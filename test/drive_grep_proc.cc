@@ -1,0 +1,128 @@
+
+#include "config.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include "grep_proc.hh"
+#include "line_buffer.hh"
+
+using namespace std;
+
+class my_source : public grep_proc_source {
+
+public:
+    my_source(auto_fd &fd) : ms_offset(0) {
+	this->ms_buffer.set_fd(fd);
+    };
+
+    bool grep_value_for_line(int line_number, string &value_out) {
+	bool retval = false;
+
+	try {
+	    size_t len;
+	    char *line;
+	    
+	    if ((line = this->ms_buffer.read_line(this->ms_offset,
+						  len)) != NULL) {
+		value_out = string(line, len);
+		retval = true;
+	    }
+	}
+	catch (line_buffer::error &e) {
+	    fprintf(stderr,
+		    "error: source buffer error %d %s\n",
+		    this->ms_buffer.get_fd(),
+		    strerror(e.e_err));
+	}
+	
+	return retval;
+    };
+    
+private:
+    line_buffer ms_buffer;
+    off_t ms_offset;
+    
+};
+
+class my_sink : public grep_proc_sink {
+
+public:
+    my_sink() : ms_finished(false) { };
+    
+    void grep_match(grep_proc &gp,
+		    grep_line_t line,
+		    int start,
+		    int end) {
+	printf("%d:%d:%d\n", (int)line, start, end);
+    };
+
+    void grep_capture(grep_proc &gp,
+		      grep_line_t line,
+		      int start,
+		      int end,
+		      char *capture) {
+	fprintf(stderr, "%d(%d:%d)%s\n", (int)line, start, end, capture);
+    };
+
+    void grep_end(grep_proc &gp) {
+	this->ms_finished = true;
+    };
+
+    bool ms_finished;
+};
+
+int main(int argc, char *argv[])
+{
+    int retval = EXIT_SUCCESS;
+    const char *errptr;
+    auto_fd fd;
+    pcre *code;
+    int eoff;
+    
+    if (argc < 3) {
+	fprintf(stderr, "error: expecting pattern and file arguments\n");
+	retval = EXIT_FAILURE;
+    }
+    else if ((fd = open(argv[2], O_RDONLY)) == -1) {
+	perror("open");
+	retval = EXIT_FAILURE;
+    }
+    else if ((code = pcre_compile(argv[1],
+				  PCRE_CASELESS,
+				  &errptr,
+				  &eoff,
+				  NULL)) == NULL) {
+      fprintf(stderr, "error: invalid pattern -- %s\n", errptr);
+    }
+    else {
+	my_source ms(fd);
+	fd_set read_fds;
+	my_sink msink;
+	int maxfd;
+	
+	FD_ZERO(&read_fds);
+	
+	grep_proc gp(code, ms, maxfd, read_fds);
+	
+	gp.queue_request();
+	gp.start();
+	gp.set_sink(&msink);
+
+	while (!msink.ms_finished) {
+	    fd_set rfds = read_fds;
+	    
+	    select(maxfd + 1, &rfds, NULL, NULL, NULL);
+
+	    gp.check_fd_set(rfds);
+	}
+    }
+    
+    return retval;
+}

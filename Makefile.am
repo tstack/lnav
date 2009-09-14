@@ -1,0 +1,6 @@
+
+ACLOCAL_AMFLAGS = -I .
+
+SUBDIRS = src test
+
+noinst_SCRIPTS = TESTS_ENVIRONMENT

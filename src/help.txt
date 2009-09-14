@@ -1,0 +1,239 @@
+
+  lnav - A fancy log file viewer
+
+DESCRIPTION
+-----------
+
+The log file navigator, lnav, is an enhanced log file viewer that
+takes advantage of any semantic information that can be gleaned from
+the files being viewed, such as timestamps and log levels.  Using this
+extra semantic information, lnav can do things like interleaving
+messages from different files, generate histograms of messages over
+time, and providing hotkeys for navigating through the file.  It is
+hoped that these features will allow the user to quickly and
+efficiently zero in on problems.
+
+
+OPTIONS
+-------
+
+Lnav takes a list of files to view and/or you can use the flag
+arguments to load well-known log files, such as the syslog or apache
+log files.  The flag arguments are:
+
+  -s         Load the most recent syslog messages file. (Default)
+  -a         Load all of the most recent log file types.
+  -r         Load older rotated log files as well.
+
+When using the flag arguments, lnav will look for the files relative
+to the current directory and its parent directories.  In other words,
+if you are working within a directory that has the well-known log
+files, those will be preferred over any others.  As an example, if you
+are anywhere in a directory tree that was archived using 'pnlog
+mailto', the log files within that tree will be loaded instead of the
+files used by the local machine.
+
+Any files given on the command-line are scanned to determine their log
+file format and to create an index for each line in the file.  You do
+not have to manually specify the log file format.  The currently
+supported formats are: syslog, apache, strace, tcsh history, and
+generic log files with timestamps.
+
+
+DISPLAY
+-------
+
+The main part of the display shows the log lines from the files
+interleaved based on time-of-day.  The lines are "scrubbed" to remove
+redundant/extraneous parts and highlighted to emphasize other parts.
+New lines are automatically loaded as they are appended to the files
+and, if you are viewing the bottom of the files, lnav will scroll down
+to display the new lines, much like 'tail -f'.
+
+On color displays, the lines will be highlighted as follows:
+
+  * Errors will be colored in red;
+  * warnings will be yellow;
+  * lines in even-numbered hours have their timestamps in bold white;
+  * boundaries between days will be underlined; and
+  * various color highlights will be applied to: SQL keywords, XML
+    tags, file and line numbers in Java backtraces, and
+    quoted strings.
+
+To give you an idea of where you are in the file spatially, the right
+side of the display has a proportionally sized 'scrollbar' that
+indicates your current position in the file.
+
+Above and below the main body are status lines that display:
+
+  * the current time;
+  * the number of errors/warnings above and below your current
+    position;
+  * the number of search hits, which updates as more are found;
+  * the line number for the top line in the display; and
+  * the name of the file the top line was pulled from.
+
+Finally, the last line on the display is where you can enter search
+patterns and execute internal commands, such as converting a
+unix-timestamp into a human-readable date.
+
+
+KEY BINDINGS
+------------
+
+To help navigate through the file there are many hotkeys that should
+make it easy to zero-in on a specific section of the file or scan
+through the file.
+
+  ?                 View/leave this help message.
+  q                 Quit.
+
+  home              Move to the top of the file.
+  end               Move to the end of the file.
+  space/pgdn        Move down a page.
+  b/bs/pgup         Move up a page.
+  j/cr/down-arrow   Move down a line.
+  k/up-arrow        Move up a line.
+  h/left-arrow      Move to the left.
+  l/right-arrow     Move to the right.
+
+  e/E               Move to the next/previous error.
+  w/W               Move to the next/previous warning.
+  n/N               Move to the next/previous search hit.
+  f/F               Move to the next/previous entry in a different
+                    file.
+
+  o/O               Move forward/backward 60 minutes from the current
+                    position in the log file.
+
+  d/D               Move forward/backward 24 hours from the current
+                    position in the log file.
+
+  1-6/Shift 1-6     Move to the next/previous n'th ten minute of the
+                    hour.  For example, '4' would move to the first
+                    log line in the fortieth minute of the current
+                    hour in the log.  And, '6' would move to the next
+                    hour boundary.
+
+  0/Shift 0         Move to the next/previous day boundary.
+
+  m                 Mark/unmark the line at the top of the display.
+		    The line will be highlighted with reverse video to
+		    indicate that it is a user bookmark.  You can use
+		    the 'u' hotkey to iterate through marks you have
+		    added.
+
+  M		    Mark/unmark all the lines between the top of the
+		    display and the last line marked/unmarked.
+
+  J                 Mark/unmark the next line after the previously
+  		    marked line.
+
+  K		    Like 'J' except it toggles the mark on the
+  		    previous line.
+
+  c                 Copy the marked text to the X selection buffer.
+
+  u/U               Move forward/backward through any user bookmarks
+		    you have added using the 'm' key.
+  
+  s                 Toggle "scrubbing" of the input file to
+                    hide/reveal parts of the timestamp and other
+                    excessive/redundant information in each log line.
+  
+  i                 View/leave a histogram of the log messages over
+                    time.  The histogram counts the number of
+                    displayed log lines for each bucket of time.  The
+                    bars are layed out horizontally with colored
+                    segments representing the different log levels.
+                    You can use the 'z' hotkey to change the size of
+                    the time buckets (e.g. ten minutes, one hour, one
+                    day).
+
+  I                 Switch between the log and histogram views while
+		    keeping the time displayed at the top of each view
+		    in sync.  For example, if the top line in the log
+		    view is "11:40", hitting 'I' will switch to the
+		    histogram view and scrolled to display "11:00" at
+		    the top (if the zoom level is hours).
+
+  z/Shift Z         Zoom in or out one step in the histogram view.
+
+  /<regexp>         Start a search for the given regular expression.
+                    The search is live, so when there is a pause in
+                    typing, the currently running search will be
+                    canceled and a new one started.  History is
+                    maintained for your searches so you can rerun them
+                    easily.  If there is an error encountered while
+                    trying to interpret the expression, the error will
+                    be displayed in red on the status line.  While the
+                    search is active, the 'hits' field in the status
+                    line will be green, when finished it will turn
+                    back to black.
+
+  :<command>        Execute an internal command.  The commands are
+                    listed below.  History is also supported in this
+                    context as well as tab-completion for commands and
+                    some arguments.  The result of the command
+                    replaces the command you typed.
+
+  ;<sql>            Execute an SQL query.  Most supported log file
+                    formats provide a sqlite virtual table backend
+                    that can be used in queries.  See the SQL section
+                    below for more information.
+
+COMMANDS
+--------
+
+  unix-time <secs-or-date>
+                    Convert a unix-timestamp in seconds to a
+                    human-readable form or vice-versa.
+		    BEWARE OF TIMEZONE DIFFERENCES.
+
+  current-time      Print the current time in human-readable form and
+                    as a unix-timestamp.
+
+  goto <line#|N%>   Go to the given line number or N percent into the
+                    file.
+
+  highlight <regex> Highlight strings that match the given regular
+                    expression.
+
+  filter-in <regex> Only display lines that match the given regular
+                    expression.  This command can be used multiple
+                    times to add more lines to the display.
+
+  filter-out <regex>
+                    Do not display lines that match the given regular
+                    expression.  This command can be used multiple
+                    times to remove more lines from the display.  If a
+                    'filter-in' expression is also active, it takes
+                    priority and the filter-out will remove lines that
+                    were matched by the 'filter-in'.
+
+  disable-filter <regex>
+                    Disable an active 'filter-in' or 'filter-out'
+                    expression.
+
+  enable-filter <regex>
+                    Enable a inactive 'filter-in' or 'filter-out'
+                    expression.
+
+  graph <regex>     Graph the value of numbers in the file(s) over
+                    time.  The given regular expression should capture
+                    the number to be displayed.  For example:
+
+                      my stats: (\d+\.\d+)
+
+                    Will graph all the "stats" values found in the
+                    file.  XXX This is still mostly a toy...
+
+  append-to <file>  Append any marked lines to the given file.
+
+  write-to <file>   Write any marked lines to the given file.
+
+
+SQL
+---
+
+WRITE ME
