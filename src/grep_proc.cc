@@ -159,7 +159,7 @@ void grep_proc::start(void)
 	    line_value.clear();
 	    done = !this->gp_source.grep_value_for_line(line, line_value);
 	    if (!done) {
-		pcre_context_static<10> pc;
+		pcre_context_static<60> pc;
 		pcre_input pi(line_value);
 		
 		while (this->gp_pcre.match(pc, pi)) {
@@ -172,6 +172,13 @@ void grep_proc::start(void)
 		    m = pc.all();
 		    fprintf(stdout, "[%d:%d]\n", m->m_begin, m->m_end);
 		    for (pc_iter = pc.begin(); pc_iter != pc.end(); pc_iter++) {
+			if (pc_iter->m_begin < 0) {
+			    /* If the capture was conditional, pcre will
+			     * return a -1 here.
+			     */
+			    continue;
+			}
+			
 			fprintf(stdout,
 				"(%d:%d)",
 				pc_iter->m_begin,

@@ -204,7 +204,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 	int off, hcount = 0;
 
 	for (off = 0; off < str.size(); ) {
-	    int rc, matches[30];
+	    int rc, matches[60];
 	    
 	    rc = pcre_exec(iter->second.h_code,
 			   NULL,
@@ -213,7 +213,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 			   off,
 			   0,
 			   matches,
-			   30);
+			   60);
 	    if (rc > 0) {
 		struct line_range lr;
 	    
@@ -242,9 +242,10 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 	    }
 	}
     }
-    
+
     if (binary_search(bv.begin(), bv.end(), row)) {
 	string_attrs_t::iterator iter;
+	bool added = false;
 
 	for (iter = sa.begin(); iter != sa.end(); iter++) {
 	    attrs_map_t &am = iter->second;
@@ -253,8 +254,15 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 	    for (am_iter = am.begin(); am_iter != am.end(); am_iter++) {
 		if (am_iter->first == "style") {
 		    am_iter->second.sa_int ^= A_REVERSE;
+		    added = true;
+		    break;
 		}
 	    }
+	}
+	if (!added) {
+	    struct line_range lr = { 0, -1 };
+	    
+	    sa[lr].insert(make_string_attr("style", A_REVERSE));
 	}
     }
 }

@@ -136,6 +136,8 @@ int log_format::log_scanf(const char *line,
 	"%Y/%m/%d %H:%M:%S",
 	"%Y/%m/%d %H:%M",
 	
+	"%a %b %d %H:%M:%S %Y",
+	
 	"%d/%b/%Y:%H:%M:%S %z",
 	
 	"%b %d %H:%M:%S",

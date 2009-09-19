@@ -206,7 +206,9 @@ noinst_LIBRARIES = libdiag.a
 @HAVE_OBJCOPY_FALSE@HELP_SRC = help.cc
 @HAVE_OBJCOPY_TRUE@HELP_SRC = 
 AM_LDFLAGS = \
-	$(SQLITE3_LDFLAGS)
+	$(SQLITE3_LDFLAGS) \
+	-pthread \
+	-static
 
 AM_CPPFLAGS = \
 	$(SQLITE3_CFLAGS) \

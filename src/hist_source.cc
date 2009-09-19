@@ -29,6 +29,10 @@ void hist_source::text_value_for_line(textview_curses &tc,
 	
 	tc.get_dimensions(height, width);
 	value_out.insert((unsigned int)0, width, '-');
+	
+	if (this->hs_label_source != NULL) {
+	    this->hs_label_source->hist_label_for_group(grow, value_out);
+	}
 	this->hs_token_bucket = NULL;
     }
     else {

@@ -25,7 +25,10 @@ public:
 	int length() { return this->m_end - this->m_begin; };
     } match_t;
     typedef match_t *iterator;
-    
+
+    int get_max_count() {
+	return this->pc_max_count;
+    };
 
     void set_count(int count) {
 	this->pc_count = count;
@@ -37,9 +40,11 @@ public:
     iterator end() { return pc_matches + pc_count; };
     
 protected:
-    pcre_context(match_t *matches) : pc_matches(matches) { };
-    
+    pcre_context(match_t *matches, int max_count)
+	: pc_matches(matches), pc_max_count(max_count) { };
+
     match_t *pc_matches;
+    int pc_max_count;
     int pc_count;
 };
 
@@ -47,10 +52,10 @@ template<size_t MAX_COUNT>
 class pcre_context_static : public pcre_context {
 public:
     pcre_context_static()
-	: pcre_context(this->pc_match_buffer) { };
+	: pcre_context(this->pc_match_buffer, MAX_COUNT + 1) { };
 
 private:
-    match_t pc_match_buffer[MAX_COUNT * 3 + 1];
+    match_t pc_match_buffer[MAX_COUNT + 1];
 };
 
 class pcre_input {
@@ -119,7 +124,7 @@ public:
     virtual ~pcrepp() { };
 
     bool match(pcre_context &pc, pcre_input &pi, int options = 0) {
-	int count = 30;
+	int count = pc.get_max_count();
 	int rc;
 
 	pi.pi_offset = pi.pi_next_offset;
@@ -130,9 +135,13 @@ public:
 		       pi.pi_offset,
 		       options,
 		       (int *)pc.all(),
-		       count);
+		       count * 2);
 
-	if (rc <= 0) { }
+	if (rc < 0) {
+	}
+	else if (rc == 0) {
+	    rc = 0;
+	}
 	else if (pc.all()->m_begin == pc.all()->m_end)
 	    rc = 0;
 	else 

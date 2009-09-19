@@ -182,6 +182,9 @@ through the file.
                     that can be used in queries.  See the SQL section
                     below for more information.
 
+  .                 Switch to/from the sql result view.
+
+
 COMMANDS
 --------
 
@@ -233,7 +236,66 @@ COMMANDS
   write-to <file>   Write any marked lines to the given file.
 
 
-SQL
----
+SQL QUERIES
+-----------
 
-WRITE ME
+Lnav has support for performing SQL queries on log files using the
+Sqlite3 "virtual" table feature.  For all supported log file types,
+lnav will create tables that can be queried using the subset of SQL
+that is supported by Sqlite3.  For example, to get the top ten URLs
+being accessed in any loaded Apache log files, you can execute:
+
+  ;select cs_uri_stem, count(*) as total from access_log 
+     group by cs_uri_stem order by total desc limit 10;
+
+The query result view shows the results as text and graphs any number
+values found in the result, much like the histogram view.
+
+The basic set of log file tables are:
+
+  syslog_log, generic_log
+                   Contains any syslog lines and any lines picked up
+                   by the generic log file parser.
+
+    line_number    The line number in the file, starting at zero.
+    path           The full path to the file.
+    log_time       The time of the log entry.
+    level          The log level (e.g. info, error, etc...).
+    raw_line       The raw line of text.
+
+The following tables include the basic columns as listed above and
+include a few more columns since the log file format is more
+structured.
+
+  access_log       Contains Apache log file lines.  The column names
+                   are the same as those in the Microsoft LogParser.
+
+    c_ip           The client IP address.
+    cs_username    The client user name.
+    cs_method      The HTTP method.
+    cs_uri_stem    The stem portion of the URI.
+    cs_uri_query   The query portion of the URI.
+    cs_version     The HTTP version string.
+    sc_status      The status number returned to the client.
+    sc_bytes       The number of bytes sent to the client.
+    cs_referrer    The URL of the referring page.
+    cs_user_agent  The user agent string.
+
+  strace_log       Contains strace log file lines.  Currently, you
+                   need to run strace with the "-tt -T" options.
+
+    funcname       The name of the syscall.
+    result         The result code.
+    duration       The amount of time spent in the syscall.
+    arg0 - arg9    The arguments passed to the syscall.
+
+These tables are created dynamically and not stored in memory or on
+disk.  If you would like to persist some information from the tables,
+you can attach another database and create tables in that database.
+For example, if you wanted to save the results from the earlier
+example of a top ten query into the "/tmp/topten.db" file, you can do:
+
+  ;attach database "/tmp/topten.db" as topten;
+  ;create table topten as select cs_uri_stem, count(*) as total
+     from access_log group by cs_uri_stem order by total desc
+     limit 10;

@@ -93,7 +93,12 @@ char **readline_context::attempted_completion(const char *text,
 {
     char **retval = NULL;
 
-    if (start == 0) {
+    if (loaded_context->rc_possibilities.find("*") != loaded_context->rc_possibilities.end()) {
+	fprintf(stderr, "all poss\n");
+	arg_possibilities = &loaded_context->rc_possibilities["*"];
+	rl_completion_append_character = ' ';
+    }
+    else if (start == 0) {
 	arg_possibilities              = &loaded_context->rc_possibilities["__command"];
 	rl_completion_append_character = ' ';
     }

@@ -278,8 +278,6 @@ static struct {
 
     auto_ptr<grep_highlighter> ld_grep_child[LG__MAX];
 
-    auto_temp_file ld_db_file;
-
     log_vtab_manager *ld_vtab_manager;
     session *ld_sql;
 } lnav_data;
@@ -1302,7 +1300,7 @@ public:
 
     bool matches(string line)
     {
-	static const int MATCH_COUNT = 30;
+	static const int MATCH_COUNT = 20 * 3;
 	int  matches[MATCH_COUNT], rc;
 	bool retval;
 
@@ -1596,6 +1594,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 	    char buffer[128];
 	    
 	    hs.clear();
+	    dls.dls_headers.clear();
 	    dls.dls_rows.clear();
 	    for (rowset<row>::const_iterator it = rs.begin();
 		 it != rs.end();
@@ -1608,6 +1607,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 		    if (!header_done) {
 			fprintf(stderr, "<%s> ", props.get_name().c_str());
 			fprintf(stderr, " dt %d\n", props.get_data_type());
+			dls.push_header(props.get_name());
 			hs.set_role_for_type(bucket_type_t(lpc),
 					     view_colors::singleton().
 					     next_highlight());
@@ -1682,8 +1682,9 @@ static void rl_callback(void *dummy, readline_curses *rc)
 
 	    hs.analyze();
 	    lnav_data.ld_views[LNV_DB].reload_data();
-	    
-	    toggle_view(&lnav_data.ld_views[LNV_DB]);
+
+	    if (row_number > 0)
+		toggle_view(&lnav_data.ld_views[LNV_DB]);
 	}
 	catch (soci::soci_error &e) {
 	    rc->set_value(e.what());
@@ -1778,6 +1779,7 @@ static void looper(void)
 	struct timeval   last_check = { 0, 0 };
 	readline_context search_context;
 	readline_context index_context;
+	readline_context sql_context;
 	textview_curses  *tc;
 	readline_curses  rlc;
 	int lpc;
@@ -1788,7 +1790,7 @@ static void looper(void)
 	rlc.add_context(LNM_COMMAND, command_context);
 	rlc.add_context(LNM_SEARCH, search_context);
 	rlc.add_context(LNM_CAPTURE, index_context);
-	rlc.add_context(LNM_SQL, index_context);
+	rlc.add_context(LNM_SQL, sql_context);
 	rlc.start();
 
 	lnav_data.ld_rl_view = &rlc;
@@ -1797,6 +1799,110 @@ static void looper(void)
 	add_possibility(LNM_COMMAND, "graph", "\\d+(?:\\.\\d+)?");
 	lnav_data.ld_rl_view->
 	add_possibility(LNM_COMMAND, "graph", "([:= \\t]\\d+(?:\\.\\d+)?)");
+
+	{
+	    const char *sql_commands[] = {
+		"add",
+		"all",
+		"alter",
+		"analyze",
+		"asc",
+		"attach",
+		"begin",
+		"collate",
+		"column",
+		"commit",
+		"conflict",
+		"create",
+		"cross",
+		"database",
+		"delete",
+		"desc",
+		"detach",
+		"distinct",
+		"drop",
+		"end",
+		"except",
+		"explain",
+		"from",
+		"group",
+		"having",
+		"index",
+		"indexed",
+		"inner",
+		"insert",
+		"intersect",
+		"join",
+		"left",
+		"limit",
+		"natural",
+		"offset",
+		"order",
+		"outer",
+		"pragma",
+		"reindex",
+		"rename",
+		"replace",
+		"rollback",
+		"select",
+		"table",
+		"transaction",
+		"trigger",
+		"union",
+		"unique",
+		"update",
+		"using",
+		"vacuum",
+		"view",
+		"where",
+		"when",
+
+		// XXX do the following dynamically by reading sqlite_master
+
+		"access_log",
+		"syslog_log",
+		"generic_log",
+		"strace_log",
+
+		"line_number",
+		"path",
+		"log_time",
+		"level",
+		"raw_line",
+		
+		"c_ip",
+		"cs_username",
+		"cs_method",
+		"cs_uri_stem",
+		"cs_uri_query",
+		"cs_version",
+		"sc_status",
+		"sc_bytes",
+		"cs_referer",
+		"cs_user_agent",
+		
+		"funcname",
+		"result",
+		"duration",
+		"arg0",
+		"arg1",
+		"arg2",
+		"arg3",
+		"arg4",
+		"arg5",
+		"arg6",
+		"arg7",
+		"arg8",
+		"arg9",
+		
+		NULL
+	    };
+
+	    for (int lpc = 0; sql_commands[lpc]; lpc++) {
+		lnav_data.ld_rl_view->
+		    add_possibility(LNM_SQL, "*", sql_commands[lpc]);
+	    }
+	}
 
 	(void)signal(SIGINT, sigint);
 	(void)signal(SIGTERM, sigint);
@@ -2033,7 +2139,7 @@ public:
 	using namespace sqlite_api;
 	string c_ip, cs_username, cs_method, cs_uri_stem, cs_uri_query;
 	string cs_version, sc_status, cs_referer, cs_user_agent;
-	int sc_bytes = 0;
+	string sc_bytes;
 	
 	if (!this->alt_regex.FullMatch(line,
 				       &c_ip,
@@ -2046,7 +2152,7 @@ public:
 				       &sc_bytes,
 				       &cs_referer,
 				       &cs_user_agent)) {
-	    fprintf(stderr, "bad match! %s\n", line.c_str());
+	    fprintf(stderr, "bad match! %d %s\n", column, line.c_str());
 	}
 	switch (column) {
 	case 0:
@@ -2092,7 +2198,12 @@ public:
 				SQLITE_TRANSIENT);
 	    break;
 	case 7:
-	    sqlite3_result_int64(ctx, sc_bytes);
+	    {
+		int sc_bytes_int = 0;
+
+		sscanf(sc_bytes.c_str(), "%d", &sc_bytes_int);
+		sqlite3_result_int64(ctx, sc_bytes_int);
+	    }
 	    break;
 	case 8:
 	    sqlite3_result_text(ctx,
@@ -2185,6 +2296,18 @@ public:
 			if (!in_quote)
 			    in_struct += 1;
 			break;
+		    case '}':
+			if (!in_quote)
+			    in_struct -= 1;
+			break;
+		    case '[':
+			if (!in_quote)
+			    in_list += 1;
+			break;
+		    case ']':
+			if (!in_quote)
+			    in_list -= 1;
+			break;
 		    case '"':
 			if (!in_quote)
 			    in_quote = true;
@@ -2192,7 +2315,7 @@ public:
 			    in_quote = false;
 			break;
 		    case ',':
-			if (!in_quote) {
+			if (!in_quote && !in_struct && !in_list) {
 			    if (curarg == argnum) {
 				sqlite3_result_text(ctx,
 						    arg_start,
@@ -2296,7 +2419,7 @@ int main(int argc, char *argv[])
 
     lnav_data.ld_looping = true;
     lnav_data.ld_mode    = LNM_PAGING;
-    lnav_data.ld_debug_log_name = "/tmp/lnav.err"; // XXX change to /dev/null
+    lnav_data.ld_debug_log_name = "/dev/null"; // XXX change to /dev/null
     while ((c = getopt(argc, argv, "harsd:")) != -1) {
 	switch (c) {
 	case 'h':
@@ -2392,7 +2515,6 @@ int main(int argc, char *argv[])
 		lnav_data.ld_log_source.insert_file(lf);
 	    }
 
-	    lnav_data.ld_db_file = "/tmp/lnav-db.XXXXXX";
 	    looper();
 	}
 	catch (line_buffer::error & e) {

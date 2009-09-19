@@ -23,7 +23,9 @@ HELP_SRC = help.cc
 endif
 
 AM_LDFLAGS = \
-	$(SQLITE3_LDFLAGS)
+	$(SQLITE3_LDFLAGS) \
+	-pthread \
+	-static
 
 AM_CPPFLAGS = \
 	$(SQLITE3_CFLAGS) \
