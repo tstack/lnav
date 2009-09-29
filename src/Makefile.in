@@ -226,22 +226,34 @@ LDADD = \
 	-lpcrecpp
 
 noinst_HEADERS = \
+	auto_fd.hh \
+	auto_mem.hh \
+	auto_temp_file.hh \
 	bookmarks.hh \
+	bottom_status_source.hh \
+	db_sub_source.hh \
 	grep_proc.hh \
 	help.hh \
+	help.txt \
 	hist_source.hh \
 	line_buffer.hh \
 	listview_curses.hh \
+	lnav_util.hh \
 	log_format.hh \
 	logfile.hh \
 	logfile_sub_source.hh \
+	pcrepp.hh \
+	piper_proc.hh \
 	readline_curses.hh \
 	statusview_curses.hh \
-	piper_proc.hh \
+	strong_int.hh \
 	textview_curses.hh \
+	time_T.hh \
+	top_status_source.hh \
 	view_curses.hh \
 	vt52_curses.hh \
-	log_vtab_impl.hh
+	log_vtab_impl.hh \
+	log_format_impls.cc
 
 libdiag_a_SOURCES = \
 	bookmarks.cc \

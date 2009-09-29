@@ -1,5 +1,4 @@
 
-#include "tables.h"
 #include "log_format.hh"
 
 using namespace std;

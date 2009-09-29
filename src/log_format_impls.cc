@@ -1,7 +1,6 @@
 
 #include <soci.h>
 
-#include "tables.h"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
 

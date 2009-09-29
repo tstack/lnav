@@ -105,6 +105,32 @@ slicer_SOURCES = \
 
 scripty_SOURCES = scripty.cc
 
+dist_noinst_SCRIPTS = \
+	test_grep_proc.sh \
+	test_line_buffer.sh \
+	test_listview.sh \
+	test_logfile.sh \
+	test_vt52_curses.sh
+
+dist_noinst_DATA = \
+	listview_output.0 \
+	listview_output.1 \
+	listview_output.2 \
+	listview_output.3 \
+	listview_output.4 \
+	listview_output.5 \
+	listview_output.6 \
+	logfile_access_log.0 \
+	logfile_empty.0 \
+	logfile_syslog.0 \
+	logfile_syslog.1 \
+	logfile_tcsh_history.0 \
+	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
+	vt52_curses_input.0 \
+	vt52_curses_input.1 \
+	vt52_curses_output.0 \
+	vt52_curses_output.1
+
 TESTS = test_bookmarks \
 	test_auto_fd \
 	test_auto_mem \

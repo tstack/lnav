@@ -13,6 +13,8 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
+
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -44,7 +46,8 @@ TESTS = test_bookmarks$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_grep_proc2$(EXEEXT) $(am__EXEEXT_1) test_listview.sh \
 	test_logfile.sh test_vt52_curses.sh test_top_status$(EXEEXT)
 subdir = test
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(dist_noinst_DATA) $(dist_noinst_SCRIPTS) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/ax_sqlite3.m4 \
 	$(top_srcdir)/lnav.m4 $(top_srcdir)/configure.in
@@ -118,6 +121,7 @@ am_test_top_status_OBJECTS = bookmarks.$(OBJEXT) logfile.$(OBJEXT) \
 	test_top_status.$(OBJEXT)
 test_top_status_OBJECTS = $(am_test_top_status_OBJECTS)
 test_top_status_DEPENDENCIES = $(am__DEPENDENCIES_1)
+SCRIPTS = $(dist_noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -140,6 +144,7 @@ DIST_SOURCES = $(drive_grep_proc_SOURCES) $(drive_line_buffer_SOURCES) \
 	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
 	$(test_grep_proc2_SOURCES) $(test_line_buffer2_SOURCES) \
 	$(test_top_status_SOURCES)
+DATA = $(dist_noinst_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -335,6 +340,32 @@ slicer_SOURCES = \
 	slicer.cc
 
 scripty_SOURCES = scripty.cc
+dist_noinst_SCRIPTS = \
+	test_grep_proc.sh \
+	test_line_buffer.sh \
+	test_listview.sh \
+	test_logfile.sh \
+	test_vt52_curses.sh
+
+dist_noinst_DATA = \
+	listview_output.0 \
+	listview_output.1 \
+	listview_output.2 \
+	listview_output.3 \
+	listview_output.4 \
+	listview_output.5 \
+	listview_output.6 \
+	logfile_access_log.0 \
+	logfile_empty.0 \
+	logfile_syslog.0 \
+	logfile_syslog.1 \
+	logfile_tcsh_history.0 \
+	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
+	vt52_curses_input.0 \
+	vt52_curses_input.1 \
+	vt52_curses_output.0 \
+	vt52_curses_output.1
+
 all: all-am
 
 .SUFFIXES:
@@ -764,7 +795,7 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-am
-all-am: Makefile
+all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs:
 install: install-am
 install-exec: install-exec-am
