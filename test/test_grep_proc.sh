@@ -6,7 +6,7 @@ Goodbye, World?
 EOF
 
 grep_slice() {
-    ./drive_grep_proc "$1" "$2" | slicer "$2"
+    ./drive_grep_proc "$1" "$2" | ./slicer "$2"
 }
 
 grep_capture() {

@@ -38,13 +38,13 @@ check_PROGRAMS = drive_line_buffer$(EXEEXT) drive_grep_proc$(EXEEXT) \
 	drive_vt52_curses$(EXEEXT) drive_readline_curses$(EXEEXT) \
 	slicer$(EXEEXT) scripty$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) \
-	test_grep_proc2$(EXEEXT) $(am__EXEEXT_1) \
-	test_line_buffer2$(EXEEXT) test_top_status$(EXEEXT)
+	test_grep_proc2$(EXEEXT) test_line_buffer2$(EXEEXT) \
+	test_top_status$(EXEEXT)
 TESTS = test_bookmarks$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_line_buffer.sh \
 	test_line_buffer2$(EXEEXT) test_grep_proc.sh \
-	test_grep_proc2$(EXEEXT) $(am__EXEEXT_1) test_listview.sh \
-	test_logfile.sh test_vt52_curses.sh test_top_status$(EXEEXT)
+	test_grep_proc2$(EXEEXT) test_listview.sh test_logfile.sh \
+	test_vt52_curses.sh test_top_status$(EXEEXT)
 subdir = test
 DIST_COMMON = $(dist_noinst_DATA) $(dist_noinst_SCRIPTS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -56,7 +56,6 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 =
 am_drive_grep_proc_OBJECTS = line_buffer.$(OBJEXT) grep_proc.$(OBJEXT) \
 	drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
@@ -162,7 +161,6 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CURSES_LIB = @CURSES_LIB@
 CXX = @CXX@
-CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -202,8 +200,6 @@ READLINE_CFLAGS = @READLINE_CFLAGS@
 READLINE_LIBS = @READLINE_LIBS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
-SOCI_CXXFLAGS = @SOCI_CXXFLAGS@
-SOCI_LIBS = @SOCI_LIBS@
 SQLITE3_CFLAGS = @SQLITE3_CFLAGS@
 SQLITE3_LDFLAGS = @SQLITE3_LDFLAGS@
 SQLITE3_LIBS = @SQLITE3_LIBS@
@@ -264,14 +260,8 @@ top_srcdir = @top_srcdir@
 TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
-	$(SQLITE3_CFLAGS) \
-	$(SOCI_CXXFLAGS)
+	$(SQLITE3_CFLAGS)
 
-@HAVE_SOCI_FALSE@SOCI_TESTS = 
-
-# AM_CFLAGS = -fprofile-arcs -ftest-coverage
-# AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
-@HAVE_SOCI_TRUE@SOCI_TESTS = 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS)
 

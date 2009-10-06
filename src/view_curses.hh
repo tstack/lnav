@@ -39,11 +39,11 @@ struct line_range {
     };
     
     bool operator<(const struct line_range &rhs) const {
-      if (this->lr_start < rhs.lr_start) return true;
-      else if (this->lr_start > rhs.lr_start) return false;
-
-      if (this->lr_end < rhs.lr_end) return true;
-      return false;
+	if (this->lr_start < rhs.lr_start) return true;
+	else if (this->lr_start > rhs.lr_start) return false;
+	
+	if (this->lr_end < rhs.lr_end) return true;
+	return false;
     };
 };
 

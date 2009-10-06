@@ -59,8 +59,6 @@ AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE([], [AC_MSG_ERROR([readline required to build])])
 
 AX_LIB_SQLITE3("3.0.0")
-AX_PATH_LIB_SOCI([], [AC_MSG_ERROR([soci required to build])])
-AM_CONDITIONAL(HAVE_SOCI, test x"$SOCI_CXXFLAGS" != x"")
 
 AM_CONDITIONAL(HAVE_LIBSQLITE3, [
     test -n "$SQLITE3_CFLAGS" -a -n "$SQLITE3_LDFLAGS"])

@@ -6,8 +6,6 @@
 #include "logfile_sub_source.hh"
 
 using namespace std;
-using namespace soci;
-using namespace sqlite_api;
 
 static string declare_table_statement(log_vtab_impl *vi)
 {
@@ -33,7 +31,7 @@ static string declare_table_statement(log_vtab_impl *vi)
 
 struct vtab {
     sqlite3_vtab base;
-    sqlite_api::sqlite3 *db;
+    sqlite3 *db;
     logfile_sub_source *lss;
     log_vtab_impl *vi;
 };
@@ -45,7 +43,7 @@ struct vtab_cursor {
 
 static int vt_destructor(sqlite3_vtab *p_svt);
 
-static int vt_create( sqlite_api::sqlite3 *db,
+static int vt_create( sqlite3 *db,
                       void *pAux,
                       int argc, const char *const*argv,
                       sqlite3_vtab **pp_vt,
@@ -87,7 +85,7 @@ static int vt_destructor(sqlite3_vtab *p_svt)
     return SQLITE_OK;
 }
 
-static int vt_connect( sqlite_api::sqlite3 *db, void *p_aux,
+static int vt_connect( sqlite3 *db, void *p_aux,
                        int argc, const char *const*argv,
                        sqlite3_vtab **pp_vt, char **pzErr )
 {
@@ -263,7 +261,7 @@ static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
     return SQLITE_OK;
 }
 
-static sqlite_api::sqlite3_module vtab_module = {
+static sqlite3_module vtab_module = {
     0,              /* iVersion */
     vt_create,      /* xCreate       - create a vtable */
     vt_connect,     /* xConnect      - associate a vtable with a connection */
@@ -285,23 +283,31 @@ static sqlite_api::sqlite3_module vtab_module = {
     NULL,           /* xFindFunction - function overloading */
 };
 
-log_vtab_manager::log_vtab_manager(soci::session &sql, logfile_sub_source &lss)
-    : vm_sql(sql), vm_source(lss)
+log_vtab_manager::log_vtab_manager(sqlite3 *memdb, logfile_sub_source &lss)
+    : vm_db(memdb), vm_source(lss)
 {
-    sqlite3_session_backend *be = (sqlite3_session_backend *)sql.get_backend();
-    sqlite_api::sqlite3 *db = be->conn_;
-    
-    sqlite3_create_module(db, "log_vtab_impl", &vtab_module, this);
+    sqlite3_create_module(this->vm_db, "log_vtab_impl", &vtab_module, this);
 }
 
 void log_vtab_manager::register_vtab(log_vtab_impl *vi) {
     if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
+	const char *errmsg;
+	char *sql;
+	int rc;
+	
 	this->vm_impls[vi->get_name()] = vi;
 
-	vm_sql << "CREATE VIRTUAL TABLE "
-	       << vi->get_name()
-	       << " USING log_vtab_impl("
-	       << vi->get_name()
-	       << ")";
+	sql = sqlite3_mprintf("CREATE VIRTUAL TABLE %s "
+			      "USING log_vtab_impl(%s)",
+			      vi->get_name().c_str(),
+			      vi->get_name().c_str());
+	rc = sqlite3_exec(this->vm_db,
+			  sql,
+			  NULL,
+			  NULL,
+			  NULL);
+	assert(rc == SQLITE_OK);
+
+	sqlite3_free(sql);
     }
 }

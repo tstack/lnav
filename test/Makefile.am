@@ -3,17 +3,10 @@ TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
-	$(SQLITE3_CFLAGS) \
-	$(SOCI_CXXFLAGS)
+	$(SQLITE3_CFLAGS)
 
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage
 # AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
-
-if HAVE_SOCI
-SOCI_TESTS =
-else
-SOCI_TESTS =
-endif
 
 check_PROGRAMS = \
 	drive_line_buffer \
@@ -28,7 +21,6 @@ check_PROGRAMS = \
 	test_auto_mem \
 	test_bookmarks \
 	test_grep_proc2 \
-	$(SOCI_TESTS) \
 	test_line_buffer2 \
 	test_top_status
 
@@ -138,7 +130,6 @@ TESTS = test_bookmarks \
 	test_line_buffer2 \
 	test_grep_proc.sh \
 	test_grep_proc2 \
-	$(SOCI_TESTS) \
 	test_listview.sh \
 	test_logfile.sh \
 	test_vt52_curses.sh \

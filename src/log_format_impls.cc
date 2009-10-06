@@ -1,11 +1,8 @@
 
-#include <soci.h>
-
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
 
 using namespace std;
-using namespace soci;
 
 class access_log_format : public log_format {
     string get_name() { return "access_log"; };

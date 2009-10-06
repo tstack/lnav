@@ -5,15 +5,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <soci.h>
-#include <soci-sqlite3.h>
-
 #include "time_T.hh"
 #include "auto_temp_file.hh"
 #include "capture_proc.hh"
-
-using namespace std;
-using namespace SOCI;
 
 static const int MS_LINE_COUNT = 4;
 

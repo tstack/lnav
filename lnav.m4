@@ -114,29 +114,3 @@ AC_DEFUN([MP_WITH_CURSES],
    LIBS="$mp_save_LIBS"
    AC_SUBST(CURSES_LIB)
 ])dnl
-
-
-AC_DEFUN([AX_PATH_LIB_SOCI],[dnl
-AC_MSG_CHECKING([lib soci])
-AC_ARG_WITH(soci,
-[  --with-soci[[=prefix]]    compile soci part (via libsoci check)],,
-     with_soci="yes")
-if test ".$with_soci" = ".no" ; then
-  AC_MSG_RESULT([disabled])
-  m4_ifval($2,$2)
-else
-  AC_MSG_RESULT([(testing)])
-  AC_LANG_PUSH([C++])
-  AC_CHECK_HEADERS(soci/soci.h)
-  AC_LANG_POP([C++])
-  if test "$ac_cv_header_soci_soci_h" = "yes" ; then
-    if test ".$with_soci" == ".yes"; then
-      with_soci="/usr/local/include"
-    fi
-    SOCI_CXXFLAGS="-I${with_soci}/soci -I${with_soci}/soci/sqlite3"
-    SOCI_LIBS="-lsoci_sqlite3-gcc-3_0 -lsoci_core-gcc-3_0"
-  fi
-fi
-AC_SUBST([SOCI_LIBS])
-AC_SUBST([SOCI_CXXFLAGS])
-])

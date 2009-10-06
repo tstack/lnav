@@ -82,17 +82,18 @@ private:
 	this->vem_map[KEY_BEG] = "\x1";
 	this->vem_map[KEY_END] = "\x5";
 
-	this->vem_map[KEY_SLEFT] = tgetstr("#4", NULL);
+	this->vem_map[KEY_SLEFT] = tgetstr("#4", &area);
 	if (this->vem_map[KEY_SLEFT] == NULL) {
 	    this->vem_map[KEY_SLEFT] = "\033b";
 	}
-	this->vem_map[KEY_SRIGHT] = tgetstr("%i", NULL);
+	this->vem_map[KEY_SRIGHT] = tgetstr("%i", &area);
 	if (this->vem_map[KEY_SRIGHT] == NULL) {
 	    this->vem_map[KEY_SRIGHT] = "\033f";
 	}
 
 	this->vem_input_map[tgetstr("ce", &area)] = "ce";
 	this->vem_input_map[tgetstr("kl", &area)] = "kl";
+	this->vem_input_map[tgetstr("kr", &area)] = "kr";
 	tgetent(NULL, getenv("TERM"));
     };
 
@@ -157,6 +158,14 @@ void vt52_curses::map_output(const char *output, int len)
 		    this->vc_x -= 1;
 		    wmove(this->vc_window, y, this->vc_x);
 		    this->vc_escape_len = 0;
+		}
+		else if (strcmp(cap, "kr") == 0) {
+		    this->vc_x += 1;
+		    wmove(this->vc_window, y, this->vc_x);
+		    this->vc_escape_len = 0;
+		}
+		else {
+		    assert(0);
 		}
 	    }
 	}

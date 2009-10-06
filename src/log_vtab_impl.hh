@@ -2,13 +2,11 @@
 #ifndef __vtab_impl_hh
 #define __vtab_impl_hh
 
-#include <soci.h>
-
-#include <sqlite3/soci-sqlite3.h>
 #include <sqlite3.h>
 
 #include <map>
 #include <string>
+#include <vector>
 
 class logfile_sub_source;
 
@@ -33,7 +31,7 @@ public:
 
     virtual void extract(const std::string &line,
 			 int column,
-			 sqlite_api::sqlite3_context *ctx) {
+			 sqlite3_context *ctx) {
     };
     
 private:
@@ -42,7 +40,7 @@ private:
 
 class log_vtab_manager {
 public:
-    log_vtab_manager(soci::session &sql, logfile_sub_source &lss);
+    log_vtab_manager(sqlite3 *db, logfile_sub_source &lss);
 
     logfile_sub_source *get_source() { return &this->vm_source; };
     
@@ -52,7 +50,7 @@ public:
     };
     
 private:
-    soci::session &vm_sql;
+    sqlite3 *vm_db;
     logfile_sub_source &vm_source;
     std::map<std::string, log_vtab_impl *> vm_impls;
 };

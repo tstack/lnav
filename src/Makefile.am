@@ -28,15 +28,13 @@ AM_LDFLAGS = \
 	-static
 
 AM_CPPFLAGS = \
-	$(SQLITE3_CFLAGS) \
-	$(SOCI_CXXFLAGS)
+	$(SQLITE3_CFLAGS)
 
 LDADD = \
 	libdiag.a \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(HELP_O) \
-	$(SOCI_LIBS) \
 	/usr/lib/libsqlite3.a \
 	-ldl \
 	-lz \

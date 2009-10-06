@@ -33,9 +33,6 @@
 /* Define to 1 if you have the <readline/readline.h> header file. */
 #undef HAVE_READLINE_READLINE_H
 
-/* Define to 1 if you have the <soci/soci.h> header file. */
-#undef HAVE_SOCI_SOCI_H
-
 /* sqlite3 */
 #undef HAVE_SQLITE3
 

@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <functional>
 
+#include <sqlite3.h>
+
 #include "help.hh"
 #include "auto_temp_file.hh"
 #include "logfile.hh"
@@ -49,11 +51,7 @@
 #include "db_sub_source.hh"
 #include "pcrecpp.h"
 
-#include <soci.h>
-#include <sqlite3/soci-sqlite3.h>
-
 using namespace std;
-using namespace soci;
 
 typedef enum {
     LNM_PAGING,
@@ -239,6 +237,12 @@ public:
     bucket_type_t gr_next_field;
 };
 
+/* XXX figure out how to do this with the template */
+void sqlite_close_wrapper(void *mem)
+{
+    sqlite3_close((sqlite3*)mem);
+}
+
 static struct {
     const char           *ld_program_name;
     const char *ld_debug_log_name;
@@ -279,7 +283,7 @@ static struct {
     auto_ptr<grep_highlighter> ld_grep_child[LG__MAX];
 
     log_vtab_manager *ld_vtab_manager;
-    session *ld_sql;
+    auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
 } lnav_data;
 
 class loading_observer
@@ -1447,6 +1451,36 @@ static string com_capture(string cmdline, vector<string> &args)
 
 static readline_context::command_map_t lnav_commands;
 
+static int sql_callback(void *arg,
+			int ncols,
+			char **values,
+			char **colnames)
+{
+    db_label_source &dls = lnav_data.ld_db_rows;
+    hist_source &hs = lnav_data.ld_db_source;
+    double num_value = 0.0;
+    int row_number;
+    int lpc, retval = 0;
+
+    row_number = dls.dls_rows.size();
+    dls.dls_rows.resize(row_number + 1);
+    if (dls.dls_headers.empty()) {
+	for (lpc = 0; lpc < ncols; lpc++) {
+	    dls.push_header(colnames[lpc]);
+	    hs.set_role_for_type(bucket_type_t(lpc),
+				 view_colors::singleton().
+				 next_highlight());
+	}
+    }
+    for (lpc = 0; lpc < ncols; lpc++) {
+	dls.push_column(values[lpc]);
+	sscanf(values[lpc], "%lf", &num_value);
+	hs.add_value(row_number, bucket_type_t(lpc), num_value);
+    }
+    
+    return retval;
+}
+
 static void rl_search(void *dummy, readline_curses *rc)
 {
     static string last_search[LG__MAX];
@@ -1468,14 +1502,26 @@ static void rl_search(void *dummy, readline_curses *rc)
 	return;
 	
     case LNM_SQL:
-	try {
-	    /* XXX need to use the sqlite api */
-	    session &sql = *lnav_data.ld_sql;
-	    sql.prepare << rc->get_value();
-	}
-	catch (soci::soci_error &e) {
+	if (!sqlite3_complete(rc->get_value().c_str())) {
 	    lnav_data.ld_bottom_source.
-		grep_error(string("sql error: ") + e.what());
+		grep_error("sql error: incomplete statement");
+	}
+	else {
+	    sqlite3_stmt *stmt;
+	    const char *tail;
+	    int retcode;
+	    
+	    retcode = sqlite3_prepare_v2(lnav_data.ld_db,
+					 rc->get_value().c_str(),
+					 -1,
+					 &stmt,
+					 &tail);
+	    if (retcode != SQLITE_OK) {
+		const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+		
+		lnav_data.ld_bottom_source.
+		    grep_error(string("sql error: ") + string(errmsg));
+	    }
 	}
 	return;
     default:
@@ -1583,112 +1629,33 @@ static void rl_callback(void *dummy, readline_curses *rc)
 	break;
 
     case LNM_SQL:
-	try {
-	    session &sql = *lnav_data.ld_sql;
-	    
-	    rowset<row> rs = (sql.prepare << rc->get_value());
+	{
 	    db_label_source &dls = lnav_data.ld_db_rows;
 	    hist_source &hs = lnav_data.ld_db_source;
-	    bool header_done = false;
-	    int row_number = 0;
-	    char buffer[128];
+	    auto_mem<char, sqlite3_free> errmsg;
 	    
+	    lnav_data.ld_bottom_source.grep_error("");
 	    hs.clear();
 	    dls.dls_headers.clear();
 	    dls.dls_rows.clear();
-	    for (rowset<row>::const_iterator it = rs.begin();
-		 it != rs.end();
-		 ++it, row_number++) {
-		dls.dls_rows.resize(dls.dls_rows.size() + 1);
-		for(std::size_t lpc = 0; lpc != it->size(); ++lpc) {
-		    const column_properties & props = it->get_properties(lpc);
-		    double num_value = 0;
-		    
-		    if (!header_done) {
-			fprintf(stderr, "<%s> ", props.get_name().c_str());
-			fprintf(stderr, " dt %d\n", props.get_data_type());
-			dls.push_header(props.get_name());
-			hs.set_role_for_type(bucket_type_t(lpc),
-					     view_colors::singleton().
-					     next_highlight());
-		    }
-		    switch(props.get_data_type())
-		    {
-		    case dt_string:
-			{
-			    const char *str = it->get<std::string>(lpc).c_str();
-			    int i;
-			    
-			    dls.push_column(str);
-			    // XXX captures too much
-			    if (sscanf(str, "%d", &i) == 1) {
-				num_value = i;
-			    }
-			    else {
-				sscanf(str, "%f", &num_value);
-			    }
-			}
-			break;
-		    case dt_double:
-			snprintf(buffer, sizeof(buffer),
-				 "%f",
-				 it->get<double>(lpc));
-			dls.push_column(buffer);
-			num_value = it->get<double>(lpc);
-			break;
-		    case dt_integer:
-			snprintf(buffer, sizeof(buffer),
-				 "%d",
-				 it->get<int>(lpc));
-			dls.push_column(buffer);
-			num_value = it->get<int>(lpc);
-			break;
-		    case dt_unsigned_long:
-			snprintf(buffer, sizeof(buffer),
-				 "%ld",
-				 it->get<unsigned long>(lpc));
-			dls.push_column(buffer);
-			num_value = it->get<unsigned long>(lpc);
-			break;
-		    case dt_long_long:
-			snprintf(buffer, sizeof(buffer),
-				 "%lld",
-				 it->get<long long>(lpc));
-			dls.push_column(buffer);
-			num_value = it->get<long long>(lpc);
-			break;
-		    case dt_date:
-			{
-			    std::tm when = it->get<std::tm>(lpc);
-			    
-			    strftime(buffer, sizeof(buffer),
-				     "%a, %d %b %Y %H:%M:%S %z",
-				     &when);
-			    dls.push_column(buffer);
-			}
-			break;
-
-		    default:
-			dls.push_column("XXX");
-			break;
-		    }
-		    
-		    hs.add_value(row_number, bucket_type_t(lpc), num_value);
-		}
-		header_done = true;
+	    if (sqlite3_exec(lnav_data.ld_db,
+			     rc->get_value().c_str(),
+			     sql_callback,
+			     NULL,
+			     errmsg.out()) != SQLITE_OK) {
+		rc->set_value(errmsg.in());
 	    }
-
-	    rc->set_value(""); // XXX
-
-	    hs.analyze();
-	    lnav_data.ld_views[LNV_DB].reload_data();
-
-	    if (row_number > 0)
-		toggle_view(&lnav_data.ld_views[LNV_DB]);
+	    else {
+		rc->set_value("");
+		
+		hs.analyze();
+		lnav_data.ld_views[LNV_DB].reload_data();
+		
+		if (dls.dls_rows.size() > 0)
+		    toggle_view(&lnav_data.ld_views[LNV_DB]);
+	    }
 	}
-	catch (soci::soci_error &e) {
-	    rc->set_value(e.what());
-	}
+
 	lnav_data.ld_mode = LNM_PAGING;
 	break;
     }
@@ -2135,8 +2102,7 @@ public:
 
     void extract(const std::string &line,
 		 int column,
-		 sqlite_api::sqlite3_context *ctx) {
-	using namespace sqlite_api;
+		 sqlite3_context *ctx) {
 	string c_ip, cs_username, cs_method, cs_uri_stem, cs_uri_query;
 	string cs_version, sc_status, cs_referer, cs_user_agent;
 	string sc_bytes;
@@ -2252,8 +2218,7 @@ public:
 
     void extract(const std::string &line,
 		 int column,
-		 sqlite_api::sqlite3_context *ctx) {
-	using namespace sqlite_api;
+		 sqlite3_context *ctx) {
 	string function, args, result, duration = "0";
 	
 	if (!this->slt_regex.FullMatch(line,
@@ -2357,13 +2322,16 @@ int main(int argc, char *argv[])
 {
     int lpc, c, retval = EXIT_SUCCESS;
     auto_ptr<piper_proc> stdin_reader;
-    session sql(sqlite3, ":memory:");
+
+    if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
+	fprintf(stderr, "unable to create sqlite memory database\n");
+	exit(EXIT_FAILURE);
+    }
  
     lnav_data.ld_program_name = argv[0];
 
-    lnav_data.ld_sql = &sql;
     lnav_data.ld_vtab_manager =
-	new log_vtab_manager(sql, lnav_data.ld_log_source);
+	new log_vtab_manager(lnav_data.ld_db, lnav_data.ld_log_source);
 
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("syslog_log"));
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
