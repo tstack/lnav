@@ -1013,13 +1013,21 @@ static void handle_paging_key(int ch)
 
     case 'I':
 	{
-	    time_t tt = lnav_data.ld_top_time;
+	    time_t log_top = lnav_data.ld_top_time;
+	    
+	    time_t hist_top =
+		lnav_data.ld_hist_source.value_for_row(tc->get_top());
 
 	    if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
 		hist_source &hs = lnav_data.ld_hist_source;
 
 		tc = lnav_data.ld_view_stack.top();
-		tc->set_top(hs.row_for_value(tt));
+		tc->set_top(hs.row_for_value(log_top));
+	    }
+	    else {
+		tc = lnav_data.ld_view_stack.top();
+		tc->set_top(lss.find_from_time(hist_top));
+		tc->set_needs_update();
 	    }
 	}
 	break;
@@ -2318,6 +2326,29 @@ private:
     pcrecpp::RE slt_regex;
 };
 
+class guard_termios {
+public:
+    guard_termios(int fd) : gt_fd(fd) {
+	
+	if (isatty(this->gt_fd) &&
+	    tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
+	    perror("tcgetattr");
+	}
+
+    };
+    
+    ~guard_termios() {
+	if (isatty(this->gt_fd) &&
+	    tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1) {
+	    perror("tcsetattr");
+	}
+    };
+
+private:
+    int gt_fd;
+    struct termios gt_termios;
+};
+
 int main(int argc, char *argv[])
 {
     int lpc, c, retval = EXIT_SUCCESS;
@@ -2483,6 +2514,7 @@ int main(int argc, char *argv[])
 		lnav_data.ld_log_source.insert_file(lf);
 	    }
 
+	    guard_termios gt(STDIN_FILENO);
 	    looper();
 	}
 	catch (line_buffer::error & e) {

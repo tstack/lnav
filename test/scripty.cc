@@ -207,7 +207,6 @@ static char *hex2bits(const char *src)
 
 static void sigchld(int sig)
 {
-    scripty_data.sd_looping = false;
 }
 
 static void sigpass(int sig)
@@ -224,7 +223,7 @@ static void usage(void)
         "\n"
         "Options:\n"
         "  -h         Print this message, then exit.\n"
-        "  -t <file>  The file where any input send to the child process\n"
+        "  -t <file>  The file where any input sent to the child process\n"
         "             should be stored.\n"
         "  -f <file>  The file where any output from the child process\n"
         "             should be stored.\n";
@@ -522,6 +521,14 @@ int main(int argc, char *argv[])
 			rc = read(ct.get_fd(), buffer, sizeof(buffer));
 			if (rc <= 0) {
 			    scripty_data.sd_looping = false;
+			    if (scripty_data.sd_from_child) {
+				fprintf(scripty_data.sd_from_child, "read ");
+				dump_memory(scripty_data.sd_from_child,
+					    out_buffer,
+					    out_len);
+				fprintf(scripty_data.sd_from_child, "\n");
+				out_len = 0;
+			    }
 			}
 			else {
 			    if (passout)
