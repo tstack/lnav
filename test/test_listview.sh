@@ -1,9 +1,9 @@
 #! /bin/sh
 
-run_test ./scripty -- ./drive_listview < /dev/null
+run_test ./scripty -n -e ${srcdir}/listview_output.0 -- \
+    ./drive_listview < /dev/null
 
-check_output "Listview doesn't match input?" < \
-    ${srcdir}/listview_output.0
+on_error_fail_with "listview output does not match?"
 
 run_test ./scripty -- ./drive_listview -t 1 < /dev/null
 

@@ -133,10 +133,12 @@ class tcsh_history_format : public log_format {
 	      int len) {
 	bool   retval = false;
 	time_t log_time;
+	int log_time_int;
 	
-	if (sscanf(prefix, "#+%d", &log_time) == 1) {
+	if (sscanf(prefix, "#+%d", &log_time_int) == 1) {
 	    struct tm log_tm;
-	    
+
+	    log_time = log_time_int;
 	    memset(&log_tm, 0, sizeof(log_tm));
 	    log_tm = *localtime( &log_time);
 	    

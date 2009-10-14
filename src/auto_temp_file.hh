@@ -45,7 +45,8 @@ public:
 	    char *pat = (char *)alloca(strlen(cpat) + 1); /* XXX */
 
 	    strcpy(pat, cpat);
-	    mktemp(pat);
+	    if (mktemp(pat) == NULL)
+		perror("mktemp");
 	    this->atf_name = pat;
 	}
     };

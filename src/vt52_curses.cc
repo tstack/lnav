@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <curses.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <map>
 

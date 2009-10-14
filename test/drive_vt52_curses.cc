@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include "view_curses.hh"
 #include "vt52_curses.hh"

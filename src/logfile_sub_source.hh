@@ -160,7 +160,7 @@ public:
     content_line_t at(vis_line_t vl) { return this->lss_index[vl]; };
 
 private:
-    static const int MAX_LINES_PER_FILE = 16 * 1024 * 1024;
+    static const size_t MAX_LINES_PER_FILE = 16 * 1024 * 1024;
 
     enum {
 	B_NO_SCRUB,

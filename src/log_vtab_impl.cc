@@ -51,7 +51,6 @@ static int vt_create( sqlite3 *db,
 {
     log_vtab_manager *vm = (log_vtab_manager *)pAux;
     int rc = SQLITE_OK;
-    log_vtab_impl *vi;
     vtab* p_vt;
 
     /* Allocate the sqlite3_vtab/vtab structure itself */
@@ -136,7 +135,7 @@ static int vt_eof(sqlite3_vtab_cursor *cur)
     vtab_cursor *vc = (vtab_cursor *)cur;
     vtab *vt = (vtab *)cur->pVtab;
 
-    return vc->curr_line == vt->lss->text_line_count();
+    return vc->curr_line == (int)vt->lss->text_line_count();
 }
 
 static int vt_next(sqlite3_vtab_cursor *cur)
@@ -149,7 +148,7 @@ static int vt_next(sqlite3_vtab_cursor *cur)
     do {
 	vc->curr_line = vc->curr_line + vis_line_t(1);
 
-	if (vc->curr_line == vt->lss->text_line_count())
+	if (vc->curr_line == (int)vt->lss->text_line_count())
 	    break;
 	
 	content_line_t cl(vt->lss->at(vc->curr_line));
@@ -291,7 +290,6 @@ log_vtab_manager::log_vtab_manager(sqlite3 *memdb, logfile_sub_source &lss)
 
 void log_vtab_manager::register_vtab(log_vtab_impl *vi) {
     if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
-	const char *errmsg;
 	char *sql;
 	int rc;
 	

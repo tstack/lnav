@@ -24,10 +24,12 @@ endif
 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
-	-pthread \
-	-static
+	-pthread
+#	-static
 
 AM_CPPFLAGS = \
+	-Wall \
+	-Werror \
 	$(SQLITE3_CFLAGS)
 
 LDADD = \
@@ -62,6 +64,7 @@ noinst_HEADERS = \
 	readline_curses.hh \
 	statusview_curses.hh \
 	strong_int.hh \
+	termios_guard.hh \
 	textview_curses.hh \
 	time_T.hh \
 	top_status_source.hh \

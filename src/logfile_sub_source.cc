@@ -342,7 +342,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 			action_priority = -1;
 		    }
 
-		    for (lpc = 0; lpc < this->lss_filters.size(); lpc++) {
+		    for (lpc = 0; lpc < (int)this->lss_filters.size(); lpc++) {
 			logfile_filter *filter = this->lss_filters[lpc];
 
 			if (filter->is_enabled()) {
@@ -373,6 +373,10 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 				    }
 				    action_priority = lpc;
 				}
+				break;
+
+			    default:
+				assert(0);
 				break;
 			    }
 			}
@@ -414,7 +418,7 @@ void logfile_sub_source::text_update_marks(bookmarks &bm)
     bm[&BM_FILES].clear();
     bm[&textview_curses::BM_USER].clear();
 
-    for (; vl < this->lss_index.size(); ++vl) {
+    for (; vl < (int)this->lss_index.size(); ++vl) {
 	content_line_t cl = this->lss_index[vl];
 	logfile        *lf;
 

@@ -166,7 +166,7 @@ protected:
     std::auto_ptr<log_format> lf_format;
     std::vector<logline> lf_index;
     time_t      lf_index_time;
-    size_t      lf_index_size;
+    off_t      lf_index_size;
     line_buffer lf_line_buffer;
 };
 

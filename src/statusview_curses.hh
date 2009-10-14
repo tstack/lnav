@@ -109,13 +109,13 @@ public:
     /** @param width The maximum display width, in characters. */
     void set_width(int width) { this->sf_width = width; };
     /** @param width The maximum display width, in characters. */
-    int get_width() { return this->sf_width; };
+    size_t get_width() { return this->sf_width; };
 
 protected:
-    int                 sf_width; /*< The maximum display width, in chars. */
+    size_t              sf_width; /*< The maximum display width, in chars. */
     bool                sf_right_justify;
     bool sf_cylon;
-    int sf_cylon_pos;
+    size_t sf_cylon_pos;
     attr_line_t         sf_value; /*< The value to display for this field. */
     view_colors::role_t sf_role;  /*< The color role for this field. */
 };

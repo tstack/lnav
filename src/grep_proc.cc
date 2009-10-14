@@ -146,7 +146,7 @@ void grep_proc::start(void)
     while (!this->gp_queue.empty()) {
 	grep_line_t start_line = this->gp_queue.front().first;
 	grep_line_t stop_line  = this->gp_queue.front().second;
-	bool        done       = false, got_first_hit = false;
+	bool        done       = false;
 	int         line;
 
 	this->gp_queue.pop_front();

@@ -29,11 +29,11 @@ public:
     } field_t;
     
     bottom_status_source()
-	: bss_error(80, view_colors::VCR_ALERT_STATUS),
-	  line_number_wire(*this, &bottom_status_source::update_line_number),
+	: line_number_wire(*this, &bottom_status_source::update_line_number),
 	  percent_wire(*this, &bottom_status_source::update_percent),
 	  marks_wire(*this, &bottom_status_source::update_marks),
 	  hits_wire(*this, &bottom_status_source::update_hits),
+	  bss_error(80, view_colors::VCR_ALERT_STATUS),
 	  bss_hit_spinner(0),
 	  bss_load_percent(0) {
 	this->bss_fields[BSF_LINE_NUMBER].set_width(8);
@@ -167,7 +167,7 @@ public:
     void update_loading(off_t off, size_t total) {
 	status_field &sf = this->bss_fields[BSF_LOADING];
 	
-	if (off == total) {
+	if ((size_t)off == total) {
 	    sf.set_role(view_colors::VCR_STATUS);
 	    sf.clear();
 	}

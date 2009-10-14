@@ -65,7 +65,7 @@ public:
 	    }
 	};
 
-	view_colors::role_t get_role(int index)
+	view_colors::role_t get_role(unsigned int index)
 	{
 	    view_colors &vc = view_colors::singleton();
 	    view_colors::role_t retval;
@@ -166,7 +166,7 @@ public:
     {
 	bool retval = false;
 
-	if (line < this->tc_sub_source->text_line_count()) {
+	if (line < (int)this->tc_sub_source->text_line_count()) {
 	    this->tc_sub_source->text_value_for_line(*this,
 						     line,
 						     value_out,

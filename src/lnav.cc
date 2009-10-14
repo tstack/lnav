@@ -50,6 +50,7 @@
 #include "log_vtab_impl.hh"
 #include "db_sub_source.hh"
 #include "pcrecpp.h"
+#include "termios_guard.hh"
 
 using namespace std;
 
@@ -214,16 +215,15 @@ public:
 				   string &label_out)
 	{
 	    hist_source::bucket_t::const_iterator iter;
-	    float total = 0.0;
 
 	    for (iter = bucket.begin(); iter != bucket.end(); iter++) {
 		char buffer[64];
 
 		if (iter->second != 0.0) {
-		    snprintf(buffer, sizeof(buffer), "  % 10.2f", iter->second);
+		    snprintf(buffer, sizeof(buffer), "  %10.2f", iter->second);
 		}
 		else {
-		    snprintf(buffer, sizeof(buffer), "  % 10s", "-");
+		    snprintf(buffer, sizeof(buffer), "  %10s", "-");
 		}
 		label_out += string(buffer);
 	    }
@@ -295,7 +295,8 @@ public:
 
     void logfile_indexing(logfile &lf, off_t off, size_t total)
     {
-	if (abs(off - this->lo_last_offset) > (128 * 1024) || off == total) {
+	if (abs(off - this->lo_last_offset) > (128 * 1024) ||
+	    (size_t)off == total) {
 	    lnav_data.ld_bottom_source.update_loading(off, total);
 	    this->do_update();
 	    this->lo_last_offset = off;
@@ -310,7 +311,7 @@ public:
 				      content_line_t cl,
 				      size_t total)
     {
-	if (abs(cl - this->lo_last_line) > 1024 || cl == (total - 1)) {
+	if (abs(cl - this->lo_last_line) > 1024 || (size_t)cl == (total - 1)) {
 	    lnav_data.ld_bottom_source.update_loading(cl, (total - 1));
 	    this->do_update();
 	    this->lo_last_line = cl;
@@ -337,7 +338,6 @@ private:
 static void rebuild_hist(size_t old_count, bool force)
 {
     textview_curses &hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
-    textview_curses &log_view  = lnav_data.ld_views[LNV_LOG];
     logfile_sub_source &lss    = lnav_data.ld_log_source;
     size_t new_count = lss.text_line_count();
     hist_source &hs = lnav_data.ld_hist_source;
@@ -351,7 +351,7 @@ static void rebuild_hist(size_t old_count, bool force)
     if (force) {
 	hs.clear();
     }
-    for (lpc = old_count; lpc < new_count; lpc++) {
+    for (lpc = old_count; lpc < (int)new_count; lpc++) {
 	logline *ll = lss.find_line(lss.at(vis_line_t(lpc)));
 
 	if (!(ll->get_level() & logline::LEVEL_CONTINUED)) {
@@ -381,7 +381,7 @@ static void rebuild_indexes(bool force)
     old_time = lnav_data.ld_top_time;
     log_view.get_dimensions(height, width);
     old_bottom  = log_view.get_top() + height;
-    scroll_down = old_bottom > lss.text_line_count();
+    scroll_down = (size_t)old_bottom > lss.text_line_count();
     if (force) {
 	old_count = 0;
     }
@@ -389,14 +389,13 @@ static void rebuild_indexes(bool force)
 	old_count = lss.text_line_count();
     }
     if (lss.rebuild_index(&obs, force)) {
-	hist_source &hs = lnav_data.ld_hist_source;
 	size_t      new_count = lss.text_line_count();
 	grep_line_t start_line;
 	int         lpc;
 
 	log_view.reload_data();
 	
-	if (scroll_down && new_count >= height) {
+	if (scroll_down && new_count >= (size_t)height) {
 	    log_view.set_top(vis_line_t(new_count - height + 1));
 	}
 	else if (!scroll_down && force) {
@@ -523,7 +522,9 @@ static bool change_to_parent_dir(void)
     bool retval = false;
     char cwd[3] = "";
 
-    getcwd(cwd, sizeof(cwd));
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+	// perror("getcwd");
+    }
     if (strcmp(cwd, "/") != 0) {
 	if (chdir("..") == -1) {
 	    perror("chdir('..')");
@@ -562,7 +563,7 @@ static bool append_default_files(lnav_flags_t flag)
 		    if (glob(path.c_str(), 0, NULL, &gl) == 0) {
 			int lpc;
 
-			for (lpc = 0; lpc < gl.gl_pathc; lpc++) {
+			for (lpc = 0; lpc < (int)gl.gl_pathc; lpc++) {
 			    lnav_data.ld_file_names.insert(make_pair(gl.gl_pathv[lpc], -1));
 			}
 			globfree(&gl);
@@ -814,8 +815,6 @@ static void handle_paging_key(int ch)
 		flash();
 	    }
 	    else {
-		hist_source &hs = lnav_data.ld_hist_source;
-
 		lnav_data.ld_hist_zoom += 1;
 		rebuild_hist(0, true);
 	    }
@@ -828,8 +827,6 @@ static void handle_paging_key(int ch)
 		flash();
 	    }
 	    else {
-		hist_source &hs = lnav_data.ld_hist_source;
-
 		lnav_data.ld_hist_zoom -= 1;
 		rebuild_hist(0, true);
 	    }
@@ -1173,7 +1170,7 @@ static string com_save_to(string cmdline, vector<string> &args)
     FILE *outfile = NULL;
     FILE *pfile = NULL;
     char command[1024];
-    const char *mode;
+    const char *mode = "";
 
     if (args.size() == 0) {
 	args.push_back("filename");
@@ -1189,7 +1186,8 @@ static string com_save_to(string cmdline, vector<string> &args)
 	return "error: unable to compute file name";
     }
 
-    fgets(command, sizeof(command), pfile);
+    if (fgets(command, sizeof(command), pfile) == 0)
+	perror("fgets");
     fclose(pfile);
     pfile = NULL;
 
@@ -1386,7 +1384,6 @@ static string com_enable_filter(string cmdline, vector<string> &args)
     }
     else if (args.size() > 1) {
 	logfile_filter *lf;
-	bool           found = false;
 
 	args[1] = cmdline.substr(cmdline.find(args[1]));
 	lf      = lnav_data.ld_log_source.get_filter(args[1]);
@@ -1419,7 +1416,6 @@ static string com_disable_filter(string cmdline, vector<string> &args)
     }
     else if (args.size() > 1) {
 	logfile_filter *lf;
-	bool           found = false;
 
 	args[1] = cmdline.substr(cmdline.find(args[1]));
 	lf      = lnav_data.ld_log_source.get_filter(args[1]);
@@ -1597,6 +1593,10 @@ static void rl_search(void *dummy, readline_curses *rc)
 static void rl_callback(void *dummy, readline_curses *rc)
 {
     switch (lnav_data.ld_mode) {
+    case LNM_PAGING:
+	assert(0);
+	break;
+	
     case LNM_COMMAND:
 	{
 	    stringstream ss(rc->get_value());
@@ -1751,7 +1751,6 @@ static void looper(void)
     try {
 	readline_context command_context(&lnav_commands);
 
-	struct timeval   last_check = { 0, 0 };
 	readline_context search_context;
 	readline_context index_context;
 	readline_context sql_context;
@@ -2263,7 +2262,7 @@ public:
 		bool in_quote = false;
 
 		argnum = column - 3;
-		for (lpc = 0; lpc < args.length(); lpc++) {
+		for (lpc = 0; lpc < (int)args.length(); lpc++) {
 		    switch (args[lpc]) {
 		    case '{':
 			if (!in_quote)
@@ -2324,29 +2323,6 @@ public:
 
 private:
     pcrecpp::RE slt_regex;
-};
-
-class guard_termios {
-public:
-    guard_termios(int fd) : gt_fd(fd) {
-	
-	if (isatty(this->gt_fd) &&
-	    tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
-	    perror("tcgetattr");
-	}
-
-    };
-    
-    ~guard_termios() {
-	if (isatty(this->gt_fd) &&
-	    tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1) {
-	    perror("tcsetattr");
-	}
-    };
-
-private:
-    int gt_fd;
-    struct termios gt_termios;
 };
 
 int main(int argc, char *argv[])

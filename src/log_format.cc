@@ -1,4 +1,9 @@
 
+#include "config.h"
+
+#include <stdarg.h>
+#include <string.h>
+
 #include "log_format.hh"
 
 using namespace std;

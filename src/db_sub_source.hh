@@ -15,7 +15,7 @@ public:
 
     void hist_label_for_group(int group, std::string &label_out) {
 	label_out.clear();
-	for (int lpc = 0; lpc < this->dls_headers.size(); lpc++) {
+	for (int lpc = 0; lpc < (int)this->dls_headers.size(); lpc++) {
 	    int before, total_fill =
 		this->dls_column_sizes[lpc] - this->dls_headers[lpc].length();
 
@@ -36,9 +36,9 @@ public:
 	 */
 
 	label_out.clear();
-	if (bucket_start_value >= this->dls_rows.size())
+	if (bucket_start_value >= (int)this->dls_rows.size())
 	    return;
-	for (int lpc = 0; lpc < this->dls_rows[bucket_start_value].size(); lpc++) {
+	for (int lpc = 0; lpc < (int)this->dls_rows[bucket_start_value].size(); lpc++) {
 	    label_out.append(this->dls_column_sizes[lpc] - this->dls_rows[bucket_start_value][lpc].length(), ' ');
 	    label_out.append(this->dls_rows[bucket_start_value][lpc]);
 	}

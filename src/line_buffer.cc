@@ -285,7 +285,6 @@ throw (error)
 {
     size_t request_size = DEFAULT_INCREMENT;
     char   *retval      = NULL;
-    int    last_avail   = 0;
 
     assert(this->lb_fd != -1);
 

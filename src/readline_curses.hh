@@ -64,7 +64,7 @@ public:
     {
 	this->rc_possibilities[type].insert(value);
 	fprintf(stderr, "pos %d %p %s %s\n",
-		this->rc_possibilities[type].size(),
+		(int)this->rc_possibilities[type].size(),
 		&this->rc_possibilities[type],
 		type.c_str(),
 		value.c_str());

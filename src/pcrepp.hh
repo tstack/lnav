@@ -10,6 +10,8 @@
 #error "pcre.h not found?"
 #endif
 
+#include <string.h>
+
 #include <string>
 #include <memory>
 #include <exception>
@@ -61,14 +63,16 @@ private:
 class pcre_input {
 public:
     pcre_input(const char *str, size_t off = 0, size_t len = -1)
-	: pi_string(str), pi_offset(off), pi_length(len), pi_next_offset(off) {
-	if (this->pi_length == -1)
+	: pi_offset(off), pi_next_offset(off), pi_length(len), pi_string(str) {
+	if (this->pi_length == (size_t)-1)
 	    this->pi_length = strlen(str);
     };
 
     pcre_input(std::string &str, size_t off = 0)
-	: pi_string(str.c_str()), pi_offset(off), pi_length(str.length()),
-	  pi_next_offset(off) {
+	: pi_offset(off),
+	  pi_next_offset(off),
+	  pi_length(str.length()),
+	  pi_string(str.c_str()) {
     };
 
     const char *get_string() const { return this->pi_string; };

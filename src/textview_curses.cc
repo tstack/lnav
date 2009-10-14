@@ -45,7 +45,7 @@ public:
 
 		switch (str[matches[4]]) {
 		case 'm':
-		    for (lpc = matches[2]; lpc != string::npos && lpc < matches[3];) {
+		    for (lpc = matches[2]; lpc != (int)string::npos && lpc < matches[3];) {
 			int ansi_code = 0;
 			
 			if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
@@ -86,7 +86,7 @@ public:
 			    }
 			}
 			lpc = str.find(";", lpc);
-			if (lpc != string::npos) {
+			if (lpc != (int)string::npos) {
 			    lpc += 1;
 			}
 		    }
@@ -203,7 +203,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 	 iter++) {
 	int off, hcount = 0;
 
-	for (off = 0; off < str.size(); ) {
+	for (off = 0; off < (int)str.size(); ) {
 	    int rc, matches[60];
 	    
 	    rc = pcre_exec(iter->second.h_code,

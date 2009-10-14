@@ -37,7 +37,6 @@ void hist_source::text_value_for_line(textview_curses &tc,
     }
     else {
 	bucket_group_t bg = this->hs_group_keys[grow];
-	bucket_count_t total(0);
 	bucket_t::iterator iter;
 	int bucket_index;
 
@@ -60,7 +59,6 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
     if (this->hs_token_bucket != NULL) {
 	view_colors &vc = view_colors::singleton();
 	unsigned long width, avail_width;
-	bucket_count_t total(0);
 	bucket_t::iterator iter;
 	vis_line_t         height;
 	struct line_range lr;

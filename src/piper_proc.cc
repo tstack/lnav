@@ -3,8 +3,10 @@
 #include <paths.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/param.h>
 #include <signal.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "piper_proc.hh"
 

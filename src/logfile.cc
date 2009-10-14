@@ -5,7 +5,6 @@
 #include "config.h"
 
 #include <stdio.h>
-#define __USE_GNU
 #include <string.h>
 #include <stdarg.h>
 #include <errno.h>
@@ -69,7 +68,6 @@ logfile::~logfile()
 void logfile::process_prefix(off_t offset, char *prefix, int len)
 {
     bool found = false;
-    int  lpc;
 
     if (this->lf_format.get() != NULL) {
 	/* We've locked onto a format, just use that scanner. */

@@ -44,7 +44,7 @@ void view_curses::mvwattrline(WINDOW *window,
     if (lr.lr_start < (int)line.size()) {
 	waddnstr(window, &line.c_str()[lr.lr_start], line_width);
     }
-    if (lr.lr_end > line.size())
+    if (lr.lr_end > (int)line.size())
 	whline(window, ' ', lr.lr_end - line.size());
     wattroff(window, attrs);
 

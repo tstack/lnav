@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include <ncurses.h>
 
