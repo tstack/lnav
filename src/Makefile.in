@@ -64,12 +64,12 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am__lnav_SOURCES_DIST = lnav.cc help.cc
-@HAVE_OBJCOPY_FALSE@am__objects_1 = help.$(OBJEXT)
+@HAVE_OBJ_FORMAT_FALSE@am__objects_1 = help.$(OBJEXT)
 am_lnav_OBJECTS = lnav.$(OBJEXT) $(am__objects_1)
 lnav_OBJECTS = $(am_lnav_OBJECTS)
 lnav_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
-@HAVE_OBJCOPY_TRUE@am__DEPENDENCIES_2 = help.o
+@HAVE_OBJ_FORMAT_TRUE@am__DEPENDENCIES_2 = help.o
 lnav_DEPENDENCIES = libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	/usr/lib/libsqlite3.a
@@ -126,6 +126,7 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 OBJCOPY = @OBJCOPY@
 OBJEXT = @OBJEXT@
+OBJ_FORMAT = @OBJ_FORMAT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -199,10 +200,10 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libdiag.a
-@HAVE_OBJCOPY_FALSE@HELP_O = 
-@HAVE_OBJCOPY_TRUE@HELP_O = help.o
-@HAVE_OBJCOPY_FALSE@HELP_SRC = help.cc
-@HAVE_OBJCOPY_TRUE@HELP_SRC = 
+@HAVE_OBJ_FORMAT_FALSE@HELP_O = 
+@HAVE_OBJ_FORMAT_TRUE@HELP_O = help.o
+@HAVE_OBJ_FORMAT_FALSE@HELP_SRC = help.cc
+@HAVE_OBJ_FORMAT_TRUE@HELP_SRC = 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
 	-pthread
@@ -574,16 +575,16 @@ uninstall-am: uninstall-binPROGRAMS
 	uninstall-am uninstall-binPROGRAMS
 
 
-@HAVE_OBJCOPY_TRUE@help.txt.term: help.txt
-@HAVE_OBJCOPY_TRUE@	cat $< > $@
-@HAVE_OBJCOPY_TRUE@	/bin/echo -en '\000' >> $@
+@HAVE_OBJ_FORMAT_TRUE@help.txt.term: help.txt
+@HAVE_OBJ_FORMAT_TRUE@	cat $< > $@
+@HAVE_OBJ_FORMAT_TRUE@	/bin/echo -en '\000' >> $@
 
-@HAVE_OBJCOPY_TRUE@help.o: help.txt.term
-@HAVE_OBJCOPY_TRUE@	objcopy -I binary -O elf64-x86-64 -Bi386 \
-@HAVE_OBJCOPY_TRUE@		--redefine-sym _binary_help_txt_term_start=help_text_start \
-@HAVE_OBJCOPY_TRUE@		--redefine-sym _binary_help_txt_term_end=help_text_end \
-@HAVE_OBJCOPY_TRUE@		--redefine-sym _binary_help_txt_term_size=help_text_size \
-@HAVE_OBJCOPY_TRUE@		$< $@
+@HAVE_OBJ_FORMAT_TRUE@help.o: help.txt.term
+@HAVE_OBJ_FORMAT_TRUE@	objcopy -I binary -O $(OBJ_FORMAT) -Bi386 \
+@HAVE_OBJ_FORMAT_TRUE@		--redefine-sym _binary_help_txt_term_start=help_text_start \
+@HAVE_OBJ_FORMAT_TRUE@		--redefine-sym _binary_help_txt_term_end=help_text_end \
+@HAVE_OBJ_FORMAT_TRUE@		--redefine-sym _binary_help_txt_term_size=help_text_size \
+@HAVE_OBJ_FORMAT_TRUE@		$< $@
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
