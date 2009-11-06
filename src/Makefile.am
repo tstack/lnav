@@ -3,13 +3,13 @@ bin_PROGRAMS = lnav
 
 noinst_LIBRARIES = libdiag.a
 
-if HAVE_OBJCOPY
+if HAVE_OBJ_FORMAT
 help.txt.term: help.txt
 	cat $< > $@
 	/bin/echo -en '\000' >> $@
 
 help.o: help.txt.term
-	objcopy -I binary -O elf64-x86-64 -Bi386 \
+	objcopy -I binary -O $(OBJ_FORMAT) -Bi386 \
 		--redefine-sym _binary_help_txt_term_start=help_text_start \
 		--redefine-sym _binary_help_txt_term_end=help_text_end \
 		--redefine-sym _binary_help_txt_term_size=help_text_size \

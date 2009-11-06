@@ -1683,6 +1683,7 @@ static void usage(void)
 	"\n"
 	"Options:\n"
 	"  -h         Print this message, then exit.\n"
+	"  -V         Print version information.\n"
 	"  -s         Load the most recent syslog messages file.\n"
 	"  -a         Load all of the most recent log file types.\n"
 	"  -r         Load older rotated log files as well.\n"
@@ -1695,7 +1696,9 @@ static void usage(void)
 	"    $ lnav\n"
 	"\n"
 	"  To interleave the JBoss and backend log files -\n"
-	"    $ lnav -bf\n";
+	"    $ lnav -bf\n"
+	"\n"
+	"Version: " PACKAGE_STRING "\n";
 
     fprintf(stderr, usage_msg, lnav_data.ld_program_name);
 }
@@ -2395,7 +2398,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_looping = true;
     lnav_data.ld_mode    = LNM_PAGING;
     lnav_data.ld_debug_log_name = "/dev/null"; // XXX change to /dev/null
-    while ((c = getopt(argc, argv, "harsd:")) != -1) {
+    while ((c = getopt(argc, argv, "harsd:V")) != -1) {
 	switch (c) {
 	case 'h':
 	    usage();
@@ -2416,6 +2419,11 @@ int main(int argc, char *argv[])
 
 	case 's':
 	    lnav_data.ld_flags |= LNF_SYSLOG;
+	    break;
+
+	case 'V':
+	    printf("%s\n", PACKAGE_STRING);
+	    exit(0);
 	    break;
 
 	default:    

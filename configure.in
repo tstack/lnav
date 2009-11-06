@@ -51,8 +51,20 @@ AC_CHECK_SIZEOF(size_t)
 AC_CHECK_PROG(OBJCOPY, objcopy, objcopy)
 AM_CONDITIONAL(HAVE_OBJCOPY, test x"$OBJCOPY" != x"")
 
+case "$host_cpu" in
+x86_64)
+	OBJ_FORMAT=elf64-x86-64
+	;;
+*)
+	AC_WARN("embedded help not supported for $host_cpu")
+	;;
+esac
+AM_CONDITIONAL(HAVE_OBJ_FORMAT, test x"$OBJ_FORMAT" != x"" -a x"$OBJCOPY" != x"")
+AC_SUBST(OBJ_FORMAT)
+
 AC_SEARCH_LIBS(openpty, util)
-AC_CHECK_HEADERS(pty.h util.h)
+AC_SEARCH_LIBS(gzseek, libz)
+AC_CHECK_HEADERS(pty.h util.h zlib.h)
 
 MP_WITH_CURSES()
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
