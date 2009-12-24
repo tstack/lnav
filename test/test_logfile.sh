@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 run_test ./drive_logfile -f syslog_log ${srcdir}/logfile_syslog.0
 

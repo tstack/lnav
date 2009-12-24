@@ -29,7 +29,6 @@ AM_LDFLAGS = \
 
 AM_CPPFLAGS = \
 	-Wall \
-	-Werror \
 	$(SQLITE3_CFLAGS)
 
 LDADD = \
@@ -37,9 +36,7 @@ LDADD = \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(HELP_O) \
-	/usr/lib/libsqlite3.a \
-	-ldl \
-	-lz \
+	$(SQLITE3_LIBS) \
 	-lpcrecpp
 
 noinst_HEADERS = \

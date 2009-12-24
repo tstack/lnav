@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 run_test ./scripty -n -e ${srcdir}/listview_output.0 -- \
     ./drive_listview < /dev/null

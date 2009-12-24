@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 run_test ./drive_line_buffer ${top_srcdir}/src/line_buffer.hh
 

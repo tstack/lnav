@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 cat > gp.dat <<EOF
 Hello, World!

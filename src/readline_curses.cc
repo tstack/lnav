@@ -22,6 +22,10 @@
 #include <util.h>
 #endif
 
+#ifdef HAVE_LIBUTIL_H
+#include <libutil.h>
+#endif
+
 #include <string>
 
 #include "auto_mem.hh"

@@ -13,6 +13,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <ncurses.h>
+#include <signal.h>
 
 #ifdef HAVE_PTY_H
 #include <pty.h>
@@ -20,6 +21,10 @@
 
 #ifdef HAVE_UTIL_H
 #include <util.h>
+#endif
+
+#ifdef HAVE_LIBUTIL_H
+#include <libutil.h>
 #endif
 
 #include <queue>

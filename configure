@@ -727,8 +727,6 @@ SQLITE3_CFLAGS
 SQLITE3_LDFLAGS
 SQLITE3_LIBS
 SQLITE3_VERSION
-HAVE_LIBSQLITE3_TRUE
-HAVE_LIBSQLITE3_FALSE
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -2349,6 +2347,9 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
+
+CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+LDFLAGS="$LDFLAGS -L/usr/local/lib"
 
 case x$srcdir in
 x/*)
@@ -5787,7 +5788,7 @@ return gzseek ();
   return 0;
 }
 _ACEOF
-for ac_lib in '' libz; do
+for ac_lib in '' z; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -5840,12 +5841,100 @@ ac_res=$ac_cv_search_gzseek
 if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
+else
+  { { echo "$as_me:$LINENO: error: libz required to build" >&5
+echo "$as_me: error: libz required to build" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+{ echo "$as_me:$LINENO: checking for library containing dlopen" >&5
+echo $ECHO_N "checking for library containing dlopen... $ECHO_C" >&6; }
+if test "${ac_cv_search_dlopen+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char dlopen ();
+int
+main ()
+{
+return dlopen ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' dl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_search_dlopen=$ac_res
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext
+  if test "${ac_cv_search_dlopen+set}" = set; then
+  break
+fi
+done
+if test "${ac_cv_search_dlopen+set}" = set; then
+  :
+else
+  ac_cv_search_dlopen=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_dlopen" >&5
+echo "${ECHO_T}$ac_cv_search_dlopen" >&6; }
+ac_res=$ac_cv_search_dlopen
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
 fi
 
 
 
 
-for ac_header in pty.h util.h zlib.h
+
+for ac_header in pty.h util.h zlib.h libutil.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -6918,16 +7007,6 @@ _ACEOF
 
 
 
- if
-    test -n "$SQLITE3_CFLAGS" -a -n "$SQLITE3_LDFLAGS"; then
-  HAVE_LIBSQLITE3_TRUE=
-  HAVE_LIBSQLITE3_FALSE='#'
-else
-  HAVE_LIBSQLITE3_TRUE='#'
-  HAVE_LIBSQLITE3_FALSE=
-fi
-
-
 case "$host_os" in
     darwin*)
 
@@ -6937,11 +7016,7 @@ _ACEOF
 
 	;;
     *)
-
-cat >>confdefs.h <<\_ACEOF
-#define _XOPEN_SOURCE 500
-_ACEOF
-
+	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
 
 cat >>confdefs.h <<\_ACEOF
 #define _BSD_SOURCE
@@ -7089,13 +7164,6 @@ if test -z "${HAVE_OBJ_FORMAT_TRUE}" && test -z "${HAVE_OBJ_FORMAT_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_OBJ_FORMAT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_OBJ_FORMAT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_LIBSQLITE3_TRUE}" && test -z "${HAVE_LIBSQLITE3_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_LIBSQLITE3\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_LIBSQLITE3\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -7786,13 +7854,11 @@ SQLITE3_CFLAGS!$SQLITE3_CFLAGS$ac_delim
 SQLITE3_LDFLAGS!$SQLITE3_LDFLAGS$ac_delim
 SQLITE3_LIBS!$SQLITE3_LIBS$ac_delim
 SQLITE3_VERSION!$SQLITE3_VERSION$ac_delim
-HAVE_LIBSQLITE3_TRUE!$HAVE_LIBSQLITE3_TRUE$ac_delim
-HAVE_LIBSQLITE3_FALSE!$HAVE_LIBSQLITE3_FALSE$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 18; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 16; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

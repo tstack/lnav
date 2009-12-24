@@ -72,7 +72,7 @@ am__DEPENDENCIES_1 =
 @HAVE_OBJ_FORMAT_TRUE@am__DEPENDENCIES_2 = help.o
 lnav_DEPENDENCIES = libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	/usr/lib/libsqlite3.a
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -210,7 +210,6 @@ AM_LDFLAGS = \
 
 AM_CPPFLAGS = \
 	-Wall \
-	-Werror \
 	$(SQLITE3_CFLAGS)
 
 LDADD = \
@@ -218,9 +217,7 @@ LDADD = \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(HELP_O) \
-	/usr/lib/libsqlite3.a \
-	-ldl \
-	-lz \
+	$(SQLITE3_LIBS) \
 	-lpcrecpp
 
 noinst_HEADERS = \
