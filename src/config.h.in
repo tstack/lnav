@@ -12,6 +12,9 @@
 /* Define to 1 if you have the `readline' library (-lreadline). */
 #undef HAVE_LIBREADLINE
 
+/* Define to 1 if you have the <libutil.h> header file. */
+#undef HAVE_LIBUTIL_H
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -98,6 +101,3 @@
 
 /* Need pread */
 #undef _BSD_SOURCE
-
-/* Need pread */
-#undef _XOPEN_SOURCE

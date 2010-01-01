@@ -7,6 +7,9 @@ AC_PREFIX_DEFAULT(/usr/)
 
 AC_CANONICAL_HOST
 
+CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+LDFLAGS="$LDFLAGS -L/usr/local/lib"
+
 dnl abssrcdir is the absolute path to the source base (regardless of where
 dnl you are building it)
 case x$srcdir in
@@ -63,8 +66,9 @@ AM_CONDITIONAL(HAVE_OBJ_FORMAT, test x"$OBJ_FORMAT" != x"" -a x"$OBJCOPY" != x""
 AC_SUBST(OBJ_FORMAT)
 
 AC_SEARCH_LIBS(openpty, util)
-AC_SEARCH_LIBS(gzseek, libz)
-AC_CHECK_HEADERS(pty.h util.h zlib.h)
+AC_SEARCH_LIBS(gzseek, z, [], [AC_MSG_ERROR([libz required to build])])
+AC_SEARCH_LIBS(dlopen, dl)
+AC_CHECK_HEADERS(pty.h util.h zlib.h libutil.h)
 
 MP_WITH_CURSES()
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
@@ -72,15 +76,12 @@ AX_PATH_LIB_READLINE([], [AC_MSG_ERROR([readline required to build])])
 
 AX_LIB_SQLITE3("3.0.0")
 
-AM_CONDITIONAL(HAVE_LIBSQLITE3, [
-    test -n "$SQLITE3_CFLAGS" -a -n "$SQLITE3_LDFLAGS"])
-
 case "$host_os" in
     darwin*) 
 	AC_DEFINE([_APPLE_C_SOURCE], [], [Needed for the 'timezone' variable])
 	;;
     *)
-	AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
+	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
 	AC_DEFINE([_BSD_SOURCE], [], [Need pread])
 	;;
 esac

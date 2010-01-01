@@ -50,7 +50,7 @@ public:
 	: af_fd(fd)
     {
 	assert(fd >= -1);
-	assert(fd < FD_SETSIZE);
+	assert(fd < (int)FD_SETSIZE);
     };
 
     /**
@@ -95,7 +95,7 @@ public:
     auto_fd &operator=(int fd)
     {
 	assert(fd >= -1);
-	assert(fd < FD_SETSIZE);
+	assert(fd < (int)FD_SETSIZE);
 
 	this->reset(fd);
 	return(*this);
@@ -152,7 +152,7 @@ public:
     void reset(int fd = -1)
     {
 	assert(fd >= -1);
-	assert(fd < FD_SETSIZE);
+	assert(fd < (int)FD_SETSIZE);
 
 	if (this->af_fd != fd) {
 	    if (this->af_fd != -1) {
