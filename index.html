@@ -94,6 +94,14 @@
     background-color: #24913c;
   }
 
+  div.ishot {
+    text-align: center;
+  }
+
+  p {
+    margin-bottom: 2em;
+  }
+
   table.sstable {
     width: 100%;
   }
@@ -158,35 +166,29 @@ Source:
 
 <h2><a name="interface">Interface Tour</a></h2>
 
-<table class="sstable">
+<div class="ishot"><img src="lnav-top.png"></div>
+<p>
+Top bar: Displays the current time, the number of warnings and errors above the
+top line and the name of the file where the top line came from.
+</p>
 
-<tr><td><img src="lnav-top.png"></td></tr>
-<tr>
-<td class="caption">Top bar: Displays the current time, the number of warnings
-  and errors above the top line and the name of the file where the top line came
-  from.</td>
-</tr>
+<div class="ishot"><img src="lnav-content.png"></div>
+<p>
+Main content: Displays the log lines in time sorted order and highlighted.
+Highlights are done for: errors, warnings, search terms, quoted strings, and
+some SQL syntax.  On the far right, there is a proportional scroll bar displayed
+in reverse-video that shows the current position in the file.
+</p>
 
-<tr>
-<tr><td><img src="lnav-content.png"></td></tr>
-<td class="caption">Main content: Displays the log lines in time sorted order
-  and highlighted.  Highlights are done for: errors, warnings, search terms,
-  quoted strings, and some SQL syntax.  On the far right, there is a
-  proportional scroll bar displayed in reverse-video that shows the current
-  position in the file.</td>
-</tr>
+<div class="ishot"><img src="lnav-bottom.png"></div>
+<p>
+Bottom bar: Displays the current line number, the position
+in the file as a percentage, warnings and errors below the bottom line.
+</p>
 
-<tr>
-<tr><td><img src="lnav-bottom.png"></td></tr>
-<td class="caption">Bottom bar: Displays the current line number, the position
-  in the file as a percentage, warnings and errors below the bottom line.</td>
-</tr>
-
-<tr>
-<td class="caption">Entry line: Searches and commands are entered here.</td>
-</tr>
-
-</table>
+<div class="ishot"><img src="lnav-entry.png"></div>
+<p>Entry line: Searches and commands are entered here.  The entry line supports
+tab-completion in most contexts and displays suggestions in the entry box.</p>
 
 <h2><a name="links">Links</a></h2>
 
