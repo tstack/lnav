@@ -134,3 +134,8 @@ TESTS = test_bookmarks \
 	test_logfile.sh \
 	test_vt52_curses.sh \
 	test_top_status
+
+DISTCLEANFILES = \
+	*.dat \
+	*.index \
+	*.tmp

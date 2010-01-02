@@ -89,6 +89,9 @@ libdiag_a_SOURCES = \
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 
+DISTCLEANFILES = \
+	help.txt.term
+
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
 		$(HEADERS))

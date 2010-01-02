@@ -144,7 +144,7 @@ class tcsh_history_format : public log_format {
 	    
 	    log_tm.tm_isdst = 0;
 	    dst.push_back(logline(offset,
-				  mktime(&log_tm) /* - timezone XXX */,
+				  tm2sec(&log_tm),
 				  0,
 				  logline::LEVEL_UNKNOWN));
 	    
