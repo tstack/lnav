@@ -163,7 +163,9 @@ throw (line_buffer::error)
 	    last_off = off;
 
 	    if (lo != NULL) {
-		lo->logfile_indexing(*this, off, st.st_size);
+		lo->logfile_indexing(*this,
+				     this->lf_line_buffer.get_read_offset(off),
+				     st.st_size);
 	    }
 	}
 

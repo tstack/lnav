@@ -206,8 +206,7 @@ noinst_LIBRARIES = libdiag.a
 @HAVE_OBJ_FORMAT_TRUE@HELP_SRC = 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
-	-pthread \
-	-static
+	-pthread
 
 AM_CPPFLAGS = \
 	-Wall \

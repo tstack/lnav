@@ -54,6 +54,13 @@ public:
      */
     size_t get_file_size() { return this->lb_file_size; };
 
+    off_t get_read_offset(off_t off) {
+	if (this->lb_gz_file)
+	    return this->lb_gz_offset;
+	else
+	    return off;
+    };
+
     /**
      * Read up to the end of file or a given delimiter.
      *

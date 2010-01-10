@@ -189,6 +189,7 @@ throw (error)
 		&this->lb_buffer[prefill],
 		this->lb_buffer_size);
 
+	available = this->lb_buffer_max - this->lb_buffer_size;
 	if (max_length > available) {
 	    char *tmp, *old;
 

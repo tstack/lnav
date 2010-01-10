@@ -295,6 +295,8 @@ public:
 
     void logfile_indexing(logfile &lf, off_t off, size_t total)
     {
+	assert(off <= total);
+	
 	if (abs(off - this->lo_last_offset) > (128 * 1024) ||
 	    (size_t)off == total) {
 	    lnav_data.ld_bottom_source.update_loading(off, total);
