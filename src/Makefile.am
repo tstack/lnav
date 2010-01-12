@@ -24,7 +24,8 @@ endif
 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
-	-pthread
+	-pthread \
+	-static
 
 AM_CPPFLAGS = \
 	-Wall \
