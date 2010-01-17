@@ -187,6 +187,9 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I .
 SUBDIRS = src test
 noinst_SCRIPTS = TESTS_ENVIRONMENT
+EXTRA_DIST = \
+	LICENSE
+
 all: all-recursive
 
 .SUFFIXES:
