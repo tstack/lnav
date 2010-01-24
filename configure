@@ -1412,7 +1412,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-ncurses          Force the use of ncurses over curses
-  --with-pcre[=prefix]    compile xmlpcre part (via libpcre check)
+  --with-pcre[=prefix]
   --with-readline[=prefix]    compile xmlreadline part (via libreadline check)
   --with-sqlite3=[ARG]    use SQLite 3 library [default=yes], optionally
                           specify the prefix for sqlite3 library
@@ -2226,7 +2226,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=lnav
- VERSION=0.1.0
+ VERSION=0.2.0
 
 
 cat >>confdefs.h <<_ACEOF
@@ -6613,7 +6613,8 @@ fi
      if test "$ac_cv_lib_pcre_pcre_compile" = "yes" ; then
         { $as_echo "$as_me:$LINENO: result: .setting PCRE_LIBS -L$with_pcre/lib -lpcre" >&5
 $as_echo ".setting PCRE_LIBS -L$with_pcre/lib -lpcre" >&6; }
-        PCRE_LIBS="-L$with_pcre/lib -lpcre"
+        PCRE_LDFLAGS="-L$with_pcre/lib"
+        PCRE_LIBS="-lpcre"
         test -d "$with_pcre/include" && PCRE_CFLAGS="-I$with_pcre/include"
         { $as_echo "$as_me:$LINENO: checking lib pcre" >&5
 $as_echo_n "checking lib pcre... " >&6; }
@@ -7092,13 +7093,6 @@ _ACEOF
 
 
 case "$host_os" in
-    darwin*)
-
-cat >>confdefs.h <<\_ACEOF
-#define _APPLE_C_SOURCE /**/
-_ACEOF
-
-	;;
     *)
 	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
 

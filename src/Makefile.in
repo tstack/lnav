@@ -72,7 +72,7 @@ am__DEPENDENCIES_1 =
 @HAVE_OBJ_FORMAT_TRUE@am__DEPENDENCIES_2 = help.o
 lnav_DEPENDENCIES = libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -206,6 +206,7 @@ noinst_LIBRARIES = libdiag.a
 @HAVE_OBJ_FORMAT_TRUE@HELP_SRC = 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
+	$(PCRE_LDFLAGS) \
 	-pthread
 
 AM_CPPFLAGS = \
@@ -218,6 +219,7 @@ LDADD = \
 	$(CURSES_LIB) \
 	$(HELP_O) \
 	$(SQLITE3_LIBS) \
+	$(PCRE_LIBS) \
 	-lpcrecpp
 
 noinst_HEADERS = \

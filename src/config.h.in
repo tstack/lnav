@@ -96,8 +96,5 @@
 /* Version number of package */
 #undef VERSION
 
-/* Needed for the 'timezone' variable */
-#undef _APPLE_C_SOURCE
-
 /* Need pread */
 #undef _BSD_SOURCE

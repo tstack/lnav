@@ -156,7 +156,6 @@ int log_format::log_scanf(const char *line,
 
     while (next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
 	time_dest[0] = '\0';
-	memset(tm_out, 0, sizeof(struct tm));
 	
 	retval = vsscanf(line, fmt[curr_fmt], args);
 	if (retval < expected_matches) {
@@ -177,11 +176,13 @@ int log_format::log_scanf(const char *line,
 	    while (next_format(time_fmt,
 			       curr_time_fmt,
 			       this->lf_time_fmt_lock)) {
+		memset(tm_out, 0, sizeof(struct tm));
 		if (strptime(time_dest,
 			     time_fmt[curr_time_fmt],
 			     tm_out) != NULL) {
 		    if (tm_out->tm_year < 70) {
-			tm_out->tm_year = 1970;
+			// XXX We should pull the time from the file mtime (?)
+			tm_out->tm_year = 80;
 		    }
 		    time_out = tm2sec(tm_out);
 		    

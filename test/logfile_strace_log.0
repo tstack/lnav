@@ -1,0 +1,9 @@
+08:09:33.814936 execve("/bin/ls", ["ls"], [/* 38 vars */]) = 0 <0.000264>
+08:09:33.815688 brk(0)                  = 0x1513000 <0.000016>
+08:09:33.815801 mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f9100b05000 <0.000019>
+08:09:33.815943 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory) <0.000019>
+08:09:33.816083 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f9100b03000 <0.000018>
+08:09:33.816206 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory) <0.000019>
+08:09:33.816326 open("/etc/ld.so.cache", O_RDONLY) = 3 <0.000023>
+08:09:33.816428 fstat(3, {st_mode=S_IFREG|0644, st_size=102143, ...}) = 0 <0.000015>
+08:09:33.816577 mmap(NULL, 102143, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f9100aea000 <0.000019>
