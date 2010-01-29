@@ -240,7 +240,7 @@ class strace_log_format : public log_format {
 	char timestr[64];
 	time_t line_time;
 	int usecs;
-	
+
 	if (this->log_scanf(prefix,
 			    log_fmt,
 			    2,

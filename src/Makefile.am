@@ -24,6 +24,7 @@ endif
 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
+	$(PCRE_LDFLAGS) \
 	-pthread \
 	-static
 
@@ -37,6 +38,7 @@ LDADD = \
 	$(CURSES_LIB) \
 	$(HELP_O) \
 	$(SQLITE3_LIBS) \
+	$(PCRE_LIBS) \
 	-lpcrecpp
 
 noinst_HEADERS = \

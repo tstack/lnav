@@ -1,7 +1,7 @@
 AC_DEFUN([AX_PATH_LIB_PCRE],[dnl
 AC_MSG_CHECKING([lib pcre])
 AC_ARG_WITH(pcre,
-[  --with-pcre[[=prefix]]    compile xmlpcre part (via libpcre check)],,
+[  --with-pcre[[=prefix]]],,
      with_pcre="yes")
 if test ".$with_pcre" = ".no" ; then
   AC_MSG_RESULT([disabled])
@@ -23,7 +23,8 @@ else
      LDFLAGS="$OLDLDFLAGS"
      if test "$ac_cv_lib_pcre_pcre_compile" = "yes" ; then
         AC_MSG_RESULT(.setting PCRE_LIBS -L$with_pcre/lib -lpcre)
-        PCRE_LIBS="-L$with_pcre/lib -lpcre"
+        PCRE_LDFLAGS="-L$with_pcre/lib"
+        PCRE_LIBS="-lpcre"
         test -d "$with_pcre/include" && PCRE_CFLAGS="-I$with_pcre/include"
         AC_MSG_CHECKING([lib pcre])
         AC_MSG_RESULT([$PCRE_LIBS])

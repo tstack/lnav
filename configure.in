@@ -1,7 +1,7 @@
 
 AC_INIT(lnav, 0.1.0, timothyshanestack@gmail.com)
 AC_CONFIG_SRCDIR([src/lnav.cc])
-AM_INIT_AUTOMAKE(lnav, 0.1.0)
+AM_INIT_AUTOMAKE(lnav, 0.2.0)
 
 AC_PREFIX_DEFAULT(/usr/)
 
@@ -77,9 +77,6 @@ AX_PATH_LIB_READLINE([], [AC_MSG_ERROR([readline required to build])])
 AX_LIB_SQLITE3("3.0.0")
 
 case "$host_os" in
-    darwin*) 
-	AC_DEFINE([_APPLE_C_SOURCE], [], [Needed for the 'timezone' variable])
-	;;
     *)
 	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
 	AC_DEFINE([_BSD_SOURCE], [], [Need pread])

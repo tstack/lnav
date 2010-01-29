@@ -12,6 +12,10 @@ run_test ./drive_logfile -f access_log ${srcdir}/logfile_access_log.0
 
 on_error_fail_with "Didn't infer access_log log format?"
 
+run_test ./drive_logfile -f strace_log ${srcdir}/logfile_strace_log.0
+
+on_error_fail_with "Didn't infer strace_log log format?"
+
 
 run_test ./drive_logfile ${srcdir}/logfile_empty.0
 
@@ -53,6 +57,20 @@ Jul 20 22:59:29 2009 -- 000
 Jul 20 22:59:29 2009 -- 000
 EOF
 
+run_test ./drive_logfile -t -f strace_log ${srcdir}/logfile_strace_log.0
+
+check_output "strace_log timestamp interpreted incorrectly?" <<EOF
+Dec 31 08:09:33 1979 -- 814
+Dec 31 08:09:33 1979 -- 815
+Dec 31 08:09:33 1979 -- 815
+Dec 31 08:09:33 1979 -- 815
+Dec 31 08:09:33 1979 -- 816
+Dec 31 08:09:33 1979 -- 816
+Dec 31 08:09:33 1979 -- 816
+Dec 31 08:09:33 1979 -- 816
+Dec 31 08:09:33 1979 -- 816
+EOF
+
 ##
 
 run_test ./drive_logfile -v -f syslog_log ${srcdir}/logfile_syslog.0
@@ -79,4 +97,18 @@ check_output "access_log level interpreted incorrectly?" <<EOF
 0x03
 0x05
 0x03
+EOF
+
+run_test ./drive_logfile -v -f strace_log ${srcdir}/logfile_strace_log.0
+
+check_output "strace_log level interpreted incorrectly?" <<EOF
+0x00
+0x00
+0x00
+0x05
+0x00
+0x05
+0x00
+0x00
+0x00
 EOF
