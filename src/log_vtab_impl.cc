@@ -60,7 +60,8 @@ static int vt_create( sqlite3 *db,
     {
         return SQLITE_NOMEM;
     }
-    
+
+    memset(&p_vt->base, 0, sizeof(sqlite3_vtab));
     p_vt->db = db;
     
     /* Declare the vtable's structure */
