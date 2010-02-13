@@ -179,6 +179,8 @@ readline_curses::readline_curses()
 
 	signal(SIGALRM, sigalrm);
 	signal(SIGWINCH, sigwinch);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
 
 	dup2(this->rc_pty[RCF_SLAVE], STDIN_FILENO);
 	dup2(this->rc_pty[RCF_SLAVE], STDOUT_FILENO);
@@ -404,26 +406,24 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
 	char buffer[128];
 
 	rc = read(this->rc_pty[RCF_MASTER], buffer, sizeof(buffer));
-	assert(rc != 0);
-	assert(rc != -1 && (errno != EINTR || errno != EIO));
-
-	{
-	    int lpc;
-
-	    fprintf(stderr, "from child %d|", rc);
-	    for (lpc = 0; lpc < rc; lpc++) {
-		fprintf(stderr, " %d", buffer[lpc]);
+	if (rc > 0) {
+	    {
+		int lpc;
+		
+		fprintf(stderr, "from child %d|", rc);
+		for (lpc = 0; lpc < rc; lpc++) {
+		    fprintf(stderr, " %d", buffer[lpc]);
+		}
+		fprintf(stderr, "\n");
 	    }
-	    fprintf(stderr, "\n");
+	    
+	    this->map_output(buffer, rc);
 	}
-
-	this->map_output(buffer, rc);
     }
     if (FD_ISSET(this->rc_command_pipe[RCF_MASTER], &ready_rfds)) {
 	char msg[1024 + 1];
 
 	rc = read(this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);
-	assert(rc != 0);
 	if (rc >= 2) {
 	    string old_value = this->rc_value;
 

@@ -17,6 +17,7 @@ static string declare_table_statement(log_vtab_impl *vi)
 	<< "  line_number int,\n"
 	<< "  path text,\n"
 	<< "  log_time datetime,\n"
+	<< "  idle_msecs int,\n"
 	<< "  level text,\n"
 	<< "  raw_line text";
     vi->get_columns(cols);
@@ -205,6 +206,24 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 	}
 	break;
     case 3:
+	if (vc->curr_line == 0) {
+	    sqlite3_result_int64( ctx, 0 );
+	}
+	else {
+	    content_line_t prev_cl(vt->lss->at(vis_line_t(vc->curr_line - 1)));
+	    logfile *prev_lf = vt->lss->find(prev_cl);
+	    logfile::iterator prev_ll = prev_lf->begin() + prev_cl;
+	    uint64_t prev_time, curr_line_time;
+
+	    prev_time = prev_ll->get_time() * 1000ULL;
+	    prev_time += prev_ll->get_millis();
+	    curr_line_time = ll->get_time() * 1000ULL;
+	    curr_line_time += ll->get_millis();
+	    assert(curr_line_time >= prev_time);
+	    sqlite3_result_int64( ctx, curr_line_time - prev_time );
+	}
+	break;
+    case 4:
 	{
 	    const char *level_name = ll->get_level_name();
 	    
@@ -214,7 +233,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 				SQLITE_STATIC);
 	}
 	break;
-    case 4:
+    case 5:
 	{
 	    string line;
 
@@ -232,7 +251,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 	    
 	    line_iter = lf->begin() + cl;
 	    lf->read_line(line_iter, line);
-	    vt->vi->extract(line, col - 5, ctx);
+	    vt->vi->extract(line, col - 6, ctx);
 	}
 	break;
     }

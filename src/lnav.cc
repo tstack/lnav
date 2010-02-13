@@ -98,7 +98,6 @@ typedef enum {
 } lnav_status_t;
 
 typedef enum {
-    LG_SEARCH,
     LG_GRAPH,
     LG_CAPTURE,
     
@@ -264,6 +263,8 @@ static struct {
 
     stack<textview_curses *> ld_view_stack;
     textview_curses      ld_views[LNV__MAX];
+    auto_ptr<grep_highlighter> ld_search_child[LNV__MAX];
+    vis_line_t ld_search_start_line;
     readline_curses      *ld_rl_view;
 
     logfile_sub_source   ld_log_source;
@@ -416,6 +417,11 @@ static void rebuild_indexes(bool force)
 		    queue_request(start_line);
 		lnav_data.ld_grep_child[lpc]->get_grep_proc()->start();
 	    }
+	}
+	if (lnav_data.ld_search_child[LNV_LOG].get() != NULL) {
+	    lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->
+		queue_request(start_line);
+	    lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->start();
 	}
     }
 
@@ -624,11 +630,6 @@ static bool toggle_view(textview_curses *toggle_tc)
 	lnav_data.ld_view_stack.pop();
     }
     else {
-	int lpc;
-
-	for (lpc = 0; lpc < LG__MAX; lpc++) {
-	    lnav_data.ld_grep_child[lpc].reset();
-	}
 	lnav_data.ld_view_stack.push(toggle_tc);
 	retval = true;
     }
@@ -637,6 +638,15 @@ static bool toggle_view(textview_curses *toggle_tc)
     lnav_data.ld_scroll_broadcaster.invoke(tc);
 
     return retval;
+}
+
+static void ensure_view(textview_curses *expected_tc)
+{
+    textview_curses *tc    = lnav_data.ld_view_stack.top();
+
+    if (tc != expected_tc) {
+	toggle_view(expected_tc);
+    }
 }
 
 static void moveto_cluster(vis_line_t (bookmark_vector::*f)(vis_line_t),
@@ -1000,6 +1010,8 @@ static void handle_paging_key(int ch)
 
     case '/':
 	lnav_data.ld_mode = LNM_SEARCH;
+	lnav_data.ld_search_start_line = lnav_data.ld_view_stack.top()->
+	    get_top();
 	lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
 	break;
 
@@ -1466,7 +1478,6 @@ static int sql_callback(void *arg,
 {
     db_label_source &dls = lnav_data.ld_db_rows;
     hist_source &hs = lnav_data.ld_db_source;
-    double num_value = 0.0;
     int row_number;
     int lpc, retval = 0;
 
@@ -1481,6 +1492,8 @@ static int sql_callback(void *arg,
 	}
     }
     for (lpc = 0; lpc < ncols; lpc++) {
+	double num_value = 0.0;
+	
 	dls.push_column(values[lpc]);
 	sscanf(values[lpc], "%lf", &num_value);
 	hs.add_value(row_number, bucket_type_t(lpc), num_value);
@@ -1491,18 +1504,16 @@ static int sql_callback(void *arg,
 
 static void rl_search(void *dummy, readline_curses *rc)
 {
-    static string last_search[LG__MAX];
+    static string last_search[LNV__MAX];
 
     string name;
-    int index;
 
     switch (lnav_data.ld_mode) {
     case LNM_SEARCH:
-	index = LG_SEARCH;
 	name = "(search";
 	break;
     case LNM_CAPTURE:
-	index = LG_CAPTURE;
+	assert(0);
 	name = "(capture";
 	break;
 	
@@ -1530,6 +1541,10 @@ static void rl_search(void *dummy, readline_curses *rc)
 		lnav_data.ld_bottom_source.
 		    grep_error(string("sql error: ") + string(errmsg));
 	    }
+	    else {
+		lnav_data.ld_bottom_source.
+		    grep_error("");
+	    }
 	}
 	return;
     default:
@@ -1537,10 +1552,11 @@ static void rl_search(void *dummy, readline_curses *rc)
 	break;
     }
 
-    auto_ptr<grep_highlighter> &gc = lnav_data.ld_grep_child[index];
+    textview_curses *tc = lnav_data.ld_view_stack.top();
+    int index = (tc - lnav_data.ld_views);
+    auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[index];
     
     if ((gc.get() == NULL) || (rc->get_value() != last_search[index])) {
-	textview_curses *tc = lnav_data.ld_view_stack.top();
 	const char      *errptr;
 	pcre            *code;
 	int             eoff;
@@ -1552,6 +1568,8 @@ static void rl_search(void *dummy, readline_curses *rc)
 	gc.reset();
 	
 	fprintf(stderr, "start search for: %s\n", rc->get_value().c_str());
+
+	tc->set_top(lnav_data.ld_search_start_line);
 	
 	if (rc->get_value().empty()) {
 	    lnav_data.ld_bottom_source.grep_error("");
@@ -1663,8 +1681,9 @@ static void rl_callback(void *dummy, readline_curses *rc)
 		hs.analyze();
 		lnav_data.ld_views[LNV_DB].reload_data();
 		
-		if (dls.dls_rows.size() > 0)
-		    toggle_view(&lnav_data.ld_views[LNV_DB]);
+		if (dls.dls_rows.size() > 0) {
+		    ensure_view(&lnav_data.ld_views[LNV_DB]);
+		}
 	    }
 	}
 
@@ -1808,6 +1827,7 @@ static void looper(void)
 		"from",
 		"group",
 		"having",
+		"idle_msecs",
 		"index",
 		"indexed",
 		"inner",
@@ -2005,10 +2025,15 @@ static void looper(void)
 	    rc = select(lnav_data.ld_max_fd + 1,
 			&ready_rfds, NULL, NULL,
 			&to);
+	    
+	    {
+		int index;
 
-	    if (lnav_data.ld_grep_child[LG_SEARCH].get() != NULL) {
-		lnav_data.ld_bottom_source.
-		update_hits(lnav_data.ld_view_stack.top());
+		index = lnav_data.ld_view_stack.top() - lnav_data.ld_views;
+		if (lnav_data.ld_search_child[index].get() != NULL) {
+		    lnav_data.ld_bottom_source.
+			update_hits(lnav_data.ld_view_stack.top());
+		}
 	    }
 
 	    if (rc < 0) {
@@ -2066,6 +2091,14 @@ static void looper(void)
 			    lnav_data.ld_views[LNV_GRAPH].reload_data();
 			    /* XXX */
 			}
+		    }
+		}
+		for (lpc = 0; lpc < LNV__MAX; lpc++) {
+		    auto_ptr<grep_highlighter> &gc =
+			lnav_data.ld_search_child[lpc];
+		    
+		    if (gc.get() != NULL) {
+			gc->get_grep_proc()->check_fd_set(ready_rfds);
 		    }
 		}
 		rlc.check_fd_set(ready_rfds);

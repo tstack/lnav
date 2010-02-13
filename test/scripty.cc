@@ -198,7 +198,7 @@ static char *hex2bits(const char *src)
     len = strlen(src) / 2;
     retval = new char[sizeof(int) + len];
     *((int *)retval) = len;
-    while (src[0]) {
+    while (pos < (sizeof(int) + len)) {
 	int val;
 	
 	sscanf(src, "%2x", &val);
