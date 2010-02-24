@@ -1,6 +1,7 @@
 
 #include "config.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <errno.h>
 #include <paths.h>
@@ -20,6 +21,8 @@ piper_proc::piper_proc(int pipefd)
 {
     char piper_tmpname[PATH_MAX];
     const char *tmpdir;
+
+    assert(pipefd >= 0);
 
     if ((tmpdir = getenv("TMPDIR")) == NULL) {
 	tmpdir = _PATH_VARTMP;
@@ -43,6 +46,9 @@ piper_proc::piper_proc(int pipefd)
 	    int rc;
 	    
 	    while ((rc = read(pipefd, buffer, sizeof(buffer))) > 0) {
+		/* Need to do pwrite here since the fd is used by the main
+		 * lnav process as well.
+		 */
 		int wrc = pwrite(this->pp_fd, buffer, rc, off);
 
 		off += wrc;

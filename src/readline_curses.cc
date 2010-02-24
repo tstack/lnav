@@ -37,6 +37,8 @@ static int             got_line    = 0;
 static sig_atomic_t    got_timeout = 0;
 static sig_atomic_t    got_winch   = 0;
 static readline_curses *child_this;
+static sig_atomic_t    looping = 1;
+static const int HISTORY_SIZE = 256;
 
 readline_context *readline_context::loaded_context;
 set<string> *readline_context::arg_possibilities;
@@ -49,6 +51,11 @@ static void sigalrm(int sig)
 static void sigwinch(int sig)
 {
     got_winch = 1;
+}
+
+static void sigterm(int sig)
+{
+    looping = 0;
 }
 
 static void line_ready_tramp(char *line)
@@ -179,8 +186,8 @@ readline_curses::readline_curses()
 
 	signal(SIGALRM, sigalrm);
 	signal(SIGWINCH, sigwinch);
-	signal(SIGINT, SIG_DFL);
-	signal(SIGTERM, SIG_DFL);
+	signal(SIGINT, sigterm);
+	signal(SIGTERM, sigterm);
 
 	dup2(this->rc_pty[RCF_SLAVE], STDIN_FILENO);
 	dup2(this->rc_pty[RCF_SLAVE], STDOUT_FILENO);
@@ -188,6 +195,8 @@ readline_curses::readline_curses()
 	setenv("TERM", "vt52", 1);
 
 	rl_initialize();
+	using_history();
+	stifle_history(HISTORY_SIZE);
 	
 	/*
 	 * XXX Need to keep the input on a single line since the display screws
@@ -243,7 +252,7 @@ void readline_curses::start(void)
 
     maxfd = max(STDIN_FILENO, this->rc_command_pipe[RCF_SLAVE].get());
 
-    while (1) {
+    while (looping) {
 	fd_set ready_rfds = rfds;
 	int    rc;
 
@@ -363,6 +372,28 @@ void readline_curses::start(void)
 	    rl_set_screen_size(ws.ws_row, ws.ws_col);
 	}
     }
+
+    fprintf(stderr, "writing history\n");
+    std::map<int, readline_context *>::iterator citer;
+    for (citer = this->rc_contexts.begin();
+	 citer != this->rc_contexts.end();
+	 citer++) {
+	char *home;
+	
+	citer->second->load();
+	home = getenv("HOME");
+	if (home) {
+	    char hpath[2048];
+	    
+	    snprintf(hpath, sizeof(hpath),
+		     "%s/.lnav/%s.history",
+		     home, citer->second->get_name().c_str());
+	    write_history(hpath);
+	}
+	citer->second->save();
+    }
+
+    exit(0);
 }
 
 void readline_curses::line_ready(const char *line)

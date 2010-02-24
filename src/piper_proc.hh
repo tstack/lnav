@@ -5,6 +5,10 @@
 #include <string>
 #include <sys/types.h>
 
+/**
+ * Creates a subprocess that reads data from a pipe and writes it to a file so
+ * lnav can treat it like any other file and do preads.
+ */
 class piper_proc {
 public:
     class error

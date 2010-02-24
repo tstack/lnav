@@ -782,6 +782,40 @@ static void handle_paging_key(int ch)
 	tc->set_top(bm[&textview_curses::BM_SEARCH].prev(tc->get_top()));
 	break;
 
+    case '>':
+	{
+	    std::pair<int, int> range;
+
+	    tc->horiz_shift(tc->get_top(),
+			    tc->get_bottom(),
+			    tc->get_left(),
+			    "(search",
+			    range);
+	    if (range.second != INT_MAX)
+		tc->set_left(range.second);
+	    else
+		flash();
+	}
+	break;
+    case '<':
+	if (tc->get_left() == 0) {
+	    flash();
+	}
+	else {
+	    std::pair<int, int> range;
+
+	    tc->horiz_shift(tc->get_top(),
+			    tc->get_bottom(),
+			    tc->get_left(),
+			    "(search",
+			    range);
+	    if (range.first != -1)
+		tc->set_left(range.first);
+	    else
+		tc->set_left(0);
+	}
+	break;
+
     case 'f':
 	if (tc == &lnav_data.ld_views[LNV_LOG]) {
 	    tc->set_top(bm[&logfile_sub_source::BM_FILES].next(tc->get_top()));
@@ -1775,11 +1809,11 @@ static void looper(void)
     fprintf(stderr, "startup\n");
 
     try {
-	readline_context command_context(&lnav_commands);
+	readline_context command_context("cmd", &lnav_commands);
 
-	readline_context search_context;
-	readline_context index_context;
-	readline_context sql_context;
+	readline_context search_context("search");
+	readline_context index_context("capture");
+	readline_context sql_context("sql");
 	textview_curses  *tc;
 	readline_curses  rlc;
 	int lpc;
@@ -2365,11 +2399,26 @@ private:
     pcrecpp::RE slt_regex;
 };
 
+void ensure_dotlnav(void)
+{
+    char *home;
+    
+    home = getenv("HOME");
+    if (home) {
+	char hpath[2048];
+
+	snprintf(hpath, sizeof(hpath), "%s/.lnav", home);
+	mkdir(hpath, 0755);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int lpc, c, retval = EXIT_SUCCESS;
     auto_ptr<piper_proc> stdin_reader;
 
+    ensure_dotlnav();
+    
     if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
 	fprintf(stderr, "unable to create sqlite memory database\n");
 	exit(EXIT_FAILURE);

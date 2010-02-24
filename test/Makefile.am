@@ -114,6 +114,7 @@ dist_noinst_DATA = \
 	listview_output.6 \
 	logfile_access_log.0 \
 	logfile_empty.0 \
+	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
 	logfile_tcsh_history.0 \

@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	}
     }
     
-    readline_context context(&COMMANDS);
+    readline_context context("test", &COMMANDS);
     readline_curses rlc;
     bool done = false;
     fd_set rfds;

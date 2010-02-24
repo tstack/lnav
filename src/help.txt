@@ -103,6 +103,8 @@ through the file.
   f/F               Move to the next/previous entry in a different
                     file.
 
+  >/<               Move horizontally to the next/previous search hit.
+
   o/O               Move forward/backward 60 minutes from the current
                     position in the log file.
 

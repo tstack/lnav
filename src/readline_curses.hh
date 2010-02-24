@@ -6,6 +6,7 @@
 #define __readline_curses_hh
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -29,8 +30,11 @@ public:
 				     std::vector<std::string> &args);
     typedef std::map<std::string, command_t> command_map_t;
 
-    readline_context(command_map_t *commands = NULL)
+    readline_context(const std::string &name, command_map_t *commands = NULL)
+	: rc_name(name)
     {
+	char *home;
+	
 	if (commands != NULL) {
 	    command_map_t::iterator iter;
 
@@ -41,8 +45,22 @@ public:
 		iter->second(cmd, this->rc_prototypes[cmd]);
 	    }
 	}
+	
 	memset(&this->rc_history, 0, sizeof(this->rc_history));
+	history_set_history_state(&this->rc_history);
+	home = getenv("HOME");
+	if (home) {
+	    char hpath[2048];
+	    
+	    snprintf(hpath, sizeof(hpath),
+		     "%s/.lnav/%s.history",
+		     home, this->rc_name.c_str());
+	    read_history(hpath);
+	    this->save();
+	}
     };
+
+    const std::string &get_name() const { return this->rc_name; };
 
     void load(void)
     {
@@ -80,8 +98,9 @@ private:
     static char *completion_generator(const char *text, int state);
 
     static readline_context *loaded_context;
-    static std::            set<std::string> *arg_possibilities;
+    static std::set<std::string> *arg_possibilities;
 
+    std::string rc_name;
     HISTORY_STATE rc_history;
     std::map<std::string, std::set<std::string> >    rc_possibilities;
     std::map<std::string, std::vector<std::string> > rc_prototypes;
