@@ -139,10 +139,6 @@ through the file.
   u/U               Move forward/backward through any user bookmarks
 		    you have added using the 'm' key.
   
-  s                 Toggle "scrubbing" of the input file to
-                    hide/reveal parts of the timestamp and other
-                    excessive/redundant information in each log line.
-  
   i                 View/leave a histogram of the log messages over
                     time.  The histogram counts the number of
                     displayed log lines for each bucket of time.  The
@@ -172,6 +168,18 @@ through the file.
                     search is active, the 'hits' field in the status
                     line will be green, when finished it will turn
                     back to black.
+
+		    Note: The regular expression format used by is PCRE
+		    (Perl-Compatible Regular Expressions).  For example,
+		    if you wanted to search for ethernet device names,
+		    regardless of their ID number, you can type:
+
+		      eth\d+
+
+		    You can find more information about Perl regular
+		    expressions at:
+
+		      http://perldoc.perl.org/perlre.html
 
   :<command>        Execute an internal command.  The commands are
                     listed below.  History is also supported in this
