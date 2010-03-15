@@ -192,8 +192,16 @@ through the file.
                     that can be used in queries.  See the SQL section
                     below for more information.
 
-  .                 Switch to/from the sql result view.
+  v                 Switch to/from the SQL result view.
 
+  V                 Switch between the log and SQL result views while
+  		    keeping the top line number in the log view in
+		    sync with the line_number column in the SQL view.
+		    For example, doing a query that selects for
+		    "idle_msecs" and "line_number", you can move the
+		    top of the SQL view to a line and hit 'V' to switch
+		    to the log view and move to the line number that was
+		    selected in the "line_number" column.
 
 COMMANDS
 --------

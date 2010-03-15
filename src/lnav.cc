@@ -501,8 +501,8 @@ public:
 
 	len = strlen(buffer);
 	snprintf(&buffer[len], sizeof(buffer) - len,
-		 " %8d total  %8d errors",
-		 total, errors);
+		 " %8d total  %8d errors  %8d warnings",
+		 total, errors, warnings);
 
 	label_out = string(buffer);
     };
@@ -1072,7 +1072,7 @@ static void handle_paging_key(int ch)
 		tc->set_top(hs.row_for_value(log_top));
 	    }
 	    else {
-		tc = lnav_data.ld_view_stack.top();
+		tc = &lnav_data.ld_views[LNV_LOG];
 		tc->set_top(lss.find_from_time(hist_top));
 		tc->set_needs_update();
 	    }
@@ -1087,8 +1087,63 @@ static void handle_paging_key(int ch)
 	toggle_view(&lnav_data.ld_views[LNV_HELP]);
 	break;
 
-    case '.':
+    case 'v':
 	toggle_view(&lnav_data.ld_views[LNV_DB]);
+	break;
+    case 'V':
+	{
+	    textview_curses *db_tc = &lnav_data.ld_views[LNV_DB];
+	    db_label_source &dls = lnav_data.ld_db_rows;
+	    hist_source &hs = lnav_data.ld_db_source;
+	    
+	    if (toggle_view(db_tc)) {
+		int lpc;
+		
+		for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
+		    if (dls.dls_headers[lpc] != "line_number")
+			continue;
+
+		    char linestr[64];
+		    int line_number = (int)tc->get_top();
+		    int row;
+		    
+		    snprintf(linestr, sizeof(linestr), "%d", line_number);
+		    for (row = 0; row < dls.dls_rows.size(); row++) {
+			if (strcmp(dls.dls_rows[row][lpc].c_str(),
+				   linestr) == 0) {
+			    vis_line_t db_line(hs.row_for_value(row));
+
+			    db_tc->set_top(db_line);
+			    db_tc->set_needs_update();
+			    break;
+			}
+		    }
+		    break;
+		}
+	    }
+	    else {
+		int db_row = hs.value_for_row(db_tc->get_top());
+		int lpc;
+
+		for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
+		    if (dls.dls_headers[lpc] != "line_number")
+			continue;
+
+		    int line_number;
+		    
+		    if (sscanf(dls.dls_rows[db_row][lpc].c_str(),
+			       "%d",
+			       &line_number) &&
+			line_number >= 0 &&
+			line_number < tc->listview_rows(*tc)) {
+			tc = &lnav_data.ld_views[LNV_LOG];
+			tc->set_top(vis_line_t(line_number));
+			tc->set_needs_update();
+		    }
+		    break;
+		}
+	    }
+	}
 	break;
 
     default:
@@ -1529,7 +1584,8 @@ static int sql_callback(void *arg,
 	double num_value = 0.0;
 	
 	dls.push_column(values[lpc]);
-	sscanf(values[lpc], "%lf", &num_value);
+	if (strcmp(colnames[lpc], "line_number") != 0)
+	    sscanf(values[lpc], "%lf", &num_value);
 	hs.add_value(row_number, bucket_type_t(lpc), num_value);
     }
     
