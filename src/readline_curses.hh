@@ -24,6 +24,11 @@
 #include "auto_fd.hh"
 #include "vt52_curses.hh"
 
+/**
+ * Container for information related to different readline contexts.  Since
+ * lnav uses readline for different inputs, we need a way to keep things like
+ * history and tab-completions separate.
+ */
 class readline_context {
 public:
     typedef std::string (*command_t)(std::string cmdline,
@@ -106,6 +111,13 @@ private:
     std::map<std::string, std::vector<std::string> > rc_prototypes;
 };
 
+/**
+ * Adapter between readline and curses.  The curses and readline libraries
+ * normally do not get along.  So, we need to put readline in another process
+ * and present it with a vt52 interface that we then translate to curses.  The
+ * vt52 translation is done by the parent class, vt52_curses, while this class
+ * takes care of the communication between the two processes.
+ */
 class readline_curses
     : public vt52_curses {
 public:

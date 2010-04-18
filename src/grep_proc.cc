@@ -106,7 +106,7 @@ void grep_proc::start(void)
 	fcntl(err_fd[0], F_SETFD, 1);
 	this->gp_err_pipe      = err_fd[0];
 	this->gp_child_started = true;
-
+	
 	FD_SET(this->gp_line_buffer.get_fd(), &this->gp_readfds);
 	FD_SET(this->gp_err_pipe, &this->gp_readfds);
 	this->gp_maxfd = std::max(this->gp_maxfd,

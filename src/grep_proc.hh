@@ -149,9 +149,12 @@ public:
     void set_sink(grep_proc_sink *gpd)
     {
 	this->gp_sink = gpd;
-	if (gpd != NULL) {
+	this->reset();
+    };
+
+    void reset() {
+	if (this->gp_sink != NULL)
 	    this->gp_sink->grep_begin(*this);
-	}
     };
 
     /** @param gpd The sink to send results to. */

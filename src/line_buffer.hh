@@ -47,8 +47,6 @@ public:
     /** @return The file descriptor that data should be pulled from. */
     int get_fd() { return this->lb_fd; };
 
-    void set_file_size(size_t fs) { this->lb_file_size = fs; };
-
     /**
      * @return The size of the file or the amount of data pulled from a pipe.
      */

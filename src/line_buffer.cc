@@ -295,9 +295,10 @@ throw (error)
 
 	/* Find the data in the cache and */
 	line_start = this->get_range(offset, len_out);
-	/* ... look for the end-of-line. */
+	/* ... look for the end-of-line or end-of-file. */
 	if (((lf = (char *)memchr(line_start, delim, len_out)) != NULL) ||
-	    ((offset + len_out) == this->lb_file_size)) {
+	    ((request_size >= (MAX_LINE_BUFFER_SIZE - DEFAULT_INCREMENT)) &&
+	     (offset + len_out) == this->lb_file_size)) {
 	    if (lf != NULL) {
 		len_out = lf - line_start;
 		offset += 1; /* Skip the delimiter. */

@@ -143,7 +143,6 @@ throw (line_buffer::error)
 	char   *line;
 	size_t len;
 
-	this->lf_line_buffer.set_file_size((size_t)-1);
 	if (this->lf_index.size() > 0) {
 	    off = this->lf_index.back().get_offset();
 

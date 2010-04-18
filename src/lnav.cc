@@ -419,6 +419,7 @@ static void rebuild_indexes(bool force)
 	    }
 	}
 	if (lnav_data.ld_search_child[LNV_LOG].get() != NULL) {
+	    lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->reset();
 	    lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->
 		queue_request(start_line);
 	    lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->start();
