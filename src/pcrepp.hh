@@ -1,4 +1,15 @@
 
+/**
+ * @file pcrepp.hh
+ *
+ * A C++ adapter for the pcre library.  The interface provided here has a
+ * different focus than the pcrecpp.h file included in the pcre distribution.
+ * The standard pcrecpp.h interface is more concerned with regular expressions
+ * that are digesting data to be used within the program itself.  Whereas this
+ * interface is dealing with regular expression entered by the user and
+ * processing a series of matches on text files.
+ */
+
 #ifndef __pcrepp_hh
 #define __pcrepp_hh
 
@@ -18,38 +29,53 @@
 
 #include "auto_mem.hh"
 
+/**
+ * Context that tracks captures found during a match operation.  This class is a
+ * base that defines iterator methods and fields, but does not allocate space
+ * for the capture array.
+ */
 class pcre_context {
 public:
     typedef struct {
-	int m_begin;
-	int m_end;
+	int c_begin;
+	int c_end;
 
-	int length() { return this->m_end - this->m_begin; };
-    } match_t;
-    typedef match_t *iterator;
+	int length() { return this->c_end - this->c_begin; };
+    } capture_t;
+    typedef capture_t *iterator;
 
+    /** @return The maximum number of strings this context can capture. */
     int get_max_count() {
 	return this->pc_max_count;
     };
 
     void set_count(int count) {
 	this->pc_count = count;
-    }
+    };
 
-    match_t *all() { return pc_matches; };
+    /**
+     * @return a capture_t that covers all of the text that was matched.
+     */
+    capture_t *all() { return pc_captures; };
 
-    iterator begin() { return pc_matches + 1; };
-    iterator end() { return pc_matches + pc_count; };
+    /** @return An iterator to the first capture. */
+    iterator begin() { return pc_captures + 1; };
+    /** @return An iterator that refers to the end of the capture array. */
+    iterator end() { return pc_captures + pc_count; };
     
 protected:
-    pcre_context(match_t *matches, int max_count)
-	: pc_matches(matches), pc_max_count(max_count) { };
+    pcre_context(capture_t *captures, int max_count)
+	: pc_captures(captures), pc_max_count(max_count) { };
 
-    match_t *pc_matches;
+    capture_t *pc_captures;
     int pc_max_count;
     int pc_count;
 };
 
+/**
+ * A pcre_context that allocates storage for the capture array within the object
+ * itself.
+ */
 template<size_t MAX_COUNT>
 class pcre_context_static : public pcre_context {
 public:
@@ -57,9 +83,12 @@ public:
 	: pcre_context(this->pc_match_buffer, MAX_COUNT + 1) { };
 
 private:
-    match_t pc_match_buffer[MAX_COUNT + 1];
+    capture_t pc_match_buffer[MAX_COUNT + 1];
 };
 
+/**
+ * 
+ */
 class pcre_input {
 public:
     pcre_input(const char *str, size_t off = 0, size_t len = -1)
@@ -68,7 +97,7 @@ public:
 	    this->pi_length = strlen(str);
     };
 
-    pcre_input(std::string &str, size_t off = 0)
+    pcre_input(const std::string &str, size_t off = 0)
 	: pi_offset(off),
 	  pi_next_offset(off),
 	  pi_length(str.length()),
@@ -77,8 +106,14 @@ public:
 
     const char *get_string() const { return this->pi_string; };
 
-    const char *get_substr(pcre_context::iterator iter) const {
-	return &this->pi_string[iter->m_begin];
+    const char *get_substr_start(pcre_context::iterator iter) const {
+	return &this->pi_string[iter->c_begin];
+    };
+
+    std::string get_substr(pcre_context::iterator iter) const {
+	return std::string(this->pi_string,
+			   iter->c_begin,
+			   iter->length());
     };
 
     size_t pi_offset;
@@ -146,10 +181,10 @@ public:
 	else if (rc == 0) {
 	    rc = 0;
 	}
-	else if (pc.all()->m_begin == pc.all()->m_end)
+	else if (pc.all()->c_begin == pc.all()->c_end)
 	    rc = 0;
 	else 
-	    pi.pi_next_offset = pc.all()->m_end;
+	    pi.pi_next_offset = pc.all()->c_end;
 
 	pc.set_count(rc);
 	

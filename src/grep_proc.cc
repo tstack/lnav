@@ -164,15 +164,15 @@ void grep_proc::start(void)
 		
 		while (this->gp_pcre.match(pc, pi)) {
 		    pcre_context::iterator pc_iter;
-		    pcre_context::match_t *m;
+		    pcre_context::capture_t *m;
 		    
 		    if (pi.pi_offset == 0) {
 			fprintf(stdout, "%d\n", line);
 		    }
 		    m = pc.all();
-		    fprintf(stdout, "[%d:%d]\n", m->m_begin, m->m_end);
+		    fprintf(stdout, "[%d:%d]\n", m->c_begin, m->c_end);
 		    for (pc_iter = pc.begin(); pc_iter != pc.end(); pc_iter++) {
-			if (pc_iter->m_begin < 0) {
+			if (pc_iter->c_begin < 0) {
 			    /* If the capture was conditional, pcre will
 			     * return a -1 here.
 			     */
@@ -181,9 +181,9 @@ void grep_proc::start(void)
 			
 			fprintf(stdout,
 				"(%d:%d)",
-				pc_iter->m_begin,
-				pc_iter->m_end);
-			fwrite(pi.get_substr(pc_iter),
+				pc_iter->c_begin,
+				pc_iter->c_end);
+			fwrite(pi.get_substr_start(pc_iter),
 			       1,
 			       pc_iter->length(),
 			       stdout);

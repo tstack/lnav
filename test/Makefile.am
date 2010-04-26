@@ -22,6 +22,7 @@ check_PROGRAMS = \
 	test_bookmarks \
 	test_grep_proc2 \
 	test_line_buffer2 \
+	test_pcrepp \
 	test_top_status
 
 AM_LDFLAGS = \
@@ -44,6 +45,9 @@ test_grep_proc2_LDADD = $(PCRE_LIBS) -lz
 test_line_buffer2_SOURCES = \
 	../src/line_buffer.cc \
 	test_line_buffer2.cc
+
+test_pcrepp_SOURCES = \
+	test_pcrepp.cc
 
 test_top_status_SOURCES = \
 	../src/bookmarks.cc \
@@ -133,6 +137,7 @@ TESTS = test_bookmarks \
 	test_grep_proc2 \
 	test_listview.sh \
 	test_logfile.sh \
+	test_pcrepp \
 	test_vt52_curses.sh \
 	test_top_status
 
