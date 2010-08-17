@@ -176,15 +176,18 @@ public:
 		       (int *)pc.all(),
 		       count * 2);
 
+	
 	if (rc < 0) {
 	}
 	else if (rc == 0) {
 	    rc = 0;
 	}
-	else if (pc.all()->c_begin == pc.all()->c_end)
+	else if (pc.all()->c_begin == pc.all()->c_end) {
 	    rc = 0;
-	else 
+	}
+	else  {
 	    pi.pi_next_offset = pc.all()->c_end;
+	}
 
 	pc.set_count(rc);
 	

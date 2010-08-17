@@ -26,7 +26,7 @@ AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
 	$(PCRE_LDFLAGS) \
 	-pthread \
-	-static
+	$(STATIC_LDFLAGS)
 
 AM_CPPFLAGS = \
 	-Wall \
