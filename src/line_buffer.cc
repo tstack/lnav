@@ -128,8 +128,12 @@ throw (error)
 	    if (pread(fd, gz_id, sizeof(gz_id), 0) == sizeof(gz_id)) {
 		if (gz_id[0] == '\037' && gz_id[1] == '\213') {
 		    lseek(fd, 0, SEEK_SET);
-		    if ((this->lb_gz_file = gzdopen(dup(fd), "r")) == NULL)
-			throw bad_alloc();
+		    if ((this->lb_gz_file = gzdopen(dup(fd), "r")) == NULL) {
+			if (errno == 0)
+			    throw bad_alloc();
+			else
+			    throw error(errno);
+		    }
 		    this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
 		}
 	    }
@@ -154,17 +158,12 @@ throw (error)
     }
 
     if (start < this->lb_file_offset ||
-	start > (off_t)(this->lb_file_offset + this->lb_buffer_size)) {
+	start >= (off_t)(this->lb_file_offset + this->lb_buffer_size)) {
 	/*
 	 * The request is outside the cached range, need to reload the
 	 * whole thing.
 	 */
-
 	prefill = 0;
-	if (lseek(this->lb_fd, start, SEEK_SET) == -1) {
-	    throw error(errno);
-	}
-
 	this->lb_file_offset = start;
 	this->lb_buffer_size = 0;
     }
