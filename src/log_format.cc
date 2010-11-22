@@ -138,6 +138,7 @@ int log_format::log_scanf(const char *line,
     static const char *std_time_fmt[] = {
 	"%Y-%m-%d %H:%M:%S",
 	"%Y-%m-%d %H:%M",
+	"%Y-%m-%dT%H:%M:%S",
 	"%Y/%m/%d %H:%M:%S",
 	"%Y/%m/%d %H:%M",
 	

@@ -250,6 +250,11 @@ public:
 	return this->tc_match_count;
     };
 
+	void match_reset() {
+	    this->tc_match_count = 0;
+	    this->tc_bookmarks[&BM_SEARCH].clear();
+	}
+
     typedef std::map<std::string, highlighter> highlight_map_t;
 
     highlight_map_t &get_highlights() { return this->tc_highlights; };

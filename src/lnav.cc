@@ -411,6 +411,10 @@ static void rebuild_indexes(bool force)
 
 	start_line = force ? grep_line_t(0) : grep_line_t(-1);
 
+	if (force) {
+		log_view.match_reset();
+	}
+
 	for (lpc = 0; lpc < LG__MAX; lpc++) {
 	    if (lnav_data.ld_grep_child[lpc].get() != NULL) {
 		lnav_data.ld_grep_child[lpc]->get_grep_proc()->
@@ -1661,6 +1665,7 @@ static void rl_search(void *dummy, readline_curses *rc)
 	fprintf(stderr, "start search for: %s\n", rc->get_value().c_str());
 
 	tc->set_top(lnav_data.ld_search_start_line);
+	tc->match_reset();
 	
 	if (rc->get_value().empty()) {
 	    lnav_data.ld_bottom_source.grep_error("");
