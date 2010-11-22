@@ -100,10 +100,14 @@ through the file.
   e/E               Move to the next/previous error.
   w/W               Move to the next/previous warning.
   n/N               Move to the next/previous search hit.
-  f/F               Move to the next/previous entry in a different
-                    file.
+  f/F               Move to the next/previous file.  In the log view, this
+  		    moves to the next line from a different file.  In the
+		    text view, this rotates the view to the next file.
 
   >/<               Move horizontally to the next/previous search hit.
+
+  t                 Switch to/from the text file view.  The text file view is
+                    for any files that are not recognized as log files.
 
   o/O               Move forward/backward 60 minutes from the current
                     position in the log file.

@@ -41,6 +41,7 @@
 #include "readline_curses.hh"
 #include "textview_curses.hh"
 #include "logfile_sub_source.hh"
+#include "textfile_sub_source.hh"
 #include "grep_proc.hh"
 #include "bookmarks.hh"
 #include "hist_source.hh"
@@ -82,6 +83,7 @@ static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
 typedef enum {
     LNV_LOG,
+    LNV_TEXT,
     LNV_HELP,
     LNV_HISTOGRAM,
     LNV_GRAPH,
@@ -271,6 +273,8 @@ static struct {
     hist_source          ld_hist_source;
     int                  ld_hist_zoom;
 
+    textfile_sub_source  ld_text_source;
+
     map<textview_curses *, int> ld_last_user_mark;
 
     grapher              ld_graph_source;
@@ -382,6 +386,26 @@ static void rebuild_indexes(bool force)
     bool          scroll_down;
     size_t        old_count;
     time_t        old_time;
+
+    {
+	textfile_sub_source *tss = &lnav_data.ld_text_source;
+	std::list<logfile *>::iterator iter;
+
+	for (iter = tss->tss_files.begin();
+	     iter != tss->tss_files.end();) {
+	    (*iter)->rebuild_index(&obs);
+	    if ((*iter)->get_format() != NULL) {
+		logfile *lf = *iter;
+
+		iter = tss->tss_files.erase(iter);
+		lnav_data.ld_log_source.insert_file(lf);
+		force = true;
+	    }
+	    else {
+		++iter;
+	    }
+	}
+    }
 
     old_time = lnav_data.ld_top_time;
     log_view.get_dimensions(height, width);
@@ -738,7 +762,9 @@ static void handle_paging_key(int ch)
     case 'q':
     case 'Q':
 	lnav_data.ld_view_stack.pop();
-	if (lnav_data.ld_view_stack.empty()) {
+	if (lnav_data.ld_view_stack.empty() ||
+	    (lnav_data.ld_view_stack.size() == 1 &&
+	     lnav_data.ld_log_source.text_line_count() == 0)) {
 	    lnav_data.ld_looping = false;
 	}
 	else {
@@ -821,11 +847,29 @@ static void handle_paging_key(int ch)
 	if (tc == &lnav_data.ld_views[LNV_LOG]) {
 	    tc->set_top(bm[&logfile_sub_source::BM_FILES].next(tc->get_top()));
 	}
+	else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
+	    textfile_sub_source &tss = lnav_data.ld_text_source;
+
+	    if (!tss.tss_files.empty()) {
+		tss.tss_files.push_front(tss.tss_files.back());
+		tss.tss_files.pop_back();
+		tc->reload_data();
+	    }
+	}
 	break;
 
     case 'F':
 	if (tc == &lnav_data.ld_views[LNV_LOG]) {
 	    tc->set_top(bm[&logfile_sub_source::BM_FILES].prev(tc->get_top()));
+	}
+	else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
+	    textfile_sub_source &tss = lnav_data.ld_text_source;
+	    
+	    if (!tss.tss_files.empty()) {
+		tss.tss_files.push_back(tss.tss_files.front());
+		tss.tss_files.pop_front();
+		tc->reload_data();
+	    }
 	}
 	break;
 
@@ -1053,6 +1097,10 @@ static void handle_paging_key(int ch)
     case ';':
 	lnav_data.ld_mode = LNM_SQL;
 	lnav_data.ld_rl_view->focus(LNM_SQL, ";");
+	break;
+
+    case 't':
+	toggle_view(&lnav_data.ld_views[LNV_TEXT]);
 	break;
 
     case 'i':
@@ -2117,15 +2165,8 @@ static void looper(void)
 			&ready_rfds, NULL, NULL,
 			&to);
 	    
-	    {
-		int index;
-
-		index = lnav_data.ld_view_stack.top() - lnav_data.ld_views;
-		if (lnav_data.ld_search_child[index].get() != NULL) {
-		    lnav_data.ld_bottom_source.
-			update_hits(lnav_data.ld_view_stack.top());
-		}
-	    }
+	    lnav_data.ld_bottom_source.
+		update_hits(lnav_data.ld_view_stack.top());
 
 	    if (rc < 0) {
 		switch (errno) {
@@ -2139,7 +2180,15 @@ static void looper(void)
 		}
 	    }
 	    else if (rc == 0) {
+		static bool initial_build = false;
+		
 		rebuild_indexes(false);
+		if (!initial_build &&
+		    lnav_data.ld_log_source.text_line_count() == 0 &&
+		    lnav_data.ld_text_source.text_line_count() > 0) {
+		    toggle_view(&lnav_data.ld_views[LNV_TEXT]);
+		}
+		initial_build = true;
 	    }
 	    else {
 		if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
@@ -2510,6 +2559,8 @@ int main(int argc, char *argv[])
     set_sub_source(new plain_text_source(help_text_start));
     lnav_data.ld_views[LNV_LOG].
     set_sub_source(&lnav_data.ld_log_source);
+    lnav_data.ld_views[LNV_TEXT].
+    set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_HISTOGRAM].
     set_sub_source(&lnav_data.ld_hist_source);
     lnav_data.ld_views[LNV_GRAPH].
@@ -2638,7 +2689,7 @@ int main(int argc, char *argv[])
 		 iter++) {
 		logfile *lf = new logfile(iter->first, iter->second);
 
-		lnav_data.ld_log_source.insert_file(lf);
+		lnav_data.ld_text_source.tss_files.push_back(lf);
 	    }
 
 	    guard_termios gt(STDIN_FILENO);
