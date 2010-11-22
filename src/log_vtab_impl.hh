@@ -8,6 +8,16 @@
 #include <string>
 #include <vector>
 
+enum {
+    VT_COL_LINE_NUMBER,
+    VT_COL_PATH,
+    VT_COL_LOG_TIME,
+    VT_COL_IDLE_MSECS,
+    VT_COL_LEVEL,
+    VT_COL_RAW_LINE,
+    VT_COL_MAX
+};
+
 class logfile_sub_source;
 
 class log_vtab_impl {

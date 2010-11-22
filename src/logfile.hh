@@ -71,7 +71,7 @@ public:
 
     /**
      * @return The detected format, rebuild_index() must be called before this
-     * will return a value other than FORMAT_UNKNOWN.
+     * will return a value other than NULL.
      */
     log_format *get_format() { return this->lf_format.get(); };
 

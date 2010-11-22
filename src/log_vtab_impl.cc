@@ -175,15 +175,17 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     logfile *lf = vt->lss->find(cl);
     logfile::iterator ll = lf->begin() + cl;
 
+    assert(col >= 0);
+
     /* Just return the ordinal of the column requested. */
     switch(col)
     {
-    case 0:
+    case VT_COL_LINE_NUMBER:
 	{
 	    sqlite3_result_int64( ctx, vc->curr_line );
 	}
 	break;
-    case 1:
+    case VT_COL_PATH:
         {
 	    string &fn = lf->get_filename();
 	    
@@ -193,7 +195,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 				 SQLITE_STATIC );
 	}
 	break;
-    case 2:
+    case VT_COL_LOG_TIME:
 	{
 	    time_t line_time;
 	    char buffer[64];
@@ -205,7 +207,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 	    sqlite3_result_text(ctx, buffer, strlen(buffer), SQLITE_TRANSIENT);
 	}
 	break;
-    case 3:
+    case VT_COL_IDLE_MSECS:
 	if (vc->curr_line == 0) {
 	    sqlite3_result_int64( ctx, 0 );
 	}
@@ -223,7 +225,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 	    sqlite3_result_int64( ctx, curr_line_time - prev_time );
 	}
 	break;
-    case 4:
+    case VT_COL_LEVEL:
 	{
 	    const char *level_name = ll->get_level_name();
 	    
@@ -233,7 +235,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 				SQLITE_STATIC);
 	}
 	break;
-    case 5:
+    case VT_COL_RAW_LINE:
 	{
 	    string line;
 
@@ -251,7 +253,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 	    
 	    line_iter = lf->begin() + cl;
 	    lf->read_line(line_iter, line);
-	    vt->vi->extract(line, col - 6, ctx);
+	    vt->vi->extract(line, col - VT_COL_MAX, ctx);
 	}
 	break;
     }
