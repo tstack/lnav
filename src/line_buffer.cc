@@ -20,8 +20,6 @@ static const size_t DEFAULT_LINE_BUFFER_SIZE = 256 * 1024;
 static const size_t MAX_LINE_BUFFER_SIZE     = 2 * DEFAULT_LINE_BUFFER_SIZE;
 static const size_t DEFAULT_INCREMENT        = 1024;
 
-static set<line_buffer *> ALL_BUFFERS;
-
 /*
  * XXX REMOVE ME
  *
@@ -86,8 +84,6 @@ line_buffer::line_buffer()
 	throw bad_alloc();
     }
 
-    ALL_BUFFERS.insert(this);
-
     assert(this->invariant());
 }
 
@@ -96,8 +92,6 @@ line_buffer::~line_buffer()
     auto_fd fd = -1;
 
     this->set_fd(fd);
-    
-    ALL_BUFFERS.erase(this);
 }
 
 void line_buffer::set_fd(auto_fd &fd)

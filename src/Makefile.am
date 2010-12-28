@@ -39,8 +39,7 @@ LDADD = \
 	$(HELP_O) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
-	-lpcrecpp \
-	-lgpm
+	-lpcrecpp
 
 noinst_HEADERS = \
 	auto_fd.hh \

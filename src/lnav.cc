@@ -380,6 +380,7 @@ static void rebuild_indexes(bool force)
 
     logfile_sub_source &lss   = lnav_data.ld_log_source;
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+    textview_curses &text_view = lnav_data.ld_views[LNV_TEXT];
     vis_line_t old_bottom(0), height(0);
 
     unsigned long width;
@@ -390,6 +391,11 @@ static void rebuild_indexes(bool force)
     {
 	textfile_sub_source *tss = &lnav_data.ld_text_source;
 	std::list<logfile *>::iterator iter;
+	size_t new_count;
+
+	text_view.get_dimensions(height, width);
+	old_bottom = text_view.get_top() + height;
+	scroll_down = (size_t)old_bottom > tss->text_line_count();
 
 	for (iter = tss->tss_files.begin();
 	     iter != tss->tss_files.end();) {
@@ -404,6 +410,13 @@ static void rebuild_indexes(bool force)
 	    else {
 		++iter;
 	    }
+	}
+
+	text_view.reload_data();
+
+	new_count = tss->text_line_count();
+	if (scroll_down && new_count >= (size_t)height) {
+	  text_view.set_top(vis_line_t(new_count - height + 1));
 	}
     }
 
