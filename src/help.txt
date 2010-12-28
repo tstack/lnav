@@ -28,10 +28,7 @@ log files.  The flag arguments are:
 When using the flag arguments, lnav will look for the files relative
 to the current directory and its parent directories.  In other words,
 if you are working within a directory that has the well-known log
-files, those will be preferred over any others.  As an example, if you
-are anywhere in a directory tree that was archived using 'pnlog
-mailto', the log files within that tree will be loaded instead of the
-files used by the local machine.
+files, those will be preferred over any others.
 
 Any files given on the command-line are scanned to determine their log
 file format and to create an index for each line in the file.  You do

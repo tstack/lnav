@@ -1867,11 +1867,8 @@ static void usage(void)
 	"  logfile1          The log files to view.\n"
 	"\n"
 	"Examples:\n"
-	"  To load and follow the backend log file -\n"
-	"    $ lnav\n"
-	"\n"
-	"  To interleave the JBoss and backend log files -\n"
-	"    $ lnav -bf\n"
+	"  To load and follow the syslog file -\n"
+	"    $ lnav -s\n"
 	"\n"
 	"Version: " PACKAGE_STRING "\n";
 
