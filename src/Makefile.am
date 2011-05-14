@@ -64,6 +64,7 @@ noinst_HEADERS = \
 	statusview_curses.hh \
 	strong_int.hh \
 	termios_guard.hh \
+	textfile_sub_source.hh \
 	textview_curses.hh \
 	time_T.hh \
 	top_status_source.hh \
