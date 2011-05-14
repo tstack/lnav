@@ -154,11 +154,11 @@ int log_format::log_scanf(const char *line,
     int curr_fmt = -1, retval = 0;
     va_list args;
 
-    va_start(args, time_out);
-
     while (next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
+	va_start(args, time_out);
+
 	time_dest[0] = '\0';
-	
+
 	retval = vsscanf(line, fmt[curr_fmt], args);
 	if (retval < expected_matches) {
 	    retval = 0;
@@ -199,9 +199,9 @@ int log_format::log_scanf(const char *line,
 	    if (!found)
 		retval = 0;
 	}
-    }
 
-    va_end(args);
+	va_end(args);
+    }
 
     return retval;
 }

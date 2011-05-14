@@ -66,6 +66,29 @@ static void line_ready_tramp(char *line)
     rl_callback_handler_remove();
 }
 
+static int reliable_send(int sock, char *buf, size_t len)
+{
+    int retval;
+    
+    while ((retval = send(sock, buf, len, 0)) == -1) {
+	if (errno == ENOBUFS) {
+	    fd_set ready_wfds;
+
+	    FD_ZERO(&ready_wfds);
+	    FD_SET(sock, &ready_wfds);
+	    select(sock + 1, NULL, &ready_wfds, NULL, NULL);
+	}
+	else if (errno == EINTR) {
+	    continue;
+	}
+	else {
+	    break;
+	}
+    }
+
+    return retval;
+}
+
 char *readline_context::completion_generator(const char *text, int state)
 {
     static vector<string> matches;
@@ -296,6 +319,7 @@ void readline_curses::start(void)
 		    int  context, prompt_start = 0;
 		    char type[32];
 
+		    fprintf(stderr, "msg: %s\n", msg);
 		    msg[rc] = '\0';
 		    if (sscanf(msg, "f:%d:%n", &context, &prompt_start) == 1 &&
 			prompt_start != 0 &&
@@ -340,10 +364,10 @@ void readline_curses::start(void)
 	    fprintf(stderr, "got timeout\n");
 	    got_timeout = 0;
 	    snprintf(msg, sizeof(msg), "t:%s", rl_line_buffer);
-	    if (write(this->rc_command_pipe[RCF_SLAVE],
-		      msg,
-		      strlen(msg)) == -1) {
-		perror("write failed");
+	    if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
+			      msg,
+			      strlen(msg)) == -1) {
+		perror("got_timeout: write failed");
 		exit(1);
 	    }
 	}
@@ -423,8 +447,10 @@ void readline_curses::line_ready(const char *line)
 	snprintf(msg, sizeof(msg), "d:%s", expanded.in());
 	break;
     }
-    if (write(this->rc_command_pipe[RCF_SLAVE], msg, strlen(msg)) == -1) {
-	perror("write failed");
+    if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
+		      msg,
+		      strlen(msg)) == -1) {
+	perror("line_ready: write failed");
 	exit(1);
     }
 }
@@ -486,7 +512,7 @@ void readline_curses::handle_key(int ch)
 
     bch = this->map_input(ch, len);
     if (write(this->rc_pty[RCF_MASTER], bch, len) == -1) {
-	perror("write failed");
+	perror("handle_key: write failed");
     }
     fprintf(stderr, "to child %d\n", bch[0]);
     if (ch == '\t' || ch == '\r') {
@@ -501,10 +527,10 @@ void readline_curses::focus(int context, const char *prompt)
     this->rc_active_context = context;
 
     snprintf(buffer, sizeof(buffer), "f:%d:%s", context, prompt);
-    if (write(this->rc_command_pipe[RCF_MASTER],
+    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
 	      buffer,
 	      strlen(buffer) + 1) == -1) {
-	perror("write failed");
+	perror("focus: write failed");
     }
     wmove(this->vc_window, this->get_actual_y(), 0);
     wclrtoeol(this->vc_window);
@@ -517,10 +543,11 @@ void readline_curses::add_possibility(int context, string type, string value)
     snprintf(buffer, sizeof(buffer),
 	     "ap:%d:%s:%s",
 	     context, type.c_str(), value.c_str());
-    if (write(this->rc_command_pipe[RCF_MASTER],
-	      buffer,
-	      strlen(buffer) + 1) == -1) {
-	perror("write failed");
+    fprintf(stderr, "msg: %s\n", buffer);
+    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
+		      buffer,
+		      strlen(buffer) + 1) == -1) {
+	perror("add_possibility: write failed");
     }
 }
 
@@ -531,10 +558,10 @@ void readline_curses::rem_possibility(int context, string type, string value)
     snprintf(buffer, sizeof(buffer),
 	     "rp:%d:%s:%s",
 	     context, type.c_str(), value.c_str());
-    if (write(this->rc_command_pipe[RCF_MASTER],
-	      buffer,
-	      strlen(buffer) + 1) == -1) {
-	perror("write failed");
+    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
+		      buffer,
+		      strlen(buffer) + 1) == -1) {
+	perror("rem_possiblity: write failed");
     }
 }
 

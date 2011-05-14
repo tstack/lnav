@@ -21,6 +21,7 @@ void view_curses::mvwattrline(WINDOW *window,
     string_attrs_t &sa = al.get_attrs();
     string &line = al.get_string();
     string_attrs_t::iterator iter;
+    std::vector<size_t> tab_list;
     char *buffer;
 
     line_width = lr.length();
@@ -30,6 +31,7 @@ void view_curses::mvwattrline(WINDOW *window,
 	size_t tab;
 	
 	while ((tab = line.find('\t')) != string::npos) {
+	    tab_list.push_back(tab);
 	    line = line.replace(tab, 1, 8, ' ');
 	}
 	while ((tab = line.find('\r')) != string::npos) {
@@ -50,10 +52,23 @@ void view_curses::mvwattrline(WINDOW *window,
 
     for (iter = sa.begin(); iter != sa.end(); iter++) {
 	struct line_range attr_range = iter->first;
-
+	std::vector<size_t>::iterator tab_iter;
+	
 	assert(attr_range.lr_start >= 0);
 	assert(attr_range.lr_end >= -1);
 
+	tab_iter = lower_bound(tab_list.begin(),
+			       tab_list.end(),
+			       attr_range.lr_start);
+	attr_range.lr_start += (8 * (tab_iter - tab_list.begin()));
+
+	if (attr_range.lr_end != -1) {
+	    tab_iter = lower_bound(tab_list.begin(),
+				   tab_list.end(),
+				   attr_range.lr_end);
+	    attr_range.lr_end += (8 * (tab_iter - tab_list.begin()));
+	}
+	
 	attr_range.lr_start = max(0, attr_range.lr_start - lr.lr_start);
 	if (attr_range.lr_end == -1) {
 	    attr_range.lr_end = line_width;
