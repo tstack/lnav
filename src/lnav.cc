@@ -396,7 +396,7 @@ static void rebuild_indexes(bool force)
 	text_view.get_dimensions(height, width);
 	old_bottom = text_view.get_top() + height;
 	scroll_down = (size_t)old_bottom > tss->text_line_count();
-
+	
 	for (iter = tss->tss_files.begin();
 	     iter != tss->tss_files.end();) {
 	    (*iter)->rebuild_index(&obs);
@@ -415,8 +415,8 @@ static void rebuild_indexes(bool force)
 	text_view.reload_data();
 
 	new_count = tss->text_line_count();
-	if (scroll_down && new_count >= (size_t)height) {
-	  text_view.set_top(vis_line_t(new_count - height + 1));
+	if (scroll_down && new_count >= old_bottom) {
+	    text_view.set_top(vis_line_t(new_count - height + 1));
 	}
     }
 
@@ -437,7 +437,7 @@ static void rebuild_indexes(bool force)
 
 	log_view.reload_data();
 	
-	if (scroll_down && new_count >= (size_t)height) {
+	if (scroll_down && new_count >= old_bottom) {
 	    log_view.set_top(vis_line_t(new_count - height + 1));
 	}
 	else if (!scroll_down && force) {
@@ -2202,6 +2202,7 @@ static void looper(void)
 		    lnav_data.ld_log_source.text_line_count() == 0 &&
 		    lnav_data.ld_text_source.text_line_count() > 0) {
 		    toggle_view(&lnav_data.ld_views[LNV_TEXT]);
+		    lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
 		}
 		initial_build = true;
 	    }
@@ -2286,7 +2287,7 @@ public:
 	  alt_regex("([\\w\\.-]+) [\\w\\.-]+ ([\\w\\.-]+) "
 		    "\\[[^\\]]+\\] \"(\\w+) ([^ \\?]+)(\\?[^ ]+)? "
 		    "([\\w/\\.]+)\" (\\d+) "
-		    "(\\d+|-) \"([^\"]+)\" \"([^\"]+)\".*") {
+		    "(\\d+|-)(?: \"([^\"]+)\" \"([^\"]+)\")?.*") {
     };
     
     void get_columns(vector<vtab_column> &cols) {

@@ -19,6 +19,7 @@ using namespace std;
 static const size_t DEFAULT_LINE_BUFFER_SIZE = 256 * 1024;
 static const size_t MAX_LINE_BUFFER_SIZE     = 2 * DEFAULT_LINE_BUFFER_SIZE;
 static const size_t DEFAULT_INCREMENT        = 1024;
+static const size_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
 
 /*
  * XXX REMOVE ME
@@ -74,6 +75,7 @@ private:
 
 line_buffer::line_buffer()
     : lb_gz_file(NULL),
+      lb_bz_file(false),
       lb_file_size((size_t) - 1),
       lb_file_offset(0),
       lb_buffer_size(0),
@@ -104,6 +106,10 @@ throw (error)
 	this->lb_gz_file = NULL;
     }
 
+    if (this->lb_bz_file) {
+	this->lb_bz_file = false;
+    }
+
     if (fd != -1) {
 	/* Sync the fd's offset with the object. */
 	newoff = lseek(fd, 0, SEEK_CUR);
@@ -130,6 +136,15 @@ throw (error)
 		    }
 		    this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
 		}
+		else if (gz_id[0] == 'B' && gz_id[1] == 'Z') {
+		    lseek(fd, 0, SEEK_SET);
+		    this->lb_bz_file = true;
+		    /*
+		     * Loading data from a bzip2 file is pretty slow, so we try
+		     * to keep as much in memory as possible.
+		     */
+		    this->resize_buffer(MAX_COMPRESSED_BUFFER_SIZE);
+		}
 	    }
 	    this->lb_seekable = true;
 	}
@@ -139,6 +154,25 @@ throw (error)
     this->lb_fd          = fd;
 
     assert(this->invariant());
+}
+
+void line_buffer::resize_buffer(size_t new_max)
+    throw (error)
+{
+    char *tmp, *old;
+    
+    /* Still need more space, try a realloc. */
+    old = this->lb_buffer.release();
+    tmp = (char *)realloc(old, new_max);
+    if (tmp != NULL) {
+	this->lb_buffer     = tmp;
+	this->lb_buffer_max = new_max;
+    }
+    else {
+	this->lb_buffer = old;
+	
+	throw error(ENOMEM);
+    }
 }
 
 void line_buffer::ensure_available(off_t start, size_t max_length)
@@ -152,13 +186,24 @@ throw (error)
     }
 
     if (start < this->lb_file_offset ||
-	start >= (off_t)(this->lb_file_offset + this->lb_buffer_size)) {
+	start > (off_t)(this->lb_file_offset + this->lb_buffer_size)) {
 	/*
 	 * The request is outside the cached range, need to reload the
 	 * whole thing.
 	 */
 	prefill = 0;
-	this->lb_file_offset = start;
+	if ((this->lb_file_size != (size_t)-1) &&
+	    (start + this->lb_buffer_max > this->lb_file_size)) {
+	    /*
+	     * If the start is near the end of the file, move the offset back a
+	     * bit so we can get more of the file in the cache.
+	     */
+	    this->lb_file_offset = this->lb_file_size -
+		std::min(this->lb_file_size, this->lb_buffer_max);
+	}
+	else {
+	    this->lb_file_offset = start;
+	}
 	this->lb_buffer_size = 0;
     }
     else {
@@ -184,22 +229,7 @@ throw (error)
 
 	available = this->lb_buffer_max - this->lb_buffer_size;
 	if (max_length > available) {
-	    char *tmp, *old;
-
-	    /* Still need more space, try a realloc. */
-	    old = this->lb_buffer.release();
-	    tmp = (char *)realloc(old,
-				  this->lb_buffer_max +
-				  DEFAULT_LINE_BUFFER_SIZE);
-	    if (tmp != NULL) {
-		this->lb_buffer      = tmp;
-		this->lb_buffer_max += DEFAULT_LINE_BUFFER_SIZE;
-	    }
-	    else {
-		this->lb_buffer = old;
-
-		throw error(ENOMEM);
-	    }
+	    this->resize_buffer(this->lb_buffer_max + DEFAULT_LINE_BUFFER_SIZE);
 	}
     }
 }
@@ -221,16 +251,64 @@ throw (error)
 
 	/* ... read in the new data. */
 	if (this->lb_gz_file) {
-	    lock_hack::guard guard;
-	    
-	    lseek(this->lb_fd, this->lb_gz_offset, SEEK_SET);
-	    gzseek(this->lb_gz_file,
-		   this->lb_file_offset + this->lb_buffer_size,
-		   SEEK_SET);
-	    rc = gzread(this->lb_gz_file,
-			&this->lb_buffer[this->lb_buffer_size],
-			this->lb_buffer_max - this->lb_buffer_size);
-	    this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
+	    if (this->lb_file_size != (size_t)-1 &&
+		this->in_range(start) &&
+		this->in_range(this->lb_file_size - 1)) {
+		rc = 0;
+	    }
+	    else {
+		lock_hack::guard guard;
+		
+		lseek(this->lb_fd, this->lb_gz_offset, SEEK_SET);
+		gzseek(this->lb_gz_file,
+		       this->lb_file_offset + this->lb_buffer_size,
+		       SEEK_SET);
+		rc = gzread(this->lb_gz_file,
+			    &this->lb_buffer[this->lb_buffer_size],
+			    this->lb_buffer_max - this->lb_buffer_size);
+		this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
+	    }
+	}
+	else if (this->lb_bz_file) {
+	    if (this->lb_file_size != (size_t)-1 &&
+		((start >= this->lb_file_size) ||
+		 (this->in_range(start) &&
+		  this->in_range(this->lb_file_size - 1)))) {
+		rc = 0;
+	    }
+	    else {
+		lock_hack::guard guard;
+		char scratch[32 * 1024];
+		BZFILE *bz_file;
+		off_t seek_to;
+
+		/*
+		 * Unfortunately, there is no bzseek, so we need to reopen the
+		 * file every time we want to do a read.
+		 */
+		lseek(this->lb_fd, 0, SEEK_SET);
+		if ((bz_file = BZ2_bzdopen(dup(this->lb_fd), "r")) == NULL) {
+		    if (errno == 0)
+			throw bad_alloc();
+		    else
+			throw error(errno);
+		}
+		
+		seek_to = this->lb_file_offset + this->lb_buffer_size;
+		while (seek_to > 0) {
+		    int count;
+		    
+		    count = BZ2_bzread(bz_file,
+				       scratch,
+				       std::min((unsigned long)seek_to,
+						sizeof(scratch)));
+		    seek_to -= count;
+		}
+		rc = BZ2_bzread(bz_file,
+				&this->lb_buffer[this->lb_buffer_size],
+				this->lb_buffer_max - this->lb_buffer_size);
+		BZ2_bzclose(bz_file);
+	    }
 	}
 	else if (this->lb_seekable) {
 	    rc = pread(this->lb_fd,
@@ -248,6 +326,16 @@ throw (error)
 	    this->lb_file_size = this->lb_file_offset + this->lb_buffer_size;
 	    if (start < (off_t) this->lb_file_size) {
 		retval = true;
+	    }
+
+	    if (this->lb_gz_file || this->lb_bz_file) {
+		/*
+		 * For compressed files, increase the buffer size so we don't
+		 * have to spend as much time uncompressing the data.
+		 */
+		this->resize_buffer(std::min(this->lb_file_size +
+					     DEFAULT_INCREMENT,
+					     MAX_COMPRESSED_BUFFER_SIZE));
 	    }
 	    break;
 
@@ -290,8 +378,8 @@ throw (error)
 	line_start = this->get_range(offset, len_out);
 	/* ... look for the end-of-line or end-of-file. */
 	if (((lf = (char *)memchr(line_start, delim, len_out)) != NULL) ||
-	    ((request_size >= (MAX_LINE_BUFFER_SIZE - DEFAULT_INCREMENT)) &&
-	     (offset + len_out) == this->lb_file_size)) {
+	    (request_size >= (MAX_LINE_BUFFER_SIZE - DEFAULT_INCREMENT)) ||
+	    (((offset + len_out) == this->lb_file_size) && len_out > 0)) {
 	    if (lf != NULL) {
 		len_out = lf - line_start;
 		offset += 1; /* Skip the delimiter. */

@@ -22,6 +22,7 @@ public:
 	TSF_TIME,
 	TSF_WARNINGS,
 	TSF_ERRORS,
+	TSF_FORMAT,
 	TSF_FILENAME,
 
 	TSF__MAX
@@ -34,6 +35,8 @@ public:
 	this->tss_fields[TSF_WARNINGS].set_width(10);
 	this->tss_fields[TSF_ERRORS].set_width(10);
 	this->tss_fields[TSF_ERRORS].set_role(view_colors::VCR_ALERT_STATUS);
+	this->tss_fields[TSF_FORMAT].set_width(15);
+	this->tss_fields[TSF_FORMAT].right_justify(true);
 	this->tss_fields[TSF_FILENAME].set_width(35); // XXX
 	this->tss_fields[TSF_FILENAME].right_justify(true);
     };
@@ -92,7 +95,8 @@ public:
 
     void update_filename(listview_curses *lc) {
 	if (lc->get_inner_height() > 0) {
-	    status_field &sf = this->tss_fields[TSF_FILENAME];
+	    status_field &sf_format = this->tss_fields[TSF_FORMAT];
+	    status_field &sf_filename = this->tss_fields[TSF_FILENAME];
 	    struct line_range lr = { 0, -1 };
 	    attrs_map_t::iterator iter;
 	    string_attrs_t sa;
@@ -104,11 +108,17 @@ public:
 	    iter = sa[lr].find("file");
 	    if (iter != sa[lr].end()) {
 		logfile *lf = (logfile *)iter->second.sa_ptr;
-		
-		sf.set_value(lf->get_filename());
+
+		if (lf->get_format())
+		   sf_format.set_value("(%s)",
+				       lf->get_format()->get_name().c_str());
+		else
+		   sf_format.set_value("(unknown)");
+		sf_filename.set_value(lf->get_filename());
 	    }
 	    else {
-		sf.clear();
+		sf_format.set_value("(unknown)");
+		sf_filename.clear();
 	    }
 	}
     };

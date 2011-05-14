@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <zlib.h>
+#include <bzlib.h>
 
 #include <exception>
 
@@ -120,6 +121,8 @@ private:
 	       off < (int)(this->lb_file_offset + this->lb_buffer_size);
     };
 
+    void resize_buffer(size_t new_max) throw (error);
+
     /**
      * Ensure there is enough room in the buffer to cache a range of data from
      * the file.  First, this method will check to see if there is enough room
@@ -169,6 +172,7 @@ private:
 
     auto_fd lb_fd;              /*< The file to read data from. */
     gzFile lb_gz_file;
+    bool lb_bz_file;
     off_t lb_gz_offset;
     
     auto_mem<char> lb_buffer;   /*< The internal buffer where data is cached */
