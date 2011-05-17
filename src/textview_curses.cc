@@ -189,7 +189,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 					     vis_line_t row,
 					     attr_line_t &value_out)
 {
-    bookmark_vector &bv = this->tc_bookmarks[&BM_USER];
+    bookmark_vector &user_marks = this->tc_bookmarks[&BM_USER];
     string_attrs_t &sa = value_out.get_attrs();
     string &str = value_out.get_string();
     highlight_map_t::iterator iter;
@@ -229,14 +229,14 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 		}
 
 		if (lr.lr_end > lr.lr_start) {
-		  sa[lr].insert(make_string_attr("style", iter->second.
-						 get_attrs(hcount)));
-		  hcount++;
-
-		  off = matches[1];
+		    sa[lr].insert(make_string_attr("style", iter->second.
+						   get_attrs(hcount)));
+		    hcount++;
+		    
+		    off = matches[1];
 		}
 		else {
-		  off += 1;
+		    off += 1;
 		}
 	    }
 	    else {
@@ -245,9 +245,9 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 	}
     }
 
-    if (binary_search(bv.begin(), bv.end(), row)) {
+    if (binary_search(user_marks.begin(), user_marks.end(), row)) {
+	struct line_range lr = { 0, -1 };
 	string_attrs_t::iterator iter;
-	bool added = false;
 
 	for (iter = sa.begin(); iter != sa.end(); iter++) {
 	    attrs_map_t &am = iter->second;
@@ -256,15 +256,10 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 	    for (am_iter = am.begin(); am_iter != am.end(); am_iter++) {
 		if (am_iter->first == "style") {
 		    am_iter->second.sa_int ^= A_REVERSE;
-		    added = true;
-		    break;
 		}
 	    }
 	}
-	if (!added) {
-	    struct line_range lr = { 0, -1 };
-	    
-	    sa[lr].insert(make_string_attr("style", A_REVERSE));
-	}
+	
+	sa[lr].insert(make_string_attr("style", A_REVERSE));
     }
 }

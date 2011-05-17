@@ -1,3 +1,7 @@
+/**
+ * @file textview_curses.hh
+ */
+
 #ifndef __textview_curses_hh
 #define __textview_curses_hh
 
@@ -32,6 +36,10 @@ public:
     virtual void text_user_mark(int line, bool added) { };
 };
 
+/**
+ * The textview_curses class adds user bookmarks and searching to the standard
+ * list view interface.
+ */
 class textview_curses
     : public listview_curses,
       public list_data_source,

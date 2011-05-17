@@ -31,7 +31,14 @@ AC_ARG_ENABLE([static],
               AS_HELP_STRING([--disable-static],
                              [Disable static linking]))
 if test x"${enable_static}" != x"no"; then
+    case "$host_os" in
+    darwin*)
+	AC_WARN("static linking is not supported on $host_os")
+	;;
+    *)
    	STATIC_LDFLAGS="$STATIC_LDFLAGS -static"
+	;;
+    esac
 fi
 AC_SUBST(STATIC_LDFLAGS)
 

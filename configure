@@ -3628,7 +3628,15 @@ if test "${enable_static+set}" = set; then :
 fi
 
 if test x"${enable_static}" != x"no"; then
+    case "$host_os" in
+    darwin*)
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"static linking is not supported on $host_os\"" >&5
+$as_echo "$as_me: WARNING: \"static linking is not supported on $host_os\"" >&2;}
+	;;
+    *)
    	STATIC_LDFLAGS="$STATIC_LDFLAGS -static"
+	;;
+    esac
 fi
 
 
