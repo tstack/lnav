@@ -239,7 +239,6 @@ protected:
 
     pcrepp gp_pcre;
     pcre *gp_code;                       /*< The compiled pattern. */
-    auto_mem<pcre_extra> gp_code_extra;  /*< Results of a pcre_study. */
     grep_proc_source & gp_source;        /*< The data source delegate. */
 
     auto_fd     gp_err_pipe;             /*< Standard error from the child. */

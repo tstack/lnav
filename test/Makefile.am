@@ -13,6 +13,7 @@ check_PROGRAMS = \
 	drive_grep_proc \
 	drive_listview \
 	drive_logfile \
+	drive_sequencer \
 	drive_vt52_curses \
 	drive_readline_curses \
 	slicer \
@@ -83,6 +84,13 @@ drive_logfile_SOURCES = \
 	../src/log_format.cc \
 	../src/line_buffer.cc \
 	drive_logfile.cc
+
+drive_sequencer_SOURCES = \
+	../src/grep_proc.cc \
+	../src/logfile.cc \
+	../src/log_format.cc \
+	../src/line_buffer.cc \
+	drive_sequencer.cc
 
 drive_vt52_curses_SOURCES = \
 	../src/vt52_curses.cc \

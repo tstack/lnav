@@ -25,7 +25,6 @@ grep_proc::grep_proc(pcre *code,
 		     int &maxfd,
 		     fd_set &readfds)
     : gp_pcre(code),
-      gp_code(code),
       gp_source(gps),
       gp_pipe_offset(0),
       gp_child(-1),
@@ -36,10 +35,6 @@ grep_proc::grep_proc(pcre *code,
       gp_sink(NULL),
       gp_control(NULL)
 {
-    const char *errptr;
-
-    this->gp_code_extra = pcre_study(code, 0, &errptr);
-
     assert(this->invariant());
 }
 
