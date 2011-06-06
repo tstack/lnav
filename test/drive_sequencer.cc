@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -18,123 +19,118 @@
 
 #include "pcrepp.hh"
 #include "logfile.hh"
+#include "sequence_sink.hh"
+#include "sequence_matcher.hh"
 
 using namespace std;
 
-string in[] = {
-    "eth0 up",
-    "eth0 down",
-    ""
-};
-
-class sequence_source {
-public:
-    virtual ~sequence_source() { };
-
-    virtual bool sequence_value_for_field(int line,
-					  int col,
-					  std::string &value_out) = 0;
-};
-
-template<size_t BYTE_COUNT>
-class byte_array {
-public:
-
-    bool operator<(const byte_array &other) const {
-	return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) < 0;
-    };
+class my_source : public grep_proc_source {
     
-    unsigned char ba_data[BYTE_COUNT];
-};
-
-class sequence_matcher {
 public:
-    typedef std::vector<string> field_row_t;
-    typedef std::list<field_row_t> field_col_t;
-    
-    enum field_type_t {
-	FT_VARIABLE,
-	FT_CONSTANT,
+    my_source(auto_fd &fd) : ms_offset(0) {
+	this->ms_buffer.set_fd(fd);
     };
 
-    class state<T> {
-    public:
-	std::vector<T> sms_line;
+    bool grep_value_for_line(int line_number, string &value_out) {
+	bool retval = false;
 
-	byte_array<20> sms_id;
-    };
-
-    class field {
-	
-    public:
-	field() : sf_type(FT_VARIABLE) { };
-
-	field_type_t sf_type;
-	field_col_t sf_value;
-    };
-
-    sequence_matcher(field_col_t example) {
-	for (field_col_t::iterator col_iter = example.begin();
-	     col_iter != example.end();
-	     ++col_iter) {
-	    std::string first_value;
+	try {
+	    size_t len;
+	    char *line;
 	    
-	    for (field_row_t::iterator row_iter = (*col_iter).begin();
-		 row_iter != (*col_iter).end();
-		 ++row_iter) {
-		if (row_iter == (*col_iter).begin()) {
-		    first_value = *row_iter;
-		}
-		else if (first_value != *row_iter) {
-		    
-		}
+	    if ((line = this->ms_buffer.read_line(this->ms_offset,
+						  len)) != NULL) {
+		value_out = string(line, len);
+		retval = true;
 	    }
 	}
+	catch (line_buffer::error &e) {
+	    fprintf(stderr,
+		    "error: source buffer error %d %s\n",
+		    this->ms_buffer.get_fd(),
+		    strerror(e.e_err));
+	}
+	
+	return retval;
     };
-
+    
+private:
+    line_buffer ms_buffer;
+    off_t ms_offset;
     
 };
+
 
 int main(int argc, char *argv[])
 {
-  int c, retval = EXIT_SUCCESS;
+    int c, retval = EXIT_SUCCESS;
+    const char *errptr;
+    auto_fd fd;
+    pcre *code;
+    int eoff;
+    
+    if (argc < 3) {
+	fprintf(stderr, "error: expecting pattern and file arguments\n");
+	retval = EXIT_FAILURE;
+    }
+    else if ((fd = open(argv[2], O_RDONLY)) == -1) {
+	perror("open");
+	retval = EXIT_FAILURE;
+    }
+    else if ((code = pcre_compile(argv[1],
+				  PCRE_CASELESS,
+				  &errptr,
+				  &eoff,
+				  NULL)) == NULL) {
+      fprintf(stderr, "error: invalid pattern -- %s\n", errptr);
+    }
+    else {
+	my_source ms(fd);
+	fd_set read_fds;
+	int maxfd;
 
-  pcre_context_static<20> *captures = new pcre_context_static<20>[2];
-  long cols = 0;
+	sequence_matcher::field_col_t fc;
+	
+	fc.resize(2);
+	
+	sequence_matcher::field_row_t &frf = fc.front();
+	frf.resize(2);
+	frf[0] = "eth0";
+	frf[1] = "eth0";
+	
+	sequence_matcher::field_row_t &frb = fc.back();
+	frb.resize(2);
+	frb[0] = "up";
+	frb[1] = "down";
 
-  sequence::field *fields = new sequence::field[2];
-  
-  pcrepp re("(\\w+) (up|down)");
+	static bookmark_type_t SEQUENCE;
+	
+	sequence_matcher sm(fc);
+	bookmarks bm;
+	sequence_sink ss(sm, bm[&SEQUENCE]);
+	
+	FD_ZERO(&read_fds);
+	
+	grep_proc gp(code, ms, maxfd, read_fds);
+	
+	gp.queue_request();
+	gp.start();
+	gp.set_sink(&ss);
 
-  for (int lpc = 0; in[lpc] != ""; lpc++) {
-      pcre_input pi(in[lpc]);
-      bool rc;
-      
-      rc = re.match(captures[lpc], pi);
-      cols = max(cols, captures[lpc].end() - captures[lpc].begin());
+	while (bm[&SEQUENCE].size() == 0) {
+	    fd_set rfds = read_fds;
+	    
+	    select(maxfd + 1, &rfds, NULL, NULL, NULL);
 
-      assert(rc);
-  }
+	    gp.check_fd_set(rfds);
+	}
 
-  for (int curr_col = 0; curr_col < cols; curr_col++) {
-      string first_row;
-      
-      for (int curr_row = 0; curr_row < 2; curr_row++) {
-	  pcre_input pi(in[curr_row]);
-	  string curr = pi.get_substr(captures[curr_col].begin() + curr_col);
-	  
-	  if (curr_row == 0) {
-	      first_row = curr;
-	  }
-	  else if (first_row != curr) {
-	      fields[curr_col].sf_type = sequence::FT_CONSTANT;
-	  }
-      }
-  }
-
-  for (int lpc = 0; lpc < cols; lpc++) {
-      printf("field[%d] = %d\n", lpc, fields[lpc].sf_type);
-  }
-  
-  return retval;
+	for (bookmark_vector::iterator iter = bm[&SEQUENCE].begin();
+	     iter != bm[&SEQUENCE].end();
+	     ++iter) {
+	    printf("%d\n", (const int)*iter);
+	}
+    }
+    
+    return retval;
 }

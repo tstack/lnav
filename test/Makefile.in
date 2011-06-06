@@ -83,9 +83,8 @@ drive_readline_curses_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_drive_sequencer_OBJECTS = grep_proc.$(OBJEXT) logfile.$(OBJEXT) \
 	log_format.$(OBJEXT) line_buffer.$(OBJEXT) \
-	drive_sequencer.$(OBJEXT)
+	sequence_matcher.$(OBJEXT) drive_sequencer.$(OBJEXT)
 drive_sequencer_OBJECTS = $(am_drive_sequencer_OBJECTS)
-drive_sequencer_LDADD = $(LDADD)
 drive_sequencer_DEPENDENCIES =
 am_drive_vt52_curses_OBJECTS = vt52_curses.$(OBJEXT) \
 	drive_vt52_curses.$(OBJEXT)
@@ -338,8 +337,10 @@ drive_sequencer_SOURCES = \
 	../src/logfile.cc \
 	../src/log_format.cc \
 	../src/line_buffer.cc \
+	../src/sequence_matcher.cc \
 	drive_sequencer.cc
 
+drive_sequencer_LDADD = -lcrypto
 drive_vt52_curses_SOURCES = \
 	../src/vt52_curses.cc \
 	drive_vt52_curses.cc
@@ -495,6 +496,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile_sub_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scripty.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slicer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_auto_fd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_auto_mem.Po@am__quote@
@@ -632,6 +634,20 @@ readline_curses.obj: ../src/readline_curses.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../src/readline_curses.cc' object='readline_curses.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o readline_curses.obj `if test -f '../src/readline_curses.cc'; then $(CYGPATH_W) '../src/readline_curses.cc'; else $(CYGPATH_W) '$(srcdir)/../src/readline_curses.cc'; fi`
+
+sequence_matcher.o: ../src/sequence_matcher.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sequence_matcher.o -MD -MP -MF $(DEPDIR)/sequence_matcher.Tpo -c -o sequence_matcher.o `test -f '../src/sequence_matcher.cc' || echo '$(srcdir)/'`../src/sequence_matcher.cc
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/sequence_matcher.Tpo $(DEPDIR)/sequence_matcher.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../src/sequence_matcher.cc' object='sequence_matcher.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sequence_matcher.o `test -f '../src/sequence_matcher.cc' || echo '$(srcdir)/'`../src/sequence_matcher.cc
+
+sequence_matcher.obj: ../src/sequence_matcher.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sequence_matcher.obj -MD -MP -MF $(DEPDIR)/sequence_matcher.Tpo -c -o sequence_matcher.obj `if test -f '../src/sequence_matcher.cc'; then $(CYGPATH_W) '../src/sequence_matcher.cc'; else $(CYGPATH_W) '$(srcdir)/../src/sequence_matcher.cc'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/sequence_matcher.Tpo $(DEPDIR)/sequence_matcher.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='../src/sequence_matcher.cc' object='sequence_matcher.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sequence_matcher.obj `if test -f '../src/sequence_matcher.cc'; then $(CYGPATH_W) '../src/sequence_matcher.cc'; else $(CYGPATH_W) '$(srcdir)/../src/sequence_matcher.cc'; fi`
 
 bookmarks.o: ../src/bookmarks.cc
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT bookmarks.o -MD -MP -MF $(DEPDIR)/bookmarks.Tpo -c -o bookmarks.o `test -f '../src/bookmarks.cc' || echo '$(srcdir)/'`../src/bookmarks.cc

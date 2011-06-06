@@ -90,7 +90,9 @@ drive_sequencer_SOURCES = \
 	../src/logfile.cc \
 	../src/log_format.cc \
 	../src/line_buffer.cc \
+	../src/sequence_matcher.cc \
 	drive_sequencer.cc
+drive_sequencer_LDADD = -lcrypto
 
 drive_vt52_curses_SOURCES = \
 	../src/vt52_curses.cc \

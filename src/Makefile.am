@@ -47,6 +47,7 @@ noinst_HEADERS = \
 	auto_temp_file.hh \
 	bookmarks.hh \
 	bottom_status_source.hh \
+	byte_array.hh \
 	db_sub_source.hh \
 	grep_proc.hh \
 	help.hh \
@@ -61,6 +62,8 @@ noinst_HEADERS = \
 	pcrepp.hh \
 	piper_proc.hh \
 	readline_curses.hh \
+	sequence_matcher.hh \
+	sequence_sink.hh \
 	statusview_curses.hh \
 	strong_int.hh \
 	termios_guard.hh \
@@ -83,6 +86,7 @@ libdiag_a_SOURCES = \
 	logfile.cc \
 	logfile_sub_source.cc \
 	readline_curses.cc \
+	sequence_matcher.cc \
 	statusview_curses.cc \
 	piper_proc.cc \
 	textview_curses.cc \

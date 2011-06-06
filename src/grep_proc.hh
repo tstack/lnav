@@ -102,6 +102,8 @@ public:
 			      int start,
 			      int end,
 			      char *capture) { };
+
+    virtual void grep_match_end(grep_proc &gp, grep_line_t line) { };
 };
 
 /**
@@ -126,10 +128,8 @@ public:
     };
 
     /**
-     * Construct a grep_proc object.  This involves compiling the regular
-     * expression and then forking off the child process.  Note that both the
-     * parent and child return from this call and you must call the start()
-     * method immediately afterward to get things going.
+     * Construct a grep_proc object.  You must call the start() method
+     * to fork off the child process and begin processing.
      *
      * @param code The pcre code to run over the lines of input.
      * @param gps The source of the data to match.

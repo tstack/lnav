@@ -195,7 +195,8 @@ public:
 		    this->gr_highlighter->get_role(this->gr_next_field);
 	    }
 	}
-	sscanf(capture, "%f", &amount);
+	if (capture != 0)
+	    sscanf(capture, "%f", &amount);
 	this->add_value(this->gr_x, this->gr_next_field, amount);
 
 	++ this->gr_next_field;

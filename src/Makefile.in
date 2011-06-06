@@ -55,10 +55,10 @@ am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) grep_proc.$(OBJEXT) \
 	hist_source.$(OBJEXT) line_buffer.$(OBJEXT) \
 	listview_curses.$(OBJEXT) log_format.$(OBJEXT) \
 	logfile.$(OBJEXT) logfile_sub_source.$(OBJEXT) \
-	readline_curses.$(OBJEXT) statusview_curses.$(OBJEXT) \
-	piper_proc.$(OBJEXT) textview_curses.$(OBJEXT) \
-	view_curses.$(OBJEXT) vt52_curses.$(OBJEXT) \
-	log_vtab_impl.$(OBJEXT)
+	readline_curses.$(OBJEXT) sequence_matcher.$(OBJEXT) \
+	statusview_curses.$(OBJEXT) piper_proc.$(OBJEXT) \
+	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
+	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT)
 libdiag_a_OBJECTS = $(am_libdiag_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
@@ -229,6 +229,7 @@ noinst_HEADERS = \
 	auto_temp_file.hh \
 	bookmarks.hh \
 	bottom_status_source.hh \
+	byte_array.hh \
 	db_sub_source.hh \
 	grep_proc.hh \
 	help.hh \
@@ -243,6 +244,8 @@ noinst_HEADERS = \
 	pcrepp.hh \
 	piper_proc.hh \
 	readline_curses.hh \
+	sequence_matcher.hh \
+	sequence_sink.hh \
 	statusview_curses.hh \
 	strong_int.hh \
 	termios_guard.hh \
@@ -265,6 +268,7 @@ libdiag_a_SOURCES = \
 	logfile.cc \
 	logfile_sub_source.cc \
 	readline_curses.cc \
+	sequence_matcher.cc \
 	statusview_curses.cc \
 	piper_proc.cc \
 	textview_curses.cc \
@@ -380,6 +384,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile_sub_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/piper_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statusview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view_curses.Po@am__quote@
