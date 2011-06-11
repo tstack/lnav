@@ -422,10 +422,12 @@ void logfile_sub_source::text_update_marks(bookmarks &bm)
 	content_line_t cl = this->lss_index[vl];
 	logfile        *lf;
 
-	if (binary_search(this->lss_user_marks.begin(),
-			  this->lss_user_marks.end(),
-			  cl)) {
-	    bm[&textview_curses::BM_USER].insert_once(vl);
+	for (user_marks_t::iterator iter = this->lss_user_marks.begin();
+	     iter != this->lss_user_marks.end();
+	     ++iter) {
+	    if (binary_search(iter->second.begin(), iter->second.end(), cl)) {
+		bm[iter->first].insert_once(vl);
+	    }
 	}
 
 	lf = this->find(cl);
