@@ -98,21 +98,21 @@ public:
 			     int row,
 			     string_attrs_t &value_out);
 
-    void text_user_mark(int line, bool added)
+    void text_user_mark(bookmark_type_t *bm, int line, bool added)
     {
 	content_line_t cl = this->lss_index[line];
 	std::vector<content_line_t>::iterator lb;
 
-	lb = std::lower_bound(this->lss_user_marks.begin(),
-			      this->lss_user_marks.end(),
+	lb = std::lower_bound(this->lss_user_marks[bm].begin(),
+			      this->lss_user_marks[bm].end(),
 			      cl);
 	if (added) {
-	    this->lss_user_marks.insert(lb, cl);
+	    this->lss_user_marks[bm].insert(lb, cl);
 	}
 	else {
-	    assert(lb != this->lss_user_marks.end());
+	    assert(lb != this->lss_user_marks[bm].end());
 	    
-	    this->lss_user_marks.erase(lb);
+	    this->lss_user_marks[bm].erase(lb);
 	}
     };
 
@@ -212,7 +212,10 @@ private:
 
     std::vector<content_line_t> lss_index;
 
-    std::vector<content_line_t> lss_user_marks;
+    typedef std::map< bookmark_type_t *,
+		      std::vector<content_line_t> > user_marks_t;
+
+    user_marks_t lss_user_marks;
 
     logfile           *lss_token_file;
     std::string       lss_token_value;

@@ -21,8 +21,6 @@ public:
     };
 
     struct field {
-	
-    public:
 	field() : sf_type(FT_VARIABLE) { };
 
 	field_type_t sf_type;

@@ -1,3 +1,10 @@
+/**
+ * @file lnav.cc
+ *
+ * XXX This file has become a dumping ground for code and needs to be broken up
+ * a bit.
+ */
+
 #include "config.h"
 
 #include <stdio.h>
@@ -22,6 +29,7 @@
 #include <readline/readline.h>
 
 #include <map>
+#include <set>
 #include <stack>
 #include <vector>
 #include <memory>
@@ -55,6 +63,7 @@
 
 using namespace std;
 
+/** The command modes that are available while viewing a file. */
 typedef enum {
     LNM_PAGING,
     LNM_COMMAND,
@@ -71,6 +80,7 @@ enum {
     LNB_ROTATED
 };
 
+/** Flags set on the lnav command-line. */
 typedef enum {
     LNF_SYSLOG        = (1L << LNB_SYSLOG),
 
@@ -81,6 +91,7 @@ typedef enum {
 
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
+/** The different views available. */
 typedef enum {
     LNV_LOG,
     LNV_TEXT,
@@ -88,10 +99,12 @@ typedef enum {
     LNV_HISTOGRAM,
     LNV_GRAPH,
     LNV_DB,
+    LNV_EXAMPLE,
 
     LNV__MAX
 } lnav_view_t;
 
+/** The status bars. */
 typedef enum {
     LNS_TOP,
     LNS_BOTTOM,
@@ -120,6 +133,8 @@ static struct hist_level HIST_ZOOM_VALUES[] = {
 };
 
 static const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) / sizeof(struct hist_level);
+
+static bookmark_type_t BM_EXAMPLE;
 
 class grep_highlighter {
 public:
@@ -956,7 +971,8 @@ static void handle_paging_key(int ch)
 
     case 'm':
 	lnav_data.ld_last_user_mark[tc] = tc->get_top();
-	tc->toggle_user_mark(lnav_data.ld_last_user_mark[tc]);
+	tc->toggle_user_mark(&textview_curses::BM_USER,
+			     lnav_data.ld_last_user_mark[tc]);
 	tc->reload_data();
 	break;
     case 'J':
@@ -974,7 +990,8 @@ static void handle_paging_key(int ch)
 	else {
 	    lnav_data.ld_last_user_mark[tc] += 1;
 	}
-	tc->toggle_user_mark(lnav_data.ld_last_user_mark[tc]);
+	tc->toggle_user_mark(&textview_curses::BM_USER,
+			     lnav_data.ld_last_user_mark[tc]);
 	tc->reload_data();
 	break;
     case 'K':
@@ -983,7 +1000,8 @@ static void handle_paging_key(int ch)
 	    lnav_data.ld_last_user_mark[tc] = tc->get_top();
 	}
 
-	tc->toggle_user_mark(lnav_data.ld_last_user_mark[tc]);
+	tc->toggle_user_mark(&textview_curses::BM_USER,
+			     lnav_data.ld_last_user_mark[tc]);
 	if (lnav_data.ld_last_user_mark[tc] - 1 < 0) {
 	    flash();
 	}
@@ -1000,7 +1018,8 @@ static void handle_paging_key(int ch)
 	    int start_line = min((int)tc->get_top(), lnav_data.ld_last_user_mark[tc] + 1);
 	    int end_line = max((int)tc->get_top(), lnav_data.ld_last_user_mark[tc] - 1);
 	    
-	    tc->toggle_user_mark(start_line, end_line);
+	    tc->toggle_user_mark(&textview_curses::BM_USER,
+				 start_line, end_line);
 	    tc->reload_data();
 	}
 	break;
@@ -1213,8 +1232,30 @@ static void handle_paging_key(int ch)
 	}
 	break;
 
+    case 'x':
+	tc->toggle_user_mark(&BM_EXAMPLE, tc->get_top());
+	break;
+
+    case '\\':
+	{
+	    bookmarks &bm = tc->get_bookmarks();
+	    string ex;
+
+	    for (bookmark_vector::iterator iter = bm[&BM_EXAMPLE].begin();
+		 iter != bm[&BM_EXAMPLE].end();
+		 ++iter) {
+		string line;
+
+		tc->get_sub_source()->text_value_for_line(*tc, *iter, line);
+		ex += line + "\n";
+	    }
+	    lnav_data.ld_views[LNV_EXAMPLE].set_sub_source(new plain_text_source(ex));
+	    ensure_view(&lnav_data.ld_views[LNV_EXAMPLE]);
+	}
+	break;
+
     default:
-	// fprintf(stderr, "unhandled %d\n", ch);
+	fprintf(stderr, "unhandled %d\n", ch);
 	flash();
 	break;
     }
