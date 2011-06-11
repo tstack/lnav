@@ -254,6 +254,11 @@ COMMANDS
 
   write-to <file>   Write any marked lines to the given file.
 
+  session <cmd>     Add the given command to the session file
+                    (~/.lnav/session).  Any commands listed in the session file
+                    are executed on startup.  Only the highlight and
+                    filter-related commands can be added to the session file.
+
 
 SQL QUERIES
 -----------

@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <pthread.h>
 
 #include <time.h>
 #include <glob.h>
@@ -25,7 +24,9 @@
 #include <stack>
 #include <vector>
 #include <memory>
+#include <fstream>
 #include <sstream>
+#include <iostream>
 #include <algorithm>
 #include <functional>
 
@@ -120,6 +121,22 @@ static struct hist_level HIST_ZOOM_VALUES[] = {
 };
 
 static const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) / sizeof(struct hist_level);
+
+string dotlnav_path(const char *sub)
+{
+    string retval;
+    char *home;
+    
+    home = getenv("HOME");
+    if (home) {
+	char hpath[2048];
+
+	snprintf(hpath, sizeof(hpath), "%s/.lnav/%s", home, sub);
+	retval = hpath;
+    }
+
+    return retval;
+}
 
 class grep_highlighter {
 public:
@@ -1625,7 +1642,128 @@ static string com_capture(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_session(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a command to save to the sesion file";
+    
+    if (args.size() == 0) {
+    }
+    else if (args.size() > 2) {
+	// XXX put these in a map
+	if (args[1] != "highlight" &&
+	    args[1] != "filter-in" &&
+	    args[1] != "filter-out" &&
+	    args[1] != "enable-filter" &&
+	    args[1] != "disable-filter") {
+	    retval = "error: only the highlight and filter commands are "
+		"supported";
+	}
+	else if (getenv("HOME") == NULL) {
+	    retval = "error: the HOME environment variable is not set";
+	}
+	else {
+	    string old_file_name, new_file_name;
+	    string::size_type space;
+	    string saved_cmd;
+
+	    space = cmdline.find(' ');
+	    while (isspace(cmdline[space]))
+		space += 1;
+	    saved_cmd = cmdline.substr(space);
+	    
+	    old_file_name = dotlnav_path("session");
+	    new_file_name = dotlnav_path("session.tmp");
+	    
+	    ifstream session_file(old_file_name.c_str());
+	    ofstream new_session_file(new_file_name.c_str());
+
+	    if (!new_session_file) {
+		retval = "error: cannot write to session file";
+	    }
+	    else {
+		bool added = false;
+		string line;
+		
+		if (session_file.is_open()) {
+		    while (getline(session_file, line)) {
+			if (line == saved_cmd) {
+			    added = true;
+			    break;
+			}
+			new_session_file << line << endl;
+		    }
+		}
+		if (!added) {
+		    new_session_file << saved_cmd << endl;
+		
+		    rename(new_file_name.c_str(), old_file_name.c_str());
+		}
+		else {
+		    remove(new_file_name.c_str());
+		}
+
+		retval = "info: session file saved";
+	    }
+	}
+    }
+
+    return retval;
+}
+
 static readline_context::command_map_t lnav_commands;
+
+static string execute_command(string cmdline)
+{
+    stringstream ss(cmdline);
+    
+    vector<string> args;
+    string buf, msg;
+    
+    while (ss >> buf) {
+	args.push_back(buf);
+    }
+    
+    if (args.size() > 0) {
+	readline_context::command_map_t::iterator iter;
+	
+	if ((iter = lnav_commands.find(args[0])) ==
+	    lnav_commands.end()) {
+	    msg = "error: unknown command - " + args[0];
+	}
+	else {
+	    msg = iter->second(cmdline, args);
+	}
+    }
+
+    return msg;
+}
+
+static void execute_file(string path)
+{
+    ifstream cmd_file(path.c_str());
+    
+    if (cmd_file.is_open()) {
+	int line_number = 0;
+	string line;
+
+	while (getline(cmd_file, line)) {
+	    line_number += 1;
+	    
+	    if (line.empty())
+		continue;
+	    if (line[0] == '#')
+		continue;
+	    
+	    string rc = execute_command(line);
+
+	    fprintf(stderr,
+		    "%s:%d:execute result -- %s\n",
+		    path.c_str(),
+		    line_number,
+		    rc.c_str());
+	}
+    }
+}
 
 static int sql_callback(void *arg,
 			int ncols,
@@ -1778,30 +1916,8 @@ static void rl_callback(void *dummy, readline_curses *rc)
 	break;
 	
     case LNM_COMMAND:
-	{
-	    stringstream ss(rc->get_value());
-
-	    vector<string> args;
-	    string buf, msg;
-
-	    lnav_data.ld_mode = LNM_PAGING;
-	    while (ss >> buf) {
-		args.push_back(buf);
-	    }
-
-	    if (args.size() > 0) {
-		readline_context::command_map_t::iterator iter;
-
-		if ((iter = lnav_commands.find(args[0])) ==
-		    lnav_commands.end()) {
-		    msg = "error: unknown command - " + args[0];
-		}
-		else {
-		    msg = iter->second(rc->get_value(), args);
-		}
-	    }
-	    rc->set_value(msg);
-	}
+	lnav_data.ld_mode = LNM_PAGING;
+	rc->set_value(execute_command(rc->get_value()));
 	break;
 
     case LNM_SEARCH:
@@ -2157,6 +2273,8 @@ static void looper(void)
 	FD_SET(STDIN_FILENO, &lnav_data.ld_read_fds);
 	lnav_data.ld_max_fd =
 	    max(STDIN_FILENO, rlc.update_fd_set(lnav_data.ld_read_fds));
+
+	execute_file(dotlnav_path("session"));
 
 	while (lnav_data.ld_looping) {
 	    fd_set         ready_rfds = lnav_data.ld_read_fds;
@@ -2524,15 +2642,10 @@ private:
 
 void ensure_dotlnav(void)
 {
-    char *home;
-    
-    home = getenv("HOME");
-    if (home) {
-	char hpath[2048];
+    string path = dotlnav_path("");
 
-	snprintf(hpath, sizeof(hpath), "%s/.lnav", home);
-	mkdir(hpath, 0755);
-    }
+    if (!path.empty())
+	mkdir(path.c_str(), 0755);
 }
 
 int main(int argc, char *argv[])
@@ -2571,6 +2684,7 @@ int main(int argc, char *argv[])
     lnav_commands["enable-filter"]  = com_enable_filter;
     lnav_commands["disable-filter"] = com_disable_filter;
     lnav_commands["capture-into"] = com_capture;
+    lnav_commands["session"] = com_session;
 
     lnav_data.ld_views[LNV_HELP].
     set_sub_source(new plain_text_source(help_text_start));
