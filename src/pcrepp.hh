@@ -116,6 +116,15 @@ public:
 			   iter->length());
     };
 
+    void ratchet() {
+	size_t offset = this->pi_next_offset - this->pi_offset;
+	
+	this->pi_string = &this->pi_string[offset];
+	this->pi_offset = 0;
+	this->pi_next_offset = 0;
+	this->pi_length -= offset;
+    };
+
     size_t pi_offset;
     size_t pi_next_offset;
     size_t pi_length;
@@ -157,6 +166,13 @@ public:
 	    throw error(errptr, eoff);
 	}
 	
+	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
+    };
+
+    pcrepp(const pcrepp &other) {
+	const char *errptr;
+	
+	this->p_code = other.p_code;
 	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
     };
 

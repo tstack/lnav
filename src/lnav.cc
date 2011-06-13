@@ -2855,7 +2855,7 @@ int main(int argc, char *argv[])
     else {
 	try {
 	    set< pair<string, int> >::iterator iter;
-
+	    
 	    for (iter = lnav_data.ld_file_names.begin();
 		 iter != lnav_data.ld_file_names.end();
 		 iter++) {

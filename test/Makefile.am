@@ -9,6 +9,7 @@ AM_CPPFLAGS = \
 # AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
 
 check_PROGRAMS = \
+	drive_data_scanner \
 	drive_line_buffer \
 	drive_grep_proc \
 	drive_listview \
@@ -93,6 +94,10 @@ drive_sequencer_SOURCES = \
 	../src/sequence_matcher.cc \
 	drive_sequencer.cc
 drive_sequencer_LDADD = -lcrypto
+
+drive_data_scanner_SOURCES = \
+	../src/data_scanner.cc \
+	drive_data_scanner.cc
 
 drive_vt52_curses_SOURCES = \
 	../src/vt52_curses.cc \

@@ -85,6 +85,7 @@ libdiag_a_SOURCES = \
 	log_format.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
+	data_scanner.cc \
 	readline_curses.cc \
 	sequence_matcher.cc \
 	statusview_curses.cc \
