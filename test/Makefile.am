@@ -96,6 +96,7 @@ drive_sequencer_SOURCES = \
 drive_sequencer_LDADD = -lcrypto
 
 drive_data_scanner_SOURCES = \
+	../src/data_parser.cc \
 	../src/data_scanner.cc \
 	drive_data_scanner.cc
 

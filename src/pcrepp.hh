@@ -29,6 +29,8 @@
 
 #include "auto_mem.hh"
 
+#include <stdio.h>
+
 /**
  * Context that tracks captures found during a match operation.  This class is a
  * base that defines iterator methods and fields, but does not allocate space
@@ -92,7 +94,10 @@ private:
 class pcre_input {
 public:
     pcre_input(const char *str, size_t off = 0, size_t len = -1)
-	: pi_offset(off), pi_next_offset(off), pi_length(len), pi_string(str) {
+	: pi_offset(off),
+	  pi_next_offset(off),
+	  pi_length(len),
+	  pi_string(str) {
 	if (this->pi_length == (size_t)-1)
 	    this->pi_length = strlen(str);
     };
@@ -114,15 +119,6 @@ public:
 	return std::string(this->pi_string,
 			   iter->c_begin,
 			   iter->length());
-    };
-
-    void ratchet() {
-	size_t offset = this->pi_next_offset - this->pi_offset;
-	
-	this->pi_string = &this->pi_string[offset];
-	this->pi_offset = 0;
-	this->pi_next_offset = 0;
-	this->pi_length -= offset;
     };
 
     size_t pi_offset;

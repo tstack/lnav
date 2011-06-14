@@ -7,7 +7,9 @@
 #include "pcrepp.hh"
 
 enum data_token_t {
-    DT_URL,
+    DT_INVALID = -1,
+    
+    DT_URL = 0,
     DT_SEPARATOR,
     DT_COMMA,
 
@@ -28,13 +30,25 @@ enum data_token_t {
     DT_GARBAGE,
 
     DT_TERMINAL_MAX = DT_GARBAGE + 1,
+
+    DNT_KEY = 50,
+    DNT_PAIR,
+    DNT_VALUE,
+    DNT_AGGREGATE,
+    DNT_ROW,
+    DNT_UNITS,
+    DNT_MEASUREMENT,
+    DNT_VARIABLE_KEY,
+    DNT_ROWRANGE,
+	
+    T_ANY = 100,
 };
 
 class data_scanner {
 public:
     data_scanner(const std::string &line) :
 	ds_line(line),
-	ds_pcre_input(line) {
+	ds_pcre_input(ds_line.c_str()) {
     };
 
     bool tokenize(pcre_context &pc, data_token_t &token_out);
