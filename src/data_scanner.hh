@@ -40,8 +40,8 @@ enum data_token_t {
     DNT_MEASUREMENT,
     DNT_VARIABLE_KEY,
     DNT_ROWRANGE,
-	
-    T_ANY = 100,
+    
+    DT_ANY = 100,
 };
 
 class data_scanner {
@@ -52,6 +52,8 @@ public:
     };
 
     bool tokenize(pcre_context &pc, data_token_t &token_out);
+
+    pcre_input &get_input() { return this->ds_pcre_input; };
 
 private:
     std::string ds_line;

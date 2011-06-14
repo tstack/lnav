@@ -38,7 +38,10 @@
  */
 class pcre_context {
 public:
-    typedef struct {
+    typedef struct capture {
+	capture() { };
+	capture(int begin, int end) : c_begin(begin), c_end(end) { };
+	
 	int c_begin;
 	int c_end;
 
