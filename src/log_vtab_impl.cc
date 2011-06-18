@@ -39,7 +39,7 @@ struct vtab {
 
 struct vtab_cursor {
     sqlite3_vtab_cursor base;
-    vis_line_t curr_line;
+    struct log_cursor log_cursor;
 };
 
 static int vt_destructor(sqlite3_vtab *p_svt);
@@ -116,7 +116,8 @@ static int vt_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
     *pp_cursor = (sqlite3_vtab_cursor*)p_cur;
 
     p_cur->base.pVtab = p_svt;
-    p_cur->curr_line = vis_line_t(-1);
+    p_cur->log_cursor.lc_curr_line = vis_line_t(-1);
+    p_cur->log_cursor.lc_sub_index = 0;
     vt_next((sqlite3_vtab_cursor *)p_cur);
     
     return (p_cur ? SQLITE_OK : SQLITE_NOMEM);
@@ -137,29 +138,17 @@ static int vt_eof(sqlite3_vtab_cursor *cur)
     vtab_cursor *vc = (vtab_cursor *)cur;
     vtab *vt = (vtab *)cur->pVtab;
 
-    return vc->curr_line == (int)vt->lss->text_line_count();
+    return vc->log_cursor.lc_curr_line == (int)vt->lss->text_line_count();
 }
 
 static int vt_next(sqlite3_vtab_cursor *cur)
 {
     vtab_cursor *vc = (vtab_cursor *)cur;
     vtab *vt = (vtab *)cur->pVtab;
-    const string &format_name = vt->vi->get_name();
     bool done = false;
 
     do {
-	vc->curr_line = vc->curr_line + vis_line_t(1);
-
-	if (vc->curr_line == (int)vt->lss->text_line_count())
-	    break;
-	
-	content_line_t cl(vt->lss->at(vc->curr_line));
-	logfile *lf = vt->lss->find(cl);
-
-	log_format *format = lf->get_format();
-	if (format != NULL && format->get_name() == format_name) {
-	    done = true;
-	}
+	done = vt->vi->next(vc->log_cursor, *vt->lss);
     }
     while (!done);
 
@@ -171,7 +160,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     vtab_cursor *vc = (vtab_cursor *)cur;
     vtab *vt = (vtab *)cur->pVtab;
 
-    content_line_t cl(vt->lss->at(vc->curr_line));
+    content_line_t cl(vt->lss->at(vc->log_cursor.lc_curr_line));
     logfile *lf = vt->lss->find(cl);
     logfile::iterator ll = lf->begin() + cl;
 
@@ -182,7 +171,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     {
     case VT_COL_LINE_NUMBER:
 	{
-	    sqlite3_result_int64( ctx, vc->curr_line );
+	    sqlite3_result_int64( ctx, vc->log_cursor.lc_curr_line );
 	}
 	break;
     case VT_COL_PATH:
@@ -208,11 +197,11 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 	}
 	break;
     case VT_COL_IDLE_MSECS:
-	if (vc->curr_line == 0) {
+	if (vc->log_cursor.lc_curr_line == 0) {
 	    sqlite3_result_int64( ctx, 0 );
 	}
 	else {
-	    content_line_t prev_cl(vt->lss->at(vis_line_t(vc->curr_line - 1)));
+	    content_line_t prev_cl(vt->lss->at(vis_line_t(vc->log_cursor.lc_curr_line - 1)));
 	    logfile *prev_lf = vt->lss->find(prev_cl);
 	    logfile::iterator prev_ll = prev_lf->begin() + prev_cl;
 	    uint64_t prev_time, curr_line_time;
@@ -265,7 +254,8 @@ static int vt_rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *p_rowid)
 {
     vtab_cursor *p_cur = (vtab_cursor*)cur;
 
-    *p_rowid = p_cur->curr_line;
+    *p_rowid = (((uint64_t)p_cur->log_cursor.lc_curr_line) << 8) |
+	(p_cur->log_cursor.lc_sub_index & 0xff);
 
     return SQLITE_OK;
 }

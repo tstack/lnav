@@ -44,7 +44,7 @@ public:
 	if (commands != NULL) {
 	    command_map_t::iterator iter;
 
-	    for (iter = commands->begin(); iter != commands->end(); iter++) {
+	    for (iter = commands->begin(); iter != commands->end(); ++iter) {
 		std::string cmd = iter->first;
 
 		this->rc_possibilities["__command"].insert(cmd);

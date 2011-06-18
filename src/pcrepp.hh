@@ -40,14 +40,17 @@ class pcre_context {
 public:
     typedef struct capture {
 	capture() { };
-	capture(int begin, int end) : c_begin(begin), c_end(end) { };
+	capture(int begin, int end) : c_begin(begin), c_end(end) {
+	    assert(begin <= end);
+	};
 	
 	int c_begin;
 	int c_end;
 
-	int length() { return this->c_end - this->c_begin; };
+	int length() const { return this->c_end - this->c_begin; };
     } capture_t;
     typedef capture_t *iterator;
+    typedef const capture_t *const_iterator;
 
     /** @return The maximum number of strings this context can capture. */
     int get_max_count() {
@@ -114,11 +117,11 @@ public:
 
     const char *get_string() const { return this->pi_string; };
 
-    const char *get_substr_start(pcre_context::iterator iter) const {
+    const char *get_substr_start(const pcre_context::iterator iter) const {
 	return &this->pi_string[iter->c_begin];
     };
 
-    std::string get_substr(pcre_context::iterator iter) const {
+    std::string get_substr(pcre_context::const_iterator iter) const {
 	return std::string(this->pi_string,
 			   iter->c_begin,
 			   iter->length());

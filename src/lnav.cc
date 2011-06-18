@@ -61,6 +61,7 @@
 #include "db_sub_source.hh"
 #include "pcrecpp.h"
 #include "termios_guard.hh"
+#include "data_parser.hh"
 
 using namespace std;
 
@@ -1351,14 +1352,16 @@ static string com_unix_time(string cmdline, vector<string> &args)
 static string com_current_time(string cmdline, vector<string> &args)
 {
     char   ftime[128];
+    struct tm localtm;
     string retval;
     time_t u_time;
     int    len;
 
+    memset(&localtm, 0, sizeof(localtm));
     u_time = time(NULL);
     strftime(ftime, sizeof(ftime),
 	     "%a %b %d %H:%M:%S %Y  %z %Z",
-	     localtime(&u_time));
+	     localtime_r(&u_time, &localtm));
     len = strlen(ftime);
     snprintf(ftime + len, sizeof(ftime) - len,
 	     " -- %ld\n",
@@ -2681,6 +2684,109 @@ private:
     pcrecpp::RE slt_regex;
 };
 
+class log_data_table : public log_vtab_impl {
+public:
+
+    log_data_table()
+	: log_vtab_impl("log_data") {
+	this->ldt_iter = this->ldt_pairs.end();
+    };
+
+    void get_columns(vector<vtab_column> &cols) {
+	cols.push_back(vtab_column("key", "text"));
+	cols.push_back(vtab_column("value", "text"));
+    };
+    
+    bool next(log_cursor &lc, logfile_sub_source &lss) {
+	fprintf(stderr, "next %d\n", (int)lc.lc_curr_line);
+	if (this->ldt_iter == this->ldt_pairs.end()) {
+	    fprintf(stderr, "try %d\n", (int)lc.lc_curr_line);
+	    log_vtab_impl::next(lc, lss);
+	    this->ldt_pairs.clear();
+	    
+	    fprintf(stderr, "esc %d\n", (int)lc.lc_curr_line);
+	    if (lc.lc_curr_line < (int)lss.text_line_count()) {
+		content_line_t cl(lss.at(lc.lc_curr_line));
+		logfile *lf = lss.find(cl);
+		logfile::iterator line_iter;
+		string line;
+		
+		line_iter = lf->begin() + cl;
+		lf->read_line(line_iter, line);
+		
+		data_scanner ds(line);
+		data_parser dp(&ds);
+		
+		dp.parse();
+		
+		fprintf(stderr, "got %d\n", dp.dp_stack.size());
+		while (!dp.dp_stack.empty()) {
+		    fprintf(stderr, "got %d\n", dp.dp_stack.front().e_token);
+		    if (dp.dp_stack.front().e_token == DNT_PAIR) {
+			this->ldt_pairs.splice(this->ldt_pairs.end(),
+					       dp.dp_stack,
+					       dp.dp_stack.begin());
+		    }
+		    else {
+			dp.dp_stack.pop_front();
+		    }
+		}
+
+		if (!this->ldt_pairs.empty()) {
+		    this->ldt_iter = this->ldt_pairs.begin();
+		    return true;
+		}
+	    }
+	    else {
+		fprintf(stderr, "EOF %d %d\n",
+			(int)lc.lc_curr_line,
+			lss.text_line_count());
+		return true;
+	    }
+	    
+	    return false;
+	}
+	else {
+	    fprintf(stderr, "else %d\n", (int)lc.lc_curr_line);
+	    ++(this->ldt_iter);
+	    if (this->ldt_iter == this->ldt_pairs.end())
+		return false;
+	    
+	    lc.lc_sub_index += 1;
+
+	    return true;
+	}
+    };
+    
+    void extract(const std::string &line,
+		 int column,
+		 sqlite3_context *ctx) {
+	pcre_context::capture_t cap;
+
+	fprintf(stderr, "col %d -- %s\n", column, line.c_str());
+	switch (column) {
+	case 0:
+	    cap = this->ldt_iter->e_sub_elements->front().e_capture;
+	    sqlite3_result_text(ctx,
+				&(line.c_str()[cap.c_begin]),
+				cap.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 1:
+	    cap = this->ldt_iter->e_sub_elements->back().e_capture;
+	    sqlite3_result_text(ctx,
+				&(line.c_str()[cap.c_begin]),
+				cap.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	}
+    };
+
+private:
+    std::list<data_parser::element> ldt_pairs;
+    std::list<data_parser::element>::iterator ldt_iter;
+};
+
 void ensure_dotlnav(void)
 {
     string path = dotlnav_path("");
@@ -2710,6 +2816,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
     lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
+    lnav_data.ld_vtab_manager->register_vtab(new log_data_table());
     
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
 

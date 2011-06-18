@@ -58,11 +58,11 @@ am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) grep_proc.$(OBJEXT) \
 	hist_source.$(OBJEXT) line_buffer.$(OBJEXT) \
 	listview_curses.$(OBJEXT) log_format.$(OBJEXT) \
 	logfile.$(OBJEXT) logfile_sub_source.$(OBJEXT) \
-	data_scanner.$(OBJEXT) readline_curses.$(OBJEXT) \
-	sequence_matcher.$(OBJEXT) statusview_curses.$(OBJEXT) \
-	piper_proc.$(OBJEXT) textview_curses.$(OBJEXT) \
-	view_curses.$(OBJEXT) vt52_curses.$(OBJEXT) \
-	log_vtab_impl.$(OBJEXT)
+	data_scanner.$(OBJEXT) data_parser.$(OBJEXT) \
+	readline_curses.$(OBJEXT) sequence_matcher.$(OBJEXT) \
+	statusview_curses.$(OBJEXT) piper_proc.$(OBJEXT) \
+	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
+	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT)
 libdiag_a_OBJECTS = $(am_libdiag_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
@@ -236,6 +236,8 @@ noinst_HEADERS = \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \
+	data_scanner.hh \
+	data_parser.hh \
 	db_sub_source.hh \
 	grep_proc.hh \
 	help.hh \
@@ -274,6 +276,7 @@ libdiag_a_SOURCES = \
 	logfile.cc \
 	logfile_sub_source.cc \
 	data_scanner.cc \
+	data_parser.cc \
 	readline_curses.cc \
 	sequence_matcher.cc \
 	statusview_curses.cc \
@@ -394,6 +397,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bookmarks.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grep_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Po@am__quote@

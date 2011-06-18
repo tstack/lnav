@@ -2,11 +2,32 @@
 #ifndef __data_parser_hh
 #define __data_parser_hh
 
+#include <stdio.h>
+
 #include <list>
 #include <algorithm>
 
 #include "pcrepp.hh"
 #include "data_scanner.hh"
+
+template<class ForwardIterator1, class ForwardIterator2, class BinaryPredicate>
+ForwardIterator1 find_first_not_of(ForwardIterator1 first, ForwardIterator1 last,
+				   ForwardIterator2 s_first, ForwardIterator2 s_last,
+				   BinaryPredicate p)
+{
+    for (; first != last; ++first) {
+	bool found = false;
+	
+        for (ForwardIterator2 it = s_first; it != s_last; ++it) {
+            if (p(*first, *it)) {
+                found = true;
+            }
+        }
+	if (!found)
+	    return first;
+    }
+    return last;
+}
 
 class data_parser {
 
@@ -25,6 +46,7 @@ public:
 
 	    this->e_capture = other.e_capture;
 	    this->e_token = other.e_token;
+	    this->e_sub_elements = NULL;
 	};
 
 	~element() {
@@ -35,8 +57,46 @@ public:
 	};
 
 	void assign_elements(std::list<element> &subs) {
-	    this->e_sub_elements = new std::list<element>();
-	    this->e_sub_elements->splice(this->e_sub_elements->begin(), subs);
+	    if (this->e_sub_elements == NULL)
+		this->e_sub_elements = new std::list<element>();
+	    this->e_sub_elements->splice(this->e_sub_elements->end(), subs);
+	    this->update_capture();
+	};
+
+	void update_capture(void) {
+	    if (this->e_sub_elements != NULL) {
+		this->e_capture.c_begin =
+		    this->e_sub_elements->front().e_capture.c_begin;
+		this->e_capture.c_end =
+		    this->e_sub_elements->back().e_capture.c_end;
+	    }
+	};
+
+	void print(FILE *out, pcre_input &pi, int offset = 0) {
+	    if (this->e_sub_elements != NULL) {
+		for (std::list<data_parser::element>::iterator iter2 =
+			 this->e_sub_elements->begin();
+		     iter2 != this->e_sub_elements->end();
+		     ++iter2) {
+		    iter2->print(out, pi, offset + 1);
+		}
+	    }
+
+	    fprintf(out, "%4s %3d:%-3d ",
+		    data_scanner::token2name(this->e_token),
+		    this->e_capture.c_begin,
+		    this->e_capture.c_end);
+	    for (int lpc = 0; lpc < this->e_capture.c_end; lpc++) {
+		if (lpc == this->e_capture.c_begin)
+		    fputc('^', out);
+		else if (lpc == (this->e_capture.c_end - 1))
+		    fputc('^', out);
+		else if (lpc > this->e_capture.c_begin)
+		    fputc('-', out);
+		else
+		    fputc(' ', out);
+	    }
+	    fputc('\n', out);
 	};
 	
 	pcre_context::capture_t e_capture;
@@ -84,34 +144,35 @@ public:
     bool reducePattern(std::list<element> &reduction,
 		       const data_token_t *pattern_start,
 		       const data_token_t *pattern_end,
-		       bool repeating = false) {
-	size_t pattern_size = (pattern_end - pattern_start);
-	bool found, retval = false;
+		       bool repeating = false);
+
+    bool reduceAnyOf(std::list<element> &reduction,
+		     const data_token_t *possibilities_start,
+		     const data_token_t *possibilities_end) {
+	size_t poss_size = (possibilities_end - possibilities_start);
+	std::list<element>::iterator iter;
+	bool retval = false;
 
 	reduction.clear();
 
-	do {
-	    found = false;
-	    if (pattern_size <= this->dp_stack.size() &&
-		std::equal(pattern_start, pattern_end,
-			   this->dp_stack.begin(),
-			   element_cmp())) {
-		std::list<element>::iterator match_end = this->dp_stack.begin();
-		
-		advance(match_end, pattern_size);
-		reduction.splice(reduction.end(),
-				 this->dp_stack,
-				 this->dp_stack.begin(),
-				 match_end);
+	iter = find_first_not_of(this->dp_stack.begin(),
+				 this->dp_stack.end(),
+				 possibilities_start, possibilities_end,
+				 element_cmp());
+	if (iter != this->dp_stack.begin()) {
+	    reduction.splice(reduction.end(),
+			     this->dp_stack,
+			     this->dp_stack.begin(),
+			     iter);
 
-		retval = found = true;
-	    }
-	} while (found && repeating);
+	    retval = true;
+	}
 
 	reduction.reverse();
 	
 	return retval;
     };
+
 
     bool reduceUpTo(std::list<element> &reduction,
 		    const data_token_t *possibilities_start,
@@ -139,30 +200,17 @@ public:
 	return retval;
     };
 
-    void reduceAggregate(void);
+    void reduceQual(const struct element &lookahead);
+    void reduceRow(void);
     void reducePair(void);
 
-    void print(void) {
+    void print(FILE *out) {
+	fprintf(out, "             %s\n",
+		this->dp_scanner->get_input().get_string());
 	for (std::list<data_parser::element>::iterator iter = this->dp_stack.begin();
 	     iter != this->dp_stack.end();
 	     ++iter) {
-	    printf("%d %d:%d %s\n",
-		   iter->e_token,
-		   iter->e_capture.c_begin,
-		   iter->e_capture.c_end,
-		   this->dp_scanner->get_input().get_substr(&iter->e_capture).c_str());
-	    if (iter->e_sub_elements != NULL) {
-		for (std::list<data_parser::element>::iterator iter2 =
-			 iter->e_sub_elements->begin();
-		     iter2 != iter->e_sub_elements->end();
-		     ++iter2) {
-		    printf("  %d %d:%d %s\n",
-			   iter2->e_token,
-			   iter2->e_capture.c_begin,
-			   iter2->e_capture.c_end,
-			   this->dp_scanner->get_input().get_substr(&iter2->e_capture).c_str());
-		}
-	    }
+	    iter->print(out, this->dp_scanner->get_input());
 	}
     };
     

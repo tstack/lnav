@@ -48,6 +48,8 @@ noinst_HEADERS = \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \
+	data_scanner.hh \
+	data_parser.hh \
 	db_sub_source.hh \
 	grep_proc.hh \
 	help.hh \
@@ -86,6 +88,7 @@ libdiag_a_SOURCES = \
 	logfile.cc \
 	logfile_sub_source.cc \
 	data_scanner.cc \
+	data_parser.cc \
 	readline_curses.cc \
 	sequence_matcher.cc \
 	statusview_curses.cc \

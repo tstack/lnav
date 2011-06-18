@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "lnav_util.hh"
+#include "data_parser.hh"
 #include "textview_curses.hh"
 
 using namespace std;
@@ -244,6 +245,52 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 	    }
 	}
     }
+
+#if 0
+    typedef std::map<std::string, view_colors::role_t> key_map_t;
+    static key_map_t key_roles;
+
+    data_scanner ds(str);
+    data_parser dp(&ds);
+
+    dp.parse();
+
+    for (list<data_parser::element>::iterator iter = dp.dp_stack.begin();
+	 iter != dp.dp_stack.end();
+	 ++iter) {
+	view_colors &vc = view_colors::singleton();
+	
+	if (iter->e_token == DNT_PAIR) {
+	    list<data_parser::element>::iterator pair_iter;
+	    key_map_t::iterator km_iter;
+	    data_token_t value_token;
+	    struct line_range lr;
+	    string key;
+
+	    value_token =
+		iter->e_sub_elements->back().e_sub_elements->front().e_token;
+	    if (value_token == DT_STRING)
+		continue;
+	    
+	    lr.lr_start = iter->e_capture.c_begin;
+	    lr.lr_end = iter->e_capture.c_end;
+
+	    key = ds.get_input().get_substr(&iter->e_sub_elements->front().e_capture);
+	    if ((km_iter = key_roles.find(key)) == key_roles.end()) {
+		key_roles[key] = vc.next_highlight();
+	    }
+	    // fprintf(stderr, "key = %s\n", key.c_str());
+	    sa[lr].insert(make_string_attr("style", vc.attrs_for_role(key_roles[key])));
+
+	    pair_iter = iter->e_sub_elements->begin();
+	    ++pair_iter;
+
+	    lr.lr_start = pair_iter->e_capture.c_begin;
+	    lr.lr_end = pair_iter->e_capture.c_end;
+	    sa[lr].insert(make_string_attr("style", COLOR_PAIR(view_colors::VC_WHITE) | A_BOLD));
+	}
+    }
+#endif
 
     if (binary_search(user_marks.begin(), user_marks.end(), row)) {
 	struct line_range lr = { 0, -1 };

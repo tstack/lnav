@@ -49,7 +49,7 @@ TESTS = test_bookmarks$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_line_buffer2$(EXEEXT) test_grep_proc.sh \
 	test_grep_proc2$(EXEEXT) test_listview.sh test_logfile.sh \
 	test_pcrepp$(EXEEXT) test_vt52_curses.sh \
-	test_top_status$(EXEEXT)
+	test_top_status$(EXEEXT) test_data_parser.sh
 subdir = test
 DIST_COMMON = $(dist_noinst_DATA) $(dist_noinst_SCRIPTS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -136,7 +136,8 @@ test_pcrepp_DEPENDENCIES =
 am_test_top_status_OBJECTS = bookmarks.$(OBJEXT) logfile.$(OBJEXT) \
 	line_buffer.$(OBJEXT) log_format.$(OBJEXT) \
 	logfile_sub_source.$(OBJEXT) listview_curses.$(OBJEXT) \
-	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
+	textview_curses.$(OBJEXT) data_scanner.$(OBJEXT) \
+	data_parser.$(OBJEXT) view_curses.$(OBJEXT) \
 	test_top_status.$(OBJEXT)
 test_top_status_OBJECTS = $(am_test_top_status_OBJECTS)
 test_top_status_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -320,6 +321,8 @@ test_top_status_SOURCES = \
 	../src/logfile_sub_source.cc \
 	../src/listview_curses.cc \
 	../src/textview_curses.cc \
+	../src/data_scanner.cc \
+	../src/data_parser.cc \
 	../src/view_curses.cc \
 	test_top_status.cc
 
@@ -378,6 +381,7 @@ slicer_SOURCES = \
 
 scripty_SOURCES = scripty.cc
 dist_noinst_SCRIPTS = \
+	test_data_parser.sh \
 	test_grep_proc.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
@@ -385,6 +389,12 @@ dist_noinst_SCRIPTS = \
 	test_vt52_curses.sh
 
 dist_noinst_DATA = \
+	datafile_simple.0 \
+	datafile_simple.1 \
+	datafile_simple.2 \
+	datafile_simple.3 \
+	datafile_simple.4 \
+	datafile_simple.5 \
 	listview_output.0 \
 	listview_output.1 \
 	listview_output.2 \

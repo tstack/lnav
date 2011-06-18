@@ -59,6 +59,8 @@ test_top_status_SOURCES = \
 	../src/logfile_sub_source.cc \
 	../src/listview_curses.cc \
 	../src/textview_curses.cc \
+	../src/data_scanner.cc \
+	../src/data_parser.cc \
 	../src/view_curses.cc \
 	test_top_status.cc
 test_top_status_LDADD = $(CURSES_LIB) -lz
@@ -118,6 +120,7 @@ slicer_SOURCES = \
 scripty_SOURCES = scripty.cc
 
 dist_noinst_SCRIPTS = \
+	test_data_parser.sh \
 	test_grep_proc.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
@@ -125,6 +128,12 @@ dist_noinst_SCRIPTS = \
 	test_vt52_curses.sh
 
 dist_noinst_DATA = \
+	datafile_simple.0 \
+	datafile_simple.1 \
+	datafile_simple.2 \
+	datafile_simple.3 \
+	datafile_simple.4 \
+	datafile_simple.5 \
 	listview_output.0 \
 	listview_output.1 \
 	listview_output.2 \
@@ -155,7 +164,8 @@ TESTS = test_bookmarks \
 	test_logfile.sh \
 	test_pcrepp \
 	test_vt52_curses.sh \
-	test_top_status
+	test_top_status \
+	test_data_parser.sh
 
 DISTCLEANFILES = \
 	*.dat \
