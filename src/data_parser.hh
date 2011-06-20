@@ -149,7 +149,6 @@ public:
     bool reduceAnyOf(std::list<element> &reduction,
 		     const data_token_t *possibilities_start,
 		     const data_token_t *possibilities_end) {
-	size_t poss_size = (possibilities_end - possibilities_start);
 	std::list<element>::iterator iter;
 	bool retval = false;
 
@@ -177,7 +176,6 @@ public:
     bool reduceUpTo(std::list<element> &reduction,
 		    const data_token_t *possibilities_start,
 		    const data_token_t *possibilities_end) {
-	size_t poss_size = (possibilities_end - possibilities_start);
 	std::list<element>::iterator iter;
 	bool retval = false;
 
@@ -213,7 +211,8 @@ public:
 	    iter->print(out, this->dp_scanner->get_input());
 	}
     };
-    
+
+    std::list<element> dp_qual;
     std::list<element> dp_stack;
     
 private:

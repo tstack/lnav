@@ -159,7 +159,7 @@ private:
      */
     char *get_range(off_t start, size_t &avail_out)
     {
-	int  buffer_offset = start - this->lb_file_offset;
+	off_t  buffer_offset = start - this->lb_file_offset;
 	char *retval;
 
 	assert(buffer_offset >= 0);

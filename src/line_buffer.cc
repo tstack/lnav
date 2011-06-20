@@ -239,6 +239,8 @@ throw (error)
 {
     bool retval = false;
 
+    assert(start >= 0);
+
     if (this->in_range(start) && this->in_range(start + max_length)) {
 	/* Cache already has the data, nothing to do. */
 	retval = true;
@@ -271,7 +273,7 @@ throw (error)
 	}
 	else if (this->lb_bz_file) {
 	    if (this->lb_file_size != (size_t)-1 &&
-		((start >= this->lb_file_size) ||
+		(((size_t)start >= this->lb_file_size) ||
 		 (this->in_range(start) &&
 		  this->in_range(this->lb_file_size - 1)))) {
 		rc = 0;
@@ -390,7 +392,9 @@ throw (error)
 		 * add a NULL-terminator.
 		 */
 		this->ensure_available(offset, len_out + 1);
+		line_start = this->get_range(offset, len_out);
 	    }
+
 	    offset += len_out;
 
 	    retval = line_start;

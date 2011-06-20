@@ -9,7 +9,7 @@ static data_token_t PATTERN_KEY[] = {
     DT_STRING,
     DT_NUMBER,
     DT_HEX_NUMBER,
-    DT_QUALIFIED_NAME,
+    // DT_QUALIFIED_NAME,
 };
 
 static data_token_t UPTO_SEPARATOR[] = {
@@ -26,7 +26,7 @@ static data_token_t UPTO_NT[] = {
 static data_token_t PATTERN_PAIR[] = {
     DNT_ROW,
     DT_SEPARATOR,
-    DNT_KEY,
+    // DNT_KEY,
 };
 
 static data_token_t PATTERN_ROW[] = {
@@ -88,17 +88,8 @@ void data_parser::reduceQual(const struct element &lookahead)
 			    PATTERN_QUAL,
 			    PATTERN_QUAL +
 			    sizeof(PATTERN_QUAL) / sizeof(data_token_t))) {
-	std::list<element>::iterator iter = reduction.begin();
-
-	++iter;
-	if (this->dp_scanner->get_input().get_substr(&iter->e_capture) ==
-	    this->dp_scanner->get_input().get_substr(&(lookahead.e_capture))) {
-	    this->dp_stack.push_front(element(reduction, DNT_KEY));
-	    this->dp_stack.front().assign_elements(reduction);
-	}
-	else {
-	    this->dp_stack.splice(this->dp_stack.begin(), reduction);
-	}
+	// printf("qual hit\n");
+	this->dp_qual.splice(this->dp_qual.end(), reduction);
     }
 }
 
@@ -153,14 +144,22 @@ void data_parser::reducePair(void)
 	    this->dp_stack.front().assign_elements(reduction);
 	}
     }
-    
+
     if (this->reducePattern(reduction,
 			    PATTERN_PAIR,
 			    PATTERN_PAIR +
 			    sizeof(PATTERN_PAIR) / sizeof(data_token_t))) {
-	this->dp_stack.push_front(element(reduction, DNT_PAIR));
-	this->dp_stack.front().assign_elements(reduction);
+	if (this->dp_qual.empty()) {
+	    this->dp_stack.splice(this->dp_stack.begin(), reduction);
+	}
+	else {
+	    reduction.push_front(this->dp_qual.back());
+	    this->dp_qual.pop_back();
+	    this->dp_stack.push_front(element(reduction, DNT_PAIR));
+	    this->dp_stack.front().assign_elements(reduction);
+	}
     }
+    // this->print(stdout);
 }
 
 #define DEB 0
@@ -174,6 +173,10 @@ void data_parser::reduce(const element &lookahead)
     case DT_INVALID:
     case DT_WHITE:
 	this->reducePair();
+	push_lookahead = false;
+	break;
+
+    case DT_GARBAGE:
 	push_lookahead = false;
 	break;
 
@@ -198,6 +201,7 @@ void data_parser::reduce(const element &lookahead)
 		this->dp_stack.front().assign_elements(reduction);
 	    }
 	}
+
 	this->reducePair();
 	push_lookahead = false;
 	break;
@@ -209,6 +213,16 @@ void data_parser::reduce(const element &lookahead)
 	    this->dp_stack.front().e_token != DNT_ROW) {
 	    if (this->dp_stack.front().e_token == DT_SEPARATOR) {
 		push_lookahead = false;
+	    }
+	    else if (this->dp_stack.front().e_token == DNT_PAIR) {
+		std::list<element>::iterator pair_iter = this->dp_stack.begin();
+
+		this->dp_qual.push_front(this->dp_stack.front().e_sub_elements->front());
+		this->dp_stack.front().e_sub_elements->pop_front();
+		this->dp_stack.front().e_sub_elements->reverse();
+		this->dp_stack.splice(this->dp_stack.begin(),
+				      *this->dp_stack.front().e_sub_elements);
+		this->dp_stack.erase(pair_iter);
 	    }
 	    else {
 		std::list<element>::iterator next_elem = this->dp_stack.begin();
@@ -230,13 +244,20 @@ void data_parser::reduce(const element &lookahead)
 			      PATTERN_KEY +
 			      sizeof(PATTERN_KEY) / sizeof(data_token_t))) {
 	    this->reducePair();
-	    this->dp_stack.push_front(element(reduction, DNT_KEY));
-	    this->reduceQual(lookahead);
+	    if (this->dp_stack.front().e_token == DT_SEPARATOR)
+		this->dp_stack.pop_front();
+	    this->dp_qual.push_back(element(reduction, DNT_KEY));
+	    // this->reduceQual(lookahead);
 	}
+	break;
+
+    default:
 	break;
     }
 
     if (push_lookahead) {
 	this->dp_stack.push_front(lookahead);
     }
+
+    // this->print(stdout);
 }

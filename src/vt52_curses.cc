@@ -72,29 +72,29 @@ private:
 	if (tgetent(NULL, "vt52") == ERR) {
 	    perror("tgetent");
 	}
-	this->vem_map[KEY_UP]        = tgetstr("ku", &area);
-	this->vem_map[KEY_DOWN]      = tgetstr("kd", &area);
-	this->vem_map[KEY_RIGHT]     = tgetstr("kr", &area);
-	this->vem_map[KEY_LEFT]      = tgetstr("kl", &area);
-	this->vem_map[KEY_HOME]      = tgetstr("kh", &area);
+	this->vem_map[KEY_UP]        = tgetstr((char *)"ku", &area);
+	this->vem_map[KEY_DOWN]      = tgetstr((char *)"kd", &area);
+	this->vem_map[KEY_RIGHT]     = tgetstr((char *)"kr", &area);
+	this->vem_map[KEY_LEFT]      = tgetstr((char *)"kl", &area);
+	this->vem_map[KEY_HOME]      = tgetstr((char *)"kh", &area);
 	this->vem_map[KEY_BACKSPACE] = "\010";
 	this->vem_map[KEY_DC]        = "\x4";
 
 	this->vem_map[KEY_BEG] = "\x1";
 	this->vem_map[KEY_END] = "\x5";
 
-	this->vem_map[KEY_SLEFT] = tgetstr("#4", &area);
+	this->vem_map[KEY_SLEFT] = tgetstr((char *)"#4", &area);
 	if (this->vem_map[KEY_SLEFT] == NULL) {
 	    this->vem_map[KEY_SLEFT] = "\033b";
 	}
-	this->vem_map[KEY_SRIGHT] = tgetstr("%i", &area);
+	this->vem_map[KEY_SRIGHT] = tgetstr((char *)"%i", &area);
 	if (this->vem_map[KEY_SRIGHT] == NULL) {
 	    this->vem_map[KEY_SRIGHT] = "\033f";
 	}
 
-	this->vem_input_map[tgetstr("ce", &area)] = "ce";
-	this->vem_input_map[tgetstr("kl", &area)] = "kl";
-	this->vem_input_map[tgetstr("kr", &area)] = "kr";
+	this->vem_input_map[tgetstr((char *)"ce", &area)] = "ce";
+	this->vem_input_map[tgetstr((char *)"kl", &area)] = "kl";
+	this->vem_input_map[tgetstr((char *)"kr", &area)] = "kr";
 	tgetent(NULL, getenv("TERM"));
     };
 

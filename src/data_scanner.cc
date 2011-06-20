@@ -1,4 +1,5 @@
 
+
 #include "config.h"
 
 #include "pcrepp.hh"
@@ -11,10 +12,11 @@ static struct {
     pcrepp pcre;
 } MATCHERS[DT_TERMINAL_MAX] = {
     { "url", pcrepp("([\\w]+://[^\\s'\"\\[\\](){}]+)"), },
+    { "path", pcrepp("(?<![\\w\\d-_])((?:/|\\./|\\.\\./)[\\w\\d\\.-_\\~/]+)"), },
     { "time", pcrepp("\\b(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"), }, // XXX be more specific
     { "mac", pcrepp("([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5,5})"), },
     { "quot", pcrepp("u?\"([^\"]+)\"|u'([^']+(?:'\\w[^']*)*)'"), },
-    { "qual", pcrepp("([^\\s:=]+:[^\\s:=]+(?::[^\\s:=]+)*)"), },
+    // { "qual", pcrepp("([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), },
     
     { "sep", pcrepp("(:|=)"), },
     { "comm", pcrepp("(,|/)"), },

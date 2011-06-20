@@ -10,10 +10,11 @@ enum data_token_t {
     DT_INVALID = -1,
     
     DT_URL = 0,
+    DT_PATH,
     DT_TIME,
     DT_MAC_ADDRESS,
     DT_QUOTED_STRING,
-    DT_QUALIFIED_NAME,
+    // DT_QUALIFIED_NAME,
     
     DT_SEPARATOR,
     DT_COMMA,

@@ -2689,17 +2689,19 @@ public:
 
     log_data_table()
 	: log_vtab_impl("log_data") {
-	this->ldt_iter = this->ldt_pairs.end();
+	this->ldt_pair_iter = this->ldt_pairs.end();
     };
 
     void get_columns(vector<vtab_column> &cols) {
+	cols.push_back(vtab_column("qualifier", "text"));
 	cols.push_back(vtab_column("key", "text"));
+	cols.push_back(vtab_column("subindex", "int"));
 	cols.push_back(vtab_column("value", "text"));
     };
     
     bool next(log_cursor &lc, logfile_sub_source &lss) {
 	fprintf(stderr, "next %d\n", (int)lc.lc_curr_line);
-	if (this->ldt_iter == this->ldt_pairs.end()) {
+	if (this->ldt_pair_iter == this->ldt_pairs.end()) {
 	    fprintf(stderr, "try %d\n", (int)lc.lc_curr_line);
 	    log_vtab_impl::next(lc, lss);
 	    this->ldt_pairs.clear();
@@ -2733,7 +2735,10 @@ public:
 		}
 
 		if (!this->ldt_pairs.empty()) {
-		    this->ldt_iter = this->ldt_pairs.begin();
+		    this->ldt_pair_iter = this->ldt_pairs.begin();
+		    this->ldt_column = 0;
+		    this->ldt_row_iter =
+			this->ldt_pair_iter->e_sub_elements->back().e_sub_elements->begin();
 		    return true;
 		}
 	    }
@@ -2748,10 +2753,23 @@ public:
 	}
 	else {
 	    fprintf(stderr, "else %d\n", (int)lc.lc_curr_line);
-	    ++(this->ldt_iter);
-	    if (this->ldt_iter == this->ldt_pairs.end())
+	    ++(this->ldt_row_iter);
+	    this->ldt_column += 1;
+	    if (this->ldt_row_iter == this->ldt_pair_iter->e_sub_elements->back().e_sub_elements->end()) {
+		++(this->ldt_pair_iter);
+		if (this->ldt_pair_iter != this->ldt_pairs.end()) {
+		    this->ldt_row_iter = this->ldt_pair_iter->e_sub_elements->back().e_sub_elements->begin();
+		    this->ldt_column = 0;
+
+		    lc.lc_sub_index += 1;
+		    return true;
+		}
 		return false;
-	    
+	    }
+	    if (this->ldt_pair_iter == this->ldt_pairs.end()) {
+		return false;
+	    }
+
 	    lc.lc_sub_index += 1;
 
 	    return true;
@@ -2766,14 +2784,23 @@ public:
 	fprintf(stderr, "col %d -- %s\n", column, line.c_str());
 	switch (column) {
 	case 0:
-	    cap = this->ldt_iter->e_sub_elements->front().e_capture;
+	    sqlite3_result_text(ctx,
+				"",
+				0,
+				SQLITE_TRANSIENT);
+	    break;
+	case 1:
+	    cap = this->ldt_pair_iter->e_sub_elements->front().e_capture;
 	    sqlite3_result_text(ctx,
 				&(line.c_str()[cap.c_begin]),
 				cap.length(),
 				SQLITE_TRANSIENT);
 	    break;
-	case 1:
-	    cap = this->ldt_iter->e_sub_elements->back().e_capture;
+	case 2:
+	    sqlite3_result_int64( ctx, this->ldt_column );
+	    break;
+	case 3:
+	    cap = this->ldt_row_iter->e_capture;
 	    sqlite3_result_text(ctx,
 				&(line.c_str()[cap.c_begin]),
 				cap.length(),
@@ -2784,7 +2811,9 @@ public:
 
 private:
     std::list<data_parser::element> ldt_pairs;
-    std::list<data_parser::element>::iterator ldt_iter;
+    std::list<data_parser::element>::iterator ldt_pair_iter;
+    std::list<data_parser::element>::iterator ldt_row_iter;
+    int ldt_column;
 };
 
 void ensure_dotlnav(void)
@@ -2819,6 +2848,8 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager->register_vtab(new log_data_table());
     
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
+    DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));
+    DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
 
     lnav_commands["unix-time"]      = com_unix_time;
     lnav_commands["current-time"]   = com_current_time;
