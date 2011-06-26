@@ -94,9 +94,10 @@ public:
     };
 
     void update_filename(listview_curses *lc) {
+	status_field &sf_format = this->tss_fields[TSF_FORMAT];
+	status_field &sf_filename = this->tss_fields[TSF_FILENAME];
+	
 	if (lc->get_inner_height() > 0) {
-	    status_field &sf_format = this->tss_fields[TSF_FORMAT];
-	    status_field &sf_filename = this->tss_fields[TSF_FILENAME];
 	    struct line_range lr = { 0, -1 };
 	    attrs_map_t::iterator iter;
 	    string_attrs_t sa;
@@ -110,16 +111,22 @@ public:
 		logfile *lf = (logfile *)iter->second.sa_ptr;
 
 		if (lf->get_format())
-		   sf_format.set_value("(%s)",
-				       lf->get_format()->get_name().c_str());
+		    sf_format.set_value("(%s)",
+					lf->get_format()->get_name().c_str());
+		else if (!lf->get_filename().empty())
+		    sf_format.set_value("(unknown)");
 		else
-		   sf_format.set_value("(unknown)");
+		    sf_format.clear();
 		sf_filename.set_value(lf->get_filename());
 	    }
 	    else {
-		sf_format.set_value("(unknown)");
+		sf_format.clear();
 		sf_filename.clear();
 	    }
+	}
+	else {
+	    sf_format.clear();
+	    sf_filename.clear();
 	}
     };
 

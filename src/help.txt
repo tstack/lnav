@@ -40,12 +40,10 @@ generic log files with timestamps.
 DISPLAY
 -------
 
-The main part of the display shows the log lines from the files
-interleaved based on time-of-day.  The lines are "scrubbed" to remove
-redundant/extraneous parts and highlighted to emphasize other parts.
-New lines are automatically loaded as they are appended to the files
-and, if you are viewing the bottom of the files, lnav will scroll down
-to display the new lines, much like 'tail -f'.
+The main part of the display shows the log lines from the files interleaved
+based on time-of-day.  New lines are automatically loaded as they are appended
+to the files and, if you are viewing the bottom of the files, lnav will scroll
+down to display the new lines, much like 'tail -f'.
 
 On color displays, the lines will be highlighted as follows:
 
@@ -72,7 +70,18 @@ Above and below the main body are status lines that display:
 
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a
-unix-timestamp into a human-readable date.
+unix-timestamp into a human-readable date.  The command-line is by
+the readline library, so the usual set of keyboard shortcuts can
+be used.
+
+
+The body of the display is also used to display other content, such
+as: the help file, histograms of the log messages over time, and
+SQL results.  The views are organized into a stack so that any time
+you activate a new view with a key press or command, the new view
+is pushed onto the stack.  Pressing the same key again will pop the
+view off of the stack and return you to the previous view.  Note
+that you can always use 'q' to pop the top view off of the stack.
 
 
 KEY BINDINGS
@@ -83,7 +92,8 @@ make it easy to zero-in on a specific section of the file or scan
 through the file.
 
   ?                 View/leave this help message.
-  q                 Quit.
+  q                 Leave the current view or quit the program when in
+                    the log file view.
 
   home              Move to the top of the file.
   end               Move to the end of the file.
@@ -98,7 +108,7 @@ through the file.
   w/W               Move to the next/previous warning.
   n/N               Move to the next/previous search hit.
   f/F               Move to the next/previous file.  In the log view, this
-  		    moves to the next line from a different file.  In the
+                    moves to the next line from a different file.  In the
 		    text view, this rotates the view to the next file.
 
   >/<               Move horizontally to the next/previous search hit.
@@ -126,14 +136,14 @@ through the file.
 		    the 'u' hotkey to iterate through marks you have
 		    added.
 
-  M		    Mark/unmark all the lines between the top of the
+  M                 Mark/unmark all the lines between the top of the
 		    display and the last line marked/unmarked.
 
   J                 Mark/unmark the next line after the previously
-  		    marked line.
+                    marked line.
 
-  K		    Like 'J' except it toggles the mark on the
-  		    previous line.
+  K                 Like 'J' except it toggles the mark on the
+                    previous line.
 
   c                 Copy the marked text to the X selection buffer.
 
@@ -196,7 +206,7 @@ through the file.
   v                 Switch to/from the SQL result view.
 
   V                 Switch between the log and SQL result views while
-  		    keeping the top line number in the log view in
+                    keeping the top line number in the log view in
 		    sync with the line_number column in the SQL view.
 		    For example, doing a query that selects for
 		    "idle_msecs" and "line_number", you can move the
