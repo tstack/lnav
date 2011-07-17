@@ -1,6 +1,21 @@
 
 lnav v0.4.0:
+     Features:
+     * Files that are not recognized as containing log messages have been
+       broken out to a separate text files view.  You can flip between the
+       log view and the text file view with the 't' hotkey.  When viewing
+       text files, the 'f' hotkey will switch between files.
+     * Files compressed with bzip2 are recognized and decompressed on the
+       fly.
+     * Added a "session" file and command for storing commands that should
+       be executed on startup.  For example, if you always want some
+       highlighting to be done, you can add that command to the session
+       file.
 
+     Fixes:
+     * Add some more log file formats for generic log files.
+     * Performance improvements for compressed files.
+     * Works on OS X now.
 
 lnav v0.3.0:
      Changes:
