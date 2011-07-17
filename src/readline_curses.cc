@@ -524,6 +524,8 @@ void readline_curses::focus(int context, const char *prompt)
 {
     char buffer[1024];
 
+    curs_set(1);
+
     this->rc_active_context = context;
 
     snprintf(buffer, sizeof(buffer), "f:%d:%s", context, prompt);

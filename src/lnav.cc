@@ -2008,6 +2008,8 @@ static void rl_callback(void *dummy, readline_curses *rc)
 	lnav_data.ld_mode = LNM_PAGING;
 	break;
     }
+
+    curs_set(0);
 }
 
 static void usage(void)
@@ -2243,6 +2245,8 @@ static void looper(void)
 	rlc.set_perform_action(readline_curses::action(rl_callback));
 	rlc.set_timeout_action(readline_curses::action(rl_search));
 
+	(void)curs_set(0);
+
 	lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
 
 	tc = lnav_data.ld_view_stack.top();
@@ -2343,9 +2347,6 @@ static void looper(void)
 			&ready_rfds, NULL, NULL,
 			&to);
 	    
-	    lnav_data.ld_bottom_source.
-		update_hits(lnav_data.ld_view_stack.top());
-
 	    if (rc < 0) {
 		switch (errno) {
 		case EINTR:
@@ -2418,6 +2419,11 @@ static void looper(void)
 		    
 		    if (gc.get() != NULL) {
 			gc->get_grep_proc()->check_fd_set(ready_rfds);
+
+			if (!lnav_data.ld_view_stack.empty()) {
+			    lnav_data.ld_bottom_source.
+				update_hits(lnav_data.ld_view_stack.top());
+			}
 		    }
 		}
 		rlc.check_fd_set(ready_rfds);
@@ -2851,19 +2857,19 @@ int main(int argc, char *argv[])
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
 
-    lnav_commands["unix-time"]      = com_unix_time;
-    lnav_commands["current-time"]   = com_current_time;
-    lnav_commands["goto"]           = com_goto;
-    lnav_commands["graph"]          = com_graph;
-    lnav_commands["highlight"]      = com_highlight;
-    lnav_commands["filter-in"]      = com_filter;
-    lnav_commands["filter-out"]     = com_filter;
-    lnav_commands["append-to"] = com_save_to;
-    lnav_commands["write-to"] = com_save_to;
-    lnav_commands["enable-filter"]  = com_enable_filter;
-    lnav_commands["disable-filter"] = com_disable_filter;
-    lnav_commands["capture-into"] = com_capture;
-    lnav_commands["session"] = com_session;
+    lnav_commands["unix-time"]		= com_unix_time;
+    lnav_commands["current-time"]	= com_current_time;
+    lnav_commands["goto"]		= com_goto;
+    lnav_commands["graph"]		= com_graph;
+    lnav_commands["highlight"]		= com_highlight;
+    lnav_commands["filter-in"]		= com_filter;
+    lnav_commands["filter-out"]		= com_filter;
+    lnav_commands["append-to"]		= com_save_to;
+    lnav_commands["write-to"]		= com_save_to;
+    lnav_commands["enable-filter"]	= com_enable_filter;
+    lnav_commands["disable-filter"]	= com_disable_filter;
+    lnav_commands["capture-into"]	= com_capture;
+    lnav_commands["session"]		= com_session;
 
     lnav_data.ld_views[LNV_HELP].
     set_sub_source(new plain_text_source(help_text_start));
