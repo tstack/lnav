@@ -1,26 +1,10 @@
 
-bin_PROGRAMS = lnav
+bin_PROGRAMS = lnav bin2c
 
 noinst_LIBRARIES = libdiag.a
 
-if HAVE_OBJ_FORMAT
-help.txt.term: help.txt
-	cat $< > $@
-	/bin/echo -en '\000' >> $@
-
-help.o: help.txt.term
-	objcopy -I binary -O $(OBJ_FORMAT) -Bi386 \
-		--redefine-sym _binary_help_txt_term_start=help_text_start \
-		--redefine-sym _binary_help_txt_term_end=help_text_end \
-		--redefine-sym _binary_help_txt_term_size=help_text_size \
-		$< $@
-
-HELP_O = help.o
-HELP_SRC =
-else
-HELP_O =
-HELP_SRC = help.cc
-endif
+help.c: help.txt bin2c
+	./bin2c -z -c $< $@
 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
@@ -36,7 +20,6 @@ LDADD = \
 	libdiag.a \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
-	$(HELP_O) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
 	-lpcrecpp
@@ -99,6 +82,9 @@ libdiag_a_SOURCES = \
 	log_vtab_impl.cc
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
+lnav_LDADD = help.o $(LDADD)
+
+bin2c_SOURCES = bin2c.c
 
 DISTCLEANFILES = \
 	help.txt.term

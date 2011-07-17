@@ -10,7 +10,7 @@ extern "C" {
      * The help message text.  The value for this comes from the "help.txt" file,
      * which gets linked into the executable by the Makefile.
      */
-    extern const char help_text_start[];
+    extern const char help_txt[];
 }
 
 #endif

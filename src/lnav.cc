@@ -2872,7 +2872,7 @@ int main(int argc, char *argv[])
     lnav_commands["session"]		= com_session;
 
     lnav_data.ld_views[LNV_HELP].
-    set_sub_source(new plain_text_source(help_text_start));
+    set_sub_source(new plain_text_source(help_txt));
     lnav_data.ld_views[LNV_LOG].
     set_sub_source(&lnav_data.ld_log_source);
     lnav_data.ld_views[LNV_TEXT].
