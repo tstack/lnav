@@ -85,6 +85,8 @@ lnav_LDADD = help.o $(LDADD)
 
 bin2c_SOURCES = bin2c.c
 
+DISTCLEANFILES = help.c
+
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
 		$(HEADERS))
