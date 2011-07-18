@@ -21,7 +21,6 @@ LDADD = \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
-	$(PCRE_LIBS) \
 	-lpcrecpp
 
 noinst_HEADERS = \
@@ -85,9 +84,6 @@ lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = help.o $(LDADD)
 
 bin2c_SOURCES = bin2c.c
-
-DISTCLEANFILES = \
-	help.txt.term
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

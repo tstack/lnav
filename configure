@@ -2344,8 +2344,15 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
-CPPFLAGS="$CPPFLAGS -I/usr/local/include"
-LDFLAGS="$LDFLAGS -L/usr/local/lib"
+for defdir in /usr/local /opt/local; do
+    if test -d "$defdir/include"; then
+	CPPFLAGS="$CPPFLAGS -I$defdir/include"
+    fi
+
+    if test -d "$defdir/lib"; then
+	LDFLAGS="$LDFLAGS -L$defdir/lib"
+    fi
+done
 
 case x$srcdir in
 x/*)
@@ -3146,8 +3153,21 @@ fi
 if test x"${enable_static}" != x"no"; then
     case "$host_os" in
     darwin*)
-	{ echo "$as_me:$LINENO: WARNING: \"static linking is not supported on $host_os\"" >&5
-echo "$as_me: WARNING: \"static linking is not supported on $host_os\"" >&2;}
+	STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first -Lstatic-libs"
+	# This is a hack to link against static libraries instead of shared
+	# on OS X so that we can build a mostly statically link exe that can
+	# be downloaded and used right away.
+	mkdir -p src/static-libs
+	for libflag in $LDFLAGS; do
+		case $libflag in
+		-Lstatic-libs)
+			;;
+		-L*)
+			ln -sf `echo $libflag/*.a | sed -e 's/-L//'` \
+			    src/static-libs/.;
+			;;
+		esac
+	done
 	;;
     *)
    	STATIC_LDFLAGS="$STATIC_LDFLAGS -static"

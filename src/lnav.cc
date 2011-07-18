@@ -2835,6 +2835,12 @@ int main(int argc, char *argv[])
     int lpc, c, retval = EXIT_SUCCESS;
     auto_ptr<piper_proc> stdin_reader;
 
+    /* If we statically linked against an ncurses library that had a non-
+     * standard path to the terminfo database, we need to set this variable
+     * so that it will try the default path.
+     */
+    setenv("TERMINFO_DIRS", "/usr/share/terminfo", 0);
+
     ensure_dotlnav();
     
     if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {

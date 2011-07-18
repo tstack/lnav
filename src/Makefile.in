@@ -69,13 +69,11 @@ bin2c_OBJECTS = $(am_bin2c_OBJECTS)
 bin2c_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 bin2c_DEPENDENCIES = libdiag.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_lnav_OBJECTS = lnav.$(OBJEXT)
 lnav_OBJECTS = $(am_lnav_OBJECTS)
 am__DEPENDENCIES_2 = libdiag.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 lnav_DEPENDENCIES = help.o $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -221,7 +219,6 @@ LDADD = \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
-	$(PCRE_LIBS) \
 	-lpcrecpp
 
 noinst_HEADERS = \
@@ -284,9 +281,6 @@ libdiag_a_SOURCES = \
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = help.o $(LDADD)
 bin2c_SOURCES = bin2c.c
-DISTCLEANFILES = \
-	help.txt.term
-
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -531,7 +525,6 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
-	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
