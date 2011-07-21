@@ -1,0 +1,271 @@
+<html>
+<head>
+  <title>lnav -- The Logfile Navigator</title>
+  <style>
+  ul.navbar {
+    text-align: center;
+  }
+
+  ul.navbar li {
+    list-style-type: none;
+    display: inline;
+  }
+
+  p.banner {
+    padding: 8px;
+    margin: 0px;
+    font-family: sans-serif;
+    font-weight: normal;
+    font-size: x-large;
+    color: #ffffff;
+    background-color: #24913c;
+    text-align: center;
+    border-color: #38e05d;
+    border-style: solid;
+    border-width: 0px 0px 4px 0px;
+  }
+
+  div.footer {
+    border-style: solid;
+    border-width: 8px 0px 0px 0px;
+    border-color: #65e080;
+    color: #ffffff;
+    background-color: #00c12b;
+    margin-bottom: 0px;
+    padding: 8px;
+    font-family: sans-serif;
+    font-size: small;
+    text-align: right;
+  }
+
+  div.footer span.hosting {
+    float: left;
+  }
+
+  div.footer a {
+    color: #ffffff;
+    text-decoration: none;
+    border-style: dotted;
+    border-width: 0px 0px 1px 0px;
+  }
+  div.footer a:link {
+    color: #ffffff;
+    font-size: small;
+    text-decoration: none;
+    border-style: dotted;
+    border-width: 0px 0px 1px 0px;
+  }
+  div.footer a:visited {
+    color: #ffffff;
+    font-size: small;
+    text-decoration: none;
+    border-style: dotted;
+    border-width: 0px 0px 1px 0px;
+  }
+  div.footer a:hover {
+    color: #ffffff;
+    font-size: small;
+    text-decoration: none;
+    border-style: solid;
+    border-width: 0px 0px 1px 0px;
+  }
+
+  td.caption {
+    font-size: small;
+    text-align: left;
+    width: 50%;
+  }
+
+  body {
+    margin-top: 0px;
+    margin-left: 20%;
+    margin-right: 20%;
+    margin-bottom: 0px;
+  }
+
+  h2 {
+    font-family: sans-serif;
+    color: #ffffff;
+    font-weight: normal;
+    border-style: solid;
+    border-width: 0px 0px 0px 8px;
+    border-color: #38e05d;
+    padding: 4px;
+    background-color: #24913c;
+  }
+
+  div.ishot {
+    text-align: center;
+  }
+
+  p {
+    margin-bottom: 2em;
+  }
+
+  table.sstable {
+    width: 100%;
+  }
+
+  table.sstable td {
+  }
+
+  table.sstable td.thumb {
+    text-align: center;
+  }
+  </style>
+</head>
+
+<body>
+<p class="banner">LNAV &mdash; The Logfile Navigator</p>
+
+<ul class="navbar">
+<li><a href="#introduction">[Introduction]</a>
+<li><a href="#screenshots">[Screenshots]</a>
+<li><a href="#download">[Download]</a>
+<li><a href="#features">[Features]</a>
+<li><a href="#interface">[Interface Tour]</a>
+<li><a href="#links">[Links]</a>
+</ul>
+
+<h2><a name="introduction">Introduction</a></h2>
+
+The Logfile Navigator, <b>lnav</b> for short, is a <a href="http://en.wikipedia.org/wiki/Curses_(programming_library)">curses</a>-based
+tool for viewing and analyzing log files.  The value added by <b>lnav</b> over text
+viewers / editors is that it takes advantage of any semantic information that
+can be gleaned from the log file, such as timestamps and log levels.  Using this
+extra semantic information, <b>lnav</b> can do things like: interleaving messages from
+different files; generate histograms of messages over time; and providing
+hotkeys for navigating through the file.  It is hoped that these features will
+allow the user to quickly and efficiently zero-in on problems.
+
+<h2><a name="screenshots">Screenshots</a></h2>
+
+<center>
+<table class="sstable">
+<tr>
+<td class="thumb"><a href="lnav-syslog.png"><img src="lnav-syslog-thumb.png"></a></td>
+<td class="thumb"><a href="lnav-hist.png"><img src="lnav-hist-thumb.png"></a></td>
+</tr>
+
+<tr>
+<td class="caption">The standard view of a syslog file.  Log lines are
+displayed with highlights.  Errors are red and warnings are yellow.</td>
+<td class="caption">The histogram view of the same syslog file.  The histogram
+  shows the number of messages per time slice.</td>
+</tr>
+
+</table>
+</center>
+
+<h2><a name="download">Download</a></h2>
+
+Source:
+<ul>
+<li><a href="http://github.org/tstack/lnav">Git Repository</a></li>
+<li><a href="http://cloud.github.com/downloads/tstack/lnav/lnav-0.3.0.tar.gz">lnav-0.3.0.tar.gz</a></li>
+</ul>
+
+<h2><a name="features">Features</a></h2>
+
+<p>
+The major features of <b>lnav</b> are:
+</p>
+
+<ul>
+<li><b>Support for the following log file formats:</b>
+  <blockquote>Syslog, Apache access log, strace, tcsh history, and
+  generic log files with timestamps.  The file format is automatically
+  detected when the file is read in.</blockquote>
+<li><b>Histogram view:</b>
+  <blockquote>Displays the number of log messages per bucket-of-time.
+  Useful for getting an overview of what was happening over a long
+  period of time.</blockquote>
+<li><b>Filters:</b>
+  <blockquote>Display only lines that match or do not match a set of
+  regular expressions.  Useful for removing extraneous log lines that
+  you are not interested in.</blockquote>
+<li><b>"Live" operation:</b>
+  <blockquote>Searches are done as you type; new log lines are
+  automatically loaded and searched as they are added; filters apply
+  to lines as they are loaded; and, SQL queries are checked for
+  correctness as you type.</blockquote>
+<li><b>Automatic tailing:</b>
+  <blockquote>The log file view automatically scrolls down to follow
+  new lines that are added to files.  Simply scroll up to lock the
+  view in place and then scroll down to the bottom to resume
+  tailing.</blockquote>
+<li><b>Time-of-day ordering of lines:</b> 
+  <blockquote>The log lines from all the files are loaded and then
+  sorted by time-of-day.  Relieves you of having to manually line up
+  log messages from different files.</blockquote>
+<li><b>Syntax highlighting:</b>
+  <blockquote>Errors and warnings are colored in red and yellow,
+  respectively.  Highlights are also applied to: SQL keywords, XML
+  tags, file and line numbers in Java backtraces, and quoted
+  strings.</blockquote>
+<li><b>Navigation:</b>
+  <blockquote>There are hotkeys for jumping to the next or previous
+  error or warning and moving forward or backward by an amount of
+  time.</blockquote>
+<li><b>Use SQL to query logs:</b>
+  <blockquote>Each log file line is treated as a row in a database
+  that can be queried using SQL.  The columns that are available
+  depend on logs file types being viewed.</blockquote>
+<li><b>Command and search history:</b>
+  <blockquote>Your previously entered commands and searches are saved
+  so you can access them between sessions.</blockquote>
+</ul>
+
+See the
+  <a href="https://github.com/tstack/lnav/blob/master/src/help.txt">on-line
+  help text</a> for more information.
+
+<h2><a name="interface">Interface Tour</a></h2>
+
+<div class="ishot"><img src="lnav-top.png"></div>
+<p>
+Top bar: Displays the current time, the number of warnings and errors above the
+top line and the name of the file where the top line came from.
+</p>
+
+<div class="ishot"><img src="lnav-content.png"></div>
+<p>
+Main content: Displays the log lines in time sorted order and highlighted.
+Highlights are done for: errors, warnings, search terms, quoted strings, and
+some SQL syntax.  On the far right, there is a proportional scroll bar displayed
+in reverse-video that shows the current position in the file.
+</p>
+
+<div class="ishot"><img src="lnav-bottom.png"></div>
+<p>
+Bottom bar: Displays the current line number, the position
+in the file as a percentage, warnings and errors below the bottom line.
+</p>
+
+<div class="ishot"><img src="lnav-entry.png"></div>
+<p>Entry line: Searches and commands are entered here.  The entry line supports
+tab-completion in most contexts and displays suggestions in the entry
+box.  In this screenshot, the user is typing in a SQL query.  The top
+shows an error message indicating that the SQL statement is
+incomplete.  Queries and searches are automatically checked for
+correctness as you type.  The screenshot also shows suggestions for
+SQL keywords and column names after the user hit the TAB key twice.
+
+<h2><a name="links">Related Links</a></h2>
+
+<ul>
+<li><a href="http://www.microsoft.com/downloads/details.aspx?FamilyID=890cd06b-abf8-4c25-91b2-f8d975cf8c07&displaylang=en">Microsoft's Log Parser</a>
+</ul>
+
+<div class="footer">
+<span class="hosting">Hosting by <a href="http://github.com">github.com</a>.
+</span>
+
+<span class="contact">
+e-mail: <a href="mailto:timothyshanestack@gmail.com">timothyshanestack at
+gmail.com</a></span>
+</div>
+
+</body>
+
+</html>
