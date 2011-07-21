@@ -22,6 +22,7 @@ Lnav requires the following software packages:
   ncurses   - The ncurses text UI library.
   readline  - The readline line editing library.
   zlib      - The zlib compression library.
+  bz2       - The bzip2 compression library.
 
 
 INSTALLATION

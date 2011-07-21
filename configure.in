@@ -15,6 +15,9 @@ for defdir in /usr/local /opt/local; do
     if test -d "$defdir/lib"; then
 	LDFLAGS="$LDFLAGS -L$defdir/lib"
     fi
+    if test -d "$defdir/lib64"; then
+	LDFLAGS="$LDFLAGS -L$defdir/lib64"
+    fi
 done
 
 dnl abssrcdir is the absolute path to the source base (regardless of where
