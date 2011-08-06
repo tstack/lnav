@@ -279,50 +279,51 @@ void sqlite_close_wrapper(void *mem)
 }
 
 static struct {
-    const char           *ld_program_name;
-    const char *ld_debug_log_name;
+    const char *				ld_program_name;
+    const char *				ld_debug_log_name;
 
-    set< pair<string, int> > ld_file_names;
-    sig_atomic_t         ld_looping;
-    sig_atomic_t         ld_winched;
-    unsigned long        ld_flags;
-    WINDOW               *ld_window;
-    ln_mode_t            ld_mode;
+    set< pair<string, int> >			ld_file_names;
+    list<const logfile *>			ld_files;
+    sig_atomic_t				ld_looping;
+    sig_atomic_t				ld_winched;
+    unsigned long				ld_flags;
+    WINDOW *					ld_window;
+    ln_mode_t					ld_mode;
 
-    statusview_curses    ld_status[LNS__MAX];
-    top_status_source    ld_top_source;
-    bottom_status_source ld_bottom_source;
-    listview_curses::action::broadcaster ld_scroll_broadcaster;
+    statusview_curses				ld_status[LNS__MAX];
+    top_status_source				ld_top_source;
+    bottom_status_source			ld_bottom_source;
+    listview_curses::action::broadcaster	ld_scroll_broadcaster;
 
-    time_t               ld_top_time;
-    time_t               ld_bottom_time;
+    time_t					ld_top_time;
+    time_t					ld_bottom_time;
 
-    stack<textview_curses *> ld_view_stack;
-    textview_curses      ld_views[LNV__MAX];
-    auto_ptr<grep_highlighter> ld_search_child[LNV__MAX];
-    vis_line_t ld_search_start_line;
-    readline_curses      *ld_rl_view;
+    stack<textview_curses *>			ld_view_stack;
+    textview_curses				ld_views[LNV__MAX];
+    auto_ptr<grep_highlighter>			ld_search_child[LNV__MAX];
+    vis_line_t					ld_search_start_line;
+    readline_curses *				ld_rl_view;
 
-    logfile_sub_source   ld_log_source;
-    hist_source          ld_hist_source;
-    int                  ld_hist_zoom;
+    logfile_sub_source				ld_log_source;
+    hist_source					ld_hist_source;
+    int						ld_hist_zoom;
 
-    textfile_sub_source  ld_text_source;
+    textfile_sub_source				ld_text_source;
 
-    map<textview_curses *, int> ld_last_user_mark;
+    map<textview_curses *, int>			ld_last_user_mark;
 
-    grapher              ld_graph_source;
+    grapher					ld_graph_source;
 
-    hist_source ld_db_source;
-    db_label_source ld_db_rows;
+    hist_source					ld_db_source;
+    db_label_source				ld_db_rows;
 
-    int                  ld_max_fd;
-    fd_set               ld_read_fds;
+    int						ld_max_fd;
+    fd_set					ld_read_fds;
 
-    auto_ptr<grep_highlighter> ld_grep_child[LG__MAX];
+    auto_ptr<grep_highlighter>			ld_grep_child[LG__MAX];
 
-    log_vtab_manager *ld_vtab_manager;
-    auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
+    log_vtab_manager *				ld_vtab_manager;
+    auto_mem<sqlite3, sqlite_close_wrapper>	ld_db;
 } lnav_data;
 
 class loading_observer
@@ -641,23 +642,7 @@ static bool append_default_files(lnav_flags_t flag)
 	    if (access(path.c_str(), R_OK) == 0) {
 		path = get_current_dir() + range.first->second;
 
-		if (lnav_data.ld_flags & LNF_ROTATED) {
-		    glob_t gl;
-
-		    memset(&gl, 0, sizeof(gl));
-		    path += "*";
-		    if (glob(path.c_str(), 0, NULL, &gl) == 0) {
-			int lpc;
-
-			for (lpc = 0; lpc < (int)gl.gl_pathc; lpc++) {
-			    lnav_data.ld_file_names.insert(make_pair(gl.gl_pathv[lpc], -1));
-			}
-			globfree(&gl);
-		    }
-		}
-		else {
-		    lnav_data.ld_file_names.insert(make_pair(path, -1));
-		}
+		lnav_data.ld_file_names.insert(make_pair(path, -1));
 		found = true;
 	    }
 	    else if (stat(path.c_str(), &st) == 0) {
@@ -2082,6 +2067,72 @@ static void update_times(void *, listview_curses *lv)
     }
 }
 
+struct same_file {
+    same_file(const struct stat &stat) : sf_stat(stat) { };
+    
+    bool operator()(const logfile *lf) const {
+	return (this->sf_stat.st_dev == lf->get_stat().st_dev &&
+		this->sf_stat.st_ino == lf->get_stat().st_ino);
+    };
+
+    const struct stat &sf_stat;
+};
+
+static void watch_logfile(string filename, int fd, bool required)
+{
+    struct stat st;
+    int rc;
+    
+    if (fd != -1) {
+	rc = fstat(fd, &st);
+    }
+    else {
+	rc = stat(filename.c_str(), &st);
+    }
+    if (rc == -1) {
+	if (required)
+	    throw logfile::error(filename, errno);
+	else
+	    return;
+    }
+
+    if (find_if(lnav_data.ld_files.begin(),
+		lnav_data.ld_files.end(),
+		same_file(st)) ==
+	lnav_data.ld_files.end()) {
+	logfile *lf = new logfile(filename, fd);
+	
+	lnav_data.ld_files.push_back(lf);
+	lnav_data.ld_text_source.tss_files.push_back(lf);
+    }
+}
+
+static void rescan_files(bool required = false)
+{
+    set< pair<string, int> >::iterator iter;
+	    
+    for (iter = lnav_data.ld_file_names.begin();
+	 iter != lnav_data.ld_file_names.end();
+	 iter++) {
+	watch_logfile(iter->first, iter->second, required);
+
+	if (lnav_data.ld_flags & LNF_ROTATED) {
+	    string path = iter->first + ".*";
+	    glob_t gl;
+	    
+	    memset(&gl, 0, sizeof(gl));
+	    if (glob(path.c_str(), 0, NULL, &gl) == 0) {
+		int lpc;
+		
+		for (lpc = 0; lpc < (int)gl.gl_pathc; lpc++) {
+		    watch_logfile(gl.gl_pathv[lpc], -1, false);
+		}
+		globfree(&gl);
+	    }
+	}
+    }
+}
+
 static void looper(void)
 {
     int fd;
@@ -2330,6 +2381,8 @@ static void looper(void)
 	    int            rc;
 
 	    lnav_data.ld_top_source.update_time();
+
+	    rescan_files();
 
 	    for (lpc = 0; lpc < LNV__MAX; lpc++) {
 		lnav_data.ld_views[lpc]
@@ -3004,16 +3057,8 @@ int main(int argc, char *argv[])
     }
     else {
 	try {
-	    set< pair<string, int> >::iterator iter;
+	    rescan_files(true);
 	    
-	    for (iter = lnav_data.ld_file_names.begin();
-		 iter != lnav_data.ld_file_names.end();
-		 iter++) {
-		logfile *lf = new logfile(iter->first, iter->second);
-
-		lnav_data.ld_text_source.tss_files.push_back(lf);
-	    }
-
 	    guard_termios gt(STDIN_FILENO);
 	    looper();
 	}

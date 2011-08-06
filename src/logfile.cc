@@ -31,10 +31,10 @@ throw (error)
     int reserve_size = 100;
 
     assert(filename.size() > 0);
-    
+
+    memset(&this->lf_stat, 0, sizeof(this->lf_stat));
     if (fd == -1) {
 	char resolved_path[PATH_MAX];
-	struct stat st;
 	
 	errno = 0;
 	if (realpath(filename.c_str(), resolved_path) == NULL) {
@@ -42,18 +42,21 @@ throw (error)
 	}
 	filename = resolved_path;
 	
-	if (stat(filename.c_str(), &st) == -1) {
+	if (stat(filename.c_str(), &this->lf_stat) == -1) {
 	    throw error(filename, errno);
 	}
-	reserve_size = st.st_size / 100;
+	reserve_size = this->lf_stat.st_size / 100;
 	
-	if (!S_ISREG(st.st_mode)) {
+	if (!S_ISREG(this->lf_stat.st_mode)) {
 	    throw error(filename, EINVAL);
 	}
 
 	if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
 	    throw error(filename, errno);
 	}
+    }
+    else {
+	fstat(fd, &this->lf_stat);
     }
 
     this->lf_line_buffer.set_fd(fd);

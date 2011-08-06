@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 #include <string>
@@ -67,7 +68,10 @@ public:
     virtual ~logfile();
 
     /** @return The filename as given in the constructor. */
-    std::string &get_filename() { return this->lf_filename; };
+    const std::string &get_filename() const { return this->lf_filename; };
+
+    /** @return The inode for this log file. */
+    const struct stat &get_stat() const { return this->lf_stat; };
 
     /**
      * @return The detected format, rebuild_index() must be called before this
@@ -162,12 +166,13 @@ protected:
      */
     void process_prefix(off_t offset, char *prefix, int len);
 
-    std::string          lf_filename;
-    std::auto_ptr<log_format> lf_format;
-    std::vector<logline> lf_index;
-    time_t      lf_index_time;
-    off_t      lf_index_size;
-    line_buffer lf_line_buffer;
+    std::string			lf_filename;
+    struct stat			lf_stat;
+    std::auto_ptr<log_format>	lf_format;
+    std::vector<logline>	lf_index;
+    time_t			lf_index_time;
+    off_t			lf_index_size;
+    line_buffer			lf_line_buffer;
 };
 
 #endif

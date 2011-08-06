@@ -176,7 +176,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 	break;
     case VT_COL_PATH:
         {
-	    string &fn = lf->get_filename();
+	    const string &fn = lf->get_filename();
 	    
 	    sqlite3_result_text( ctx,
 				 fn.c_str(),
