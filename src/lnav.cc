@@ -2883,6 +2883,25 @@ void ensure_dotlnav(void)
 	mkdir(path.c_str(), 0755);
 }
 
+static void setup_highlights(textview_curses::highlight_map_t &hm)
+{
+    hm["(sql"] = textview_curses::
+        highlighter(xpcre_compile("(?: alter | select | insert | update "
+                                  "| create "
+                                  "| from | where | order by "
+                                  "| group by )", PCRE_CASELESS));
+    hm["(java"] = textview_curses::
+        highlighter(xpcre_compile("(?:\\w+\\.java:\\d+)"));
+    hm["(xml"] = textview_curses::
+        highlighter(xpcre_compile("<(/?[^ >]+)[^>]*>"));
+    hm["(stringd"] = textview_curses::
+        highlighter(xpcre_compile("\".*(?<!\\\\)\""));
+    hm["(strings"] = textview_curses::
+        highlighter(xpcre_compile("\'.*(?<!\\\\)\'"));
+    hm["(ip"] = textview_curses::
+        highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
+}
+
 int main(int argc, char *argv[])
 {
     int lpc, c, retval = EXIT_SUCCESS;
@@ -2944,24 +2963,8 @@ int main(int argc, char *argv[])
     set_sub_source(&lnav_data.ld_db_source);
 
     {
-	textview_curses::highlight_map_t &hm =
-	    lnav_data.ld_views[LNV_LOG].get_highlights();
-
-	hm["(sql"] = textview_curses::
-		     highlighter(xpcre_compile("(?: alter | select | insert | update "
-					       "| create "
-					       "| from | where | order by "
-					       "| group by )", PCRE_CASELESS));
-	hm["(java"] = textview_curses::
-		      highlighter(xpcre_compile("(?:\\w+\\.java:\\d+)"));
-	hm["(xml"] = textview_curses::
-		     highlighter(xpcre_compile("<(/?[^ >]+)[^>]*>"));
-	hm["(stringd"] = textview_curses::
-			 highlighter(xpcre_compile("\".*(?<!\\\\)\""));
-	hm["(strings"] = textview_curses::
-			 highlighter(xpcre_compile("\'.*(?<!\\\\)\'"));
-	hm["(ip"] = textview_curses::
-		    highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
+	setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
+        setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
     }
 
     lnav_data.ld_looping = true;

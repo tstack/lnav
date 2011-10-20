@@ -174,6 +174,7 @@ class generic_log_format : public log_format {
 	      char *prefix,
 	      int len) {
 	static const char *log_fmt[] = {
+	    "%63[0-9: ,-]%15[^:]",
 	    "%63[a-zA-Z0-9: ,-] [%*[^]]]%15[^:]",
 	    "%63[a-zA-Z0-9: ,-] %15s",
 	    "[%63[0-9: .-] %*s %15s",
