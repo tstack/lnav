@@ -756,6 +756,22 @@ static void moveto_cluster(vis_line_t (bookmark_vector::*f)(vis_line_t),
     }
 }
 
+static void check_for_clipboard(FILE **pfile, const char *execstr)
+{
+    if ( execstr == NULL || pfile == NULL || *pfile != NULL ) {
+        return;
+    }
+
+    if ( ( *pfile = popen(execstr, "w") ) != NULL && pclose(*pfile) == 0) {
+        *pfile = popen(execstr, "w");
+    }
+    else {
+        *pfile = NULL;
+    }
+
+    return;
+}
+
 /* XXX For one, this code is kinda crappy.  For two, we should probably link
  * directly with X so we don't need to have xclip installed and it'll work if
  * we're ssh'd into a box.
@@ -767,18 +783,24 @@ static void copy_to_xclip(void)
     bookmark_vector::iterator iter;
     FILE *pfile = NULL;
     string line;
-    
-    if ((pfile = popen("xclip -i > /dev/null", "w")) == NULL) {
-	flash();
-	return;
+
+    //XXX : Check if this is linux or MAC. Probably not the best solution but
+    //better than traversing the PATH to stat for the binaries or trying to
+    //forkexec.
+    check_for_clipboard(&pfile, "xclip -i > /dev/null 2>&1");
+    check_for_clipboard(&pfile, "pbcopy > /dev/null 2>&1");
+
+   if (!pfile) {
+        flash();
+        return;
     }
 
     for (iter = bv.begin(); iter != bv.end(); iter++) {
-	tc->grep_value_for_line(*iter, line);
-	fprintf(pfile, "%s\n", line.c_str());
+        tc->grep_value_for_line(*iter, line);
+        fprintf(pfile, "%s\n", line.c_str());
     }
 
-    fclose(pfile);
+    pclose(pfile);
     pfile = NULL;
 }
 
