@@ -767,8 +767,9 @@ static void copy_to_xclip(void)
     bookmark_vector::iterator iter;
     FILE *pfile = NULL;
     string line;
-    
-    if ((pfile = popen("xclip -i > /dev/null", "w")) == NULL) {
+
+    if ((pfile = popen("xclip -i > /dev/null 2>&1", "w")) == NULL || //Linux
+        (pfile = popen("pbcopy > /dev/null 2>&1", "w")) == NULL) { //Mac
 	flash();
 	return;
     }
