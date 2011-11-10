@@ -767,18 +767,37 @@ static void copy_to_xclip(void)
     bookmark_vector::iterator iter;
     FILE *pfile = NULL;
     string line;
-    
-    if ((pfile = popen("xclip -i > /dev/null", "w")) == NULL) {
-	flash();
-	return;
+
+    //XXX : Check if this is linux or MAC. Probably not the best solution but
+    //better than traversing the PATH to stat for the binaries or trying to
+    //forkexec.
+   if ( (pfile = popen("xclip -i > /dev/null 2>&1", "w")) != NULL &&
+         pclose(pfile) == 0) {
+       pfile = popen("xclip -i > /dev/null 2>&1", "w");
+   }
+   else {
+       pfile = NULL;
+   }
+
+   if ( !pfile && (pfile = popen("pbcopy > /dev/null 2>&1", "w")) != NULL &&
+         pclose(pfile) == 0) {
+       pfile = popen("pbcopy > /dev/null 2>&1", "w");
+   }
+   else {
+       pfile = NULL;
+   }
+
+   if (!pfile) {
+        flash();
+        return;
     }
 
     for (iter = bv.begin(); iter != bv.end(); iter++) {
-	tc->grep_value_for_line(*iter, line);
-	fprintf(pfile, "%s\n", line.c_str());
+        tc->grep_value_for_line(*iter, line);
+        fprintf(pfile, "%s\n", line.c_str());
     }
 
-    fclose(pfile);
+    pclose(pfile);
     pfile = NULL;
 }
 
