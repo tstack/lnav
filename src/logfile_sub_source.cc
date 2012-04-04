@@ -408,7 +408,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
     return retval;
 }
 
-void logfile_sub_source::text_update_marks(bookmarks &bm)
+void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
 {
     logfile    *last_file = NULL;
     vis_line_t vl;
@@ -422,7 +422,7 @@ void logfile_sub_source::text_update_marks(bookmarks &bm)
 	content_line_t cl = this->lss_index[vl];
 	logfile        *lf;
 
-	for (user_marks_t::iterator iter = this->lss_user_marks.begin();
+	for (bookmarks<content_line_t>::type::iterator iter = this->lss_user_marks.begin();
 	     iter != this->lss_user_marks.end();
 	     ++iter) {
 	    if (binary_search(iter->second.begin(), iter->second.end(), cl)) {

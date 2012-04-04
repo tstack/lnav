@@ -21,10 +21,14 @@
  * value that may or may not be in the vector, find the next or
  * previous value that is in the vector.
  *
+ * @param LineType The type used to store line numbers.  (e.g.
+ *   vis_line_t or content_line_t)
+ *
  * @note The vector is expected to be sorted.
  */
+template<typename LineType>
 class bookmark_vector
-    : public std::vector<vis_line_t> {
+    : public std::vector<LineType> {
 public:
 
     /**
@@ -33,9 +37,9 @@ public:
      *
      * @param vl The line to bookmark.
      */
-    iterator insert_once(vis_line_t vl)
+    typename bookmark_vector::iterator insert_once(LineType vl)
     {
-	iterator lb, retval;
+	typename bookmark_vector::iterator lb, retval;
 
 	assert(vl >= 0);
 
@@ -58,7 +62,7 @@ public:
      * the next bookmark is returned.  If the 'start' value is not a
      * bookmark, the next highest value in the vector is returned.
      */
-    vis_line_t next(vis_line_t start);
+    LineType next(LineType start);
 
     /**
      * @param start The value to start the search for the previous
@@ -67,7 +71,7 @@ public:
      * are no more prior bookmarks.
      * @see next
      */
-    vis_line_t prev(vis_line_t start);
+    LineType prev(LineType start);
 };
 
 /**
@@ -79,6 +83,11 @@ class bookmark_type_t { };
 /**
  * Map of bookmark types to bookmark vectors.
  */
-typedef std::map<bookmark_type_t *, bookmark_vector> bookmarks;
+template<typename LineType>
+struct bookmarks {
+    typedef std::map<bookmark_type_t *, bookmark_vector<LineType> > type;
+};
+
+typedef bookmarks<vis_line_t>::type vis_bookmarks;
 
 #endif

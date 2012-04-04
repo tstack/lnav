@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
   int lpc, retval = EXIT_SUCCESS;
-  bookmark_vector bv, bv_cp;
+  bookmark_vector<vis_line_t> bv, bv_cp;
 
   bv.insert_once(vis_line_t(1));
   bv.insert_once(vis_line_t(1));

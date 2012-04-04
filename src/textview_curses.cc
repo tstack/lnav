@@ -190,7 +190,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 					     vis_line_t row,
 					     attr_line_t &value_out)
 {
-    bookmark_vector &user_marks = this->tc_bookmarks[&BM_USER];
+    bookmark_vector<vis_line_t> &user_marks = this->tc_bookmarks[&BM_USER];
     string_attrs_t &sa = value_out.get_attrs();
     string &str = value_out.get_string();
     highlight_map_t::iterator iter;

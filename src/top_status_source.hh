@@ -65,14 +65,14 @@ public:
 	textview_curses *tc = dynamic_cast<textview_curses *>(lc);
 	status_field &sfw = this->tss_fields[TSF_WARNINGS];
 	status_field &sfe = this->tss_fields[TSF_ERRORS];
-	bookmarks &bm = tc->get_bookmarks();
+	vis_bookmarks &bm = tc->get_bookmarks();
 	unsigned long width;
 	vis_line_t height;
 
 	tc->get_dimensions(height, width);
 	if (bm.find(&logfile_sub_source::BM_WARNINGS) != bm.end()) {
-	    bookmark_vector &bv = bm[&logfile_sub_source::BM_WARNINGS];
-	    bookmark_vector::iterator iter;
+	    bookmark_vector<vis_line_t> &bv = bm[&logfile_sub_source::BM_WARNINGS];
+	    bookmark_vector<vis_line_t>::iterator iter;
 
 	    iter = lower_bound(bv.begin(), bv.end(), tc->get_top());
 	    sfw.set_value("%9dW", distance(bv.begin(), iter));
@@ -82,8 +82,8 @@ public:
 	}
 	
 	if (bm.find(&logfile_sub_source::BM_ERRORS) != bm.end()) {
-	    bookmark_vector &bv = bm[&logfile_sub_source::BM_ERRORS];
-	    bookmark_vector::iterator iter;
+	    bookmark_vector<vis_line_t> &bv = bm[&logfile_sub_source::BM_ERRORS];
+	    bookmark_vector<vis_line_t>::iterator iter;
 
 	    iter = lower_bound(bv.begin(), bv.end(), tc->get_top());
 	    sfe.set_value("%9dE", distance(bv.begin(), iter));

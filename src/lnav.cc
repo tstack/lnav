@@ -710,7 +710,7 @@ static void ensure_view(textview_curses *expected_tc)
     }
 }
 
-static void moveto_cluster(vis_line_t (bookmark_vector::*f)(vis_line_t),
+static void moveto_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line_t),
 			   bookmark_type_t *bt,
 			   vis_line_t top)
 {
@@ -721,7 +721,7 @@ static void moveto_cluster(vis_line_t (bookmark_vector::*f)(vis_line_t),
     }
     else {
 	logfile_sub_source &lss = lnav_data.ld_log_source;
-	bookmarks &bm           = tc->get_bookmarks();
+	vis_bookmarks &bm           = tc->get_bookmarks();
 	vis_line_t vl(-1), last_top(top);
 
 	logline::level_t last_level;
@@ -779,8 +779,8 @@ static void check_for_clipboard(FILE **pfile, const char *execstr)
 static void copy_to_xclip(void)
 {
     textview_curses *tc = lnav_data.ld_view_stack.top();
-    bookmark_vector &bv = tc->get_bookmarks()[&textview_curses::BM_USER];
-    bookmark_vector::iterator iter;
+    bookmark_vector<vis_line_t> &bv = tc->get_bookmarks()[&textview_curses::BM_USER];
+    bookmark_vector<vis_line_t>::iterator iter;
     FILE *pfile = NULL;
     string line;
 
@@ -807,13 +807,14 @@ static void copy_to_xclip(void)
 static void handle_paging_key(int ch)
 {
     textview_curses *tc = lnav_data.ld_view_stack.top();
-
-    logfile_sub_source &lss = lnav_data.ld_log_source;
-    bookmarks &bm           = tc->get_bookmarks();
+    logfile_sub_source *lss = NULL;
+    vis_bookmarks &bm           = tc->get_bookmarks();
 
     if (tc->handle_key(ch)) {
 	return;
     }
+
+    lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
 
     /* process the command keystroke */
     switch (ch) {
@@ -835,26 +836,33 @@ static void handle_paging_key(int ch)
 	copy_to_xclip();
 	break;
 
+    case 'C':
+	if (lss) {
+	    lss->get_user_bookmarks()[&textview_curses::BM_USER].clear();
+	    tc->reload_data();
+	}
+	break;
+
     case 'e':
-	moveto_cluster(&bookmark_vector::next,
+	moveto_cluster(&bookmark_vector<vis_line_t>::next,
 		       &logfile_sub_source::BM_ERRORS,
 		       tc->get_top());
 	break;
 
     case 'E':
-	moveto_cluster(&bookmark_vector::prev,
+	moveto_cluster(&bookmark_vector<vis_line_t>::prev,
 		       &logfile_sub_source::BM_ERRORS,
 		       tc->get_top());
 	break;
 
     case 'w':
-	moveto_cluster(&bookmark_vector::next,
+	moveto_cluster(&bookmark_vector<vis_line_t>::next,
 		       &logfile_sub_source::BM_WARNINGS,
 		       tc->get_top());
 	break;
 
     case 'W':
-	moveto_cluster(&bookmark_vector::prev,
+	moveto_cluster(&bookmark_vector<vis_line_t>::prev,
 		       &logfile_sub_source::BM_WARNINGS,
 		       tc->get_top());
 	break;
@@ -995,16 +1003,19 @@ static void handle_paging_key(int ch)
 	break;
 
     case 'm':
-	lnav_data.ld_last_user_mark[tc] = tc->get_top();
-	tc->toggle_user_mark(&textview_curses::BM_USER,
-			     lnav_data.ld_last_user_mark[tc]);
-	tc->reload_data();
+	if (lss) {
+	    lnav_data.ld_last_user_mark[tc] = tc->get_top();
+	    lss->toggle_user_mark(&textview_curses::BM_USER,
+		    vis_line_t(lnav_data.ld_last_user_mark[tc]));
+	    tc->reload_data();
+	}
 	break;
     case 'J':
 	// TODO: if they scroll up, we should start marking again from the top.
 	// We should also scroll down as the continue to mark stuff.  If they
 	// move somewhere else in the file, we should also start marking from
 	// the top again.
+	if (lss) {
 	if (lnav_data.ld_last_user_mark.find(tc) == lnav_data.ld_last_user_mark.end()) {
 	    lnav_data.ld_last_user_mark[tc] = tc->get_top();
 	}
@@ -1015,27 +1026,31 @@ static void handle_paging_key(int ch)
 	else {
 	    lnav_data.ld_last_user_mark[tc] += 1;
 	}
-	tc->toggle_user_mark(&textview_curses::BM_USER,
-			     lnav_data.ld_last_user_mark[tc]);
+	lss->toggle_user_mark(&textview_curses::BM_USER,
+			     vis_line_t(lnav_data.ld_last_user_mark[tc]));
 	tc->reload_data();
+}
 	break;
     case 'K':
 	// TODO: scroll up with the selection
-	if (lnav_data.ld_last_user_mark.find(tc) == lnav_data.ld_last_user_mark.end()) {
-	    lnav_data.ld_last_user_mark[tc] = tc->get_top();
-	}
+	if (lss) {
+		if (lnav_data.ld_last_user_mark.find(tc) == lnav_data.ld_last_user_mark.end()) {
+			lnav_data.ld_last_user_mark[tc] = tc->get_top();
+		}
 
-	tc->toggle_user_mark(&textview_curses::BM_USER,
-			     lnav_data.ld_last_user_mark[tc]);
-	if (lnav_data.ld_last_user_mark[tc] - 1 < 0) {
-	    flash();
+		lss->toggle_user_mark(&textview_curses::BM_USER,
+		                      vis_line_t(lnav_data.ld_last_user_mark[tc]));
+		if (lnav_data.ld_last_user_mark[tc] - 1 < 0) {
+			flash();
+		}
+		else {
+			lnav_data.ld_last_user_mark[tc] -= 1;
+		}
+		tc->reload_data();
 	}
-	else {
-	    lnav_data.ld_last_user_mark[tc] -= 1;
-	}
-	tc->reload_data();
 	break;
     case 'M':
+	if (lss) {
 	if (lnav_data.ld_last_user_mark.find(tc) == lnav_data.ld_last_user_mark.end()) {
 	    flash();
 	}
@@ -1043,10 +1058,11 @@ static void handle_paging_key(int ch)
 	    int start_line = min((int)tc->get_top(), lnav_data.ld_last_user_mark[tc] + 1);
 	    int end_line = max((int)tc->get_top(), lnav_data.ld_last_user_mark[tc] - 1);
 	    
-	    tc->toggle_user_mark(&textview_curses::BM_USER,
-				 start_line, end_line);
+	    lss->toggle_user_mark(&textview_curses::BM_USER,
+				  vis_line_t(start_line), vis_line_t(end_line));
 	    tc->reload_data();
 	}
+}
 	break;
 
     case '1':
@@ -1055,14 +1071,14 @@ static void handle_paging_key(int ch)
     case '4':
     case '5':
     case '6':
-	{
+	if (lss) {
 	    int    ten_minute = (ch - '0') * 10 * 60;
 	    time_t hour       = rounddown(lnav_data.ld_top_time +
 					  (60 * 60) -
 					  ten_minute +
 					  1,
 					  60 * 60);
-	    vis_line_t line = lss.find_from_time(hour + ten_minute);
+	    vis_line_t line = lss->find_from_time(hour + ten_minute);
 
 	    tc->set_top(line);
 	}
@@ -1093,19 +1109,19 @@ static void handle_paging_key(int ch)
 	break;
 
     case '0':
-	{
+	if (lss) {
 	    time_t     first_time = lnav_data.ld_top_time;
 	    int        step       = 24 * 60 * 60;
-	    vis_line_t line       = lss.find_from_time(roundup(first_time, step));
+	    vis_line_t line       = lss->find_from_time(roundup(first_time, step));
 
 	    tc->set_top(line);
 	}
 	break;
 
     case ')':
-	{
+	if (lss) {
 	    time_t     day  = rounddown(lnav_data.ld_top_time, 24 * 60 * 60);
-	    vis_line_t line = lss.find_from_time(day);
+	    vis_line_t line = lss->find_from_time(day);
 
 	    --line;
 	    tc->set_top(line);
@@ -1117,10 +1133,10 @@ static void handle_paging_key(int ch)
 	if (tc->get_top() == 0) {
 	    flash();
 	}
-	else {
+	else if (lss) {
 	    int        step     = ch == 'D' ? (24 * 60 * 60) : (60 * 60);
 	    time_t     top_time = lnav_data.ld_top_time;
-	    vis_line_t line     = lss.find_from_time(top_time - step);
+	    vis_line_t line     = lss->find_from_time(top_time - step);
 
 	    if (line != 0) {
 		--line;
@@ -1131,9 +1147,9 @@ static void handle_paging_key(int ch)
 
     case 'd':
     case 'o':
-	{
+	if (lss) {
 	    int        step = ch == 'd' ? (24 * 60 * 60) : (60 * 60);
-	    vis_line_t line = lss.find_from_time(lnav_data.ld_top_time + step);
+	    vis_line_t line = lss->find_from_time(lnav_data.ld_top_time + step);
 
 	    tc->set_top(line);
 	}
@@ -1184,7 +1200,8 @@ static void handle_paging_key(int ch)
 	    }
 	    else {
 		tc = &lnav_data.ld_views[LNV_LOG];
-		tc->set_top(lss.find_from_time(hist_top));
+		lss = &lnav_data.ld_log_source;
+		tc->set_top(lss->find_from_time(hist_top));
 		tc->set_needs_update();
 	    }
 	}
@@ -1258,15 +1275,17 @@ static void handle_paging_key(int ch)
 	break;
 
     case 'x':
-	tc->toggle_user_mark(&BM_EXAMPLE, tc->get_top());
+	if (tc == &lnav_data.ld_views[LNV_LOG]) {
+	    lnav_data.ld_log_source.toggle_user_mark(&BM_EXAMPLE, vis_line_t(tc->get_top()));
+	}
 	break;
 
     case '\\':
 	{
-	    bookmarks &bm = tc->get_bookmarks();
+	    vis_bookmarks &bm = tc->get_bookmarks();
 	    string ex;
 
-	    for (bookmark_vector::iterator iter = bm[&BM_EXAMPLE].begin();
+	    for (bookmark_vector<vis_line_t>::iterator iter = bm[&BM_EXAMPLE].begin();
 		 iter != bm[&BM_EXAMPLE].end();
 		 ++iter) {
 		string line;
@@ -1443,8 +1462,8 @@ static string com_save_to(string cmdline, vector<string> &args)
     }
     
     textview_curses *tc = lnav_data.ld_view_stack.top();
-    bookmark_vector &bv = tc->get_bookmarks()[&textview_curses::BM_USER];
-    bookmark_vector::iterator iter;
+    bookmark_vector<vis_line_t> &bv = tc->get_bookmarks()[&textview_curses::BM_USER];
+    bookmark_vector<vis_line_t>::iterator iter;
     string line;
     
     for (iter = bv.begin(); iter != bv.end(); iter++) {

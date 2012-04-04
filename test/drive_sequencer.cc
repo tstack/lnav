@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 	static bookmark_type_t SEQUENCE;
 	
 	sequence_matcher sm(fc);
-	bookmarks bm;
+	vis_bookmarks bm;
 	sequence_sink ss(sm, bm[&SEQUENCE]);
 	
 	FD_ZERO(&read_fds);
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 	    gp.check_fd_set(rfds);
 	}
 
-	for (bookmark_vector::iterator iter = bm[&SEQUENCE].begin();
+	for (bookmark_vector<vis_line_t>::iterator iter = bm[&SEQUENCE].begin();
 	     iter != bm[&SEQUENCE].end();
 	     ++iter) {
 	    printf("%d\n", (const int)*iter);

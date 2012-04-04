@@ -10,7 +10,7 @@
 
 class sequence_sink : public grep_proc_sink {
 public:
-    sequence_sink(sequence_matcher &sm, bookmark_vector &bv) :
+    sequence_sink(sequence_matcher &sm, bookmark_vector<vis_line_t> &bv) :
 	ss_matcher(sm),
 	ss_bookmarks(bv) {
     };
@@ -55,7 +55,7 @@ public:
 
 private:
     sequence_matcher &ss_matcher;
-    bookmark_vector &ss_bookmarks;
+    bookmark_vector<vis_line_t> &ss_bookmarks;
     std::vector<std::string> ss_line_values;
     std::map< sequence_matcher::id_t, std::vector<grep_line_t> > ss_state;
 };

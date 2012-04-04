@@ -125,7 +125,30 @@ public:
     };
     bool rebuild_index(observer *obs = NULL, bool force = false);
 
-    void text_update_marks(bookmarks &bm);
+    void text_update_marks(vis_bookmarks &bm);
+
+    void toggle_user_mark(bookmark_type_t *bm,
+			  vis_line_t start_line,
+			  vis_line_t end_line = vis_line_t(-1))
+    {
+	if (end_line == -1)
+	    end_line = start_line;
+	for (vis_line_t curr_line = start_line; curr_line <= end_line; ++curr_line) {
+	    bookmark_vector<content_line_t> &bv = this->lss_user_marks[bm];
+	    bookmark_vector<content_line_t>::iterator iter;
+	    
+	    iter = bv.insert_once(this->at(curr_line));
+	    if (iter == bv.end()) {
+	    }
+	    else {
+		bv.erase(iter);
+	    }
+	}
+    };
+
+    bookmarks<content_line_t>::type &get_user_bookmarks(void) {
+    	return this->lss_user_marks;
+    };
 
     int get_filtered_count() const { return this->lss_filtered_count; };
 
@@ -212,10 +235,7 @@ private:
 
     std::vector<content_line_t> lss_index;
 
-    typedef std::map< bookmark_type_t *,
-		      std::vector<content_line_t> > user_marks_t;
-
-    user_marks_t lss_user_marks;
+    bookmarks<content_line_t>::type lss_user_marks;
 
     logfile           *lss_token_file;
     std::string       lss_token_value;

@@ -147,6 +147,8 @@ through the file.
 
   c                 Copy the marked text to the X selection buffer.
 
+  C                 Clear all marked lines.
+
   u/U               Move forward/backward through any user bookmarks
 		    you have added using the 'm' key.
   

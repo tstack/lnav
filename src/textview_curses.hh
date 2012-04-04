@@ -31,9 +31,7 @@ public:
 				     string_attrs_t &value_out) {
     };
 
-    virtual void text_update_marks(bookmarks &bm) { };
-
-    virtual void text_user_mark(bookmark_type_t *bm, int line, bool added) { };
+    virtual void text_update_marks(vis_bookmarks &bm) { };
 };
 
 /**
@@ -105,29 +103,7 @@ public:
     textview_curses();
     virtual ~textview_curses();
 
-    bookmarks &get_bookmarks(void) { return this->tc_bookmarks; };
-
-    void toggle_user_mark(bookmark_type_t *bm,
-			  int start_line,
-			  int end_line = -1)
-    {
-	if (end_line == -1)
-	    end_line = start_line;
-	for (int curr_line = start_line; curr_line <= end_line; curr_line++) {
-	    bookmark_vector &bv = this->tc_bookmarks[bm];
-	    bookmark_vector::iterator iter;
-	    bool added = false;
-	    
-	    iter = bv.insert_once(vis_line_t(curr_line));
-	    if (iter == bv.end()) {
-		added = true;
-	    }
-	    else {
-		bv.erase(iter);
-	    }
-	    this->tc_sub_source->text_user_mark(bm, curr_line, added);
-	}
-    };
+    vis_bookmarks &get_bookmarks(void) { return this->tc_bookmarks; };
 
     void set_sub_source(text_sub_source *src)
     {
@@ -274,7 +250,7 @@ public:
 protected:
     text_sub_source *tc_sub_source;
 
-    bookmarks tc_bookmarks;
+    vis_bookmarks tc_bookmarks;
 
     vis_line_t tc_lview_top;
     int        tc_lview_left;

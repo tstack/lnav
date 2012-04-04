@@ -4,11 +4,12 @@
 
 #include "bookmarks.hh"
 
-vis_line_t bookmark_vector::next(vis_line_t start)
+template<typename LineType>
+LineType bookmark_vector<LineType>::next(LineType start)
 {
-    std::vector<vis_line_t>::iterator ub;
+    typename bookmark_vector::iterator ub;
 
-    vis_line_t retval(-1);
+    LineType retval(-1);
 
     assert(start >= -1);
 
@@ -22,11 +23,12 @@ vis_line_t bookmark_vector::next(vis_line_t start)
     return retval;
 }
 
-vis_line_t bookmark_vector::prev(vis_line_t start)
+template<typename LineType>
+LineType bookmark_vector<LineType>::prev(LineType start)
 {
-    std::vector<vis_line_t>::iterator lb;
+    typename bookmark_vector::iterator lb;
 
-    vis_line_t retval(-1);
+    LineType retval(-1);
 
     assert(start >= 0);
 
@@ -40,3 +42,6 @@ vis_line_t bookmark_vector::prev(vis_line_t start)
 
     return retval;
 }
+
+template class bookmark_vector<vis_line_t>;
+
