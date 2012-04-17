@@ -2,6 +2,8 @@
  * @file listview_curses.cc
  */
 
+#include "config.h"
+
 #include "listview_curses.hh"
 
 using namespace std;

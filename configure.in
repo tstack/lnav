@@ -96,7 +96,7 @@ AC_SEARCH_LIBS(BZ2_bzopen, bz2)
 AC_SEARCH_LIBS(dlopen, dl)
 AC_CHECK_HEADERS(pty.h util.h zlib.h bzlib.h libutil.h)
 
-MP_WITH_CURSES()
+AX_WITH_CURSES
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE([], [AC_MSG_ERROR([readline required to build])])
 

@@ -51,7 +51,7 @@ if test ".$with_readline" = ".no" ; then
 else
   if test ".$with_readline" = ".yes"; then
     OLD_LIBS="$LIBS"
-    AC_CHECK_LIB(readline, readline, [], [], [-ltermcap])
+    AC_CHECK_LIB(readline, readline, [], [], [])
     LIBS="$OLD_LIBS"
     if test "$ac_cv_lib_readline_readline" = "yes"; then
       READLINE_LIBS="-lreadline"
@@ -78,40 +78,3 @@ fi
 AC_SUBST([READLINE_LIBS])
 AC_SUBST([READLINE_CFLAGS])
 ])
-
-
-AC_DEFUN([MP_WITH_CURSES],
-  [AC_ARG_WITH(ncurses, [  --with-ncurses          Force the use of ncurses over curses],,)
-   mp_save_LIBS="$LIBS"
-   CURSES_LIB=""
-   if test "$with_ncurses" != yes
-   then
-     AC_CACHE_CHECK([for working curses], mp_cv_curses,
-       [LIBS="$LIBS -lcurses"
-        AC_TRY_LINK(
-          [#include <curses.h>],
-          [chtype a; int b=A_STANDOUT, c=KEY_LEFT; initscr(); ],
-          mp_cv_curses=yes, mp_cv_curses=no)])
-     if test "$mp_cv_curses" = yes
-     then
-       AC_DEFINE(HAVE_CURSES_H, [], [curses library])
-       CURSES_LIB="-lcurses"
-     fi
-   fi
-   if test ! "$CURSES_LIB"
-   then
-     AC_CACHE_CHECK([for working ncurses], mp_cv_ncurses,
-       [LIBS="$mp_save_LIBS -lncurses"
-        AC_TRY_LINK(
-          [#include <ncurses.h>],
-          [chtype a; int b=A_STANDOUT, c=KEY_LEFT; initscr(); ],
-          mp_cv_ncurses=yes, mp_cv_ncurses=no)])
-     if test "$mp_cv_ncurses" = yes
-     then
-       AC_DEFINE(HAVE_NCURSES_H, [], [curses library])
-       CURSES_LIB="-lncurses"
-     fi
-   fi
-   LIBS="$mp_save_LIBS"
-   AC_SUBST(CURSES_LIB)
-])dnl

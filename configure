@@ -723,6 +723,7 @@ enable_dependency_tracking
 enable_static
 enable_profiling
 with_ncurses
+with_ncursesw
 with_pcre
 with_readline
 with_sqlite3
@@ -738,7 +739,8 @@ CPPFLAGS
 CCC
 CC
 CFLAGS
-CPP'
+CPP
+CURSES_LIB'
 
 
 # Initialize some variables set by options.
@@ -1367,7 +1369,8 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-ncurses          Force the use of ncurses over curses
+  --with-ncurses          force the use of Ncurses or NcursesW
+  --without-ncursesw      do not use NcursesW (wide character support)
   --with-pcre[=prefix]
   --with-readline[=prefix]    compile xmlreadline part (via libreadline check)
   --with-sqlite3=[ARG]    use SQLite 3 library [default=yes], optionally
@@ -1384,6 +1387,7 @@ Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPP         C preprocessor
+  CURSES_LIB  linker library for Curses, e.g. -lcurses
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -5186,89 +5190,761 @@ done
 
 
 
+
+
 # Check whether --with-ncurses was given.
 if test "${with_ncurses+set}" = set; then :
   withval=$with_ncurses;
+else
+  with_ncurses=check
 fi
 
-   mp_save_LIBS="$LIBS"
-   CURSES_LIB=""
-   if test "$with_ncurses" != yes
-   then
-     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working curses" >&5
-$as_echo_n "checking for working curses... " >&6; }
-if ${mp_cv_curses+:} false; then :
+
+# Check whether --with-ncursesw was given.
+if test "${with_ncursesw+set}" = set; then :
+  withval=$with_ncursesw;
+else
+  with_ncursesw=check
+fi
+
+
+    ax_saved_LIBS=$LIBS
+    if test "x$with_ncurses" = xyes || test "x$with_ncursesw" = xyes; then :
+  ax_with_plaincurses=no
+else
+  ax_with_plaincurses=check
+fi
+
+    ax_cv_curses_which=no
+
+    # Test for NcursesW
+
+    if test "x$CURSES_LIB" = x && test "x$with_ncursesw" != xno; then :
+
+        LIBS="$ax_saved_LIBS -lncursesw"
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NcursesW wide-character library" >&5
+$as_echo_n "checking for NcursesW wide-character library... " >&6; }
+if ${ax_cv_ncursesw+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  LIBS="$LIBS -lcurses"
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char initscr ();
 int
 main ()
 {
-chtype a; int b=A_STANDOUT, c=KEY_LEFT; initscr();
+return initscr ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  mp_cv_curses=yes
+  ax_cv_ncursesw=yes
 else
-  mp_cv_curses=no
+  ax_cv_ncursesw=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $mp_cv_curses" >&5
-$as_echo "$mp_cv_curses" >&6; }
-     if test "$mp_cv_curses" = yes
-     then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_ncursesw" >&5
+$as_echo "$ax_cv_ncursesw" >&6; }
+        if test "x$ax_cv_ncursesw" = xno && test "x$with_ncursesw" = xyes; then :
 
-$as_echo "#define HAVE_CURSES_H /**/" >>confdefs.h
+            as_fn_error $? "--with-ncursesw specified but could not find NcursesW library" "$LINENO" 5
 
-       CURSES_LIB="-lcurses"
-     fi
-   fi
-   if test ! "$CURSES_LIB"
-   then
-     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working ncurses" >&5
-$as_echo_n "checking for working ncurses... " >&6; }
-if ${mp_cv_ncurses+:} false; then :
+fi
+
+        if test "x$ax_cv_ncursesw" = xyes; then :
+
+            ax_cv_curses=yes
+            ax_cv_curses_which=ncursesw
+            CURSES_LIB="-lncursesw"
+
+$as_echo "#define HAVE_NCURSESW 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES 1" >>confdefs.h
+
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working ncursesw/curses.h" >&5
+$as_echo_n "checking for working ncursesw/curses.h... " >&6; }
+if ${ax_cv_header_ncursesw_curses_h+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  LIBS="$mp_save_LIBS -lncurses"
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <ncurses.h>
+
+                        #define _XOPEN_SOURCE_EXTENDED 1
+                        #include <ncursesw/curses.h>
+
 int
 main ()
 {
-chtype a; int b=A_STANDOUT, c=KEY_LEFT; initscr();
+
+                        chtype a = A_BOLD;
+                        int b = KEY_LEFT;
+                        chtype c = COLOR_PAIR(1) & A_COLOR;
+                        attr_t d = WA_NORMAL;
+                        cchar_t e;
+                        wint_t f;
+                        int g = getattrs(stdscr);
+                        int h = getcurx(stdscr) + getmaxx(stdscr);
+                        initscr();
+                        init_pair(1, COLOR_WHITE, COLOR_RED);
+                        wattr_set(stdscr, d, 0, NULL);
+                        wget_wch(stdscr, &f);
+
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  mp_cv_ncurses=yes
+  ax_cv_header_ncursesw_curses_h=yes
 else
-  mp_cv_ncurses=no
+  ax_cv_header_ncursesw_curses_h=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $mp_cv_ncurses" >&5
-$as_echo "$mp_cv_ncurses" >&6; }
-     if test "$mp_cv_ncurses" = yes
-     then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_header_ncursesw_curses_h" >&5
+$as_echo "$ax_cv_header_ncursesw_curses_h" >&6; }
+            if test "x$ax_cv_header_ncursesw_curses_h" = xyes; then :
 
-$as_echo "#define HAVE_NCURSES_H /**/" >>confdefs.h
+                ax_cv_curses_enhanced=yes
+                ax_cv_curses_color=yes
+                ax_cv_curses_obsolete=yes
 
-       CURSES_LIB="-lncurses"
-     fi
-   fi
-   LIBS="$mp_save_LIBS"
+$as_echo "#define HAVE_CURSES_ENHANCED 1" >>confdefs.h
 
+
+$as_echo "#define HAVE_CURSES_COLOR 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES_OBSOLETE 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_NCURSESW_CURSES_H 1" >>confdefs.h
+
+
+fi
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working ncursesw.h" >&5
+$as_echo_n "checking for working ncursesw.h... " >&6; }
+if ${ax_cv_header_ncursesw_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                        #define _XOPEN_SOURCE_EXTENDED 1
+                        #include <ncursesw.h>
+
+int
+main ()
+{
+
+                        chtype a = A_BOLD;
+                        int b = KEY_LEFT;
+                        chtype c = COLOR_PAIR(1) & A_COLOR;
+                        attr_t d = WA_NORMAL;
+                        cchar_t e;
+                        wint_t f;
+                        int g = getattrs(stdscr);
+                        int h = getcurx(stdscr) + getmaxx(stdscr);
+                        initscr();
+                        init_pair(1, COLOR_WHITE, COLOR_RED);
+                        wattr_set(stdscr, d, 0, NULL);
+                        wget_wch(stdscr, &f);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_header_ncursesw_h=yes
+else
+  ax_cv_header_ncursesw_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_header_ncursesw_h" >&5
+$as_echo "$ax_cv_header_ncursesw_h" >&6; }
+            if test "x$ax_cv_header_ncursesw_h" = xyes; then :
+
+                ax_cv_curses_enhanced=yes
+                ax_cv_curses_color=yes
+                ax_cv_curses_obsolete=yes
+
+$as_echo "#define HAVE_CURSES_ENHANCED 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES_COLOR 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES_OBSOLETE 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_NCURSESW_H 1" >>confdefs.h
+
+
+fi
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working ncurses.h" >&5
+$as_echo_n "checking for working ncurses.h... " >&6; }
+if ${ax_cv_header_ncurses_h_with_ncursesw+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                        #define _XOPEN_SOURCE_EXTENDED 1
+                        #include <ncurses.h>
+
+int
+main ()
+{
+
+                        chtype a = A_BOLD;
+                        int b = KEY_LEFT;
+                        chtype c = COLOR_PAIR(1) & A_COLOR;
+                        attr_t d = WA_NORMAL;
+                        cchar_t e;
+                        wint_t f;
+                        int g = getattrs(stdscr);
+                        int h = getcurx(stdscr) + getmaxx(stdscr);
+                        initscr();
+                        init_pair(1, COLOR_WHITE, COLOR_RED);
+                        wattr_set(stdscr, d, 0, NULL);
+                        wget_wch(stdscr, &f);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_header_ncurses_h_with_ncursesw=yes
+else
+  ax_cv_header_ncurses_h_with_ncursesw=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_header_ncurses_h_with_ncursesw" >&5
+$as_echo "$ax_cv_header_ncurses_h_with_ncursesw" >&6; }
+            if test "x$ax_cv_header_ncurses_h_with_ncursesw" = xyes; then :
+
+                ax_cv_curses_enhanced=yes
+                ax_cv_curses_color=yes
+                ax_cv_curses_obsolete=yes
+
+$as_echo "#define HAVE_CURSES_ENHANCED 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES_COLOR 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES_OBSOLETE 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_NCURSES_H 1" >>confdefs.h
+
+
+fi
+
+            if test "x$ax_cv_header_ncursesw_curses_h" = xno && test "x$ax_cv_header_ncursesw_h" = xno && test "x$ax_cv_header_ncurses_h_with_ncursesw" = xno; then :
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: could not find a working ncursesw/curses.h, ncursesw.h or ncurses.h" >&5
+$as_echo "$as_me: WARNING: could not find a working ncursesw/curses.h, ncursesw.h or ncurses.h" >&2;}
+
+fi
+
+fi
+
+fi
+
+    # Test for Ncurses
+
+    if test "x$CURSES_LIB" = x && test "x$with_ncurses" != xno && test "x$ax_cv_curses_which" = xno; then :
+
+        LIBS="$ax_saved_LIBS -lncurses"
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Ncurses library" >&5
+$as_echo_n "checking for Ncurses library... " >&6; }
+if ${ax_cv_ncurses+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char initscr ();
+int
+main ()
+{
+return initscr ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_ncurses=yes
+else
+  ax_cv_ncurses=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_ncurses" >&5
+$as_echo "$ax_cv_ncurses" >&6; }
+        if test "x$ax_cv_ncurses" = xno && test "x$with_ncurses" = xyes; then :
+
+            as_fn_error $? "--with-ncurses specified but could not find Ncurses library" "$LINENO" 5
+
+fi
+
+        if test "x$ax_cv_ncurses" = xyes; then :
+
+            ax_cv_curses=yes
+            ax_cv_curses_which=ncurses
+            CURSES_LIB="-lncurses"
+
+$as_echo "#define HAVE_NCURSES 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES 1" >>confdefs.h
+
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working ncurses/curses.h" >&5
+$as_echo_n "checking for working ncurses/curses.h... " >&6; }
+if ${ax_cv_header_ncurses_curses_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                        #include <ncurses/curses.h>
+
+int
+main ()
+{
+
+                        chtype a = A_BOLD;
+                        int b = KEY_LEFT;
+                        chtype c = COLOR_PAIR(1) & A_COLOR;
+                        int g = getattrs(stdscr);
+                        int h = getcurx(stdscr) + getmaxx(stdscr);
+                        initscr();
+                        init_pair(1, COLOR_WHITE, COLOR_RED);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_header_ncurses_curses_h=yes
+else
+  ax_cv_header_ncurses_curses_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_header_ncurses_curses_h" >&5
+$as_echo "$ax_cv_header_ncurses_curses_h" >&6; }
+            if test "x$ax_cv_header_ncurses_curses_h" = xyes; then :
+
+                ax_cv_curses_color=yes
+                ax_cv_curses_obsolete=yes
+
+$as_echo "#define HAVE_CURSES_COLOR 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES_OBSOLETE 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_NCURSES_CURSES_H 1" >>confdefs.h
+
+
+fi
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working ncurses.h" >&5
+$as_echo_n "checking for working ncurses.h... " >&6; }
+if ${ax_cv_header_ncurses_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                        #include <ncurses.h>
+
+int
+main ()
+{
+
+                        chtype a = A_BOLD;
+                        int b = KEY_LEFT;
+                        chtype c = COLOR_PAIR(1) & A_COLOR;
+                        int g = getattrs(stdscr);
+                        int h = getcurx(stdscr) + getmaxx(stdscr);
+                        initscr();
+                        init_pair(1, COLOR_WHITE, COLOR_RED);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_header_ncurses_h=yes
+else
+  ax_cv_header_ncurses_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_header_ncurses_h" >&5
+$as_echo "$ax_cv_header_ncurses_h" >&6; }
+            if test "x$ax_cv_header_ncurses_h" = xyes; then :
+
+                ax_cv_curses_color=yes
+                ax_cv_curses_obsolete=yes
+
+$as_echo "#define HAVE_CURSES_COLOR 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES_OBSOLETE 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_NCURSES_H 1" >>confdefs.h
+
+
+fi
+
+            if test "x$ax_cv_header_ncurses_curses_h" = xno && test "x$ax_cv_header_ncurses_h" = xno; then :
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: could not find a working ncurses/curses.h or ncurses.h" >&5
+$as_echo "$as_me: WARNING: could not find a working ncurses/curses.h or ncurses.h" >&2;}
+
+fi
+
+fi
+
+fi
+
+    # Test for plain Curses (or if CURSES_LIB was set by user)
+
+    if test "x$with_plaincurses" != xno && test "x$ax_cv_curses_which" = xno; then :
+
+        if test "x$CURSES_LIB" != x; then :
+
+            LIBS="$ax_saved_LIBS $CURSES_LIB"
+
+else
+
+            LIBS="$ax_saved_LIBS -lcurses"
+
+fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Curses library" >&5
+$as_echo_n "checking for Curses library... " >&6; }
+if ${ax_cv_plaincurses+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char initscr ();
+int
+main ()
+{
+return initscr ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_plaincurses=yes
+else
+  ax_cv_plaincurses=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_plaincurses" >&5
+$as_echo "$ax_cv_plaincurses" >&6; }
+
+        if test "x$ax_cv_plaincurses" = xyes; then :
+
+            ax_cv_curses=yes
+            ax_cv_curses_which=plaincurses
+            if test "x$CURSES_LIB" = x; then :
+
+                CURSES_LIB="-lcurses"
+
+fi
+
+$as_echo "#define HAVE_CURSES 1" >>confdefs.h
+
+
+            # Check for base conformance (and header file)
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for working curses.h" >&5
+$as_echo_n "checking for working curses.h... " >&6; }
+if ${ax_cv_header_curses_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                        #include <curses.h>
+
+int
+main ()
+{
+
+                        chtype a = A_BOLD;
+                        int b = KEY_LEFT;
+                        initscr();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_header_curses_h=yes
+else
+  ax_cv_header_curses_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_header_curses_h" >&5
+$as_echo "$ax_cv_header_curses_h" >&6; }
+            if test "x$ax_cv_header_curses_h" = xyes; then :
+
+
+$as_echo "#define HAVE_CURSES_H 1" >>confdefs.h
+
+
+                # Check for X/Open Enhanced conformance
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X/Open Enhanced Curses conformance" >&5
+$as_echo_n "checking for X/Open Enhanced Curses conformance... " >&6; }
+if ${ax_cv_plaincurses_enhanced+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+                    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                            #define _XOPEN_SOURCE_EXTENDED 1
+                            #include <curses.h>
+                            #ifndef _XOPEN_CURSES
+                            #error "this Curses library is not enhanced"
+                            "this Curses library is not enhanced"
+                            #endif
+
+int
+main ()
+{
+
+                            chtype a = A_BOLD;
+                            int b = KEY_LEFT;
+                            chtype c = COLOR_PAIR(1) & A_COLOR;
+                            attr_t d = WA_NORMAL;
+                            cchar_t e;
+                            wint_t f;
+                            initscr();
+                            init_pair(1, COLOR_WHITE, COLOR_RED);
+                            wattr_set(stdscr, d, 0, NULL);
+                            wget_wch(stdscr, &f);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_plaincurses_enhanced=yes
+else
+  ax_cv_plaincurses_enhanced=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_plaincurses_enhanced" >&5
+$as_echo "$ax_cv_plaincurses_enhanced" >&6; }
+                if test "x$ax_cv_plaincurses_enhanced" = xyes; then :
+
+                    ax_cv_curses_enhanced=yes
+                    ax_cv_curses_color=yes
+
+$as_echo "#define HAVE_CURSES_ENHANCED 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_CURSES_COLOR 1" >>confdefs.h
+
+
+fi
+
+                # Check for color functions
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Curses color functions" >&5
+$as_echo_n "checking for Curses color functions... " >&6; }
+if ${ax_cv_plaincurses_color+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+                    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                        #define _XOPEN_SOURCE_EXTENDED 1
+                        #include <curses.h>
+
+int
+main ()
+{
+
+                            chtype a = A_BOLD;
+                            int b = KEY_LEFT;
+                            chtype c = COLOR_PAIR(1) & A_COLOR;
+                            initscr();
+                            init_pair(1, COLOR_WHITE, COLOR_RED);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_plaincurses_color=yes
+else
+  ax_cv_plaincurses_color=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_plaincurses_color" >&5
+$as_echo "$ax_cv_plaincurses_color" >&6; }
+                if test "x$ax_cv_plaincurses_color" = xyes; then :
+
+                    ax_cv_curses_color=yes
+
+$as_echo "#define HAVE_CURSES_COLOR 1" >>confdefs.h
+
+
+fi
+
+                # Check for obsolete functions
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for obsolete Curses functions" >&5
+$as_echo_n "checking for obsolete Curses functions... " >&6; }
+if ${ax_cv_plaincurses_obsolete+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                        #include <curses.h>
+
+int
+main ()
+{
+
+                        chtype a = A_BOLD;
+                        int b = KEY_LEFT;
+                        int g = getattrs(stdscr);
+                        int h = getcurx(stdscr) + getmaxx(stdscr);
+                        initscr();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_plaincurses_obsolete=yes
+else
+  ax_cv_plaincurses_obsolete=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_plaincurses_obsolete" >&5
+$as_echo "$ax_cv_plaincurses_obsolete" >&6; }
+                if test "x$ax_cv_plaincurses_obsolete" = xyes; then :
+
+                    ax_cv_curses_obsolete=yes
+
+$as_echo "#define HAVE_CURSES_OBSOLETE 1" >>confdefs.h
+
+
+fi
+
+fi
+
+            if test "x$ax_cv_header_curses_h" = xno; then :
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: could not find a working curses.h" >&5
+$as_echo "$as_me: WARNING: could not find a working curses.h" >&2;}
+
+fi
+
+fi
+
+fi
+
+    if test "x$ax_cv_curses"          != xyes; then :
+  ax_cv_curses=no
+fi
+    if test "x$ax_cv_curses_enhanced" != xyes; then :
+  ax_cv_curses_enhanced=no
+fi
+    if test "x$ax_cv_curses_color"    != xyes; then :
+  ax_cv_curses_color=no
+fi
+    if test "x$ax_cv_curses_obsolete" != xyes; then :
+  ax_cv_curses_obsolete=no
+fi
+
+    LIBS=$ax_saved_LIBS
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib pcre" >&5
 $as_echo_n "checking lib pcre... " >&6; }
@@ -5448,7 +6124,7 @@ if ${ac_cv_lib_readline_readline+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lreadline -ltermcap $LIBS"
+LIBS="-lreadline  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 

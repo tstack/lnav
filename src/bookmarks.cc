@@ -2,6 +2,8 @@
  * @file bookmarks.cc
  */
 
+#include "config.h"
+
 #include "bookmarks.hh"
 
 template<typename LineType>
