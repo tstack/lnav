@@ -10,6 +10,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifdef HAVE_BZLIB_H
+#include <bzlib.h>
+#endif
+
 #include <set>
 
 #include "line_buffer.hh"
@@ -136,6 +140,7 @@ throw (error)
 		    }
 		    this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
 		}
+#ifdef HAVE_BZLIB_H
 		else if (gz_id[0] == 'B' && gz_id[1] == 'Z') {
 		    lseek(fd, 0, SEEK_SET);
 		    this->lb_bz_file = true;
@@ -145,6 +150,7 @@ throw (error)
 		     */
 		    this->resize_buffer(MAX_COMPRESSED_BUFFER_SIZE);
 		}
+#endif
 	    }
 	    this->lb_seekable = true;
 	}
@@ -271,6 +277,7 @@ throw (error)
 		this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
 	    }
 	}
+#ifdef HAVE_BZLIB_H
 	else if (this->lb_bz_file) {
 	    if (this->lb_file_size != (size_t)-1 &&
 		(((size_t)start >= this->lb_file_size) ||
@@ -312,6 +319,7 @@ throw (error)
 		BZ2_bzclose(bz_file);
 	    }
 	}
+#endif
 	else if (this->lb_seekable) {
 	    rc = pread(this->lb_fd,
 		       &this->lb_buffer[this->lb_buffer_size],
@@ -343,6 +351,11 @@ throw (error)
 
 	case - 1:
 	    switch (errno) {
+#ifdef ENODATA
+	    // Cygwin seems to return this when pread reaches the end of the
+	    // file.
+	    case ENODATA:
+#endif
 	    case EINTR:
 	    case EAGAIN:
 		break;

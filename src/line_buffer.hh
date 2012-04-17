@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <zlib.h>
-#include <bzlib.h>
 
 #include <exception>
 

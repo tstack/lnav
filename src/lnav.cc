@@ -339,7 +339,7 @@ public:
 	if (off > total)
 	    off = total;
 	
-	if (abs(off - this->lo_last_offset) > (128 * 1024) ||
+	if ((std::abs(off - this->lo_last_offset) > (off_t)(128 * 1024)) ||
 	    (size_t)off == total) {
 	    lnav_data.ld_bottom_source.update_loading(off, total);
 	    this->do_update();
@@ -355,7 +355,7 @@ public:
 				      content_line_t cl,
 				      size_t total)
     {
-	if (abs(cl - this->lo_last_line) > 1024 || (size_t)cl == (total - 1)) {
+	if (std::abs(cl - this->lo_last_line) > 1024 || (size_t)cl == (total - 1)) {
 	    lnav_data.ld_bottom_source.update_loading(cl, (total - 1));
 	    this->do_update();
 	    this->lo_last_line = cl;
@@ -734,7 +734,7 @@ static void moveto_cluster(vis_line_t (bookmark_vector<vis_line_t>::*f)(vis_line
 	last_level = ll->get_level();
 	while (vl == -1 && (top = (bm[bt].*f)(top)) != -1) {
 	    ll = lss.find_line(lss.at(top));
-	    if (abs(last_top - top) > 1 ||
+	    if (std::abs(last_top - top) > 1 ||
 		ll->get_level() != last_level ||
 		ll->get_time() != last_time) {
 		last_time  = ll->get_time();
