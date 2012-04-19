@@ -13,12 +13,12 @@
 #include <time.h>
 #include <glob.h>
 
-#include <curses.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <termios.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>

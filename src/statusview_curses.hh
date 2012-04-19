@@ -5,8 +5,6 @@
 #ifndef __statusview_curses_hh
 #define __statusview_curses_hh
 
-#include <curses.h>
-
 #include <string>
 #include <vector>
 

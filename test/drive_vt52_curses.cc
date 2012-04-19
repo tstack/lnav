@@ -11,6 +11,27 @@
 #include "view_curses.hh"
 #include "vt52_curses.hh"
 
+#if defined HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#  include <ncursesw/term.h>
+#elif defined HAVE_NCURSESW_H
+#  include <ncursesw.h>
+#  include <term.h>
+#elif defined HAVE_NCURSES_CURSES_H
+#  include <ncurses/curses.h>
+#  include <ncurses/term.h>
+#elif defined HAVE_NCURSES_H
+#  include <ncurses.h>
+#  include <term.h>
+#elif defined HAVE_CURSES_H
+#  include <curses.h>
+#  include <term.h>
+#else
+#  error "SysV or X/Open-compatible Curses header file required"
+#endif
+
+#undef set_window
+
 int main(int argc, char *argv[])
 {
   int lpc, c, fd, retval = EXIT_SUCCESS;

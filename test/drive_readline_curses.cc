@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#include <sys/ttydefaults.h>
+
 #include <algorithm>
 
 #include "readline_curses.hh"

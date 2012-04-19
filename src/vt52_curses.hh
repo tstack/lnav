@@ -5,11 +5,6 @@
 #ifndef __vt52_curses_hh
 #define __vt52_curses_hh
 
-#include <curses.h>
-#include <term.h>
-
-#undef set_window /* XXX term.h #defines this... */
-
 #include <list>
 #include <string>
 

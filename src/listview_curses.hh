@@ -5,7 +5,6 @@
 #ifndef __listview_curses_hh
 #define __listview_curses_hh
 
-#include <curses.h>
 #include <sys/types.h>
 
 #include <string>

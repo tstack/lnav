@@ -1,6 +1,5 @@
 
 #include <stdio.h>
-#include <curses.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <fcntl.h>
