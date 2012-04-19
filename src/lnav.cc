@@ -159,8 +159,7 @@ public:
     grep_highlighter(auto_ptr < grep_proc > gp,
 		     string hl_name,
 		     textview_curses::highlight_map_t &hl_map)
-	: gh_code(gp->get_code()),
-	  gh_grep_proc(gp),
+	: gh_grep_proc(gp),
 	  gh_hl_name(hl_name),
 	  gh_hl_map(hl_map) { };
 
@@ -172,7 +171,6 @@ public:
     grep_proc *get_grep_proc() { return this->gh_grep_proc.get(); };
 
 private:
-    auto_mem<pcre> gh_code;
     auto_ptr<grep_proc> gh_grep_proc;
     string gh_hl_name;
     textview_curses::highlight_map_t gh_hl_map;

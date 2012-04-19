@@ -153,6 +153,7 @@ public:
     pcrepp(pcre *code) : p_code(code) {
 	const char *errptr;
 	
+	pcre_refcount(this->p_code, 1);
 	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
     };
     
@@ -168,6 +169,7 @@ public:
 	    throw error(errptr, eoff);
 	}
 	
+	pcre_refcount(this->p_code, 1);
 	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
     };
 
@@ -175,10 +177,16 @@ public:
 	const char *errptr;
 	
 	this->p_code = other.p_code;
+	pcre_refcount(this->p_code, 1);
 	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
     };
 
-    virtual ~pcrepp() { };
+    virtual ~pcrepp() { 
+    	if (pcre_refcount(this->p_code, -1) == 0) {
+    	    free(this->p_code);
+    	    this->p_code = 0;
+    	}
+    };
 
     bool match(pcre_context &pc, pcre_input &pi, int options = 0) {
 	int count = pc.get_max_count();

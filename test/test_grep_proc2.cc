@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
 			&errptr,
 			&eoff,
 			NULL);
+    pcre_refcount(code, 1);
     assert(code != NULL);
 
     {
