@@ -339,7 +339,7 @@ public:
 	if (off > total)
 	    off = total;
 	
-	if ((std::abs(off - this->lo_last_offset) > (off_t)(128 * 1024)) ||
+	if ((std::abs((long int)(off - this->lo_last_offset)) > (off_t)(128 * 1024)) ||
 	    (size_t)off == total) {
 	    lnav_data.ld_bottom_source.update_loading(off, total);
 	    this->do_update();
