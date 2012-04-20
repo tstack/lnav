@@ -9,7 +9,6 @@ help.c: help.txt bin2c
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
 	$(PCRE_LDFLAGS) \
-	-pthread \
 	$(STATIC_LDFLAGS)
 
 AM_CPPFLAGS = \

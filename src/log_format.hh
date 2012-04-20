@@ -113,7 +113,9 @@ public:
     template<class T> class register_root_format {
     public:
 	register_root_format() {
-	    log_format::lf_root_formats.push_back(new T());
+	    static T format;
+
+	    log_format::lf_root_formats.push_back(&format);
 	};
     };
 

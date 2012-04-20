@@ -61,6 +61,8 @@ public:
 	struct winsize ws;
 	auto_fd slave;
 
+	memset(&ws, 0, sizeof(ws));
+
 	if (isatty(STDIN_FILENO) &&
 	    tcgetattr(STDIN_FILENO, &this->ct_termios) == -1) {
 	    throw error(errno);

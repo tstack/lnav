@@ -75,7 +75,7 @@ class syslog_log_format : public log_format {
 	char      *rest;
 	
 	now      = time(NULL);
-	log_time = *localtime(&now);
+	localtime_r(&now, &log_time);
 	
 	log_time.tm_isdst = 0;
 	
