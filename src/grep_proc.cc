@@ -130,6 +130,13 @@ void grep_proc::start(void)
 
     this->child_init();
     
+    this->child_loop();
+
+    exit(0);
+}
+
+void grep_proc::child_loop(void)
+{
     char   outbuf[BUFSIZ * 2];
     string line_value;
 
@@ -196,8 +203,6 @@ void grep_proc::start(void)
 	fprintf(stdout, "%d\n", line - 1);
 	this->child_term();
     }
-
-    exit(0);
 }
 
 void grep_proc::cleanup(void)

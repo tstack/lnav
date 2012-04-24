@@ -128,6 +128,8 @@ int main(int argc, char *argv[])
 	assert(wait(&status) == -1);
 	assert(errno == ECHILD);
     }
+
+    free(code);
     
     return retval;
 }

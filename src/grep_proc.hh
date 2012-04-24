@@ -225,6 +225,8 @@ protected:
      */
     void cleanup(void);
 
+    void child_loop(void);
+
     virtual void child_init(void) { };
 
     virtual void child_batch(void) { fflush(stdout); };
