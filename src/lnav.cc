@@ -2056,11 +2056,16 @@ static void usage(void)
 	"  -r         Load older rotated log files as well.\n"
 	"\n"
 	"Optional arguments:\n"
-	"  logfile1          The log files to view.\n"
+	"  logfile1          The log files or directories to view.  If a\n"
+	"                    directory is given, all of the files in the\n"
+	"                    directory will be loaded.\n"
 	"\n"
 	"Examples:\n"
 	"  To load and follow the syslog file -\n"
 	"    $ lnav -s\n"
+	"\n"
+	"  To load all of the files in /var/log:\n"
+	"    $ lnav /var/log\n"
 	"\n"
 	"Version: " PACKAGE_STRING "\n";
 
@@ -2128,6 +2133,18 @@ static void watch_logfile(string filename, int fd, bool required)
     else {
 	rc = stat(filename.c_str(), &st);
     }
+
+    if (rc == 0) {
+	if (!S_ISREG(st.st_mode)) {
+	    if (required) {
+		rc = -1;
+		errno = EINVAL;
+	    }
+	    else {
+	    	return;
+	    }
+	}
+    }
     if (rc == -1) {
 	if (required)
 	    throw logfile::error(filename, errno);
@@ -2146,6 +2163,25 @@ static void watch_logfile(string filename, int fd, bool required)
     }
 }
 
+static void expand_filename(string path, bool required)
+{
+    glob_t gl;
+
+    memset(&gl, 0, sizeof(gl));
+    if (glob(path.c_str(), GLOB_NOCHECK, NULL, &gl) == 0) {
+	int lpc;
+	
+	if (gl.gl_pathc > 1 ||
+	    strcmp(path.c_str(), gl.gl_pathv[0]) != 0) {
+	    required = false;
+	}
+	for (lpc = 0; lpc < (int)gl.gl_pathc; lpc++) {
+	    watch_logfile(gl.gl_pathv[lpc], -1, required);
+	}
+	globfree(&gl);
+    }
+}
+
 static void rescan_files(bool required = false)
 {
     set< pair<string, int> >::iterator iter;
@@ -2153,21 +2189,16 @@ static void rescan_files(bool required = false)
     for (iter = lnav_data.ld_file_names.begin();
 	 iter != lnav_data.ld_file_names.end();
 	 iter++) {
-	watch_logfile(iter->first, iter->second, required);
+	if (iter->second == -1) {
+	    expand_filename(iter->first, required);
+	    if (lnav_data.ld_flags & LNF_ROTATED) {
+		string path = iter->first + ".*";
 
-	if (lnav_data.ld_flags & LNF_ROTATED) {
-	    string path = iter->first + ".*";
-	    glob_t gl;
-	    
-	    memset(&gl, 0, sizeof(gl));
-	    if (glob(path.c_str(), 0, NULL, &gl) == 0) {
-		int lpc;
-		
-		for (lpc = 0; lpc < (int)gl.gl_pathc; lpc++) {
-		    watch_logfile(gl.gl_pathv[lpc], -1, false);
-		}
-		globfree(&gl);
+		expand_filename(path, false);
 	    }
+	}
+	else {
+	    watch_logfile(iter->first, iter->second, required);
 	}
     }
 }
@@ -3072,7 +3103,23 @@ int main(int argc, char *argv[])
     }
 
     for (lpc = 0; lpc < argc; lpc++) {
-	lnav_data.ld_file_names.insert(make_pair(argv[lpc], -1));
+    	struct stat st;
+
+    	if (stat(argv[lpc], &st) == -1) {
+    		perror("Cannot stat file");
+    		retval = EXIT_FAILURE;
+    	}
+    	else if (S_ISDIR(st.st_mode)) {
+    	    string dir_wild(argv[lpc]);
+
+    	    if (dir_wild[dir_wild.size() - 1] == '/') {
+    	    	dir_wild.resize(dir_wild.size() - 1);
+    	    }
+    	    lnav_data.ld_file_names.insert(make_pair(dir_wild + "/*", -1));
+    	}
+    	else {
+	    lnav_data.ld_file_names.insert(make_pair(argv[lpc], -1));
+	}
     }
 
     if (!isatty(STDOUT_FILENO)) {
