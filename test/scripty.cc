@@ -470,7 +470,7 @@ int main(int argc, char *argv[])
 			int len;
 
 			scripty_data.sd_replay.pop();
-			fprintf(stderr, "replay %d\n", scripty_data.sd_replay.size());
+			fprintf(stderr, "replay %zd\n", scripty_data.sd_replay.size());
 			switch (cmd.c_type) {
 			case CT_SLEEP:
 			    break;

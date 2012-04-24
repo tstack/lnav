@@ -336,7 +336,7 @@ public:
     void logfile_indexing(logfile &lf, off_t off, size_t total)
     {
 	// XXX assert(off <= total);
-	if (off > total)
+	if (off > (off_t)total)
 	    off = total;
 	
 	if ((std::abs((long int)(off - this->lo_last_offset)) > (off_t)(128 * 1024)) ||
@@ -450,7 +450,7 @@ static void rebuild_indexes(bool force)
 	text_view.reload_data();
 
 	new_count = tss->text_line_count();
-	if (scroll_down && new_count >= old_bottom) {
+	if (scroll_down && new_count >= (size_t)old_bottom) {
 	    text_view.set_top(vis_line_t(new_count - height + 1));
 	}
     }
@@ -472,7 +472,7 @@ static void rebuild_indexes(bool force)
 
 	log_view.reload_data();
 	
-	if (scroll_down && new_count >= old_bottom) {
+	if (scroll_down && new_count >= (size_t)old_bottom) {
 	    log_view.set_top(vis_line_t(new_count - height + 1));
 	}
 	else if (!scroll_down && force) {
@@ -1225,7 +1225,7 @@ static void handle_paging_key(int ch)
 	    hist_source &hs = lnav_data.ld_db_source;
 	    
 	    if (toggle_view(db_tc)) {
-		int lpc;
+		unsigned int lpc;
 		
 		for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
 		    if (dls.dls_headers[lpc] != "line_number")
@@ -1233,7 +1233,7 @@ static void handle_paging_key(int ch)
 
 		    char linestr[64];
 		    int line_number = (int)tc->get_top();
-		    int row;
+		    unsigned int row;
 		    
 		    snprintf(linestr, sizeof(linestr), "%d", line_number);
 		    for (row = 0; row < dls.dls_rows.size(); row++) {
@@ -1251,13 +1251,13 @@ static void handle_paging_key(int ch)
 	    }
 	    else {
 		int db_row = hs.value_for_row(db_tc->get_top());
-		int lpc;
+		unsigned int lpc;
 
 		for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
 		    if (dls.dls_headers[lpc] != "line_number")
 			continue;
 
-		    int line_number;
+		    unsigned int line_number;
 		    
 		    if (sscanf(dls.dls_rows[db_row][lpc].c_str(),
 			       "%d",
@@ -2230,18 +2230,13 @@ public:
 
 		tc->get_dimensions(height, width);
 
-		fprintf(stderr, "y %d < %d\n", (int)y, (int)tc->get_y());
-
 		gettimeofday(&now, NULL);
 		timersub(&now, &this->lb_last_event_time, &diff);
 		this->lb_last_event_time = now;
 
-		fprintf(stderr, "mouse = %d %d %d  %d.%06d\n", button, y, (int)vis_y,
-		        diff.tv_sec, diff.tv_usec);
 		lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
 		switch (button) {
 		case xterm_mouse::XT_BUTTON1:
-		fprintf(stderr, " x %d %d\n", x, width);
 			if (this->lb_selection_start == vis_line_t(-1) &&
 			    (y <= tc->get_y() ||
 			     y > (tc->get_y() + (int)height))) {
@@ -2253,7 +2248,6 @@ public:
 				double curr_pct, curr_cover, pct;
 				int scroll_y, scroll_height;
 
-				fprintf(stderr, " sb %d\n", this->lb_scrollbar_y);
 				curr_pct = (double)tc->get_top() / (double)tc->get_inner_height();
 				curr_cover = (double)height / (double)tc->get_inner_height();
 				scroll_y = (tc->get_y() + (int)(curr_pct * (double)height));
@@ -2261,21 +2255,13 @@ public:
 					this->lb_scrollbar_y = y - scroll_y;
 				scroll_height = (int)(curr_cover * (double)height);
 				scroll_height += 1;
-				fprintf(stderr, "yyy %f %f  sy %d sh %d   y %d\n",
-				        curr_pct,
-				        curr_cover,
-				       	this->lb_scrollbar_y,
-				        scroll_height,
-				        y);
 				if (this->lb_scrollbar_y > 0 &&
 				    this->lb_scrollbar_y <= scroll_height) {
 					y -= this->lb_scrollbar_y + 1;
 				}
-				fprintf(stderr, " new y %d\n", y);
 				pct = (double)(y - tc->get_y()) / (double)height;
 				tc->set_top(vis_line_t(tc->get_inner_height() * pct));
 				pct *= 100.0;
-				fprintf(stderr, "pc t %f\n", pct);
 				return;
 			}
 			if (lss) {
@@ -2312,23 +2298,19 @@ public:
 					if (scroll_diff.tv_usec > 50000) {
 						tc->shift_top(vis_line_t(this->scroll_polarity(button) *
 						              this->lb_scroll_repeat));
-						fprintf(stderr, "end %d\n", this->lb_scroll_repeat);
 						this->lb_scroll_repeat = 0;
 					}
 					else {
-						fprintf(stderr, "repeat\n");
 						this->lb_scroll_repeat += 1;
 					}
 				}
 				else {
-					fprintf(stderr, "first\n");
 					this->lb_scroll_repeat = 1;
 					this->lb_last_scroll_time = now;
 					tc->shift_top(vis_line_t(this->scroll_polarity(button)));
 				}
 			}
 			else {
-				fprintf(stderr, "normal\n");
 				tc->shift_top(vis_line_t(this->scroll_polarity(button)));
 			}
 			break;
@@ -3001,7 +2983,7 @@ public:
 		
 		dp.parse();
 		
-		fprintf(stderr, "got %d\n", dp.dp_stack.size());
+		fprintf(stderr, "got %zd\n", dp.dp_stack.size());
 		while (!dp.dp_stack.empty()) {
 		    fprintf(stderr, "got %d\n", dp.dp_stack.front().e_token);
 		    if (dp.dp_stack.front().e_token == DNT_PAIR) {
@@ -3023,7 +3005,7 @@ public:
 		}
 	    }
 	    else {
-		fprintf(stderr, "EOF %d %d\n",
+		fprintf(stderr, "EOF %d %zd\n",
 			(int)lc.lc_curr_line,
 			lss.text_line_count());
 		return true;

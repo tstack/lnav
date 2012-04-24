@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
       }
       break;
     case MODE_LINE_COUNT:
-      printf("%d\n", lf.size());
+      printf("%zd\n", lf.size());
       break;
     case MODE_TIMES:
       for (logfile::iterator iter = lf.begin(); iter != lf.end(); iter++) {
