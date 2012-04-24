@@ -34,8 +34,11 @@ class view_curses;
 class screen_curses {
 public:
     screen_curses()
-	: sc_main_window(initscr()) { };
-    virtual ~screen_curses() { endwin(); };
+	: sc_main_window(initscr()) {
+	};
+    virtual ~screen_curses() {
+    	endwin();
+    };
 
     WINDOW *get_window() { return this->sc_main_window; };
 

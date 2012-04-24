@@ -216,6 +216,12 @@ through the file.
 		    to the log view and move to the line number that was
 		    selected in the "line_number" column.
 
+MOUSE SUPPORT
+-------------
+
+If you are using Xterm, or a compatible terminal, you can use the mouse to
+mark lines of text and move the view by grabbing the scrollbar.
+
 COMMANDS
 --------
 

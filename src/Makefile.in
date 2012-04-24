@@ -63,7 +63,8 @@ am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) grep_proc.$(OBJEXT) \
 	readline_curses.$(OBJEXT) sequence_matcher.$(OBJEXT) \
 	statusview_curses.$(OBJEXT) piper_proc.$(OBJEXT) \
 	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
-	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT)
+	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT) \
+	xterm_mouse.$(OBJEXT)
 libdiag_a_OBJECTS = $(am_libdiag_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
@@ -261,7 +262,8 @@ noinst_HEADERS = \
 	view_curses.hh \
 	vt52_curses.hh \
 	log_vtab_impl.hh \
-	log_format_impls.cc
+	log_format_impls.cc \
+	xterm_mouse.hh
 
 libdiag_a_SOURCES = \
 	bookmarks.cc \
@@ -281,7 +283,8 @@ libdiag_a_SOURCES = \
 	textview_curses.cc \
 	view_curses.cc \
 	vt52_curses.cc \
-	log_vtab_impl.cc
+	log_vtab_impl.cc \
+	xterm_mouse.cc
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = help.o $(LDADD)
@@ -414,6 +417,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vt52_curses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xterm_mouse.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

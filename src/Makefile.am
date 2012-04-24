@@ -57,7 +57,8 @@ noinst_HEADERS = \
 	view_curses.hh \
 	vt52_curses.hh \
 	log_vtab_impl.hh \
-	log_format_impls.cc
+	log_format_impls.cc \
+	xterm_mouse.hh
 
 libdiag_a_SOURCES = \
 	bookmarks.cc \
@@ -77,7 +78,8 @@ libdiag_a_SOURCES = \
 	textview_curses.cc \
 	view_curses.cc \
 	vt52_curses.cc \
-	log_vtab_impl.cc
+	log_vtab_impl.cc \
+	xterm_mouse.cc
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = help.o $(LDADD)

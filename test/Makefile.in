@@ -87,7 +87,8 @@ drive_logfile_OBJECTS = $(am_drive_logfile_OBJECTS)
 drive_logfile_LDADD = $(LDADD)
 drive_logfile_DEPENDENCIES =
 am_drive_readline_curses_OBJECTS = vt52_curses.$(OBJEXT) \
-	readline_curses.$(OBJEXT) drive_readline_curses.$(OBJEXT)
+	readline_curses.$(OBJEXT) view_curses.$(OBJEXT) \
+	drive_readline_curses.$(OBJEXT)
 drive_readline_curses_OBJECTS = $(am_drive_readline_curses_OBJECTS)
 drive_readline_curses_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
@@ -97,7 +98,7 @@ am_drive_sequencer_OBJECTS = grep_proc.$(OBJEXT) logfile.$(OBJEXT) \
 drive_sequencer_OBJECTS = $(am_drive_sequencer_OBJECTS)
 drive_sequencer_DEPENDENCIES =
 am_drive_vt52_curses_OBJECTS = vt52_curses.$(OBJEXT) \
-	drive_vt52_curses.$(OBJEXT)
+	view_curses.$(OBJEXT) drive_vt52_curses.$(OBJEXT)
 drive_vt52_curses_OBJECTS = $(am_drive_vt52_curses_OBJECTS)
 drive_vt52_curses_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_scripty_OBJECTS = scripty.$(OBJEXT)
@@ -365,12 +366,14 @@ drive_data_scanner_SOURCES = \
 
 drive_vt52_curses_SOURCES = \
 	../src/vt52_curses.cc \
+	../src/view_curses.cc \
 	drive_vt52_curses.cc
 
 drive_vt52_curses_LDADD = $(CURSES_LIB)
 drive_readline_curses_SOURCES = \
 	../src/vt52_curses.cc \
 	../src/readline_curses.cc \
+	../src/view_curses.cc \
 	drive_readline_curses.cc
 
 drive_readline_curses_LDADD = $(CURSES_LIB) $(READLINE_LIBS)

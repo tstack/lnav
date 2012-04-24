@@ -104,12 +104,14 @@ drive_data_scanner_SOURCES = \
 
 drive_vt52_curses_SOURCES = \
 	../src/vt52_curses.cc \
+	../src/view_curses.cc \
 	drive_vt52_curses.cc
 drive_vt52_curses_LDADD = $(CURSES_LIB)
 
 drive_readline_curses_SOURCES = \
 	../src/vt52_curses.cc \
 	../src/readline_curses.cc \
+	../src/view_curses.cc \
 	drive_readline_curses.cc
 drive_readline_curses_LDADD = $(CURSES_LIB) $(READLINE_LIBS)
 

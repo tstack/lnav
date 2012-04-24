@@ -133,6 +133,8 @@ public:
     {
 	if (end_line == -1)
 	    end_line = start_line;
+	if (start_line > end_line)
+		std::swap(start_line, end_line);
 	for (vis_line_t curr_line = start_line; curr_line <= end_line; ++curr_line) {
 	    bookmark_vector<content_line_t> &bv = this->lss_user_marks[bm];
 	    bookmark_vector<content_line_t>::iterator iter;

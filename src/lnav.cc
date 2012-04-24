@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 
 #include <readline/readline.h>
@@ -62,6 +63,7 @@
 #include "pcrecpp.h"
 #include "termios_guard.hh"
 #include "data_parser.hh"
+#include "xterm_mouse.hh"
 
 using namespace std;
 
@@ -1025,7 +1027,7 @@ static void handle_paging_key(int ch)
 	    lnav_data.ld_last_user_mark[tc] += 1;
 	}
 	lss->toggle_user_mark(&textview_curses::BM_USER,
-			     vis_line_t(lnav_data.ld_last_user_mark[tc]));
+			      vis_line_t(lnav_data.ld_last_user_mark[tc]));
 	tc->reload_data();
 }
 	break;
@@ -2203,6 +2205,147 @@ static void rescan_files(bool required = false)
     }
 }
 
+class lnav_behavior : public mouse_behavior {
+
+public:
+	lnav_behavior() : 
+		lb_selection_start(-1),
+		lb_selection_last(-1),
+		lb_scrollbar_y(-1),
+		lb_scroll_repeat(0) {
+
+	};
+
+	int scroll_polarity(int button) {
+		return button == xterm_mouse::XT_SCROLL_UP ? -1 : 1;
+	};
+
+	void mouse_event(int button, int x, int y) {
+		logfile_sub_source *lss = NULL;
+		textview_curses *tc = lnav_data.ld_view_stack.top();
+		vis_line_t vis_y(tc->get_top() + y - 2);
+		struct timeval now, diff;
+		unsigned long width;
+		vis_line_t height;
+
+		tc->get_dimensions(height, width);
+
+		fprintf(stderr, "y %d < %d\n", (int)y, (int)tc->get_y());
+
+		gettimeofday(&now, NULL);
+		timersub(&now, &this->lb_last_event_time, &diff);
+		this->lb_last_event_time = now;
+
+		fprintf(stderr, "mouse = %d %d %d  %d.%06d\n", button, y, (int)vis_y,
+		        diff.tv_sec, diff.tv_usec);
+		lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
+		switch (button) {
+		case xterm_mouse::XT_BUTTON1:
+		fprintf(stderr, " x %d %d\n", x, width);
+			if (this->lb_selection_start == vis_line_t(-1) &&
+			    (y <= tc->get_y() ||
+			     y > (tc->get_y() + (int)height))) {
+				return;
+			}
+			if (this->lb_selection_start == vis_line_t(-1) &&
+			    tc->get_inner_height() &&
+			    ((this->lb_scrollbar_y != -1) || (x >= (width - 2)))) {
+				double curr_pct, curr_cover, pct;
+				int scroll_y, scroll_height;
+
+				fprintf(stderr, " sb %d\n", this->lb_scrollbar_y);
+				curr_pct = (double)tc->get_top() / (double)tc->get_inner_height();
+				curr_cover = (double)height / (double)tc->get_inner_height();
+				scroll_y = (tc->get_y() + (int)(curr_pct * (double)height));
+				if (this->lb_scrollbar_y == -1)
+					this->lb_scrollbar_y = y - scroll_y;
+				scroll_height = (int)(curr_cover * (double)height);
+				scroll_height += 1;
+				fprintf(stderr, "yyy %f %f  sy %d sh %d   y %d\n",
+				        curr_pct,
+				        curr_cover,
+				       	this->lb_scrollbar_y,
+				        scroll_height,
+				        y);
+				if (this->lb_scrollbar_y > 0 &&
+				    this->lb_scrollbar_y <= scroll_height) {
+					y -= this->lb_scrollbar_y + 1;
+				}
+				fprintf(stderr, " new y %d\n", y);
+				pct = (double)(y - tc->get_y()) / (double)height;
+				tc->set_top(vis_line_t(tc->get_inner_height() * pct));
+				pct *= 100.0;
+				fprintf(stderr, "pc t %f\n", pct);
+				return;
+			}
+			if (lss) {
+				if (this->lb_selection_start == vis_line_t(-1)) {
+					this->lb_selection_start = vis_y;
+
+					lss->toggle_user_mark(&textview_curses::BM_USER,
+					                      this->lb_selection_start,
+					                      vis_y);
+				}
+				else {
+					lss->toggle_user_mark(&textview_curses::BM_USER,
+					                      this->lb_selection_start,
+					                      this->lb_selection_last);
+					lss->toggle_user_mark(&textview_curses::BM_USER,
+					                      this->lb_selection_start,
+					                      vis_y);
+				}
+				this->lb_selection_last = vis_y;
+				tc->reload_data();
+			}
+			break;
+		case xterm_mouse::XT_BUTTON_RELEASE:
+			this->lb_scrollbar_y = -1;
+			this->lb_selection_start = vis_line_t(-1);
+			break;
+		case xterm_mouse::XT_SCROLL_UP:
+		case xterm_mouse::XT_SCROLL_DOWN:
+			if (this->lb_scroll_repeat || (diff.tv_sec == 0 && diff.tv_usec < 30000)) {
+				if (this->lb_scroll_repeat) {
+					struct timeval scroll_diff;
+
+					timersub(&now, &this->lb_last_scroll_time, &scroll_diff);
+					if (scroll_diff.tv_usec > 50000) {
+						tc->shift_top(vis_line_t(this->scroll_polarity(button) *
+						              this->lb_scroll_repeat));
+						fprintf(stderr, "end %d\n", this->lb_scroll_repeat);
+						this->lb_scroll_repeat = 0;
+					}
+					else {
+						fprintf(stderr, "repeat\n");
+						this->lb_scroll_repeat += 1;
+					}
+				}
+				else {
+					fprintf(stderr, "first\n");
+					this->lb_scroll_repeat = 1;
+					this->lb_last_scroll_time = now;
+					tc->shift_top(vis_line_t(this->scroll_polarity(button)));
+				}
+			}
+			else {
+				fprintf(stderr, "normal\n");
+				tc->shift_top(vis_line_t(this->scroll_polarity(button)));
+			}
+			break;
+		}
+	};
+
+private:
+	struct timeval lb_last_event_time;
+	vis_line_t lb_selection_start;
+	vis_line_t lb_selection_last;
+
+	int lb_scrollbar_y;
+
+	struct timeval lb_last_scroll_time;
+	int lb_scroll_repeat;
+};
+
 static void looper(void)
 {
     int fd;
@@ -2348,6 +2491,10 @@ static void looper(void)
 	(void)signal(SIGWINCH, sigwinch);
 
 	screen_curses sc;
+	xterm_mouse mouse;
+	lnav_behavior lb;
+
+	mouse.set_behavior(&lb);
 
 	lnav_data.ld_window = sc.get_window();
 	keypad(stdscr, TRUE);
@@ -2501,6 +2648,10 @@ static void looper(void)
 			switch (ch) {
 			case CEOF:
 			case KEY_RESIZE:
+			    break;
+
+			    case KEY_MOUSE:
+			    mouse.handle_mouse(ch);
 			    break;
 
 			default:
