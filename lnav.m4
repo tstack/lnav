@@ -51,7 +51,7 @@ if test ".$with_readline" = ".no" ; then
 else
   if test ".$with_readline" = ".yes"; then
     OLD_LIBS="$LIBS"
-    AC_CHECK_LIB(readline, readline, [], [], [])
+    AC_CHECK_LIB(readline, readline, [], [], [$CURSES_LIB])
     LIBS="$OLD_LIBS"
     if test "$ac_cv_lib_readline_readline" = "yes"; then
       READLINE_LIBS="-lreadline"
