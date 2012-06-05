@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -47,6 +48,9 @@
 
 using namespace std;
 
+/**
+ * An RAII class for opening a PTY and forking a child process.
+ */
 class child_term {
 
 public:
@@ -139,9 +143,15 @@ protected:
     
 };
 
+/**
+ * @param fd The file descriptor to switch to raw mode.
+ * @return Zero on success, -1 on error.
+ */
 static int tty_raw(int fd)
 {
     struct termios attr[1];
+
+    assert(fd >= 0);
     
     if (tcgetattr(fd, attr) == -1)
 	return -1;
@@ -157,15 +167,103 @@ static int tty_raw(int fd)
     return tcsetattr(fd, TCSANOW, attr);
 }
 
+static void dump_memory(FILE *dst, const char *src, int len)
+{
+    int lpc;
+
+    for (lpc = 0; lpc < len; lpc++) {
+	fprintf(dst, "%02x", src[lpc]);
+    }
+}
+
+static char *hex2bits(const char *src)
+{
+    int len, pos = sizeof(int);
+    char *retval;
+
+    len = strlen(src) / 2;
+    retval = new char[sizeof(uint32_t) + len];
+    *((uint32_t *)retval) = len;
+    while (pos < (sizeof(uint32_t) + len)) {
+	int val;
+	
+	sscanf(src, "%2x", &val);
+	src += 2;
+	retval[pos] = (char)val;
+	pos += 1;
+    }
+
+    return retval;
+}
+
 typedef enum {
+    ET_NONE,
     ET_READ,
 } expect_type_t;
+
+struct expect_read {
+	uint32_t er_length;
+	char er_data[];
+};
 
 struct expect {
     expect_type_t e_type;
     union {
-	char *b;
+    	struct expect_read *read;
     } e_arg;
+};
+
+struct expect_read_state {
+	uint32_t ers_pos;
+};
+
+class expect_handler {
+public:
+	expect_handler() {
+		memset(&this->eh_state, 0, sizeof(this->eh_state));
+	};
+
+	int process_input(const char *buffer, size_t blen) {
+		if (this->eh_queue.empty())
+			return 0;
+
+		uint32_t &exp_pos = this->eh_state.es_read.ers_pos;
+		struct expect &next = this->eh_queue.front();
+		int cmp_len = min((next.e_arg.read->er_length - exp_pos), (uint32_t)blen);
+		char *exp_start = &next.e_arg.read->er_data[this->eh_state.es_read.ers_pos];
+		int retval = 0;
+
+		assert(buffer != NULL || blen == 0);
+
+		if (memcmp(exp_start, buffer, cmp_len) == 0) {
+			exp_pos += cmp_len;
+			if (exp_pos == next.e_arg.read->er_length) {
+				retval = 1;
+				if (!this->eh_queue.empty()) {
+					exp_pos = 0;
+					this->eh_queue.pop();
+				}
+			}
+		}
+		else {
+			printf("Detected output differences at offset %d, "
+			       "expecting:\n  ", exp_pos);
+			dump_memory(stdout, exp_start, cmp_len);
+			printf("\nGot:\n  ");
+			dump_memory(stdout, buffer, cmp_len);
+			retval = -1;
+		}
+
+		fprintf(stderr, "pi ret %d\n", retval);
+
+		return retval;
+	};
+
+	queue<struct expect> eh_queue;
+private:
+	union {
+		struct expect_read_state es_read;
+	} eh_state;
 };
 
 typedef enum {
@@ -193,37 +291,9 @@ static struct {
     FILE *sd_from_child;
 
     queue<struct command> sd_replay;
-    queue<struct expect> sd_expected;
+
+    bool sd_user_step;
 } scripty_data;
-
-static void dump_memory(FILE *dst, char *src, int len)
-{
-    int lpc;
-
-    for (lpc = 0; lpc < len; lpc++) {
-	fprintf(dst, "%02x", src[lpc]);
-    }
-}
-
-static char *hex2bits(const char *src)
-{
-    int len, pos = sizeof(int);
-    char *retval;
-
-    len = strlen(src) / 2;
-    retval = new char[sizeof(int) + len];
-    *((int *)retval) = len;
-    while (pos < (sizeof(int) + len)) {
-	int val;
-	
-	sscanf(src, "%2x", &val);
-	src += 2;
-	retval[pos] = (char)val;
-	pos += 1;
-    }
-
-    return retval;
-}
 
 static void sigchld(int sig)
 {
@@ -246,7 +316,18 @@ static void usage(void)
         "  -t <file>  The file where any input sent to the child process\n"
         "             should be stored.\n"
         "  -f <file>  The file where any output from the child process\n"
-        "             should be stored.\n";
+        "             should be stored.\n"
+        "  -r <file>  The file containing the input to be sent to the child\n"
+        "             process.\n"
+        "  -e <file>  The file containing the expected output from the child\n"
+        "             process.\n"
+        "\n"
+        "Examples:\n"
+        "  To record a session for playback later:\n"
+        "    $ scripty -t input.0 -f output.0 -- myCursesApp\n"
+        "\n"
+        "  To replay the recorded session:\n"
+        "    $ scripty -r input.0 -- myCursesApp\n";
     
     fprintf(stderr, usage_msg, scripty_data.sd_program_name);
 }
@@ -254,17 +335,21 @@ static void usage(void)
 int main(int argc, char *argv[])
 {
     int c, fd, retval = EXIT_SUCCESS;
+    expect_handler ex_handler;
     bool passout = true;
     FILE *file;
 
     scripty_data.sd_program_name = argv[0];
     scripty_data.sd_looping = true;
     
-    while ((c = getopt(argc, argv, "ht:f:r:e:n")) != -1) {
+    while ((c = getopt(argc, argv, "ht:f:r:e:ns")) != -1) {
 	switch (c) {
 	case 'h':
 	    usage();
 	    exit(retval);
+	    break;
+	case 's':
+	    scripty_data.sd_user_step = true;
 	    break;
 	case 't':
 	    scripty_data.sd_to_child_name = optarg;
@@ -292,7 +377,7 @@ int main(int argc, char *argv[])
 			sp += 1;
 			if (strcmp(line, "read") == 0) {
 			    exp.e_type = ET_READ;
-			    exp.e_arg.b = hex2bits(sp);
+			    exp.e_arg.read = (struct expect_read *)hex2bits(sp);
 			}
 			else {
 			    fprintf(stderr,
@@ -300,7 +385,7 @@ int main(int argc, char *argv[])
 				    line);
 			    retval = EXIT_FAILURE;
 			}
-			scripty_data.sd_expected.push(exp);
+			ex_handler.eh_queue.push(exp);
 		    }
 		}
 		fclose(file);
@@ -400,12 +485,12 @@ int main(int argc, char *argv[])
 	    exit(-1);
 	}
 	else {
-	    int maxfd, out_len = 0, exp_pos = 0, exp_len = 0;
+	    int maxfd, out_len = 0;
 	    bool got_expected = true;
+	    bool got_user_step;
 	    struct timeval last, now;
 	    char out_buffer[8192];
 	    fd_set read_fds;
-	    char *exp_data = NULL;
 
 	    scripty_data.sd_child_pid = ct.get_child_pid();
 	    signal(SIGINT, sigpass);
@@ -424,17 +509,7 @@ int main(int argc, char *argv[])
 
 	    tty_raw(STDIN_FILENO);
 	    
-	    if (!scripty_data.sd_expected.empty()) {
-		struct expect exp = scripty_data.sd_expected.front();
-		
-		scripty_data.sd_expected.pop();
-		switch (exp.e_type) {
-		case ET_READ:
-		    exp_pos = sizeof(int);
-		    exp_len = *((int *)exp.e_arg.b) + sizeof(int);
-		    exp_data = exp.e_arg.b;
-		    break;
-		}
+	    if (!ex_handler.eh_queue.empty()) {
 		got_expected = false;
 	    }
 	    
@@ -448,27 +523,25 @@ int main(int argc, char *argv[])
 		to.tv_usec = 10000;
 		rc = select(maxfd + 1, &ready_rfds, NULL, NULL, &to);
 		if (rc == 0) {
-		    if (exp_data != NULL && exp_pos == exp_len && !got_expected) {
-			exp_data = NULL;
-			if (!scripty_data.sd_expected.empty()) {
-			    struct expect exp = scripty_data.sd_expected.front();
-			    
-			    delete [] exp_data;
-			    scripty_data.sd_expected.pop();
-			    switch (exp.e_type) {
-			    case ET_READ:
-				exp_pos = sizeof(int);
-				exp_len = *((int *)exp.e_arg.b) + sizeof(int);
-				exp_data = exp.e_arg.b;
-				break;
-			    }
-			}
-			got_expected = true;
+		    if (!got_expected) {
+		    switch (ex_handler.process_input(NULL, 0)) {
+	    	    case -1:
+	    	        scripty_data.sd_looping = false;
+		    	retval = EXIT_FAILURE;
+		    	break;
+		    case 0:
+		        break;
+		    case 1:
+		        got_expected = true;
+		        break;
 		    }
-		    if (!scripty_data.sd_replay.empty() && got_expected) {
+		}
+		    if (!scripty_data.sd_replay.empty() && got_expected &&
+		        (!scripty_data.sd_user_step || got_user_step)) {
 			struct command cmd = scripty_data.sd_replay.front();
 			int len;
 
+			fprintf(stderr, " us %d got %d\n", scripty_data.sd_user_step, got_user_step);
 			scripty_data.sd_replay.pop();
 			fprintf(stderr, "replay %zd\n", scripty_data.sd_replay.size());
 			switch (cmd.c_type) {
@@ -482,6 +555,7 @@ int main(int argc, char *argv[])
 			    delete [] cmd.c_arg.b;
 			    break;
 			}
+			got_user_step = false;
 			got_expected = false;
 		    }
 		}
@@ -498,6 +572,7 @@ int main(int argc, char *argv[])
 		else {
 		    char buffer[1024];
 
+		    fprintf(stderr, "fds ready %d\n", rc);
 		    gettimeofday(&now, NULL);
 		    timersub(&now, &last, &diff);
 		    if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
@@ -507,6 +582,11 @@ int main(int argc, char *argv[])
 			}
 			else if (rc == 0) {
 			  FD_CLR(STDIN_FILENO, &read_fds);
+			}
+			else if (!scripty_data.sd_replay.empty()) {
+				if (scripty_data.sd_user_step) {
+					got_user_step = true;
+				}
 			}
 			else {
 			    write(ct.get_fd(), buffer, rc);
@@ -539,6 +619,7 @@ int main(int argc, char *argv[])
 		    }
 		    if (FD_ISSET(ct.get_fd(), &ready_rfds)) {
 			rc = read(ct.get_fd(), buffer, sizeof(buffer));
+			fprintf(stderr, "read rc %d\n", rc);
 			if (rc <= 0) {
 			    scripty_data.sd_looping = false;
 			    if (scripty_data.sd_from_child) {
@@ -560,37 +641,16 @@ int main(int argc, char *argv[])
 				       rc);
 				out_len += rc;
 			    }
-			    if (exp_data != NULL) {
-				int clen = min((exp_len - exp_pos), rc);
-
-				fprintf(stderr, "cmp %d %d %d %d\n", exp_len, exp_pos, rc, clen);
-				if (memcmp(&exp_data[exp_pos],
-					   buffer,
-					   clen) == 0) {
-				    exp_pos += clen;
-				    fprintf(stderr, "exp %d %d\n", exp_pos, clen);
-				    if (exp_pos == exp_len) {
-					exp_data = NULL;
-					if (!scripty_data.sd_expected.empty()) {
-					    struct expect exp = scripty_data.sd_expected.front();
-
-					    delete [] exp_data;
-					    scripty_data.sd_expected.pop();
-					    switch (exp.e_type) {
-					    case ET_READ:
-						exp_pos = sizeof(int);
-						exp_len = *((int *)exp.e_arg.b) + sizeof(int);
-						exp_data = exp.e_arg.b;
-						break;
-					    }
-					}
-					got_expected = true;
-				    }
-				}
-				else {
-				    scripty_data.sd_looping = false;
-				    retval = EXIT_FAILURE;
-				}
+			    switch (ex_handler.process_input(buffer, rc)) {
+		    	    case -1:
+		    	        scripty_data.sd_looping = false;
+			    	retval = EXIT_FAILURE;
+			    	break;
+			    case 0:
+			        break;
+			    case 1:
+			        got_expected = true;
+			        break;
 			    }
 			}
 		    }
@@ -599,8 +659,10 @@ int main(int argc, char *argv[])
 	    }
 	}
 
-	if (!scripty_data.sd_expected.empty())
+	if (!ex_handler.eh_queue.empty()) {
+		fprintf(stderr, "More input expected from child\n");
 	    retval = EXIT_FAILURE;
+	}
 
 	retval = ct.wait_for_child() || retval;
     }

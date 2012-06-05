@@ -171,14 +171,14 @@ throw (line_buffer::error)
 	    }
 	}
 
-	this->lf_line_buffer.invalidate();
-
 	/*
 	 * The file can still grow between the above fstat and when we're
 	 * doing the scanning, so use the line buffer's notion of the file
 	 * size.
 	 */
 	this->lf_index_size = this->lf_line_buffer.get_file_size();
+
+	this->lf_line_buffer.invalidate();
 
 	retval = true;
     }

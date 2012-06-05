@@ -141,10 +141,15 @@ class tcsh_history_format : public log_format {
 	    struct tm log_tm;
 
 	    log_time = log_time_int;
+	    /*
+	     * NB: We convert any displayed dates to gm time, so we need to
+	     * convert this time to local and then back to gmt.
+	     */
 	    memset(&log_tm, 0, sizeof(log_tm));
 	    log_tm = *localtime( &log_time);
-	    
+	    log_tm.tm_zone = NULL;
 	    log_tm.tm_isdst = 0;
+
 	    dst.push_back(logline(offset,
 				  tm2sec(&log_tm),
 				  0,

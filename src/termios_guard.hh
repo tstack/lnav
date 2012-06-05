@@ -5,6 +5,10 @@
 #ifndef __termios_guard_hh
 #define __termios_guard_hh
 
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+
 /**
  * RAII class that saves the current termios for a tty and then restores them
  * during destruction.

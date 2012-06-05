@@ -26,7 +26,7 @@ using namespace std;
 
 static time_t BAD_DATE = -1;
 
-static time_t tm2sec(const struct tm *t)
+time_t tm2sec(const struct tm *t)
 {
     int       year;
     time_t    days;
@@ -57,6 +57,8 @@ static time_t tm2sec(const struct tm *t)
 	return BAD_DATE;
     }                          /* must have overflowed */
     else {
+    	if (t->tm_zone)
+    		days -= t->tm_gmtoff;
 	return days;
     }                          /* must be a valid time */
 }

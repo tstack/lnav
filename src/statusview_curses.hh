@@ -118,20 +118,30 @@ protected:
     view_colors::role_t sf_role;  /*< The color role for this field. */
 };
 
-class telltale_field : public status_field {
-
-public:
-    
-};
-
+/**
+ * Data source for the fields to be displayed in a status view.
+ */
 class status_data_source {
 public:
     virtual ~status_data_source() { };
 
+    /**
+     * @return The number of status_fields in this source.
+     */
     virtual size_t statusview_fields(void) = 0;
+
+    /**
+     * Callback used to get a particular field.
+     *
+     * @param field The index of the field to return.
+     * @return A reference to the field at the given index.
+     */
     virtual status_field &statusview_value_for_field(int field) = 0;
 };
 
+/**
+ * A view that displays a collection of fields in a line on the display.
+ */
 class statusview_curses
     : public view_curses {
 public:

@@ -13,7 +13,7 @@
 #include "strong_int.hh"
 #include "view_curses.hh"
 
-/** Strongly-typed for lines to be displayed. */
+/** Strongly-typed integer for visible lines. */
 STRONG_INT_TYPE(int, vis_line);
 
 class listview_curses;
@@ -56,9 +56,7 @@ public:
     void set_data_source(list_data_source *src)
     {
 	this->lv_source = src;
-	if (this->lv_source != NULL) {
-	    this->reload_data();
-	}
+	this->reload_data();
     };
 
     /** @return The data source delegate. */
@@ -85,14 +83,14 @@ public:
     /** @return The curses window this view is attached to. */
     WINDOW *get_window() { return this->lv_window; };
 
-    void set_y(int y)
+    void set_y(unsigned int y)
     {
 	if (y != this->lv_y) {
 	    this->lv_y            = y;
 	    this->lv_needs_update = true;
 	}
     };
-    int get_y() { return this->lv_y; };
+    unsigned int get_y() { return this->lv_y; };
 
     /**
      * Set the line number to be displayed at the top of the view.  If the
@@ -100,11 +98,13 @@ public:
      * new value will be set and the scroll action called.
      *
      * @param top The new value for top.
+     * @param suppress_flash Don't call flash() if the top is out-of-bounds.
      */
-    void set_top(vis_line_t top)
+    void set_top(vis_line_t top, bool suppress_flash = false)
     {
 	if (top < 0 || (top > 0 && top >= this->get_inner_height())) {
-	    flash();
+	    if (!suppress_flash)
+		flash();
 	}
 	else if (this->lv_top != top) {
 	    this->lv_top = top;
@@ -116,6 +116,7 @@ public:
     /** @return The line number that is displayed at the top. */
     vis_line_t get_top() { return this->lv_top; };
 
+    /** @return The line number that is displayed at the bottom. */
     vis_line_t get_bottom()
     {
 	vis_line_t    retval, height;
@@ -132,15 +133,17 @@ public:
      * Shift the value of top by the given value.
      *
      * @param offset The amount to change top by.
+     * @param suppress_flash Don't call flash() if the offset is out-of-bounds.
      * @return The final value of top.
      */
-    vis_line_t shift_top(vis_line_t offset)
+    vis_line_t shift_top(vis_line_t offset, bool suppress_flash = false)
     {
 	if (offset < 0 && this->lv_top == 0) {
-	    flash();
+	    if (suppress_flash == false)
+		flash();
 	}
 	else {
-	    this->set_top(std::max(vis_line_t(0), this->lv_top + offset));
+	    this->set_top(std::max(vis_line_t(0), this->lv_top + offset), suppress_flash);
 	}
 
 	return this->lv_top;
@@ -154,9 +157,9 @@ public:
      *
      * @param left The new value for left.
      */
-    void set_left(int left)
+    void set_left(unsigned int left)
     {
-	if (left >= 0 && this->lv_left != left) {
+	if (this->lv_left != left) {
 	    this->lv_left = left;
 	    this->lv_scroll.invoke(this);
 	    this->lv_needs_update = true;
@@ -164,7 +167,7 @@ public:
     };
 
     /** @return The column number that is displayed at the left. */
-    int get_left() { return this->lv_left; };
+    unsigned int get_left() { return this->lv_left; };
 
     /**
      * Shift the value of left by the given value.
@@ -172,9 +175,14 @@ public:
      * @param offset The amount to change top by.
      * @return The final value of top.
      */
-    int shift_left(int offset)
+    unsigned int shift_left(int offset)
     {
-	this->set_left(std::max(0, this->lv_left + offset));
+    	if (offset < 0 && this->lv_left < (unsigned int)-offset) {
+    		this->set_left(0);
+    	}
+    	else {
+	    	this->set_left(this->lv_left + offset);
+	}
 
 	return this->lv_left;
     };
@@ -197,10 +205,11 @@ public:
     /** @return The absolute or relative height of the window. */
     vis_line_t get_height() { return this->lv_height; };
 
-    int get_inner_height() const
+    /** @return The number of rows of data in this view's source data. */
+    vis_line_t get_inner_height() const
     {
-	return this->lv_source == NULL ? 0 :
-	       this->lv_source->listview_rows(*this);
+	return vis_line_t(this->lv_source == NULL ? 0 :
+		          this->lv_source->listview_rows(*this));
     };
 
     void set_needs_update() { this->lv_needs_update = true; };
@@ -244,12 +253,14 @@ protected:
     list_data_source *lv_source;  /*< The data source delegate. */
     action           lv_scroll;   /*< The scroll action. */
     WINDOW           *lv_window;  /*< The window that contains this view. */
-    int        lv_y;
+    unsigned int        lv_y;	  /*< The y offset of this view. */
     vis_line_t lv_top;            /*< The line at the top of the view. */
-    int        lv_left;           /*< The column at the left of the view. */
+    unsigned int        lv_left;  /*< The column at the left of the view. */
     vis_line_t lv_height;         /*< The abs/rel height of the view. */
-    bool       lv_needs_update;
-    bool       lv_show_scrollbar;
+    bool       lv_needs_update;	  /*< Flag to indicate if a display update
+    				   *  is needed.
+    				   */
+    bool       lv_show_scrollbar; /*< Draw the scrollbar in the view. */
 };
 
 #endif

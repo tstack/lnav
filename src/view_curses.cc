@@ -24,6 +24,8 @@ void view_curses::mvwattrline(WINDOW *window,
     std::vector<size_t> tab_list;
     char *buffer;
 
+    assert(lr.lr_end != -1);
+
     line_width = lr.length();
     buffer = (char *)alloca(line_width + 1);
 

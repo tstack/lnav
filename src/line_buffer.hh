@@ -87,6 +87,7 @@ public:
     {
 	this->lb_file_offset += this->lb_buffer_size;
 	this->lb_buffer_size  = 0;
+	this->lb_file_size = -1;
     };
 
     /** Release any resources held by this object. */
@@ -170,9 +171,9 @@ private:
     };
 
     auto_fd lb_fd;              /*< The file to read data from. */
-    gzFile lb_gz_file;
-    bool lb_bz_file;
-    off_t lb_gz_offset;
+    gzFile lb_gz_file;          /*< File handle for gzipped files. */
+    bool lb_bz_file;            /*< Flag set for bzip2 compressed files. */
+    off_t lb_gz_offset;         /*< The offset into the compressed file. */
     
     auto_mem<char> lb_buffer;   /*< The internal buffer where data is cached */
 
@@ -187,7 +188,7 @@ private:
 				 */
     size_t lb_buffer_size;      /*< The amount of cached data in the buffer. */
     size_t lb_buffer_max;       /*< The size of the buffer memory. */
-    bool   lb_seekable;
+    bool   lb_seekable;         /*< Flag set for seekable file descriptors. */
 };
 
 #endif

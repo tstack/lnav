@@ -11,6 +11,7 @@ using namespace std;
 hist_source::hist_source()
     : hs_bucket_size(1),
       hs_group_size(100),
+      hs_analyzed(false),
       hs_label_source(NULL),
       hs_token_bucket(NULL)
 { }
@@ -22,6 +23,8 @@ void hist_source::text_value_for_line(textview_curses &tc,
 {
     int grow = row / (this->buckets_per_group() + 1);
     int brow = row % (this->buckets_per_group() + 1);
+
+    assert(this->hs_analyzed);
 
     if (brow == 0) {
 	unsigned long width;
@@ -56,6 +59,8 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
 				      int row,
 				      string_attrs_t &value_out)
 {
+    assert(this->hs_analyzed);
+
     if (this->hs_token_bucket != NULL) {
 	view_colors &vc = view_colors::singleton();
 	unsigned long width, avail_width;
@@ -92,9 +97,13 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
     }
 }
 
-void hist_source::add_value(int value, bucket_type_t bt, bucket_count_t amount)
+void hist_source::add_value(unsigned int value,
+                            bucket_type_t bt,
+                            bucket_count_t amount)
 {
     bucket_group_t bg;
+
+    this->hs_analyzed = false;
 
     bg = bucket_group_t(value / this->hs_group_size);
 
@@ -104,7 +113,7 @@ void hist_source::add_value(int value, bucket_type_t bt, bucket_count_t amount)
 	ba.resize(this->buckets_per_group());
     }
 
-    bucket_count_t &bc = ba[abs(value % this->hs_group_size) /
+    bucket_count_t &bc = ba[(value % this->hs_group_size) /
 			    this->hs_bucket_size][bt];
 
     bc += amount;
@@ -146,4 +155,6 @@ void hist_source::analyze(void)
     }
 
     sort(this->hs_group_keys.begin(), this->hs_group_keys.end());
+
+    this->hs_analyzed = true;
 }

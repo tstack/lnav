@@ -5,6 +5,8 @@
 #ifndef __view_curses_hh
 #define __view_curses_hh
 
+#include "config.h"
+
 #include <assert.h>
 #include <stdint.h>
 #include <limits.h>

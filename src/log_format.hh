@@ -152,4 +152,12 @@ protected:
     int lf_time_fmt_lock;
 };
 
+/**
+ * Convert the time stored in a 'tm' struct into epoch time.
+ *
+ * @param t The 'tm' structure to convert to epoch time.
+ * @return The given time in seconds since the epoch.
+ */
+time_t tm2sec(const struct tm *t);
+
 #endif

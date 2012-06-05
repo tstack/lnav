@@ -1,3 +1,7 @@
+/**
+ * @file hist_source.hh
+ */
+
 #ifndef __hist_source_hh
 #define __hist_source_hh
 
@@ -10,14 +14,34 @@
 
 typedef float bucket_count_t;
 
+/** Type for indexes into a group of buckets. */
 STRONG_INT_TYPE(int, bucket_group);
+
+/** Type used to differentiate values added to the same row in the histogram */
 STRONG_INT_TYPE(int, bucket_type);
 
+/**
+ * A text source that displays data as a histogram using horizontal bars.  Data
+ * is added to the histogram using the add_value() method.  Once all of the
+ * values have been added, the analyze() method needs to be called to analyze
+ * the data so that it can be displayed.
+ *
+ * For example, if the values (7, 3, 4, 2) were added, they would be displayed
+ * like so:
+ *
+ *   ******
+ *   ***
+ *   ****
+ *   **
+ */
 class hist_source
     : public text_sub_source {
 public:
     typedef std::map<bucket_type_t, bucket_count_t> bucket_t;
 
+    /**
+     * Source for labels on each bucket and group.
+     */
     class label_source {
 public:
 	virtual ~label_source() { };
@@ -33,11 +57,18 @@ public:
     hist_source();
     virtual ~hist_source() { };
 
-    void set_bucket_size(int bs) { this->hs_bucket_size = bs; };
-    int get_bucket_size(void) const { return this->hs_bucket_size; };
+    void set_bucket_size(unsigned int bs) {
+    	assert(bs > 0);
 
-    void set_group_size(int gs) { this->hs_group_size = gs; };
-    int get_group_size(void) const { return this->hs_group_size; };
+    	this->hs_bucket_size = bs;
+    };
+    unsigned int get_bucket_size(void) const { return this->hs_bucket_size; };
+
+    void set_group_size(unsigned int gs) {
+    	assert(gs > 0);
+    	this->hs_group_size = gs;
+    };
+    unsigned int get_group_size(void) const { return this->hs_group_size; };
 
     void set_label_source(label_source *hls)
     {
@@ -118,7 +149,16 @@ public:
 	return retval;
     };
 
-    void add_value(int value, bucket_type_t bt, bucket_count_t amount = 1.0);
+    /**
+     * Add a value to the histogram.
+     *
+     * @param value The row in the histogram.
+     * @param bt The type of data.
+     * @param amount The amount to add to this row in the histogram.
+     */
+    void add_value(unsigned int value,
+                   bucket_type_t bt,
+                   bucket_count_t amount = 1.0);
     void analyze(void);
 
 protected:
@@ -129,10 +169,12 @@ protected:
     std::map<bucket_group_t, bucket_array_t> hs_groups;
     std::vector<bucket_group_t> hs_group_keys;
 
-    int            hs_bucket_size; /* hours */
-    int            hs_group_size;  /* days */
+    unsigned int   hs_bucket_size; /* hours */
+    unsigned int   hs_group_size;  /* days */
     bucket_count_t hs_min_count;
     bucket_count_t hs_max_count;
+    /** Indicates that all of the data has been analyze()'d. */
+    bool hs_analyzed;
     label_source   *hs_label_source;
 
     bucket_t *hs_token_bucket;

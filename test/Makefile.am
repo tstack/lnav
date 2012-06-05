@@ -15,6 +15,7 @@ check_PROGRAMS = \
 	drive_listview \
 	drive_logfile \
 	drive_sequencer \
+	drive_view_colors \
 	drive_vt52_curses \
 	drive_readline_curses \
 	slicer \
@@ -23,6 +24,7 @@ check_PROGRAMS = \
 	test_auto_mem \
 	test_bookmarks \
 	test_grep_proc2 \
+	test_hist_source \
 	test_line_buffer2 \
 	test_pcrepp \
 	test_top_status
@@ -43,6 +45,12 @@ test_grep_proc2_SOURCES = \
 	../src/grep_proc.cc \
 	test_grep_proc2.cc
 test_grep_proc2_LDADD = $(PCRE_LIBS) -lz
+
+test_hist_source_SOURCES = \
+	../src/hist_source.cc \
+	../src/view_curses.cc \
+	test_hist_source.cc
+test_hist_source_LDADD = $(CURSES_LIB) -lz
 
 test_line_buffer2_SOURCES = \
 	../src/line_buffer.cc \
@@ -101,6 +109,11 @@ drive_data_scanner_SOURCES = \
 	../src/data_parser.cc \
 	../src/data_scanner.cc \
 	drive_data_scanner.cc
+
+drive_view_colors_SOURCES = \
+	../src/view_curses.cc \
+	drive_view_colors.cc
+drive_view_colors_LDADD = $(CURSES_LIB)
 
 drive_vt52_curses_SOURCES = \
 	../src/vt52_curses.cc \
@@ -162,9 +175,11 @@ TESTS = test_bookmarks \
 	test_line_buffer2 \
 	test_grep_proc.sh \
 	test_grep_proc2 \
+	test_hist_source \
 	test_listview.sh \
 	test_logfile.sh \
 	test_pcrepp \
+	test_view_colors.sh \
 	test_vt52_curses.sh \
 	test_top_status \
 	test_data_parser.sh

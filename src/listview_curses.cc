@@ -26,6 +26,7 @@ void listview_curses::reload_data(void)
 {
     if (this->lv_source == NULL) {
 	this->lv_top = vis_line_t(0);
+	this->lv_left = 0;
     }
     else if (this->lv_top >= this->get_inner_height()) {
 	this->lv_top = max(vis_line_t(0),

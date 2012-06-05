@@ -1262,7 +1262,6 @@ static void handle_paging_key(int ch)
 		    if (sscanf(dls.dls_rows[db_row][lpc].c_str(),
 			       "%d",
 			       &line_number) &&
-			line_number >= 0 &&
 			line_number < tc->listview_rows(*tc)) {
 			tc = &lnav_data.ld_views[LNV_LOG];
 			tc->set_top(vis_line_t(line_number));
@@ -2267,20 +2266,24 @@ public:
 			if (lss) {
 				if (this->lb_selection_start == vis_line_t(-1)) {
 					this->lb_selection_start = vis_y;
-
-					lss->toggle_user_mark(&textview_curses::BM_USER,
-					                      this->lb_selection_start,
-					                      vis_y);
+					this->lb_selection_last = vis_line_t(-1);
 				}
 				else {
-					lss->toggle_user_mark(&textview_curses::BM_USER,
-					                      this->lb_selection_start,
-					                      this->lb_selection_last);
-					lss->toggle_user_mark(&textview_curses::BM_USER,
-					                      this->lb_selection_start,
-					                      vis_y);
+					if (this->lb_selection_last != vis_line_t(-1)) {
+						lss->toggle_user_mark(&textview_curses::BM_USER,
+						                      this->lb_selection_start,
+						                      this->lb_selection_last);
+					}
+					if (this->lb_selection_start == vis_y) {
+						this->lb_selection_last = vis_line_t(-1);
+					}
+					else {
+						lss->toggle_user_mark(&textview_curses::BM_USER,
+						                      this->lb_selection_start,
+						                      vis_y);
+						this->lb_selection_last = vis_y;
+					}
 				}
-				this->lb_selection_last = vis_y;
 				tc->reload_data();
 			}
 			break;
@@ -2297,7 +2300,8 @@ public:
 					timersub(&now, &this->lb_last_scroll_time, &scroll_diff);
 					if (scroll_diff.tv_usec > 50000) {
 						tc->shift_top(vis_line_t(this->scroll_polarity(button) *
-						              this->lb_scroll_repeat));
+						              this->lb_scroll_repeat),
+							      true);
 						this->lb_scroll_repeat = 0;
 					}
 					else {
@@ -2307,11 +2311,11 @@ public:
 				else {
 					this->lb_scroll_repeat = 1;
 					this->lb_last_scroll_time = now;
-					tc->shift_top(vis_line_t(this->scroll_polarity(button)));
+					tc->shift_top(vis_line_t(this->scroll_polarity(button)), true);
 				}
 			}
 			else {
-				tc->shift_top(vis_line_t(this->scroll_polarity(button)));
+				tc->shift_top(vis_line_t(this->scroll_polarity(button)), true);
 			}
 			break;
 		}

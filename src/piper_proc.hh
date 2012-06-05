@@ -1,3 +1,6 @@
+/**
+ * @file piper_proc.hh
+ */
 
 #ifndef __piper_proc_hh
 #define __piper_proc_hh

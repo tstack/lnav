@@ -1,3 +1,6 @@
+/**
+ * @file piper_proc.cc
+ */
 
 #include "config.h"
 

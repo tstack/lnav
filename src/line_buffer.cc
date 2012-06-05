@@ -191,6 +191,10 @@ throw (error)
 	throw error(EFBIG);
     }
 
+    /* 
+     * Check to see if the start is inside the cached range or immediately
+     * after.
+     */
     if (start < this->lb_file_offset ||
 	start > (off_t)(this->lb_file_offset + this->lb_buffer_size)) {
 	/*
@@ -198,6 +202,7 @@ throw (error)
 	 * whole thing.
 	 */
 	prefill = 0;
+	this->lb_buffer_size = 0;
 	if ((this->lb_file_size != (size_t)-1) &&
 	    (start + this->lb_buffer_max > this->lb_file_size)) {
 	    /*
@@ -210,10 +215,11 @@ throw (error)
 	else {
 	    this->lb_file_offset = start;
 	}
-	this->lb_buffer_size = 0;
     }
     else {
-	/* The request is in the cached range. */
+	/* The request is in the cached range.  Record how much extra data is in
+	 * the buffer before the requested range.
+	 */
 	prefill = start - this->lb_file_offset;
     }
     assert(this->lb_file_offset <= start);
