@@ -139,14 +139,14 @@ public:
 protected:
     static std::vector<log_format *> lf_root_formats;
 
-    int log_scanf(const char *line,
-		  const char *fmt[],
-		  int expected_matches,
-		  const char *time_fmt[],
-		  char *time_dest,
-		  struct tm *tm_out,
-		  time_t &time_out,
-		  ...);
+    char *log_scanf(const char *line,
+		    const char *fmt[],
+		    int expected_matches,
+		    const char *time_fmt[],
+		    char *time_dest,
+		    struct tm *tm_out,
+		    time_t &time_out,
+		    ...);
 
     int lf_fmt_lock;
     int lf_time_fmt_lock;

@@ -128,14 +128,14 @@ static bool next_format(const char *fmt[], int &index, int &locked_index)
     return retval;
 }
 
-int log_format::log_scanf(const char *line,
-			  const char *fmt[],
-			  int expected_matches,
-			  const char *time_fmt[],
-			  char *time_dest,
-			  struct tm *tm_out,
-			  time_t &time_out,
-			  ...)
+char *log_format::log_scanf(const char *line,
+			    const char *fmt[],
+			    int expected_matches,
+			    const char *time_fmt[],
+			    char *time_dest,
+			    struct tm *tm_out,
+			    time_t &time_out,
+			    ...)
 {
     static const char *std_time_fmt[] = {
 	"%Y-%m-%d %H:%M:%S",
@@ -153,22 +153,24 @@ int log_format::log_scanf(const char *line,
 	NULL,
     };
     
-    int curr_fmt = -1, retval = 0;
+    int curr_fmt = -1;
+    char *retval = NULL;
     va_list args;
 
     while (next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
 	va_start(args, time_out);
+	int matches;
 
 	time_dest[0] = '\0';
 
-	retval = vsscanf(line, fmt[curr_fmt], args);
-	if (retval < expected_matches) {
-	    retval = 0;
+	matches = vsscanf(line, fmt[curr_fmt], args);
+	if (matches < expected_matches) {
+	    retval = NULL;
 	    continue;
 	}
 
 	if (time_dest[0] == '\0') {
-	    retval = 0;
+	    retval = NULL;
 	}
 	else {
 	    int curr_time_fmt = -1;
@@ -181,9 +183,9 @@ int log_format::log_scanf(const char *line,
 			       curr_time_fmt,
 			       this->lf_time_fmt_lock)) {
 		memset(tm_out, 0, sizeof(struct tm));
-		if (strptime(time_dest,
-			     time_fmt[curr_time_fmt],
-			     tm_out) != NULL) {
+		if ((retval = strptime(time_dest,
+				       time_fmt[curr_time_fmt],
+			               tm_out)) != NULL) {
 		    if (tm_out->tm_year < 70) {
 			// XXX We should pull the time from the file mtime (?)
 			tm_out->tm_year = 80;
@@ -199,7 +201,7 @@ int log_format::log_scanf(const char *line,
 	    }
 	    
 	    if (!found)
-		retval = 0;
+		retval = NULL;
 	}
 
 	va_end(args);

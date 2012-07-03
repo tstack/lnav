@@ -195,20 +195,29 @@ class generic_log_format : public log_format {
 	char timestr[64];
 	time_t line_time;
 	char level[16];
+	char *last_pos;
 	
-	if (this->log_scanf(prefix,
-			    log_fmt,
-			    2,
-			    NULL,
-			    timestr,
-			    &log_time,
-			    line_time,
+	if ((last_pos = this->log_scanf(prefix,
+					log_fmt,
+					2,
+					NULL,
+					timestr,
+					&log_time,
+					line_time,
 			    
-			    timestr,
-			    level)) {
+					timestr,
+					level)) != NULL) {
+	    uint16_t millis = 0;
+
+	    /* Try to pull out the milliseconds value. */
+	    if (last_pos[0] == ',') {
+	    	sscanf(last_pos, ",%hd", &millis);
+	    	if (millis >= 1000)
+		    millis = 0;
+	    }
 	    dst.push_back(logline(offset,
 				  line_time,
-				  0,
+				  millis,
 				  logline::string2level(level)));
 	    retval = true;
 	}
