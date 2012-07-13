@@ -33,12 +33,16 @@ noinst_HEADERS = \
 	data_scanner.hh \
 	data_parser.hh \
 	db_sub_source.hh \
+	grapher.hh \
+	grep_highlighter.hh \
 	grep_proc.hh \
 	help.hh \
 	help.txt \
 	hist_source.hh \
 	line_buffer.hh \
 	listview_curses.hh \
+	lnav.hh \
+	lnav_commands.hh \
 	lnav_util.hh \
 	log_format.hh \
 	logfile.hh \
@@ -67,6 +71,7 @@ libdiag_a_SOURCES = \
 	hist_source.cc \
 	line_buffer.cc \
 	listview_curses.cc \
+	lnav_commands.cc \
 	log_format.cc \
 	logfile.cc \
 	logfile_sub_source.cc \

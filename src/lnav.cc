@@ -41,6 +41,7 @@
 
 #include <sqlite3.h>
 
+#include "lnav.hh"
 #include "help.hh"
 #include "auto_temp_file.hh"
 #include "logfile.hh"
@@ -64,64 +65,13 @@
 #include "termios_guard.hh"
 #include "data_parser.hh"
 #include "xterm_mouse.hh"
+#include "lnav_commands.hh"
 
 using namespace std;
 
-/** The command modes that are available while viewing a file. */
-typedef enum {
-    LNM_PAGING,
-    LNM_COMMAND,
-    LNM_SEARCH,
-    LNM_CAPTURE,
-    LNM_SQL,
-} ln_mode_t;
-
-enum {
-    LNB_SYSLOG,
-
-    LNB__MAX,
-
-    LNB_ROTATED
-};
-
-/** Flags set on the lnav command-line. */
-typedef enum {
-    LNF_SYSLOG        = (1L << LNB_SYSLOG),
-
-    LNF_ROTATED       = (1L << LNB_ROTATED),
-
-    LNF__ALL          = (LNF_SYSLOG)
-} lnav_flags_t;
-
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
-/** The different views available. */
-typedef enum {
-    LNV_LOG,
-    LNV_TEXT,
-    LNV_HELP,
-    LNV_HISTOGRAM,
-    LNV_GRAPH,
-    LNV_DB,
-    LNV_EXAMPLE,
-
-    LNV__MAX
-} lnav_view_t;
-
-/** The status bars. */
-typedef enum {
-    LNS_TOP,
-    LNS_BOTTOM,
-
-    LNS__MAX
-} lnav_status_t;
-
-typedef enum {
-    LG_GRAPH,
-    LG_CAPTURE,
-    
-    LG__MAX
-} lnav_grep_t;
+struct _lnav_data lnav_data;
 
 struct hist_level {
     int hl_bucket_size;
@@ -156,175 +106,11 @@ string dotlnav_path(const char *sub)
     return retval;
 }
 
-class grep_highlighter {
-public:
-    grep_highlighter(auto_ptr < grep_proc > gp,
-		     string hl_name,
-		     textview_curses::highlight_map_t &hl_map)
-	: gh_grep_proc(gp),
-	  gh_hl_name(hl_name),
-	  gh_hl_map(hl_map) { };
-
-    ~grep_highlighter()
-    {
-	this->gh_hl_map.erase(this->gh_hl_map.find(this->gh_hl_name));
-    };
-
-    grep_proc *get_grep_proc() { return this->gh_grep_proc.get(); };
-
-private:
-    auto_ptr<grep_proc> gh_grep_proc;
-    string gh_hl_name;
-    textview_curses::highlight_map_t gh_hl_map;
-};
-
-class grapher
-    : public grep_proc_sink,
-      public hist_source {
-public:
-
-    grapher()
-	: gr_highlighter(NULL)
-    {
-	this->set_label_source(&this->gr_label_source);
-    };
-
-    grep_line_t at(int row) { return this->gr_lines[row]; };
-
-    void set_highlighter(textview_curses::highlighter *hl)
-    {
-	this->gr_highlighter = hl;
-    };
-
-    void grep_begin(grep_proc &gp)
-    {
-	this->clear();
-	this->hs_type2role.clear();
-	this->gr_lines.clear();
-	this->gr_x          = -1;
-	this->gr_next_field = bucket_type_t(0);
-    };
-
-    void grep_match(grep_proc &gp, grep_line_t line, int start, int end) { };
-
-    void grep_capture(grep_proc &gp,
-		      grep_line_t line,
-		      int start,
-		      int end,
-		      char *capture)
-    {
-	float amount = 1.0;
-
-	if (this->gr_lines.empty() || this->gr_lines.back() != line) {
-	    this->gr_next_field = bucket_type_t(0);
-	    this->gr_x         += 1;
-	    this->gr_lines.push_back(line);
-	}
-
-	if (this->gr_highlighter != NULL) {
-	    if (this->hs_type2role.find(this->gr_next_field) ==
-		this->hs_type2role.end()) {
-		this->hs_type2role[this->gr_next_field] =
-		    this->gr_highlighter->get_role(this->gr_next_field);
-	    }
-	}
-	if (capture != 0)
-	    sscanf(capture, "%f", &amount);
-	this->add_value(this->gr_x, this->gr_next_field, amount);
-
-	++ this->gr_next_field;
-    };
-
-    void grep_end_batch(grep_proc &gp) { this->analyze(); };
-    void grep_end(grep_proc &gp) { this->analyze(); };
-
-private:
-
-    class label_source
-	: public hist_source::label_source {
-public:
-	label_source() { };
-
-	void hist_label_for_bucket(int bucket_start_value,
-				   const hist_source::bucket_t &bucket,
-				   string &label_out)
-	{
-	    hist_source::bucket_t::const_iterator iter;
-
-	    for (iter = bucket.begin(); iter != bucket.end(); iter++) {
-		char buffer[64];
-
-		if (iter->second != 0.0) {
-		    snprintf(buffer, sizeof(buffer), "  %10.2f", iter->second);
-		}
-		else {
-		    snprintf(buffer, sizeof(buffer), "  %10s", "-");
-		}
-		label_out += string(buffer);
-	    }
-	};
-    };
-
-    label_source gr_label_source;
-    textview_curses::highlighter *gr_highlighter;
-    vector<grep_line_t> gr_lines;
-    int           gr_x;
-    bucket_type_t gr_next_field;
-};
-
 /* XXX figure out how to do this with the template */
 void sqlite_close_wrapper(void *mem)
 {
     sqlite3_close((sqlite3*)mem);
 }
-
-static struct {
-    const char *				ld_program_name;
-    const char *				ld_debug_log_name;
-
-    set< pair<string, int> >			ld_file_names;
-    list<const logfile *>			ld_files;
-    sig_atomic_t				ld_looping;
-    sig_atomic_t				ld_winched;
-    unsigned long				ld_flags;
-    WINDOW *					ld_window;
-    ln_mode_t					ld_mode;
-
-    statusview_curses				ld_status[LNS__MAX];
-    top_status_source				ld_top_source;
-    bottom_status_source			ld_bottom_source;
-    listview_curses::action::broadcaster	ld_scroll_broadcaster;
-
-    time_t					ld_top_time;
-    time_t					ld_bottom_time;
-
-    stack<textview_curses *>			ld_view_stack;
-    textview_curses				ld_views[LNV__MAX];
-    auto_ptr<grep_highlighter>			ld_search_child[LNV__MAX];
-    vis_line_t					ld_search_start_line;
-    readline_curses *				ld_rl_view;
-
-    logfile_sub_source				ld_log_source;
-    hist_source					ld_hist_source;
-    int						ld_hist_zoom;
-
-    textfile_sub_source				ld_text_source;
-
-    map<textview_curses *, int>			ld_last_user_mark;
-
-    grapher					ld_graph_source;
-
-    hist_source					ld_db_source;
-    db_label_source				ld_db_rows;
-
-    int						ld_max_fd;
-    fd_set					ld_read_fds;
-
-    auto_ptr<grep_highlighter>			ld_grep_child[LG__MAX];
-
-    log_vtab_manager *				ld_vtab_manager;
-    auto_mem<sqlite3, sqlite_close_wrapper>	ld_db;
-} lnav_data;
 
 class loading_observer
     : public logfile_sub_source::observer {
@@ -409,7 +195,7 @@ static void rebuild_hist(size_t old_count, bool force)
     hist_view.set_top(hs.row_for_value(old_time));
 }
 
-static void rebuild_indexes(bool force)
+void rebuild_indexes(bool force)
 {
     static loading_observer obs;
 
@@ -417,11 +203,18 @@ static void rebuild_indexes(bool force)
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
     textview_curses &text_view = lnav_data.ld_views[LNV_TEXT];
     vis_line_t old_bottom(0), height(0);
+    content_line_t top_content = content_line_t(-1);
 
     unsigned long width;
     bool          scroll_down;
     size_t        old_count;
     time_t        old_time;
+
+
+    old_count = lss.text_line_count();
+
+    if (old_count)
+	top_content = lss.at(log_view.get_top());
 
     {
 	textfile_sub_source *tss = &lnav_data.ld_text_source;
@@ -458,12 +251,9 @@ static void rebuild_indexes(bool force)
     old_time = lnav_data.ld_top_time;
     log_view.get_dimensions(height, width);
     old_bottom  = log_view.get_top() + height;
-    scroll_down = (size_t)old_bottom > lss.text_line_count();
+    scroll_down = (size_t)old_bottom > old_count;
     if (force) {
 	old_count = 0;
-    }
-    else {
-	old_count = lss.text_line_count();
     }
     if (lss.rebuild_index(&obs, force)) {
 	size_t      new_count = lss.text_line_count();
@@ -471,12 +261,18 @@ static void rebuild_indexes(bool force)
 	int         lpc;
 
 	log_view.reload_data();
-	
+
 	if (scroll_down && new_count >= (size_t)old_bottom) {
 	    log_view.set_top(vis_line_t(new_count - height + 1));
 	}
 	else if (!scroll_down && force) {
-	    log_view.set_top(lss.find_from_time(old_time));
+	    content_line_t new_top_content = content_line_t(-1);
+
+	    if (new_count)
+	    	new_top_content = lss.at(log_view.get_top());
+
+	    if (new_top_content != top_content)
+		log_view.set_top(lss.find_from_time(old_time));
 	}
 
 	rebuild_hist(old_count, force);
@@ -1318,468 +1114,7 @@ static void handle_rl_key(int ch)
     }
 }
 
-static string com_unix_time(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting a unix time value";
-
-    if (args.size() == 0) { }
-    else if (args.size() >= 2) {
-	char      ftime[128] = "";
-	bool      parsed     = false;
-	struct tm log_time;
-	time_t    u_time;
-	size_t    millis;
-	char      *rest;
-
-	u_time   = time(NULL);
-	log_time = *localtime( &u_time);
-
-	log_time.tm_isdst = -1;
-
-	args[1] = cmdline.substr(cmdline.find(args[1]));
-	if ((millis = args[1].find('.')) != string::npos ||
-	    (millis = args[1].find(',')) != string::npos) {
-	    args[1] = args[1].erase(millis, 4);
-	}
-	if (((rest = strptime(args[1].c_str(),
-			      "%b %d %H:%M:%S %Y",
-			      &log_time)) != NULL &&
-	     (rest - args[1].c_str()) >= 20) ||
-	    ((rest = strptime(args[1].c_str(),
-			      "%Y-%m-%d %H:%M:%S",
-			      &log_time)) != NULL &&
-	     (rest - args[1].c_str()) >= 19)) {
-	    u_time = mktime(&log_time);
-	    parsed = true;
-	}
-	else if (sscanf(args[1].c_str(), "%ld", &u_time)) {
-	    log_time = *localtime( &u_time);
-
-	    parsed = true;
-	}
-	if (parsed) {
-	    int len;
-
-	    strftime(ftime, sizeof(ftime),
-		     "%a %b %d %H:%M:%S %Y  %z %Z",
-		     localtime(&u_time));
-	    len = strlen(ftime);
-	    snprintf(ftime + len, sizeof(ftime) - len,
-		     " -- %ld\n",
-		     u_time);
-	    retval = string(ftime);
-	}
-    }
-
-    return retval;
-}
-
-static string com_current_time(string cmdline, vector<string> &args)
-{
-    char   ftime[128];
-    struct tm localtm;
-    string retval;
-    time_t u_time;
-    int    len;
-
-    memset(&localtm, 0, sizeof(localtm));
-    u_time = time(NULL);
-    strftime(ftime, sizeof(ftime),
-	     "%a %b %d %H:%M:%S %Y  %z %Z",
-	     localtime_r(&u_time, &localtm));
-    len = strlen(ftime);
-    snprintf(ftime + len, sizeof(ftime) - len,
-	     " -- %ld\n",
-	     u_time);
-    retval = string(ftime);
-
-    return retval;
-}
-
-static string com_goto(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting line number/percentage";
-
-    if (args.size() == 0) { }
-    else if (args.size() > 1) {
-	textview_curses *tc = lnav_data.ld_view_stack.top();
-	int             line_number, consumed;
-	float           value;
-
-	if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
-	    if (args[1][consumed] == '%') {
-		line_number = (int)
-			      ((double)tc->get_inner_height() * (value / 100.0));
-	    }
-	    else {
-		line_number = (int)value;
-	    }
-	    tc->set_top(vis_line_t(line_number));
-
-	    retval = "";
-	}
-    }
-
-    return retval;
-}
-
-static string com_save_to(string cmdline, vector<string> &args)
-{
-    FILE *outfile = NULL;
-    FILE *pfile = NULL;
-    char command[1024];
-    const char *mode = "";
-
-    if (args.size() == 0) {
-	args.push_back("filename");
-	return "";
-    }
-    
-    if (args.size() != 2) {
-	return "error: expecting file name";
-    }
-
-    snprintf(command, sizeof(command), "echo -n %s", args[1].c_str());
-    if ((pfile = popen(command, "r")) == NULL) {
-	return "error: unable to compute file name";
-    }
-
-    if (fgets(command, sizeof(command), pfile) == 0)
-	perror("fgets");
-    fclose(pfile);
-    pfile = NULL;
-
-    if (args[0] == "append-to") {
-	mode = "a";
-    }
-    else if (args[0] == "write-to") {
-	mode = "w";
-    }
-
-    if ((outfile = fopen(command, mode)) == NULL) {
-	return "error: unable to open file -- " + string(command);
-    }
-    
-    textview_curses *tc = lnav_data.ld_view_stack.top();
-    bookmark_vector<vis_line_t> &bv = tc->get_bookmarks()[&textview_curses::BM_USER];
-    bookmark_vector<vis_line_t>::iterator iter;
-    string line;
-    
-    for (iter = bv.begin(); iter != bv.end(); iter++) {
-	tc->grep_value_for_line(*iter, line);
-	fprintf(outfile, "%s\n", line.c_str());
-    }
-
-    fclose(outfile);
-    outfile = NULL;
-
-    return "";
-}
-
-static string com_highlight(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting regular expression to highlight";
-
-    if (args.size() == 0) { }
-    else if (args.size() > 1) {
-	const char *errptr;
-	pcre       *code;
-	int        eoff;
-
-	args[1] = cmdline.substr(cmdline.find(args[1]));
-	if ((code = pcre_compile(args[1].c_str(),
-				 PCRE_CASELESS,
-				 &errptr,
-				 &eoff,
-				 NULL)) == NULL) {
-	    retval = "error: " + string(errptr);
-	}
-	else {
-	    textview_curses *tc = lnav_data.ld_view_stack.top();
-	    textview_curses::highlighter hl(code, false);
-
-	    textview_curses::highlight_map_t &hm = tc->get_highlights();
-
-	    hm[args[1]] = hl;
-
-	    retval = "info: highlight pattern now active";
-	}
-    }
-
-    return retval;
-}
-
-static string com_graph(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting regular expression to graph";
-
-    if (args.size() == 0) {
-	args.push_back("graph");
-    }
-    else if (args.size() > 1) {
-	const char *errptr;
-	pcre       *code;
-	int        eoff;
-
-	args[1] = cmdline.substr(cmdline.find(args[1]));
-	if ((code = pcre_compile(args[1].c_str(),
-				 PCRE_CASELESS,
-				 &errptr,
-				 &eoff,
-				 NULL)) == NULL) {
-	    retval = "error: " + string(errptr);
-	}
-	else {
-	    textview_curses &tc = lnav_data.ld_views[LNV_LOG];
-	    textview_curses::highlighter hl(code, true);
-
-	    textview_curses::highlight_map_t &hm = tc.get_highlights();
-
-	    hm["(graph"] = hl;
-	    lnav_data.ld_graph_source.set_highlighter(&hm["(graph"]);
-
-	    auto_ptr<grep_proc> gp(new grep_proc(code,
-						 tc,
-						 lnav_data.ld_max_fd,
-						 lnav_data.ld_read_fds));
-
-	    gp->queue_request();
-	    gp->start();
-	    gp->set_sink(&lnav_data.ld_graph_source);
-
-	    auto_ptr<grep_highlighter>
-	    gh(new grep_highlighter(gp, "(graph", hm));
-	    lnav_data.ld_grep_child[LG_GRAPH] = gh;
-
-	    retval = "";
-	}
-    }
-
-    return retval;
-}
-
-class pcre_filter
-    : public logfile_filter {
-public:
-    pcre_filter(type_t type, string id, pcre *code)
-	: logfile_filter(type, id),
-	  pf_code(code) { };
-    virtual ~pcre_filter() { };
-
-    bool matches(string line)
-    {
-	static const int MATCH_COUNT = 20 * 3;
-	int  matches[MATCH_COUNT], rc;
-	bool retval;
-
-	rc = pcre_exec(this->pf_code,
-		       NULL,
-		       line.c_str(),
-		       line.size(),
-		       0,
-		       0,
-		       matches,
-		       MATCH_COUNT);
-	retval = (rc >= 0);
-
-#if 0
-	fprintf(stderr, " out %d %s\n",
-		retval,
-		line.c_str());
-#endif
-
-	return retval;
-    };
-
-protected:
-    auto_mem<pcre> pf_code;
-};
-
-static string com_filter(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting regular expression to filter out";
-
-    if (args.size() == 0) {
-	args.push_back("filter");
-    }
-    else if (args.size() > 1) {
-	const char *errptr;
-	pcre       *code;
-	int        eoff;
-
-	args[1] = cmdline.substr(cmdline.find(args[1]));
-	if ((code = pcre_compile(args[1].c_str(),
-				 0,
-				 &errptr,
-				 &eoff,
-				 NULL)) == NULL) {
-	    retval = "error: " + string(errptr);
-	}
-	else {
-	    logfile_sub_source &lss = lnav_data.ld_log_source;
-	    logfile_filter::type_t lt = (args[0] == "filter-out") ?
-					logfile_filter::EXCLUDE : logfile_filter::INCLUDE;
-	    auto_ptr<pcre_filter> pf(new pcre_filter(lt, args[1], code));
-
-	    lss.get_filters().push_back(pf.release());
-	    lnav_data.ld_rl_view->
-	    add_possibility(LNM_COMMAND, "enabled-filter", args[1]);
-	    rebuild_indexes(true);
-
-	    retval = "info: filter now active";
-	}
-    }
-
-    return retval;
-}
-
-static string com_enable_filter(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting disabled filter to enable";
-
-    if (args.size() == 0) {
-	args.push_back("disabled-filter");
-    }
-    else if (args.size() > 1) {
-	logfile_filter *lf;
-
-	args[1] = cmdline.substr(cmdline.find(args[1]));
-	lf      = lnav_data.ld_log_source.get_filter(args[1]);
-	if (lf == NULL) {
-	    retval = "error: no such filter -- " + args[1];
-	}
-	else if (lf->is_enabled()) {
-	    retval = "info: filter already enabled";
-	}
-	else {
-	    lf->enable();
-	    lnav_data.ld_rl_view->
-	    rem_possibility(LNM_COMMAND, "disabled-filter", args[1]);
-	    lnav_data.ld_rl_view->
-	    add_possibility(LNM_COMMAND, "enabled-filter", args[1]);
-	    rebuild_indexes(true);
-	    retval = "info: filter enabled";
-	}
-    }
-
-    return retval;
-}
-
-static string com_disable_filter(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting enabled filter to disable";
-
-    if (args.size() == 0) {
-	args.push_back("enabled-filter");
-    }
-    else if (args.size() > 1) {
-	logfile_filter *lf;
-
-	args[1] = cmdline.substr(cmdline.find(args[1]));
-	lf      = lnav_data.ld_log_source.get_filter(args[1]);
-	if (lf == NULL) {
-	    retval = "error: no such filter -- " + args[1];
-	}
-	else if (!lf->is_enabled()) {
-	    retval = "info: filter already disabled";
-	}
-	else {
-	    lf->disable();
-	    lnav_data.ld_rl_view->
-	    rem_possibility(LNM_COMMAND, "disabled-filter", args[1]);
-	    lnav_data.ld_rl_view->
-	    add_possibility(LNM_COMMAND, "enabled-filter", args[1]);
-	    rebuild_indexes(true);
-	    retval = "info: filter disabled";
-	}
-    }
-
-    return retval;
-}
-
-static string com_capture(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting table name";
-
-    if (args.size() == 2) {
-	lnav_data.ld_mode = LNM_CAPTURE;
-	lnav_data.ld_rl_view->focus(LNM_CAPTURE, "index: ");
-
-	retval = "";
-    }
-
-    return retval;
-}
-
-static string com_session(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting a command to save to the sesion file";
-    
-    if (args.size() == 0) {
-    }
-    else if (args.size() > 2) {
-	// XXX put these in a map
-	if (args[1] != "highlight" &&
-	    args[1] != "filter-in" &&
-	    args[1] != "filter-out" &&
-	    args[1] != "enable-filter" &&
-	    args[1] != "disable-filter") {
-	    retval = "error: only the highlight and filter commands are "
-		"supported";
-	}
-	else if (getenv("HOME") == NULL) {
-	    retval = "error: the HOME environment variable is not set";
-	}
-	else {
-	    string old_file_name, new_file_name;
-	    string::size_type space;
-	    string saved_cmd;
-
-	    space = cmdline.find(' ');
-	    while (isspace(cmdline[space]))
-		space += 1;
-	    saved_cmd = cmdline.substr(space);
-	    
-	    old_file_name = dotlnav_path("session");
-	    new_file_name = dotlnav_path("session.tmp");
-	    
-	    ifstream session_file(old_file_name.c_str());
-	    ofstream new_session_file(new_file_name.c_str());
-
-	    if (!new_session_file) {
-		retval = "error: cannot write to session file";
-	    }
-	    else {
-		bool added = false;
-		string line;
-		
-		if (session_file.is_open()) {
-		    while (getline(session_file, line)) {
-			if (line == saved_cmd) {
-			    added = true;
-			    break;
-			}
-			new_session_file << line << endl;
-		    }
-		}
-		if (!added) {
-		    new_session_file << saved_cmd << endl;
-		
-		    rename(new_file_name.c_str(), old_file_name.c_str());
-		}
-		else {
-		    remove(new_file_name.c_str());
-		}
-
-		retval = "info: session file saved";
-	    }
-	}
-    }
-
-    return retval;
-}
-
-static readline_context::command_map_t lnav_commands;
+readline_context::command_map_t lnav_commands;
 
 static string execute_command(string cmdline)
 {
@@ -2125,6 +1460,7 @@ struct same_file {
 
 static void watch_logfile(string filename, int fd, bool required)
 {
+    list<logfile *>::iterator file_iter;
     struct stat st;
     int rc;
     
@@ -2153,14 +1489,19 @@ static void watch_logfile(string filename, int fd, bool required)
 	    return;
     }
 
-    if (find_if(lnav_data.ld_files.begin(),
-		lnav_data.ld_files.end(),
-		same_file(st)) ==
-	lnav_data.ld_files.end()) {
+    file_iter = find_if(lnav_data.ld_files.begin(),
+			lnav_data.ld_files.end(),
+			same_file(st));
+
+    if (file_iter == lnav_data.ld_files.end()) {
 	logfile *lf = new logfile(filename, fd);
 	
 	lnav_data.ld_files.push_back(lf);
 	lnav_data.ld_text_source.tss_files.push_back(lf);
+    }
+    else {
+    	/* Keep the file name up-to-date. */
+    	(*file_iter)->set_filename(filename);
     }
 }
 
@@ -3142,19 +2483,7 @@ int main(int argc, char *argv[])
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
 
-    lnav_commands["unix-time"]		= com_unix_time;
-    lnav_commands["current-time"]	= com_current_time;
-    lnav_commands["goto"]		= com_goto;
-    lnav_commands["graph"]		= com_graph;
-    lnav_commands["highlight"]		= com_highlight;
-    lnav_commands["filter-in"]		= com_filter;
-    lnav_commands["filter-out"]		= com_filter;
-    lnav_commands["append-to"]		= com_save_to;
-    lnav_commands["write-to"]		= com_save_to;
-    lnav_commands["enable-filter"]	= com_enable_filter;
-    lnav_commands["disable-filter"]	= com_disable_filter;
-    lnav_commands["capture-into"]	= com_capture;
-    lnav_commands["session"]		= com_session;
+    init_lnav_commands(lnav_commands);
 
     lnav_data.ld_views[LNV_HELP].
     set_sub_source(new plain_text_source(help_txt));

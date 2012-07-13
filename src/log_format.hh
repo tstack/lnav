@@ -4,7 +4,7 @@
 
 #include <assert.h>
 #include <time.h>
-#include <inttypes.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #include <string>

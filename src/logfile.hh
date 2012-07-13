@@ -70,6 +70,9 @@ public:
     /** @return The filename as given in the constructor. */
     const std::string &get_filename() const { return this->lf_filename; };
 
+    /** @param filename The new filename for this log file. */
+    void set_filename(const std::string &filename) { this->lf_filename = filename; };
+
     /** @return The inode for this log file. */
     const struct stat &get_stat() const { return this->lf_stat; };
 
