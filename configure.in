@@ -1,7 +1,7 @@
 
-AC_INIT(lnav, 0.4.0, timothyshanestack@gmail.com)
+AC_INIT(lnav, 0.5.0, timothyshanestack@gmail.com)
 AC_CONFIG_SRCDIR([src/lnav.cc])
-AM_INIT_AUTOMAKE(lnav, 0.4.0)
+AM_INIT_AUTOMAKE(lnav, 0.5.0)
 
 AC_PREFIX_DEFAULT(/usr/)
 

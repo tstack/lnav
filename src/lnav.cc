@@ -90,6 +90,26 @@ static const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) / sizeof(struct his
 
 static bookmark_type_t BM_EXAMPLE;
 
+/**
+ * Check if an experimental feature should be enabled by
+ * examining the LNAV_EXP environment variable.
+ *
+ * @param feature_name The feature name to check for in
+ *   the LNAV_EXP environment variable.
+ *
+ * @return True if the feature was mentioned in the env
+ *   var and should be enabled.
+ */
+bool check_experimental(const char *feature_name)
+{
+	const char *env_value = getenv("LNAV_EXP");
+
+	if (env_value && strcasestr(env_value, feature_name))
+		return true;
+
+	return false;
+}
+
 string dotlnav_path(const char *sub)
 {
     string retval;
@@ -1821,6 +1841,7 @@ static void looper(void)
 	xterm_mouse mouse;
 	lnav_behavior lb;
 
+	mouse.set_enabled(check_experimental("mouse"));
 	mouse.set_behavior(&lb);
 
 	lnav_data.ld_window = sc.get_window();
@@ -1977,7 +1998,7 @@ static void looper(void)
 			case KEY_RESIZE:
 			    break;
 
-			    case KEY_MOUSE:
+			case KEY_MOUSE:
 			    mouse.handle_mouse(ch);
 			    break;
 

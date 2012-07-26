@@ -52,7 +52,6 @@ public:
 	};
 
 	xterm_mouse() : xm_behavior(NULL) {
-		set_enabled(true);
 	};
 
 	~xterm_mouse() {
