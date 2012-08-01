@@ -179,20 +179,20 @@ class generic_log_format : public log_format {
 	      char *prefix,
 	      int len) {
 	static const char *log_fmt[] = {
-	    "%63[0-9: ,-]%15[^:]",
-	    "%63[a-zA-Z0-9: ,-] [%*[^]]]%15[^:]",
-	    "%63[a-zA-Z0-9: ,-] %15s",
-	    "[%63[0-9: .-] %*s %15s",
-	    "[%63[a-zA-Z0-9: -+/]] %15s",
-	    "[%63[a-zA-Z0-9: -+/]] [%15[a-zA-Z]]",
-	    "[%63[a-zA-Z0-9: .-+/] %*s %15s",
-	    "[%63[a-zA-Z0-9: -+/]] (%*d) %15s",
+	    "%63[0-9: ,-]%31[^:]",
+	    "%63[a-zA-Z0-9: ,-] [%*[^]]]%31[^:]",
+	    "%63[a-zA-Z0-9: ,-] %31s",
+	    "[%63[0-9: .-] %*s %31s",
+	    "[%63[a-zA-Z0-9: -+/]] %31s",
+	    "[%63[a-zA-Z0-9: -+/]] [%31[a-zA-Z]]",
+	    "[%63[a-zA-Z0-9: .-+/] %*s %31s",
+	    "[%63[a-zA-Z0-9: -+/]] (%*d) %31s",
 	    NULL
 	};
 	
 	bool retval = false;
 	struct tm log_time;
-	char timestr[64];
+	char timestr[64 + 32];
 	time_t line_time;
 	char level[16];
 	char *last_pos;
