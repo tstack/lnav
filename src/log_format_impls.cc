@@ -17,13 +17,13 @@ class access_log_format : public log_format {
 	    "%*s %*s %*s [%63[^]]] \"%*[^\"]\" %d",
 	    NULL
 	};
-	
+
 	bool retval = false;
 	struct tm log_time;
 	int http_code = 0;
 	char timestr[64];
 	time_t line_time;
-	
+
 	if (this->log_scanf(prefix,
 			    log_fmt,
 			    2,
@@ -31,11 +31,11 @@ class access_log_format : public log_format {
 			    timestr,
 			    &log_time,
 			    line_time,
-			    
+
 			    timestr,
 			    &http_code)) {
 	    logline::level_t ll = logline::LEVEL_UNKNOWN;
-	    
+
 	    if (http_code < 400) {
 		ll = logline::LEVEL_INFO;
 	    }
@@ -48,13 +48,13 @@ class access_log_format : public log_format {
 				  ll));
 	    retval = true;
 	}
-	
+
 	return retval;
     };
 
     auto_ptr<log_format> specialized() {
 	auto_ptr<log_format> retval((log_format *)new access_log_format(*this));
-	
+
 	return retval;
     };
 };
@@ -73,18 +73,18 @@ class syslog_log_format : public log_format {
 	short     millis = 0;
 	time_t    now;
 	char      *rest;
-	
+
 	now      = time(NULL);
 	localtime_r(&now, &log_time);
-	
+
 	log_time.tm_isdst = 0;
-	
+
 	if ((rest = strptime(prefix,
 			     "%b %d %H:%M:%S",
 			     &log_time)) != NULL) {
 	    logline::level_t ll = logline::LEVEL_UNKNOWN;
 	    time_t           log_gmt;
-	    
+
 	    if (strcasestr(prefix, "failed") != NULL ||
 		strcasestr(prefix, "failure") != NULL ||
 		strcasestr(prefix, "error") != NULL) {
@@ -99,21 +99,21 @@ class syslog_log_format : public log_format {
 	    if (!dst.empty() &&
 		((dst.back().get_time() - log_gmt) > (24 * 60 * 60))) {
 		vector<logline>::iterator iter;
-		
+
 		for (iter = dst.begin(); iter != dst.end(); iter++) {
 		    time_t    ot = iter->get_time();
 		    struct tm *otm;
-		    
+
 		    otm           = gmtime(&ot);
 		    otm->tm_year -= 1;
 		    iter->set_time(tm2sec(otm));
 		}
 	    }
 	    dst.push_back(logline(offset, log_gmt, millis, ll));
-	    
+
 	    retval = true;
 	}
-	
+
 	return retval;
     };
 
@@ -136,7 +136,7 @@ class tcsh_history_format : public log_format {
 	bool   retval = false;
 	time_t log_time;
 	int log_time_int;
-	
+
 	if (sscanf(prefix, "#+%d", &log_time_int) == 1) {
 	    struct tm log_tm;
 
@@ -154,10 +154,10 @@ class tcsh_history_format : public log_format {
 				  tm2sec(&log_tm),
 				  0,
 				  logline::LEVEL_UNKNOWN));
-	    
+
 	    retval = true;
 	}
-	
+
 	return retval;
     };
 
@@ -189,14 +189,14 @@ class generic_log_format : public log_format {
 	    "[%63[a-zA-Z0-9: -+/]] (%*d) %31s",
 	    NULL
 	};
-	
+
 	bool retval = false;
 	struct tm log_time;
 	char timestr[64 + 32];
 	time_t line_time;
-	char level[16];
+	char level[32];
 	char *last_pos;
-	
+
 	if ((last_pos = this->log_scanf(prefix,
 					log_fmt,
 					2,
@@ -204,7 +204,7 @@ class generic_log_format : public log_format {
 					timestr,
 					&log_time,
 					line_time,
-			    
+
 					timestr,
 					level)) != NULL) {
 	    uint16_t millis = 0;
@@ -251,7 +251,7 @@ class strace_log_format : public log_format {
 	    "%H:%M:%S",
 	    NULL
 	};
-	
+
 	bool retval = false;
 	struct tm log_time;
 	char timestr[64];
@@ -265,7 +265,7 @@ class strace_log_format : public log_format {
 			    timestr,
 			    &log_time,
 			    line_time,
-			    
+
 			    timestr,
 			    &usecs)) {
 	    logline::level_t level = logline::LEVEL_UNKNOWN;
@@ -278,7 +278,7 @@ class strace_log_format : public log_format {
 		    level = logline::LEVEL_ERROR;
 		}
 	    }
-	    
+
 	    if (!dst.empty() && (line_time < dst.back().get_time())) {
 		line_time += (24 * 60 * 60);
 	    }

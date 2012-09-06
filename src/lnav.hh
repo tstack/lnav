@@ -7,6 +7,8 @@
 
 #include "config.h"
 
+#include <signal.h>
+
 #include <map>
 #include <set>
 #include <list>
@@ -76,7 +78,7 @@ typedef enum {
 typedef enum {
     LG_GRAPH,
     LG_CAPTURE,
-    
+
     LG__MAX
 } lnav_grep_t;
 
