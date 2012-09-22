@@ -61,6 +61,10 @@ public:
 	this->pc_count = count;
     };
 
+    int get_count(void) const {
+        return this->pc_count;
+    };
+
     /**
      * @return a capture_t that covers all of the text that was matched.
      */

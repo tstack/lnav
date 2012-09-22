@@ -84,7 +84,7 @@ public:
 	return retval;
     };
 
-    void toggle_scrub(void) { this->lss_flags ^= F_NO_SCRUB; };
+    void toggle_scrub(void) { this->lss_flags ^= F_SCRUB; };
     size_t text_line_count()
     {
 	return this->lss_index.size();
@@ -188,11 +188,11 @@ private:
     static const size_t MAX_LINES_PER_FILE = 16 * 1024 * 1024;
 
     enum {
-	B_NO_SCRUB,
+	B_SCRUB,
     };
 
     enum {
-	F_NO_SCRUB = (1L << B_NO_SCRUB),
+	F_SCRUB = (1L << B_SCRUB),
     };
 
     struct logline_cmp {

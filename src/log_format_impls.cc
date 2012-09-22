@@ -62,7 +62,30 @@ class access_log_format : public log_format {
 log_format::register_root_format<access_log_format> access_log_instance;
 
 class syslog_log_format : public log_format {
+
+    static pcrepp &scrub_pattern(void) {
+        static pcrepp SCRUB_PATTERN("(\\w+\\s[\\s\\d]\\d \\d+:\\d+:\\d+) [\\.\\-\\w]+( .*)");
+
+        return SCRUB_PATTERN;
+    }
+
     string get_name() { return "syslog_log"; };
+
+    void scrub(string &line) {
+        pcre_context_static<30> context;
+        pcre_input pi(line);
+        string new_line = "";
+
+        if (scrub_pattern().match(context, pi)) {
+            pcre_context::capture_t *cap;
+
+            for (cap = context.begin(); cap != context.end(); cap++) {
+                new_line += pi.get_substr(cap);
+            }
+
+            line = new_line;
+        }
+    };
 
     bool scan(vector < logline > &dst,
 	      off_t offset,
@@ -172,7 +195,29 @@ class tcsh_history_format : public log_format {
 log_format::register_root_format<tcsh_history_format> tcsh_instance;
 
 class generic_log_format : public log_format {
+    static pcrepp &scrub_pattern(void) {
+        static pcrepp SCRUB_PATTERN("\\d+-(\\d+-\\d+ \\d+:\\d+:\\d+(?:,\\d+)?:)\\w+:([\\w\\.\\-_:]+)?(.*)");
+
+        return SCRUB_PATTERN;
+    }
+
     string get_name() { return "generic_log"; };
+
+    void scrub(string &line) {
+        pcre_context_static<30> context;
+        pcre_input pi(line);
+        string new_line = "";
+
+        if (scrub_pattern().match(context, pi)) {
+            pcre_context::capture_t *cap;
+
+            for (cap = context.begin(); cap != context.end(); cap++) {
+                new_line += pi.get_substr(cap);
+            }
+
+            line = new_line;
+        }
+    };
 
     bool scan(vector < logline > &dst,
 	      off_t offset,
@@ -180,6 +225,7 @@ class generic_log_format : public log_format {
 	      int len) {
 	static const char *log_fmt[] = {
 	    "%63[0-9: ,-]%31[^:]",
+            "%63[a-zA-Z0-9:-+/.] [%*x %31s",
 	    "%63[a-zA-Z0-9: ,-] [%*[^]]]%31[^:]",
 	    "%63[a-zA-Z0-9: ,-] %31s",
 	    "[%63[0-9: .-] %*s %31s",

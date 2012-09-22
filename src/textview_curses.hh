@@ -13,19 +13,43 @@
 
 class textview_curses;
 
+/**
+ * Source for the text to be shown in a textview_curses view.
+ */
 class text_sub_source {
 public:
     virtual ~text_sub_source() { };
 
     virtual void toggle_scrub(void) { };
 
+    /**
+     * @return The total number of lines available from the source.
+     */
     virtual size_t text_line_count() = 0;
 
+    /**
+     * Get the value for a line.
+     * 
+     * @param tc The textview_curses object that is delegating control.
+     * @param line The line number to retrieve.
+     * @param value_out The string object that should be set to the line
+     *   contents.
+     * @param raw Indicates that the raw contents of the line should be returned
+     *   without any post processing.
+     */
     virtual void text_value_for_line(textview_curses &tc,
 				     int line,
 				     std::string &value_out,
 				     bool raw = false) = 0;
 
+    /**
+     * Get the attributes for a line of text.
+     * 
+     * @param tc The textview_curses object that is delegating control.
+     * @param line The line number to retrieve.
+     * @param value_out A string_attrs_t object that should be updated with the
+     *   attributes for the line.
+     */
     virtual void text_attrs_for_line(textview_curses &tc,
 				     int line,
 				     string_attrs_t &value_out) {

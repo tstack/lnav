@@ -50,6 +50,9 @@ public:
     virtual std::string grep_source_name(void) { return ""; };
 };
 
+/**
+ * Delegate interface for control messages from the grep_proc.
+ */
 class grep_proc_control {
 public:
 
@@ -265,6 +268,11 @@ protected:
 					 * the child.  For multiple matches,
 					 * the line number is only sent once.
 					 */
+    grep_line_t        gp_highest_line; /*< The highest numbered line processed
+                                         * by the grep child process.  This
+                                         * value is used when the start line
+                                         * for a queued request is -1.
+                                         */
     grep_proc_sink    *gp_sink;         /*< The sink delegate. */
     grep_proc_control *gp_control;      /*< The control delegate. */
 };

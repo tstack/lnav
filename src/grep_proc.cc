@@ -154,7 +154,7 @@ void grep_proc::child_loop(void)
 
 	this->gp_queue.pop_front();
 	if (start_line == -1) {
-	    start_line = this->gp_last_line;
+	    start_line = this->gp_highest_line;
 	}
 	for (line = start_line;
 	     (stop_line == -1 || line < stop_line) && !done;
@@ -251,6 +251,9 @@ void grep_proc::dispatch_line(char *line)
     if (sscanf(line, "%d", this->gp_last_line.out()) == 1) {
 	/* Starting a new line with matches. */
 
+        if (this->gp_last_line > this->gp_highest_line) {
+            this->gp_highest_line = this->gp_last_line;
+        }
 	assert(this->gp_last_line >= 0);
     }
     else if (sscanf(line, "[%d:%d]", &start, &end) == 2) {

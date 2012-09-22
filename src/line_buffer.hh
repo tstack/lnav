@@ -98,6 +98,7 @@ public:
 	this->lb_file_offset = 0;
 	this->lb_file_size   = (size_t)-1;
 	this->lb_buffer_size = 0;
+        this->lb_last_line_offset = -1;
     };
 
     /** Check the invariants for this object. */
@@ -189,6 +190,7 @@ private:
     size_t lb_buffer_size;      /*< The amount of cached data in the buffer. */
     size_t lb_buffer_max;       /*< The size of the buffer memory. */
     bool   lb_seekable;         /*< Flag set for seekable file descriptors. */
+    off_t  lb_last_line_offset; /*< */
 };
 
 #endif

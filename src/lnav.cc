@@ -1533,6 +1533,13 @@ static void expand_filename(string path, bool required)
     if (glob(path.c_str(), GLOB_NOCHECK, NULL, &gl) == 0) {
 	int lpc;
 	
+	if (gl.gl_pathc == 1 && gl.gl_matchc == 0) {
+	    /* It's a pattern that doesn't match any files
+	     * yet, allow it through since we'll load it in
+	     * dynamically.
+	     */
+	    required = false;
+	}
 	if (gl.gl_pathc > 1 ||
 	    strcmp(path.c_str(), gl.gl_pathv[0]) != 0) {
 	    required = false;
@@ -1695,6 +1702,7 @@ private:
 
 static void looper(void)
 {
+    screen_curses sc;
     int fd;
 
     fd = open(lnav_data.ld_debug_log_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
@@ -1837,7 +1845,6 @@ static void looper(void)
 	(void)signal(SIGTERM, sigint);
 	(void)signal(SIGWINCH, sigwinch);
 
-	screen_curses sc;
 	xterm_mouse mouse;
 	lnav_behavior lb;
 

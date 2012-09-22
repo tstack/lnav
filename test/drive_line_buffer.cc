@@ -123,6 +123,9 @@ int main(int argc, char *argv[])
 		retval = EXIT_FAILURE;
 	    }
 	    else {
+                off_t seq_offset = 0;
+
+                while (lb.read_line(seq_offset, len) != NULL) { }
 		do {
 		    int lpc;
 
@@ -133,6 +136,7 @@ int main(int argc, char *argv[])
 			offset = index[lpc].second;
 			line = lb.read_line(offset, len, delim);
 
+                        assert(line != NULL);
 			assert(offset >= 0);
 			assert(offset <= st.st_size);
 			assert(memcmp(line,

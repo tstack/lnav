@@ -1,3 +1,6 @@
+/**
+ * @file log_format.hh
+ */
 
 #ifndef __log_format_hh
 #define __log_format_hh
@@ -31,7 +34,7 @@ public:
 
 	LEVEL__MAX,
 
-	LEVEL_MULTILINE = 0x40,  /*< Start of a multiline entry.  (Unused) */
+	LEVEL_MULTILINE = 0x40,  /*< Start of a multiline entry. */
 	LEVEL_CONTINUED = 0x80,  /*< Continuation of multiline entry. */
 
 	/** Mask of flags for the level field. */
@@ -106,10 +109,19 @@ private:
     uint8_t ll_module;
 };
 
+/**
+ * Base class for implementations of log format parsers.
+ */
 class log_format {
 public:
+    /**
+     * @return The collection of builtin log formats.
+     */
     static std::vector<log_format *> &get_root_formats(void);
 
+    /**
+     * Template used to register log formats during initialization.
+     */
     template<class T> class register_root_format {
     public:
 	register_root_format() {
@@ -127,12 +139,28 @@ public:
 	this->lf_time_fmt_lock = -1;
     };
 
+    /**
+     * Get the name of this log format.
+     * 
+     * @return The log format name.
+     */
     virtual std::string get_name(void) = 0;
 
+    /**
+     * Scan a log line to see if it matches this log format.
+     *
+     * @param dst The vector of loglines that the formatter should append to
+     *   if it detected a match.
+     * @param offset The offset in the file where this line is located.
+     * @param prefix The contents of the line.
+     * @param len The length of the prefix string.
+     */
     virtual bool scan(std::vector< logline > &dst,
 		      off_t offset,
 		      char *prefix,
 		      int len) = 0;
+
+    virtual void scrub(std::string &line) { };
     
     virtual std::auto_ptr<log_format> specialized(void) = 0;
 

@@ -84,7 +84,8 @@ line_buffer::line_buffer()
       lb_file_offset(0),
       lb_buffer_size(0),
       lb_buffer_max(DEFAULT_LINE_BUFFER_SIZE),
-      lb_seekable(false)
+      lb_seekable(false),
+      lb_last_line_offset(-1)
 {
     if ((this->lb_buffer = (char *)malloc(this->lb_buffer_max)) == NULL) {
 	throw bad_alloc();
@@ -391,6 +392,14 @@ throw (error)
 
     assert(this->lb_fd != -1);
 
+    if (this->lb_last_line_offset != -1 && offset > this->lb_last_line_offset) {
+        /*
+         * Don't return anything past the last known line.  The caller needs
+         * to try reading at the offset of the last line again.
+         */
+        return NULL;
+    }
+
     len_out = 0;
     while ((retval == NULL) && this->fill_range(offset, request_size)) {
 	char *line_start, *lf;
@@ -404,6 +413,8 @@ throw (error)
 	    if (lf != NULL) {
 		len_out = lf - line_start;
 		offset += 1; /* Skip the delimiter. */
+                if (offset > this->lb_last_line_offset)
+                    this->lb_last_line_offset = offset + len_out;
 	    }
 	    else {
 		/*
@@ -412,6 +423,17 @@ throw (error)
 		 */
 		this->ensure_available(offset, len_out + 1);
 		line_start = this->get_range(offset, len_out);
+
+                /* 
+                 * Since no delimiter was seen, we need to remember the offset
+                 * of the last line in the file so we don't mistakenly return
+                 * two partial lines to the caller.
+                 *
+                 *   1. read_line() - returns partial line
+                 *   2. file is written
+                 *   3. read_line() - returns the middle of partial line.
+                 */
+                this->lb_last_line_offset = offset;
 	    }
 
 	    offset += len_out;

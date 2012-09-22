@@ -158,68 +158,12 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     }
 
     this->lss_token_date_end = 0;
-#if 0
-    if (!(this->lss_flags & F_NO_SCRUB)) {
-	log_format *format = this->lss_token_file->get_format();
-	const pcre        *scrubber = NULL;
-	int matches[60];
-	int lpc, rc;
-
-	// scrubber = logfile_scrub_map::singleton().include(format);
-	if (scrubber != NULL) {
-	    memset(matches, 0, sizeof(matches));
-	    rc = pcre_exec(logfile_scrub_map::
-			   singleton().include(format),
-			   NULL,
-			   this->lss_token_value.c_str(),
-			   this->lss_token_value.size(),
-			   0,
-			   0,
-			   matches,
-			   60);
-	    matches[1] = 0;
-	    for (lpc = rc - 1; lpc >= 1; lpc--) {
-		int c_end   = matches[lpc * 2];
-		int c_start = matches[lpc * 2 - 1];
-
-		this->lss_token_value.
-		erase(this->lss_token_value.begin() + c_start,
-		      this->lss_token_value.begin() + c_end);
-	    }
-
-	    if (rc > 1) {
-		this->lss_token_date_end = 15;
-	    }                                  /* XXX */
-	}
-
-	scrubber = logfile_scrub_map::singleton().exclude(format);
-	if (scrubber != NULL) {
-	    do {
-		rc = pcre_exec(logfile_scrub_map::singleton().
-			       exclude(format),
-			       NULL,
-			       this->lss_token_value.c_str(),
-			       this->lss_token_value.size(),
-			       0,
-			       0,
-			       matches,
-			       60);
-		for (lpc = rc - 1; lpc >= 1; lpc--) {
-		    int c_start = matches[lpc * 2];
-		    int c_end   = matches[lpc * 2 + 1];
-
-		    if (c_start != -1 && c_end != -1) {
-			this->lss_token_value.
-			erase(this->lss_token_value.begin() + c_start,
-			      this->lss_token_value.begin() + c_end);
-		    }
-		}
-	    } while (rc > 0);
-	}
-    }
-#endif
-
     value_out = this->lss_token_value;
+    if (this->lss_flags & F_SCRUB) {
+        log_format *lf = this->lss_token_file->get_format();
+
+        lf->scrub(value_out);
+    }
 }
 
 void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
