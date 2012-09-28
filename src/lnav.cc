@@ -114,7 +114,7 @@ string dotlnav_path(const char *sub)
 {
     string retval;
     char *home;
-    
+
     home = getenv("HOME");
     if (home) {
 	char hpath[2048];
@@ -144,7 +144,7 @@ public:
 	// XXX assert(off <= total);
 	if (off > (off_t)total)
 	    off = total;
-	
+
 	if ((std::abs((long int)(off - this->lo_last_offset)) > (off_t)(128 * 1024)) ||
 	    (size_t)off == total) {
 	    lnav_data.ld_bottom_source.update_loading(off, total);
@@ -244,7 +244,7 @@ void rebuild_indexes(bool force)
 	text_view.get_dimensions(height, width);
 	old_bottom = text_view.get_top() + height;
 	scroll_down = (size_t)old_bottom > tss->text_line_count();
-	
+
 	for (iter = tss->tss_files.begin();
 	     iter != tss->tss_files.end();) {
 	    (*iter)->rebuild_index(&obs);
@@ -746,7 +746,7 @@ static void handle_paging_key(int ch)
 	}
 	else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
 	    textfile_sub_source &tss = lnav_data.ld_text_source;
-	    
+
 	    if (!tss.tss_files.empty()) {
 		tss.tss_files.push_back(tss.tss_files.front());
 		tss.tss_files.pop_front();
@@ -873,7 +873,7 @@ static void handle_paging_key(int ch)
 	else {
 	    int start_line = min((int)tc->get_top(), lnav_data.ld_last_user_mark[tc] + 1);
 	    int end_line = max((int)tc->get_top(), lnav_data.ld_last_user_mark[tc] - 1);
-	    
+
 	    lss->toggle_user_mark(&textview_curses::BM_USER,
 				  vis_line_t(start_line), vis_line_t(end_line));
 	    tc->reload_data();
@@ -1004,7 +1004,7 @@ static void handle_paging_key(int ch)
     case 'I':
 	{
 	    time_t log_top = lnav_data.ld_top_time;
-	    
+
 	    time_t hist_top =
 		lnav_data.ld_hist_source.value_for_row(tc->get_top());
 
@@ -1039,10 +1039,10 @@ static void handle_paging_key(int ch)
 	    textview_curses *db_tc = &lnav_data.ld_views[LNV_DB];
 	    db_label_source &dls = lnav_data.ld_db_rows;
 	    hist_source &hs = lnav_data.ld_db_source;
-	    
+
 	    if (toggle_view(db_tc)) {
 		unsigned int lpc;
-		
+
 		for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
 		    if (dls.dls_headers[lpc] != "line_number")
 			continue;
@@ -1050,7 +1050,7 @@ static void handle_paging_key(int ch)
 		    char linestr[64];
 		    int line_number = (int)tc->get_top();
 		    unsigned int row;
-		    
+
 		    snprintf(linestr, sizeof(linestr), "%d", line_number);
 		    for (row = 0; row < dls.dls_rows.size(); row++) {
 			if (strcmp(dls.dls_rows[row][lpc].c_str(),
@@ -1074,7 +1074,7 @@ static void handle_paging_key(int ch)
 			continue;
 
 		    unsigned int line_number;
-		    
+
 		    if (sscanf(dls.dls_rows[db_row][lpc].c_str(),
 			       "%d",
 			       &line_number) &&
@@ -1139,17 +1139,17 @@ readline_context::command_map_t lnav_commands;
 static string execute_command(string cmdline)
 {
     stringstream ss(cmdline);
-    
+
     vector<string> args;
     string buf, msg;
-    
+
     while (ss >> buf) {
 	args.push_back(buf);
     }
-    
+
     if (args.size() > 0) {
 	readline_context::command_map_t::iterator iter;
-	
+
 	if ((iter = lnav_commands.find(args[0])) ==
 	    lnav_commands.end()) {
 	    msg = "error: unknown command - " + args[0];
@@ -1165,19 +1165,19 @@ static string execute_command(string cmdline)
 static void execute_file(string path)
 {
     ifstream cmd_file(path.c_str());
-    
+
     if (cmd_file.is_open()) {
 	int line_number = 0;
 	string line;
 
 	while (getline(cmd_file, line)) {
 	    line_number += 1;
-	    
+
 	    if (line.empty())
 		continue;
 	    if (line[0] == '#')
 		continue;
-	    
+
 	    string rc = execute_command(line);
 
 	    fprintf(stderr,
@@ -1211,13 +1211,13 @@ static int sql_callback(void *arg,
     }
     for (lpc = 0; lpc < ncols; lpc++) {
 	double num_value = 0.0;
-	
+
 	dls.push_column(values[lpc]);
 	if (strcmp(colnames[lpc], "line_number") != 0)
 	    sscanf(values[lpc], "%lf", &num_value);
 	hs.add_value(row_number, bucket_type_t(lpc), num_value);
     }
-    
+
     return retval;
 }
 
@@ -1235,10 +1235,10 @@ static void rl_search(void *dummy, readline_curses *rc)
 	assert(0);
 	name = "(capture";
 	break;
-	
+
     case LNM_COMMAND:
 	return;
-	
+
     case LNM_SQL:
 	if (!sqlite3_complete(rc->get_value().c_str())) {
 	    lnav_data.ld_bottom_source.
@@ -1248,7 +1248,7 @@ static void rl_search(void *dummy, readline_curses *rc)
 	    sqlite3_stmt *stmt;
 	    const char *tail;
 	    int retcode;
-	    
+
 	    retcode = sqlite3_prepare_v2(lnav_data.ld_db,
 					 rc->get_value().c_str(),
 					 -1,
@@ -1256,7 +1256,7 @@ static void rl_search(void *dummy, readline_curses *rc)
 					 &tail);
 	    if (retcode != SQLITE_OK) {
 		const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
-		
+
 		lnav_data.ld_bottom_source.
 		    grep_error(string("sql error: ") + string(errmsg));
 	    }
@@ -1274,23 +1274,23 @@ static void rl_search(void *dummy, readline_curses *rc)
     textview_curses *tc = lnav_data.ld_view_stack.top();
     int index = (tc - lnav_data.ld_views);
     auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[index];
-    
+
     if ((gc.get() == NULL) || (rc->get_value() != last_search[index])) {
 	const char      *errptr;
 	pcre            *code;
 	int             eoff;
-	
+
 	if (rc->get_value().empty() && gc.get() != NULL) {
 	    tc->grep_begin(*(gc->get_grep_proc()));
 	    tc->grep_end(*(gc->get_grep_proc()));
 	}
 	gc.reset();
-	
+
 	fprintf(stderr, "start search for: %s\n", rc->get_value().c_str());
 
 	tc->set_top(lnav_data.ld_search_start_line);
 	tc->match_reset();
-	
+
 	if (rc->get_value().empty()) {
 	    lnav_data.ld_bottom_source.grep_error("");
 	}
@@ -1305,15 +1305,15 @@ static void rl_search(void *dummy, readline_curses *rc)
 	else {
 	    textview_curses::highlighter
 		hl(code, false, view_colors::VCR_SEARCH);
-	    
+
 	    textview_curses::highlight_map_t &hm = tc->get_highlights();
 	    hm[name] = hl;
-	    
+
 	    auto_ptr<grep_proc> gp(new grep_proc(code,
 						 *tc,
 						 lnav_data.ld_max_fd,
 						 lnav_data.ld_read_fds));
-	    
+
 	    gp->queue_request(grep_line_t(tc->get_top()));
 	    if (tc->get_top() > 0) {
 		gp->queue_request(grep_line_t(0),
@@ -1321,12 +1321,12 @@ static void rl_search(void *dummy, readline_curses *rc)
 	    }
 	    gp->start();
 	    gp->set_sink(lnav_data.ld_view_stack.top());
-	    
+
 	    tc->set_follow_search(true);
-	    
+
 	    auto_ptr<grep_highlighter> gh(new grep_highlighter(gp, name, hm));
 	    gc = gh;
-	    
+
 	    last_search[index] = rc->get_value();
 	}
     }
@@ -1338,7 +1338,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
     case LNM_PAGING:
 	assert(0);
 	break;
-	
+
     case LNM_COMMAND:
 	lnav_data.ld_mode = LNM_PAGING;
 	rc->set_value(execute_command(rc->get_value()));
@@ -1361,7 +1361,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 	    db_label_source &dls = lnav_data.ld_db_rows;
 	    hist_source &hs = lnav_data.ld_db_source;
 	    auto_mem<char, sqlite3_free> errmsg;
-	    
+
 	    lnav_data.ld_bottom_source.grep_error("");
 	    hs.clear();
 	    dls.dls_headers.clear();
@@ -1375,10 +1375,10 @@ static void rl_callback(void *dummy, readline_curses *rc)
 	    }
 	    else {
 		rc->set_value("");
-		
+
 		hs.analyze();
 		lnav_data.ld_views[LNV_DB].reload_data();
-		
+
 		if (dls.dls_rows.size() > 0) {
 		    ensure_view(&lnav_data.ld_views[LNV_DB]);
 		}
@@ -1469,7 +1469,7 @@ static void update_times(void *, listview_curses *lv)
 
 struct same_file {
     same_file(const struct stat &stat) : sf_stat(stat) { };
-    
+
     bool operator()(const logfile *lf) const {
 	return (this->sf_stat.st_dev == lf->get_stat().st_dev &&
 		this->sf_stat.st_ino == lf->get_stat().st_ino);
@@ -1483,7 +1483,7 @@ static void watch_logfile(string filename, int fd, bool required)
     list<logfile *>::iterator file_iter;
     struct stat st;
     int rc;
-    
+
     if (fd != -1) {
 	rc = fstat(fd, &st);
     }
@@ -1515,7 +1515,7 @@ static void watch_logfile(string filename, int fd, bool required)
 
     if (file_iter == lnav_data.ld_files.end()) {
 	logfile *lf = new logfile(filename, fd);
-	
+
 	lnav_data.ld_files.push_back(lf);
 	lnav_data.ld_text_source.tss_files.push_back(lf);
     }
@@ -1532,8 +1532,8 @@ static void expand_filename(string path, bool required)
     memset(&gl, 0, sizeof(gl));
     if (glob(path.c_str(), GLOB_NOCHECK, NULL, &gl) == 0) {
 	int lpc;
-	
-	if (gl.gl_pathc == 1 && gl.gl_matchc == 0) {
+
+	if (gl.gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
 	    /* It's a pattern that doesn't match any files
 	     * yet, allow it through since we'll load it in
 	     * dynamically.
@@ -1554,7 +1554,7 @@ static void expand_filename(string path, bool required)
 static void rescan_files(bool required = false)
 {
     set< pair<string, int> >::iterator iter;
-	    
+
     for (iter = lnav_data.ld_file_names.begin();
 	 iter != lnav_data.ld_file_names.end();
 	 iter++) {
@@ -1575,7 +1575,7 @@ static void rescan_files(bool required = false)
 class lnav_behavior : public mouse_behavior {
 
 public:
-	lnav_behavior() : 
+	lnav_behavior() :
 		lb_selection_start(-1),
 		lb_selection_last(-1),
 		lb_scrollbar_y(-1),
@@ -1702,7 +1702,6 @@ private:
 
 static void looper(void)
 {
-    screen_curses sc;
     int fd;
 
     fd = open(lnav_data.ld_debug_log_name, O_WRONLY | O_CREAT | O_APPEND, 0666);
@@ -1806,7 +1805,7 @@ static void looper(void)
 		"log_time",
 		"level",
 		"raw_line",
-		
+
 		"c_ip",
 		"cs_username",
 		"cs_method",
@@ -1817,7 +1816,7 @@ static void looper(void)
 		"sc_bytes",
 		"cs_referer",
 		"cs_user_agent",
-		
+
 		"funcname",
 		"result",
 		"duration",
@@ -1831,7 +1830,7 @@ static void looper(void)
 		"arg7",
 		"arg8",
 		"arg9",
-		
+
 		NULL
 	    };
 
@@ -1845,6 +1844,7 @@ static void looper(void)
 	(void)signal(SIGTERM, sigint);
 	(void)signal(SIGWINCH, sigwinch);
 
+        screen_curses sc;
 	xterm_mouse mouse;
 	lnav_behavior lb;
 
@@ -1971,7 +1971,7 @@ static void looper(void)
 	    rc = select(lnav_data.ld_max_fd + 1,
 			&ready_rfds, NULL, NULL,
 			&to);
-	    
+
 	    if (rc < 0) {
 		switch (errno) {
 		case EINTR:
@@ -1985,7 +1985,7 @@ static void looper(void)
 	    }
 	    else if (rc == 0) {
 		static bool initial_build = false;
-		
+
 		rebuild_indexes(false);
 		if (!initial_build &&
 		    lnav_data.ld_log_source.text_line_count() == 0 &&
@@ -2033,7 +2033,7 @@ static void looper(void)
 		for (lpc = 0; lpc < LG__MAX; lpc++) {
 		    auto_ptr<grep_highlighter> &gc =
 			lnav_data.ld_grep_child[lpc];
-		    
+
 		    if (gc.get() != NULL) {
 			gc->get_grep_proc()->check_fd_set(ready_rfds);
 			if (lpc == LG_GRAPH) {
@@ -2045,7 +2045,7 @@ static void looper(void)
 		for (lpc = 0; lpc < LNV__MAX; lpc++) {
 		    auto_ptr<grep_highlighter> &gc =
 			lnav_data.ld_search_child[lpc];
-		    
+
 		    if (gc.get() != NULL) {
 			gc->get_grep_proc()->check_fd_set(ready_rfds);
 
@@ -2079,7 +2079,7 @@ static void looper(void)
 
 class access_log_table : public log_vtab_impl {
 public:
-    
+
     access_log_table()
 	: log_vtab_impl("access_log"),
 	  alt_regex("([\\w\\.-]+) [\\w\\.-]+ ([\\w\\.-]+) "
@@ -2087,7 +2087,7 @@ public:
 		    "([\\w/\\.]+)\" (\\d+) "
 		    "(\\d+|-)(?: \"([^\"]+)\" \"([^\"]+)\")?.*") {
     };
-    
+
     void get_columns(vector<vtab_column> &cols) {
 	cols.push_back(vtab_column("c_ip", "text"));
 	cols.push_back(vtab_column("cs_username", "text"));
@@ -2107,7 +2107,7 @@ public:
 	string c_ip, cs_username, cs_method, cs_uri_stem, cs_uri_query;
 	string cs_version, sc_status, cs_referer, cs_user_agent;
 	string sc_bytes;
-	
+
 	if (!this->alt_regex.FullMatch(line,
 				       &c_ip,
 				       &cs_username,
@@ -2193,14 +2193,14 @@ private:
 
 class strace_log_table : public log_vtab_impl {
 public:
-    
+
     strace_log_table()
 	: log_vtab_impl("strace_log"),
 	  slt_regex("[0-9:.]* ([a-zA-Z_][a-zA-Z_0-9]*)\\("
 		    "(.*)\\)"
 		    "\\s+= ([-xa-fA-F\\d\\?]+).*(?:<(\\d+\\.\\d+)>)?") {
     };
-    
+
     void get_columns(vector<vtab_column> &cols) {
 	cols.push_back(vtab_column("funcname", "text"));
 	cols.push_back(vtab_column("result", "text"));
@@ -2221,7 +2221,7 @@ public:
 		 int column,
 		 sqlite3_context *ctx) {
 	string function, args, result, duration = "0";
-	
+
 	if (!this->slt_regex.FullMatch(line,
 				       &function,
 				       &args,
@@ -2290,7 +2290,7 @@ public:
 						    SQLITE_TRANSIENT);
 				return;
 			    }
-			    
+
 			    curarg += 1;
 			    arg_start = &(args.c_str()[lpc + 1]);
 			}
@@ -2333,29 +2333,29 @@ public:
 	cols.push_back(vtab_column("subindex", "int"));
 	cols.push_back(vtab_column("value", "text"));
     };
-    
+
     bool next(log_cursor &lc, logfile_sub_source &lss) {
 	fprintf(stderr, "next %d\n", (int)lc.lc_curr_line);
 	if (this->ldt_pair_iter == this->ldt_pairs.end()) {
 	    fprintf(stderr, "try %d\n", (int)lc.lc_curr_line);
 	    log_vtab_impl::next(lc, lss);
 	    this->ldt_pairs.clear();
-	    
+
 	    fprintf(stderr, "esc %d\n", (int)lc.lc_curr_line);
 	    if (lc.lc_curr_line < (int)lss.text_line_count()) {
 		content_line_t cl(lss.at(lc.lc_curr_line));
 		logfile *lf = lss.find(cl);
 		logfile::iterator line_iter;
 		string line;
-		
+
 		line_iter = lf->begin() + cl;
 		lf->read_line(line_iter, line);
-		
+
 		data_scanner ds(line);
 		data_parser dp(&ds);
-		
+
 		dp.parse();
-		
+
 		fprintf(stderr, "got %zd\n", dp.dp_stack.size());
 		while (!dp.dp_stack.empty()) {
 		    fprintf(stderr, "got %d\n", dp.dp_stack.front().e_token);
@@ -2383,7 +2383,7 @@ public:
 			lss.text_line_count());
 		return true;
 	    }
-	    
+
 	    return false;
 	}
 	else {
@@ -2410,7 +2410,7 @@ public:
 	    return true;
 	}
     };
-    
+
     void extract(const std::string &line,
 		 int column,
 		 sqlite3_context *ctx) {
@@ -2490,12 +2490,12 @@ int main(int argc, char *argv[])
     setenv("TERMINFO_DIRS", "/usr/share/terminfo", 0);
 
     ensure_dotlnav();
-    
+
     if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
 	fprintf(stderr, "unable to create sqlite memory database\n");
 	exit(EXIT_FAILURE);
     }
- 
+
     lnav_data.ld_program_name = argv[0];
 
     lnav_data.ld_vtab_manager =
@@ -2506,7 +2506,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new log_data_table());
-    
+
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
@@ -2562,7 +2562,7 @@ int main(int argc, char *argv[])
 	    exit(0);
 	    break;
 
-	default:    
+	default:
 	    retval = EXIT_FAILURE;
 	    break;
 	}
@@ -2629,7 +2629,7 @@ int main(int argc, char *argv[])
 	    perror("cannot dup stdout to stdin");
 	}
     }
-    
+
     if (lnav_data.ld_file_names.empty()) {
 	fprintf(stderr, "error: no log files given/found.\n");
 	retval = EXIT_FAILURE;
@@ -2641,7 +2641,7 @@ int main(int argc, char *argv[])
     else {
 	try {
 	    rescan_files(true);
-	    
+
 	    guard_termios gt(STDIN_FILENO);
 	    looper();
 	}
