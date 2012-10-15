@@ -93,7 +93,7 @@ public:
 			     int row,
 			     std::string &value_out,
 			     bool raw);
-    
+
     void text_attrs_for_line(textview_curses &tc,
 			     int row,
 			     string_attrs_t &value_out);
@@ -111,7 +111,7 @@ public:
 	}
 	else {
 	    assert(lb != this->lss_user_marks[bm].end());
-	    
+
 	    this->lss_user_marks[bm].erase(lb);
 	}
     };
@@ -119,7 +119,7 @@ public:
     void insert_file(logfile *lf)
     {
 	assert(lf->size() < MAX_LINES_PER_FILE);
-	
+
 	this->lss_files.push_back(logfile_data(lf));
 	this->lss_index.clear();
     };
@@ -138,7 +138,7 @@ public:
 	for (vis_line_t curr_line = start_line; curr_line <= end_line; ++curr_line) {
 	    bookmark_vector<content_line_t> &bv = this->lss_user_marks[bm];
 	    bookmark_vector<content_line_t>::iterator iter;
-	    
+
 	    iter = bv.insert_once(this->at(curr_line));
 	    if (iter == bv.end()) {
 	    }
@@ -185,7 +185,7 @@ public:
     content_line_t at(vis_line_t vl) { return this->lss_index[vl]; };
 
 private:
-    static const size_t MAX_LINES_PER_FILE = 16 * 1024 * 1024;
+    static const size_t MAX_LINES_PER_FILE = 4 * 1024 * 1024;
 
     enum {
 	B_SCRUB,
