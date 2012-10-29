@@ -159,7 +159,6 @@ void textview_curses::grep_begin(grep_proc &gp)
 {
     this->tc_searching   = true;
     if (0) {
-	    this->tc_match_count = 0;
 	    this->tc_bookmarks[&BM_SEARCH].clear();
     }
     
@@ -179,8 +178,10 @@ void textview_curses::grep_match(grep_proc &gp,
 				 int start,
 				 int end)
 {
-    this->tc_match_count += 1;
     this->tc_bookmarks[&BM_SEARCH].insert_once(vis_line_t(line));
+    if (this->tc_sub_source != NULL) {
+        this->tc_sub_source->text_mark(&BM_SEARCH, line, true);
+    }
 
     listview_curses::reload_data();
 }

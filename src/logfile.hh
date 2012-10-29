@@ -101,6 +101,9 @@ public:
 
     logline &operator[](int index) { return this->lf_index[index]; };
 
+    /** @return True if this log file still exists. */
+    bool exists() const;
+
     /**
      * Read a line from the file.
      *
@@ -169,6 +172,7 @@ protected:
      */
     void process_prefix(off_t offset, char *prefix, int len);
 
+    bool                        lf_valid_filename;
     std::string			lf_filename;
     struct stat			lf_stat;
     std::auto_ptr<log_format>	lf_format;

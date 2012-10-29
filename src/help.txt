@@ -113,6 +113,11 @@ through the file.
 
   >/<               Move horizontally to the next/previous search hit.
 
+  s                 Toggle "scrubbing" of log lines in the log view.  Log
+                    formats that support scrubbing will try to eliminate
+                    redundant information on a single line.  For example, the
+                    year part of a timestamp or the log level text.
+
   t                 Switch to/from the text file view.  The text file view is
                     for any files that are not recognized as log files.
 
@@ -151,7 +156,11 @@ through the file.
 
   u/U               Move forward/backward through any user bookmarks
 		    you have added using the 'm' key.
-  
+
+  T                 Toggle the display of the "time offset" column that shows
+                    the time elapsed since the beginning of the logs or the
+                    offset from the previous bookmark.
+
   i                 View/leave a histogram of the log messages over
                     time.  The histogram counts the number of
                     displayed log lines for each bucket of time.  The

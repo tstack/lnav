@@ -997,6 +997,11 @@ static void handle_paging_key(int ch)
 	toggle_view(&lnav_data.ld_views[LNV_TEXT]);
 	break;
 
+    case 'T':
+        lnav_data.ld_log_source.toggle_time_offset();
+        tc->reload_data();
+        break;
+
     case 'i':
 	toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM]);
 	break;
@@ -1466,10 +1471,19 @@ static void update_times(void *, listview_curses *lv)
 	lnav_data.ld_bottom_time = hs.value_for_row(lv->get_bottom());
     }
 }
-
+ 
+/**
+ * Functor used to compare files based on their device and inode number.
+ */
 struct same_file {
     same_file(const struct stat &stat) : sf_stat(stat) { };
 
+    /**
+     * Compare the given log file against the 'stat' given in the constructor.
+     * @param  lf The log file to compare.
+     * @return    True if the dev/inode values in the stat given in the
+     *   constructor matches the stat in the logfile object.
+     */
     bool operator()(const logfile *lf) const {
 	return (this->sf_stat.st_dev == lf->get_stat().st_dev &&
 		this->sf_stat.st_ino == lf->get_stat().st_ino);
@@ -1478,6 +1492,15 @@ struct same_file {
     const struct stat &sf_stat;
 };
 
+/**
+ * Try to load the given file as a log file.  If the file has not already been
+ * loaded, it will be loaded.  If the file has already been loaded, the file
+ * name will be updated.
+ * 
+ * @param filename The file name to check.
+ * @param fd       An already-opened descriptor for 'filename'.
+ * @param required Specifies whether or not the file must exist and be valid.
+ */
 static void watch_logfile(string filename, int fd, bool required)
 {
     list<logfile *>::iterator file_iter;
@@ -1514,17 +1537,26 @@ static void watch_logfile(string filename, int fd, bool required)
 			same_file(st));
 
     if (file_iter == lnav_data.ld_files.end()) {
+        /* It's a new file, load it in. */
 	logfile *lf = new logfile(filename, fd);
 
 	lnav_data.ld_files.push_back(lf);
 	lnav_data.ld_text_source.tss_files.push_back(lf);
     }
     else {
-    	/* Keep the file name up-to-date. */
+        /* The file is already loaded, but has been found under a different 
+         * name.  We just need to update the stored file name.
+         */
     	(*file_iter)->set_filename(filename);
     }
 }
 
+/**
+ * Expand a glob pattern and call watch_logfile with the file names that match
+ * the pattern.
+ * @param path     The glob pattern to expand.
+ * @param required Passed to watch_logfile.
+ */
 static void expand_filename(string path, bool required)
 {
     glob_t gl;
@@ -1551,9 +1583,11 @@ static void expand_filename(string path, bool required)
     }
 }
 
-static void rescan_files(bool required = false)
+static bool rescan_files(bool required = false)
 {
     set< pair<string, int> >::iterator iter;
+    list<logfile *>::iterator file_iter;
+    bool retval = false;
 
     for (iter = lnav_data.ld_file_names.begin();
 	 iter != lnav_data.ld_file_names.end();
@@ -1570,6 +1604,29 @@ static void rescan_files(bool required = false)
 	    watch_logfile(iter->first, iter->second, required);
 	}
     }
+
+    for (file_iter = lnav_data.ld_files.begin();
+         file_iter != lnav_data.ld_files.end();) {
+        if (!(*file_iter)->exists()) {
+            std::list<logfile *>::iterator tss_iter;
+
+            fprintf(stderr, "file has been deleted -- %s\n",
+                    (*file_iter)->get_filename().c_str());
+            lnav_data.ld_log_source.remove_file(*file_iter);
+            file_iter = lnav_data.ld_files.erase(file_iter);
+            tss_iter = find(lnav_data.ld_text_source.tss_files.begin(),
+                            lnav_data.ld_text_source.tss_files.end(),
+                            *file_iter);
+            if (tss_iter != lnav_data.ld_text_source.tss_files.end())
+                lnav_data.ld_text_source.tss_files.erase(tss_iter);
+            retval = true;
+        }
+        else {
+            ++file_iter;
+        }
+    }
+
+    return retval;
 }
 
 class lnav_behavior : public mouse_behavior {
@@ -1954,7 +2011,9 @@ static void looper(void)
 
 	    lnav_data.ld_top_source.update_time();
 
-	    rescan_files();
+	    if (rescan_files()) {
+                rebuild_indexes(true);
+            }
 
 	    for (lpc = 0; lpc < LNV__MAX; lpc++) {
 		lnav_data.ld_views[lpc]

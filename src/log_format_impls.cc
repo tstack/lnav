@@ -6,6 +6,45 @@
 
 using namespace std;
 
+static pcrepp RDNS_PATTERN("^(?:com|net|org|edu|[a-z][a-z])"
+                           "(\\.\\w+)+(.+)");
+
+/**
+ * Attempt to scrub a reverse-DNS string.
+ * 
+ * @param  str The string to scrub.  If the string looks like a reverse-DNS
+ *   string, the leading components of the name will be reduced to a single
+ *   letter.  For example, "com.example.foo" will be reduced to "c.e.foo".
+ * @return     The scrubbed version of the input string or the original string
+ *   if it is not a reverse-DNS string.
+ */
+static string scrub_rdns(const string &str)
+{
+        pcre_context_static<30> context;
+        pcre_input input(str);
+        string retval;
+
+        if (RDNS_PATTERN.match(context, input)) {
+                pcre_context::capture_t *cap;
+
+                cap = context.begin();
+                for (int index = 0; index < cap->c_begin; index++) {
+                        if (index == 0 || str[index - 1] == '.') {
+                                if (index > 0) {
+                                        retval.append(1, '.');
+                                }
+                                retval.append(1, str[index]);
+                        }
+                }
+                retval += input.get_substr(cap);
+                retval += input.get_substr(cap + 1);
+        }
+        else {
+                retval = str;
+        }
+        return retval;
+}
+
 class access_log_format : public log_format {
     string get_name() { return "access_log"; };
 
@@ -196,7 +235,7 @@ log_format::register_root_format<tcsh_history_format> tcsh_instance;
 
 class generic_log_format : public log_format {
     static pcrepp &scrub_pattern(void) {
-        static pcrepp SCRUB_PATTERN("\\d+-(\\d+-\\d+ \\d+:\\d+:\\d+(?:,\\d+)?:)\\w+:([\\w\\.\\-_:]+)?(.*)");
+        static pcrepp SCRUB_PATTERN("\\d+-(\\d+-\\d+ \\d+:\\d+:\\d+(?:,\\d+)?:)\\w+:(.*)");
 
         return SCRUB_PATTERN;
     }
@@ -212,7 +251,7 @@ class generic_log_format : public log_format {
             pcre_context::capture_t *cap;
 
             for (cap = context.begin(); cap != context.end(); cap++) {
-                new_line += pi.get_substr(cap);
+                new_line += scrub_rdns(pi.get_substr(cap));
             }
 
             line = new_line;

@@ -42,6 +42,17 @@ public:
 				     std::string &value_out,
 				     bool raw = false) = 0;
 
+    virtual void text_mark(bookmark_type_t *bm, int line, bool added) {
+    };
+
+    /**
+     * Clear the bookmarks for a particular type in the text source.
+     * 
+     * @param bm The type of bookmarks to clear.
+     */
+    virtual void text_clear_marks(bookmark_type_t *bm) { 
+    };
+
     /**
      * Get the attributes for a line of text.
      * 
@@ -55,6 +66,12 @@ public:
 				     string_attrs_t &value_out) {
     };
 
+    /**
+     * Update the bookmarks used by the text view based on the bookmarks
+     * maintained by the text source.
+     * 
+     * @param bm The bookmarks data structure used by the text view.
+     */
     virtual void text_update_marks(vis_bookmarks &bm) { };
 };
 
@@ -257,12 +274,14 @@ public:
 
     size_t get_match_count(void)
     {
-	return this->tc_match_count;
+	return this->tc_bookmarks[&BM_SEARCH].size();
     };
 
     void match_reset() {
-	this->tc_match_count = 0;
 	this->tc_bookmarks[&BM_SEARCH].clear();
+        if (this->tc_sub_source != NULL) {
+                this->tc_sub_source->text_clear_marks(&BM_SEARCH);
+        }
     };
 
     typedef std::map<std::string, highlighter> highlight_map_t;
@@ -279,7 +298,6 @@ protected:
     vis_line_t tc_lview_top;
     int        tc_lview_left;
 
-    int    tc_match_count;
     bool   tc_searching;
     bool   tc_follow_search;
     action tc_search_action;

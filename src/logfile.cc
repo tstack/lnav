@@ -54,9 +54,12 @@ throw (error)
 	if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
 	    throw error(filename, errno);
 	}
+
+        this->lf_valid_filename = true;
     }
     else {
 	fstat(fd, &this->lf_stat);
+        this->lf_valid_filename = false;
     }
 
     this->lf_line_buffer.set_fd(fd);
@@ -67,6 +70,21 @@ throw (error)
 
 logfile::~logfile()
 { }
+
+bool logfile::exists(void) const
+{
+    struct stat st;
+
+    if (!this->lf_valid_filename)
+        return true;
+
+    if (::stat(this->lf_filename.c_str(), &st) == -1) {
+        return false;
+    }
+
+    return (this->lf_stat.st_dev == st.st_dev &&
+            this->lf_stat.st_ino == st.st_ino);
+}
 
 void logfile::process_prefix(off_t offset, char *prefix, int len)
 {

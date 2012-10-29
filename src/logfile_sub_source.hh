@@ -85,6 +85,9 @@ public:
     };
 
     void toggle_scrub(void) { this->lss_flags ^= F_SCRUB; };
+
+    void toggle_time_offset(void) { this->lss_flags ^= F_TIME_OFFSET; };
+
     size_t text_line_count()
     {
 	return this->lss_index.size();
@@ -98,7 +101,7 @@ public:
 			     int row,
 			     string_attrs_t &value_out);
 
-    void text_user_mark(bookmark_type_t *bm, int line, bool added)
+    void text_mark(bookmark_type_t *bm, int line, bool added)
     {
 	content_line_t cl = this->lss_index[line];
 	std::vector<content_line_t>::iterator lb;
@@ -107,22 +110,67 @@ public:
 			      this->lss_user_marks[bm].end(),
 			      cl);
 	if (added) {
-	    this->lss_user_marks[bm].insert(lb, cl);
+            if (lb == this->lss_user_marks[bm].end() || *lb != cl)
+        	this->lss_user_marks[bm].insert(lb, cl);
 	}
-	else {
+	else if (lb != this->lss_user_marks[bm].end() && *lb == cl) {
 	    assert(lb != this->lss_user_marks[bm].end());
 	    
 	    this->lss_user_marks[bm].erase(lb);
 	}
     };
 
+    void text_clear_marks(bookmark_type_t *bm) {
+        this->lss_user_marks[bm].clear();
+    };
+
     void insert_file(logfile *lf)
     {
+        std::vector<logfile_data>::iterator existing;
+
 	assert(lf->size() < MAX_LINES_PER_FILE);
-	
-	this->lss_files.push_back(logfile_data(lf));
-	this->lss_index.clear();
+
+        existing = std::find_if(this->lss_files.begin(),
+                                this->lss_files.end(),
+                                logfile_data_eq(NULL));
+        if (existing == this->lss_files.end()) {
+            this->lss_files.push_back(logfile_data(lf));
+	    this->lss_index.clear();
+        }
+        else {
+            existing->ld_file = lf;
+        }
     };
+
+    void remove_file(logfile *lf)
+    {
+        std::vector<logfile_data>::iterator iter;
+
+        iter = std::find_if(this->lss_files.begin(),
+                            this->lss_files.end(),
+                            logfile_data_eq(lf));
+        if (iter != this->lss_files.end()) {
+            bookmarks<content_line_t>::type::iterator mark_iter;
+            int file_index = iter - this->lss_files.begin();
+
+            iter->clear();
+            for (mark_iter = this->lss_user_marks.begin();
+                 mark_iter != this->lss_user_marks.end();
+                 ++mark_iter) {
+                content_line_t mark_curr = content_line_t(file_index * MAX_LINES_PER_FILE);
+                content_line_t mark_end = content_line_t((file_index + 1) * MAX_LINES_PER_FILE);
+                bookmark_vector<content_line_t>::iterator bv_iter;
+                bookmark_vector<content_line_t> &bv = mark_iter->second;
+
+                while ((bv_iter = std::lower_bound(bv.begin(), bv.end(), mark_curr)) != bv.end()) {
+                        if (*bv_iter >= mark_end)
+                                break;
+                        mark_iter->second.erase(bv_iter);
+                }
+            }
+        }
+    };
+
     bool rebuild_index(observer *obs = NULL, bool force = false);
 
     void text_update_marks(vis_bookmarks &bm);
@@ -189,10 +237,12 @@ private:
 
     enum {
 	B_SCRUB,
+        B_TIME_OFFSET,
     };
 
     enum {
 	F_SCRUB = (1L << B_SCRUB),
+        F_TIME_OFFSET = (1L << B_TIME_OFFSET),
     };
 
     struct logline_cmp {
@@ -215,6 +265,10 @@ private:
 	logfile_sub_source & llss_controller;
     };
 
+    /**
+     * Container for logfile references that keeps of how many lines in the
+     * logfile have been indexed.
+     */
     struct logfile_data {
 	logfile_data(logfile *lf = NULL)
 	    : ld_file(lf),
@@ -222,11 +276,37 @@ private:
 
 	bool operator<(const logfile_data &rhs)
 	{
+            if (this->ld_file == rhs.ld_file)
+                return false;
+            if (this->ld_file == NULL)
+                return true;
+            if (this->ld_file != NULL)
+                return true;
 	    return (*this->ld_file) < (*rhs.ld_file);
 	};
 
+        void clear(void) {
+                if (this->ld_file != NULL) {
+                    delete this->ld_file;
+                }
+                this->ld_file = NULL;
+        };
+
 	logfile *ld_file;
 	size_t  ld_lines_indexed;
+    };
+
+    /**
+     * Functor for comparing the ld_file field of the logfile_data struct.
+     */
+    struct logfile_data_eq {
+        logfile_data_eq(logfile *lf) : lde_file(lf) { };
+
+        bool operator()(const logfile_data &ld) {
+            return this->lde_file == ld.ld_file;
+        }
+
+        logfile *lde_file;
     };
 
     unsigned long             lss_flags;

@@ -139,6 +139,9 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
 
     size_t tab;
 
+    assert(row >= 0);
+    assert(row < this->lss_index.size());
+
     line = this->lss_index[row];
     this->lss_token_file   = this->find(line);
     this->lss_token_line   = this->lss_token_file->begin() + line;
@@ -164,6 +167,64 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
 
         lf->scrub(value_out);
     }
+
+    if (this->lss_flags & F_TIME_OFFSET) {
+    long long start_millis, curr_millis;
+
+    vis_line_t prev_mark = tc.get_bookmarks()[&textview_curses::BM_USER].prev(vis_line_t(row));
+    if (prev_mark == -1) {
+        prev_mark = vis_line_t(0);
+    }
+
+    logline *first_line = this->find_line(this->at(prev_mark));
+    start_millis = first_line->get_time() * 1000 +
+        first_line->get_millis();
+    curr_millis = this->lss_token_line->get_time() * 1000 +
+        this->lss_token_line->get_millis();
+    long long diff = curr_millis - start_millis;
+
+    // 24h22m33s111
+
+    static struct rel_interval {
+        long long length;
+        const char *format;
+        const char *symbol;
+    } intervals[] = { 
+        { 1000,  "%03qd%s", "" },
+        {   60,  "%qd%s", "s" },
+        {   60,  "%qd%s", "m" },
+        {    0,  "%qd%s", "h" },
+        {    0, NULL }
+    };
+
+    struct rel_interval *curr_interval;
+    int rel_length = 0;
+
+    value_out = "|" + value_out;
+    for (curr_interval = intervals; curr_interval->symbol != NULL; curr_interval++) {
+        long long amount;
+        char segment[32];
+
+        if (curr_interval->length) {
+                amount = diff % curr_interval->length;
+                diff = diff / curr_interval->length;
+        }
+        else {
+                amount = diff;
+                diff = 0;
+        }
+
+        if (!amount && !diff)
+                break;
+
+        snprintf(segment, sizeof(segment), curr_interval->format, amount, curr_interval->symbol);
+        rel_length += strlen(segment);
+        value_out = segment + value_out;
+    }
+    if (rel_length < 12) {
+        value_out.insert(0, 12 - rel_length, ' ');
+    }
+}
 }
 
 void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
@@ -173,6 +234,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     view_colors &vc = view_colors::singleton();
     logline *next_line = NULL;
     struct line_range lr;
+    int time_offset_end = 0;
     int attrs = 0;
     
     switch (this->lss_token_line->get_level() & ~logline::LEVEL__FLAGS) {
@@ -200,10 +262,19 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 	attrs |= A_UNDERLINE;
     }
 
-    lr.lr_start = this->lss_token_date_end;
+    lr.lr_start = time_offset_end + this->lss_token_date_end;
     lr.lr_end = -1;
     
     value_out[lr].insert(make_string_attr("style", attrs));
+
+    if (this->lss_flags & F_TIME_OFFSET) {
+        time_offset_end = 13;
+        lr.lr_start = 0;
+        lr.lr_end = time_offset_end;
+
+        attrs = vc.attrs_for_role(view_colors::VCR_OK);
+        value_out[lr].insert(make_string_attr("style", attrs));
+    }
     
     lr.lr_start = 0;
     lr.lr_end = -1;
@@ -212,7 +283,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     if (this->lss_token_date_end > 0 &&
 	((this->lss_token_line->get_time() / (60 * 60)) % 2) == 0) {
 	attrs = vc.attrs_for_role(view_colors::VCR_ALT_ROW);
-	lr.lr_start = 0;
+	lr.lr_start = time_offset_end;
 	lr.lr_end   = this->lss_token_date_end;
 	
 	value_out[lr].insert(make_string_attr("style", attrs));
@@ -227,12 +298,22 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
     for (iter = this->lss_files.begin();
 	 iter != this->lss_files.end();
 	 iter++) {
-	if (iter->ld_file->rebuild_index(obs)) {
+        if (iter->ld_file == NULL) {
+            if (iter->ld_lines_indexed > 0) {
+                force = true;
+                retval = true;
+            }
+        }
+	else if (iter->ld_file->rebuild_index(obs)) {
 	    retval = true;
 	}
-	if (force) {
-	    iter->ld_lines_indexed = 0;
-	}
+    }
+    if (force) {
+        for (iter = this->lss_files.begin();
+             iter != this->lss_files.end();
+             iter++) {
+                iter->ld_lines_indexed = 0;
+        }
     }
 
     if (retval || force) {
@@ -248,6 +329,9 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 	for (iter = this->lss_files.begin();
 	     iter != this->lss_files.end();
 	     iter++, file_index++) {
+            if (iter->ld_file == NULL)
+                continue;
+
 	    if (iter->ld_lines_indexed < iter->ld_file->size()) {
 		content_line_t con_line(file_index *MAX_LINES_PER_FILE +
 					iter->ld_lines_indexed);
@@ -361,6 +445,7 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
     bm[&BM_ERRORS].clear();
     bm[&BM_FILES].clear();
     bm[&textview_curses::BM_USER].clear();
+    bm[&textview_curses::BM_SEARCH].clear();
 
     for (; vl < (int)this->lss_index.size(); ++vl) {
 	content_line_t cl = this->lss_index[vl];
