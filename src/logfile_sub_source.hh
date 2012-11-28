@@ -1,5 +1,11 @@
-#ifndef __logfile_controller_hh
-#define __logfile_controller_hh
+/**
+ * @file logfile_sub_source.hh
+ */
+
+#ifndef __logfile_sub_source_hh
+#define __logfile_sub_source_hh
+
+#include <limits.h>
 
 #include <map>
 #include <list>
@@ -43,6 +49,10 @@ protected:
     std::string lf_id;
 };
 
+/**
+ * Delegate class that merges the contents of multiple log files into a single
+ * source of data for a text view.
+ */
 class logfile_sub_source
     : public text_sub_source {
 public:
@@ -124,7 +134,7 @@ public:
         this->lss_user_marks[bm].clear();
     };
 
-    void insert_file(logfile *lf)
+    bool insert_file(logfile *lf)
     {
         std::vector<logfile_data>::iterator existing;
 
@@ -134,12 +144,18 @@ public:
                                 this->lss_files.end(),
                                 logfile_data_eq(NULL));
         if (existing == this->lss_files.end()) {
+            if (this->lss_files.size() >= MAX_FILES) {
+                return false;
+            }
+
             this->lss_files.push_back(logfile_data(lf));
 	    this->lss_index.clear();
         }
         else {
             existing->ld_file = lf;
         }
+
+        return true;
     };
 
     void remove_file(logfile *lf)
@@ -232,9 +248,10 @@ public:
 
     content_line_t at(vis_line_t vl) { return this->lss_index[vl]; };
 
-private:
     static const size_t MAX_LINES_PER_FILE = 4 * 1024 * 1024;
+    static const size_t MAX_FILES = INT_MAX / MAX_LINES_PER_FILE;
 
+private:
     enum {
 	B_SCRUB,
         B_TIME_OFFSET,

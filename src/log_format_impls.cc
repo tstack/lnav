@@ -1,3 +1,6 @@
+/**
+ * @file log_format_impls.cc
+ */
 
 #include <stdio.h>
 
@@ -108,6 +111,19 @@ class syslog_log_format : public log_format {
         return SCRUB_PATTERN;
     }
 
+    static pcrepp &error_pattern(void) {
+        static pcrepp ERROR_PATTERN("(?:failed|failure|error)", PCRE_CASELESS);
+
+        return ERROR_PATTERN;
+    }
+
+    static pcrepp &warning_pattern(void) {
+        static pcrepp WARNING_PATTERN(
+                "(?:warn|not responding|init: cannot execute)", PCRE_CASELESS);
+
+        return WARNING_PATTERN;
+    }
+
     string get_name() { return "syslog_log"; };
 
     void scrub(string &line) {
@@ -144,17 +160,15 @@ class syslog_log_format : public log_format {
 	if ((rest = strptime(prefix,
 			     "%b %d %H:%M:%S",
 			     &log_time)) != NULL) {
+            pcre_context_static<20> context;
+            pcre_input pi(prefix, 0, len);
 	    logline::level_t ll = logline::LEVEL_UNKNOWN;
 	    time_t           log_gmt;
 
-	    if (strcasestr(prefix, "failed") != NULL ||
-		strcasestr(prefix, "failure") != NULL ||
-		strcasestr(prefix, "error") != NULL) {
+	    if (error_pattern().match(context, pi)) {
 		ll = logline::LEVEL_ERROR;
 	    }
-	    else if (strcasestr(prefix, "warn") != NULL ||
-		     strcasestr(prefix, "not responding") != NULL ||
-		     strcasestr(prefix, "init: cannot execute") != NULL) {
+	    else if (warning_pattern().match(context, pi)) {
 		ll = logline::LEVEL_WARNING;
 	    }
 	    log_gmt = tm2sec(&log_time);

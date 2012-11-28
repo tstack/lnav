@@ -110,6 +110,12 @@ bool check_experimental(const char *feature_name)
 	return false;
 }
 
+/**
+ * Compute the path to a file in the user's '.lnav' directory.
+ * 
+ * @param  sub The path to the file in the '.lnav' directory.
+ * @return     The full path 
+ */
 string dotlnav_path(const char *sub)
 {
     string retval;
@@ -122,6 +128,9 @@ string dotlnav_path(const char *sub)
 	snprintf(hpath, sizeof(hpath), "%s/.lnav/%s", home, sub);
 	retval = hpath;
     }
+    else {
+        retval = sub;
+    }
 
     return retval;
 }
@@ -132,6 +141,9 @@ void sqlite_close_wrapper(void *mem)
     sqlite3_close((sqlite3*)mem);
 }
 
+/**
+ * Observer for loading progress that updates the bottom status bar.
+ */
 class loading_observer
     : public logfile_sub_source::observer {
 public:
@@ -251,9 +263,13 @@ void rebuild_indexes(bool force)
 	    if ((*iter)->get_format() != NULL) {
 		logfile *lf = *iter;
 
-		iter = tss->tss_files.erase(iter);
-		lnav_data.ld_log_source.insert_file(lf);
-		force = true;
+                if (lnav_data.ld_log_source.insert_file(lf)) {
+        		iter = tss->tss_files.erase(iter);
+	               	force = true;
+                }
+                else {
+                        ++iter;
+                }
 	    }
 	    else {
 		++iter;
@@ -827,20 +843,24 @@ static void handle_paging_key(int ch)
 	}
 	break;
     case 'J':
-	// TODO: if they scroll up, we should start marking again from the top.
-	// We should also scroll down as the continue to mark stuff.  If they
-	// move somewhere else in the file, we should also start marking from
-	// the top again.
 	if (lss) {
-	if (lnav_data.ld_last_user_mark.find(tc) == lnav_data.ld_last_user_mark.end()) {
+	if (lnav_data.ld_last_user_mark.find(tc) == lnav_data.ld_last_user_mark.end() ||
+            !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
 	    lnav_data.ld_last_user_mark[tc] = tc->get_top();
 	}
-	else if (lnav_data.ld_last_user_mark[tc] + 1 > tc->get_bottom()) {
-	    flash();
-	    break; // XXX
-	}
 	else {
-	    lnav_data.ld_last_user_mark[tc] += 1;
+            vis_line_t height;
+            unsigned long width;
+
+            tc->get_dimensions(height, width);
+            if (lnav_data.ld_last_user_mark[tc] > tc->get_bottom() - 2 &&
+                tc->get_top() + height < tc->get_inner_height()) {
+                tc->shift_top(vis_line_t(1));
+            }
+            if (lnav_data.ld_last_user_mark[tc] + 1 >= tc->get_inner_height()) {
+                break;
+            }
+            lnav_data.ld_last_user_mark[tc] += 1;
 	}
 	lss->toggle_user_mark(&textview_curses::BM_USER,
 			      vis_line_t(lnav_data.ld_last_user_mark[tc]));
@@ -848,20 +868,30 @@ static void handle_paging_key(int ch)
 }
 	break;
     case 'K':
-	// TODO: scroll up with the selection
 	if (lss) {
-		if (lnav_data.ld_last_user_mark.find(tc) == lnav_data.ld_last_user_mark.end()) {
-			lnav_data.ld_last_user_mark[tc] = tc->get_top();
+                int new_mark;
+
+		if (lnav_data.ld_last_user_mark.find(tc) == lnav_data.ld_last_user_mark.end() ||
+                    !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
+                        lnav_data.ld_last_user_mark[tc] = -1;
+			new_mark = tc->get_top();
 		}
+                else {
+                        new_mark = lnav_data.ld_last_user_mark[tc];
+                }
 
 		lss->toggle_user_mark(&textview_curses::BM_USER,
-		                      vis_line_t(lnav_data.ld_last_user_mark[tc]));
-		if (lnav_data.ld_last_user_mark[tc] - 1 < 0) {
-			flash();
-		}
-		else {
-			lnav_data.ld_last_user_mark[tc] -= 1;
-		}
+		                      vis_line_t(new_mark));
+                if (new_mark == tc->get_top()) {
+                        tc->shift_top(vis_line_t(-1));
+                }
+                if (new_mark > 0) {
+        		lnav_data.ld_last_user_mark[tc] = new_mark - 1;
+                }
+                else {
+                        lnav_data.ld_last_user_mark[tc] = new_mark;
+                        flash();
+                }
 		tc->reload_data();
 	}
 	break;
@@ -1453,6 +1483,13 @@ static pcre *xpcre_compile(const char *pattern, int options = 0)
     return retval;
 }
 
+/**
+ * Callback used to keep track of the timestamps for the top and bottom lines
+ * in the log view.  This function is intended to be used as the callback
+ * function in a view_action.
+ *
+ * @param lv The listview object that contains the log 
+ */
 static void update_times(void *, listview_curses *lv)
 {
     if (lv == &lnav_data.ld_views[LNV_LOG] && lv->get_inner_height() > 0) {
@@ -2569,6 +2606,7 @@ int main(int argc, char *argv[])
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
+    DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog.log")));
 
     init_lnav_commands(lnav_commands);
 
@@ -2592,7 +2630,7 @@ int main(int argc, char *argv[])
 
     lnav_data.ld_looping = true;
     lnav_data.ld_mode    = LNM_PAGING;
-    lnav_data.ld_debug_log_name = "/dev/null"; // XXX change to /dev/null
+    lnav_data.ld_debug_log_name = "/dev/null";
     while ((c = getopt(argc, argv, "harsd:V")) != -1) {
 	switch (c) {
 	case 'h':

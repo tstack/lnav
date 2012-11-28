@@ -129,6 +129,10 @@ public:
 	return retval;
     };
 
+    bool is_visible(vis_line_t line) {
+        return (this->get_top() <= line && line <= this->get_bottom());
+    };
+
     /**
      * Shift the value of top by the given value.
      *
