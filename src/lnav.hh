@@ -138,4 +138,6 @@ void rebuild_indexes(bool force);
 
 std::string dotlnav_path(const char *sub);
 
+bool toggle_view(textview_curses *toggle_tc);
+
 #endif

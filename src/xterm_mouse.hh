@@ -78,8 +78,8 @@ public:
 
 	void handle_mouse(int ch) {
 	    	int bstate = getch();
-	    	int x = getch() - XT_MAGIC;
-	    	int y = getch() - XT_MAGIC;
+	    	int x = getch() - XT_MAGIC - 1;
+	    	int y = getch() - XT_MAGIC - 1;
 
 	    	bstate -= XT_MAGIC;
 

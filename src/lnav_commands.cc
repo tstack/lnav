@@ -243,6 +243,8 @@ static string com_graph(string cmdline, vector<string> &args)
 	    gh(new grep_highlighter(gp, "(graph", hm));
 	    lnav_data.ld_grep_child[LG_GRAPH] = gh;
 
+            toggle_view(&lnav_data.ld_views[LNV_GRAPH]);
+
 	    retval = "";
 	}
     }

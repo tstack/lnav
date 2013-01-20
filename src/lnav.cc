@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <math.h>
 #include <time.h>
 #include <glob.h>
 
@@ -514,7 +515,7 @@ static void back_ten(int ten_minute)
     lnav_data.ld_view_stack.top()->set_top(line);
 }
 
-static bool toggle_view(textview_curses *toggle_tc)
+bool toggle_view(textview_curses *toggle_tc)
 {
     textview_curses *tc    = lnav_data.ld_view_stack.top();
     bool            retval = false;
@@ -531,6 +532,22 @@ static bool toggle_view(textview_curses *toggle_tc)
     lnav_data.ld_scroll_broadcaster.invoke(tc);
 
     return retval;
+}
+
+static void change_text_file(void)
+{
+        textview_curses *tc = &lnav_data.ld_views[LNV_TEXT];
+
+        tc->reload_data();
+        if (lnav_data.ld_search_child[LNV_TEXT].get() != NULL) {
+                grep_proc *gp = lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc();
+
+                tc->match_reset();
+                gp->reset();
+                gp->queue_request(grep_line_t(0));
+                gp->start();
+        }
+        lnav_data.ld_scroll_broadcaster.invoke(tc);
 }
 
 static void ensure_view(textview_curses *expected_tc)
@@ -751,7 +768,7 @@ static void handle_paging_key(int ch)
 	    if (!tss.tss_files.empty()) {
 		tss.tss_files.push_front(tss.tss_files.back());
 		tss.tss_files.pop_back();
-		tc->reload_data();
+                change_text_file();
 	    }
 	}
 	break;
@@ -766,39 +783,10 @@ static void handle_paging_key(int ch)
 	    if (!tss.tss_files.empty()) {
 		tss.tss_files.push_back(tss.tss_files.front());
 		tss.tss_files.pop_front();
-		tc->reload_data();
+                change_text_file();
 	    }
 	}
 	break;
-
-#if 0
-	/* XXX superceded by 'I' ? */
-    case 'j':
-	if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
-	    time_t top_time;
-
-	    top_time = lnav_data.ld_hist_source.value_for_row(tc->get_top());
-
-	    do {
-		lnav_data.ld_view_stack.pop();
-		tc = lnav_data.ld_view_stack.top();
-	    } while (tc != &lnav_data.ld_views[LNV_LOG]);
-	    tc->set_top(lss.find_from_time(top_time));
-	    tc->set_needs_update();
-	}
-	else if (tc == &lnav_data.ld_views[LNV_GRAPH]) {
-	    grapher &gr = lnav_data.ld_graph_source;
-	    int row = gr.value_for_row(tc->get_top());
-
-	    do {
-		lnav_data.ld_view_stack.pop();
-		tc = lnav_data.ld_view_stack.top();
-	    } while (tc != &lnav_data.ld_views[LNV_LOG]);
-	    tc->set_top(vis_line_t(gr.at(row)));
-	    tc->set_needs_update();
-	}
-	break;
-#endif
 
     case 'z':
 	if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
@@ -910,6 +898,21 @@ static void handle_paging_key(int ch)
 	}
 }
 	break;
+
+    case 'r':
+        {
+            bookmark_vector<vis_line_t>::iterator iter;
+
+            for (iter = bm[&textview_curses::BM_SEARCH].begin();
+                 iter != bm[&textview_curses::BM_SEARCH].end();
+                 ++iter) {
+                lss->toggle_user_mark(&textview_curses::BM_USER, *iter);
+            }
+
+            lnav_data.ld_last_user_mark[tc] = -1;
+            tc->reload_data();
+        }
+        break;
 
     case '1':
     case '2':
@@ -1430,7 +1433,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 static void usage(void)
 {
     const char *usage_msg =
-	"usage: %s [-habfso] [logfile1 logfile2 ...]\n"
+	"usage: %s [-hVsar] [logfile1 logfile2 ...]\n"
 	"\n"
 	"A curses-based log file viewer that indexes log messages by type\n"
 	"and time to make it easier to navigate through files quickly.\n"
@@ -1669,11 +1672,19 @@ static bool rescan_files(bool required = false)
 class lnav_behavior : public mouse_behavior {
 
 public:
+        enum lb_mode_t {
+                LB_MODE_NONE,
+                LB_MODE_DOWN,
+                LB_MODE_UP,
+                LB_MODE_DRAG
+        };
+
 	lnav_behavior() :
 		lb_selection_start(-1),
 		lb_selection_last(-1),
 		lb_scrollbar_y(-1),
-		lb_scroll_repeat(0) {
+		lb_scroll_repeat(0),
+                lb_mode(LB_MODE_NONE) {
 
 	};
 
@@ -1699,30 +1710,50 @@ public:
 		switch (button) {
 		case xterm_mouse::XT_BUTTON1:
 			if (this->lb_selection_start == vis_line_t(-1) &&
-			    (y <= tc->get_y() ||
-			     y > (tc->get_y() + (int)height))) {
-				return;
-			}
-			if (this->lb_selection_start == vis_line_t(-1) &&
 			    tc->get_inner_height() &&
 			    ((this->lb_scrollbar_y != -1) || (x >= (width - 2)))) {
-				double curr_pct, curr_cover, pct;
-				int scroll_y, scroll_height;
+				double top_pct, bot_pct, pct;
+				int scroll_top, scroll_bottom, shift_amount = 0, new_top = 0;
 
-				curr_pct = (double)tc->get_top() / (double)tc->get_inner_height();
-				curr_cover = (double)height / (double)tc->get_inner_height();
-				scroll_y = (tc->get_y() + (int)(curr_pct * (double)height));
-				if (this->lb_scrollbar_y == -1)
-					this->lb_scrollbar_y = y - scroll_y;
-				scroll_height = (int)(curr_cover * (double)height);
-				scroll_height += 1;
-				if (this->lb_scrollbar_y > 0 &&
-				    this->lb_scrollbar_y <= scroll_height) {
-					y -= this->lb_scrollbar_y + 1;
-				}
-				pct = (double)(y - tc->get_y()) / (double)height;
-				tc->set_top(vis_line_t(tc->get_inner_height() * pct));
-				pct *= 100.0;
+				top_pct = (double)tc->get_top() / (double)tc->get_inner_height();
+                                bot_pct = (double)tc->get_bottom() / (double)tc->get_inner_height();
+				scroll_top = (tc->get_y() + (int)(top_pct * (double)height));
+                                scroll_bottom = (tc->get_y() + (int)(bot_pct * (double)height));
+                                if (this->lb_mode == LB_MODE_NONE) {
+
+                                        if (scroll_top <= y && y <= scroll_bottom) {
+                                                this->lb_mode = LB_MODE_DRAG;
+                                                this->lb_scrollbar_y = y - scroll_top;
+                                        }
+                                        else if (y < scroll_top) {
+                                                this->lb_mode = LB_MODE_UP;
+                                        }
+                                        else {
+                                                this->lb_mode = LB_MODE_DOWN;
+                                        }
+                                }
+                                switch (this->lb_mode) {
+                                case LB_MODE_NONE:
+                                        assert(0);
+                                        break;
+                                case LB_MODE_UP:
+                                        if (y < scroll_top)
+                                                shift_amount = -1 * height;
+                                        break;
+                                case LB_MODE_DOWN:
+                                        if (y > scroll_bottom)
+                                                shift_amount = height;
+                                        break;
+                                case LB_MODE_DRAG:
+                                        pct = (double)tc->get_inner_height() / (double)height;
+                                        new_top = y - tc->get_y() - this->lb_scrollbar_y;
+                                        new_top = (int)floor(((double)new_top * pct) + 0.5);
+                                        tc->set_top(vis_line_t(new_top));
+                                        break;
+                                }
+                                if (shift_amount != 0) {
+                                        tc->shift_top(vis_line_t(shift_amount));
+                                }
 				return;
 			}
 			if (lss) {
@@ -1750,6 +1781,7 @@ public:
 			}
 			break;
 		case xterm_mouse::XT_BUTTON_RELEASE:
+                        this->lb_mode = LB_MODE_NONE;
 			this->lb_scrollbar_y = -1;
 			this->lb_selection_start = vis_line_t(-1);
 			break;
@@ -1792,6 +1824,8 @@ private:
 
 	struct timeval lb_last_scroll_time;
 	int lb_scroll_repeat;
+
+        lb_mode_t lb_mode;
 };
 
 static void looper(void)

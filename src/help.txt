@@ -49,7 +49,6 @@ On color displays, the lines will be highlighted as follows:
 
   * Errors will be colored in red;
   * warnings will be yellow;
-  * lines in even-numbered hours have their timestamps in bold white;
   * boundaries between days will be underlined; and
   * various color highlights will be applied to: SQL keywords, XML
     tags, file and line numbers in Java backtraces, and

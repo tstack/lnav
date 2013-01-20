@@ -42,6 +42,18 @@ public:
 				     std::string &value_out,
 				     bool raw = false) = 0;
 
+    /**
+     * Inform the source that the given line has been marked/unmarked.  This
+     * callback function can be used to translate between between visible line
+     * numbers and content line numbers.  For example, when viewing a log file
+     * with filters being applied, we want the bookmarked lines to be stable
+     * across changes in the filters.
+     * 
+     * @param bm    The type of bookmark.
+     * @param line  The line that has been marked/unmarked.
+     * @param added True if the line was bookmarked and false if it was
+     *   unmarked.
+     */
     virtual void text_mark(bookmark_type_t *bm, int line, bool added) {
     };
 
