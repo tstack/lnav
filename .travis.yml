@@ -1,4 +1,6 @@
 
 language: cpp
 compiler: gcc
-script: ./configure && make
+before_install:
+    - sudo apt-get install -y -qq libgpm-dev
+script: ./configure && make && make check
