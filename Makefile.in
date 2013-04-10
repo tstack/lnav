@@ -221,7 +221,8 @@ ACLOCAL_AMFLAGS = -I .
 SUBDIRS = src test
 noinst_SCRIPTS = TESTS_ENVIRONMENT
 EXTRA_DIST = \
-	LICENSE
+	LICENSE \
+        README.md
 
 all: all-recursive
 

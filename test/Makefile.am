@@ -180,7 +180,6 @@ TESTS = test_bookmarks \
 	test_grep_proc2 \
 	test_hist_source \
 	test_listview.sh \
-	test_logfile.sh \
 	test_pcrepp \
 	test_view_colors.sh \
 	test_vt52_curses.sh \
