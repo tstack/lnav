@@ -51,7 +51,7 @@ public:
 		return retval;
 	};
 
-	xterm_mouse() : xm_behavior(NULL) {
+	xterm_mouse() : xm_enabled(false), xm_behavior(NULL) {
 	};
 
 	~xterm_mouse() {
@@ -66,7 +66,7 @@ public:
 		}
 	};
 
-	bool is_enabled() {
+	bool is_enabled() const {
 		return this->xm_enabled;
 	};
 

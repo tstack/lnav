@@ -71,7 +71,7 @@ typedef union {
 } string_attr_t;
 
 inline std::pair<std::string, string_attr_t>
-make_string_attr(const std::string name, void *val)
+make_string_attr(const std::string &name, void *val)
 {
     string_attr_t sa;
 
@@ -81,7 +81,7 @@ make_string_attr(const std::string name, void *val)
 }
 
 inline std::pair<std::string, string_attr_t>
-make_string_attr(const std::string name, int val)
+make_string_attr(const std::string &name, int val)
 {
     string_attr_t sa;
     
@@ -135,7 +135,7 @@ public:
 	    : mf_receiver(receiver),
 	      mf_selector(selector) { };
 
-	void operator()(_Sender *sender)
+	void operator()(_Sender *sender) const
 	{
 	    (this->mf_receiver.*mf_selector)(sender);
 	};
@@ -162,7 +162,7 @@ public:
 	{
 	    typename std::vector<view_action>::iterator iter;
 
-	    for (iter = this->begin(); iter != this->end(); iter++) {
+	    for (iter = this->begin(); iter != this->end(); ++iter) {
 		(*iter).invoke(sender);
 	    }
 	};
@@ -270,13 +270,13 @@ public:
      * called before this method, but the returned attributes cannot be used
      * with curses code until this method is called.
      */
-    void init(void);
+    static void init(void);
 
     /**
      * @param role The role to retrieve character attributes for.
      * @return The attributes to use for the given role.
      */
-    int attrs_for_role(role_t role)
+    int attrs_for_role(role_t role) const
     {
 	assert(role >= 0);
 	assert(role < VCR__MAX + (HL_COLOR_COUNT * 2));
@@ -284,7 +284,7 @@ public:
 	return this->vc_role_colors[role];
     };
 
-    int reverse_attrs_for_role(role_t role)
+    int reverse_attrs_for_role(role_t role) const
     {
 	assert(role >= 0);
 	assert(role < VCR__MAX + (HL_COLOR_COUNT * 2));
@@ -351,12 +351,12 @@ public:
      */
     virtual void do_update(void) = 0;
 
-    void mvwattrline(WINDOW *window,
-		     int y,
-		     int x,
-		     attr_line_t &al,
-		     struct line_range &lr,
-		     view_colors::role_t base_role = view_colors::VCR_TEXT);
+    static void mvwattrline(WINDOW *window,
+		     	    int y,
+		     	    int x,
+		     	    attr_line_t &al,
+		     	    struct line_range &lr,
+		     	    view_colors::role_t base_role = view_colors::VCR_TEXT);
 };
 
 #endif

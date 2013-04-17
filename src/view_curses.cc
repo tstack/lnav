@@ -52,7 +52,7 @@ void view_curses::mvwattrline(WINDOW *window,
 	whline(window, ' ', lr.lr_end - line.size());
     wattroff(window, attrs);
 
-    for (iter = sa.begin(); iter != sa.end(); iter++) {
+    for (iter = sa.begin(); iter != sa.end(); ++iter) {
 	struct line_range attr_range = iter->first;
 	std::vector<size_t>::iterator tab_iter;
 	
@@ -86,7 +86,7 @@ void view_curses::mvwattrline(WINDOW *window,
 	    attrs_map_t::iterator am_iter;
 
 	    attrs = 0;
-	    for (am_iter = am.begin(); am_iter != am.end(); am_iter++) {
+	    for (am_iter = am.begin(); am_iter != am.end(); ++am_iter) {
 		if (am_iter->first == "style") {
 		    attrs |= am_iter->second.sa_int;
 		}

@@ -75,13 +75,13 @@ public:
     };
 
     void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
-    bool get_show_scrollbar() { return this->lv_show_scrollbar; };
+    bool get_show_scrollbar() const { return this->lv_show_scrollbar; };
 
     /** @param win The curses window this view is attached to. */
     void set_window(WINDOW *win) { this->lv_window = win; };
 
     /** @return The curses window this view is attached to. */
-    WINDOW *get_window() { return this->lv_window; };
+    WINDOW *get_window() const { return this->lv_window; };
 
     void set_y(unsigned int y)
     {
@@ -90,7 +90,7 @@ public:
 	    this->lv_needs_update = true;
 	}
     };
-    unsigned int get_y() { return this->lv_y; };
+    unsigned int get_y() const { return this->lv_y; };
 
     /**
      * Set the line number to be displayed at the top of the view.  If the
@@ -114,7 +114,7 @@ public:
     };
 
     /** @return The line number that is displayed at the top. */
-    vis_line_t get_top() { return this->lv_top; };
+    vis_line_t get_top() const { return this->lv_top; };
 
     /** @return The line number that is displayed at the bottom. */
     vis_line_t get_bottom()
@@ -171,7 +171,7 @@ public:
     };
 
     /** @return The column number that is displayed at the left. */
-    unsigned int get_left() { return this->lv_left; };
+    unsigned int get_left() const { return this->lv_left; };
 
     /**
      * Shift the value of left by the given value.
@@ -207,7 +207,7 @@ public:
     };
 
     /** @return The absolute or relative height of the window. */
-    vis_line_t get_height() { return this->lv_height; };
+    vis_line_t get_height() const { return this->lv_height; };
 
     /** @return The number of rows of data in this view's source data. */
     vis_line_t get_inner_height() const

@@ -125,7 +125,9 @@ vt52_curses::vt52_curses()
     : vc_window(NULL),
       vc_x(0),
       vc_y(0),
-      vc_escape_len(0)
+      vc_max_height(0),
+      vc_escape_len(0),
+      vc_map_buffer(0)
 { }
 
 vt52_curses::~vt52_curses()
@@ -256,7 +258,7 @@ void vt52_curses::do_update(void)
     y = this->get_actual_y() - (int)this->vc_past_lines.size();
     for (iter = this->vc_past_lines.begin();
 	 iter != this->vc_past_lines.end();
-	 iter++, y++) {
+	 ++iter, y++) {
 	if (y >= 0) {
 	    mvwprintw(this->vc_window, y, 0, "%s", iter->c_str());
 	    wclrtoeol(this->vc_window);

@@ -316,7 +316,7 @@ throw (error)
 		    
 		    count = BZ2_bzread(bz_file,
 				       scratch,
-				       std::min((unsigned long)seek_to,
+				       std::min((size_t)seek_to,
 						sizeof(scratch)));
 		    seek_to -= count;
 		}

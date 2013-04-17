@@ -104,7 +104,7 @@ char *readline_context::completion_generator(const char *text, int state)
 
 	    for (iter = arg_possibilities->begin();
 		 iter != arg_possibilities->end();
-		 iter++) {
+		 ++iter) {
 		fprintf(stderr, " cmp %s %s\n", text, iter->c_str());
 		if (strncmp(text, iter->c_str(), len) == 0) {
 		    matches.push_back(*iter);
@@ -148,7 +148,7 @@ char **readline_context::attempted_completion(const char *text,
 
 	vector<string> &proto = loaded_context->rc_prototypes[cmd];
 
-	if (proto.size() == 0) {
+	if (proto.empty()) {
 	    arg_possibilities = NULL;
 	}
 	else if (proto[0] == "filename") {
@@ -401,7 +401,7 @@ void readline_curses::start(void)
     std::map<int, readline_context *>::iterator citer;
     for (citer = this->rc_contexts.begin();
 	 citer != this->rc_contexts.end();
-	 citer++) {
+	 ++citer) {
 	char *home;
 	
 	citer->second->load();

@@ -89,10 +89,10 @@ public:
     attr_line_t &get_value() { return this->sf_value; };
 
     void right_justify(bool yes) { this->sf_right_justify = yes; };
-    bool is_right_justified(void) { return this->sf_right_justify; };
+    bool is_right_justified(void) const { return this->sf_right_justify; };
 
     void set_cylon(bool yes) { this->sf_cylon = yes; };
-    bool is_cylon(void) { return this->sf_cylon; };
+    bool is_cylon(void) const { return this->sf_cylon; };
 
     /** @return True if this field's value is an empty string. */
     bool empty() { return this->sf_value.get_string().empty(); };
@@ -102,12 +102,12 @@ public:
     /** @param role The color role for this field. */
     void set_role(view_colors::role_t role) { this->sf_role = role; };
     /** @return The color role for this field. */
-    view_colors::role_t get_role() { return this->sf_role; };
+    view_colors::role_t get_role() const { return this->sf_role; };
 
     /** @param width The maximum display width, in characters. */
     void set_width(int width) { this->sf_width = width; };
     /** @param width The maximum display width, in characters. */
-    size_t get_width() { return this->sf_width; };
+    size_t get_width() const { return this->sf_width; };
 
 protected:
     size_t              sf_width; /*< The maximum display width, in chars. */
@@ -146,7 +146,8 @@ class statusview_curses
     : public view_curses {
 public:
     statusview_curses()
-	: sc_window(NULL),
+	: sc_source(NULL),
+	  sc_window(NULL),
 	  sc_top(0) { };
     virtual ~statusview_curses() { };
 
@@ -154,7 +155,7 @@ public:
     status_data_source *get_data_source() { return this->sc_source; };
 
     void set_top(int top) { this->sc_top = top; };
-    int get_top() { return this->sc_top; };
+    int get_top() const { return this->sc_top; };
 
     void set_window(WINDOW *win) { this->sc_window = win; };
     WINDOW *get_window() { return this->sc_window; };

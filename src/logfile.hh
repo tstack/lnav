@@ -86,7 +86,7 @@ public:
      * @return The last modified time of the file when the file was last
      * indexed.
      */
-    time_t get_modified_time() { return this->lf_index_time; };
+    time_t get_modified_time() const { return this->lf_index_time; };
 
     iterator begin() { return this->lf_index.begin(); }
 
@@ -140,10 +140,10 @@ public:
     {
 	bool retval;
 
-	if (this->lf_index.size() == 0) {
+	if (this->lf_index.empty()) {
 	    retval = true;
 	}
-	else if (rhs.lf_index.size() == 0) {
+	else if (rhs.lf_index.empty()) {
 	    retval = false;
 	}
 	else {

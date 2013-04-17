@@ -147,7 +147,7 @@ public:
     void set_timeout_action(action va) { this->rc_timeout = va; };
 
     void set_value(std::string value) { this->rc_value = value; };
-    std::string get_value() { return this->rc_value; };
+    std::string get_value() const { return this->rc_value; };
 
     int update_fd_set(fd_set &readfds)
     {

@@ -45,14 +45,14 @@ public:
     void set_fd(auto_fd &fd) throw (error);
 
     /** @return The file descriptor that data should be pulled from. */
-    int get_fd() { return this->lb_fd; };
+    int get_fd() const { return this->lb_fd; };
 
     /**
      * @return The size of the file or the amount of data pulled from a pipe.
      */
-    size_t get_file_size() { return this->lb_file_size; };
+    size_t get_file_size() const { return this->lb_file_size; };
 
-    off_t get_read_offset(off_t off) {
+    off_t get_read_offset(off_t off) const {
 	if (this->lb_gz_file)
 	    return this->lb_gz_offset;
 	else
@@ -116,7 +116,7 @@ private:
      * @param off The file offset to check for in the buffer.
      * @return True if the given offset is cached in the buffer.
      */
-    bool in_range(off_t off)
+    bool in_range(off_t off) const
     {
 	return this->lb_file_offset <= off &&
 	       off < (int)(this->lb_file_offset + this->lb_buffer_size);

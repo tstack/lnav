@@ -28,7 +28,7 @@ public:
   strong_int operator/(const strong_int &rhs) {
     return strong_int(this->value / rhs.value);
   };
-  bool operator<(const strong_int &rhs) {
+  bool operator<(const strong_int &rhs) const {
   	return this->value < rhs.value;
   };
   strong_int &operator+=(const strong_int &rhs) {

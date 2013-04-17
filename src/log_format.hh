@@ -99,7 +99,7 @@ public:
 		this->ll_millis < rhs.ll_millis);
     };
 
-    bool operator<(const time_t &rhs) { return this->ll_time < rhs; };
+    bool operator<(const time_t &rhs) const { return this->ll_time < rhs; };
 
 private:
     off_t   ll_offset;

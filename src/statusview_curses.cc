@@ -26,7 +26,6 @@ void statusview_curses::do_update(void)
 	status_field &sf = this->sc_source->statusview_value_for_field(field);
 	struct line_range lr = { 0, sf.get_width() };
 	attr_line_t val;
-	string str;
 	int x;
 
 	val = sf.get_value();

@@ -47,7 +47,7 @@ public:
 	    }
 
 	    if (iter->sf_value[state.size()] != values[lpc]) {
-		if (state.size() > 0) {
+		if (!state.empty()) {
 		    state.clear();
 		    lpc = 0;
 		    goto retry;

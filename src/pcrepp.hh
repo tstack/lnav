@@ -39,7 +39,7 @@
 class pcre_context {
 public:
     typedef struct capture {
-	capture() { };
+	capture() : c_begin(-1), c_end(-1) { };
 	capture(int begin, int end) : c_begin(begin), c_end(end) {
 	    assert(begin <= end);
 	};
@@ -53,7 +53,7 @@ public:
     typedef const capture_t *const_iterator;
 
     /** @return The maximum number of strings this context can capture. */
-    int get_max_count() {
+    int get_max_count() const {
 	return this->pc_max_count;
     };
 
@@ -77,7 +77,7 @@ public:
     
 protected:
     pcre_context(capture_t *captures, int max_count)
-	: pc_captures(captures), pc_max_count(max_count) { };
+	: pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
 
     capture_t *pc_captures;
     int pc_max_count;

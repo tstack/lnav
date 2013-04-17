@@ -46,13 +46,13 @@ public:
     void set_y(int y) { this->vc_y = y; };
 
     /** @return The abs/rel Y position of the cursor on the curses display. */
-    int get_y() { return this->vc_y; };
+    int get_y() const { return this->vc_y; };
 
     /** @param x The X position of the cursor on the curses display. */
     void set_x(int x) { this->vc_x = x; };
 
     /** @return The X position of the cursor on the curses display. */
-    int get_x() { return this->vc_x; };
+    int get_x() const { return this->vc_x; };
 
     /**
      * @return The height of this view, which consists of a single line for
@@ -63,7 +63,7 @@ public:
     int get_height() { return this->vc_past_lines.size() + 1; };
 
     void set_max_height(int mh) { this->vc_max_height = mh; };
-    int get_max_height() { return this->vc_max_height; };
+    int get_max_height() const { return this->vc_max_height; };
 
     /**
      * Map an ncurses input keycode to a vt52 sequence.

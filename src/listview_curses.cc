@@ -117,7 +117,6 @@ void listview_curses::do_update(void)
 	for (; y < lines; ++y) {
 	    vis_line_t row = this->lv_top + y - vis_line_t(this->lv_y);
 	    attr_line_t al;
-	    string line;
 
 	    this->lv_source->listview_value_for_row(*this, row, al);
 	    this->mvwattrline(this->lv_window, y, 0, al, lr);

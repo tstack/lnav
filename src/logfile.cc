@@ -104,7 +104,7 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
 	 */
 	for (iter = root_formats.begin();
 	     iter != root_formats.end() && !found;
-	     iter++) {
+	     ++iter) {
 	    (*iter)->clear();
 	    if ((*iter)->scan(this->lf_index, offset, prefix, len)) {
 #if 0
@@ -164,7 +164,7 @@ throw (line_buffer::error)
 	char   *line;
 	size_t len;
 
-	if (this->lf_index.size() > 0) {
+	if (!this->lf_index.empty()) {
 	    off = this->lf_index.back().get_offset();
 
 	    /*
