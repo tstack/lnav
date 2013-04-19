@@ -1,5 +1,5 @@
 
-TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
+LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \

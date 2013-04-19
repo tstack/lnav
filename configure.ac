@@ -1,7 +1,7 @@
 
 AC_INIT(lnav, 0.5.0, timothyshanestack@gmail.com)
 AC_CONFIG_SRCDIR([src/lnav.cc])
-AM_INIT_AUTOMAKE(lnav, 0.5.0)
+AM_INIT_AUTOMAKE
 
 AC_PREFIX_DEFAULT(/usr/)
 
@@ -114,7 +114,7 @@ case "$host_os" in
 	;;
 esac
 
-AM_CONFIG_HEADER([src/config.h])
+AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([TESTS_ENVIRONMENT])
 AC_CONFIG_FILES([src/Makefile])

@@ -1,5 +1,7 @@
 
-bin_PROGRAMS = lnav bin2c
+bin_PROGRAMS = lnav
+
+noinst_PROGRAMS = bin2c
 
 noinst_LIBRARIES = libdiag.a
 
