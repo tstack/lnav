@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <vector>
 #include <algorithm>
 
 #include "lnav_util.hh"
@@ -25,6 +26,8 @@ public:
 
     void scrub_value(string &str, string_attrs_t &sa)
     {
+        vector<line_range> range_queue;
+        vector< pair<string, string_attr_t> > attr_queue;
 	int rc, matches[60];
 
 	do {
@@ -106,12 +109,20 @@ public:
 		str.erase(str.begin() + c_start, str.begin() + c_end);
 		
 		if (has_attrs) {
+                    if (!range_queue.empty()) {
+                        range_queue.back().lr_end = c_start;
+                    }
 		    lr.lr_start = c_start;
 		    lr.lr_end = -1;
-		    sa[lr].insert(make_string_attr("style", attrs));
+                    range_queue.push_back(lr);
+                    attr_queue.push_back(make_string_attr("style", attrs));
 		}
 	    }
 	} while (rc > 0);
+
+        for (int lpc = 0; lpc < range_queue.size(); lpc++) {
+            sa[range_queue[lpc]].insert(attr_queue[lpc]);
+        }
     };
 
 private:

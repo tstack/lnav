@@ -33,6 +33,9 @@
 
 class view_curses;
 
+/**
+ * An RAII class that initializes and deinitializes curses.
+ */
 class screen_curses {
 public:
     screen_curses()
@@ -48,6 +51,9 @@ private:
     WINDOW *sc_main_window;
 };
 
+/**
+ * Encapsulates a range in a string.
+ */
 struct line_range {
     int lr_start;
     int lr_end;
@@ -65,11 +71,20 @@ struct line_range {
     };
 };
 
+/**
+ * Container for attribute values for a substring.
+ */
 typedef union {
     void *sa_ptr;
     int sa_int;
 } string_attr_t;
 
+/**
+ * Construct a string_attr_t the a void pointer value.
+ *
+ * @param name The name of the attribute.
+ * @param val The value to store in the attribute.
+ */
 inline std::pair<std::string, string_attr_t>
 make_string_attr(const std::string &name, void *val)
 {
@@ -80,6 +95,12 @@ make_string_attr(const std::string &name, void *val)
     return std::make_pair(name, sa);
 }
 
+/**
+ * Construct a string_attr_t the an integer value.
+ *
+ * @param name The name of the attribute.
+ * @param val The value to store in the attribute.
+ */
 inline std::pair<std::string, string_attr_t>
 make_string_attr(const std::string &name, int val)
 {
@@ -90,19 +111,27 @@ make_string_attr(const std::string &name, int val)
     return std::make_pair(name, sa);
 }
 
+/** A map of symbolic names to attribute values. */
 typedef std::multimap<std::string, string_attr_t> attrs_map_t;
+/** A map of line ranges to attributes for that range. */
 typedef std::map<struct line_range, attrs_map_t> string_attrs_t;
 
+/**
+ * A line that has attributes.
+ */
 class attr_line_t {
 public:
     attr_line_t() { };
 
+    /** @return The string itself. */
     std::string &get_string() { return this->al_string; };
     
+    /** @return The attributes for the string. */
     string_attrs_t &get_attrs() { return this->al_attrs; };
 
     void operator=(const std::string &rhs) { this->al_string = rhs; };
     
+    /** Clear the string and the attributes for the string. */
     void clear() {
 	this->al_string.clear();
 	this->al_attrs.clear();

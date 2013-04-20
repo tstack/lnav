@@ -66,6 +66,12 @@ public:
 	    std::max(this->dls_column_sizes[index], colstr.length() + 1);
     }
 
+    void clear(void) {
+        this->dls_headers.clear();
+        this->dls_rows.clear();
+        this->dls_column_sizes.clear();
+    }
+
     std::vector< std::string > dls_headers;
     std::vector< std::vector< std::string > > dls_rows;
     std::vector< size_t > dls_column_sizes;

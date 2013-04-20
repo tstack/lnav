@@ -129,6 +129,7 @@ public:
 	return retval;
     };
 
+    /** @return True if the given line is visible. */
     bool is_visible(vis_line_t line) {
         return (this->get_top() <= line && line <= this->get_bottom());
     };

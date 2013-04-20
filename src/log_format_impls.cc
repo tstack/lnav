@@ -279,6 +279,7 @@ class generic_log_format : public log_format {
 	static const char *log_fmt[] = {
 	    "%63[0-9: ,-]%31[^:]",
             "%63[a-zA-Z0-9:-+/.] [%*x %31s",
+            "%63[a-zA-Z0-9:,-] %31s",
 	    "%63[a-zA-Z0-9: ,-] [%*[^]]]%31[^:]",
 	    "%63[a-zA-Z0-9: ,-] %31s",
 	    "[%63[0-9: .-] %*s %31s",

@@ -159,6 +159,9 @@ public:
 	
 	pcre_refcount(this->p_code, 1);
 	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
+        if (!this->p_code_extra && errptr) {
+                fprintf(stderr, "pcre_study error: %s\n", errptr);
+        }
     };
     
     pcrepp(const char *pattern, int options = 0) {
@@ -175,6 +178,9 @@ public:
 	
 	pcre_refcount(this->p_code, 1);
 	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
+        if (!this->p_code_extra && errptr) {
+                fprintf(stderr, "pcre_study error: %s\n", errptr);
+        }
     };
 
     pcrepp(const pcrepp &other) {
@@ -183,6 +189,9 @@ public:
 	this->p_code = other.p_code;
 	pcre_refcount(this->p_code, 1);
 	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
+        if (!this->p_code_extra && errptr) {
+                fprintf(stderr, "pcre_study error: %s\n", errptr);
+        }
     };
 
     virtual ~pcrepp() { 

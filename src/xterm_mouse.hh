@@ -1,3 +1,6 @@
+/**
+ * @file xterm_mouse.hh
+ */
 
 #ifndef __xterm_mouse_hh
 #define __xterm_mouse_hh
@@ -8,14 +11,29 @@
 
 #include <string>
 
+/**
+ * Base class for delegates of the xterm_mouse class.
+ */
 class mouse_behavior {
 
 public:
 	virtual ~mouse_behavior() { };
 
+        /**
+         * Callback used to process mouse events.
+         * 
+         * @param button The button that was pressed or released.  This will
+         *   be one of the XT_BUTTON or XT_SCROLL constants in the xterm_mouse
+         *   class.
+         * @param x      The X coordinate where the event occurred.
+         * @param y      The Y coordinate where the event occurred.
+         */
 	virtual void mouse_event(int button, int x, int y) = 0;
 };
 
+/**
+ * Class that handles xterm mouse events coming through the ncurses interface.
+ */
 class xterm_mouse {
 
 public:
@@ -41,6 +59,9 @@ public:
 	static const char *XT_TERMCAP;
 	static const char *XT_TERMCAP_TRACKING;
 
+        /**
+         * @return True if the user's terminal supports xterm-mouse events.
+         */
 	static bool is_available() {
 		static const char *termname = getenv("TERM");
 		bool retval = false;
@@ -58,6 +79,10 @@ public:
 		set_enabled(false);
 	};
 
+        /**
+         * @param enabled True if xterm mouse support should be enabled in the
+         *   terminal.
+         */
 	void set_enabled(bool enabled) {
 		if (is_available()) {
 			putp(tparm((char *)XT_TERMCAP, enabled ? 1 : 0));
@@ -66,28 +91,34 @@ public:
 		}
 	};
 
+        /**
+         * @return True if xterm mouse support is enabled, false otherwise.
+         */
 	bool is_enabled() const {
 		return this->xm_enabled;
 	};
 
+        /**
+         * @param mb The delegate to send mouse events to.
+         */
 	void set_behavior(mouse_behavior *mb) {
 		this->xm_behavior = mb;
 	};
 
 	mouse_behavior *get_behavior() { return this->xm_behavior; };
 
+        /**
+         * Handle a KEY_MOUSE character from ncurses.
+         * @param ch unused
+         */
 	void handle_mouse(int ch) {
-	    	int bstate = getch();
+                /* The button event and coordinates follow the KEY_MOUSE char */
+	    	int bstate = getch() - XT_MAGIC & XT_BUTTON__MASK;
 	    	int x = getch() - XT_MAGIC - 1;
 	    	int y = getch() - XT_MAGIC - 1;
 
-	    	bstate -= XT_MAGIC;
-
 	    	if (this->xm_behavior) {
-	    		this->xm_behavior->mouse_event(
-	                        bstate & XT_BUTTON__MASK,
-	                        x,
-	                        y);
+	    		this->xm_behavior->mouse_event(bstate, x, y);
 	    	}
 	};
 

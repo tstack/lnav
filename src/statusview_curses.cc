@@ -1,3 +1,7 @@
+/**
+ * @file statusview_curses.cc
+ */
+
 #include "config.h"
 
 #include "statusview_curses.hh"

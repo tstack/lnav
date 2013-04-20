@@ -550,6 +550,11 @@ static void change_text_file(void)
         lnav_data.ld_scroll_broadcaster.invoke(tc);
 }
 
+/**
+ * Ensure that the view is on the top of the view stack.
+ * 
+ * @param expected_tc The text view that should be on top.
+ */
 static void ensure_view(textview_curses *expected_tc)
 {
     textview_curses *tc    = lnav_data.ld_view_stack.top();
@@ -678,6 +683,7 @@ static void handle_paging_key(int ch)
 	else {
 	    tc = lnav_data.ld_view_stack.top();
 	    tc->set_needs_update();
+            lnav_data.ld_scroll_broadcaster.invoke(tc);
 	}
 	break;
 
@@ -1113,11 +1119,11 @@ static void handle_paging_key(int ch)
 
 		    unsigned int line_number;
 
+                    tc = &lnav_data.ld_views[LNV_LOG];
 		    if (sscanf(dls.dls_rows[db_row][lpc].c_str(),
 			       "%d",
 			       &line_number) &&
 			line_number < tc->listview_rows(*tc)) {
-			tc = &lnav_data.ld_views[LNV_LOG];
 			tc->set_top(vis_line_t(line_number));
 			tc->set_needs_update();
 		    }
@@ -1402,8 +1408,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 
 	    lnav_data.ld_bottom_source.grep_error("");
 	    hs.clear();
-	    dls.dls_headers.clear();
-	    dls.dls_rows.clear();
+            dls.clear();
 	    if (sqlite3_exec(lnav_data.ld_db,
 			     rc->get_value().c_str(),
 			     sql_callback,
@@ -1416,6 +1421,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 
 		hs.analyze();
 		lnav_data.ld_views[LNV_DB].reload_data();
+                lnav_data.ld_views[LNV_DB].set_left(0);
 
 		if (dls.dls_rows.size() > 0) {
 		    ensure_view(&lnav_data.ld_views[LNV_DB]);
@@ -1444,6 +1450,7 @@ static void usage(void)
 	"\n"
 	"Options:\n"
 	"  -h         Print this message, then exit.\n"
+        "  -d file    Write debug messages to the given file.\n"
 	"  -V         Print version information.\n"
 	"  -s         Load the most recent syslog messages file.\n"
 	"  -a         Load all of the most recent log file types.\n"

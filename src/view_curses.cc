@@ -5,6 +5,7 @@
 #include "config.h"
 
 #include <string>
+#include <algorithm>
 
 #include "view_curses.hh"
 
@@ -21,54 +22,67 @@ void view_curses::mvwattrline(WINDOW *window,
     string_attrs_t &sa = al.get_attrs();
     string &line = al.get_string();
     string_attrs_t::iterator iter;
-    std::vector<size_t> tab_list;
-    char *buffer;
+    std::map<size_t, size_t, std::greater<size_t> > tab_list;
+    int tab_count = 0;
+    char *buffer, *expanded_line;
+    size_t exp_index = 0;
+    string full_line;
 
     assert(lr.lr_end != -1);
 
     line_width = lr.length();
     buffer = (char *)alloca(line_width + 1);
+    tab_count = count(line.begin(), line.end(), '\t');
+    expanded_line = (char *)alloca(line.size() + tab_count * 8 + 1);
 
-    {
-	size_t tab;
-	
-	while ((tab = line.find('\t')) != string::npos) {
-	    tab_list.push_back(tab);
-	    line = line.replace(tab, 1, 8, ' ');
-	}
-	while ((tab = line.find('\r')) != string::npos) {
-	    line = line.replace(tab, 1, " ");
-	}
+    for (size_t lpc = 0; lpc < line.size(); lpc++) {
+        switch (line[lpc]) {
+        case '\t':
+                do {
+                        expanded_line[exp_index] = ' ';
+                        exp_index += 1;
+                } while (exp_index % 8);
+                tab_list[lpc] = exp_index;
+                break;
+        case '\r':
+                exp_index = -1;
+                break;
+        default:
+                expanded_line[exp_index] = line[lpc];
+                exp_index += 1;
+                break;
+        }
     }
-    
+
+    expanded_line[exp_index] = '\0';
+    full_line = string(expanded_line);
+
     text_attrs = view_colors::singleton().attrs_for_role(base_role);
     attrs = text_attrs;
     wmove(window, y, x);
     wattron(window, attrs);
-    if (lr.lr_start < (int)line.size()) {
-	waddnstr(window, &line.c_str()[lr.lr_start], line_width);
+    if (lr.lr_start < (int)full_line.size()) {
+	waddnstr(window, &full_line.c_str()[lr.lr_start], line_width);
     }
-    if (lr.lr_end > (int)line.size())
-	whline(window, ' ', lr.lr_end - line.size());
+    if (lr.lr_end > (int)full_line.size())
+	whline(window, ' ', lr.lr_end - full_line.size());
     wattroff(window, attrs);
 
     for (iter = sa.begin(); iter != sa.end(); ++iter) {
 	struct line_range attr_range = iter->first;
-	std::vector<size_t>::iterator tab_iter;
+	std::map<size_t, size_t>::iterator tab_iter;
 	
 	assert(attr_range.lr_start >= 0);
 	assert(attr_range.lr_end >= -1);
 
-	tab_iter = lower_bound(tab_list.begin(),
-			       tab_list.end(),
-			       attr_range.lr_start);
-	attr_range.lr_start += (8 * (tab_iter - tab_list.begin()));
+        tab_iter = tab_list.lower_bound(attr_range.lr_start);
+        if (tab_iter != tab_list.end())
+        	attr_range.lr_start += (tab_iter->second - tab_iter->first) - 1;
 
 	if (attr_range.lr_end != -1) {
-	    tab_iter = lower_bound(tab_list.begin(),
-				   tab_list.end(),
-				   attr_range.lr_end);
-	    attr_range.lr_end += (8 * (tab_iter - tab_list.begin()));
+	    tab_iter = tab_list.lower_bound(attr_range.lr_end);
+            if (tab_iter != tab_list.end())
+        	    attr_range.lr_end += (tab_iter->second - tab_iter->first) - 1;
 	}
 	
 	attr_range.lr_start = max(0, attr_range.lr_start - lr.lr_start);
