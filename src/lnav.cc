@@ -2608,9 +2608,15 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
     hm["(xml"] = textview_curses::
         highlighter(xpcre_compile("<(/?[^ >]+)[^>]*>"));
     hm["(stringd"] = textview_curses::
-        highlighter(xpcre_compile("\".*(?<!\\\\)\""));
+        highlighter(xpcre_compile("\"(?:\\\\.|[^\"])*\""));
     hm["(strings"] = textview_curses::
-        highlighter(xpcre_compile("\'.*(?<!\\\\)\'"));
+        highlighter(xpcre_compile("(?<![^ru])\'(?:\\\\.|[^'])*\'"));
+    hm["(diffp"] = textview_curses::
+        highlighter(xpcre_compile("^\\+.*"), false, view_colors::VCR_DIFF_ADD);
+    hm["(diffm"] = textview_curses::
+        highlighter(xpcre_compile("^\\-.*"), false, view_colors::VCR_DIFF_DELETE);
+    hm["(diffs"] = textview_curses::
+        highlighter(xpcre_compile("^\\@@ .*"), false, view_colors::VCR_DIFF_SECTION);
     hm["(ip"] = textview_curses::
         highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
 }

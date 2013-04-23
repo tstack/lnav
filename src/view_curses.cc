@@ -45,7 +45,7 @@ void view_curses::mvwattrline(WINDOW *window,
                 tab_list[lpc] = exp_index;
                 break;
         case '\r':
-                exp_index = -1;
+                // exp_index = -1;
                 break;
         default:
                 expanded_line[exp_index] = line[lpc];
@@ -148,6 +148,10 @@ view_colors::view_colors()
 	COLOR_PAIR(VC_GREEN_ON_WHITE);
     this->vc_role_colors[VCR_ACTIVE_STATUS2] =
 	COLOR_PAIR(VC_GREEN_ON_WHITE) | A_BOLD;
+
+    this->vc_role_colors[VCR_DIFF_DELETE] = COLOR_PAIR(VC_RED);
+    this->vc_role_colors[VCR_DIFF_ADD] = COLOR_PAIR(VC_GREEN);
+    this->vc_role_colors[VCR_DIFF_SECTION] = COLOR_PAIR(VC_MAGENTA);
 
     for (lpc = 0; lpc < VCR__MAX; lpc++) {
 	this->vc_role_reverse_colors[lpc] =

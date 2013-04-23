@@ -75,6 +75,8 @@ public:
     /** @return The millisecond timestamp for the line. */
     uint16_t get_millis() const { return this->ll_millis; };
 
+    void set_millis(uint16_t m) { this->ll_millis = m; }
+
     void set_multiline(void) { this->ll_level |= LEVEL_MULTILINE; };
 
     /** @param l The logging level. */
@@ -160,6 +162,14 @@ public:
 		      char *prefix,
 		      int len) = 0;
 
+    /**
+     * Remove redundant data from the log line string.
+     * 
+     * XXX We should probably also add some attributes to the line here, so we
+     * can highlight things like the date.
+     * 
+     * @param line The log line to edit.
+     */
     virtual void scrub(std::string &line) { };
     
     virtual std::auto_ptr<log_format> specialized(void) = 0;

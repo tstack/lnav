@@ -116,6 +116,18 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
 		this->lf_format =
 		    auto_ptr<log_format>((*iter)->specialized());
 		found           = true;
+
+		/* 
+		 * We'll go ahead and assume that any previous lines were
+		 * written out at the same time as the last one, so we need to
+		 * go back and update everything.
+		 */
+		logline &last_line = this->lf_index[this->lf_index.size() - 1];
+
+		for (size_t lpc = 0; lpc < this->lf_index.size() - 1; lpc++) {
+			this->lf_index[lpc].set_time(last_line.get_time());
+			this->lf_index[lpc].set_millis(last_line.get_millis());
+		}
 	    }
 	}
     }
