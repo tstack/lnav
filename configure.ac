@@ -110,7 +110,7 @@ AX_LIB_SQLITE3("3.0.0")
 case "$host_os" in
     *)
 	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
-	AC_DEFINE([_BSD_SOURCE], [], [Need pread])
+	AC_DEFINE([_BSD_SOURCE], [1], [Need pread])
 	;;
 esac
 
