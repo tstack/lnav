@@ -70,7 +70,7 @@ public:
      * @param delim The character that splits lines in the input, defaults to a
      * line feed.
      * @return The address in the internal buffer where the line starts.  The
-     * line is not terminated, but this method ensures there is room to NULL
+     * line is not NULL-terminated, but this method ensures there is room to NULL
      * terminate the line.  If any modifications are made to the line, such as
      * NULL termination, the invalidate() must be called before re-reading the
      * line to refresh the buffer.

@@ -1455,6 +1455,9 @@ static void usage(void)
 	"  -s         Load the most recent syslog messages file.\n"
 	"  -a         Load all of the most recent log file types.\n"
 	"  -r         Load older rotated log files as well.\n"
+        "  -t         Prepend timestamps to the lines of data being read in\n"
+        "             on the standard input.\n"
+        "  -w file    Write the contents of the standard input to this file.\n"
 	"\n"
 	"Optional arguments:\n"
 	"  logfile1          The log files or directories to view.  If a\n"
@@ -2625,6 +2628,7 @@ int main(int argc, char *argv[])
 {
     int lpc, c, retval = EXIT_SUCCESS;
     auto_ptr<piper_proc> stdin_reader;
+    const char *stdin_out = NULL;
 
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
@@ -2678,7 +2682,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_looping = true;
     lnav_data.ld_mode    = LNM_PAGING;
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "harsd:V")) != -1) {
+    while ((c = getopt(argc, argv, "harsd:tw:V")) != -1) {
 	switch (c) {
 	case 'h':
 	    usage();
@@ -2700,6 +2704,14 @@ int main(int argc, char *argv[])
 	case 's':
 	    lnav_data.ld_flags |= LNF_SYSLOG;
 	    break;
+
+	case 't':
+	    lnav_data.ld_flags |= LNF_TIMESTAMP;
+	    break;
+
+        case 'w':
+            stdin_out = optarg;
+            break;
 
 	case 'V':
 	    printf("%s\n", PACKAGE_STRING);
@@ -2766,7 +2778,7 @@ int main(int argc, char *argv[])
     }
 
     if (!isatty(STDIN_FILENO)) {
-	stdin_reader = auto_ptr<piper_proc>(new piper_proc(STDIN_FILENO));
+	stdin_reader = auto_ptr<piper_proc>(new piper_proc(STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out));
 	lnav_data.ld_file_names.insert(make_pair("stdin",
 						 stdin_reader->get_fd()));
 	if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {

@@ -30,8 +30,12 @@ public:
      * and write it to a temporary file.
      *
      * @param pipefd The file descriptor to read the file contents from.
+     * @param timestamp True if an ISO 8601 timestamp should be prepended onto
+     *   the lines read from pipefd.
+     * @param filename The name of the file to save the input to, otherwise a
+     *   temporary file will be created.
      */
-    piper_proc(int pipefd);
+    piper_proc(int pipefd, bool timestamp, const char *filename=NULL);
 
     /**
      * Terminates the child process.
@@ -44,6 +48,9 @@ public:
 private:
     /** A file descriptor that refers to the temporary file. */
     int pp_fd;
+
+    /** Indicates whether timestamps should be added to the input. */
+    bool pp_timestamp;
 
     /** The child process' pid. */
     pid_t pp_child;

@@ -277,11 +277,11 @@ class generic_log_format : public log_format {
 	      char *prefix,
 	      int len) {
 	static const char *log_fmt[] = {
-	    "%63[0-9: ,-]%31[^:]",
+	    "%63[0-9: ,.-]%31[^:]",
             "%63[a-zA-Z0-9:-+/.] [%*x %31s",
-            "%63[a-zA-Z0-9:,-] %31s",
-	    "%63[a-zA-Z0-9: ,-] [%*[^]]]%31[^:]",
-	    "%63[a-zA-Z0-9: ,-] %31s",
+            "%63[a-zA-Z0-9:.,-] %31s",
+	    "%63[a-zA-Z0-9: .,-] [%*[^]]]%31[^:]",
+	    "%63[a-zA-Z0-9: .,-] %31s",
 	    "[%63[0-9: .-] %*s %31s",
 	    "[%63[a-zA-Z0-9: -+/]] %31s",
 	    "[%63[a-zA-Z0-9: -+/]] [%31[a-zA-Z]]",
@@ -310,8 +310,9 @@ class generic_log_format : public log_format {
 	    uint16_t millis = 0;
 
 	    /* Try to pull out the milliseconds value. */
-	    if (last_pos[0] == ',') {
-	    	sscanf(last_pos, ",%hd", &millis);
+	    	fprintf(stderr, "last pos %s\n", last_pos);
+	    if (last_pos[0] == ',' || last_pos[0] == '.') {
+	    	sscanf(last_pos + 1, "%hd", &millis);
 	    	if (millis >= 1000)
 		    millis = 0;
 	    }

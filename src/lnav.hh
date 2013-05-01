@@ -39,6 +39,7 @@ typedef enum {
 
 enum {
     LNB_SYSLOG,
+    LNB_TIMESTAMP,
 
     LNB__MAX,
 
@@ -50,6 +51,8 @@ typedef enum {
     LNF_SYSLOG        = (1L << LNB_SYSLOG),
 
     LNF_ROTATED       = (1L << LNB_ROTATED),
+
+    LNF_TIMESTAMP     = (1L << LNB_TIMESTAMP),
 
     LNF__ALL          = (LNF_SYSLOG)
 } lnav_flags_t;
