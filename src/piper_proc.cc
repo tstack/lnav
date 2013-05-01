@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 #include <paths.h>
 #include <fcntl.h>
@@ -74,7 +75,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
 
 	    	    gettimeofday(&tv, NULL);
 	    	    strftime(time_str, sizeof(time_str), "%FT%T", gmtime(&tv.tv_sec));
-	    	    snprintf(ms_str, sizeof(ms_str), ".%03d", tv.tv_usec / 1000);
+	    	    snprintf(ms_str, sizeof(ms_str), ".%03d", (int)(tv.tv_usec / 1000));
 	    	    strcat(time_str, ms_str);
 	    	    strcat(time_str, "Z  ");
 	    	    wrc = pwrite(this->pp_fd, time_str, strlen(time_str), woff);
