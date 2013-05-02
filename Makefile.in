@@ -53,7 +53,7 @@ host_triplet = @host@
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) mkinstalldirs \
-	$(srcdir)/TESTS_ENVIRONMENT.in INSTALL NEWS README \
+	$(srcdir)/TESTS_ENVIRONMENT.in AUTHORS INSTALL NEWS README \
 	config.guess config.sub depcomp install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/ax_sqlite3.m4 \
@@ -283,6 +283,7 @@ ACLOCAL_AMFLAGS = -I .
 SUBDIRS = src test
 noinst_SCRIPTS = TESTS_ENVIRONMENT
 EXTRA_DIST = \
+	AUTHORS \
 	LICENSE \
         README.md
 

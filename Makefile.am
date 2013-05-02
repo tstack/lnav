@@ -6,5 +6,6 @@ SUBDIRS = src test
 noinst_SCRIPTS = TESTS_ENVIRONMENT
 
 EXTRA_DIST = \
+	AUTHORS \
 	LICENSE \
         README.md

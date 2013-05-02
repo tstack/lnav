@@ -277,16 +277,16 @@ class generic_log_format : public log_format {
 	      char *prefix,
 	      int len) {
 	static const char *log_fmt[] = {
-	    "%63[0-9: ,.-]%31[^:]",
-            "%63[a-zA-Z0-9:-+/.] [%*x %31s",
-            "%63[a-zA-Z0-9:.,-] %31s",
-	    "%63[a-zA-Z0-9: .,-] [%*[^]]]%31[^:]",
-	    "%63[a-zA-Z0-9: .,-] %31s",
-	    "[%63[0-9: .-] %*s %31s",
-	    "[%63[a-zA-Z0-9: -+/]] %31s",
-	    "[%63[a-zA-Z0-9: -+/]] [%31[a-zA-Z]]",
-	    "[%63[a-zA-Z0-9: .-+/] %*s %31s",
-	    "[%63[a-zA-Z0-9: -+/]] (%*d) %31s",
+	    "%63[0-9: ,.-]%63[^:]",
+            "%63[a-zA-Z0-9:-+/.] [%*x %63[^\n]",
+            "%63[a-zA-Z0-9:.,-] %63[^\n]",
+	    "%63[a-zA-Z0-9: .,-] [%*[^]]]%63[^:]",
+	    "%63[a-zA-Z0-9: .,-] %63[^\n]",
+	    "[%63[0-9: .-] %*s %63[^\n]",
+	    "[%63[a-zA-Z0-9: -+/]] %63[^\n]",
+	    "[%63[a-zA-Z0-9: -+/]] [%63[a-zA-Z]]",
+	    "[%63[a-zA-Z0-9: .-+/] %*s %63[^\n]",
+	    "[%63[a-zA-Z0-9: -+/]] (%*d) %63[^\n]",
 	    NULL
 	};
 
@@ -294,7 +294,7 @@ class generic_log_format : public log_format {
 	struct tm log_time;
 	char timestr[64 + 32];
 	time_t line_time;
-	char level[32];
+	char level[64];
 	char *last_pos;
 
 	if ((last_pos = this->log_scanf(prefix,
@@ -310,7 +310,6 @@ class generic_log_format : public log_format {
 	    uint16_t millis = 0;
 
 	    /* Try to pull out the milliseconds value. */
-	    	fprintf(stderr, "last pos %s\n", last_pos);
 	    if (last_pos[0] == ',' || last_pos[0] == '.') {
 	    	sscanf(last_pos + 1, "%hd", &millis);
 	    	if (millis >= 1000)

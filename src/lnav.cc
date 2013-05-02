@@ -1465,11 +1465,14 @@ static void usage(void)
 	"                    directory will be loaded.\n"
 	"\n"
 	"Examples:\n"
-	"  To load and follow the syslog file -\n"
+	"  To load and follow the syslog file:\n"
 	"    $ lnav -s\n"
 	"\n"
 	"  To load all of the files in /var/log:\n"
 	"    $ lnav /var/log\n"
+	"\n"
+	"  To watch the output of make with timestamps prepended:\n"
+	"    $ make 2>&1 | lnav -t\n"
 	"\n"
 	"Version: " PACKAGE_STRING "\n";
 
@@ -2606,8 +2609,8 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
                                   "| create "
                                   "| from | where | order by "
                                   "| group by )", PCRE_CASELESS));
-    hm["(java"] = textview_curses::
-        highlighter(xpcre_compile("(?:\\w+\\.java:\\d+)"));
+    hm["(srcfile"] = textview_curses::
+        highlighter(xpcre_compile("\\w+\\.(?:java|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):\\d+"));
     hm["(xml"] = textview_curses::
         highlighter(xpcre_compile("<(/?[^ >]+)[^>]*>"));
     hm["(stringd"] = textview_curses::
