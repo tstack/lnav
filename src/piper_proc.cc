@@ -1,4 +1,31 @@
 /**
+ * Copyright (c) 2007-2012, Timothy Stack
+ *
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * * Neither the name of Timothy Stack nor the names of its contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  * @file piper_proc.cc
  */
 
@@ -22,6 +49,22 @@
 #include "line_buffer.hh"
 
 using namespace std;
+
+static const char *STDIN_EOF_MSG = "---- END-OF-STDIN ----";
+
+static int write_timestamp(int fd, off_t woff)
+{
+    char time_str[64];
+    struct timeval tv;
+    char ms_str[8];
+
+    gettimeofday(&tv, NULL);
+    strftime(time_str, sizeof(time_str), "%FT%T", gmtime(&tv.tv_sec));
+    snprintf(ms_str, sizeof(ms_str), ".%03d", (int)(tv.tv_usec / 1000));
+    strcat(time_str, ms_str);
+    strcat(time_str, "Z  ");
+    return pwrite(fd, time_str, strlen(time_str), woff);
+}
 
 piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
     : pp_fd(-1), pp_timestamp(timestamp), pp_child(-1)
@@ -69,21 +112,12 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 int wrc;
 
 	    	if (timestamp) {
-	    	    char time_str[64];
-	    	    struct timeval tv;
-	    	    char ms_str[8];
-
-	    	    gettimeofday(&tv, NULL);
-	    	    strftime(time_str, sizeof(time_str), "%FT%T", gmtime(&tv.tv_sec));
-	    	    snprintf(ms_str, sizeof(ms_str), ".%03d", (int)(tv.tv_usec / 1000));
-	    	    strcat(time_str, ms_str);
-	    	    strcat(time_str, "Z  ");
-	    	    wrc = pwrite(this->pp_fd, time_str, strlen(time_str), woff);
-                    if (wrc == -1) {
-                        perror("Unable to write to output file for stdin");
-                        break;
-                    }
-                    woff += wrc;
+	    	    wrc = write_timestamp(this->pp_fd, woff);
+                if (wrc == -1) {
+                    perror("Unable to write to output file for stdin");
+                    break;
+                }
+                woff += wrc;
 	    	}
 
 	    	line[len] = '\n';
@@ -97,6 +131,25 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 }
 		woff += wrc;
 	    }
+
+        if (timestamp) {
+            int wrc;
+
+            wrc = write_timestamp(this->pp_fd, woff);
+            if (wrc == -1) {
+                perror("Unable to write to output file for stdin");
+                break;
+            }
+            woff += wrc;
+            wrc = pwrite(this->pp_fd,
+                         STDIN_EOF_MSG, strlen(STDIN_EOF_MSG),
+                         woff);
+            if (wrc == -1) {
+                perror("Unable to write to output file for stdin");
+                break;
+            }
+            woff += wrc;
+        }
 	}
 	exit(0);
 	break;

@@ -1,4 +1,13 @@
 
+lnav v0.5.1:
+     Features:
+     * Added the '-t' and '-w' options which can be used to prepend a
+       timestamp to any data piped in on stdin and to specify a file to
+       write the contents of stdin to.
+
+     Fixes:
+     * Cleanup for packaging.
+
 lnav v0.5.0:
      Features:
      * Files can be specified on the command-line using wildcards so that
