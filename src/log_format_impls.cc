@@ -235,6 +235,67 @@ class generic_log_format : public log_format {
 
 log_format::register_root_format<generic_log_format> generic_log_instance;
 
+class glog_log_format : public log_format {
+    string get_name() { return "glog_log"; };
+
+    bool scan(vector < logline > &dst,
+	      off_t offset,
+	      char *prefix,
+	      int len) {
+	bool      retval = false;
+	struct tm log_time;
+	short     millis = 0;
+	time_t    now;
+	char      *rest;
+
+	now      = time(NULL);
+	localtime_r(&now, &log_time);
+
+	log_time.tm_isdst = 0;
+
+	if ((rest = strptime(prefix + 1,
+			     "%m%d %H:%M:%S.",
+			     &log_time)) != NULL) {
+	    logline::level_t ll = logline::LEVEL_UNKNOWN;
+	    time_t           log_gmt;
+
+	    millis = atoi(rest) / 1000;
+
+	    switch (*prefix) {
+		case 'I': // info
+		    ll = logline::LEVEL_INFO;
+		    break;
+		case 'W': // warning
+		    ll = logline::LEVEL_WARNING;
+		    break;
+		case 'E': // error
+		    ll = logline::LEVEL_ERROR;
+		    break;
+		case 'C': // critical
+		    ll = logline::LEVEL_CRITICAL;
+		    break;
+		case 'F': // fatal
+		    ll = logline::LEVEL_CRITICAL;
+		    break;
+	    }
+	    log_gmt = tm2sec(&log_time);
+	    dst.push_back(logline(offset, log_gmt, millis, ll));
+
+	    retval = true;
+	}
+
+	return retval;
+    };
+
+    auto_ptr<log_format> specialized() {
+	auto_ptr<log_format> retval((log_format *)new glog_log_format(*this));
+
+	return retval;
+    };
+};
+
+log_format::register_root_format<glog_log_format> glog_instance;
+
 class strace_log_format : public log_format {
     string get_name() { return "strace_log"; };
 
