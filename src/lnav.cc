@@ -1966,6 +1966,7 @@ static void looper(void)
 		"access_log",
 		"syslog_log",
 		"generic_log",
+		"glog_log",
 		"strace_log",
 
 		"line_number",
@@ -2361,6 +2362,82 @@ private:
     pcrecpp::RE alt_regex;
 };
 
+class glog_log_table : public log_vtab_impl {
+public:
+    
+    glog_log_table()
+	: log_vtab_impl("glog_log"),
+	  slt_regex(
+		"\\s*([IWECF])([0-9]* [0-9:.]*)" // level, date
+		"\\s*([0-9]*)" // thread
+		"\\s*(.*:[0-9]*)\\]" // filename:number
+		"\\s*(.*)"
+		    ) {
+    };
+    
+    void get_columns(vector<vtab_column> &cols) {
+	cols.push_back(vtab_column("glog_level", "text"));
+	cols.push_back(vtab_column("glog_thread", "text"));
+	cols.push_back(vtab_column("glog_date", "text"));
+	cols.push_back(vtab_column("glog_file", "text"));
+	cols.push_back(vtab_column("glog_message", "text"));
+    };
+
+    void extract(const std::string &line,
+		 int column,
+		 sqlite3_context *ctx) {
+	string level, thread, date, file, message = "0";
+	
+	if (!this->slt_regex.FullMatch(line,
+		&level,
+		&thread,
+		&date,
+		&file,
+		&message
+		)) {
+	    fprintf(stderr, "bad match! %s\n", line.c_str());
+	}
+	switch (column) {
+	case 0:
+	    sqlite3_result_text(ctx,
+				level.c_str(),
+				level.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 1:
+	    sqlite3_result_text(ctx,
+				thread.c_str(),
+				thread.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 2:
+	    sqlite3_result_text(ctx,
+				date.c_str(),
+				date.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 3:
+	    sqlite3_result_text(ctx,
+				file.c_str(),
+				file.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 4:
+	    sqlite3_result_text(ctx,
+				message.c_str(),
+				message.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	default:
+	    fprintf(stderr, "bad match! %s\n", line.c_str());
+	    break;
+	}
+    };
+
+private:
+    pcrecpp::RE slt_regex;
+};
+
 class strace_log_table : public log_vtab_impl {
 public:
 
@@ -2684,6 +2761,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("syslog_log"));
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
     lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
+    lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new log_data_table());
 

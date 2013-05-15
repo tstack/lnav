@@ -1,2 +1,15 @@
 autom4te.cache
-
+Makefile
+TESTS_ENVIRONMENT
+config.status
+src/.deps/
+src/Makefile
+src/bin2c
+src/config.h
+src/help.c
+src/libdiag.a
+src/lnav
+src/stamp-h1
+src/static-libs/
+test/.deps/
+test/Makefile
