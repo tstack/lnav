@@ -266,6 +266,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     int attrs = 0;
     
     switch (this->lss_token_line->get_level() & ~logline::LEVEL__FLAGS) {
+    case logline::LEVEL_FATAL:
     case logline::LEVEL_CRITICAL:
     case logline::LEVEL_ERROR:
 	attrs = vc.attrs_for_role(view_colors::VCR_ERROR);
@@ -498,6 +499,7 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
 	    bm[&BM_WARNINGS].insert_once(vl);
 	    break;
 
+	case logline::LEVEL_FATAL:
 	case logline::LEVEL_ERROR:
 	case logline::LEVEL_CRITICAL:
 	    bm[&BM_ERRORS].insert_once(vl);

@@ -425,6 +425,7 @@ public:
 	for (iter = bucket.begin(); iter != bucket.end(); iter++) {
 	    total += (int)iter->second;
 	    switch (iter->first) {
+	    case logline::LEVEL_FATAL:
 	    case logline::LEVEL_ERROR:
 	    case logline::LEVEL_CRITICAL:
 		errors += (int)iter->second;
@@ -2085,6 +2086,8 @@ static void looper(void)
 	    hist_source &hs = lnav_data.ld_hist_source;
 
 	    lnav_data.ld_hist_zoom = 2;
+	    hs.set_role_for_type(bucket_type_t(logline::LEVEL_FATAL),
+				 view_colors::VCR_ERROR);
 	    hs.set_role_for_type(bucket_type_t(logline::LEVEL_CRITICAL),
 				 view_colors::VCR_ERROR);
 	    hs.set_role_for_type(bucket_type_t(logline::LEVEL_ERROR),
@@ -2368,32 +2371,32 @@ public:
     glog_log_table()
 	: log_vtab_impl("glog_log"),
 	  slt_regex(
-		"\\s*([IWECF])([0-9]*) ([0-9:.]*)" // level, date
+		"\\s*(?:[IWECF])([0-9]*) ([0-9:.]*)" // level, date
 		"\\s*([0-9]*)" // thread
-		"\\s*(.*:[0-9]*)\\]" // filename:number
+		"\\s*(.*):(\\d*)\\]" // filename:number
 		"\\s*(.*)"
 		    ) {
     };
     
     void get_columns(vector<vtab_column> &cols) {
-	cols.push_back(vtab_column("glog_level", "text"));
 	cols.push_back(vtab_column("timestamp", "text"));
 	cols.push_back(vtab_column("thread", "text"));
-	cols.push_back(vtab_column("file", "text"));
+	cols.push_back(vtab_column("src_file", "text"));
+	cols.push_back(vtab_column("src_line", "int"));
 	cols.push_back(vtab_column("message", "text"));
     };
 
     void extract(const std::string &line,
 		 int column,
 		 sqlite3_context *ctx) {
-	string level, date, time, thread, file, message = "0";
+	string date, time, thread, file, src_line, message = "0";
 	
 	if (!this->slt_regex.FullMatch(line,
-		&level,
 		&date,
 		&time,
 		&thread,
 		&file,
+		&src_line,
 		&message
 		)) {
 	    fprintf(stderr, "bad match! %s\n", line.c_str());
@@ -2404,12 +2407,6 @@ public:
 	char buf[128];
 	switch (column) {
 	case 0:
-	    sqlite3_result_text(ctx,
-				level.c_str(),
-				level.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 1:
 	    localtime_r(&now, &log_time); // need year data
 	    strptime(date.data(), "%m%d", &log_time);
 	    strftime(buf, sizeof(buf), "%Y-%m-%d", &log_time);
@@ -2424,16 +2421,22 @@ public:
 				timestamp.str().length(),
 				SQLITE_TRANSIENT);
 	    break;
-	case 2:
+	case 1:
 	    sqlite3_result_text(ctx,
 				thread.c_str(),
 				thread.length(),
 				SQLITE_TRANSIENT);
 	    break;
-	case 3:
+	case 2:
 	    sqlite3_result_text(ctx,
 				file.c_str(),
 				file.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 3:
+	    sqlite3_result_text(ctx,
+				src_line.c_str(),
+				src_line.length(),
 				SQLITE_TRANSIENT);
 	    break;
 	case 4:

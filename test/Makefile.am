@@ -161,6 +161,7 @@ dist_noinst_DATA = \
 	logfile_access_log.0 \
 	logfile_empty.0 \
 	logfile_generic.0 \
+	logfile_glog.0 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \

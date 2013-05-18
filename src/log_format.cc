@@ -98,7 +98,8 @@ const char *logline::level_names[LEVEL__MAX] = {
     "info",
     "warning",
     "error",
-    "critical"
+    "critical",
+    "fatal",
 };
 
 logline::level_t logline::string2level(const char *levelstr)
@@ -125,6 +126,9 @@ logline::level_t logline::string2level(const char *levelstr)
     }
     else if (strcasestr(levelstr, "CRITICAL")) {
 	retval = logline::LEVEL_CRITICAL;
+    }
+    else if (strcasestr(levelstr, "FATAL")) {
+    	retval = logline::LEVEL_FATAL;
     }
     
     return retval;

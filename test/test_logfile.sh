@@ -124,3 +124,27 @@ run_test ./drive_logfile -v -f generic_log ${srcdir}/logfile_generic.0
 check_output "generic_log level interpreted incorrectly?" <<EOF
 0x02
 EOF
+
+run_test ./drive_logfile -t -f glog_log ${srcdir}/logfile_glog.0
+
+check_output "glog_log timestamp interpreted incorrectly?" <<EOF
+May 17 15:04:22 2007 -- 619
+May 17 15:04:22 2007 -- 619
+May 17 15:04:22 2007 -- 619
+May 17 15:04:22 2007 -- 619
+May 17 15:04:22 2007 -- 619
+May 17 15:04:22 2007 -- 619
+May 17 15:04:22 2007 -- 619
+EOF
+
+run_test ./drive_logfile -v -f glog_log ${srcdir}/logfile_glog.0
+
+check_output "glog_log level interpreted incorrectly?" <<EOF
+0x05
+0x03
+0x03
+0x04
+0x03
+0x03
+0x05
+EOF

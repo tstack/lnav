@@ -402,7 +402,7 @@ class glog_log_format : public log_format {
 		    ll = logline::LEVEL_CRITICAL;
 		    break;
 		case 'F': // fatal
-		    ll = logline::LEVEL_CRITICAL;
+		    ll = logline::LEVEL_FATAL;
 		    break;
 	    }
 	    log_gmt = tm2sec(&log_time);
