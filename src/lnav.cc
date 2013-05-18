@@ -41,10 +41,10 @@
 #include <time.h>
 #include <glob.h>
 
+#include <fcntl.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <termios.h>
 
@@ -1966,6 +1966,7 @@ static void looper(void)
 		"access_log",
 		"syslog_log",
 		"generic_log",
+		"glog_log",
 		"strace_log",
 
 		"line_number",
@@ -2361,6 +2362,96 @@ private:
     pcrecpp::RE alt_regex;
 };
 
+class glog_log_table : public log_vtab_impl {
+public:
+    
+    glog_log_table()
+	: log_vtab_impl("glog_log"),
+	  slt_regex(
+		"\\s*([IWECF])([0-9]*) ([0-9:.]*)" // level, date
+		"\\s*([0-9]*)" // thread
+		"\\s*(.*:[0-9]*)\\]" // filename:number
+		"\\s*(.*)"
+		    ) {
+    };
+    
+    void get_columns(vector<vtab_column> &cols) {
+	cols.push_back(vtab_column("glog_level", "text"));
+	cols.push_back(vtab_column("timestamp", "text"));
+	cols.push_back(vtab_column("thread", "text"));
+	cols.push_back(vtab_column("file", "text"));
+	cols.push_back(vtab_column("message", "text"));
+    };
+
+    void extract(const std::string &line,
+		 int column,
+		 sqlite3_context *ctx) {
+	string level, date, time, thread, file, message = "0";
+	
+	if (!this->slt_regex.FullMatch(line,
+		&level,
+		&date,
+		&time,
+		&thread,
+		&file,
+		&message
+		)) {
+	    fprintf(stderr, "bad match! %s\n", line.c_str());
+	}
+	struct tm log_time;
+	time_t now = ::time(NULL);
+	stringstream timestamp;
+	char buf[128];
+	switch (column) {
+	case 0:
+	    sqlite3_result_text(ctx,
+				level.c_str(),
+				level.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 1:
+	    localtime_r(&now, &log_time); // need year data
+	    strptime(date.data(), "%m%d", &log_time);
+	    strftime(buf, sizeof(buf), "%Y-%m-%d", &log_time);
+	    // C++11 can do this much more nicely:
+	    //timestamp << std::put_time(&log_time, "%Y-%m-%d ");
+	    timestamp
+	       << buf
+	       << " "
+	       << time;
+	    sqlite3_result_text(ctx,
+				timestamp.str().c_str(),
+				timestamp.str().length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 2:
+	    sqlite3_result_text(ctx,
+				thread.c_str(),
+				thread.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 3:
+	    sqlite3_result_text(ctx,
+				file.c_str(),
+				file.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	case 4:
+	    sqlite3_result_text(ctx,
+				message.c_str(),
+				message.length(),
+				SQLITE_TRANSIENT);
+	    break;
+	default:
+	    fprintf(stderr, "bad match! %s\n", line.c_str());
+	    break;
+	}
+    };
+
+private:
+    pcrecpp::RE slt_regex;
+};
+
 class strace_log_table : public log_vtab_impl {
 public:
 
@@ -2684,6 +2775,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("syslog_log"));
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
     lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
+    lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new log_data_table());
 
