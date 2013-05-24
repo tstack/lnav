@@ -57,9 +57,8 @@ On color displays, the lines will be highlighted as follows:
   * Errors will be colored in red;
   * warnings will be yellow;
   * boundaries between days will be underlined; and
-  * various color highlights will be applied to: SQL keywords, XML
-    tags, file and line numbers in Java backtraces, and
-    quoted strings.
+  * various color highlights will be applied to: IP addresses, SQL keywords,
+    XML tags, file and line numbers in Java backtraces, and quoted strings.
 
 To give you an idea of where you are in the file spatially, the right
 side of the display has a proportionally sized 'scrollbar' that
@@ -221,6 +220,9 @@ through the file.
                     that can be used in queries.  See the SQL section
                     below for more information.
 
+  y/Y               Move forward/backward through the log view based on the
+                    "line_number" column in the SQL result view.
+
   v                 Switch to/from the SQL result view.
 
   V                 Switch between the log and SQL result views while
@@ -231,6 +233,11 @@ through the file.
 		    top of the SQL view to a line and hit 'V' to switch
 		    to the log view and move to the line number that was
 		    selected in the "line_number" column.
+
+  p                 Enable or disable the display of the fields that the
+                    log message parser knows about or has discovered.
+                    This overlay is temporarily enabled when the semicolon
+                    key (;) is pressed so that it is easier to write queries.
 
 MOUSE SUPPORT (experimental)
 ----------------------------
@@ -243,6 +250,8 @@ environment variable to "mouse".
 
 COMMANDS
 --------
+
+  help              Switch to this help text view.
 
   unix-time <secs-or-date>
                     Convert a unix-timestamp in seconds to a
@@ -297,7 +306,7 @@ COMMANDS
                     filter-related commands can be added to the session file.
 
 
-SQL QUERIES
+SQL QUERIES (experimental)
 -----------
 
 Lnav has support for performing SQL queries on log files using the
@@ -312,24 +321,46 @@ being accessed in any loaded Apache log files, you can execute:
 The query result view shows the results as text and graphs any number
 values found in the result, much like the histogram view.
 
-The basic set of log file tables are:
+The builtin set of log tables are listed below.  Note that only the
+log messages that match a particular format can be queried by a
+particular table.  You can find the file format and table name for
+the top log message by looking in the upper right hand corner of the
+log file view.
 
-  syslog_log, generic_log
-                   Contains any syslog lines and any lines picked up
-                   by the generic log file parser.
+The log table names are as follows:
+
+  access_log       Apache common access log format
+  syslog_log       Syslog format
+  glog_log         Google glog format
+  strace_log       Strace log format
+  generic_log      'Generic' log format.  This table contains messages
+                   from files that have a very simple format with a
+                   leading timestamp followed by the message.
+
+The columns available for the top log line in the view will
+automatically be displayed after pressing the semicolon (;) key.
+All log tables contain at least the following columns:
 
     line_number    The line number in the file, starting at zero.
-    path           The full path to the file.
     log_time       The time of the log entry.
+    idle_msecs     The amount of time, in milliseconds, between the
+                   current log message and the previous one.
     level          The log level (e.g. info, error, etc...).
+    path           The full path to the file.
     raw_line       The raw line of text.
 
 The following tables include the basic columns as listed above and
 include a few more columns since the log file format is more
 structured.
 
-  access_log       Contains Apache log file lines.  The column names
-                   are the same as those in the Microsoft LogParser.
+  syslog_log
+
+    log_hostname   The hostname the message was received from.
+    log_procname   The name of the process that sent the message.
+    log_pid        The process ID of the process that sent the message.
+
+  access_log       (The column names are the same as those in the
+                    Microsoft LogParser tool.)
 
     c_ip           The client IP address.
     cs_username    The client user name.
@@ -342,8 +373,9 @@ structured.
     cs_referrer    The URL of the referring page.
     cs_user_agent  The user agent string.
 
-  strace_log       Contains strace log file lines.  Currently, you
-                   need to run strace with the "-tt -T" options.
+  strace_log       (Currently, you need to run strace with the
+                    "-tt -T" options so there are timestamps for
+                    each function call.)
 
     funcname       The name of the syscall.
     result         The result code.
@@ -360,3 +392,51 @@ example of a top ten query into the "/tmp/topten.db" file, you can do:
   ;create table topten as select cs_uri_stem, count(*) as total
      from access_log group by cs_uri_stem order by total desc
      limit 10;
+
+
+DYNAMIC LOG LINE TABLE (experimental)
+----------------------
+
+(NOTE: This feature is still very new and not completely reliable yet,
+ use with care.)
+
+For log formats that lack message structure, lnav can parse the log
+message and attempt to extract any data fields that it finds.  This
+feature is available through the "logline" log table.  This table is
+dynamically created and defined based on the message at the top of
+the log view.  For example, given the following log message from "sudo",
+lnav will create the "logline" table with columns for "TTY", "PWD",
+"USER", and "COMMAND":
+
+  May 24 06:48:38 Tim-Stacks-iMac.local sudo[76387]: stack : TTY=ttys003 ; 
+    PWD=/Users/stack/github/lbuild ; USER=root ;
+    COMMAND=/bin/echo Hello, World!
+
+Queries executed against this table will then only return results for
+other log messages that have the same format.  So, if you were to
+execute the following query while viewing the above line, you might
+get the following results:
+
+  ;select USER,COMMAND from logline;
+
+  USER | COMMAND
+  ---- | -------------------------
+  root | /bin/echo Hello, World!
+  mal  | /bin/echo Goodbye, World!
+
+
+The log parser works by examining each message for key/value pairs
+separated by an equal sign (=) or a colon (:).  For example, in the
+previous example of a "sudo" message, the parser sees the "USER=root"
+string as a pair where the key is "USER" and the value is "root".
+If no pairs can be found, then anything that looks like a value is
+extracted and assigned a numbered column.  For example, the following
+line is from "dhcpd":
+
+  Sep 16 22:35:57 drill dhcpd: DHCPDISCOVER from 00:16:ce:54:4e:f3 via hme3
+
+In this case, the lnav parser recognizes that "DHCPDISCOVER", the MAC
+address and the "hme3" device name are values and not normal words.  So,
+it builds a table with three columns for each of these values.  The
+regular words in the message, like "from" and "via", are then used to
+find other messages with a similar format.

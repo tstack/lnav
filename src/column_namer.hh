@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2013, Timothy Stack
  *
  * All rights reserved.
  * 
@@ -26,80 +26,61 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file auto_mem.hh
+ * @file column_namer.hh
  */
 
-#ifndef __auto_mem_hh
-#define __auto_mem_hh
+#include <map>
+#include <string>
+#include <vector>
+#include <algorithm>
 
-#include <assert.h>
-#include <unistd.h>
-#include <stdlib.h>
-
-#include <exception>
-
-typedef void (*free_func_t)(void *);
-
-/**
- * Resource management class for memory allocated by a custom allocator.
- *
- * @param T The object type.
- * @param auto_free The function to call to free the managed object.
- */
-template<class T, free_func_t default_free = free>
-class auto_mem {
+class column_namer {
 
 public:
-    auto_mem(T *ptr = NULL) : am_ptr(ptr), am_free_func(default_free) { };
+	column_namer() {
+		this->cn_builtin_names.push_back("col");
+	};
 
-    auto_mem(auto_mem &am)
-        : am_ptr(am.release()), am_free_func(am.am_free_func)
-    {
-    };
+	bool existing_name(const std::string &in_name) {
+		if (find(this->cn_builtin_names.begin(),
+		    this->cn_builtin_names.end(),
+		    in_name) != this->cn_builtin_names.end()) {
+			return true;
+		}
+		else if (find(this->cn_names.begin(),
+		         this->cn_names.end(),
+		         in_name) != this->cn_names.end()) {
+	                return true;
+	        }
 
-    template<typename F>
-    auto_mem(F free_func)
-        : am_ptr(NULL), am_free_func((void (*)(void *))free_func) { };
+	        return false;
+	};
 
-    ~auto_mem() { this->reset(); };
+	std::string add_column(const std::string &in_name) {
+		std::string base_name = in_name, retval;
+		size_t buf_size;
+		char *buffer;
+		int num = 0;
 
-    operator T *(void) const { return this->am_ptr; };
+		buf_size = in_name.length() + 64;
+		buffer = (char *)alloca(buf_size);
+		if (in_name == "") {
+			base_name = "col";
+		}
 
-    auto_mem &operator=(T *ptr) {
-	this->reset(ptr);
-	return *this;
-    };
-    
-    auto_mem &operator=(auto_mem &am) {
-	this->reset(am.release());
-	return *this;
-    };
+		retval = base_name;
+		while (this->existing_name(retval)) {
+			snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
+			retval = buffer;
+			num += 1;
+		}
 
-    T *release(void) {
-	T *retval = this->am_ptr;
+		this->cn_names.push_back(retval);
 
-	this->am_ptr = NULL;
-	return retval;
-    };
+		return retval;
+	};
 
-    T *in(void) { return this->am_ptr; };
-    
-    T **out(void) {
-	this->reset();
-	return &this->am_ptr;
-    };
-
-    void reset(T *ptr = NULL) {
-	if (this->am_ptr != ptr) {
-        this->am_free_func(this->am_ptr);
-	    this->am_ptr = ptr;
-	}
-    };
-    
-private:
-    T *am_ptr;
-    void (*am_free_func)(void *);
-
+	std::vector<std::string> cn_builtin_names;
+	std::vector<std::string> cn_names;
+	
 };
-
-#endif

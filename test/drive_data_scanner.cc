@@ -105,12 +105,10 @@ int main(int argc, char *argv[])
 	    }
 	    
 	    data_scanner ds(line.substr(13));
-	    data_token_t token;
-	    
 	    data_parser dp(&ds);
 	    
 	    dp.parse();
-	    dp.print(out);
+	    dp.print(out, dp.dp_pairs);
 	    fclose(out);
 
 	    sprintf(cmd, "diff -u %s %s", argv[0], TMP_NAME);

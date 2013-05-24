@@ -43,7 +43,11 @@ struct byte_array {
     bool operator<(const byte_array &other) const {
 	return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) < 0;
     };
-    
+
+    bool operator!=(const byte_array &other) const {
+    	return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
+    };
+
     unsigned char ba_data[BYTE_COUNT];
 };
 

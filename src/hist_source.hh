@@ -79,6 +79,10 @@ public:
 	virtual void hist_label_for_bucket(int bucket_start_value,
 					   const bucket_t &bucket,
 					   std::string &label_out) { };
+
+	virtual void hist_attrs_for_bucket(int bucket_start_value,
+	                                   const bucket_t &bucket,
+	                                   string_attrs_t &sa) { };
     };
 
     hist_source();
@@ -186,6 +190,21 @@ public:
     void add_value(unsigned int value,
                    bucket_type_t bt,
                    bucket_count_t amount = 1.0);
+
+    void add_empty_value(unsigned int value) {
+    	bucket_group_t bg;
+
+    	this->hs_analyzed = false;
+
+    	bg = bucket_group_t(value / this->hs_group_size);
+
+    	bucket_array_t &ba = this->hs_groups[bg];
+
+    	if (ba.empty()) {
+    		ba.resize(this->buckets_per_group());
+    	}
+    };
+
     void analyze(void);
 
 protected:

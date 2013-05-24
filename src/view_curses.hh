@@ -92,6 +92,8 @@ struct line_range {
     bool operator<(const struct line_range &rhs) const {
 	if (this->lr_start < rhs.lr_start) return true;
 	else if (this->lr_start > rhs.lr_start) return false;
+
+	if (this->lr_end == rhs.lr_end) return false;
 	
 	if (this->lr_end < rhs.lr_end) return true;
 	return false;
@@ -143,12 +145,31 @@ typedef std::multimap<std::string, string_attr_t> attrs_map_t;
 /** A map of line ranges to attributes for that range. */
 typedef std::map<struct line_range, attrs_map_t> string_attrs_t;
 
+inline struct line_range
+find_string_attr_range(const string_attrs_t &sa, const std::string &name) {
+	struct line_range retval = { -1, -1 };
+
+    	for (string_attrs_t::const_iterator iter = sa.begin();
+    	     iter != sa.end();
+    	     ++iter) {
+    	     	attrs_map_t::const_iterator prefix_iter;
+
+    		if ((prefix_iter = iter->second.find(name)) != iter->second.end()) {
+    			retval = iter->first;
+    			break;
+    		}
+    	}
+
+    	return retval;
+}
+
 /**
  * A line that has attributes.
  */
 class attr_line_t {
 public:
     attr_line_t() { };
+    attr_line_t(const std::string &str) : al_string(str) { };
 
     /** @return The string itself. */
     std::string &get_string() { return this->al_string; };
@@ -319,6 +340,8 @@ public:
 	VCR_DIFF_ADD,		/*< Added line in a diff. */
 	VCR_DIFF_SECTION,	/*< Section marker in a diff. */
 
+	VCR_SHADOW,
+
 	VCR__MAX
     } role_t;
 
@@ -357,7 +380,9 @@ public:
      * method will iterate through eight-or-so attributes combinations so there
      * is some variety in how text is highlighted.
      */
-    role_t next_highlight(void);
+    role_t next_highlight();
+
+    role_t next_plain_highlight();
 
     enum {
 	VC_EMPTY = 0,       /* XXX Dead color pair, doesn't work. */
@@ -381,6 +406,8 @@ public:
 	VC_RED_ON_WHITE,
 
 	VC_WHITE_ON_GREEN,
+
+	VC_GRAY,
     };
 
 private:
@@ -397,6 +424,7 @@ private:
     int vc_role_reverse_colors[VCR__MAX + (HL_COLOR_COUNT * 2)];
     /** The index of the next highlight color to use. */
     int vc_next_highlight;
+    int vc_next_plain_highlight;
 };
 
 /**

@@ -40,6 +40,7 @@
 #include <math.h>
 #include <time.h>
 #include <glob.h>
+#include <locale.h>
 
 #include <fcntl.h>
 #include <signal.h>
@@ -94,6 +95,7 @@
 #include "data_parser.hh"
 #include "xterm_mouse.hh"
 #include "lnav_commands.hh"
+#include "column_namer.hh"
 
 using namespace std;
 
@@ -117,6 +119,7 @@ static struct hist_level HIST_ZOOM_VALUES[] = {
 static const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) / sizeof(struct hist_level);
 
 static bookmark_type_t BM_EXAMPLE;
+static bookmark_type_t BM_QUERY;
 
 /**
  * Check if an experimental feature should be enabled by
@@ -167,6 +170,385 @@ string dotlnav_path(const char *sub)
 void sqlite_close_wrapper(void *mem)
 {
     sqlite3_close((sqlite3*)mem);
+}
+
+class field_overlay_source : public list_overlay_source {
+public:
+	field_overlay_source() :
+	    fos_active(false),
+	    fos_active_prev(false),
+	    fos_scanner(NULL),
+	    fos_parser(NULL),
+	    fos_namer(NULL) { };
+
+	~field_overlay_source() {
+		if (this->fos_scanner) {
+			delete this->fos_scanner;
+		}
+		if (this->fos_parser) {
+			delete this->fos_parser;
+		}
+		if (this->fos_namer) {
+			delete this->fos_namer;
+		}
+	};
+
+	size_t list_overlay_count(const listview_curses &lv) {
+		logfile_sub_source &lss = lnav_data.ld_log_source;
+
+		if (!this->fos_active)
+			return 0;
+
+		if (lss.text_line_count() == 0)
+			return 0;
+
+		content_line_t cl = lss.at(lv.get_top());
+		logfile *lf = lss.find(cl);
+		std::string line = lf->read_line(lf->begin() + cl);
+		struct line_range body;
+		string_attrs_t sa;
+
+		this->fos_line_values.clear();
+		this->fos_key_size = 0;
+
+		lf->get_format()->annotate(line, sa, this->fos_line_values);
+
+		for (std::vector<logline_value>::iterator iter = this->fos_line_values.begin();
+		     iter != this->fos_line_values.end();
+		     ++iter) {
+			this->fos_key_size = max(this->fos_key_size,
+			                         (int)iter->lv_name.length());
+		}
+
+		body = find_string_attr_range(sa, "body");
+		if (body.lr_end != -1) {
+			line = line.substr(body.lr_start);
+		}
+
+		if (this->fos_parser) {
+			delete this->fos_parser;
+			delete this->fos_scanner;
+			delete this->fos_namer;
+		}
+
+		this->fos_scanner = new data_scanner(line);
+		this->fos_parser = new data_parser(this->fos_scanner);
+		this->fos_parser->parse();
+		this->fos_namer = new column_namer();
+
+		for (data_parser::element_list_t::iterator iter = this->fos_parser->dp_pairs.begin();
+		     iter != this->fos_parser->dp_pairs.end();
+		     ++iter) {
+			std::string colname = this->fos_parser->get_element_string(iter->e_sub_elements->front());
+
+		        colname = this->fos_namer->add_column(colname);
+			this->fos_key_size = max(this->fos_key_size,
+			                         (int)colname.length());
+		}
+
+		return (1 +
+		        this->fos_line_values.size() +
+		        1 +
+		        this->fos_parser->dp_pairs.size());
+	};
+
+	bool list_value_for_overlay(const listview_curses &lv,
+	                            vis_line_t y,
+	                            attr_line_t &value_out) {
+		if (!this->fos_active || this->fos_parser == NULL)
+			return false;
+
+		size_t total_count = (1 +
+		                      this->fos_line_values.size() +
+		                      1 +
+		                      this->fos_parser->dp_pairs.size());
+		int row = (int)y - 1;
+		bool last_line = (row == (int)(total_count - 1));
+
+		if (row < 0 || row >= (int)total_count)
+			return false;
+
+		std::string &str = value_out.get_string();
+
+		if (row == 0) {
+			if (this->fos_line_values.empty())
+				str = " No known message fields";
+			else
+				str = " Known message fields:";
+			return true;
+		}
+		row -= 1;
+		if (row == this->fos_line_values.size()) {
+			if (this->fos_parser->dp_pairs.empty())
+				str = " No discovered message fields";
+			else
+				str = " Discovered message fields:";
+			return true;
+		}
+
+		if (row < (int)this->fos_line_values.size()) {
+			str = "   " + this->fos_line_values[row].lv_name;
+
+			int padding = this->fos_key_size - str.length() + 3;
+
+			str.append(padding, ' ');
+			str += " = " + this->fos_line_values[row].to_string();
+		}
+		else {
+			data_parser::element_list_t::iterator iter;
+
+			row -= this->fos_line_values.size() + 1;
+
+			iter = this->fos_parser->dp_pairs.begin();
+			std::advance(iter, row);
+
+			str = "   " + this->fos_namer->cn_names[row];
+			int padding = this->fos_key_size - str.length() + 3;
+
+			str.append(padding, ' ');
+			str += " = " + this->fos_parser->get_element_string(iter->e_sub_elements->back());
+		}
+
+		string_attrs_t &sa = value_out.get_attrs();
+		struct line_range lr = { 1, 2 };
+		sa[lr].insert(make_string_attr("graphic",
+		              last_line ? ACS_LLCORNER : ACS_LTEE));
+
+		lr.lr_start = 3 + this->fos_key_size + 3;
+		lr.lr_end = -1;
+		sa[lr].insert(make_string_attr("style", A_BOLD));
+
+		return true;
+	};
+
+	bool fos_active;
+	bool fos_active_prev;
+	data_scanner *fos_scanner;
+	data_parser *fos_parser;
+	column_namer *fos_namer;
+	std::vector<logline_value> fos_line_values;
+	int fos_key_size;
+};
+
+typedef std::map<string, std::vector<string> > db_table_map_t;
+
+class db_metadata
+{
+public:
+	db_metadata() { };
+
+	db_table_map_t dm_db_list;
+};
+
+static int handle_collation_list(void *ptr,
+                                 int ncols,
+                                 char **colvalues,
+                                 char **colnames)
+{
+	lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
+
+	return 0;
+}
+
+static int handle_db_list(void *ptr,
+                          int ncols,
+                          char **colvalues,
+                          char **colnames)
+{
+	db_metadata *dbm = (db_metadata *)ptr;
+
+	dbm->dm_db_list[colvalues[1]] = std::vector<string>();
+
+	lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
+
+	return 0;
+}
+
+static int handle_table_list(void *ptr,
+                             int ncols,
+                             char **colvalues,
+                             char **colnames)
+{
+	std::map<string, std::vector<string> >::iterator iter = *(std::map<string, std::vector<string> >::iterator *)ptr;
+
+	lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[0]);
+	iter->second.push_back(colvalues[0]);
+
+	return 0;
+}
+
+static int handle_table_info(void *ptr,
+                             int ncols,
+                             char **colvalues,
+                             char **colnames)
+{
+	// string &table_name = *((string *)ptr);
+
+	lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
+	if (strcmp(colvalues[5], "1") == 0) {
+		lnav_data.ld_db_key_names.push_back(colvalues[1]);
+	}
+	return 0;
+}
+
+static int handle_foreign_key_list(void *ptr,
+                                   int ncols,
+                                   char **colvalues,
+                                   char **colnames)
+{
+	lnav_data.ld_db_key_names.push_back(colvalues[3]);
+	lnav_data.ld_db_key_names.push_back(colvalues[4]);
+	return 0;
+}
+
+static void walk_sqlite_metadata(sqlite3 *db)
+{
+	db_metadata dbm;
+
+	lnav_data.ld_db_key_names.clear();
+	lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
+
+	{
+	    const char *sql_commands[] = {
+		"ADD",
+		"ALL",
+		"ALTER",
+		"ANALYZE",
+		"AND",
+		"ASC",
+		"ATTACH",
+		"BEGIN",
+		"BETWEEN",
+		"CASE",
+		"CAST",
+		"COLLATE",
+		"COLUMN",
+		"COMMIT",
+		"CONFLICT",
+		"CREATE",
+		"CROSS",
+		"DATABASE",
+		"DELETE",
+		"DESC",
+		"DETACH",
+		"DISTINCT",
+		"DROP",
+		"ELSE",
+		"END",
+		"ESCAPE",
+		"EXCEPT",
+		"EXISTS",
+		"EXPLAIN",
+		"FROM",
+		"GLOB",
+		"GROUP",
+		"HAVING",
+		"IN",
+		"INDEX",
+		"INDEXED",
+		"INNER",
+		"INSERT",
+		"INTERSECT",
+		"ISNULL",
+		"JOIN",
+		"LEFT",
+		"LIKE",
+		"LIMIT",
+		"MATCH",
+		"NATURAL",
+		"NOT",
+		"NOTNULL",
+		"NULL",
+		"OFFSET",
+		"OR",
+		"ORDER",
+		"OUTER",
+		"PRAGMA",
+		"REGEXP",
+		"REINDEX",
+		"RENAME",
+		"REPLACE",
+		"ROLLBACK",
+		"SELECT",
+		"TABLE",
+		"THEN",
+		"TRANSACTION",
+		"TRIGGER",
+		"UNION",
+		"UNIQUE",
+		"UPDATE",
+		"USING",
+		"VACUUM",
+		"VIEW",
+		"WHERE",
+		"WHEN",
+
+		"logline",
+
+		NULL
+	    };
+
+	    for (int lpc = 0; sql_commands[lpc]; lpc++) {
+		lnav_data.ld_rl_view->
+		    add_possibility(LNM_SQL, "*", sql_commands[lpc]);
+	    }
+	}
+
+	sqlite3_exec(db,
+	             "pragma collation_list",
+	             handle_collation_list,
+	             NULL,
+	             NULL);
+
+	sqlite3_exec(db,
+	             "pragma database_list",
+	             handle_db_list,
+	             &dbm,
+	             NULL);
+
+	for (db_table_map_t::iterator iter = dbm.dm_db_list.begin();
+	     iter != dbm.dm_db_list.end();
+	     ++iter) {
+	     	auto_mem<char, sqlite3_free> query;
+
+	        query = sqlite3_mprintf("SELECT name FROM %Q.sqlite_master "
+	                                "WHERE type='table'",
+	                                iter->first.c_str());
+
+	     	sqlite3_exec(db, query, handle_table_list, &iter, NULL);
+
+	     	for (std::vector<string>::iterator table_iter = iter->second.begin();
+	     	     table_iter != iter->second.end();
+	     	     ++table_iter) {
+	     	     	auto_mem<char, sqlite3_free> table_query;
+	     	        string &table_name = *table_iter;
+
+	     	        table_query = sqlite3_mprintf(
+	     	                "pragma %Q.table_info(%Q)",
+	     	                iter->first.c_str(),
+	     	                table_name.c_str());
+
+	     	        sqlite3_exec(db,
+	     	                     table_query,
+	     	                     handle_table_info,
+	     	                     &table_name,
+	     	                     NULL);
+
+	     	        table_query = sqlite3_mprintf(
+	     	                "pragma %Q.foreign_key_list(%Q)",
+	     	                iter->first.c_str(),
+	     	                table_name.c_str());
+
+	     	        sqlite3_exec(db,
+	     	                     table_query,
+	     	                     handle_foreign_key_list,
+	     	                     &table_name,
+	     	                     NULL);
+	     	}
+	}
+
+	stable_sort(lnav_data.ld_db_key_names.begin(),
+	            lnav_data.ld_db_key_names.end());
 }
 
 /**
@@ -223,6 +605,135 @@ private:
 
     off_t          lo_last_offset;
     content_line_t lo_last_line;
+};
+
+class log_data_table : public log_vtab_impl {
+public:
+
+    log_data_table(content_line_t template_line)
+	: log_vtab_impl("logline"),
+	  ldt_template_line(template_line) {
+    };
+
+    void get_columns(vector<vtab_column> &cols) {
+    	content_line_t cl_copy = this->ldt_template_line;
+    	logfile *lf = lnav_data.ld_log_source.find(cl_copy);
+    	std::string val = lf->read_line(lf->begin() + cl_copy);
+    	struct line_range body;
+    	string_attrs_t sa;
+    	std::vector<logline_value> line_values;
+
+    	lf->get_format()->annotate(val, sa, line_values);
+    	body = find_string_attr_range(sa, "body");
+    	if (body.lr_end != -1) {
+    		val = val.substr(body.lr_start);
+    	}
+    	data_scanner ds(val);
+    	data_parser dp(&ds);
+    	column_namer cn;
+
+    	dp.parse();
+
+    	for (data_parser::element_list_t::iterator pair_iter = dp.dp_pairs.begin();
+    	     pair_iter != dp.dp_pairs.end();
+    	     ++pair_iter) {
+    		std::string key_str = dp.get_element_string(pair_iter->e_sub_elements->front());
+    	        std::string colname = cn.add_column(key_str);
+    	        int sql_type = SQLITE3_TEXT;
+    	        const char *collator = NULL;
+    	        char *name;
+
+    		/* XXX LEAK */
+    		name = strdup(colname.c_str());
+    		fprintf(stderr, "name: %s\n", name);
+    		switch (pair_iter->e_sub_elements->back().e_token) {
+    		case DT_IPV4_ADDRESS:
+    			case DT_IPV6_ADDRESS:
+    			collator = "ipaddress";
+    			break;
+    		case DT_NUMBER:
+    			sql_type = SQLITE_FLOAT;
+    			break;
+    		default:
+    		        collator = "naturalnocase";
+    		        break;
+    		}
+    		cols.push_back(vtab_column(name, sql_type, collator));
+    	}
+    	this->ldt_schema_id = dp.dp_schema_id;
+	// cols.push_back(vtab_column("value", "text"));
+    };
+
+    bool next(log_cursor &lc, logfile_sub_source &lss) {
+    	lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
+	lc.lc_sub_index = 0;
+
+	if (lc.lc_curr_line == (int)lss.text_line_count())
+	    return true;
+
+	std::string line;
+	content_line_t cl;
+	string_attrs_t sa;
+	struct line_range body;
+	std::vector<logline_value> line_values;
+
+	cl = lss.at(lc.lc_curr_line);
+	logfile *lf = lss.find(cl);
+	logfile::iterator lf_iter = lf->begin() + cl;
+
+	if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
+		return false;
+	}
+
+	lf->read_line(lf_iter, line);
+    	lf->get_format()->annotate(line, sa, line_values);
+    	body = find_string_attr_range(sa, "body");
+    	if (body.lr_end == -1) {
+    		return false;
+    	}
+
+    	line = line.substr(body.lr_start);
+    	if (line.empty())
+    		return false;
+
+    	data_scanner ds(line);
+    	data_parser dp(&ds);
+    	dp.parse();
+    	if (dp.dp_schema_id != this->ldt_schema_id)
+    		return false;
+	
+	return true;
+    };
+
+    void extract(logfile *lf,
+                 const std::string &line,
+                 std::vector<logline_value> &values) {
+    	std::vector<logline_value> std_values;
+	struct line_range body;
+	string_attrs_t sa;
+
+    	lf->get_format()->annotate(line, sa, std_values);
+    	body = find_string_attr_range(sa, "body");
+    	string sub = line.substr(body.lr_start);
+
+    	data_scanner ds(sub);
+    	data_parser dp(&ds);
+
+    	dp.parse();
+
+    	for (data_parser::element_list_t::iterator pair_iter = dp.dp_pairs.begin();
+    	     pair_iter != dp.dp_pairs.end();
+    	     ++pair_iter) {
+    	    std::string tmp = dp.get_element_string(pair_iter->e_sub_elements->back());
+
+    	    values.push_back(logline_value("", tmp));
+    	}
+    };
+
+private:
+    int ldt_column;
+    const content_line_t ldt_template_line;
+    data_parser::schema_id_t ldt_schema_id;
 };
 
 static void rebuild_hist(size_t old_count, bool force)
@@ -583,7 +1094,7 @@ static void change_text_file(void)
  * 
  * @param expected_tc The text view that should be on top.
  */
-static void ensure_view(textview_curses *expected_tc)
+void ensure_view(textview_curses *expected_tc)
 {
     textview_curses *tc    = lnav_data.ld_view_stack.top();
 
@@ -756,6 +1267,14 @@ static void handle_paging_key(int ch)
 
     case 'N':
 	tc->set_top(bm[&textview_curses::BM_SEARCH].prev(tc->get_top()));
+	break;
+
+    case 'y':
+	tc->set_top(bm[&BM_QUERY].next(tc->get_top()));
+	break;
+
+    case 'Y':
+	tc->set_top(bm[&BM_QUERY].prev(tc->get_top()));
 	break;
 
     case '>':
@@ -1056,9 +1575,43 @@ static void handle_paging_key(int ch)
 	break;
 
     case ';':
-	lnav_data.ld_mode = LNM_SQL;
-	lnav_data.ld_rl_view->focus(LNM_SQL, ";");
+        if (tc == &lnav_data.ld_views[LNV_LOG] ||
+            tc == &lnav_data.ld_views[LNV_DB]) {
+            	textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+
+        	lnav_data.ld_mode = LNM_SQL;
+        	walk_sqlite_metadata(lnav_data.ld_db.in());
+        	lnav_data.ld_rl_view->focus(LNM_SQL, ";");
+
+        	if (log_view.get_inner_height()) {
+        		vis_line_t vl = log_view.get_top();
+        		content_line_t cl = lnav_data.ld_log_source.at(vl);
+
+        		lnav_data.ld_vtab_manager->unregister_vtab("logline");
+        		lnav_data.ld_vtab_manager->register_vtab(new log_data_table(cl));
+        	}
+
+        	lnav_data.ld_bottom_source.update_loading(0, 0);
+		lnav_data.ld_status[LNS_BOTTOM].do_update();
+
+		field_overlay_source *fos;
+
+		fos = (field_overlay_source *)log_view.get_overlay_source();
+		fos->fos_active_prev = fos->fos_active;
+		if (!fos->fos_active) {
+			fos->fos_active = true;
+			tc->reload_data();
+		}
+	}
 	break;
+
+    case 'p':
+        field_overlay_source *fos;
+
+        fos = (field_overlay_source *)lnav_data.ld_views[LNV_LOG].get_overlay_source();
+        fos->fos_active = !fos->fos_active;
+        tc->reload_data();
+        break;
 
     case 't':
 	toggle_view(&lnav_data.ld_views[LNV_TEXT]);
@@ -1261,13 +1814,12 @@ static void execute_file(string path)
     }
 }
 
-static int sql_callback(void *arg,
-			int ncols,
-			char **values,
-			char **colnames)
+static int sql_callback(sqlite3_stmt *stmt)
 {
+    logfile_sub_source &lss = lnav_data.ld_log_source;
     db_label_source &dls = lnav_data.ld_db_rows;
     hist_source &hs = lnav_data.ld_db_source;
+    int ncols = sqlite3_column_count(stmt);
     int row_number;
     int lpc, retval = 0;
 
@@ -1275,19 +1827,45 @@ static int sql_callback(void *arg,
     dls.dls_rows.resize(row_number + 1);
     if (dls.dls_headers.empty()) {
 	for (lpc = 0; lpc < ncols; lpc++) {
-	    dls.push_header(colnames[lpc]);
-	    hs.set_role_for_type(bucket_type_t(lpc),
-				 view_colors::singleton().
-				 next_highlight());
-	}
+            int type = sqlite3_column_type(stmt, lpc);
+            string colname = sqlite3_column_name(stmt, lpc);
+            bool graphable;
+
+            graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT) &&
+                         colname != "line_number" &&
+                         !binary_search(lnav_data.ld_db_key_names.begin(),
+                                        lnav_data.ld_db_key_names.end(),
+                                        colname));
+
+	    dls.push_header(colname, type, graphable);
+            if (graphable) {
+                   hs.set_role_for_type(bucket_type_t(lpc),
+                                        view_colors::singleton().
+                                        next_plain_highlight());
+           }
+        }
     }
     for (lpc = 0; lpc < ncols; lpc++) {
+    	const char *value = (const char  *)sqlite3_column_text(stmt, lpc);
 	double num_value = 0.0;
 
-	dls.push_column(values[lpc]);
-	if (strcmp(colnames[lpc], "line_number") != 0)
-	    sscanf(values[lpc], "%lf", &num_value);
-	hs.add_value(row_number, bucket_type_t(lpc), num_value);
+	if (value == NULL)
+		value = "<NULL>";
+	dls.push_column(value);
+	if (dls.dls_headers[lpc] == "line_number") {
+		int line_number = -1;
+
+		if (sscanf(value, "%d", &line_number) == 1) {
+			lss.text_mark(&BM_QUERY, line_number, true);
+		}
+	}
+	if (dls.dls_headers_to_graph[lpc]) {
+	    sscanf(value, "%lf", &num_value);
+	    hs.add_value(row_number, bucket_type_t(lpc), num_value);
+        }
+        else {
+        	hs.add_empty_value(row_number);
+        }
     }
 
     return retval;
@@ -1317,15 +1895,14 @@ static void rl_search(void *dummy, readline_curses *rc)
 		grep_error("sql error: incomplete statement");
 	}
 	else {
-	    sqlite3_stmt *stmt;
-	    const char *tail;
+	    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 	    int retcode;
 
 	    retcode = sqlite3_prepare_v2(lnav_data.ld_db,
 					 rc->get_value().c_str(),
 					 -1,
-					 &stmt,
-					 &tail);
+					 stmt.out(),
+					 NULL);
 	    if (retcode != SQLITE_OK) {
 		const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
@@ -1432,29 +2009,74 @@ static void rl_callback(void *dummy, readline_curses *rc)
 	{
 	    db_label_source &dls = lnav_data.ld_db_rows;
 	    hist_source &hs = lnav_data.ld_db_source;
-	    auto_mem<char, sqlite3_free> errmsg;
+	    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+	    int retcode;
 
 	    lnav_data.ld_bottom_source.grep_error("");
 	    hs.clear();
             dls.clear();
-	    if (sqlite3_exec(lnav_data.ld_db,
-			     rc->get_value().c_str(),
-			     sql_callback,
-			     NULL,
-			     errmsg.out()) != SQLITE_OK) {
-		rc->set_value(errmsg.in());
+	    retcode = sqlite3_prepare_v2(lnav_data.ld_db,
+	                                 rc->get_value().c_str(),
+	                                 -1,
+	                                 stmt.out(),
+	                                 NULL);
+	    if (retcode != SQLITE_OK) {
+	    	const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+
+		rc->set_value(errmsg);
 	    }
-	    else {
-		rc->set_value("");
+	    else if (stmt == NULL) {
+                rc->set_value("");
+            }
+            else {
+	    	bool done = false;
 
-		hs.analyze();
-		lnav_data.ld_views[LNV_DB].reload_data();
-                lnav_data.ld_views[LNV_DB].set_left(0);
+	    	lnav_data.ld_log_source.text_clear_marks(&BM_QUERY);
+		while (!done) {
+			retcode = sqlite3_step(stmt.in());
 
-		if (dls.dls_rows.size() > 0) {
-		    ensure_view(&lnav_data.ld_views[LNV_DB]);
+			switch (retcode) {
+                        case SQLITE_OK:
+			case SQLITE_DONE:
+				done = true;
+				rc->set_value("");
+				break;
+			case SQLITE_ROW:
+			        sql_callback(stmt.in());
+				break;
+			default:
+				{
+					const char *errmsg;
+
+                                        fprintf(stderr, "code %d\n", retcode);
+					errmsg = sqlite3_errmsg(lnav_data.ld_db);
+					rc->set_value(errmsg);
+                                        done = true;
+				}
+				break;
+			}
 		}
+
+		if (retcode == SQLITE_DONE) {
+			hs.analyze();
+			lnav_data.ld_views[LNV_LOG].reload_data();
+			lnav_data.ld_views[LNV_DB].reload_data();
+			lnav_data.ld_views[LNV_DB].set_left(0);
+
+			if (dls.dls_rows.size() > 0) {
+				ensure_view(&lnav_data.ld_views[LNV_DB]);
+			}
+		}
+
+		lnav_data.ld_bottom_source.update_loading(0, 0);
+		lnav_data.ld_status[LNS_BOTTOM].do_update();
 	    }
+
+	    field_overlay_source *fos;
+
+	    fos = (field_overlay_source *)lnav_data.ld_views[LNV_LOG].get_overlay_source();
+	    fos->fos_active = fos->fos_active_prev;
+	    lnav_data.ld_views[LNV_LOG].reload_data();
 	}
 
 	lnav_data.ld_mode = LNM_PAGING;
@@ -1552,7 +2174,74 @@ static void update_times(void *, listview_curses *lv)
 	lnav_data.ld_bottom_time = hs.value_for_row(lv->get_bottom());
     }
 }
- 
+
+enum file_format_t {
+	FF_UNKNOWN,
+	FF_SQLITE_DB,
+};
+
+file_format_t detect_file_format(const string &filename)
+{
+	file_format_t retval = FF_UNKNOWN;
+	int fd;
+
+	if ((fd = open(filename.c_str(), O_RDONLY)) != -1) {
+		char buffer[32];
+		int rc;
+
+		if ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+			if (rc > 16 &&
+			    strncmp(buffer, "SQLite format 3", 16) == 0) {
+				retval = FF_SQLITE_DB;
+			}
+		}
+	}
+
+
+	return retval;
+}
+
+void attach_sqlite_db(const string &filename)
+{
+	static pcrecpp::RE db_name_converter("[^\\w]");
+
+	auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+
+	if (sqlite3_prepare_v2(lnav_data.ld_db.in(),
+	                       "ATTACH DATABASE ? as ?",
+	                       -1,
+	                       stmt.out(),
+	                       NULL) != SQLITE_OK) {
+		return;
+	}
+
+	if (sqlite3_bind_text(stmt.in(), 1,
+	                      filename.c_str(), filename.length(),
+	                      SQLITE_TRANSIENT) != SQLITE_OK) {
+		return;
+	}
+
+	size_t base_start = filename.find_last_of("/\\");
+	string db_name;
+
+	if (base_start == string::npos) {
+		db_name = filename;
+	}
+	else {
+		db_name = filename.substr(base_start + 1);
+	}
+
+	db_name_converter.GlobalReplace("_", &db_name);
+
+	if (sqlite3_bind_text(stmt.in(), 2,
+	                      db_name.c_str(), db_name.length(),
+	                      SQLITE_TRANSIENT) != SQLITE_OK) {
+		return;
+	}
+
+	sqlite3_step(stmt.in());
+}
+
 /**
  * Functor used to compare files based on their device and inode number.
  */
@@ -1618,11 +2307,25 @@ static void watch_logfile(string filename, int fd, bool required)
 			same_file(st));
 
     if (file_iter == lnav_data.ld_files.end()) {
-        /* It's a new file, load it in. */
-	logfile *lf = new logfile(filename, fd);
+    	if (find(lnav_data.ld_other_files.begin(),
+    	         lnav_data.ld_other_files.end(),
+    	         filename) == lnav_data.ld_other_files.end()) {
+    		file_format_t ff = detect_file_format(filename);
 
-	lnav_data.ld_files.push_back(lf);
-	lnav_data.ld_text_source.tss_files.push_back(lf);
+    	        switch (ff) {
+    	        case FF_SQLITE_DB:
+    	                lnav_data.ld_other_files.push_back(filename);
+    	                attach_sqlite_db(filename);
+    	        	break;
+    	        default:
+                        /* It's a new file, load it in. */
+    	        	logfile *lf = new logfile(filename, fd);
+
+    	        	lnav_data.ld_files.push_back(lf);
+    	        	lnav_data.ld_text_source.tss_files.push_back(lf);
+    	        	break;
+    	        }
+    	}
     }
     else {
         /* The file is already loaded, but has been found under a different 
@@ -1752,7 +2455,7 @@ public:
 		case xterm_mouse::XT_BUTTON1:
 			if (this->lb_selection_start == vis_line_t(-1) &&
 			    tc->get_inner_height() &&
-			    ((this->lb_scrollbar_y != -1) || (x >= (width - 2)))) {
+			    ((this->lb_scrollbar_y != -1) || (x >= (int)(width - 2)))) {
 				double top_pct, bot_pct, pct;
 				int scroll_top, scroll_bottom, shift_amount = 0, new_top = 0;
 
@@ -1883,7 +2586,7 @@ static void looper(void)
 
 	readline_context search_context("search");
 	readline_context index_context("capture");
-	readline_context sql_context("sql");
+	readline_context sql_context("sql", NULL, false);
 	textview_curses  *tc;
 	readline_curses  rlc;
 	int lpc;
@@ -1903,112 +2606,6 @@ static void looper(void)
 	add_possibility(LNM_COMMAND, "graph", "\\d+(?:\\.\\d+)?");
 	lnav_data.ld_rl_view->
 	add_possibility(LNM_COMMAND, "graph", "([:= \\t]\\d+(?:\\.\\d+)?)");
-
-	{
-	    const char *sql_commands[] = {
-		"add",
-		"all",
-		"alter",
-		"analyze",
-		"asc",
-		"attach",
-		"begin",
-		"collate",
-		"column",
-		"commit",
-		"conflict",
-		"create",
-		"cross",
-		"database",
-		"delete",
-		"desc",
-		"detach",
-		"distinct",
-		"drop",
-		"end",
-		"except",
-		"explain",
-		"from",
-		"group",
-		"having",
-		"idle_msecs",
-		"index",
-		"indexed",
-		"inner",
-		"insert",
-		"intersect",
-		"join",
-		"left",
-		"limit",
-		"natural",
-		"offset",
-		"order",
-		"outer",
-		"pragma",
-		"reindex",
-		"rename",
-		"replace",
-		"rollback",
-		"select",
-		"table",
-		"transaction",
-		"trigger",
-		"union",
-		"unique",
-		"update",
-		"using",
-		"vacuum",
-		"view",
-		"where",
-		"when",
-
-		// XXX do the following dynamically by reading sqlite_master
-
-		"access_log",
-		"syslog_log",
-		"generic_log",
-		"glog_log",
-		"strace_log",
-
-		"line_number",
-		"path",
-		"log_time",
-		"level",
-		"raw_line",
-
-		"c_ip",
-		"cs_username",
-		"cs_method",
-		"cs_uri_stem",
-		"cs_uri_query",
-		"cs_version",
-		"sc_status",
-		"sc_bytes",
-		"cs_referer",
-		"cs_user_agent",
-
-		"funcname",
-		"result",
-		"duration",
-		"arg0",
-		"arg1",
-		"arg2",
-		"arg3",
-		"arg4",
-		"arg5",
-		"arg6",
-		"arg7",
-		"arg8",
-		"arg9",
-
-		NULL
-	    };
-
-	    for (int lpc = 0; sql_commands[lpc]; lpc++) {
-		lnav_data.ld_rl_view->
-		    add_possibility(LNM_SQL, "*", sql_commands[lpc]);
-	    }
-	}
 
 	(void)signal(SIGINT, sigint);
 	(void)signal(SIGTERM, sigint);
@@ -2108,7 +2705,7 @@ static void looper(void)
 	    hist_source &hs = lnav_data.ld_db_source;
 
 	    hs.set_bucket_size(1);
-	    hs.set_group_size(100);
+	    hs.set_group_size(10);
 	    hs.set_label_source(&lnav_data.ld_db_rows);
 	}
 
@@ -2116,6 +2713,9 @@ static void looper(void)
 	FD_SET(STDIN_FILENO, &lnav_data.ld_read_fds);
 	lnav_data.ld_max_fd =
 	    max(STDIN_FILENO, rlc.update_fd_set(lnav_data.ld_read_fds));
+
+	lnav_data.ld_status[0].window_change();
+	lnav_data.ld_status[1].window_change();
 
 	execute_file(dotlnav_path("session"));
 
@@ -2241,6 +2841,8 @@ static void looper(void)
 		    resizeterm(size.ws_row, size.ws_col);
 		}
 		rlc.window_change();
+		lnav_data.ld_status[0].window_change();
+		lnav_data.ld_status[1].window_change();
 		lnav_data.ld_view_stack.top()->set_needs_update();
 		lnav_data.ld_winched = false;
 	    }
@@ -2255,233 +2857,83 @@ class access_log_table : public log_vtab_impl {
 public:
 
     access_log_table()
-	: log_vtab_impl("access_log"),
-	  alt_regex("([\\w\\.-]+) [\\w\\.-]+ ([\\w\\.-]+) "
-		    "\\[[^\\]]+\\] \"(\\w+) ([^ \\?]+)(\\?[^ ]+)? "
-		    "([\\w/\\.]+)\" (\\d+) "
-		    "(\\d+|-)(?: \"([^\"]+)\" \"([^\"]+)\")?.*") {
+       : log_vtab_impl("access_log") {
     };
 
     void get_columns(vector<vtab_column> &cols) {
-	cols.push_back(vtab_column("c_ip", "text"));
-	cols.push_back(vtab_column("cs_username", "text"));
-	cols.push_back(vtab_column("cs_method", "text"));
-	cols.push_back(vtab_column("cs_uri_stem", "text"));
-	cols.push_back(vtab_column("cs_uri_query", "text"));
-	cols.push_back(vtab_column("cs_version", "text"));
-	cols.push_back(vtab_column("sc_status", "text"));
-	cols.push_back(vtab_column("sc_bytes", "int"));
-	cols.push_back(vtab_column("cs_referer", "text"));
-	cols.push_back(vtab_column("cs_user_agent", "text"));
+       cols.push_back(vtab_column("c_ip", SQLITE3_TEXT, "ipaddress"));
+       cols.push_back(vtab_column("cs_username", SQLITE3_TEXT));
+       cols.push_back(vtab_column("cs_method", SQLITE3_TEXT));
+       cols.push_back(vtab_column("cs_uri_stem", SQLITE3_TEXT));
+       cols.push_back(vtab_column("cs_uri_query", SQLITE3_TEXT));
+       cols.push_back(vtab_column("cs_version", SQLITE3_TEXT));
+       cols.push_back(vtab_column("sc_status", SQLITE_INTEGER));
+       cols.push_back(vtab_column("sc_bytes", SQLITE_INTEGER));
+       cols.push_back(vtab_column("cs_referer", SQLITE3_TEXT));
+       cols.push_back(vtab_column("cs_user_agent", SQLITE3_TEXT));
     };
 
-    void extract(const std::string &line,
-		 int column,
-		 sqlite3_context *ctx) {
-	string c_ip, cs_username, cs_method, cs_uri_stem, cs_uri_query;
-	string cs_version, sc_status, cs_referer, cs_user_agent;
-	string sc_bytes;
+};
 
-	if (!this->alt_regex.FullMatch(line,
-				       &c_ip,
-				       &cs_username,
-				       &cs_method,
-				       &cs_uri_stem,
-				       &cs_uri_query,
-				       &cs_version,
-				       &sc_status,
-				       &sc_bytes,
-				       &cs_referer,
-				       &cs_user_agent)) {
-	    fprintf(stderr, "bad match! %d %s\n", column, line.c_str());
-	}
-	switch (column) {
-	case 0:
-	    sqlite3_result_text(ctx,
-				c_ip.c_str(),
-				c_ip.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 1:
-	    sqlite3_result_text(ctx,
-				cs_username.c_str(),
-				cs_username.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 2:
-	    sqlite3_result_text(ctx,
-				cs_method.c_str(),
-				cs_method.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 3:
-	    sqlite3_result_text(ctx,
-				cs_uri_stem.c_str(),
-				cs_uri_stem.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 4:
-	    sqlite3_result_text(ctx,
-				cs_uri_query.c_str(),
-				cs_uri_query.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 5:
-	    sqlite3_result_text(ctx,
-				cs_version.c_str(),
-				cs_version.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 6:
-	    sqlite3_result_text(ctx,
-				sc_status.c_str(),
-				sc_status.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 7:
-	    {
-		int sc_bytes_int = 0;
+class syslog_log_table : public log_vtab_impl {
+public:
 
-		sscanf(sc_bytes.c_str(), "%d", &sc_bytes_int);
-		sqlite3_result_int64(ctx, sc_bytes_int);
-	    }
-	    break;
-	case 8:
-	    sqlite3_result_text(ctx,
-				cs_referer.c_str(),
-				cs_referer.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 9:
-	    sqlite3_result_text(ctx,
-				cs_user_agent.c_str(),
-				cs_user_agent.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	}
+    syslog_log_table()
+       : log_vtab_impl("syslog_log") {
     };
 
-private:
-    pcrecpp::RE alt_regex;
+    void get_columns(vector<vtab_column> &cols) {
+       cols.push_back(vtab_column("log_hostname", SQLITE3_TEXT));
+       cols.push_back(vtab_column("log_pid", SQLITE3_TEXT));
+    };
+
 };
 
 class glog_log_table : public log_vtab_impl {
 public:
     
     glog_log_table()
-	: log_vtab_impl("glog_log"),
-	  slt_regex(
-		"\\s*(?:[IWECF])([0-9]*) ([0-9:.]*)" // level, date
-		"\\s*([0-9]*)" // thread
-		"\\s*(.*):(\\d*)\\]" // filename:number
-		"\\s*(.*)"
-		    ) {
+	: log_vtab_impl("glog_log") {
     };
     
     void get_columns(vector<vtab_column> &cols) {
-	cols.push_back(vtab_column("timestamp", "text"));
-	cols.push_back(vtab_column("thread", "text"));
-	cols.push_back(vtab_column("src_file", "text"));
-	cols.push_back(vtab_column("src_line", "int"));
-	cols.push_back(vtab_column("message", "text"));
+	cols.push_back(vtab_column("micros", SQLITE_INTEGER));
+	cols.push_back(vtab_column("thread", SQLITE3_TEXT));
+	cols.push_back(vtab_column("src_file", SQLITE3_TEXT));
+	cols.push_back(vtab_column("src_line", SQLITE_INTEGER));
+	cols.push_back(vtab_column("message", SQLITE3_TEXT));
     };
-
-    void extract(const std::string &line,
-		 int column,
-		 sqlite3_context *ctx) {
-	string date, time, thread, file, src_line, message = "0";
-	
-	if (!this->slt_regex.FullMatch(line,
-		&date,
-		&time,
-		&thread,
-		&file,
-		&src_line,
-		&message
-		)) {
-	    fprintf(stderr, "bad match! %s\n", line.c_str());
-	}
-	struct tm log_time;
-	time_t now = ::time(NULL);
-	stringstream timestamp;
-	char buf[128];
-	switch (column) {
-	case 0:
-	    localtime_r(&now, &log_time); // need year data
-	    strptime(date.data(), "%m%d", &log_time);
-	    strftime(buf, sizeof(buf), "%Y-%m-%d", &log_time);
-	    // C++11 can do this much more nicely:
-	    //timestamp << std::put_time(&log_time, "%Y-%m-%d ");
-	    timestamp
-	       << buf
-	       << " "
-	       << time;
-	    sqlite3_result_text(ctx,
-				timestamp.str().c_str(),
-				timestamp.str().length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 1:
-	    sqlite3_result_text(ctx,
-				thread.c_str(),
-				thread.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 2:
-	    sqlite3_result_text(ctx,
-				file.c_str(),
-				file.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 3:
-	    sqlite3_result_text(ctx,
-				src_line.c_str(),
-				src_line.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 4:
-	    sqlite3_result_text(ctx,
-				message.c_str(),
-				message.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	default:
-	    fprintf(stderr, "bad match! %s\n", line.c_str());
-	    break;
-	}
-    };
-
-private:
-    pcrecpp::RE slt_regex;
 };
 
 class strace_log_table : public log_vtab_impl {
 public:
 
     strace_log_table()
-	: log_vtab_impl("strace_log"),
-	  slt_regex("[0-9:.]* ([a-zA-Z_][a-zA-Z_0-9]*)\\("
-		    "(.*)\\)"
-		    "\\s+= ([-xa-fA-F\\d\\?]+).*(?:<(\\d+\\.\\d+)>)?") {
+	: log_vtab_impl("strace_log") {
     };
 
     void get_columns(vector<vtab_column> &cols) {
-	cols.push_back(vtab_column("funcname", "text"));
-	cols.push_back(vtab_column("result", "text"));
-	cols.push_back(vtab_column("duration", "text"));
-	cols.push_back(vtab_column("arg0", "text"));
-	cols.push_back(vtab_column("arg1", "text"));
-	cols.push_back(vtab_column("arg2", "text"));
-	cols.push_back(vtab_column("arg3", "text"));
-	cols.push_back(vtab_column("arg4", "text"));
-	cols.push_back(vtab_column("arg5", "text"));
-	cols.push_back(vtab_column("arg6", "text"));
-	cols.push_back(vtab_column("arg7", "text"));
-	cols.push_back(vtab_column("arg8", "text"));
-	cols.push_back(vtab_column("arg9", "text"));
+	cols.push_back(vtab_column("funcname", SQLITE_TEXT));
+	cols.push_back(vtab_column("args", SQLITE_TEXT));
+	cols.push_back(vtab_column("result", SQLITE_TEXT));
+	cols.push_back(vtab_column("duration", SQLITE_TEXT));
+#if 0
+	cols.push_back(vtab_column("arg0", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg1", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg2", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg3", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg4", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg5", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg6", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg7", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg8", SQLITE_TEXT));
+	cols.push_back(vtab_column("arg9", SQLITE_TEXT));
+#endif
     };
 
-    void extract(const std::string &line,
+#if 0
+    void extract(logfile *lf,
+                 const std::string &line,
 		 int column,
 		 sqlite3_context *ctx) {
 	string function, args, result, duration = "0";
@@ -2581,138 +3033,7 @@ public:
 
 private:
     pcrecpp::RE slt_regex;
-};
-
-class log_data_table : public log_vtab_impl {
-public:
-
-    log_data_table()
-	: log_vtab_impl("log_data") {
-	this->ldt_pair_iter = this->ldt_pairs.end();
-    };
-
-    void get_columns(vector<vtab_column> &cols) {
-	cols.push_back(vtab_column("qualifier", "text"));
-	cols.push_back(vtab_column("key", "text"));
-	cols.push_back(vtab_column("subindex", "int"));
-	cols.push_back(vtab_column("value", "text"));
-    };
-
-    bool next(log_cursor &lc, logfile_sub_source &lss) {
-	fprintf(stderr, "next %d\n", (int)lc.lc_curr_line);
-	if (this->ldt_pair_iter == this->ldt_pairs.end()) {
-	    fprintf(stderr, "try %d\n", (int)lc.lc_curr_line);
-	    log_vtab_impl::next(lc, lss);
-	    this->ldt_pairs.clear();
-
-	    fprintf(stderr, "esc %d\n", (int)lc.lc_curr_line);
-	    if (lc.lc_curr_line < (int)lss.text_line_count()) {
-		content_line_t cl(lss.at(lc.lc_curr_line));
-		logfile *lf = lss.find(cl);
-		logfile::iterator line_iter;
-		string line;
-
-		line_iter = lf->begin() + cl;
-		lf->read_line(line_iter, line);
-
-		data_scanner ds(line);
-		data_parser dp(&ds);
-
-		dp.parse();
-
-		fprintf(stderr, "got %zd\n", dp.dp_stack.size());
-		while (!dp.dp_stack.empty()) {
-		    fprintf(stderr, "got %d\n", dp.dp_stack.front().e_token);
-		    if (dp.dp_stack.front().e_token == DNT_PAIR) {
-			this->ldt_pairs.splice(this->ldt_pairs.end(),
-					       dp.dp_stack,
-					       dp.dp_stack.begin());
-		    }
-		    else {
-			dp.dp_stack.pop_front();
-		    }
-		}
-
-		if (!this->ldt_pairs.empty()) {
-		    this->ldt_pair_iter = this->ldt_pairs.begin();
-		    this->ldt_column = 0;
-		    this->ldt_row_iter =
-			this->ldt_pair_iter->e_sub_elements->back().e_sub_elements->begin();
-		    return true;
-		}
-	    }
-	    else {
-		fprintf(stderr, "EOF %d %zd\n",
-			(int)lc.lc_curr_line,
-			lss.text_line_count());
-		return true;
-	    }
-
-	    return false;
-	}
-	else {
-	    fprintf(stderr, "else %d\n", (int)lc.lc_curr_line);
-	    ++(this->ldt_row_iter);
-	    this->ldt_column += 1;
-	    if (this->ldt_row_iter == this->ldt_pair_iter->e_sub_elements->back().e_sub_elements->end()) {
-		++(this->ldt_pair_iter);
-		if (this->ldt_pair_iter != this->ldt_pairs.end()) {
-		    this->ldt_row_iter = this->ldt_pair_iter->e_sub_elements->back().e_sub_elements->begin();
-		    this->ldt_column = 0;
-
-		    lc.lc_sub_index += 1;
-		    return true;
-		}
-		return false;
-	    }
-	    if (this->ldt_pair_iter == this->ldt_pairs.end()) {
-		return false;
-	    }
-
-	    lc.lc_sub_index += 1;
-
-	    return true;
-	}
-    };
-
-    void extract(const std::string &line,
-		 int column,
-		 sqlite3_context *ctx) {
-	pcre_context::capture_t cap;
-
-	fprintf(stderr, "col %d -- %s\n", column, line.c_str());
-	switch (column) {
-	case 0:
-	    sqlite3_result_text(ctx,
-				"",
-				0,
-				SQLITE_TRANSIENT);
-	    break;
-	case 1:
-	    cap = this->ldt_pair_iter->e_sub_elements->front().e_capture;
-	    sqlite3_result_text(ctx,
-				&(line.c_str()[cap.c_begin]),
-				cap.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	case 2:
-	    sqlite3_result_int64( ctx, this->ldt_column );
-	    break;
-	case 3:
-	    cap = this->ldt_row_iter->e_capture;
-	    sqlite3_result_text(ctx,
-				&(line.c_str()[cap.c_begin]),
-				cap.length(),
-				SQLITE_TRANSIENT);
-	    break;
-	}
-    };
-
-private:
-    std::list<data_parser::element> ldt_pairs;
-    std::list<data_parser::element>::iterator ldt_pair_iter;
-    std::list<data_parser::element>::iterator ldt_row_iter;
-    int ldt_column;
+#endif
 };
 
 void ensure_dotlnav(void)
@@ -2749,6 +3070,34 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
         highlighter(xpcre_compile("^\\@@ .*"), false, view_colors::VCR_DIFF_SECTION);
     hm["(ip"] = textview_curses::
         highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
+    hm["(cdef"] = textview_curses::
+       highlighter(xpcre_compile("^#\\s*(?:if|ifndef|ifdef|else|define|undef|endif)\\b"));
+}
+
+extern "C" {
+	int RegisterExtensionFunctions(sqlite3 *db);
+}
+
+int register_network_extension_functions(sqlite3 *db);
+
+int sql_progress(const struct log_cursor &lc)
+{
+	size_t total = lnav_data.ld_log_source.text_line_count();
+	off_t off = lc.lc_curr_line;
+
+	if (lnav_data.ld_window == NULL)
+		return 0;
+
+	if (!lnav_data.ld_looping)
+		return 1;
+
+	lnav_data.ld_bottom_source.update_loading(off, total);
+	lnav_data.ld_top_source.update_time();
+	lnav_data.ld_status[LNS_TOP].do_update();
+	lnav_data.ld_status[LNS_BOTTOM].do_update();
+	refresh();
+
+	return 0;
 }
 
 int main(int argc, char *argv[])
@@ -2756,6 +3105,8 @@ int main(int argc, char *argv[])
     int lpc, c, retval = EXIT_SUCCESS;
     auto_ptr<piper_proc> stdin_reader;
     const char *stdin_out = NULL;
+
+    setlocale(LC_NUMERIC, "");
 
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
@@ -2770,17 +3121,26 @@ int main(int argc, char *argv[])
 	exit(EXIT_FAILURE);
     }
 
+    {
+    	int register_collation_functions(sqlite3 *db);
+
+    	RegisterExtensionFunctions(lnav_data.ld_db.in());
+    	register_network_extension_functions(lnav_data.ld_db.in());
+    	register_collation_functions(lnav_data.ld_db.in());
+    }
+
     lnav_data.ld_program_name = argv[0];
 
     lnav_data.ld_vtab_manager =
-	new log_vtab_manager(lnav_data.ld_db, lnav_data.ld_log_source);
+	new log_vtab_manager(lnav_data.ld_db,
+	                     lnav_data.ld_log_source,
+	                     sql_progress);
 
-    lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("syslog_log"));
+    lnav_data.ld_vtab_manager->register_vtab(new syslog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
     lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
-    lnav_data.ld_vtab_manager->register_vtab(new log_data_table());
 
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));
@@ -2801,6 +3161,12 @@ int main(int argc, char *argv[])
     set_sub_source(&lnav_data.ld_graph_source);
     lnav_data.ld_views[LNV_DB].
     set_sub_source(&lnav_data.ld_db_source);
+    lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_rows;
+    lnav_data.ld_views[LNV_DB].
+    set_overlay_source(&lnav_data.ld_db_overlay);
+    lnav_data.ld_views[LNV_LOG].
+    set_overlay_source(new field_overlay_source());
+    lnav_data.ld_db_overlay.dos_hist_source = &lnav_data.ld_db_source;
 
     {
 	setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
@@ -2840,6 +3206,15 @@ int main(int argc, char *argv[])
         case 'w':
             stdin_out = optarg;
             break;
+
+	    /*
+	     * Add an option that will write stdin to a file with timestamps.
+	     * Maybe add two options, one to write to a file and one to add
+	     * timestamps.  If the file already exists, we should load in the
+	     * existing contents and append any new content to the file.
+	     * Timestamps should be added only at the beginning of a line and
+	     * only after a delay period.
+	     */
 
 	case 'V':
 	    printf("%s\n", PACKAGE_STRING);

@@ -41,11 +41,9 @@
 
 enum {
     VT_COL_LINE_NUMBER,
-    VT_COL_PATH,
     VT_COL_LOG_TIME,
     VT_COL_IDLE_MSECS,
     VT_COL_LEVEL,
-    VT_COL_RAW_LINE,
     VT_COL_MAX
 };
 
@@ -59,11 +57,12 @@ struct log_cursor {
 class log_vtab_impl {
 public:
     struct vtab_column {
-	vtab_column(const char *name, const char *type)
-	    : vc_name(name), vc_type(type) { };
+	vtab_column(const char *name, int type, const char *collator=NULL)
+	    : vc_name(name), vc_type(type), vc_collator(collator) { };
 	
 	const char *vc_name;
-	const char *vc_type;
+	int vc_type;
+	const char *vc_collator;
     };
     
     log_vtab_impl(const std::string name)
@@ -84,6 +83,11 @@ public:
 	
 	content_line_t cl(lss.at(lc.lc_curr_line));
 	logfile *lf = lss.find(cl);
+	logfile::iterator lf_iter = lf->begin() + cl;
+
+	if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
+		return false;
+	}
 
 	log_format *format = lf->get_format();
 	if (format != NULL && format->get_name() == this->vi_name)
@@ -94,22 +98,32 @@ public:
     
     virtual void get_columns(std::vector<vtab_column> &cols) { };
 
-    virtual void extract(const std::string &line,
-			 int column,
-			 sqlite3_context *ctx) {
+    virtual void extract(logfile *lf,
+                         const std::string &line,
+                         std::vector<logline_value> &values) {
+    	log_format *format = lf->get_format();
+    	string_attrs_t sa;
+
+    	format->annotate(line, sa, values);
     };
     
+    int vi_column_count;
 private:
     const std::string vi_name;
 };
 
+typedef int (*sql_progress_callback_t)(const log_cursor &lc);
+
 class log_vtab_manager {
 public:
-    log_vtab_manager(sqlite3 *db, logfile_sub_source &lss);
+    log_vtab_manager(sqlite3 *db,
+                     logfile_sub_source &lss,
+                     sql_progress_callback_t);
 
     logfile_sub_source *get_source() { return &this->vm_source; };
     
     void register_vtab(log_vtab_impl *vi);
+    void unregister_vtab(std::string name);
     log_vtab_impl *lookup_impl(std::string name) {
 	return this->vm_impls[name];
     };

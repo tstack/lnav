@@ -63,8 +63,11 @@ public:
 				     std::vector<std::string> &args);
     typedef std::map<std::string, command_t> command_map_t;
 
-    readline_context(const std::string &name, command_map_t *commands = NULL)
-	: rc_name(name)
+    readline_context(const std::string &name,
+                     command_map_t *commands = NULL,
+                     bool case_sensitive = true)
+	: rc_name(name),
+	  rc_case_sensitive(case_sensitive)
     {
 	char *home;
 	
@@ -97,6 +100,16 @@ public:
 
     void load(void)
     {
+    	char buffer[128];
+	/*
+	 * XXX Need to keep the input on a single line since the display screws
+	 * up if it wraps around.
+	 */
+	snprintf(buffer, sizeof(buffer),
+	         "set completion-ignore-case %s",
+	         this->rc_case_sensitive ? "off" : "on");
+	rl_parse_and_bind(buffer); // NOTE: buffer is modified
+
 	loaded_context = this;
 	rl_attempted_completion_function = attempted_completion;
 	history_set_history_state(&this->rc_history);
@@ -126,6 +139,15 @@ public:
 	this->rc_possibilities[type].erase(value);
     };
 
+    void clear_possibilities(std::string type)
+    {
+    	this->rc_possibilities[type].clear();
+    };
+
+    bool is_case_sensitive(void) const {
+    	return this->rc_case_sensitive;
+    };
+
 private:
     static char **attempted_completion(const char *text, int start, int end);
     static char *completion_generator(const char *text, int state);
@@ -137,6 +159,7 @@ private:
     HISTORY_STATE rc_history;
     std::map<std::string, std::set<std::string> >    rc_possibilities;
     std::map<std::string, std::vector<std::string> > rc_prototypes;
+    bool rc_case_sensitive;
 };
 
 /**
@@ -211,6 +234,7 @@ public:
 
     void add_possibility(int context, std::string type, std::string value);
     void rem_possibility(int context, std::string type, std::string value);
+    void clear_possibilities(int context, std::string type);
 
 private:
     enum {

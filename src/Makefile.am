@@ -23,7 +23,8 @@ LDADD = \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
-	-lpcrecpp
+	-lpcrecpp \
+	-lcrypto
 
 noinst_HEADERS = \
 	auto_fd.hh \
@@ -32,6 +33,7 @@ noinst_HEADERS = \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \
+	column_namer.hh \
 	data_scanner.hh \
 	data_parser.hh \
 	db_sub_source.hh \
@@ -55,6 +57,7 @@ noinst_HEADERS = \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	statusview_curses.hh \
+	strnatcmp.h \
 	strong_int.hh \
 	termios_guard.hh \
 	textfile_sub_source.hh \
@@ -69,6 +72,8 @@ noinst_HEADERS = \
 
 libdiag_a_SOURCES = \
 	bookmarks.cc \
+	collation-functions.cc \
+	extension-functions.c \
 	grep_proc.cc \
 	hist_source.cc \
 	line_buffer.cc \
@@ -77,12 +82,14 @@ libdiag_a_SOURCES = \
 	log_format.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
+	network-extension-functions.cc \
 	data_scanner.cc \
 	data_parser.cc \
 	readline_curses.cc \
 	sequence_matcher.cc \
 	statusview_curses.cc \
 	piper_proc.cc \
+	strnatcmp.c \
 	textview_curses.cc \
 	view_curses.cc \
 	vt52_curses.cc \

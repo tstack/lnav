@@ -3751,8 +3751,8 @@ fi
 
 
 
-#CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
-#CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
+# CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
+# CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
 
 # Check whether --enable-static was given.
 if test "${enable_static+set}" = set; then :

@@ -77,16 +77,19 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libdiag_a_AR = $(AR) $(ARFLAGS)
 libdiag_a_LIBADD =
-am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) grep_proc.$(OBJEXT) \
-	hist_source.$(OBJEXT) line_buffer.$(OBJEXT) \
-	listview_curses.$(OBJEXT) lnav_commands.$(OBJEXT) \
-	log_format.$(OBJEXT) logfile.$(OBJEXT) \
-	logfile_sub_source.$(OBJEXT) data_scanner.$(OBJEXT) \
+am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) \
+	collation-functions.$(OBJEXT) extension-functions.$(OBJEXT) \
+	grep_proc.$(OBJEXT) hist_source.$(OBJEXT) \
+	line_buffer.$(OBJEXT) listview_curses.$(OBJEXT) \
+	lnav_commands.$(OBJEXT) log_format.$(OBJEXT) logfile.$(OBJEXT) \
+	logfile_sub_source.$(OBJEXT) \
+	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
 	sequence_matcher.$(OBJEXT) statusview_curses.$(OBJEXT) \
-	piper_proc.$(OBJEXT) textview_curses.$(OBJEXT) \
-	view_curses.$(OBJEXT) vt52_curses.$(OBJEXT) \
-	log_vtab_impl.$(OBJEXT) xterm_mouse.$(OBJEXT)
+	piper_proc.$(OBJEXT) strnatcmp.$(OBJEXT) \
+	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
+	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT) \
+	xterm_mouse.$(OBJEXT)
 libdiag_a_OBJECTS = $(am_libdiag_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
@@ -300,7 +303,8 @@ LDADD = \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
-	-lpcrecpp
+	-lpcrecpp \
+	-lcrypto
 
 noinst_HEADERS = \
 	auto_fd.hh \
@@ -309,6 +313,7 @@ noinst_HEADERS = \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \
+	column_namer.hh \
 	data_scanner.hh \
 	data_parser.hh \
 	db_sub_source.hh \
@@ -332,6 +337,7 @@ noinst_HEADERS = \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	statusview_curses.hh \
+	strnatcmp.h \
 	strong_int.hh \
 	termios_guard.hh \
 	textfile_sub_source.hh \
@@ -346,6 +352,8 @@ noinst_HEADERS = \
 
 libdiag_a_SOURCES = \
 	bookmarks.cc \
+	collation-functions.cc \
+	extension-functions.c \
 	grep_proc.cc \
 	hist_source.cc \
 	line_buffer.cc \
@@ -354,12 +362,14 @@ libdiag_a_SOURCES = \
 	log_format.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
+	network-extension-functions.cc \
 	data_scanner.cc \
 	data_parser.cc \
 	readline_curses.cc \
 	sequence_matcher.cc \
 	statusview_curses.cc \
 	piper_proc.cc \
+	strnatcmp.c \
 	textview_curses.cc \
 	view_curses.cc \
 	vt52_curses.cc \
@@ -487,8 +497,10 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bin2c.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bookmarks.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/collation-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_scanner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grep_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hist_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/line_buffer.Po@am__quote@
@@ -499,10 +511,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log_vtab_impl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile_sub_source.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/network-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/piper_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statusview_curses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strnatcmp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vt52_curses.Po@am__quote@

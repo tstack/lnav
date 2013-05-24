@@ -88,6 +88,11 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
 				      int row,
 				      string_attrs_t &value_out)
 {
+    int grow = row / (this->buckets_per_group() + 1);
+    int brow = row % (this->buckets_per_group() + 1);
+    bucket_group_t bg = this->hs_group_keys[grow];
+    int bucket_index = brow - 1;
+
     assert(this->hs_analyzed);
 
     if (this->hs_token_bucket != NULL) {
@@ -120,9 +125,14 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
 	    
 	    lr.lr_end = lr.lr_start + amount;
 	    value_out[lr].insert(make_string_attr("style", attrs));
-	    
+
 	    lr.lr_start = lr.lr_end;
 	}
+
+	this->hs_label_source->hist_attrs_for_bucket((bg * this->hs_group_size) +
+	                                             (bucket_index * this->hs_bucket_size),
+	                                             *this->hs_token_bucket,
+	                                             value_out);	
     }
 }
 

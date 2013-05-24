@@ -168,7 +168,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     size_t tab;
 
     assert(row >= 0);
-    assert(row < this->lss_index.size());
+    assert((size_t)row < this->lss_index.size());
 
     line = this->lss_index[row];
     this->lss_token_file   = this->find(line);
@@ -309,13 +309,21 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     lr.lr_end = -1;
     value_out[lr].insert(make_string_attr("file", this->lss_token_file));
 
-    if (this->lss_token_date_end > 0 &&
-	((this->lss_token_line->get_time() / (60 * 60)) % 2) == 0) {
-	attrs = vc.attrs_for_role(view_colors::VCR_ALT_ROW);
-	lr.lr_start = time_offset_end;
-	lr.lr_end   = this->lss_token_date_end;
-	
-	value_out[lr].insert(make_string_attr("style", attrs));
+    if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
+        !(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
+    	log_format *format = this->lss_token_file->get_format();
+        std::vector<logline_value> line_values;
+
+        format->annotate(this->lss_token_value, value_out, line_values);
+
+        struct line_range time_range = find_string_attr_range(value_out, "timestamp");
+
+        if (time_range.lr_end != -1) {
+        	time_range.lr_start += time_offset_end;
+        	time_range.lr_end += time_offset_end;
+        	attrs = vc.attrs_for_role(view_colors::VCR_ALT_ROW);
+        	value_out[time_range].insert(make_string_attr("style", attrs));
+        }
     }
 }
 
@@ -394,6 +402,9 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 				++start_line;
 			    }
 			}
+			else {
+				this->lss_filtered_count += 1;
+			}
 			start_line      = con_line;
 			action          = logfile_filter::MAYBE;
 			action_priority = -1;
@@ -450,6 +461,9 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 			++start_line;
 		    }
 		}
+		else {
+			this->lss_filtered_count += 1;
+		}
 
 		iter->ld_lines_indexed = iter->ld_file->size();
 
@@ -473,8 +487,12 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
     bm[&BM_WARNINGS].clear();
     bm[&BM_ERRORS].clear();
     bm[&BM_FILES].clear();
-    bm[&textview_curses::BM_USER].clear();
-    bm[&textview_curses::BM_SEARCH].clear();
+
+    for (bookmarks<content_line_t>::type::iterator iter = this->lss_user_marks.begin();
+         iter != this->lss_user_marks.end();
+         ++iter) {
+    	bm[iter->first].clear();
+    }
 
     for (; vl < (int)this->lss_index.size(); ++vl) {
 	content_line_t cl = this->lss_index[vl];

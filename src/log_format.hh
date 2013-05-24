@@ -41,6 +41,8 @@
 #include <vector>
 #include <memory>
 
+#include "view_curses.hh"
+
 /**
  * Metadata for a single line in a log file.
  */
@@ -139,6 +141,65 @@ private:
     uint8_t ll_module;
 };
 
+class logline_value {
+
+public:
+	enum kind_t {
+		VALUE_TEXT,
+		VALUE_INTEGER,
+		VALUE_FLOAT,
+	};
+
+	logline_value(std::string name, int64_t i)
+	: lv_name(name), lv_kind(VALUE_INTEGER), lv_number(i) { };
+	logline_value(std::string name, double i)
+	: lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i) { };
+	logline_value(std::string name, std::string s)
+	: lv_name(name), lv_kind(VALUE_TEXT), lv_string(s) { };
+	logline_value(std::string name, kind_t kind, std::string s)
+	: lv_name(name), lv_kind(kind) {
+		switch (kind) {
+		case VALUE_TEXT:
+			this->lv_string = s;
+			break;
+		case VALUE_INTEGER:
+			sscanf(s.c_str(), "%qd", &this->lv_number.i);
+			break;
+		case VALUE_FLOAT:
+			sscanf(s.c_str(), "%lf", &this->lv_number.d);
+			break;
+		}
+	};
+
+	const std::string to_string() {
+		char buffer[128];
+		switch (this->lv_kind) {
+			case VALUE_TEXT:
+			return this->lv_string;
+			case VALUE_INTEGER:
+			snprintf(buffer, sizeof(buffer), "%qd", this->lv_number.i);
+			break;
+			case VALUE_FLOAT:
+			snprintf(buffer, sizeof(buffer), "%lf", this->lv_number.d);
+			break;
+		}
+
+		return std::string(buffer);
+	};
+
+	std::string lv_name;
+	kind_t lv_kind;
+	union value_u {
+		int64_t i;
+		double d;
+
+		value_u() : i(0) { };
+		value_u(int64_t i) : i(i) { };
+		value_u(double d) : d(d) { };
+	} lv_number;
+	std::string lv_string;
+};
+
 /**
  * Base class for implementations of log format parsers.
  */
@@ -199,6 +260,11 @@ public:
      * @param line The log line to edit.
      */
     virtual void scrub(std::string &line) { };
+
+    virtual void annotate(const std::string &line,
+                          string_attrs_t &sa,
+                          std::vector<logline_value> &values) const
+    { };
     
     virtual std::auto_ptr<log_format> specialized(void) = 0;
 

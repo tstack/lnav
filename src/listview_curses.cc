@@ -125,10 +125,17 @@ bool listview_curses::handle_key(int ch)
 void listview_curses::do_update(void)
 {
     if (this->lv_window != NULL && this->lv_needs_update) {
-	vis_line_t y(this->lv_y), height, bottom, lines;
+	vis_line_t y(this->lv_y), height, bottom, lines, row;
+	attr_line_t overlay_line;
+	vis_line_t overlay_height(0);
 	struct line_range lr;
 	unsigned long width;
 	size_t        row_count;
+
+	if (this->lv_overlay_source != NULL) {
+		overlay_height = vis_line_t(
+		        this->lv_overlay_source->list_overlay_count(*this));
+	}
 
 	this->get_dimensions(height, width);
 	lr.lr_start = this->lv_left;
@@ -139,20 +146,31 @@ void listview_curses::do_update(void)
 	    this->lv_top = max(vis_line_t(0), vis_line_t(row_count) - height);
 	}
 
-	lines  = y + min(height, vis_line_t(row_count) - this->lv_top);
+	row = this->lv_top;
+	lines = min(height - overlay_height,
+	            vis_line_t(row_count) - this->lv_top);
 	bottom = y + height;
-	for (; y < lines; ++y) {
-	    vis_line_t row = this->lv_top + y - vis_line_t(this->lv_y);
-	    attr_line_t al;
-
-	    this->lv_source->listview_value_for_row(*this, row, al);
-	    this->mvwattrline(this->lv_window, y, 0, al, lr);
-	}
-
-	/* Clear out any remaining lines on the display. */
 	for (; y < bottom; ++y) {
-	    wmove(this->lv_window, y, 0);
-	    wclrtoeol(this->lv_window);
+	    if (this->lv_overlay_source != NULL &&
+	        this->lv_overlay_source->list_value_for_overlay(
+	                *this,
+	                y - vis_line_t(this->lv_y),
+	                overlay_line)) {
+	    	this->mvwattrline(this->lv_window, y, 0, overlay_line, lr);
+	        overlay_line.clear();
+	    }
+	    else if (lines > 0) {
+	    	attr_line_t al;
+
+	    	this->lv_source->listview_value_for_row(*this, row, al);
+	    	this->mvwattrline(this->lv_window, y, 0, al, lr);
+	    	--lines;
+	    	++row;
+	    }
+	    else {
+	    	wmove(this->lv_window, y, 0);
+	    	wclrtoeol(this->lv_window);
+	    }
 	}
 
 	if (this->lv_show_scrollbar) {

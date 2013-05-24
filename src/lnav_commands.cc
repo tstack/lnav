@@ -159,13 +159,15 @@ static string com_save_to(string cmdline, vector<string> &args)
 	return "error: expecting file name";
     }
 
-    snprintf(command, sizeof(command), "echo -n %s", args[1].c_str());
+    snprintf(command, sizeof(command), "/bin/echo -n %s", args[1].c_str());
     if ((pfile = popen(command, "r")) == NULL) {
 	return "error: unable to compute file name";
     }
 
-    if (fgets(command, sizeof(command), pfile) == 0)
+    if (fgets(command, sizeof(command), pfile) == 0) {
 	perror("fgets");
+	return "error: unable to compute file name";
+    }
     fclose(pfile);
     pfile = NULL;
 
@@ -278,6 +280,20 @@ static string com_graph(string cmdline, vector<string> &args)
     }
 
     return retval;
+}
+
+static string com_help(string cmdline, vector<string> &args)
+{
+	string retval = "";
+
+	if (args.size() == 0) {
+
+	}
+	else {
+		ensure_view(&lnav_data.ld_views[LNV_HELP]);
+	}
+
+	return retval;
 }
 
 class pcre_filter
@@ -507,6 +523,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["current-time"]	= com_current_time;
     cmd_map["goto"]		= com_goto;
     cmd_map["graph"]		= com_graph;
+    cmd_map["help"]             = com_help;
     cmd_map["highlight"]	= com_highlight;
     cmd_map["filter-in"]	= com_filter;
     cmd_map["filter-out"]	= com_filter;

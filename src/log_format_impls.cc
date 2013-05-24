@@ -76,6 +76,17 @@ static string scrub_rdns(const string &str)
 }
 
 class access_log_format : public log_format {
+
+	static pcrepp &value_pattern(void) {
+		static pcrepp VALUE_PATTERN(
+		    "^([\\w\\.-]+) [\\w\\.-]+ ([\\w\\.-]+) "
+		    "\\[([^\\]]+)\\] \"(?:\\-|(\\w+) ([^ \\?]+)(\\?[^ ]+)? "
+		    "([\\w/\\.]+))\" (\\d+) "
+		    "(\\d+|-)(?: \"([^\"]+)\" \"([^\"]+)\")?.*");
+
+		return VALUE_PATTERN;
+	};
+
     string get_name() { return "access_log"; };
 
     bool scan(vector < logline > &dst,
@@ -126,11 +137,74 @@ class access_log_format : public log_format {
 
 	return retval;
     };
+
+    void annotate(const std::string &line,
+                  string_attrs_t &sa,
+                  std::vector<logline_value> &values) const {
+    	pcre_context_static<30> pc;
+    	pcre_input pi(line);
+
+    	if (value_pattern().match(pc, pi)) {
+    		static struct {
+    			const char *name;
+    			logline_value::kind_t kind;
+    		} columns[] = {
+    			{ "c_ip", logline_value::VALUE_TEXT },
+    			{ "cs_username", logline_value::VALUE_TEXT },
+    			{ "", },
+    			{ "cs_method", logline_value::VALUE_TEXT },
+    			{ "cs_uri_stem", logline_value::VALUE_TEXT },
+    			{ "cs_uri_query", logline_value::VALUE_TEXT },
+    			{ "cs_version", logline_value::VALUE_TEXT },
+    			{ "sc_status", logline_value::VALUE_INTEGER },
+    			{ "sc_bytes", logline_value::VALUE_INTEGER },
+    			{ "cs_referer", logline_value::VALUE_TEXT },
+    			{ "cs_user_agent", logline_value::VALUE_TEXT },
+    			
+    			{ NULL },
+    		};
+
+    		pcre_context::iterator iter;
+    		struct line_range lr;
+
+    		iter = pc.begin() + 3;
+    		lr.lr_start = iter->c_begin;
+    		lr.lr_end = iter->c_end;
+    		sa[lr].insert(make_string_attr("timestamp", 0));
+
+    		lr.lr_start = 0;
+    		lr.lr_end = line.length();
+    		sa[lr].insert(make_string_attr("prefix", 0));
+
+    		lr.lr_start = line.length();
+    		lr.lr_end = line.length();
+    		sa[lr].insert(make_string_attr("body", 0));
+
+    		for (int lpc = 0; columns[lpc].name; lpc++) {
+    			if (columns[lpc].name[0] == '\0')
+    				continue;
+    			values.push_back(logline_value(columns[lpc].name,
+    			                 columns[lpc].kind,
+    			                 pi.get_substr(pc.begin() + lpc)));
+    		}
+    	}
+    	else {
+    		fprintf(stderr, "bad match! %s\n", line.c_str());
+    	}
+    };
 };
 
 log_format::register_root_format<access_log_format> access_log_instance;
 
 class syslog_log_format : public log_format {
+
+    static const int TIMESTAMP_LENGTH = 16;
+
+    static pcrepp &repeated_pattern(void) {
+        static pcrepp REPEATED_PATTERN("last message repeated \\d+ times");
+
+        return REPEATED_PATTERN;
+    }
 
     static pcrepp &scrub_pattern(void) {
         static pcrepp SCRUB_PATTERN("(\\w+\\s[\\s\\d]\\d \\d+:\\d+:\\d+) [\\.\\-\\w]+( .*)");
@@ -169,6 +243,90 @@ class syslog_log_format : public log_format {
         }
     };
 
+    void annotate(const string &line,
+                  string_attrs_t &sa,
+                  std::vector<logline_value> &values) const {
+    	bool found_hostname = false, found_procname = false, found_prefix = false;
+    	struct line_range lr, hostname_range = { 0, 0 };
+    	struct line_range procname_range = { 0, 0 };
+    	int log_pid = -1;
+
+    	lr.lr_start = 0;
+    	lr.lr_end = TIMESTAMP_LENGTH;
+    	sa[lr].insert(make_string_attr("timestamp", 0));
+
+    	for (size_t lpc = TIMESTAMP_LENGTH; lpc < line.size(); lpc++) {
+    		if (line[lpc] == ' ' && !found_hostname) {
+    			hostname_range.lr_start = TIMESTAMP_LENGTH;
+    			hostname_range.lr_end = lpc;
+    			sa[hostname_range].insert(make_string_attr("log_hostname", 0));
+
+    			found_hostname = true;
+    		}
+
+    		if (line[lpc] == ' ' && found_hostname && !found_procname) {
+    			bool done = false;
+
+    			procname_range.lr_start = procname_range.lr_end = lpc + 1;
+    			while (!done) {
+    				switch (line[lpc]) {
+    				case '\0':
+    					done = true;
+    					break;
+    				case ':':
+    				case '[':
+    					procname_range.lr_end = lpc;
+    					done = true;
+    					break;
+    				default:
+    					lpc += 1;
+    					break;
+    				}
+    			}
+
+    			sa[procname_range].insert(make_string_attr("log_procname", 0));
+
+    			found_procname = true;
+    		}
+
+    		if (line[lpc] == '[' && log_pid == -1) {
+    			const char *line_c_str = line.c_str();
+
+    			sscanf(&line_c_str[lpc + 1], "%d", &log_pid);
+    		}
+
+    		if (line[lpc] == ':') {
+    			lr.lr_start = 0;
+    			lr.lr_end = lpc + 1;
+    			sa[lr].insert(make_string_attr("prefix", 0));
+
+    			lr.lr_start = lpc + 1;
+    			lr.lr_end = line.length();
+    			sa[lr].insert(make_string_attr("body", 0));
+
+    			found_prefix = true;
+    			break;
+    		}
+    	}
+
+    	if (!found_prefix) {
+    		lr.lr_start = 0;
+    		lr.lr_end = line.length();
+    		sa[lr].insert(make_string_attr("prefix", 0));
+
+    		lr.lr_start = line.length();
+    		lr.lr_end = line.length();
+    		sa[lr].insert(make_string_attr("body", 0));
+
+    		hostname_range.lr_start = 0;
+    		hostname_range.lr_end = 0;
+    	}
+
+    	values.push_back(logline_value("log_hostname", line.substr(hostname_range.lr_start, hostname_range.length())));
+    	values.push_back(logline_value("log_procname", line.substr(procname_range.lr_start, procname_range.length())));
+    	values.push_back(logline_value("log_pid", (int64_t)log_pid));
+    };
+
     bool scan(vector < logline > &dst,
 	      off_t offset,
 	      char *prefix,
@@ -192,7 +350,10 @@ class syslog_log_format : public log_format {
 	    logline::level_t ll = logline::LEVEL_UNKNOWN;
 	    time_t           log_gmt;
 
-	    if (error_pattern().match(context, pi)) {
+	    if (repeated_pattern().match(context, pi)) {
+	    	ll = logline::LEVEL_CONTINUED;
+	    }
+	    else if (error_pattern().match(context, pi)) {
 		ll = logline::LEVEL_ERROR;
 	    }
 	    else if (warning_pattern().match(context, pi)) {
@@ -281,6 +442,24 @@ class generic_log_format : public log_format {
         return SCRUB_PATTERN;
     }
 
+    static const char**get_log_formats() {
+	static const char *log_fmt[] = {
+	    "%63[0-9: ,.-]%63[^:]%n",
+            "%63[a-zA-Z0-9:-+/.] [%*x %63[^\n]%n",
+            "%63[a-zA-Z0-9:.,-] %63[^\n]%n",
+	    "%63[a-zA-Z0-9: .,-] [%*[^]]]%63[^:]%n",
+	    "%63[a-zA-Z0-9: .,-] %63[^\n]%n",
+	    "[%63[0-9: .-] %*s %63[^\n]%n",
+	    "[%63[a-zA-Z0-9: -+/]] %63[^\n]%n",
+	    "[%63[a-zA-Z0-9: -+/]] [%63[a-zA-Z]]%n",
+	    "[%63[a-zA-Z0-9: .-+/] %*s %63[^\n]%n",
+	    "[%63[a-zA-Z0-9: -+/]] (%*d) %63[^\n]%n",
+	    NULL
+	};
+
+	return log_fmt;
+    };
+
     string get_name() { return "generic_log"; };
 
     void scrub(string &line) {
@@ -303,19 +482,6 @@ class generic_log_format : public log_format {
 	      off_t offset,
 	      char *prefix,
 	      int len) {
-	static const char *log_fmt[] = {
-	    "%63[0-9: ,.-]%63[^:]",
-            "%63[a-zA-Z0-9:-+/.] [%*x %63[^\n]",
-            "%63[a-zA-Z0-9:.,-] %63[^\n]",
-	    "%63[a-zA-Z0-9: .,-] [%*[^]]]%63[^:]",
-	    "%63[a-zA-Z0-9: .,-] %63[^\n]",
-	    "[%63[0-9: .-] %*s %63[^\n]",
-	    "[%63[a-zA-Z0-9: -+/]] %63[^\n]",
-	    "[%63[a-zA-Z0-9: -+/]] [%63[a-zA-Z]]",
-	    "[%63[a-zA-Z0-9: .-+/] %*s %63[^\n]",
-	    "[%63[a-zA-Z0-9: -+/]] (%*d) %63[^\n]",
-	    NULL
-	};
 
 	bool retval = false;
 	struct tm log_time;
@@ -323,9 +489,10 @@ class generic_log_format : public log_format {
 	time_t line_time;
 	char level[64];
 	char *last_pos;
+	int prefix_len;
 
 	if ((last_pos = this->log_scanf(prefix,
-					log_fmt,
+					get_log_formats(),
 					2,
 					NULL,
 					timestr,
@@ -333,7 +500,8 @@ class generic_log_format : public log_format {
 					line_time,
 
 					timestr,
-					level)) != NULL) {
+					level,
+					&prefix_len)) != NULL) {
 	    uint16_t millis = 0;
 
 	    /* Try to pull out the milliseconds value. */
@@ -352,6 +520,30 @@ class generic_log_format : public log_format {
 	return retval;
     };
 
+    void annotate(const string &line,
+                  string_attrs_t &sa,
+                  std::vector<logline_value> &values) const {
+    	const char *fmt = get_log_formats()[this->lf_fmt_lock];
+    	char timestr[64 + 32] = "";
+    	char level[64] = "";
+    	struct line_range lr;
+    	int prefix_len;
+
+    	sscanf(line.c_str(), fmt, timestr, level, &prefix_len);
+
+    	lr.lr_start = 0 ? fmt[0] == '%' : 1;
+    	lr.lr_end = lr.lr_start + strlen(timestr);
+    	sa[lr].insert(make_string_attr("timestamp", 0));
+
+    	lr.lr_start = 0;
+    	lr.lr_end = prefix_len;
+    	sa[lr].insert(make_string_attr("prefix", 0));
+
+    	lr.lr_start = prefix_len;
+    	lr.lr_end = line.length();
+    	sa[lr].insert(make_string_attr("body", 0));
+    };
+
     auto_ptr<log_format> specialized() {
 	auto_ptr<log_format> retval((log_format *)
 				    new generic_log_format(*this));
@@ -363,6 +555,16 @@ class generic_log_format : public log_format {
 log_format::register_root_format<generic_log_format> generic_log_instance;
 
 class glog_log_format : public log_format {
+    static pcrepp &value_pattern(void) {
+    	static pcrepp VALUE_PATTERN(
+	    "\\s*(?:[IWECF])\\d+ \\d+:\\d+:\\d+\\.(\\d+)" // level, date
+	    "\\s*([0-9]*)" // thread
+	    "\\s*(.*):(\\d*)\\]" // filename:number
+	    "\\s*(.*)");
+
+    	return VALUE_PATTERN;
+    };
+
     string get_name() { return "glog_log"; };
 
     bool scan(vector < logline > &dst,
@@ -419,11 +621,68 @@ class glog_log_format : public log_format {
 
 	return retval;
     };
+    void annotate(const std::string &line,
+                  string_attrs_t &sa,
+                  std::vector<logline_value> &values) const {
+    	pcre_context_static<30> pc;
+    	pcre_input pi(line);
+
+    	if (value_pattern().match(pc, pi)) {
+    		static struct {
+    			const char *name;
+    			logline_value::kind_t kind;
+    		} columns[] = {
+    			{ "micros", logline_value::VALUE_INTEGER },
+    			{ "thread", logline_value::VALUE_TEXT },
+    			{ "src_file", logline_value::VALUE_TEXT },
+    			{ "src_line", logline_value::VALUE_INTEGER },
+    			{ "message", logline_value::VALUE_TEXT },
+
+    			{ NULL }
+    		};
+
+    		pcre_context::iterator iter;
+    		struct line_range lr;
+
+    		lr.lr_start = 1;
+    		lr.lr_end = 21;
+    		sa[lr].insert(make_string_attr("timestamp", 0));
+
+    		iter = pc.begin() + 4;
+    		lr.lr_start = 0;
+    		lr.lr_end = iter->c_begin;
+    		sa[lr].insert(make_string_attr("prefix", 0));
+
+    		lr.lr_start = iter->c_begin;
+    		lr.lr_end = line.length();
+    		sa[lr].insert(make_string_attr("body", 0));
+
+    		for (int lpc = 0; columns[lpc].name; lpc++) {
+    			if (columns[lpc].name[0] == '\0')
+    				continue;
+    			values.push_back(logline_value(columns[lpc].name,
+    			                 columns[lpc].kind,
+    			                 pi.get_substr(pc.begin() + lpc)));
+    		}
+    	}
+    	else {
+    		fprintf(stderr, "bad match! %s\n", line.c_str());
+    	}
+    };
 };
 
 log_format::register_root_format<glog_log_format> glog_instance;
 
 class strace_log_format : public log_format {
+    static pcrepp &value_pattern(void) {
+    	static pcrepp VALUE_PATTERN(
+    	    "[0-9:.]* ([a-zA-Z_][a-zA-Z_0-9]*)\\("
+    	    "(.*)\\)"
+	    "\\s+= ([-xa-fA-F\\d\\?]+).*(?:<(\\d+\\.\\d+)>)?");
+
+    	return VALUE_PATTERN;
+    };
+
     string get_name() { return "strace_log"; };
 
     bool scan(vector < logline > &dst,
@@ -485,6 +744,54 @@ class strace_log_format : public log_format {
 				    new strace_log_format(*this));
 
 	return retval;
+    };
+
+    void annotate(const std::string &line,
+                  string_attrs_t &sa,
+                  std::vector<logline_value> &values) const {
+    	pcre_context_static<30> pc;
+    	pcre_input pi(line);
+
+    	if (value_pattern().match(pc, pi)) {
+    		static struct {
+    			const char *name;
+    			logline_value::kind_t kind;
+    		} columns[] = {
+    			{ "funcname", logline_value::VALUE_TEXT },
+    			{ "args", logline_value::VALUE_TEXT },
+    			{ "result", logline_value::VALUE_TEXT },
+    			{ "duration", logline_value::VALUE_TEXT },
+    			
+    			{ NULL },
+    		};
+
+    		pcre_context::iterator iter;
+    		struct line_range lr;
+
+    		iter = pc.begin() + 3;
+    		lr.lr_start = iter->c_begin;
+    		lr.lr_end = iter->c_end;
+    		sa[lr].insert(make_string_attr("timestamp", 0));
+
+    		lr.lr_start = 0;
+    		lr.lr_end = line.length();
+    		sa[lr].insert(make_string_attr("prefix", 0));
+
+    		lr.lr_start = line.length();
+    		lr.lr_end = line.length();
+    		sa[lr].insert(make_string_attr("body", 0));
+
+    		for (int lpc = 0; columns[lpc].name; lpc++) {
+    			if (columns[lpc].name[0] == '\0')
+    				continue;
+    			values.push_back(logline_value(columns[lpc].name,
+    			                 columns[lpc].kind,
+    			                 pi.get_substr(pc.begin() + lpc)));
+    		}
+    	}
+    	else {
+    		fprintf(stderr, "bad match! %s\n", line.c_str());
+    	}
     };
 };
 

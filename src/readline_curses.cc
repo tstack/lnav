@@ -132,8 +132,13 @@ char *readline_context::completion_generator(const char *text, int state)
 	    for (iter = arg_possibilities->begin();
 		 iter != arg_possibilities->end();
 		 ++iter) {
+	    	int (*cmpfunc)(const char *, const char *, size_t);
+
 		fprintf(stderr, " cmp %s %s\n", text, iter->c_str());
-		if (strncmp(text, iter->c_str(), len) == 0) {
+		cmpfunc = (loaded_context->is_case_sensitive() ?
+		           strncmp : strncasecmp);
+		if (cmpfunc(text, iter->c_str(), len) == 0) {
+			fprintf(stderr, "match!!! %d %s  %s\n", len, text, iter->c_str());
 		    matches.push_back(*iter);
 		}
 	    }
@@ -143,6 +148,8 @@ char *readline_context::completion_generator(const char *text, int state)
     if (!matches.empty()) {
 	retval = strdup(matches.back().c_str());
 	matches.pop_back();
+
+	fprintf(stderr, "comp gen %s\n", retval);
     }
 
     return retval;
@@ -153,6 +160,8 @@ char **readline_context::attempted_completion(const char *text,
 					      int end)
 {
     char **retval = NULL;
+
+    fprintf(stderr, "attempted %s\n", text);
 
     if (loaded_context->rc_possibilities.find("*") != loaded_context->rc_possibilities.end()) {
 	fprintf(stderr, "all poss\n");
@@ -378,6 +387,9 @@ void readline_curses::start(void)
 			rem_possibility(string(type),
 					string(&msg[prompt_start]));
 		    }
+		    else if (sscanf(msg, "cp:%d:%s", &context, type)) {
+		    	this->rc_contexts[context]->clear_possibilities(type);
+		    }
 		    else {
 			fprintf(stderr, "unhandled message: %s\n", msg);
 		    }
@@ -591,6 +603,20 @@ void readline_curses::rem_possibility(int context, string type, string value)
 		      buffer,
 		      strlen(buffer) + 1) == -1) {
 	perror("rem_possiblity: write failed");
+    }
+}
+
+void readline_curses::clear_possibilities(int context, string type)
+{
+    char buffer[1024];
+
+    snprintf(buffer, sizeof(buffer),
+	     "cp:%d:%s",
+	     context, type.c_str());
+    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
+		      buffer,
+		      strlen(buffer) + 1) == -1) {
+	perror("clear_possiblity: write failed");
     }
 }
 

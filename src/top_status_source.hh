@@ -65,7 +65,8 @@ public:
 	this->tss_fields[TSF_ERRORS].set_role(view_colors::VCR_ALERT_STATUS);
 	this->tss_fields[TSF_FORMAT].set_width(15);
 	this->tss_fields[TSF_FORMAT].right_justify(true);
-	this->tss_fields[TSF_FILENAME].set_width(35); // XXX
+	this->tss_fields[TSF_FILENAME].set_min_width(35); // XXX
+	this->tss_fields[TSF_FILENAME].set_share(1);
 	this->tss_fields[TSF_FILENAME].right_justify(true);
     };
 

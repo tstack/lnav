@@ -149,7 +149,7 @@ public:
 	    }
 	} while (rc > 0);
 
-        for (int lpc = 0; lpc < range_queue.size(); lpc++) {
+        for (size_t lpc = 0; lpc < range_queue.size(); lpc++) {
             sa[range_queue[lpc]].insert(attr_queue[lpc]);
         }
     };

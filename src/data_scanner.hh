@@ -36,18 +36,33 @@
 
 enum data_token_t {
     DT_INVALID = -1,
-    
-    DT_URL = 0,
+
+    DT_QUOTED_STRING = 0,
+    DT_URL,
     DT_PATH,
-    DT_TIME,
     DT_MAC_ADDRESS,
-    DT_QUOTED_STRING,
+    DT_TIME,
+    DT_IPV6_ADDRESS,
     // DT_QUALIFIED_NAME,
     
     DT_SEPARATOR,
     DT_COMMA,
+    DT_SEMI,
 
-    DT_IP_ADDRESS,
+    DT_LCURLY,
+    DT_RCURLY,
+
+    DT_LSQUARE,
+    DT_RSQUARE,
+
+    DT_LPAREN,
+    DT_RPAREN,
+
+    DT_LANGLE,
+    DT_RANGLE,
+
+    DT_IPV4_ADDRESS,
+    DT_UUID,
 
     DT_VERSION_NUMBER,
     DT_OCTAL_NUMBER,
@@ -55,7 +70,8 @@ enum data_token_t {
     DT_NUMBER,
     DT_HEX_NUMBER,
 
-    DT_STRING,
+    DT_WORD,
+    DT_SYMBOL,
     DT_LINE,
     DT_WHITE,
     DT_DOT,
@@ -73,6 +89,9 @@ enum data_token_t {
     DNT_VARIABLE_KEY,
     DNT_ROWRANGE,
     DNT_DATE_TIME,
+    DNT_GROUP,
+
+    DNT_MAX,
     
     DT_ANY = 100,
 };
@@ -84,6 +103,9 @@ public:
     data_scanner(const std::string &line) :
 	ds_line(line),
 	ds_pcre_input(ds_line.c_str()) {
+		if (!line.empty() && line[line.length() - 1] == '.') {
+			this->ds_pcre_input.pi_length -= 1;
+		}
     };
 
     bool tokenize(pcre_context &pc, data_token_t &token_out);

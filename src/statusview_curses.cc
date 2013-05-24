@@ -37,7 +37,7 @@ using namespace std;
 
 void statusview_curses::do_update(void)
 {
-    int           top, attrs, field, field_count, left = 1, right;
+    int  top, attrs, field, field_count, left = 1, right;
     view_colors &vc = view_colors::singleton();
     unsigned long width, height;
 
@@ -60,6 +60,7 @@ void statusview_curses::do_update(void)
 	int x;
 
 	val = sf.get_value();
+
 	if (sf.is_right_justified()) {
 	    right -= 1 + sf.get_width();
 	    x = right;

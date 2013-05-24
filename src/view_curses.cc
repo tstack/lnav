@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -55,7 +55,7 @@ void view_curses::mvwattrline(WINDOW *window,
     size_t exp_index = 0;
     string full_line;
 
-    assert(lr.lr_end != -1);
+    assert(lr.lr_end >= 0);
 
     line_width = lr.length();
     buffer = (char *)alloca(line_width + 1);
@@ -95,12 +95,17 @@ void view_curses::mvwattrline(WINDOW *window,
 	whline(window, ' ', lr.lr_end - full_line.size());
     wattroff(window, attrs);
 
+    std::vector<line_range> graphic_range;
+    std::vector<int> graphic_in;
+
     for (iter = sa.begin(); iter != sa.end(); ++iter) {
 	struct line_range attr_range = iter->first;
 	std::map<size_t, size_t>::iterator tab_iter;
-	
+
 	assert(attr_range.lr_start >= 0);
 	assert(attr_range.lr_end >= -1);
+
+	fprintf(stderr, "attr %d %d\n", attr_range.lr_start, attr_range.lr_end);
 
         tab_iter = tab_list.lower_bound(attr_range.lr_start);
         if (tab_iter != tab_list.end())
@@ -111,7 +116,7 @@ void view_curses::mvwattrline(WINDOW *window,
             if (tab_iter != tab_list.end())
         	    attr_range.lr_end += (tab_iter->second - tab_iter->first) - 1;
 	}
-	
+
 	attr_range.lr_start = max(0, attr_range.lr_start - lr.lr_start);
 	if (attr_range.lr_end == -1) {
 	    attr_range.lr_end = line_width;
@@ -128,19 +133,36 @@ void view_curses::mvwattrline(WINDOW *window,
 
 	    attrs = 0;
 	    for (am_iter = am.begin(); am_iter != am.end(); ++am_iter) {
-		if (am_iter->first == "style") {
-		    attrs |= am_iter->second.sa_int;
-		}
-	    }
-	    
-	    /* This silliness is brought to you by a buggy old curses lib. */
-	    mvwinnstr(window, y, x + attr_range.lr_start, buffer, awidth);
-	    wattron(window, attrs);
-	    mvwaddnstr(window, y, x + attr_range.lr_start, buffer, awidth);
-	    wattroff(window, attrs);
-	}
-	
-	attrs = text_attrs; /* Reset attrs to regular text. */
+                if (am_iter->first == "style") {
+                    attrs |= am_iter->second.sa_int;
+                }
+            }
+
+            if (attrs != 0) {
+            	fprintf(stderr, "text  %d  %d  %x\n", y, x + attr_range.lr_start, attrs);
+                /* This silliness is brought to you by a buggy old curses lib. */
+                mvwinnstr(window, y, x + attr_range.lr_start, buffer, awidth);
+                wattron(window, attrs);
+                mvwaddnstr(window, y, x + attr_range.lr_start, buffer, awidth);
+                wattroff(window, attrs);
+            }
+            for (am_iter = am.begin(); am_iter != am.end(); ++am_iter) {
+                if (am_iter->first == "graphic") {
+                    graphic_range.push_back(attr_range);
+                    graphic_in.push_back(am_iter->second.sa_int | attrs);
+                }
+            }
+        }
+
+        attrs = text_attrs; /* Reset attrs to regular text. */
+    }
+
+    for (size_t lpc = 0; lpc < graphic_range.size(); lpc++) {
+        for (int lpc2 = graphic_range[lpc].lr_start;
+             lpc2 < graphic_range[lpc].lr_end;
+             lpc2++) {
+                mvwaddch(window, y, lpc2, graphic_in[lpc]);
+        }
     }
 }
 
@@ -180,6 +202,8 @@ view_colors::view_colors()
     this->vc_role_colors[VCR_DIFF_ADD] = COLOR_PAIR(VC_GREEN);
     this->vc_role_colors[VCR_DIFF_SECTION] = COLOR_PAIR(VC_MAGENTA);
 
+    this->vc_role_colors[VCR_SHADOW] = COLOR_PAIR(VC_GRAY);
+
     for (lpc = 0; lpc < VCR__MAX; lpc++) {
 	this->vc_role_reverse_colors[lpc] =
 	    this->vc_role_colors[lpc] | A_REVERSE;
@@ -211,7 +235,7 @@ void view_colors::init(void)
 	init_pair(VC_CYAN, COLOR_CYAN, COLOR_BLACK);
 	init_pair(VC_GREEN, COLOR_GREEN, COLOR_BLACK);
 	init_pair(VC_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
-	
+
 	init_pair(VC_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
 	init_pair(VC_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
 	init_pair(VC_GREEN_ON_WHITE, COLOR_GREEN, COLOR_WHITE);
@@ -224,17 +248,29 @@ void view_colors::init(void)
 	init_pair(VC_BLACK_ON_WHITE, COLOR_BLACK, COLOR_WHITE);
 	init_pair(VC_RED_ON_WHITE, COLOR_RED, COLOR_WHITE);
 	init_pair(VC_YELLOW_ON_WHITE, COLOR_YELLOW, COLOR_WHITE);
-	
+
 	init_pair(VC_WHITE_ON_GREEN, COLOR_WHITE, COLOR_GREEN);
+
+	init_pair(VC_GRAY, COLOR_BLACK, COLOR_BLACK);
     }
 }
 
-view_colors::role_t view_colors::next_highlight(void)
+view_colors::role_t view_colors::next_highlight()
 {
     role_t retval = (role_t)(VCR__MAX + this->vc_next_highlight);
 
     this->vc_next_highlight = (this->vc_next_highlight + 1) %
 			      (HL_COLOR_COUNT * 2);
+
+    return retval;
+}
+
+view_colors::role_t view_colors::next_plain_highlight()
+{
+    role_t retval = (role_t)(VCR__MAX + this->vc_next_plain_highlight);
+
+    this->vc_next_plain_highlight = (this->vc_next_plain_highlight + 2) %
+    (HL_COLOR_COUNT * 2);
 
     return retval;
 }

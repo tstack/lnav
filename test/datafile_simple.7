@@ -1,0 +1,12 @@
+             func(arg1="a", arg2="b")
+ key   5:5       ^                     
+ key   5:9        ^--^                 arg1
+quot  11:12             ^              a
+ val  11:12             ^              a
+pair   5:12       ^-----^              arg1="a
+ key  15:19                 ^--^       arg2
+quot  21:22                       ^    b
+ val  21:22                       ^    b
+pair  15:22                 ^-----^    arg2="b
+ grp   5:22       ^---------------^    arg1="a", arg2="b
+pair   5:22       ^---------------^    arg1="a", arg2="b

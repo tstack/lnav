@@ -32,6 +32,11 @@
 
 #include <string>
 
+#include "grep_proc.hh"
+#include "textview_curses.hh"
+#include "logfile_sub_source.hh"
+#include "status_controllers.hh"
+
 class bottom_status_source
     : public status_data_source,
       public grep_proc_control
@@ -52,6 +57,7 @@ public:
 	BSF_ERRORS,
 	BSF_FILTERED,
 	BSF_LOADING,
+	BSF_HELP,
 
 	BSF__MAX
     } field_t;
@@ -64,17 +70,20 @@ public:
 	  bss_error(80, view_colors::VCR_ALERT_STATUS),
 	  bss_hit_spinner(0),
 	  bss_load_percent(0) {
-	this->bss_fields[BSF_LINE_NUMBER].set_width(8);
+	this->bss_fields[BSF_LINE_NUMBER].set_width(10);
 	this->bss_fields[BSF_PERCENT].set_width(4);
 	this->bss_fields[BSF_HITS].set_width(16);
 	this->bss_fields[BSF_HITS].set_cylon(true);
 	this->bss_fields[BSF_WARNINGS].set_width(10);
 	this->bss_fields[BSF_ERRORS].set_width(10);
 	this->bss_fields[BSF_ERRORS].set_role(view_colors::VCR_ALERT_STATUS);
-	this->bss_fields[BSF_FILTERED].set_width(14);
+	this->bss_fields[BSF_FILTERED].set_width(20);
 	this->bss_fields[BSF_LOADING].set_width(13);
 	this->bss_fields[BSF_LOADING].set_cylon(true);
 	this->bss_fields[BSF_LOADING].right_justify(true);
+	this->bss_fields[BSF_HELP].set_width(14);
+	this->bss_fields[BSF_HELP].set_value("?:View Help");
+	this->bss_fields[BSF_HELP].right_justify(true);
     };
     
     virtual ~bottom_status_source() { };
@@ -111,10 +120,12 @@ public:
     void update_line_number(listview_curses *lc) {
 	status_field &sf = this->bss_fields[BSF_LINE_NUMBER];
 	
-	if (lc->get_inner_height() == 0)
+	if (lc->get_inner_height() == 0) {
 	    sf.set_value("L0");
-	else
-	    sf.set_value("L%d", (int)lc->get_top());
+	}
+	else {
+	    sf.set_value("L%'d", (int)lc->get_top());
+	}
     };
 
     void update_percent(listview_curses *lc) {
@@ -153,7 +164,7 @@ public:
 	    bookmark_vector<vis_line_t>::iterator iter;
 
 	    iter = lower_bound(bv.begin(), bv.end(), tc->get_top() + height);
-	    sfw.set_value("%9dW", distance(iter, bv.end()));
+	    sfw.set_value("%'9dW", distance(iter, bv.end()));
 	}
 	else {
 	    sfw.clear();
@@ -164,7 +175,7 @@ public:
 	    bookmark_vector<vis_line_t>::iterator iter;
 
 	    iter = lower_bound(bv.begin(), bv.end(), tc->get_top() + height);
-	    sfe.set_value("%9dE", distance(iter, bv.end()));
+	    sfe.set_value("%'9dE", distance(iter, bv.end()));
 	}
 	else {
 	    sfe.clear();
@@ -189,7 +200,7 @@ public:
 	}
 	sf.set_role(new_role);
 	this->bss_error.clear();
-	sf.set_value("%9d hits", tc->get_match_count());
+	sf.set_value("%'9d hits", tc->get_match_count());
     };
 
     void update_loading(off_t off, size_t total) {
@@ -218,7 +229,7 @@ public:
 	if (lss.get_filtered_count() == 0)
 	    sf.clear();
 	else
-	    sf.set_value("%d Not Shown", lss.get_filtered_count());
+	    sf.set_value("%'9d Not Shown", lss.get_filtered_count());
     };
 
 private:

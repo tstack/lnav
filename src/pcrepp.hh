@@ -100,7 +100,7 @@ public:
     iterator begin() { return pc_captures + 1; };
     /** @return An iterator that refers to the end of the capture array. */
     iterator end() { return pc_captures + pc_count; };
-    
+
 protected:
     pcre_context(capture_t *captures, int max_count)
 	: pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
@@ -109,6 +109,28 @@ protected:
     int pc_max_count;
     int pc_count;
 };
+
+struct capture_if_not {
+	capture_if_not(int begin) : cin_begin(begin) { };
+
+	bool operator()(const pcre_context::capture_t &cap) {
+		return cap.c_begin != this->cin_begin;
+	}
+
+	int cin_begin;
+};
+
+inline
+pcre_context::iterator skip_invalid_captures(pcre_context::iterator iter,
+                                             pcre_context::iterator pc_end)
+{
+	for (; iter != pc_end; ++iter) {
+		if (iter->c_begin == -1)
+			continue;
+	}
+
+	return iter;
+}
 
 /**
  * A pcre_context that allocates storage for the capture array within the object
@@ -152,6 +174,9 @@ public:
     };
 
     std::string get_substr(pcre_context::const_iterator iter) const {
+    	if (iter->c_begin == -1) {
+    		return "";
+    	}
 	return std::string(this->pi_string,
 			   iter->c_begin,
 			   iter->length());

@@ -35,6 +35,7 @@
 #include <sys/types.h>
 
 #include <string>
+#include <vector>
 #include <algorithm>
 
 #include "strong_int.hh"
@@ -66,6 +67,31 @@ public:
 					attr_line_t &value_out) = 0;
 };
 
+struct listview_overlay {
+    listview_overlay(int y, const attr_line_t &al) : lo_y(y), lo_line(al) { };
+
+    int get_absolute_y(int height) {
+        if (this->lo_y >= 0)
+            return this->lo_y;
+
+        return height + this->lo_y;
+    };
+
+    int lo_y;
+    attr_line_t lo_line;
+};
+
+class list_overlay_source {
+public:
+    virtual ~list_overlay_source() { };
+
+    virtual size_t list_overlay_count(const listview_curses &lv) = 0;
+
+    virtual bool list_value_for_overlay(const listview_curses &lv,
+                                        vis_line_t y,
+                                        attr_line_t &value_out) = 0;
+};
+
 /**
  * View that displays a list of lines that can optionally contain highlighting.
  */
@@ -87,7 +113,19 @@ public:
     };
 
     /** @return The data source delegate. */
-    list_data_source *get_data_source() { return this->lv_source; };
+    list_data_source *get_data_source() const { return this->lv_source; };
+
+    /** @param src The data source delegate. */
+    void set_overlay_source(list_overlay_source *src)
+    {
+	this->lv_overlay_source = src;
+	this->reload_data();
+    };
+
+    /** @return The overlay source delegate. */
+    list_overlay_source *get_overlay_source() {
+    	return this->lv_overlay_source;
+    };
 
     /**
      * @param va The action to invoke when the view is scrolled.
@@ -265,6 +303,7 @@ public:
 	else {
 	    height_out = this->lv_height;
 	}
+
     };
 
     /** This method should be called when the data source has changed. */
@@ -283,6 +322,7 @@ public:
 
 protected:
     list_data_source *lv_source;  /*< The data source delegate. */
+    list_overlay_source *lv_overlay_source;
     action           lv_scroll;   /*< The scroll action. */
     WINDOW           *lv_window;  /*< The window that contains this view. */
     unsigned int        lv_y;	  /*< The y offset of this view. */

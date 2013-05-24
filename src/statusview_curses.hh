@@ -53,7 +53,8 @@ public:
 	  sf_right_justify(false),
 	  sf_cylon(false),
 	  sf_cylon_pos(0),
-	  sf_role(role) { };
+	  sf_role(role),
+      sf_share(0) { };
 
     virtual ~status_field() { };
 
@@ -77,6 +78,14 @@ public:
 		value = abbrev;
 	    }
 	}
+
+    if (this->sf_right_justify) {
+        int padding = this->sf_width - value.size();
+
+        if (padding > 2) {
+            value.insert(0, padding, ' ');
+        }
+    }
 	
 	this->sf_value = value;
 
@@ -136,13 +145,23 @@ public:
     /** @param width The maximum display width, in characters. */
     size_t get_width() const { return this->sf_width; };
 
+    /** @param width The maximum display width, in characters. */
+    void set_min_width(int width) { this->sf_min_width = width; };
+    /** @param width The maximum display width, in characters. */
+    size_t get_min_width() const { return this->sf_min_width; };
+
+    void set_share(int share) { this->sf_share = share; };
+    int get_share() const { return this->sf_share; };
+
 protected:
     size_t              sf_width; /*< The maximum display width, in chars. */
+    size_t              sf_min_width; /*< The maximum display width, in chars. */
     bool                sf_right_justify;
     bool sf_cylon;
     size_t sf_cylon_pos;
     attr_line_t         sf_value; /*< The value to display for this field. */
     view_colors::role_t sf_role;  /*< The color role for this field. */
+    int sf_share;
 };
 
 /**
@@ -186,6 +205,39 @@ public:
 
     void set_window(WINDOW *win) { this->sc_window = win; };
     WINDOW *get_window() { return this->sc_window; };
+
+    void window_change(void) {
+        int field_count = this->sc_source->statusview_fields();
+        int remaining, total_shares = 0;
+        unsigned long width, height;
+
+        getmaxyx(this->sc_window, height, width);
+        remaining = width - 4;
+        for (int field = 0; field < field_count; field++) {
+            status_field &sf = this->sc_source->statusview_value_for_field(field);
+
+            remaining -= sf.get_share() ? sf.get_min_width() : sf.get_width();
+            remaining -= 1;
+            total_shares += sf.get_share();
+        }
+
+        if (remaining < 2) {
+        	remaining = 0;
+        }
+
+        for (int field = 0; field < field_count; field++) {
+            status_field &sf = this->sc_source->statusview_value_for_field(field);
+
+            if (sf.get_share()) {
+                int actual_width;
+
+                actual_width = sf.get_min_width();
+                actual_width += remaining / (sf.get_share() / total_shares);
+
+                sf.set_width(actual_width);
+            }
+        }
+    };
 
     void do_update(void);
 

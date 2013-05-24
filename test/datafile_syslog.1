@@ -1,33 +1,21 @@
-             Jun 18 16:13:52 Tim-Stacks-iMac Safari[81045]: INSERT-HANG-DETECTED: Tx time:3.093364, # of Inserts: 89, # of bytes written: 465365, Did shrink: NO
- key 137:143                                                                                                                                          ^----^
- sep 143:144                                                                                                                                                ^
-word 145:147                                                                                                                                                  ^^
- row 145:147                                                                                                                                                  ^^
-pair 137:147                                                                                                                                          ^--------^
- key 107:123                                                                                                            ^--------------^
- sep 123:124                                                                                                                            ^
- num 125:131                                                                                                                              ^----^
-word 133:136                                                                                                                                      ^-^
- row 125:136                                                                                                                              ^---------^
-pair 107:136                                                                                                            ^---------------------------^
- key  89:99                                                                                           ^--------^
- sep  99:100                                                                                                    ^
- num 101:103                                                                                                      ^^
-word 105:106                                                                                                          ^
- row 101:106                                                                                                      ^---^
-pair  89:106                                                                                          ^---------------^
- key  72:76                                                                          ^--^
- sep  76:77                                                                              ^
- num  77:85                                                                               ^------^
-word  87:88                                                                                         ^
- row  77:88                                                                               ^---------^
-pair  72:88                                                                          ^--------------^
- key  47:67                                                 ^------------------^
- sep  67:68                                                                     ^
-word  69:71                                                                       ^^
- row  69:71                                                                       ^^
-pair  47:71                                                 ^----------------------^
-word   0:3   ^-^
- num   4:6       ^^
-time   7:15         ^------^
-date   0:15  ^-------------^
+             INSERT-HANG-DETECTED: Tx time:3.093364, # of Inserts: 89, # of bytes written: 465365, Did shrink: NO
+ key   0:20  ^------------------^                                                                                  INSERT-HANG-DETECTED
+word  22:24                        ^^                                                                              Tx
+ val  22:24                        ^^                                                                              Tx
+pair   0:24  ^----------------------^                                                                              INSERT-HANG-DETECTED: Tx
+ key  25:29                           ^--^                                                                         time
+ num  30:38                                ^------^                                                                3.093364
+ val  30:38                                ^------^                                                                3.093364
+pair  25:38                           ^-----------^                                                                time:3.093364
+ key  40:52                                          ^----------^                                                  # of Inserts
+ num  54:56                                                        ^^                                              89
+ val  54:56                                                        ^^                                              89
+pair  40:56                                          ^--------------^                                              # of Inserts: 89
+ key  58:76                                                            ^----------------^                          # of bytes written
+ num  78:84                                                                                ^----^                  465365
+ val  78:84                                                                                ^----^                  465365
+pair  58:84                                                            ^------------------------^                  # of bytes written: 465365
+ key  86:96                                                                                        ^--------^      Did shrink
+ sym  98:100                                                                                                   ^^  NO
+ val  98:100                                                                                                   ^^  NO
+pair  86:100                                                                                       ^------------^  Did shrink: NO

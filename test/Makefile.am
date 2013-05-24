@@ -110,6 +110,7 @@ drive_data_scanner_SOURCES = \
 	../src/data_parser.cc \
 	../src/data_scanner.cc \
 	drive_data_scanner.cc
+drive_data_scanner_LDADD = -lcrypto
 
 drive_view_colors_SOURCES = \
 	../src/view_curses.cc \
@@ -151,6 +152,8 @@ dist_noinst_DATA = \
 	datafile_simple.3 \
 	datafile_simple.4 \
 	datafile_simple.5 \
+	datafile_simple.6 \
+	datafile_simple.7 \
 	listview_output.0 \
 	listview_output.1 \
 	listview_output.2 \

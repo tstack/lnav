@@ -1,32 +1,20 @@
-             Nov  3 09:47:02 veridian sudo: timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
- key 106:113                                                                                                           ^-----^
- sep 113:114                                                                                                                  ^
-path 114:127                                                                                                                   ^-----------^
-path 128:145                                                                                                                                 ^---------------^
- row 114:145                                                                                                                   ^-----------------------------^
-pair 106:127                                                                                                           ^-------------------^
- key  94:98                                                                                                ^--^
- sep  98:99                                                                                                    ^
-word  99:103                                                                                                    ^--^
- row  99:103                                                                                                    ^--^
-pair  94:103                                                                                               ^-------^
- key  54:57                                                        ^-^
- sep  57:58                                                           ^
-path  58:91                                                            ^-------------------------------^
- row  58:91                                                            ^-------------------------------^
-pair  54:91                                                        ^-----------------------------------^
- key  42:45                                            ^-^
- sep  45:46                                               ^
-word  46:49                                                ^-^
-path  49:51                                                   ^^
- row  46:51                                                ^---^
-pair  42:51                                            ^-------^
- key  16:29                  ^-----------^
- sep  29:30                               ^
-word  31:39                                 ^------^
- row  31:39                                 ^------^
-pair  16:39                  ^---------------------^
-word   0:3   ^-^
- num   5:6        ^
-time   7:15         ^------^
-date   0:15  ^-------------^
+             timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
+ key  11:14             ^-^                                                                                                      TTY
+ sym  15:18                 ^-^                                                                                                  pts
+ num  19:20                     ^                                                                                                6
+ val  15:20                 ^---^                                                                                                pts/6
+pair  11:20             ^-------^                                                                                                TTY=pts/6
+ key  23:26                         ^-^                                                                                          PWD
+path  27:60                             ^-------------------------------^                                                        /auto/wstimstack/rpms/lbuild/test
+ val  27:60                             ^-------------------------------^                                                        /auto/wstimstack/rpms/lbuild/test
+pair  23:60                         ^-----------------------------------^                                                        PWD=/auto/wstimstack/rpms/lbuild/test
+ key  63:67                                                                 ^--^                                                 USER
+word  68:72                                                                      ^--^                                            root
+ val  68:72                                                                      ^--^                                            root
+pair  63:72                                                                 ^-------^                                            USER=root
+ key  75:82                                                                             ^-----^                                  COMMAND
+path  83:96                                                                                     ^-----------^                    /usr/bin/tail
+wspc  96:97                                                                                                  ^                    
+path  97:114                                                                                                  ^---------------^  /var/log/messages
+ val  83:114                                                                                    ^-----------------------------^  /usr/bin/tail /var/log/messages
+pair  75:114                                                                            ^-------------------------------------^  COMMAND=/usr/bin/tail /var/log/messages

@@ -1,17 +1,14 @@
              a=1 b=2 c=3,4
- key   8:9           ^
- sep   9:10           ^
- num  10:11            ^
- num  12:13              ^
- row  10:13            ^-^
-pair   8:13          ^---^
- key   4:5       ^
- sep   5:6        ^
- num   6:7         ^
- row   6:7         ^
-pair   4:7       ^-^
- key   0:1   ^
- sep   1:2    ^
- num   2:3     ^
- row   2:3     ^
-pair   0:3   ^-^
+ key   0:1   ^              a
+ num   2:3     ^            1
+ val   2:3     ^            1
+pair   0:3   ^-^            a=1
+ key   4:5       ^          b
+ num   6:7         ^        2
+ val   6:7         ^        2
+pair   4:7       ^-^        b=2
+ key   8:9           ^      c
+ num  10:11            ^    3
+ num  12:13              ^  4
+ val  10:13            ^-^  3,4
+pair   8:13          ^---^  c=3,4

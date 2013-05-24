@@ -35,25 +35,52 @@
 
 using namespace std;
 
+static struct log_cursor log_cursor_latest;
+
+static sql_progress_callback_t vtab_progress_callback;
+
+static const char *type_to_string(int type)
+{
+    switch (type) {
+        case SQLITE_FLOAT:
+        return "float";
+        case SQLITE_INTEGER:
+        return "integer";
+        case SQLITE_TEXT:
+        return "text";
+    }
+
+    assert("Invalid sqlite type");
+
+    return NULL;
+}
+
 static string declare_table_statement(log_vtab_impl *vi)
 {
     std::vector<log_vtab_impl::vtab_column> cols;
     std::vector<log_vtab_impl::vtab_column>::const_iterator iter;
     std::ostringstream oss;
-    
+
     oss << "CREATE TABLE unused (\n"
-	<< "  line_number int,\n"
-	<< "  path text,\n"
+	<< "  line_number text,\n"
 	<< "  log_time datetime,\n"
 	<< "  idle_msecs int,\n"
-	<< "  level text,\n"
-	<< "  raw_line text";
+	<< "  level text,\n";
     vi->get_columns(cols);
+    vi->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {
-	oss << ",\n";
-	oss << "  " << iter->vc_name << " " << iter->vc_type;
+    	auto_mem<char, sqlite3_free> coldecl;
+
+    	coldecl = sqlite3_mprintf("  %Q %s collate %Q,\n",
+    	                          iter->vc_name,
+    	                          type_to_string(iter->vc_type),
+    	                          iter->vc_collator == NULL ?
+    	                          "BINARY" : iter->vc_collator);
+	oss << coldecl;
     }
-    oss << "\n);";
+    oss << "  path text collate naturalnocase,\n"
+        << "  raw_line text\n"
+        << ");";
 
     return oss.str();
 }
@@ -68,6 +95,7 @@ struct vtab {
 struct vtab_cursor {
     sqlite3_vtab_cursor base;
     struct log_cursor log_cursor;
+    std::vector<logline_value> line_values;
 };
 
 static int vt_destructor(sqlite3_vtab *p_svt);
@@ -95,6 +123,9 @@ static int vt_create( sqlite3 *db,
     
     /* Declare the vtable's structure */
     p_vt->vi = vm->lookup_impl(argv[3]);
+    if (p_vt->vi == NULL) {
+        return SQLITE_ERROR;
+    }
     p_vt->lss = vm->get_source();
     rc = sqlite3_declare_vtab(db, declare_table_statement(p_vt->vi).c_str());
 
@@ -138,8 +169,7 @@ static int vt_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
     vtab* p_vt         = (vtab*)p_svt;
     p_vt->base.zErrMsg = NULL;
     
-    vtab_cursor *p_cur = 
-        (vtab_cursor*)sqlite3_malloc(sizeof(vtab_cursor));
+    vtab_cursor *p_cur = (vtab_cursor*)new vtab_cursor();
 
     *pp_cursor = (sqlite3_vtab_cursor*)p_cur;
 
@@ -156,7 +186,7 @@ static int vt_close(sqlite3_vtab_cursor *cur)
     vtab_cursor *p_cur = (vtab_cursor*)cur;
 
     /* Free cursor struct. */
-    sqlite3_free(p_cur);
+    delete p_cur;
 
     return SQLITE_OK;
 }
@@ -175,7 +205,13 @@ static int vt_next(sqlite3_vtab_cursor *cur)
     vtab *vt = (vtab *)cur->pVtab;
     bool done = false;
 
+    vc->line_values.clear();
     do {
+    	log_cursor_latest = vc->log_cursor;
+    	if (vtab_progress_callback(log_cursor_latest)) {
+    		done = true;
+    		break;
+    	}
 	done = vt->vi->next(vc->log_cursor, *vt->lss);
     }
     while (!done);
@@ -200,16 +236,6 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     case VT_COL_LINE_NUMBER:
 	{
 	    sqlite3_result_int64( ctx, vc->log_cursor.lc_curr_line );
-	}
-	break;
-    case VT_COL_PATH:
-        {
-	    const string &fn = lf->get_filename();
-	    
-	    sqlite3_result_text( ctx,
-				 fn.c_str(),
-				 fn.length(),
-				 SQLITE_STATIC );
 	}
 	break;
     case VT_COL_LOG_TIME:
@@ -252,25 +278,57 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 				SQLITE_STATIC);
 	}
 	break;
-    case VT_COL_RAW_LINE:
-	{
-	    string line;
-
-	    lf->read_line(ll, line);
-	    sqlite3_result_text(ctx,
-				line.c_str(),
-				line.length(),
-				SQLITE_TRANSIENT);
-	}
-	break;
     default:
-        {
-	    logfile::iterator line_iter;
-	    string line, value;
-	    
-	    line_iter = lf->begin() + cl;
-	    lf->read_line(line_iter, line);
-	    vt->vi->extract(line, col - VT_COL_MAX, ctx);
+        if (col > (VT_COL_MAX + vt->vi->vi_column_count - 1)) {
+                int post_col_number = col - (VT_COL_MAX + vt->vi->vi_column_count - 1) - 1;
+
+                if (post_col_number == 0)
+                {
+                    const string &fn = lf->get_filename();
+
+                    sqlite3_result_text( ctx,
+                                        fn.c_str(),
+                                        fn.length(),
+                                        SQLITE_STATIC );
+            }
+            else {
+                   string line;
+
+                   lf->read_line(ll, line);
+                   sqlite3_result_text(ctx,
+                                       line.c_str(),
+                                       line.length(),
+                                       SQLITE_TRANSIENT);
+           }
+        }
+        else {
+        	if (vc->line_values.empty()) {
+        		logfile::iterator line_iter;
+        		string line, value;
+
+        		line_iter = lf->begin() + cl;
+        		lf->read_line(line_iter, line);
+        		vt->vi->extract(lf, line, vc->line_values);
+        	}
+        	
+        	{
+        		logline_value &lv = vc->line_values[col - VT_COL_MAX];
+
+        		switch (lv.lv_kind) {
+        		case logline_value::VALUE_TEXT:
+        			sqlite3_result_text(ctx,
+        			                    lv.lv_string.c_str(),
+        			                    lv.lv_string.length(),
+        			                    SQLITE_TRANSIENT);
+        			break;
+        		case logline_value::VALUE_INTEGER:
+        			sqlite3_result_int64(ctx, lv.lv_number.i);
+        			break;
+        		case logline_value::VALUE_FLOAT:
+        			sqlite3_result_double(ctx, lv.lv_number.d);
+        			break;
+        		}
+        	}
 	}
 	break;
     }
@@ -322,30 +380,64 @@ static sqlite3_module vtab_module = {
     NULL,           /* xFindFunction - function overloading */
 };
 
-log_vtab_manager::log_vtab_manager(sqlite3 *memdb, logfile_sub_source &lss)
+static int progress_callback(void *ptr)
+{
+	int retval = 0;
+
+	if (vtab_progress_callback != NULL) {
+		retval = vtab_progress_callback(log_cursor_latest);
+	}
+
+	return retval;
+}
+
+log_vtab_manager::log_vtab_manager(sqlite3 *memdb,
+                                   logfile_sub_source &lss,
+                                   sql_progress_callback_t pc)
     : vm_db(memdb), vm_source(lss)
 {
     sqlite3_create_module(this->vm_db, "log_vtab_impl", &vtab_module, this);
+    vtab_progress_callback = pc;
+    sqlite3_progress_handler(memdb, 10, progress_callback, NULL);
 }
 
 void log_vtab_manager::register_vtab(log_vtab_impl *vi) {
     if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
-	char *sql;
-	int rc;
-	
-	this->vm_impls[vi->get_name()] = vi;
+    char *sql;
+    int rc;
+    
+    this->vm_impls[vi->get_name()] = vi;
 
-	sql = sqlite3_mprintf("CREATE VIRTUAL TABLE %s "
-			      "USING log_vtab_impl(%s)",
-			      vi->get_name().c_str(),
-			      vi->get_name().c_str());
-	rc = sqlite3_exec(this->vm_db,
-			  sql,
-			  NULL,
-			  NULL,
-			  NULL);
-	assert(rc == SQLITE_OK);
+    sql = sqlite3_mprintf("CREATE VIRTUAL TABLE %s "
+                  "USING log_vtab_impl(%s)",
+                  vi->get_name().c_str(),
+                  vi->get_name().c_str());
+    rc = sqlite3_exec(this->vm_db,
+              sql,
+              NULL,
+              NULL,
+              NULL);
+    assert(rc == SQLITE_OK);
 
-	sqlite3_free(sql);
+    sqlite3_free(sql);
     }
+}
+
+void log_vtab_manager::unregister_vtab(std::string name) {
+    if (this->vm_impls.find(name) != this->vm_impls.end()) {
+    char *sql;
+    int rc;
+    
+    sql = sqlite3_mprintf("DROP TABLE %s ", name.c_str());
+    rc = sqlite3_exec(this->vm_db,
+              sql,
+              NULL,
+              NULL,
+              NULL);
+    assert(rc == SQLITE_OK);
+
+    sqlite3_free(sql);
+    }
+
+    this->vm_impls.erase(name);
 }

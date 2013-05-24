@@ -120,6 +120,7 @@ struct _lnav_data {
 
     std::set< std::pair<std::string, int> >	ld_file_names;
     std::list<logfile *>			ld_files;
+    std::list<std::string>                      ld_other_files;
     sig_atomic_t				ld_looping;
     sig_atomic_t				ld_winched;
     unsigned long				ld_flags;
@@ -152,6 +153,8 @@ struct _lnav_data {
 
     hist_source					ld_db_source;
     db_label_source				ld_db_rows;
+    db_overlay_source                           ld_db_overlay;
+    std::vector<std::string>                    ld_db_key_names;
 
     int						ld_max_fd;
     fd_set					ld_read_fds;
@@ -168,6 +171,7 @@ void rebuild_indexes(bool force);
 
 std::string dotlnav_path(const char *sub);
 
+void ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);
 
 #endif
