@@ -37,6 +37,7 @@ using namespace std;
 
 listview_curses::listview_curses()
     : lv_source(NULL),
+      lv_overlay_source(NULL),
       lv_window(NULL),
       lv_y(0),
       lv_top(0),

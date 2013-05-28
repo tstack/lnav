@@ -72,7 +72,6 @@
 
 #include "lnav.hh"
 #include "help.hh"
-#include "auto_temp_file.hh"
 #include "logfile.hh"
 #include "lnav_util.hh"
 #include "listview_curses.hh"

@@ -155,9 +155,7 @@ find_string_attr_range(const string_attrs_t &sa, const std::string &name)
     for (string_attrs_t::const_iterator iter = sa.begin();
          iter != sa.end();
          ++iter) {
-        attrs_map_t::const_iterator prefix_iter;
-
-        if ((prefix_iter = iter->second.find(name)) != iter->second.end()) {
+        if (iter->second.find(name) != iter->second.end()) {
             retval = iter->first;
             break;
         }

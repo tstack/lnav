@@ -29,7 +29,6 @@ LDADD = \
 noinst_HEADERS = \
 	auto_fd.hh \
 	auto_mem.hh \
-	auto_temp_file.hh \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \

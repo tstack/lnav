@@ -70,7 +70,7 @@ public:
 struct listview_overlay {
     listview_overlay(int y, const attr_line_t &al) : lo_y(y), lo_line(al) { };
 
-    int         get_absolute_y(int height)
+    int         get_absolute_y(int height) const
     {
         if (this->lo_y >= 0) {
             return this->lo_y;

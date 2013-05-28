@@ -117,7 +117,7 @@ protected:
 struct capture_if_not {
     capture_if_not(int begin) : cin_begin(begin) { };
 
-    bool operator()(const pcre_context::capture_t &cap)
+    bool operator()(const pcre_context::capture_t &cap) const
     {
         return cap.c_begin != this->cin_begin;
     }

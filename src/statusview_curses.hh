@@ -50,6 +50,7 @@ public:
     status_field(int width = 1,
                  view_colors::role_t role = view_colors::VCR_STATUS)
         : sf_width(width),
+          sf_min_width(0),
           sf_right_justify(false),
           sf_cylon(false),
           sf_cylon_pos(0),
