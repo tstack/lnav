@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -114,9 +114,9 @@ public:
      * match.
      */
     virtual void grep_match(grep_proc &gp,
-			    grep_line_t line,
-			    int start,
-			    int end) = 0;
+                            grep_line_t line,
+                            int start,
+                            int end) = 0;
 
     /**
      * Called for each captured substring in the line.
@@ -128,10 +128,10 @@ public:
      * @param capture The captured substring itself.
      */
     virtual void grep_capture(grep_proc &gp,
-			      grep_line_t line,
-			      int start,
-			      int end,
-			      char *capture) { };
+                              grep_line_t line,
+                              int start,
+                              int end,
+                              char *capture) { };
 
     virtual void grep_match_end(grep_proc &gp, grep_line_t line) { };
 };
@@ -149,12 +149,12 @@ public:
 class grep_proc {
 public:
     class error
-	: public std::exception {
+        : public std::exception {
 public:
-	error(int err)
-	    : e_err(err) { };
+        error(int err)
+            : e_err(err) { };
 
-	int e_err;
+        int e_err;
     };
 
     /**
@@ -166,9 +166,9 @@ public:
      * @param readfds The file descriptor set for readable fds.
      */
     grep_proc(pcre *code,
-	      grep_proc_source &gps,
-	      int &maxfd,
-	      fd_set &readfds);
+              grep_proc_source &gps,
+              int &maxfd,
+              fd_set &readfds);
 
     virtual ~grep_proc();
 
@@ -178,19 +178,21 @@ public:
     /** @param gpd The sink to send resuls to. */
     void set_sink(grep_proc_sink *gpd)
     {
-	this->gp_sink = gpd;
-	this->reset();
+        this->gp_sink = gpd;
+        this->reset();
     };
 
-    void reset() {
-	if (this->gp_sink != NULL)
-	    this->gp_sink->grep_begin(*this);
+    void reset()
+    {
+        if (this->gp_sink != NULL) {
+            this->gp_sink->grep_begin(*this);
+        }
     };
 
     /** @param gpd The sink to send results to. */
     void set_control(grep_proc_control *gpc)
     {
-	this->gp_control = gpc;
+        this->gp_control = gpc;
     };
 
     /** @return The sink to send resuls to. */
@@ -204,12 +206,12 @@ public:
      * the end-of-file.
      */
     void queue_request(grep_line_t start = grep_line_t(0),
-		       grep_line_t stop = grep_line_t(-1))
+                       grep_line_t stop = grep_line_t(-1))
     {
-	assert(start != -1 || stop == -1);
-	assert(stop == -1 || start < stop);
+        assert(start != -1 || stop == -1);
+        assert(stop == -1 || start < stop);
 
-	this->gp_queue.push_back(std::make_pair(start, stop));
+        this->gp_queue.push_back(std::make_pair(start, stop));
     };
 
     /**
@@ -227,19 +229,19 @@ public:
     /** Check the invariants for this object. */
     bool invariant(void)
     {
-	assert(this->gp_code != NULL);
-	if (this->gp_child_started) {
-	    assert(this->gp_child > 0);
-	    assert(this->gp_line_buffer.get_fd() != -1);
-	    assert(FD_ISSET(this->gp_line_buffer.get_fd(), &this->gp_readfds));
-	}
-	else {
-	    assert(this->gp_pipe_offset == 0);
-	    // assert(this->gp_child == -1); XXX doesnt work with static destr
-	    assert(this->gp_line_buffer.get_fd() == -1);
-	}
+        assert(this->gp_code != NULL);
+        if (this->gp_child_started) {
+            assert(this->gp_child > 0);
+            assert(this->gp_line_buffer.get_fd() != -1);
+            assert(FD_ISSET(this->gp_line_buffer.get_fd(), &this->gp_readfds));
+        }
+        else {
+            assert(this->gp_pipe_offset == 0);
+            /* assert(this->gp_child == -1); XXX doesnt work with static destr */
+            assert(this->gp_line_buffer.get_fd() == -1);
+        }
 
-	return true;
+        return true;
     };
 
 protected:
@@ -264,44 +266,43 @@ protected:
     virtual void child_term(void) { fflush(stdout); };
 
     virtual void handle_match(int line,
-			      std::string &line_value,
-			      int off,
-			      int *matches,
-			      int count);
+                              std::string &line_value,
+                              int off,
+                              int *matches,
+                              int count);
 
-    pcrepp gp_pcre;
-    pcre *gp_code;                       /*< The compiled pattern. */
+    pcrepp             gp_pcre;
+    pcre *             gp_code;          /*< The compiled pattern. */
     grep_proc_source & gp_source;        /*< The data source delegate. */
 
     auto_fd     gp_err_pipe;             /*< Standard error from the child. */
     line_buffer gp_line_buffer;          /*< Standard out from the child. */
     off_t       gp_pipe_offset;
 
-    pid_t gp_child;			/*<
-					 * The child's pid or zero in the
-					 * child.
-					 */
-    bool  gp_child_started;             /*< True if the child was start()'d. */
-    int & gp_maxfd;
-    fd_set & gp_readfds;		/*<
-					 * Pointer to the read fd_set so we can
-					 * clear our file descriptors later.
-					 */
+    pid_t gp_child;                     /*<
+                                         * The child's pid or zero in the
+                                         * child.
+                                         */
+    bool     gp_child_started;          /*< True if the child was start()'d. */
+    int &    gp_maxfd;
+    fd_set & gp_readfds;                /*<
+                                         * Pointer to the read fd_set so we can
+                                         * clear our file descriptors later.
+                                         */
 
     /** The queue of search requests. */
     std::deque<std::pair<grep_line_t, grep_line_t> > gp_queue;
-    grep_line_t       gp_last_line;	/*<
-					 * The last line number received from
-					 * the child.  For multiple matches,
-					 * the line number is only sent once.
-					 */
-    grep_line_t        gp_highest_line; /*< The highest numbered line processed
+    grep_line_t gp_last_line;           /*<
+                                         * The last line number received from
+                                         * the child.  For multiple matches,
+                                         * the line number is only sent once.
+                                         */
+    grep_line_t gp_highest_line;        /*< The highest numbered line processed
                                          * by the grep child process.  This
                                          * value is used when the start line
                                          * for a queued request is -1.
                                          */
-    grep_proc_sink    *gp_sink;         /*< The sink delegate. */
+    grep_proc_sink *   gp_sink;         /*< The sink delegate. */
     grep_proc_control *gp_control;      /*< The control delegate. */
 };
-
 #endif

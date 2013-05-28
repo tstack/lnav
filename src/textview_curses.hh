@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -56,7 +56,7 @@ public:
 
     /**
      * Get the value for a line.
-     * 
+     *
      * @param tc The textview_curses object that is delegating control.
      * @param line The line number to retrieve.
      * @param value_out The string object that should be set to the line
@@ -65,9 +65,9 @@ public:
      *   without any post processing.
      */
     virtual void text_value_for_line(textview_curses &tc,
-				     int line,
-				     std::string &value_out,
-				     bool raw = false) = 0;
+                                     int line,
+                                     std::string &value_out,
+                                     bool raw = false) = 0;
 
     /**
      * Inform the source that the given line has been marked/unmarked.  This
@@ -75,40 +75,37 @@ public:
      * numbers and content line numbers.  For example, when viewing a log file
      * with filters being applied, we want the bookmarked lines to be stable
      * across changes in the filters.
-     * 
+     *
      * @param bm    The type of bookmark.
      * @param line  The line that has been marked/unmarked.
      * @param added True if the line was bookmarked and false if it was
      *   unmarked.
      */
-    virtual void text_mark(bookmark_type_t *bm, int line, bool added) {
-    };
+    virtual void text_mark(bookmark_type_t *bm, int line, bool added) {};
 
     /**
      * Clear the bookmarks for a particular type in the text source.
-     * 
+     *
      * @param bm The type of bookmarks to clear.
      */
-    virtual void text_clear_marks(bookmark_type_t *bm) { 
-    };
+    virtual void text_clear_marks(bookmark_type_t *bm) {};
 
     /**
      * Get the attributes for a line of text.
-     * 
+     *
      * @param tc The textview_curses object that is delegating control.
      * @param line The line number to retrieve.
      * @param value_out A string_attrs_t object that should be updated with the
      *   attributes for the line.
      */
     virtual void text_attrs_for_line(textview_curses &tc,
-				     int line,
-				     string_attrs_t &value_out) {
-    };
+                                     int line,
+                                     string_attrs_t &value_out) {};
 
     /**
      * Update the bookmarks used by the text view based on the bookmarks
      * maintained by the text source.
-     * 
+     *
      * @param bm The bookmarks data structure used by the text view.
      */
     virtual void text_update_marks(vis_bookmarks &bm) { };
@@ -131,53 +128,53 @@ public:
     static bookmark_type_t BM_SEARCH;
 
     struct highlighter {
-	highlighter()
-	    : h_code(NULL),
-	      h_multiple(false) { };
-	highlighter(pcre *code,
-		    bool multiple = false,
-		    view_colors::role_t role = view_colors::VCR_NONE)
-	    : h_code(code),
-	      h_multiple(multiple)
-	{
-	    if (!multiple) {
-		if (role == view_colors::VCR_NONE) {
-		    this->h_roles.
-		    push_back(view_colors::singleton().next_highlight());
-		}
-		else {
-		    this->h_roles.push_back(role);
-		}
-	    }
-	};
+        highlighter()
+            : h_code(NULL),
+              h_multiple(false) { };
+        highlighter(pcre *code,
+                    bool multiple = false,
+                    view_colors::role_t role = view_colors::VCR_NONE)
+            : h_code(code),
+              h_multiple(multiple)
+        {
+            if (!multiple) {
+                if (role == view_colors::VCR_NONE) {
+                    this->h_roles.
+                    push_back(view_colors::singleton().next_highlight());
+                }
+                else {
+                    this->h_roles.push_back(role);
+                }
+            }
+        };
 
-	view_colors::role_t get_role(unsigned int index)
-	{
-	    view_colors &vc = view_colors::singleton();
-	    view_colors::role_t retval;
+        view_colors::role_t              get_role(unsigned int index)
+        {
+            view_colors &       vc = view_colors::singleton();
+            view_colors::role_t retval;
 
-	    if (this->h_multiple) {
-		while (index >= this->h_roles.size()) {
-		    this->h_roles.push_back(vc.next_highlight());
-		}
-		retval = this->h_roles[index];
-	    }
-	    else {
-		retval = this->h_roles[0];
-	    }
+            if (this->h_multiple) {
+                while (index >= this->h_roles.size()) {
+                    this->h_roles.push_back(vc.next_highlight());
+                }
+                retval = this->h_roles[index];
+            }
+            else {
+                retval = this->h_roles[0];
+            }
 
-	    return retval;
-	};
+            return retval;
+        };
 
-	int get_attrs(int index)
-	{
-	    return view_colors::singleton().
-		   attrs_for_role(this->get_role(index));
-	};
+        int                              get_attrs(int index)
+        {
+            return view_colors::singleton().
+                   attrs_for_role(this->get_role(index));
+        };
 
-	pcre                             *h_code;
-	bool                             h_multiple;
-	std::vector<view_colors::role_t> h_roles;
+        pcre *                           h_code;
+        bool                             h_multiple;
+        std::vector<view_colors::role_t> h_roles;
     };
 
     textview_curses();
@@ -187,125 +184,127 @@ public:
 
     void set_sub_source(text_sub_source *src)
     {
-	this->tc_sub_source = src;
-	this->reload_data();
+        this->tc_sub_source = src;
+        this->reload_data();
     };
     text_sub_source *get_sub_source(void) { return this->tc_sub_source; };
 
     void horiz_shift(vis_line_t start, vis_line_t end,
-		     int off_start,
-		     std::string highlight_name,
-		     std::pair<int, int> &range_out) {
-	highlighter &hl = this->tc_highlights[highlight_name];
-	int prev_hit = -1, next_hit = INT_MAX;
-	std::string str;
-	
-	for ( ; start < end; ++start) {
-	    int off;
-	    
-	    this->tc_sub_source->text_value_for_line(*this, start, str);
-	    
-	    for (off = 0; off < (int)str.size(); ) {
-		int rc, matches[60];
-		
-		rc = pcre_exec(hl.h_code,
-			       NULL,
-			       str.c_str(),
-			       str.size(),
-			       off,
-			       0,
-			       matches,
-			       60);
-		if (rc > 0) {
-		    struct line_range lr;
-		    
-		    if (rc == 2) {
-			lr.lr_start = matches[2];
-			lr.lr_end   = matches[3];
-		    }
-		    else {
-			lr.lr_start = matches[0];
-			lr.lr_end   = matches[1];
-		    }
+                     int off_start,
+                     std::string highlight_name,
+                     std::pair<int, int> &range_out)
+    {
+        highlighter &hl       = this->tc_highlights[highlight_name];
+        int          prev_hit = -1, next_hit = INT_MAX;
+        std::string  str;
 
-		    if (lr.lr_start < off_start) {
-			prev_hit = std::max(prev_hit, lr.lr_start);
-		    }
-		    else if (lr.lr_start > off_start) {
-			next_hit = std::min(next_hit, lr.lr_start);
-		    }
-		    if (lr.lr_end > lr.lr_start) {
-			off = matches[1];
-		    }
-		    else {
-			off += 1;
-		    }
-		}
-		else {
-		    off = str.size();
-		}
-	    }
-	}
+        for (; start < end; ++start) {
+            int off;
 
-	range_out = std::make_pair(prev_hit, next_hit);
+            this->tc_sub_source->text_value_for_line(*this, start, str);
+
+            for (off = 0; off < (int)str.size(); ) {
+                int rc, matches[60];
+
+                rc = pcre_exec(hl.h_code,
+                               NULL,
+                               str.c_str(),
+                               str.size(),
+                               off,
+                               0,
+                               matches,
+                               60);
+                if (rc > 0) {
+                    struct line_range lr;
+
+                    if (rc == 2) {
+                        lr.lr_start = matches[2];
+                        lr.lr_end   = matches[3];
+                    }
+                    else {
+                        lr.lr_start = matches[0];
+                        lr.lr_end   = matches[1];
+                    }
+
+                    if (lr.lr_start < off_start) {
+                        prev_hit = std::max(prev_hit, lr.lr_start);
+                    }
+                    else if (lr.lr_start > off_start) {
+                        next_hit = std::min(next_hit, lr.lr_start);
+                    }
+                    if (lr.lr_end > lr.lr_start) {
+                        off = matches[1];
+                    }
+                    else {
+                        off += 1;
+                    }
+                }
+                else {
+                    off = str.size();
+                }
+            }
+        }
+
+        range_out = std::make_pair(prev_hit, next_hit);
     };
-    
+
     void set_search_action(action sa) { this->tc_search_action = sa; };
 
     template<class _Receiver>
-    void set_search_action(action::mem_functor_t < _Receiver > *mf)
+    void set_search_action(action::mem_functor_t<_Receiver> *mf)
     {
-	this->tc_search_action = action(mf);
+        this->tc_search_action = action(mf);
     };
 
     void grep_end_batch(grep_proc &gp)
     {
-	if (this->tc_follow_search && !this->tc_bookmarks[&BM_SEARCH].empty()) {
-	    vis_line_t first_hit;
+        if (this->tc_follow_search &&
+            !this->tc_bookmarks[&BM_SEARCH].empty()) {
+            vis_line_t first_hit;
 
-	    first_hit = this->tc_bookmarks[&BM_SEARCH].
-			next(vis_line_t(this->get_top() - 1));
-	    if (first_hit != -1) {
-		if (first_hit > 0) {
-		    --first_hit;
-		}
-		this->set_top(first_hit);
-	    }
-	}
-	this->tc_search_action.invoke(this);
+            first_hit = this->tc_bookmarks[&BM_SEARCH].
+                        next(vis_line_t(this->get_top() - 1));
+            if (first_hit != -1) {
+                if (first_hit > 0) {
+                    --first_hit;
+                }
+                this->set_top(first_hit);
+            }
+        }
+        this->tc_search_action.invoke(this);
     };
     void grep_end(grep_proc &gp);
 
     size_t listview_rows(const listview_curses &lv)
     {
-	return this->tc_sub_source == NULL ? 0 :
-	       this->tc_sub_source->text_line_count();
+        return this->tc_sub_source == NULL ? 0 :
+               this->tc_sub_source->text_line_count();
     };
-    
+
     void listview_value_for_row(const listview_curses &lv,
-				vis_line_t line,
-				attr_line_t &value_out);
-    
+                                vis_line_t line,
+                                attr_line_t &value_out);
+
     bool grep_value_for_line(int line, std::string &value_out)
     {
-	bool retval = false;
+        bool retval = false;
 
-	if (line < (int)this->tc_sub_source->text_line_count()) {
-	    this->tc_sub_source->text_value_for_line(*this,
-						     line,
-						     value_out,
-						     true);
-	    retval = true;
-	}
+        if (line < (int)this->tc_sub_source->text_line_count()) {
+            this->tc_sub_source->text_value_for_line(*this,
+                                                     line,
+                                                     value_out,
+                                                     true);
+            retval = true;
+        }
 
-	return retval;
+        return retval;
     };
 
     void grep_begin(grep_proc &gp);
     void grep_match(grep_proc &gp,
-		    grep_line_t line,
-		    int start,
-		    int end);
+                    grep_line_t line,
+                    int start,
+                    int end);
 
     bool is_searching(void) { return this->tc_searching; };
 
@@ -313,13 +312,14 @@ public:
 
     size_t get_match_count(void)
     {
-	return this->tc_bookmarks[&BM_SEARCH].size();
+        return this->tc_bookmarks[&BM_SEARCH].size();
     };
 
-    void match_reset() {
-	this->tc_bookmarks[&BM_SEARCH].clear();
+    void match_reset()
+    {
+        this->tc_bookmarks[&BM_SEARCH].clear();
         if (this->tc_sub_source != NULL) {
-                this->tc_sub_source->text_clear_marks(&BM_SEARCH);
+            this->tc_sub_source->text_clear_marks(&BM_SEARCH);
         }
     };
 
@@ -340,9 +340,8 @@ protected:
     bool   tc_searching;
     bool   tc_follow_search;
     action tc_search_action;
-    
+
     highlight_map_t           tc_highlights;
     highlight_map_t::iterator tc_current_highlight;
 };
-
 #endif

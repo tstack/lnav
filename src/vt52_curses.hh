@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -124,33 +124,32 @@ protected:
     /** @return The absolute Y position of this view. */
     int get_actual_y()
     {
-	unsigned long width, height;
-	int           retval;
+        unsigned long width, height;
+        int           retval;
 
-	getmaxyx(this->vc_window, height, width);
-	if (this->vc_y < 0) {
-	    retval = height + this->vc_y;
-	}
-	else {
-	    retval = this->vc_y;
-	}
+        getmaxyx(this->vc_window, height, width);
+        if (this->vc_y < 0) {
+            retval = height + this->vc_y;
+        }
+        else {
+            retval = this->vc_y;
+        }
 
-	return retval;
+        return retval;
     };
 
     WINDOW *vc_window;        /*< The window that contains this view. */
-    int    vc_x;              /*< The X position of the cursor. */
-    int    vc_y;              /*< The Y position of the cursor. */
-    int    vc_max_height;
-    char   vc_escape[16];     /*< Storage for escape sequences. */
-    int    vc_escape_len;     /*< The number of chars in vc_escape. */
-    char   vc_map_buffer;     /*<
-			       * Buffer returned by map_input for trivial
-			       * translations (one-to-one).
-			       */
+    int     vc_x;             /*< The X position of the cursor. */
+    int     vc_y;             /*< The Y position of the cursor. */
+    int     vc_max_height;
+    char    vc_escape[16];    /*< Storage for escape sequences. */
+    int     vc_escape_len;    /*< The number of chars in vc_escape. */
+    char    vc_map_buffer;    /*<
+                               * Buffer returned by map_input for trivial
+                               * translations (one-to-one).
+                               */
 
     /** Vector of past lines of output from the child. */
     std::list<std::string> vc_past_lines;
 };
-
 #endif

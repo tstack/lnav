@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -65,29 +65,33 @@
 class pcre_context {
 public:
     typedef struct capture {
-	capture() : c_begin(-1), c_end(-1) { };
-	capture(int begin, int end) : c_begin(begin), c_end(end) {
-	    assert(begin <= end);
-	};
-	
-	int c_begin;
-	int c_end;
+        capture() : c_begin(-1), c_end(-1) { };
+        capture(int begin, int end) : c_begin(begin), c_end(end)
+        {
+            assert(begin <= end);
+        };
 
-	int length() const { return this->c_end - this->c_begin; };
+        int c_begin;
+        int c_end;
+
+        int length() const { return this->c_end - this->c_begin; };
     } capture_t;
-    typedef capture_t *iterator;
+    typedef capture_t       *iterator;
     typedef const capture_t *const_iterator;
 
     /** @return The maximum number of strings this context can capture. */
-    int get_max_count() const {
-	return this->pc_max_count;
+    int get_max_count() const
+    {
+        return this->pc_max_count;
     };
 
-    void set_count(int count) {
-	this->pc_count = count;
+    void set_count(int count)
+    {
+        this->pc_count = count;
     };
 
-    int get_count(void) const {
+    int get_count(void) const
+    {
         return this->pc_count;
     };
 
@@ -103,33 +107,35 @@ public:
 
 protected:
     pcre_context(capture_t *captures, int max_count)
-	: pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
+        : pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
 
     capture_t *pc_captures;
-    int pc_max_count;
-    int pc_count;
+    int        pc_max_count;
+    int        pc_count;
 };
 
 struct capture_if_not {
-	capture_if_not(int begin) : cin_begin(begin) { };
+    capture_if_not(int begin) : cin_begin(begin) { };
 
-	bool operator()(const pcre_context::capture_t &cap) {
-		return cap.c_begin != this->cin_begin;
-	}
+    bool operator()(const pcre_context::capture_t &cap)
+    {
+        return cap.c_begin != this->cin_begin;
+    }
 
-	int cin_begin;
+    int cin_begin;
 };
 
 inline
 pcre_context::iterator skip_invalid_captures(pcre_context::iterator iter,
                                              pcre_context::iterator pc_end)
 {
-	for (; iter != pc_end; ++iter) {
-		if (iter->c_begin == -1)
-			continue;
-	}
+    for (; iter != pc_end; ++iter) {
+        if (iter->c_begin == -1) {
+            continue;
+        }
+    }
 
-	return iter;
+    return iter;
 }
 
 /**
@@ -140,46 +146,49 @@ template<size_t MAX_COUNT>
 class pcre_context_static : public pcre_context {
 public:
     pcre_context_static()
-	: pcre_context(this->pc_match_buffer, MAX_COUNT + 1) { };
+        : pcre_context(this->pc_match_buffer, MAX_COUNT + 1) { };
 
 private:
     capture_t pc_match_buffer[MAX_COUNT + 1];
 };
 
 /**
- * 
+ *
  */
 class pcre_input {
 public:
     pcre_input(const char *str, size_t off = 0, size_t len = -1)
-	: pi_offset(off),
-	  pi_next_offset(off),
-	  pi_length(len),
-	  pi_string(str) {
-	if (this->pi_length == (size_t)-1)
-	    this->pi_length = strlen(str);
+        : pi_offset(off),
+          pi_next_offset(off),
+          pi_length(len),
+          pi_string(str)
+    {
+        if (this->pi_length == (size_t)-1) {
+            this->pi_length = strlen(str);
+        }
     };
 
     pcre_input(const std::string &str, size_t off = 0)
-	: pi_offset(off),
-	  pi_next_offset(off),
-	  pi_length(str.length()),
-	  pi_string(str.c_str()) {
-    };
+        : pi_offset(off),
+          pi_next_offset(off),
+          pi_length(str.length()),
+          pi_string(str.c_str()) {};
 
     const char *get_string() const { return this->pi_string; };
 
-    const char *get_substr_start(const pcre_context::iterator iter) const {
-	return &this->pi_string[iter->c_begin];
+    const char *get_substr_start(const pcre_context::iterator iter) const
+    {
+        return &this->pi_string[iter->c_begin];
     };
 
-    std::string get_substr(pcre_context::const_iterator iter) const {
-    	if (iter->c_begin == -1) {
-    		return "";
-    	}
-	return std::string(this->pi_string,
-			   iter->c_begin,
-			   iter->length());
+    std::string get_substr(pcre_context::const_iterator iter) const
+    {
+        if (iter->c_begin == -1) {
+            return "";
+        }
+        return std::string(this->pi_string,
+                           iter->c_begin,
+                           iter->length());
     };
 
     size_t pi_offset;
@@ -192,101 +201,105 @@ private:
 class pcrepp {
 public:
     class error : public std::exception {
-    public:
-	error(std::string msg, int offset) :
-	    e_msg(msg), e_offset(offset) { };
-	virtual ~error() throw () { };
-	
-	virtual const char* what() const throw() {
-	    return this->e_msg.c_str();
-	};
-	
-	const std::string e_msg;
-	int e_offset;
+public:
+        error(std::string msg, int offset)
+            : e_msg(msg), e_offset(offset) { };
+        virtual ~error() throw () { };
+
+        virtual const char *what() const throw()
+        {
+            return this->e_msg.c_str();
+        };
+
+        const std::string e_msg;
+        int e_offset;
     };
 
-    pcrepp(pcre *code) : p_code(code) {
-	const char *errptr;
-	
-	pcre_refcount(this->p_code, 1);
-	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
+    pcrepp(pcre *code) : p_code(code)
+    {
+        const char *errptr;
+
+        pcre_refcount(this->p_code, 1);
+        this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
         if (!this->p_code_extra && errptr) {
-                fprintf(stderr, "pcre_study error: %s\n", errptr);
-        }
-    };
-    
-    pcrepp(const char *pattern, int options = 0) {
-	const char *errptr;
-	int eoff;
-	
-	if ((this->p_code = pcre_compile(pattern,
-					 options,
-					 &errptr,
-					 &eoff,
-					 NULL)) == NULL) {
-	    throw error(errptr, eoff);
-	}
-	
-	pcre_refcount(this->p_code, 1);
-	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
-        if (!this->p_code_extra && errptr) {
-                fprintf(stderr, "pcre_study error: %s\n", errptr);
+            fprintf(stderr, "pcre_study error: %s\n", errptr);
         }
     };
 
-    pcrepp(const pcrepp &other) {
-	const char *errptr;
-	
-	this->p_code = other.p_code;
-	pcre_refcount(this->p_code, 1);
-	this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
+    pcrepp(const char *pattern, int options = 0)
+    {
+        const char *errptr;
+        int         eoff;
+
+        if ((this->p_code = pcre_compile(pattern,
+                                         options,
+                                         &errptr,
+                                         &eoff,
+                                         NULL)) == NULL) {
+            throw error(errptr, eoff);
+        }
+
+        pcre_refcount(this->p_code, 1);
+        this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
         if (!this->p_code_extra && errptr) {
-                fprintf(stderr, "pcre_study error: %s\n", errptr);
+            fprintf(stderr, "pcre_study error: %s\n", errptr);
         }
     };
 
-    virtual ~pcrepp() { 
-    	if (pcre_refcount(this->p_code, -1) == 0) {
-    	    free(this->p_code);
-    	    this->p_code = 0;
-    	}
+    pcrepp(const pcrepp &other)
+    {
+        const char *errptr;
+
+        this->p_code = other.p_code;
+        pcre_refcount(this->p_code, 1);
+        this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
+        if (!this->p_code_extra && errptr) {
+            fprintf(stderr, "pcre_study error: %s\n", errptr);
+        }
     };
 
-    bool match(pcre_context &pc, pcre_input &pi, int options = 0) {
-	int count = pc.get_max_count();
-	int rc;
-
-	pi.pi_offset = pi.pi_next_offset;
-	rc = pcre_exec(this->p_code,
-		       this->p_code_extra,
-		       pi.get_string(),
-		       pi.pi_length,
-		       pi.pi_offset,
-		       options,
-		       (int *)pc.all(),
-		       count * 2);
-
-	
-	if (rc < 0) {
-	}
-	else if (rc == 0) {
-	    rc = 0;
-	}
-	else if (pc.all()->c_begin == pc.all()->c_end) {
-	    rc = 0;
-	}
-	else  {
-	    pi.pi_next_offset = pc.all()->c_end;
-	}
-
-	pc.set_count(rc);
-	
-	return rc > 0;
+    virtual ~pcrepp()
+    {
+        if (pcre_refcount(this->p_code, -1) == 0) {
+            free(this->p_code);
+            this->p_code = 0;
+        }
     };
-    
+
+    bool match(pcre_context &pc, pcre_input &pi, int options = 0)
+    {
+        int count = pc.get_max_count();
+        int rc;
+
+        pi.pi_offset = pi.pi_next_offset;
+        rc           = pcre_exec(this->p_code,
+                                 this->p_code_extra,
+                                 pi.get_string(),
+                                 pi.pi_length,
+                                 pi.pi_offset,
+                                 options,
+                                 (int *)pc.all(),
+                                 count * 2);
+
+
+        if (rc < 0) {}
+        else if (rc == 0) {
+            rc = 0;
+        }
+        else if (pc.all()->c_begin == pc.all()->c_end) {
+            rc = 0;
+        }
+        else {
+            pi.pi_next_offset = pc.all()->c_end;
+        }
+
+        pc.set_count(rc);
+
+        return rc > 0;
+    };
+
 private:
     pcre *p_code;
     auto_mem<pcre_extra> p_code_extra;
 };
-
 #endif

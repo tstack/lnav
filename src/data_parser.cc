@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -40,81 +40,96 @@ data_format data_parser::FORMAT_PLAIN(DT_INVALID, DT_INVALID);
 data_format_state_t dfs_semi_next(data_format_state_t state,
                                   data_token_t next_token)
 {
-	data_format_state_t retval = state;
+    data_format_state_t retval = state;
 
-	switch (state) {
-		case DFS_INIT:
-		switch (next_token) {
-			case DT_COMMA:
-			case DT_SEMI:
-			retval = DFS_ERROR;
-			break;
-			default: retval = DFS_KEY; break;
-		}
-		break;
-		case DFS_KEY:
-		switch (next_token) {
-			case DT_SEPARATOR: retval = DFS_VALUE; break;
-			case DT_SEMI: retval = DFS_ERROR; break;
-			default: break;
-		}
-		break;
-		case DFS_VALUE:
-		switch (next_token) {
-			case DT_SEMI: retval = DFS_INIT; break;
-			default: break;
-		}
-		break;
-		case DFS_ERROR:	retval = DFS_ERROR; break;
-	}
+    switch (state) {
+    case DFS_INIT:
+        switch (next_token) {
+        case DT_COMMA:
+        case DT_SEMI:
+            retval = DFS_ERROR;
+            break;
 
-	return retval;
+        default: retval = DFS_KEY; break;
+        }
+        break;
+
+    case DFS_KEY:
+        switch (next_token) {
+        case DT_SEPARATOR: retval = DFS_VALUE; break;
+
+        case DT_SEMI: retval = DFS_ERROR; break;
+
+        default: break;
+        }
+        break;
+
+    case DFS_VALUE:
+        switch (next_token) {
+        case DT_SEMI: retval = DFS_INIT; break;
+
+        default: break;
+        }
+        break;
+
+    case DFS_ERROR: retval = DFS_ERROR; break;
+    }
+
+    return retval;
 }
 
 data_format_state_t dfs_comma_next(data_format_state_t state,
                                    data_token_t next_token)
 {
-	data_format_state_t retval = state;
+    data_format_state_t retval = state;
 
-	switch (state) {
-		case DFS_INIT:
-		switch (next_token) {
-			case DT_COMMA:
-			case DT_SEMI:
-			retval = DFS_ERROR;
-			break;
-			default:
-			retval = DFS_KEY;
-			break;
-		}
-		break;
-		case DFS_KEY:
-		switch (next_token) {
-			case DT_SEPARATOR:
-			retval = DFS_VALUE;
-			break;
-			case DT_SEMI:
-			case DT_COMMA:
-			retval = DFS_ERROR;
-			break;
-			default: break;
-		}
-		break;
-		case DFS_VALUE:
-		switch (next_token) {
-			case DT_COMMA:
-			retval = DFS_INIT;
-			break;
-			case DT_SEPARATOR:
-			retval = DFS_VALUE;
-			break;
-			default: break;
-		}
-		break;
-		case DFS_ERROR:
-		retval = DFS_ERROR;
-		break;
-	}
+    switch (state) {
+    case DFS_INIT:
+        switch (next_token) {
+        case DT_COMMA:
+        case DT_SEMI:
+            retval = DFS_ERROR;
+            break;
 
-	return retval;
+        default:
+            retval = DFS_KEY;
+            break;
+        }
+        break;
+
+    case DFS_KEY:
+        switch (next_token) {
+        case DT_SEPARATOR:
+            retval = DFS_VALUE;
+            break;
+
+        case DT_SEMI:
+        case DT_COMMA:
+            retval = DFS_ERROR;
+            break;
+
+        default: break;
+        }
+        break;
+
+    case DFS_VALUE:
+        switch (next_token) {
+        case DT_COMMA:
+            retval = DFS_INIT;
+            break;
+
+        case DT_SEPARATOR:
+            retval = DFS_VALUE;
+            break;
+
+        default: break;
+        }
+        break;
+
+    case DFS_ERROR:
+        retval = DFS_ERROR;
+        break;
+    }
+
+    return retval;
 }

@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -71,113 +71,116 @@ public:
      */
     class label_source {
 public:
-	virtual ~label_source() { };
+        virtual ~label_source() { };
 
-	virtual void hist_label_for_group(int group,
-					  std::string &label_out) { };
+        virtual void hist_label_for_group(int group,
+                                          std::string &label_out) { };
 
-	virtual void hist_label_for_bucket(int bucket_start_value,
-					   const bucket_t &bucket,
-					   std::string &label_out) { };
+        virtual void hist_label_for_bucket(int bucket_start_value,
+                                           const bucket_t &bucket,
+                                           std::string &label_out) { };
 
-	virtual void hist_attrs_for_bucket(int bucket_start_value,
-	                                   const bucket_t &bucket,
-	                                   string_attrs_t &sa) { };
+        virtual void hist_attrs_for_bucket(int bucket_start_value,
+                                           const bucket_t &bucket,
+                                           string_attrs_t &sa) { };
     };
 
     hist_source();
     virtual ~hist_source() { };
 
-    void set_bucket_size(unsigned int bs) {
-    	assert(bs > 0);
+    void set_bucket_size(unsigned int bs)
+    {
+        assert(bs > 0);
 
-    	this->hs_bucket_size = bs;
+        this->hs_bucket_size = bs;
     };
     unsigned int get_bucket_size(void) const { return this->hs_bucket_size; };
 
-    void set_group_size(unsigned int gs) {
-    	assert(gs > 0);
-    	this->hs_group_size = gs;
+    void set_group_size(unsigned int gs)
+    {
+        assert(gs > 0);
+        this->hs_group_size = gs;
     };
     unsigned int get_group_size(void) const { return this->hs_group_size; };
 
     void set_label_source(label_source *hls)
     {
-	this->hs_label_source = hls;
+        this->hs_label_source = hls;
     }
 
     label_source *get_label_source(void)
     {
-	return this->hs_label_source;
+        return this->hs_label_source;
     };
 
     int buckets_per_group(void) const
     {
-	return this->hs_group_size / this->hs_bucket_size;
+        return this->hs_group_size / this->hs_bucket_size;
     };
 
     void clear(void) { this->hs_groups.clear(); };
 
     size_t text_line_count()
     {
-	return (this->buckets_per_group() + 1) * this->hs_groups.size();
+        return (this->buckets_per_group() + 1) * this->hs_groups.size();
     };
 
     void set_role_for_type(bucket_type_t bt, view_colors::role_t role)
     {
-	this->hs_type2role[bt] = role;
+        this->hs_type2role[bt] = role;
     };
     const view_colors::role_t &get_role_for_type(bucket_type_t bt)
     {
-	return this->hs_type2role[bt];
+        return this->hs_type2role[bt];
     };
 
     void text_value_for_line(textview_curses &tc,
-			     int row,
-			     std::string &value_out,
-			     bool no_scrub);
+                             int row,
+                             std::string &value_out,
+                             bool no_scrub);
     void text_attrs_for_line(textview_curses &tc,
-			     int row,
-			     string_attrs_t &value_out);
+                             int row,
+                             string_attrs_t &value_out);
 
     int value_for_row(vis_line_t row)
     {
-	int grow   = row / (this->buckets_per_group() + 1);
-	int brow   = row % (this->buckets_per_group() + 1);
-	int retval = 0;
+        int grow   = row / (this->buckets_per_group() + 1);
+        int brow   = row % (this->buckets_per_group() + 1);
+        int retval = 0;
 
-	if (!this->hs_group_keys.empty()) {
-	    bucket_group_t bg = this->hs_group_keys[grow];
+        if (!this->hs_group_keys.empty()) {
+            bucket_group_t bg = this->hs_group_keys[grow];
 
-	    if (brow > 0) {
-		brow -= 1;
-	    }
-	    retval = (bg * this->hs_group_size) + (brow * this->hs_bucket_size);
-	}
+            if (brow > 0) {
+                brow -= 1;
+            }
+            retval =
+                (bg * this->hs_group_size) + (brow * this->hs_bucket_size);
+        }
 
-	return retval;
+        return retval;
     };
 
     vis_line_t row_for_value(int value)
     {
-	vis_line_t retval;
+        vis_line_t retval;
 
-	if (!this->hs_group_keys.empty()) {
-	    bucket_group_t bg(value / this->hs_group_size);
+        if (!this->hs_group_keys.empty()) {
+            bucket_group_t bg(value / this->hs_group_size);
 
-	    std::vector<bucket_group_t>::iterator lb;
+            std::vector<bucket_group_t>::iterator lb;
 
-	    lb = lower_bound(this->hs_group_keys.begin(),
-			     this->hs_group_keys.end(),
-			     bg);
-	    retval = vis_line_t(distance(this->hs_group_keys.begin(), lb) *
-				(this->buckets_per_group() + 1));
-	    retval += vis_line_t(1 +
-				 (value % this->hs_group_size) /
-				 this->hs_bucket_size);
-	}
+            lb = lower_bound(this->hs_group_keys.begin(),
+                             this->hs_group_keys.end(),
+                             bg);
+            retval = vis_line_t(distance(this->hs_group_keys.begin(), lb) *
+                                (this->buckets_per_group() + 1));
+            retval += vis_line_t(1 +
+                                 (value % this->hs_group_size) /
+                                 this->hs_bucket_size);
+        }
 
-	return retval;
+        return retval;
     };
 
     /**
@@ -191,18 +194,19 @@ public:
                    bucket_type_t bt,
                    bucket_count_t amount = 1.0);
 
-    void add_empty_value(unsigned int value) {
-    	bucket_group_t bg;
+    void add_empty_value(unsigned int value)
+    {
+        bucket_group_t bg;
 
-    	this->hs_analyzed = false;
+        this->hs_analyzed = false;
 
-    	bg = bucket_group_t(value / this->hs_group_size);
+        bg = bucket_group_t(value / this->hs_group_size);
 
-    	bucket_array_t &ba = this->hs_groups[bg];
+        bucket_array_t &ba = this->hs_groups[bg];
 
-    	if (ba.empty()) {
-    		ba.resize(this->buckets_per_group());
-    	}
+        if (ba.empty()) {
+            ba.resize(this->buckets_per_group());
+        }
     };
 
     void analyze(void);
@@ -220,10 +224,9 @@ protected:
     bucket_count_t hs_min_count;
     bucket_count_t hs_max_count;
     /** Indicates that all of the data has been analyze()'d. */
-    bool hs_analyzed;
-    label_source   *hs_label_source;
+    bool          hs_analyzed;
+    label_source *hs_label_source;
 
     bucket_t *hs_token_bucket;
 };
-
 #endif

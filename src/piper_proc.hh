@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,12 +44,12 @@
 class piper_proc {
 public:
     class error
-	: public std::exception {
+        : public std::exception {
 public:
-	error(int err)
-	    : e_err(err) { };
+        error(int err)
+            : e_err(err) { };
 
-	int e_err;
+        int e_err;
     };
 
     /**
@@ -62,7 +62,7 @@ public:
      * @param filename The name of the file to save the input to, otherwise a
      *   temporary file will be created.
      */
-    piper_proc(int pipefd, bool timestamp, const char *filename=NULL);
+    piper_proc(int pipefd, bool timestamp, const char *filename = NULL);
 
     /**
      * Terminates the child process.
@@ -71,7 +71,7 @@ public:
 
     /** @return The file descriptor for the temporary file. */
     int get_fd() const { return this->pp_fd; };
-    
+
 private:
     /** A file descriptor that refers to the temporary file. */
     int pp_fd;
@@ -82,5 +82,4 @@ private:
     /** The child process' pid. */
     pid_t pp_child;
 };
-
 #endif

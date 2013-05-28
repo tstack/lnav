@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -63,21 +63,23 @@ public:
      * @param value_out The destination for the string value.
      */
     virtual void listview_value_for_row(const listview_curses &lv,
-					vis_line_t row,
-					attr_line_t &value_out) = 0;
+                                        vis_line_t row,
+                                        attr_line_t &value_out) = 0;
 };
 
 struct listview_overlay {
     listview_overlay(int y, const attr_line_t &al) : lo_y(y), lo_line(al) { };
 
-    int get_absolute_y(int height) {
-        if (this->lo_y >= 0)
+    int         get_absolute_y(int height)
+    {
+        if (this->lo_y >= 0) {
             return this->lo_y;
+        }
 
         return height + this->lo_y;
     };
 
-    int lo_y;
+    int         lo_y;
     attr_line_t lo_line;
 };
 
@@ -108,8 +110,8 @@ public:
     /** @param src The data source delegate. */
     void set_data_source(list_data_source *src)
     {
-	this->lv_source = src;
-	this->reload_data();
+        this->lv_source = src;
+        this->reload_data();
     };
 
     /** @return The data source delegate. */
@@ -118,13 +120,14 @@ public:
     /** @param src The data source delegate. */
     void set_overlay_source(list_overlay_source *src)
     {
-	this->lv_overlay_source = src;
-	this->reload_data();
+        this->lv_overlay_source = src;
+        this->reload_data();
     };
 
     /** @return The overlay source delegate. */
-    list_overlay_source *get_overlay_source() {
-    	return this->lv_overlay_source;
+    list_overlay_source *get_overlay_source()
+    {
+        return this->lv_overlay_source;
     };
 
     /**
@@ -134,9 +137,9 @@ public:
     void set_scroll_action(action va) { this->lv_scroll = va; };
 
     template<class _Receiver>
-    void set_scroll_action(action::mem_functor_t < _Receiver > *mf)
+    void set_scroll_action(action::mem_functor_t<_Receiver> *mf)
     {
-	this->lv_scroll = action(mf);
+        this->lv_scroll = action(mf);
     };
 
     void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
@@ -150,10 +153,10 @@ public:
 
     void set_y(unsigned int y)
     {
-	if (y != this->lv_y) {
-	    this->lv_y            = y;
-	    this->lv_needs_update = true;
-	}
+        if (y != this->lv_y) {
+            this->lv_y            = y;
+            this->lv_needs_update = true;
+        }
     };
     unsigned int get_y() const { return this->lv_y; };
 
@@ -167,15 +170,16 @@ public:
      */
     void set_top(vis_line_t top, bool suppress_flash = false)
     {
-	if (top < 0 || (top > 0 && top >= this->get_inner_height())) {
-	    if (suppress_flash == false)
-		flash();
-	}
-	else if (this->lv_top != top) {
-	    this->lv_top = top;
-	    this->lv_scroll.invoke(this);
-	    this->lv_needs_update = true;
-	}
+        if (top < 0 || (top > 0 && top >= this->get_inner_height())) {
+            if (suppress_flash == false) {
+                flash();
+            }
+        }
+        else if (this->lv_top != top) {
+            this->lv_top = top;
+            this->lv_scroll.invoke(this);
+            this->lv_needs_update = true;
+        }
     };
 
     /** @return The line number that is displayed at the top. */
@@ -184,19 +188,20 @@ public:
     /** @return The line number that is displayed at the bottom. */
     vis_line_t get_bottom()
     {
-	vis_line_t    retval, height;
-	unsigned long width;
+        vis_line_t    retval, height;
+        unsigned long width;
 
-	this->get_dimensions(height, width);
-	retval = std::min(this->lv_top + height - vis_line_t(1),
-			  vis_line_t(this->get_inner_height() - 1));
+        this->get_dimensions(height, width);
+        retval = std::min(this->lv_top + height - vis_line_t(1),
+                          vis_line_t(this->get_inner_height() - 1));
 
-	return retval;
+        return retval;
     };
 
     /** @return True if the given line is visible. */
-    bool is_visible(vis_line_t line) {
-        return (this->get_top() <= line && line <= this->get_bottom());
+    bool is_visible(vis_line_t line)
+    {
+        return this->get_top() <= line && line <= this->get_bottom();
     };
 
     /**
@@ -208,15 +213,18 @@ public:
      */
     vis_line_t shift_top(vis_line_t offset, bool suppress_flash = false)
     {
-	if (offset < 0 && this->lv_top == 0) {
-	    if (suppress_flash == false)
-		flash();
-	}
-	else {
-	    this->set_top(std::max(vis_line_t(0), this->lv_top + offset), suppress_flash);
-	}
+        if (offset < 0 && this->lv_top == 0) {
+            if (suppress_flash == false) {
+                flash();
+            }
+        }
+        else {
+            this->set_top(std::max(vis_line_t(
+                                       0),
+                                   this->lv_top + offset), suppress_flash);
+        }
 
-	return this->lv_top;
+        return this->lv_top;
     };
 
 
@@ -229,11 +237,11 @@ public:
      */
     void set_left(unsigned int left)
     {
-	if (this->lv_left != left) {
-	    this->lv_left = left;
-	    this->lv_scroll.invoke(this);
-	    this->lv_needs_update = true;
-	}
+        if (this->lv_left != left) {
+            this->lv_left = left;
+            this->lv_scroll.invoke(this);
+            this->lv_needs_update = true;
+        }
     };
 
     /** @return The column number that is displayed at the left. */
@@ -247,14 +255,14 @@ public:
      */
     unsigned int shift_left(int offset)
     {
-    	if (offset < 0 && this->lv_left < (unsigned int)-offset) {
-    		this->set_left(0);
-    	}
-    	else {
-	    	this->set_left(this->lv_left + offset);
-	}
+        if (offset < 0 && this->lv_left < (unsigned int)-offset) {
+            this->set_left(0);
+        }
+        else {
+            this->set_left(this->lv_left + offset);
+        }
 
-	return this->lv_left;
+        return this->lv_left;
     };
 
     /**
@@ -266,10 +274,10 @@ public:
      */
     void set_height(vis_line_t height)
     {
-	if (this->lv_height != height) {
-	    this->lv_height       = height;
-	    this->lv_needs_update = true;
-	}
+        if (this->lv_height != height) {
+            this->lv_height       = height;
+            this->lv_needs_update = true;
+        }
     };
 
     /** @return The absolute or relative height of the window. */
@@ -278,8 +286,8 @@ public:
     /** @return The number of rows of data in this view's source data. */
     vis_line_t get_inner_height() const
     {
-	return vis_line_t(this->lv_source == NULL ? 0 :
-		          this->lv_source->listview_rows(*this));
+        return vis_line_t(this->lv_source == NULL ? 0 :
+                          this->lv_source->listview_rows(*this));
     };
 
     void set_needs_update() { this->lv_needs_update = true; };
@@ -292,18 +300,17 @@ public:
      */
     void get_dimensions(vis_line_t &height_out, unsigned long &width_out)
     {
-	unsigned long height;
+        unsigned long height;
 
-	getmaxyx(this->lv_window, height, width_out);
-	if (this->lv_height < 1) {
-	    height_out = vis_line_t(height) +
-			 this->lv_height -
-			 vis_line_t(this->lv_y);
-	}
-	else {
-	    height_out = this->lv_height;
-	}
-
+        getmaxyx(this->lv_window, height, width_out);
+        if (this->lv_height < 1) {
+            height_out = vis_line_t(height) +
+                         this->lv_height -
+                         vis_line_t(this->lv_y);
+        }
+        else {
+            height_out = this->lv_height;
+        }
     };
 
     /** This method should be called when the data source has changed. */
@@ -321,18 +328,17 @@ public:
     void do_update(void);
 
 protected:
-    list_data_source *lv_source;  /*< The data source delegate. */
+    list_data_source *   lv_source; /*< The data source delegate. */
     list_overlay_source *lv_overlay_source;
-    action           lv_scroll;   /*< The scroll action. */
-    WINDOW           *lv_window;  /*< The window that contains this view. */
-    unsigned int        lv_y;	  /*< The y offset of this view. */
-    vis_line_t lv_top;            /*< The line at the top of the view. */
-    unsigned int        lv_left;  /*< The column at the left of the view. */
-    vis_line_t lv_height;         /*< The abs/rel height of the view. */
-    bool       lv_needs_update;	  /*< Flag to indicate if a display update
-    				   *  is needed.
-    				   */
-    bool       lv_show_scrollbar; /*< Draw the scrollbar in the view. */
+    action       lv_scroll;         /*< The scroll action. */
+    WINDOW *     lv_window;         /*< The window that contains this view. */
+    unsigned int lv_y;              /*< The y offset of this view. */
+    vis_line_t   lv_top;            /*< The line at the top of the view. */
+    unsigned int lv_left;           /*< The column at the left of the view. */
+    vis_line_t   lv_height;         /*< The abs/rel height of the view. */
+    bool         lv_needs_update;   /*< Flag to indicate if a display update
+                                     *  is needed.
+                                     */
+    bool lv_show_scrollbar;         /*< Draw the scrollbar in the view. */
 };
-
 #endif

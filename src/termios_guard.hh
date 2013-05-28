@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -42,33 +42,34 @@
  */
 class guard_termios {
 public:
+
     /**
      * Store the TTY termios settings in this object.
      *
      * @param fd The tty file descriptor.
      */
-    guard_termios(const int fd) : gt_fd(fd) {
-	if (isatty(this->gt_fd) &&
-	    tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
-	    perror("tcgetattr");
-	}
-
+    guard_termios(const int fd) : gt_fd(fd)
+    {
+        if (isatty(this->gt_fd) &&
+            tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
+            perror("tcgetattr");
+        }
     };
 
     /**
      * Restore the TTY termios settings that were captured when this object was
      * instantiated.
      */
-    ~guard_termios() {
-	if (isatty(this->gt_fd) &&
-	    tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1) {
-	    perror("tcsetattr");
-	}
+    ~guard_termios()
+    {
+        if (isatty(this->gt_fd) &&
+            tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1) {
+            perror("tcsetattr");
+        }
     };
 
 private:
-    const int gt_fd;
+    const int      gt_fd;
     struct termios gt_termios;
 };
-
 #endif

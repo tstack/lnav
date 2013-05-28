@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,7 +44,7 @@ LineType bookmark_vector<LineType>::next(LineType start)
 
     ub = upper_bound(this->begin(), this->end(), start);
     if (ub != this->end()) {
-	retval = *ub;
+        retval = *ub;
     }
 
     assert(retval == -1 || start < retval);
@@ -63,8 +63,8 @@ LineType bookmark_vector<LineType>::prev(LineType start)
 
     lb = lower_bound(this->begin(), this->end(), start);
     if (lb != this->begin()) {
-	lb    -= 1;
-	retval = *lb;
+        lb    -= 1;
+        retval = *lb;
     }
 
     assert(retval < start);
@@ -73,4 +73,3 @@ LineType bookmark_vector<LineType>::prev(LineType start)
 }
 
 template class bookmark_vector<vis_line_t>;
-

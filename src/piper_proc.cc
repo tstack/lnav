@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -54,9 +54,9 @@ static const char *STDIN_EOF_MSG = "---- END-OF-STDIN ----";
 
 static int write_timestamp(int fd, off_t woff)
 {
-    char time_str[64];
+    char           time_str[64];
     struct timeval tv;
-    char ms_str[8];
+    char           ms_str[8];
 
     gettimeofday(&tv, NULL);
     strftime(time_str, sizeof(time_str), "%FT%T", gmtime(&tv.tv_sec));
@@ -72,13 +72,14 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
     assert(pipefd >= 0);
 
     if (filename) {
-        if ((this->pp_fd = open(filename, O_RDWR|O_CREAT|O_TRUNC, 0600)) == -1) {
-                perror("Unable to open output file for stdin");
-                throw error(errno);
+        if ((this->pp_fd =
+                 open(filename, O_RDWR | O_CREAT | O_TRUNC, 0600)) == -1) {
+            perror("Unable to open output file for stdin");
+            throw error(errno);
         }
     }
     else {
-        char piper_tmpname[PATH_MAX];
+        char        piper_tmpname[PATH_MAX];
         const char *tmpdir;
 
         if ((tmpdir = getenv("TMPDIR")) == NULL) {
@@ -97,40 +98,42 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
     this->pp_child = fork();
     switch (this->pp_child) {
     case -1:
-	throw error(errno);
+        throw error(errno);
+
     case 0:
-	{
-	    auto_fd infd(pipefd);
-	    line_buffer lb;
-	    off_t woff = 0;
-	    off_t off = 0;
-	    char *line;
-	    size_t len;
+    {
+        auto_fd     infd(pipefd);
+        line_buffer lb;
+        off_t       woff = 0;
+        off_t       off  = 0;
+        char *      line;
+        size_t      len;
 
-	    lb.set_fd(infd);
-	    while ((line = lb.read_line(off, len)) != NULL) {
-                int wrc;
+        lb.set_fd(infd);
+        while ((line = lb.read_line(off, len)) != NULL) {
+            int wrc;
 
-	    	if (timestamp) {
-	    	    wrc = write_timestamp(this->pp_fd, woff);
+            if (timestamp) {
+                wrc = write_timestamp(this->pp_fd, woff);
                 if (wrc == -1) {
                     perror("Unable to write to output file for stdin");
                     break;
                 }
                 woff += wrc;
-	    	}
+            }
 
-	    	line[len] = '\n';
-		/* Need to do pwrite here since the fd is used by the main
-		 * lnav process as well.
-		 */
-		wrc = pwrite(this->pp_fd, line, len + 1, woff);
-                if (wrc == -1) {
-                    perror("Unable to write to output file for stdin");
-                    break;
-                }
-		woff += wrc;
-	    }
+            line[len] = '\n';
+
+            /* Need to do pwrite here since the fd is used by the main
+             * lnav process as well.
+             */
+            wrc = pwrite(this->pp_fd, line, len + 1, woff);
+            if (wrc == -1) {
+                perror("Unable to write to output file for stdin");
+                break;
+            }
+            woff += wrc;
+        }
 
         if (timestamp) {
             int wrc;
@@ -141,33 +144,34 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 break;
             }
             woff += wrc;
-            wrc = pwrite(this->pp_fd,
-                         STDIN_EOF_MSG, strlen(STDIN_EOF_MSG),
-                         woff);
+            wrc   = pwrite(this->pp_fd,
+                           STDIN_EOF_MSG, strlen(STDIN_EOF_MSG),
+                           woff);
             if (wrc == -1) {
                 perror("Unable to write to output file for stdin");
                 break;
             }
             woff += wrc;
         }
-	}
-	exit(0);
-	break;
+    }
+        exit(0);
+        break;
+
     default:
-	break;
+        break;
     }
 }
 
 piper_proc::~piper_proc()
 {
     if (this->pp_child > 0) {
-	int status;
-	
-	kill(this->pp_child, SIGTERM);
-	while (waitpid(this->pp_child, &status, 0) < 0 && (errno == EINTR)) {
-	    ;
-	}
+        int status;
 
-	this->pp_child = -1;
+        kill(this->pp_child, SIGTERM);
+        while (waitpid(this->pp_child, &status, 0) < 0 && (errno == EINTR)) {
+            ;
+        }
+
+        this->pp_child = -1;
     }
 }

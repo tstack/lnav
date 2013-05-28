@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -54,8 +54,7 @@
  * @note The vector is expected to be sorted.
  */
 template<typename LineType>
-class bookmark_vector
-    : public std::vector<LineType> {
+class bookmark_vector : public std::vector<LineType> {
 public:
 
     /**
@@ -66,20 +65,20 @@ public:
      */
     typename bookmark_vector::iterator insert_once(LineType vl)
     {
-	typename bookmark_vector::iterator lb, retval;
+        typename bookmark_vector::iterator lb, retval;
 
-	assert(vl >= 0);
+        assert(vl >= 0);
 
-	lb = std::lower_bound(this->begin(), this->end(), vl);
-	if (lb == this->end() || *lb != vl) {
-	    this->insert(lb, vl);
-	    retval = this->end();
-	}
-	else {
-	    retval = lb;
-	}
+        lb = std::lower_bound(this->begin(), this->end(), vl);
+        if (lb == this->end() || *lb != vl) {
+            this->insert(lb, vl);
+            retval = this->end();
+        }
+        else {
+            retval = lb;
+        }
 
-	return retval;
+        return retval;
     };
 
     /**
@@ -115,6 +114,6 @@ struct bookmarks {
     typedef std::map<bookmark_type_t *, bookmark_vector<LineType> > type;
 };
 
-typedef bookmarks<vis_line_t>::type vis_bookmarks;
-
+typedef bookmarks<vis_line_t>::type
+    vis_bookmarks;
 #endif

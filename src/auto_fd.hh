@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,6 +46,7 @@
  */
 class auto_fd {
 public:
+
     /**
      * Wrapper for the posix pipe(2) function that stores the file descriptor
      * results in an auto_fd array.
@@ -56,16 +57,16 @@ public:
      */
     static int pipe(auto_fd *af)
     {
-	int retval, fd[2];
+        int retval, fd[2];
 
-	assert(fd != NULL);
+        assert(fd != NULL);
 
-	if ((retval = ::pipe(fd)) == 0) {
-	    af[0] = fd[0];
-	    af[1] = fd[1];
-	}
+        if ((retval = ::pipe(fd)) == 0) {
+            af[0] = fd[0];
+            af[1] = fd[1];
+        }
 
-	return(retval);
+        return retval;
     };
 
     /**
@@ -74,10 +75,10 @@ public:
      * @param fd The file descriptor to be managed.
      */
     auto_fd(int fd = -1)
-	: af_fd(fd)
+        : af_fd(fd)
     {
-	assert(fd >= -1);
-	assert(fd < (int)FD_SETSIZE);
+        assert(fd >= -1);
+        assert(fd < (int)FD_SETSIZE);
     };
 
     /**
@@ -87,8 +88,8 @@ public:
      *
      * @param af The source of the file descriptor.
      */
-    auto_fd(auto_fd &af)
-	: af_fd(af.release()) { };
+    auto_fd(auto_fd & af)
+        : af_fd(af.release()) { };
 
     /**
      * Const copy constructor.  The file descriptor from the source will be
@@ -97,20 +98,23 @@ public:
      * @param af The source of the file descriptor.
      */
     auto_fd(const auto_fd &af)
-	: af_fd(-1)
+        : af_fd(-1)
     {
-	if (af.af_fd != -1 && (this->af_fd = dup(af.af_fd)) == -1) {
-	    throw std::bad_alloc();
-	}
+        if (af.af_fd != -1 && (this->af_fd = dup(af.af_fd)) == -1) {
+            throw std::bad_alloc();
+        }
     };
 
     /**
      * Destructor that will close the file descriptor managed by this object.
      */
-    ~auto_fd() { this->reset(); };
+    ~auto_fd()
+    {
+        this->reset();
+    };
 
     /** @return The file descriptor as a pain integer. */
-    operator int(void) const { return(this->af_fd); };
+    operator int(void) const { return this->af_fd;  };
 
     /**
      * Replace the current descriptor with the given one.  The current
@@ -119,13 +123,13 @@ public:
      * @param fd The file descriptor to store in this object.
      * @return *this
      */
-    auto_fd &operator=(int fd)
+    auto_fd &operator =(int fd)
     {
-	assert(fd >= -1);
-	assert(fd < (int)FD_SETSIZE);
+        assert(fd >= -1);
+        assert(fd < (int)FD_SETSIZE);
 
-	this->reset(fd);
-	return(*this);
+        this->reset(fd);
+        return *this;
     };
 
     /**
@@ -134,10 +138,10 @@ public:
      * @param af The old manager of the file descriptor.
      * @return *this
      */
-    auto_fd &operator=(auto_fd &af)
+    auto_fd &operator =(auto_fd & af)
     {
-	this->reset(af.release());
-	return(*this);
+        this->reset(af.release());
+        return *this;
     };
 
     /**
@@ -148,8 +152,8 @@ public:
      */
     int *out(void)
     {
-	this->reset();
-	return(&this->af_fd);
+        this->reset();
+        return &this->af_fd;
     };
 
     /**
@@ -159,16 +163,19 @@ public:
      */
     int release(void)
     {
-	int retval = this->af_fd;
+        int retval = this->af_fd;
 
-	this->af_fd = -1;
-	return(retval);
+        this->af_fd = -1;
+        return retval;
     };
 
     /**
      * @return The file descriptor.
      */
-    int get(void) const { return(this->af_fd); };
+    int get(void) const
+    {
+        return this->af_fd;
+    };
 
     /**
      * Closes the current file descriptor and replaces its value with the given
@@ -178,19 +185,18 @@ public:
      */
     void reset(int fd = -1)
     {
-	assert(fd >= -1);
-	assert(fd < (int)FD_SETSIZE);
+        assert(fd >= -1);
+        assert(fd < (int)FD_SETSIZE);
 
-	if (this->af_fd != fd) {
-	    if (this->af_fd != -1) {
-		close(this->af_fd);
-	    }
-	    this->af_fd = fd;
-	}
+        if (this->af_fd != fd) {
+            if (this->af_fd != -1) {
+                close(this->af_fd);
+            }
+            this->af_fd = fd;
+        }
     };
 
 private:
     int af_fd;  /*< The managed file descriptor. */
 };
-
 #endif

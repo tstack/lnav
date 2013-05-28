@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,7 +35,7 @@
 #include "pcrepp.hh"
 
 enum data_token_t {
-    DT_INVALID = -1,
+    DT_INVALID       = -1,
 
     DT_QUOTED_STRING = 0,
     DT_URL,
@@ -43,8 +43,8 @@ enum data_token_t {
     DT_MAC_ADDRESS,
     DT_TIME,
     DT_IPV6_ADDRESS,
-    // DT_QUALIFIED_NAME,
-    
+    /* DT_QUALIFIED_NAME, */
+
     DT_SEPARATOR,
     DT_COMMA,
     DT_SEMI,
@@ -80,7 +80,7 @@ enum data_token_t {
 
     DT_TERMINAL_MAX = DT_GARBAGE + 1,
 
-    DNT_KEY = 50,
+    DNT_KEY         = 50,
     DNT_PAIR,
     DNT_VALUE,
     DNT_ROW,
@@ -92,20 +92,21 @@ enum data_token_t {
     DNT_GROUP,
 
     DNT_MAX,
-    
+
     DT_ANY = 100,
 };
 
 class data_scanner {
 public:
     static const char *token2name(data_token_t token);
-    
-    data_scanner(const std::string &line) :
-	ds_line(line),
-	ds_pcre_input(ds_line.c_str()) {
-		if (!line.empty() && line[line.length() - 1] == '.') {
-			this->ds_pcre_input.pi_length -= 1;
-		}
+
+    data_scanner(const std::string &line)
+        : ds_line(line),
+          ds_pcre_input(ds_line.c_str())
+    {
+        if (!line.empty() && line[line.length() - 1] == '.') {
+            this->ds_pcre_input.pi_length -= 1;
+        }
     };
 
     bool tokenize(pcre_context &pc, data_token_t &token_out);
@@ -114,7 +115,6 @@ public:
 
 private:
     std::string ds_line;
-    pcre_input ds_pcre_input;
+    pcre_input  ds_pcre_input;
 };
-
 #endif

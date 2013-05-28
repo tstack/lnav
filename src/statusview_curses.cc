@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,8 +37,8 @@ using namespace std;
 
 void statusview_curses::do_update(void)
 {
-    int  top, attrs, field, field_count, left = 1, right;
-    view_colors &vc = view_colors::singleton();
+    int           top, attrs, field, field_count, left = 1, right;
+    view_colors & vc = view_colors::singleton();
     unsigned long width, height;
 
     getmaxyx(this->sc_window, height, width);
@@ -54,26 +54,27 @@ void statusview_curses::do_update(void)
 
     field_count = this->sc_source->statusview_fields();
     for (field = 0; field < field_count; field++) {
-	status_field &sf = this->sc_source->statusview_value_for_field(field);
-	struct line_range lr = { 0, sf.get_width() };
-	attr_line_t val;
-	int x;
+        status_field &sf     = this->sc_source->statusview_value_for_field(
+            field);
+        struct line_range lr = { 0, sf.get_width() };
+        attr_line_t       val;
+        int x;
 
-	val = sf.get_value();
+        val = sf.get_value();
 
-	if (sf.is_right_justified()) {
-	    right -= 1 + sf.get_width();
-	    x = right;
-	}
-	else {
-	    x = left;
-	    left += sf.get_width() + 1;
-	}
-	this->mvwattrline(this->sc_window,
-			  top, x,
-			  val,
-			  lr,
-			  sf.get_role());
+        if (sf.is_right_justified()) {
+            right -= 1 + sf.get_width();
+            x      = right;
+        }
+        else {
+            x     = left;
+            left += sf.get_width() + 1;
+        }
+        this->mvwattrline(this->sc_window,
+                          top, x,
+                          val,
+                          lr,
+                          sf.get_role());
     }
     wmove(this->sc_window, top + 1, 0);
 }

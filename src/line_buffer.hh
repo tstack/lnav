@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -55,12 +55,12 @@
 class line_buffer {
 public:
     class error
-	: public std::exception {
+        : public std::exception {
 public:
-	error(int err)
-	    : e_err(err) { };
+        error(int err)
+            : e_err(err) { };
 
-	int e_err;
+        int e_err;
     };
 
     /** Construct an empty line_buffer. */
@@ -79,11 +79,14 @@ public:
      */
     size_t get_file_size() const { return this->lb_file_size; };
 
-    off_t get_read_offset(off_t off) const {
-	if (this->lb_gz_file)
-	    return this->lb_gz_offset;
-	else
-	    return off;
+    off_t get_read_offset(off_t off) const
+    {
+        if (this->lb_gz_file) {
+            return this->lb_gz_offset;
+        }
+        else{
+            return off;
+        }
     };
 
     /**
@@ -112,29 +115,29 @@ public:
      */
     void invalidate()
     {
-	this->lb_file_offset += this->lb_buffer_size;
-	this->lb_buffer_size  = 0;
-	this->lb_file_size = -1;
+        this->lb_file_offset += this->lb_buffer_size;
+        this->lb_buffer_size  = 0;
+        this->lb_file_size    = -1;
     };
 
     /** Release any resources held by this object. */
     void reset()
     {
-	this->lb_fd.reset();
+        this->lb_fd.reset();
 
-	this->lb_file_offset = 0;
-	this->lb_file_size   = (size_t)-1;
-	this->lb_buffer_size = 0;
+        this->lb_file_offset      = 0;
+        this->lb_file_size        = (size_t)-1;
+        this->lb_buffer_size      = 0;
         this->lb_last_line_offset = -1;
     };
 
     /** Check the invariants for this object. */
     bool invariant(void)
     {
-	assert(this->lb_buffer != NULL);
-	assert(this->lb_buffer_size <= this->lb_buffer_max);
+        assert(this->lb_buffer != NULL);
+        assert(this->lb_buffer_size <= this->lb_buffer_max);
 
-	return true;
+        return true;
     };
 
 private:
@@ -145,8 +148,8 @@ private:
      */
     bool in_range(off_t off) const
     {
-	return this->lb_file_offset <= off &&
-	       off < (int)(this->lb_file_offset + this->lb_buffer_size);
+        return this->lb_file_offset <= off &&
+               off < (int)(this->lb_file_offset + this->lb_buffer_size);
     };
 
     void resize_buffer(size_t new_max) throw (error);
@@ -187,37 +190,36 @@ private:
      */
     char *get_range(off_t start, size_t &avail_out)
     {
-	off_t  buffer_offset = start - this->lb_file_offset;
-	char *retval;
+        off_t buffer_offset = start - this->lb_file_offset;
+        char *retval;
 
-	assert(buffer_offset >= 0);
+        assert(buffer_offset >= 0);
 
-	retval    = &this->lb_buffer[buffer_offset];
-	avail_out = this->lb_buffer_size - buffer_offset;
+        retval    = &this->lb_buffer[buffer_offset];
+        avail_out = this->lb_buffer_size - buffer_offset;
 
-	return retval;
+        return retval;
     };
 
     auto_fd lb_fd;              /*< The file to read data from. */
-    gzFile lb_gz_file;          /*< File handle for gzipped files. */
-    bool lb_bz_file;            /*< Flag set for bzip2 compressed files. */
-    off_t lb_gz_offset;         /*< The offset into the compressed file. */
-    
+    gzFile  lb_gz_file;         /*< File handle for gzipped files. */
+    bool    lb_bz_file;         /*< Flag set for bzip2 compressed files. */
+    off_t   lb_gz_offset;       /*< The offset into the compressed file. */
+
     auto_mem<char> lb_buffer;   /*< The internal buffer where data is cached */
 
-    size_t lb_file_size;	/*<
-				 * The size of the file.  When lb_fd refers to
-				 * a pipe, this is set to the amount of data
-				 * read from the pipe when EOF is reached.
-				 */
-    off_t  lb_file_offset;	/*<
-				 * Data cached in the buffer comes from this
-				 * offset in the file.
-				 */
+    size_t lb_file_size;        /*<
+                                 * The size of the file.  When lb_fd refers to
+                                 * a pipe, this is set to the amount of data
+                                 * read from the pipe when EOF is reached.
+                                 */
+    off_t lb_file_offset;       /*<
+                                 * Data cached in the buffer comes from this
+                                 * offset in the file.
+                                 */
     size_t lb_buffer_size;      /*< The amount of cached data in the buffer. */
     size_t lb_buffer_max;       /*< The size of the buffer memory. */
     bool   lb_seekable;         /*< Flag set for seekable file descriptors. */
     off_t  lb_last_line_offset; /*< */
 };
-
 #endif

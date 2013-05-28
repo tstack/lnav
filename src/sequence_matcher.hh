@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,20 +39,20 @@
 class sequence_matcher {
 public:
     typedef std::vector<std::string> field_row_t;
-    typedef std::list<field_row_t> field_col_t;
+    typedef std::list<field_row_t>   field_col_t;
 
-    typedef byte_array<20> id_t;
-    
+    typedef byte_array<20>           id_t;
+
     enum field_type_t {
-	FT_VARIABLE,
-	FT_CONSTANT,
+        FT_VARIABLE,
+        FT_CONSTANT,
     };
 
     struct field {
-	field() : sf_type(FT_VARIABLE) { };
+        field() : sf_type(FT_VARIABLE) { };
 
-	field_type_t sf_type;
-	field_row_t sf_value;
+        field_type_t sf_type;
+        field_row_t  sf_value;
     };
 
     sequence_matcher(field_col_t &example);
@@ -61,42 +61,42 @@ public:
 
     template<typename T>
     bool match(const std::vector<std::string> &values,
-	       std::vector<T> &state,
-	       T index) {
-	bool index_match = true;
-	int lpc = 0;
-	
-    retry:
-	for (std::list<field>::iterator iter = this->sm_fields.begin();
-	     iter != this->sm_fields.end();
-	     ++iter, lpc++) {
-	    if (iter->sf_type != sequence_matcher::FT_CONSTANT) {
-		continue;
-	    }
+               std::vector<T> &state,
+               T index)
+    {
+        bool index_match = true;
+        int  lpc         = 0;
 
-	    if (iter->sf_value[state.size()] != values[lpc]) {
-		if (!state.empty()) {
-		    state.clear();
-		    lpc = 0;
-		    goto retry;
-		}
-		else {
-		    index_match = false;
-		    break;
-		}
-	    }
-	}
-	
-	if (index_match) {
-	    state.push_back(index);
-	}
-	
-	return (this->sm_count == state.size());
+retry:
+        for (std::list<field>::iterator iter = this->sm_fields.begin();
+             iter != this->sm_fields.end();
+             ++iter, lpc++) {
+            if (iter->sf_type != sequence_matcher::FT_CONSTANT) {
+                continue;
+            }
+
+            if (iter->sf_value[state.size()] != values[lpc]) {
+                if (!state.empty()) {
+                    state.clear();
+                    lpc = 0;
+                    goto retry;
+                }
+                else {
+                    index_match = false;
+                    break;
+                }
+            }
+        }
+
+        if (index_match) {
+            state.push_back(index);
+        }
+
+        return this->sm_count == state.size();
     };
 
 private:
     int sm_count;
     std::list<field> sm_fields;
 };
-
 #endif

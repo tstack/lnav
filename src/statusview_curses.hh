@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -48,60 +48,66 @@ public:
      * @param role The color role for this field, defaults to VCR_STATUS.
      */
     status_field(int width = 1,
-		 view_colors::role_t role = view_colors::VCR_STATUS)
-	: sf_width(width),
-	  sf_right_justify(false),
-	  sf_cylon(false),
-	  sf_cylon_pos(0),
-	  sf_role(role),
-      sf_share(0) { };
+                 view_colors::role_t role = view_colors::VCR_STATUS)
+        : sf_width(width),
+          sf_right_justify(false),
+          sf_cylon(false),
+          sf_cylon_pos(0),
+          sf_role(role),
+          sf_share(0) { };
 
     virtual ~status_field() { };
 
     /** @param value The new value for this field. */
-    void set_value(std::string value) {
-	if (value.size() > this->get_width()) {
-	    if (value.size() <= 11) {
-		value.resize(11);
-	    }
-	    else {
-		static const std::string MIDSUB = " .. ";
+    void set_value(std::string value)
+    {
+        if (value.size() > this->get_width()) {
+            if (value.size() <= 11) {
+                value.resize(11);
+            }
+            else {
+                static const std::string MIDSUB = " .. ";
 
-		size_t half_width = this->get_width() / 2 - MIDSUB.size() / 2;
-		std::string abbrev;
-		
-		abbrev.append(value, 0, half_width);
-		abbrev.append(MIDSUB);
-		abbrev.append(value,
-			      value.size() - half_width,
-			      std::string::npos);
-		value = abbrev;
-	    }
-	}
+                size_t half_width = this->get_width() / 2 -
+                                    MIDSUB.size() / 2;
+                std::string abbrev;
 
-    if (this->sf_right_justify) {
-        int padding = this->sf_width - value.size();
-
-        if (padding > 2) {
-            value.insert(0, padding, ' ');
+                abbrev.append(value, 0, half_width);
+                abbrev.append(MIDSUB);
+                abbrev.append(value,
+                              value.size() - half_width,
+                              std::string::npos);
+                value = abbrev;
+            }
         }
-    }
-	
-	this->sf_value = value;
 
-	string_attrs_t &sa = this->sf_value.get_attrs();
-	sa.clear();
-	
-	if (this->sf_cylon) {
-	    struct line_range lr = { this->sf_cylon_pos,
-				     this->sf_width };
-	    
-	    sa[lr].insert(make_string_attr("style", COLOR_PAIR(view_colors::VC_WHITE_ON_GREEN) | A_BOLD));
+        if (this->sf_right_justify) {
+            int padding = this->sf_width - value.size();
 
-	    this->sf_cylon_pos += 1;
-	    if (this->sf_cylon_pos > this->sf_width)
-		this->sf_cylon_pos = 0;
-	}
+            if (padding > 2) {
+                value.insert(0, padding, ' ');
+            }
+        }
+
+        this->sf_value = value;
+
+        string_attrs_t &sa = this->sf_value.get_attrs();
+        sa.clear();
+
+        if (this->sf_cylon) {
+            struct line_range lr = { this->sf_cylon_pos,
+                                     this->sf_width };
+
+            sa[lr].insert(make_string_attr("style",
+                                           COLOR_PAIR(view_colors::
+                                                      VC_WHITE_ON_GREEN) |
+                                           A_BOLD));
+
+            this->sf_cylon_pos += 1;
+            if (this->sf_cylon_pos > this->sf_width) {
+                this->sf_cylon_pos = 0;
+            }
+        }
     };
 
     /**
@@ -112,13 +118,13 @@ public:
      */
     void set_value(const char *fmt, ...)
     {
-	char    buffer[128];
-	va_list args;
+        char    buffer[128];
+        va_list args;
 
-	va_start(args, fmt);
-	vsnprintf(buffer, sizeof(buffer), fmt, args);
-	this->set_value(std::string(buffer));
-	va_end(args);
+        va_start(args, fmt);
+        vsnprintf(buffer, sizeof(buffer), fmt, args);
+        this->set_value(std::string(buffer));
+        va_end(args);
     };
 
     /** @return The string value for this field. */
@@ -154,10 +160,10 @@ public:
     int get_share() const { return this->sf_share; };
 
 protected:
-    size_t              sf_width; /*< The maximum display width, in chars. */
-    size_t              sf_min_width; /*< The maximum display width, in chars. */
-    bool                sf_right_justify;
-    bool sf_cylon;
+    size_t sf_width;              /*< The maximum display width, in chars. */
+    size_t sf_min_width;          /*< The maximum display width, in chars. */
+    bool   sf_right_justify;
+    bool   sf_cylon;
     size_t sf_cylon_pos;
     attr_line_t         sf_value; /*< The value to display for this field. */
     view_colors::role_t sf_role;  /*< The color role for this field. */
@@ -192,9 +198,9 @@ class statusview_curses
     : public view_curses {
 public:
     statusview_curses()
-	: sc_source(NULL),
-	  sc_window(NULL),
-	  sc_top(0) { };
+        : sc_source(NULL),
+          sc_window(NULL),
+          sc_top(0) { };
     virtual ~statusview_curses() { };
 
     void set_data_source(status_data_source *src) { this->sc_source = src; };
@@ -206,32 +212,36 @@ public:
     void set_window(WINDOW *win) { this->sc_window = win; };
     WINDOW *get_window() { return this->sc_window; };
 
-    void window_change(void) {
-        int field_count = this->sc_source->statusview_fields();
-        int remaining, total_shares = 0;
+    void window_change(void)
+    {
+        int           field_count = this->sc_source->statusview_fields();
+        int           remaining, total_shares = 0;
         unsigned long width, height;
 
         getmaxyx(this->sc_window, height, width);
         remaining = width - 4;
         for (int field = 0; field < field_count; field++) {
-            status_field &sf = this->sc_source->statusview_value_for_field(field);
+            status_field &sf = this->sc_source->statusview_value_for_field(
+                field);
 
-            remaining -= sf.get_share() ? sf.get_min_width() : sf.get_width();
-            remaining -= 1;
+            remaining -=
+                sf.get_share() ? sf.get_min_width() : sf.get_width();
+            remaining    -= 1;
             total_shares += sf.get_share();
         }
 
         if (remaining < 2) {
-        	remaining = 0;
+            remaining = 0;
         }
 
         for (int field = 0; field < field_count; field++) {
-            status_field &sf = this->sc_source->statusview_value_for_field(field);
+            status_field &sf = this->sc_source->statusview_value_for_field(
+                field);
 
             if (sf.get_share()) {
                 int actual_width;
 
-                actual_width = sf.get_min_width();
+                actual_width  = sf.get_min_width();
                 actual_width += remaining / (sf.get_share() / total_shares);
 
                 sf.set_width(actual_width);
@@ -243,8 +253,7 @@ public:
 
 private:
     status_data_source *sc_source;
-    WINDOW             *sc_window;
+    WINDOW *            sc_window;
     int sc_top;
 };
-
 #endif

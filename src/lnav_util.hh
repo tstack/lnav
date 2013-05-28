@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,12 +44,12 @@
  */
 inline int rounddown(size_t size, int step)
 {
-    return (size - (size % step));
+    return size - (size % step);
 }
 
 inline int rounddown_offset(size_t size, int step, int offset)
 {
-    return (size - ((size - offset) % step));
+    return size - ((size - offset) % step);
 }
 
 inline int roundup(size_t size, int step)
@@ -57,7 +57,7 @@ inline int roundup(size_t size, int step)
     int retval = size + step;
 
     retval -= (retval % step);
-    
+
     return retval;
 }
 
@@ -72,11 +72,10 @@ inline time_t hour_num(time_t ti)
 }
 
 #if SIZEOF_OFF_T == 8
-#define FORMAT_OFF_T "%qd"
+#define FORMAT_OFF_T    "%qd"
 #elif SIZEOF_OFF_T == 4
-#define FORMAT_OFF_T "%ld"
+#define FORMAT_OFF_T    "%ld"
 #else
 #error "off_t has unhandled size..."
 #endif
-
 #endif

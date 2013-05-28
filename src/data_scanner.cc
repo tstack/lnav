@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -38,49 +38,78 @@ using namespace std;
 
 static struct {
     const char *name;
-    pcrepp pcre;
+    pcrepp      pcre;
 } MATCHERS[DT_TERMINAL_MAX] = {
-    { "quot", pcrepp("(?:u|r)?\"((?:\\\\.|[^\"])+)\"|"
-                     "(?:u|r)?'((?:\\\\.|[^'])+)'"), },
-    { "url", pcrepp("([\\w]+://[^\\s'\"\\[\\](){}]+[a-zA-Z0-9\\-=&])"), },
-    { "path", pcrepp("(?<![\\w\\d-_])((?:/|\\./|\\.\\./)[\\w\\.\\-_\\~/]+)"), },
-    { "mac", pcrepp("([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"), },
-    { "time", pcrepp("\\b(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"), }, // XXX be more specific
-    // { "qual", pcrepp("([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), },
-    { "ipv6", pcrepp("(::|[:\\da-fA-f\\.]+[a-fA-f\\d])"), },
-    
-    { "sep", pcrepp("(:|=)"), },
-    { "comm", pcrepp("(,|/)"), },
-    { "semi", pcrepp("(;)"), },
+    { "quot",    pcrepp("(?:u|r)?\"((?:\\\\.|[^\"])+)\"|"
+                        "(?:u|r)?'((?:\\\\.|[^'])+)'"), },
+    { "url",     pcrepp("([\\w]+://[^\\s'\"\\[\\](){}]+[a-zA-Z0-9\\-=&])"),
+    },
+    { "path",
+      pcrepp("(?<![\\w\\d-_])((?:/|\\./|\\.\\./)[\\w\\.\\-_\\~/]+)"),     },
+    { "mac",     pcrepp(
+          "([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"),   },
+    { "time",    pcrepp(
+          "\\b(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"),  },           /* XXX be more specific */
+    /* { "qual", pcrepp("([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
+    { "ipv6",    pcrepp("(::|[:\\da-fA-f\\.]+[a-fA-f\\d])"),
+    },
 
-    { "lcurly", pcrepp("({)"), },
-    { "rcurly", pcrepp("(})"), },
+    { "sep",     pcrepp("(:|=)"),
+    },
+    { "comm",    pcrepp("(,|/)"),
+    },
+    { "semi",    pcrepp("(;)"),
+    },
 
-    { "lsquare", pcrepp("(\\[)"), },
-    { "rsquare", pcrepp("(\\])"), },
+    { "lcurly",  pcrepp("({)"),
+    },
+    { "rcurly",  pcrepp("(})"),
+    },
 
-    { "lparen", pcrepp("(\\()"), },
-    { "rparen", pcrepp("(\\))"), },
+    { "lsquare", pcrepp("(\\[)"),
+    },
+    { "rsquare", pcrepp("(\\])"),
+    },
 
-    { "langle", pcrepp("(\\<)"), },
-    { "rangle", pcrepp("(\\>)"), },
+    { "lparen",  pcrepp("(\\()"),
+    },
+    { "rparen",  pcrepp("(\\))"),
+    },
 
-    { "ipv4", pcrepp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"), },
-    { "uuid", pcrepp("([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"), },
+    { "langle",  pcrepp("(\\<)"),
+    },
+    { "rangle",  pcrepp("(\\>)"),
+    },
 
-    { "vers", pcrepp("([0-9]+(?:\\.[0-9]+){2,}\\b)"), },
-    { "oct", pcrepp("(-?0[0-7]+\\b)"), },
-    { "pcnt", pcrepp("(-?[0-9]+(\\.[0-9]+)?[ ]*%\\b)"), },
-    { "num", pcrepp("(-?[0-9]+(\\.[0-9]+)?([eE][-+][0-9]+)?\\b)"), },
-    { "hex", pcrepp("(-?(?:0x|[0-9])[0-9a-fA-F]+\\b)"), },
+    { "ipv4",    pcrepp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"),
+    },
+    { "uuid",    pcrepp(
+          "([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"),   },
 
-    { "word", pcrepp("([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|\\.\\s|$))"), },
-    { "sym", pcrepp("([^\";\\s:=,/(){}\\[\\]]+)"), },
-    { "line", pcrepp("(\r?\n|\r|;)"), },
-    { "wspc", pcrepp("([ \r\t]+)"), },
-    { "dot", pcrepp("(\\.)"), },
+    { "vers",    pcrepp("([0-9]+(?:\\.[0-9]+){2,}\\b)"),
+    },
+    { "oct",     pcrepp("(-?0[0-7]+\\b)"),
+    },
+    { "pcnt",    pcrepp("(-?[0-9]+(\\.[0-9]+)?[ ]*%\\b)"),
+    },
+    { "num",     pcrepp("(-?[0-9]+(\\.[0-9]+)?([eE][-+][0-9]+)?\\b)"),
+    },
+    { "hex",     pcrepp("(-?(?:0x|[0-9])[0-9a-fA-F]+\\b)"),
+    },
 
-    { "gbg", pcrepp("(.)"), },
+    { "word",    pcrepp(
+          "([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|\\.\\s|$))"), },
+    { "sym",     pcrepp("([^\";\\s:=,/(){}\\[\\]]+)"),
+    },
+    { "line",    pcrepp("(\r?\n|\r|;)"),
+    },
+    { "wspc",    pcrepp("([ \r\t]+)"),
+    },
+    { "dot",     pcrepp("(\\.)"),
+    },
+
+    { "gbg",     pcrepp("(.)"),
+    },
 };
 
 const char *DNT_NAMES[DNT_MAX - DNT_KEY] = {
@@ -98,32 +127,36 @@ const char *DNT_NAMES[DNT_MAX - DNT_KEY] = {
 
 const char *data_scanner::token2name(data_token_t token)
 {
-    if (token < 0)
-	return "inv";
-    else if (token < DT_TERMINAL_MAX)
-	return MATCHERS[token].name;
-    else if (token == DT_ANY)
-	return "any";
-    else
-	return DNT_NAMES[token - DNT_KEY];
+    if (token < 0) {
+        return "inv";
+    }
+    else if (token < DT_TERMINAL_MAX) {
+        return MATCHERS[token].name;
+    }
+    else if (token == DT_ANY) {
+        return "any";
+    }
+    else{
+        return DNT_NAMES[token - DNT_KEY];
+    }
 }
 
 static
 bool find_string_end(const char *str, size_t &start, size_t length, char term)
 {
-	for (; start < length; start++) {
-		if (str[start] == term) {
-			start += 1;
-			return true;
-		}
-		if (str[start] == '\\') {
-			if (start + 1 >= length) {
-				return false;
-			}
-			start += 1;
-		}
-	}
-	return false;
+    for (; start < length; start++) {
+        if (str[start] == term) {
+            start += 1;
+            return true;
+        }
+        if (str[start] == '\\') {
+            if (start + 1 >= length) {
+                return false;
+            }
+            start += 1;
+        }
+    }
+    return false;
 }
 
 bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
@@ -131,83 +164,89 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
     int lpc;
 
     token_out = data_token_t(-1);
-    
+
     if (this->ds_pcre_input.pi_next_offset > this->ds_pcre_input.pi_length) {
-	return false;
+        return false;
     }
     else if (this->ds_pcre_input.pi_next_offset ==
-	     this->ds_pcre_input.pi_length) {
-	this->ds_pcre_input.pi_next_offset += 1;
-	token_out = DT_LINE;
-	
-	return false;
+             this->ds_pcre_input.pi_length) {
+        this->ds_pcre_input.pi_next_offset += 1;
+        token_out = DT_LINE;
+
+        return false;
     }
 
     for (lpc = 0; lpc < DT_TERMINAL_MAX; lpc++) {
-    	switch (lpc) {
-    		case DT_QUOTED_STRING: {
-    			pcre_input &pi = this->ds_pcre_input;
-    			const char *str = pi.get_string();
-    			size_t str_start, str_end;
-    			bool found = false;
+        switch (lpc) {
+        case DT_QUOTED_STRING: {
+            pcre_input &pi  = this->ds_pcre_input;
+            const char *str = pi.get_string();
+            size_t      str_start, str_end;
+            bool        found = false;
 
-    			pi.pi_offset = pi.pi_next_offset;
-    			str_end = str_start = pi.pi_offset + 1;
-    			switch (str[pi.pi_offset]) {
-    				case 'u':
-    				case 'r':
-    				if (pi.pi_offset + 1 < pi.pi_length &&
-    				    (str[pi.pi_offset + 1] == '\'' ||
-    				     str[pi.pi_offset + 1] == '\"')) {
-    				     str_start += 1;
-    				     str_end += 1;
-    				     found = find_string_end(str,
-    				                             str_end,
-    				                             pi.pi_length,
-    				                             str[pi.pi_offset]);
-    				}
-    				break;
-    				case '\'':
-    				case '\"':
-    				found = find_string_end(str,
-    				                        str_end,
-    				                        pi.pi_length,
-    				                        str[pi.pi_offset]);
-    				break;
-    			}
-    			if (found) {
-    				token_out = data_token_t(DT_QUOTED_STRING);
-    				pi.pi_next_offset = str_end;
-    				pc.all()[0].c_begin = pi.pi_offset;
-    				pc.all()[0].c_end = str_end;
-    				pc.all()[1].c_begin = str_start;
-    				pc.all()[1].c_end = str_end - 1;
-    				pc.set_count(2);
-    				return true;
-    			}
-    		}
-    		break;
-    	default:
-    		if (MATCHERS[lpc].pcre.match(pc, this->ds_pcre_input, PCRE_ANCHORED)) {
+            pi.pi_offset = pi.pi_next_offset;
+            str_end      = str_start = pi.pi_offset + 1;
+            switch (str[pi.pi_offset]) {
+            case 'u':
+            case 'r':
+                if (pi.pi_offset + 1 < pi.pi_length &&
+                    (str[pi.pi_offset + 1] == '\'' ||
+                     str[pi.pi_offset + 1] == '\"')) {
+                    str_start += 1;
+                    str_end   += 1;
+                    found      = find_string_end(str,
+                                                 str_end,
+                                                 pi.pi_length,
+                                                 str[pi.pi_offset]);
+                }
+                break;
+
+            case '\'':
+            case '\"':
+                found = find_string_end(str,
+                                        str_end,
+                                        pi.pi_length,
+                                        str[pi.pi_offset]);
+                break;
+            }
+            if (found) {
+                token_out           = data_token_t(DT_QUOTED_STRING);
+                pi.pi_next_offset   = str_end;
+                pc.all()[0].c_begin = pi.pi_offset;
+                pc.all()[0].c_end   = str_end;
+                pc.all()[1].c_begin = str_start;
+                pc.all()[1].c_end   = str_end - 1;
+                pc.set_count(2);
+                return true;
+            }
+        }
+        break;
+
+        default:
+            if (MATCHERS[lpc].pcre.match(pc, this->ds_pcre_input,
+                                         PCRE_ANCHORED)) {
                 switch (lpc) {
                 case DT_IPV6_ADDRESS: {
-                    std::string addr = this->ds_pcre_input.get_substr(pc.all());
+                    std::string addr =
+                        this->ds_pcre_input.get_substr(pc.all());
                     char buf[sizeof(struct in6_addr)];
 
                     if (inet_pton(AF_INET6, addr.c_str(), buf) == 1) {
                         token_out = data_token_t(lpc);
                         return true;
                     }
-                    this->ds_pcre_input.pi_next_offset = this->ds_pcre_input.pi_offset;
+                    this->ds_pcre_input.pi_next_offset =
+                        this->ds_pcre_input.pi_offset;
                     break;
                 }
+
                 default:
                     token_out = data_token_t(lpc);
                     return true;
                 }
-    		}
-    		break;
-    	}
+            }
+            break;
+        }
     }
 
     assert((0 <= token_out && token_out < DT_TERMINAL_MAX));

@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -48,58 +48,65 @@ typedef void (*free_func_t)(void *);
  */
 template<class T, free_func_t default_free = free>
 class auto_mem {
-
 public:
     auto_mem(T *ptr = NULL) : am_ptr(ptr), am_free_func(default_free) { };
 
-    auto_mem(auto_mem &am)
+    auto_mem(auto_mem & am)
         : am_ptr(am.release()), am_free_func(am.am_free_func)
-    {
-    };
+    {};
 
     template<typename F>
     auto_mem(F free_func)
-        : am_ptr(NULL), am_free_func((void (*)(void *))free_func) { };
+        : am_ptr(NULL), am_free_func((void(*) (void *))free_func) { };
 
-    ~auto_mem() { this->reset(); };
+    ~auto_mem()
+    {
+        this->reset();
+    };
 
     operator T *(void) const { return this->am_ptr; };
 
-    auto_mem &operator=(T *ptr) {
-	this->reset(ptr);
-	return *this;
-    };
-    
-    auto_mem &operator=(auto_mem &am) {
-	this->reset(am.release());
-	return *this;
+    auto_mem &operator =(T *ptr)
+    {
+        this->reset(ptr);
+        return *this;
     };
 
-    T *release(void) {
-	T *retval = this->am_ptr;
-
-	this->am_ptr = NULL;
-	return retval;
+    auto_mem &operator =(auto_mem & am)
+    {
+        this->reset(am.release());
+        return *this;
     };
 
-    T *in(void) { return this->am_ptr; };
-    
-    T **out(void) {
-	this->reset();
-	return &this->am_ptr;
+    T *release(void)
+    {
+        T *retval = this->am_ptr;
+
+        this->am_ptr = NULL;
+        return retval;
     };
 
-    void reset(T *ptr = NULL) {
-	if (this->am_ptr != ptr) {
-        this->am_free_func(this->am_ptr);
-	    this->am_ptr = ptr;
-	}
+    T *in(void)
+    {
+        return this->am_ptr;
     };
-    
+
+    T **out(void)
+    {
+        this->reset();
+        return &this->am_ptr;
+    };
+
+    void reset(T *ptr = NULL)
+    {
+        if (this->am_ptr != ptr) {
+            this->am_free_func(this->am_ptr);
+            this->am_ptr = ptr;
+        }
+    };
+
 private:
-    T *am_ptr;
+    T *  am_ptr;
     void (*am_free_func)(void *);
-
 };
-
 #endif

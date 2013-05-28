@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -71,12 +71,12 @@ public:
 
     class error {
 public:
-	error(std::string filename, int err)
-	    : e_filename(filename),
-	      e_err(err) { };
+        error(std::string filename, int err)
+            : e_filename(filename),
+              e_err(err) { };
 
-	std::string e_filename;
-	int         e_err;
+        std::string e_filename;
+        int         e_err;
     };
 
     typedef std::vector<logline>::iterator       iterator;
@@ -98,7 +98,11 @@ public:
     const std::string &get_filename() const { return this->lf_filename; };
 
     /** @param filename The new filename for this log file. */
-    void set_filename(const std::string &filename) { this->lf_filename = filename; };
+    void set_filename(const std::string &filename)
+    {
+        this->lf_filename =
+            filename;
+    };
 
     /** @return The inode for this log file. */
     const struct stat &get_stat() const { return this->lf_stat; };
@@ -147,11 +151,11 @@ public:
      */
     std::string read_line(iterator ll)
     {
-	std::string retval;
+        std::string retval;
 
-	this->read_line(ll, retval);
+        this->read_line(ll, retval);
 
-	return retval;
+        return retval;
     };
 
     /**
@@ -165,27 +169,27 @@ public:
 
     bool operator<(const logfile &rhs) const
     {
-	bool retval;
+        bool retval;
 
-	if (this->lf_index.empty()) {
-	    retval = true;
-	}
-	else if (rhs.lf_index.empty()) {
-	    retval = false;
-	}
-	else {
-	    retval = this->lf_index[0].get_time() < rhs.lf_index[0].get_time();
-	}
+        if (this->lf_index.empty()) {
+            retval = true;
+        }
+        else if (rhs.lf_index.empty()) {
+            retval = false;
+        }
+        else {
+            retval = this->lf_index[0].get_time() < rhs.lf_index[0].get_time();
+        }
 
-	return retval;
+        return retval;
     };
 
     /** Check the invariants for this object. */
     bool invariant(void)
     {
-	assert(this->lf_filename.size() > 0);
+        assert(this->lf_filename.size() > 0);
 
-	return true;
+        return true;
     };
 
 protected:
@@ -199,14 +203,13 @@ protected:
      */
     void process_prefix(off_t offset, char *prefix, int len);
 
-    bool                        lf_valid_filename;
-    std::string			lf_filename;
-    struct stat			lf_stat;
-    std::auto_ptr<log_format>	lf_format;
-    std::vector<logline>	lf_index;
-    time_t			lf_index_time;
-    off_t			lf_index_size;
-    line_buffer			lf_line_buffer;
+    bool        lf_valid_filename;
+    std::string lf_filename;
+    struct stat lf_stat;
+    std::auto_ptr<log_format> lf_format;
+    std::vector<logline>      lf_index;
+    time_t      lf_index_time;
+    off_t       lf_index_size;
+    line_buffer lf_line_buffer;
 };
-
 #endif

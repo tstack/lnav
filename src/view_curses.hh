@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -66,10 +66,10 @@ class view_curses;
 class screen_curses {
 public:
     screen_curses()
-	: sc_main_window(initscr()) {
-	};
-    virtual ~screen_curses() {
-    	endwin();
+        : sc_main_window(initscr()) {};
+    virtual ~screen_curses()
+    {
+        endwin();
     };
 
     WINDOW *get_window() { return this->sc_main_window; };
@@ -85,18 +85,20 @@ struct line_range {
     int lr_start;
     int lr_end;
 
-    int length() const {
-	return this->lr_end == -1 ? INT_MAX : this->lr_end - this->lr_start;
+    int length() const
+    {
+        return this->lr_end == -1 ? INT_MAX : this->lr_end - this->lr_start;
     };
-    
-    bool operator<(const struct line_range &rhs) const {
-	if (this->lr_start < rhs.lr_start) return true;
-	else if (this->lr_start > rhs.lr_start) return false;
 
-	if (this->lr_end == rhs.lr_end) return false;
-	
-	if (this->lr_end < rhs.lr_end) return true;
-	return false;
+    bool operator<(const struct line_range &rhs) const
+    {
+        if (this->lr_start < rhs.lr_start) { return true; }
+        else if (this->lr_start > rhs.lr_start) { return false; }
+
+        if (this->lr_end == rhs.lr_end) { return false; }
+
+        if (this->lr_end < rhs.lr_end) { return true; }
+        return false;
     };
 };
 
@@ -105,7 +107,7 @@ struct line_range {
  */
 typedef union {
     void *sa_ptr;
-    int sa_int;
+    int   sa_int;
 } string_attr_t;
 
 /**
@@ -134,7 +136,7 @@ inline std::pair<std::string, string_attr_t>
 make_string_attr(const std::string &name, int val)
 {
     string_attr_t sa;
-    
+
     sa.sa_int = val;
 
     return std::make_pair(name, sa);
@@ -143,24 +145,25 @@ make_string_attr(const std::string &name, int val)
 /** A map of symbolic names to attribute values. */
 typedef std::multimap<std::string, string_attr_t> attrs_map_t;
 /** A map of line ranges to attributes for that range. */
-typedef std::map<struct line_range, attrs_map_t> string_attrs_t;
+typedef std::map<struct line_range, attrs_map_t>  string_attrs_t;
 
 inline struct line_range
-find_string_attr_range(const string_attrs_t &sa, const std::string &name) {
-	struct line_range retval = { -1, -1 };
+find_string_attr_range(const string_attrs_t &sa, const std::string &name)
+{
+    struct line_range retval = { -1, -1 };
 
-    	for (string_attrs_t::const_iterator iter = sa.begin();
-    	     iter != sa.end();
-    	     ++iter) {
-    	     	attrs_map_t::const_iterator prefix_iter;
+    for (string_attrs_t::const_iterator iter = sa.begin();
+         iter != sa.end();
+         ++iter) {
+        attrs_map_t::const_iterator prefix_iter;
 
-    		if ((prefix_iter = iter->second.find(name)) != iter->second.end()) {
-    			retval = iter->first;
-    			break;
-    		}
-    	}
+        if ((prefix_iter = iter->second.find(name)) != iter->second.end()) {
+            retval = iter->first;
+            break;
+        }
+    }
 
-    	return retval;
+    return retval;
 }
 
 /**
@@ -173,20 +176,21 @@ public:
 
     /** @return The string itself. */
     std::string &get_string() { return this->al_string; };
-    
+
     /** @return The attributes for the string. */
     string_attrs_t &get_attrs() { return this->al_attrs; };
 
     void operator=(const std::string &rhs) { this->al_string = rhs; };
-    
+
     /** Clear the string and the attributes for the string. */
-    void clear() {
-	this->al_string.clear();
-	this->al_attrs.clear();
+    void clear()
+    {
+        this->al_string.clear();
+        this->al_attrs.clear();
     };
-    
+
 private:
-    std::string al_string;
+    std::string    al_string;
     string_attrs_t al_attrs;
 };
 
@@ -207,50 +211,50 @@ public:
     template<class _Receiver>
     class mem_functor_t {
 public:
-	mem_functor_t(_Receiver &receiver,
-		      void (_Receiver::*selector)(_Sender *))
-	    : mf_receiver(receiver),
-	      mf_selector(selector) { };
+        mem_functor_t(_Receiver &receiver,
+                      void(_Receiver::*selector)(_Sender *))
+            : mf_receiver(receiver),
+              mf_selector(selector) { };
 
-	void operator()(_Sender *sender) const
-	{
-	    (this->mf_receiver.*mf_selector)(sender);
-	};
+        void operator()(_Sender *sender) const
+        {
+            (this->mf_receiver.*mf_selector)(sender);
+        };
 
-	static void invoke(mem_functor_t *self, _Sender *sender)
-	{
-	    (*self)(sender);
-	};
+        static void invoke(mem_functor_t *self, _Sender *sender)
+        {
+            (*self)(sender);
+        };
 
 private:
-	_Receiver & mf_receiver;
-	void (_Receiver::*mf_selector)(_Sender *);
+        _Receiver & mf_receiver;
+        void        (_Receiver::*mf_selector)(_Sender *);
     };
 
     class broadcaster
-	: public std::vector<view_action> {
+        : public std::vector<view_action> {
 public:
 
-	broadcaster()
-	    : b_functor(*this, &broadcaster::invoke) { };
-	virtual ~broadcaster() { };
+        broadcaster()
+            : b_functor(*this, &broadcaster::invoke) { };
+        virtual ~broadcaster() { };
 
-	void invoke(_Sender *sender)
-	{
-	    typename std::vector<view_action>::iterator iter;
+        void invoke(_Sender *sender)
+        {
+            typename std::vector<view_action>::iterator iter;
 
-	    for (iter = this->begin(); iter != this->end(); ++iter) {
-		(*iter).invoke(sender);
-	    }
-	};
+            for (iter = this->begin(); iter != this->end(); ++iter) {
+                (*iter).invoke(sender);
+            }
+        };
 
-	mem_functor_t<broadcaster> *get_functor()
-	{
-	    return &this->b_functor;
-	};
+        mem_functor_t<broadcaster> *get_functor()
+        {
+            return &this->b_functor;
+        };
 
 private:
-	mem_functor_t<broadcaster> b_functor;
+        mem_functor_t<broadcaster> b_functor;
     };
 
     /**
@@ -260,15 +264,15 @@ private:
      * parameters, the first being the value of the receiver pointer and the
      * second being the sender pointer as passed to invoke().
      */
-    view_action(void (*invoker)(void *, _Sender *) = NULL)
-    	: va_functor(NULL),
-    	  va_invoker(invoker) { };
+    view_action(void(*invoker)(void *, _Sender *) = NULL)
+        : va_functor(NULL),
+          va_invoker(invoker) { };
 
     template<class _Receiver>
-    view_action(mem_functor_t < _Receiver > *mf)
-	: va_functor(mf),
-	  va_invoker((void (*)(void *, _Sender *))
-		     mem_functor_t<_Receiver>::invoke) { };
+    view_action(mem_functor_t<_Receiver> *mf)
+        : va_functor(mf),
+          va_invoker((void(*) (void *, _Sender *))
+                     mem_functor_t<_Receiver>::invoke) { };
 
     /**
      * Performs a shallow copy of another view_action.
@@ -277,8 +281,8 @@ private:
      * from.
      */
     view_action(const view_action &va)
-	: va_functor(va.va_functor),
-	  va_invoker(va.va_invoker) { };
+        : va_functor(va.va_functor),
+          va_invoker(va.va_invoker) { };
 
     ~view_action() { };
 
@@ -288,10 +292,10 @@ private:
      */
     view_action &operator=(const view_action &rhs)
     {
-	this->va_functor = rhs.va_functor;
-	this->va_invoker = rhs.va_invoker;
+        this->va_functor = rhs.va_functor;
+        this->va_invoker = rhs.va_invoker;
 
-	return *this;
+        return *this;
     };
 
     /**
@@ -301,9 +305,9 @@ private:
      */
     void invoke(_Sender *sender)
     {
-	if (this->va_invoker != NULL) {
-	    this->va_invoker(this->va_functor, sender);
-	}
+        if (this->va_invoker != NULL) {
+            this->va_invoker(this->va_functor, sender);
+        }
     };
 
 private:
@@ -311,7 +315,7 @@ private:
     /** The object to pass as the first argument to the selector function.*/
     void *va_functor;
     /** The function to call when this action is invoke()'d. */
-    void (*va_invoker)(void *functor, _Sender * sender);
+    void (*va_invoker)(void *functor, _Sender *sender);
 };
 
 /**
@@ -322,27 +326,27 @@ public:
 
     /** Roles that can be mapped to curses attributes using attrs_for_role() */
     typedef enum {
-	VCR_NONE = -1,
+        VCR_NONE = -1,
 
-	VCR_TEXT,               /*< Raw text. */
-	VCR_SEARCH,             /*< A search hit. */
-	VCR_OK,
-	VCR_ERROR,              /*< An error message. */
-	VCR_WARNING,            /*< A warning message. */
-	VCR_ALT_ROW,            /*< Highlight for alternating rows in a list */
-	VCR_STATUS,             /*< Normal status line text. */
-	VCR_WARN_STATUS,
-	VCR_ALERT_STATUS,       /*< Alert status line text. */
-	VCR_ACTIVE_STATUS,      /*< */
-	VCR_ACTIVE_STATUS2,     /*< */
+        VCR_TEXT,               /*< Raw text. */
+        VCR_SEARCH,             /*< A search hit. */
+        VCR_OK,
+        VCR_ERROR,              /*< An error message. */
+        VCR_WARNING,            /*< A warning message. */
+        VCR_ALT_ROW,            /*< Highlight for alternating rows in a list */
+        VCR_STATUS,             /*< Normal status line text. */
+        VCR_WARN_STATUS,
+        VCR_ALERT_STATUS,       /*< Alert status line text. */
+        VCR_ACTIVE_STATUS,      /*< */
+        VCR_ACTIVE_STATUS2,     /*< */
 
-	VCR_DIFF_DELETE,	/*< Deleted line in a diff. */
-	VCR_DIFF_ADD,		/*< Added line in a diff. */
-	VCR_DIFF_SECTION,	/*< Section marker in a diff. */
+        VCR_DIFF_DELETE,        /*< Deleted line in a diff. */
+        VCR_DIFF_ADD,           /*< Added line in a diff. */
+        VCR_DIFF_SECTION,       /*< Section marker in a diff. */
 
-	VCR_SHADOW,
+        VCR_SHADOW,
 
-	VCR__MAX
+        VCR__MAX
     } role_t;
 
     /** @return A reference to the singleton. */
@@ -361,18 +365,18 @@ public:
      */
     int attrs_for_role(role_t role) const
     {
-	assert(role >= 0);
-	assert(role < VCR__MAX + (HL_COLOR_COUNT * 2));
+        assert(role >= 0);
+        assert(role < VCR__MAX + (HL_COLOR_COUNT * 2));
 
-	return this->vc_role_colors[role];
+        return this->vc_role_colors[role];
     };
 
     int reverse_attrs_for_role(role_t role) const
     {
-	assert(role >= 0);
-	assert(role < VCR__MAX + (HL_COLOR_COUNT * 2));
+        assert(role >= 0);
+        assert(role < VCR__MAX + (HL_COLOR_COUNT * 2));
 
-	return this->vc_role_reverse_colors[role];
+        return this->vc_role_reverse_colors[role];
     };
 
     /**
@@ -385,29 +389,29 @@ public:
     role_t next_plain_highlight();
 
     enum {
-	VC_EMPTY = 0,       /* XXX Dead color pair, doesn't work. */
+        VC_EMPTY = 0,       /* XXX Dead color pair, doesn't work. */
 
-	VC_BLUE,
-	VC_CYAN,
-	VC_GREEN,
-	VC_MAGENTA,
+        VC_BLUE,
+        VC_CYAN,
+        VC_GREEN,
+        VC_MAGENTA,
 
-	VC_BLUE_ON_WHITE,
-	VC_CYAN_ON_BLACK,
-	VC_GREEN_ON_WHITE,
-	VC_MAGENTA_ON_WHITE,
+        VC_BLUE_ON_WHITE,
+        VC_CYAN_ON_BLACK,
+        VC_GREEN_ON_WHITE,
+        VC_MAGENTA_ON_WHITE,
 
-	VC_RED,
-	VC_YELLOW,
-	VC_WHITE,
+        VC_RED,
+        VC_YELLOW,
+        VC_WHITE,
 
-	VC_BLACK_ON_WHITE,
-	VC_YELLOW_ON_WHITE,
-	VC_RED_ON_WHITE,
+        VC_BLACK_ON_WHITE,
+        VC_YELLOW_ON_WHITE,
+        VC_RED_ON_WHITE,
 
-	VC_WHITE_ON_GREEN,
+        VC_WHITE_ON_GREEN,
 
-	VC_GRAY,
+        VC_GRAY,
     };
 
 private:
@@ -440,11 +444,11 @@ public:
     virtual void do_update(void) = 0;
 
     static void mvwattrline(WINDOW *window,
-		     	    int y,
-		     	    int x,
-		     	    attr_line_t &al,
-		     	    struct line_range &lr,
-		     	    view_colors::role_t base_role = view_colors::VCR_TEXT);
+                            int y,
+                            int x,
+                            attr_line_t &al,
+                            struct line_range &lr,
+                            view_colors::role_t base_role =
+                                view_colors::VCR_TEXT);
 };
-
 #endif

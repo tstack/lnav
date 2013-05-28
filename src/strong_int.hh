@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -44,37 +44,44 @@
 template<typename T, class DISTINCT>
 class strong_int {
 public:
-  explicit strong_int(T v = 0) : value(v) { };
-  operator const T & () const { return this->value; };
-  strong_int operator+(const strong_int &rhs) {
-    return strong_int(this->value + rhs.value);
-  };
-  strong_int operator-(const strong_int &rhs) {
-    return strong_int(this->value - rhs.value);
-  };
-  strong_int operator/(const strong_int &rhs) {
-    return strong_int(this->value / rhs.value);
-  };
-  bool operator<(const strong_int &rhs) const {
-  	return this->value < rhs.value;
-  };
-  strong_int &operator+=(const strong_int &rhs) {
-    this->value += rhs.value;
-    return *this;
-  };
-  strong_int &operator-=(const strong_int &rhs) {
-    this->value -= rhs.value;
-    return *this;
-  };
-  strong_int &operator-(void) {
-    this->value = -this->value;
-    return *this;
-  };
-  strong_int &operator++(void) { this->value++; return *this; };
-  strong_int &operator--(void) { this->value--; return *this; };
-  T *out(void) { return &this->value; };
+    explicit strong_int(T v = 0) : value(v) { };
+    operator const T &() const { return this->value; };
+    strong_int operator+(const strong_int &rhs)
+    {
+        return strong_int(this->value + rhs.value);
+    };
+    strong_int operator-(const strong_int &rhs)
+    {
+        return strong_int(this->value - rhs.value);
+    };
+    strong_int operator/(const strong_int &rhs)
+    {
+        return strong_int(this->value / rhs.value);
+    };
+    bool operator<(const strong_int &rhs) const
+    {
+        return this->value < rhs.value;
+    };
+    strong_int &operator+=(const strong_int &rhs)
+    {
+        this->value += rhs.value;
+        return *this;
+    };
+    strong_int &operator-=(const strong_int &rhs)
+    {
+        this->value -= rhs.value;
+        return *this;
+    };
+    strong_int &operator-(void)
+    {
+        this->value = -this->value;
+        return *this;
+    };
+    strong_int &operator++(void) { this->value++; return *this; };
+    strong_int &operator--(void) { this->value--; return *this; };
+    T *out(void) { return &this->value; };
 private:
-  T value;
+    T value;
 };
 
 /**
@@ -84,8 +91,7 @@ private:
  * @param T The integer type.
  * @param name The name of the strongly-typed integer.
  */
-#define STRONG_INT_TYPE(T, name) \
-  class __##name##_distinct; \
-  typedef strong_int<int, __##name##_distinct> name##_t
-
+#define STRONG_INT_TYPE(T, name)   \
+    class __ ## name ## _distinct; \
+    typedef strong_int<int, __ ## name ## _distinct> name ## _t
 #endif
