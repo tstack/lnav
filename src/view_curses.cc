@@ -108,9 +108,6 @@ void view_curses::mvwattrline(WINDOW *window,
         assert(attr_range.lr_start >= 0);
         assert(attr_range.lr_end >= -1);
 
-        fprintf(stderr, "attr %d %d\n", attr_range.lr_start,
-                attr_range.lr_end);
-
         tab_iter = tab_list.lower_bound(attr_range.lr_start);
         if (tab_iter != tab_list.end()) {
             attr_range.lr_start += (tab_iter->second - tab_iter->first) - 1;
@@ -145,8 +142,6 @@ void view_curses::mvwattrline(WINDOW *window,
             }
 
             if (attrs != 0) {
-                fprintf(stderr, "text  %d  %d  %x\n", y,
-                        x + attr_range.lr_start, attrs);
                 /* This silliness is brought to you by a buggy old curses lib. */
                 mvwinnstr(window, y, x + attr_range.lr_start, buffer, awidth);
                 wattron(window, attrs);

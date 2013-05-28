@@ -221,18 +221,18 @@ through the file.
                     below for more information.
 
   y/Y               Move forward/backward through the log view based on the
-                    "line_number" column in the SQL result view.
+                    "log_line" column in the SQL result view.
 
   v                 Switch to/from the SQL result view.
 
   V                 Switch between the log and SQL result views while
                     keeping the top line number in the log view in
-		    sync with the line_number column in the SQL view.
+		    sync with the log_line column in the SQL view.
 		    For example, doing a query that selects for
-		    "idle_msecs" and "line_number", you can move the
+		    "log_idle_msecs" and "log_line", you can move the
 		    top of the SQL view to a line and hit 'V' to switch
 		    to the log view and move to the line number that was
-		    selected in the "line_number" column.
+		    selected in the "log_line" column.
 
   p                 Enable or disable the display of the fields that the
                     log message parser knows about or has discovered.
@@ -305,6 +305,15 @@ COMMANDS
                     are executed on startup.  Only the highlight and
                     filter-related commands can be added to the session file.
 
+  create-logline-table <table-name>
+                    Create an SQL table using the top line of the log view
+                    as a template.  See the "SQL QUERIES" and "DYNAMIC LOG
+                    LINE TABLE" sections below for more information.
+
+  delete-logline-table <table-name>
+                    Delete an SQL table created by the 'create-logline-table'
+                    command.
+
 
 SQL QUERIES (experimental)
 -----------
@@ -341,13 +350,15 @@ The columns available for the top log line in the view will
 automatically be displayed after pressing the semicolon (;) key.
 All log tables contain at least the following columns:
 
-    line_number    The line number in the file, starting at zero.
-    log_time       The time of the log entry.
-    idle_msecs     The amount of time, in milliseconds, between the
-                   current log message and the previous one.
-    level          The log level (e.g. info, error, etc...).
-    path           The full path to the file.
-    raw_line       The raw line of text.
+    log_line        The line number in the file, starting at zero.
+    log_time        The time of the log entry.
+    log_idle_msecs  The amount of time, in milliseconds, between the
+                    current log message and the previous one.
+    log_level       The log level (e.g. info, error, etc...).
+    log_path        The full path to the file.
+    log_text        The raw line of text.  Note that this column is
+                    not included in the result of a 'select *', but
+                    it does exist.
 
 The following tables include the basic columns as listed above and
 include a few more columns since the log file format is more
@@ -440,3 +451,8 @@ address and the "hme3" device name are values and not normal words.  So,
 it builds a table with three columns for each of these values.  The
 regular words in the message, like "from" and "via", are then used to
 find other messages with a similar format.
+
+If you would like to execute queries against log messages of different
+formats at the same time, you can use the 'create-logline-table' command
+to permanently create a table using the top line of the log view as a
+template.

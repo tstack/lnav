@@ -29,6 +29,9 @@
  * @file column_namer.hh
  */
 
+#ifndef _column_namer_hh
+#define _column_namer_hh
+
 #include <map>
 #include <string>
 #include <vector>
@@ -85,3 +88,4 @@ public:
     std::vector<std::string> cn_builtin_names;
     std::vector<std::string> cn_names;
 };
+#endif

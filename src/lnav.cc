@@ -95,6 +95,7 @@
 #include "xterm_mouse.hh"
 #include "lnav_commands.hh"
 #include "column_namer.hh"
+#include "log_data_table.hh"
 
 using namespace std;
 
@@ -625,148 +626,6 @@ private:
 
     off_t          lo_last_offset;
     content_line_t lo_last_line;
-};
-
-class log_data_table : public log_vtab_impl {
-public:
-
-    log_data_table(content_line_t template_line)
-        : log_vtab_impl("logline"),
-          ldt_template_line(template_line) {};
-
-    void get_columns(vector<vtab_column> &cols)
-    {
-        content_line_t cl_copy = this->ldt_template_line;
-        logfile *      lf      = lnav_data.ld_log_source.find(
-            cl_copy);
-        std::string val        = lf->read_line(
-            lf->begin() + cl_copy);
-        struct line_range          body;
-        string_attrs_t             sa;
-        std::vector<logline_value> line_values;
-
-        lf->get_format()->annotate(val, sa, line_values);
-        body = find_string_attr_range(sa, "body");
-        if (body.lr_end != -1) {
-            val = val.substr(body.lr_start);
-        }
-        data_scanner ds(val);
-        data_parser  dp(&ds);
-        column_namer cn;
-
-        dp.parse();
-
-        for (data_parser::element_list_t::iterator pair_iter =
-                 dp.dp_pairs.begin();
-             pair_iter != dp.dp_pairs.end();
-             ++pair_iter) {
-            std::string key_str  = dp.get_element_string(
-                pair_iter->e_sub_elements->front());
-            std::string colname  = cn.add_column(key_str);
-            int         sql_type = SQLITE3_TEXT;
-            const char *collator = NULL;
-            char *      name;
-
-            /* XXX LEAK */
-            name = strdup(colname.c_str());
-            fprintf(stderr, "name: %s\n", name);
-            switch (pair_iter->e_sub_elements->back().e_token) {
-            case DT_IPV4_ADDRESS:
-            case DT_IPV6_ADDRESS:
-                collator = "ipaddress";
-                break;
-
-            case DT_NUMBER:
-                sql_type = SQLITE_FLOAT;
-                break;
-
-            default:
-                collator = "naturalnocase";
-                break;
-            }
-            cols.push_back(vtab_column(name, sql_type, collator));
-        }
-        this->ldt_schema_id = dp.dp_schema_id;
-        /* cols.push_back(vtab_column("value", "text")); */
-    };
-
-    bool next(log_cursor &lc, logfile_sub_source &lss)
-    {
-        lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
-        lc.lc_sub_index = 0;
-
-        if (lc.lc_curr_line == (int)lss.text_line_count()) {
-            return true;
-        }
-
-        std::string line;
-        content_line_t             cl;
-        string_attrs_t             sa;
-        struct line_range          body;
-        std::vector<logline_value> line_values;
-
-        cl = lss.at(lc.lc_curr_line);
-        logfile *         lf      = lss.find(cl);
-        logfile::iterator lf_iter = lf->begin() + cl;
-
-        if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
-            return false;
-        }
-
-        lf->read_line(lf_iter, line);
-        lf->get_format()->annotate(line, sa, line_values);
-        body = find_string_attr_range(sa, "body");
-        if (body.lr_end == -1) {
-            return false;
-        }
-
-        line = line.substr(body.lr_start);
-        if (line.empty()) {
-            return false;
-        }
-
-        data_scanner ds(line);
-        data_parser  dp(&ds);
-        dp.parse();
-        if (dp.dp_schema_id != this->ldt_schema_id) {
-            return false;
-        }
-
-        return true;
-    };
-
-    void extract(logfile *lf,
-                 const std::string &line,
-                 std::vector<logline_value> &values)
-    {
-        std::vector<logline_value> std_values;
-        struct line_range          body;
-        string_attrs_t             sa;
-
-        lf->get_format()->annotate(line, sa, std_values);
-        body = find_string_attr_range(sa, "body");
-        string sub = line.substr(body.lr_start);
-
-        data_scanner ds(sub);
-        data_parser  dp(&ds);
-
-        dp.parse();
-
-        for (data_parser::element_list_t::iterator pair_iter =
-                 dp.dp_pairs.begin();
-             pair_iter != dp.dp_pairs.end();
-             ++pair_iter) {
-            std::string tmp = dp.get_element_string(
-                pair_iter->e_sub_elements->back());
-
-            values.push_back(logline_value("", tmp));
-        }
-    };
-
-private:
-    int ldt_column;
-    const content_line_t     ldt_template_line;
-    data_parser::schema_id_t ldt_schema_id;
 };
 
 static void rebuild_hist(size_t old_count, bool force)
@@ -1728,7 +1587,7 @@ static void handle_paging_key(int ch)
             unsigned int lpc;
 
             for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
-                if (dls.dls_headers[lpc] != "line_number") {
+                if (dls.dls_headers[lpc] != "log_line") {
                     continue;
                 }
 
@@ -1755,7 +1614,7 @@ static void handle_paging_key(int ch)
             unsigned int lpc;
 
             for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
-                if (dls.dls_headers[lpc] != "line_number") {
+                if (dls.dls_headers[lpc] != "log_line") {
                     continue;
                 }
 
@@ -1898,7 +1757,7 @@ static int sql_callback(sqlite3_stmt *stmt)
             bool   graphable;
 
             graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT) &&
-                         colname != "line_number" &&
+                         colname != "log_line" &&
                          !binary_search(lnav_data.ld_db_key_names.begin(),
                                         lnav_data.ld_db_key_names.end(),
                                         colname));
@@ -1919,7 +1778,7 @@ static int sql_callback(sqlite3_stmt *stmt)
             value = "<NULL>";
         }
         dls.push_column(value);
-        if (dls.dls_headers[lpc] == "line_number") {
+        if (dls.dls_headers[lpc] == "log_line") {
             int line_number = -1;
 
             if (sscanf(value, "%d", &line_number) == 1) {

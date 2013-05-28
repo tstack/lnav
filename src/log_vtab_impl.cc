@@ -64,10 +64,10 @@ static string declare_table_statement(log_vtab_impl *vi)
     std::ostringstream oss;
 
     oss << "CREATE TABLE unused (\n"
-        << "  line_number text,\n"
+        << "  log_line text,\n"
         << "  log_time datetime,\n"
-        << "  idle_msecs int,\n"
-        << "  level text,\n";
+        << "  log_idle_msecs int,\n"
+        << "  log_level text,\n";
     vi->get_columns(cols);
     vi->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {
@@ -80,8 +80,8 @@ static string declare_table_statement(log_vtab_impl *vi)
                                   "BINARY" : iter->vc_collator);
         oss << coldecl;
     }
-    oss << "  path text collate naturalnocase,\n"
-        << "  raw_line text\n"
+    oss << "  log_path text collate naturalnocase,\n"
+        << "  log_text text hidden\n"
         << ");";
 
     return oss.str();
@@ -434,9 +434,14 @@ void log_vtab_manager::register_vtab(log_vtab_impl *vi)
     }
 }
 
-void log_vtab_manager::unregister_vtab(std::string name)
+string log_vtab_manager::unregister_vtab(std::string name)
 {
-    if (this->vm_impls.find(name) != this->vm_impls.end()) {
+    string retval = "";
+
+    if (this->vm_impls.find(name) == this->vm_impls.end()) {
+        retval = "unknown log line table -- " + name;
+    }
+    else {
         char *sql;
         int   rc;
 
@@ -449,7 +454,9 @@ void log_vtab_manager::unregister_vtab(std::string name)
         assert(rc == SQLITE_OK);
 
         sqlite3_free(sql);
+
+        this->vm_impls.erase(name);
     }
 
-    this->vm_impls.erase(name);
+    return retval;
 }

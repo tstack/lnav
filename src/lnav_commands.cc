@@ -34,6 +34,7 @@
 #include <fstream>
 
 #include "lnav.hh"
+#include "log_data_table.hh"
 #include "lnav_commands.hh"
 
 using namespace std;
@@ -436,15 +437,55 @@ static string com_disable_filter(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_capture(string cmdline, vector<string> &args)
+static std::vector<string> custom_logline_tables;
+
+static string com_create_logline_table(string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting table name";
+    string retval = "error: expecting a table name";
 
-    if (args.size() == 2) {
-        lnav_data.ld_mode = LNM_CAPTURE;
-        lnav_data.ld_rl_view->focus(LNM_CAPTURE, "index: ");
+	if (args.size() == 0) {}
+    else if (args.size() == 2) {
+        textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
 
-        retval = "";
+        if (log_view.get_inner_height() == 0) {
+            retval = "error: no log data available";
+        }
+        else {
+            vis_line_t     vl = log_view.get_top();
+            content_line_t cl = lnav_data.ld_log_source.at(vl);
+            log_data_table *ldt = new log_data_table(cl, args[1]);
+
+            lnav_data.ld_vtab_manager->register_vtab(ldt);
+
+            lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                  "custom-table",
+                                                  args[1]);
+            retval = "info: created new log table -- " + args[1];
+        }
+    }
+
+    return retval;
+}
+
+static string com_delete_logline_table(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a table name";
+
+    if (args.size() == 0) {
+        args.push_back("custom-table");
+    }
+    else if (args.size() == 2) {
+        string rc = lnav_data.ld_vtab_manager->unregister_vtab(args[1]);
+
+        if (rc.empty()) {
+            lnav_data.ld_rl_view->rem_possibility(LNM_COMMAND,
+                                                  "custom-table",
+                                                  args[1]);
+            retval = "info: deleted logline table";
+        }
+        else {
+            retval = "error: " + rc;
+        }
     }
 
     return retval;
@@ -452,7 +493,7 @@ static string com_capture(string cmdline, vector<string> &args)
 
 static string com_session(string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a command to save to the sesion file";
+    string retval = "error: expecting a command to save to the session file";
 
     if (args.size() == 0) {}
     else if (args.size() > 2) {
@@ -532,6 +573,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["write-to"]       = com_save_to;
     cmd_map["enable-filter"]  = com_enable_filter;
     cmd_map["disable-filter"] = com_disable_filter;
-    cmd_map["capture-into"]   = com_capture;
+    cmd_map["create-logline-table"] = com_create_logline_table;
+    cmd_map["delete-logline-table"] = com_delete_logline_table;
     cmd_map["session"]        = com_session;
 }
