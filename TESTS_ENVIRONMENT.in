@@ -50,10 +50,11 @@ run_test() {
 #     EOF
 #
 check_output() {
-    cmp ${test_file_base}_${test_num}.tmp -
+    diff -u ${test_file_base}_${test_num}.tmp - > ${test_file_base}_${test_num}.diff
     if test $? -ne 0; then
 	echo $LAST_TEST
 	echo $1
+        cat ${test_file_base}_${test_num}.diff
 	exit 1
     fi
     test_num=`expr ${test_num} \+ 1`
