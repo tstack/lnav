@@ -411,9 +411,12 @@ log_vtab_manager::log_vtab_manager(sqlite3 *memdb,
     sqlite3_progress_handler(memdb, 10, progress_callback, NULL);
 }
 
-void log_vtab_manager::register_vtab(log_vtab_impl *vi)
+string log_vtab_manager::register_vtab(log_vtab_impl *vi)
 {
+    string retval;
+
     if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
+        auto_mem<char> errmsg(sqlite3_free);
         char *sql;
         int   rc;
 
@@ -427,11 +430,18 @@ void log_vtab_manager::register_vtab(log_vtab_impl *vi)
                           sql,
                           NULL,
                           NULL,
-                          NULL);
-        assert(rc == SQLITE_OK);
+                          errmsg.out());
+        if (rc != SQLITE_OK) {
+            retval = errmsg;
+        }
 
         sqlite3_free(sql);
     }
+    else {
+        retval = "a table with the given name already exists";
+    }
+
+    return retval;
 }
 
 string log_vtab_manager::unregister_vtab(std::string name)

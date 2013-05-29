@@ -454,13 +454,18 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
             vis_line_t     vl = log_view.get_top();
             content_line_t cl = lnav_data.ld_log_source.at(vl);
             log_data_table *ldt = new log_data_table(cl, args[1]);
+            string errmsg;
 
-            lnav_data.ld_vtab_manager->register_vtab(ldt);
-
-            lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
-                                                  "custom-table",
-                                                  args[1]);
-            retval = "info: created new log table -- " + args[1];
+            errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
+            if (errmsg.empty()) {
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                      "custom-table",
+                                                      args[1]);
+                retval = "info: created new log table -- " + args[1];
+            }
+            else {
+                retval = "error: unable to create table -- " + errmsg;
+            }
         }
     }
 

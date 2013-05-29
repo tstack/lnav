@@ -73,6 +73,7 @@ libdiag_a_SOURCES = \
 	bookmarks.cc \
 	collation-functions.cc \
 	extension-functions.c \
+    fs-extension-functions.cc \
 	grep_proc.cc \
 	hist_source.cc \
 	line_buffer.cc \

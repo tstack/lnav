@@ -3053,6 +3053,7 @@ int RegisterExtensionFunctions(sqlite3 *db);
 }
 
 int register_network_extension_functions(sqlite3 *db);
+int register_fs_extension_functions(sqlite3 *db);
 
 int sql_progress(const struct log_cursor &lc)
 {
@@ -3103,6 +3104,7 @@ int main(int argc, char *argv[])
 
         RegisterExtensionFunctions(lnav_data.ld_db.in());
         register_network_extension_functions(lnav_data.ld_db.in());
+        register_fs_extension_functions(lnav_data.ld_db.in());
         register_collation_functions(lnav_data.ld_db.in());
     }
 

@@ -79,9 +79,10 @@ libdiag_a_AR = $(AR) $(ARFLAGS)
 libdiag_a_LIBADD =
 am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) \
 	collation-functions.$(OBJEXT) extension-functions.$(OBJEXT) \
-	grep_proc.$(OBJEXT) hist_source.$(OBJEXT) \
-	line_buffer.$(OBJEXT) listview_curses.$(OBJEXT) \
-	lnav_commands.$(OBJEXT) log_format.$(OBJEXT) logfile.$(OBJEXT) \
+	fs-extension-functions.$(OBJEXT) grep_proc.$(OBJEXT) \
+	hist_source.$(OBJEXT) line_buffer.$(OBJEXT) \
+	listview_curses.$(OBJEXT) lnav_commands.$(OBJEXT) \
+	log_format.$(OBJEXT) logfile.$(OBJEXT) \
 	logfile_sub_source.$(OBJEXT) \
 	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
@@ -353,6 +354,7 @@ libdiag_a_SOURCES = \
 	bookmarks.cc \
 	collation-functions.cc \
 	extension-functions.c \
+    fs-extension-functions.cc \
 	grep_proc.cc \
 	hist_source.cc \
 	line_buffer.cc \
@@ -500,6 +502,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/extension-functions.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fs-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grep_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hist_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/line_buffer.Po@am__quote@

@@ -571,7 +571,7 @@ class generic_log_format : public log_format {
 
         sscanf(line.c_str(), fmt, timestr, level, &prefix_len);
 
-        lr.lr_start = 0 ? fmt[0] == '%' : 1;
+        lr.lr_start = fmt[0] == '%' ? 0 : 1;
         lr.lr_end   = lr.lr_start + strlen(timestr);
         sa[lr].insert(make_string_attr("timestamp", 0));
 

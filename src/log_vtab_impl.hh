@@ -126,7 +126,7 @@ public:
 
     logfile_sub_source *get_source() { return &this->vm_source; };
 
-    void register_vtab(log_vtab_impl *vi);
+    std::string register_vtab(log_vtab_impl *vi);
     std::string unregister_vtab(std::string name);
 
     log_vtab_impl *lookup_impl(std::string name)
