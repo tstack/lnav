@@ -16,6 +16,7 @@ check_PROGRAMS = \
 	drive_listview \
 	drive_logfile \
 	drive_sequencer \
+	drive_sql \
 	drive_view_colors \
 	drive_vt52_curses \
 	drive_readline_curses \
@@ -130,6 +131,10 @@ drive_readline_curses_SOURCES = \
 	drive_readline_curses.cc
 drive_readline_curses_LDADD = $(CURSES_LIB) $(READLINE_LIBS)
 
+drive_sql_SOURCES = \
+	drive_sql.cc
+drive_sql_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
+
 slicer_SOURCES = \
 	../src/line_buffer.cc \
 	slicer.cc
@@ -142,6 +147,7 @@ dist_noinst_SCRIPTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_sql_fs_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh
 
@@ -186,6 +192,7 @@ TESTS = test_bookmarks \
 	test_hist_source \
 	test_listview.sh \
 	test_pcrepp \
+	test_sql_fs_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh \
 	test_top_status \

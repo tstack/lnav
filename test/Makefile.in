@@ -54,20 +54,20 @@ host_triplet = @host@
 check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 	drive_line_buffer$(EXEEXT) drive_grep_proc$(EXEEXT) \
 	drive_listview$(EXEEXT) drive_logfile$(EXEEXT) \
-	drive_sequencer$(EXEEXT) drive_view_colors$(EXEEXT) \
-	drive_vt52_curses$(EXEEXT) drive_readline_curses$(EXEEXT) \
-	slicer$(EXEEXT) scripty$(EXEEXT) test_auto_fd$(EXEEXT) \
-	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) \
-	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
-	test_line_buffer2$(EXEEXT) test_pcrepp$(EXEEXT) \
-	test_top_status$(EXEEXT)
+	drive_sequencer$(EXEEXT) drive_sql$(EXEEXT) \
+	drive_view_colors$(EXEEXT) drive_vt52_curses$(EXEEXT) \
+	drive_readline_curses$(EXEEXT) slicer$(EXEEXT) \
+	scripty$(EXEEXT) test_auto_fd$(EXEEXT) test_auto_mem$(EXEEXT) \
+	test_bookmarks$(EXEEXT) test_grep_proc2$(EXEEXT) \
+	test_hist_source$(EXEEXT) test_line_buffer2$(EXEEXT) \
+	test_pcrepp$(EXEEXT) test_top_status$(EXEEXT)
 TESTS = test_bookmarks$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_line_buffer.sh \
 	test_line_buffer2$(EXEEXT) test_grep_proc.sh \
 	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
-	test_listview.sh test_pcrepp$(EXEEXT) test_view_colors.sh \
-	test_vt52_curses.sh test_top_status$(EXEEXT) \
-	test_data_parser.sh
+	test_listview.sh test_pcrepp$(EXEEXT) test_sql_fs_func.sh \
+	test_view_colors.sh test_vt52_curses.sh \
+	test_top_status$(EXEEXT) test_data_parser.sh
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/mkinstalldirs $(dist_noinst_SCRIPTS) \
@@ -116,6 +116,9 @@ am_drive_sequencer_OBJECTS = grep_proc.$(OBJEXT) logfile.$(OBJEXT) \
 	sequence_matcher.$(OBJEXT) drive_sequencer.$(OBJEXT)
 drive_sequencer_OBJECTS = $(am_drive_sequencer_OBJECTS)
 drive_sequencer_DEPENDENCIES =
+am_drive_sql_OBJECTS = drive_sql.$(OBJEXT)
+drive_sql_OBJECTS = $(am_drive_sql_OBJECTS)
+drive_sql_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
 am_drive_view_colors_OBJECTS = view_curses.$(OBJEXT) \
 	drive_view_colors.$(OBJEXT)
 drive_view_colors_OBJECTS = $(am_drive_view_colors_OBJECTS)
@@ -207,9 +210,9 @@ am__v_CXXLD_1 =
 SOURCES = $(drive_data_scanner_SOURCES) $(drive_grep_proc_SOURCES) \
 	$(drive_line_buffer_SOURCES) $(drive_listview_SOURCES) \
 	$(drive_logfile_SOURCES) $(drive_readline_curses_SOURCES) \
-	$(drive_sequencer_SOURCES) $(drive_view_colors_SOURCES) \
-	$(drive_vt52_curses_SOURCES) $(scripty_SOURCES) \
-	$(slicer_SOURCES) $(test_auto_fd_SOURCES) \
+	$(drive_sequencer_SOURCES) $(drive_sql_SOURCES) \
+	$(drive_view_colors_SOURCES) $(drive_vt52_curses_SOURCES) \
+	$(scripty_SOURCES) $(slicer_SOURCES) $(test_auto_fd_SOURCES) \
 	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
 	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
 	$(test_line_buffer2_SOURCES) $(test_pcrepp_SOURCES) \
@@ -218,8 +221,9 @@ DIST_SOURCES = $(drive_data_scanner_SOURCES) \
 	$(drive_grep_proc_SOURCES) $(drive_line_buffer_SOURCES) \
 	$(drive_listview_SOURCES) $(drive_logfile_SOURCES) \
 	$(drive_readline_curses_SOURCES) $(drive_sequencer_SOURCES) \
-	$(drive_view_colors_SOURCES) $(drive_vt52_curses_SOURCES) \
-	$(scripty_SOURCES) $(slicer_SOURCES) $(test_auto_fd_SOURCES) \
+	$(drive_sql_SOURCES) $(drive_view_colors_SOURCES) \
+	$(drive_vt52_curses_SOURCES) $(scripty_SOURCES) \
+	$(slicer_SOURCES) $(test_auto_fd_SOURCES) \
 	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
 	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
 	$(test_line_buffer2_SOURCES) $(test_pcrepp_SOURCES) \
@@ -669,6 +673,10 @@ drive_readline_curses_SOURCES = \
 	drive_readline_curses.cc
 
 drive_readline_curses_LDADD = $(CURSES_LIB) $(READLINE_LIBS)
+drive_sql_SOURCES = \
+	drive_sql.cc
+
+drive_sql_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
 slicer_SOURCES = \
 	../src/line_buffer.cc \
 	slicer.cc
@@ -680,6 +688,7 @@ dist_noinst_SCRIPTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_sql_fs_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh
 
@@ -777,6 +786,9 @@ drive_readline_curses$(EXEEXT): $(drive_readline_curses_OBJECTS) $(drive_readlin
 drive_sequencer$(EXEEXT): $(drive_sequencer_OBJECTS) $(drive_sequencer_DEPENDENCIES) $(EXTRA_drive_sequencer_DEPENDENCIES) 
 	@rm -f drive_sequencer$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_sequencer_OBJECTS) $(drive_sequencer_LDADD) $(LIBS)
+drive_sql$(EXEEXT): $(drive_sql_OBJECTS) $(drive_sql_DEPENDENCIES) $(EXTRA_drive_sql_DEPENDENCIES) 
+	@rm -f drive_sql$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(drive_sql_OBJECTS) $(drive_sql_LDADD) $(LIBS)
 drive_view_colors$(EXEEXT): $(drive_view_colors_OBJECTS) $(drive_view_colors_DEPENDENCIES) $(EXTRA_drive_view_colors_DEPENDENCIES) 
 	@rm -f drive_view_colors$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_view_colors_OBJECTS) $(drive_view_colors_LDADD) $(LIBS)
@@ -830,6 +842,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_logfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_sequencer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_sql.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_view_colors.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_vt52_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grep_proc.Po@am__quote@
@@ -1338,6 +1351,13 @@ test_listview.sh.log: test_listview.sh
 test_pcrepp.log: test_pcrepp$(EXEEXT)
 	@p='test_pcrepp$(EXEEXT)'; \
 	b='test_pcrepp'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_sql_fs_func.sh.log: test_sql_fs_func.sh
+	@p='test_sql_fs_func.sh'; \
+	b='test_sql_fs_func.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -102,7 +102,7 @@ static void sql_dirname(sqlite3_context *context,
     while (text_end >= 0) {
         if (path_in[text_end] == '/' || path_in[text_end] == '\\') {
             sqlite3_result_text(context,
-                                path_in, text_end + 1,
+                                path_in, text_end == 0 ? 1 : text_end,
                                 SQLITE_TRANSIENT);
             return;
         }
@@ -123,6 +123,11 @@ static void sql_joinpath(sqlite3_context *context,
 {
     std::string full_path;
     int lpc;
+
+    if (argc == 0) {
+        sqlite3_result_null(context);
+        return;
+    }
 
     for (lpc = 0; lpc < argc; lpc++) {
         if (sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
@@ -160,7 +165,7 @@ int register_fs_extension_functions(sqlite3 *db)
     } plain_funcs[] = {
         { "basename", 1, SQLITE_UTF8, sql_basename },
         { "dirname", 1, SQLITE_UTF8, sql_dirname },
-        { "joinpath", 2, SQLITE_UTF8, sql_joinpath },
+        { "joinpath", -1, SQLITE_UTF8, sql_joinpath },
 
         { NULL }
     };

@@ -3095,7 +3095,7 @@ int main(int argc, char *argv[])
     ensure_dotlnav();
 
     if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
-        fprintf(stderr, "unable to create sqlite memory database\n");
+        fprintf(stderr, "error: unable to create sqlite memory database\n");
         exit(EXIT_FAILURE);
     }
 

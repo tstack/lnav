@@ -47,6 +47,7 @@ noinst_HEADERS = \
 	lnav.hh \
 	lnav_commands.hh \
 	lnav_util.hh \
+    log_data_table.hh \
 	log_format.hh \
 	logfile.hh \
 	logfile_sub_source.hh \
@@ -55,6 +56,7 @@ noinst_HEADERS = \
 	readline_curses.hh \
 	sequence_matcher.hh \
 	sequence_sink.hh \
+    status_controllers.hh \
 	statusview_curses.hh \
 	strnatcmp.h \
 	strong_int.hh \
