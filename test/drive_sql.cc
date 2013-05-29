@@ -1,5 +1,5 @@
-
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -51,6 +51,8 @@ int main(int argc, char *argv[])
     else {
         auto_mem<char> errmsg(sqlite3_free);
         struct callback_state state;
+
+        memset(&state, 0, sizeof(state));
 
         {
             int register_collation_functions(sqlite3 * db);
