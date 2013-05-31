@@ -42,10 +42,10 @@
 #include <stack>
 #include <memory>
 
+#include "byte_array.hh"
 #include "grapher.hh"
 #include "logfile.hh"
 #include "hist_source.hh"
-#include "readline_curses.hh"
 #include "statusview_curses.hh"
 #include "listview_curses.hh"
 #include "top_status_source.hh"
@@ -54,6 +54,7 @@
 #include "db_sub_source.hh"
 #include "textfile_sub_source.hh"
 #include "log_vtab_impl.hh"
+#include "readline_curses.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -97,6 +98,8 @@ typedef enum {
     LNV__MAX
 } lnav_view_t;
 
+extern const char *lnav_view_strings[LNV__MAX];
+
 /** The status bars. */
 typedef enum {
     LNS_TOP,
@@ -115,6 +118,9 @@ typedef enum {
 void sqlite_close_wrapper(void *mem);
 
 struct _lnav_data {
+    std::string ld_session_id;
+    time_t ld_session_time;
+    std::vector<std::pair<int, std::string> > ld_session_file_names;
     const char *                            ld_program_name;
     const char *                            ld_debug_log_name;
 

@@ -36,6 +36,10 @@
 
 #include <sys/types.h>
 
+#include <openssl/sha.h>
+
+#include <string>
+
 /**
  * Round down a number based on a given granularity.
  *
@@ -78,4 +82,37 @@ inline time_t hour_num(time_t ti)
 #else
 #error "off_t has unhandled size..."
 #endif
+
+struct sha_updater {
+    sha_updater(SHA_CTX *context) : su_context(context) { };
+
+    void operator()(const std::string &str) {
+        SHA_Update(this->su_context, str.c_str(), str.length());
+    }
+
+    SHA_CTX *su_context;
+};
+
+template<typename UnaryFunction, typename Member>
+struct object_field_t {
+
+    object_field_t(UnaryFunction &func, Member &mem)
+        : of_func(func), of_mem(mem) {
+
+        };
+
+    template<typename Object>
+    void operator()(Object obj) {
+        this->of_func(obj.*(this->of_mem));
+    };
+
+    UnaryFunction &of_func;
+    Member of_mem;
+};
+
+template<typename UnaryFunction, typename Member>
+object_field_t<UnaryFunction, Member> object_field(UnaryFunction &func, Member mem) {
+    return object_field_t<UnaryFunction, Member>(func, mem);
+}
+
 #endif

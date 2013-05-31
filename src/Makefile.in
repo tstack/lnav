@@ -114,11 +114,15 @@ am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) \
 	logfile_sub_source.$(OBJEXT) \
 	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
-	sequence_matcher.$(OBJEXT) statusview_curses.$(OBJEXT) \
-	piper_proc.$(OBJEXT) strnatcmp.$(OBJEXT) \
-	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
-	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT) \
-	xterm_mouse.$(OBJEXT)
+	session_data.$(OBJEXT) sequence_matcher.$(OBJEXT) \
+	statusview_curses.$(OBJEXT) piper_proc.$(OBJEXT) \
+	strnatcmp.$(OBJEXT) textview_curses.$(OBJEXT) \
+	view_curses.$(OBJEXT) vt52_curses.$(OBJEXT) \
+	log_vtab_impl.$(OBJEXT) xterm_mouse.$(OBJEXT) yajlpp.$(OBJEXT) \
+	yajl.$(OBJEXT) yajl_alloc.$(OBJEXT) yajl_buf.$(OBJEXT) \
+	yajl_encode.$(OBJEXT) yajl_gen.$(OBJEXT) yajl_lex.$(OBJEXT) \
+	yajl_parser.$(OBJEXT) yajl_tree.$(OBJEXT) \
+	yajl_version.$(OBJEXT)
 libdiag_a_OBJECTS = $(am_libdiag_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
@@ -149,6 +153,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
@@ -365,6 +373,7 @@ noinst_HEADERS = \
 	readline_curses.hh \
 	sequence_matcher.hh \
 	sequence_sink.hh \
+	session_data.hh \
     status_controllers.hh \
 	statusview_curses.hh \
 	strnatcmp.h \
@@ -378,7 +387,20 @@ noinst_HEADERS = \
 	vt52_curses.hh \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
-	xterm_mouse.hh
+	xterm_mouse.hh \
+	yajlpp.hh \
+	yajl/api/yajl_common.h \
+	yajl/api/yajl_gen.h \
+	yajl/api/yajl_parse.h \
+	yajl/api/yajl_tree.h \
+	yajl/yajl_alloc.h \
+	yajl/yajl_buf.h \
+	yajl/yajl_bytestack.h \
+	yajl/yajl_common.h \
+	yajl/yajl_encode.h \
+	yajl/yajl_lex.h \
+	yajl/yajl_parser.h \
+	yajl/yajl_version.h
 
 libdiag_a_SOURCES = \
 	bookmarks.cc \
@@ -397,6 +419,7 @@ libdiag_a_SOURCES = \
 	data_scanner.cc \
 	data_parser.cc \
 	readline_curses.cc \
+	session_data.cc \
 	sequence_matcher.cc \
 	statusview_curses.cc \
 	piper_proc.cc \
@@ -405,7 +428,23 @@ libdiag_a_SOURCES = \
 	view_curses.cc \
 	vt52_curses.cc \
 	log_vtab_impl.cc \
-	xterm_mouse.cc
+	xterm_mouse.cc \
+	yajlpp.cc \
+	yajl/yajl.c \
+	yajl/yajl_alloc.c \
+	yajl/yajl_alloc.h \
+	yajl/yajl_buf.c \
+	yajl/yajl_buf.h \
+	yajl/yajl_bytestack.h \
+	yajl/yajl_encode.c \
+	yajl/yajl_encode.h \
+	yajl/yajl_gen.c \
+	yajl/yajl_lex.c \
+	yajl/yajl_lex.h \
+	yajl/yajl_parser.c \
+	yajl/yajl_parser.h \
+	yajl/yajl_tree.c \
+	yajl/yajl_version.c
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = help.o $(LDADD)
@@ -550,12 +589,23 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/piper_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/session_data.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statusview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strnatcmp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vt52_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xterm_mouse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl_alloc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl_buf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl_encode.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl_gen.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl_lex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl_parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl_tree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajl_version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajlpp.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -570,6 +620,132 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+yajl.o: yajl/yajl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl.o -MD -MP -MF $(DEPDIR)/yajl.Tpo -c -o yajl.o `test -f 'yajl/yajl.c' || echo '$(srcdir)/'`yajl/yajl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl.Tpo $(DEPDIR)/yajl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl.c' object='yajl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl.o `test -f 'yajl/yajl.c' || echo '$(srcdir)/'`yajl/yajl.c
+
+yajl.obj: yajl/yajl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl.obj -MD -MP -MF $(DEPDIR)/yajl.Tpo -c -o yajl.obj `if test -f 'yajl/yajl.c'; then $(CYGPATH_W) 'yajl/yajl.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl.Tpo $(DEPDIR)/yajl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl.c' object='yajl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl.obj `if test -f 'yajl/yajl.c'; then $(CYGPATH_W) 'yajl/yajl.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl.c'; fi`
+
+yajl_alloc.o: yajl/yajl_alloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_alloc.o -MD -MP -MF $(DEPDIR)/yajl_alloc.Tpo -c -o yajl_alloc.o `test -f 'yajl/yajl_alloc.c' || echo '$(srcdir)/'`yajl/yajl_alloc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_alloc.Tpo $(DEPDIR)/yajl_alloc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_alloc.c' object='yajl_alloc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_alloc.o `test -f 'yajl/yajl_alloc.c' || echo '$(srcdir)/'`yajl/yajl_alloc.c
+
+yajl_alloc.obj: yajl/yajl_alloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_alloc.obj -MD -MP -MF $(DEPDIR)/yajl_alloc.Tpo -c -o yajl_alloc.obj `if test -f 'yajl/yajl_alloc.c'; then $(CYGPATH_W) 'yajl/yajl_alloc.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_alloc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_alloc.Tpo $(DEPDIR)/yajl_alloc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_alloc.c' object='yajl_alloc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_alloc.obj `if test -f 'yajl/yajl_alloc.c'; then $(CYGPATH_W) 'yajl/yajl_alloc.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_alloc.c'; fi`
+
+yajl_buf.o: yajl/yajl_buf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_buf.o -MD -MP -MF $(DEPDIR)/yajl_buf.Tpo -c -o yajl_buf.o `test -f 'yajl/yajl_buf.c' || echo '$(srcdir)/'`yajl/yajl_buf.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_buf.Tpo $(DEPDIR)/yajl_buf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_buf.c' object='yajl_buf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_buf.o `test -f 'yajl/yajl_buf.c' || echo '$(srcdir)/'`yajl/yajl_buf.c
+
+yajl_buf.obj: yajl/yajl_buf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_buf.obj -MD -MP -MF $(DEPDIR)/yajl_buf.Tpo -c -o yajl_buf.obj `if test -f 'yajl/yajl_buf.c'; then $(CYGPATH_W) 'yajl/yajl_buf.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_buf.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_buf.Tpo $(DEPDIR)/yajl_buf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_buf.c' object='yajl_buf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_buf.obj `if test -f 'yajl/yajl_buf.c'; then $(CYGPATH_W) 'yajl/yajl_buf.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_buf.c'; fi`
+
+yajl_encode.o: yajl/yajl_encode.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_encode.o -MD -MP -MF $(DEPDIR)/yajl_encode.Tpo -c -o yajl_encode.o `test -f 'yajl/yajl_encode.c' || echo '$(srcdir)/'`yajl/yajl_encode.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_encode.Tpo $(DEPDIR)/yajl_encode.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_encode.c' object='yajl_encode.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_encode.o `test -f 'yajl/yajl_encode.c' || echo '$(srcdir)/'`yajl/yajl_encode.c
+
+yajl_encode.obj: yajl/yajl_encode.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_encode.obj -MD -MP -MF $(DEPDIR)/yajl_encode.Tpo -c -o yajl_encode.obj `if test -f 'yajl/yajl_encode.c'; then $(CYGPATH_W) 'yajl/yajl_encode.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_encode.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_encode.Tpo $(DEPDIR)/yajl_encode.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_encode.c' object='yajl_encode.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_encode.obj `if test -f 'yajl/yajl_encode.c'; then $(CYGPATH_W) 'yajl/yajl_encode.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_encode.c'; fi`
+
+yajl_gen.o: yajl/yajl_gen.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_gen.o -MD -MP -MF $(DEPDIR)/yajl_gen.Tpo -c -o yajl_gen.o `test -f 'yajl/yajl_gen.c' || echo '$(srcdir)/'`yajl/yajl_gen.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_gen.Tpo $(DEPDIR)/yajl_gen.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_gen.c' object='yajl_gen.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_gen.o `test -f 'yajl/yajl_gen.c' || echo '$(srcdir)/'`yajl/yajl_gen.c
+
+yajl_gen.obj: yajl/yajl_gen.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_gen.obj -MD -MP -MF $(DEPDIR)/yajl_gen.Tpo -c -o yajl_gen.obj `if test -f 'yajl/yajl_gen.c'; then $(CYGPATH_W) 'yajl/yajl_gen.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_gen.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_gen.Tpo $(DEPDIR)/yajl_gen.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_gen.c' object='yajl_gen.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_gen.obj `if test -f 'yajl/yajl_gen.c'; then $(CYGPATH_W) 'yajl/yajl_gen.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_gen.c'; fi`
+
+yajl_lex.o: yajl/yajl_lex.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_lex.o -MD -MP -MF $(DEPDIR)/yajl_lex.Tpo -c -o yajl_lex.o `test -f 'yajl/yajl_lex.c' || echo '$(srcdir)/'`yajl/yajl_lex.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_lex.Tpo $(DEPDIR)/yajl_lex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_lex.c' object='yajl_lex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_lex.o `test -f 'yajl/yajl_lex.c' || echo '$(srcdir)/'`yajl/yajl_lex.c
+
+yajl_lex.obj: yajl/yajl_lex.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_lex.obj -MD -MP -MF $(DEPDIR)/yajl_lex.Tpo -c -o yajl_lex.obj `if test -f 'yajl/yajl_lex.c'; then $(CYGPATH_W) 'yajl/yajl_lex.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_lex.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_lex.Tpo $(DEPDIR)/yajl_lex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_lex.c' object='yajl_lex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_lex.obj `if test -f 'yajl/yajl_lex.c'; then $(CYGPATH_W) 'yajl/yajl_lex.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_lex.c'; fi`
+
+yajl_parser.o: yajl/yajl_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_parser.o -MD -MP -MF $(DEPDIR)/yajl_parser.Tpo -c -o yajl_parser.o `test -f 'yajl/yajl_parser.c' || echo '$(srcdir)/'`yajl/yajl_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_parser.Tpo $(DEPDIR)/yajl_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_parser.c' object='yajl_parser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_parser.o `test -f 'yajl/yajl_parser.c' || echo '$(srcdir)/'`yajl/yajl_parser.c
+
+yajl_parser.obj: yajl/yajl_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_parser.obj -MD -MP -MF $(DEPDIR)/yajl_parser.Tpo -c -o yajl_parser.obj `if test -f 'yajl/yajl_parser.c'; then $(CYGPATH_W) 'yajl/yajl_parser.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_parser.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_parser.Tpo $(DEPDIR)/yajl_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_parser.c' object='yajl_parser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_parser.obj `if test -f 'yajl/yajl_parser.c'; then $(CYGPATH_W) 'yajl/yajl_parser.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_parser.c'; fi`
+
+yajl_tree.o: yajl/yajl_tree.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_tree.o -MD -MP -MF $(DEPDIR)/yajl_tree.Tpo -c -o yajl_tree.o `test -f 'yajl/yajl_tree.c' || echo '$(srcdir)/'`yajl/yajl_tree.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_tree.Tpo $(DEPDIR)/yajl_tree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_tree.c' object='yajl_tree.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_tree.o `test -f 'yajl/yajl_tree.c' || echo '$(srcdir)/'`yajl/yajl_tree.c
+
+yajl_tree.obj: yajl/yajl_tree.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_tree.obj -MD -MP -MF $(DEPDIR)/yajl_tree.Tpo -c -o yajl_tree.obj `if test -f 'yajl/yajl_tree.c'; then $(CYGPATH_W) 'yajl/yajl_tree.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_tree.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_tree.Tpo $(DEPDIR)/yajl_tree.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_tree.c' object='yajl_tree.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_tree.obj `if test -f 'yajl/yajl_tree.c'; then $(CYGPATH_W) 'yajl/yajl_tree.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_tree.c'; fi`
+
+yajl_version.o: yajl/yajl_version.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_version.o -MD -MP -MF $(DEPDIR)/yajl_version.Tpo -c -o yajl_version.o `test -f 'yajl/yajl_version.c' || echo '$(srcdir)/'`yajl/yajl_version.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_version.Tpo $(DEPDIR)/yajl_version.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_version.c' object='yajl_version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_version.o `test -f 'yajl/yajl_version.c' || echo '$(srcdir)/'`yajl/yajl_version.c
+
+yajl_version.obj: yajl/yajl_version.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT yajl_version.obj -MD -MP -MF $(DEPDIR)/yajl_version.Tpo -c -o yajl_version.obj `if test -f 'yajl/yajl_version.c'; then $(CYGPATH_W) 'yajl/yajl_version.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_version.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/yajl_version.Tpo $(DEPDIR)/yajl_version.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='yajl/yajl_version.c' object='yajl_version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o yajl_version.obj `if test -f 'yajl/yajl_version.c'; then $(CYGPATH_W) 'yajl/yajl_version.c'; else $(CYGPATH_W) '$(srcdir)/yajl/yajl_version.c'; fi`
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

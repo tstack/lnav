@@ -96,6 +96,9 @@
 #include "lnav_commands.hh"
 #include "column_namer.hh"
 #include "log_data_table.hh"
+#include "session_data.hh"
+
+#include "yajlpp.hh"
 
 using namespace std;
 
@@ -121,6 +124,16 @@ static const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) /
 
 static bookmark_type_t BM_EXAMPLE;
 static bookmark_type_t BM_QUERY;
+
+const char *lnav_view_strings[LNV__MAX] = {
+    "log",
+    "text",
+    "help",
+    "histogram",
+    "graph",
+    "db",
+    "example",
+};
 
 /**
  * Check if an experimental feature should be enabled by
@@ -292,7 +305,7 @@ public:
             return true;
         }
         row -= 1;
-        if (row == this->fos_line_values.size()) {
+        if (row == (int)this->fos_line_values.size()) {
             if (this->fos_parser->dp_pairs.empty()) {
                 str = " No discovered message fields";
             }
@@ -2668,6 +2681,8 @@ static void looper(void)
 
         execute_file(dotlnav_path("session"));
 
+        bool session_loaded = false;
+
         while (lnav_data.ld_looping) {
             fd_set         ready_rfds = lnav_data.ld_read_fds;
             struct timeval to         = { 0, 330000 };
@@ -2677,6 +2692,11 @@ static void looper(void)
 
             if (rescan_files()) {
                 rebuild_indexes(true);
+            }
+
+            if (!session_loaded && lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
+                load_session();
+                session_loaded = true;
             }
 
             for (lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -3184,15 +3204,6 @@ int main(int argc, char *argv[])
             stdin_out = optarg;
             break;
 
-        /*
-         * Add an option that will write stdin to a file with timestamps.
-         * Maybe add two options, one to write to a file and one to add
-         * timestamps.  If the file already exists, we should load in the
-         * existing contents and append any new content to the file.
-         * Timestamps should be added only at the beginning of a line and
-         * only after a delay period.
-         */
-
         case 'V':
             printf("%s\n", PACKAGE_STRING);
             exit(0);
@@ -3290,9 +3301,19 @@ int main(int argc, char *argv[])
     else {
         try {
             rescan_files(true);
+            
+            init_session();
+
+            scan_sessions();
+
+            if (!lnav_data.ld_session_file_names.empty()) {
+                lnav_data.ld_session_time = lnav_data.ld_session_file_names.back().first;
+            }
 
             guard_termios gt(STDIN_FILENO);
             looper();
+
+            save_session();
         }
         catch (line_buffer::error & e) {
             fprintf(stderr, "error: %s\n", strerror(e.e_err));

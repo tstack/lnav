@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2013, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,42 +25,16 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file session_data.hh
  */
-#ifndef __byte_array_hh
-#define __byte_array_hh
 
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
+#ifndef _session_data_hh
+#define _session_data_hh
 
-template<size_t BYTE_COUNT>
-struct byte_array {
-    byte_array() { };
+void init_session(void);
+void load_session(void);
+void save_session(void);
+void scan_sessions(void);
 
-    byte_array(const byte_array &other)
-    {
-        memcpy(this->ba_data, other.ba_data, BYTE_COUNT);
-    };
-
-    bool operator<(const byte_array &other) const
-    {
-        return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) < 0;
-    };
-
-    bool operator!=(const byte_array &other) const
-    {
-        return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
-    };
-
-    void to_string(char *buffer)
-    {
-        for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
-            snprintf(&buffer[lpc * 2], 3, "%02x", this->ba_data[lpc]);
-        }
-    };
-
-    unsigned char *out() { return this->ba_data; };
-
-    unsigned char ba_data[BYTE_COUNT];
-};
 #endif

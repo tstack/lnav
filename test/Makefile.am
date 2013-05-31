@@ -200,5 +200,6 @@ TESTS = test_bookmarks \
 
 DISTCLEANFILES = \
 	*.dat \
+	*.diff \
 	*.index \
 	*.tmp

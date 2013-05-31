@@ -122,6 +122,10 @@ public:
 
     const T *operator->(void) const { return &this->srm_value; };
 
+    operator T(void) { return this->srm_value; };
+
+    T in(void) { return this->srm_value; };
+
     T *inout(void) { return &this->srm_value; };
 private:
     T srm_value;

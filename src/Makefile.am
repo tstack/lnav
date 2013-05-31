@@ -56,6 +56,7 @@ noinst_HEADERS = \
 	readline_curses.hh \
 	sequence_matcher.hh \
 	sequence_sink.hh \
+	session_data.hh \
     status_controllers.hh \
 	statusview_curses.hh \
 	strnatcmp.h \
@@ -69,7 +70,20 @@ noinst_HEADERS = \
 	vt52_curses.hh \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
-	xterm_mouse.hh
+	xterm_mouse.hh \
+	yajlpp.hh \
+	yajl/api/yajl_common.h \
+	yajl/api/yajl_gen.h \
+	yajl/api/yajl_parse.h \
+	yajl/api/yajl_tree.h \
+	yajl/yajl_alloc.h \
+	yajl/yajl_buf.h \
+	yajl/yajl_bytestack.h \
+	yajl/yajl_common.h \
+	yajl/yajl_encode.h \
+	yajl/yajl_lex.h \
+	yajl/yajl_parser.h \
+	yajl/yajl_version.h
 
 libdiag_a_SOURCES = \
 	bookmarks.cc \
@@ -88,6 +102,7 @@ libdiag_a_SOURCES = \
 	data_scanner.cc \
 	data_parser.cc \
 	readline_curses.cc \
+	session_data.cc \
 	sequence_matcher.cc \
 	statusview_curses.cc \
 	piper_proc.cc \
@@ -96,7 +111,23 @@ libdiag_a_SOURCES = \
 	view_curses.cc \
 	vt52_curses.cc \
 	log_vtab_impl.cc \
-	xterm_mouse.cc
+	xterm_mouse.cc \
+	yajlpp.cc \
+	yajl/yajl.c \
+	yajl/yajl_alloc.c \
+	yajl/yajl_alloc.h \
+	yajl/yajl_buf.c \
+	yajl/yajl_buf.h \
+	yajl/yajl_bytestack.h \
+	yajl/yajl_encode.c \
+	yajl/yajl_encode.h \
+	yajl/yajl_gen.c \
+	yajl/yajl_lex.c \
+	yajl/yajl_lex.h \
+	yajl/yajl_parser.c \
+	yajl/yajl_parser.h \
+	yajl/yajl_tree.c \
+	yajl/yajl_version.c
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = help.o $(LDADD)

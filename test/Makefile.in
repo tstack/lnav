@@ -753,6 +753,7 @@ dist_noinst_DATA = \
 
 DISTCLEANFILES = \
 	*.dat \
+	*.diff \
 	*.index \
 	*.tmp
 
