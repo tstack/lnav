@@ -2279,27 +2279,25 @@ static void watch_logfile(string filename, int fd, bool required)
  */
 static void expand_filename(string path, bool required)
 {
-    glob_t gl;
+    static_root_mem<glob_t, globfree> gl;
 
-    memset(&gl, 0, sizeof(gl));
-    if (glob(path.c_str(), GLOB_NOCHECK, NULL, &gl) == 0) {
+    if (glob(path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
         int lpc;
 
-        if (gl.gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
+        if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
             /* It's a pattern that doesn't match any files
              * yet, allow it through since we'll load it in
              * dynamically.
              */
             required = false;
         }
-        if (gl.gl_pathc > 1 ||
-            strcmp(path.c_str(), gl.gl_pathv[0]) != 0) {
+        if (gl->gl_pathc > 1 ||
+            strcmp(path.c_str(), gl->gl_pathv[0]) != 0) {
             required = false;
         }
-        for (lpc = 0; lpc < (int)gl.gl_pathc; lpc++) {
-            watch_logfile(gl.gl_pathv[lpc], -1, required);
+        for (lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
+            watch_logfile(gl->gl_pathv[lpc], -1, required);
         }
-        globfree(&gl);
     }
 }
 
@@ -3237,14 +3235,22 @@ int main(int argc, char *argv[])
     }
 
     for (lpc = 0; lpc < argc; lpc++) {
+        auto_mem<char> abspath;
         struct stat st;
 
         if (stat(argv[lpc], &st) == -1) {
-            perror("Cannot stat file");
+            fprintf(stderr,
+                    "Cannot stat file: %s -- %s\n",
+                    argv[lpc],
+                    strerror(errno));
+            retval = EXIT_FAILURE;
+        }
+        else if ((abspath = realpath(argv[lpc], NULL)) == NULL) {
+            perror("Cannot find file");
             retval = EXIT_FAILURE;
         }
         else if (S_ISDIR(st.st_mode)) {
-            string dir_wild(argv[lpc]);
+            string dir_wild(abspath.in());
 
             if (dir_wild[dir_wild.size() - 1] == '/') {
                 dir_wild.resize(dir_wild.size() - 1);
@@ -3252,7 +3258,7 @@ int main(int argc, char *argv[])
             lnav_data.ld_file_names.insert(make_pair(dir_wild + "/*", -1));
         }
         else {
-            lnav_data.ld_file_names.insert(make_pair(argv[lpc], -1));
+            lnav_data.ld_file_names.insert(make_pair(abspath.in(), -1));
         }
     }
 

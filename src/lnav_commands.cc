@@ -29,11 +29,14 @@
 
 #include "config.h"
 
+#include <wordexp.h>
+
 #include <string>
 #include <vector>
 #include <fstream>
 
 #include "lnav.hh"
+#include "auto_mem.hh"
 #include "log_data_table.hh"
 #include "lnav_commands.hh"
 
@@ -148,8 +151,6 @@ static string com_goto(string cmdline, vector<string> &args)
 static string com_save_to(string cmdline, vector<string> &args)
 {
     FILE *      outfile = NULL;
-    FILE *      pfile   = NULL;
-    char        command[1024];
     const char *mode = "";
 
     if (args.size() == 0) {
@@ -161,17 +162,26 @@ static string com_save_to(string cmdline, vector<string> &args)
         return "error: expecting file name";
     }
 
-    snprintf(command, sizeof(command), "/bin/echo -n %s", args[1].c_str());
-    if ((pfile = popen(command, "r")) == NULL) {
-        return "error: unable to compute file name";
+    static_root_mem<wordexp_t, wordfree> wordmem;
+
+    switch (wordexp(args[1].c_str(), wordmem.inout(), WRDE_NOCMD|WRDE_UNDEF)) {
+    case WRDE_BADCHAR:
+        return "error: invalid filename character";
+    case WRDE_CMDSUB:
+        return "error: command substitution is not allowed";
+    case WRDE_BADVAL:
+        return "error: unknown environment variable in file name";
+    case WRDE_NOSPACE:
+        return "error: out of memory";
+    case WRDE_SYNTAX:
+        return "error: invalid syntax";
+    default:
+        break;
     }
 
-    if (fgets(command, sizeof(command), pfile) == 0) {
-        perror("fgets");
-        return "error: unable to compute file name";
+    if (wordmem->we_wordc > 1) {
+        return "error: more than one file name was matched";
     }
-    fclose(pfile);
-    pfile = NULL;
 
     if (args[0] == "append-to") {
         mode = "a";
@@ -180,8 +190,8 @@ static string com_save_to(string cmdline, vector<string> &args)
         mode = "w";
     }
 
-    if ((outfile = fopen(command, mode)) == NULL) {
-        return "error: unable to open file -- " + string(command);
+    if ((outfile = fopen(wordmem->we_wordv[0], mode)) == NULL) {
+        return "error: unable to open file -- " + string(wordmem->we_wordv[0]);
     }
 
     textview_curses *tc             = lnav_data.ld_view_stack.top();

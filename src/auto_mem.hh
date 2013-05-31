@@ -32,6 +32,7 @@
 #ifndef __auto_mem_hh
 #define __auto_mem_hh
 
+#include <string.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -108,5 +109,21 @@ public:
 private:
     T *  am_ptr;
     void (*am_free_func)(void *);
+};
+
+template<typename T, void (*free_func)(T *)>
+class static_root_mem {
+public:
+    static_root_mem() {
+        memset(&this->srm_value, 0, sizeof(T));
+    };
+
+    ~static_root_mem() { free_func(&this->srm_value); };
+
+    const T *operator->(void) const { return &this->srm_value; };
+
+    T *inout(void) { return &this->srm_value; };
+private:
+    T srm_value;
 };
 #endif
