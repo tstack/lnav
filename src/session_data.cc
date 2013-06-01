@@ -192,7 +192,6 @@ void save_session(void)
         {
             yajlpp_map root_map(handle);
 
-
             root_map.gen("files");
 
             {

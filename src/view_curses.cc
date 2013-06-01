@@ -76,6 +76,11 @@ void view_curses::mvwattrline(WINDOW *window,
             /* exp_index = -1; */
             break;
 
+        case '\n':
+            expanded_line[exp_index] = ' ';
+            exp_index += 1;
+            break;
+
         default:
             expanded_line[exp_index] = line[lpc];
             exp_index += 1;

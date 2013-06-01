@@ -626,10 +626,16 @@ void readline_curses::clear_possibilities(int context, string type)
 void readline_curses::do_update(void)
 {
     if (this->rc_active_context == -1) {
+        int alt_start = getmaxx(this->vc_window) - this->rc_alt_value.length();
+
+        wmove(this->vc_window, this->get_actual_y(), 0);
+        wclrtoeol(this->vc_window);
+        mvwprintw(this->vc_window, this->get_actual_y(), alt_start,
+                  "%s",
+                  this->rc_alt_value.c_str());
         mvwprintw(this->vc_window, this->get_actual_y(), 0,
                   "%s",
                   this->rc_value.c_str());
-        wclrtoeol(this->vc_window);
         this->set_x(0);
     }
     vt52_curses::do_update();

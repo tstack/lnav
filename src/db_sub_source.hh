@@ -32,6 +32,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "listview_curses.hh"
 #include "hist_source.hh"

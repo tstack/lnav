@@ -1096,6 +1096,9 @@ static void copy_to_xclip(void)
 
     if (!pfile) {
         flash();
+        lnav_data.ld_rl_view->set_value(
+            "error: Unable to copy to clipboard.  "
+            "Make sure xclip or pbcopy is installed.");
         return;
     }
 
@@ -1124,6 +1127,24 @@ static void handle_paging_key(int ch)
     switch (ch) {
     case 'q':
     case 'Q':
+        {
+            string msg = "";
+
+            if (tc == &lnav_data.ld_views[LNV_DB]) {
+                msg = "v/V: Switch to the SQL result view";
+            }
+            else if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
+                msg = "i/I: Switch to the histogram view";
+            }
+            else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
+                msg = "t: Switch to the text file view";
+            }
+            else if (tc == &lnav_data.ld_views[LNV_GRAPH]) {
+                msg = "g: Switch to the graph view";
+            }
+
+            lnav_data.ld_rl_view->set_alt_value(msg);
+        }
         lnav_data.ld_view_stack.pop();
         if (lnav_data.ld_view_stack.empty() ||
             (lnav_data.ld_view_stack.size() == 1 &&
@@ -1131,6 +1152,7 @@ static void handle_paging_key(int ch)
             lnav_data.ld_looping = false;
         }
         else {
+
             tc = lnav_data.ld_view_stack.top();
             tc->set_needs_update();
             lnav_data.ld_scroll_broadcaster.invoke(tc);
@@ -1297,6 +1319,9 @@ static void handle_paging_key(int ch)
             lss->toggle_user_mark(&textview_curses::BM_USER,
                                   vis_line_t(lnav_data.ld_last_user_mark[tc]));
             tc->reload_data();
+
+            lnav_data.ld_rl_view->set_alt_value(
+                "u/U: Move forward/backward through user bookmarks");
         }
         break;
 
@@ -1325,6 +1350,9 @@ static void handle_paging_key(int ch)
             lss->toggle_user_mark(&textview_curses::BM_USER,
                                   vis_line_t(lnav_data.ld_last_user_mark[tc]));
             tc->reload_data();
+
+            lnav_data.ld_rl_view->set_alt_value(
+                "c: Copy marked lines to the clipboard");
         }
         break;
 
@@ -1544,7 +1572,10 @@ static void handle_paging_key(int ch)
         break;
 
     case 't':
-        toggle_view(&lnav_data.ld_views[LNV_TEXT]);
+        if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
+            lnav_data.ld_rl_view->set_alt_value(
+                "f/F: Switch to the next/previous file");
+        }
         break;
 
     case 'T':
@@ -1553,7 +1584,12 @@ static void handle_paging_key(int ch)
         break;
 
     case 'i':
-        toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM]);
+        if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
+            lnav_data.ld_rl_view->set_alt_value("z/Z: Zoom in/out");
+        }
+        else {
+            lnav_data.ld_rl_view->set_alt_value("");
+        }
         break;
 
     case 'I':
@@ -1932,6 +1968,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
     case LNM_COMMAND:
         lnav_data.ld_mode = LNM_PAGING;
         rc->set_value(execute_command(rc->get_value()));
+        rc->set_alt_value("");
         break;
 
     case LNM_SEARCH:
@@ -1942,6 +1979,8 @@ static void rl_callback(void *dummy, readline_curses *rc)
             lnav_data.ld_rl_view->
             add_possibility(LNM_COMMAND, "filter", rc->get_value());
             rc->set_value("search: " + rc->get_value());
+            rc->set_alt_value("n/N: Move forward/backward through search "
+                              "results");
         }
         lnav_data.ld_mode = LNM_PAGING;
         break;
@@ -1965,9 +2004,11 @@ static void rl_callback(void *dummy, readline_curses *rc)
             const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
             rc->set_value(errmsg);
+            rc->set_alt_value("");
         }
         else if (stmt == NULL) {
             rc->set_value("");
+            rc->set_alt_value("");
         }
         else {
             bool done = false;
@@ -1980,7 +2021,6 @@ static void rl_callback(void *dummy, readline_curses *rc)
                 case SQLITE_OK:
                 case SQLITE_DONE:
                     done = true;
-                    rc->set_value("");
                     break;
 
                 case SQLITE_ROW:
@@ -2007,7 +2047,20 @@ static void rl_callback(void *dummy, readline_curses *rc)
                 lnav_data.ld_views[LNV_DB].set_left(0);
 
                 if (dls.dls_rows.size() > 0) {
+                    char row_count[32];
+
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
+
+                    snprintf(row_count, sizeof(row_count),
+                             "%'d row(s) matched",
+                             (int)dls.dls_rows.size());
+                    rc->set_value(row_count);
+                    rc->set_alt_value("y/Y: Move forward/backward through "
+                                      "query results in the log view");
+                }
+                else {
+                    rc->set_value("No rows matched");
+                    rc->set_alt_value("");
                 }
             }
 
@@ -2596,6 +2649,7 @@ static void looper(void)
         rlc.set_y(-1);
         rlc.set_perform_action(readline_curses::action(rl_callback));
         rlc.set_timeout_action(readline_curses::action(rl_search));
+        rlc.set_alt_value("e/E: Move forward/backward through error messages");
 
         (void)curs_set(0);
 
@@ -2735,6 +2789,8 @@ static void looper(void)
                     lnav_data.ld_text_source.text_line_count() > 0) {
                     toggle_view(&lnav_data.ld_views[LNV_TEXT]);
                     lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
+                    lnav_data.ld_rl_view->set_alt_value(
+                        "f/F: Switch to the next/previous file");
                 }
                 initial_build = true;
             }
