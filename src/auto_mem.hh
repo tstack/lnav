@@ -101,7 +101,8 @@ public:
     void reset(T *ptr = NULL)
     {
         if (this->am_ptr != ptr) {
-            this->am_free_func(this->am_ptr);
+            if (this->am_ptr != NULL)
+                this->am_free_func(this->am_ptr);
             this->am_ptr = ptr;
         }
     };

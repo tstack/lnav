@@ -143,7 +143,7 @@ public:
     void handle_mouse(int ch)
     {
         /* The button event and coordinates follow the KEY_MOUSE char */
-        int bstate = getch() - XT_MAGIC & XT_BUTTON__MASK;
+        int bstate = (getch() - XT_MAGIC) & XT_BUTTON__MASK;
         int x      = getch() - XT_MAGIC - 1;
         int y      = getch() - XT_MAGIC - 1;
 

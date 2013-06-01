@@ -47,7 +47,7 @@ static void sql_gethostbyname(sqlite3_context *context,
     char             buffer[INET6_ADDRSTRLEN];
     const char *     name_in;
     struct addrinfo *ai;
-    void *           addr_ptr;
+    void *           addr_ptr = NULL;
     int rc;
 
     assert(argc >= 1 && argc <= 2);

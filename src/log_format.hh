@@ -35,6 +35,8 @@
 #include <assert.h>
 #include <time.h>
 #include <stdint.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <sys/types.h>
 
 #include <string>
@@ -165,7 +167,7 @@ public:
             break;
 
         case VALUE_INTEGER:
-            sscanf(s.c_str(), "%qd", &this->lv_number.i);
+            sscanf(s.c_str(), "%" PRId64 "", &this->lv_number.i);
             break;
 
         case VALUE_FLOAT:
@@ -183,7 +185,7 @@ public:
             return this->lv_string;
 
         case VALUE_INTEGER:
-            snprintf(buffer, sizeof(buffer), "%qd", this->lv_number.i);
+            snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_number.i);
             break;
 
         case VALUE_FLOAT:
