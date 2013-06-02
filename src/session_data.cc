@@ -29,6 +29,8 @@
  * @file session_data.cc
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <glob.h>
 #include <fcntl.h>
@@ -46,10 +48,11 @@
 
 using namespace std;
 
+static const size_t MAX_SESSIONS = 16;
+
 void init_session(void)
 {
     byte_array<20> hash;
-    char hash_hex[64];
     SHA_CTX context;
 
     lnav_data.ld_session_time = time(NULL);
@@ -61,16 +64,28 @@ void init_session(void)
              object_field(updater, &pair<string, int>::first));
     SHA_Final(hash.out(), &context);
 
-    hash.to_string(hash_hex);
-
-    lnav_data.ld_session_id = hash_hex;
+    lnav_data.ld_session_id = hash.to_string();
 }
 
 void scan_sessions(void)
 {
+    std::list<session_pair_t> &session_file_names = lnav_data.ld_session_file_names;
     static_root_mem<glob_t, globfree> view_info_list;
+    std::list<session_pair_t>::iterator iter;
     char view_info_pattern_base[128];
     string view_info_pattern;
+    string old_session_name;
+    int index;
+
+    if (lnav_data.ld_session_file_index >= 0 &&
+        lnav_data.ld_session_file_index < (int)session_file_names.size()) {
+        iter = session_file_names.begin();
+
+        advance(iter, lnav_data.ld_session_file_index);
+        old_session_name = iter->second;
+    }
+
+    session_file_names.clear();
 
     snprintf(view_info_pattern_base, sizeof(view_info_pattern_base),
              "view-info-%s.*.json",
@@ -78,21 +93,41 @@ void scan_sessions(void)
     view_info_pattern = dotlnav_path(view_info_pattern_base);
     if (glob(view_info_pattern.c_str(), 0, NULL, view_info_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < view_info_list->gl_pathc; lpc++) {
+            const char *path = view_info_list->gl_pathv[lpc];
             int timestamp, ppid;
             char *base;
 
-            base = strrchr(view_info_list->gl_pathv[lpc], '/') + 1;
+            base = strrchr(path, '/') + 1;
             if (sscanf(base,
                        "view-info-%*[^.].ts%d.ppid%d.json",
                        &timestamp,
                        &ppid) == 2) {
-                lnav_data.ld_session_file_names.push_back(make_pair(timestamp, view_info_list->gl_pathv[lpc]));
+                ppid_time_pair_t ptp;
+
+                ptp.first = (ppid == getppid()) ? 1 : 0;
+                ptp.second = timestamp;
+                session_file_names.push_back(make_pair(ptp, path));
             }
         }
     }
 
-    sort(lnav_data.ld_session_file_names.begin(),
-         lnav_data.ld_session_file_names.end());
+    session_file_names.sort();
+
+    while (session_file_names.size() > MAX_SESSIONS) {
+        unlink(session_file_names.front().second.c_str());
+        session_file_names.pop_front();
+    }
+
+    lnav_data.ld_session_file_index = ((int)session_file_names.size()) - 1;
+
+    for (index = 0, iter = session_file_names.begin();
+         iter != session_file_names.end();
+         index++, ++iter) {
+        if (iter->second == old_session_name) {
+            lnav_data.ld_session_file_index = index;
+            break;
+        }
+    }
 }
 
 static int read_files(void *ctx, const unsigned char *str, size_t len)
@@ -120,18 +155,28 @@ static int read_top_line(void *ctx, long long value)
     return 1;
 }
 
-struct json_path_handler view_info_handlers[] = {
-    json_path_handler(".files[]", read_files),
-    json_path_handler(".views.*.top_line", read_top_line),
+static int read_commands(void *ctx, const unsigned char *str, size_t len)
+{
+    std::string cmdline = std::string((const char *)str, len);
 
-    json_path_handler::TERMINATOR
+    execute_command(cmdline);
+
+    return 1;
+}
+
+static struct json_path_handler view_info_handlers[] = {
+    json_path_handler("/files#", read_files),
+    json_path_handler("/views/([^.]+)/top_line", read_top_line),
+    json_path_handler("/commands#", read_commands),
+
+    json_path_handler()
 };
 
 void load_session(void)
 {
+    std::list<session_pair_t>::iterator sess_iter;
     yajlpp_parse_context ypc(view_info_handlers);
     yajl_handle handle;
-    string view_info_name;
     int fd;
 
     if (lnav_data.ld_session_file_names.empty()) {
@@ -139,7 +184,10 @@ void load_session(void)
     }
 
     handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
-    view_info_name = lnav_data.ld_session_file_names.back().second;
+    sess_iter = lnav_data.ld_session_file_names.begin();
+    advance(sess_iter, lnav_data.ld_session_file_index);
+    string &view_info_name = sess_iter->second;
+
     if ((fd = open(view_info_name.c_str(), O_RDONLY)) < 0) {
         perror("cannot open session file");
     }
@@ -162,12 +210,87 @@ static void yajl_writer(void *context, const char *str, size_t len)
     fwrite(str, len, 1, file);
 }
 
+void save_bookmarks(void)
+{
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    bookmarks<content_line_t>::type &bm = lss.get_user_bookmarks();
+    bookmark_vector<content_line_t> &user_marks = bm[&textview_curses::BM_USER];
+    bookmark_vector<content_line_t>::iterator iter;
+    string mark_file_name, mark_file_tmp_name;
+    auto_mem<FILE> file(fclose);
+    logfile *curr_lf = NULL;
+    yajl_gen handle = NULL;
+
+    for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
+        content_line_t cl = *iter;
+        logfile *lf;
+
+        lf = lss.find(cl);
+        if (curr_lf != lf) {
+            char mark_base_name[256];
+            char hash_hex[64];
+            SHA_CTX context;
+            byte_array<20> hash;
+
+            if (handle) {
+                yajl_gen_array_close(handle);
+                yajl_gen_map_close(handle);
+                yajl_gen_clear(handle);
+                yajl_gen_free(handle);
+                fclose(file.release());
+
+                rename(mark_file_tmp_name.c_str(), mark_file_name.c_str());
+            }
+
+            SHA_Init(&context);
+            SHA_Update(&context,
+                       lf->get_filename().c_str(),
+                       lf->get_filename().length());
+            SHA_Final(hash.out(), &context);
+
+            hash.to_string(hash_hex);
+
+            snprintf(mark_base_name, sizeof(mark_base_name),
+                     "file-%s.ts%ld.json",
+                     hash_hex,
+                     lnav_data.ld_session_time);
+
+            mark_file_name = dotlnav_path(mark_base_name);
+            mark_file_tmp_name = mark_file_name + ".tmp";
+
+            file = fopen(mark_file_name.c_str(), "w");
+            handle = yajl_gen_alloc(NULL);
+            yajl_gen_config(handle, yajl_gen_beautify, 1);
+            yajl_gen_config(handle,
+                            yajl_gen_print_callback, yajl_writer, file.in());
+            yajl_gen_map_open(handle);
+            yajl_gen_string(handle, "path");
+            yajl_gen_string(handle, lf->get_filename());
+            yajl_gen_string(handle, "marks");
+            yajl_gen_array_open(handle);
+
+            curr_lf = lf;
+        }
+
+        yajl_gen_integer(handle, (long long)cl);
+    }
+    if (handle) {
+        yajl_gen_array_close(handle);
+        yajl_gen_map_close(handle);
+        yajl_gen_clear(handle);
+        yajl_gen_free(handle);
+        fclose(file.release());
+    }
+}
+
 void save_session(void)
 {
     string view_file_name, view_file_tmp_name;
     auto_mem<FILE> file(fclose);
     char view_base_name[256];
     yajl_gen handle = NULL;
+
+    save_bookmarks();
 
     snprintf(view_base_name, sizeof(view_base_name),
              "view-info-%s.ts%ld.ppid%d.json",
@@ -225,6 +348,36 @@ void save_session(void)
                         view_map.gen((long long)tc.get_top());
                 }
             }
+
+            root_map.gen("commands");
+
+            {
+                logfile_sub_source::filter_stack_t::iterator filter_iter;
+                logfile_sub_source &lss = lnav_data.ld_log_source;
+                logfile_sub_source::filter_stack_t &fs = lss.get_filters();
+
+                yajlpp_array cmd_array(handle);
+
+                for (filter_iter = fs.begin();
+                     filter_iter != fs.end();
+                     ++filter_iter) {
+                    if (!(*filter_iter)->is_enabled())
+                        continue;
+
+                    cmd_array.gen((*filter_iter)->to_command());
+                }
+
+                textview_curses::highlight_map_t &hmap = lnav_data.ld_views[LNV_LOG].get_highlights();
+                textview_curses::highlight_map_t::iterator hl_iter;
+
+                for (hl_iter = hmap.begin();
+                     hl_iter != hmap.end();
+                     ++hl_iter) {
+                    if (hl_iter->first[0] == '$')
+                        continue;
+                    cmd_array.gen("highlight " + hl_iter->first);
+                }
+            }
         }
 
         yajl_gen_clear(handle);
@@ -234,4 +387,28 @@ void save_session(void)
 
         rename(view_file_tmp_name.c_str(), view_file_name.c_str());
     }
+}
+
+void reset_session(void)
+{
+    textview_curses::highlight_map_t &hmap = lnav_data.ld_views[LNV_LOG].get_highlights();
+    textview_curses::highlight_map_t::iterator hl_iter = hmap.begin();
+
+    save_session();
+    scan_sessions();
+
+    lnav_data.ld_session_time = time(NULL);
+
+    while (hl_iter != hmap.end()) {
+        if (hl_iter->first[0] == '$') {
+            ++hl_iter;
+        }
+        else {
+            hmap.erase(hl_iter++);
+        }
+    }
+
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+
+    lss.get_filters().clear();
 }

@@ -38,6 +38,8 @@
 #include <vector>
 #include <string>
 
+#include "pcrepp.hh"
+
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_gen.h"
 
@@ -59,11 +61,12 @@ yajl_gen_status yajl_gen_string(yajl_gen hand, const std::string &str)
 }
 
 struct json_path_handler_base {
-    json_path_handler_base(const char *path) : jph_path(path) {
+    json_path_handler_base(const char *path) : jph_path(path), jph_regex(path) {
         memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
     };
 
     const char *jph_path;
+    pcrepp jph_regex;
     yajl_callbacks jph_callbacks;
 };
 
@@ -93,10 +96,8 @@ struct json_path_handler : public json_path_handler_base {
             this->jph_callbacks.yajl_string = str_func;
         }
 
-    json_path_handler() : json_path_handler_base(NULL) { 
+    json_path_handler() : json_path_handler_base("") {
     };
-
-    static json_path_handler TERMINATOR;
 };
 
 class yajlpp_parse_context {
@@ -143,6 +144,7 @@ public:
     yajl_callbacks ypc_callbacks;
     std::string ypc_path;
     std::vector<size_t> ypc_path_index_stack;
+    pcre_context_static<30> ypc_pcre_context;
 
 private:
     static const yajl_callbacks DEFAULT_CALLBACKS;

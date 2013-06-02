@@ -117,10 +117,14 @@ typedef enum {
 
 void sqlite_close_wrapper(void *mem);
 
+typedef std::pair<int, int> ppid_time_pair_t;
+typedef std::pair<ppid_time_pair_t, std::string> session_pair_t;
+
 struct _lnav_data {
     std::string ld_session_id;
     time_t ld_session_time;
-    std::vector<std::pair<int, std::string> > ld_session_file_names;
+    std::list<session_pair_t> ld_session_file_names;
+    int ld_session_file_index;
     const char *                            ld_program_name;
     const char *                            ld_debug_log_name;
 
@@ -179,4 +183,7 @@ std::string dotlnav_path(const char *sub);
 
 void ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);
+
+std::string execute_command(std::string cmdline);
+
 #endif

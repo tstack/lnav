@@ -110,7 +110,7 @@ am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) \
 	fs-extension-functions.$(OBJEXT) grep_proc.$(OBJEXT) \
 	hist_source.$(OBJEXT) line_buffer.$(OBJEXT) \
 	listview_curses.$(OBJEXT) lnav_commands.$(OBJEXT) \
-	log_format.$(OBJEXT) logfile.$(OBJEXT) \
+	lnav_util.$(OBJEXT) log_format.$(OBJEXT) logfile.$(OBJEXT) \
 	logfile_sub_source.$(OBJEXT) \
 	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
@@ -412,6 +412,7 @@ libdiag_a_SOURCES = \
 	line_buffer.cc \
 	listview_curses.cc \
 	lnav_commands.cc \
+	lnav_util.cc \
 	log_format.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
@@ -581,6 +582,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav_commands.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log_format.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log_vtab_impl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile.Po@am__quote@

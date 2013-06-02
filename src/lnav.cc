@@ -921,10 +921,16 @@ static bool append_default_files(lnav_flags_t flag)
             struct stat st;
 
             if (access(path.c_str(), R_OK) == 0) {
-                path = get_current_dir() + range.first->second;
+                auto_mem<char> abspath;
 
-                lnav_data.ld_file_names.insert(make_pair(path, -1));
-                found = true;
+                path = get_current_dir() + range.first->second;
+                if ((abspath = realpath(path.c_str(), NULL)) == NULL) {
+                    perror("Unable to resolve path");
+                }
+                else {
+                    lnav_data.ld_file_names.insert(make_pair(abspath.in(), -1));
+                    found = true;
+                }
             }
             else if (stat(path.c_str(), &st) == 0) {
                 fprintf(stderr,
@@ -1174,32 +1180,44 @@ static void handle_paging_key(int ch)
         moveto_cluster(&bookmark_vector<vis_line_t>::next,
                        &logfile_sub_source::BM_ERRORS,
                        tc->get_top());
+        lnav_data.ld_rl_view->set_alt_value(
+            "w/W: Move forward/backward through warning messages");
         break;
 
     case 'E':
         moveto_cluster(&bookmark_vector<vis_line_t>::prev,
                        &logfile_sub_source::BM_ERRORS,
                        tc->get_top());
+        lnav_data.ld_rl_view->set_alt_value(
+            "w/W: Move forward/backward through warning messages");
         break;
 
     case 'w':
         moveto_cluster(&bookmark_vector<vis_line_t>::next,
                        &logfile_sub_source::BM_WARNINGS,
                        tc->get_top());
+        lnav_data.ld_rl_view->set_alt_value(
+            "o/O: Move forward/backward an hour");
         break;
 
     case 'W':
         moveto_cluster(&bookmark_vector<vis_line_t>::prev,
                        &logfile_sub_source::BM_WARNINGS,
                        tc->get_top());
+        lnav_data.ld_rl_view->set_alt_value(
+            "o/O: Move forward/backward an hour");
         break;
 
     case 'n':
         tc->set_top(bm[&textview_curses::BM_SEARCH].next(tc->get_top()));
+        lnav_data.ld_rl_view->set_alt_value(
+            "Press '>' or '<' to scroll horizontally to a search result");
         break;
 
     case 'N':
         tc->set_top(bm[&textview_curses::BM_SEARCH].prev(tc->get_top()));
+        lnav_data.ld_rl_view->set_alt_value(
+            "Press '>' or '<' to scroll horizontally to a search result");
         break;
 
     case 'y':
@@ -1288,6 +1306,9 @@ static void handle_paging_key(int ch)
                 lnav_data.ld_hist_zoom += 1;
                 rebuild_hist(0, true);
             }
+
+            lnav_data.ld_rl_view->set_alt_value(
+                "Press 'I' to switch to the log view at the top displayed time");
         }
         break;
 
@@ -1300,6 +1321,9 @@ static void handle_paging_key(int ch)
                 lnav_data.ld_hist_zoom -= 1;
                 rebuild_hist(0, true);
             }
+
+            lnav_data.ld_rl_view->set_alt_value(
+                "Press 'I' to switch to the log view at the top displayed time");
         }
         break;
 
@@ -1383,6 +1407,9 @@ static void handle_paging_key(int ch)
                 flash();
             }
             tc->reload_data();
+
+            lnav_data.ld_rl_view->set_alt_value(
+                "c: Copy marked lines to the clipboard");
         }
         break;
 
@@ -1406,7 +1433,7 @@ static void handle_paging_key(int ch)
         }
         break;
 
-    case 'r':
+    case 'S':
     {
         bookmark_vector<vis_line_t>::iterator iter;
 
@@ -1710,6 +1737,29 @@ static void handle_paging_key(int ch)
     }
     break;
 
+    case 'r':
+        lnav_data.ld_session_file_index = (lnav_data.ld_session_file_index + 1) %
+            lnav_data.ld_session_file_names.size();
+        reset_session();
+        load_session();
+        rebuild_indexes(true);
+        break;
+    case 'R':
+        if (lnav_data.ld_session_file_index == 0)
+            lnav_data.ld_session_file_index = lnav_data.ld_session_file_names.size() - 1;
+        else
+            lnav_data.ld_session_file_index -= 1;
+        reset_session();
+        load_session();
+        rebuild_indexes(true);
+        break;
+    case KEY_CTRL_R:
+        reset_session();
+        rebuild_indexes(true);
+        lnav_data.ld_rl_view->set_alt_value(
+            "r/R: Restore the next/previous session");
+        break;
+
     default:
         fprintf(stderr, "unhandled %d\n", ch);
         flash();
@@ -1733,7 +1783,7 @@ static void handle_rl_key(int ch)
 
 readline_context::command_map_t lnav_commands;
 
-static string execute_command(string cmdline)
+string execute_command(string cmdline)
 {
     stringstream ss(cmdline);
 
@@ -2750,6 +2800,19 @@ static void looper(void)
 
             if (!session_loaded && lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
                 load_session();
+                if (!lnav_data.ld_session_file_names.empty()) {
+                    std::list<session_pair_t>::iterator sess_iter;
+                    std::string ago;
+
+                    sess_iter = lnav_data.ld_session_file_names.begin();
+                    advance(sess_iter, lnav_data.ld_session_file_index);
+                    ago = time_ago(sess_iter->first.second);
+
+                    fprintf(stderr, " ago %d\n", sess_iter->first.second);
+                    lnav_data.ld_rl_view->set_value("restored session from " +
+                                                    ago +
+                                                    "; press Ctrl-R to reset session");
+                }
                 session_loaded = true;
             }
 
@@ -3085,39 +3148,39 @@ void ensure_dotlnav(void)
 
 static void setup_highlights(textview_curses::highlight_map_t &hm)
 {
-    hm["(sql"] = textview_curses::
+    hm["$sql"] = textview_curses::
                  highlighter(xpcre_compile(
                                  "(?: alter | select | insert | update "
                                  "| create "
                                  "| from | where | order by "
                                  "| group by )", PCRE_CASELESS));
-    hm["(srcfile"] = textview_curses::
+    hm["$srcfile"] = textview_curses::
                      highlighter(xpcre_compile(
                                      "[\\w\\-_]+\\."
                                      "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
                                      "\\d+"));
-    hm["(xml"] = textview_curses::
+    hm["$xml"] = textview_curses::
                  highlighter(xpcre_compile("<(/?[^ >]+)[^>]*>"));
-    hm["(stringd"] = textview_curses::
+    hm["$stringd"] = textview_curses::
                      highlighter(xpcre_compile("\"(?:\\\\.|[^\"])*\""));
-    hm["(strings"] = textview_curses::
+    hm["$strings"] = textview_curses::
                      highlighter(xpcre_compile(
                                      "(?<![A-Za-qstv-z])\'(?:\\\\.|[^'])*\'"));
-    hm["(diffp"] = textview_curses::
+    hm["$diffp"] = textview_curses::
                    highlighter(xpcre_compile(
                                    "^\\+.*"), false,
                                view_colors::VCR_DIFF_ADD);
-    hm["(diffm"] = textview_curses::
+    hm["$diffm"] = textview_curses::
                    highlighter(xpcre_compile(
                                    "^\\-.*"), false,
                                view_colors::VCR_DIFF_DELETE);
-    hm["(diffs"] = textview_curses::
+    hm["$diffs"] = textview_curses::
                    highlighter(xpcre_compile(
                                    "^\\@@ .*"), false,
                                view_colors::VCR_DIFF_SECTION);
-    hm["(ip"] = textview_curses::
+    hm["$ip"] = textview_curses::
                 highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
-    hm["(cdef"] = textview_curses::
+    hm["$cdef"] = textview_curses::
                   highlighter(xpcre_compile(
                                   "^#\\s*(?:if|ifndef|ifdef|else|define|undef|endif)\\b"));
 }
@@ -3361,10 +3424,6 @@ int main(int argc, char *argv[])
             init_session();
 
             scan_sessions();
-
-            if (!lnav_data.ld_session_file_names.empty()) {
-                lnav_data.ld_session_time = lnav_data.ld_session_file_names.back().first;
-            }
 
             guard_termios gt(STDIN_FILENO);
             looper();

@@ -29,11 +29,9 @@
  * @file yajlpp.cc
  */
 
-#include <fnmatch.h>
+#include "config.h"
 
 #include "yajlpp.hh"
-
-json_path_handler json_path_handler::TERMINATOR;
 
 int yajlpp_parse_context::map_start(void *ctx)
 {
@@ -50,7 +48,7 @@ int yajlpp_parse_context::map_key(void *ctx,
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
 
     ypc->ypc_path = ypc->ypc_path.substr(0, ypc->ypc_path_index_stack.back());
-    ypc->ypc_path += "." + std::string((const char *)key, len);
+    ypc->ypc_path += "/" + std::string((const char *)key, len);
 
     ypc->update_callbacks();
     return 1;
@@ -58,14 +56,15 @@ int yajlpp_parse_context::map_key(void *ctx,
 
 void yajlpp_parse_context::update_callbacks(void)
 {
+    pcre_input pi(this->ypc_path);
     bool found = false;
 
     this->ypc_callbacks = DEFAULT_CALLBACKS;
 
-    for (int lpc = 0; this->ypc_handlers[lpc].jph_path != NULL; lpc++) {
+    for (int lpc = 0; this->ypc_handlers[lpc].jph_path[0]; lpc++) {
         const json_path_handler &jph = this->ypc_handlers[lpc];
 
-        if (fnmatch(jph.jph_path, this->ypc_path.c_str(), 0) == 0) {
+        if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
             this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
             this->ypc_callbacks.yajl_boolean = jph.jph_callbacks.yajl_boolean;
             this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
@@ -93,7 +92,7 @@ int yajlpp_parse_context::array_start(void *ctx)
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
 
     ypc->ypc_path_index_stack.push_back(ypc->ypc_path.length());
-    ypc->ypc_path += "[]";
+    ypc->ypc_path += "#";
 
     ypc->update_callbacks();
 

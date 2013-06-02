@@ -114,7 +114,7 @@ through the file.
   n/N               Move to the next/previous search hit.
   f/F               Move to the next/previous file.  In the log view, this
                     moves to the next line from a different file.  In the
-		    text view, this rotates the view to the next file.
+                    text view, this rotates the view to the next file.
 
   >/<               Move horizontally to the next/previous search hit.
 
@@ -141,13 +141,13 @@ through the file.
   0/Shift 0         Move to the next/previous day boundary.
 
   m                 Mark/unmark the line at the top of the display.
-		    The line will be highlighted with reverse video to
-		    indicate that it is a user bookmark.  You can use
-		    the 'u' hotkey to iterate through marks you have
-		    added.
+                    The line will be highlighted with reverse video to
+                    indicate that it is a user bookmark.  You can use
+                    the 'u' hotkey to iterate through marks you have
+                    added.
 
   M                 Mark/unmark all the lines between the top of the
-		    display and the last line marked/unmarked.
+                    display and the last line marked/unmarked.
 
   J                 Mark/unmark the next line after the previously
                     marked line.
@@ -161,7 +161,7 @@ through the file.
   C                 Clear all marked lines.
 
   u/U               Move forward/backward through any user bookmarks
-		    you have added using the 'm' key.
+                    you have added using the 'm' key.
 
   T                 Toggle the display of the "time offset" column that shows
                     the time elapsed since the beginning of the logs or the
@@ -177,11 +177,11 @@ through the file.
                     day).
 
   I                 Switch between the log and histogram views while
-		    keeping the time displayed at the top of each view
-		    in sync.  For example, if the top line in the log
-		    view is "11:40", hitting 'I' will switch to the
-		    histogram view and scrolled to display "11:00" at
-		    the top (if the zoom level is hours).
+                    keeping the time displayed at the top of each view
+                    in sync.  For example, if the top line in the log
+                    view is "11:40", hitting 'I' will switch to the
+                    histogram view and scrolled to display "11:00" at
+                    the top (if the zoom level is hours).
 
   z/Shift Z         Zoom in or out one step in the histogram view.
 
@@ -197,17 +197,17 @@ through the file.
                     line will be green, when finished it will turn
                     back to black.
 
-		    Note: The regular expression format used by is PCRE
-		    (Perl-Compatible Regular Expressions).  For example,
-		    if you wanted to search for ethernet device names,
-		    regardless of their ID number, you can type:
+                    Note: The regular expression format used by is PCRE
+                    (Perl-Compatible Regular Expressions).  For example,
+                    if you wanted to search for ethernet device names,
+                    regardless of their ID number, you can type:
 
-		      eth\d+
+                      eth\d+
 
-		    You can find more information about Perl regular
-		    expressions at:
+                    You can find more information about Perl regular
+                    expressions at:
 
-		      http://perldoc.perl.org/perlre.html
+                      http://perldoc.perl.org/perlre.html
 
   :<command>        Execute an internal command.  The commands are
                     listed below.  History is also supported in this
@@ -227,17 +227,25 @@ through the file.
 
   V                 Switch between the log and SQL result views while
                     keeping the top line number in the log view in
-		    sync with the log_line column in the SQL view.
-		    For example, doing a query that selects for
-		    "log_idle_msecs" and "log_line", you can move the
-		    top of the SQL view to a line and hit 'V' to switch
-		    to the log view and move to the line number that was
-		    selected in the "log_line" column.
+                    sync with the log_line column in the SQL view.
+                    For example, doing a query that selects for
+                    "log_idle_msecs" and "log_line", you can move the
+                    top of the SQL view to a line and hit 'V' to switch
+                    to the log view and move to the line number that was
+                    selected in the "log_line" column.
 
   p                 Enable or disable the display of the fields that the
                     log message parser knows about or has discovered.
                     This overlay is temporarily enabled when the semicolon
                     key (;) is pressed so that it is easier to write queries.
+
+  CTRL-R            Reset the session state.  This will save the current
+                    session state (filters, highlights) and then reset the
+                    state to the factory default.
+
+  r/R               Restore the next/previous session.  The current session is
+                    saved and then the new state is restored.
+
 
 MOUSE SUPPORT (experimental)
 ----------------------------
@@ -256,7 +264,7 @@ COMMANDS
   unix-time <secs-or-date>
                     Convert a unix-timestamp in seconds to a
                     human-readable form or vice-versa.
-		    BEWARE OF TIMEZONE DIFFERENCES.
+                    BEWARE OF TIMEZONE DIFFERENCES.
 
   current-time      Print the current time in human-readable form and
                     as a unix-timestamp.
@@ -269,7 +277,9 @@ COMMANDS
 
   filter-in <regex> Only display lines that match the given regular
                     expression.  This command can be used multiple
-                    times to add more lines to the display.
+                    times to add more lines to the display.  The number
+                    of lines that are filtered out will be shown in the
+                    bottom status bar as 'Not Shown'.
 
   filter-out <regex>
                     Do not display lines that match the given regular
@@ -277,7 +287,9 @@ COMMANDS
                     times to remove more lines from the display.  If a
                     'filter-in' expression is also active, it takes
                     priority and the filter-out will remove lines that
-                    were matched by the 'filter-in'.
+                    were matched by the 'filter-in'.  The number
+                    of lines that are filtered out will be shown in the
+                    bottom status bar as 'Not Shown'.
 
   disable-filter <regex>
                     Disable an active 'filter-in' or 'filter-out'

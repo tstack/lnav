@@ -33,6 +33,8 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <string>
+
 template<size_t BYTE_COUNT>
 struct byte_array {
     byte_array() { };
@@ -52,12 +54,18 @@ struct byte_array {
         return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
     };
 
-    void to_string(char *buffer)
-    {
+    void to_string(char *buffer) const {
         for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
             snprintf(&buffer[lpc * 2], 3, "%02x", this->ba_data[lpc]);
         }
     };
+
+    std::string to_string() const {
+        char buffer[BYTE_COUNT * 2 + 1];
+
+        this->to_string(buffer);
+        return std::string(buffer);
+    }
 
     unsigned char *out() { return this->ba_data; };
 

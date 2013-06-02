@@ -266,7 +266,7 @@ public:
         }
     };
 
-    bool match(pcre_context &pc, pcre_input &pi, int options = 0)
+    bool match(pcre_context &pc, pcre_input &pi, int options = 0) const
     {
         int count = pc.get_max_count();
         int rc;

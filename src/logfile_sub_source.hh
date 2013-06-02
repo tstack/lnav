@@ -70,6 +70,8 @@ public:
 
     virtual bool matches(std::string line) = 0;
 
+    virtual std::string to_command(void) = 0;
+
 protected:
     bool        lf_enabled;
     type_t      lf_type;
@@ -88,7 +90,7 @@ public:
 
     class observer
         : public logfile_observer {
-public:
+    public:
         virtual void logfile_sub_source_filtering(logfile_sub_source &lss,
                                                   content_line_t cl,
                                                   size_t total) = 0;

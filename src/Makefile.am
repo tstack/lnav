@@ -95,6 +95,7 @@ libdiag_a_SOURCES = \
 	line_buffer.cc \
 	listview_curses.cc \
 	lnav_commands.cc \
+	lnav_util.cc \
 	log_format.cc \
 	logfile.cc \
 	logfile_sub_source.cc \

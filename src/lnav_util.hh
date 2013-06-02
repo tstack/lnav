@@ -34,6 +34,7 @@
 #ifndef __lnav_util_hh
 #define __lnav_util_hh
 
+#include <time.h>
 #include <sys/types.h>
 
 #include <openssl/sha.h>
@@ -74,6 +75,8 @@ inline time_t hour_num(time_t ti)
 {
     return ti / (60 * 60);
 }
+
+std::string time_ago(time_t last_time);
 
 #if SIZEOF_OFF_T == 8
 #define FORMAT_OFF_T    "%qd"

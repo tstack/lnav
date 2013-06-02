@@ -26,16 +26,55 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file session_data.hh
+ * @file lnav_util.cc
+ *
+ * Dumping ground for useful functions with no other home.
  */
 
-#ifndef _session_data_hh
-#define _session_data_hh
+#include "config.h"
 
-void init_session(void);
-void load_session(void);
-void save_session(void);
-void reset_session(void);
-void scan_sessions(void);
+#include "lnav_util.hh"
 
-#endif
+std::string time_ago(time_t last_time)
+{
+    time_t delta, current_time = time(NULL);
+    const char *fmt;
+    char buffer[64];
+    int amount;
+
+    delta = current_time - last_time;
+    if (delta < 0) {
+        return "in the future";
+    }
+    else if (delta < 60) {
+        return "just now";
+    }
+    else if (delta < (60 * 2)) {
+        return "one minute ago";
+    }
+    else if (delta < (60 * 60)) {
+        fmt = "%d minutes ago";
+        amount = delta / 60;
+    }
+    else if (delta < (2 * 60 * 60)) {
+        return "one hour ago";
+    }
+    else if (delta < (24 * 60 * 60)) {
+        fmt = "%d hours ago";
+        amount = delta / (60 * 60);
+    }
+    else if (delta < (2 * 24 * 60 * 60)) {
+        return "one day ago";
+    }
+    else if (delta < (365 * 24 * 60 * 60)) {
+        fmt = "%d days ago";
+        amount = delta / (24 * 60 * 60);
+    }
+    else {
+        return "over a year ago";
+    }
+
+    snprintf(buffer, sizeof(buffer), fmt, amount);
+
+    return std::string(buffer);
+}

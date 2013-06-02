@@ -58,6 +58,8 @@
 #include <functional>
 #include <algorithm>
 
+#define KEY_CTRL_R 18
+
 class view_curses;
 
 /**

@@ -340,6 +340,12 @@ public:
         return retval;
     };
 
+    std::string to_command(void) {
+        return ((this->lf_type == logfile_filter::INCLUDE ?
+                 "filter-in " : "filter-out ") +
+                this->lf_id);
+    };
+
 protected:
     auto_mem<pcre> pf_code;
 };
