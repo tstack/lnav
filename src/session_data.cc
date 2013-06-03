@@ -43,12 +43,71 @@
 
 #include "yajlpp.hh"
 #include "lnav.hh"
+#include "logfile.hh"
 #include "lnav_util.hh"
 #include "session_data.hh"
 
 using namespace std;
 
 static const size_t MAX_SESSIONS = 16;
+
+static string bookmark_file_name(const string &name)
+{
+    char mark_base_name[256];
+    SHA_CTX context;
+    byte_array<20> hash;
+
+    SHA_Init(&context);
+    SHA_Update(&context, name.c_str(), name.length());
+    SHA_Final(hash.out(), &context);
+
+    snprintf(mark_base_name, sizeof(mark_base_name),
+             "file-%s.ts%ld.json",
+             hash.to_string().c_str(),
+             lnav_data.ld_session_time);
+
+    return string(mark_base_name);
+}
+
+static string latest_bookmark_file(const string &name)
+{
+    std::vector<std::pair<int, string> > file_names;
+    static_root_mem<glob_t, globfree> file_list;
+    string mark_file_pattern;
+    char mark_base_name[256];
+    SHA_CTX context;
+    byte_array<20> hash;
+
+    SHA_Init(&context);
+    SHA_Update(&context, name.c_str(), name.length());
+    SHA_Final(hash.out(), &context);
+
+    snprintf(mark_base_name, sizeof(mark_base_name),
+             "file-%s.ts*.json",
+             hash.to_string().c_str());
+
+    mark_file_pattern = dotlnav_path(mark_base_name);
+
+    if (glob(mark_file_pattern.c_str(), 0, NULL, file_list.inout()) == 0) {
+        for (size_t lpc = 0; lpc < file_list->gl_pathc; lpc++) {
+            const char *path = file_list->gl_pathv[lpc];
+            int timestamp;
+            char *base;
+
+            base = strrchr(path, '/') + 1;
+            if (sscanf(base, "file-%*[^.].ts%d.json", &timestamp) == 1) {
+                file_names.push_back(make_pair(timestamp, path));
+            }
+        }
+    }
+
+    sort(file_names.begin(), file_names.end());
+
+    if (file_names.empty())
+        return "";
+
+    return file_names.back().second;
+}
 
 void init_session(void)
 {
@@ -130,6 +189,80 @@ void scan_sessions(void)
     }
 }
 
+static int read_path(void *ctx, const unsigned char *str, size_t len)
+{
+    return 1;
+}
+
+static int read_marks(void *ctx, long long num)
+{
+    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    pair<logfile *, content_line_t> *pair;
+
+    fprintf(stderr, "read line %qd\n", num);
+
+    pair = (std::pair<logfile *, content_line_t> *)ypc->ypc_userdata;
+    lnav_data.ld_log_source.set_user_mark(&textview_curses::BM_USER,
+                                          content_line_t(pair->second + num));
+
+    return 1;
+}
+
+static struct json_path_handler file_handlers[] = {
+    json_path_handler("/path", read_path),
+    json_path_handler("/marks#", read_marks),
+
+    json_path_handler()
+};
+
+void load_bookmarks(void)
+{
+    std::set<std::pair<std::string, int> >::iterator iter;
+
+    for (iter = lnav_data.ld_file_names.begin();
+         iter != lnav_data.ld_file_names.end();
+         ++iter) {
+        pair<logfile *, content_line_t> logfile_pair;
+        yajlpp_parse_context ypc(file_handlers);
+        string mark_file_name;
+        yajl_handle handle;
+        int fd;
+
+        fprintf(stderr, "load %s\n", iter->first.c_str());
+        if (iter->second != -1)
+            continue;
+
+        logfile_pair.first = lnav_data.ld_log_source.find(iter->first.c_str(),
+                                                          logfile_pair.second);
+        if (logfile_pair.first == NULL) {
+            fprintf(stderr, "  not found\n");
+            continue;
+        }
+
+        mark_file_name = latest_bookmark_file(iter->first);
+        if (mark_file_name.empty())
+            continue;
+
+        fprintf(stderr, "loading %s\n", mark_file_name.c_str());
+        handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+
+        ypc.ypc_userdata = (void *)&logfile_pair;
+        if ((fd = open(mark_file_name.c_str(), O_RDONLY)) < 0) {
+            perror("cannot open bookmark file");
+        }
+        else {
+            unsigned char buffer[1024];
+            size_t rc;
+
+            while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+                yajl_parse(handle, buffer, rc);
+            }
+            yajl_complete_parse(handle);
+        }
+        yajl_free(handle);
+    }
+}
+
 static int read_files(void *ctx, const unsigned char *str, size_t len)
 {
     return 1;
@@ -179,6 +312,8 @@ void load_session(void)
     yajl_handle handle;
     int fd;
 
+    load_bookmarks();
+
     if (lnav_data.ld_session_file_names.empty()) {
         return;
     }
@@ -215,11 +350,45 @@ void save_bookmarks(void)
     logfile_sub_source &lss = lnav_data.ld_log_source;
     bookmarks<content_line_t>::type &bm = lss.get_user_bookmarks();
     bookmark_vector<content_line_t> &user_marks = bm[&textview_curses::BM_USER];
+    std::set<std::pair<std::string, int> >::iterator file_iter;
     bookmark_vector<content_line_t>::iterator iter;
     string mark_file_name, mark_file_tmp_name;
     auto_mem<FILE> file(fclose);
     logfile *curr_lf = NULL;
     yajl_gen handle = NULL;
+
+    for (file_iter = lnav_data.ld_file_names.begin();
+         file_iter != lnav_data.ld_file_names.end();
+         ++file_iter) {
+        string mark_base_name = bookmark_file_name(file_iter->first);
+
+        mark_file_name = dotlnav_path(mark_base_name.c_str());
+        mark_file_tmp_name = mark_file_name + ".tmp";
+
+        file = fopen(mark_file_tmp_name.c_str(), "w");
+        handle = yajl_gen_alloc(NULL);
+        yajl_gen_config(handle, yajl_gen_beautify, 1);
+        yajl_gen_config(handle,
+                        yajl_gen_print_callback, yajl_writer, file.in());
+
+        {
+            yajlpp_map root_map(handle);
+
+            root_map.gen("path");
+            root_map.gen(file_iter->first);
+            {
+                yajlpp_array mark_array(handle);
+            }
+        }
+
+        yajl_gen_clear(handle);
+        yajl_gen_free(handle);
+        fclose(file.release());
+
+        rename(mark_file_tmp_name.c_str(), mark_file_name.c_str());
+
+        handle = NULL;
+    }
 
     for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
         content_line_t cl = *iter;
@@ -227,10 +396,6 @@ void save_bookmarks(void)
 
         lf = lss.find(cl);
         if (curr_lf != lf) {
-            char mark_base_name[256];
-            char hash_hex[64];
-            SHA_CTX context;
-            byte_array<20> hash;
 
             if (handle) {
                 yajl_gen_array_close(handle);
@@ -242,20 +407,8 @@ void save_bookmarks(void)
                 rename(mark_file_tmp_name.c_str(), mark_file_name.c_str());
             }
 
-            SHA_Init(&context);
-            SHA_Update(&context,
-                       lf->get_filename().c_str(),
-                       lf->get_filename().length());
-            SHA_Final(hash.out(), &context);
-
-            hash.to_string(hash_hex);
-
-            snprintf(mark_base_name, sizeof(mark_base_name),
-                     "file-%s.ts%ld.json",
-                     hash_hex,
-                     lnav_data.ld_session_time);
-
-            mark_file_name = dotlnav_path(mark_base_name);
+            string mark_base_name = bookmark_file_name(lf->get_filename());
+            mark_file_name = dotlnav_path(mark_base_name.c_str());
             mark_file_tmp_name = mark_file_name + ".tmp";
 
             file = fopen(mark_file_name.c_str(), "w");

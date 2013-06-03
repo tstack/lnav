@@ -141,6 +141,7 @@ public:
     };
 
     struct json_path_handler *ypc_handlers;
+    void *ypc_userdata;
     yajl_callbacks ypc_callbacks;
     std::string ypc_path;
     std::vector<size_t> ypc_path_index_stack;

@@ -2813,6 +2813,7 @@ static void looper(void)
                                                     ago +
                                                     "; press Ctrl-R to reset session");
                 }
+                rebuild_indexes(true);
                 session_loaded = true;
             }
 

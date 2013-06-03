@@ -33,6 +33,8 @@
 
 #include "config.h"
 
+#include <stdio.h>
+
 #include "lnav_util.hh"
 
 std::string time_ago(time_t last_time)

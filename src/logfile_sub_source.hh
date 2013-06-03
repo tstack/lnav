@@ -252,6 +252,10 @@ public:
         }
     };
 
+    void set_user_mark(bookmark_type_t *bm, content_line_t cl) {
+        this->lss_user_marks[bm].insert_once(cl);
+    };
+
     bookmarks<content_line_t>::type &get_user_bookmarks(void)
     {
         return this->lss_user_marks;
