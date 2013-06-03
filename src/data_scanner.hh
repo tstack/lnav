@@ -100,9 +100,9 @@ class data_scanner {
 public:
     static const char *token2name(data_token_t token);
 
-    data_scanner(const std::string &line)
+    data_scanner(const std::string &line, size_t off = 0, size_t len = -1)
         : ds_line(line),
-          ds_pcre_input(ds_line.c_str())
+          ds_pcre_input(ds_line.c_str(), off, len)
     {
         if (!line.empty() && line[line.length() - 1] == '.') {
             this->ds_pcre_input.pi_length -= 1;

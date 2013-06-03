@@ -37,6 +37,18 @@
 
 #include "lnav_util.hh"
 
+std::string hash_string(const std::string &str)
+{
+    byte_array<20> hash;
+    SHA_CTX context;
+
+    SHA_Init(&context);
+    SHA_Update(&context, str.c_str(), str.length());
+    SHA_Final(hash.out(), &context);
+
+    return hash.to_string();
+}
+
 std::string time_ago(time_t last_time)
 {
     time_t delta, current_time = time(NULL);

@@ -36,6 +36,7 @@
 #include <fstream>
 
 #include "lnav.hh"
+#include "lnav_util.hh"
 #include "auto_mem.hh"
 #include "log_data_table.hh"
 #include "lnav_commands.hh"
@@ -580,6 +581,49 @@ static string com_session(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_add_test(string cmdline, vector<string> &args)
+{
+    string retval = "";
+
+    if (args.size() == 0) {
+
+    }
+    else if (args.size() > 1) {
+        retval = "error: not expecting any arguments";
+    }
+    else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+
+        bookmark_vector<vis_line_t> &bv =
+            tc->get_bookmarks()[&textview_curses::BM_USER];
+        bookmark_vector<vis_line_t>::iterator iter;
+
+        for (iter = bv.begin(); iter != bv.end(); ++iter) {
+            auto_mem<FILE> file(fclose);
+            char path[PATH_MAX];
+            string line;
+
+            tc->grep_value_for_line(*iter, line);
+
+            line.insert(0, 13, ' ');
+
+            snprintf(path, sizeof(path),
+                     "%s/test/log-samples/sample-%s.txt",
+                     getenv("LNAV_SRC"),
+                     hash_string(line).c_str());
+
+            if ((file = fopen(path, "w")) == NULL) {
+                perror("fopen failed");
+            }
+            else {
+                fprintf(file, "%s\n", line.c_str());
+            }
+        }
+    }
+
+    return retval;
+}
+
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
     cmd_map["unix-time"]      = com_unix_time;
@@ -597,4 +641,8 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["create-logline-table"] = com_create_logline_table;
     cmd_map["delete-logline-table"] = com_delete_logline_table;
     cmd_map["session"]        = com_session;
+
+    if (getenv("LNAV_SRC") != NULL) {
+        cmd_map["add-test"] = com_add_test;
+    }
 }

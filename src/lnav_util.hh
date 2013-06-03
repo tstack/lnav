@@ -41,6 +41,8 @@
 
 #include <string>
 
+#include "byte_array.hh"
+
 /**
  * Round down a number based on a given granularity.
  *
@@ -95,6 +97,8 @@ struct sha_updater {
 
     SHA_CTX *su_context;
 };
+
+std::string hash_string(const std::string &str);
 
 template<typename UnaryFunction, typename Member>
 struct object_field_t {

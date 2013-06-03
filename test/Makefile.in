@@ -111,10 +111,9 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am_drive_data_scanner_OBJECTS = data_parser.$(OBJEXT) \
-	data_scanner.$(OBJEXT) drive_data_scanner.$(OBJEXT)
+am_drive_data_scanner_OBJECTS = drive_data_scanner.$(OBJEXT)
 drive_data_scanner_OBJECTS = $(am_drive_data_scanner_OBJECTS)
-drive_data_scanner_DEPENDENCIES =
+drive_data_scanner_DEPENDENCIES = ../src/libdiag.a
 am_drive_grep_proc_OBJECTS = line_buffer.$(OBJEXT) grep_proc.$(OBJEXT) \
 	drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
@@ -678,11 +677,9 @@ drive_sequencer_SOURCES = \
 
 drive_sequencer_LDADD = -lcrypto
 drive_data_scanner_SOURCES = \
-	../src/data_parser.cc \
-	../src/data_scanner.cc \
 	drive_data_scanner.cc
 
-drive_data_scanner_LDADD = -lcrypto
+drive_data_scanner_LDADD = ../src/libdiag.a -lcrypto
 drive_view_colors_SOURCES = \
 	../src/view_curses.cc \
 	drive_view_colors.cc
@@ -749,7 +746,10 @@ dist_noinst_DATA = \
 	vt52_curses_input.0 \
 	vt52_curses_input.1 \
 	vt52_curses_output.0 \
-	vt52_curses_output.1
+	vt52_curses_output.1 \
+	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
+	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
+	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
 
 DISTCLEANFILES = \
 	*.dat \
@@ -930,34 +930,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-data_parser.o: ../src/data_parser.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_parser.o -MD -MP -MF $(DEPDIR)/data_parser.Tpo -c -o data_parser.o `test -f '../src/data_parser.cc' || echo '$(srcdir)/'`../src/data_parser.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_parser.Tpo $(DEPDIR)/data_parser.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_parser.cc' object='data_parser.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_parser.o `test -f '../src/data_parser.cc' || echo '$(srcdir)/'`../src/data_parser.cc
-
-data_parser.obj: ../src/data_parser.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_parser.obj -MD -MP -MF $(DEPDIR)/data_parser.Tpo -c -o data_parser.obj `if test -f '../src/data_parser.cc'; then $(CYGPATH_W) '../src/data_parser.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_parser.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_parser.Tpo $(DEPDIR)/data_parser.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_parser.cc' object='data_parser.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_parser.obj `if test -f '../src/data_parser.cc'; then $(CYGPATH_W) '../src/data_parser.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_parser.cc'; fi`
-
-data_scanner.o: ../src/data_scanner.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_scanner.o -MD -MP -MF $(DEPDIR)/data_scanner.Tpo -c -o data_scanner.o `test -f '../src/data_scanner.cc' || echo '$(srcdir)/'`../src/data_scanner.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_scanner.Tpo $(DEPDIR)/data_scanner.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_scanner.cc' object='data_scanner.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_scanner.o `test -f '../src/data_scanner.cc' || echo '$(srcdir)/'`../src/data_scanner.cc
-
-data_scanner.obj: ../src/data_scanner.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_scanner.obj -MD -MP -MF $(DEPDIR)/data_scanner.Tpo -c -o data_scanner.obj `if test -f '../src/data_scanner.cc'; then $(CYGPATH_W) '../src/data_scanner.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_scanner.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_scanner.Tpo $(DEPDIR)/data_scanner.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_scanner.cc' object='data_scanner.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_scanner.obj `if test -f '../src/data_scanner.cc'; then $(CYGPATH_W) '../src/data_scanner.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_scanner.cc'; fi`
 
 line_buffer.o: ../src/line_buffer.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT line_buffer.o -MD -MP -MF $(DEPDIR)/line_buffer.Tpo -c -o line_buffer.o `test -f '../src/line_buffer.cc' || echo '$(srcdir)/'`../src/line_buffer.cc
@@ -1140,6 +1112,34 @@ textview_curses.obj: ../src/textview_curses.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/textview_curses.cc' object='textview_curses.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o textview_curses.obj `if test -f '../src/textview_curses.cc'; then $(CYGPATH_W) '../src/textview_curses.cc'; else $(CYGPATH_W) '$(srcdir)/../src/textview_curses.cc'; fi`
+
+data_scanner.o: ../src/data_scanner.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_scanner.o -MD -MP -MF $(DEPDIR)/data_scanner.Tpo -c -o data_scanner.o `test -f '../src/data_scanner.cc' || echo '$(srcdir)/'`../src/data_scanner.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_scanner.Tpo $(DEPDIR)/data_scanner.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_scanner.cc' object='data_scanner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_scanner.o `test -f '../src/data_scanner.cc' || echo '$(srcdir)/'`../src/data_scanner.cc
+
+data_scanner.obj: ../src/data_scanner.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_scanner.obj -MD -MP -MF $(DEPDIR)/data_scanner.Tpo -c -o data_scanner.obj `if test -f '../src/data_scanner.cc'; then $(CYGPATH_W) '../src/data_scanner.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_scanner.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_scanner.Tpo $(DEPDIR)/data_scanner.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_scanner.cc' object='data_scanner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_scanner.obj `if test -f '../src/data_scanner.cc'; then $(CYGPATH_W) '../src/data_scanner.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_scanner.cc'; fi`
+
+data_parser.o: ../src/data_parser.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_parser.o -MD -MP -MF $(DEPDIR)/data_parser.Tpo -c -o data_parser.o `test -f '../src/data_parser.cc' || echo '$(srcdir)/'`../src/data_parser.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_parser.Tpo $(DEPDIR)/data_parser.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_parser.cc' object='data_parser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_parser.o `test -f '../src/data_parser.cc' || echo '$(srcdir)/'`../src/data_parser.cc
+
+data_parser.obj: ../src/data_parser.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_parser.obj -MD -MP -MF $(DEPDIR)/data_parser.Tpo -c -o data_parser.obj `if test -f '../src/data_parser.cc'; then $(CYGPATH_W) '../src/data_parser.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_parser.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_parser.Tpo $(DEPDIR)/data_parser.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_parser.cc' object='data_parser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_parser.obj `if test -f '../src/data_parser.cc'; then $(CYGPATH_W) '../src/data_parser.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_parser.cc'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

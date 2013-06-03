@@ -2,10 +2,10 @@
  * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -38,6 +38,7 @@
 #include "pcrepp.hh"
 #include "data_scanner.hh"
 #include "data_parser.hh"
+#include "log_format.hh"
 
 using namespace std;
 
@@ -45,91 +46,121 @@ const char *TMP_NAME = "scanned.tmp";
 
 int main(int argc, char *argv[])
 {
-    int c, retval = EXIT_SUCCESS;
+    int  c, retval = EXIT_SUCCESS;
     bool prompt = false;
-    
+
     while ((c = getopt(argc, argv, "p")) != -1) {
-	switch (c) {
-	case 'p':
-	    prompt = true;
-	    break;
-	default:
-	    retval = EXIT_FAILURE;
-	    break;
-	}
+        switch (c) {
+        case 'p':
+            prompt = true;
+            break;
+
+        default:
+            retval = EXIT_FAILURE;
+            break;
+        }
     }
-    
+
     argc -= optind;
     argv += optind;
 
-    if (retval != EXIT_SUCCESS) {
-    }
+    if (retval != EXIT_SUCCESS) {}
     else if (argc != 1) {
-	fprintf(stderr, "error: expecting a single file name argument\n");
-	retval = EXIT_FAILURE;
+        fprintf(stderr, "error: expecting a single file name argument\n");
+        retval = EXIT_FAILURE;
     }
     else {
-	istream *in;
-	string dstname;
-	FILE *out;
+        istream *in;
+        FILE *   out;
 
-	if (strcmp(argv[0], "-") == 0) {
-	    in = &cin;
-	}
-	else {
-	    ifstream *ifs = new ifstream(argv[0]);
-	    
-	    if (!ifs->is_open()) {
-		fprintf(stderr, "error: unable to open file\n");
-		retval = EXIT_FAILURE;
-	    }
-	    else {
-		in = ifs;
-	    }
-	}
+        if (strcmp(argv[0], "-") == 0) {
+            in = &cin;
+        }
+        else {
+            ifstream *ifs = new ifstream(argv[0]);
 
-	if (retval == EXIT_FAILURE) {
-	}
-	else if ((out = fopen(TMP_NAME, "w")) == NULL) {
-	    fprintf(stderr, "error: unable to temporary file for writing\n");
-	    retval = EXIT_FAILURE;
-	}
-	else {
-	    char cmd[2048];
-	    string line;
-	    int rc;
-	    
-	    getline(*in, line);
-	    if (strcmp(argv[0], "-") == 0) {
-		line = "             " + line;
-	    }
-	    
-	    data_scanner ds(line.substr(13));
-	    data_parser dp(&ds);
-	    
-	    dp.parse();
-	    dp.print(out, dp.dp_pairs);
-	    fclose(out);
+            if (!ifs->is_open()) {
+                fprintf(stderr, "error: unable to open file\n");
+                retval = EXIT_FAILURE;
+            }
+            else {
+                in = ifs;
+            }
+        }
 
-	    sprintf(cmd, "diff -u %s %s", argv[0], TMP_NAME);
-	    rc = system(cmd);
-	    if (rc != 0) {
-		if (prompt) {
-		    char resp;
-		    
-		    printf("Would you like to update the original file? (y/N) ");
-		    fflush(stdout);
-		    if (scanf("%c", &resp) == 1 && resp == 'y')
-			rename(TMP_NAME, argv[0]);
-		    else
-			retval = EXIT_FAILURE;
-		}
-		else {
-		    fprintf(stderr, "error: mismatch\n");
-		    retval = EXIT_FAILURE;
-		}
-	    }
-	}
+        if (retval == EXIT_FAILURE) {}
+        else if ((out = fopen(TMP_NAME, "w")) == NULL) {
+            fprintf(stderr, "error: unable to temporary file for writing\n");
+            retval = EXIT_FAILURE;
+        }
+        else {
+            auto_ptr<log_format> format;
+            char log_line[2048];
+            bool found = false;
+            char   cmd[2048];
+            string line;
+            int    rc;
+
+            getline(*in, line);
+            if (strcmp(argv[0], "-") == 0) {
+                line = "             " + line;
+            }
+
+            strcpy(log_line, &line[13]);
+
+            vector<log_format *> &root_formats = log_format::get_root_formats();
+            vector<log_format *>::iterator iter;
+            vector<logline> index;
+
+            for (iter = root_formats.begin();
+                 iter != root_formats.end() && !found;
+                 ++iter) {
+                (*iter)->clear();
+                if ((*iter)->scan(index, 13, log_line, strlen(log_line))) {
+                    format = (*iter)->specialized();
+                    found = true;
+                }
+            }
+
+            string sub_line = line.substr(13);
+            struct line_range body = { 0, sub_line.length() };
+
+            if (format.get() != NULL) {
+                vector<logline_value> ll_values;
+                string_attrs_t sa;
+
+                format->annotate(sub_line, sa, ll_values);
+                body = find_string_attr_range(sa, "body");
+            }
+
+            data_scanner ds(sub_line, body.lr_start, sub_line.length());
+            data_parser  dp(&ds);
+
+            dp.parse();
+            dp.print(out, dp.dp_pairs);
+            fclose(out);
+
+            sprintf(cmd, "diff -u %s %s", argv[0], TMP_NAME);
+            rc = system(cmd);
+            if (rc != 0) {
+                if (prompt) {
+                    char resp;
+
+                    printf("Would you like to update the original file? (y/N) ");
+                    fflush(stdout);
+                    if (scanf("%c", &resp) == 1 && resp == 'y') {
+                        rename(TMP_NAME, argv[0]);
+                    }
+                    else{
+                        retval = EXIT_FAILURE;
+                    }
+                }
+                else {
+                    fprintf(stderr, "error: mismatch\n");
+                    retval = EXIT_FAILURE;
+                }
+            }
+        }
     }
 
     return retval;

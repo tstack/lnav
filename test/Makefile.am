@@ -108,10 +108,8 @@ drive_sequencer_SOURCES = \
 drive_sequencer_LDADD = -lcrypto
 
 drive_data_scanner_SOURCES = \
-	../src/data_parser.cc \
-	../src/data_scanner.cc \
 	drive_data_scanner.cc
-drive_data_scanner_LDADD = -lcrypto
+drive_data_scanner_LDADD = ../src/libdiag.a -lcrypto
 
 drive_view_colors_SOURCES = \
 	../src/view_curses.cc \
@@ -180,7 +178,10 @@ dist_noinst_DATA = \
 	vt52_curses_input.0 \
 	vt52_curses_input.1 \
 	vt52_curses_output.0 \
-	vt52_curses_output.1
+	vt52_curses_output.1 \
+	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
+	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
+	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
 
 TESTS = test_bookmarks \
 	test_auto_fd \

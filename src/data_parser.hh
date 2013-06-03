@@ -358,6 +358,14 @@ private:
                 if (!found && !el_stack.empty() && !key_comps.empty()) {
                     element_list_t::iterator value_iter;
 
+                    if (el_stack.size() > 1 &&
+                        this->dp_format->df_appender != DT_INVALID &&
+                        this->dp_format->df_terminator != DT_INVALID) {
+                        // If we're expecting a terminator and haven't found it
+                        // then this is part of the value.
+                        continue;
+                    }
+
                     value.splice(value.end(),
                                  key_comps,
                                  key_comps.begin(),
@@ -369,6 +377,7 @@ private:
                                      value_iter);
                     key_comps.resize(1);
                 }
+
                 strip(value, element_if(DT_WHITE));
                 value.remove_if(element_if(DT_COMMA));
                 if (!value.empty()) {
