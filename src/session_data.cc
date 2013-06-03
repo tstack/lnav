@@ -91,8 +91,8 @@ static string latest_bookmark_file(const string &name)
     if (glob(mark_file_pattern.c_str(), 0, NULL, file_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < file_list->gl_pathc; lpc++) {
             const char *path = file_list->gl_pathv[lpc];
+            const char *base;
             int timestamp;
-            char *base;
 
             base = strrchr(path, '/') + 1;
             if (sscanf(base, "file-%*[^.].ts%d.json", &timestamp) == 1) {
@@ -154,7 +154,7 @@ void scan_sessions(void)
         for (size_t lpc = 0; lpc < view_info_list->gl_pathc; lpc++) {
             const char *path = view_info_list->gl_pathv[lpc];
             int timestamp, ppid;
-            char *base;
+            const char *base;
 
             base = strrchr(path, '/') + 1;
             if (sscanf(base,
