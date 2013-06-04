@@ -2808,7 +2808,6 @@ static void looper(void)
                     advance(sess_iter, lnav_data.ld_session_file_index);
                     ago = time_ago(sess_iter->first.second);
 
-                    fprintf(stderr, " ago %d\n", sess_iter->first.second);
                     lnav_data.ld_rl_view->set_value("restored session from " +
                                                     ago +
                                                     "; press Ctrl-R to reset session");

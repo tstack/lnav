@@ -630,9 +630,11 @@ void readline_curses::do_update(void)
 
         wmove(this->vc_window, this->get_actual_y(), 0);
         wclrtoeol(this->vc_window);
-        mvwprintw(this->vc_window, this->get_actual_y(), alt_start,
-                  "%s",
-                  this->rc_alt_value.c_str());
+        if (alt_start >= (int)(this->rc_value.length() + 5)) {
+            mvwprintw(this->vc_window, this->get_actual_y(), alt_start,
+                      "%s",
+                      this->rc_alt_value.c_str());
+        }
         mvwprintw(this->vc_window, this->get_actual_y(), 0,
                   "%s",
                   this->rc_value.c_str());

@@ -1,0 +1,7 @@
+             Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Registering new address record for 10.1.10.62 on eth0.
+ key  86:86                                                                                       ^                    
+ipv4  86:96                                                                                        ^--------^          10.1.10.62
+pair  86:96                                                                                        ^--------^          10.1.10.62
+ key 100:100                                                                                                    ^      
+ sym 100:104                                                                                                     ^--^  eth0
+pair 100:104                                                                                                     ^--^  eth0

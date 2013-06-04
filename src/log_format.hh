@@ -75,7 +75,7 @@ public:
 
     static const char *level_names[LEVEL__MAX];
 
-    static level_t string2level(const char *levelstr);
+    static level_t string2level(const char *levelstr, bool exact = false);
 
     /**
      * Construct a logline object with the given values.

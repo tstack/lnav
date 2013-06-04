@@ -217,29 +217,28 @@ static struct json_path_handler file_handlers[] = {
 
 void load_bookmarks(void)
 {
-    std::set<std::pair<std::string, int> >::iterator iter;
+    logfile_sub_source::iterator iter;
 
-    for (iter = lnav_data.ld_file_names.begin();
-         iter != lnav_data.ld_file_names.end();
+    for (iter = lnav_data.ld_log_source.begin();
+         iter != lnav_data.ld_log_source.end();
          ++iter) {
         pair<logfile *, content_line_t> logfile_pair;
         yajlpp_parse_context ypc(file_handlers);
+        const string &log_name = iter->ld_file->get_filename();
         string mark_file_name;
         yajl_handle handle;
         int fd;
 
-        fprintf(stderr, "load %s\n", iter->first.c_str());
-        if (iter->second != -1)
-            continue;
+        fprintf(stderr, "load %s\n", log_name.c_str());
 
-        logfile_pair.first = lnav_data.ld_log_source.find(iter->first.c_str(),
+        logfile_pair.first = lnav_data.ld_log_source.find(log_name.c_str(),
                                                           logfile_pair.second);
         if (logfile_pair.first == NULL) {
             fprintf(stderr, "  not found\n");
             continue;
         }
 
-        mark_file_name = latest_bookmark_file(iter->first);
+        mark_file_name = latest_bookmark_file(log_name.c_str());
         if (mark_file_name.empty())
             continue;
 
@@ -350,17 +349,18 @@ void save_bookmarks(void)
     logfile_sub_source &lss = lnav_data.ld_log_source;
     bookmarks<content_line_t>::type &bm = lss.get_user_bookmarks();
     bookmark_vector<content_line_t> &user_marks = bm[&textview_curses::BM_USER];
-    std::set<std::pair<std::string, int> >::iterator file_iter;
+    logfile_sub_source::iterator file_iter;
     bookmark_vector<content_line_t>::iterator iter;
     string mark_file_name, mark_file_tmp_name;
     auto_mem<FILE> file(fclose);
     logfile *curr_lf = NULL;
     yajl_gen handle = NULL;
 
-    for (file_iter = lnav_data.ld_file_names.begin();
-         file_iter != lnav_data.ld_file_names.end();
+    for (file_iter = lnav_data.ld_log_source.begin();
+         file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
-        string mark_base_name = bookmark_file_name(file_iter->first);
+        logfile *lf = file_iter->ld_file;
+        string mark_base_name = bookmark_file_name(lf->get_filename());
 
         mark_file_name = dotlnav_path(mark_base_name.c_str());
         mark_file_tmp_name = mark_file_name + ".tmp";
@@ -375,7 +375,7 @@ void save_bookmarks(void)
             yajlpp_map root_map(handle);
 
             root_map.gen("path");
-            root_map.gen(file_iter->first);
+            root_map.gen(lf->get_filename());
             {
                 yajlpp_array mark_array(handle);
             }

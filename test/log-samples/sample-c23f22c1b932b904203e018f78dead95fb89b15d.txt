@@ -1,0 +1,23 @@
+             Apr 29 08:13:42 tstack-centos5 dhclient: DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0xd16b79d)
+ key  41:41                                          ^                                                                            
+ sym  41:53                                           ^----------^                                                                DHCPDISCOVER
+pair  41:53                                           ^----------^                                                                DHCPDISCOVER
+ key  57:57                                                          ^                                                            
+ sym  57:61                                                           ^--^                                                        eth0
+pair  57:61                                                           ^--^                                                        eth0
+ key  65:65                                                                  ^                                                    
+ipv4  65:80                                                                   ^-------------^                                     255.255.255.255
+pair  65:80                                                                   ^-------------^                                     255.255.255.255
+ key  86:86                                                                                       ^                               
+ num  86:88                                                                                        ^^                             67
+pair  86:88                                                                                        ^^                             67
+ key  98:98                                                                                                   ^                   
+ num  98:99                                                                                                    ^                  5
+pair  98:99                                                                                                    ^                  5
+ key 101:101                                                                                                     ^                
+ key 101:104                                                                                                      ^-^             xid
+ hex 105:114                                                                                                          ^-------^   0xd16b79d
+ val 105:114                                                                                                          ^-------^   0xd16b79d
+pair 101:114                                                                                                      ^-----------^   xid=0xd16b79d
+ grp 101:114                                                                                                      ^-----------^   xid=0xd16b79d
+pair 101:114                                                                                                      ^-----------^   xid=0xd16b79d

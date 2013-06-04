@@ -293,40 +293,6 @@ public:
 
     content_line_t at(vis_line_t vl) { return this->lss_index[vl]; };
 
-    static const size_t MAX_LINES_PER_FILE = 4 * 1024 * 1024;
-    static const size_t MAX_FILES          = INT_MAX / MAX_LINES_PER_FILE;
-
-private:
-    enum {
-        B_SCRUB,
-        B_TIME_OFFSET,
-    };
-
-    enum {
-        F_SCRUB       = (1L << B_SCRUB),
-        F_TIME_OFFSET = (1L << B_TIME_OFFSET),
-    };
-
-    struct logline_cmp {
-        logline_cmp(logfile_sub_source & lc)
-            : llss_controller(lc) { };
-        bool operator()(const content_line_t &lhs, const content_line_t &rhs)
-        {
-            logline *ll_lhs = this->llss_controller.find_line(lhs);
-            logline *ll_rhs = this->llss_controller.find_line(rhs);
-
-            return (*ll_lhs) < (*ll_rhs);
-        };
-        bool operator()(const content_line_t &lhs, const time_t &rhs)
-        {
-            logline *ll_lhs = this->llss_controller.find_line(lhs);
-
-            return ll_lhs->get_time() < rhs;
-        };
-
-        logfile_sub_source & llss_controller;
-    };
-
     /**
      * Container for logfile references that keeps of how many lines in the
      * logfile have been indexed.
@@ -360,6 +326,50 @@ private:
 
         logfile *ld_file;
         size_t   ld_lines_indexed;
+    };
+
+    typedef std::vector<logfile_data>::iterator iterator;
+
+    iterator begin() {
+        return this->lss_files.begin();
+    };
+
+    iterator end() {
+        return this->lss_files.end();
+    };
+
+    static const size_t MAX_LINES_PER_FILE = 4 * 1024 * 1024;
+    static const size_t MAX_FILES          = INT_MAX / MAX_LINES_PER_FILE;
+
+private:
+    enum {
+        B_SCRUB,
+        B_TIME_OFFSET,
+    };
+
+    enum {
+        F_SCRUB       = (1L << B_SCRUB),
+        F_TIME_OFFSET = (1L << B_TIME_OFFSET),
+    };
+
+    struct logline_cmp {
+        logline_cmp(logfile_sub_source & lc)
+            : llss_controller(lc) { };
+        bool operator()(const content_line_t &lhs, const content_line_t &rhs)
+        {
+            logline *ll_lhs = this->llss_controller.find_line(lhs);
+            logline *ll_rhs = this->llss_controller.find_line(rhs);
+
+            return (*ll_lhs) < (*ll_rhs);
+        };
+        bool operator()(const content_line_t &lhs, const time_t &rhs)
+        {
+            logline *ll_lhs = this->llss_controller.find_line(lhs);
+
+            return ll_lhs->get_time() < rhs;
+        };
+
+        logfile_sub_source & llss_controller;
     };
 
     /**

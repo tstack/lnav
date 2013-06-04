@@ -1,0 +1,7 @@
+             Apr 29 08:13:43 tstack-centos5 dhclient: DHCPOFFER from 10.1.10.1
+ key  41:41                                          ^                          
+ sym  41:50                                           ^-------^                 DHCPOFFER
+pair  41:50                                           ^-------^                 DHCPOFFER
+ key  56:56                                                         ^           
+ipv4  56:65                                                          ^-------^  10.1.10.1
+pair  56:65                                                          ^-------^  10.1.10.1

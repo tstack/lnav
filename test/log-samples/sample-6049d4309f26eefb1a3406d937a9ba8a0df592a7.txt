@@ -1,0 +1,7 @@
+             Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Withdrawing address record for 10.1.10.62 on eth0.
+ key  82:82                                                                                   ^                    
+ipv4  82:92                                                                                    ^--------^          10.1.10.62
+pair  82:92                                                                                    ^--------^          10.1.10.62
+ key  96:96                                                                                                 ^      
+ sym  96:100                                                                                                 ^--^  eth0
+pair  96:100                                                                                                 ^--^  eth0

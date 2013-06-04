@@ -412,6 +412,8 @@ public:
         VC_WHITE_ON_GREEN,
 
         VC_GRAY,
+
+        VC_GRADIENT_START,
     };
 
 private:

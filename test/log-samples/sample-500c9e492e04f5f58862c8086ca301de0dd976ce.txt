@@ -1,0 +1,7 @@
+             Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: New relevant interface eth0.IPv4 for mDNS.
+ key  74:74                                                                           ^                    
+ sym  74:83                                                                            ^-------^           eth0.IPv4
+pair  74:83                                                                            ^-------^           eth0.IPv4
+ key  88:88                                                                                         ^      
+ sym  88:92                                                                                          ^--^  mDNS
+pair  88:92                                                                                          ^--^  mDNS

@@ -259,6 +259,13 @@ void view_colors::init(void)
         init_pair(VC_WHITE_ON_GREEN, COLOR_WHITE, COLOR_GREEN);
 
         init_pair(VC_GRAY, COLOR_BLACK, COLOR_BLACK);
+
+        for (int lpc = 0; lpc < 8; lpc++) {
+            short gradient_value = (1000 / 8) * lpc;
+            
+            init_color(lpc + 16, gradient_value, gradient_value, gradient_value);
+            init_pair(VC_GRADIENT_START + lpc, lpc + 16, COLOR_BLACK);
+        }
     }
 }
 

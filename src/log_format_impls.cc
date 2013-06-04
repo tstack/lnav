@@ -567,13 +567,17 @@ class generic_log_format : public log_format {
         char              timestr[64 + 32] = "";
         char              level[64]        = "";
         struct line_range lr;
-        int prefix_len;
+        int prefix_len = 0;
 
         sscanf(line.c_str(), fmt, timestr, level, &prefix_len);
 
         lr.lr_start = fmt[0] == '%' ? 0 : 1;
         lr.lr_end   = lr.lr_start + strlen(timestr);
         sa[lr].insert(make_string_attr("timestamp", 0));
+
+        if (logline::string2level(level) == logline::LEVEL_UNKNOWN) {
+            prefix_len = strlen(timestr);
+        }
 
         lr.lr_start = 0;
         lr.lr_end   = prefix_len;

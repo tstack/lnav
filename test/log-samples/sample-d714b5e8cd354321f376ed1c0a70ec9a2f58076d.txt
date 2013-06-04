@@ -1,0 +1,4 @@
+             Apr 29 23:02:45 tstack-centos5 avahi-daemon[2467]: Invalid response packet from host 10.1.10.10.
+ key  85:85                                                                                      ^            
+ipv4  85:95                                                                                       ^--------^  10.1.10.10
+pair  85:95                                                                                       ^--------^  10.1.10.10

@@ -1,0 +1,10 @@
+             Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.62.
+ key  59:59                                                            ^                                                                     
+ sym  59:63                                                             ^--^                                                                 mDNS
+pair  59:63                                                             ^--^                                                                 mDNS
+ key  93:93                                                                                              ^                                   
+ sym  93:102                                                                                              ^-------^                          eth0.IPv4
+pair  93:102                                                                                              ^-------^                          eth0.IPv4
+ key 116:116                                                                                                                    ^            
+ipv4 116:126                                                                                                                     ^--------^  10.1.10.62
+pair 116:126                                                                                                                     ^--------^  10.1.10.62
