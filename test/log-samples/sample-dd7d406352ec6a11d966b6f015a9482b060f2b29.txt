@@ -1,0 +1,13 @@
+             2013-02-11 06:42:34,311:INFO:com.twisted:Starting factory <twisted.web.server.Site instance at 0x1de9290>
+ key  29:29                              ^                                                                              
+ key  29:40                               ^---------^                                                                   com.twisted
+pair  29:40                               ^---------^                                                                   com.twisted
+ key  59:59                                                            ^                                                
+ key  59:59                                                            ^                                                
+ sym  59:82                                                             ^---------------------^                         twisted.web.server.Site
+pair  59:82                                                             ^---------------------^                         twisted.web.server.Site
+ key  95:95                                                                                                ^            
+ hex  95:104                                                                                                ^-------^   0x1de9290
+pair  95:104                                                                                                ^-------^   0x1de9290
+ grp  59:104                                                            ^-------------------------------------------^   twisted.web.server.Site instance at 0x1de9290
+pair  59:104                                                            ^-------------------------------------------^   twisted.web.server.Site instance at 0x1de9290

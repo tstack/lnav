@@ -129,15 +129,19 @@ enum data_format_state_t {
 };
 
 struct data_format {
-    data_format(data_token_t appender = DT_INVALID,
+    data_format(const char *name,
+                data_token_t appender = DT_INVALID,
                 data_token_t terminator = DT_INVALID)
-        : df_appender(appender), df_terminator(terminator)
+        : df_name(name), df_appender(appender), df_terminator(terminator)
     {};
 
+    const char *df_name;
     const data_token_t df_appender;
     const data_token_t df_terminator;
 };
 
+data_format_state_t dfs_prefix_next(data_format_state_t state,
+                                    data_token_t next_token);
 data_format_state_t dfs_semi_next(data_format_state_t state,
                                   data_token_t next_token);
 data_format_state_t dfs_comma_next(data_format_state_t state,
@@ -321,14 +325,29 @@ private:
                 }
             }
 
-            if (iter->e_token == DT_SEPARATOR) {
+            if (iter->e_token == this->dp_format->df_terminator) {
+                std::vector<element> key_copy;
+
+                value.splice(value.end(),
+                             key_comps,
+                             key_comps.begin(),
+                             key_comps.end());
+                value.remove_if(element_if(this->dp_format->df_terminator));
+                strip(value, element_if(DT_WHITE));
+                value.remove_if(element_if(DT_COMMA));
+                if (!value.empty()) {
+                    el_stack.push_back(element(value, DNT_VALUE));
+                }
+                value.clear();
+
+                key_comps.push_back(*iter);
+            }
+            else if (iter->e_token == DT_SEPARATOR) {
                 element_list_t::iterator key_iter = key_comps.end();
                 bool found = false;
 
-                --key_iter;
-                for (;
-                     key_iter != key_comps.begin() && !found;
-                     --key_iter) {
+                do {
+                    --key_iter;
                     if (key_iter->e_token == this->dp_format->df_appender) {
                         ++key_iter;
                         value.splice(value.end(),
@@ -354,7 +373,7 @@ private:
                         strip(key_comps, element_if(DT_WHITE));
                         found = true;
                     }
-                }
+                } while (key_iter != key_comps.begin() && !found);
                 if (!found && !el_stack.empty() && !key_comps.empty()) {
                     element_list_t::iterator value_iter;
 
@@ -404,6 +423,8 @@ private:
                          key_comps,
                          key_comps.begin(),
                          key_comps.end());
+
+            value.remove_if(element_if(this->dp_format->df_terminator));
             strip(value, element_if(DT_WHITE));
             value.remove_if(element_if(DT_COMMA));
             if (!value.empty()) {
@@ -415,7 +436,20 @@ private:
         while (!el_stack.empty()) {
             element_list_t::iterator kv_iter = el_stack.begin();
             if (kv_iter->e_token == DNT_VALUE) {
-                free_row.push_back(el_stack.front());
+                if (pairs_out.empty()) {
+                    free_row.push_back(el_stack.front());
+                }
+                else {
+                    element_list_t free_pair_subs;
+                    struct element blank;
+
+                    blank.e_capture.c_begin = blank.e_capture.c_end =
+                        el_stack.front().e_capture.c_begin;
+                    blank.e_token = DNT_KEY;
+                    free_pair_subs.push_back(blank);
+                    free_pair_subs.push_back(el_stack.front());
+                    pairs_out.push_back(element(free_pair_subs, DNT_PAIR));
+                }
             }
             if (kv_iter->e_token != DNT_KEY) {
                 el_stack.pop_front();
@@ -439,6 +473,19 @@ private:
 
             if (schema != NULL) {
                 SHA_Update(&context, key_val.c_str(), key_val.length());
+            }
+
+            while (!free_row.empty()) {
+                element_list_t free_pair_subs;
+                struct element blank;
+
+                blank.e_capture.c_begin = blank.e_capture.c_end =
+                    free_row.front().e_capture.c_begin;
+                blank.e_token = DNT_KEY;
+                free_pair_subs.push_back(blank);
+                free_pair_subs.push_back(free_row.front());
+                pairs_out.push_back(element(free_pair_subs, DNT_PAIR));
+                free_row.pop_front();
             }
 
             ++kv_iter;
@@ -473,6 +520,7 @@ private:
             while (!free_row.empty()) {
                 switch (free_row.front().e_token) {
                 case DNT_GROUP:
+                case DNT_VALUE:
                 case DT_NUMBER:
                 case DT_SYMBOL:
                 case DT_HEX_NUMBER:
@@ -539,6 +587,7 @@ private:
         this->dp_group_token.push_back(DT_INVALID);
         this->dp_group_stack.resize(1);
 
+        data_format_state_t prefix_state  = DFS_INIT;
         data_format_state_t semi_state  = DFS_INIT;
         data_format_state_t comma_state = DFS_INIT;
 
@@ -554,8 +603,15 @@ private:
             assert(elem.e_capture.c_begin != -1);
             assert(elem.e_capture.c_end != -1);
 
+            prefix_state        = dfs_prefix_next(prefix_state, elem.e_token);
             semi_state          = dfs_semi_next(semi_state, elem.e_token);
             comma_state         = dfs_comma_next(comma_state, elem.e_token);
+            if (prefix_state != DFS_ERROR) {
+                if (semi_state == DFS_ERROR)
+                    semi_state = DFS_INIT;
+                if (comma_state == DFS_ERROR)
+                    comma_state = DFS_INIT;
+            }
             hist[elem.e_token] += 1;
             switch (elem.e_token) {
             case DT_LPAREN:

@@ -33,9 +33,41 @@
 
 using namespace std;
 
-data_format data_parser::FORMAT_SEMI(DT_COMMA, DT_SEMI);
-data_format data_parser::FORMAT_COMMA(DT_INVALID, DT_COMMA);
-data_format data_parser::FORMAT_PLAIN(DT_INVALID, DT_INVALID);
+data_format data_parser::FORMAT_SEMI("semi", DT_COMMA, DT_SEMI);
+data_format data_parser::FORMAT_COMMA("comma", DT_INVALID, DT_COMMA);
+data_format data_parser::FORMAT_PLAIN("plain", DT_INVALID, DT_INVALID);
+
+data_format_state_t dfs_prefix_next(data_format_state_t state,
+                                    data_token_t next_token)
+{
+    data_format_state_t retval = state;
+
+    switch (state) {
+    case DFS_INIT:
+        switch (next_token) {
+        case DT_PATH:
+        case DT_SEPARATOR:
+        case DT_WORD:
+        case DT_SYMBOL:
+        case DT_OCTAL_NUMBER:
+        case DT_HEX_NUMBER:
+        case DT_NUMBER:
+        case DT_WHITE:
+            break;
+        default:
+            retval = DFS_ERROR;
+            break;
+        }
+        break;
+    case DFS_ERROR:
+        retval = DFS_ERROR;
+        break;
+    default:
+        break;
+    }
+
+    return retval;
+}
 
 data_format_state_t dfs_semi_next(data_format_state_t state,
                                   data_token_t next_token)
@@ -87,6 +119,7 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
     case DFS_INIT:
         switch (next_token) {
         case DT_COMMA:
+            break;
         case DT_SEMI:
             retval = DFS_ERROR;
             break;
@@ -103,8 +136,11 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
             retval = DFS_VALUE;
             break;
 
-        case DT_SEMI:
         case DT_COMMA:
+            retval = DFS_INIT;
+            break;
+
+        case DT_SEMI:
             retval = DFS_ERROR;
             break;
 
@@ -119,7 +155,7 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
             break;
 
         case DT_SEPARATOR:
-            retval = DFS_VALUE;
+            retval = DFS_ERROR;
             break;
 
         default: break;

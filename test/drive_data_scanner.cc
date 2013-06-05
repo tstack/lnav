@@ -148,11 +148,11 @@ int main(int argc, char *argv[])
 
                         printf("Would you like to update the original file? (y/N) ");
                         fflush(stdout);
-                        if (scanf("%3s", resp) == 1 && strcasecmp(resp, "y") == 0) {
+                        scanf("%3s", resp);
+                        if (strcasecmp(resp, "y") == 0) {
                             rename(TMP_NAME, argv[lpc]);
                         }
                         else{
-                            fprintf(stderr, " resp %s\n", resp);
                             retval = EXIT_FAILURE;
                         }
                     }

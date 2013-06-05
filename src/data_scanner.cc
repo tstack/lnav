@@ -55,7 +55,7 @@ static struct {
 
     { "sep",     pcrepp("(:|=)"),
     },
-    { "comm",    pcrepp("(,|/)"),
+    { "comm",    pcrepp("(,)"),
     },
     { "semi",    pcrepp("(;)"),
     },
@@ -98,7 +98,7 @@ static struct {
 
     { "word",    pcrepp(
           "([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|\\.\\s|$))"), },
-    { "sym",     pcrepp("([^\";\\s:=,/(){}\\[\\]]+)"),
+    { "sym",     pcrepp("([^\";\\s:=,(){}\\[\\]]+)"),
     },
     { "line",    pcrepp("(\r?\n|\r|;)"),
     },
