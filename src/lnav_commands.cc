@@ -35,6 +35,8 @@
 #include <vector>
 #include <fstream>
 
+#include <pcrecpp.h>
+
 #include "lnav.hh"
 #include "lnav_util.hh"
 #include "auto_mem.hh"
@@ -581,6 +583,187 @@ static string com_session(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_summarize(string cmdline, vector<string> &args)
+{
+    static pcrecpp::RE db_column_converter("\"");
+
+    string retval = "";
+
+    if (args.size() == 0) {
+        args.push_back("colname");
+        return retval;
+    }
+    else if (!setup_logline_table()) {
+        retval = "error: no log data available";
+    }
+    else {
+        auto_mem<char, sqlite3_free> query_frag;
+        std::vector<string> other_columns;
+        std::vector<string> num_columns;
+        string query;
+
+        for (size_t lpc = 1; lpc < args.size(); lpc++) {
+            string quoted_name = args[lpc];
+            const char *datatype;
+            int rc;
+
+            rc = sqlite3_table_column_metadata(
+                lnav_data.ld_db.in(),
+                "main",
+                "logline",
+                args[lpc].c_str(),
+                &datatype,
+                NULL,
+                NULL,
+                NULL,
+                NULL);
+            if (rc != SQLITE_OK) {
+                return "error: bad column name -- " + args[lpc];
+            }
+
+            db_column_converter.GlobalReplace("\"\"", &quoted_name);
+
+            fprintf(stderr, "dt = %s\n", datatype);
+            if (strcasecmp(datatype, "float") == 0) {
+                num_columns.push_back(quoted_name);
+            }
+            else {
+                other_columns.push_back(quoted_name);
+            }
+        }
+
+        query = "SELECT";
+        for (std::vector<string>::iterator iter = other_columns.begin();
+             iter != other_columns.end();
+             ++iter) {
+            if (iter != other_columns.begin())
+                query += ",";
+            query_frag = sqlite3_mprintf(" \"%s\", count(*) as \"count_%s\"",
+                                         iter->c_str(),
+                                         iter->c_str());
+            query += query_frag;
+        }
+
+        if (!other_columns.empty() && !num_columns.empty())
+            query += ", ";
+
+        for (std::vector<string>::iterator iter = num_columns.begin();
+             iter != num_columns.end();
+             ++iter) {
+            if (iter != num_columns.begin())
+                query += ",";
+            query_frag = sqlite3_mprintf(" sum(\"%s\"), "
+                                         " min(\"%s\"), "
+                                         " avg(\"%s\"), "
+                                         " median(\"%s\"), "
+                                         " stddev(\"%s\"), "
+                                         " max(\"%s\") ",
+                                         iter->c_str(),
+                                         iter->c_str(),
+                                         iter->c_str(),
+                                         iter->c_str(),
+                                         iter->c_str(),
+                                         iter->c_str());
+            query += query_frag;
+        }
+
+        query += " FROM logline";
+
+        for (std::vector<string>::iterator iter = other_columns.begin();
+             iter != other_columns.end();
+             ++iter) {
+            if (iter == other_columns.begin())
+                query += " GROUP BY ";
+            else
+                query += ",";
+            query_frag = sqlite3_mprintf(" \"%s\"", iter->c_str());
+            query += query_frag;
+        }
+
+        for (std::vector<string>::iterator iter = other_columns.begin();
+             iter != other_columns.end();
+             ++iter) {
+            if (iter == other_columns.begin())
+                query += " ORDER BY ";
+            else
+                query += ",";
+            query_frag = sqlite3_mprintf(" \"count_%s\" desc, \"%s\" asc",
+                                         iter->c_str(),
+                                         iter->c_str());
+            query += query_frag;
+        }
+
+        fprintf(stderr, "query %s\n", query.c_str());
+
+        db_label_source &      dls = lnav_data.ld_db_rows;
+        hist_source &          hs  = lnav_data.ld_db_source;
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        int retcode;
+
+        hs.clear();
+        dls.clear();
+        retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                     query.c_str(),
+                                     -1,
+                                     stmt.out(),
+                                     NULL);
+
+        if (retcode != SQLITE_OK) {
+            const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+
+            retval = "error: " + string(errmsg);
+        }
+        else if (stmt == NULL) {
+            retval = "";
+        }
+        else {
+            bool done = false;
+
+            while (!done) {
+                retcode = sqlite3_step(stmt.in());
+
+                switch (retcode) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    done = true;
+                    break;
+
+                case SQLITE_ROW:
+                    sql_callback(stmt.in());
+                    break;
+
+                default:
+                {
+                    const char *errmsg;
+
+                    fprintf(stderr, "code %d\n", retcode);
+                    errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                    retval = "error: " + string(errmsg);
+                    done = true;
+                }
+                break;
+                }
+            }
+
+            if (retcode == SQLITE_DONE) {
+                hs.analyze();
+                lnav_data.ld_views[LNV_LOG].reload_data();
+                lnav_data.ld_views[LNV_DB].reload_data();
+                lnav_data.ld_views[LNV_DB].set_left(0);
+
+                if (dls.dls_rows.size() > 0) {
+                    ensure_view(&lnav_data.ld_views[LNV_DB]);
+                }
+            }
+
+            lnav_data.ld_bottom_source.update_loading(0, 0);
+            lnav_data.ld_status[LNS_BOTTOM].do_update();
+        }
+    }
+
+    return retval;
+}
+
 static string com_add_test(string cmdline, vector<string> &args)
 {
     string retval = "";
@@ -641,6 +824,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["create-logline-table"] = com_create_logline_table;
     cmd_map["delete-logline-table"] = com_delete_logline_table;
     cmd_map["session"]        = com_session;
+    cmd_map["summarize"] = com_summarize;
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;

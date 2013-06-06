@@ -105,7 +105,7 @@ const char *logline::level_names[LEVEL__MAX] = {
 
 static int strcasestr_i(const char *s1, const char *s2)
 {
-    return strcasestr(s1, s2) != NULL;
+    return strcasestr(s1, s2) == NULL;
 }
 
 logline::level_t logline::string2level(const char *levelstr, bool exact)
@@ -118,28 +118,28 @@ logline::level_t logline::string2level(const char *levelstr, bool exact)
     else
         cmpfunc = strcasestr_i;
 
-    if (strcasestr(levelstr, "TRACE") == 0) {
+    if (cmpfunc(levelstr, "TRACE") == 0) {
         retval = logline::LEVEL_TRACE;
     }
-    else if (strcasestr(levelstr, "VERBOSE") == 0) {
+    else if (cmpfunc(levelstr, "VERBOSE") == 0) {
         retval = logline::LEVEL_DEBUG;
     }
-    else if (strcasestr(levelstr, "DEBUG") == 0) {
+    else if (cmpfunc(levelstr, "DEBUG") == 0) {
         retval = logline::LEVEL_DEBUG;
     }
-    else if (strcasestr(levelstr, "INFO") == 0) {
+    else if (cmpfunc(levelstr, "INFO") == 0) {
         retval = logline::LEVEL_INFO;
     }
-    else if (strcasestr(levelstr, "WARNING") == 0) {
+    else if (cmpfunc(levelstr, "WARNING") == 0) {
         retval = logline::LEVEL_WARNING;
     }
-    else if (strcasestr(levelstr, "ERROR") == 0) {
+    else if (cmpfunc(levelstr, "ERROR") == 0) {
         retval = logline::LEVEL_ERROR;
     }
-    else if (strcasestr(levelstr, "CRITICAL") == 0) {
+    else if (cmpfunc(levelstr, "CRITICAL") == 0) {
         retval = logline::LEVEL_CRITICAL;
     }
-    else if (strcasestr(levelstr, "FATAL") == 0) {
+    else if (cmpfunc(levelstr, "FATAL") == 0) {
         retval = logline::LEVEL_FATAL;
     }
 

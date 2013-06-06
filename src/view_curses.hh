@@ -339,6 +339,7 @@ public:
         VCR_ALERT_STATUS,       /*< Alert status line text. */
         VCR_ACTIVE_STATUS,      /*< */
         VCR_ACTIVE_STATUS2,     /*< */
+        VCR_BOLD_STATUS,
 
         VCR_DIFF_DELETE,        /*< Deleted line in a diff. */
         VCR_DIFF_ADD,           /*< Added line in a diff. */

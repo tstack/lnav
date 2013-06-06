@@ -204,6 +204,8 @@ view_colors::view_colors()
         COLOR_PAIR(VC_GREEN_ON_WHITE);
     this->vc_role_colors[VCR_ACTIVE_STATUS2] =
         COLOR_PAIR(VC_GREEN_ON_WHITE) | A_BOLD;
+    this->vc_role_colors[VCR_BOLD_STATUS] =
+        COLOR_PAIR(VC_BLACK_ON_WHITE) | A_BOLD;
 
     this->vc_role_colors[VCR_DIFF_DELETE]  = COLOR_PAIR(VC_RED);
     this->vc_role_colors[VCR_DIFF_ADD]     = COLOR_PAIR(VC_GREEN);

@@ -1781,6 +1781,7 @@ int RegisterExtensionFunctions(sqlite3 *db){
     void (*xFinalize)(sqlite3_context*);
   } aAggs[] = {
     { "stdev",            1, 0, 0, varianceStep, stdevFinalize  },
+    { "stddev",            1, 0, 0, varianceStep, stdevFinalize  },
     { "variance",         1, 0, 0, varianceStep, varianceFinalize  },
     { "mode",             1, 0, 0, modeStep,     modeFinalize  },
     { "median",           1, 0, 0, modeStep,     medianFinalize  },

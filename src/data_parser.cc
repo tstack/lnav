@@ -53,6 +53,10 @@ data_format_state_t dfs_prefix_next(data_format_state_t state,
         case DT_HEX_NUMBER:
         case DT_NUMBER:
         case DT_WHITE:
+        case DT_LSQUARE:
+        case DT_RSQUARE:
+        case DT_LANGLE:
+        case DT_RANGLE:
             break;
         default:
             retval = DFS_ERROR;

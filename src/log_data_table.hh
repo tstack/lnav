@@ -175,7 +175,19 @@ public:
             std::string tmp = dp.get_element_string(
                 pair_iter->e_sub_elements->back());
 
-            values.push_back(logline_value("", tmp));
+            fprintf(stderr, "data %s\n", tmp.c_str());
+            switch(pair_iter->e_sub_elements->back().e_token) {
+                case DT_NUMBER: {
+                    double d = 0;
+
+                    sscanf(tmp.c_str(), "%lf", &d);
+                    values.push_back(logline_value("", d));
+                }
+                break;
+                default:
+                values.push_back(logline_value("", tmp));
+                break;
+            }
         }
     };
 

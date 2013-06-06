@@ -77,6 +77,7 @@ public:
         this->bss_fields[BSF_ERRORS].set_width(10);
         this->bss_fields[BSF_ERRORS].set_role(view_colors::VCR_ALERT_STATUS);
         this->bss_fields[BSF_FILTERED].set_width(20);
+        this->bss_fields[BSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
         this->bss_fields[BSF_LOADING].set_width(13);
         this->bss_fields[BSF_LOADING].set_cylon(true);
         this->bss_fields[BSF_LOADING].right_justify(true);

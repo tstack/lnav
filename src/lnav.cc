@@ -582,6 +582,26 @@ static void walk_sqlite_metadata(sqlite3 *db)
                 lnav_data.ld_db_key_names.end());
 }
 
+bool setup_logline_table()
+{
+    textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+    bool retval = false;
+
+    if (log_view.get_inner_height()) {
+        vis_line_t     vl = log_view.get_top();
+        content_line_t cl = lnav_data.ld_log_source.at(vl);
+
+        lnav_data.ld_vtab_manager->unregister_vtab("logline");
+        lnav_data.ld_vtab_manager->register_vtab(new log_data_table(cl));
+
+        retval = true;
+    }
+
+    walk_sqlite_metadata(lnav_data.ld_db.in());
+
+    return retval;
+}
+
 /**
  * Observer for loading progress that updates the bottom status bar.
  */
@@ -1546,6 +1566,39 @@ static void handle_paging_key(int ch)
         break;
 
     case ':':
+        if (lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
+            logfile_sub_source &lss = lnav_data.ld_log_source;
+            textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+            content_line_t    cl   = lss.at(log_view.get_top());
+            logfile *         lf   = lss.find(cl);
+            std::string       line = lf->read_line(lf->begin() + cl);
+            struct line_range body;
+            string_attrs_t    sa;
+            std::vector<logline_value> line_values;
+
+            lf->get_format()->annotate(line, sa, line_values);
+
+            body = find_string_attr_range(sa, "body");
+            if (body.lr_end != -1) {
+                line = line.substr(body.lr_start);
+            }
+
+            data_scanner ds(line);
+            data_parser dp(&ds);
+            dp.parse();
+
+            column_namer namer;
+
+            lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "colname");
+            for (data_parser::element_list_t::iterator iter = dp.dp_pairs.begin();
+                 iter != dp.dp_pairs.end();
+                 ++iter) {
+                std::string colname = dp.get_element_string(iter->e_sub_elements->front());
+
+                colname            = namer.add_column(colname);
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname", colname);
+            }
+        }
         lnav_data.ld_mode = LNM_COMMAND;
         lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
         break;
@@ -1563,16 +1616,8 @@ static void handle_paging_key(int ch)
             textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
 
             lnav_data.ld_mode = LNM_SQL;
-            walk_sqlite_metadata(lnav_data.ld_db.in());
+            setup_logline_table();
             lnav_data.ld_rl_view->focus(LNM_SQL, ";");
-
-            if (log_view.get_inner_height()) {
-                vis_line_t     vl = log_view.get_top();
-                content_line_t cl = lnav_data.ld_log_source.at(vl);
-
-                lnav_data.ld_vtab_manager->unregister_vtab("logline");
-                lnav_data.ld_vtab_manager->register_vtab(new log_data_table(cl));
-            }
 
             lnav_data.ld_bottom_source.update_loading(0, 0);
             lnav_data.ld_status[LNS_BOTTOM].do_update();
@@ -1838,7 +1883,7 @@ static void execute_file(string path)
     }
 }
 
-static int sql_callback(sqlite3_stmt *stmt)
+int sql_callback(sqlite3_stmt *stmt)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     db_label_source &   dls = lnav_data.ld_db_rows;
@@ -2045,7 +2090,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
         lnav_data.ld_bottom_source.grep_error("");
         hs.clear();
         dls.clear();
-        retcode = sqlite3_prepare_v2(lnav_data.ld_db,
+        retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
                                      rc->get_value().c_str(),
                                      -1,
                                      stmt.out(),

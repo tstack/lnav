@@ -32,6 +32,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "strong_int.hh"
 #include "listview_curses.hh"
@@ -92,9 +93,9 @@ public:
     void reload_data(void);
 
 private:
-    typedef vector<bucket_count_t> buckets_t;
+    typedef std::vector<bucket_count_t> buckets_t;
 
-    map<bucket_group_t, buckets_t> hv_groups;
+    std::map<bucket_group_t, buckets_t> hv_groups;
     int hv_bucket_size; /* hours */
     int hv_group_size;  /* days */
     hist_data_source * hv_data_source;

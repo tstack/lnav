@@ -186,4 +186,7 @@ bool toggle_view(textview_curses *toggle_tc);
 
 std::string execute_command(std::string cmdline);
 
+bool setup_logline_table();
+int sql_callback(sqlite3_stmt *stmt);
+
 #endif
