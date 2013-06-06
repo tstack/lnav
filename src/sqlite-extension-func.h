@@ -26,66 +26,55 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file column_namer.hh
+ * @file sqlite-extension-func.h
  */
 
-#ifndef _column_namer_hh
-#define _column_namer_hh
+#ifndef _sqlite_extension_func_h
+#define _sqlite_extension_func_h
 
-#include <map>
-#include <string>
-#include <vector>
-#include <algorithm>
+#include <stdint.h>
+#include <sqlite3.h>
 
-class column_namer {
-public:
-    column_namer()
-    {
-        this->cn_builtin_names.push_back("col");
-    };
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    bool existing_name(const std::string &in_name) const
-    {
-        if (find(this->cn_builtin_names.begin(),
-                 this->cn_builtin_names.end(),
-                 in_name) != this->cn_builtin_names.end()) {
-            return true;
-        }
-        else if (find(this->cn_names.begin(),
-                      this->cn_names.end(),
-                      in_name) != this->cn_names.end()) {
-            return true;
-        }
-
-        return false;
-    };
-
-    std::string add_column(const std::string &in_name)
-    {
-        std::string base_name = in_name, retval;
-        size_t      buf_size;
-        char *      buffer;
-        int         num = 0;
-
-        buf_size = in_name.length() + 64;
-        buffer   = (char *)alloca(buf_size);
-        if (in_name == "") {
-            base_name = "col";
-        }
-
-        retval = base_name;
-        while (this->existing_name(retval)) {
-            snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
-            retval = buffer;
-            num   += 1;
-        }
-
-        this->cn_names.push_back(retval);
-
-        return retval;
-    };
-
-    std::vector<std::string> cn_builtin_names;
-    std::vector<std::string> cn_names;
+struct FuncDef {
+     const char *zName;
+     signed char nArg;
+     uint8_t argType;           /* 0: none.  1: db  2: (-1) */
+     uint8_t eTextRep;          /* 1: UTF-16.  0: UTF-8 */
+     uint8_t needCollSeq;
+     void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
 };
+
+struct FuncDefAgg {
+    const char *zName;
+    signed char nArg;
+    uint8_t argType;
+    uint8_t needCollSeq;
+    void (*xStep)(sqlite3_context*,int,sqlite3_value**);
+    void (*xFinalize)(sqlite3_context*);
+};
+
+typedef int (*sqlite_registration_func_t)(const struct FuncDef **basic_funcs,
+                                          const struct FuncDefAgg **agg_funcs);
+
+int common_extension_functions(const struct FuncDef **basic_funcs,
+                               const struct FuncDefAgg **agg_funcs);
+
+int network_extension_functions(const struct FuncDef **basic_funcs,
+                                const struct FuncDefAgg **agg_funcs);
+
+int fs_extension_functions(const struct FuncDef **basic_funcs,
+                           const struct FuncDefAgg **agg_funcs);
+
+extern sqlite_registration_func_t sqlite_registration_funcs[];
+
+int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

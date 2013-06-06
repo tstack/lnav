@@ -6,6 +6,7 @@
 #include <sqlite3.h>
 
 #include "auto_mem.hh"
+#include "sqlite-extension-func.h"
 
 struct callback_state {
     int cs_row;
@@ -27,13 +28,6 @@ static int sql_callback(void *ptr,
     
     return 0;
 }
-
-extern "C" {
-int RegisterExtensionFunctions(sqlite3 *db);
-}
-
-int register_network_extension_functions(sqlite3 *db);
-int register_fs_extension_functions(sqlite3 *db);
 
 int main(int argc, char *argv[])
 {
@@ -57,9 +51,7 @@ int main(int argc, char *argv[])
         {
             int register_collation_functions(sqlite3 * db);
 
-            RegisterExtensionFunctions(db.in());
-            register_network_extension_functions(db.in());
-            register_fs_extension_functions(db.in());
+            register_sqlite_funcs(db.in(), sqlite_registration_funcs);
             register_collation_functions(db.in());
         }
 

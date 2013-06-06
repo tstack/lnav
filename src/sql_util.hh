@@ -26,66 +26,36 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file column_namer.hh
+ * @file sql_util.hh
  */
 
-#ifndef _column_namer_hh
-#define _column_namer_hh
+#ifndef _sql_util_hh
+#define _sql_util_hh
+
+#include <sqlite3.h>
 
 #include <map>
 #include <string>
 #include <vector>
-#include <algorithm>
 
-class column_namer {
-public:
-    column_namer()
-    {
-        this->cn_builtin_names.push_back("col");
-    };
+extern const char *sql_keywords[];
+extern const char *sql_function_names[];
 
-    bool existing_name(const std::string &in_name) const
-    {
-        if (find(this->cn_builtin_names.begin(),
-                 this->cn_builtin_names.end(),
-                 in_name) != this->cn_builtin_names.end()) {
-            return true;
-        }
-        else if (find(this->cn_names.begin(),
-                      this->cn_names.end(),
-                      in_name) != this->cn_names.end()) {
-            return true;
-        }
+typedef int (*sqlite_exec_callback)(void *, int, char **, char **);
+typedef std::vector<std::string> db_table_list_t;
+typedef std::map<std::string, db_table_list_t> db_table_map_t;
 
-        return false;
-    };
-
-    std::string add_column(const std::string &in_name)
-    {
-        std::string base_name = in_name, retval;
-        size_t      buf_size;
-        char *      buffer;
-        int         num = 0;
-
-        buf_size = in_name.length() + 64;
-        buffer   = (char *)alloca(buf_size);
-        if (in_name == "") {
-            base_name = "col";
-        }
-
-        retval = base_name;
-        while (this->existing_name(retval)) {
-            snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
-            retval = buffer;
-            num   += 1;
-        }
-
-        this->cn_names.push_back(retval);
-
-        return retval;
-    };
-
-    std::vector<std::string> cn_builtin_names;
-    std::vector<std::string> cn_names;
+struct sqlite_metadata_callbacks {
+    sqlite_exec_callback smc_collation_list;
+    sqlite_exec_callback smc_database_list;
+    sqlite_exec_callback smc_table_list;
+    sqlite_exec_callback smc_table_info;
+    sqlite_exec_callback smc_foreign_key_list;
+    db_table_map_t smc_db_list;
 };
+
+int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc);
+
+void attach_sqlite_db(sqlite3 *db, const std::string &filename);
+
 #endif

@@ -45,6 +45,7 @@
 #include "lnav.hh"
 #include "logfile.hh"
 #include "lnav_util.hh"
+#include "lnav_config.hh"
 #include "session_data.hh"
 
 using namespace std;
@@ -54,16 +55,13 @@ static const size_t MAX_SESSIONS = 16;
 static string bookmark_file_name(const string &name)
 {
     char mark_base_name[256];
-    SHA_CTX context;
-    byte_array<20> hash;
+    string hash;
 
-    SHA_Init(&context);
-    SHA_Update(&context, name.c_str(), name.length());
-    SHA_Final(hash.out(), &context);
+    hash = hash_string(name);
 
     snprintf(mark_base_name, sizeof(mark_base_name),
              "file-%s.ts%ld.json",
-             hash.to_string().c_str(),
+             hash.c_str(),
              lnav_data.ld_session_time);
 
     return string(mark_base_name);
@@ -75,16 +73,13 @@ static string latest_bookmark_file(const string &name)
     static_root_mem<glob_t, globfree> file_list;
     string mark_file_pattern;
     char mark_base_name[256];
-    SHA_CTX context;
-    byte_array<20> hash;
+    string hash;
 
-    SHA_Init(&context);
-    SHA_Update(&context, name.c_str(), name.length());
-    SHA_Final(hash.out(), &context);
+    hash = hash_string(name);
 
     snprintf(mark_base_name, sizeof(mark_base_name),
              "file-%s.ts*.json",
-             hash.to_string().c_str());
+             hash.c_str());
 
     mark_file_pattern = dotlnav_path(mark_base_name);
 
@@ -111,7 +106,7 @@ static string latest_bookmark_file(const string &name)
 
 void init_session(void)
 {
-    byte_array<20> hash;
+    byte_array<SHA_DIGEST_LENGTH> hash;
     SHA_CTX context;
 
     lnav_data.ld_session_time = time(NULL);

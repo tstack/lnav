@@ -26,66 +26,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file column_namer.hh
+ * @file lnav_config.hh
  */
 
-#ifndef _column_namer_hh
-#define _column_namer_hh
+#ifndef _lnav_config_hh
+#define _lnav_config_hh
 
-#include <map>
 #include <string>
-#include <vector>
-#include <algorithm>
 
-class column_namer {
-public:
-    column_namer()
-    {
-        this->cn_builtin_names.push_back("col");
-    };
+/**
+ * Compute the path to a file in the user's '.lnav' directory.
+ *
+ * @param  sub The path to the file in the '.lnav' directory.
+ * @return     The full path
+ */
+std::string dotlnav_path(const char *sub);
 
-    bool existing_name(const std::string &in_name) const
-    {
-        if (find(this->cn_builtin_names.begin(),
-                 this->cn_builtin_names.end(),
-                 in_name) != this->cn_builtin_names.end()) {
-            return true;
-        }
-        else if (find(this->cn_names.begin(),
-                      this->cn_names.end(),
-                      in_name) != this->cn_names.end()) {
-            return true;
-        }
+/**
+ * Check if an experimental feature should be enabled by
+ * examining the LNAV_EXP environment variable.
+ *
+ * @param feature_name The feature name to check for in
+ *   the LNAV_EXP environment variable.
+ *
+ * @return True if the feature was mentioned in the env
+ *   var and should be enabled.
+ */
+bool check_experimental(const char *feature_name);
 
-        return false;
-    };
+/**
+ * Ensure that the '.lnav' directory exists.
+ */
+void ensure_dotlnav(void);
 
-    std::string add_column(const std::string &in_name)
-    {
-        std::string base_name = in_name, retval;
-        size_t      buf_size;
-        char *      buffer;
-        int         num = 0;
-
-        buf_size = in_name.length() + 64;
-        buffer   = (char *)alloca(buf_size);
-        if (in_name == "") {
-            base_name = "col";
-        }
-
-        retval = base_name;
-        while (this->existing_name(retval)) {
-            snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
-            retval = buffer;
-            num   += 1;
-        }
-
-        this->cn_names.push_back(retval);
-
-        return retval;
-    };
-
-    std::vector<std::string> cn_builtin_names;
-    std::vector<std::string> cn_names;
-};
 #endif

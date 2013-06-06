@@ -179,8 +179,6 @@ extern struct _lnav_data lnav_data;
 
 void rebuild_indexes(bool force);
 
-std::string dotlnav_path(const char *sub);
-
 void ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);
 

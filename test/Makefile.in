@@ -93,8 +93,8 @@ TESTS = test_bookmarks$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_line_buffer.sh \
 	test_line_buffer2$(EXEEXT) test_grep_proc.sh \
 	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
-	test_listview.sh test_pcrepp$(EXEEXT) test_sql_fs_func.sh \
-	test_view_colors.sh test_vt52_curses.sh \
+	test_listview.sh test_pcrepp$(EXEEXT) test_sql_coll_func.sh \
+	test_sql_fs_func.sh test_view_colors.sh test_vt52_curses.sh \
 	test_top_status$(EXEEXT) test_data_parser.sh
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -713,6 +713,7 @@ dist_noinst_SCRIPTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_sql_coll_func.sh \
 	test_sql_fs_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh
@@ -1400,6 +1401,13 @@ test_listview.sh.log: test_listview.sh
 test_pcrepp.log: test_pcrepp$(EXEEXT)
 	@p='test_pcrepp$(EXEEXT)'; \
 	b='test_pcrepp'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_sql_coll_func.sh.log: test_sql_coll_func.sh
+	@p='test_sql_coll_func.sh'; \
+	b='test_sql_coll_func.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

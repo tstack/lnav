@@ -123,12 +123,14 @@ public:
 
     const T *operator->(void) const { return &this->srm_value; };
 
-    operator T(void) { return this->srm_value; };
-
-    T in(void) { return this->srm_value; };
+    const T &in(void) const { return this->srm_value; };
 
     T *inout(void) { return &this->srm_value; };
 private:
+    static_root_mem &operator =(T &) { return *this; };
+
+    static_root_mem &operator =(static_root_mem &) { return *this; };
+
     T srm_value;
 };
 #endif

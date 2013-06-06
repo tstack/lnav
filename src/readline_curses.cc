@@ -580,7 +580,9 @@ void readline_curses::focus(int context, const char *prompt)
     wclrtoeol(this->vc_window);
 }
 
-void readline_curses::add_possibility(int context, string type, string value)
+void readline_curses::add_possibility(int context,
+                                      const string &type,
+                                      const string &value)
 {
     char buffer[1024];
 
@@ -595,7 +597,9 @@ void readline_curses::add_possibility(int context, string type, string value)
     }
 }
 
-void readline_curses::rem_possibility(int context, string type, string value)
+void readline_curses::rem_possibility(int context,
+                                      const string &type,
+                                      const string &value)
 {
     char buffer[1024];
 

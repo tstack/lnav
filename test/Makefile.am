@@ -145,6 +145,7 @@ dist_noinst_SCRIPTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_sql_coll_func.sh \
 	test_sql_fs_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh
@@ -193,6 +194,7 @@ TESTS = test_bookmarks \
 	test_hist_source \
 	test_listview.sh \
 	test_pcrepp \
+	test_sql_coll_func.sh \
 	test_sql_fs_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh \

@@ -172,19 +172,18 @@ public:
                  dp.dp_pairs.begin();
              pair_iter != dp.dp_pairs.end();
              ++pair_iter) {
-            std::string tmp = dp.get_element_string(
-                pair_iter->e_sub_elements->back());
+            const data_parser::element &pvalue = pair_iter->get_pair_value();
+            std::string tmp = dp.get_element_string(pvalue);
 
-            fprintf(stderr, "data %s\n", tmp.c_str());
-            switch(pair_iter->e_sub_elements->back().e_token) {
-                case DT_NUMBER: {
+            switch(pvalue.value_token()) {
+            case DT_NUMBER: {
                     double d = 0;
 
                     sscanf(tmp.c_str(), "%lf", &d);
                     values.push_back(logline_value("", d));
                 }
                 break;
-                default:
+            default:
                 values.push_back(logline_value("", tmp));
                 break;
             }

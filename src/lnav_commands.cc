@@ -38,6 +38,7 @@
 #include <pcrecpp.h>
 
 #include "lnav.hh"
+#include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "auto_mem.hh"
 #include "log_data_table.hh"

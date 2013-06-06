@@ -46,6 +46,7 @@ noinst_HEADERS = \
 	listview_curses.hh \
 	lnav.hh \
 	lnav_commands.hh \
+	lnav_config.hh \
 	lnav_util.hh \
     log_data_table.hh \
 	log_format.hh \
@@ -57,6 +58,8 @@ noinst_HEADERS = \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	session_data.hh \
+	sql_util.hh \
+	sqlite-extension-func.h \
     status_controllers.hh \
 	statusview_curses.hh \
 	strnatcmp.h \
@@ -95,6 +98,7 @@ libdiag_a_SOURCES = \
 	line_buffer.cc \
 	listview_curses.cc \
 	lnav_commands.cc \
+	lnav_config.cc \
 	lnav_util.cc \
 	log_format.cc \
 	logfile.cc \
@@ -105,8 +109,10 @@ libdiag_a_SOURCES = \
 	readline_curses.cc \
 	session_data.cc \
 	sequence_matcher.cc \
+	sqlite-extension-func.c \
 	statusview_curses.cc \
 	piper_proc.cc \
+	sql_util.cc \
 	strnatcmp.c \
 	textview_curses.cc \
 	view_curses.cc \

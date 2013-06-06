@@ -153,7 +153,7 @@ public:
     static data_format FORMAT_COMMA;
     static data_format FORMAT_PLAIN;
 
-    typedef byte_array<20>     schema_id_t;
+    typedef byte_array<SHA_DIGEST_LENGTH>     schema_id_t;
 
     struct element;
     typedef std::list<element> element_list_t;
@@ -223,14 +223,24 @@ public:
             }
         };
 
+        const element &get_pair_value(void) const {
+            assert(this->e_token == DNT_PAIR);
+
+            return this->e_sub_elements->back();
+        };
+
         data_token_t            value_token(void) const
         {
             data_token_t retval = DT_INVALID;
 
-            if (this->e_token == DNT_VALUE &&
-                this->e_sub_elements != NULL &&
-                this->e_sub_elements->size() == 1) {
-                retval = this->e_sub_elements->front().e_token;
+            if (this->e_token == DNT_VALUE) {
+                if (this->e_sub_elements != NULL &&
+                    this->e_sub_elements->size() == 1) {
+                    retval = this->e_sub_elements->front().e_token;
+                }
+            }
+            else {
+                retval = this->e_token;
             }
             return retval;
         };
@@ -692,7 +702,7 @@ private:
         }
     };
 
-    std::string get_element_string(element &elem)
+    std::string get_element_string(const element &elem)
     {
         pcre_input &pi = this->dp_scanner->get_input();
 

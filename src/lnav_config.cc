@@ -26,66 +26,55 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file column_namer.hh
+ * @file lnav_config.cc
  */
 
-#ifndef _column_namer_hh
-#define _column_namer_hh
+#include "config.h"
 
-#include <map>
-#include <string>
-#include <vector>
-#include <algorithm>
+#include <assert.h>
+#include <sys/stat.h>
 
-class column_namer {
-public:
-    column_namer()
-    {
-        this->cn_builtin_names.push_back("col");
-    };
+#include "lnav_config.hh"
 
-    bool existing_name(const std::string &in_name) const
-    {
-        if (find(this->cn_builtin_names.begin(),
-                 this->cn_builtin_names.end(),
-                 in_name) != this->cn_builtin_names.end()) {
-            return true;
-        }
-        else if (find(this->cn_names.begin(),
-                      this->cn_names.end(),
-                      in_name) != this->cn_names.end()) {
-            return true;
-        }
+using namespace std;
 
-        return false;
-    };
+string dotlnav_path(const char *sub)
+{
+    string retval;
+    char * home;
 
-    std::string add_column(const std::string &in_name)
-    {
-        std::string base_name = in_name, retval;
-        size_t      buf_size;
-        char *      buffer;
-        int         num = 0;
+    home = getenv("HOME");
+    if (home) {
+        char hpath[PATH_MAX];
 
-        buf_size = in_name.length() + 64;
-        buffer   = (char *)alloca(buf_size);
-        if (in_name == "") {
-            base_name = "col";
-        }
+        snprintf(hpath, sizeof(hpath), "%s/.lnav/%s", home, sub);
+        retval = hpath;
+    }
+    else {
+        retval = sub;
+    }
 
-        retval = base_name;
-        while (this->existing_name(retval)) {
-            snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
-            retval = buffer;
-            num   += 1;
-        }
+    return retval;
+}
 
-        this->cn_names.push_back(retval);
+bool check_experimental(const char *feature_name)
+{
+    const char *env_value = getenv("LNAV_EXP");
 
-        return retval;
-    };
+    assert(feature_name != NULL);
 
-    std::vector<std::string> cn_builtin_names;
-    std::vector<std::string> cn_names;
-};
-#endif
+    if (env_value && strcasestr(env_value, feature_name)) {
+        return true;
+    }
+
+    return false;
+}
+
+void ensure_dotlnav(void)
+{
+    string path = dotlnav_path("");
+
+    if (!path.empty()) {
+        mkdir(path.c_str(), 0755);
+    }
+}

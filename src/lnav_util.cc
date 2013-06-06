@@ -34,12 +34,15 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <fcntl.h>
+
+#include <sqlite3.h>
 
 #include "lnav_util.hh"
 
 std::string hash_string(const std::string &str)
 {
-    byte_array<20> hash;
+    byte_array<SHA_DIGEST_LENGTH> hash;
     SHA_CTX context;
 
     SHA_Init(&context);
@@ -91,4 +94,69 @@ std::string time_ago(time_t last_time)
     snprintf(buffer, sizeof(buffer), fmt, amount);
 
     return std::string(buffer);
+}
+
+/* XXX figure out how to do this with the template */
+void sqlite_close_wrapper(void *mem)
+{
+    sqlite3_close((sqlite3 *)mem);
+}
+
+std::string get_current_dir(void)
+{
+    char   cwd[FILENAME_MAX];
+    std::string retval = ".";
+
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        perror("getcwd");
+    }
+    else {
+        retval = std::string(cwd);
+    }
+
+    if (retval != "/") {
+        retval += "/";
+    }
+
+    return retval;
+}
+
+bool change_to_parent_dir(void)
+{
+    bool retval = false;
+    char cwd[3] = "";
+
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        /* perror("getcwd"); */
+    }
+    if (strcmp(cwd, "/") != 0) {
+        if (chdir("..") == -1) {
+            perror("chdir('..')");
+        }
+        else {
+            retval = true;
+        }
+    }
+
+    return retval;
+}
+
+file_format_t detect_file_format(const std::string &filename)
+{
+    file_format_t retval = FF_UNKNOWN;
+    int           fd;
+
+    if ((fd = open(filename.c_str(), O_RDONLY)) != -1) {
+        char buffer[32];
+        int  rc;
+
+        if ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+            if (rc > 16 &&
+                strncmp(buffer, "SQLite format 3", 16) == 0) {
+                retval = FF_SQLITE_DB;
+            }
+        }
+    }
+
+    return retval;
 }

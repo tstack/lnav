@@ -97,6 +97,9 @@
 #include "column_namer.hh"
 #include "log_data_table.hh"
 #include "session_data.hh"
+#include "lnav_config.hh"
+#include "sql_util.hh"
+#include "sqlite-extension-func.h"
 
 #include "yajlpp.hh"
 
@@ -134,58 +137,6 @@ const char *lnav_view_strings[LNV__MAX] = {
     "db",
     "example",
 };
-
-/**
- * Check if an experimental feature should be enabled by
- * examining the LNAV_EXP environment variable.
- *
- * @param feature_name The feature name to check for in
- *   the LNAV_EXP environment variable.
- *
- * @return True if the feature was mentioned in the env
- *   var and should be enabled.
- */
-bool check_experimental(const char *feature_name)
-{
-    const char *env_value = getenv("LNAV_EXP");
-
-    if (env_value && strcasestr(env_value, feature_name)) {
-        return true;
-    }
-
-    return false;
-}
-
-/**
- * Compute the path to a file in the user's '.lnav' directory.
- *
- * @param  sub The path to the file in the '.lnav' directory.
- * @return     The full path
- */
-string dotlnav_path(const char *sub)
-{
-    string retval;
-    char * home;
-
-    home = getenv("HOME");
-    if (home) {
-        char hpath[2048];
-
-        snprintf(hpath, sizeof(hpath), "%s/.lnav/%s", home, sub);
-        retval = hpath;
-    }
-    else {
-        retval = sub;
-    }
-
-    return retval;
-}
-
-/* XXX figure out how to do this with the template */
-void sqlite_close_wrapper(void *mem)
-{
-    sqlite3_close((sqlite3 *)mem);
-}
 
 class field_overlay_source : public list_overlay_source {
 public:
@@ -360,15 +311,6 @@ public:
     int fos_key_size;
 };
 
-typedef std::map<string, std::vector<string> > db_table_map_t;
-
-class db_metadata {
-public:
-    db_metadata() { };
-
-    db_table_map_t dm_db_list;
-};
-
 static int handle_collation_list(void *ptr,
                                  int ncols,
                                  char **colvalues,
@@ -384,10 +326,6 @@ static int handle_db_list(void *ptr,
                           char **colvalues,
                           char **colnames)
 {
-    db_metadata *dbm = (db_metadata *)ptr;
-
-    dbm->dm_db_list[colvalues[1]] = std::vector<string>();
-
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
 
     return 0;
@@ -398,12 +336,7 @@ static int handle_table_list(void *ptr,
                              char **colvalues,
                              char **colnames)
 {
-    std::map<string,
-             std::vector<string> >::iterator iter =
-        *(std::map<string, std::vector<string> >::iterator *)ptr;
-
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[0]);
-    iter->second.push_back(colvalues[0]);
 
     return 0;
 }
@@ -413,8 +346,6 @@ static int handle_table_info(void *ptr,
                              char **colvalues,
                              char **colnames)
 {
-    /* string &table_name = *((string *)ptr); */
-
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
     if (strcmp(colvalues[5], "1") == 0) {
         lnav_data.ld_db_key_names.push_back(colvalues[1]);
@@ -432,155 +363,13 @@ static int handle_foreign_key_list(void *ptr,
     return 0;
 }
 
-static void walk_sqlite_metadata(sqlite3 *db)
-{
-    db_metadata dbm;
-
-    lnav_data.ld_db_key_names.clear();
-    lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
-
-    {
-        const char *sql_commands[] = {
-            "ADD",
-            "ALL",
-            "ALTER",
-            "ANALYZE",
-            "AND",
-            "ASC",
-            "ATTACH",
-            "BEGIN",
-            "BETWEEN",
-            "CASE",
-            "CAST",
-            "COLLATE",
-            "COLUMN",
-            "COMMIT",
-            "CONFLICT",
-            "CREATE",
-            "CROSS",
-            "DATABASE",
-            "DELETE",
-            "DESC",
-            "DETACH",
-            "DISTINCT",
-            "DROP",
-            "ELSE",
-            "END",
-            "ESCAPE",
-            "EXCEPT",
-            "EXISTS",
-            "EXPLAIN",
-            "FROM",
-            "GLOB",
-            "GROUP",
-            "HAVING",
-            "IN",
-            "INDEX",
-            "INDEXED",
-            "INNER",
-            "INSERT",
-            "INTERSECT",
-            "ISNULL",
-            "JOIN",
-            "LEFT",
-            "LIKE",
-            "LIMIT",
-            "MATCH",
-            "NATURAL",
-            "NOT",
-            "NOTNULL",
-            "NULL",
-            "OFFSET",
-            "OR",
-            "ORDER",
-            "OUTER",
-            "PRAGMA",
-            "REGEXP",
-            "REINDEX",
-            "RENAME",
-            "REPLACE",
-            "ROLLBACK",
-            "SELECT",
-            "TABLE",
-            "THEN",
-            "TRANSACTION",
-            "TRIGGER",
-            "UNION",
-            "UNIQUE",
-            "UPDATE",
-            "USING",
-            "VACUUM",
-            "VIEW",
-            "WHERE",
-            "WHEN",
-
-            "logline",
-
-            NULL
-        };
-
-        for (int lpc = 0; sql_commands[lpc]; lpc++) {
-            lnav_data.ld_rl_view->
-            add_possibility(LNM_SQL, "*", sql_commands[lpc]);
-        }
-    }
-
-    sqlite3_exec(db,
-                 "pragma collation_list",
-                 handle_collation_list,
-                 NULL,
-                 NULL);
-
-    sqlite3_exec(db,
-                 "pragma database_list",
-                 handle_db_list,
-                 &dbm,
-                 NULL);
-
-    for (db_table_map_t::iterator iter = dbm.dm_db_list.begin();
-         iter != dbm.dm_db_list.end();
-         ++iter) {
-        auto_mem<char, sqlite3_free> query;
-
-        query = sqlite3_mprintf("SELECT name FROM %Q.sqlite_master "
-                                "WHERE type='table'",
-                                iter->first.c_str());
-
-        sqlite3_exec(db, query, handle_table_list, &iter, NULL);
-
-        for (std::vector<string>::iterator table_iter = iter->second.begin();
-             table_iter != iter->second.end();
-             ++table_iter) {
-            auto_mem<char, sqlite3_free> table_query;
-            string &table_name = *table_iter;
-
-            table_query = sqlite3_mprintf(
-                "pragma %Q.table_info(%Q)",
-                iter->first.c_str(),
-                table_name.c_str());
-
-            sqlite3_exec(db,
-                         table_query,
-                         handle_table_info,
-                         &table_name,
-                         NULL);
-
-            table_query = sqlite3_mprintf(
-                "pragma %Q.foreign_key_list(%Q)",
-                iter->first.c_str(),
-                table_name.c_str());
-
-            sqlite3_exec(db,
-                         table_query,
-                         handle_foreign_key_list,
-                         &table_name,
-                         NULL);
-        }
-    }
-
-    stable_sort(lnav_data.ld_db_key_names.begin(),
-                lnav_data.ld_db_key_names.end());
-}
+struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
+    handle_collation_list,
+    handle_db_list,
+    handle_table_list,
+    handle_table_info,
+    handle_foreign_key_list,
+};
 
 bool setup_logline_table()
 {
@@ -597,7 +386,16 @@ bool setup_logline_table()
         retval = true;
     }
 
-    walk_sqlite_metadata(lnav_data.ld_db.in());
+    lnav_data.ld_db_key_names.clear();
+    lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
+
+    lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);
+    lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_function_names);
+
+    walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
+
+    stable_sort(lnav_data.ld_db_key_names.begin(),
+                lnav_data.ld_db_key_names.end());
 
     return retval;
 }
@@ -885,45 +683,6 @@ public:
         label_out = string(buffer);
     };
 };
-
-static string get_current_dir(void)
-{
-    char   cwd[FILENAME_MAX];
-    string retval = ".";
-
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        perror("getcwd");
-    }
-    else {
-        retval = string(cwd);
-    }
-
-    if (retval != "/") {
-        retval += "/";
-    }
-
-    return retval;
-}
-
-static bool change_to_parent_dir(void)
-{
-    bool retval = false;
-    char cwd[3] = "";
-
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        /* perror("getcwd"); */
-    }
-    if (strcmp(cwd, "/") != 0) {
-        if (chdir("..") == -1) {
-            perror("chdir('..')");
-        }
-        else {
-            retval = true;
-        }
-    }
-
-    return retval;
-}
 
 static bool append_default_files(lnav_flags_t flag)
 {
@@ -2268,73 +2027,6 @@ static void update_times(void *, listview_curses *lv)
     }
 }
 
-enum file_format_t {
-    FF_UNKNOWN,
-    FF_SQLITE_DB,
-};
-
-file_format_t detect_file_format(const string &filename)
-{
-    file_format_t retval = FF_UNKNOWN;
-    int           fd;
-
-    if ((fd = open(filename.c_str(), O_RDONLY)) != -1) {
-        char buffer[32];
-        int  rc;
-
-        if ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
-            if (rc > 16 &&
-                strncmp(buffer, "SQLite format 3", 16) == 0) {
-                retval = FF_SQLITE_DB;
-            }
-        }
-    }
-
-
-    return retval;
-}
-
-void attach_sqlite_db(const string &filename)
-{
-    static pcrecpp::RE db_name_converter("[^\\w]");
-
-    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-
-    if (sqlite3_prepare_v2(lnav_data.ld_db.in(),
-                           "ATTACH DATABASE ? as ?",
-                           -1,
-                           stmt.out(),
-                           NULL) != SQLITE_OK) {
-        return;
-    }
-
-    if (sqlite3_bind_text(stmt.in(), 1,
-                          filename.c_str(), filename.length(),
-                          SQLITE_TRANSIENT) != SQLITE_OK) {
-        return;
-    }
-
-    size_t base_start = filename.find_last_of("/\\");
-    string db_name;
-
-    if (base_start == string::npos) {
-        db_name = filename;
-    }
-    else {
-        db_name = filename.substr(base_start + 1);
-    }
-
-    db_name_converter.GlobalReplace("_", &db_name);
-
-    if (sqlite3_bind_text(stmt.in(), 2,
-                          db_name.c_str(), db_name.length(),
-                          SQLITE_TRANSIENT) != SQLITE_OK) {
-        return;
-    }
-
-    sqlite3_step(stmt.in());
-}
-
 /**
  * Functor used to compare files based on their device and inode number.
  */
@@ -2411,7 +2103,7 @@ static void watch_logfile(string filename, int fd, bool required)
             switch (ff) {
             case FF_SQLITE_DB:
                 lnav_data.ld_other_files.push_back(filename);
-                attach_sqlite_db(filename);
+                attach_sqlite_db(lnav_data.ld_db.in(), filename);
                 break;
 
             default:
@@ -3182,15 +2874,6 @@ private:
 #endif
 };
 
-void ensure_dotlnav(void)
-{
-    string path = dotlnav_path("");
-
-    if (!path.empty()) {
-        mkdir(path.c_str(), 0755);
-    }
-}
-
 static void setup_highlights(textview_curses::highlight_map_t &hm)
 {
     hm["$sql"] = textview_curses::
@@ -3229,13 +2912,6 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
                   highlighter(xpcre_compile(
                                   "^#\\s*(?:if|ifndef|ifdef|else|define|undef|endif)\\b"));
 }
-
-extern "C" {
-int RegisterExtensionFunctions(sqlite3 *db);
-}
-
-int register_network_extension_functions(sqlite3 *db);
-int register_fs_extension_functions(sqlite3 *db);
 
 int sql_progress(const struct log_cursor &lc)
 {
@@ -3284,9 +2960,7 @@ int main(int argc, char *argv[])
     {
         int register_collation_functions(sqlite3 * db);
 
-        RegisterExtensionFunctions(lnav_data.ld_db.in());
-        register_network_extension_functions(lnav_data.ld_db.in());
-        register_fs_extension_functions(lnav_data.ld_db.in());
+        register_sqlite_funcs(lnav_data.ld_db.in(), sqlite_registration_funcs);
         register_collation_functions(lnav_data.ld_db.in());
     }
 

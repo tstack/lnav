@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2007-2013, Timothy Stack
  *
  * All rights reserved.
  *
@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include <sys/types.h>
 
 #include <string>
@@ -55,6 +56,8 @@ struct byte_array {
     };
 
     void to_string(char *buffer) const {
+        assert(buffer != NULL);
+
         for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
             snprintf(&buffer[lpc * 2], 3, "%02x", this->ba_data[lpc]);
         }
@@ -67,6 +70,7 @@ struct byte_array {
         return std::string(buffer);
     }
 
+    const unsigned char *in() const { return this->ba_data; };
     unsigned char *out() { return this->ba_data; };
 
     unsigned char ba_data[BYTE_COUNT];

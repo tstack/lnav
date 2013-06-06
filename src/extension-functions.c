@@ -143,6 +143,8 @@ SQLITE_EXTENSION_INIT1
 #include <stdint.h>
 #include <inttypes.h>
 
+#include "sqlite-extension-func.h"
+
 /*
 ** Simple binary tree implementation to use in median, mode and quartile calculations
 ** Tree is not necessarily balanced. That would require something like red&black trees of AVL
@@ -1704,15 +1706,9 @@ static void differenceFunc(sqlite3_context *context, int argc, sqlite3_value **a
 ** functions.  This should be the only routine in this file with
 ** external linkage.
 */
-int RegisterExtensionFunctions(sqlite3 *db){
-  static const struct FuncDef {
-     char *zName;
-     signed char nArg;
-     u8 argType;           /* 0: none.  1: db  2: (-1) */
-     u8 eTextRep;          /* 1: UTF-16.  0: UTF-8 */
-     u8 needCollSeq;
-     void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
-  } aFuncs[] = {
+int common_extension_functions(const struct FuncDef **basic_funcs,
+                               const struct FuncDefAgg **agg_funcs) {
+  static const struct FuncDef aFuncs[] = {
     /* math.h */
     { "acos",               1, 0, SQLITE_UTF8,    0, acosFunc  },
     { "asin",               1, 0, SQLITE_UTF8,    0, asinFunc  },
@@ -1770,16 +1766,11 @@ int RegisterExtensionFunctions(sqlite3 *db){
     { "padc",               2, 0, SQLITE_UTF8,    0, padcFunc },
     { "strfilter",          2, 0, SQLITE_UTF8,    0, strfilterFunc },
 
+    { NULL }
   };
+
   /* Aggregate functions */
-  static const struct FuncDefAgg {
-    char *zName;
-    signed char nArg;
-    u8 argType;
-    u8 needCollSeq;
-    void (*xStep)(sqlite3_context*,int,sqlite3_value**);
-    void (*xFinalize)(sqlite3_context*);
-  } aAggs[] = {
+  static const struct FuncDefAgg aAggs[] = {
     { "stdev",            1, 0, 0, varianceStep, stdevFinalize  },
     { "stddev",            1, 0, 0, varianceStep, stdevFinalize  },
     { "variance",         1, 0, 0, varianceStep, varianceFinalize  },
@@ -1787,51 +1778,14 @@ int RegisterExtensionFunctions(sqlite3 *db){
     { "median",           1, 0, 0, modeStep,     medianFinalize  },
     { "lower_quartile",   1, 0, 0, modeStep,     lower_quartileFinalize  },
     { "upper_quartile",   1, 0, 0, modeStep,     upper_quartileFinalize  },
+
+    { NULL }
   };
-  int i;
 
-  for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    void *pArg = 0;
-    switch( aFuncs[i].argType ){
-      case 1: pArg = db; break;
-      case 2: pArg = (void *)(-1); break;
-    }
-    //sqlite3CreateFunc
-    /* LMH no error checking */
-    sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
-        aFuncs[i].eTextRep, pArg, aFuncs[i].xFunc, 0, 0);
-#if 0
-    if( aFuncs[i].needCollSeq ){
-      struct FuncDef *pFunc = sqlite3FindFunction(db, aFuncs[i].zName,
-          strlen(aFuncs[i].zName), aFuncs[i].nArg, aFuncs[i].eTextRep, 0);
-      if( pFunc && aFuncs[i].needCollSeq ){
-        pFunc->needCollSeq = 1;
-      }
-    }
-#endif
-  }
+  *basic_funcs = aFuncs;
+  *agg_funcs = aAggs;
 
-  for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
-    void *pArg = 0;
-    switch( aAggs[i].argType ){
-      case 1: pArg = db; break;
-      case 2: pArg = (void *)(-1); break;
-    }
-    //sqlite3CreateFunc
-    /* LMH no error checking */
-    sqlite3_create_function(db, aAggs[i].zName, aAggs[i].nArg, SQLITE_UTF8,
-        pArg, 0, aAggs[i].xStep, aAggs[i].xFinalize);
-#if 0
-    if( aAggs[i].needCollSeq ){
-      struct FuncDefAgg *pFunc = sqlite3FindFunction( db, aAggs[i].zName,
-          strlen(aAggs[i].zName), aAggs[i].nArg, SQLITE_UTF8, 0);
-      if( pFunc && aAggs[i].needCollSeq ){
-        pFunc->needCollSeq = 1;
-      }
-    }
-#endif
-  }
-  return 0;
+  return SQLITE_OK;
 }
 
 #ifdef COMPILE_SQLITE_EXTENSIONS_AS_LOADABLE_MODULE

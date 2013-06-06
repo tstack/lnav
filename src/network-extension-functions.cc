@@ -41,6 +41,8 @@
 
 #include "sqlite3.h"
 
+#include "sqlite-extension-func.h"
+
 static void sql_gethostbyname(sqlite3_context *context,
                               int argc, sqlite3_value **argv)
 {
@@ -138,35 +140,17 @@ static void sql_gethostbyaddr(sqlite3_context *context,
     sqlite3_result_text(context, buffer, -1, SQLITE_TRANSIENT);
 }
 
-int register_network_extension_functions(sqlite3 *db)
+int network_extension_functions(const struct FuncDef **basic_funcs,
+                                const struct FuncDefAgg **agg_funcs)
 {
-    static const struct {
-        const char *name;
-        char        narg;
-        uint8_t     text_rep;
-        void        (*func)(sqlite3_context *, int, sqlite3_value **);
-    } plain_funcs[] = {
-        { "gethostbyname", 1, SQLITE_UTF8, sql_gethostbyname },
-        { "gethostbyaddr", 1, SQLITE_UTF8, sql_gethostbyaddr },
+    static const struct FuncDef network_funcs[] = {
+        { "gethostbyname", 1, 0, SQLITE_UTF8, 0, sql_gethostbyname },
+        { "gethostbyaddr", 1, 0, SQLITE_UTF8, 0, sql_gethostbyaddr },
 
         { NULL }
     };
 
-    int retval;
-
-    for (int lpc = 0; plain_funcs[lpc].name; lpc++) {
-        retval = sqlite3_create_function(db,
-                                         plain_funcs[lpc].name,
-                                         plain_funcs[lpc].narg,
-                                         plain_funcs[lpc].text_rep,
-                                         NULL,
-                                         plain_funcs[lpc].func,
-                                         NULL,
-                                         NULL);
-        if (retval != SQLITE_OK) {
-            return retval;
-        }
-    }
+    *basic_funcs = network_funcs;
 
     return SQLITE_OK;
 }

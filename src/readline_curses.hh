@@ -237,8 +237,21 @@ public:
 
     void line_ready(const char *line);
 
-    void add_possibility(int context, std::string type, std::string value);
-    void rem_possibility(int context, std::string type, std::string value);
+    void add_possibility(int context,
+                         const std::string &type,
+                         const std::string &value);
+
+    void add_possibility(int context,
+                         const std::string &type,
+                         const char *values[]) {
+        for (int lpc = 0; values[lpc]; lpc++) {
+            this->add_possibility(context, type, values[lpc]);
+        }
+    };
+
+    void rem_possibility(int context,
+                         const std::string &type,
+                         const std::string &value);
     void clear_possibilities(int context, std::string type);
 
 private:

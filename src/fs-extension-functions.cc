@@ -38,6 +38,8 @@
 
 #include "sqlite3.h"
 
+#include "sqlite-extension-func.h"
+
 static void sql_basename(sqlite3_context *context,
                          int argc, sqlite3_value **argv)
 {
@@ -155,36 +157,19 @@ static void sql_joinpath(sqlite3_context *context,
     sqlite3_result_text(context, full_path.c_str(), -1, SQLITE_TRANSIENT);
 }
 
-int register_fs_extension_functions(sqlite3 *db)
+int fs_extension_functions(const struct FuncDef **basic_funcs,
+                           const struct FuncDefAgg **agg_funcs)
 {
-    static const struct {
-        const char *name;
-        char        narg;
-        uint8_t     text_rep;
-        void        (*func)(sqlite3_context *, int, sqlite3_value **);
-    } plain_funcs[] = {
-        { "basename", 1, SQLITE_UTF8, sql_basename },
-        { "dirname", 1, SQLITE_UTF8, sql_dirname },
-        { "joinpath", -1, SQLITE_UTF8, sql_joinpath },
+    static const struct FuncDef fs_funcs[] = {
+        { "basename", 1, 0, SQLITE_UTF8, 0, sql_basename },
+        { "dirname", 1, 0, SQLITE_UTF8, 0, sql_dirname },
+        { "joinpath", -1, 0, SQLITE_UTF8, 0, sql_joinpath },
 
         { NULL }
     };
 
-    int retval;
-
-    for (int lpc = 0; plain_funcs[lpc].name; lpc++) {
-        retval = sqlite3_create_function(db,
-                                         plain_funcs[lpc].name,
-                                         plain_funcs[lpc].narg,
-                                         plain_funcs[lpc].text_rep,
-                                         NULL,
-                                         plain_funcs[lpc].func,
-                                         NULL,
-                                         NULL);
-        if (retval != SQLITE_OK) {
-            return retval;
-        }
-    }
+    *basic_funcs = fs_funcs;
+    *agg_funcs = NULL;
 
     return SQLITE_OK;
 }
