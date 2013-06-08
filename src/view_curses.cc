@@ -237,6 +237,17 @@ view_colors::view_colors()
 void view_colors::init(void)
 {
     if (has_colors()) {
+        static int ansi_colors_to_curses[] = {
+            COLOR_BLACK,
+            COLOR_RED,
+            COLOR_GREEN,
+            COLOR_YELLOW,
+            COLOR_BLUE,
+            COLOR_MAGENTA,
+            COLOR_CYAN,
+            COLOR_WHITE,
+        };
+
         start_color();
 
         /* use_default_colors(); */
@@ -261,6 +272,14 @@ void view_colors::init(void)
         init_pair(VC_WHITE_ON_GREEN, COLOR_WHITE, COLOR_GREEN);
 
         init_pair(VC_GRAY, COLOR_BLACK, COLOR_BLACK);
+
+        for (int fg = 0; fg < 8; fg++) {
+            for (int bg = 0; bg < 8; bg++) {
+                init_pair(ansi_color_pair_index(fg, bg),
+                          ansi_colors_to_curses[fg],
+                          ansi_colors_to_curses[bg]);
+            }
+        }
 
         for (int lpc = 0; lpc < 8; lpc++) {
             short gradient_value = (1000 / 8) * lpc;

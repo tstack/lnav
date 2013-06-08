@@ -414,7 +414,18 @@ public:
 
         VC_GRAY,
 
+        VC_ANSI_START,
+        VC_ANSI_END = VC_ANSI_START + (8 * 8),
+
         VC_GRADIENT_START,
+    };
+
+    static inline int ansi_color_pair_index(int fg, int bg) {
+        return VC_ANSI_START + ((fg * 8) + bg);
+    };
+
+    int ansi_color_pair(int fg, int bg) {
+        return COLOR_PAIR(ansi_color_pair_index(fg, bg));
     };
 
 private:

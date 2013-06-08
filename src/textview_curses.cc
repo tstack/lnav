@@ -32,6 +32,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "pcrepp.hh"
 #include "lnav_util.hh"
 #include "data_parser.hh"
 #include "textview_curses.hh"
@@ -55,111 +56,92 @@ public:
 
     void scrub_value(string &str, string_attrs_t &sa)
     {
-        vector<line_range> range_queue;
+        view_colors &vc = view_colors::singleton();
         vector<pair<string, string_attr_t> > attr_queue;
-        int rc, matches[60];
+        pcre_context_static<60> context;
+        vector<line_range> range_queue;
+        pcre_input pi(str);
 
-        do {
-            rc = pcre_exec(this->as_pcre,
-                           NULL,
-                           str.c_str(),
-                           str.size(),
-                           0,
-                           0,
-                           matches,
-                           60);
-            if (rc > 0) {
-                int c_start = matches[0];
-                int c_end   = matches[1];
-                struct line_range lr;
-                bool has_attrs = false;
-                int  attrs     = 0;
-                int  lpc;
+        while (this->as_regex.match(context, pi)) {
+            pcre_context::capture_t *caps = context.all();
+            struct line_range lr;
+            bool has_attrs = false;
+            int  attrs     = 0;
+            int  bg = 0;
+            int  fg = 0;
+            int  lpc;
 
-                switch (str[matches[4]]) {
-                case 'm':
-                    for (lpc = matches[2];
-                         lpc != (int)string::npos && lpc < matches[3]; ) {
-                        int ansi_code = 0;
+            switch (pi.get_substr_start(&caps[2])[0]) {
+            case 'm':
+                for (lpc = caps[1].c_begin;
+                     lpc != (int)string::npos && lpc < caps[1].c_end; ) {
+                    int ansi_code = 0;
 
-                        if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
-                            switch (ansi_code) {
-                            case 1:
-                                attrs |= A_BOLD;
-                                break;
-
-                            case 2:
-                                attrs |= A_DIM;
-                                break;
-
-                            case 4:
-                                attrs |= A_UNDERLINE;
-                                break;
-
-                            case 7:
-                                attrs |= A_REVERSE;
-                                break;
-
-                            case 31:
-                                attrs |= COLOR_PAIR(view_colors::VC_RED);
-                                break;
-
-                            case 32:
-                                attrs |= COLOR_PAIR(view_colors::VC_GREEN);
-                                break;
-
-                            case 33:
-                                attrs |= COLOR_PAIR(view_colors::VC_YELLOW);
-                                break;
-
-                            case 34:
-                                attrs |= COLOR_PAIR(view_colors::VC_BLUE);
-                                break;
-
-                            case 35:
-                                attrs |= COLOR_PAIR(view_colors::VC_MAGENTA);
-                                break;
-
-                            case 36:
-                                attrs |= COLOR_PAIR(view_colors::VC_CYAN);
-                                break;
-
-                            case 37:
-                                attrs |= COLOR_PAIR(view_colors::VC_WHITE);
-                                break;
-                            }
+                    if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
+                        if (90 <= ansi_code && ansi_code <= 97) {
+                            ansi_code -= 60;
+                            attrs |= A_STANDOUT;
                         }
-                        lpc = str.find(";", lpc);
-                        if (lpc != (int)string::npos) {
-                            lpc += 1;
+                        if (30 <= ansi_code && ansi_code <= 37) {
+                            fg = ansi_code - 30;
+                        }
+                        if (40 <= ansi_code && ansi_code <= 47) {
+                            bg = ansi_code - 40;
+                        }
+                        switch (ansi_code) {
+                        case 1:
+                            attrs |= A_BOLD;
+                            break;
+
+                        case 2:
+                            attrs |= A_DIM;
+                            break;
+
+                        case 4:
+                            attrs |= A_UNDERLINE;
+                            break;
+
+                        case 7:
+                            attrs |= A_REVERSE;
+                            break;
                         }
                     }
-                    has_attrs = true;
-                    break;
+                    lpc = str.find(";", lpc);
+                    if (lpc != (int)string::npos) {
+                        lpc += 1;
+                    }
+                }
+                if (fg != 0 || bg != 0) {
+                    attrs |= vc.ansi_color_pair(fg, bg);
+                }
+                has_attrs = true;
+                break;
 
-                case 'C':
+            case 'C':
                 {
                     int spaces = 0;
 
-                    if (sscanf(&(str[matches[2]]), "%d", &spaces) == 1) {
-                        str.insert(c_end, spaces, ' ');
+                    if (sscanf(&(str[caps[1].c_begin]), "%d", &spaces) == 1) {
+                        str.insert(caps[0].c_end, spaces, ' ');
                     }
                 }
                 break;
-                }
-                str.erase(str.begin() + c_start, str.begin() + c_end);
-
-                if (has_attrs) {
-                    if (!range_queue.empty()) {
-                        range_queue.back().lr_end = c_start;
-                    }
-                    lr.lr_start = c_start;
-                    lr.lr_end   = -1;
-                    range_queue.push_back(lr);
-                    attr_queue.push_back(make_string_attr("style", attrs));
-                }
             }
-        } while (rc > 0);
+            str.erase(str.begin() + caps[0].c_begin,
+                      str.begin() + caps[0].c_end);
+
+            if (has_attrs) {
+                if (!range_queue.empty()) {
+                    range_queue.back().lr_end = caps[0].c_begin;
+                }
+                lr.lr_start = caps[0].c_begin;
+                lr.lr_end   = -1;
+                range_queue.push_back(lr);
+                attr_queue.push_back(make_string_attr("style", attrs));
+            }
+
+            pi.reset(str);
+        }
 
         for (size_t lpc = 0; lpc < range_queue.size(); lpc++) {
             sa[range_queue[lpc]].insert(attr_queue[lpc]);
@@ -167,26 +149,11 @@ public:
     };
 
 private:
-    pcre *build_pcre(const char *pattern) /* XXX refactor me */
-    {
-        const char *errptr;
-        pcre *      retval;
-        int         eoff;
-
-        retval = pcre_compile(pattern, 0, &errptr, &eoff, NULL);
-        if (retval == NULL) {
-            throw errptr;
-        }
-
-        return retval;
-    };
-
     ansi_scrubber()
-    {
-        this->as_pcre = this->build_pcre("\x1b\\[([\\d=;]*)([a-zA-Z])");
+        : as_regex("\x1b\\[([\\d=;]*)([a-zA-Z])") {
     };
 
-    pcre *as_pcre;
+    pcrepp as_regex;
 };
 
 textview_curses::textview_curses()

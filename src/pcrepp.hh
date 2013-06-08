@@ -191,6 +191,22 @@ public:
                            iter->length());
     };
 
+    void reset(const char *str, size_t off = 0, size_t len = -1) {
+        this->pi_string = str;
+        this->pi_offset = off;
+        this->pi_next_offset = off;
+        if (this->pi_length == (size_t)-1) {
+            this->pi_length = strlen(str);
+        }
+        else {
+            this->pi_length = len;
+        }
+    }
+
+    void reset(const std::string &str, size_t off = 0) {
+        this->reset(str.c_str(), off, str.length());
+    }
+
     size_t pi_offset;
     size_t pi_next_offset;
     size_t pi_length;

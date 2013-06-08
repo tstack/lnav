@@ -156,6 +156,7 @@ dist_noinst_SCRIPTS = \
 	test_vt52_curses.sh
 
 dist_noinst_DATA = \
+	ansi-colors.0.in \
 	datafile_simple.0 \
 	datafile_simple.1 \
 	datafile_simple.2 \
