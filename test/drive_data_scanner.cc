@@ -165,6 +165,7 @@ int main(int argc, char *argv[])
                 }
 
                 fclose(data_parser::TRACE_FILE);
+                data_parser::TRACE_FILE = NULL;
             }
         }
     }
