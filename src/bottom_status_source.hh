@@ -65,6 +65,7 @@ public:
           percent_wire(*this, &bottom_status_source::update_percent),
           marks_wire(*this, &bottom_status_source::update_marks),
           hits_wire(*this, &bottom_status_source::update_hits),
+          bss_prompt(80, view_colors::VCR_STATUS),
           bss_error(80, view_colors::VCR_ALERT_STATUS),
           bss_hit_spinner(0),
           bss_load_percent(0)
@@ -95,6 +96,10 @@ public:
 
     status_field &get_field(field_t id) { return this->bss_fields[id]; };
 
+    void set_prompt(const std::string &prompt) {
+        this->bss_prompt.set_value(prompt);
+    };
+
     void grep_error(std::string msg)
     {
         this->bss_error.set_value(msg);
@@ -104,7 +109,7 @@ public:
     {
         size_t retval;
 
-        if (this->bss_error.empty()) {
+        if (this->bss_prompt.empty() && this->bss_error.empty()) {
             retval = BSF__MAX;
         }
         else{
@@ -116,11 +121,14 @@ public:
 
     status_field &statusview_value_for_field(int field)
     {
-        if (this->bss_error.empty()) {
-            return this->get_field((field_t)field);
+        if (!this->bss_prompt.empty()) {
+            return this->bss_prompt;
         }
-        else{
+        else if (!this->bss_error.empty()) {
             return this->bss_error;
+        }
+        else {
+            return this->get_field((field_t)field);
         }
     };
 
@@ -251,6 +259,7 @@ public:
     };
 
 private:
+    status_field bss_prompt;
     status_field bss_error;
     status_field bss_fields[BSF__MAX];
     int          bss_hit_spinner;

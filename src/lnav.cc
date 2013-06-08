@@ -1360,6 +1360,7 @@ static void handle_paging_key(int ch)
         }
         lnav_data.ld_mode = LNM_COMMAND;
         lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
+        lnav_data.ld_bottom_source.set_prompt("Enter an lnav command:");
         break;
 
     case '/':
@@ -1367,6 +1368,8 @@ static void handle_paging_key(int ch)
         lnav_data.ld_search_start_line = lnav_data.ld_view_stack.top()->
                                          get_top();
         lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
+        lnav_data.ld_bottom_source.set_prompt(
+            "Enter a regular expression to search for:");
         break;
 
     case ';':
@@ -1389,6 +1392,8 @@ static void handle_paging_key(int ch)
                 fos->fos_active = true;
                 tc->reload_data();
             }
+            lnav_data.ld_bottom_source.set_prompt(
+                "Enter an SQL query:");
         }
         break;
 
@@ -1814,6 +1819,8 @@ static void rl_search(void *dummy, readline_curses *rc)
 
 static void rl_callback(void *dummy, readline_curses *rc)
 {
+    lnav_data.ld_bottom_source.set_prompt("");
+    
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
         assert(0);
