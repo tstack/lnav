@@ -167,7 +167,7 @@ class access_log_format : public log_format {
                 { "cs_version",
                   logline_value::VALUE_TEXT                              },
                 { "sc_status",
-                  logline_value::VALUE_INTEGER                           },
+                  logline_value::VALUE_TEXT                              },
                 { "sc_bytes",
                   logline_value::VALUE_INTEGER                           },
                 { "cs_referer",
@@ -696,7 +696,7 @@ class glog_log_format : public log_format {
                 { "micros",   logline_value::VALUE_INTEGER       },
                 { "thread",   logline_value::VALUE_TEXT          },
                 { "src_file", logline_value::VALUE_TEXT          },
-                { "src_line", logline_value::VALUE_INTEGER       },
+                { "src_line", logline_value::VALUE_TEXT          },
                 { "message",  logline_value::VALUE_TEXT          },
 
                 { NULL }

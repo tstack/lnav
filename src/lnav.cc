@@ -2692,7 +2692,7 @@ public:
         cols.push_back(vtab_column("cs_uri_stem", SQLITE3_TEXT));
         cols.push_back(vtab_column("cs_uri_query", SQLITE3_TEXT));
         cols.push_back(vtab_column("cs_version", SQLITE3_TEXT));
-        cols.push_back(vtab_column("sc_status", SQLITE_INTEGER));
+        cols.push_back(vtab_column("sc_status", SQLITE_TEXT));
         cols.push_back(vtab_column("sc_bytes", SQLITE_INTEGER));
         cols.push_back(vtab_column("cs_referer", SQLITE3_TEXT));
         cols.push_back(vtab_column("cs_user_agent", SQLITE3_TEXT));
@@ -2723,7 +2723,7 @@ public:
         cols.push_back(vtab_column("micros", SQLITE_INTEGER));
         cols.push_back(vtab_column("thread", SQLITE3_TEXT));
         cols.push_back(vtab_column("src_file", SQLITE3_TEXT));
-        cols.push_back(vtab_column("src_line", SQLITE_INTEGER));
+        cols.push_back(vtab_column("src_line", SQLITE_TEXT));
         cols.push_back(vtab_column("message", SQLITE3_TEXT));
     };
 };
