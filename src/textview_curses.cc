@@ -105,7 +105,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
     this->tc_sub_source->text_value_for_line(*this, row, str);
     this->tc_sub_source->text_attrs_for_line(*this, row, sa);
 
-    ansi_scrubber::singleton().scrub_value(str, sa);
+    scrub_ansi_string(str, sa);
 
     for (iter = this->tc_highlights.begin();
          iter != this->tc_highlights.end();

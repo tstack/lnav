@@ -25,6 +25,13 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file test_ansi_scrubber.cc
+ *
+ * Test for the scrub_ansi_string function.
+ *
+ * TODO: Add a test for the ansi-colors.0.in file.  It has a matrix of all the
+ * color/style combinations.
  */
 
 #include "config.h"
@@ -35,20 +42,19 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    ansi_scrubber &as = ansi_scrubber::singleton();
     view_colors &vc = view_colors::singleton();
     string_attrs_t::iterator iter;
     string_attrs_t sa;
     string str_cp;
 
     str_cp = "Hello, World!";
-    as.scrub_value(str_cp, sa);
+    scrub_ansi_string(str_cp, sa);
 
     assert(str_cp == "Hello, World!");
     assert(sa.empty());
 
     str_cp = "Hello\x1b[44;m, \x1b[33;mWorld\x1b[0;m!";
-    as.scrub_value(str_cp, sa);
+    scrub_ansi_string(str_cp, sa);
     assert(str_cp == "Hello, World!");
     
     iter = sa.begin();

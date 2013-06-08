@@ -25,6 +25,8 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file ansi_scrubber.hh
  */
 
 #ifndef _ansi_scrubber_hh
@@ -32,26 +34,15 @@
 
 #include <string>
 
-#include "pcrepp.hh"
 #include "view_curses.hh"
 
-class ansi_scrubber {
-public:
-    static ansi_scrubber &singleton()
-    {
-        static ansi_scrubber s_as;
-
-        return s_as;
-    }
-
-    void scrub_value(std::string &str, string_attrs_t &sa);
-
-private:
-    ansi_scrubber()
-        : as_regex("\x1b\\[([\\d=;]*)([a-zA-Z])") {
-    };
-
-    pcrepp as_regex;
-};
+/**
+ * Check a string for ANSI escape sequences, process them, remove them, and add
+ * any style attributes to the given attribute container.
+ * 
+ * @param str The string to check for ANSI escape sequences.
+ * @param sa  The container for any style attributes.
+ */
+void scrub_ansi_string(std::string &str, string_attrs_t &sa);
 
 #endif
