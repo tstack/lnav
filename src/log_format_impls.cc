@@ -575,7 +575,15 @@ class generic_log_format : public log_format {
         lr.lr_end   = lr.lr_start + strlen(timestr);
         sa[lr].insert(make_string_attr("timestamp", 0));
 
-        if (logline::string2level(level) == logline::LEVEL_UNKNOWN) {
+        for (int lpc = 0; level[lpc]; lpc++) {
+            if (!isalpha(level[lpc])) {
+                level[lpc] = '\0';
+                prefix_len = strlen(timestr) + lpc;
+                break;
+            }
+        }
+
+        if (logline::string2level(level, true) == logline::LEVEL_UNKNOWN) {
             prefix_len = strlen(timestr);
         }
 

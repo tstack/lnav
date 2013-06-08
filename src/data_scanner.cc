@@ -96,6 +96,7 @@ static struct {
     { "hex",     pcrepp("(-?(?:0x|[0-9])[0-9a-fA-F]+\\b)"),
     },
 
+    { "cnst",    pcrepp("(true|True|TRUE|false|False|FALSE|None|null)\\b") },
     { "word",    pcrepp(
           "([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|\\.\\s|$))"), },
     { "sym",     pcrepp("([^\";\\s:=,(){}\\[\\]]+)"),

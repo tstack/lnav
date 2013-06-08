@@ -2,6 +2,10 @@
 TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
+simple-db.db: simple-db.sql
+	rm -f $@
+	$(SQLITE3_CMD) $@ < $<
+
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	$(SQLITE3_CFLAGS)
@@ -140,6 +144,7 @@ slicer_SOURCES = \
 scripty_SOURCES = scripty.cc
 
 dist_noinst_SCRIPTS = \
+	parser_debugger.py \
 	test_data_parser.sh \
 	test_grep_proc.sh \
 	test_line_buffer.sh \
@@ -175,6 +180,7 @@ dist_noinst_DATA = \
 	logfile_syslog.1 \
 	logfile_tcsh_history.0 \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
+	simple-db.sql \
 	view_colors_output.0 \
 	vt52_curses_input.0 \
 	vt52_curses_input.1 \
@@ -183,6 +189,9 @@ dist_noinst_DATA = \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
 	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
 	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
+
+nodist_noinst_DATA = \
+	simple-db.db
 
 TESTS = test_bookmarks \
 	test_auto_fd \
@@ -203,6 +212,8 @@ TESTS = test_bookmarks \
 
 DISTCLEANFILES = \
 	*.dat \
+	*.db \
+	*.dpt \
 	*.diff \
 	*.index \
 	*.tmp

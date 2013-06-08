@@ -37,6 +37,8 @@ data_format data_parser::FORMAT_SEMI("semi", DT_COMMA, DT_SEMI);
 data_format data_parser::FORMAT_COMMA("comma", DT_INVALID, DT_COMMA);
 data_format data_parser::FORMAT_PLAIN("plain", DT_INVALID, DT_INVALID);
 
+FILE *data_parser::TRACE_FILE;
+
 data_format_state_t dfs_prefix_next(data_format_state_t state,
                                     data_token_t next_token)
 {
@@ -63,6 +65,7 @@ data_format_state_t dfs_prefix_next(data_format_state_t state,
             break;
         }
         break;
+    case DFS_EXPECTING_SEP:
     case DFS_ERROR:
         retval = DFS_ERROR;
         break;
@@ -108,6 +111,7 @@ data_format_state_t dfs_semi_next(data_format_state_t state,
         }
         break;
 
+    case DFS_EXPECTING_SEP:
     case DFS_ERROR: retval = DFS_ERROR; break;
     }
 
@@ -144,10 +148,26 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
             retval = DFS_INIT;
             break;
 
+        case DT_WORD:
+            retval = DFS_EXPECTING_SEP;
+            break;
+
         case DT_SEMI:
             retval = DFS_ERROR;
             break;
 
+        default: break;
+        }
+        break;
+    case DFS_EXPECTING_SEP:
+        switch (next_token) {
+        case DT_SEPARATOR:
+            retval = DFS_VALUE;
+            break;
+        case DT_COMMA:
+        case DT_SEMI:
+            retval = DFS_ERROR;
+            break;
         default: break;
         }
         break;

@@ -81,7 +81,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = lnav$(EXEEXT)
-noinst_PROGRAMS = bin2c$(EXEEXT)
+noinst_PROGRAMS = bin2c$(EXEEXT) lnav-test$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/config.h.in $(top_srcdir)/mkinstalldirs \
@@ -116,7 +116,8 @@ am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
 	session_data.$(OBJEXT) sequence_matcher.$(OBJEXT) \
 	sqlite-extension-func.$(OBJEXT) statusview_curses.$(OBJEXT) \
-	piper_proc.$(OBJEXT) sql_util.$(OBJEXT) strnatcmp.$(OBJEXT) \
+	string-extension-functions.$(OBJEXT) piper_proc.$(OBJEXT) \
+	sql_util.$(OBJEXT) strnatcmp.$(OBJEXT) \
 	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
 	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT) \
 	xterm_mouse.$(OBJEXT) yajlpp.$(OBJEXT) yajl.$(OBJEXT) \
@@ -137,6 +138,9 @@ lnav_OBJECTS = $(am_lnav_OBJECTS)
 am__DEPENDENCIES_2 = libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 lnav_DEPENDENCIES = help.o $(am__DEPENDENCIES_2)
+am_lnav_test_OBJECTS = lnav.$(OBJEXT) test_override.$(OBJEXT)
+lnav_test_OBJECTS = $(am_lnav_test_OBJECTS)
+lnav_test_DEPENDENCIES = help.o $(am__DEPENDENCIES_2)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -182,8 +186,10 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libdiag_a_SOURCES) $(bin2c_SOURCES) $(lnav_SOURCES)
-DIST_SOURCES = $(libdiag_a_SOURCES) $(bin2c_SOURCES) $(lnav_SOURCES)
+SOURCES = $(libdiag_a_SOURCES) $(bin2c_SOURCES) $(lnav_SOURCES) \
+	$(lnav_test_SOURCES)
+DIST_SOURCES = $(libdiag_a_SOURCES) $(bin2c_SOURCES) $(lnav_SOURCES) \
+	$(lnav_test_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -266,6 +272,7 @@ READLINE_LIBS = @READLINE_LIBS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SQLITE3_CFLAGS = @SQLITE3_CFLAGS@
+SQLITE3_CMD = @SQLITE3_CMD@
 SQLITE3_LDFLAGS = @SQLITE3_LDFLAGS@
 SQLITE3_LIBS = @SQLITE3_LIBS@
 SQLITE3_VERSION = @SQLITE3_VERSION@
@@ -428,6 +435,7 @@ libdiag_a_SOURCES = \
 	sequence_matcher.cc \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
+	string-extension-functions.cc \
 	piper_proc.cc \
 	sql_util.cc \
 	strnatcmp.c \
@@ -455,6 +463,8 @@ libdiag_a_SOURCES = \
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = help.o $(LDADD)
+lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
+lnav_test_LDADD = help.o $(LDADD)
 bin2c_SOURCES = bin2c.c
 DISTCLEANFILES = help.c
 all: config.h
@@ -569,6 +579,10 @@ lnav$(EXEEXT): $(lnav_OBJECTS) $(lnav_DEPENDENCIES) $(EXTRA_lnav_DEPENDENCIES)
 	@rm -f lnav$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(lnav_OBJECTS) $(lnav_LDADD) $(LIBS)
 
+lnav-test$(EXEEXT): $(lnav_test_OBJECTS) $(lnav_test_DEPENDENCIES) $(EXTRA_lnav_test_DEPENDENCIES) 
+	@rm -f lnav-test$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(lnav_test_OBJECTS) $(lnav_test_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -602,7 +616,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sqlite-extension-func.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/statusview_curses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/string-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strnatcmp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_override.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vt52_curses.Po@am__quote@

@@ -133,6 +133,8 @@ int main(int argc, char *argv[])
                     body = find_string_attr_range(sa, "body");
                 }
 
+                data_parser::TRACE_FILE = fopen("scanned.dpt", "w");
+
                 data_scanner ds(sub_line, body.lr_start, sub_line.length());
                 data_parser  dp(&ds);
 
@@ -161,6 +163,8 @@ int main(int argc, char *argv[])
                         retval = EXIT_FAILURE;
                     }
                 }
+
+                fclose(data_parser::TRACE_FILE);
             }
         }
     }

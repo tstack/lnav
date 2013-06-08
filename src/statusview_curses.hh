@@ -162,7 +162,7 @@ public:
 
 protected:
     size_t sf_width;              /*< The maximum display width, in chars. */
-    size_t sf_min_width;          /*< The maximum display width, in chars. */
+    size_t sf_min_width;          /*< The minimum display width, in chars. */
     bool   sf_right_justify;
     bool   sf_cylon;
     size_t sf_cylon_pos;

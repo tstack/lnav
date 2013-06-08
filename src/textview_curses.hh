@@ -137,6 +137,8 @@ public:
             : h_code(code),
               h_multiple(multiple)
         {
+            const char *errptr;
+
             if (!multiple) {
                 if (role == view_colors::VCR_NONE) {
                     this->h_roles.
@@ -145,6 +147,18 @@ public:
                 else {
                     this->h_roles.push_back(role);
                 }
+            }
+            this->h_code_extra = pcre_study(this->h_code, 0, &errptr);
+            if (!this->h_code_extra && errptr) {
+                fprintf(stderr, "pcre_study error: %s\n", errptr);
+            }
+            if (this->h_code_extra != NULL) {
+                pcre_extra *extra = this->h_code_extra;
+
+                extra->flags |= (PCRE_EXTRA_MATCH_LIMIT|
+                                 PCRE_EXTRA_MATCH_LIMIT_RECURSION);
+                extra->match_limit = 10000;
+                extra->match_limit_recursion = 500;
             }
         };
 
@@ -173,6 +187,7 @@ public:
         };
 
         pcre *                           h_code;
+        pcre_extra *h_code_extra;
         bool                             h_multiple;
         std::vector<view_colors::role_t> h_roles;
     };
@@ -207,7 +222,7 @@ public:
                 int rc, matches[60];
 
                 rc = pcre_exec(hl.h_code,
-                               NULL,
+                               hl.h_code_extra,
                                str.c_str(),
                                str.size(),
                                off,

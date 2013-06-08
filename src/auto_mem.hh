@@ -87,7 +87,7 @@ public:
         return retval;
     };
 
-    T *in(void)
+    T *in(void) const
     {
         return this->am_ptr;
     };

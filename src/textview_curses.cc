@@ -262,7 +262,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
             int rc, matches[60];
 
             rc = pcre_exec(iter->second.h_code,
-                           NULL,
+                           iter->second.h_code_extra,
                            str.c_str(),
                            str.size(),
                            off,

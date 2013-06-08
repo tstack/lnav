@@ -186,6 +186,7 @@ char *log_format::log_scanf(const char *line,
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%d %H:%M",
         "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%SZ",
         "%Y/%m/%d %H:%M:%S",
         "%Y/%m/%d %H:%M",
 

@@ -70,6 +70,7 @@ enum data_token_t {
     DT_NUMBER,
     DT_HEX_NUMBER,
 
+    DT_CONSTANT,
     DT_WORD,
     DT_SYMBOL,
     DT_LINE,

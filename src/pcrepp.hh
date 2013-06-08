@@ -224,6 +224,14 @@ public:
         if (!this->p_code_extra && errptr) {
             fprintf(stderr, "pcre_study error: %s\n", errptr);
         }
+        if (this->p_code_extra != NULL) {
+            pcre_extra *extra = this->p_code_extra;
+
+            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT|
+                             PCRE_EXTRA_MATCH_LIMIT_RECURSION);
+            extra->match_limit = 10000;
+            extra->match_limit_recursion = 500;
+        }
     };
 
     pcrepp(const char *pattern, int options = 0)
@@ -243,6 +251,14 @@ public:
         this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
         if (!this->p_code_extra && errptr) {
             fprintf(stderr, "pcre_study error: %s\n", errptr);
+        }
+        if (this->p_code_extra != NULL) {
+            pcre_extra *extra = this->p_code_extra;
+
+            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT|
+                             PCRE_EXTRA_MATCH_LIMIT_RECURSION);
+            extra->match_limit = 10000;
+            extra->match_limit_recursion = 500;
         }
     };
 
@@ -273,7 +289,7 @@ public:
 
         pi.pi_offset = pi.pi_next_offset;
         rc           = pcre_exec(this->p_code,
-                                 this->p_code_extra,
+                                 this->p_code_extra.in(),
                                  pi.get_string(),
                                  pi.pi_length,
                                  pi.pi_offset,

@@ -1,7 +1,7 @@
 
 bin_PROGRAMS = lnav
 
-noinst_PROGRAMS = bin2c
+noinst_PROGRAMS = bin2c lnav-test
 
 noinst_LIBRARIES = libdiag.a
 
@@ -111,6 +111,7 @@ libdiag_a_SOURCES = \
 	sequence_matcher.cc \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
+	string-extension-functions.cc \
 	piper_proc.cc \
 	sql_util.cc \
 	strnatcmp.c \
@@ -138,6 +139,9 @@ libdiag_a_SOURCES = \
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = help.o $(LDADD)
+
+lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
+lnav_test_LDADD = help.o $(LDADD)
 
 bin2c_SOURCES = bin2c.c
 

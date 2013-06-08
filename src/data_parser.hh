@@ -39,6 +39,7 @@
 #include <iterator>
 #include <algorithm>
 
+#include "yajlpp.hh"
 #include "pcrepp.hh"
 #include "byte_array.hh"
 #include "data_scanner.hh"
@@ -109,15 +110,20 @@
  * into the 'bookmarks' table to create new user bookmarks.
  */
 
+#define ELEMENT_LIST_T(var) var("" #var, __FILE__, __LINE__)
+#define PUSH_BACK(elem) push_back(elem, __FILE__, __LINE__)
+#define POP_FRONT(elem) pop_front(__FILE__, __LINE__)
+#define POP_BACK(elem) pop_back(__FILE__, __LINE__)
+#define SPLICE(pos, other, first, last) splice(pos, other, first, last, __FILE__, __LINE__)
 
 template<class Container, class UnaryPredicate>
 void strip(Container &container, UnaryPredicate p)
 {
     while (!container.empty() && p(container.front())) {
-        container.pop_front();
+        container.POP_FRONT();
     }
     while (!container.empty() && p(container.back())) {
-        container.pop_back();
+        container.POP_BACK();
     }
 }
 
@@ -125,6 +131,7 @@ enum data_format_state_t {
     DFS_ERROR = -1,
     DFS_INIT,
     DFS_KEY,
+    DFS_EXPECTING_SEP,
     DFS_VALUE,
 };
 
@@ -147,16 +154,142 @@ data_format_state_t dfs_semi_next(data_format_state_t state,
 data_format_state_t dfs_comma_next(data_format_state_t state,
                                    data_token_t next_token);
 
+#define LIST_INIT_TRACE \
+    do { \
+        if (TRACE_FILE != NULL) { \
+            fprintf(TRACE_FILE, \
+                    "%p %s:%d %s %s\n", \
+                    this, \
+                    fn, line, \
+                    __func__, \
+                    varname); \
+        } \
+    } while (false)
+
+#define LIST_DEINIT_TRACE \
+    do { \
+        if (TRACE_FILE != NULL) { \
+            fprintf(TRACE_FILE, \
+                    "%p %s:%d %s\n", \
+                    this, \
+                    fn, line, \
+                    __func__); \
+        } \
+    } while (false)
+
+#define ELEMENT_TRACE \
+    do { \
+        if (TRACE_FILE != NULL) { \
+            fprintf(TRACE_FILE, \
+                    "%p %s:%d %s %s %d:%d\n", \
+                    this, \
+                    fn, line, \
+                    __func__, \
+                    data_scanner::token2name(elem.e_token), \
+                    elem.e_capture.c_begin, \
+                    elem.e_capture.c_end); \
+        } \
+    } while (false)
+
+#define LIST_TRACE \
+    do { \
+        if (TRACE_FILE != NULL) { \
+            fprintf(TRACE_FILE, \
+                    "%p %s:%d %s\n", \
+                    this, \
+                    fn, line, \
+                    __func__); \
+        } \
+    } while (false)
+
+#define SPLICE_TRACE \
+    do { \
+        if (TRACE_FILE != NULL) { \
+            fprintf(TRACE_FILE, \
+                    "%p %s:%d %s %d %p %d:%d\n", \
+                    this, \
+                    fn, line, \
+                    __func__, \
+                    (int)std::distance(this->begin(), pos), \
+                    &other, \
+                    (int)std::distance(other.begin(), first), \
+                    (int)std::distance(last, other.end())); \
+        } \
+    } while (false);
+
+#define POINT_TRACE(name) \
+    do { \
+        if (TRACE_FILE) { \
+            fprintf(TRACE_FILE, \
+                    "0x0 %s:%d point %s\n", \
+                    __FILE__, __LINE__, \
+                    name); \
+        } \
+    } while(false);
+
 class data_parser {
 public:
     static data_format FORMAT_SEMI;
     static data_format FORMAT_COMMA;
     static data_format FORMAT_PLAIN;
 
+    static FILE *TRACE_FILE;
+
     typedef byte_array<SHA_DIGEST_LENGTH>     schema_id_t;
 
     struct element;
-    typedef std::list<element> element_list_t;
+    // typedef std::list<element> element_list_t;
+
+    class element_list_t : public std::list<element> {
+    public:
+        element_list_t(const char *varname, const char *fn, int line) {
+            LIST_INIT_TRACE;
+        }
+
+        element_list_t() {
+            const char *varname = "_anon2_";
+            const char *fn = __FILE__;
+            int line = __LINE__;
+
+            LIST_INIT_TRACE;
+        };
+
+        ~element_list_t() {
+            const char *fn = __FILE__;
+            int line = __LINE__;
+
+            LIST_DEINIT_TRACE;
+        };
+
+        void push_back(const element &elem, const char *fn, int line) {
+            ELEMENT_TRACE;
+
+            this->std::list<element>::push_back(elem);
+        };
+
+        void pop_front(const char *fn, int line) {
+            LIST_TRACE;
+
+            this->std::list<element>::pop_front();
+        };
+
+        void pop_back(const char *fn, int line) {
+            LIST_TRACE;
+
+            this->std::list<element>::pop_back();
+        };
+
+        void splice(iterator pos,
+                    element_list_t &other,
+                    iterator first,
+                    iterator last,
+                    const char *fn,
+                    int line) {
+            SPLICE_TRACE;
+
+            this->std::list<element>::splice(pos, other, first, last);
+        }
+    };
 
     struct element {
         element() : e_token(DT_INVALID), e_sub_elements(NULL) { };
@@ -207,7 +340,7 @@ public:
         void                    assign_elements(element_list_t &subs)
         {
             if (this->e_sub_elements == NULL) {
-                this->e_sub_elements = new element_list_t();
+                this->e_sub_elements = new element_list_t("_sub_", __FILE__, __LINE__);
             }
             this->e_sub_elements->swap(subs);
             this->update_capture();
@@ -315,19 +448,29 @@ private:
         data_token_t ei_token;
     };
 
-    data_parser(data_scanner *ds) : dp_format(NULL), dp_scanner(ds) { };
+    data_parser(data_scanner *ds)
+        : dp_errors("dp_errors", __FILE__, __LINE__),
+          dp_pairs("dp_pairs", __FILE__, __LINE__),
+          dp_format(NULL),
+          dp_scanner(ds) {
+        if (TRACE_FILE != NULL) {
+            fprintf(TRACE_FILE, "input %s\n", ds->get_input().get_string());
+        }
+    };
 
     void pairup(schema_id_t *schema, element_list_t &pairs_out,
                 element_list_t &in_list)
     {
-        element_list_t el_stack, free_row, key_comps, value, prefix;
+        element_list_t ELEMENT_LIST_T(el_stack), ELEMENT_LIST_T(free_row), ELEMENT_LIST_T(key_comps), ELEMENT_LIST_T(value), ELEMENT_LIST_T(prefix);
         SHA_CTX        context;
+
+        POINT_TRACE("pairup_start");
 
         for (element_list_t::iterator iter = in_list.begin();
              iter != in_list.end();
              ++iter) {
             if (iter->e_token == DNT_GROUP) {
-                element_list_t group_pairs;
+                element_list_t ELEMENT_LIST_T(group_pairs);
 
                 this->pairup(NULL, group_pairs, *iter->e_sub_elements);
                 if (!group_pairs.empty()) {
@@ -338,7 +481,7 @@ private:
             if (iter->e_token == this->dp_format->df_terminator) {
                 std::vector<element> key_copy;
 
-                value.splice(value.end(),
+                value.SPLICE(value.end(),
                              key_comps,
                              key_comps.begin(),
                              key_comps.end());
@@ -346,11 +489,11 @@ private:
                 strip(value, element_if(DT_WHITE));
                 value.remove_if(element_if(DT_COMMA));
                 if (!value.empty()) {
-                    el_stack.push_back(element(value, DNT_VALUE));
+                    el_stack.PUSH_BACK(element(value, DNT_VALUE));
                 }
                 value.clear();
 
-                key_comps.push_back(*iter);
+                key_comps.PUSH_BACK(*iter);
             }
             else if (iter->e_token == DT_SEPARATOR) {
                 element_list_t::iterator key_iter = key_comps.end();
@@ -360,12 +503,13 @@ private:
                     --key_iter;
                     if (key_iter->e_token == this->dp_format->df_appender) {
                         ++key_iter;
-                        value.splice(value.end(),
+                        value.SPLICE(value.end(),
                                      key_comps,
                                      key_comps.begin(),
                                      key_iter);
-                        key_comps.splice(key_comps.begin(),
+                        key_comps.SPLICE(key_comps.begin(),
                                          key_comps,
+                                         --(key_comps.end()),
                                          key_comps.end());
                         key_comps.resize(1);
                         found = true;
@@ -374,12 +518,12 @@ private:
                              this->dp_format->df_terminator) {
                         std::vector<element> key_copy;
 
-                        value.splice(value.end(),
+                        value.SPLICE(value.end(),
                                      key_comps,
                                      key_comps.begin(),
                                      key_iter);
                         ++key_iter;
-                        key_comps.pop_front();
+                        key_comps.POP_FRONT();
                         strip(key_comps, element_if(DT_WHITE));
                         found = true;
                     }
@@ -395,41 +539,46 @@ private:
                         continue;
                     }
 
-                    value.splice(value.end(),
+                    value.SPLICE(value.end(),
                                  key_comps,
                                  key_comps.begin(),
                                  key_comps.end());
                     value_iter = value.end();
                     std::advance(value_iter, -1);
-                    key_comps.splice(key_comps.begin(),
+                    key_comps.SPLICE(key_comps.begin(),
                                      value,
-                                     value_iter);
+                                     value_iter,
+                                     value.end());
                     key_comps.resize(1);
                 }
 
                 strip(value, element_if(DT_WHITE));
                 value.remove_if(element_if(DT_COMMA));
                 if (!value.empty()) {
-                    el_stack.push_back(element(value, DNT_VALUE));
+                    el_stack.PUSH_BACK(element(value, DNT_VALUE));
                 }
                 strip(key_comps, element_if(DT_WHITE));
                 if (!key_comps.empty()) {
-                    el_stack.push_back(element(key_comps, DNT_KEY, false));
+                    el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
                 }
                 key_comps.clear();
                 value.clear();
             }
             else {
-                key_comps.push_back(*iter);
+                key_comps.PUSH_BACK(*iter);
             }
+
+            POINT_TRACE("pairup_loop");
         }
 
+        POINT_TRACE("pairup_eol");
+
         if (el_stack.empty()) {
-            free_row.splice(free_row.begin(),
+            free_row.SPLICE(free_row.begin(),
                             key_comps, key_comps.begin(), key_comps.end());
         }
         else {
-            value.splice(value.begin(),
+            value.SPLICE(value.begin(),
                          key_comps,
                          key_comps.begin(),
                          key_comps.end());
@@ -438,72 +587,74 @@ private:
             strip(value, element_if(DT_WHITE));
             value.remove_if(element_if(DT_COMMA));
             if (!value.empty()) {
-                el_stack.push_back(element(value, DNT_VALUE));
+                el_stack.PUSH_BACK(element(value, DNT_VALUE));
             }
         }
+
+        POINT_TRACE("pairup_stack");
 
         SHA_Init(&context);
         while (!el_stack.empty()) {
             element_list_t::iterator kv_iter = el_stack.begin();
             if (kv_iter->e_token == DNT_VALUE) {
                 if (pairs_out.empty()) {
-                    free_row.push_back(el_stack.front());
+                    free_row.PUSH_BACK(el_stack.front());
                 }
                 else {
-                    element_list_t free_pair_subs;
+                    element_list_t ELEMENT_LIST_T(free_pair_subs);
                     struct element blank;
 
                     blank.e_capture.c_begin = blank.e_capture.c_end =
                         el_stack.front().e_capture.c_begin;
                     blank.e_token = DNT_KEY;
-                    free_pair_subs.push_back(blank);
-                    free_pair_subs.push_back(el_stack.front());
-                    pairs_out.push_back(element(free_pair_subs, DNT_PAIR));
+                    free_pair_subs.PUSH_BACK(blank);
+                    free_pair_subs.PUSH_BACK(el_stack.front());
+                    pairs_out.PUSH_BACK(element(free_pair_subs, DNT_PAIR));
                 }
             }
             if (kv_iter->e_token != DNT_KEY) {
-                el_stack.pop_front();
+                el_stack.POP_FRONT();
                 continue;
             }
 
             ++kv_iter;
             if (kv_iter == el_stack.end()) {
-                el_stack.pop_front();
+                el_stack.POP_FRONT();
                 continue;
             }
 
             if (kv_iter->e_token != DNT_VALUE) {
-                el_stack.pop_front();
+                el_stack.POP_FRONT();
                 continue;
             }
 
             std::string key_val =
                 this->get_element_string(el_stack.front());
-            element_list_t pair_subs;
+            element_list_t ELEMENT_LIST_T(pair_subs);
 
             if (schema != NULL) {
                 SHA_Update(&context, key_val.c_str(), key_val.length());
             }
 
             while (!free_row.empty()) {
-                element_list_t free_pair_subs;
+                element_list_t ELEMENT_LIST_T(free_pair_subs);
                 struct element blank;
 
                 blank.e_capture.c_begin = blank.e_capture.c_end =
                     free_row.front().e_capture.c_begin;
                 blank.e_token = DNT_KEY;
-                free_pair_subs.push_back(blank);
-                free_pair_subs.push_back(free_row.front());
-                pairs_out.push_back(element(free_pair_subs, DNT_PAIR));
-                free_row.pop_front();
+                free_pair_subs.PUSH_BACK(blank);
+                free_pair_subs.PUSH_BACK(free_row.front());
+                pairs_out.PUSH_BACK(element(free_pair_subs, DNT_PAIR));
+                free_row.POP_FRONT();
             }
 
             ++kv_iter;
-            pair_subs.splice(pair_subs.begin(),
+            pair_subs.SPLICE(pair_subs.begin(),
                              el_stack,
                              el_stack.begin(),
                              kv_iter);
-            pairs_out.push_back(element(pair_subs, DNT_PAIR));
+            pairs_out.PUSH_BACK(element(pair_subs, DNT_PAIR));
         }
 
         if (pairs_out.size() == 1) {
@@ -513,11 +664,16 @@ private:
             if (value.e_token == DNT_VALUE &&
                 value.e_sub_elements != NULL &&
                 value.e_sub_elements->size() > 1) {
-                prefix.splice(prefix.begin(),
+                element_list_t::iterator next_sub;
+
+                next_sub = pair.e_sub_elements->begin();
+                ++next_sub;
+                prefix.SPLICE(prefix.begin(),
                               *pair.e_sub_elements,
-                              pair.e_sub_elements->begin());
+                              pair.e_sub_elements->begin(),
+                              next_sub);
                 free_row.clear();
-                free_row.splice(free_row.begin(),
+                free_row.SPLICE(free_row.begin(),
                                 *value.e_sub_elements,
                                 value.e_sub_elements->begin(),
                                 value.e_sub_elements->end());
@@ -531,6 +687,7 @@ private:
                 switch (free_row.front().e_token) {
                 case DNT_GROUP:
                 case DNT_VALUE:
+                case DT_CONSTANT:
                 case DT_NUMBER:
                 case DT_SYMBOL:
                 case DT_HEX_NUMBER:
@@ -545,16 +702,16 @@ private:
                 case DT_PATH:
                 case DT_TIME:
                 case DT_PERCENTAGE: {
-                    element_list_t pair_subs;
+                    element_list_t ELEMENT_LIST_T(pair_subs);
                     struct element blank;
 
                     blank.e_capture.c_begin = blank.e_capture.c_end =
                                                   free_row.front().e_capture.
                                                   c_begin;
                     blank.e_token = DNT_KEY;
-                    pair_subs.push_back(blank);
-                    pair_subs.push_back(free_row.front());
-                    pairs_out.push_back(element(pair_subs, DNT_PAIR));
+                    pair_subs.PUSH_BACK(blank);
+                    pair_subs.PUSH_BACK(free_row.front());
+                    pairs_out.PUSH_BACK(element(pair_subs, DNT_PAIR));
                 }
                 break;
 
@@ -567,19 +724,19 @@ private:
                 break;
                 }
 
-                free_row.pop_front();
+                free_row.POP_FRONT();
             }
         }
 
         if (!prefix.empty()) {
-            element_list_t pair_subs;
+            element_list_t ELEMENT_LIST_T(pair_subs);
             struct element blank;
 
             blank.e_capture.c_begin = blank.e_capture.c_end =
                                           prefix.front().e_capture.c_begin;
             blank.e_token = DNT_KEY;
-            pair_subs.push_back(blank);
-            pair_subs.push_back(prefix.front());
+            pair_subs.PUSH_BACK(blank);
+            pair_subs.PUSH_BACK(prefix.front());
             pairs_out.push_front(element(pair_subs, DNT_PAIR));
         }
 
@@ -629,7 +786,7 @@ private:
             case DT_LCURLY:
             case DT_LSQUARE:
                 this->dp_group_token.push_back(elem.e_token);
-                this->dp_group_stack.push_back(element_list_t());
+                this->dp_group_stack.push_back(element_list_t("_anon_", __FILE__, __LINE__));
                 break;
 
             case DT_RPAREN:
@@ -643,18 +800,18 @@ private:
                         this->dp_group_stack.rbegin();
                     ++riter;
                     if (!this->dp_group_stack.back().empty()) {
-                        (*riter).push_back(element(this->dp_group_stack.back(),
+                        (*riter).PUSH_BACK(element(this->dp_group_stack.back(),
                                                    DNT_GROUP));
                     }
                     this->dp_group_stack.pop_back();
                 }
                 else {
-                    this->dp_group_stack.back().push_back(elem);
+                    this->dp_group_stack.back().PUSH_BACK(elem);
                 }
                 break;
 
             default:
-                this->dp_group_stack.back().push_back(elem);
+                this->dp_group_stack.back().PUSH_BACK(elem);
                 break;
             }
         }
@@ -666,7 +823,7 @@ private:
                 this->dp_group_stack.rbegin();
             ++riter;
             if (!this->dp_group_stack.back().empty()) {
-                (*riter).push_back(element(this->dp_group_stack.back(),
+                (*riter).PUSH_BACK(element(this->dp_group_stack.back(),
                                            DNT_GROUP));
             }
             this->dp_group_stack.pop_back();
@@ -702,7 +859,7 @@ private:
         }
     };
 
-    std::string get_element_string(const element &elem)
+    std::string get_element_string(const element &elem) const
     {
         pcre_input &pi = this->dp_scanner->get_input();
 

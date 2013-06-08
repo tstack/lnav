@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file lnav.cc
+ * @file log_data_table.hh
  *
  * XXX This file has become a dumping ground for code and needs to be broken up
  * a bit.

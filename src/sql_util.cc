@@ -396,7 +396,7 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
         return;
     }
 
-    if (sqlite3_step(stmt.in()) != SQLITE_OK) {
+    if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
         fprintf(stderr,
                 "error: could not execute DB attach statement -- %s\n", 
                 sqlite3_errmsg(db));
