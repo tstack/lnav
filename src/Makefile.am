@@ -27,6 +27,7 @@ LDADD = \
 	-lcrypto
 
 noinst_HEADERS = \
+	ansi_scrubber.hh \
 	auto_fd.hh \
 	auto_mem.hh \
 	bookmarks.hh \
@@ -89,6 +90,7 @@ noinst_HEADERS = \
 	yajl/yajl_version.h
 
 libdiag_a_SOURCES = \
+	ansi_scrubber.cc \
 	bookmarks.cc \
 	collation-functions.cc \
 	extension-functions.c \

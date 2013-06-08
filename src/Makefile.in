@@ -105,7 +105,7 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libdiag_a_AR = $(AR) $(ARFLAGS)
 libdiag_a_LIBADD =
-am_libdiag_a_OBJECTS = bookmarks.$(OBJEXT) \
+am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	collation-functions.$(OBJEXT) extension-functions.$(OBJEXT) \
 	fs-extension-functions.$(OBJEXT) grep_proc.$(OBJEXT) \
 	hist_source.$(OBJEXT) line_buffer.$(OBJEXT) \
@@ -351,6 +351,7 @@ LDADD = \
 	-lcrypto
 
 noinst_HEADERS = \
+	ansi_scrubber.hh \
 	auto_fd.hh \
 	auto_mem.hh \
 	bookmarks.hh \
@@ -413,6 +414,7 @@ noinst_HEADERS = \
 	yajl/yajl_version.h
 
 libdiag_a_SOURCES = \
+	ansi_scrubber.cc \
 	bookmarks.cc \
 	collation-functions.cc \
 	extension-functions.c \
@@ -589,6 +591,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ansi_scrubber.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bin2c.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bookmarks.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/collation-functions.Po@am__quote@

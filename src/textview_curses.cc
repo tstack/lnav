@@ -35,126 +35,13 @@
 #include "pcrepp.hh"
 #include "lnav_util.hh"
 #include "data_parser.hh"
+#include "ansi_scrubber.hh"
 #include "textview_curses.hh"
 
 using namespace std;
 
 bookmark_type_t textview_curses::BM_USER;
 bookmark_type_t textview_curses::BM_SEARCH;
-
-class ansi_scrubber {
-    /* XXX move to view_curses.cc ; actually, move to it's own file and call
-     * from there.
-     */
-public:
-    static ansi_scrubber &singleton()
-    {
-        static ansi_scrubber s_as;
-
-        return s_as;
-    }
-
-    void scrub_value(string &str, string_attrs_t &sa)
-    {
-        view_colors &vc = view_colors::singleton();
-        vector<pair<string, string_attr_t> > attr_queue;
-        pcre_context_static<60> context;
-        vector<line_range> range_queue;
-        pcre_input pi(str);
-
-        while (this->as_regex.match(context, pi)) {
-            pcre_context::capture_t *caps = context.all();
-            struct line_range lr;
-            bool has_attrs = false;
-            int  attrs     = 0;
-            int  bg = 0;
-            int  fg = 0;
-            int  lpc;
-
-            switch (pi.get_substr_start(&caps[2])[0]) {
-            case 'm':
-                for (lpc = caps[1].c_begin;
-                     lpc != (int)string::npos && lpc < caps[1].c_end; ) {
-                    int ansi_code = 0;
-
-                    if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
-                        if (90 <= ansi_code && ansi_code <= 97) {
-                            ansi_code -= 60;
-                            attrs |= A_STANDOUT;
-                        }
-                        if (30 <= ansi_code && ansi_code <= 37) {
-                            fg = ansi_code - 30;
-                        }
-                        if (40 <= ansi_code && ansi_code <= 47) {
-                            bg = ansi_code - 40;
-                        }
-                        switch (ansi_code) {
-                        case 1:
-                            attrs |= A_BOLD;
-                            break;
-
-                        case 2:
-                            attrs |= A_DIM;
-                            break;
-
-                        case 4:
-                            attrs |= A_UNDERLINE;
-                            break;
-
-                        case 7:
-                            attrs |= A_REVERSE;
-                            break;
-                        }
-                    }
-                    lpc = str.find(";", lpc);
-                    if (lpc != (int)string::npos) {
-                        lpc += 1;
-                    }
-                }
-                if (fg != 0 || bg != 0) {
-                    attrs |= vc.ansi_color_pair(fg, bg);
-                }
-                has_attrs = true;
-                break;
-
-            case 'C':
-                {
-                    int spaces = 0;
-
-                    if (sscanf(&(str[caps[1].c_begin]), "%d", &spaces) == 1) {
-                        str.insert(caps[0].c_end, spaces, ' ');
-                    }
-                }
-                break;
-            }
-            str.erase(str.begin() + caps[0].c_begin,
-                      str.begin() + caps[0].c_end);
-
-            if (has_attrs) {
-                if (!range_queue.empty()) {
-                    range_queue.back().lr_end = caps[0].c_begin;
-                }
-                lr.lr_start = caps[0].c_begin;
-                lr.lr_end   = -1;
-                range_queue.push_back(lr);
-                attr_queue.push_back(make_string_attr("style", attrs));
-            }
-
-            pi.reset(str);
-        }
-
-        for (size_t lpc = 0; lpc < range_queue.size(); lpc++) {
-            sa[range_queue[lpc]].insert(attr_queue[lpc]);
-        }
-    };
-
-private:
-    ansi_scrubber()
-        : as_regex("\x1b\\[([\\d=;]*)([a-zA-Z])") {
-    };
-
-    pcrepp as_regex;
-};
 
 textview_curses::textview_curses()
     : tc_searching(false),

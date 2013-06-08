@@ -26,6 +26,7 @@ check_PROGRAMS = \
 	drive_readline_curses \
 	slicer \
 	scripty \
+	test_ansi_scrubber \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
@@ -39,6 +40,9 @@ AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS)
 
 LDADD = -lz
+
+test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
+test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 test_auto_fd_SOURCES = test_auto_fd.cc
 
@@ -65,19 +69,8 @@ test_line_buffer2_SOURCES = \
 test_pcrepp_SOURCES = \
 	test_pcrepp.cc
 
-test_top_status_SOURCES = \
-	../src/bookmarks.cc \
-	../src/logfile.cc \
-	../src/line_buffer.cc \
-	../src/log_format.cc \
-	../src/logfile_sub_source.cc \
-	../src/listview_curses.cc \
-	../src/textview_curses.cc \
-	../src/data_scanner.cc \
-	../src/data_parser.cc \
-	../src/view_curses.cc \
-	test_top_status.cc
-test_top_status_LDADD = $(CURSES_LIB) -lz
+test_top_status_SOURCES = test_top_status.cc
+test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 
 drive_line_buffer_SOURCES = \
 	../src/line_buffer.cc \
@@ -194,9 +187,11 @@ dist_noinst_DATA = \
 nodist_noinst_DATA = \
 	simple-db.db
 
-TESTS = test_bookmarks \
+TESTS = \
+	test_ansi_scrubber \
 	test_auto_fd \
 	test_auto_mem \
+	test_bookmarks \
 	test_line_buffer.sh \
 	test_line_buffer2 \
 	test_grep_proc.sh \

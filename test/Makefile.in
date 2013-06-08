@@ -85,16 +85,18 @@ check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 	drive_sequencer$(EXEEXT) drive_sql$(EXEEXT) \
 	drive_view_colors$(EXEEXT) drive_vt52_curses$(EXEEXT) \
 	drive_readline_curses$(EXEEXT) slicer$(EXEEXT) \
-	scripty$(EXEEXT) test_auto_fd$(EXEEXT) test_auto_mem$(EXEEXT) \
+	scripty$(EXEEXT) test_ansi_scrubber$(EXEEXT) \
+	test_auto_fd$(EXEEXT) test_auto_mem$(EXEEXT) \
 	test_bookmarks$(EXEEXT) test_grep_proc2$(EXEEXT) \
 	test_hist_source$(EXEEXT) test_line_buffer2$(EXEEXT) \
 	test_pcrepp$(EXEEXT) test_top_status$(EXEEXT)
-TESTS = test_bookmarks$(EXEEXT) test_auto_fd$(EXEEXT) \
-	test_auto_mem$(EXEEXT) test_line_buffer.sh \
-	test_line_buffer2$(EXEEXT) test_grep_proc.sh \
-	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
-	test_listview.sh test_pcrepp$(EXEEXT) test_sql_coll_func.sh \
-	test_sql_fs_func.sh test_view_colors.sh test_vt52_curses.sh \
+TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
+	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) \
+	test_line_buffer.sh test_line_buffer2$(EXEEXT) \
+	test_grep_proc.sh test_grep_proc2$(EXEEXT) \
+	test_hist_source$(EXEEXT) test_listview.sh \
+	test_pcrepp$(EXEEXT) test_sql_coll_func.sh test_sql_fs_func.sh \
+	test_view_colors.sh test_vt52_curses.sh \
 	test_top_status$(EXEEXT) test_data_parser.sh
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -162,6 +164,10 @@ am_slicer_OBJECTS = line_buffer.$(OBJEXT) slicer.$(OBJEXT)
 slicer_OBJECTS = $(am_slicer_OBJECTS)
 slicer_LDADD = $(LDADD)
 slicer_DEPENDENCIES =
+am_test_ansi_scrubber_OBJECTS = test_ansi_scrubber.$(OBJEXT)
+test_ansi_scrubber_OBJECTS = $(am_test_ansi_scrubber_OBJECTS)
+test_ansi_scrubber_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1)
 am_test_auto_fd_OBJECTS = test_auto_fd.$(OBJEXT)
 test_auto_fd_OBJECTS = $(am_test_auto_fd_OBJECTS)
 test_auto_fd_LDADD = $(LDADD)
@@ -192,14 +198,9 @@ am_test_pcrepp_OBJECTS = test_pcrepp.$(OBJEXT)
 test_pcrepp_OBJECTS = $(am_test_pcrepp_OBJECTS)
 test_pcrepp_LDADD = $(LDADD)
 test_pcrepp_DEPENDENCIES =
-am_test_top_status_OBJECTS = bookmarks.$(OBJEXT) logfile.$(OBJEXT) \
-	line_buffer.$(OBJEXT) log_format.$(OBJEXT) \
-	logfile_sub_source.$(OBJEXT) listview_curses.$(OBJEXT) \
-	textview_curses.$(OBJEXT) data_scanner.$(OBJEXT) \
-	data_parser.$(OBJEXT) view_curses.$(OBJEXT) \
-	test_top_status.$(OBJEXT)
+am_test_top_status_OBJECTS = test_top_status.$(OBJEXT)
 test_top_status_OBJECTS = $(am_test_top_status_OBJECTS)
-test_top_status_DEPENDENCIES = $(am__DEPENDENCIES_1)
+test_top_status_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
 SCRIPTS = $(dist_noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -239,7 +240,8 @@ SOURCES = $(drive_data_scanner_SOURCES) $(drive_grep_proc_SOURCES) \
 	$(drive_logfile_SOURCES) $(drive_readline_curses_SOURCES) \
 	$(drive_sequencer_SOURCES) $(drive_sql_SOURCES) \
 	$(drive_view_colors_SOURCES) $(drive_vt52_curses_SOURCES) \
-	$(scripty_SOURCES) $(slicer_SOURCES) $(test_auto_fd_SOURCES) \
+	$(scripty_SOURCES) $(slicer_SOURCES) \
+	$(test_ansi_scrubber_SOURCES) $(test_auto_fd_SOURCES) \
 	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
 	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
 	$(test_line_buffer2_SOURCES) $(test_pcrepp_SOURCES) \
@@ -250,11 +252,11 @@ DIST_SOURCES = $(drive_data_scanner_SOURCES) \
 	$(drive_readline_curses_SOURCES) $(drive_sequencer_SOURCES) \
 	$(drive_sql_SOURCES) $(drive_view_colors_SOURCES) \
 	$(drive_vt52_curses_SOURCES) $(scripty_SOURCES) \
-	$(slicer_SOURCES) $(test_auto_fd_SOURCES) \
-	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
-	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
-	$(test_line_buffer2_SOURCES) $(test_pcrepp_SOURCES) \
-	$(test_top_status_SOURCES)
+	$(slicer_SOURCES) $(test_ansi_scrubber_SOURCES) \
+	$(test_auto_fd_SOURCES) $(test_auto_mem_SOURCES) \
+	$(test_bookmarks_SOURCES) $(test_grep_proc2_SOURCES) \
+	$(test_hist_source_SOURCES) $(test_line_buffer2_SOURCES) \
+	$(test_pcrepp_SOURCES) $(test_top_status_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -609,6 +611,8 @@ AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS)
 
 LDADD = -lz
+test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
+test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB)
 test_auto_fd_SOURCES = test_auto_fd.cc
 test_auto_mem_SOURCES = test_auto_mem.cc
 test_bookmarks_SOURCES = test_bookmarks.cc ../src/bookmarks.cc
@@ -631,20 +635,8 @@ test_line_buffer2_SOURCES = \
 test_pcrepp_SOURCES = \
 	test_pcrepp.cc
 
-test_top_status_SOURCES = \
-	../src/bookmarks.cc \
-	../src/logfile.cc \
-	../src/line_buffer.cc \
-	../src/log_format.cc \
-	../src/logfile_sub_source.cc \
-	../src/listview_curses.cc \
-	../src/textview_curses.cc \
-	../src/data_scanner.cc \
-	../src/data_parser.cc \
-	../src/view_curses.cc \
-	test_top_status.cc
-
-test_top_status_LDADD = $(CURSES_LIB) -lz
+test_top_status_SOURCES = test_top_status.cc
+test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 drive_line_buffer_SOURCES = \
 	../src/line_buffer.cc \
 	drive_line_buffer.cc
@@ -853,6 +845,10 @@ slicer$(EXEEXT): $(slicer_OBJECTS) $(slicer_DEPENDENCIES) $(EXTRA_slicer_DEPENDE
 	@rm -f slicer$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(slicer_OBJECTS) $(slicer_LDADD) $(LIBS)
 
+test_ansi_scrubber$(EXEEXT): $(test_ansi_scrubber_OBJECTS) $(test_ansi_scrubber_DEPENDENCIES) $(EXTRA_test_ansi_scrubber_DEPENDENCIES) 
+	@rm -f test_ansi_scrubber$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_ansi_scrubber_OBJECTS) $(test_ansi_scrubber_LDADD) $(LIBS)
+
 test_auto_fd$(EXEEXT): $(test_auto_fd_OBJECTS) $(test_auto_fd_DEPENDENCIES) $(EXTRA_test_auto_fd_DEPENDENCIES) 
 	@rm -f test_auto_fd$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_auto_fd_OBJECTS) $(test_auto_fd_LDADD) $(LIBS)
@@ -892,8 +888,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bookmarks.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_parser.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_data_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_grep_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_line_buffer.Po@am__quote@
@@ -910,11 +904,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log_format.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile_sub_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scripty.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slicer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_ansi_scrubber.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_auto_fd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_auto_mem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_bookmarks.Po@am__quote@
@@ -923,7 +917,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_line_buffer2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_pcrepp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_top_status.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vt52_curses.Po@am__quote@
 
@@ -1094,62 +1087,6 @@ hist_source.obj: ../src/hist_source.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/hist_source.cc' object='hist_source.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o hist_source.obj `if test -f '../src/hist_source.cc'; then $(CYGPATH_W) '../src/hist_source.cc'; else $(CYGPATH_W) '$(srcdir)/../src/hist_source.cc'; fi`
-
-logfile_sub_source.o: ../src/logfile_sub_source.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT logfile_sub_source.o -MD -MP -MF $(DEPDIR)/logfile_sub_source.Tpo -c -o logfile_sub_source.o `test -f '../src/logfile_sub_source.cc' || echo '$(srcdir)/'`../src/logfile_sub_source.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/logfile_sub_source.Tpo $(DEPDIR)/logfile_sub_source.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/logfile_sub_source.cc' object='logfile_sub_source.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o logfile_sub_source.o `test -f '../src/logfile_sub_source.cc' || echo '$(srcdir)/'`../src/logfile_sub_source.cc
-
-logfile_sub_source.obj: ../src/logfile_sub_source.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT logfile_sub_source.obj -MD -MP -MF $(DEPDIR)/logfile_sub_source.Tpo -c -o logfile_sub_source.obj `if test -f '../src/logfile_sub_source.cc'; then $(CYGPATH_W) '../src/logfile_sub_source.cc'; else $(CYGPATH_W) '$(srcdir)/../src/logfile_sub_source.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/logfile_sub_source.Tpo $(DEPDIR)/logfile_sub_source.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/logfile_sub_source.cc' object='logfile_sub_source.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o logfile_sub_source.obj `if test -f '../src/logfile_sub_source.cc'; then $(CYGPATH_W) '../src/logfile_sub_source.cc'; else $(CYGPATH_W) '$(srcdir)/../src/logfile_sub_source.cc'; fi`
-
-textview_curses.o: ../src/textview_curses.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT textview_curses.o -MD -MP -MF $(DEPDIR)/textview_curses.Tpo -c -o textview_curses.o `test -f '../src/textview_curses.cc' || echo '$(srcdir)/'`../src/textview_curses.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/textview_curses.Tpo $(DEPDIR)/textview_curses.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/textview_curses.cc' object='textview_curses.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o textview_curses.o `test -f '../src/textview_curses.cc' || echo '$(srcdir)/'`../src/textview_curses.cc
-
-textview_curses.obj: ../src/textview_curses.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT textview_curses.obj -MD -MP -MF $(DEPDIR)/textview_curses.Tpo -c -o textview_curses.obj `if test -f '../src/textview_curses.cc'; then $(CYGPATH_W) '../src/textview_curses.cc'; else $(CYGPATH_W) '$(srcdir)/../src/textview_curses.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/textview_curses.Tpo $(DEPDIR)/textview_curses.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/textview_curses.cc' object='textview_curses.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o textview_curses.obj `if test -f '../src/textview_curses.cc'; then $(CYGPATH_W) '../src/textview_curses.cc'; else $(CYGPATH_W) '$(srcdir)/../src/textview_curses.cc'; fi`
-
-data_scanner.o: ../src/data_scanner.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_scanner.o -MD -MP -MF $(DEPDIR)/data_scanner.Tpo -c -o data_scanner.o `test -f '../src/data_scanner.cc' || echo '$(srcdir)/'`../src/data_scanner.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_scanner.Tpo $(DEPDIR)/data_scanner.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_scanner.cc' object='data_scanner.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_scanner.o `test -f '../src/data_scanner.cc' || echo '$(srcdir)/'`../src/data_scanner.cc
-
-data_scanner.obj: ../src/data_scanner.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_scanner.obj -MD -MP -MF $(DEPDIR)/data_scanner.Tpo -c -o data_scanner.obj `if test -f '../src/data_scanner.cc'; then $(CYGPATH_W) '../src/data_scanner.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_scanner.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_scanner.Tpo $(DEPDIR)/data_scanner.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_scanner.cc' object='data_scanner.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_scanner.obj `if test -f '../src/data_scanner.cc'; then $(CYGPATH_W) '../src/data_scanner.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_scanner.cc'; fi`
-
-data_parser.o: ../src/data_parser.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_parser.o -MD -MP -MF $(DEPDIR)/data_parser.Tpo -c -o data_parser.o `test -f '../src/data_parser.cc' || echo '$(srcdir)/'`../src/data_parser.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_parser.Tpo $(DEPDIR)/data_parser.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_parser.cc' object='data_parser.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_parser.o `test -f '../src/data_parser.cc' || echo '$(srcdir)/'`../src/data_parser.cc
-
-data_parser.obj: ../src/data_parser.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT data_parser.obj -MD -MP -MF $(DEPDIR)/data_parser.Tpo -c -o data_parser.obj `if test -f '../src/data_parser.cc'; then $(CYGPATH_W) '../src/data_parser.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_parser.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/data_parser.Tpo $(DEPDIR)/data_parser.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/data_parser.cc' object='data_parser.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o data_parser.obj `if test -f '../src/data_parser.cc'; then $(CYGPATH_W) '../src/data_parser.cc'; else $(CYGPATH_W) '$(srcdir)/../src/data_parser.cc'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -1344,9 +1281,9 @@ recheck: all $(check_PROGRAMS)
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
-test_bookmarks.log: test_bookmarks$(EXEEXT)
-	@p='test_bookmarks$(EXEEXT)'; \
-	b='test_bookmarks'; \
+test_ansi_scrubber.log: test_ansi_scrubber$(EXEEXT)
+	@p='test_ansi_scrubber$(EXEEXT)'; \
+	b='test_ansi_scrubber'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1361,6 +1298,13 @@ test_auto_fd.log: test_auto_fd$(EXEEXT)
 test_auto_mem.log: test_auto_mem$(EXEEXT)
 	@p='test_auto_mem$(EXEEXT)'; \
 	b='test_auto_mem'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_bookmarks.log: test_bookmarks$(EXEEXT)
+	@p='test_bookmarks$(EXEEXT)'; \
+	b='test_bookmarks'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
