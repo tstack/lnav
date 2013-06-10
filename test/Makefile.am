@@ -4,7 +4,7 @@ LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
 simple-db.db: simple-db.sql
 	rm -f $@
-	$(SQLITE3_CMD) $@ < $<
+	$(SQLITE3_CMD) $@ < $(srcdir)/simple-db.sql
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \

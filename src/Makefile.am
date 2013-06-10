@@ -6,7 +6,7 @@ noinst_PROGRAMS = bin2c lnav-test
 noinst_LIBRARIES = libdiag.a
 
 help.c: help.txt bin2c
-	./bin2c -z -c $< $@
+	./bin2c -z -c $(srcdir)/help.txt $@
 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
