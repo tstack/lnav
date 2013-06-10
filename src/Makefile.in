@@ -1000,7 +1000,7 @@ uninstall-am: uninstall-binPROGRAMS
 
 
 help.c: help.txt bin2c
-	./bin2c -z -c $< $@
+	./bin2c -z -c $(srcdir)/help.txt $@
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

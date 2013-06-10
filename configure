@@ -3037,14 +3037,14 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 for defdir in /usr/local /opt/local; do
     if test -d "$defdir/include"; then
-	CPPFLAGS="$CPPFLAGS -I$defdir/include"
+        CPPFLAGS="$CPPFLAGS -I$defdir/include"
     fi
 
     if test -d "$defdir/lib"; then
-	LDFLAGS="$LDFLAGS -L$defdir/lib"
+        LDFLAGS="$LDFLAGS -L$defdir/lib"
     fi
     if test -d "$defdir/lib64"; then
-	LDFLAGS="$LDFLAGS -L$defdir/lib64"
+        LDFLAGS="$LDFLAGS -L$defdir/lib64"
     fi
 done
 
@@ -3987,6 +3987,10 @@ $as_echo "no" >&6; }
 fi
 
 
+
+if test x"$SQLITE3_CMD" = x""; then
+    as_fn_error $? "The sqlite3 command is required" "$LINENO" 5
+fi
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -6643,6 +6647,10 @@ $as_echo "#define HAVE_SQLITE3 /**/" >>confdefs.h
 
 
 
+
+if test x"$SQLITE3_LIBS" = x""; then
+    as_fn_error $? "The sqlite3 developement package must be installed." "$LINENO" 5
+fi
 
 case "$host_os" in
     *)

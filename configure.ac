@@ -10,14 +10,14 @@ AC_CANONICAL_HOST
 
 for defdir in /usr/local /opt/local; do
     if test -d "$defdir/include"; then
-	CPPFLAGS="$CPPFLAGS -I$defdir/include"
+        CPPFLAGS="$CPPFLAGS -I$defdir/include"
     fi
 
     if test -d "$defdir/lib"; then
-	LDFLAGS="$LDFLAGS -L$defdir/lib"
+        LDFLAGS="$LDFLAGS -L$defdir/lib"
     fi
     if test -d "$defdir/lib64"; then
-	LDFLAGS="$LDFLAGS -L$defdir/lib64"
+        LDFLAGS="$LDFLAGS -L$defdir/lib64"
     fi
 done
 
@@ -90,6 +90,10 @@ AC_PROG_MAKE_SET
 
 AC_PATH_PROG(SQLITE3_CMD, [sqlite3])
 
+if test x"$SQLITE3_CMD" = x""; then
+    AC_MSG_ERROR([The sqlite3 command is required])
+fi
+
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(size_t)
 
@@ -109,6 +113,10 @@ AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE([], [AC_MSG_ERROR([readline required to build])])
 
 AX_LIB_SQLITE3("3.0.0")
+
+if test x"$SQLITE3_LIBS" = x""; then
+    AC_MSG_ERROR([The sqlite3 developement package must be installed.])
+fi
 
 case "$host_os" in
     *)

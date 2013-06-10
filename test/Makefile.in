@@ -1572,7 +1572,7 @@ uninstall-am:
 
 simple-db.db: simple-db.sql
 	rm -f $@
-	$(SQLITE3_CMD) $@ < $<
+	$(SQLITE3_CMD) $@ < $(srcdir)/simple-db.sql
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
