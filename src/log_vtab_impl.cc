@@ -64,7 +64,7 @@ static string declare_table_statement(log_vtab_impl *vi)
     std::ostringstream oss;
 
     oss << "CREATE TABLE unused (\n"
-        << "  log_line text,\n"
+        << "  log_line integer PRIMARY KEY,\n"
         << "  log_time datetime,\n"
         << "  log_idle_msecs int,\n"
         << "  log_level text,\n";

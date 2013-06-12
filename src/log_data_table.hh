@@ -126,6 +126,11 @@ public:
             return false;
         }
 
+        if (lf_iter->has_schema() &&
+            !lf_iter->match_schema(this->ldt_schema_id)) {
+            return false;
+        }
+
         string_attrs_t             sa;
         struct line_range          body;
         std::vector<logline_value> line_values;
@@ -141,6 +146,10 @@ public:
         data_parser  dp(&ds);
         dp.parse();
 
+        lf_iter->set_schema(dp.dp_schema_id);
+
+        // The cached schema ID in the log line is not complete, so we still
+        // need to check for a full match.
         if (dp.dp_schema_id != this->ldt_schema_id) {
             return false;
         }

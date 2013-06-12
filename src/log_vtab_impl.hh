@@ -101,6 +101,10 @@ public:
 
     virtual void get_columns(std::vector<vtab_column> &cols) { };
 
+    virtual void get_foreign_keys(std::vector<std::string> &keys_inout) {
+        keys_inout.push_back("log_line");
+    };
+
     virtual void extract(logfile *lf,
                          const std::string &line,
                          std::vector<logline_value> &values)
@@ -120,6 +124,8 @@ typedef int (*sql_progress_callback_t)(const log_cursor &lc);
 
 class log_vtab_manager {
 public:
+    typedef std::map<std::string, log_vtab_impl *>::const_iterator iterator;
+
     log_vtab_manager(sqlite3 *db,
                      logfile_sub_source &lss,
                      sql_progress_callback_t);
@@ -132,6 +138,14 @@ public:
     log_vtab_impl *lookup_impl(std::string name)
     {
         return this->vm_impls[name];
+    };
+
+    iterator begin() const {
+        return this->vm_impls.begin();
+    };
+
+    iterator end() const {
+        return this->vm_impls.end();
     };
 
 private:

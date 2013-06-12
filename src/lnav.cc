@@ -395,6 +395,16 @@ bool setup_logline_table()
 
     walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
 
+    {
+        log_vtab_manager::iterator iter;
+
+        for (iter = lnav_data.ld_vtab_manager->begin();
+             iter != lnav_data.ld_vtab_manager->end();
+             ++iter) {
+            iter->second->get_foreign_keys(lnav_data.ld_db_key_names);
+        }
+    }
+
     stable_sort(lnav_data.ld_db_key_names.begin(),
                 lnav_data.ld_db_key_names.end());
 
@@ -1666,7 +1676,6 @@ int sql_callback(sqlite3_stmt *stmt)
             bool   graphable;
 
             graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT) &&
-                         colname != "log_line" &&
                          !binary_search(lnav_data.ld_db_key_names.begin(),
                                         lnav_data.ld_db_key_names.end(),
                                         colname));
@@ -2705,6 +2714,12 @@ public:
         cols.push_back(vtab_column("cs_referer", SQLITE3_TEXT));
         cols.push_back(vtab_column("cs_user_agent", SQLITE3_TEXT));
     };
+
+    void get_foreign_keys(vector<string> &keys_inout) {
+        this->log_vtab_impl::get_foreign_keys(keys_inout);
+
+        keys_inout.push_back("sc_status");
+    };
 };
 
 class syslog_log_table : public log_vtab_impl {
@@ -2716,7 +2731,13 @@ public:
     void get_columns(vector<vtab_column> &cols)
     {
         cols.push_back(vtab_column("log_hostname", SQLITE3_TEXT));
-        cols.push_back(vtab_column("log_pid", SQLITE3_TEXT));
+        cols.push_back(vtab_column("log_pid", SQLITE_INTEGER));
+    };
+
+    void get_foreign_keys(vector<string> &keys_inout) {
+        this->log_vtab_impl::get_foreign_keys(keys_inout);
+
+        keys_inout.push_back("log_pid");
     };
 };
 
@@ -2979,12 +3000,6 @@ int main(int argc, char *argv[])
                              lnav_data.ld_log_source,
                              sql_progress);
 
-    lnav_data.ld_vtab_manager->register_vtab(new syslog_log_table());
-    lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
-    lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
-    lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
-    lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
-
     {
         auto_mem<char, sqlite3_free> errmsg;
 
@@ -2998,6 +3013,12 @@ int main(int argc, char *argv[])
                     errmsg.in());
         }
     }
+
+    lnav_data.ld_vtab_manager->register_vtab(new syslog_log_table());
+    lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
+    lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
+    lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
+    lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
 
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));

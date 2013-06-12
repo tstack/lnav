@@ -8,7 +8,10 @@ noinst_LIBRARIES = libdiag.a
 help.c: $(srcdir)/help.txt bin2c
 	./bin2c -z -c $< $@
 
-init-sql.c: $(srcdir)/init.sql bin2c
+init.sql: $(srcdir)/init_sql.py
+	$(PYTHON) $< > $@
+
+init-sql.c: init.sql bin2c
 	./bin2c -z -c $< $@
 
 AM_LDFLAGS = \

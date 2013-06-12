@@ -43,6 +43,7 @@
 #include <vector>
 #include <memory>
 
+#include "byte_array.hh"
 #include "view_curses.hh"
 
 /**
@@ -94,7 +95,9 @@ public:
           ll_time(t),
           ll_millis(millis),
           ll_level(l),
-          ll_module(m) { };
+          ll_module(m) {
+        memset(this->ll_schema, 0, sizeof(this->ll_schema));
+    };
 
     /** @return The offset of the line in the file. */
     off_t get_offset() const { return this->ll_offset; };
@@ -125,6 +128,40 @@ public:
     uint8_t get_module() const { return this->ll_module; };
 
     /**
+     * @return  True if there is a schema value set for this log line.
+     */
+    bool has_schema(void) const {
+        return (this->ll_schema[0] != 0 ||
+                this->ll_schema[1] != 0 ||
+                this->ll_schema[2] != 0 ||
+                this->ll_schema[3] != 0);
+    };
+
+    /**
+     * Set the "schema" for this log line.  The schema ID is used to match log
+     * lines that have a similar format when generating the logline table.  The
+     * schema is set lazily so that startup is faster.
+     * 
+     * @param ba The SHA-1 hash of the constant parts of this log line.
+     */
+    void set_schema(const byte_array<20> &ba) {
+        memcpy(this->ll_schema, ba.in(), sizeof(this->ll_schema));
+    };
+
+    /**
+     * Perform a partial match of the given schema against this log line.
+     * Storing the full schema is not practical, so we just keep the first four
+     * bytes.
+     * 
+     * @param  ba The SHA-1 hash of the constant parts of a log line.
+     * @return    True if the first four bytes of the given schema match the
+     *   schema stored in this log line.
+     */
+    bool match_schema(const byte_array<20> &ba) const {
+        return memcmp(this->ll_schema, ba.in(), sizeof(this->ll_schema)) == 0;
+    }
+
+    /**
      * Compare loglines based on their timestamp.
      */
     bool operator<(const logline &rhs) const
@@ -142,6 +179,7 @@ private:
     uint16_t ll_millis;
     uint8_t  ll_level;
     uint8_t  ll_module;
+    char     ll_schema[4];
 };
 
 class logline_value {
