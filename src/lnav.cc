@@ -72,6 +72,7 @@
 
 #include "lnav.hh"
 #include "help.hh"
+#include "init-sql.hh"
 #include "logfile.hh"
 #include "lnav_util.hh"
 #include "listview_curses.hh"
@@ -2699,7 +2700,7 @@ public:
         cols.push_back(vtab_column("cs_uri_stem", SQLITE3_TEXT));
         cols.push_back(vtab_column("cs_uri_query", SQLITE3_TEXT));
         cols.push_back(vtab_column("cs_version", SQLITE3_TEXT));
-        cols.push_back(vtab_column("sc_status", SQLITE_TEXT));
+        cols.push_back(vtab_column("sc_status", SQLITE_INTEGER));
         cols.push_back(vtab_column("sc_bytes", SQLITE_INTEGER));
         cols.push_back(vtab_column("cs_referer", SQLITE3_TEXT));
         cols.push_back(vtab_column("cs_user_agent", SQLITE3_TEXT));
@@ -2983,6 +2984,20 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
+
+    {
+        auto_mem<char, sqlite3_free> errmsg;
+
+        if (sqlite3_exec(lnav_data.ld_db.in(),
+                         init_sql,
+                         NULL,
+                         NULL,
+                         errmsg.out()) != SQLITE_OK) {
+            fprintf(stderr,
+                    "error: unable to execute DB init -- %s\n",
+                    errmsg.in());
+        }
+    }
 
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));

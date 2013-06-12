@@ -116,8 +116,8 @@ CONFIG_CLEAN_VPATH_FILES =
 am_drive_data_scanner_OBJECTS = drive_data_scanner.$(OBJEXT)
 drive_data_scanner_OBJECTS = $(am_drive_data_scanner_OBJECTS)
 drive_data_scanner_DEPENDENCIES = ../src/libdiag.a
-am_drive_grep_proc_OBJECTS = line_buffer.$(OBJEXT) grep_proc.$(OBJEXT) \
-	drive_grep_proc.$(OBJEXT)
+am_drive_grep_proc_OBJECTS = pcrepp.$(OBJEXT) line_buffer.$(OBJEXT) \
+	grep_proc.$(OBJEXT) drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
 am__DEPENDENCIES_1 =
 drive_grep_proc_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -130,7 +130,7 @@ am_drive_listview_OBJECTS = listview_curses.$(OBJEXT) \
 drive_listview_OBJECTS = $(am_drive_listview_OBJECTS)
 drive_listview_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_drive_logfile_OBJECTS = logfile.$(OBJEXT) log_format.$(OBJEXT) \
-	line_buffer.$(OBJEXT) drive_logfile.$(OBJEXT)
+	line_buffer.$(OBJEXT) pcrepp.$(OBJEXT) drive_logfile.$(OBJEXT)
 drive_logfile_OBJECTS = $(am_drive_logfile_OBJECTS)
 drive_logfile_LDADD = $(LDADD)
 drive_logfile_DEPENDENCIES =
@@ -141,7 +141,7 @@ drive_readline_curses_OBJECTS = $(am_drive_readline_curses_OBJECTS)
 drive_readline_curses_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am_drive_sequencer_OBJECTS = grep_proc.$(OBJEXT) logfile.$(OBJEXT) \
-	log_format.$(OBJEXT) line_buffer.$(OBJEXT) \
+	log_format.$(OBJEXT) line_buffer.$(OBJEXT) pcrepp.$(OBJEXT) \
 	sequence_matcher.$(OBJEXT) drive_sequencer.$(OBJEXT)
 drive_sequencer_OBJECTS = $(am_drive_sequencer_OBJECTS)
 drive_sequencer_DEPENDENCIES =
@@ -182,7 +182,7 @@ test_bookmarks_OBJECTS = $(am_test_bookmarks_OBJECTS)
 test_bookmarks_LDADD = $(LDADD)
 test_bookmarks_DEPENDENCIES =
 am_test_grep_proc2_OBJECTS = line_buffer.$(OBJEXT) grep_proc.$(OBJEXT) \
-	test_grep_proc2.$(OBJEXT)
+	pcrepp.$(OBJEXT) test_grep_proc2.$(OBJEXT)
 test_grep_proc2_OBJECTS = $(am_test_grep_proc2_OBJECTS)
 test_grep_proc2_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_test_hist_source_OBJECTS = hist_source.$(OBJEXT) \
@@ -194,7 +194,7 @@ am_test_line_buffer2_OBJECTS = line_buffer.$(OBJEXT) \
 test_line_buffer2_OBJECTS = $(am_test_line_buffer2_OBJECTS)
 test_line_buffer2_LDADD = $(LDADD)
 test_line_buffer2_DEPENDENCIES =
-am_test_pcrepp_OBJECTS = test_pcrepp.$(OBJEXT)
+am_test_pcrepp_OBJECTS = pcrepp.$(OBJEXT) test_pcrepp.$(OBJEXT)
 test_pcrepp_OBJECTS = $(am_test_pcrepp_OBJECTS)
 test_pcrepp_LDADD = $(LDADD)
 test_pcrepp_DEPENDENCIES =
@@ -619,6 +619,7 @@ test_bookmarks_SOURCES = test_bookmarks.cc ../src/bookmarks.cc
 test_grep_proc2_SOURCES = \
 	../src/line_buffer.cc \
 	../src/grep_proc.cc \
+	../src/pcrepp.cc \
 	test_grep_proc2.cc
 
 test_grep_proc2_LDADD = $(PCRE_LIBS) -lz
@@ -633,6 +634,7 @@ test_line_buffer2_SOURCES = \
 	test_line_buffer2.cc
 
 test_pcrepp_SOURCES = \
+	../src/pcrepp.cc \
 	test_pcrepp.cc
 
 test_top_status_SOURCES = test_top_status.cc
@@ -643,6 +645,7 @@ drive_line_buffer_SOURCES = \
 
 drive_line_buffer_LDADD = $(CURSES_LIB) -lz
 drive_grep_proc_SOURCES = \
+	../src/pcrepp.cc \
 	../src/line_buffer.cc \
 	../src/grep_proc.cc \
 	drive_grep_proc.cc
@@ -658,6 +661,7 @@ drive_logfile_SOURCES = \
 	../src/logfile.cc \
 	../src/log_format.cc \
 	../src/line_buffer.cc \
+	../src/pcrepp.cc \
 	drive_logfile.cc
 
 drive_sequencer_SOURCES = \
@@ -665,6 +669,7 @@ drive_sequencer_SOURCES = \
 	../src/logfile.cc \
 	../src/log_format.cc \
 	../src/line_buffer.cc \
+	../src/pcrepp.cc \
 	../src/sequence_matcher.cc \
 	drive_sequencer.cc
 
@@ -904,6 +909,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log_format.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcrepp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scripty.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
@@ -933,6 +939,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+pcrepp.o: ../src/pcrepp.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT pcrepp.o -MD -MP -MF $(DEPDIR)/pcrepp.Tpo -c -o pcrepp.o `test -f '../src/pcrepp.cc' || echo '$(srcdir)/'`../src/pcrepp.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pcrepp.Tpo $(DEPDIR)/pcrepp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/pcrepp.cc' object='pcrepp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o pcrepp.o `test -f '../src/pcrepp.cc' || echo '$(srcdir)/'`../src/pcrepp.cc
+
+pcrepp.obj: ../src/pcrepp.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT pcrepp.obj -MD -MP -MF $(DEPDIR)/pcrepp.Tpo -c -o pcrepp.obj `if test -f '../src/pcrepp.cc'; then $(CYGPATH_W) '../src/pcrepp.cc'; else $(CYGPATH_W) '$(srcdir)/../src/pcrepp.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pcrepp.Tpo $(DEPDIR)/pcrepp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/pcrepp.cc' object='pcrepp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o pcrepp.obj `if test -f '../src/pcrepp.cc'; then $(CYGPATH_W) '../src/pcrepp.cc'; else $(CYGPATH_W) '$(srcdir)/../src/pcrepp.cc'; fi`
 
 line_buffer.o: ../src/line_buffer.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT line_buffer.o -MD -MP -MF $(DEPDIR)/line_buffer.Tpo -c -o line_buffer.o `test -f '../src/line_buffer.cc' || echo '$(srcdir)/'`../src/line_buffer.cc

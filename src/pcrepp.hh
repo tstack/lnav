@@ -231,26 +231,13 @@ public:
         int e_offset;
     };
 
-    pcrepp(pcre *code) : p_code(code)
+    pcrepp(pcre *code) : p_code(code), p_code_extra(pcre_free_study)
     {
-        const char *errptr;
-
         pcre_refcount(this->p_code, 1);
-        this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
-        if (!this->p_code_extra && errptr) {
-            fprintf(stderr, "pcre_study error: %s\n", errptr);
-        }
-        if (this->p_code_extra != NULL) {
-            pcre_extra *extra = this->p_code_extra;
-
-            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT|
-                             PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-            extra->match_limit = 10000;
-            extra->match_limit_recursion = 500;
-        }
+        this->study();
     };
 
-    pcrepp(const char *pattern, int options = 0)
+    pcrepp(const char *pattern, int options = 0) : p_code_extra(pcre_free_study)
     {
         const char *errptr;
         int         eoff;
@@ -264,30 +251,14 @@ public:
         }
 
         pcre_refcount(this->p_code, 1);
-        this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
-        if (!this->p_code_extra && errptr) {
-            fprintf(stderr, "pcre_study error: %s\n", errptr);
-        }
-        if (this->p_code_extra != NULL) {
-            pcre_extra *extra = this->p_code_extra;
-
-            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT|
-                             PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-            extra->match_limit = 10000;
-            extra->match_limit_recursion = 500;
-        }
+        this->study();
     };
 
     pcrepp(const pcrepp &other)
     {
-        const char *errptr;
-
         this->p_code = other.p_code;
         pcre_refcount(this->p_code, 1);
-        this->p_code_extra = pcre_study(this->p_code, 0, &errptr);
-        if (!this->p_code_extra && errptr) {
-            fprintf(stderr, "pcre_study error: %s\n", errptr);
-        }
+        this->study();
     };
 
     virtual ~pcrepp()
@@ -300,21 +271,42 @@ public:
 
     bool match(pcre_context &pc, pcre_input &pi, int options = 0) const
     {
+        int length, startoffset, filtered_options = options;
         int count = pc.get_max_count();
+        const char *str;
         int rc;
 
         pi.pi_offset = pi.pi_next_offset;
+
+        str = pi.get_string();
+        if (filtered_options & PCRE_ANCHORED) {
+            filtered_options &= ~PCRE_ANCHORED;
+            str = &str[pi.pi_offset];
+            startoffset = 0;
+            length = pi.pi_length - pi.pi_offset;
+        }
+        else {
+            startoffset = pi.pi_offset;
+            length = pi.pi_length;
+        }
         rc           = pcre_exec(this->p_code,
-                                 this->p_code_extra.in(),
-                                 pi.get_string(),
-                                 pi.pi_length,
-                                 pi.pi_offset,
-                                 options,
-                                 (int *)pc.all(),
-                                 count * 2);
+                                     this->p_code_extra.in(),
+                                     str,
+                                     length,
+                                     startoffset,
+                                     filtered_options,
+                                     (int *)pc.all(),
+                                     count * 2);
 
-
-        if (rc < 0) {}
+        if (rc < 0) {
+            switch (rc) {
+            case PCRE_ERROR_NOMATCH:
+                break;
+            default:
+            fprintf(stderr, "pcre err %d\n", rc);
+            break;
+            }
+        }
         else if (rc == 0) {
             rc = 0;
         }
@@ -322,6 +314,15 @@ public:
             rc = 0;
         }
         else {
+            if (options & PCRE_ANCHORED) {
+                for (int lpc = 0; lpc < rc; lpc++) {
+                    if (pc.all()[lpc].c_begin == -1) {
+                        continue;
+                    }
+                    pc.all()[lpc].c_begin += pi.pi_offset;
+                    pc.all()[lpc].c_end += pi.pi_offset;
+                }
+            }
             pi.pi_next_offset = pc.all()->c_end;
         }
 
@@ -330,7 +331,30 @@ public:
         return rc > 0;
     };
 
+    static pcre_jit_stack *jit_stack(void);
+
 private:
+
+    void study(void) {
+        const char *errptr;
+
+        this->p_code_extra = pcre_study(this->p_code,
+                                        PCRE_STUDY_JIT_COMPILE,
+                                        &errptr);
+        if (!this->p_code_extra && errptr) {
+            fprintf(stderr, "pcre_study error: %s\n", errptr);
+        }
+        if (this->p_code_extra != NULL) {
+            pcre_extra *extra = this->p_code_extra;
+
+            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT|
+                             PCRE_EXTRA_MATCH_LIMIT_RECURSION);
+            extra->match_limit = 10000;
+            extra->match_limit_recursion = 500;
+            pcre_assign_jit_stack(extra, NULL, jit_stack());
+        }
+    };
+
     pcre *p_code;
     auto_mem<pcre_extra> p_code_extra;
 };

@@ -167,7 +167,7 @@ class access_log_format : public log_format {
                 { "cs_version",
                   logline_value::VALUE_TEXT                              },
                 { "sc_status",
-                  logline_value::VALUE_TEXT                              },
+                  logline_value::VALUE_INTEGER                           },
                 { "sc_bytes",
                   logline_value::VALUE_INTEGER                           },
                 { "cs_referer",

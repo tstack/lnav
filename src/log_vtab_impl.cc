@@ -211,7 +211,8 @@ static int vt_next(sqlite3_vtab_cursor *cur)
     vc->line_values.clear();
     do {
         log_cursor_latest = vc->log_cursor;
-        if (vtab_progress_callback(log_cursor_latest)) {
+        if (((log_cursor_latest.lc_curr_line % 50) == 0) &&
+            vtab_progress_callback(log_cursor_latest)) {
             done = true;
             break;
         }

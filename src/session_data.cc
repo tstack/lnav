@@ -440,6 +440,8 @@ void save_session(void)
 
     save_bookmarks();
 
+    /* TODO: save the last search query */
+
     snprintf(view_base_name, sizeof(view_base_name),
              "view-info-%s.ts%ld.ppid%d.json",
              lnav_data.ld_session_id.c_str(),

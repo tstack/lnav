@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2013, Timothy Stack
+ * Copyright (c) 2013, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,58 +25,18 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file init-sql.hh
  */
-#ifndef __byte_array_hh
-#define __byte_array_hh
 
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <sys/types.h>
+#ifndef __init_sql_hh
+#define __init_sql_hh
 
-#include <string>
-
-template<size_t BYTE_COUNT>
-struct byte_array {
-    byte_array() { };
-
-    byte_array(const byte_array &other)
-    {
-        memcpy(this->ba_data, other.ba_data, BYTE_COUNT);
-    };
-
-    bool operator<(const byte_array &other) const
-    {
-        return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) < 0;
-    };
-
-    bool operator!=(const byte_array &other) const
-    {
-        return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
-    };
-
-    void clear(void) {
-        memset(this->ba_data, 0, BYTE_COUNT);
-    };
-
-    void to_string(char *buffer) const {
-        assert(buffer != NULL);
-
-        for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
-            snprintf(&buffer[lpc * 2], 3, "%02x", this->ba_data[lpc]);
-        }
-    };
-
-    std::string to_string() const {
-        char buffer[BYTE_COUNT * 2 + 1];
-
-        this->to_string(buffer);
-        return std::string(buffer);
-    }
-
-    const unsigned char *in() const { return this->ba_data; };
-    unsigned char *out() { return this->ba_data; };
-
-    unsigned char ba_data[BYTE_COUNT];
-};
+extern "C" {
+/**
+ * The help message text.  The value for this comes from the "init.sql" file,
+ * which gets linked into the executable by the Makefile.
+ */
+extern const char init_sql[];
+}
 #endif

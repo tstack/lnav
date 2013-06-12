@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2013, Timothy Stack
+ * Copyright (c) 2007-2012, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,58 +25,24 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file pcrepp.cc
  */
-#ifndef __byte_array_hh
-#define __byte_array_hh
 
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include <sys/types.h>
+#include "config.h"
 
-#include <string>
+#include "pcrepp.hh"
 
-template<size_t BYTE_COUNT>
-struct byte_array {
-    byte_array() { };
+const int JIT_STACK_MIN_SIZE = 32 * 1024;
+const int JIT_STACK_MAX_SIZE = 512 * 1024;
 
-    byte_array(const byte_array &other)
-    {
-        memcpy(this->ba_data, other.ba_data, BYTE_COUNT);
-    };
+pcre_jit_stack *pcrepp::jit_stack(void)
+{
+    static pcre_jit_stack *retval = NULL;
 
-    bool operator<(const byte_array &other) const
-    {
-        return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) < 0;
-    };
-
-    bool operator!=(const byte_array &other) const
-    {
-        return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
-    };
-
-    void clear(void) {
-        memset(this->ba_data, 0, BYTE_COUNT);
-    };
-
-    void to_string(char *buffer) const {
-        assert(buffer != NULL);
-
-        for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
-            snprintf(&buffer[lpc * 2], 3, "%02x", this->ba_data[lpc]);
-        }
-    };
-
-    std::string to_string() const {
-        char buffer[BYTE_COUNT * 2 + 1];
-
-        this->to_string(buffer);
-        return std::string(buffer);
+    if (retval == NULL) {
+        retval = pcre_jit_stack_alloc(JIT_STACK_MIN_SIZE, JIT_STACK_MAX_SIZE);
     }
 
-    const unsigned char *in() const { return this->ba_data; };
-    unsigned char *out() { return this->ba_data; };
-
-    unsigned char ba_data[BYTE_COUNT];
-};
-#endif
+    return retval;
+}

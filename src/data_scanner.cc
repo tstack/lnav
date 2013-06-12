@@ -42,75 +42,76 @@ static struct {
     const char *name;
     pcrepp      pcre;
 } MATCHERS[DT_TERMINAL_MAX] = {
-    { "quot",    pcrepp("(?:u|r)?\"((?:\\\\.|[^\"])+)\"|"
-                        "(?:u|r)?'((?:\\\\.|[^'])+)'"), },
-    { "url",     pcrepp("([\\w]+://[^\\s'\"\\[\\](){}]+[a-zA-Z0-9\\-=&])"),
+    { "quot",    pcrepp("\\A(?:(?:u|r)?\"((?:\\\\.|[^\"])+)\"|"
+                        "(?:u|r)?'((?:\\\\.|[^'])+)')"), },
+    { "url",     pcrepp("\\A([\\w]+://[^\\s'\"\\[\\](){}]+[a-zA-Z0-9\\-=&])"),
     },
-    { "path",    pcrepp("((?:/|\\./|\\.\\./)[\\w\\.\\-_\\~/]*)"),     },
+    { "path",    pcrepp("\\A((?:/|\\./|\\.\\./)[\\w\\.\\-_\\~/]*)"),     },
     { "mac",     pcrepp(
-          "([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"),   },
+          "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"),   },
     { "time",    pcrepp(
-          "\\b(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"),  },           /* XXX be more specific */
+          "\\A\\b(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"),  },           /* XXX be more specific */
     /* { "qual", pcrepp("([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
-    { "ipv6",    pcrepp("(::|[:\\da-fA-f\\.]+[a-fA-f\\d])"),
+    { "ipv6",    pcrepp("\\A(::|[:\\da-fA-f\\.]+[a-fA-f\\d])"),
     },
 
-    { "sep",     pcrepp("(:|=)"),
+    { "sep",     pcrepp("\\A(:|=)"),
     },
-    { "comm",    pcrepp("(,)"),
+    { "comm",    pcrepp("\\A(,)"),
     },
-    { "semi",    pcrepp("(;)"),
-    },
-
-    { "lcurly",  pcrepp("({)"),
-    },
-    { "rcurly",  pcrepp("(})"),
+    { "semi",    pcrepp("\\A(;)"),
     },
 
-    { "lsquare", pcrepp("(\\[)"),
+    { "lcurly",  pcrepp("\\A({)"),
     },
-    { "rsquare", pcrepp("(\\])"),
-    },
-
-    { "lparen",  pcrepp("(\\()"),
-    },
-    { "rparen",  pcrepp("(\\))"),
+    { "rcurly",  pcrepp("\\A(})"),
     },
 
-    { "langle",  pcrepp("(\\<)"),
+    { "lsquare", pcrepp("\\A(\\[)"),
     },
-    { "rangle",  pcrepp("(\\>)"),
+    { "rsquare", pcrepp("\\A(\\])"),
     },
 
-    { "ipv4",    pcrepp("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"),
+    { "lparen",  pcrepp("\\A(\\()"),
+    },
+    { "rparen",  pcrepp("\\A(\\))"),
+    },
+
+    { "langle",  pcrepp("\\A(\\<)"),
+    },
+    { "rangle",  pcrepp("\\A(\\>)"),
+    },
+
+    { "ipv4",    pcrepp("\\A(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"),
     },
     { "uuid",    pcrepp(
-          "([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"),   },
+          "\\A([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"),   },
 
-    { "vers",    pcrepp("([0-9]+(?:\\.[0-9]+){2,}\\b)"),
+    { "vers",    pcrepp("\\A([0-9]+(?:\\.[0-9]+){2,}\\b)"),
     },
-    { "oct",     pcrepp("(-?0[0-7]+\\b)"),
+    { "oct",     pcrepp("\\A(-?0[0-7]+\\b)"),
     },
-    { "pcnt",    pcrepp("(-?[0-9]+(\\.[0-9]+)?[ ]*%\\b)"),
+    { "pcnt",    pcrepp("\\A(-?[0-9]+(\\.[0-9]+)?[ ]*%\\b)"),
     },
-    { "num",     pcrepp("(-?[0-9]+(\\.[0-9]+)?([eE][-+][0-9]+)?\\b)"),
+    { "num",     pcrepp("\\A(-?[0-9]+(\\.[0-9]+)?([eE][-+][0-9]+)?\\b)"),
     },
-    { "hex",     pcrepp("(-?(?:0x|[0-9])[0-9a-fA-F]+\\b)"),
+    { "hex",     pcrepp("\\A(-?(?:0x|[0-9])[0-9a-fA-F]+\\b)"),
     },
 
-    { "cnst",    pcrepp("(true|True|TRUE|false|False|FALSE|None|null)\\b") },
+    { "cnst",    pcrepp("\\A(true|True|TRUE|false|False|FALSE|None|null)\\b") },
     { "word",    pcrepp(
-          "([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|\\.\\s|$))"), },
-    { "sym",     pcrepp("([^\";\\s:=,(){}\\[\\]]+)"),
+          "\\A([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|[\\.\\!,\\?]\\s|$))"), },
+    { "sym",     pcrepp(
+        "\\A([^\";\\s:=,\\(\\)\\{\\}\\[\\]\\+#!@%\\^&\\*'\\?<>\\~`\\|\\\\]+)"),
     },
-    { "line",    pcrepp("(\r?\n|\r|;)"),
+    { "line",    pcrepp("\\A(\r?\n|\r|;)"),
     },
-    { "wspc",    pcrepp("([ \r\t]+)"),
+    { "wspc",    pcrepp("\\A([ \r\t]+)"),
     },
-    { "dot",     pcrepp("(\\.)"),
+    { "dot",     pcrepp("\\A(\\.)"),
     },
 
-    { "gbg",     pcrepp("(.)"),
+    { "gbg",     pcrepp("\\A(.)"),
     },
 };
 
@@ -161,8 +162,20 @@ bool find_string_end(const char *str, size_t &start, size_t length, char term)
     return false;
 }
 
+static
+void single_char_capture(pcre_context &pc, pcre_input &pi)
+{
+    pc.all()[0].c_begin = pi.pi_offset;
+    pc.all()[0].c_end = pi.pi_offset + 1;
+    pc.all()[1] = pc.all()[0];
+    pc.set_count(2);
+    pi.pi_next_offset = pi.pi_offset + 1;
+}
+
 bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
 {
+    const char *str = this->ds_pcre_input.get_string();
+    pcre_input &pi = this->ds_pcre_input;
     int lpc;
 
     token_out = data_token_t(-1);
@@ -219,6 +232,40 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
                 pc.all()[1].c_begin = str_start;
                 pc.all()[1].c_end   = str_end - 1;
                 pc.set_count(2);
+                return true;
+            }
+        }
+        break;
+
+        case DT_SEPARATOR: {
+            pi.pi_offset = pi.pi_next_offset;
+
+            if (str[pi.pi_offset] == ':' ||
+                str[pi.pi_offset] == '=') {
+                token_out           = data_token_t(DT_SEPARATOR);
+                single_char_capture(pc, pi);
+                return true;
+            }
+        }
+        break;
+
+        case DT_COMMA: {
+            pi.pi_offset = pi.pi_next_offset;
+
+            if (str[pi.pi_offset] == ',') {
+                token_out           = data_token_t(DT_COMMA);
+                single_char_capture(pc, pi);
+                return true;
+            }
+        }
+        break;
+
+        case DT_SEMI: {
+            pi.pi_offset = pi.pi_next_offset;
+
+            if (str[pi.pi_offset] == ';') {
+                token_out           = data_token_t(DT_SEMI);
+                single_char_capture(pc, pi);
                 return true;
             }
         }

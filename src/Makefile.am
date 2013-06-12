@@ -5,8 +5,11 @@ noinst_PROGRAMS = bin2c lnav-test
 
 noinst_LIBRARIES = libdiag.a
 
-help.c: help.txt bin2c
-	./bin2c -z -c $(srcdir)/help.txt $@
+help.c: $(srcdir)/help.txt bin2c
+	./bin2c -z -c $< $@
+
+init-sql.c: $(srcdir)/init.sql bin2c
+	./bin2c -z -c $< $@
 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
@@ -43,6 +46,8 @@ noinst_HEADERS = \
 	help.hh \
 	help.txt \
 	hist_source.hh \
+	init.sql \
+	init-sql.hh \
 	line_buffer.hh \
 	listview_curses.hh \
 	lnav.hh \
@@ -114,6 +119,7 @@ libdiag_a_SOURCES = \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
 	string-extension-functions.cc \
+	pcrepp.cc \
 	piper_proc.cc \
 	sql_util.cc \
 	strnatcmp.c \
@@ -139,15 +145,18 @@ libdiag_a_SOURCES = \
 	yajl/yajl_tree.c \
 	yajl/yajl_version.c
 
+dist_noinst_SCRIPTS = \
+	init_sql.py
+
 lnav_SOURCES = lnav.cc $(HELP_SRC)
-lnav_LDADD = help.o $(LDADD)
+lnav_LDADD = help.o init-sql.o $(LDADD)
 
 lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
-lnav_test_LDADD = help.o $(LDADD)
+lnav_test_LDADD = help.o init-sql.o $(LDADD)
 
 bin2c_SOURCES = bin2c.c
 
-DISTCLEANFILES = help.c
+DISTCLEANFILES = help.c init-sql.c
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

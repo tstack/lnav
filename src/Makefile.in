@@ -16,6 +16,7 @@
 
 
 
+
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -85,7 +86,7 @@ noinst_PROGRAMS = bin2c$(EXEEXT) lnav-test$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/config.h.in $(top_srcdir)/mkinstalldirs \
-	$(top_srcdir)/depcomp $(noinst_HEADERS)
+	$(dist_noinst_SCRIPTS) $(top_srcdir)/depcomp $(noinst_HEADERS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/ax_sqlite3.m4 \
 	$(top_srcdir)/ax_with_curses.m4 $(top_srcdir)/lnav.m4 \
@@ -116,8 +117,8 @@ am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
 	session_data.$(OBJEXT) sequence_matcher.$(OBJEXT) \
 	sqlite-extension-func.$(OBJEXT) statusview_curses.$(OBJEXT) \
-	string-extension-functions.$(OBJEXT) piper_proc.$(OBJEXT) \
-	sql_util.$(OBJEXT) strnatcmp.$(OBJEXT) \
+	string-extension-functions.$(OBJEXT) pcrepp.$(OBJEXT) \
+	piper_proc.$(OBJEXT) sql_util.$(OBJEXT) strnatcmp.$(OBJEXT) \
 	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
 	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT) \
 	xterm_mouse.$(OBJEXT) yajlpp.$(OBJEXT) yajl.$(OBJEXT) \
@@ -137,10 +138,11 @@ am_lnav_OBJECTS = lnav.$(OBJEXT)
 lnav_OBJECTS = $(am_lnav_OBJECTS)
 am__DEPENDENCIES_2 = libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-lnav_DEPENDENCIES = help.o $(am__DEPENDENCIES_2)
+lnav_DEPENDENCIES = help.o init-sql.o $(am__DEPENDENCIES_2)
 am_lnav_test_OBJECTS = lnav.$(OBJEXT) test_override.$(OBJEXT)
 lnav_test_OBJECTS = $(am_lnav_test_OBJECTS)
-lnav_test_DEPENDENCIES = help.o $(am__DEPENDENCIES_2)
+lnav_test_DEPENDENCIES = help.o init-sql.o $(am__DEPENDENCIES_2)
+SCRIPTS = $(dist_noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -367,6 +369,8 @@ noinst_HEADERS = \
 	help.hh \
 	help.txt \
 	hist_source.hh \
+	init.sql \
+	init-sql.hh \
 	line_buffer.hh \
 	listview_curses.hh \
 	lnav.hh \
@@ -438,6 +442,7 @@ libdiag_a_SOURCES = \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
 	string-extension-functions.cc \
+	pcrepp.cc \
 	piper_proc.cc \
 	sql_util.cc \
 	strnatcmp.c \
@@ -463,12 +468,15 @@ libdiag_a_SOURCES = \
 	yajl/yajl_tree.c \
 	yajl/yajl_version.c
 
+dist_noinst_SCRIPTS = \
+	init_sql.py
+
 lnav_SOURCES = lnav.cc $(HELP_SRC)
-lnav_LDADD = help.o $(LDADD)
+lnav_LDADD = help.o init-sql.o $(LDADD)
 lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
-lnav_test_LDADD = help.o $(LDADD)
+lnav_test_LDADD = help.o init-sql.o $(LDADD)
 bin2c_SOURCES = bin2c.c
-DISTCLEANFILES = help.c
+DISTCLEANFILES = help.c init-sql.c
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -612,6 +620,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logfile_sub_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/network-extension-functions.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcrepp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/piper_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
@@ -875,7 +884,8 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS) config.h
+all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS) $(HEADERS) \
+		config.h
 installdirs:
 	for dir in "$(DESTDIR)$(bindir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -999,8 +1009,11 @@ uninstall-am: uninstall-binPROGRAMS
 	uninstall-am uninstall-binPROGRAMS
 
 
-help.c: help.txt bin2c
-	./bin2c -z -c $(srcdir)/help.txt $@
+help.c: $(srcdir)/help.txt bin2c
+	./bin2c -z -c $< $@
+
+init-sql.c: $(srcdir)/init.sql bin2c
+	./bin2c -z -c $< $@
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

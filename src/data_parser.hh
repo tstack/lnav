@@ -507,11 +507,7 @@ private:
                                      key_comps,
                                      key_comps.begin(),
                                      key_iter);
-                        key_comps.SPLICE(key_comps.begin(),
-                                         key_comps,
-                                         --(key_comps.end()),
-                                         key_comps.end());
-                        key_comps.resize(1);
+                        key_comps.POP_FRONT();
                         found = true;
                     }
                     else if (key_iter->e_token ==

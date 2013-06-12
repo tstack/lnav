@@ -53,6 +53,7 @@ test_bookmarks_SOURCES = test_bookmarks.cc ../src/bookmarks.cc
 test_grep_proc2_SOURCES = \
 	../src/line_buffer.cc \
 	../src/grep_proc.cc \
+	../src/pcrepp.cc \
 	test_grep_proc2.cc
 test_grep_proc2_LDADD = $(PCRE_LIBS) -lz
 
@@ -67,6 +68,7 @@ test_line_buffer2_SOURCES = \
 	test_line_buffer2.cc
 
 test_pcrepp_SOURCES = \
+	../src/pcrepp.cc \
 	test_pcrepp.cc
 
 test_top_status_SOURCES = test_top_status.cc
@@ -78,6 +80,7 @@ drive_line_buffer_SOURCES = \
 drive_line_buffer_LDADD = $(CURSES_LIB) -lz
 
 drive_grep_proc_SOURCES = \
+	../src/pcrepp.cc \
 	../src/line_buffer.cc \
 	../src/grep_proc.cc \
 	drive_grep_proc.cc
@@ -93,6 +96,7 @@ drive_logfile_SOURCES = \
 	../src/logfile.cc \
 	../src/log_format.cc \
 	../src/line_buffer.cc \
+	../src/pcrepp.cc \
 	drive_logfile.cc
 
 drive_sequencer_SOURCES = \
@@ -100,6 +104,7 @@ drive_sequencer_SOURCES = \
 	../src/logfile.cc \
 	../src/log_format.cc \
 	../src/line_buffer.cc \
+	../src/pcrepp.cc \
 	../src/sequence_matcher.cc \
 	drive_sequencer.cc
 drive_sequencer_LDADD = -lcrypto

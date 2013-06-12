@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
             }
             else {
                 auto_ptr<log_format> format;
-                char log_line[2048];
+                char *log_line;
                 bool found = false;
                 char   cmd[2048];
                 string line;
@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
                     line = "             " + line;
                 }
 
+                log_line = (char *)alloca(line.length());
                 strcpy(log_line, &line[13]);
 
                 vector<log_format *> &root_formats = log_format::get_root_formats();

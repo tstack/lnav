@@ -64,10 +64,11 @@ public:
 
         lf->get_format()->annotate(val, sa, line_values);
         body = find_string_attr_range(sa, "body");
-        if (body.lr_end != -1) {
-            val = val.substr(body.lr_start);
+        if (body.lr_end == -1 || body.length() == 0) {
+            this->ldt_schema_id.clear();
+            return;
         }
-        data_scanner ds(val);
+        data_scanner ds(val, body.lr_start, body.lr_end);
         data_parser  dp(&ds);
         column_namer cn;
 
@@ -115,11 +116,7 @@ public:
             return true;
         }
 
-        std::string line;
         content_line_t             cl;
-        string_attrs_t             sa;
-        struct line_range          body;
-        std::vector<logline_value> line_values;
 
         cl = lss.at(lc.lc_curr_line);
         logfile *         lf      = lss.find(cl);
@@ -129,24 +126,27 @@ public:
             return false;
         }
 
-        lf->read_line(lf_iter, line);
-        lf->get_format()->annotate(line, sa, line_values);
+        string_attrs_t             sa;
+        struct line_range          body;
+        std::vector<logline_value> line_values;
+
+        lf->read_line(lf_iter, this->ldt_current_line);
+        lf->get_format()->annotate(this->ldt_current_line, sa, line_values);
         body = find_string_attr_range(sa, "body");
-        if (body.lr_end == -1) {
+        if (body.lr_end == -1 || body.length() == 0) {
             return false;
         }
 
-        line = line.substr(body.lr_start);
-        if (line.empty()) {
-            return false;
-        }
-
-        data_scanner ds(line);
+        data_scanner ds(this->ldt_current_line, body.lr_start, body.lr_end);
         data_parser  dp(&ds);
         dp.parse();
+
         if (dp.dp_schema_id != this->ldt_schema_id) {
             return false;
         }
+
+        this->ldt_pairs.clear();
+        this->ldt_pairs.swap(dp.dp_pairs);
 
         return true;
     };
@@ -155,25 +155,13 @@ public:
                  const std::string &line,
                  std::vector<logline_value> &values)
     {
-        std::vector<logline_value> std_values;
-        struct line_range          body;
-        string_attrs_t             sa;
-
-        lf->get_format()->annotate(line, sa, std_values);
-        body = find_string_attr_range(sa, "body");
-        std::string sub = line.substr(body.lr_start);
-
-        data_scanner ds(sub);
-        data_parser  dp(&ds);
-
-        dp.parse();
-
         for (data_parser::element_list_t::iterator pair_iter =
-                 dp.dp_pairs.begin();
-             pair_iter != dp.dp_pairs.end();
+             this->ldt_pairs.begin();
+             pair_iter != this->ldt_pairs.end();
              ++pair_iter) {
             const data_parser::element &pvalue = pair_iter->get_pair_value();
-            std::string tmp = dp.get_element_string(pvalue);
+            const std::string tmp = this->ldt_current_line.substr(
+                pvalue.e_capture.c_begin, pvalue.e_capture.length());
 
             switch(pvalue.value_token()) {
             case DT_NUMBER: {
@@ -194,5 +182,7 @@ private:
     int ldt_column;
     const content_line_t     ldt_template_line;
     data_parser::schema_id_t ldt_schema_id;
+    std::string ldt_current_line;
+    data_parser::element_list_t ldt_pairs;
 };
 #endif
