@@ -36,6 +36,7 @@
 const int JIT_STACK_MIN_SIZE = 32 * 1024;
 const int JIT_STACK_MAX_SIZE = 512 * 1024;
 
+#ifdef PCRE_STUDY_JIT_COMPILE
 pcre_jit_stack *pcrepp::jit_stack(void)
 {
     static pcre_jit_stack *retval = NULL;
@@ -46,3 +47,11 @@ pcre_jit_stack *pcrepp::jit_stack(void)
 
     return retval;
 }
+#else
+#warning "pcrejit is not available, search performance will be degraded"
+
+void pcrepp::pcre_free_study(pcre_extra *extra)
+{
+    free(extra);
+}
+#endif

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2007-2013, Timothy Stack
  *
  * All rights reserved.
  *
@@ -331,7 +331,11 @@ public:
         return rc > 0;
     };
 
+#ifdef PCRE_STUDY_JIT_COMPILE
     static pcre_jit_stack *jit_stack(void);
+#else
+    static void pcre_free_study(pcre_extra *);
+#endif
 
 private:
 
@@ -339,7 +343,11 @@ private:
         const char *errptr;
 
         this->p_code_extra = pcre_study(this->p_code,
+#ifdef PCRE_STUDY_JIT_COMPILE
                                         PCRE_STUDY_JIT_COMPILE,
+#else
+                                        0,
+#endif
                                         &errptr);
         if (!this->p_code_extra && errptr) {
             fprintf(stderr, "pcre_study error: %s\n", errptr);
@@ -351,7 +359,9 @@ private:
                              PCRE_EXTRA_MATCH_LIMIT_RECURSION);
             extra->match_limit = 10000;
             extra->match_limit_recursion = 500;
+#ifdef PCRE_STUDY_JIT_COMPILE
             pcre_assign_jit_stack(extra, NULL, jit_stack());
+#endif
         }
     };
 
