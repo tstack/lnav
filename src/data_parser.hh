@@ -683,6 +683,7 @@ private:
                 switch (free_row.front().e_token) {
                 case DNT_GROUP:
                 case DNT_VALUE:
+                case DT_EMAIL:
                 case DT_CONSTANT:
                 case DT_NUMBER:
                 case DT_SYMBOL:

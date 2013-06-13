@@ -50,8 +50,8 @@ static struct {
     { "mac",     pcrepp(
           "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"),   },
     { "time",    pcrepp(
-          "\\A\\b(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"),  },           /* XXX be more specific */
-    /* { "qual", pcrepp("([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
+          "\\A(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"),  },           /* XXX be more specific */
+    /* { "qual", pcrepp("\\A([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
     { "ipv6",    pcrepp("\\A(::|[:\\da-fA-f\\.]+[a-fA-f\\d])"),
     },
 
@@ -98,6 +98,7 @@ static struct {
     { "hex",     pcrepp("\\A(-?(?:0x|[0-9])[0-9a-fA-F]+\\b)"),
     },
 
+    { "mail",    pcrepp("\\A([a-zA-Z0-9\\._%+-]+@[a-zA-Z0-9\\.-]+\\.[a-zA-Z]+)\\b"), },
     { "cnst",    pcrepp("\\A(true|True|TRUE|false|False|FALSE|None|null)\\b") },
     { "word",    pcrepp(
           "\\A([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|[\\.\\!,\\?]\\s|$))"), },

@@ -49,6 +49,8 @@ data_format_state_t dfs_prefix_next(data_format_state_t state,
         switch (next_token) {
         case DT_PATH:
         case DT_SEPARATOR:
+        case DT_CONSTANT:
+        case DT_EMAIL:
         case DT_WORD:
         case DT_SYMBOL:
         case DT_OCTAL_NUMBER:
