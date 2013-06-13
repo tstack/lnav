@@ -50,7 +50,10 @@
 
 using namespace std;
 
-static const size_t MAX_SESSIONS = 16;
+static const size_t MAX_SESSIONS = 8;
+static const size_t MAX_SESSION_FILE_COUNT = 256;
+
+typedef std::vector<std::pair<int, string> > timestamped_list_t;
 
 static string bookmark_file_name(const string &name)
 {
@@ -69,7 +72,7 @@ static string bookmark_file_name(const string &name)
 
 static string latest_bookmark_file(const string &name)
 {
-    std::vector<std::pair<int, string> > file_names;
+    timestamped_list_t file_names;
     static_root_mem<glob_t, globfree> file_list;
     string mark_file_pattern;
     char mark_base_name[256];
@@ -104,6 +107,101 @@ static string latest_bookmark_file(const string &name)
     return file_names.back().second;
 }
 
+struct session_file_info {
+    session_file_info(int timestamp,
+                      const string &id,
+                      const string &path)
+        : sfi_timestamp(timestamp), sfi_id(id), sfi_path(path) {
+    };
+
+    bool operator<(const session_file_info &other) const {
+        if (this->sfi_timestamp < other.sfi_timestamp)
+            return true;
+        if (this->sfi_path < other.sfi_path)
+            return true;
+        return false;
+    };
+
+    int sfi_timestamp;
+    string sfi_id;
+    string sfi_path;
+};
+
+static void cleanup_session_data(void)
+{
+    static_root_mem<glob_t, globfree> session_file_list;
+    std::list<struct session_file_info> session_info_list;
+    map<string, int> session_count;
+    string session_file_pattern;
+
+    session_file_pattern = dotlnav_path("*-*.ts*.json");
+
+    if (glob(session_file_pattern.c_str(),
+             0,
+             NULL,
+             session_file_list.inout()) == 0) {
+        for (size_t lpc = 0; lpc < session_file_list->gl_pathc; lpc++) {
+            const char *path = session_file_list->gl_pathv[lpc];
+            char hash_id[64];
+            int timestamp;
+            const char *base;
+
+            base = strrchr(path, '/') + 1;
+            if (sscanf(base, "file-%63[^.].ts%d.json",
+                       hash_id, &timestamp) == 2) {
+                session_count[hash_id] += 1;
+                session_info_list.push_back(session_file_info(
+                    timestamp, hash_id, path));
+            }
+            if (sscanf(base,
+                       "view-info-%63[^.].ts%d.ppid%*d.json",
+                       hash_id,
+                       &timestamp) == 2) {
+                session_count[hash_id] += 1;
+                session_info_list.push_back(session_file_info(
+                    timestamp, hash_id, path));
+            }
+        }
+    }
+
+    session_info_list.sort();
+
+    while (session_info_list.size() > MAX_SESSION_FILE_COUNT) {
+        const session_file_info &front = session_info_list.front();
+
+        if (session_count[front.sfi_id] == 1) {
+            session_info_list.splice(session_info_list.end(),
+                                     session_info_list,
+                                     session_info_list.begin());
+        }
+        else {
+            if (remove(front.sfi_path.c_str()) != 0) {
+                fprintf(stderr,
+                        "error: Unable to remove session file: %s -- %s\n",
+                        front.sfi_path.c_str(),
+                        strerror(errno));
+            }
+            session_count[front.sfi_id] -= 1;
+            session_info_list.pop_front();
+        }
+    }
+
+    session_info_list.sort();
+
+    while (session_info_list.size() > MAX_SESSION_FILE_COUNT) {
+        const session_file_info &front = session_info_list.front();
+
+        if (remove(front.sfi_path.c_str()) != 0) {
+            fprintf(stderr,
+                    "error: Unable to remove session file: %s -- %s\n",
+                    front.sfi_path.c_str(),
+                    strerror(errno));
+        }
+        session_count[front.sfi_id] -= 1;
+        session_info_list.pop_front();
+    }
+}
+
 void init_session(void)
 {
     byte_array<SHA_DIGEST_LENGTH> hash;
@@ -130,6 +228,8 @@ void scan_sessions(void)
     string view_info_pattern;
     string old_session_name;
     int index;
+
+    cleanup_session_data();
 
     if (lnav_data.ld_session_file_index >= 0 &&
         lnav_data.ld_session_file_index < (int)session_file_names.size()) {
@@ -168,7 +268,14 @@ void scan_sessions(void)
     session_file_names.sort();
 
     while (session_file_names.size() > MAX_SESSIONS) {
-        unlink(session_file_names.front().second.c_str());
+        const std::string &name = session_file_names.front().second;
+
+        if (remove(name.c_str()) != 0) {
+            fprintf(stderr,
+                    "error: Unable to remove session: %s -- %s\n",
+                    name.c_str(),
+                    strerror(errno));
+        }
         session_file_names.pop_front();
     }
 
@@ -496,6 +603,9 @@ void save_session(void)
                         view_map.gen(-1);
                     else
                         view_map.gen((long long)tc.get_top());
+
+                    view_map.gen("search");
+                    view_map.gen(lnav_data.ld_last_search[lpc]);
                 }
             }
 

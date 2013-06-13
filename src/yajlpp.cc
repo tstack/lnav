@@ -57,7 +57,6 @@ int yajlpp_parse_context::map_key(void *ctx,
 void yajlpp_parse_context::update_callbacks(void)
 {
     pcre_input pi(this->ypc_path);
-    bool found = false;
 
     this->ypc_callbacks = DEFAULT_CALLBACKS;
 
@@ -70,7 +69,6 @@ void yajlpp_parse_context::update_callbacks(void)
             this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
             this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
             this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
-            found = true;
             break;
         }
     }

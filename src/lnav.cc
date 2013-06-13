@@ -1025,7 +1025,7 @@ static void handle_paging_key(int ch)
         tc->horiz_shift(tc->get_top(),
                         tc->get_bottom(),
                         tc->get_left(),
-                        "(search",
+                        "$search",
                         range);
         if (range.second != INT_MAX) {
             tc->set_left(range.second);
@@ -1046,7 +1046,7 @@ static void handle_paging_key(int ch)
             tc->horiz_shift(tc->get_top(),
                             tc->get_bottom(),
                             tc->get_left(),
-                            "(search",
+                            "$search",
                             range);
             if (range.first != -1) {
                 tc->set_left(range.first);
@@ -1717,18 +1717,16 @@ int sql_callback(sqlite3_stmt *stmt)
 
 static void rl_search(void *dummy, readline_curses *rc)
 {
-    static string last_search[LNV__MAX];
-
     string name;
 
     switch (lnav_data.ld_mode) {
     case LNM_SEARCH:
-        name = "(search";
+        name = "$search";
         break;
 
     case LNM_CAPTURE:
         assert(0);
-        name = "(capture";
+        name = "$capture";
         break;
 
     case LNM_COMMAND:
@@ -1770,7 +1768,8 @@ static void rl_search(void *dummy, readline_curses *rc)
     int index                      = (tc - lnav_data.ld_views);
     auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[index];
 
-    if ((gc.get() == NULL) || (rc->get_value() != last_search[index])) {
+    if ((gc.get() == NULL) ||
+        (rc->get_value() != lnav_data.ld_last_search[index])) {
         const char *errptr;
         pcre *      code;
         int         eoff;
@@ -1822,7 +1821,7 @@ static void rl_search(void *dummy, readline_curses *rc)
             auto_ptr<grep_highlighter> gh(new grep_highlighter(gp, name, hm));
             gc = gh;
 
-            last_search[index] = rc->get_value();
+            lnav_data.ld_last_search[index] = rc->get_value();
         }
     }
 }
