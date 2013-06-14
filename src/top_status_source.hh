@@ -57,9 +57,9 @@ public:
         : filename_wire(*this, &top_status_source::update_filename)
     {
         this->tss_fields[TSF_TIME].set_width(24);
-        this->tss_fields[TSF_VIEW_NAME].set_width(7);
+        this->tss_fields[TSF_VIEW_NAME].set_width(8);
         this->tss_fields[TSF_VIEW_NAME].right_justify(true);
-        this->tss_fields[TSF_FORMAT].set_width(15);
+        this->tss_fields[TSF_FORMAT].set_width(16);
         this->tss_fields[TSF_FORMAT].right_justify(true);
         this->tss_fields[TSF_FILENAME].set_min_width(35); /* XXX */
         this->tss_fields[TSF_FILENAME].set_share(1);
@@ -104,22 +104,22 @@ public:
             iter = sa[lr].find("file");
             if (iter != sa[lr].end()) {
                 logfile *lf = (logfile *)iter->second.sa_ptr;
-                struct line_range lr = { 0, 1 };
+                struct line_range lr = { 0, 2};
 
                 if (lf->get_format()) {
-                    sf_format.set_value("< % 13s",
+                    sf_format.set_value(":: % 13s",
                                         lf->get_format()->get_name().c_str());
                 }
                 else if (!lf->get_filename().empty()) {
-                    sf_format.set_value("< % 13s", "unknown");
+                    sf_format.set_value(":: % 13s", "unknown");
                 }
                 else{
                     sf_format.clear();
                 }
 
                 sf_format.get_value().get_attrs()[lr].insert(
-                    make_string_attr("style", A_BOLD|COLOR_PAIR(
-                        view_colors::VC_GREEN_ON_WHITE)));
+                    make_string_attr("style", COLOR_PAIR(
+                        view_colors::VC_MAGENTA_ON_WHITE)));
                 sf_filename.set_value(lf->get_filename());
             }
             else {

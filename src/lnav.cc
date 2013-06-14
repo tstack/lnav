@@ -780,11 +780,11 @@ static void update_view_name(void)
     status_field &sf = lnav_data.ld_top_source.statusview_value_for_field(
         top_status_source::TSF_VIEW_NAME);
     textview_curses *tc = lnav_data.ld_view_stack.top();
-    struct line_range lr = { 0, 1 };
+    struct line_range lr = { 0, 2 };
 
-    sf.set_value("< % 5s", view_names[tc - lnav_data.ld_views]);
+    sf.set_value(":: % 5s", view_names[tc - lnav_data.ld_views]);
     sf.get_value().get_attrs()[lr].insert(make_string_attr(
-        "style", A_BOLD|COLOR_PAIR(view_colors::VC_GREEN_ON_WHITE)));
+        "style", COLOR_PAIR(view_colors::VC_MAGENTA_ON_WHITE)));
 }
 
 bool toggle_view(textview_curses *toggle_tc)
