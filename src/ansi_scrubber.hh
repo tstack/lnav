@@ -36,6 +36,11 @@
 
 #include "view_curses.hh"
 
+#define ANSI_BOLD_START "\x1b[1m"
+#define ANSI_NORM "\x1b[0m"
+
+#define ANSI_BOLD(msg) ANSI_BOLD_START msg ANSI_NORM
+
 /**
  * Check a string for ANSI escape sequences, process them, remove them, and add
  * any style attributes to the given attribute container.

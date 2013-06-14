@@ -46,8 +46,7 @@ public:
 
     typedef enum {
         TSF_TIME,
-        TSF_WARNINGS,
-        TSF_ERRORS,
+        TSF_VIEW_NAME,
         TSF_FORMAT,
         TSF_FILENAME,
 
@@ -55,13 +54,11 @@ public:
     } field_t;
 
     top_status_source()
-        : marks_wire(*this, &top_status_source::update_marks),
-          filename_wire(*this, &top_status_source::update_filename)
+        : filename_wire(*this, &top_status_source::update_filename)
     {
         this->tss_fields[TSF_TIME].set_width(24);
-        this->tss_fields[TSF_WARNINGS].set_width(10);
-        this->tss_fields[TSF_ERRORS].set_width(10);
-        this->tss_fields[TSF_ERRORS].set_role(view_colors::VCR_ALERT_STATUS);
+        this->tss_fields[TSF_VIEW_NAME].set_width(7);
+        this->tss_fields[TSF_VIEW_NAME].right_justify(true);
         this->tss_fields[TSF_FORMAT].set_width(15);
         this->tss_fields[TSF_FORMAT].right_justify(true);
         this->tss_fields[TSF_FILENAME].set_min_width(35); /* XXX */
@@ -69,7 +66,6 @@ public:
         this->tss_fields[TSF_FILENAME].right_justify(true);
     };
 
-    lv_functor_t marks_wire;
     lv_functor_t filename_wire;
 
     size_t statusview_fields(void) { return TSF__MAX; };
@@ -91,41 +87,6 @@ public:
         sf.set_value(buffer);
     };
 
-    void update_marks(listview_curses *lc)
-    {
-        textview_curses *tc  = dynamic_cast<textview_curses *>(lc);
-        status_field &   sfw = this->tss_fields[TSF_WARNINGS];
-        status_field &   sfe = this->tss_fields[TSF_ERRORS];
-        vis_bookmarks &  bm  = tc->get_bookmarks();
-        unsigned long    width;
-        vis_line_t       height;
-
-        tc->get_dimensions(height, width);
-        if (bm.find(&logfile_sub_source::BM_WARNINGS) != bm.end()) {
-            bookmark_vector<vis_line_t> &bv =
-                bm[&logfile_sub_source::BM_WARNINGS];
-            bookmark_vector<vis_line_t>::iterator iter;
-
-            iter = lower_bound(bv.begin(), bv.end(), tc->get_top());
-            sfw.set_value("%9dW", distance(bv.begin(), iter));
-        }
-        else {
-            sfw.clear();
-        }
-
-        if (bm.find(&logfile_sub_source::BM_ERRORS) != bm.end()) {
-            bookmark_vector<vis_line_t> &bv =
-                bm[&logfile_sub_source::BM_ERRORS];
-            bookmark_vector<vis_line_t>::iterator iter;
-
-            iter = lower_bound(bv.begin(), bv.end(), tc->get_top());
-            sfe.set_value("%9dE", distance(bv.begin(), iter));
-        }
-        else {
-            sfe.clear();
-        }
-    };
-
     void update_filename(listview_curses *lc)
     {
         status_field &sf_format   = this->tss_fields[TSF_FORMAT];
@@ -143,17 +104,22 @@ public:
             iter = sa[lr].find("file");
             if (iter != sa[lr].end()) {
                 logfile *lf = (logfile *)iter->second.sa_ptr;
+                struct line_range lr = { 0, 1 };
 
                 if (lf->get_format()) {
-                    sf_format.set_value("(%s)",
+                    sf_format.set_value("< % 13s",
                                         lf->get_format()->get_name().c_str());
                 }
                 else if (!lf->get_filename().empty()) {
-                    sf_format.set_value("(unknown)");
+                    sf_format.set_value("< % 13s", "unknown");
                 }
                 else{
                     sf_format.clear();
                 }
+
+                sf_format.get_value().get_attrs()[lr].insert(
+                    make_string_attr("style", A_BOLD|COLOR_PAIR(
+                        view_colors::VC_GREEN_ON_WHITE)));
                 sf_filename.set_value(lf->get_filename());
             }
             else {

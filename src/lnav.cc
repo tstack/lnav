@@ -75,6 +75,7 @@
 #include "init-sql.hh"
 #include "logfile.hh"
 #include "lnav_util.hh"
+#include "ansi_scrubber.hh"
 #include "listview_curses.hh"
 #include "statusview_curses.hh"
 #include "vt52_curses.hh"
@@ -105,6 +106,12 @@
 #include "yajlpp.hh"
 
 using namespace std;
+
+#define HELP_MSG_1(x, msg) \
+    "Press '" ANSI_BOLD(#x) "'' " msg
+
+#define HELP_MSG_2(x, y, msg) \
+    "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
 
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
@@ -758,6 +765,28 @@ static void back_ten(int ten_minute)
     lnav_data.ld_view_stack.top()->set_top(line);
 }
 
+static void update_view_name(void)
+{
+    static const char *view_names[LNV__MAX] = {
+        "LOG",
+        "TEXT",
+        "HELP",
+        "HIST",
+        "GRAPH",
+        "DB",
+        "EXAMPLE",
+    };
+
+    status_field &sf = lnav_data.ld_top_source.statusview_value_for_field(
+        top_status_source::TSF_VIEW_NAME);
+    textview_curses *tc = lnav_data.ld_view_stack.top();
+    struct line_range lr = { 0, 1 };
+
+    sf.set_value("< % 5s", view_names[tc - lnav_data.ld_views]);
+    sf.get_value().get_attrs()[lr].insert(make_string_attr(
+        "style", A_BOLD|COLOR_PAIR(view_colors::VC_GREEN_ON_WHITE)));
+}
+
 bool toggle_view(textview_curses *toggle_tc)
 {
     textview_curses *tc     = lnav_data.ld_view_stack.top();
@@ -773,6 +802,8 @@ bool toggle_view(textview_curses *toggle_tc)
     tc = lnav_data.ld_view_stack.top();
     tc->set_needs_update();
     lnav_data.ld_scroll_broadcaster.invoke(tc);
+
+    update_view_name();
 
     return retval;
 }
@@ -927,16 +958,16 @@ static void handle_paging_key(int ch)
             string msg = "";
 
             if (tc == &lnav_data.ld_views[LNV_DB]) {
-                msg = "v/V: Switch to the SQL result view";
+                msg = HELP_MSG_2(v, V, "to switch to the SQL result view");
             }
             else if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
-                msg = "i/I: Switch to the histogram view";
+                msg = HELP_MSG_2(i, I, "to switch to the histogram view");
             }
             else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
-                msg = "t: Switch to the text file view";
+                msg = HELP_MSG_1(t, "to switch to the text file view");
             }
             else if (tc == &lnav_data.ld_views[LNV_GRAPH]) {
-                msg = "g: Switch to the graph view";
+                msg = HELP_MSG_1(g, "to switch to the graph view");
             }
 
             lnav_data.ld_rl_view->set_alt_value(msg);
@@ -952,6 +983,7 @@ static void handle_paging_key(int ch)
             tc = lnav_data.ld_view_stack.top();
             tc->set_needs_update();
             lnav_data.ld_scroll_broadcaster.invoke(tc);
+            update_view_name();
         }
         break;
 
@@ -970,44 +1002,46 @@ static void handle_paging_key(int ch)
         moveto_cluster(&bookmark_vector<vis_line_t>::next,
                        &logfile_sub_source::BM_ERRORS,
                        tc->get_top());
-        lnav_data.ld_rl_view->set_alt_value(
-            "w/W: Move forward/backward through warning messages");
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+            w, W, "to move forward/backward through warning messages"));
         break;
 
     case 'E':
         moveto_cluster(&bookmark_vector<vis_line_t>::prev,
                        &logfile_sub_source::BM_ERRORS,
                        tc->get_top());
-        lnav_data.ld_rl_view->set_alt_value(
-            "w/W: Move forward/backward through warning messages");
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+            w, W, "to move forward/backward through warning messages"));
         break;
 
     case 'w':
         moveto_cluster(&bookmark_vector<vis_line_t>::next,
                        &logfile_sub_source::BM_WARNINGS,
                        tc->get_top());
-        lnav_data.ld_rl_view->set_alt_value(
-            "o/O: Move forward/backward an hour");
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+            o, O, "to move forward/backward an hour"));
         break;
 
     case 'W':
         moveto_cluster(&bookmark_vector<vis_line_t>::prev,
                        &logfile_sub_source::BM_WARNINGS,
                        tc->get_top());
-        lnav_data.ld_rl_view->set_alt_value(
-            "o/O: Move forward/backward an hour");
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+            o, O, "to move forward/backward an hour"));
         break;
 
     case 'n':
         tc->set_top(bm[&textview_curses::BM_SEARCH].next(tc->get_top()));
         lnav_data.ld_rl_view->set_alt_value(
-            "Press '>' or '<' to scroll horizontally to a search result");
+            "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
+            "' to scroll horizontally to a search result");
         break;
 
     case 'N':
         tc->set_top(bm[&textview_curses::BM_SEARCH].prev(tc->get_top()));
         lnav_data.ld_rl_view->set_alt_value(
-            "Press '>' or '<' to scroll horizontally to a search result");
+            "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
+            "' to scroll horizontally to a search result");
         break;
 
     case 'y':
@@ -1097,8 +1131,8 @@ static void handle_paging_key(int ch)
                 rebuild_hist(0, true);
             }
 
-            lnav_data.ld_rl_view->set_alt_value(
-                "Press 'I' to switch to the log view at the top displayed time");
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                I, "to switch to the log view at the top displayed time"));
         }
         break;
 
@@ -1112,8 +1146,8 @@ static void handle_paging_key(int ch)
                 rebuild_hist(0, true);
             }
 
-            lnav_data.ld_rl_view->set_alt_value(
-                "Press 'I' to switch to the log view at the top displayed time");
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                I, "to switch to the log view at the top displayed time"));
         }
         break;
 
@@ -1165,8 +1199,8 @@ static void handle_paging_key(int ch)
                                   vis_line_t(lnav_data.ld_last_user_mark[tc]));
             tc->reload_data();
 
-            lnav_data.ld_rl_view->set_alt_value(
-                "c: Copy marked lines to the clipboard");
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                c, "to copy marked lines to the clipboard"));
         }
         break;
 
@@ -1198,8 +1232,8 @@ static void handle_paging_key(int ch)
             }
             tc->reload_data();
 
-            lnav_data.ld_rl_view->set_alt_value(
-                "c: Copy marked lines to the clipboard");
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                c, "to copy marked lines to the clipboard"));
         }
         break;
 
@@ -1279,6 +1313,22 @@ static void handle_paging_key(int ch)
 
     case '^':
         back_ten(6);
+        break;
+
+    case '9':
+        if (lss) {
+            double tenth = ((double)tc->get_inner_height()) / 10.0;
+
+            tc->shift_top(vis_line_t(tenth));
+        }
+        break;
+
+    case '(':
+        if (lss) {
+            double tenth = ((double)tc->get_inner_height()) / 10.0;
+
+            tc->shift_top(vis_line_t(-tenth));
+        }
         break;
 
     case '0':
@@ -1420,8 +1470,8 @@ static void handle_paging_key(int ch)
 
     case 't':
         if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
-            lnav_data.ld_rl_view->set_alt_value(
-                "f/F: Switch to the next/previous file");
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+                f, F, "to switch to the next/previous file"));
         }
         break;
 
@@ -1432,7 +1482,8 @@ static void handle_paging_key(int ch)
 
     case 'i':
         if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
-            lnav_data.ld_rl_view->set_alt_value("z/Z: Zoom in/out");
+            lnav_data.ld_rl_view->set_alt_value(
+                HELP_MSG_2(z, Z, "to zoom in/out"));
         }
         else {
             lnav_data.ld_rl_view->set_alt_value("");
@@ -1576,8 +1627,8 @@ static void handle_paging_key(int ch)
     case KEY_CTRL_R:
         reset_session();
         rebuild_indexes(true);
-        lnav_data.ld_rl_view->set_alt_value(
-            "r/R: Restore the next/previous session");
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+            r, R, "to restore the next/previous session"));
         break;
 
     default:
@@ -1849,8 +1900,8 @@ static void rl_callback(void *dummy, readline_curses *rc)
             lnav_data.ld_rl_view->
             add_possibility(LNM_COMMAND, "filter", rc->get_value());
             rc->set_value("search: " + rc->get_value());
-            rc->set_alt_value("n/N: Move forward/backward through search "
-                              "results");
+            rc->set_alt_value(HELP_MSG_2(
+                n, N, "to move forward/backward through search results"));
         }
         lnav_data.ld_mode = LNM_PAGING;
         break;
@@ -1925,8 +1976,9 @@ static void rl_callback(void *dummy, readline_curses *rc)
                              "%'d row(s) matched",
                              (int)dls.dls_rows.size());
                     rc->set_value(row_count);
-                    rc->set_alt_value("y/Y: Move forward/backward through "
-                                      "query results in the log view");
+                    rc->set_alt_value(HELP_MSG_2(
+                        y, Y, "to move forward/backward through query results "
+                        "in the log view"));
                 }
                 else {
                     rc->set_value("No rows matched");
@@ -2452,11 +2504,13 @@ static void looper(void)
         rlc.set_y(-1);
         rlc.set_perform_action(readline_curses::action(rl_callback));
         rlc.set_timeout_action(readline_curses::action(rl_search));
-        rlc.set_alt_value("e/E: Move forward/backward through error messages");
+        rlc.set_alt_value(HELP_MSG_2(
+            e, E, "to move forward/backward through error messages"));
 
         (void)curs_set(0);
 
         lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
+        update_view_name();
 
         tc = lnav_data.ld_view_stack.top();
 
@@ -2480,7 +2534,6 @@ static void looper(void)
         lnav_data.ld_status[LNS_BOTTOM].
         set_data_source(&lnav_data.ld_bottom_source);
         sb.push_back(view_action<listview_curses>(update_times));
-        sb.push_back(&lnav_data.ld_top_source.marks_wire);
         sb.push_back(&lnav_data.ld_top_source.filename_wire);
         sb.push_back(&lnav_data.ld_bottom_source.line_number_wire);
         sb.push_back(&lnav_data.ld_bottom_source.percent_wire);
@@ -2554,16 +2607,13 @@ static void looper(void)
             if (!session_loaded && lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
                 load_session();
                 if (!lnav_data.ld_session_file_names.empty()) {
-                    std::list<session_pair_t>::iterator sess_iter;
                     std::string ago;
 
-                    sess_iter = lnav_data.ld_session_file_names.begin();
-                    advance(sess_iter, lnav_data.ld_session_file_index);
-                    ago = time_ago(sess_iter->first.second);
-
-                    lnav_data.ld_rl_view->set_value("restored session from " +
-                                                    ago +
-                                                    "; press Ctrl-R to reset session");
+                    ago = time_ago(lnav_data.ld_session_save_time);
+                    lnav_data.ld_rl_view->set_value(
+                        ("restored session from " ANSI_BOLD_START) +
+                        ago +
+                        (ANSI_NORM "; press Ctrl-R to reset session"));
                 }
                 rebuild_indexes(true);
                 session_loaded = true;
@@ -2606,7 +2656,7 @@ static void looper(void)
                     toggle_view(&lnav_data.ld_views[LNV_TEXT]);
                     lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
                     lnav_data.ld_rl_view->set_alt_value(
-                        "f/F: Switch to the next/previous file");
+                        HELP_MSG_2(f, F, "to switch to the next/previous file"));
                 }
                 initial_build = true;
             }

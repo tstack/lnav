@@ -134,7 +134,8 @@ am_drive_logfile_OBJECTS = logfile.$(OBJEXT) log_format.$(OBJEXT) \
 drive_logfile_OBJECTS = $(am_drive_logfile_OBJECTS)
 drive_logfile_LDADD = $(LDADD)
 drive_logfile_DEPENDENCIES =
-am_drive_readline_curses_OBJECTS = vt52_curses.$(OBJEXT) \
+am_drive_readline_curses_OBJECTS = ansi_scrubber.$(OBJEXT) \
+	pcrepp.$(OBJEXT) vt52_curses.$(OBJEXT) \
 	readline_curses.$(OBJEXT) view_curses.$(OBJEXT) \
 	drive_readline_curses.$(OBJEXT)
 drive_readline_curses_OBJECTS = $(am_drive_readline_curses_OBJECTS)
@@ -699,6 +700,8 @@ drive_vt52_curses_SOURCES = \
 
 drive_vt52_curses_LDADD = $(CURSES_LIB)
 drive_readline_curses_SOURCES = \
+	../src/ansi_scrubber.cc \
+	../src/pcrepp.cc \
 	../src/vt52_curses.cc \
 	../src/readline_curses.cc \
 	../src/view_curses.cc \
@@ -901,6 +904,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ansi_scrubber.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bookmarks.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_data_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_grep_proc.Po@am__quote@
@@ -1046,6 +1050,20 @@ log_format.obj: ../src/log_format.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/log_format.cc' object='log_format.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o log_format.obj `if test -f '../src/log_format.cc'; then $(CYGPATH_W) '../src/log_format.cc'; else $(CYGPATH_W) '$(srcdir)/../src/log_format.cc'; fi`
+
+ansi_scrubber.o: ../src/ansi_scrubber.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ansi_scrubber.o -MD -MP -MF $(DEPDIR)/ansi_scrubber.Tpo -c -o ansi_scrubber.o `test -f '../src/ansi_scrubber.cc' || echo '$(srcdir)/'`../src/ansi_scrubber.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ansi_scrubber.Tpo $(DEPDIR)/ansi_scrubber.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/ansi_scrubber.cc' object='ansi_scrubber.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ansi_scrubber.o `test -f '../src/ansi_scrubber.cc' || echo '$(srcdir)/'`../src/ansi_scrubber.cc
+
+ansi_scrubber.obj: ../src/ansi_scrubber.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ansi_scrubber.obj -MD -MP -MF $(DEPDIR)/ansi_scrubber.Tpo -c -o ansi_scrubber.obj `if test -f '../src/ansi_scrubber.cc'; then $(CYGPATH_W) '../src/ansi_scrubber.cc'; else $(CYGPATH_W) '$(srcdir)/../src/ansi_scrubber.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ansi_scrubber.Tpo $(DEPDIR)/ansi_scrubber.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../src/ansi_scrubber.cc' object='ansi_scrubber.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ansi_scrubber.obj `if test -f '../src/ansi_scrubber.cc'; then $(CYGPATH_W) '../src/ansi_scrubber.cc'; else $(CYGPATH_W) '$(srcdir)/../src/ansi_scrubber.cc'; fi`
 
 vt52_curses.o: ../src/vt52_curses.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT vt52_curses.o -MD -MP -MF $(DEPDIR)/vt52_curses.Tpo -c -o vt52_curses.o `test -f '../src/vt52_curses.cc' || echo '$(srcdir)/'`../src/vt52_curses.cc

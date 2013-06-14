@@ -80,7 +80,7 @@ static string declare_table_statement(log_vtab_impl *vi)
                                   "BINARY" : iter->vc_collator);
         oss << coldecl;
     }
-    oss << "  log_path text collate naturalnocase,\n"
+    oss << "  log_path text hidden collate naturalnocase,\n"
         << "  log_text text hidden\n"
         << ");";
 

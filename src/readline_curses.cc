@@ -56,6 +56,7 @@
 #include <string>
 
 #include "auto_mem.hh"
+#include "ansi_scrubber.hh"
 #include "readline_curses.hh"
 
 using namespace std;
@@ -630,18 +631,38 @@ void readline_curses::clear_possibilities(int context, string type)
 void readline_curses::do_update(void)
 {
     if (this->rc_active_context == -1) {
-        int alt_start = getmaxx(this->vc_window) - this->rc_alt_value.length();
+        int alt_start = -1;
+        struct line_range lr = { 0, };
+        attr_line_t al, alt_al;
 
         wmove(this->vc_window, this->get_actual_y(), 0);
         wclrtoeol(this->vc_window);
-        if (alt_start >= (int)(this->rc_value.length() + 5)) {
-            mvwprintw(this->vc_window, this->get_actual_y(), alt_start,
-                      "%s",
-                      this->rc_alt_value.c_str());
+
+        al.get_string() = this->rc_value;
+        scrub_ansi_string(al.get_string(), al.get_attrs());
+
+        if (!this->rc_alt_value.empty()) {
+            alt_al.get_string() = this->rc_alt_value;
+            scrub_ansi_string(alt_al.get_string(), alt_al.get_attrs());
+
+            alt_start = getmaxx(this->vc_window) - alt_al.get_string().size();
         }
-        mvwprintw(this->vc_window, this->get_actual_y(), 0,
-                  "%s",
-                  this->rc_value.c_str());
+
+        if (alt_start >= (int)(al.get_string().length() + 5)) {
+            lr.lr_end = alt_al.get_string().length();
+            view_curses::mvwattrline(this->vc_window,
+                                     this->get_actual_y(),
+                                     alt_start,
+                                     alt_al,
+                                     lr);
+        }
+
+        lr.lr_end = al.get_string().length();
+        view_curses::mvwattrline(this->vc_window,
+                                 this->get_actual_y(),
+                                 0,
+                                 al,
+                                 lr);
         this->set_x(0);
     }
     vt52_curses::do_update();

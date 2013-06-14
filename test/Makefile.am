@@ -125,6 +125,8 @@ drive_vt52_curses_SOURCES = \
 drive_vt52_curses_LDADD = $(CURSES_LIB)
 
 drive_readline_curses_SOURCES = \
+	../src/ansi_scrubber.cc \
+	../src/pcrepp.cc \
 	../src/vt52_curses.cc \
 	../src/readline_curses.cc \
 	../src/view_curses.cc \

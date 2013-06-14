@@ -180,10 +180,8 @@ public:
         if (bm.find(&logfile_sub_source::BM_WARNINGS) != bm.end()) {
             bookmark_vector<vis_line_t> &bv =
                 bm[&logfile_sub_source::BM_WARNINGS];
-            bookmark_vector<vis_line_t>::iterator iter;
 
-            iter = lower_bound(bv.begin(), bv.end(), tc->get_top() + height);
-            sfw.set_value("%'9dW", distance(iter, bv.end()));
+            sfw.set_value("%'9dW", bv.size());
         }
         else {
             sfw.clear();
@@ -192,10 +190,8 @@ public:
         if (bm.find(&logfile_sub_source::BM_ERRORS) != bm.end()) {
             bookmark_vector<vis_line_t> &bv =
                 bm[&logfile_sub_source::BM_ERRORS];
-            bookmark_vector<vis_line_t>::iterator iter;
 
-            iter = lower_bound(bv.begin(), bv.end(), tc->get_top() + height);
-            sfe.set_value("%'9dE", distance(iter, bv.end()));
+            sfe.set_value("%'9dE", bv.size());
         }
         else {
             sfe.clear();

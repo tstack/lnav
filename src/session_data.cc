@@ -364,6 +364,13 @@ void load_bookmarks(void)
     }
 }
 
+static int save_time(void *ctx, long long value)
+{
+    lnav_data.ld_session_save_time = value;
+
+    return 1;
+}
+
 static int read_files(void *ctx, const unsigned char *str, size_t len)
 {
     return 1;
@@ -399,6 +406,7 @@ static int read_commands(void *ctx, const unsigned char *str, size_t len)
 }
 
 static struct json_path_handler view_info_handlers[] = {
+    json_path_handler("/save-time", save_time),
     json_path_handler("/files#", read_files),
     json_path_handler("/views/([^.]+)/top_line", read_top_line),
     json_path_handler("/commands#", read_commands),
@@ -422,6 +430,7 @@ void load_session(void)
     handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
     sess_iter = lnav_data.ld_session_file_names.begin();
     advance(sess_iter, lnav_data.ld_session_file_index);
+    lnav_data.ld_session_save_time = sess_iter->first.second;
     string &view_info_name = sess_iter->second;
 
     if ((fd = open(view_info_name.c_str(), O_RDONLY)) < 0) {
@@ -571,6 +580,9 @@ void save_session(void)
 
         {
             yajlpp_map root_map(handle);
+
+            root_map.gen("save-time");
+            root_map.gen(time(NULL));
 
             root_map.gen("files");
 
