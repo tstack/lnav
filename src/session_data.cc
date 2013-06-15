@@ -364,7 +364,7 @@ void load_bookmarks(void)
     }
 }
 
-static int save_time(void *ctx, long long value)
+static int read_save_time(void *ctx, long long value)
 {
     lnav_data.ld_session_save_time = value;
 
@@ -373,6 +373,26 @@ static int save_time(void *ctx, long long value)
 
 static int read_files(void *ctx, const unsigned char *str, size_t len)
 {
+    return 1;
+}
+
+static int read_last_search(void *ctx, const unsigned char *str, size_t len)
+{
+    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    string regex = std::string((const char *)str, len);
+    const char **view_name;
+    int view_index;
+
+    view_name = find(lnav_view_strings,
+                     lnav_view_strings + LNV__MAX,
+                     ypc->get_path_fragment(-2));
+    view_index = view_name - lnav_view_strings;
+
+    if (view_index < LNV__MAX) {
+        execute_search((lnav_view_t)view_index, regex);
+        lnav_data.ld_views[view_index].set_follow_search(false);
+    }
+
     return 1;
 }
 
@@ -406,9 +426,10 @@ static int read_commands(void *ctx, const unsigned char *str, size_t len)
 }
 
 static struct json_path_handler view_info_handlers[] = {
-    json_path_handler("/save-time", save_time),
+    json_path_handler("/save-time", read_save_time),
     json_path_handler("/files#", read_files),
     json_path_handler("/views/([^.]+)/top_line", read_top_line),
+    json_path_handler("/views/([^.]+)/search", read_last_search),
     json_path_handler("/commands#", read_commands),
 
     json_path_handler()

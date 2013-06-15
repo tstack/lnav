@@ -1182,8 +1182,8 @@ static void handle_paging_key(int ch)
                                   vis_line_t(lnav_data.ld_last_user_mark[tc]));
             tc->reload_data();
 
-            lnav_data.ld_rl_view->set_alt_value(
-                "u/U: Move forward/backward through user bookmarks");
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+                u, U, "to move forward/backward through user bookmarks"));
         }
         break;
 
@@ -1380,7 +1380,7 @@ static void handle_paging_key(int ch)
                 --line;
             }
             tc->set_top(line);
-            
+
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(/, "to search"));
         }
         break;
@@ -1791,6 +1791,70 @@ int sql_callback(sqlite3_stmt *stmt)
     return retval;
 }
 
+void execute_search(lnav_view_t view, const std::string &regex)
+{
+    auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
+    textview_curses &tc = lnav_data.ld_views[view];
+
+    if ((gc.get() == NULL) || (regex != lnav_data.ld_last_search[view])) {
+        const char *errptr;
+        pcre *      code;
+        int         eoff;
+
+        if (regex.empty() && gc.get() != NULL) {
+            tc.grep_begin(*(gc->get_grep_proc()));
+            tc.grep_end(*(gc->get_grep_proc()));
+        }
+        gc.reset();
+
+        fprintf(stderr, "start search for: %s\n", regex.c_str());
+
+        tc.match_reset();
+
+        if (regex.empty()) {
+            lnav_data.ld_bottom_source.grep_error("");
+        }
+        else if ((code = pcre_compile(regex.c_str(),
+                                      PCRE_CASELESS,
+                                      &errptr,
+                                      &eoff,
+                                      NULL)) == NULL) {
+            lnav_data.ld_bottom_source.
+            grep_error("regexp error: " + string(errptr));
+        }
+        else {
+            textview_curses::highlighter
+                hl(code, false, view_colors::VCR_SEARCH);
+
+            lnav_data.ld_bottom_source.set_prompt("");
+
+            textview_curses::highlight_map_t &hm = tc.get_highlights();
+            hm["$search"] = hl;
+
+            auto_ptr<grep_proc> gp(new grep_proc(code,
+                                                 tc,
+                                                 lnav_data.ld_max_fd,
+                                                 lnav_data.ld_read_fds));
+
+            gp->queue_request(grep_line_t(tc.get_top()));
+            if (tc.get_top() > 0) {
+                gp->queue_request(grep_line_t(0),
+                                  grep_line_t(tc.get_top()));
+            }
+            gp->start();
+            gp->set_sink(lnav_data.ld_view_stack.top());
+
+            tc.set_follow_search(true);
+
+            auto_ptr<grep_highlighter> gh(new grep_highlighter(gp, "$search", hm));
+            gc = gh;
+
+        }
+    }
+    
+    lnav_data.ld_last_search[view] = regex;
+}
+
 static void rl_search(void *dummy, readline_curses *rc)
 {
     string name;
@@ -1840,68 +1904,11 @@ static void rl_search(void *dummy, readline_curses *rc)
         break;
     }
 
-    textview_curses *tc            = lnav_data.ld_view_stack.top();
-    int index                      = (tc - lnav_data.ld_views);
-    auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[index];
+    textview_curses *tc = lnav_data.ld_view_stack.top();
+    lnav_view_t index   = (lnav_view_t)(tc - lnav_data.ld_views);
 
-    if ((gc.get() == NULL) ||
-        (rc->get_value() != lnav_data.ld_last_search[index])) {
-        const char *errptr;
-        pcre *      code;
-        int         eoff;
-
-        if (rc->get_value().empty() && gc.get() != NULL) {
-            tc->grep_begin(*(gc->get_grep_proc()));
-            tc->grep_end(*(gc->get_grep_proc()));
-        }
-        gc.reset();
-
-        fprintf(stderr, "start search for: %s\n", rc->get_value().c_str());
-
-        tc->set_top(lnav_data.ld_search_start_line);
-        tc->match_reset();
-
-        if (rc->get_value().empty()) {
-            lnav_data.ld_bottom_source.grep_error("");
-        }
-        else if ((code = pcre_compile(rc->get_value().c_str(),
-                                      PCRE_CASELESS,
-                                      &errptr,
-                                      &eoff,
-                                      NULL)) == NULL) {
-            lnav_data.ld_bottom_source.
-            grep_error("regexp error: " + string(errptr));
-        }
-        else {
-            textview_curses::highlighter
-                hl(code, false, view_colors::VCR_SEARCH);
-
-            lnav_data.ld_bottom_source.set_prompt("");
-
-            textview_curses::highlight_map_t &hm = tc->get_highlights();
-            hm[name] = hl;
-
-            auto_ptr<grep_proc> gp(new grep_proc(code,
-                                                 *tc,
-                                                 lnav_data.ld_max_fd,
-                                                 lnav_data.ld_read_fds));
-
-            gp->queue_request(grep_line_t(tc->get_top()));
-            if (tc->get_top() > 0) {
-                gp->queue_request(grep_line_t(0),
-                                  grep_line_t(tc->get_top()));
-            }
-            gp->start();
-            gp->set_sink(lnav_data.ld_view_stack.top());
-
-            tc->set_follow_search(true);
-
-            auto_ptr<grep_highlighter> gh(new grep_highlighter(gp, name, hm));
-            gc = gh;
-
-            lnav_data.ld_last_search[index] = rc->get_value();
-        }
-    }
+    tc->set_top(lnav_data.ld_search_start_line);
+    execute_search(index, rc->get_value());
 }
 
 static void rl_callback(void *dummy, readline_curses *rc)
@@ -2633,21 +2640,6 @@ static void looper(void)
                 rebuild_indexes(true);
             }
 
-            if (!session_loaded && lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
-                load_session();
-                if (!lnav_data.ld_session_file_names.empty()) {
-                    std::string ago;
-
-                    ago = time_ago(lnav_data.ld_session_save_time);
-                    lnav_data.ld_rl_view->set_value(
-                        ("restored session from " ANSI_BOLD_START) +
-                        ago +
-                        (ANSI_NORM "; press Ctrl-R to reset session"));
-                }
-                rebuild_indexes(true);
-                session_loaded = true;
-            }
-
             for (lpc = 0; lpc < LNV__MAX; lpc++) {
                 lnav_data.ld_views[lpc]
                 .set_height(vis_line_t(-(rlc.get_height() + 1)));
@@ -2686,8 +2678,25 @@ static void looper(void)
                     lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
                     lnav_data.ld_rl_view->set_alt_value(
                         HELP_MSG_2(f, F, "to switch to the next/previous file"));
+
+
                 }
                 initial_build = true;
+
+                if (!session_loaded) {
+                    load_session();
+                    if (!lnav_data.ld_session_file_names.empty()) {
+                        std::string ago;
+
+                        ago = time_ago(lnav_data.ld_session_save_time);
+                        lnav_data.ld_rl_view->set_value(
+                            ("restored session from " ANSI_BOLD_START) +
+                            ago +
+                            (ANSI_NORM "; press Ctrl-R to reset session"));
+                    }
+                    rebuild_indexes(true);
+                    session_loaded = true;
+                }
             }
             else {
                 if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {

@@ -189,4 +189,6 @@ std::string execute_command(std::string cmdline);
 bool setup_logline_table();
 int sql_callback(sqlite3_stmt *stmt);
 
+void execute_search(lnav_view_t view, const std::string &regex);
+
 #endif
