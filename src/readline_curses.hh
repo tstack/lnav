@@ -187,6 +187,8 @@ public:
 
     static const int KEY_TIMEOUT = 750 * 1000;
 
+    static const int VALUE_EXPIRATION = 20;
+
     readline_curses();
     virtual ~readline_curses();
 
@@ -198,7 +200,10 @@ public:
     void set_perform_action(action va) { this->rc_perform = va; };
     void set_timeout_action(action va) { this->rc_timeout = va; };
 
-    void set_value(const std::string &value) { this->rc_value = value; };
+    void set_value(const std::string &value) {
+        this->rc_value = value; 
+        this->rc_value_expiration = time(NULL) + VALUE_EXPIRATION;
+    };
     std::string get_value() const { return this->rc_value; };
 
     void set_alt_value(const std::string &value) { this->rc_alt_value = value; };
@@ -268,6 +273,7 @@ private:
     auto_fd rc_command_pipe[2];
     std::map<int, readline_context *> rc_contexts;
     std::string rc_value;
+    time_t rc_value_expiration;
     std::string rc_alt_value;
     
     action rc_perform;

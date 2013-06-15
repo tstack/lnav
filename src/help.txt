@@ -67,11 +67,13 @@ indicates your current position in the file.
 Above and below the main body are status lines that display:
 
   * the current time;
-  * the number of errors/warnings above and below your current
-    position;
-  * the number of search hits, which updates as more are found;
-  * the line number for the top line in the display; and
-  * the name of the file the top line was pulled from.
+  * the name of the file the top line was pulled from;
+  * the log format for the top line;
+  * the current view;
+  * the line number for the top line in the display;
+  * the total number of warnings and errors;
+  * the number of search hits, which updates as more are found; and
+  * the number of lines not displayed because of filtering.
 
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a

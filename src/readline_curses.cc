@@ -638,6 +638,10 @@ void readline_curses::do_update(void)
         wmove(this->vc_window, this->get_actual_y(), 0);
         wclrtoeol(this->vc_window);
 
+        if (time(NULL) > this->rc_value_expiration) {
+            this->rc_value.clear();
+        }
+
         al.get_string() = this->rc_value;
         scrub_ansi_string(al.get_string(), al.get_attrs());
 

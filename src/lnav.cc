@@ -913,6 +913,7 @@ static void copy_to_xclip(void)
         tc->get_bookmarks()[&textview_curses::BM_USER];
     bookmark_vector<vis_line_t>::iterator iter;
     FILE * pfile = NULL;
+    int line_count = 0;
     string line;
 
     /* XXX : Check if this is linux or MAC. Probably not the best solution but */
@@ -932,10 +933,18 @@ static void copy_to_xclip(void)
     for (iter = bv.begin(); iter != bv.end(); iter++) {
         tc->grep_value_for_line(*iter, line);
         fprintf(pfile, "%s\n", line.c_str());
+        line_count += 1;
     }
 
     pclose(pfile);
     pfile = NULL;
+
+    char buffer[128];
+
+    snprintf(buffer, sizeof(buffer),
+             "Copied " ANSI_BOLD("%d") " lines to the clipboard",
+             line_count);
+    lnav_data.ld_rl_view->set_value(buffer);
 }
 
 static void handle_paging_key(int ch)
@@ -994,6 +1003,8 @@ static void handle_paging_key(int ch)
         if (lss) {
             lss->get_user_bookmarks()[&textview_curses::BM_USER].clear();
             tc->reload_data();
+
+            lnav_data.ld_rl_view->set_value("Cleared bookmarks");
         }
         break;
 
@@ -1062,6 +1073,8 @@ static void handle_paging_key(int ch)
                         range);
         if (range.second != INT_MAX) {
             tc->set_left(range.second);
+            lnav_data.ld_rl_view->set_alt_value(
+                HELP_MSG_1(m, "to bookmark a line"));
         }
         else{
             flash();
@@ -1087,6 +1100,8 @@ static void handle_paging_key(int ch)
             else{
                 tc->set_left(0);
             }
+            lnav_data.ld_rl_view->set_alt_value(
+                HELP_MSG_1(m, "to bookmark a line"));
         }
         break;
 
@@ -1365,6 +1380,8 @@ static void handle_paging_key(int ch)
                 --line;
             }
             tc->set_top(line);
+            
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(/, "to search"));
         }
         break;
 
@@ -1376,6 +1393,8 @@ static void handle_paging_key(int ch)
                 lss->find_from_time(lnav_data.ld_top_time + step);
 
             tc->set_top(line);
+
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(/, "to search"));
         }
         break;
 
@@ -1470,6 +1489,7 @@ static void handle_paging_key(int ch)
     case 't':
         if (lnav_data.ld_text_source.current_file() == NULL) {
             flash();
+            lnav_data.ld_rl_view->set_value("No text files loaded");
         }
         else if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
@@ -1635,6 +1655,9 @@ static void handle_paging_key(int ch)
 
     default:
         fprintf(stderr, "unhandled %d\n", ch);
+        lnav_data.ld_rl_view->set_value("Unrecognized keystroke, press "
+                                        ANSI_BOLD("?")
+                                        " to view help");
         flash();
         break;
     }
@@ -1853,6 +1876,8 @@ static void rl_search(void *dummy, readline_curses *rc)
             textview_curses::highlighter
                 hl(code, false, view_colors::VCR_SEARCH);
 
+            lnav_data.ld_bottom_source.set_prompt("");
+
             textview_curses::highlight_map_t &hm = tc->get_highlights();
             hm[name] = hl;
 
@@ -1975,7 +2000,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
 
                     snprintf(row_count, sizeof(row_count),
-                             "%'d row(s) matched",
+                             ANSI_BOLD("%'d") " row(s) matched",
                              (int)dls.dls_rows.size());
                     rc->set_value(row_count);
                     rc->set_alt_value(HELP_MSG_2(
