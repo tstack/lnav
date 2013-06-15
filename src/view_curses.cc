@@ -258,6 +258,7 @@ void view_colors::init(void)
 
         init_pair(VC_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
         init_pair(VC_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
+        init_pair(VC_CYAN_ON_WHITE, COLOR_CYAN, COLOR_WHITE);
         init_pair(VC_GREEN_ON_WHITE, COLOR_GREEN, COLOR_WHITE);
         init_pair(VC_MAGENTA_ON_WHITE, COLOR_MAGENTA, COLOR_WHITE);
 
@@ -269,7 +270,10 @@ void view_colors::init(void)
         init_pair(VC_RED_ON_WHITE, COLOR_RED, COLOR_WHITE);
         init_pair(VC_YELLOW_ON_WHITE, COLOR_YELLOW, COLOR_WHITE);
 
+        init_pair(VC_CYAN_ON_BLUE, COLOR_CYAN, COLOR_BLUE);
+
         init_pair(VC_WHITE_ON_GREEN, COLOR_WHITE, COLOR_GREEN);
+        init_pair(VC_WHITE_ON_CYAN, COLOR_WHITE, COLOR_CYAN);
 
         init_pair(VC_GRAY, COLOR_BLACK, COLOR_BLACK);
 

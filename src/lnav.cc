@@ -108,7 +108,7 @@
 using namespace std;
 
 #define HELP_MSG_1(x, msg) \
-    "Press '" ANSI_BOLD(#x) "'' " msg
+    "Press '" ANSI_BOLD(#x) "' " msg
 
 #define HELP_MSG_2(x, y, msg) \
     "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
@@ -780,11 +780,11 @@ static void update_view_name(void)
     status_field &sf = lnav_data.ld_top_source.statusview_value_for_field(
         top_status_source::TSF_VIEW_NAME);
     textview_curses *tc = lnav_data.ld_view_stack.top();
-    struct line_range lr = { 0, 2 };
+    struct line_range lr = { 0, -1 };
 
-    sf.set_value(":: % 5s", view_names[tc - lnav_data.ld_views]);
+    sf.set_value("% 5s ", view_names[tc - lnav_data.ld_views]);
     sf.get_value().get_attrs()[lr].insert(make_string_attr(
-        "style", COLOR_PAIR(view_colors::VC_MAGENTA_ON_WHITE)));
+        "style", A_REVERSE|COLOR_PAIR(view_colors::VC_BLUE_ON_WHITE)));
 }
 
 bool toggle_view(textview_curses *toggle_tc)
@@ -979,7 +979,6 @@ static void handle_paging_key(int ch)
             lnav_data.ld_looping = false;
         }
         else {
-
             tc = lnav_data.ld_view_stack.top();
             tc->set_needs_update();
             lnav_data.ld_scroll_broadcaster.invoke(tc);
@@ -1469,7 +1468,10 @@ static void handle_paging_key(int ch)
         break;
 
     case 't':
-        if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
+        if (lnav_data.ld_text_source.current_file() == NULL) {
+            flash();
+        }
+        else if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
                 f, F, "to switch to the next/previous file"));
         }
@@ -2590,6 +2592,8 @@ static void looper(void)
         lnav_data.ld_status[1].window_change();
 
         execute_file(dotlnav_path("session"));
+
+        lnav_data.ld_scroll_broadcaster.invoke(lnav_data.ld_view_stack.top());
 
         bool session_loaded = false;
 

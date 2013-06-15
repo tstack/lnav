@@ -47,7 +47,9 @@ public:
     typedef enum {
         TSF_TIME,
         TSF_VIEW_NAME,
+        TSF_STITCH_VIEW_FORMAT,
         TSF_FORMAT,
+        TSF_STITCH_FORMAT_FILENAME,
         TSF_FILENAME,
 
         TSF__MAX
@@ -57,10 +59,16 @@ public:
         : filename_wire(*this, &top_status_source::update_filename)
     {
         this->tss_fields[TSF_TIME].set_width(24);
-        this->tss_fields[TSF_VIEW_NAME].set_width(8);
+        this->tss_fields[TSF_VIEW_NAME].set_width(6);
         this->tss_fields[TSF_VIEW_NAME].right_justify(true);
-        this->tss_fields[TSF_FORMAT].set_width(16);
+        this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_width(2);
+        this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_stitch_value(view_colors::VC_CYAN_ON_BLUE);
+        this->tss_fields[TSF_STITCH_VIEW_FORMAT].right_justify(true);
+        this->tss_fields[TSF_FORMAT].set_width(13);
         this->tss_fields[TSF_FORMAT].right_justify(true);
+        this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_width(2);
+        this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_stitch_value(view_colors::VC_WHITE_ON_CYAN);
+        this->tss_fields[TSF_STITCH_FORMAT_FILENAME].right_justify(true);
         this->tss_fields[TSF_FILENAME].set_min_width(35); /* XXX */
         this->tss_fields[TSF_FILENAME].set_share(1);
         this->tss_fields[TSF_FILENAME].right_justify(true);
@@ -91,9 +99,9 @@ public:
     {
         status_field &sf_format   = this->tss_fields[TSF_FORMAT];
         status_field &sf_filename = this->tss_fields[TSF_FILENAME];
+        struct line_range     lr = { 0, -1 };
 
         if (lc->get_inner_height() > 0) {
-            struct line_range     lr = { 0, -1 };
             attrs_map_t::iterator iter;
             string_attrs_t        sa;
             attr_line_t           al;
@@ -104,22 +112,18 @@ public:
             iter = sa[lr].find("file");
             if (iter != sa[lr].end()) {
                 logfile *lf = (logfile *)iter->second.sa_ptr;
-                struct line_range lr = { 0, 2};
 
                 if (lf->get_format()) {
-                    sf_format.set_value(":: % 13s",
+                    sf_format.set_value("% 13s",
                                         lf->get_format()->get_name().c_str());
                 }
                 else if (!lf->get_filename().empty()) {
-                    sf_format.set_value(":: % 13s", "unknown");
+                    sf_format.set_value("% 13s", "plain text");
                 }
                 else{
                     sf_format.clear();
                 }
 
-                sf_format.get_value().get_attrs()[lr].insert(
-                    make_string_attr("style", COLOR_PAIR(
-                        view_colors::VC_MAGENTA_ON_WHITE)));
                 sf_filename.set_value(lf->get_filename());
             }
             else {
@@ -131,6 +135,9 @@ public:
             sf_format.clear();
             sf_filename.clear();
         }
+        sf_format.get_value().get_attrs()[lr].insert(
+            make_string_attr("style", A_REVERSE|COLOR_PAIR(
+                view_colors::VC_CYAN_ON_BLACK)));
     };
 
 private:

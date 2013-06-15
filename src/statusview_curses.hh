@@ -128,6 +128,18 @@ public:
         va_end(args);
     };
 
+    void set_stitch_value(int color_pair) {
+        string_attrs_t &sa = this->sf_value.get_attrs();
+        struct line_range lr = { 0, 1 };
+
+        this->sf_value.get_string() = "::";
+        sa[lr].insert(make_string_attr("style",
+                      A_REVERSE|COLOR_PAIR(color_pair)));
+        lr.lr_start = 1;
+        lr.lr_end = 2;
+        sa[lr].insert(make_string_attr("style", COLOR_PAIR(color_pair)));
+    };
+
     /** @return The string value for this field. */
     attr_line_t &get_value() { return this->sf_value; };
 

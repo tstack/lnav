@@ -399,6 +399,7 @@ public:
 
         VC_BLUE_ON_WHITE,
         VC_CYAN_ON_BLACK,
+        VC_CYAN_ON_WHITE,
         VC_GREEN_ON_WHITE,
         VC_MAGENTA_ON_WHITE,
 
@@ -410,7 +411,10 @@ public:
         VC_YELLOW_ON_WHITE,
         VC_RED_ON_WHITE,
 
+        VC_CYAN_ON_BLUE,
+
         VC_WHITE_ON_GREEN,
+        VC_WHITE_ON_CYAN,
 
         VC_GRAY,
 

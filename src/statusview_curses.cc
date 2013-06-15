@@ -43,7 +43,7 @@ void statusview_curses::do_update(void)
 
     getmaxyx(this->sc_window, height, width);
     top   = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
-    right = width - 1;
+    right = width;
     attrs = vc.attrs_for_role(view_colors::VCR_STATUS);
 
     wattron(this->sc_window, attrs);
@@ -65,7 +65,6 @@ void statusview_curses::do_update(void)
         if (sf.is_right_justified()) {
             right -= sf.get_width();
             x      = right;
-            right -= 1;
         }
         else {
             x     = left;
