@@ -1019,13 +1019,13 @@ uninstall-am: uninstall-binPROGRAMS
 
 
 help.c: $(srcdir)/help.txt bin2c
-	./bin2c -z -c $< $@
+	./bin2c -z -c $(srcdir)/help.txt $@
 
 init.sql: $(srcdir)/init_sql.py
-	$(PYTHON) $< > $@
+	$(PYTHON) $(srcdir)/init_sql.py > $@
 
-init-sql.c: init.sql bin2c
-	./bin2c -z -c $< $@
+init-sql.c: $(srcdir)/init.sql bin2c
+	./bin2c -z -c $(srcdir)/init.sql $@
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

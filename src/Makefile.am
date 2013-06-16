@@ -6,13 +6,13 @@ noinst_PROGRAMS = bin2c lnav-test
 noinst_LIBRARIES = libdiag.a
 
 help.c: $(srcdir)/help.txt bin2c
-	./bin2c -z -c $< $@
+	./bin2c -z -c $(srcdir)/help.txt $@
 
 init.sql: $(srcdir)/init_sql.py
-	$(PYTHON) $< > $@
+	$(PYTHON) $(srcdir)/init_sql.py > $@
 
-init-sql.c: init.sql bin2c
-	./bin2c -z -c $< $@
+init-sql.c: $(srcdir)/init.sql bin2c
+	./bin2c -z -c $(srcdir)/init.sql $@
 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS) \
