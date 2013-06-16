@@ -111,12 +111,15 @@ static int strcasestr_i(const char *s1, const char *s2)
 logline::level_t logline::string2level(const char *levelstr, bool exact)
 {
     logline::level_t retval = logline::LEVEL_UNKNOWN;
+
     int (*cmpfunc)(const char *, const char *);
 
-    if (exact)
+    if (exact) {
         cmpfunc = strcasecmp;
-    else
+    }
+    else{
         cmpfunc = strcasestr_i;
+    }
 
     if (cmpfunc(levelstr, "TRACE") == 0) {
         retval = logline::LEVEL_TRACE;

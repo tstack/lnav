@@ -155,9 +155,9 @@ public:
             if (this->h_code_extra != NULL) {
                 pcre_extra *extra = this->h_code_extra;
 
-                extra->flags |= (PCRE_EXTRA_MATCH_LIMIT|
+                extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
                                  PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-                extra->match_limit = 10000;
+                extra->match_limit           = 10000;
                 extra->match_limit_recursion = 500;
             }
         };
@@ -187,7 +187,7 @@ public:
         };
 
         pcre *                           h_code;
-        pcre_extra *h_code_extra;
+        pcre_extra *                     h_code_extra;
         bool                             h_multiple;
         std::vector<view_colors::role_t> h_roles;
     };

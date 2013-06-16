@@ -36,18 +36,17 @@
 
 #include "view_curses.hh"
 
-#define ANSI_BOLD_START "\x1b[1m"
-#define ANSI_NORM "\x1b[0m"
+#define ANSI_BOLD_START    "\x1b[1m"
+#define ANSI_NORM          "\x1b[0m"
 
-#define ANSI_BOLD(msg) ANSI_BOLD_START msg ANSI_NORM
+#define ANSI_BOLD(msg)    ANSI_BOLD_START msg ANSI_NORM
 
 /**
  * Check a string for ANSI escape sequences, process them, remove them, and add
  * any style attributes to the given attribute container.
- * 
+ *
  * @param str The string to check for ANSI escape sequences.
  * @param sa  The container for any style attributes.
  */
 void scrub_ansi_string(std::string &str, string_attrs_t &sa);
-
 #endif

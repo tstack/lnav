@@ -58,5 +58,4 @@ bool check_experimental(const char *feature_name);
  * Ensure that the '.lnav' directory exists.
  */
 void ensure_dotlnav(void);
-
 #endif

@@ -54,10 +54,10 @@ std::string hash_string(const std::string &str)
 
 std::string time_ago(time_t last_time)
 {
-    time_t delta, current_time = time(NULL);
+    time_t      delta, current_time = time(NULL);
     const char *fmt;
-    char buffer[64];
-    int amount;
+    char        buffer[64];
+    int         amount;
 
     delta = current_time - last_time;
     if (delta < 0) {
@@ -70,21 +70,21 @@ std::string time_ago(time_t last_time)
         return "one minute ago";
     }
     else if (delta < (60 * 60)) {
-        fmt = "%d minutes ago";
+        fmt    = "%d minutes ago";
         amount = delta / 60;
     }
     else if (delta < (2 * 60 * 60)) {
         return "one hour ago";
     }
     else if (delta < (24 * 60 * 60)) {
-        fmt = "%d hours ago";
+        fmt    = "%d hours ago";
         amount = delta / (60 * 60);
     }
     else if (delta < (2 * 24 * 60 * 60)) {
         return "one day ago";
     }
     else if (delta < (365 * 24 * 60 * 60)) {
-        fmt = "%d days ago";
+        fmt    = "%d days ago";
         amount = delta / (24 * 60 * 60);
     }
     else {
@@ -104,7 +104,7 @@ void sqlite_close_wrapper(void *mem)
 
 std::string get_current_dir(void)
 {
-    char   cwd[FILENAME_MAX];
+    char        cwd[FILENAME_MAX];
     std::string retval = ".";
 
     if (getcwd(cwd, sizeof(cwd)) == NULL) {

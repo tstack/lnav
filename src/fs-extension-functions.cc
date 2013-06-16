@@ -44,7 +44,7 @@ static void sql_basename(sqlite3_context *context,
                          int argc, sqlite3_value **argv)
 {
     const char *path_in;
-    int text_end = -1;
+    int         text_end = -1;
 
     if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
         sqlite3_result_null(context);
@@ -86,7 +86,7 @@ static void sql_dirname(sqlite3_context *context,
                         int argc, sqlite3_value **argv)
 {
     const char *path_in;
-    int text_end;
+    int         text_end;
 
     if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
         sqlite3_result_null(context);
@@ -124,7 +124,7 @@ static void sql_joinpath(sqlite3_context *context,
                          int argc, sqlite3_value **argv)
 {
     std::string full_path;
-    int lpc;
+    int         lpc;
 
     if (argc == 0) {
         sqlite3_result_null(context);
@@ -161,15 +161,15 @@ int fs_extension_functions(const struct FuncDef **basic_funcs,
                            const struct FuncDefAgg **agg_funcs)
 {
     static const struct FuncDef fs_funcs[] = {
-        { "basename", 1, 0, SQLITE_UTF8, 0, sql_basename },
-        { "dirname", 1, 0, SQLITE_UTF8, 0, sql_dirname },
+        { "basename",  1, 0, SQLITE_UTF8, 0, sql_basename },
+        { "dirname",   1, 0, SQLITE_UTF8, 0, sql_dirname  },
         { "joinpath", -1, 0, SQLITE_UTF8, 0, sql_joinpath },
 
         { NULL }
     };
 
     *basic_funcs = fs_funcs;
-    *agg_funcs = NULL;
+    *agg_funcs   = NULL;
 
     return SQLITE_OK;
 }

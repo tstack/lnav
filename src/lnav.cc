@@ -382,7 +382,7 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
 bool setup_logline_table()
 {
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
-    bool retval = false;
+    bool             retval   = false;
 
     if (log_view.get_inner_height()) {
         vis_line_t     vl = log_view.get_top();
@@ -479,9 +479,9 @@ private:
 
 static void rebuild_hist(size_t old_count, bool force)
 {
-    textview_curses &   hist_view  = lnav_data.ld_views[LNV_HISTOGRAM];
-    logfile_sub_source &lss        = lnav_data.ld_log_source;
-    size_t       new_count  = lss.text_line_count();
+    textview_curses &   hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
+    logfile_sub_source &lss       = lnav_data.ld_log_source;
+    size_t       new_count        = lss.text_line_count();
     hist_source &hs         = lnav_data.ld_hist_source;
     int          zoom_level = lnav_data.ld_hist_zoom;
     time_t       old_time;
@@ -725,7 +725,8 @@ static bool append_default_files(lnav_flags_t flag)
                     perror("Unable to resolve path");
                 }
                 else {
-                    lnav_data.ld_file_names.insert(make_pair(abspath.in(), -1));
+                    lnav_data.ld_file_names.insert(make_pair(abspath.in(),
+                                                             -1));
                     found = true;
                 }
             }
@@ -779,12 +780,14 @@ static void update_view_name(void)
 
     status_field &sf = lnav_data.ld_top_source.statusview_value_for_field(
         top_status_source::TSF_VIEW_NAME);
-    textview_curses *tc = lnav_data.ld_view_stack.top();
+    textview_curses * tc = lnav_data.ld_view_stack.top();
     struct line_range lr = { 0, -1 };
 
     sf.set_value("% 5s ", view_names[tc - lnav_data.ld_views]);
     sf.get_value().get_attrs()[lr].insert(make_string_attr(
-        "style", A_REVERSE|COLOR_PAIR(view_colors::VC_BLUE_ON_WHITE)));
+                                              "style", A_REVERSE |
+                                              COLOR_PAIR(view_colors::
+                                                         VC_BLUE_ON_WHITE)));
 }
 
 bool toggle_view(textview_curses *toggle_tc)
@@ -912,8 +915,8 @@ static void copy_to_xclip(void)
     bookmark_vector<vis_line_t> &bv =
         tc->get_bookmarks()[&textview_curses::BM_USER];
     bookmark_vector<vis_line_t>::iterator iter;
-    FILE * pfile = NULL;
-    int line_count = 0;
+    FILE * pfile      = NULL;
+    int    line_count = 0;
     string line;
 
     /* XXX : Check if this is linux or MAC. Probably not the best solution but */
@@ -963,24 +966,24 @@ static void handle_paging_key(int ch)
     switch (ch) {
     case 'q':
     case 'Q':
-        {
-            string msg = "";
+    {
+        string msg = "";
 
-            if (tc == &lnav_data.ld_views[LNV_DB]) {
-                msg = HELP_MSG_2(v, V, "to switch to the SQL result view");
-            }
-            else if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
-                msg = HELP_MSG_2(i, I, "to switch to the histogram view");
-            }
-            else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
-                msg = HELP_MSG_1(t, "to switch to the text file view");
-            }
-            else if (tc == &lnav_data.ld_views[LNV_GRAPH]) {
-                msg = HELP_MSG_1(g, "to switch to the graph view");
-            }
-
-            lnav_data.ld_rl_view->set_alt_value(msg);
+        if (tc == &lnav_data.ld_views[LNV_DB]) {
+            msg = HELP_MSG_2(v, V, "to switch to the SQL result view");
         }
+        else if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
+            msg = HELP_MSG_2(i, I, "to switch to the histogram view");
+        }
+        else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
+            msg = HELP_MSG_1(t, "to switch to the text file view");
+        }
+        else if (tc == &lnav_data.ld_views[LNV_GRAPH]) {
+            msg = HELP_MSG_1(g, "to switch to the graph view");
+        }
+
+        lnav_data.ld_rl_view->set_alt_value(msg);
+    }
         lnav_data.ld_view_stack.pop();
         if (lnav_data.ld_view_stack.empty() ||
             (lnav_data.ld_view_stack.size() == 1 &&
@@ -1013,7 +1016,8 @@ static void handle_paging_key(int ch)
                        &logfile_sub_source::BM_ERRORS,
                        tc->get_top());
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-            w, W, "to move forward/backward through warning messages"));
+                                                w, W,
+                                                "to move forward/backward through warning messages"));
         break;
 
     case 'E':
@@ -1021,7 +1025,8 @@ static void handle_paging_key(int ch)
                        &logfile_sub_source::BM_ERRORS,
                        tc->get_top());
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-            w, W, "to move forward/backward through warning messages"));
+                                                w, W,
+                                                "to move forward/backward through warning messages"));
         break;
 
     case 'w':
@@ -1029,7 +1034,8 @@ static void handle_paging_key(int ch)
                        &logfile_sub_source::BM_WARNINGS,
                        tc->get_top());
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-            o, O, "to move forward/backward an hour"));
+                                                o, O,
+                                                "to move forward/backward an hour"));
         break;
 
     case 'W':
@@ -1037,7 +1043,8 @@ static void handle_paging_key(int ch)
                        &logfile_sub_source::BM_WARNINGS,
                        tc->get_top());
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-            o, O, "to move forward/backward an hour"));
+                                                o, O,
+                                                "to move forward/backward an hour"));
         break;
 
     case 'n':
@@ -1146,7 +1153,8 @@ static void handle_paging_key(int ch)
             }
 
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                I, "to switch to the log view at the top displayed time"));
+                                                    I,
+                                                    "to switch to the log view at the top displayed time"));
         }
         break;
 
@@ -1161,7 +1169,8 @@ static void handle_paging_key(int ch)
             }
 
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                I, "to switch to the log view at the top displayed time"));
+                                                    I,
+                                                    "to switch to the log view at the top displayed time"));
         }
         break;
 
@@ -1183,7 +1192,8 @@ static void handle_paging_key(int ch)
             tc->reload_data();
 
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                u, U, "to move forward/backward through user bookmarks"));
+                                                    u, U,
+                                                    "to move forward/backward through user bookmarks"));
         }
         break;
 
@@ -1214,7 +1224,8 @@ static void handle_paging_key(int ch)
             tc->reload_data();
 
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                c, "to copy marked lines to the clipboard"));
+                                                    c,
+                                                    "to copy marked lines to the clipboard"));
         }
         break;
 
@@ -1247,7 +1258,8 @@ static void handle_paging_key(int ch)
             tc->reload_data();
 
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                c, "to copy marked lines to the clipboard"));
+                                                    c,
+                                                    "to copy marked lines to the clipboard"));
         }
         break;
 
@@ -1260,7 +1272,7 @@ static void handle_paging_key(int ch)
             else {
                 int start_line = min(
                     (int)tc->get_top(), lnav_data.ld_last_user_mark[tc] + 1);
-                int end_line   = max(
+                int end_line = max(
                     (int)tc->get_top(), lnav_data.ld_last_user_mark[tc] - 1);
 
                 lss->toggle_user_mark(&textview_curses::BM_USER,
@@ -1405,13 +1417,14 @@ static void handle_paging_key(int ch)
 
     case ':':
         if (lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
-            logfile_sub_source &lss = lnav_data.ld_log_source;
-            textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
-            content_line_t    cl   = lss.at(log_view.get_top());
-            logfile *         lf   = lss.find(cl);
-            std::string       line = lf->read_line(lf->begin() + cl);
-            struct line_range body;
-            string_attrs_t    sa;
+            logfile_sub_source &lss      = lnav_data.ld_log_source;
+            textview_curses &   log_view = lnav_data.ld_views[LNV_LOG];
+            content_line_t      cl       = lss.at(log_view.get_top());
+            logfile *           lf       = lss.find(cl);
+            std::string         line     = lf->read_line(
+                lf->begin() + cl);
+            struct line_range          body;
+            string_attrs_t             sa;
             std::vector<logline_value> line_values;
 
             lf->get_format()->annotate(line, sa, line_values);
@@ -1422,19 +1435,22 @@ static void handle_paging_key(int ch)
             }
 
             data_scanner ds(line);
-            data_parser dp(&ds);
+            data_parser  dp(&ds);
             dp.parse();
 
             column_namer namer;
 
             lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "colname");
-            for (data_parser::element_list_t::iterator iter = dp.dp_pairs.begin();
+            for (data_parser::element_list_t::iterator iter =
+                     dp.dp_pairs.begin();
                  iter != dp.dp_pairs.end();
                  ++iter) {
-                std::string colname = dp.get_element_string(iter->e_sub_elements->front());
+                std::string colname = dp.get_element_string(
+                    iter->e_sub_elements->front());
 
-                colname            = namer.add_column(colname);
-                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname", colname);
+                colname = namer.add_column(colname);
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname",
+                                                      colname);
             }
         }
         lnav_data.ld_mode = LNM_COMMAND;
@@ -1493,7 +1509,8 @@ static void handle_paging_key(int ch)
         }
         else if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                f, F, "to switch to the next/previous file"));
+                                                    f, F,
+                                                    "to switch to the next/previous file"));
         }
         break;
 
@@ -1631,26 +1648,33 @@ static void handle_paging_key(int ch)
     break;
 
     case 'r':
-        lnav_data.ld_session_file_index = (lnav_data.ld_session_file_index + 1) %
+        lnav_data.ld_session_file_index =
+            (lnav_data.ld_session_file_index + 1) %
             lnav_data.ld_session_file_names.size();
         reset_session();
         load_session();
         rebuild_indexes(true);
         break;
+
     case 'R':
-        if (lnav_data.ld_session_file_index == 0)
-            lnav_data.ld_session_file_index = lnav_data.ld_session_file_names.size() - 1;
-        else
+        if (lnav_data.ld_session_file_index == 0) {
+            lnav_data.ld_session_file_index =
+                lnav_data.ld_session_file_names.size() - 1;
+        }
+        else{
             lnav_data.ld_session_file_index -= 1;
+        }
         reset_session();
         load_session();
         rebuild_indexes(true);
         break;
+
     case KEY_CTRL_R:
         reset_session();
         rebuild_indexes(true);
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-            r, R, "to restore the next/previous session"));
+                                                r, R,
+                                                "to restore the next/previous session"));
         break;
 
     default:
@@ -1794,7 +1818,7 @@ int sql_callback(sqlite3_stmt *stmt)
 void execute_search(lnav_view_t view, const std::string &regex)
 {
     auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
-    textview_curses &tc = lnav_data.ld_views[view];
+    textview_curses &           tc = lnav_data.ld_views[view];
 
     if ((gc.get() == NULL) || (regex != lnav_data.ld_last_search[view])) {
         const char *errptr;
@@ -1846,12 +1870,12 @@ void execute_search(lnav_view_t view, const std::string &regex)
 
             tc.set_follow_search(true);
 
-            auto_ptr<grep_highlighter> gh(new grep_highlighter(gp, "$search", hm));
+            auto_ptr<grep_highlighter> gh(new grep_highlighter(gp, "$search",
+                                                               hm));
             gc = gh;
-
         }
     }
-    
+
     lnav_data.ld_last_search[view] = regex;
 }
 
@@ -1893,8 +1917,7 @@ static void rl_search(void *dummy, readline_curses *rc)
                 grep_error(string("sql error: ") + string(errmsg));
             }
             else {
-                lnav_data.ld_bottom_source.
-                grep_error("");
+                lnav_data.ld_bottom_source.grep_error("");
             }
         }
         return;
@@ -1904,8 +1927,8 @@ static void rl_search(void *dummy, readline_curses *rc)
         break;
     }
 
-    textview_curses *tc = lnav_data.ld_view_stack.top();
-    lnav_view_t index   = (lnav_view_t)(tc - lnav_data.ld_views);
+    textview_curses *tc    = lnav_data.ld_view_stack.top();
+    lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
 
     tc->set_top(lnav_data.ld_search_start_line);
     execute_search(index, rc->get_value());
@@ -1914,7 +1937,7 @@ static void rl_search(void *dummy, readline_curses *rc)
 static void rl_callback(void *dummy, readline_curses *rc)
 {
     lnav_data.ld_bottom_source.set_prompt("");
-    
+
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
         assert(0);
@@ -1935,7 +1958,8 @@ static void rl_callback(void *dummy, readline_curses *rc)
             add_possibility(LNM_COMMAND, "filter", rc->get_value());
             rc->set_value("search: " + rc->get_value());
             rc->set_alt_value(HELP_MSG_2(
-                n, N, "to move forward/backward through search results"));
+                                  n, N,
+                                  "to move forward/backward through search results"));
         }
         lnav_data.ld_mode = LNM_PAGING;
         break;
@@ -2011,8 +2035,9 @@ static void rl_callback(void *dummy, readline_curses *rc)
                              (int)dls.dls_rows.size());
                     rc->set_value(row_count);
                     rc->set_alt_value(HELP_MSG_2(
-                        y, Y, "to move forward/backward through query results "
-                        "in the log view"));
+                                          y, Y,
+                                          "to move forward/backward through query results "
+                                          "in the log view"));
                 }
                 else {
                     rc->set_value("No rows matched");
@@ -2539,7 +2564,8 @@ static void looper(void)
         rlc.set_perform_action(readline_curses::action(rl_callback));
         rlc.set_timeout_action(readline_curses::action(rl_search));
         rlc.set_alt_value(HELP_MSG_2(
-            e, E, "to move forward/backward through error messages"));
+                              e, E,
+                              "to move forward/backward through error messages"));
 
         (void)curs_set(0);
 
@@ -2677,9 +2703,8 @@ static void looper(void)
                     toggle_view(&lnav_data.ld_views[LNV_TEXT]);
                     lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
                     lnav_data.ld_rl_view->set_alt_value(
-                        HELP_MSG_2(f, F, "to switch to the next/previous file"));
-
-
+                        HELP_MSG_2(f, F,
+                                   "to switch to the next/previous file"));
                 }
                 initial_build = true;
 
@@ -2802,7 +2827,8 @@ public:
         cols.push_back(vtab_column("cs_user_agent", SQLITE3_TEXT));
     };
 
-    void get_foreign_keys(vector<string> &keys_inout) {
+    void get_foreign_keys(vector<string> &keys_inout)
+    {
         this->log_vtab_impl::get_foreign_keys(keys_inout);
 
         keys_inout.push_back("sc_status");
@@ -2821,7 +2847,8 @@ public:
         cols.push_back(vtab_column("log_pid", SQLITE_INTEGER));
     };
 
-    void get_foreign_keys(vector<string> &keys_inout) {
+    void get_foreign_keys(vector<string> &keys_inout)
+    {
         this->log_vtab_impl::get_foreign_keys(keys_inout);
 
         keys_inout.push_back("log_pid");
@@ -3215,7 +3242,7 @@ int main(int argc, char *argv[])
 
     for (lpc = 0; lpc < argc; lpc++) {
         auto_mem<char> abspath;
-        struct stat st;
+        struct stat    st;
 
         if (stat(argv[lpc], &st) == -1) {
             fprintf(stderr,
@@ -3269,7 +3296,7 @@ int main(int argc, char *argv[])
     else {
         try {
             rescan_files(true);
-            
+
             init_session();
 
             scan_sessions();

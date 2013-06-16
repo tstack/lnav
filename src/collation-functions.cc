@@ -156,7 +156,8 @@ int sql_strnatcasecmp(void *ptr,
 int register_collation_functions(sqlite3 *db)
 {
     sqlite3_create_collation(db, "ipaddress", SQLITE_UTF8, NULL, ipaddress);
-    sqlite3_create_collation(db, "naturalcase", SQLITE_UTF8, NULL, sql_strnatcmp);
+    sqlite3_create_collation(db, "naturalcase", SQLITE_UTF8, NULL,
+                             sql_strnatcmp);
     sqlite3_create_collation(db, "naturalnocase", SQLITE_UTF8, NULL,
                              sql_strnatcasecmp);
 

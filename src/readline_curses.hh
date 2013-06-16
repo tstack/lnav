@@ -200,13 +200,17 @@ public:
     void set_perform_action(action va) { this->rc_perform = va; };
     void set_timeout_action(action va) { this->rc_timeout = va; };
 
-    void set_value(const std::string &value) {
-        this->rc_value = value; 
+    void set_value(const std::string &value)
+    {
+        this->rc_value            = value;
         this->rc_value_expiration = time(NULL) + VALUE_EXPIRATION;
     };
     std::string get_value() const { return this->rc_value; };
 
-    void set_alt_value(const std::string &value) { this->rc_alt_value = value; };
+    void set_alt_value(const std::string &value)
+    {
+        this->rc_alt_value = value;
+    };
     std::string get_alt_value() const { return this->rc_alt_value; };
 
     int update_fd_set(fd_set &readfds)
@@ -248,7 +252,8 @@ public:
 
     void add_possibility(int context,
                          const std::string &type,
-                         const char *values[]) {
+                         const char *values[])
+    {
         for (int lpc = 0; values[lpc]; lpc++) {
             this->add_possibility(context, type, values[lpc]);
         }
@@ -273,9 +278,9 @@ private:
     auto_fd rc_command_pipe[2];
     std::map<int, readline_context *> rc_contexts;
     std::string rc_value;
-    time_t rc_value_expiration;
+    time_t      rc_value_expiration;
     std::string rc_alt_value;
-    
+
     action rc_perform;
     action rc_timeout;
 };

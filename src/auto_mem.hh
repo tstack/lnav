@@ -101,8 +101,9 @@ public:
     void reset(T *ptr = NULL)
     {
         if (this->am_ptr != ptr) {
-            if (this->am_ptr != NULL)
+            if (this->am_ptr != NULL) {
                 this->am_free_func(this->am_ptr);
+            }
             this->am_ptr = ptr;
         }
     };
@@ -112,10 +113,11 @@ private:
     void (*am_free_func)(void *);
 };
 
-template<typename T, void (*free_func)(T *)>
+template<typename T, void(*free_func) (T *)>
 class static_root_mem {
 public:
-    static_root_mem() {
+    static_root_mem()
+    {
         memset(&this->srm_value, 0, sizeof(T));
     };
 

@@ -19,31 +19,31 @@
 #include "sqlite-extension-func.h"
 
 typedef struct {
-    char *s;
-    pcre *p;
+    char *      s;
+    pcre *      p;
     pcre_extra *e;
 } cache_entry;
 
 #ifndef CACHE_SIZE
-#define CACHE_SIZE 16
+#define CACHE_SIZE    16
 #endif
 
 static
 void regexp(sqlite3_context *ctx, int argc, sqlite3_value **argv)
 {
     const char *re, *str;
-    pcre *p;
+    pcre *      p;
     pcre_extra *e;
 
     assert(argc == 2);
 
-    re = (const char *) sqlite3_value_text(argv[0]);
+    re = (const char *)sqlite3_value_text(argv[0]);
     if (!re) {
         sqlite3_result_error(ctx, "no regexp", -1);
         return;
     }
 
-    str = (const char *) sqlite3_value_text(argv[1]);
+    str = (const char *)sqlite3_value_text(argv[1]);
     if (!str) {
         sqlite3_result_error(ctx, "no string", -1);
         return;
@@ -71,7 +71,7 @@ void regexp(sqlite3_context *ctx, int argc, sqlite3_value **argv)
         else {
             cache_entry c;
             const char *err;
-            int pos;
+            int         pos;
             c.p = pcre_compile(re, 0, &err, &pos, NULL);
             if (!c.p) {
                 char *e2 = sqlite3_mprintf("%s: %s (offset %d)", re, err, pos);

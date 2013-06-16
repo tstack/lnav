@@ -61,7 +61,7 @@
 
 using namespace std;
 
-static int got_line = 0;
+static int              got_line    = 0;
 static sig_atomic_t     got_timeout = 0;
 static sig_atomic_t     got_winch   = 0;
 static readline_curses *child_this;
@@ -416,7 +416,7 @@ void readline_curses::start(void)
         if (got_line) {
             struct itimerval itv;
 
-            got_line = 0;
+            got_line                = 0;
             itv.it_value.tv_sec     = 0;
             itv.it_value.tv_usec    = 0;
             itv.it_interval.tv_sec  = 0;
@@ -631,9 +631,9 @@ void readline_curses::clear_possibilities(int context, string type)
 void readline_curses::do_update(void)
 {
     if (this->rc_active_context == -1) {
-        int alt_start = -1;
+        int alt_start        = -1;
         struct line_range lr = { 0, };
-        attr_line_t al, alt_al;
+        attr_line_t       al, alt_al;
 
         wmove(this->vc_window, this->get_actual_y(), 0);
         wclrtoeol(this->vc_window);

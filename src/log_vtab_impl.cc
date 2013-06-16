@@ -109,7 +109,7 @@ static int vt_create(sqlite3 *db,
                      char **pzErr)
 {
     log_vtab_manager *vm = (log_vtab_manager *)pAux;
-    int   rc = SQLITE_OK;
+    int   rc             = SQLITE_OK;
     vtab *p_vt;
 
     /* Allocate the sqlite3_vtab/vtab structure itself */
@@ -418,8 +418,8 @@ string log_vtab_manager::register_vtab(log_vtab_impl *vi)
 
     if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
         auto_mem<char> errmsg(sqlite3_free);
-        char *sql;
-        int   rc;
+        char *         sql;
+        int            rc;
 
         this->vm_impls[vi->get_name()] = vi;
 

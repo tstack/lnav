@@ -47,7 +47,8 @@
 class log_data_table : public log_vtab_impl {
 public:
 
-    log_data_table(content_line_t template_line, std::string table_name="logline")
+    log_data_table(content_line_t template_line,
+                   std::string table_name = "logline")
         : log_vtab_impl(table_name),
           ldt_template_line(template_line) {};
 
@@ -56,7 +57,7 @@ public:
         content_line_t cl_copy = this->ldt_template_line;
         logfile *      lf      = lnav_data.ld_log_source.find(
             cl_copy);
-        std::string val        = lf->read_line(
+        std::string val = lf->read_line(
             lf->begin() + cl_copy);
         struct line_range          body;
         string_attrs_t             sa;
@@ -78,7 +79,7 @@ public:
                  dp.dp_pairs.begin();
              pair_iter != dp.dp_pairs.end();
              ++pair_iter) {
-            std::string key_str  = dp.get_element_string(
+            std::string key_str = dp.get_element_string(
                 pair_iter->e_sub_elements->front());
             std::string colname  = cn.add_column(key_str);
             int         sql_type = SQLITE3_TEXT;
@@ -116,7 +117,7 @@ public:
             return true;
         }
 
-        content_line_t             cl;
+        content_line_t cl;
 
         cl = lss.at(lc.lc_curr_line);
         logfile *         lf      = lss.find(cl);
@@ -148,8 +149,8 @@ public:
 
         lf_iter->set_schema(dp.dp_schema_id);
 
-        // The cached schema ID in the log line is not complete, so we still
-        // need to check for a full match.
+        /* The cached schema ID in the log line is not complete, so we still */
+        /* need to check for a full match. */
         if (dp.dp_schema_id != this->ldt_schema_id) {
             return false;
         }
@@ -165,21 +166,22 @@ public:
                  std::vector<logline_value> &values)
     {
         for (data_parser::element_list_t::iterator pair_iter =
-             this->ldt_pairs.begin();
+                 this->ldt_pairs.begin();
              pair_iter != this->ldt_pairs.end();
              ++pair_iter) {
             const data_parser::element &pvalue = pair_iter->get_pair_value();
-            const std::string tmp = this->ldt_current_line.substr(
+            const std::string           tmp    = this->ldt_current_line.substr(
                 pvalue.e_capture.c_begin, pvalue.e_capture.length());
 
-            switch(pvalue.value_token()) {
+            switch (pvalue.value_token()) {
             case DT_NUMBER: {
-                    double d = 0;
+                double d = 0;
 
-                    sscanf(tmp.c_str(), "%lf", &d);
-                    values.push_back(logline_value("", d));
-                }
-                break;
+                sscanf(tmp.c_str(), "%lf", &d);
+                values.push_back(logline_value("", d));
+            }
+            break;
+
             default:
                 values.push_back(logline_value("", tmp));
                 break;

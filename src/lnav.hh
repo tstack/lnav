@@ -117,15 +117,15 @@ typedef enum {
 
 void sqlite_close_wrapper(void *mem);
 
-typedef std::pair<int, int> ppid_time_pair_t;
+typedef std::pair<int, int>                      ppid_time_pair_t;
 typedef std::pair<ppid_time_pair_t, std::string> session_pair_t;
 
 struct _lnav_data {
-    std::string ld_session_id;
-    time_t ld_session_time;
-    time_t ld_session_save_time;
-    std::list<session_pair_t> ld_session_file_names;
-    int ld_session_file_index;
+    std::string                             ld_session_id;
+    time_t                                  ld_session_time;
+    time_t                                  ld_session_save_time;
+    std::list<session_pair_t>               ld_session_file_names;
+    int                                     ld_session_file_index;
     const char *                            ld_program_name;
     const char *                            ld_debug_log_name;
 
@@ -171,7 +171,7 @@ struct _lnav_data {
     fd_set                                  ld_read_fds;
 
     std::auto_ptr<grep_highlighter>         ld_grep_child[LG__MAX];
-    std::string ld_last_search[LNV__MAX];
+    std::string                             ld_last_search[LNV__MAX];
 
     log_vtab_manager *                      ld_vtab_manager;
     auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
@@ -190,5 +190,4 @@ bool setup_logline_table();
 int sql_callback(sqlite3_stmt *stmt);
 
 void execute_search(lnav_view_t view, const std::string &regex);
-
 #endif

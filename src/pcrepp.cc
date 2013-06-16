@@ -47,6 +47,7 @@ pcre_jit_stack *pcrepp::jit_stack(void)
 
     return retval;
 }
+
 #else
 #warning "pcrejit is not available, search performance will be degraded"
 

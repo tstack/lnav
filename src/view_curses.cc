@@ -287,8 +287,9 @@ void view_colors::init(void)
 
         for (int lpc = 0; lpc < 8; lpc++) {
             short gradient_value = (1000 / 8) * lpc;
-            
-            init_color(lpc + 16, gradient_value, gradient_value, gradient_value);
+
+            init_color(lpc + 16, gradient_value, gradient_value,
+                       gradient_value);
             init_pair(VC_GRADIENT_START + lpc, lpc + 16, COLOR_BLACK);
         }
     }

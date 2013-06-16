@@ -48,19 +48,20 @@ static pcrepp &ansi_regex(void)
 void scrub_ansi_string(std::string &str, string_attrs_t &sa)
 {
     view_colors &vc = view_colors::singleton();
+
     vector<pair<string, string_attr_t> > attr_queue;
     pcre_context_static<60> context;
-    vector<line_range> range_queue;
-    pcrepp &regex = ansi_regex();
+    vector<line_range>      range_queue;
+    pcrepp &   regex = ansi_regex();
     pcre_input pi(str);
 
     while (regex.match(context, pi)) {
         pcre_context::capture_t *caps = context.all();
-        struct line_range lr;
+        struct line_range        lr;
         bool has_attrs = false;
         int  attrs     = 0;
-        int  bg = 0;
-        int  fg = 0;
+        int  bg        = 0;
+        int  fg        = 0;
         int  lpc;
 
         switch (pi.get_substr_start(&caps[2])[0]) {
@@ -72,7 +73,7 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
                 if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
                     if (90 <= ansi_code && ansi_code <= 97) {
                         ansi_code -= 60;
-                        attrs |= A_STANDOUT;
+                        attrs     |= A_STANDOUT;
                     }
                     if (30 <= ansi_code && ansi_code <= 37) {
                         fg = ansi_code - 30;
@@ -110,15 +111,15 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
             break;
 
         case 'C':
-            {
-                int spaces = 0;
+        {
+            int spaces = 0;
 
-                if (sscanf(&(str[caps[1].c_begin]), "%d", &spaces) == 1 &&
-                    spaces > 0) {
-                    str.insert(caps[0].c_end, spaces, ' ');
-                }
+            if (sscanf(&(str[caps[1].c_begin]), "%d", &spaces) == 1 &&
+                spaces > 0) {
+                str.insert(caps[0].c_end, spaces, ' ');
             }
-            break;
+        }
+        break;
         }
         str.erase(str.begin() + caps[0].c_begin,
                   str.begin() + caps[0].c_end);

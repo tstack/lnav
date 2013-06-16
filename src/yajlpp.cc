@@ -47,7 +47,7 @@ int yajlpp_parse_context::map_key(void *ctx,
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
 
-    ypc->ypc_path = ypc->ypc_path.substr(0, ypc->ypc_path_index_stack.back());
+    ypc->ypc_path  = ypc->ypc_path.substr(0, ypc->ypc_path_index_stack.back());
     ypc->ypc_path += "/" + std::string((const char *)key, len);
 
     ypc->update_callbacks();
@@ -64,11 +64,11 @@ void yajlpp_parse_context::update_callbacks(void)
         const json_path_handler &jph = this->ypc_handlers[lpc];
 
         if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
-            this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
+            this->ypc_callbacks.yajl_null    = jph.jph_callbacks.yajl_null;
             this->ypc_callbacks.yajl_boolean = jph.jph_callbacks.yajl_boolean;
             this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
-            this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
-            this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
+            this->ypc_callbacks.yajl_double  = jph.jph_callbacks.yajl_double;
+            this->ypc_callbacks.yajl_string  = jph.jph_callbacks.yajl_string;
             break;
         }
     }

@@ -96,7 +96,8 @@ public:
 
     status_field &get_field(field_t id) { return this->bss_fields[id]; };
 
-    void set_prompt(const std::string &prompt) {
+    void set_prompt(const std::string &prompt)
+    {
         this->bss_prompt.set_value(prompt);
     };
 

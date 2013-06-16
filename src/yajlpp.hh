@@ -61,43 +61,49 @@ yajl_gen_status yajl_gen_string(yajl_gen hand, const std::string &str)
 }
 
 struct json_path_handler_base {
-    json_path_handler_base(const char *path) : jph_path(path), jph_regex(path) {
+    json_path_handler_base(const char *path) : jph_path(path), jph_regex(path)
+    {
         memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
     };
 
-    const char *jph_path;
-    pcrepp jph_regex;
+    const char *   jph_path;
+    pcrepp         jph_regex;
     yajl_callbacks jph_callbacks;
 };
 
 struct json_path_handler : public json_path_handler_base {
-    json_path_handler(const char *path, int (*null_func)(void *))
-        : json_path_handler_base(path) {
-            this->jph_callbacks.yajl_null = null_func;
-        };
-
-    json_path_handler(const char *path, int (*bool_func)(void *, int))
-        : json_path_handler_base(path) {
-            this->jph_callbacks.yajl_boolean = bool_func;
-        }
-
-    json_path_handler(const char *path, int (*int_func)(void *, long long))
-        : json_path_handler_base(path) {
-            this->jph_callbacks.yajl_integer = int_func;
-        }
-
-    json_path_handler(const char *path, int (*double_func)(void *, double))
-        : json_path_handler_base(path) {
-            this->jph_callbacks.yajl_double = double_func;
-        }
-
-    json_path_handler(const char *path, int (*str_func)(void *, const unsigned char *, size_t))
-        : json_path_handler_base(path) {
-            this->jph_callbacks.yajl_string = str_func;
-        }
-
-    json_path_handler() : json_path_handler_base("") {
+    json_path_handler(const char *path, int(*null_func)(void *))
+        : json_path_handler_base(path)
+    {
+        this->jph_callbacks.yajl_null = null_func;
     };
+
+    json_path_handler(const char *path, int(*bool_func)(void *, int))
+        : json_path_handler_base(path)
+    {
+        this->jph_callbacks.yajl_boolean = bool_func;
+    }
+
+    json_path_handler(const char *path, int(*int_func)(void *, long long))
+        : json_path_handler_base(path)
+    {
+        this->jph_callbacks.yajl_integer = int_func;
+    }
+
+    json_path_handler(const char *path, int(*double_func)(void *, double))
+        : json_path_handler_base(path)
+    {
+        this->jph_callbacks.yajl_double = double_func;
+    }
+
+    json_path_handler(const char *path,
+                      int(*str_func)(void *, const unsigned char *, size_t))
+        : json_path_handler_base(path)
+    {
+        this->jph_callbacks.yajl_string = str_func;
+    }
+
+    json_path_handler() : json_path_handler_base("") {};
 };
 
 class yajlpp_parse_context {
@@ -106,45 +112,47 @@ public:
     struct json_path_element {
         json_path_element(int index = 0) : jpe_index(index) { };
         json_path_element(const std::string &name)
-            : jpe_name(name), jpe_index(0) {
-
-            };
+            : jpe_name(name), jpe_index(0) {};
         json_path_element(const unsigned char *name)
-            : jpe_name((const char *)name), jpe_index(0) {
+            : jpe_name((const char *)name), jpe_index(0) {};
 
-            };
-
-        void set_name(const unsigned char *name, size_t len) {
+        void        set_name(const unsigned char *name, size_t len)
+        {
             this->jpe_name = std::string((const char *)name, len);
         };
 
         std::string jpe_name;
-        int jpe_index;
+        int         jpe_index;
     };
 
-    yajlpp_parse_context(struct json_path_handler *handlers) : ypc_handlers(handlers) {
+    yajlpp_parse_context(struct json_path_handler *handlers) : ypc_handlers(
+                                                                   handlers)
+    {
         this->ypc_callbacks = DEFAULT_CALLBACKS;
     };
 
-    std::string get_path_fragment(int offset) const {
+    std::string get_path_fragment(int offset) const
+    {
         size_t start, end;
 
         if (offset < 0) {
             offset = this->ypc_path_index_stack.size() + offset;
         }
         start = this->ypc_path_index_stack[offset] + 1;
-        if ((offset + 1) < (int)this->ypc_path_index_stack.size())
+        if ((offset + 1) < (int)this->ypc_path_index_stack.size()) {
             end = this->ypc_path_index_stack[offset + 1];
-        else
+        }
+        else{
             end = std::string::npos;
+        }
         return this->ypc_path.substr(start, end - start);
     };
 
     struct json_path_handler *ypc_handlers;
-    void *ypc_userdata;
-    yajl_callbacks ypc_callbacks;
-    std::string ypc_path;
-    std::vector<size_t> ypc_path_index_stack;
+    void *                  ypc_userdata;
+    yajl_callbacks          ypc_callbacks;
+    std::string             ypc_path;
+    std::vector<size_t>     ypc_path_index_stack;
     pcre_context_static<30> ypc_pcre_context;
 
 private:
@@ -163,11 +171,13 @@ class yajlpp_generator {
 public:
     yajlpp_generator(yajl_gen handle) : yg_handle(handle) { };
 
-    void operator()(const std::string &str) {
+    void operator()(const std::string &str)
+    {
         yajl_gen_string(this->yg_handle, str);
     };
 
-    void operator()(long long value) {
+    void operator()(long long value)
+    {
         yajl_gen_integer(this->yg_handle, value);
     };
 
@@ -178,15 +188,15 @@ private:
 class yajlpp_container_base {
 public:
     yajlpp_container_base(yajl_gen handle)
-        : gen(handle), ycb_handle(handle) {
+        : gen(handle), ycb_handle(handle) {};
 
-        };
-
-    void operator()(const std::string &str) {
+    void operator()(const std::string &str)
+    {
         yajl_gen_string(this->ycb_handle, str);
     };
 
-    void operator()(long long value) {
+    void operator()(long long value)
+    {
         yajl_gen_integer(this->ycb_handle, value);
     };
 
@@ -197,24 +207,22 @@ protected:
 };
 
 class yajlpp_map : public yajlpp_container_base {
-
 public:
-    yajlpp_map(yajl_gen handle) : yajlpp_container_base(handle) {
+    yajlpp_map(yajl_gen handle) : yajlpp_container_base(handle)
+    {
         yajl_gen_map_open(handle);
     };
 
     ~yajlpp_map() { yajl_gen_map_close(this->ycb_handle); };
-
 };
 
 class yajlpp_array : public yajlpp_container_base {
-
 public:
-    yajlpp_array(yajl_gen handle) : yajlpp_container_base(handle) {
+    yajlpp_array(yajl_gen handle) : yajlpp_container_base(handle)
+    {
         yajl_gen_array_open(handle);
     };
 
     ~yajlpp_array() { yajl_gen_array_close(this->ycb_handle); };
 };
-
 #endif

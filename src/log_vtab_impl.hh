@@ -101,7 +101,8 @@ public:
 
     virtual void get_columns(std::vector<vtab_column> &cols) { };
 
-    virtual void get_foreign_keys(std::vector<std::string> &keys_inout) {
+    virtual void get_foreign_keys(std::vector<std::string> &keys_inout)
+    {
         keys_inout.push_back("log_line");
     };
 
@@ -140,11 +141,13 @@ public:
         return this->vm_impls[name];
     };
 
-    iterator begin() const {
+    iterator begin() const
+    {
         return this->vm_impls.begin();
     };
 
-    iterator end() const {
+    iterator end() const
+    {
         return this->vm_impls.end();
     };
 

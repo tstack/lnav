@@ -168,7 +168,7 @@ const char *sql_keywords[] = {
 };
 
 const char *sql_function_names[] = {
-    // http://www.sqlite.org/lang_aggfunc.html
+    /* http://www.sqlite.org/lang_aggfunc.html */
     "avg",
     "count",
     "group_concat",
@@ -177,7 +177,7 @@ const char *sql_function_names[] = {
     "sum",
     "total",
 
-    // http://www.sqlite.org/lang_corefunc.html
+    /* http://www.sqlite.org/lang_corefunc.html */
     "abs",
     "changes",
     "char",
@@ -231,7 +231,7 @@ static int handle_db_list(void *ptr,
 
 struct table_list_data {
     struct sqlite_metadata_callbacks *tld_callbacks;
-    db_table_map_t::iterator *tld_iter;
+    db_table_map_t::iterator *        tld_iter;
 };
 
 static int handle_table_list(void *ptr,
@@ -279,7 +279,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
     for (db_table_map_t::iterator iter = smc.smc_db_list.begin();
          iter != smc.smc_db_list.end();
          ++iter) {
-        struct table_list_data tld = { &smc, &iter };
+        struct table_list_data       tld = { &smc, &iter };
         auto_mem<char, sqlite3_free> query;
 
         query = sqlite3_mprintf("SELECT name FROM %Q.sqlite_master "
@@ -361,7 +361,7 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
                            stmt.out(),
                            NULL) != SQLITE_OK) {
         fprintf(stderr,
-                "error: could not prepare DB attach statement -- %s\n", 
+                "error: could not prepare DB attach statement -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -370,7 +370,7 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
                           filename.c_str(), filename.length(),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
         fprintf(stderr,
-                "error: could not bind DB attach statement -- %s\n", 
+                "error: could not bind DB attach statement -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -391,14 +391,14 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
                           db_name.c_str(), db_name.length(),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
         fprintf(stderr,
-                "error: could not bind DB attach statement -- %s\n", 
+                "error: could not bind DB attach statement -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
 
     if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
         fprintf(stderr,
-                "error: could not execute DB attach statement -- %s\n", 
+                "error: could not execute DB attach statement -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }

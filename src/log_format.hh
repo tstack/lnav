@@ -95,7 +95,8 @@ public:
           ll_time(t),
           ll_millis(millis),
           ll_level(l),
-          ll_module(m) {
+          ll_module(m)
+    {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     };
 
@@ -130,21 +131,23 @@ public:
     /**
      * @return  True if there is a schema value set for this log line.
      */
-    bool has_schema(void) const {
-        return (this->ll_schema[0] != 0 ||
-                this->ll_schema[1] != 0 ||
-                this->ll_schema[2] != 0 ||
-                this->ll_schema[3] != 0);
+    bool has_schema(void) const
+    {
+        return this->ll_schema[0] != 0 ||
+               this->ll_schema[1] != 0 ||
+               this->ll_schema[2] != 0 ||
+               this->ll_schema[3] != 0;
     };
 
     /**
      * Set the "schema" for this log line.  The schema ID is used to match log
      * lines that have a similar format when generating the logline table.  The
      * schema is set lazily so that startup is faster.
-     * 
+     *
      * @param ba The SHA-1 hash of the constant parts of this log line.
      */
-    void set_schema(const byte_array<20> &ba) {
+    void set_schema(const byte_array<20> &ba)
+    {
         memcpy(this->ll_schema, ba.in(), sizeof(this->ll_schema));
     };
 
@@ -152,12 +155,13 @@ public:
      * Perform a partial match of the given schema against this log line.
      * Storing the full schema is not practical, so we just keep the first four
      * bytes.
-     * 
+     *
      * @param  ba The SHA-1 hash of the constant parts of a log line.
      * @return    True if the first four bytes of the given schema match the
      *   schema stored in this log line.
      */
-    bool match_schema(const byte_array<20> &ba) const {
+    bool match_schema(const byte_array<20> &ba) const
+    {
         return memcmp(this->ll_schema, ba.in(), sizeof(this->ll_schema)) == 0;
     }
 

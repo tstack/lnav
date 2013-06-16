@@ -62,15 +62,18 @@ data_format_state_t dfs_prefix_next(data_format_state_t state,
         case DT_LANGLE:
         case DT_RANGLE:
             break;
+
         default:
             retval = DFS_ERROR;
             break;
         }
         break;
+
     case DFS_EXPECTING_SEP:
     case DFS_ERROR:
         retval = DFS_ERROR;
         break;
+
     default:
         break;
     }
@@ -130,6 +133,7 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
         switch (next_token) {
         case DT_COMMA:
             break;
+
         case DT_SEMI:
             retval = DFS_ERROR;
             break;
@@ -161,15 +165,18 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
         default: break;
         }
         break;
+
     case DFS_EXPECTING_SEP:
         switch (next_token) {
         case DT_SEPARATOR:
             retval = DFS_VALUE;
             break;
+
         case DT_COMMA:
         case DT_SEMI:
             retval = DFS_ERROR;
             break;
+
         default: break;
         }
         break;

@@ -62,12 +62,14 @@ public:
         this->tss_fields[TSF_VIEW_NAME].set_width(6);
         this->tss_fields[TSF_VIEW_NAME].right_justify(true);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_width(2);
-        this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_stitch_value(view_colors::VC_CYAN_ON_BLUE);
+        this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_stitch_value(
+            view_colors::VC_CYAN_ON_BLUE);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].right_justify(true);
         this->tss_fields[TSF_FORMAT].set_width(13);
         this->tss_fields[TSF_FORMAT].right_justify(true);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_width(2);
-        this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_stitch_value(view_colors::VC_WHITE_ON_CYAN);
+        this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_stitch_value(
+            view_colors::VC_WHITE_ON_CYAN);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].right_justify(true);
         this->tss_fields[TSF_FILENAME].set_min_width(35); /* XXX */
         this->tss_fields[TSF_FILENAME].set_share(1);
@@ -97,9 +99,9 @@ public:
 
     void update_filename(listview_curses *lc)
     {
-        status_field &sf_format   = this->tss_fields[TSF_FORMAT];
-        status_field &sf_filename = this->tss_fields[TSF_FILENAME];
-        struct line_range     lr = { 0, -1 };
+        status_field &    sf_format   = this->tss_fields[TSF_FORMAT];
+        status_field &    sf_filename = this->tss_fields[TSF_FILENAME];
+        struct line_range lr          = { 0, -1 };
 
         if (lc->get_inner_height() > 0) {
             attrs_map_t::iterator iter;
@@ -136,8 +138,8 @@ public:
             sf_filename.clear();
         }
         sf_format.get_value().get_attrs()[lr].insert(
-            make_string_attr("style", A_REVERSE|COLOR_PAIR(
-                view_colors::VC_CYAN_ON_BLACK)));
+            make_string_attr("style", A_REVERSE | COLOR_PAIR(
+                                 view_colors::VC_CYAN_ON_BLACK)));
     };
 
 private:

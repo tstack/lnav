@@ -191,9 +191,10 @@ public:
                            iter->length());
     };
 
-    void reset(const char *str, size_t off = 0, size_t len = -1) {
-        this->pi_string = str;
-        this->pi_offset = off;
+    void reset(const char *str, size_t off = 0, size_t len = -1)
+    {
+        this->pi_string      = str;
+        this->pi_offset      = off;
         this->pi_next_offset = off;
         if (this->pi_length == (size_t)-1) {
             this->pi_length = strlen(str);
@@ -203,7 +204,8 @@ public:
         }
     }
 
-    void reset(const std::string &str, size_t off = 0) {
+    void reset(const std::string &str, size_t off = 0)
+    {
         this->reset(str.c_str(), off, str.length());
     }
 
@@ -237,7 +239,8 @@ public:
         this->study();
     };
 
-    pcrepp(const char *pattern, int options = 0) : p_code_extra(pcre_free_study)
+    pcrepp(const char *pattern, int options =
+               0) : p_code_extra(pcre_free_study)
     {
         const char *errptr;
         int         eoff;
@@ -271,40 +274,41 @@ public:
 
     bool match(pcre_context &pc, pcre_input &pi, int options = 0) const
     {
-        int length, startoffset, filtered_options = options;
-        int count = pc.get_max_count();
+        int         length, startoffset, filtered_options = options;
+        int         count = pc.get_max_count();
         const char *str;
-        int rc;
+        int         rc;
 
         pi.pi_offset = pi.pi_next_offset;
 
         str = pi.get_string();
         if (filtered_options & PCRE_ANCHORED) {
             filtered_options &= ~PCRE_ANCHORED;
-            str = &str[pi.pi_offset];
+            str         = &str[pi.pi_offset];
             startoffset = 0;
-            length = pi.pi_length - pi.pi_offset;
+            length      = pi.pi_length - pi.pi_offset;
         }
         else {
             startoffset = pi.pi_offset;
-            length = pi.pi_length;
+            length      = pi.pi_length;
         }
-        rc           = pcre_exec(this->p_code,
-                                     this->p_code_extra.in(),
-                                     str,
-                                     length,
-                                     startoffset,
-                                     filtered_options,
-                                     (int *)pc.all(),
-                                     count * 2);
+        rc = pcre_exec(this->p_code,
+                       this->p_code_extra.in(),
+                       str,
+                       length,
+                       startoffset,
+                       filtered_options,
+                       (int *)pc.all(),
+                       count * 2);
 
         if (rc < 0) {
             switch (rc) {
             case PCRE_ERROR_NOMATCH:
                 break;
+
             default:
-            fprintf(stderr, "pcre err %d\n", rc);
-            break;
+                fprintf(stderr, "pcre err %d\n", rc);
+                break;
             }
         }
         else if (rc == 0) {
@@ -320,7 +324,7 @@ public:
                         continue;
                     }
                     pc.all()[lpc].c_begin += pi.pi_offset;
-                    pc.all()[lpc].c_end += pi.pi_offset;
+                    pc.all()[lpc].c_end   += pi.pi_offset;
                 }
             }
             pi.pi_next_offset = pc.all()->c_end;
@@ -333,13 +337,15 @@ public:
 
 #ifdef PCRE_STUDY_JIT_COMPILE
     static pcre_jit_stack *jit_stack(void);
+
 #else
     static void pcre_free_study(pcre_extra *);
 #endif
 
 private:
 
-    void study(void) {
+    void study(void)
+    {
         const char *errptr;
 
         this->p_code_extra = pcre_study(this->p_code,
@@ -355,9 +361,9 @@ private:
         if (this->p_code_extra != NULL) {
             pcre_extra *extra = this->p_code_extra;
 
-            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT|
+            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
                              PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-            extra->match_limit = 10000;
+            extra->match_limit           = 10000;
             extra->match_limit_recursion = 500;
 #ifdef PCRE_STUDY_JIT_COMPILE
             pcre_assign_jit_stack(extra, NULL, jit_stack());

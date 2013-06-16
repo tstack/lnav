@@ -58,7 +58,7 @@
 #include <functional>
 #include <algorithm>
 
-#define KEY_CTRL_R 18
+#define KEY_CTRL_R    18
 
 class view_curses;
 
@@ -424,11 +424,13 @@ public:
         VC_GRADIENT_START,
     };
 
-    static inline int ansi_color_pair_index(int fg, int bg) {
+    static inline int ansi_color_pair_index(int fg, int bg)
+    {
         return VC_ANSI_START + ((fg * 8) + bg);
     };
 
-    int ansi_color_pair(int fg, int bg) {
+    int ansi_color_pair(int fg, int bg)
+    {
         return COLOR_PAIR(ansi_color_pair_index(fg, bg));
     };
 

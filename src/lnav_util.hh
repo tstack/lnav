@@ -91,7 +91,8 @@ std::string time_ago(time_t last_time);
 struct sha_updater {
     sha_updater(SHA_CTX *context) : su_context(context) { };
 
-    void operator()(const std::string &str) {
+    void operator()(const std::string &str)
+    {
         SHA_Update(this->su_context, str.c_str(), str.length());
     }
 
@@ -102,23 +103,23 @@ std::string hash_string(const std::string &str);
 
 template<typename UnaryFunction, typename Member>
 struct object_field_t {
-
     object_field_t(UnaryFunction &func, Member &mem)
-        : of_func(func), of_mem(mem) {
-
-        };
+        : of_func(func), of_mem(mem) {};
 
     template<typename Object>
-    void operator()(Object obj) {
+    void operator()(Object obj)
+    {
         this->of_func(obj.*(this->of_mem));
     };
 
     UnaryFunction &of_func;
-    Member of_mem;
+    Member         of_mem;
 };
 
 template<typename UnaryFunction, typename Member>
-object_field_t<UnaryFunction, Member> object_field(UnaryFunction &func, Member mem) {
+object_field_t<UnaryFunction, Member> object_field(UnaryFunction &func,
+                                                   Member mem)
+{
     return object_field_t<UnaryFunction, Member>(func, mem);
 }
 
@@ -135,5 +136,4 @@ enum file_format_t {
 };
 
 file_format_t detect_file_format(const std::string &filename);
-
 #endif

@@ -90,7 +90,7 @@ public:
 
     class observer
         : public logfile_observer {
-    public:
+public:
         virtual void logfile_sub_source_filtering(logfile_sub_source &lss,
                                                   content_line_t cl,
                                                   size_t total) = 0;
@@ -206,7 +206,7 @@ public:
                  ++mark_iter) {
                 content_line_t mark_curr = content_line_t(
                     file_index * MAX_LINES_PER_FILE);
-                content_line_t mark_end  = content_line_t(
+                content_line_t mark_end = content_line_t(
                     (file_index + 1) * MAX_LINES_PER_FILE);
                 bookmark_vector<content_line_t>::iterator bv_iter;
                 bookmark_vector<content_line_t> &         bv =
@@ -252,7 +252,8 @@ public:
         }
     };
 
-    void set_user_mark(bookmark_type_t *bm, content_line_t cl) {
+    void set_user_mark(bookmark_type_t *bm, content_line_t cl)
+    {
         this->lss_user_marks[bm].insert_once(cl);
     };
 
@@ -330,11 +331,13 @@ public:
 
     typedef std::vector<logfile_data>::iterator iterator;
 
-    iterator begin() {
+    iterator begin()
+    {
         return this->lss_files.begin();
     };
 
-    iterator end() {
+    iterator end()
+    {
         return this->lss_files.end();
     };
 

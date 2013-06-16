@@ -155,7 +155,7 @@ static string com_goto(string cmdline, vector<string> &args)
 static string com_save_to(string cmdline, vector<string> &args)
 {
     FILE *      outfile = NULL;
-    const char *mode = "";
+    const char *mode    = "";
 
     if (args.size() == 0) {
         args.push_back("filename");
@@ -168,17 +168,23 @@ static string com_save_to(string cmdline, vector<string> &args)
 
     static_root_mem<wordexp_t, wordfree> wordmem;
 
-    switch (wordexp(args[1].c_str(), wordmem.inout(), WRDE_NOCMD|WRDE_UNDEF)) {
+    switch (wordexp(args[1].c_str(), wordmem.inout(), WRDE_NOCMD |
+                    WRDE_UNDEF)) {
     case WRDE_BADCHAR:
         return "error: invalid filename character";
+
     case WRDE_CMDSUB:
         return "error: command substitution is not allowed";
+
     case WRDE_BADVAL:
         return "error: unknown environment variable in file name";
+
     case WRDE_NOSPACE:
         return "error: out of memory";
+
     case WRDE_SYNTAX:
         return "error: invalid syntax";
+
     default:
         break;
     }
@@ -198,7 +204,7 @@ static string com_save_to(string cmdline, vector<string> &args)
         return "error: unable to open file -- " + string(wordmem->we_wordv[0]);
     }
 
-    textview_curses *tc             = lnav_data.ld_view_stack.top();
+    textview_curses *            tc = lnav_data.ld_view_stack.top();
     bookmark_vector<vis_line_t> &bv =
         tc->get_bookmarks()[&textview_curses::BM_USER];
     bookmark_vector<vis_line_t>::iterator iter;
@@ -344,10 +350,11 @@ public:
         return retval;
     };
 
-    std::string to_command(void) {
-        return ((this->lf_type == logfile_filter::INCLUDE ?
-                 "filter-in " : "filter-out ") +
-                this->lf_id);
+    std::string to_command(void)
+    {
+        return (this->lf_type == logfile_filter::INCLUDE ?
+                "filter-in " : "filter-out ") +
+               this->lf_id;
     };
 
 protected:
@@ -463,7 +470,7 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a table name";
 
-	if (args.size() == 0) {}
+    if (args.size() == 0) {}
     else if (args.size() == 2) {
         textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
 
@@ -471,10 +478,10 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
             retval = "error: no log data available";
         }
         else {
-            vis_line_t     vl = log_view.get_top();
-            content_line_t cl = lnav_data.ld_log_source.at(vl);
+            vis_line_t      vl  = log_view.get_top();
+            content_line_t  cl  = lnav_data.ld_log_source.at(vl);
             log_data_table *ldt = new log_data_table(cl, args[1]);
-            string errmsg;
+            string          errmsg;
 
             errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
             if (errmsg.empty()) {
@@ -599,14 +606,14 @@ static string com_summarize(string cmdline, vector<string> &args)
     }
     else {
         auto_mem<char, sqlite3_free> query_frag;
-        std::vector<string> other_columns;
-        std::vector<string> num_columns;
+        std::vector<string>          other_columns;
+        std::vector<string>          num_columns;
         string query;
 
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
-            string quoted_name = args[lpc];
+            string      quoted_name = args[lpc];
             const char *datatype;
-            int rc;
+            int         rc;
 
             rc = sqlite3_table_column_metadata(
                 lnav_data.ld_db.in(),
@@ -637,22 +644,25 @@ static string com_summarize(string cmdline, vector<string> &args)
         for (std::vector<string>::iterator iter = other_columns.begin();
              iter != other_columns.end();
              ++iter) {
-            if (iter != other_columns.begin())
+            if (iter != other_columns.begin()) {
                 query += ",";
+            }
             query_frag = sqlite3_mprintf(" \"%s\", count(*) as \"count_%s\"",
                                          iter->c_str(),
                                          iter->c_str());
             query += query_frag;
         }
 
-        if (!other_columns.empty() && !num_columns.empty())
+        if (!other_columns.empty() && !num_columns.empty()) {
             query += ", ";
+        }
 
         for (std::vector<string>::iterator iter = num_columns.begin();
              iter != num_columns.end();
              ++iter) {
-            if (iter != num_columns.begin())
+            if (iter != num_columns.begin()) {
                 query += ",";
+            }
             query_frag = sqlite3_mprintf(" sum(\"%s\"), "
                                          " min(\"%s\"), "
                                          " avg(\"%s\"), "
@@ -673,21 +683,25 @@ static string com_summarize(string cmdline, vector<string> &args)
         for (std::vector<string>::iterator iter = other_columns.begin();
              iter != other_columns.end();
              ++iter) {
-            if (iter == other_columns.begin())
+            if (iter == other_columns.begin()) {
                 query += " GROUP BY ";
-            else
+            }
+            else{
                 query += ",";
+            }
             query_frag = sqlite3_mprintf(" \"%s\"", iter->c_str());
-            query += query_frag;
+            query     += query_frag;
         }
 
         for (std::vector<string>::iterator iter = other_columns.begin();
              iter != other_columns.end();
              ++iter) {
-            if (iter == other_columns.begin())
+            if (iter == other_columns.begin()) {
                 query += " ORDER BY ";
-            else
+            }
+            else{
                 query += ",";
+            }
             query_frag = sqlite3_mprintf(" \"count_%s\" desc, \"%s\" asc",
                                          iter->c_str(),
                                          iter->c_str());
@@ -740,7 +754,7 @@ static string com_summarize(string cmdline, vector<string> &args)
                     fprintf(stderr, "code %d\n", retcode);
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
                     retval = "error: " + string(errmsg);
-                    done = true;
+                    done   = true;
                 }
                 break;
                 }
@@ -769,9 +783,7 @@ static string com_add_test(string cmdline, vector<string> &args)
 {
     string retval = "";
 
-    if (args.size() == 0) {
-
-    }
+    if (args.size() == 0) {}
     else if (args.size() > 1) {
         retval = "error: not expecting any arguments";
     }
@@ -784,8 +796,8 @@ static string com_add_test(string cmdline, vector<string> &args)
 
         for (iter = bv.begin(); iter != bv.end(); ++iter) {
             auto_mem<FILE> file(fclose);
-            char path[PATH_MAX];
-            string line;
+            char           path[PATH_MAX];
+            string         line;
 
             tc->grep_value_for_line(*iter, line);
 
@@ -810,22 +822,22 @@ static string com_add_test(string cmdline, vector<string> &args)
 
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
-    cmd_map["unix-time"]      = com_unix_time;
-    cmd_map["current-time"]   = com_current_time;
-    cmd_map["goto"]           = com_goto;
-    cmd_map["graph"]          = com_graph;
-    cmd_map["help"]           = com_help;
-    cmd_map["highlight"]      = com_highlight;
-    cmd_map["filter-in"]      = com_filter;
-    cmd_map["filter-out"]     = com_filter;
-    cmd_map["append-to"]      = com_save_to;
-    cmd_map["write-to"]       = com_save_to;
-    cmd_map["enable-filter"]  = com_enable_filter;
-    cmd_map["disable-filter"] = com_disable_filter;
+    cmd_map["unix-time"]            = com_unix_time;
+    cmd_map["current-time"]         = com_current_time;
+    cmd_map["goto"]                 = com_goto;
+    cmd_map["graph"]                = com_graph;
+    cmd_map["help"]                 = com_help;
+    cmd_map["highlight"]            = com_highlight;
+    cmd_map["filter-in"]            = com_filter;
+    cmd_map["filter-out"]           = com_filter;
+    cmd_map["append-to"]            = com_save_to;
+    cmd_map["write-to"]             = com_save_to;
+    cmd_map["enable-filter"]        = com_enable_filter;
+    cmd_map["disable-filter"]       = com_disable_filter;
     cmd_map["create-logline-table"] = com_create_logline_table;
     cmd_map["delete-logline-table"] = com_delete_logline_table;
-    cmd_map["session"]        = com_session;
-    cmd_map["summarize"] = com_summarize;
+    cmd_map["session"]              = com_session;
+    cmd_map["summarize"]            = com_summarize;
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;

@@ -42,7 +42,7 @@ extern const char *sql_keywords[];
 extern const char *sql_function_names[];
 
 typedef int (*sqlite_exec_callback)(void *, int, char **, char **);
-typedef std::vector<std::string> db_table_list_t;
+typedef std::vector<std::string>               db_table_list_t;
 typedef std::map<std::string, db_table_list_t> db_table_map_t;
 
 struct sqlite_metadata_callbacks {
@@ -51,11 +51,10 @@ struct sqlite_metadata_callbacks {
     sqlite_exec_callback smc_table_list;
     sqlite_exec_callback smc_table_info;
     sqlite_exec_callback smc_foreign_key_list;
-    db_table_map_t smc_db_list;
+    db_table_map_t       smc_db_list;
 };
 
 int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc);
 
 void attach_sqlite_db(sqlite3 *db, const std::string &filename);
-
 #endif

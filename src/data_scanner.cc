@@ -46,11 +46,12 @@ static struct {
                         "(?:u|r)?'((?:\\\\.|[^'])+)')"), },
     { "url",     pcrepp("\\A([\\w]+://[^\\s'\"\\[\\](){}]+[a-zA-Z0-9\\-=&])"),
     },
-    { "path",    pcrepp("\\A((?:/|\\./|\\.\\./)[\\w\\.\\-_\\~/]*)"),     },
+    { "path",    pcrepp("\\A((?:/|\\./|\\.\\./)[\\w\\.\\-_\\~/]*)"),
+    },
     { "mac",     pcrepp(
-          "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"),   },
+          "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"), },
     { "time",    pcrepp(
-          "\\A(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"),  },           /* XXX be more specific */
+          "\\A(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"), },            /* XXX be more specific */
     /* { "qual", pcrepp("\\A([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
     { "ipv6",    pcrepp("\\A(::|[:\\da-fA-f\\.]+[a-fA-f\\d])"),
     },
@@ -85,7 +86,7 @@ static struct {
     { "ipv4",    pcrepp("\\A(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"),
     },
     { "uuid",    pcrepp(
-          "\\A([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"),   },
+          "\\A([0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"), },
 
     { "vers",    pcrepp("\\A([0-9]+(?:\\.[0-9]+){2,}\\b)"),
     },
@@ -94,19 +95,20 @@ static struct {
     { "pcnt",    pcrepp("\\A(-?[0-9]+(\\.[0-9]+)?[ ]*%\\b)"),
     },
     { "num",     pcrepp("\\A(-?[0-9]+(\\.[0-9]+)?([eE][-+][0-9]+)?)"
-                        "\\b(?![\\._\\-][a-zA-Z])"),
-    },
+                        "\\b(?![\\._\\-][a-zA-Z])"), },
     { "hex",     pcrepp("\\A(-?(?:0x|[0-9])[0-9a-fA-F]+)"
-                        "\\b(?![\\._\\-][a-zA-Z])"),
-    },
+                        "\\b(?![\\._\\-][a-zA-Z])"), },
 
-    { "mail",    pcrepp("\\A([a-zA-Z0-9\\._%+-]+@[a-zA-Z0-9\\.-]+\\.[a-zA-Z]+)\\b"), },
-    { "cnst",    pcrepp("\\A(true|True|TRUE|false|False|FALSE|None|null)\\b") },
+    { "mail",    pcrepp(
+          "\\A([a-zA-Z0-9\\._%+-]+@[a-zA-Z0-9\\.-]+\\.[a-zA-Z]+)\\b"), },
+    { "cnst",
+      pcrepp("\\A(true|True|TRUE|false|False|FALSE|None|null)\\b") },
     { "word",    pcrepp(
-          "\\A([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|[\\.\\!,\\?]\\s|$))"), },
+          "\\A([a-zA-Z][a-z']+(?=[\\s\\(\\)!\\*:;'\\\"\\?,]|[\\.\\!,\\?]\\s|$))"),
+    },
     { "sym",     pcrepp(
-        "\\A([^\";\\s:=,\\(\\)\\{\\}\\[\\]\\+#!@%\\^&\\*'\\?<>\\~`\\|\\\\]+"
-        "(?:::[^\";\\s:=,\\(\\)\\{\\}\\[\\]\\+#!@%\\^&\\*'\\?<>\\~`\\|\\\\]+)*)"),
+          "\\A([^\";\\s:=,\\(\\)\\{\\}\\[\\]\\+#!@%\\^&\\*'\\?<>\\~`\\|\\\\]+"
+          "(?:::[^\";\\s:=,\\(\\)\\{\\}\\[\\]\\+#!@%\\^&\\*'\\?<>\\~`\\|\\\\]+)*)"),
     },
     { "line",    pcrepp("\\A(\r?\n|\r|;)"),
     },
@@ -170,8 +172,8 @@ static
 void single_char_capture(pcre_context &pc, pcre_input &pi)
 {
     pc.all()[0].c_begin = pi.pi_offset;
-    pc.all()[0].c_end = pi.pi_offset + 1;
-    pc.all()[1] = pc.all()[0];
+    pc.all()[0].c_end   = pi.pi_offset + 1;
+    pc.all()[1]         = pc.all()[0];
     pc.set_count(2);
     pi.pi_next_offset = pi.pi_offset + 1;
 }
@@ -179,8 +181,8 @@ void single_char_capture(pcre_context &pc, pcre_input &pi)
 bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
 {
     const char *str = this->ds_pcre_input.get_string();
-    pcre_input &pi = this->ds_pcre_input;
-    int lpc;
+    pcre_input &pi  = this->ds_pcre_input;
+    int         lpc;
 
     token_out = data_token_t(-1);
 
@@ -246,7 +248,7 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
 
             if (str[pi.pi_offset] == ':' ||
                 str[pi.pi_offset] == '=') {
-                token_out           = data_token_t(DT_SEPARATOR);
+                token_out = data_token_t(DT_SEPARATOR);
                 single_char_capture(pc, pi);
                 return true;
             }
@@ -257,7 +259,7 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
             pi.pi_offset = pi.pi_next_offset;
 
             if (str[pi.pi_offset] == ',') {
-                token_out           = data_token_t(DT_COMMA);
+                token_out = data_token_t(DT_COMMA);
                 single_char_capture(pc, pi);
                 return true;
             }
@@ -268,7 +270,7 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
             pi.pi_offset = pi.pi_next_offset;
 
             if (str[pi.pi_offset] == ';') {
-                token_out           = data_token_t(DT_SEMI);
+                token_out = data_token_t(DT_SEMI);
                 single_char_capture(pc, pi);
                 return true;
             }

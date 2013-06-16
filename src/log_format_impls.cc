@@ -153,27 +153,26 @@ class access_log_format : public log_format {
                 logline_value::kind_t kind;
             } columns[] = {
                 { "c_ip",
-                  logline_value::VALUE_TEXT                              },
+                  logline_value::VALUE_TEXT },
                 { "cs_username",
-                  logline_value::VALUE_TEXT                              },
-                { "",
-                },
+                  logline_value::VALUE_TEXT },
+                { "",   },
                 { "cs_method",
-                  logline_value::VALUE_TEXT                              },
+                  logline_value::VALUE_TEXT },
                 { "cs_uri_stem",
-                  logline_value::VALUE_TEXT                              },
+                  logline_value::VALUE_TEXT },
                 { "cs_uri_query",
-                  logline_value::VALUE_TEXT                              },
+                  logline_value::VALUE_TEXT },
                 { "cs_version",
-                  logline_value::VALUE_TEXT                              },
+                  logline_value::VALUE_TEXT },
                 { "sc_status",
-                  logline_value::VALUE_INTEGER                           },
+                  logline_value::VALUE_INTEGER },
                 { "sc_bytes",
-                  logline_value::VALUE_INTEGER                           },
+                  logline_value::VALUE_INTEGER },
                 { "cs_referer",
-                  logline_value::VALUE_TEXT                              },
+                  logline_value::VALUE_TEXT },
                 { "cs_user_agent",
-                  logline_value::VALUE_TEXT                              },
+                  logline_value::VALUE_TEXT },
 
                 { NULL },
             };
@@ -693,11 +692,11 @@ class glog_log_format : public log_format {
                 const char *          name;
                 logline_value::kind_t kind;
             } columns[] = {
-                { "micros",   logline_value::VALUE_INTEGER       },
-                { "thread",   logline_value::VALUE_TEXT          },
-                { "src_file", logline_value::VALUE_TEXT          },
-                { "src_line", logline_value::VALUE_TEXT          },
-                { "message",  logline_value::VALUE_TEXT          },
+                { "micros",   logline_value::VALUE_INTEGER },
+                { "thread",   logline_value::VALUE_TEXT    },
+                { "src_file", logline_value::VALUE_TEXT    },
+                { "src_line", logline_value::VALUE_TEXT    },
+                { "message",  logline_value::VALUE_TEXT    },
 
                 { NULL }
             };
@@ -824,10 +823,10 @@ class strace_log_format : public log_format {
                 const char *          name;
                 logline_value::kind_t kind;
             } columns[] = {
-                { "funcname", logline_value::VALUE_TEXT             },
-                { "args",     logline_value::VALUE_TEXT             },
-                { "result",   logline_value::VALUE_TEXT             },
-                { "duration", logline_value::VALUE_TEXT             },
+                { "funcname", logline_value::VALUE_TEXT },
+                { "args",     logline_value::VALUE_TEXT },
+                { "result",   logline_value::VALUE_TEXT },
+                { "duration", logline_value::VALUE_TEXT },
 
                 { NULL },
             };

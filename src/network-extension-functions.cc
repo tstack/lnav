@@ -110,7 +110,7 @@ static void sql_gethostbyaddr(sqlite3_context *context,
 
     memset(&sa, 0, sizeof(sa));
     if (strchr(addr_str, ':')) {
-        family = AF_INET6;
+        family              = AF_INET6;
         socklen             = sizeof(struct sockaddr_in6);
         sa.sin6.sin6_family = family;
         addr_raw            = (char *)&sa.sin6.sin6_addr;

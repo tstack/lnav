@@ -50,14 +50,14 @@
 
 using namespace std;
 
-static const size_t MAX_SESSIONS = 8;
+static const size_t MAX_SESSIONS           = 8;
 static const size_t MAX_SESSION_FILE_COUNT = 256;
 
 typedef std::vector<std::pair<int, string> > timestamped_list_t;
 
 static string bookmark_file_name(const string &name)
 {
-    char mark_base_name[256];
+    char   mark_base_name[256];
     string hash;
 
     hash = hash_string(name);
@@ -73,9 +73,10 @@ static string bookmark_file_name(const string &name)
 static string latest_bookmark_file(const string &name)
 {
     timestamped_list_t file_names;
+
     static_root_mem<glob_t, globfree> file_list;
     string mark_file_pattern;
-    char mark_base_name[256];
+    char   mark_base_name[256];
     string hash;
 
     hash = hash_string(name);
@@ -90,7 +91,7 @@ static string latest_bookmark_file(const string &name)
         for (size_t lpc = 0; lpc < file_list->gl_pathc; lpc++) {
             const char *path = file_list->gl_pathv[lpc];
             const char *base;
-            int timestamp;
+            int         timestamp;
 
             base = strrchr(path, '/') + 1;
             if (sscanf(base, "file-%*[^.].ts%d.json", &timestamp) == 1) {
@@ -101,8 +102,9 @@ static string latest_bookmark_file(const string &name)
 
     sort(file_names.begin(), file_names.end());
 
-    if (file_names.empty())
+    if (file_names.empty()) {
         return "";
+    }
 
     return file_names.back().second;
 }
@@ -111,28 +113,30 @@ struct session_file_info {
     session_file_info(int timestamp,
                       const string &id,
                       const string &path)
-        : sfi_timestamp(timestamp), sfi_id(id), sfi_path(path) {
-    };
+        : sfi_timestamp(timestamp), sfi_id(id), sfi_path(path) {};
 
-    bool operator<(const session_file_info &other) const {
-        if (this->sfi_timestamp < other.sfi_timestamp)
+    bool operator<(const session_file_info &other) const
+    {
+        if (this->sfi_timestamp < other.sfi_timestamp) {
             return true;
-        if (this->sfi_path < other.sfi_path)
+        }
+        if (this->sfi_path < other.sfi_path) {
             return true;
+        }
         return false;
     };
 
-    int sfi_timestamp;
+    int    sfi_timestamp;
     string sfi_id;
     string sfi_path;
 };
 
 static void cleanup_session_data(void)
 {
-    static_root_mem<glob_t, globfree> session_file_list;
+    static_root_mem<glob_t, globfree>   session_file_list;
     std::list<struct session_file_info> session_info_list;
     map<string, int> session_count;
-    string session_file_pattern;
+    string           session_file_pattern;
 
     session_file_pattern = dotlnav_path("*-*.ts*.json");
 
@@ -142,8 +146,8 @@ static void cleanup_session_data(void)
              session_file_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < session_file_list->gl_pathc; lpc++) {
             const char *path = session_file_list->gl_pathv[lpc];
-            char hash_id[64];
-            int timestamp;
+            char        hash_id[64];
+            int         timestamp;
             const char *base;
 
             base = strrchr(path, '/') + 1;
@@ -151,7 +155,7 @@ static void cleanup_session_data(void)
                        hash_id, &timestamp) == 2) {
                 session_count[hash_id] += 1;
                 session_info_list.push_back(session_file_info(
-                    timestamp, hash_id, path));
+                                                timestamp, hash_id, path));
             }
             if (sscanf(base,
                        "view-info-%63[^.].ts%d.ppid%*d.json",
@@ -159,7 +163,7 @@ static void cleanup_session_data(void)
                        &timestamp) == 2) {
                 session_count[hash_id] += 1;
                 session_info_list.push_back(session_file_info(
-                    timestamp, hash_id, path));
+                                                timestamp, hash_id, path));
             }
         }
     }
@@ -221,13 +225,15 @@ void init_session(void)
 
 void scan_sessions(void)
 {
-    std::list<session_pair_t> &session_file_names = lnav_data.ld_session_file_names;
-    static_root_mem<glob_t, globfree> view_info_list;
+    std::list<session_pair_t> &session_file_names =
+        lnav_data.ld_session_file_names;
+
+    static_root_mem<glob_t, globfree>   view_info_list;
     std::list<session_pair_t>::iterator iter;
-    char view_info_pattern_base[128];
+    char   view_info_pattern_base[128];
     string view_info_pattern;
     string old_session_name;
-    int index;
+    int    index;
 
     cleanup_session_data();
 
@@ -245,10 +251,11 @@ void scan_sessions(void)
              "view-info-%s.*.json",
              lnav_data.ld_session_id.c_str());
     view_info_pattern = dotlnav_path(view_info_pattern_base);
-    if (glob(view_info_pattern.c_str(), 0, NULL, view_info_list.inout()) == 0) {
+    if (glob(view_info_pattern.c_str(), 0, NULL,
+             view_info_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < view_info_list->gl_pathc; lpc++) {
             const char *path = view_info_list->gl_pathv[lpc];
-            int timestamp, ppid;
+            int         timestamp, ppid;
             const char *base;
 
             base = strrchr(path, '/') + 1;
@@ -258,7 +265,7 @@ void scan_sessions(void)
                        &ppid) == 2) {
                 ppid_time_pair_t ptp;
 
-                ptp.first = (ppid == getppid()) ? 1 : 0;
+                ptp.first  = (ppid == getppid()) ? 1 : 0;
                 ptp.second = timestamp;
                 session_file_names.push_back(make_pair(ptp, path));
             }
@@ -299,6 +306,7 @@ static int read_path(void *ctx, const unsigned char *str, size_t len)
 static int read_marks(void *ctx, long long num)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+
     pair<logfile *, content_line_t> *pair;
 
     fprintf(stderr, "read line %qd\n", num);
@@ -311,7 +319,7 @@ static int read_marks(void *ctx, long long num)
 }
 
 static struct json_path_handler file_handlers[] = {
-    json_path_handler("/path", read_path),
+    json_path_handler("/path",   read_path),
     json_path_handler("/marks#", read_marks),
 
     json_path_handler()
@@ -325,11 +333,11 @@ void load_bookmarks(void)
          iter != lnav_data.ld_log_source.end();
          ++iter) {
         pair<logfile *, content_line_t> logfile_pair;
-        yajlpp_parse_context ypc(file_handlers);
+        yajlpp_parse_context            ypc(file_handlers);
         const string &log_name = iter->ld_file->get_filename();
-        string mark_file_name;
-        yajl_handle handle;
-        int fd;
+        string        mark_file_name;
+        yajl_handle   handle;
+        int           fd;
 
         fprintf(stderr, "load %s\n", log_name.c_str());
 
@@ -341,8 +349,9 @@ void load_bookmarks(void)
         }
 
         mark_file_name = latest_bookmark_file(log_name.c_str());
-        if (mark_file_name.empty())
+        if (mark_file_name.empty()) {
             continue;
+        }
 
         fprintf(stderr, "loading %s\n", mark_file_name.c_str());
         handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
@@ -353,7 +362,7 @@ void load_bookmarks(void)
         }
         else {
             unsigned char buffer[1024];
-            size_t rc;
+            size_t        rc;
 
             while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
                 yajl_parse(handle, buffer, rc);
@@ -379,9 +388,9 @@ static int read_files(void *ctx, const unsigned char *str, size_t len)
 static int read_last_search(void *ctx, const unsigned char *str, size_t len)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
-    string regex = std::string((const char *)str, len);
+    string       regex        = std::string((const char *)str, len);
     const char **view_name;
-    int view_index;
+    int          view_index;
 
     view_name = find(lnav_view_strings,
                      lnav_view_strings + LNV__MAX,
@@ -399,7 +408,7 @@ static int read_last_search(void *ctx, const unsigned char *str, size_t len)
 static int read_top_line(void *ctx, long long value)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
-    const char **view_name;
+    const char **         view_name;
     int view_index;
 
     view_name = find(lnav_view_strings,
@@ -409,8 +418,9 @@ static int read_top_line(void *ctx, long long value)
     if (view_index < LNV__MAX) {
         textview_curses &tc = lnav_data.ld_views[view_index];
 
-        if (value != -1 && value < tc.get_inner_height())
+        if (value != -1 && value < tc.get_inner_height()) {
             tc.set_top(vis_line_t(value));
+        }
     }
 
     return 1;
@@ -426,11 +436,11 @@ static int read_commands(void *ctx, const unsigned char *str, size_t len)
 }
 
 static struct json_path_handler view_info_handlers[] = {
-    json_path_handler("/save-time", read_save_time),
-    json_path_handler("/files#", read_files),
+    json_path_handler("/save-time",              read_save_time),
+    json_path_handler("/files#",                 read_files),
     json_path_handler("/views/([^.]+)/top_line", read_top_line),
-    json_path_handler("/views/([^.]+)/search", read_last_search),
-    json_path_handler("/commands#", read_commands),
+    json_path_handler("/views/([^.]+)/search",   read_last_search),
+    json_path_handler("/commands#",              read_commands),
 
     json_path_handler()
 };
@@ -439,7 +449,7 @@ void load_session(void)
 {
     std::list<session_pair_t>::iterator sess_iter;
     yajlpp_parse_context ypc(view_info_handlers);
-    yajl_handle handle;
+    yajl_handle          handle;
     int fd;
 
     load_bookmarks();
@@ -448,7 +458,7 @@ void load_session(void)
         return;
     }
 
-    handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+    handle    = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
     sess_iter = lnav_data.ld_session_file_names.begin();
     advance(sess_iter, lnav_data.ld_session_file_index);
     lnav_data.ld_session_save_time = sess_iter->first.second;
@@ -459,7 +469,7 @@ void load_session(void)
     }
     else {
         unsigned char buffer[1024];
-        size_t rc;
+        size_t        rc;
 
         while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
             yajl_parse(handle, buffer, rc);
@@ -479,25 +489,28 @@ static void yajl_writer(void *context, const char *str, size_t len)
 void save_bookmarks(void)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
-    bookmarks<content_line_t>::type &bm = lss.get_user_bookmarks();
-    bookmark_vector<content_line_t> &user_marks = bm[&textview_curses::BM_USER];
+
+    bookmarks<content_line_t>::type &bm =
+        lss.get_user_bookmarks();
+    bookmark_vector<content_line_t> &user_marks =
+        bm[&textview_curses::BM_USER];
     logfile_sub_source::iterator file_iter;
     bookmark_vector<content_line_t>::iterator iter;
-    string mark_file_name, mark_file_tmp_name;
+    string         mark_file_name, mark_file_tmp_name;
     auto_mem<FILE> file(fclose);
-    logfile *curr_lf = NULL;
-    yajl_gen handle = NULL;
+    logfile *      curr_lf = NULL;
+    yajl_gen       handle  = NULL;
 
     for (file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
-        logfile *lf = file_iter->ld_file;
-        string mark_base_name = bookmark_file_name(lf->get_filename());
+        logfile *lf             = file_iter->ld_file;
+        string   mark_base_name = bookmark_file_name(lf->get_filename());
 
-        mark_file_name = dotlnav_path(mark_base_name.c_str());
+        mark_file_name     = dotlnav_path(mark_base_name.c_str());
         mark_file_tmp_name = mark_file_name + ".tmp";
 
-        file = fopen(mark_file_tmp_name.c_str(), "w");
+        file   = fopen(mark_file_tmp_name.c_str(), "w");
         handle = yajl_gen_alloc(NULL);
         yajl_gen_config(handle, yajl_gen_beautify, 1);
         yajl_gen_config(handle,
@@ -524,11 +537,10 @@ void save_bookmarks(void)
 
     for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
         content_line_t cl = *iter;
-        logfile *lf;
+        logfile *      lf;
 
         lf = lss.find(cl);
         if (curr_lf != lf) {
-
             if (handle) {
                 yajl_gen_array_close(handle);
                 yajl_gen_map_close(handle);
@@ -540,10 +552,10 @@ void save_bookmarks(void)
             }
 
             string mark_base_name = bookmark_file_name(lf->get_filename());
-            mark_file_name = dotlnav_path(mark_base_name.c_str());
+            mark_file_name     = dotlnav_path(mark_base_name.c_str());
             mark_file_tmp_name = mark_file_name + ".tmp";
 
-            file = fopen(mark_file_name.c_str(), "w");
+            file   = fopen(mark_file_name.c_str(), "w");
             handle = yajl_gen_alloc(NULL);
             yajl_gen_config(handle, yajl_gen_beautify, 1);
             yajl_gen_config(handle,
@@ -571,9 +583,10 @@ void save_bookmarks(void)
 void save_session(void)
 {
     string view_file_name, view_file_tmp_name;
+
     auto_mem<FILE> file(fclose);
-    char view_base_name[256];
-    yajl_gen handle = NULL;
+    char           view_base_name[256];
+    yajl_gen       handle = NULL;
 
     save_bookmarks();
 
@@ -585,7 +598,7 @@ void save_session(void)
              lnav_data.ld_session_time,
              getppid());
 
-    view_file_name = dotlnav_path(view_base_name);
+    view_file_name     = dotlnav_path(view_base_name);
     view_file_tmp_name = view_file_name + ".tmp";
 
     if ((file = fopen(view_file_tmp_name.c_str(), "w")) == NULL) {
@@ -612,7 +625,8 @@ void save_session(void)
 
                 for_each(lnav_data.ld_file_names.begin(),
                          lnav_data.ld_file_names.end(),
-                         object_field(file_list.gen, &pair<string, int>::first));
+                         object_field(file_list.gen,
+                                      &pair<string, int>::first));
             }
 
             root_map.gen("views");
@@ -622,8 +636,8 @@ void save_session(void)
 
                 for (int lpc = 0; lpc < LNV__MAX; lpc++) {
                     textview_curses &tc = lnav_data.ld_views[lpc];
-                    unsigned long width;
-                    vis_line_t height;
+                    unsigned long    width;
+                    vis_line_t       height;
 
                     top_view_map.gen(lnav_view_strings[lpc]);
 
@@ -632,10 +646,12 @@ void save_session(void)
                     view_map.gen("top_line");
 
                     tc.get_dimensions(height, width);
-                    if ((tc.get_top() + height) > tc.get_inner_height())
+                    if ((tc.get_top() + height) > tc.get_inner_height()) {
                         view_map.gen(-1);
-                    else
+                    }
+                    else{
                         view_map.gen((long long)tc.get_top());
+                    }
 
                     view_map.gen("search");
                     view_map.gen(lnav_data.ld_last_search[lpc]);
@@ -654,20 +670,23 @@ void save_session(void)
                 for (filter_iter = fs.begin();
                      filter_iter != fs.end();
                      ++filter_iter) {
-                    if (!(*filter_iter)->is_enabled())
+                    if (!(*filter_iter)->is_enabled()) {
                         continue;
+                    }
 
                     cmd_array.gen((*filter_iter)->to_command());
                 }
 
-                textview_curses::highlight_map_t &hmap = lnav_data.ld_views[LNV_LOG].get_highlights();
+                textview_curses::highlight_map_t &hmap =
+                    lnav_data.ld_views[LNV_LOG].get_highlights();
                 textview_curses::highlight_map_t::iterator hl_iter;
 
                 for (hl_iter = hmap.begin();
                      hl_iter != hmap.end();
                      ++hl_iter) {
-                    if (hl_iter->first[0] == '$')
+                    if (hl_iter->first[0] == '$') {
                         continue;
+                    }
                     cmd_array.gen("highlight " + hl_iter->first);
                 }
             }
@@ -684,7 +703,8 @@ void save_session(void)
 
 void reset_session(void)
 {
-    textview_curses::highlight_map_t &hmap = lnav_data.ld_views[LNV_LOG].get_highlights();
+    textview_curses::highlight_map_t &hmap =
+        lnav_data.ld_views[LNV_LOG].get_highlights();
     textview_curses::highlight_map_t::iterator hl_iter = hmap.begin();
 
     save_session();

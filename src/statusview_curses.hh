@@ -128,15 +128,16 @@ public:
         va_end(args);
     };
 
-    void set_stitch_value(int color_pair) {
-        string_attrs_t &sa = this->sf_value.get_attrs();
+    void set_stitch_value(int color_pair)
+    {
+        string_attrs_t &  sa = this->sf_value.get_attrs();
         struct line_range lr = { 0, 1 };
 
         this->sf_value.get_string() = "::";
         sa[lr].insert(make_string_attr("style",
-                      A_REVERSE|COLOR_PAIR(color_pair)));
+                                       A_REVERSE | COLOR_PAIR(color_pair)));
         lr.lr_start = 1;
-        lr.lr_end = 2;
+        lr.lr_end   = 2;
         sa[lr].insert(make_string_attr("style", COLOR_PAIR(color_pair)));
     };
 
@@ -173,11 +174,11 @@ public:
     int get_share() const { return this->sf_share; };
 
 protected:
-    size_t sf_width;              /*< The maximum display width, in chars. */
-    size_t sf_min_width;          /*< The minimum display width, in chars. */
-    bool   sf_right_justify;
-    bool   sf_cylon;
-    size_t sf_cylon_pos;
+    size_t              sf_width;     /*< The maximum display width, in chars. */
+    size_t              sf_min_width; /*< The minimum display width, in chars. */
+    bool                sf_right_justify;
+    bool                sf_cylon;
+    size_t              sf_cylon_pos;
     attr_line_t         sf_value; /*< The value to display for this field. */
     view_colors::role_t sf_role;  /*< The color role for this field. */
     int sf_share;

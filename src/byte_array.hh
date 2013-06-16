@@ -55,11 +55,13 @@ struct byte_array {
         return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
     };
 
-    void clear(void) {
+    void                 clear(void)
+    {
         memset(this->ba_data, 0, BYTE_COUNT);
     };
 
-    void to_string(char *buffer) const {
+    void                 to_string(char *buffer) const
+    {
         assert(buffer != NULL);
 
         for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
@@ -67,7 +69,8 @@ struct byte_array {
         }
     };
 
-    std::string to_string() const {
+    std::string          to_string() const
+    {
         char buffer[BYTE_COUNT * 2 + 1];
 
         this->to_string(buffer);
@@ -75,8 +78,8 @@ struct byte_array {
     }
 
     const unsigned char *in() const { return this->ba_data; };
-    unsigned char *out() { return this->ba_data; };
+    unsigned char *      out() { return this->ba_data; };
 
-    unsigned char ba_data[BYTE_COUNT];
+    unsigned char        ba_data[BYTE_COUNT];
 };
 #endif

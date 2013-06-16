@@ -222,10 +222,10 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
             const char *format;
             const char *symbol;
         } intervals[] = {
-            { 1000, "%03qd%s", ""    },
-            {   60, "%qd%s",   "s"   },
-            {   60, "%qd%s",   "m"   },
-            {    0, "%qd%s",   "h"   },
+            { 1000, "%03qd%s", ""  },
+            {   60, "%qd%s",   "s" },
+            {   60, "%qd%s",   "m" },
+            {    0, "%qd%s",   "h" },
             {    0, NULL }
         };
 

@@ -110,11 +110,12 @@
  * into the 'bookmarks' table to create new user bookmarks.
  */
 
-#define ELEMENT_LIST_T(var) var("" #var, __FILE__, __LINE__)
-#define PUSH_BACK(elem) push_back(elem, __FILE__, __LINE__)
-#define POP_FRONT(elem) pop_front(__FILE__, __LINE__)
-#define POP_BACK(elem) pop_back(__FILE__, __LINE__)
-#define SPLICE(pos, other, first, last) splice(pos, other, first, last, __FILE__, __LINE__)
+#define ELEMENT_LIST_T(var)                var("" #var, __FILE__, __LINE__)
+#define PUSH_BACK(elem)                    push_back(elem, __FILE__, __LINE__)
+#define POP_FRONT(elem)                    pop_front(__FILE__, __LINE__)
+#define POP_BACK(elem)                     pop_back(__FILE__, __LINE__)
+#define SPLICE(pos, other, first, last)    splice(pos, other, first, last, \
+                                                  __FILE__, __LINE__)
 
 template<class Container, class UnaryPredicate>
 void strip(Container &container, UnaryPredicate p)
@@ -142,7 +143,7 @@ struct data_format {
         : df_name(name), df_appender(appender), df_terminator(terminator)
     {};
 
-    const char *df_name;
+    const char *       df_name;
     const data_token_t df_appender;
     const data_token_t df_terminator;
 };
@@ -154,78 +155,78 @@ data_format_state_t dfs_semi_next(data_format_state_t state,
 data_format_state_t dfs_comma_next(data_format_state_t state,
                                    data_token_t next_token);
 
-#define LIST_INIT_TRACE \
-    do { \
-        if (TRACE_FILE != NULL) { \
-            fprintf(TRACE_FILE, \
+#define LIST_INIT_TRACE                 \
+    do {                                \
+        if (TRACE_FILE != NULL) {       \
+            fprintf(TRACE_FILE,         \
                     "%p %s:%d %s %s\n", \
-                    this, \
-                    fn, line, \
-                    __func__, \
-                    varname); \
-        } \
+                    this,               \
+                    fn, line,           \
+                    __func__,           \
+                    varname);           \
+        }                               \
     } while (false)
 
-#define LIST_DEINIT_TRACE \
-    do { \
-        if (TRACE_FILE != NULL) { \
-            fprintf(TRACE_FILE, \
+#define LIST_DEINIT_TRACE            \
+    do {                             \
+        if (TRACE_FILE != NULL) {    \
+            fprintf(TRACE_FILE,      \
                     "%p %s:%d %s\n", \
-                    this, \
-                    fn, line, \
-                    __func__); \
-        } \
+                    this,            \
+                    fn, line,        \
+                    __func__);       \
+        }                            \
     } while (false)
 
-#define ELEMENT_TRACE \
-    do { \
-        if (TRACE_FILE != NULL) { \
-            fprintf(TRACE_FILE, \
-                    "%p %s:%d %s %s %d:%d\n", \
-                    this, \
-                    fn, line, \
-                    __func__, \
+#define ELEMENT_TRACE                                       \
+    do {                                                    \
+        if (TRACE_FILE != NULL) {                           \
+            fprintf(TRACE_FILE,                             \
+                    "%p %s:%d %s %s %d:%d\n",               \
+                    this,                                   \
+                    fn, line,                               \
+                    __func__,                               \
                     data_scanner::token2name(elem.e_token), \
-                    elem.e_capture.c_begin, \
-                    elem.e_capture.c_end); \
-        } \
+                    elem.e_capture.c_begin,                 \
+                    elem.e_capture.c_end);                  \
+        }                                                   \
     } while (false)
 
-#define LIST_TRACE \
-    do { \
-        if (TRACE_FILE != NULL) { \
-            fprintf(TRACE_FILE, \
+#define LIST_TRACE                   \
+    do {                             \
+        if (TRACE_FILE != NULL) {    \
+            fprintf(TRACE_FILE,      \
                     "%p %s:%d %s\n", \
-                    this, \
-                    fn, line, \
-                    __func__); \
-        } \
+                    this,            \
+                    fn, line,        \
+                    __func__);       \
+        }                            \
     } while (false)
 
-#define SPLICE_TRACE \
-    do { \
-        if (TRACE_FILE != NULL) { \
-            fprintf(TRACE_FILE, \
-                    "%p %s:%d %s %d %p %d:%d\n", \
-                    this, \
-                    fn, line, \
-                    __func__, \
-                    (int)std::distance(this->begin(), pos), \
-                    &other, \
+#define SPLICE_TRACE                                          \
+    do {                                                      \
+        if (TRACE_FILE != NULL) {                             \
+            fprintf(TRACE_FILE,                               \
+                    "%p %s:%d %s %d %p %d:%d\n",              \
+                    this,                                     \
+                    fn, line,                                 \
+                    __func__,                                 \
+                    (int)std::distance(this->begin(), pos),   \
+                    &other,                                   \
                     (int)std::distance(other.begin(), first), \
-                    (int)std::distance(last, other.end())); \
-        } \
+                    (int)std::distance(last, other.end()));   \
+        }                                                     \
     } while (false);
 
-#define POINT_TRACE(name) \
-    do { \
-        if (TRACE_FILE) { \
-            fprintf(TRACE_FILE, \
+#define POINT_TRACE(name)                   \
+    do {                                    \
+        if (TRACE_FILE) {                   \
+            fprintf(TRACE_FILE,             \
                     "0x0 %s:%d point %s\n", \
-                    __FILE__, __LINE__, \
-                    name); \
-        } \
-    } while(false);
+                    __FILE__, __LINE__,     \
+                    name);                  \
+        }                                   \
+    } while (false);
 
 class data_parser {
 public:
@@ -235,45 +236,51 @@ public:
 
     static FILE *TRACE_FILE;
 
-    typedef byte_array<SHA_DIGEST_LENGTH>     schema_id_t;
+    typedef byte_array<SHA_DIGEST_LENGTH> schema_id_t;
 
     struct element;
-    // typedef std::list<element> element_list_t;
+    /* typedef std::list<element> element_list_t; */
 
     class element_list_t : public std::list<element> {
-    public:
-        element_list_t(const char *varname, const char *fn, int line) {
+public:
+        element_list_t(const char *varname, const char *fn, int line)
+        {
             LIST_INIT_TRACE;
         }
 
-        element_list_t() {
+        element_list_t()
+        {
             const char *varname = "_anon2_";
-            const char *fn = __FILE__;
-            int line = __LINE__;
+            const char *fn      = __FILE__;
+            int         line    = __LINE__;
 
             LIST_INIT_TRACE;
         };
 
-        ~element_list_t() {
-            const char *fn = __FILE__;
-            int line = __LINE__;
+        ~element_list_t()
+        {
+            const char *fn   = __FILE__;
+            int         line = __LINE__;
 
             LIST_DEINIT_TRACE;
         };
 
-        void push_back(const element &elem, const char *fn, int line) {
+        void push_back(const element &elem, const char *fn, int line)
+        {
             ELEMENT_TRACE;
 
             this->std::list<element>::push_back(elem);
         };
 
-        void pop_front(const char *fn, int line) {
+        void pop_front(const char *fn, int line)
+        {
             LIST_TRACE;
 
             this->std::list<element>::pop_front();
         };
 
-        void pop_back(const char *fn, int line) {
+        void pop_back(const char *fn, int line)
+        {
             LIST_TRACE;
 
             this->std::list<element>::pop_back();
@@ -284,7 +291,8 @@ public:
                     iterator first,
                     iterator last,
                     const char *fn,
-                    int line) {
+                    int line)
+        {
             SPLICE_TRACE;
 
             this->std::list<element>::splice(pos, other, first, last);
@@ -340,7 +348,8 @@ public:
         void                    assign_elements(element_list_t &subs)
         {
             if (this->e_sub_elements == NULL) {
-                this->e_sub_elements = new element_list_t("_sub_", __FILE__, __LINE__);
+                this->e_sub_elements = new element_list_t("_sub_", __FILE__,
+                                                          __LINE__);
             }
             this->e_sub_elements->swap(subs);
             this->update_capture();
@@ -356,7 +365,8 @@ public:
             }
         };
 
-        const element &get_pair_value(void) const {
+        const element &         get_pair_value(void) const
+        {
             assert(this->e_token == DNT_PAIR);
 
             return this->e_sub_elements->back();
@@ -452,7 +462,8 @@ private:
         : dp_errors("dp_errors", __FILE__, __LINE__),
           dp_pairs("dp_pairs", __FILE__, __LINE__),
           dp_format(NULL),
-          dp_scanner(ds) {
+          dp_scanner(ds)
+    {
         if (TRACE_FILE != NULL) {
             fprintf(TRACE_FILE, "input %s\n", ds->get_input().get_string());
         }
@@ -461,8 +472,10 @@ private:
     void pairup(schema_id_t *schema, element_list_t &pairs_out,
                 element_list_t &in_list)
     {
-        element_list_t ELEMENT_LIST_T(el_stack), ELEMENT_LIST_T(free_row), ELEMENT_LIST_T(key_comps), ELEMENT_LIST_T(value), ELEMENT_LIST_T(prefix);
-        SHA_CTX        context;
+        element_list_t ELEMENT_LIST_T(el_stack), ELEMENT_LIST_T(free_row),
+        ELEMENT_LIST_T(key_comps), ELEMENT_LIST_T(value),
+        ELEMENT_LIST_T(prefix);
+        SHA_CTX context;
 
         POINT_TRACE("pairup_start");
 
@@ -530,8 +543,8 @@ private:
                     if (el_stack.size() > 1 &&
                         this->dp_format->df_appender != DT_INVALID &&
                         this->dp_format->df_terminator != DT_INVALID) {
-                        // If we're expecting a terminator and haven't found it
-                        // then this is part of the value.
+                        /* If we're expecting a terminator and haven't found it */
+                        /* then this is part of the value. */
                         continue;
                     }
 
@@ -601,7 +614,8 @@ private:
                     struct element blank;
 
                     blank.e_capture.c_begin = blank.e_capture.c_end =
-                        el_stack.front().e_capture.c_begin;
+                                                  el_stack.front().e_capture.
+                                                  c_begin;
                     blank.e_token = DNT_KEY;
                     free_pair_subs.PUSH_BACK(blank);
                     free_pair_subs.PUSH_BACK(el_stack.front());
@@ -637,7 +651,8 @@ private:
                 struct element blank;
 
                 blank.e_capture.c_begin = blank.e_capture.c_end =
-                    free_row.front().e_capture.c_begin;
+                                              free_row.front().e_capture.
+                                              c_begin;
                 blank.e_token = DNT_KEY;
                 free_pair_subs.PUSH_BACK(blank);
                 free_pair_subs.PUSH_BACK(free_row.front());
@@ -751,9 +766,9 @@ private:
         this->dp_group_token.push_back(DT_INVALID);
         this->dp_group_stack.resize(1);
 
-        data_format_state_t prefix_state  = DFS_INIT;
-        data_format_state_t semi_state  = DFS_INIT;
-        data_format_state_t comma_state = DFS_INIT;
+        data_format_state_t prefix_state = DFS_INIT;
+        data_format_state_t semi_state   = DFS_INIT;
+        data_format_state_t comma_state  = DFS_INIT;
 
         memset(hist, 0, sizeof(hist));
         while (this->dp_scanner->tokenize(pc, elem.e_token)) {
@@ -767,14 +782,16 @@ private:
             assert(elem.e_capture.c_begin != -1);
             assert(elem.e_capture.c_end != -1);
 
-            prefix_state        = dfs_prefix_next(prefix_state, elem.e_token);
-            semi_state          = dfs_semi_next(semi_state, elem.e_token);
-            comma_state         = dfs_comma_next(comma_state, elem.e_token);
+            prefix_state = dfs_prefix_next(prefix_state, elem.e_token);
+            semi_state   = dfs_semi_next(semi_state, elem.e_token);
+            comma_state  = dfs_comma_next(comma_state, elem.e_token);
             if (prefix_state != DFS_ERROR) {
-                if (semi_state == DFS_ERROR)
+                if (semi_state == DFS_ERROR) {
                     semi_state = DFS_INIT;
-                if (comma_state == DFS_ERROR)
+                }
+                if (comma_state == DFS_ERROR) {
                     comma_state = DFS_INIT;
+                }
             }
             hist[elem.e_token] += 1;
             switch (elem.e_token) {
@@ -783,7 +800,9 @@ private:
             case DT_LCURLY:
             case DT_LSQUARE:
                 this->dp_group_token.push_back(elem.e_token);
-                this->dp_group_stack.push_back(element_list_t("_anon_", __FILE__, __LINE__));
+                this->dp_group_stack.push_back(element_list_t("_anon_",
+                                                              __FILE__,
+                                                              __LINE__));
                 break;
 
             case DT_RPAREN:
