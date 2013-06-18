@@ -571,7 +571,7 @@ class generic_log_format : public log_format {
         sscanf(line.c_str(), fmt, timestr, level, &prefix_len);
 
         lr.lr_start = fmt[0] == '%' ? 0 : 1;
-        lr.lr_end   = lr.lr_start + strlen(timestr);
+        lr.lr_end   = lr.lr_start + this->lf_time_fmt_len;
         sa[lr].insert(make_string_attr("timestamp", 0));
 
         for (int lpc = 0; level[lpc]; lpc++) {
@@ -583,7 +583,7 @@ class generic_log_format : public log_format {
         }
 
         if (logline::string2level(level, true) == logline::LEVEL_UNKNOWN) {
-            prefix_len = strlen(timestr);
+            prefix_len = lr.lr_end;
         }
 
         lr.lr_start = 0;

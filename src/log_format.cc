@@ -244,6 +244,7 @@ char *log_format::log_scanf(const char *line,
 
                     this->lf_fmt_lock      = curr_fmt;
                     this->lf_time_fmt_lock = curr_time_fmt;
+                    this->lf_time_fmt_len  = retval - time_dest;
 
                     found = true;
                     break;

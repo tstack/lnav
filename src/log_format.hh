@@ -276,13 +276,15 @@ public:
         };
     };
 
-    log_format() : lf_fmt_lock(-1), lf_time_fmt_lock(-1) { };
+    log_format() : lf_fmt_lock(-1), lf_time_fmt_lock(-1), lf_time_fmt_len(-1) {
+    };
     virtual ~log_format() { };
 
     virtual void clear(void)
     {
         this->lf_fmt_lock      = -1;
         this->lf_time_fmt_lock = -1;
+        this->lf_time_fmt_len = -1;
     };
 
     /**
@@ -337,6 +339,7 @@ protected:
 
     int lf_fmt_lock;
     int lf_time_fmt_lock;
+    int lf_time_fmt_len;
 };
 
 /**
