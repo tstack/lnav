@@ -230,7 +230,7 @@ view_colors::view_colors()
         this->vc_role_reverse_colors[VCR__MAX + (lpc - 1) * 2] =
             COLOR_PAIR(lpc + HL_COLOR_COUNT) | A_REVERSE;
         this->vc_role_reverse_colors[VCR__MAX + (lpc - 1) * 2 + 1] =
-            COLOR_PAIR(lpc) | A_BOLD | A_REVERSE;
+            COLOR_PAIR(lpc + HL_COLOR_COUNT) | A_BOLD | A_REVERSE;
     }
 }
 

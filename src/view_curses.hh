@@ -393,15 +393,20 @@ public:
         VC_EMPTY = 0,       /* XXX Dead color pair, doesn't work. */
 
         VC_BLUE,
+        /* BEGIN highlight colors */
         VC_CYAN,
         VC_GREEN,
         VC_MAGENTA,
 
         VC_BLUE_ON_WHITE,
+        /*
+         * NOTE: The following colors must match the colors in the above
+         * section.
+         */
         VC_CYAN_ON_BLACK,
-        VC_CYAN_ON_WHITE,
         VC_GREEN_ON_WHITE,
         VC_MAGENTA_ON_WHITE,
+        /* END highlight colors */
 
         VC_RED,
         VC_YELLOW,
@@ -410,6 +415,7 @@ public:
         VC_BLACK_ON_WHITE,
         VC_YELLOW_ON_WHITE,
         VC_RED_ON_WHITE,
+        VC_CYAN_ON_WHITE,
 
         VC_CYAN_ON_BLUE,
 
