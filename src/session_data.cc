@@ -95,6 +95,9 @@ static string latest_bookmark_file(const string &name)
 
             base = strrchr(path, '/') + 1;
             if (sscanf(base, "file-%*[^.].ts%d.json", &timestamp) == 1) {
+                if (timestamp == lnav_data.ld_session_load_time) {
+                    return path;
+                }
                 file_names.push_back(make_pair(timestamp, path));
             }
         }
@@ -452,17 +455,19 @@ void load_session(void)
     yajl_handle          handle;
     int fd;
 
-    load_bookmarks();
-
     if (lnav_data.ld_session_file_names.empty()) {
+        load_bookmarks();
         return;
     }
 
     handle    = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
     sess_iter = lnav_data.ld_session_file_names.begin();
     advance(sess_iter, lnav_data.ld_session_file_index);
+    lnav_data.ld_session_load_time = sess_iter->first.second;
     lnav_data.ld_session_save_time = sess_iter->first.second;
     string &view_info_name = sess_iter->second;
+
+    load_bookmarks();
 
     if ((fd = open(view_info_name.c_str(), O_RDONLY)) < 0) {
         perror("cannot open session file");

@@ -123,6 +123,7 @@ typedef std::pair<ppid_time_pair_t, std::string> session_pair_t;
 struct _lnav_data {
     std::string                             ld_session_id;
     time_t                                  ld_session_time;
+    time_t                                  ld_session_load_time;
     time_t                                  ld_session_save_time;
     std::list<session_pair_t>               ld_session_file_names;
     int                                     ld_session_file_index;
