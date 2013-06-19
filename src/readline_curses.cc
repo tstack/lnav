@@ -212,7 +212,8 @@ char **readline_context::attempted_completion(const char *text,
 
 readline_curses::readline_curses()
     : rc_active_context(-1),
-      rc_child(-1)
+      rc_child(-1),
+      rc_value_expiration(0)
 {
     struct winsize ws;
     int            sp[2];
