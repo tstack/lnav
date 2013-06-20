@@ -755,12 +755,18 @@ static void sigwinch(int sig)
 
 static void back_ten(int ten_minute)
 {
-    logfile_sub_source &lss = lnav_data.ld_log_source;
+    textview_curses *   tc  = lnav_data.ld_view_stack.top();
+    logfile_sub_source *lss;
+
+    lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
+
+    if (!lss)
+        return;
 
     time_t hour = rounddown_offset(lnav_data.ld_top_time,
                                    60 * 60,
                                    ten_minute * 10 * 60);
-    vis_line_t line = lss.find_from_time(hour);
+    vis_line_t line = lss->find_from_time(hour);
 
     --line;
     lnav_data.ld_view_stack.top()->set_top(line);
@@ -1185,52 +1191,48 @@ static void handle_paging_key(int ch)
         break;
 
     case 'm':
-        if (lss) {
-            lnav_data.ld_last_user_mark[tc] = tc->get_top();
-            lss->toggle_user_mark(&textview_curses::BM_USER,
-                                  vis_line_t(lnav_data.ld_last_user_mark[tc]));
-            tc->reload_data();
+        lnav_data.ld_last_user_mark[tc] = tc->get_top();
+        tc->toggle_user_mark(&textview_curses::BM_USER,
+                             vis_line_t(lnav_data.ld_last_user_mark[tc]));
+        tc->reload_data();
 
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                                                    u, U,
-                                                    "to move forward/backward through user bookmarks"));
-        }
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+                                            u, U,
+                                            "to move forward/backward through user bookmarks"));
         break;
 
     case 'J':
-        if (lss) {
-            if (lnav_data.ld_last_user_mark.find(tc) ==
-                lnav_data.ld_last_user_mark.end() ||
-                !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
-                lnav_data.ld_last_user_mark[tc] = tc->get_top();
-            }
-            else {
-                vis_line_t    height;
-                unsigned long width;
-
-                tc->get_dimensions(height, width);
-                if (lnav_data.ld_last_user_mark[tc] > tc->get_bottom() - 2 &&
-                    tc->get_top() + height < tc->get_inner_height()) {
-                    tc->shift_top(vis_line_t(1));
-                }
-                if (lnav_data.ld_last_user_mark[tc] + 1 >=
-                    tc->get_inner_height()) {
-                    break;
-                }
-                lnav_data.ld_last_user_mark[tc] += 1;
-            }
-            lss->toggle_user_mark(&textview_curses::BM_USER,
-                                  vis_line_t(lnav_data.ld_last_user_mark[tc]));
-            tc->reload_data();
-
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                                                    c,
-                                                    "to copy marked lines to the clipboard"));
+        if (lnav_data.ld_last_user_mark.find(tc) ==
+            lnav_data.ld_last_user_mark.end() ||
+            !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
+            lnav_data.ld_last_user_mark[tc] = tc->get_top();
         }
+        else {
+            vis_line_t    height;
+            unsigned long width;
+
+            tc->get_dimensions(height, width);
+            if (lnav_data.ld_last_user_mark[tc] > tc->get_bottom() - 2 &&
+                tc->get_top() + height < tc->get_inner_height()) {
+                tc->shift_top(vis_line_t(1));
+            }
+            if (lnav_data.ld_last_user_mark[tc] + 1 >=
+                tc->get_inner_height()) {
+                break;
+            }
+            lnav_data.ld_last_user_mark[tc] += 1;
+        }
+        tc->toggle_user_mark(&textview_curses::BM_USER,
+                             vis_line_t(lnav_data.ld_last_user_mark[tc]));
+        tc->reload_data();
+
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                                            c,
+                                            "to copy marked lines to the clipboard"));
         break;
 
     case 'K':
-        if (lss) {
+        {
             int new_mark;
 
             if (lnav_data.ld_last_user_mark.find(tc) ==
@@ -1243,8 +1245,8 @@ static void handle_paging_key(int ch)
                 new_mark = lnav_data.ld_last_user_mark[tc];
             }
 
-            lss->toggle_user_mark(&textview_curses::BM_USER,
-                                  vis_line_t(new_mark));
+            tc->toggle_user_mark(&textview_curses::BM_USER,
+                                 vis_line_t(new_mark));
             if (new_mark == tc->get_top()) {
                 tc->shift_top(vis_line_t(-1));
             }
@@ -1264,39 +1266,37 @@ static void handle_paging_key(int ch)
         break;
 
     case 'M':
-        if (lss) {
-            if (lnav_data.ld_last_user_mark.find(tc) ==
-                lnav_data.ld_last_user_mark.end()) {
-                flash();
-            }
-            else {
-                int start_line = min(
-                    (int)tc->get_top(), lnav_data.ld_last_user_mark[tc] + 1);
-                int end_line = max(
-                    (int)tc->get_top(), lnav_data.ld_last_user_mark[tc] - 1);
+        if (lnav_data.ld_last_user_mark.find(tc) ==
+            lnav_data.ld_last_user_mark.end()) {
+            flash();
+        }
+        else {
+            int start_line = min((int)tc->get_top(),
+                                 lnav_data.ld_last_user_mark[tc] + 1);
+            int end_line = max((int)tc->get_top(),
+                               lnav_data.ld_last_user_mark[tc] - 1);
 
-                lss->toggle_user_mark(&textview_curses::BM_USER,
-                                      vis_line_t(start_line),
-                                      vis_line_t(end_line));
-                tc->reload_data();
-            }
+            tc->toggle_user_mark(&textview_curses::BM_USER,
+                                  vis_line_t(start_line),
+                                  vis_line_t(end_line));
+            tc->reload_data();
         }
         break;
 
     case 'S':
-    {
-        bookmark_vector<vis_line_t>::iterator iter;
+        {
+            bookmark_vector<vis_line_t>::iterator iter;
 
-        for (iter = bm[&textview_curses::BM_SEARCH].begin();
-             iter != bm[&textview_curses::BM_SEARCH].end();
-             ++iter) {
-            lss->toggle_user_mark(&textview_curses::BM_USER, *iter);
+            for (iter = bm[&textview_curses::BM_SEARCH].begin();
+                 iter != bm[&textview_curses::BM_SEARCH].end();
+                 ++iter) {
+                tc->toggle_user_mark(&textview_curses::BM_USER, *iter);
+            }
+
+            lnav_data.ld_last_user_mark[tc] = -1;
+            tc->reload_data();
         }
-
-        lnav_data.ld_last_user_mark[tc] = -1;
-        tc->reload_data();
-    }
-    break;
+        break;
 
     case '1':
     case '2':
@@ -2423,29 +2423,27 @@ public:
                 }
                 return;
             }
-            if (lss) {
-                if (this->lb_selection_start == vis_line_t(-1)) {
-                    this->lb_selection_start = vis_y;
-                    this->lb_selection_last  = vis_line_t(-1);
+            if (this->lb_selection_start == vis_line_t(-1)) {
+                this->lb_selection_start = vis_y;
+                this->lb_selection_last  = vis_line_t(-1);
+            }
+            else {
+                if (this->lb_selection_last != vis_line_t(-1)) {
+                    tc->toggle_user_mark(&textview_curses::BM_USER,
+                                         this->lb_selection_start,
+                                         this->lb_selection_last);
+                }
+                if (this->lb_selection_start == vis_y) {
+                    this->lb_selection_last = vis_line_t(-1);
                 }
                 else {
-                    if (this->lb_selection_last != vis_line_t(-1)) {
-                        lss->toggle_user_mark(&textview_curses::BM_USER,
-                                              this->lb_selection_start,
-                                              this->lb_selection_last);
-                    }
-                    if (this->lb_selection_start == vis_y) {
-                        this->lb_selection_last = vis_line_t(-1);
-                    }
-                    else {
-                        lss->toggle_user_mark(&textview_curses::BM_USER,
-                                              this->lb_selection_start,
-                                              vis_y);
-                        this->lb_selection_last = vis_y;
-                    }
+                    tc->toggle_user_mark(&textview_curses::BM_USER,
+                                         this->lb_selection_start,
+                                         vis_y);
+                    this->lb_selection_last = vis_y;
                 }
-                tc->reload_data();
             }
+            tc->reload_data();
             break;
 
         case xterm_mouse::XT_BUTTON_RELEASE:

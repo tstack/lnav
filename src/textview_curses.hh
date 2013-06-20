@@ -197,6 +197,37 @@ public:
 
     vis_bookmarks &get_bookmarks(void) { return this->tc_bookmarks; };
 
+    void toggle_user_mark(bookmark_type_t *bm,
+                          vis_line_t start_line,
+                          vis_line_t end_line = vis_line_t(-1))
+    {
+        if (end_line == -1) {
+            end_line = start_line;
+        }
+        if (start_line > end_line) {
+            std::swap(start_line, end_line);
+        }
+        for (vis_line_t curr_line = start_line; curr_line <= end_line;
+             ++curr_line) {
+            bookmark_vector<vis_line_t> &bv =
+                this->tc_bookmarks[bm];
+            bookmark_vector<vis_line_t>::iterator iter;
+            bool added;
+
+            iter = bv.insert_once(curr_line);
+            if (iter == bv.end()) {
+                added = true;
+            }
+            else {
+                bv.erase(iter);
+                added = false;
+            }
+            if (this->tc_sub_source != NULL) {
+                this->tc_sub_source->text_mark(bm, (int)curr_line, added);
+            }
+        }
+    };
+
     void set_sub_source(text_sub_source *src)
     {
         this->tc_sub_source = src;
