@@ -312,8 +312,6 @@ static int read_marks(void *ctx, long long num)
 
     pair<logfile *, content_line_t> *pair;
 
-    fprintf(stderr, "read line %qd\n", num);
-
     pair = (std::pair<logfile *, content_line_t> *)ypc->ypc_userdata;
     lnav_data.ld_log_source.set_user_mark(&textview_curses::BM_USER,
                                           content_line_t(pair->second + num));
@@ -337,6 +335,10 @@ void load_bookmarks(void)
          ++iter) {
         pair<logfile *, content_line_t> logfile_pair;
         yajlpp_parse_context            ypc(file_handlers);
+
+        if (iter->ld_file == NULL)
+            continue;
+
         const string &log_name = iter->ld_file->get_filename();
         string        mark_file_name;
         yajl_handle   handle;
@@ -510,6 +512,10 @@ void save_bookmarks(void)
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
         logfile *lf             = file_iter->ld_file;
+
+        if (lf == NULL)
+            continue;
+
         string   mark_base_name = bookmark_file_name(lf->get_filename());
 
         mark_file_name     = dotlnav_path(mark_base_name.c_str());
