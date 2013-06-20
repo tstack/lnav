@@ -38,6 +38,7 @@
 
 #include <sqlite3.h>
 
+#include "auto_fd.hh"
 #include "lnav_util.hh"
 
 std::string hash_string(const std::string &str)
@@ -144,7 +145,7 @@ bool change_to_parent_dir(void)
 file_format_t detect_file_format(const std::string &filename)
 {
     file_format_t retval = FF_UNKNOWN;
-    int           fd;
+    auto_fd       fd;
 
     if ((fd = open(filename.c_str(), O_RDONLY)) != -1) {
         char buffer[32];

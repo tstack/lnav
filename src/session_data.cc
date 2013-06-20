@@ -342,7 +342,7 @@ void load_bookmarks(void)
         const string &log_name = iter->ld_file->get_filename();
         string        mark_file_name;
         yajl_handle   handle;
-        int           fd;
+        auto_fd       fd;
 
         fprintf(stderr, "load %s\n", log_name.c_str());
 
@@ -455,7 +455,7 @@ void load_session(void)
     std::list<session_pair_t>::iterator sess_iter;
     yajlpp_parse_context ypc(view_info_handlers);
     yajl_handle          handle;
-    int fd;
+    auto_fd fd;
 
     if (lnav_data.ld_session_file_names.empty()) {
         load_bookmarks();
