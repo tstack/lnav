@@ -435,7 +435,7 @@ public:
         return VC_ANSI_START + ((fg * 8) + bg);
     };
 
-    int ansi_color_pair(int fg, int bg)
+    static inline int ansi_color_pair(int fg, int bg)
     {
         return COLOR_PAIR(ansi_color_pair_index(fg, bg));
     };

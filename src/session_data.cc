@@ -95,6 +95,9 @@ static string latest_bookmark_file(const string &name)
 
             base = strrchr(path, '/') + 1;
             if (sscanf(base, "file-%*[^.].ts%d.json", &timestamp) == 1) {
+                if (timestamp == lnav_data.ld_session_load_time) {
+                    return path;
+                }
                 file_names.push_back(make_pair(timestamp, path));
             }
         }
@@ -339,7 +342,7 @@ void load_bookmarks(void)
         const string &log_name = iter->ld_file->get_filename();
         string        mark_file_name;
         yajl_handle   handle;
-        int           fd;
+        auto_fd       fd;
 
         fprintf(stderr, "load %s\n", log_name.c_str());
 
@@ -452,19 +455,21 @@ void load_session(void)
     std::list<session_pair_t>::iterator sess_iter;
     yajlpp_parse_context ypc(view_info_handlers);
     yajl_handle          handle;
-    int fd;
-
-    load_bookmarks();
+    auto_fd fd;
 
     if (lnav_data.ld_session_file_names.empty()) {
+        load_bookmarks();
         return;
     }
 
     handle    = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
     sess_iter = lnav_data.ld_session_file_names.begin();
     advance(sess_iter, lnav_data.ld_session_file_index);
+    lnav_data.ld_session_load_time = sess_iter->first.second;
     lnav_data.ld_session_save_time = sess_iter->first.second;
     string &view_info_name = sess_iter->second;
+
+    load_bookmarks();
 
     if ((fd = open(view_info_name.c_str(), O_RDONLY)) < 0) {
         perror("cannot open session file");
