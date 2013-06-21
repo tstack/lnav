@@ -109,11 +109,26 @@ bool listview_curses::handle_key(int ch)
         break;
 
     case KEY_END:
-    case 'B':
         this->set_top(max(vis_line_t(0),
                           max(this->lv_top,
                               vis_line_t(this->get_inner_height() - height +
                                          1))));
+        break;
+
+    case 'A':
+        {
+            double tenth = ((double)this->get_inner_height()) / 10.0;
+
+            this->shift_top(vis_line_t(tenth));
+        }
+        break;
+
+    case 'B':
+        {
+            double tenth = ((double)this->get_inner_height()) / 10.0;
+
+            this->shift_top(vis_line_t(-tenth));
+        }
         break;
 
     default:

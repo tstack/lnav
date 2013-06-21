@@ -68,6 +68,7 @@ grep_proc::grep_proc(pcre *code,
 
 grep_proc::~grep_proc()
 {
+    this->gp_queue.clear();
     this->cleanup();
 }
 
@@ -127,6 +128,7 @@ void grep_proc::start(void)
 
         fcntl(err_fd[0], F_SETFL, O_NONBLOCK);
         fcntl(err_fd[0], F_SETFD, 1);
+        assert(this->gp_err_pipe.get() == -1);
         this->gp_err_pipe      = err_fd[0];
         this->gp_child_started = true;
 

@@ -2687,6 +2687,21 @@ static void looper(void)
                 case EINTR:
                     break;
 
+                case EBADF:
+                {
+                    int lpc, fd_flags;
+
+                    fprintf(stderr, "bad file descriptor\n");
+                    for (lpc = 0; lpc < FD_SETSIZE; lpc++) {
+                        if (fcntl(lpc, F_GETFD, &fd_flags) == -1 &&
+                            FD_ISSET(lpc, &lnav_data.ld_read_fds)) {
+                            fprintf(stderr, "bad fd %d\n", lpc);
+                        }
+                    }
+                    lnav_data.ld_looping = false;
+                }
+                break;
+
                 default:
                     fprintf(stderr, "select %s\n", strerror(errno));
                     lnav_data.ld_looping = false;
