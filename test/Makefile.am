@@ -173,6 +173,7 @@ dist_noinst_DATA = \
 	listview_output.5 \
 	listview_output.6 \
 	logfile_access_log.0 \
+	logfile_access_log.1 \
 	logfile_empty.0 \
 	logfile_generic.0 \
 	logfile_glog.0 \

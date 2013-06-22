@@ -229,7 +229,7 @@ throw (line_buffer::error)
                                      st.st_size);
             }
         }
-
+        
         /*
          * The file can still grow between the above fstat and when we're
          * doing the scanning, so use the line buffer's notion of the file

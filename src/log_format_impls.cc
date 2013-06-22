@@ -79,7 +79,7 @@ class access_log_format : public log_format {
     static pcrepp &value_pattern(void)
     {
         static pcrepp VALUE_PATTERN(
-            "^([\\w\\.-]+) [\\w\\.-]+ ([\\w\\.-]+) "
+            "^([\\w\\.\\-]+) [\\w\\.\\-]+ ([\\w\\.\\-]+) "
             "\\[([^\\]]+)\\] \"(?:\\-|(\\w+) ([^ \\?]+)(\\?[^ ]+)? "
             "([\\w/\\.]+))\" (\\d+) "
             "(\\d+|-)(?: \"([^\"]+)\" \"([^\"]+)\")?.*");
@@ -180,9 +180,10 @@ class access_log_format : public log_format {
             pcre_context::iterator iter;
             struct line_range      lr;
 
-            iter        = pc.begin() + 3;
+            iter        = pc.begin() + 2;
             lr.lr_start = iter->c_begin;
             lr.lr_end   = iter->c_end;
+            assert(lr.lr_start != -1);
             sa[lr].insert(make_string_attr("timestamp", 0));
 
             lr.lr_start = 0;
@@ -739,9 +740,9 @@ class strace_log_format : public log_format {
     static pcrepp &value_pattern(void)
     {
         static pcrepp VALUE_PATTERN(
-            "[0-9:.]* ([a-zA-Z_][a-zA-Z_0-9]*)\\("
+            "([0-9:.]*) ([a-zA-Z_][a-zA-Z_0-9]*)\\("
             "(.*)\\)"
-            "\\s+= ([-xa-fA-F\\d\\?]+).*(?:<(\\d+\\.\\d+)>)?");
+            "\\s+= ([-xa-fA-F\\d\\?]+)[^<]+(?:<(\\d+\\.\\d+)>)?");
 
         return VALUE_PATTERN;
     };
@@ -823,10 +824,11 @@ class strace_log_format : public log_format {
                 const char *          name;
                 logline_value::kind_t kind;
             } columns[] = {
+                { "",         logline_value::VALUE_TEXT },
                 { "funcname", logline_value::VALUE_TEXT },
                 { "args",     logline_value::VALUE_TEXT },
                 { "result",   logline_value::VALUE_TEXT },
-                { "duration", logline_value::VALUE_TEXT },
+                { "duration", logline_value::VALUE_FLOAT },
 
                 { NULL },
             };
@@ -834,10 +836,12 @@ class strace_log_format : public log_format {
             pcre_context::iterator iter;
             struct line_range      lr;
 
-            iter        = pc.begin() + 3;
-            lr.lr_start = iter->c_begin;
-            lr.lr_end   = iter->c_end;
-            sa[lr].insert(make_string_attr("timestamp", 0));
+            iter        = pc.begin();
+            if (iter->c_begin != -1) {
+                lr.lr_start = iter->c_begin;
+                lr.lr_end   = iter->c_end;
+                sa[lr].insert(make_string_attr("timestamp", 0));
+            }
 
             lr.lr_start = 0;
             lr.lr_end   = line.length();

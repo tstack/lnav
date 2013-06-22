@@ -540,20 +540,25 @@ void rebuild_indexes(bool force)
 
         for (iter = tss->tss_files.begin();
              iter != tss->tss_files.end(); ) {
-            (*iter)->rebuild_index(&obs);
-            if ((*iter)->get_format() != NULL) {
-                logfile *lf = *iter;
+            try {
+                (*iter)->rebuild_index(&obs);
+                if ((*iter)->get_format() != NULL) {
+                    logfile *lf = *iter;
 
-                if (lnav_data.ld_log_source.insert_file(lf)) {
-                    iter  = tss->tss_files.erase(iter);
-                    force = true;
+                    if (lnav_data.ld_log_source.insert_file(lf)) {
+                        iter  = tss->tss_files.erase(iter);
+                        force = true;
+                    }
+                    else {
+                        ++iter;
+                    }
                 }
                 else {
                     ++iter;
                 }
             }
-            else {
-                ++iter;
+            catch (const line_buffer::error &e) {
+                iter = tss->tss_files.erase(iter);
             }
         }
 
