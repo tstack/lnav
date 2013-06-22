@@ -107,12 +107,14 @@ am__v_AR_1 =
 libdiag_a_AR = $(AR) $(ARFLAGS)
 libdiag_a_LIBADD =
 am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
-	collation-functions.$(OBJEXT) extension-functions.$(OBJEXT) \
-	fs-extension-functions.$(OBJEXT) grep_proc.$(OBJEXT) \
-	hist_source.$(OBJEXT) line_buffer.$(OBJEXT) \
-	listview_curses.$(OBJEXT) lnav_commands.$(OBJEXT) \
-	lnav_config.$(OBJEXT) lnav_util.$(OBJEXT) log_format.$(OBJEXT) \
-	logfile.$(OBJEXT) logfile_sub_source.$(OBJEXT) \
+	collation-functions.$(OBJEXT) \
+	datetime-extension-functions.$(OBJEXT) \
+	extension-functions.$(OBJEXT) fs-extension-functions.$(OBJEXT) \
+	grep_proc.$(OBJEXT) hist_source.$(OBJEXT) \
+	line_buffer.$(OBJEXT) listview_curses.$(OBJEXT) \
+	lnav_commands.$(OBJEXT) lnav_config.$(OBJEXT) \
+	lnav_util.$(OBJEXT) log_format.$(OBJEXT) logfile.$(OBJEXT) \
+	logfile_sub_source.$(OBJEXT) \
 	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
 	session_data.$(OBJEXT) sequence_matcher.$(OBJEXT) \
@@ -430,6 +432,7 @@ libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
 	bookmarks.cc \
 	collation-functions.cc \
+	datetime-extension-functions.cc \
 	extension-functions.c \
     fs-extension-functions.cc \
 	grep_proc.cc \
@@ -614,6 +617,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/collation-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_scanner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/datetime-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fs-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grep_proc.Po@am__quote@

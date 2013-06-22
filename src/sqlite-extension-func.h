@@ -63,6 +63,9 @@ typedef int (*sqlite_registration_func_t)(const struct FuncDef **basic_funcs,
 int common_extension_functions(const struct FuncDef **basic_funcs,
                                const struct FuncDefAgg **agg_funcs);
 
+int datetime_extension_functions(const struct FuncDef **basic_funcs,
+                                 const struct FuncDefAgg **agg_funcs);
+
 int string_extension_functions(const struct FuncDef **basic_funcs,
                                const struct FuncDefAgg **agg_funcs);
 

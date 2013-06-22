@@ -403,3 +403,14 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
         return;
     }
 }
+
+void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis)
+{
+    int len;
+
+    strftime(buffer, buffer_size, "%FT%T", gmtime(&time));
+    len = strlen(buffer);
+    snprintf(&buffer[len], sizeof(buffer) - len,
+             ".%03d",
+             millis);
+}

@@ -148,7 +148,9 @@ drive_sequencer_OBJECTS = $(am_drive_sequencer_OBJECTS)
 drive_sequencer_DEPENDENCIES =
 am_drive_sql_OBJECTS = drive_sql.$(OBJEXT)
 drive_sql_OBJECTS = $(am_drive_sql_OBJECTS)
-drive_sql_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
+drive_sql_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_drive_view_colors_OBJECTS = view_curses.$(OBJEXT) \
 	drive_view_colors.$(OBJEXT)
 drive_view_colors_OBJECTS = $(am_drive_view_colors_OBJECTS)
@@ -711,7 +713,15 @@ drive_readline_curses_LDADD = $(CURSES_LIB) $(READLINE_LIBS)
 drive_sql_SOURCES = \
 	drive_sql.cc
 
-drive_sql_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
+drive_sql_LDADD = \
+	../src/libdiag.a \
+	$(SQLITE3_LIBS) \
+	$(PCRE_LIBS) \
+	$(CURSES_LIB) \
+	$(READLINE_LIBS) \
+	-lpcrecpp \
+	-lcrypto
+
 slicer_SOURCES = \
 	../src/line_buffer.cc \
 	slicer.cc

@@ -26,37 +26,45 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file sql_util.hh
+ * @file datetime-extension-functions.cc
  */
 
-#ifndef _sql_util_hh
-#define _sql_util_hh
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <stdint.h>
 
-#include <sqlite3.h>
-
-#include <map>
 #include <string>
-#include <vector>
 
-extern const char *sql_keywords[];
-extern const char *sql_function_names[];
+#include "sqlite3.h"
 
-typedef int (*sqlite_exec_callback)(void *, int, char **, char **);
-typedef std::vector<std::string>               db_table_list_t;
-typedef std::map<std::string, db_table_list_t> db_table_map_t;
+#include "lnav.hh"
+#include "sql_util.hh"
+#include "sqlite-extension-func.h"
 
-struct sqlite_metadata_callbacks {
-    sqlite_exec_callback smc_collation_list;
-    sqlite_exec_callback smc_database_list;
-    sqlite_exec_callback smc_table_list;
-    sqlite_exec_callback smc_table_info;
-    sqlite_exec_callback smc_foreign_key_list;
-    db_table_map_t       smc_db_list;
-};
+static void sql_logline_datetime(sqlite3_context *context,
+                                 int argc, sqlite3_value **argv)
+{
+    char buffer[64];
 
-int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc);
+    assert(argc == 0);
 
-void attach_sqlite_db(sqlite3 *db, const std::string &filename);
+    sql_strftime(buffer, sizeof(buffer),
+                 lnav_data.ld_top_time,
+                 lnav_data.ld_top_time_millis);
+    sqlite3_result_text(context, buffer, strlen(buffer), SQLITE_TRANSIENT);
+}
 
-void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis);
-#endif
+int datetime_extension_functions(const struct FuncDef **basic_funcs,
+                                 const struct FuncDefAgg **agg_funcs)
+{
+    static const struct FuncDef datetime_funcs[] = {
+        { "logline_datetime", 0, 0, SQLITE_UTF8, 0, sql_logline_datetime },
+
+        { NULL }
+    };
+
+    *basic_funcs = datetime_funcs;
+
+    return SQLITE_OK;
+}

@@ -145,7 +145,9 @@ struct _lnav_data {
     listview_curses::action::broadcaster    ld_scroll_broadcaster;
 
     time_t                                  ld_top_time;
+    int                                     ld_top_time_millis;
     time_t                                  ld_bottom_time;
+    int                                     ld_bottom_time_millis;
 
     std::stack<textview_curses *>           ld_view_stack;
     textview_curses                         ld_views[LNV__MAX];

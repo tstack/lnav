@@ -101,6 +101,7 @@ libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
 	bookmarks.cc \
 	collation-functions.cc \
+	datetime-extension-functions.cc \
 	extension-functions.c \
     fs-extension-functions.cc \
 	grep_proc.cc \

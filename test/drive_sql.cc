@@ -5,12 +5,15 @@
 
 #include <sqlite3.h>
 
+#include "lnav.hh"
 #include "auto_mem.hh"
 #include "sqlite-extension-func.h"
 
 struct callback_state {
     int cs_row;
 };
+
+struct _lnav_data lnav_data;
 
 static int sql_callback(void *ptr,
                         int ncols,

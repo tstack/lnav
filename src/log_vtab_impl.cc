@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "sql_util.hh"
 #include "log_vtab_impl.hh"
 
 #include "logfile_sub_source.hh"
@@ -243,13 +244,9 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 
     case VT_COL_LOG_TIME:
     {
-        time_t line_time;
         char   buffer[64];
 
-        line_time = ll->get_time();
-        strftime(buffer, sizeof(buffer),
-                 "%F %T",
-                 gmtime(&line_time));
+        sql_strftime(buffer, sizeof(buffer), ll->get_time(), ll->get_millis());
         sqlite3_result_text(ctx, buffer, strlen(buffer), SQLITE_TRANSIENT);
     }
     break;

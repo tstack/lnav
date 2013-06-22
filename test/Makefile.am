@@ -135,7 +135,14 @@ drive_readline_curses_LDADD = $(CURSES_LIB) $(READLINE_LIBS)
 
 drive_sql_SOURCES = \
 	drive_sql.cc
-drive_sql_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
+drive_sql_LDADD = \
+	../src/libdiag.a \
+	$(SQLITE3_LIBS) \
+	$(PCRE_LIBS) \
+	$(CURSES_LIB) \
+	$(READLINE_LIBS) \
+	-lpcrecpp \
+	-lcrypto
 
 slicer_SOURCES = \
 	../src/line_buffer.cc \

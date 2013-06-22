@@ -400,6 +400,23 @@ bool setup_logline_table()
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_function_names);
 
+    for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
+        const struct FuncDef *basic_funcs;
+        const struct FuncDefAgg *agg_funcs;
+
+        sqlite_registration_funcs[lpc](&basic_funcs, &agg_funcs);
+        for (int lpc2 = 0; basic_funcs && basic_funcs[lpc2].zName; lpc2++) {
+            lnav_data.ld_rl_view->add_possibility(LNM_SQL,
+                                                  "*",
+                                                  basic_funcs[lpc2].zName);
+        }
+        for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
+            lnav_data.ld_rl_view->add_possibility(LNM_SQL,
+                                                  "*",
+                                                  agg_funcs[lpc2].zName);
+        }
+    }
+
     walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
 
     {
@@ -558,6 +575,7 @@ void rebuild_indexes(bool force)
                 }
             }
             catch (const line_buffer::error &e) {
+                // TODO: log that we dropped this file.
                 iter = tss->tss_files.erase(iter);
             }
         }
@@ -2144,18 +2162,23 @@ static void update_times(void *, listview_curses *lv)
 {
     if (lv == &lnav_data.ld_views[LNV_LOG] && lv->get_inner_height() > 0) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
+        logline *ll;
 
-        lnav_data.ld_top_time =
-            lss.find_line(lss.at(lv->get_top()))->get_time();
-        lnav_data.ld_bottom_time =
-            lss.find_line(lss.at(lv->get_bottom()))->get_time();
+        ll = lss.find_line(lss.at(lv->get_top()));
+        lnav_data.ld_top_time = ll->get_time();
+        lnav_data.ld_top_time_millis = ll->get_millis();
+        ll = lss.find_line(lss.at(lv->get_bottom()));
+        lnav_data.ld_bottom_time = ll->get_time();
+        lnav_data.ld_bottom_time_millis = ll->get_millis();
     }
     if (lv == &lnav_data.ld_views[LNV_HISTOGRAM] &&
         lv->get_inner_height() > 0) {
         hist_source &hs = lnav_data.ld_hist_source;
 
         lnav_data.ld_top_time    = hs.value_for_row(lv->get_top());
+        lnav_data.ld_top_time_millis = 0;
         lnav_data.ld_bottom_time = hs.value_for_row(lv->get_bottom());
+        lnav_data.ld_bottom_time_millis = 0;
     }
 }
 
