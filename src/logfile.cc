@@ -229,7 +229,7 @@ throw (line_buffer::error)
                                      st.st_size);
             }
         }
-        
+
         /*
          * The file can still grow between the above fstat and when we're
          * doing the scanning, so use the line buffer's notion of the file
@@ -243,6 +243,66 @@ throw (line_buffer::error)
     }
 
     this->lf_index_time = st.st_mtime;
+
+    return retval;
+}
+
+logfile_filter::type_t logfile::check_filter(iterator ll,
+                                             uint8_t generation,
+                                             const filter_stack_t &filters)
+{
+    logfile_filter::type_t retval;
+    uint8_t this_generation = ll->get_filter_generation();
+
+    if (this_generation == generation) {
+        return ll->get_filter_state();
+    }
+    else {
+        retval = logfile_filter::MAYBE;
+    }
+
+    if (retval == logfile_filter::MAYBE) {
+        string line_value;
+
+        for (size_t lpc = 0; lpc < filters.size(); lpc++) {
+            logfile_filter *filter = filters[lpc];
+            bool matched;
+
+            if (!filter->is_enabled())
+                continue;
+
+            if (line_value.empty())
+                this->read_line(ll, line_value);
+            matched = filter->matches(line_value);
+
+            switch (filter->get_type()) {
+            case logfile_filter::INCLUDE:
+                if (matched) {
+                    retval = logfile_filter::INCLUDE;
+                }
+                else if (retval == logfile_filter::MAYBE) {
+                    retval = logfile_filter::EXCLUDE;
+                }
+                break;
+
+            case logfile_filter::EXCLUDE:
+                if (matched) {
+                    retval = logfile_filter::EXCLUDE;
+                }
+                break;
+
+            default:
+                assert(0);
+                break;
+            }
+        }
+    }
+
+    if (retval == logfile_filter::MAYBE) {
+        retval = logfile_filter::INCLUDE;
+    }
+
+    ll->set_filter_state(generation, retval);
 
     return retval;
 }

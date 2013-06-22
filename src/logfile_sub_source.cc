@@ -363,9 +363,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 
     if (retval || force) {
         int    file_index = 0;
-        string line_value;
 
-        line_value.reserve(4 * 1024);
         if (force) {
             this->lss_index.clear();
             this->lss_filtered_count = 0;
@@ -382,19 +380,17 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                 content_line_t con_line(file_index * MAX_LINES_PER_FILE +
                                         iter->ld_lines_indexed);
 
-                logfile_filter::type_t action = logfile_filter::INCLUDE;
+                logfile_filter::type_t action_for_prev_line;
                 content_line_t         start_line(con_line + 1);
+                logfile::iterator      lf_iter;
 
-                logfile::iterator lf_iter;
-                int action_priority = -1;
-
+                action_for_prev_line = logfile_filter::INCLUDE;
                 this->lss_index.reserve(this->lss_index.size() +
                                         iter->ld_file->size() -
                                         iter->ld_lines_indexed);
                 for (lf_iter = iter->ld_file->begin() + iter->ld_lines_indexed;
                      lf_iter != iter->ld_file->end();
                      lf_iter++) {
-                    int lpc;
 
                     if (obs != NULL) {
                         obs->logfile_sub_source_filtering(
@@ -404,8 +400,8 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                     }
 
                     if (!(lf_iter->get_level() & logline::LEVEL_CONTINUED)) {
-                        if (action == logfile_filter::INCLUDE ||
-                            action == logfile_filter::MAYBE) {
+                        if (action_for_prev_line == logfile_filter::INCLUDE ||
+                            action_for_prev_line == logfile_filter::MAYBE) {
                             while (start_line < con_line) {
                                 this->lss_index.push_back(start_line);
                                 ++start_line;
@@ -414,57 +410,19 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                         else {
                             this->lss_filtered_count += 1;
                         }
-                        start_line      = con_line;
-                        action          = logfile_filter::MAYBE;
-                        action_priority = -1;
+                        start_line = con_line;
                     }
 
-                    for (lpc = 0; lpc < (int)this->lss_filters.size(); lpc++) {
-                        logfile_filter *filter = this->lss_filters[lpc];
-
-                        if (filter->is_enabled()) {
-                            bool matched;
-
-                            if (line_value.empty()) {
-                                iter->ld_file->read_line(lf_iter, line_value);
-                            }
-                            matched = filter->matches(line_value);
-
-                            switch (filter->get_type()) {
-                            case logfile_filter::INCLUDE:
-                                if (lpc >= action_priority) {
-                                    if (matched) {
-                                        action = logfile_filter::INCLUDE;
-                                    }
-                                    else if (action == logfile_filter::MAYBE) {
-                                        action = logfile_filter::EXCLUDE;
-                                    }
-                                    action_priority = lpc;
-                                }
-                                break;
-
-                            case logfile_filter::EXCLUDE:
-                                if (lpc >= action_priority) {
-                                    if (matched) {
-                                        action = logfile_filter::EXCLUDE;
-                                    }
-                                    action_priority = lpc;
-                                }
-                                break;
-
-                            default:
-                                assert(0);
-                                break;
-                            }
-                        }
-                    }
-                    line_value.clear();
+                    action_for_prev_line = iter->ld_file->check_filter(
+                        lf_iter,
+                        this->lss_filter_generation,
+                        this->lss_filters);
 
                     ++con_line;
                 }
 
-                if (action == logfile_filter::INCLUDE ||
-                    action == logfile_filter::MAYBE) {
+                if (action_for_prev_line == logfile_filter::INCLUDE ||
+                    action_for_prev_line == logfile_filter::MAYBE) {
                     while (start_line < con_line) {
                         this->lss_index.push_back(start_line);
                         ++start_line;

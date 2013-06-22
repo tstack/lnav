@@ -46,6 +46,43 @@
 #include "byte_array.hh"
 #include "view_curses.hh"
 
+class logfile_filter {
+public:
+    typedef enum {
+        MAYBE,
+        INCLUDE,
+        EXCLUDE,
+
+        LFT__MAX,
+
+        LFT__MASK = (MAYBE|INCLUDE|EXCLUDE)
+    } type_t;
+
+    logfile_filter(type_t type, std::string id)
+        : lf_enabled(true),
+          lf_type(type),
+          lf_id(id) { };
+    virtual ~logfile_filter() { };
+
+    type_t get_type(void) const { return this->lf_type; };
+    std::string get_id(void) const { return this->lf_id; };
+
+    bool is_enabled(void) { return this->lf_enabled; };
+    void enable(void) { this->lf_enabled = true; };
+    void disable(void) { this->lf_enabled = false; };
+
+    virtual bool matches(std::string line) = 0;
+
+    virtual std::string to_command(void) = 0;
+
+protected:
+    bool        lf_enabled;
+    type_t      lf_type;
+    std::string lf_id;
+};
+
+typedef std::vector<logfile_filter *> filter_stack_t;
+
 /**
  * Metadata for a single line in a log file.
  */
@@ -95,7 +132,7 @@ public:
           ll_time(t),
           ll_millis(millis),
           ll_level(l),
-          ll_module(m)
+          ll_filter_state(logfile_filter::MAYBE)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     };
@@ -126,7 +163,18 @@ public:
         return level_names[this->ll_level & 0x0f];
     };
 
-    uint8_t get_module() const { return this->ll_module; };
+    uint8_t get_filter_generation(void) const {
+        return this->ll_filter_state >> 2;
+    };
+
+    logfile_filter::type_t get_filter_state(void) const {
+        return (logfile_filter::type_t)(this->ll_filter_state &
+                                        logfile_filter::LFT__MASK);
+    };
+
+    void set_filter_state(uint8_t generation, logfile_filter::type_t filter) {
+        this->ll_filter_state = (generation << 2) | filter;
+    };
 
     /**
      * @return  True if there is a schema value set for this log line.
@@ -182,7 +230,7 @@ private:
     time_t   ll_time;
     uint16_t ll_millis;
     uint8_t  ll_level;
-    uint8_t  ll_module;
+    uint8_t  ll_filter_state;
     char     ll_schema[4];
 };
 

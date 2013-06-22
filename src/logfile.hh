@@ -167,6 +167,26 @@ public:
      */
     bool rebuild_index(logfile_observer *lo = NULL) throw (line_buffer::error);
 
+    /**
+     * Check a line to see if it should be filtered out or not.
+     *
+     * XXX This code doesn't really belong here, it's something more
+     * approprtiate for the logfile_sub_source.  The reason it is here right
+     * now is because we cache the result of the check in the logline object.
+     * 
+     * @param  ll         The log line to check.
+     * @param  generation The "generation" that the given filters belong to.
+     *                    If the cached value for this check is from the same
+     *                    filter generation, then we just return the cached
+     *                    value.
+     * @param  filters    The filters to apply.
+     * @return            Whether or not the line should be included in the
+     *                    view.
+     */
+    logfile_filter::type_t check_filter(iterator ll,
+                                        uint8_t generation,
+                                        const filter_stack_t &filters);
+
     bool operator<(const logfile &rhs) const
     {
         bool retval;

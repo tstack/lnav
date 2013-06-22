@@ -388,7 +388,7 @@ static string com_filter(string cmdline, vector<string> &args)
                                          logfile_filter::INCLUDE;
             auto_ptr<pcre_filter> pf(new pcre_filter(lt, args[1], code));
 
-            lss.get_filters().push_back(pf.release());
+            lss.add_filter(pf.release());
             lnav_data.ld_rl_view->
             add_possibility(LNM_COMMAND, "enabled-filter", args[1]);
             rebuild_indexes(true);
@@ -419,7 +419,7 @@ static string com_enable_filter(string cmdline, vector<string> &args)
             retval = "info: filter already enabled";
         }
         else {
-            lf->enable();
+            lnav_data.ld_log_source.set_filter_enabled(lf, true);
             lnav_data.ld_rl_view->
             rem_possibility(LNM_COMMAND, "disabled-filter", args[1]);
             lnav_data.ld_rl_view->
@@ -451,7 +451,7 @@ static string com_disable_filter(string cmdline, vector<string> &args)
             retval = "info: filter already disabled";
         }
         else {
-            lf->disable();
+            lnav_data.ld_log_source.set_filter_enabled(lf, false);
             lnav_data.ld_rl_view->
             rem_possibility(LNM_COMMAND, "disabled-filter", args[1]);
             lnav_data.ld_rl_view->

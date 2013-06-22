@@ -672,9 +672,9 @@ void save_session(void)
             root_map.gen("commands");
 
             {
-                logfile_sub_source::filter_stack_t::iterator filter_iter;
+                filter_stack_t::const_iterator filter_iter;
                 logfile_sub_source &lss = lnav_data.ld_log_source;
-                logfile_sub_source::filter_stack_t &fs = lss.get_filters();
+                const filter_stack_t &fs = lss.get_filters();
 
                 yajlpp_array cmd_array(handle);
 
@@ -732,7 +732,5 @@ void reset_session(void)
         }
     }
 
-    logfile_sub_source &lss = lnav_data.ld_log_source;
-
-    lss.get_filters().clear();
+    lnav_data.ld_log_source.clear_filters();
 }

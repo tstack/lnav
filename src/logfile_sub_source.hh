@@ -47,37 +47,6 @@
 
 STRONG_INT_TYPE(int, content_line);
 
-class logfile_filter {
-public:
-    typedef enum {
-        MAYBE,
-        INCLUDE,
-        EXCLUDE
-    } type_t;
-
-    logfile_filter(type_t type, std::string id)
-        : lf_enabled(true),
-          lf_type(type),
-          lf_id(id) { };
-    virtual ~logfile_filter() { };
-
-    type_t get_type(void) const { return this->lf_type; };
-    std::string get_id(void) const { return this->lf_id; };
-
-    bool is_enabled(void) { return this->lf_enabled; };
-    void enable(void) { this->lf_enabled = true; };
-    void disable(void) { this->lf_enabled = false; };
-
-    virtual bool matches(std::string line) = 0;
-
-    virtual std::string to_command(void) = 0;
-
-protected:
-    bool        lf_enabled;
-    type_t      lf_type;
-    std::string lf_id;
-};
-
 /**
  * Delegate class that merges the contents of multiple log files into a single
  * source of data for a text view.
@@ -85,8 +54,6 @@ protected:
 class logfile_sub_source
     : public text_sub_source {
 public:
-
-    typedef std::vector<logfile_filter *> filter_stack_t;
 
     class observer
         : public logfile_observer {
@@ -103,10 +70,30 @@ public:
     logfile_sub_source();
     virtual ~logfile_sub_source();
 
-    filter_stack_t &get_filters(void)
+    const filter_stack_t &get_filters(void) const
     {
         return this->lss_filters;
     };
+
+    void add_filter(logfile_filter *filter) {
+        this->lss_filters.push_back(filter);
+        this->lss_filter_generation += 1;
+    };
+
+    void clear_filters(void) { 
+        this->lss_filters.clear(); 
+        this->lss_filter_generation += 1;
+    };
+
+    void set_filter_enabled(logfile_filter *filter, bool enabled) {
+        if (enabled) {
+            filter->enable();
+        }
+        else {
+            filter->disable();
+        }
+        this->lss_filter_generation += 1;
+    }
 
     logfile_filter *get_filter(std::string id)
     {
@@ -393,6 +380,7 @@ private:
     std::vector<logfile_data> lss_files;
 
     filter_stack_t lss_filters;
+    uint8_t        lss_filter_generation;
     int            lss_filtered_count;
 
     std::vector<content_line_t> lss_index;
