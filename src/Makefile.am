@@ -101,7 +101,6 @@ libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
 	bookmarks.cc \
 	collation-functions.cc \
-	datetime-extension-functions.cc \
 	extension-functions.c \
     fs-extension-functions.cc \
 	grep_proc.cc \
@@ -126,6 +125,7 @@ libdiag_a_SOURCES = \
 	pcrepp.cc \
 	piper_proc.cc \
 	sql_util.cc \
+	state-extension-functions.cc \
 	strnatcmp.c \
 	textview_curses.cc \
 	view_curses.cc \

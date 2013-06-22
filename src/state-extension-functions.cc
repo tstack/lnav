@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file datetime-extension-functions.cc
+ * @file state-extension-functions.cc
  */
 
 #include <stdio.h>
@@ -42,7 +42,14 @@
 #include "sql_util.hh"
 #include "sqlite-extension-func.h"
 
-static void sql_logline_datetime(sqlite3_context *context,
+static void sql_log_top_line(sqlite3_context *context,
+                             int argc, sqlite3_value **argv)
+{
+    sqlite3_result_int64(context,
+                         (int64_t)lnav_data.ld_views[LNV_LOG].get_top());
+}
+
+static void sql_log_top_datetime(sqlite3_context *context,
                                  int argc, sqlite3_value **argv)
 {
     char buffer[64];
@@ -55,11 +62,12 @@ static void sql_logline_datetime(sqlite3_context *context,
     sqlite3_result_text(context, buffer, strlen(buffer), SQLITE_TRANSIENT);
 }
 
-int datetime_extension_functions(const struct FuncDef **basic_funcs,
-                                 const struct FuncDefAgg **agg_funcs)
+int state_extension_functions(const struct FuncDef **basic_funcs,
+                              const struct FuncDefAgg **agg_funcs)
 {
     static const struct FuncDef datetime_funcs[] = {
-        { "logline_datetime", 0, 0, SQLITE_UTF8, 0, sql_logline_datetime },
+        { "log_top_line", 0, 0, SQLITE_UTF8, 0, sql_log_top_line },
+        { "log_top_datetime", 0, 0, SQLITE_UTF8, 0, sql_log_top_datetime },
 
         { NULL }
     };
