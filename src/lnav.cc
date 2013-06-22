@@ -381,6 +381,12 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
 
 bool setup_logline_table()
 {
+    // Hidden columns don't show up in the table_info pragma.
+    static const char *hidden_table_columns[] = {
+        "log_path",
+        "log_text",
+    };
+
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
     bool             retval   = false;
 
@@ -399,6 +405,7 @@ bool setup_logline_table()
 
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_function_names);
+    lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", hidden_table_columns);
 
     for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
         const struct FuncDef *basic_funcs;
