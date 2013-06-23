@@ -79,6 +79,9 @@ public:
     };
     strong_int &operator++(void) { this->value++; return *this; };
     strong_int &operator--(void) { this->value--; return *this; };
+    bool operator==(const strong_int &rhs) const {
+        return this->value == rhs.value;
+    };
     T *out(void) { return &this->value; };
 private:
     T value;

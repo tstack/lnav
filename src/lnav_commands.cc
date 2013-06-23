@@ -761,7 +761,6 @@ static string com_summarize(string cmdline, vector<string> &args)
             }
 
             if (retcode == SQLITE_DONE) {
-                hs.analyze();
                 lnav_data.ld_views[LNV_LOG].reload_data();
                 lnav_data.ld_views[LNV_DB].reload_data();
                 lnav_data.ld_views[LNV_DB].set_left(0);

@@ -32,7 +32,10 @@
 #ifndef __hist_source_hh
 #define __hist_source_hh
 
+#include <math.h>
+
 #include <map>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -118,7 +121,10 @@ public:
         return this->hs_group_size / this->hs_bucket_size;
     };
 
-    void clear(void) { this->hs_groups.clear(); };
+    void clear(void) {
+        this->hs_groups.clear();
+        this->hs_bucket_stats.clear();
+    };
 
     size_t text_line_count()
     {
@@ -148,8 +154,13 @@ public:
         int brow   = row % (this->buckets_per_group() + 1);
         int retval = 0;
 
-        if (!this->hs_group_keys.empty()) {
-            bucket_group_t bg = this->hs_group_keys[grow];
+        if (!this->hs_groups.empty()) {
+            std::map<bucket_group_t, bucket_array_t>::const_iterator iter;
+
+            iter = this->hs_groups.begin();
+            std::advance(iter, grow);
+
+            bucket_group_t bg = iter->first;
 
             if (brow > 0) {
                 brow -= 1;
@@ -165,15 +176,13 @@ public:
     {
         vis_line_t retval;
 
-        if (!this->hs_group_keys.empty()) {
+        if (!this->hs_groups.empty()) {
             bucket_group_t bg(value / this->hs_group_size);
 
-            std::vector<bucket_group_t>::iterator lb;
+            std::map<bucket_group_t, bucket_array_t>::iterator lb;
 
-            lb = lower_bound(this->hs_group_keys.begin(),
-                             this->hs_group_keys.end(),
-                             bg);
-            retval = vis_line_t(distance(this->hs_group_keys.begin(), lb) *
+            lb = this->hs_groups.lower_bound(bg);
+            retval = vis_line_t(distance(this->hs_groups.begin(), lb) *
                                 (this->buckets_per_group() + 1));
             retval += vis_line_t(1 +
                                  (value % this->hs_group_size) /
@@ -198,8 +207,6 @@ public:
     {
         bucket_group_t bg;
 
-        this->hs_analyzed = false;
-
         bg = bucket_group_t(value / this->hs_group_size);
 
         bucket_array_t &ba = this->hs_groups[bg];
@@ -209,24 +216,50 @@ public:
         }
     };
 
-    void analyze(void);
+    std::vector<bucket_type_t> &get_displayed_buckets() {
+        return this->hs_displayed_buckets;
+    };
+
+    bool is_bucket_graphed(bucket_type_t type) const {
+        return (this->hs_displayed_buckets.empty() ||
+                std::find(this->hs_displayed_buckets.begin(),
+                          this->hs_displayed_buckets.end(),
+                          type) != this->hs_displayed_buckets.end());
+    };
 
 protected:
     typedef std::vector<bucket_t> bucket_array_t;
 
+    struct bucket_stats_t {
+        bucket_stats_t() :
+            bs_min_count(std::numeric_limits<bucket_count_t>::max()),
+            bs_max_count(0)
+        {
+        };
+
+        void merge(const bucket_stats_t &rhs) {
+            this->bs_min_count = std::min(this->bs_min_count, rhs.bs_min_count);
+            this->bs_max_count += rhs.bs_max_count;
+        };
+
+        bucket_count_t width() const {
+            return fabs(this->bs_max_count - this->bs_min_count);
+        };
+
+        bucket_count_t bs_min_count;
+        bucket_count_t bs_max_count;
+    };
+
     std::map<bucket_type_t, view_colors::role_t> hs_type2role;
 
     std::map<bucket_group_t, bucket_array_t> hs_groups;
-    std::vector<bucket_group_t> hs_group_keys;
+    std::map<bucket_type_t, bucket_stats_t> hs_bucket_stats;
 
     unsigned int   hs_bucket_size; /* hours */
     unsigned int   hs_group_size;  /* days */
-    bucket_count_t hs_min_count;
-    bucket_count_t hs_max_count;
-    /** Indicates that all of the data has been analyze()'d. */
-    bool          hs_analyzed;
     label_source *hs_label_source;
 
     bucket_t *hs_token_bucket;
+    std::vector<bucket_type_t> hs_displayed_buckets;
 };
 #endif

@@ -236,6 +236,13 @@ through the file.
                     to the log view and move to the line number that was
                     selected in the "log_line" column.
 
+  TAB/Shift+TAB     In the SQL result view, cycle through the columns that
+                    are graphed.  Initially, all number values are displayed
+                    in a stacked graph.  Pressing TAB will change the display
+                    to only graph the first column.  Repeatedly pressing TAB
+                    will cycle through the columns until they are all graphed
+                    again.
+
   p                 Enable or disable the display of the fields that the
                     log message parser knows about or has discovered.
                     This overlay is temporarily enabled when the semicolon

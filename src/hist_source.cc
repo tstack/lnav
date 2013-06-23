@@ -32,6 +32,8 @@
 #include <math.h>
 #include <limits.h>
 
+#include <numeric>
+
 #include "lnav_util.hh"
 #include "hist_source.hh"
 
@@ -40,7 +42,6 @@ using namespace std;
 hist_source::hist_source()
     : hs_bucket_size(1),
       hs_group_size(100),
-      hs_analyzed(false),
       hs_label_source(NULL),
       hs_token_bucket(NULL)
 { }
@@ -52,8 +53,6 @@ void hist_source::text_value_for_line(textview_curses &tc,
 {
     int grow = row / (this->buckets_per_group() + 1);
     int brow = row % (this->buckets_per_group() + 1);
-
-    assert(this->hs_analyzed);
 
     if (brow == 0) {
         unsigned long width;
@@ -68,15 +67,17 @@ void hist_source::text_value_for_line(textview_curses &tc,
         this->hs_token_bucket = NULL;
     }
     else {
-        bucket_group_t     bg = this->hs_group_keys[grow];
+        std::map<bucket_group_t, bucket_array_t>::iterator group_iter;
         bucket_t::iterator iter;
         int bucket_index;
 
         bucket_index          = brow - 1;
-        this->hs_token_bucket = &(this->hs_groups[bg][bucket_index]);
+        group_iter = this->hs_groups.begin();
+        advance(group_iter, grow);
+        this->hs_token_bucket = &(group_iter->second[bucket_index]);
         if (this->hs_label_source != NULL) {
             this->hs_label_source->
-            hist_label_for_bucket((bg * this->hs_group_size) +
+            hist_label_for_bucket((group_iter->first * this->hs_group_size) +
                                   (bucket_index * this->hs_bucket_size),
                                   *this->hs_token_bucket,
                                   value_out);
@@ -90,29 +91,44 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
 {
     int            grow         = row / (this->buckets_per_group() + 1);
     int            brow         = row % (this->buckets_per_group() + 1);
-    bucket_group_t bg           = this->hs_group_keys[grow];
     int            bucket_index = brow - 1;
 
-    assert(this->hs_analyzed);
-
     if (this->hs_token_bucket != NULL) {
+        std::map<bucket_group_t, bucket_array_t>::iterator group_iter;
         view_colors &      vc = view_colors::singleton();
         unsigned long      width, avail_width;
         bucket_t::iterator iter;
         vis_line_t         height;
         struct line_range  lr;
 
+        group_iter = this->hs_groups.begin();
+        advance(group_iter, grow);
+
         tc.get_dimensions(height, width);
         avail_width = width - this->hs_token_bucket->size();
+
+        bucket_stats_t overall_stats;
+
+        for (std::map<bucket_type_t, bucket_stats_t>::iterator stats_iter =
+             this->hs_bucket_stats.begin();
+             stats_iter != this->hs_bucket_stats.end();
+             ++stats_iter) {
+            if (!this->is_bucket_graphed(stats_iter->first))
+                continue;
+            overall_stats.merge(stats_iter->second);
+        }
 
         lr.lr_start = 0;
         for (iter = this->hs_token_bucket->begin();
              iter != this->hs_token_bucket->end();
              iter++) {
-            double percent = (double)(iter->second - this->hs_min_count) /
-                             (this->hs_max_count - this->hs_min_count);
+            double percent = (double)(iter->second - overall_stats.bs_min_count) /
+        overall_stats.width();
             int amount, attrs;
 
+            if (!this->is_bucket_graphed(iter->first))
+                continue;
+            
             attrs = vc.
                     reverse_attrs_for_role(this->get_role_for_type(iter->first));
             amount = (int)rint(percent * avail_width);
@@ -129,11 +145,11 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
             lr.lr_start = lr.lr_end;
         }
 
-        this->hs_label_source->hist_attrs_for_bucket((bg * this->hs_group_size) +
-                                                     (bucket_index *
-                                                      this->hs_bucket_size),
-                                                     *this->hs_token_bucket,
-                                                     value_out);
+        this->hs_label_source->hist_attrs_for_bucket(
+            (group_iter->first * this->hs_group_size) +
+            (bucket_index * this->hs_bucket_size),
+            *this->hs_token_bucket,
+            value_out);
     }
 }
 
@@ -142,8 +158,6 @@ void hist_source::add_value(unsigned int value,
                             bucket_count_t amount)
 {
     bucket_group_t bg;
-
-    this->hs_analyzed = false;
 
     bg = bucket_group_t(value / this->hs_group_size);
 
@@ -157,44 +171,9 @@ void hist_source::add_value(unsigned int value,
                             this->hs_bucket_size][bt];
 
     bc += amount;
-}
 
-void hist_source::analyze(void)
-{
-    std::map<bucket_group_t, bucket_array_t>::iterator iter;
+    bucket_stats_t &stats = this->hs_bucket_stats[bt];
 
-    this->hs_group_keys.clear();
-    this->hs_min_count = 3.40282347e+38F;
-    this->hs_max_count = 0.0;
-    for (iter = this->hs_groups.begin();
-         iter != this->hs_groups.end();
-         iter++) {
-        bucket_array_t::iterator ba_iter;
-
-        for (ba_iter = iter->second.begin();
-             ba_iter != iter->second.end();
-             ba_iter++) {
-            bucket_count_t     total = 0.0;
-            bucket_t::iterator b_iter;
-
-            for (b_iter = ba_iter->begin();
-                 b_iter != ba_iter->end();
-                 b_iter++) {
-                if (b_iter->second != 0.0 &&
-                    b_iter->second < this->hs_min_count) {
-                    this->hs_min_count = b_iter->second;
-                }
-                total += b_iter->second;
-            }
-            if (total > this->hs_max_count) {
-                this->hs_max_count = total;
-            }
-        }
-
-        this->hs_group_keys.push_back(iter->first);
-    }
-
-    sort(this->hs_group_keys.begin(), this->hs_group_keys.end());
-
-    this->hs_analyzed = true;
+    stats.bs_max_count = max(stats.bs_max_count, bc);
+    stats.bs_min_count = min(stats.bs_min_count, bc);
 }

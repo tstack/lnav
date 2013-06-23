@@ -526,7 +526,6 @@ static void rebuild_hist(size_t old_count, bool force)
                                        ~logline::LEVEL__FLAGS));
         }
     }
-    hs.analyze();
     hist_view.reload_data();
     hist_view.set_top(hs.row_for_value(old_time));
 }
@@ -1650,6 +1649,60 @@ static void handle_paging_key(int ch)
     }
     break;
 
+    case '\t':
+    if (tc == &lnav_data.ld_views[LNV_DB])
+    {
+        hist_source &hs = lnav_data.ld_db_source;
+        db_label_source &dls   = lnav_data.ld_db_rows;
+        std::vector<bucket_type_t> &displayed = hs.get_displayed_buckets();
+        std::vector<bool>::iterator start_iter, iter;
+
+        start_iter = dls.dls_headers_to_graph.begin();
+        if (!displayed.empty()) {
+            advance(start_iter, (int)displayed[0] + 1);
+        }
+        displayed.clear();
+        iter = find(start_iter,
+                    dls.dls_headers_to_graph.end(),
+                    true);
+        if (iter != dls.dls_headers_to_graph.end()) {
+            bucket_type_t type;
+
+            type = bucket_type_t(distance(dls.dls_headers_to_graph.begin(), iter));
+            displayed.push_back(type);
+        }
+        tc->reload_data();
+    }
+    break;
+
+    // XXX I'm sure there must be a better way to handle the difference between
+    // iterator and reverse_iterator.
+    case KEY_BTAB:
+    if (tc == &lnav_data.ld_views[LNV_DB])
+    {
+        hist_source &hs = lnav_data.ld_db_source;
+        db_label_source &dls   = lnav_data.ld_db_rows;
+        std::vector<bucket_type_t> &displayed = hs.get_displayed_buckets();
+        std::vector<bool>::reverse_iterator start_iter, iter;
+
+        start_iter = dls.dls_headers_to_graph.rbegin();
+        if (!displayed.empty()) {
+            advance(start_iter, dls.dls_headers_to_graph.size() - (int)displayed[0]);
+        }
+        displayed.clear();
+        iter = find(start_iter,
+                    dls.dls_headers_to_graph.rend(),
+                    true);
+        if (iter != dls.dls_headers_to_graph.rend()) {
+            bucket_type_t type;
+
+            type = bucket_type_t(distance(dls.dls_headers_to_graph.begin(), --iter.base()));
+            displayed.push_back(type);
+        }
+        tc->reload_data();
+    }
+    break;
+
     case 'x':
         if (tc == &lnav_data.ld_views[LNV_LOG]) {
             lnav_data.ld_log_source.toggle_user_mark(&BM_EXAMPLE,
@@ -2003,6 +2056,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 
         lnav_data.ld_bottom_source.grep_error("");
         hs.clear();
+        hs.get_displayed_buckets().clear();
         dls.clear();
         retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
                                      rc->get_value().c_str(),
@@ -2050,7 +2104,6 @@ static void rl_callback(void *dummy, readline_curses *rc)
             }
 
             if (retcode == SQLITE_DONE) {
-                hs.analyze();
                 lnav_data.ld_views[LNV_LOG].reload_data();
                 lnav_data.ld_views[LNV_DB].reload_data();
                 lnav_data.ld_views[LNV_DB].set_left(0);

@@ -99,8 +99,8 @@ public:
         ++this->gr_next_field;
     };
 
-    void grep_end_batch(grep_proc &gp) { this->analyze(); };
-    void grep_end(grep_proc &gp) { this->analyze(); };
+    void grep_end_batch(grep_proc &gp) {  };
+    void grep_end(grep_proc &gp) {  };
 
 private:
 

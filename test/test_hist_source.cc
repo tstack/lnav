@@ -40,7 +40,6 @@ int main(int argc, char *argv[])
 	hist_source hs;
 
 	assert(hs.text_line_count() == 0);
-	hs.analyze();
 
 	hs.add_value(1, bucket_type_t(1));
 	assert(hs.text_line_count() == 101);
