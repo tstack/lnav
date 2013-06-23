@@ -544,10 +544,13 @@ class generic_log_format : public log_format {
 
             /* Try to pull out the milliseconds value. */
             if (last_pos[0] == ',' || last_pos[0] == '.') {
-                sscanf(last_pos + 1, "%hd", &millis);
+                int subsec_len = 0;
+
+                sscanf(last_pos + 1, "%hd%n", &millis, &subsec_len);
                 if (millis >= 1000) {
                     millis = 0;
                 }
+                this->lf_time_fmt_len += 1 + subsec_len;
             }
             dst.push_back(logline(offset,
                                   line_time,

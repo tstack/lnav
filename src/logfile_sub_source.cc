@@ -416,10 +416,9 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                     ld->ld_file->size());
             }
 
-            ld->ld_indexing.ld_last = con_line;
             if (!(lf_iter->get_level() & logline::LEVEL_CONTINUED)) {
                 if (action_for_prev_line == logfile_filter::INCLUDE) {
-                    while (last_owner->ld_indexing.ld_start <
+                    while (last_owner->ld_indexing.ld_start <=
                            last_owner->ld_indexing.ld_last) {
                         this->lss_index.push_back(last_owner->ld_indexing.ld_start);
                         ++last_owner->ld_indexing.ld_start;
@@ -431,6 +430,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                 ld->ld_indexing.ld_start = con_line;
             }
 
+            ld->ld_indexing.ld_last = con_line;
             action_for_prev_line = ld->ld_file->check_filter(
                 lf_iter, this->lss_filter_generation, this->lss_filters);
 
@@ -440,7 +440,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
         }
 
         if (action_for_prev_line == logfile_filter::INCLUDE) {
-            while (last_owner->ld_indexing.ld_start < 
+            while (last_owner->ld_indexing.ld_start <=
                    last_owner->ld_indexing.ld_last) {
                 this->lss_index.push_back(last_owner->ld_indexing.ld_start);
                 ++last_owner->ld_indexing.ld_start;

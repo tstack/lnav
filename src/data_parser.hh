@@ -712,6 +712,7 @@ private:
                 case DT_UUID:
                 case DT_URL:
                 case DT_PATH:
+                case DT_DATE:
                 case DT_TIME:
                 case DT_PERCENTAGE: {
                     element_list_t ELEMENT_LIST_T(pair_subs);

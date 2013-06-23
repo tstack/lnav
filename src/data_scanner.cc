@@ -50,8 +50,10 @@ static struct {
     },
     { "mac",     pcrepp(
           "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"), },
+    { "date",
+                 pcrepp("\\A(\\d{4}/\\d{1,2}/\\d{1,2}|\\d{4}-\\d{1,2}-\\d{1,2})"), },
     { "time",    pcrepp(
-          "\\A(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3})?)\\b"), },            /* XXX be more specific */
+          "\\A(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3,6})?)\\b"), },            /* XXX be more specific */
     /* { "qual", pcrepp("\\A([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
     { "ipv6",    pcrepp("\\A(::|[:\\da-fA-f\\.]+[a-fA-f\\d])"),
     },
@@ -130,7 +132,7 @@ const char *DNT_NAMES[DNT_MAX - DNT_KEY] = {
     "meas",
     "var",
     "rang",
-    "date",
+    "dt",
     "grp",
 };
 
