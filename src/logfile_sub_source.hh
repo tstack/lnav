@@ -314,6 +314,10 @@ public:
 
         logfile *ld_file;
         size_t   ld_lines_indexed;
+        struct {
+            content_line_t ld_start;
+            content_line_t ld_last;
+        } ld_indexing;
     };
 
     typedef std::vector<logfile_data>::iterator iterator;

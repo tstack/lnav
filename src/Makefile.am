@@ -51,6 +51,7 @@ noinst_HEADERS = \
 	hist_source.hh \
 	init.sql \
 	init-sql.hh \
+	k_merge_tree.h \
 	line_buffer.hh \
 	listview_curses.hh \
 	lnav.hh \

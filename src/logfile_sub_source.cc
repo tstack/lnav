@@ -31,6 +31,7 @@
 
 #include <algorithm>
 
+#include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "logfile_sub_source.hh"
 
@@ -118,6 +119,7 @@ bookmark_type_t logfile_sub_source::BM_FILES;
 
 logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
+      lss_filter_generation(1),
       lss_filtered_count(0)
 {}
 
@@ -339,6 +341,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 {
     std::vector<logfile_data>::iterator iter;
     bool retval = force;
+    int file_count = 0;
 
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end();
@@ -349,8 +352,11 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                 retval = true;
             }
         }
-        else if (iter->ld_file->rebuild_index(obs)) {
-            retval = true;
+        else {
+            if (iter->ld_file->rebuild_index(obs)) {
+                retval = true;
+            }
+            file_count += 1;
         }
     }
     if (force) {
@@ -362,85 +368,96 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
     }
 
     if (retval || force) {
-        int    file_index = 0;
+        size_t index_size;
 
         if (force) {
             this->lss_index.clear();
             this->lss_filtered_count = 0;
         }
 
+        kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(file_count);
+
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
-             iter++, file_index++) {
-            if (iter->ld_file == NULL) {
+             iter++) {
+            if (iter->ld_file == NULL)
                 continue;
-            }
 
-            if (iter->ld_lines_indexed < iter->ld_file->size()) {
-                content_line_t con_line(file_index * MAX_LINES_PER_FILE +
-                                        iter->ld_lines_indexed);
-
-                logfile_filter::type_t action_for_prev_line;
-                content_line_t         start_line(con_line + 1);
-                logfile::iterator      lf_iter;
-
-                action_for_prev_line = logfile_filter::INCLUDE;
-                this->lss_index.reserve(this->lss_index.size() +
-                                        iter->ld_file->size() -
-                                        iter->ld_lines_indexed);
-                for (lf_iter = iter->ld_file->begin() + iter->ld_lines_indexed;
-                     lf_iter != iter->ld_file->end();
-                     lf_iter++) {
-
-                    if (obs != NULL) {
-                        obs->logfile_sub_source_filtering(
-                            *this,
-                            content_line_t(con_line % MAX_LINES_PER_FILE),
-                            iter->ld_file->size());
-                    }
-
-                    if (!(lf_iter->get_level() & logline::LEVEL_CONTINUED)) {
-                        if (action_for_prev_line == logfile_filter::INCLUDE ||
-                            action_for_prev_line == logfile_filter::MAYBE) {
-                            while (start_line < con_line) {
-                                this->lss_index.push_back(start_line);
-                                ++start_line;
-                            }
-                        }
-                        else {
-                            this->lss_filtered_count += 1;
-                        }
-                        start_line = con_line;
-                    }
-
-                    action_for_prev_line = iter->ld_file->check_filter(
-                        lf_iter,
-                        this->lss_filter_generation,
-                        this->lss_filters);
-
-                    ++con_line;
-                }
-
-                if (action_for_prev_line == logfile_filter::INCLUDE ||
-                    action_for_prev_line == logfile_filter::MAYBE) {
-                    while (start_line < con_line) {
-                        this->lss_index.push_back(start_line);
-                        ++start_line;
-                    }
-                }
-                else {
-                    this->lss_filtered_count += 1;
-                }
-
-                iter->ld_lines_indexed = iter->ld_file->size();
-
-                assert(iter->ld_lines_indexed < MAX_LINES_PER_FILE);
-            }
+            merge.add(&(*iter),
+                      iter->ld_file->begin() + iter->ld_lines_indexed,
+                      iter->ld_file->end());
+            index_size += iter->ld_file->size();
         }
 
-        stable_sort(this->lss_index.begin(),
-                    this->lss_index.end(),
-                    logline_cmp(*this));
+        this->lss_index.reserve(index_size);
+
+        logfile_filter::type_t action_for_prev_line = logfile_filter::MAYBE;
+        logfile_data *last_owner = NULL;
+
+        merge.execute();
+        for (;;) {
+            logfile::iterator lf_iter;
+            logfile_data *ld;
+
+            if (!merge.get_top(ld, lf_iter)) {
+                break;
+            }
+
+            int file_index = ld - &(*this->lss_files.begin());
+            int line_index = lf_iter - ld->ld_file->begin();
+
+            content_line_t con_line(file_index * MAX_LINES_PER_FILE +
+                                    line_index);
+
+            if (obs != NULL) {
+                obs->logfile_sub_source_filtering(
+                    *this,
+                    content_line_t(con_line % MAX_LINES_PER_FILE),
+                    ld->ld_file->size());
+            }
+
+            ld->ld_indexing.ld_last = con_line;
+            if (!(lf_iter->get_level() & logline::LEVEL_CONTINUED)) {
+                if (action_for_prev_line == logfile_filter::INCLUDE) {
+                    while (last_owner->ld_indexing.ld_start <
+                           last_owner->ld_indexing.ld_last) {
+                        this->lss_index.push_back(last_owner->ld_indexing.ld_start);
+                        ++last_owner->ld_indexing.ld_start;
+                    }
+                }
+                else if (action_for_prev_line == logfile_filter::EXCLUDE) {
+                    this->lss_filtered_count += 1;
+                }
+                ld->ld_indexing.ld_start = con_line;
+            }
+
+            action_for_prev_line = ld->ld_file->check_filter(
+                lf_iter, this->lss_filter_generation, this->lss_filters);
+
+            last_owner = ld;
+
+            merge.next();
+        }
+
+        if (action_for_prev_line == logfile_filter::INCLUDE) {
+            while (last_owner->ld_indexing.ld_start < 
+                   last_owner->ld_indexing.ld_last) {
+                this->lss_index.push_back(last_owner->ld_indexing.ld_start);
+                ++last_owner->ld_indexing.ld_start;
+            }
+        }
+        else if (action_for_prev_line == logfile_filter::EXCLUDE) {
+            this->lss_filtered_count += 1;
+        }
+
+        for (iter = this->lss_files.begin();
+             iter != this->lss_files.end();
+             iter++) {
+            if (iter->ld_file == NULL)
+                continue;
+
+            iter->ld_lines_indexed = iter->ld_file->size();
+        }
     }
 
     return retval;
