@@ -152,7 +152,7 @@ private:
 template <class T, class owner_t, class iterator_t, class comparitor> 
 kmerge_tree_c<T, owner_t, iterator_t, comparitor>::kmerge_tree_c(long bucket_qty) :
 	bucket_qty_mbr(bucket_qty),
-    number_of_levels_mbr(::log2(bucket_qty_mbr)),    // don't add one - build_levels is zero based
+    number_of_levels_mbr(bucket_qty ? ::log2(bucket_qty_mbr) : 0),    // don't add one - build_levels is zero based
 	top_node_ptr_mbr(NULL),
 	first_leaf_ptr(NULL),
 	last_leaf_ptr(NULL)
