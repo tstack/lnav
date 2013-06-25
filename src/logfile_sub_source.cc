@@ -368,7 +368,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
     }
 
     if (retval || force) {
-        size_t index_size;
+        size_t index_size = 0;
 
         if (force) {
             this->lss_index.clear();

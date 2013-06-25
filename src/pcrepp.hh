@@ -57,6 +57,8 @@
 
 #include <stdio.h>
 
+class pcrepp;
+
 /**
  * Context that tracks captures found during a match operation.  This class is a
  * base that defines iterator methods and fields, but does not allocate space
@@ -95,6 +97,8 @@ public:
         return this->pc_count;
     };
 
+    void set_pcrepp(const pcrepp *src) { this->pc_pcre = src; };
+
     /**
      * @return a capture_t that covers all of the text that was matched.
      */
@@ -105,10 +109,17 @@ public:
     /** @return An iterator that refers to the end of the capture array. */
     iterator end() { return pc_captures + pc_count; };
 
+    capture_t *operator[](int offset) {
+        return &this->pc_captures[offset + 1];
+    };
+
+    capture_t *operator[](const char *name) const;
+
 protected:
     pcre_context(capture_t *captures, int max_count)
         : pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
 
+    const pcrepp *pc_pcre;
     capture_t *pc_captures;
     int        pc_max_count;
     int        pc_count;
@@ -216,6 +227,50 @@ private:
     const char *pi_string;
 };
 
+struct pcre_named_capture {
+    class iterator {
+    public:
+        iterator(pcre_named_capture *pnc, size_t name_len)
+            : i_named_capture(pnc), i_name_len(name_len)
+        {
+        };
+
+        iterator() : i_named_capture(NULL), i_name_len(0) { };
+
+        const pcre_named_capture &operator*(void) const {
+            return *this->i_named_capture;
+        };
+
+        const pcre_named_capture *operator->(void) const {
+            return this->i_named_capture;
+        };
+
+        bool operator!=(const iterator &rhs) const {
+            return this->i_named_capture != rhs.i_named_capture;
+        };
+
+        iterator &operator++() {
+            char *ptr = (char *)this->i_named_capture;
+
+            ptr += this->i_name_len;
+            this->i_named_capture = (pcre_named_capture *)ptr;
+            return *this;
+        };
+
+    private:
+        pcre_named_capture *i_named_capture;
+        size_t i_name_len;
+    };
+
+    int index() const {
+        return (this->pnc_index_msb << 8 | this->pnc_index_lsb);
+    };
+
+    char pnc_index_msb;
+    char pnc_index_lsb;
+    char pnc_name[];
+};
+
 class pcrepp {
 public:
     class error : public std::exception {
@@ -272,6 +327,28 @@ public:
         }
     };
 
+    pcre_named_capture::iterator named_begin() const {
+        return pcre_named_capture::iterator(this->p_named_entries,
+                                            this->p_name_len);
+    };
+
+    pcre_named_capture::iterator named_end() const {
+        char *ptr = (char *)this->p_named_entries;
+
+        ptr += this->p_named_count * this->p_name_len;
+        return pcre_named_capture::iterator((pcre_named_capture *)ptr,
+                                            this->p_name_len);
+    };
+
+    int name_index(const char *name) const {
+        int retval = pcre_get_stringnumber(this->p_code, name);
+
+        if (retval == PCRE_ERROR_NOSUBSTRING)
+            return retval;
+
+        return retval - 1;
+    };
+
     bool match(pcre_context &pc, pcre_input &pi, int options = 0) const
     {
         int         length, startoffset, filtered_options = options;
@@ -279,6 +356,7 @@ public:
         const char *str;
         int         rc;
 
+        pc.set_pcrepp(this);
         pi.pi_offset = pi.pi_next_offset;
 
         str = pi.get_string();
@@ -369,9 +447,24 @@ private:
             pcre_assign_jit_stack(extra, NULL, jit_stack());
 #endif
         }
+        pcre_fullinfo(this->p_code,
+                      this->p_code_extra,
+                      PCRE_INFO_NAMECOUNT,
+                      &this->p_named_count);
+        pcre_fullinfo(this->p_code,
+                      this->p_code_extra,
+                      PCRE_INFO_NAMEENTRYSIZE,
+                      &this->p_name_len);
+        pcre_fullinfo(this->p_code,
+                      this->p_code_extra,
+                      PCRE_INFO_NAMETABLE,
+                      &this->p_named_entries);
     };
 
     pcre *p_code;
     auto_mem<pcre_extra> p_code_extra;
+    int p_named_count;
+    int p_name_len;
+    pcre_named_capture *p_named_entries;
 };
 #endif

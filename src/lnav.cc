@@ -896,6 +896,11 @@ static void moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
         time_t           last_time;
         logline *        ll;
 
+        if (lss.empty()) {
+            flash();
+            return;
+        }
+
         ll         = lss.find_line(lss.at(top));
         last_time  = ll->get_time();
         last_level = ll->get_level();

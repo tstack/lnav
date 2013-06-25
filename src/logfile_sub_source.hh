@@ -118,6 +118,9 @@ public:
     {
         return this->lss_index.size();
     };
+
+    bool empty() const { return this->lss_index.empty(); };
+
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &value_out,

@@ -36,6 +36,19 @@
 const int JIT_STACK_MIN_SIZE = 32 * 1024;
 const int JIT_STACK_MAX_SIZE = 512 * 1024;
 
+pcre_context::capture_t *pcre_context::operator[](const char *name) const
+{
+    capture_t *retval = NULL;
+    int index;
+
+    index = this->pc_pcre->name_index(name);
+    if (index != PCRE_ERROR_NOSUBSTRING) {
+        retval = &this->pc_captures[index + 1];
+    }
+
+    return retval;
+}
+
 #ifdef PCRE_STUDY_JIT_COMPILE
 pcre_jit_stack *pcrepp::jit_stack(void)
 {

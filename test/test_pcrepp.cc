@@ -42,36 +42,60 @@ int main(int argc, char *argv[])
     int retval = EXIT_SUCCESS;
     
     {
-	pcrepp nomatch("nothing-to-match");
-	pcre_input pi("dummy");
-	
-	assert(!nomatch.match(context, pi));
+        pcrepp nomatch("nothing-to-match");
+        pcre_input pi("dummy");
+
+        assert(!nomatch.match(context, pi));
     }
 
     {
-	pcrepp match1("(\\w*)=(\\d+)");
-	pcre_input pi("a=1  b=2");
-	pcre_context::capture_t *cap;
-	
-	assert(match1.match(context, pi));
-	
-	cap = context.all();
-	assert(cap->c_begin == 0);
-	assert(cap->c_end == 3);
+        pcrepp match1("(\\w*)=(\\d+)");
+        pcre_input pi("a=1  b=2");
+        pcre_context::capture_t *cap;
 
-	assert((context.end() - context.begin()) == 2);
-	assert(pi.get_substr(context.begin()) == "a");
-	assert(pi.get_substr(context.begin() + 1) == "1");
+        assert(match1.match(context, pi));
 
-	assert(match1.match(context, pi));
-	assert((context.end() - context.begin()) == 2);
-	assert(pi.get_substr(context.begin()) == "b");
-	assert(pi.get_substr(context.begin() + 1) == "2");
+        cap = context.all();
+        assert(cap->c_begin == 0);
+        assert(cap->c_end == 3);
+
+        assert((context.end() - context.begin()) == 2);
+        assert(pi.get_substr(context.begin()) == "a");
+        assert(pi.get_substr(context.begin() + 1) == "1");
+        assert(pi.get_substr(context[1]) == "1");
+
+        assert(match1.match(context, pi));
+        assert((context.end() - context.begin()) == 2);
+        assert(pi.get_substr(context.begin()) == "b");
+        assert(pi.get_substr(context.begin() + 1) == "2");
     }
 
     {
-	pcrepp match2("");
+        pcrepp match2("");
     }
-    
+
+    {
+        pcrepp match3("(?<var1>\\d+)(?<var2>\\w+)");
+        pcre_named_capture::iterator iter;
+        const char *expected_names[] = {
+            "var1",
+            "var2",
+        };
+        int index = 0;
+
+        for (iter = match3.named_begin();
+             iter != match3.named_end();
+             ++iter, index++) {
+            assert(strcmp(iter->pnc_name, expected_names[index]) == 0);
+        }
+
+        assert(match3.name_index("var2") == 1);
+
+        pcre_input pi("123foo");
+
+        match3.match(context, pi);
+        assert(pi.get_substr(context["var1"]) == "123");
+    }
+
     return retval;
 }
