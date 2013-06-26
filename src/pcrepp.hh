@@ -76,6 +76,8 @@ public:
         int c_begin;
         int c_end;
 
+        bool is_valid() const { return this->c_begin != -1; };
+
         int length() const { return this->c_end - this->c_begin; };
     } capture_t;
     typedef capture_t       *iterator;

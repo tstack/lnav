@@ -80,7 +80,7 @@ class access_log_format : public log_format {
     {
         static pcrepp VALUE_PATTERN(
             "^([\\w\\.\\-]+) [\\w\\.\\-]+ ([\\w\\.\\-]+) "
-            "\\[([^\\]]+)\\] \"(?:\\-|(\\w+) ([^ \\?]+)(\\?[^ ]+)? "
+            "\\[([^\\]]+)\\] \"(?:\\-|(\\w+) ([^ \\?]+)(?:\\?([^ ]*))? "
             "([\\w/\\.]+))\" (\\d+) "
             "(\\d+|-)(?: \"([^\"]+)\" \"([^\"]+)\")?.*");
 
@@ -200,8 +200,7 @@ class access_log_format : public log_format {
                 }
                 values.push_back(logline_value(columns[lpc].name,
                                                columns[lpc].kind,
-                                               pi.get_substr(pc.begin() +
-                                                             lpc)));
+                                               pi.get_substr(pc[lpc])));
             }
         }
         else {

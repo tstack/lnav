@@ -66,6 +66,7 @@ static string declare_table_statement(log_vtab_impl *vi)
 
     oss << "CREATE TABLE unused (\n"
         << "  log_line integer PRIMARY KEY,\n"
+        << "  log_part text collate naturalnocase,\n"
         << "  log_time datetime,\n"
         << "  log_idle_msecs int,\n"
         << "  log_level text,\n";
@@ -91,6 +92,7 @@ static string declare_table_statement(log_vtab_impl *vi)
 struct vtab {
     sqlite3_vtab        base;
     sqlite3 *           db;
+    textview_curses *tc;
     logfile_sub_source *lss;
     log_vtab_impl *     vi;
 };
@@ -128,6 +130,7 @@ static int vt_create(sqlite3 *db,
     if (p_vt->vi == NULL) {
         return SQLITE_ERROR;
     }
+    p_vt->tc = vm->get_view();
     p_vt->lss = vm->get_source();
     rc        = sqlite3_declare_vtab(db, declare_table_statement(
                                          p_vt->vi).c_str());
@@ -242,6 +245,24 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     }
     break;
 
+    case VT_COL_PARTITION:
+    {
+        vis_bookmarks &vb = vt->tc->get_bookmarks();
+        bookmark_vector<vis_line_t> &bv = vb[&textview_curses::BM_USER];
+        bookmark_vector<vis_line_t>::iterator iter;
+        vis_line_t prev_line;
+        char part_name[64];
+        int index;
+
+        prev_line = vis_line_t(vc->log_cursor.lc_curr_line);
+        ++prev_line;
+        iter = lower_bound(bv.begin(), bv.end(), prev_line);
+        index = distance(bv.begin(), iter);
+        snprintf(part_name, sizeof(part_name), "p.%d", index);
+        sqlite3_result_text(ctx, part_name, strlen(part_name), SQLITE_TRANSIENT);
+    }
+    break;
+
     case VT_COL_LOG_TIME:
     {
         char   buffer[64];
@@ -317,8 +338,10 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                 vt->vi->extract(lf, line, vc->line_values);
             }
 
-            {
-                logline_value &lv = vc->line_values[col - VT_COL_MAX];
+            size_t sub_col = col - VT_COL_MAX;
+
+            if (sub_col < vc->line_values.size()) {
+                logline_value &lv = vc->line_values[sub_col];
 
                 switch (lv.lv_kind) {
                 case logline_value::VALUE_TEXT:
@@ -336,6 +359,9 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                     sqlite3_result_double(ctx, lv.lv_number.d);
                     break;
                 }
+            }
+            else {
+                sqlite3_result_null(ctx);
             }
         }
         break;
@@ -400,9 +426,10 @@ static int progress_callback(void *ptr)
 }
 
 log_vtab_manager::log_vtab_manager(sqlite3 *memdb,
+                                   textview_curses &tc,
                                    logfile_sub_source &lss,
                                    sql_progress_callback_t pc)
-    : vm_db(memdb), vm_source(lss)
+    : vm_db(memdb), vm_textview(tc), vm_source(lss)
 {
     sqlite3_create_module(this->vm_db, "log_vtab_impl", &vtab_module, this);
     vtab_progress_callback = pc;

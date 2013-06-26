@@ -36,11 +36,12 @@
 #include <string>
 #include <vector>
 
-#include "listview_curses.hh"
+#include "textview_curses.hh"
 #include "logfile_sub_source.hh"
 
 enum {
     VT_COL_LINE_NUMBER,
+    VT_COL_PARTITION,
     VT_COL_LOG_TIME,
     VT_COL_IDLE_MSECS,
     VT_COL_LEVEL,
@@ -128,8 +129,11 @@ public:
     typedef std::map<std::string, log_vtab_impl *>::const_iterator iterator;
 
     log_vtab_manager(sqlite3 *db,
+                     textview_curses &tc,
                      logfile_sub_source &lss,
                      sql_progress_callback_t);
+
+    textview_curses *get_view() const { return &this->vm_textview; };
 
     logfile_sub_source *get_source() { return &this->vm_source; };
 
@@ -153,6 +157,7 @@ public:
 
 private:
     sqlite3 *           vm_db;
+    textview_curses &vm_textview;
     logfile_sub_source &vm_source;
     std::map<std::string, log_vtab_impl *> vm_impls;
 };

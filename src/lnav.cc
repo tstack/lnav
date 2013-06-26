@@ -3217,6 +3217,7 @@ int main(int argc, char *argv[])
 
     lnav_data.ld_vtab_manager =
         new log_vtab_manager(lnav_data.ld_db,
+                             lnav_data.ld_views[LNV_LOG],
                              lnav_data.ld_log_source,
                              sql_progress);
 
