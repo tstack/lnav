@@ -218,8 +218,8 @@ public:
             new_role = view_colors::VCR_STATUS;
             sf.set_cylon(false);
         }
-        sf.set_role(new_role);
         this->bss_error.clear();
+        sf.set_role(new_role);
         sf.set_value("%'9d hits", tc->get_match_count());
     };
 

@@ -64,10 +64,6 @@ void textview_curses::reload_data(void)
 void textview_curses::grep_begin(grep_proc &gp)
 {
     this->tc_searching = true;
-    if (0) {
-        this->tc_bookmarks[&BM_SEARCH].clear();
-    }
-
     this->tc_search_action.invoke(this);
 
     listview_curses::reload_data();

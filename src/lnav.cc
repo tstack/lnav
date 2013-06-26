@@ -846,13 +846,13 @@ bool toggle_view(textview_curses *toggle_tc)
     return retval;
 }
 
-static void change_text_file(void)
+static void redo_search(lnav_view_t view_index)
 {
-    textview_curses *tc = &lnav_data.ld_views[LNV_TEXT];
+    textview_curses *tc = &lnav_data.ld_views[view_index];
 
     tc->reload_data();
-    if (lnav_data.ld_search_child[LNV_TEXT].get() != NULL) {
-        grep_proc *gp = lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc();
+    if (lnav_data.ld_search_child[view_index].get() != NULL) {
+        grep_proc *gp = lnav_data.ld_search_child[view_index]->get_grep_proc();
 
         tc->match_reset();
         gp->reset();
@@ -1162,7 +1162,7 @@ static void handle_paging_key(int ch)
             if (!tss.tss_files.empty()) {
                 tss.tss_files.push_front(tss.tss_files.back());
                 tss.tss_files.pop_back();
-                change_text_file();
+                redo_search(LNV_TEXT);
             }
         }
         break;
@@ -1177,7 +1177,7 @@ static void handle_paging_key(int ch)
             if (!tss.tss_files.empty()) {
                 tss.tss_files.push_back(tss.tss_files.front());
                 tss.tss_files.pop_front();
-                change_text_file();
+                redo_search(LNV_TEXT);
             }
         }
         break;
@@ -1913,6 +1913,8 @@ void execute_search(lnav_view_t view, const std::string &regex)
         pcre *      code;
         int         eoff;
 
+        tc.match_reset();
+
         if (regex.empty() && gc.get() != NULL) {
             tc.grep_begin(*(gc->get_grep_proc()));
             tc.grep_end(*(gc->get_grep_proc()));
@@ -1920,8 +1922,6 @@ void execute_search(lnav_view_t view, const std::string &regex)
         gc.reset();
 
         fprintf(stderr, "start search for: %s\n", regex.c_str());
-
-        tc.match_reset();
 
         if (regex.empty()) {
             lnav_data.ld_bottom_source.grep_error("");
@@ -2143,6 +2143,8 @@ static void rl_callback(void *dummy, readline_curses *rc)
             (field_overlay_source *)lnav_data.ld_views[LNV_LOG].
             get_overlay_source();
         fos->fos_active = fos->fos_active_prev;
+
+        redo_search(LNV_DB);
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
 
