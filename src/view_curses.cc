@@ -147,11 +147,7 @@ void view_curses::mvwattrline(WINDOW *window,
             }
 
             if (attrs != 0) {
-                /* This silliness is brought to you by a buggy old curses lib. */
-                mvwinnstr(window, y, x + attr_range.lr_start, buffer, awidth);
-                wattron(window, attrs);
-                mvwaddnstr(window, y, x + attr_range.lr_start, buffer, awidth);
-                wattroff(window, attrs);
+                mvwchgat(window, y, x + attr_range.lr_start, awidth, attrs, PAIR_NUMBER(attrs), NULL);
             }
             for (am_iter = am.begin(); am_iter != am.end(); ++am_iter) {
                 if (am_iter->first == "graphic") {
