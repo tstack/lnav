@@ -115,6 +115,10 @@ public:
 
     capture_t *operator[](const char *name) const;
 
+    capture_t *operator[](const std::string &name) const {
+        return (*this)[name.c_str()];
+    };
+
 protected:
     pcre_context(capture_t *captures, int max_count)
         : pc_captures(captures), pc_max_count(max_count), pc_count(0) { };

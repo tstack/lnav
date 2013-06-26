@@ -43,8 +43,17 @@
 #include <vector>
 #include <memory>
 
+#include "pcrepp.hh"
 #include "byte_array.hh"
 #include "view_curses.hh"
+
+/**
+ * Convert the time stored in a 'tm' struct into epoch time.
+ *
+ * @param t The 'tm' structure to convert to epoch time.
+ * @return The given time in seconds since the epoch.
+ */
+time_t tm2sec(const struct tm *t);
 
 class logfile_filter {
 public:
@@ -376,25 +385,171 @@ public:
 protected:
     static std::vector<log_format *> lf_root_formats;
 
-    char *log_scanf(const char *line,
-                    const char *fmt[],
-                    int expected_matches,
-                    const char *time_fmt[],
-                    char *time_dest,
-                    struct tm *tm_out,
-                    time_t &time_out,
-                    ...);
+    const char *log_scanf(const char *line,
+                          const char *fmt[],
+                          int expected_matches,
+                          const char *time_fmt[],
+                          char *time_dest,
+                          struct tm *tm_out,
+                          time_t &time_out,
+                          ...);
+
+    const char *time_scanf(const char *time_dest,
+                           const char *time_fmt[],
+                           struct tm *tm_out,
+                           time_t &time_out);
 
     int lf_fmt_lock;
     int lf_time_fmt_lock;
     int lf_time_fmt_len;
 };
 
-/**
- * Convert the time stored in a 'tm' struct into epoch time.
- *
- * @param t The 'tm' structure to convert to epoch time.
- * @return The given time in seconds since the epoch.
- */
-time_t tm2sec(const struct tm *t);
+class external_log_format : public log_format {
+
+public:
+    struct sample {
+        std::string s_line;
+        logline::level_t s_level;
+    };
+
+    struct value_def {
+        std::string vd_name;
+        logline_value::kind_t vd_kind;
+    };
+
+    struct level_pattern {
+        std::string lp_regex;
+        pcrepp *lp_pcre;
+    };
+
+    external_log_format(const std::string &name) : elf_name(name) { };
+
+    std::string get_name(void) {
+        return this->elf_name;
+    };
+
+    bool scan(std::vector<logline> &dst,
+              off_t offset,
+              char *prefix,
+              int len) {
+        pcre_input pi(prefix, 0, len);
+        pcre_context_static<30> pc;
+        bool retval = false;
+
+        if (this->elf_pcre->match(pc, pi)) {
+            pcre_context::capture_t *ts = pc["timestamp"];
+            pcre_context::capture_t *level_cap = pc[this->elf_level_field];
+            const char *ts_str = pi.get_substr_start(ts);
+            const char *last;
+            time_t line_time;
+            struct tm log_time;
+            uint16_t millis = 0;
+            logline::level_t level = logline::LEVEL_INFO;
+
+            if ((last = this->time_scanf(ts_str,
+                                         NULL,
+                                         &log_time,
+                                         line_time)) == NULL) {
+                return false;
+            }
+
+            /* Try to pull out the milliseconds value. */
+            if (last[0] == ',' || last[0] == '.') {
+                int subsec_len = 0;
+
+                sscanf(last + 1, "%hd%n", &millis, &subsec_len);
+                if (millis >= 1000) {
+                    millis = 0;
+                }
+            }
+
+            if (level_cap != NULL && level_cap->c_begin != -1) {
+                pcre_context_static<30> pc_level;
+                pcre_input pi_level(pi.get_substr_start(level_cap),
+                                    0,
+                                    level_cap->length());
+
+                for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
+                     iter != this->elf_level_patterns.end();
+                     ++iter) {
+                    if (iter->second.lp_pcre->match(pc_level, pi_level)) {
+                        level = iter->first;
+                        break;
+                    }
+                }
+            }
+
+            dst.push_back(logline(offset,
+                          line_time,
+                          millis,
+                          level));
+
+            retval = true;
+        }
+
+        return retval;
+    };
+
+    void annotate(const std::string &line,
+                  string_attrs_t &sa,
+                  std::vector<logline_value> &values) const
+    {
+        pcre_context_static<30> pc;
+        pcre_input pi(line);
+        struct line_range lr;
+        pcre_context::capture_t *cap;
+
+        if (!this->elf_pcre->match(pc, pi))
+            return;
+
+        cap = pc["timestamp"];
+        lr.lr_start = cap->c_begin;
+        lr.lr_end = cap->c_end;
+        sa[lr].insert(make_string_attr("timestamp", 0));
+
+        cap = pc["body"];
+        lr.lr_start = cap->c_begin;
+        lr.lr_end = cap->c_end;
+        sa[lr].insert(make_string_attr("body", 0));
+        
+        for (std::vector<value_def>::const_iterator iter =
+                 this->elf_value_defs.begin();
+             iter != this->elf_value_defs.end();
+             ++iter) {
+            cap = pc[iter->vd_name];
+
+            values.push_back(logline_value(iter->vd_name,
+                                           iter->vd_kind,
+                                           pi.get_substr(cap)));
+        }
+    }
+
+    void build(void) {
+        this->elf_pcre = new pcrepp(this->elf_regex.c_str());
+        for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
+             iter != this->elf_level_patterns.end();
+             ++iter) {
+            iter->second.lp_pcre = new pcrepp(iter->second.lp_regex.c_str());
+        }
+    };
+
+    std::auto_ptr<log_format> specialized() {
+        std::auto_ptr<log_format> retval((log_format *)
+                                         new external_log_format(*this));
+
+        return retval;
+    };
+
+    std::string elf_regex;
+    pcrepp *elf_pcre;
+    std::vector<sample> elf_samples;
+    std::vector<value_def> elf_value_defs;
+    std::string elf_level_field;
+    std::map<logline::level_t, level_pattern> elf_level_patterns;
+
+private:
+    const std::string elf_name;
+
+};
+
 #endif

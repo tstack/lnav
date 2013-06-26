@@ -176,34 +176,77 @@ static bool next_format(const char *fmt[], int &index, int &locked_index)
     return retval;
 }
 
-char *log_format::log_scanf(const char *line,
-                            const char *fmt[],
-                            int expected_matches,
-                            const char *time_fmt[],
-                            char *time_dest,
-                            struct tm *tm_out,
-                            time_t &time_out,
-                            ...)
+static const char *std_time_fmt[] = {
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%d %H:%M",
+    "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y/%m/%d %H:%M:%S",
+    "%Y/%m/%d %H:%M",
+
+    "%a %b %d %H:%M:%S %Y",
+    "%a %b %d %H:%M:%S %Z %Y",
+
+    "%d/%b/%Y:%H:%M:%S %z",
+
+    "%b %d %H:%M:%S",
+
+    NULL,
+};
+
+const char *log_format::time_scanf(const char *time_dest,
+                                   const char *time_fmt[],
+                                   struct tm *tm_out,
+                                   time_t &time_out)
 {
-    static const char *std_time_fmt[] = {
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%dT%H:%M:%SZ",
-        "%Y/%m/%d %H:%M:%S",
-        "%Y/%m/%d %H:%M",
+    int  curr_time_fmt = -1;
+    bool found         = false;
+    const char *retval = NULL;
 
-        "%a %b %d %H:%M:%S %Y",
+    if (!time_fmt) {
+        time_fmt = std_time_fmt;
+    }
 
-        "%d/%b/%Y:%H:%M:%S %z",
+    while (next_format(time_fmt,
+                       curr_time_fmt,
+                       this->lf_time_fmt_lock)) {
+        memset(tm_out, 0, sizeof(struct tm));
+        if ((retval = strptime(time_dest,
+            time_fmt[curr_time_fmt],
+            tm_out)) != NULL) {
+            if (tm_out->tm_year < 70) {
+                /* XXX We should pull the time from the file mtime (?) */
+                tm_out->tm_year = 80;
+            }
+            time_out = tm2sec(tm_out);
 
-        "%b %d %H:%M:%S",
+            // this->lf_fmt_lock      = curr_fmt;
+            this->lf_time_fmt_lock = curr_time_fmt;
+            this->lf_time_fmt_len  = retval - time_dest;
 
-        NULL,
-    };
+            found = true;
+            break;
+        }
+    }
 
+    if (!found) {
+        retval = NULL;
+    }
+
+    return retval;
+}
+
+const char *log_format::log_scanf(const char *line,
+                                  const char *fmt[],
+                                  int expected_matches,
+                                  const char *time_fmt[],
+                                  char *time_dest,
+                                  struct tm *tm_out,
+                                  time_t &time_out,
+                                  ...)
+{
     int     curr_fmt = -1;
-    char *  retval   = NULL;
+    const char *  retval   = NULL;
     va_list args;
 
     while (next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
@@ -222,37 +265,11 @@ char *log_format::log_scanf(const char *line,
             retval = NULL;
         }
         else {
-            int  curr_time_fmt = -1;
-            bool found         = false;
+            retval = this->time_scanf(time_dest, time_fmt, tm_out, time_out);
 
-            if (!time_fmt) {
-                time_fmt = std_time_fmt;
-            }
-
-            while (next_format(time_fmt,
-                               curr_time_fmt,
-                               this->lf_time_fmt_lock)) {
-                memset(tm_out, 0, sizeof(struct tm));
-                if ((retval = strptime(time_dest,
-                                       time_fmt[curr_time_fmt],
-                                       tm_out)) != NULL) {
-                    if (tm_out->tm_year < 70) {
-                        /* XXX We should pull the time from the file mtime (?) */
-                        tm_out->tm_year = 80;
-                    }
-                    time_out = tm2sec(tm_out);
-
-                    this->lf_fmt_lock      = curr_fmt;
-                    this->lf_time_fmt_lock = curr_time_fmt;
-                    this->lf_time_fmt_len  = retval - time_dest;
-
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                retval = NULL;
+            if (retval) {
+                this->lf_fmt_lock = curr_fmt;
+                break;
             }
         }
 

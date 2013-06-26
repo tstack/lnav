@@ -526,7 +526,7 @@ class generic_log_format : public log_format {
         char      timestr[64 + 32];
         time_t    line_time;
         char      level[64];
-        char *    last_pos;
+        const char *last_pos;
         int       prefix_len;
 
         if ((last_pos = this->log_scanf(prefix,
