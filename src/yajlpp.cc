@@ -38,6 +38,11 @@ int yajlpp_parse_context::map_start(void *ctx)
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
 
     ypc->ypc_path_index_stack.push_back(ypc->ypc_path.length());
+
+    if (ypc->ypc_path[ypc->ypc_path.size() - 1] == '#') {
+        ypc->ypc_array_index.back() += 1;
+    }
+
     return 1;
 }
 
@@ -91,6 +96,7 @@ int yajlpp_parse_context::array_start(void *ctx)
 
     ypc->ypc_path_index_stack.push_back(ypc->ypc_path.length());
     ypc->ypc_path += "#";
+    ypc->ypc_array_index.push_back(-1);
 
     ypc->update_callbacks();
 
@@ -103,6 +109,7 @@ int yajlpp_parse_context::array_end(void *ctx)
 
     ypc->ypc_path = ypc->ypc_path.substr(0, ypc->ypc_path_index_stack.back());
     ypc->ypc_path_index_stack.pop_back();
+    ypc->ypc_array_index.pop_back();
 
     ypc->update_callbacks();
 

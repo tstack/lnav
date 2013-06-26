@@ -153,6 +153,7 @@ public:
     yajl_callbacks          ypc_callbacks;
     std::string             ypc_path;
     std::vector<size_t>     ypc_path_index_stack;
+    std::vector<int>        ypc_array_index;
     pcre_context_static<30> ypc_pcre_context;
 
 private:

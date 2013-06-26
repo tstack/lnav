@@ -34,7 +34,8 @@ check_PROGRAMS = \
 	test_hist_source \
 	test_line_buffer2 \
 	test_pcrepp \
-	test_top_status
+	test_top_status \
+	test_yajlpp
 
 AM_LDFLAGS = \
 	$(SQLITE3_LDFLAGS)
@@ -73,6 +74,9 @@ test_pcrepp_SOURCES = \
 
 test_top_status_SOURCES = test_top_status.cc
 test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
+
+test_yajlpp_SOURCES = test_yajlpp.cc
+test_yajlpp_LDADD = ../src/libdiag.a
 
 drive_line_buffer_SOURCES = \
 	../src/line_buffer.cc \
@@ -219,7 +223,8 @@ TESTS = \
 	test_view_colors.sh \
 	test_vt52_curses.sh \
 	test_top_status \
-	test_data_parser.sh
+	test_data_parser.sh \
+	test_yajlpp
 
 DISTCLEANFILES = \
 	*.dat \

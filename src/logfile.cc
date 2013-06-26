@@ -161,6 +161,18 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
         }
     }
 
+    if (found) {
+        if (this->lf_index.size() >= 2) {
+            logline &second_to_last = this->lf_index[this->lf_index.size() - 2];
+            logline &latest = this->lf_index.back();
+
+            if (latest < second_to_last) {
+                latest.set_time(second_to_last.get_time());
+                latest.set_millis(second_to_last.get_millis());
+            }
+        }
+    }
+
     /* If the scanner didn't match, than we need to add it. */
     if (!found) {
         logline::level_t last_level  = logline::LEVEL_UNKNOWN;
