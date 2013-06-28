@@ -59,10 +59,10 @@ static int write_timestamp(int fd, off_t woff)
     char           ms_str[8];
 
     gettimeofday(&tv, NULL);
-    strftime(time_str, sizeof(time_str), "%FT%T", gmtime(&tv.tv_sec));
+    strftime(time_str, sizeof(time_str), "%FT%T", localtime(&tv.tv_sec));
     snprintf(ms_str, sizeof(ms_str), ".%03d", (int)(tv.tv_usec / 1000));
     strcat(time_str, ms_str);
-    strcat(time_str, "Z  ");
+    strcat(time_str, "  ");
     return pwrite(fd, time_str, strlen(time_str), woff);
 }
 

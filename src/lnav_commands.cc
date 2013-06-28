@@ -702,7 +702,7 @@ static string com_summarize(string cmdline, vector<string> &args)
             else{
                 query += ",";
             }
-            query_frag = sqlite3_mprintf(" \"count_%s\" desc, \"%s\" asc",
+            query_frag = sqlite3_mprintf(" \"count_%s\" desc, \"%s\" collate naturalnocase asc",
                                          iter->c_str(),
                                          iter->c_str());
             query += query_frag;
