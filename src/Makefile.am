@@ -8,6 +8,9 @@ noinst_LIBRARIES = libdiag.a
 help.c: $(srcdir)/help.txt bin2c
 	./bin2c -z -c $(srcdir)/help.txt $@
 
+default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
+	./bin2c -z -c $(srcdir)/default-log-formats.json $@
+
 init.sql: $(srcdir)/init_sql.py
 	$(PYTHON) $(srcdir)/init_sql.py > $@
 
@@ -32,6 +35,9 @@ LDADD = \
 	-lpcrecpp \
 	-lcrypto
 
+dist_noinst_DATA = \
+	default-log-formats.json
+
 noinst_HEADERS = \
 	ansi_scrubber.hh \
 	auto_fd.hh \
@@ -42,6 +48,7 @@ noinst_HEADERS = \
 	column_namer.hh \
 	data_scanner.hh \
 	data_parser.hh \
+	default-log-formats-json.hh \
 	db_sub_source.hh \
 	grapher.hh \
 	grep_highlighter.hh \
@@ -60,6 +67,7 @@ noinst_HEADERS = \
 	lnav_util.hh \
     log_data_table.hh \
 	log_format.hh \
+	log_format_loader.hh \
 	logfile.hh \
 	logfile_sub_source.hh \
 	pcrepp.hh \
@@ -112,6 +120,7 @@ libdiag_a_SOURCES = \
 	lnav_config.cc \
 	lnav_util.cc \
 	log_format.cc \
+	log_format_loader.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
 	network-extension-functions.cc \
@@ -154,14 +163,14 @@ dist_noinst_SCRIPTS = \
 	init_sql.py
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
-lnav_LDADD = help.o init-sql.o $(LDADD)
+lnav_LDADD = help.o init-sql.o default-log-formats-json.o $(LDADD)
 
 lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
-lnav_test_LDADD = help.o init-sql.o $(LDADD)
+lnav_test_LDADD = help.o init-sql.o default-log-formats-json.o $(LDADD)
 
 bin2c_SOURCES = bin2c.c
 
-DISTCLEANFILES = help.c init-sql.c
+DISTCLEANFILES = help.c init-sql.c default-log-formats-json.c
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

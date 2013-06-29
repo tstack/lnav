@@ -100,8 +100,7 @@ public:
                                      this->sf_width };
 
             sa[lr].insert(make_string_attr("style",
-                                           COLOR_PAIR(view_colors::
-                                                      VC_WHITE_ON_GREEN) |
+                                           view_colors::ansi_color_pair(COLOR_WHITE, COLOR_GREEN) |
                                            A_BOLD));
 
             this->sf_cylon_pos += 1;

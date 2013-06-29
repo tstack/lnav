@@ -177,57 +177,8 @@ view_colors &view_colors::singleton(void)
 }
 
 view_colors::view_colors()
-    : vc_next_highlight(0)
+    : vc_next_highlight(0), vc_next_plain_highlight(0)
 {
-    int lpc;
-
-    /* Setup the mappings from roles to actual colors. */
-    this->vc_role_colors[VCR_TEXT]   = COLOR_PAIR(VC_WHITE) | A_DIM;
-    this->vc_role_colors[VCR_SEARCH] =
-        this->vc_role_colors[VCR_TEXT] | A_REVERSE;
-    this->vc_role_colors[VCR_OK]      = COLOR_PAIR(VC_GREEN) | A_BOLD;
-    this->vc_role_colors[VCR_ERROR]   = COLOR_PAIR(VC_RED) | A_BOLD;
-    this->vc_role_colors[VCR_WARNING] = COLOR_PAIR(VC_YELLOW) | A_BOLD;
-    this->vc_role_colors[VCR_ALT_ROW] = COLOR_PAIR(VC_WHITE) | A_BOLD;
-
-    this->vc_role_colors[VCR_STATUS] =
-        COLOR_PAIR(VC_BLACK_ON_WHITE);
-    this->vc_role_colors[VCR_WARN_STATUS] =
-        COLOR_PAIR(VC_YELLOW_ON_WHITE) | A_BOLD;
-    this->vc_role_colors[VCR_ALERT_STATUS] =
-        COLOR_PAIR(VC_RED_ON_WHITE);
-    this->vc_role_colors[VCR_ACTIVE_STATUS] =
-        COLOR_PAIR(VC_GREEN_ON_WHITE);
-    this->vc_role_colors[VCR_ACTIVE_STATUS2] =
-        COLOR_PAIR(VC_GREEN_ON_WHITE) | A_BOLD;
-    this->vc_role_colors[VCR_BOLD_STATUS] =
-        COLOR_PAIR(VC_BLACK_ON_WHITE) | A_BOLD;
-
-    this->vc_role_colors[VCR_DIFF_DELETE]  = COLOR_PAIR(VC_RED);
-    this->vc_role_colors[VCR_DIFF_ADD]     = COLOR_PAIR(VC_GREEN);
-    this->vc_role_colors[VCR_DIFF_SECTION] = COLOR_PAIR(VC_MAGENTA);
-
-    this->vc_role_colors[VCR_SHADOW] = COLOR_PAIR(VC_GRAY);
-
-    for (lpc = 0; lpc < VCR__MAX; lpc++) {
-        this->vc_role_reverse_colors[lpc] =
-            this->vc_role_colors[lpc] | A_REVERSE;
-    }
-
-    /*
-     * Prime the highlight vector.  The first HL_COLOR_COUNT color pairs are
-     * assumed to be the highlight colors.
-     */
-    for (lpc = 1; lpc <= HL_COLOR_COUNT; lpc++) {
-        this->vc_role_colors[VCR__MAX + (lpc - 1) * 2]     = COLOR_PAIR(lpc);
-        this->vc_role_colors[VCR__MAX + (lpc - 1) * 2 + 1] =
-            COLOR_PAIR(lpc) | A_BOLD;
-
-        this->vc_role_reverse_colors[VCR__MAX + (lpc - 1) * 2] =
-            COLOR_PAIR(lpc + HL_COLOR_COUNT) | A_REVERSE;
-        this->vc_role_reverse_colors[VCR__MAX + (lpc - 1) * 2 + 1] =
-            COLOR_PAIR(lpc + HL_COLOR_COUNT) | A_BOLD | A_REVERSE;
-    }
 }
 
 void view_colors::init(void)
@@ -247,66 +198,138 @@ void view_colors::init(void)
         start_color();
 
         /* use_default_colors(); */
-        init_pair(VC_BLUE, COLOR_BLUE, COLOR_BLACK);
-        init_pair(VC_CYAN, COLOR_CYAN, COLOR_BLACK);
-        init_pair(VC_GREEN, COLOR_GREEN, COLOR_BLACK);
-        init_pair(VC_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
-
-        init_pair(VC_BLUE_ON_WHITE, COLOR_BLUE, COLOR_WHITE);
-        init_pair(VC_CYAN_ON_BLACK, COLOR_CYAN, COLOR_BLACK);
-        init_pair(VC_CYAN_ON_WHITE, COLOR_CYAN, COLOR_WHITE);
-        init_pair(VC_GREEN_ON_WHITE, COLOR_GREEN, COLOR_WHITE);
-        init_pair(VC_MAGENTA_ON_WHITE, COLOR_MAGENTA, COLOR_WHITE);
-
-        init_pair(VC_RED, COLOR_RED, COLOR_BLACK);
-        init_pair(VC_YELLOW, COLOR_YELLOW, COLOR_BLACK);
-        init_pair(VC_WHITE, COLOR_WHITE, COLOR_BLACK);
-
-        init_pair(VC_BLACK_ON_WHITE, COLOR_BLACK, COLOR_WHITE);
-        init_pair(VC_RED_ON_WHITE, COLOR_RED, COLOR_WHITE);
-        init_pair(VC_YELLOW_ON_WHITE, COLOR_YELLOW, COLOR_WHITE);
-
-        init_pair(VC_CYAN_ON_BLUE, COLOR_CYAN, COLOR_BLUE);
-
-        init_pair(VC_WHITE_ON_GREEN, COLOR_WHITE, COLOR_GREEN);
-        init_pair(VC_WHITE_ON_CYAN, COLOR_WHITE, COLOR_CYAN);
-
-        init_pair(VC_GRAY, COLOR_BLACK, COLOR_BLACK);
-
         for (int fg = 0; fg < 8; fg++) {
             for (int bg = 0; bg < 8; bg++) {
+                if (fg == 0 && bg == 0)
+                    continue;
                 init_pair(ansi_color_pair_index(fg, bg),
                           ansi_colors_to_curses[fg],
                           ansi_colors_to_curses[bg]);
             }
         }
 
-        for (int lpc = 0; lpc < 8; lpc++) {
-            short gradient_value = (1000 / 8) * lpc;
+        if (COLORS == 256) {
+            int color_pair_base = VC_ANSI_END;
 
-            init_color(lpc + 16, gradient_value, gradient_value,
-                       gradient_value);
-            init_pair(VC_GRADIENT_START + lpc, lpc + 16, COLOR_BLACK);
+            for (int z = 0; z < 6; z++) {
+                for (int x = 1; x < 6; x += 2) {
+                    for (int y = 0; y < 6; y += 2) {
+                        int fg = 16 + x + (y * 6) + (z * 6 * 6);
+
+                        init_pair(color_pair_base,
+                                  fg,
+                                  COLOR_BLACK);
+                        init_pair(color_pair_base + HL_COLOR_COUNT,
+                                  COLOR_BLACK,
+                                  fg);
+                        color_pair_base += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    singleton().init_roles();
+}
+
+void view_colors::init_roles(void)
+{
+    int lpc;
+
+    /* Setup the mappings from roles to actual colors. */
+    this->vc_role_colors[VCR_TEXT]   =
+        ansi_color_pair(COLOR_WHITE, COLOR_BLACK) | A_DIM;
+    this->vc_role_colors[VCR_SEARCH] =
+        this->vc_role_colors[VCR_TEXT] | A_REVERSE;
+    this->vc_role_colors[VCR_OK]      = ansi_color_pair(COLOR_GREEN, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_ERROR]   = ansi_color_pair(COLOR_RED, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_WARNING] = ansi_color_pair(COLOR_YELLOW, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_ALT_ROW] = ansi_color_pair(COLOR_WHITE, COLOR_BLACK) | A_BOLD;
+
+    this->vc_role_colors[VCR_STATUS] =
+        ansi_color_pair(COLOR_BLACK, COLOR_WHITE);
+    this->vc_role_colors[VCR_WARN_STATUS] =
+        ansi_color_pair(COLOR_YELLOW, COLOR_WHITE) | A_BOLD;
+    this->vc_role_colors[VCR_ALERT_STATUS] =
+        ansi_color_pair(COLOR_RED, COLOR_WHITE);
+    this->vc_role_colors[VCR_ACTIVE_STATUS] =
+        ansi_color_pair(COLOR_GREEN, COLOR_WHITE);
+    this->vc_role_colors[VCR_ACTIVE_STATUS2] =
+        ansi_color_pair(COLOR_GREEN, COLOR_WHITE) | A_BOLD;
+    this->vc_role_colors[VCR_BOLD_STATUS] =
+        ansi_color_pair(COLOR_BLACK, COLOR_WHITE) | A_BOLD;
+
+    this->vc_role_colors[VCR_DIFF_DELETE]  = ansi_color_pair(COLOR_RED, COLOR_BLACK);
+    this->vc_role_colors[VCR_DIFF_ADD]     = ansi_color_pair(COLOR_GREEN, COLOR_BLACK);
+    this->vc_role_colors[VCR_DIFF_SECTION] = ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK);
+
+    for (lpc = 0; lpc < VCR_HIGHLIGHT_START; lpc++) {
+        this->vc_role_reverse_colors[lpc] =
+            this->vc_role_colors[lpc] | A_REVERSE;
+    }
+
+    static short basic_hl_pairs[HL_BASIC_COLOR_COUNT] = {
+        ansi_color_pair(COLOR_BLUE, COLOR_BLACK),
+        ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
+        ansi_color_pair(COLOR_GREEN, COLOR_BLACK),
+        ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK),
+    };
+
+    static short basic_rev_hl_pairs[HL_BASIC_COLOR_COUNT] = {
+        ansi_color_pair(COLOR_BLUE, COLOR_WHITE),
+        ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
+        ansi_color_pair(COLOR_GREEN, COLOR_WHITE),
+        ansi_color_pair(COLOR_MAGENTA, COLOR_WHITE),
+    };
+
+    for (lpc = 0; lpc < HL_COLOR_COUNT / 2; lpc++) {
+        this->vc_role_colors[VCR_HIGHLIGHT_START + (lpc * 2)] = basic_hl_pairs[
+            lpc % HL_BASIC_COLOR_COUNT];
+        this->vc_role_colors[VCR_HIGHLIGHT_START + (lpc * 2) + 1] = basic_hl_pairs[
+            lpc % HL_BASIC_COLOR_COUNT] | A_BOLD;
+
+        this->vc_role_reverse_colors[VCR_HIGHLIGHT_START + (lpc * 2)] = basic_rev_hl_pairs[
+            lpc % HL_BASIC_COLOR_COUNT];
+        this->vc_role_reverse_colors[VCR_HIGHLIGHT_START + (lpc * 2) + 1] = basic_rev_hl_pairs[
+            lpc % HL_BASIC_COLOR_COUNT] | A_BOLD;
+    }
+
+    if (COLORS >= 256) {
+        int color_pair_base = VC_ANSI_END;
+
+        /*
+         * Prime the highlight vector.  The first HL_COLOR_COUNT color
+         * pairs are assumed to be the highlight colors.
+         */
+        for (lpc = VCR_HIGHLIGHT_START + HL_BASIC_COLOR_COUNT * 2;
+             lpc < VCR__MAX;
+             lpc++) {
+
+            this->vc_role_colors[lpc] = COLOR_PAIR(color_pair_base);
+
+            this->vc_role_reverse_colors[lpc] =
+                COLOR_PAIR(color_pair_base) | A_REVERSE;
+
+            color_pair_base += 1;
         }
     }
 }
 
 view_colors::role_t view_colors::next_highlight()
 {
-    role_t retval = (role_t)(VCR__MAX + this->vc_next_highlight);
+    role_t retval = (role_t)(VCR_HIGHLIGHT_START + this->vc_next_highlight);
 
-    this->vc_next_highlight = (this->vc_next_highlight + 1) %
-                              (HL_COLOR_COUNT * 2);
+    this->vc_next_highlight = (this->vc_next_highlight + 1) % HL_COLOR_COUNT;
 
     return retval;
 }
 
 view_colors::role_t view_colors::next_plain_highlight()
 {
-    role_t retval = (role_t)(VCR__MAX + this->vc_next_plain_highlight);
+    role_t retval = (role_t)(VCR_HIGHLIGHT_START + this->vc_next_plain_highlight);
 
     this->vc_next_plain_highlight = (this->vc_next_plain_highlight + 2) %
-                                    (HL_COLOR_COUNT * 2);
+                                    (HL_COLOR_COUNT);
 
     return retval;
 }

@@ -1,0 +1,116 @@
+{
+    "access_log" : {
+        "regex" : "^(?<c_ip>[\\w\\.\\-]+) [\\w\\.\\-]+ (?<cs_username>[\\w\\.\\-]+) \\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?.*",
+        "level-field": "sc_status",
+        "level" : {
+            "error" : "^[^123]"
+            },
+        "value" : {
+            "c_ip" : {
+                "kind" : "string",
+                "collate" : "ipaddress",
+                "identifier" : true
+            },
+            "cs_username" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_method" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_uri_stem" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_uri_query" : {
+                "kind" : "string"
+            },
+            "cs_version" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "sc_status" : {
+                "kind" : "integer"
+            },
+            "sc_bytes" : {
+                "kind" : "integer"
+            },
+            "cs_referer" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_user_agent" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        }
+    },
+    "vmw_log" : {
+        "regex" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$",
+        "level-field": "level",
+        "level" : {
+            "error" : "error",
+            "warning" : "warning",
+            "trace" : "verbose"
+            },
+        "value" : {
+            "tid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "comp" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "opid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "user" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        }
+    },
+    "snaplogic_log" : {
+        "regex" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+)(?<body>.*)",
+        "level-field" : "level",
+        "level" : {
+            "error" : "ERROR",
+            "debug" : "DEBUG",
+            "info" : "INFO",
+            "warning" : "WARNING"
+        },
+        "value" : {
+            "logger" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "facility" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "msgid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "pipe_rid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "comp_rid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "resource_name" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "invoker" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        }
+    }
+}

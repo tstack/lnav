@@ -78,7 +78,8 @@ static string declare_table_statement(log_vtab_impl *vi)
         coldecl = sqlite3_mprintf("  %Q %s collate %Q,\n",
                                   iter->vc_name,
                                   type_to_string(iter->vc_type),
-                                  iter->vc_collator == NULL ?
+                                  (iter->vc_collator == NULL ||
+                                   iter->vc_collator[0] == '\0') ?
                                   "BINARY" : iter->vc_collator);
         oss << coldecl;
     }
@@ -357,6 +358,10 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 
                 case logline_value::VALUE_FLOAT:
                     sqlite3_result_double(ctx, lv.lv_number.d);
+                    break;
+
+                case logline_value::VALUE_UNKNOWN:
+                    assert(0);
                     break;
                 }
             }

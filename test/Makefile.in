@@ -117,11 +117,12 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am_drive_data_scanner_OBJECTS = drive_data_scanner.$(OBJEXT)
 drive_data_scanner_OBJECTS = $(am_drive_data_scanner_OBJECTS)
-drive_data_scanner_DEPENDENCIES = ../src/libdiag.a
+am__DEPENDENCIES_1 =
+drive_data_scanner_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1)
 am_drive_grep_proc_OBJECTS = pcrepp.$(OBJEXT) line_buffer.$(OBJEXT) \
 	grep_proc.$(OBJEXT) drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
-am__DEPENDENCIES_1 =
 drive_grep_proc_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_drive_line_buffer_OBJECTS = line_buffer.$(OBJEXT) \
 	drive_line_buffer.$(OBJEXT)
@@ -134,8 +135,7 @@ drive_listview_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_drive_logfile_OBJECTS = logfile.$(OBJEXT) log_format.$(OBJEXT) \
 	line_buffer.$(OBJEXT) pcrepp.$(OBJEXT) drive_logfile.$(OBJEXT)
 drive_logfile_OBJECTS = $(am_drive_logfile_OBJECTS)
-drive_logfile_LDADD = $(LDADD)
-drive_logfile_DEPENDENCIES =
+drive_logfile_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
 am_drive_readline_curses_OBJECTS = ansi_scrubber.$(OBJEXT) \
 	pcrepp.$(OBJEXT) vt52_curses.$(OBJEXT) \
 	readline_curses.$(OBJEXT) view_curses.$(OBJEXT) \
@@ -147,7 +147,7 @@ am_drive_sequencer_OBJECTS = grep_proc.$(OBJEXT) logfile.$(OBJEXT) \
 	log_format.$(OBJEXT) line_buffer.$(OBJEXT) pcrepp.$(OBJEXT) \
 	sequence_matcher.$(OBJEXT) drive_sequencer.$(OBJEXT)
 drive_sequencer_OBJECTS = $(am_drive_sequencer_OBJECTS)
-drive_sequencer_DEPENDENCIES =
+drive_sequencer_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
 am_drive_sql_OBJECTS = drive_sql.$(OBJEXT)
 drive_sql_OBJECTS = $(am_drive_sql_OBJECTS)
 drive_sql_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1) \
@@ -684,6 +684,7 @@ drive_logfile_SOURCES = \
 	../src/pcrepp.cc \
 	drive_logfile.cc
 
+drive_logfile_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
 drive_sequencer_SOURCES = \
 	../src/grep_proc.cc \
 	../src/logfile.cc \
@@ -693,11 +694,11 @@ drive_sequencer_SOURCES = \
 	../src/sequence_matcher.cc \
 	drive_sequencer.cc
 
-drive_sequencer_LDADD = -lcrypto
+drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
 
-drive_data_scanner_LDADD = ../src/libdiag.a -lcrypto
+drive_data_scanner_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
 drive_view_colors_SOURCES = \
 	../src/view_curses.cc \
 	drive_view_colors.cc

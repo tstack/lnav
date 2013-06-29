@@ -269,7 +269,7 @@ struct pcre_named_capture {
     };
 
     int index() const {
-        return (this->pnc_index_msb << 8 | this->pnc_index_lsb);
+        return (this->pnc_index_msb << 8 | this->pnc_index_lsb) - 1;
     };
 
     char pnc_index_msb;

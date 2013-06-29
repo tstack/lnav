@@ -103,18 +103,28 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 
     scrub_ansi_string(str, sa);
 
+    struct line_range body;
+
+    body = find_string_attr_range(sa, "body");
+    if (body.lr_start == -1) {
+        body.lr_start = 0;
+        body.lr_end = str.size();
+    }
+
     for (iter = this->tc_highlights.begin();
          iter != this->tc_highlights.end();
          iter++) {
+        // XXX testing for '$search' here sucks
+        bool internal_hl = iter->first[0] == '$' && iter->first != "$search";
         int off, hcount = 0;
 
-        for (off = 0; off < (int)str.size(); ) {
+        for (off = internal_hl ? body.lr_start : 0; off < (int)str.size(); ) {
             int rc, matches[60];
 
             rc = pcre_exec(iter->second.h_code,
                            iter->second.h_code_extra,
                            str.c_str(),
-                           str.size(),
+                           internal_hl ? body.lr_end : str.size(),
                            off,
                            0,
                            matches,

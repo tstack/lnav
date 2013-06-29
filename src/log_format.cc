@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include "log_format.hh"
+#include "log_vtab_impl.hh"
 
 using namespace std;
 
@@ -147,6 +148,21 @@ logline::level_t logline::string2level(const char *levelstr, bool exact)
     }
 
     return retval;
+}
+
+logline_value::kind_t logline_value::string2kind(const char *kindstr)
+{
+    if (strcmp(kindstr, "string") == 0) {
+        return VALUE_TEXT;
+    }
+    else if (strcmp(kindstr, "integer") == 0) {
+        return VALUE_INTEGER;
+    }
+    else if (strcmp(kindstr, "float") == 0) {
+        return VALUE_FLOAT;
+    }
+
+    return VALUE_UNKNOWN;
 }
 
 vector<log_format *> log_format::lf_root_formats;
@@ -277,6 +293,184 @@ const char *log_format::log_scanf(const char *line,
     }
 
     return retval;
+}
+
+bool external_log_format::scan(std::vector<logline> &dst,
+                               off_t offset,
+                               char *prefix,
+                               int len)
+{
+    pcre_input pi(prefix, 0, len);
+    pcre_context_static<30> pc;
+    bool retval = false;
+
+    if (this->elf_pcre->match(pc, pi)) {
+        pcre_context::capture_t *ts = pc["timestamp"];
+        pcre_context::capture_t *level_cap = pc[this->elf_level_field];
+        const char *ts_str = pi.get_substr_start(ts);
+        const char *last;
+        time_t line_time;
+        struct tm log_time;
+        uint16_t millis = 0;
+        logline::level_t level = logline::LEVEL_INFO;
+
+        if ((last = this->time_scanf(ts_str,
+                                     NULL,
+                                     &log_time,
+                                     line_time)) == NULL) {
+            return false;
+        }
+
+        /* Try to pull out the milliseconds value. */
+        if (last[0] == ',' || last[0] == '.') {
+            int subsec_len = 0;
+
+            sscanf(last + 1, "%hd%n", &millis, &subsec_len);
+            if (millis >= 1000) {
+                millis = 0;
+            }
+        }
+
+        if (level_cap != NULL && level_cap->c_begin != -1) {
+            pcre_context_static<30> pc_level;
+            pcre_input pi_level(pi.get_substr_start(level_cap),
+                                0,
+                                level_cap->length());
+
+            for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
+                 iter != this->elf_level_patterns.end();
+                 ++iter) {
+                if (iter->second.lp_pcre->match(pc_level, pi_level)) {
+                    level = iter->first;
+                    break;
+                }
+            }
+        }
+
+        dst.push_back(logline(offset,
+                      line_time,
+                      millis,
+                      level));
+
+        retval = true;
+    }
+
+    return retval;
+}
+
+void external_log_format::annotate(const std::string &line,
+                                   string_attrs_t &sa,
+                                   std::vector<logline_value> &values) const
+{
+    pcre_context_static<30> pc;
+    pcre_input pi(line);
+    struct line_range lr;
+    pcre_context::capture_t *cap;
+
+    if (!this->elf_pcre->match(pc, pi)) {
+        return;
+    }
+
+    cap = pc["timestamp"];
+    lr.lr_start = cap->c_begin;
+    lr.lr_end = cap->c_end;
+    sa[lr].insert(make_string_attr("timestamp", 0));
+
+    cap = pc["body"];
+    if (cap != NULL && cap->c_begin != -1) {
+        lr.lr_start = cap->c_begin;
+        lr.lr_end = cap->c_end;
+    }
+    else {
+        lr.lr_start = line.size();
+        lr.lr_end = line.size();
+    }
+    sa[lr].insert(make_string_attr("body", 0));
+
+    view_colors &vc = view_colors::singleton();
+
+    for (size_t lpc = 0; lpc < this->elf_value_by_index.size(); lpc++) {
+        const value_def &vd = this->elf_value_by_index[lpc];
+
+        values.push_back(logline_value(vd.vd_name,
+                         vd.vd_kind,
+                         pi.get_substr(pc[vd.vd_index]),
+                         vd.vd_identifier));
+
+        if (pc[vd.vd_index]->c_begin != -1 && vd.vd_identifier) {
+            fprintf(stderr, "ident %s \n", vd.vd_name.c_str());
+            lr.lr_start = pc[vd.vd_index]->c_begin;
+            lr.lr_end = pc[vd.vd_index]->c_end;
+            sa[lr].insert(make_string_attr("style", vc.attrs_for_ident(pi.get_substr_start(pc[vd.vd_index]), lr.length())));
+        }
+    }
+}
+
+void external_log_format::build(void)
+{
+    this->elf_pcre = new pcrepp(this->elf_regex.c_str());
+    for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
+         iter != this->elf_level_patterns.end();
+         ++iter) {
+        iter->second.lp_pcre = new pcrepp(iter->second.lp_regex.c_str());
+    }
+
+    for (pcre_named_capture::iterator iter = this->elf_pcre->named_begin();
+         iter != this->elf_pcre->named_end();
+         ++iter) {
+        std::map<std::string, value_def>::iterator value_iter;
+
+        value_iter = this->elf_value_defs.find(std::string(iter->pnc_name));
+        if (value_iter != this->elf_value_defs.end()) {
+            value_iter->second.vd_index = iter->index();
+            this->elf_value_by_index.push_back(value_iter->second);
+        }
+    }
+
+    stable_sort(this->elf_value_by_index.begin(),
+                this->elf_value_by_index.end());
+}
+
+class external_log_table : public log_vtab_impl {
+public:
+    external_log_table(const external_log_format &elf) :
+        log_vtab_impl(elf.get_name()), elt_format(elf) {
+    };
+
+    void get_columns(vector<vtab_column> &cols) {
+        std::vector<external_log_format::value_def>::const_iterator iter;
+
+        for (iter = this->elt_format.elf_value_by_index.begin();
+             iter != this->elt_format.elf_value_by_index.end();
+             ++iter) {
+            int type;
+
+            switch (iter->vd_kind) {
+            case logline_value::VALUE_TEXT:
+                type = SQLITE3_TEXT;
+                break;
+            case logline_value::VALUE_FLOAT:
+                type = SQLITE_FLOAT;
+                break;
+            case logline_value::VALUE_INTEGER:
+                type = SQLITE_INTEGER;
+                break;
+            case logline_value::VALUE_UNKNOWN:
+                assert(0);
+                break;
+            }
+            cols.push_back(vtab_column(iter->vd_name.c_str(),
+                           type,
+                           iter->vd_collate.c_str()));
+        }
+    };
+
+    const external_log_format &elt_format;
+};
+
+log_vtab_impl *external_log_format::get_vtab_impl(void) const
+{
+    return new external_log_table(*this);
 }
 
 /* XXX */

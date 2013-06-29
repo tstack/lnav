@@ -46,34 +46,34 @@ public:
     my_source() : ms_rows(2) { };
 
     size_t listview_rows(const listview_curses &lv) {
-	return this->ms_rows;
+        return this->ms_rows;
     };
 
     void listview_value_for_row(const listview_curses &lv,
-				vis_line_t row,
-				attr_line_t &value_out) {
-	if (row == 0) {
-	    value_out = "Hello";
-	}
-	else if (row == 1) {
-	    value_out = "World!";
-	}
-	else if (row < this->ms_rows) {
-	    char buffer[32];
+                                vis_line_t row,
+                                attr_line_t &value_out) {
+        if (row == 0) {
+            value_out = "Hello";
+        }
+        else if (row == 1) {
+            value_out = "World!";
+        }
+        else if (row < this->ms_rows) {
+            char buffer[32];
 
-	    snprintf(buffer, sizeof(buffer), "%d", (int)row);
-	    value_out = string(buffer);
-	}
-	else {
-	    assert(0);
-	}
+            snprintf(buffer, sizeof(buffer), "%d", (int)row);
+            value_out = string(buffer);
+        }
+        else {
+            assert(0);
+        }
     };
 
     bool attrline_next_token(const view_curses &vc,
-			     int line,
-			     struct line_range &lr,
-			     int &attrs_out) {
-	return false;
+                             int line,
+                             struct line_range &lr,
+                             int &attrs_out) {
+        return false;
     };
 
     int ms_rows;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     lv.do_update();
     refresh();
     if (wait_for_input)
-	getch();
+        getch();
     endwin();
 
     return retval;

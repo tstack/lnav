@@ -102,6 +102,7 @@ drive_logfile_SOURCES = \
 	../src/line_buffer.cc \
 	../src/pcrepp.cc \
 	drive_logfile.cc
+drive_logfile_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
 
 drive_sequencer_SOURCES = \
 	../src/grep_proc.cc \
@@ -111,11 +112,11 @@ drive_sequencer_SOURCES = \
 	../src/pcrepp.cc \
 	../src/sequence_matcher.cc \
 	drive_sequencer.cc
-drive_sequencer_LDADD = -lcrypto
+drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
 
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
-drive_data_scanner_LDADD = ../src/libdiag.a -lcrypto
+drive_data_scanner_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
 
 drive_view_colors_SOURCES = \
 	../src/view_curses.cc \

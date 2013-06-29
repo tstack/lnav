@@ -75,142 +75,6 @@ static string scrub_rdns(const string &str)
     return retval;
 }
 
-class access_log_format : public log_format {
-    static pcrepp &value_pattern(void)
-    {
-        static pcrepp VALUE_PATTERN(
-            "^([\\w\\.\\-]+) [\\w\\.\\-]+ ([\\w\\.\\-]+) "
-            "\\[([^\\]]+)\\] \"(?:\\-|(\\w+) ([^ \\?]+)(?:\\?([^ ]*))? "
-            "([\\w/\\.]+))\" (\\d+) "
-            "(\\d+|-)(?: \"([^\"]+)\" \"([^\"]+)\")?.*");
-
-        return VALUE_PATTERN;
-    };
-
-    string get_name() { return "access_log"; };
-
-    bool scan(vector<logline> &dst,
-              off_t offset,
-              char *prefix,
-              int len)
-    {
-        static const char *log_fmt[] = {
-            "%*s %*s %*s [%63[^]]] \"%*[^\"]\" %d",
-            NULL
-        };
-
-        bool      retval = false;
-        struct tm log_time;
-        int       http_code = 0;
-        char      timestr[64];
-        time_t    line_time;
-
-        if (this->log_scanf(prefix,
-                            log_fmt,
-                            2,
-                            NULL,
-                            timestr,
-                            &log_time,
-                            line_time,
-
-                            timestr,
-                            &http_code)) {
-            logline::level_t ll = logline::LEVEL_UNKNOWN;
-
-            if (http_code < 400) {
-                ll = logline::LEVEL_INFO;
-            }
-            else {
-                ll = logline::LEVEL_ERROR;
-            }
-            dst.push_back(logline(offset,
-                                  line_time,
-                                  0,
-                                  ll));
-            retval = true;
-        }
-
-        return retval;
-    };
-
-    auto_ptr<log_format> specialized()
-    {
-        auto_ptr<log_format> retval((log_format *)new access_log_format(*this));
-
-        return retval;
-    };
-
-    void annotate(const std::string &line,
-                  string_attrs_t &sa,
-                  std::vector<logline_value> &values) const
-    {
-        pcre_context_static<30> pc;
-        pcre_input pi(line);
-
-        if (value_pattern().match(pc, pi)) {
-            static struct {
-                const char *          name;
-                logline_value::kind_t kind;
-            } columns[] = {
-                { "c_ip",
-                  logline_value::VALUE_TEXT },
-                { "cs_username",
-                  logline_value::VALUE_TEXT },
-                { "",   },
-                { "cs_method",
-                  logline_value::VALUE_TEXT },
-                { "cs_uri_stem",
-                  logline_value::VALUE_TEXT },
-                { "cs_uri_query",
-                  logline_value::VALUE_TEXT },
-                { "cs_version",
-                  logline_value::VALUE_TEXT },
-                { "sc_status",
-                  logline_value::VALUE_INTEGER },
-                { "sc_bytes",
-                  logline_value::VALUE_INTEGER },
-                { "cs_referer",
-                  logline_value::VALUE_TEXT },
-                { "cs_user_agent",
-                  logline_value::VALUE_TEXT },
-
-                { NULL },
-            };
-
-            pcre_context::iterator iter;
-            struct line_range      lr;
-
-            iter        = pc.begin() + 2;
-            lr.lr_start = iter->c_begin;
-            lr.lr_end   = iter->c_end;
-            assert(lr.lr_start != -1);
-            sa[lr].insert(make_string_attr("timestamp", 0));
-
-            lr.lr_start = 0;
-            lr.lr_end   = line.length();
-            sa[lr].insert(make_string_attr("prefix", 0));
-
-            lr.lr_start = line.length();
-            lr.lr_end   = line.length();
-            sa[lr].insert(make_string_attr("body", 0));
-
-            for (int lpc = 0; columns[lpc].name; lpc++) {
-                if (columns[lpc].name[0] == '\0') {
-                    continue;
-                }
-                values.push_back(logline_value(columns[lpc].name,
-                                               columns[lpc].kind,
-                                               pi.get_substr(pc[lpc])));
-            }
-        }
-        else {
-            fprintf(stderr, "bad match! %s\n", line.c_str());
-        }
-    };
-};
-
-log_format::register_root_format<access_log_format> access_log_instance;
-
 class syslog_log_format : public log_format {
     static const int TIMESTAMP_LENGTH = 16;
 
@@ -244,7 +108,7 @@ class syslog_log_format : public log_format {
         return WARNING_PATTERN;
     }
 
-    string get_name() { return "syslog_log"; };
+    string get_name() const { return "syslog_log"; };
 
     void scrub(string &line)
     {
@@ -421,7 +285,7 @@ class syslog_log_format : public log_format {
 log_format::register_root_format<syslog_log_format> syslog_instance;
 
 class tcsh_history_format : public log_format {
-    string get_name() { return "tcsh_history"; };
+    string get_name() const { return "tcsh_history"; };
 
     bool scan(vector<logline> &dst,
               off_t offset,
@@ -496,7 +360,7 @@ class generic_log_format : public log_format {
         return log_fmt;
     };
 
-    string get_name() { return "generic_log"; };
+    string get_name() const { return "generic_log"; };
 
     void scrub(string &line)
     {
@@ -571,7 +435,9 @@ class generic_log_format : public log_format {
         struct line_range lr;
         int prefix_len = 0;
 
-        sscanf(line.c_str(), fmt, timestr, level, &prefix_len);
+        if (sscanf(line.c_str(), fmt, timestr, level, &prefix_len) != 2) {
+            return;
+        }
 
         lr.lr_start = fmt[0] == '%' ? 0 : 1;
         lr.lr_end   = lr.lr_start + this->lf_time_fmt_len;
@@ -621,7 +487,7 @@ class glog_log_format : public log_format {
         return VALUE_PATTERN;
     };
 
-    string get_name() { return "glog_log"; };
+    string get_name() const { return "glog_log"; };
 
     bool scan(vector<logline> &dst,
               off_t offset,
@@ -749,7 +615,7 @@ class strace_log_format : public log_format {
         return VALUE_PATTERN;
     };
 
-    string get_name() { return "strace_log"; };
+    string get_name() const { return "strace_log"; };
 
     bool scan(vector<logline> &dst,
               off_t offset,

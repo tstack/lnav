@@ -34,6 +34,7 @@
 
 #include "config.h"
 
+#include <zlib.h>
 #include <assert.h>
 #include <stdint.h>
 #include <limits.h>
@@ -323,6 +324,9 @@ private:
  */
 class view_colors {
 public:
+    /** The number of colors used for highlighting. */
+    static const int HL_BASIC_COLOR_COUNT = 4;
+    static const int HL_COLOR_COUNT = 2 * HL_BASIC_COLOR_COUNT + 9 * 6;
 
     /** Roles that can be mapped to curses attributes using attrs_for_role() */
     typedef enum {
@@ -345,7 +349,8 @@ public:
         VCR_DIFF_ADD,           /*< Added line in a diff. */
         VCR_DIFF_SECTION,       /*< Section marker in a diff. */
 
-        VCR_SHADOW,
+        VCR_HIGHLIGHT_START,
+        VCR_HIGHLIGHT_END = VCR_HIGHLIGHT_START + HL_COLOR_COUNT,
 
         VCR__MAX
     } role_t;
@@ -360,6 +365,8 @@ public:
      */
     static void init(void);
 
+    void init_roles(void);
+
     /**
      * @param role The role to retrieve character attributes for.
      * @return The attributes to use for the given role.
@@ -367,7 +374,7 @@ public:
     int attrs_for_role(role_t role) const
     {
         assert(role >= 0);
-        assert(role < VCR__MAX + (HL_COLOR_COUNT * 2));
+        assert(role < VCR__MAX);
 
         return this->vc_role_colors[role];
     };
@@ -375,7 +382,7 @@ public:
     int reverse_attrs_for_role(role_t role) const
     {
         assert(role >= 0);
-        assert(role < VCR__MAX + (HL_COLOR_COUNT * 2));
+        assert(role < VCR__MAX);
 
         return this->vc_role_reverse_colors[role];
     };
@@ -389,45 +396,10 @@ public:
 
     role_t next_plain_highlight();
 
-    enum {
-        VC_EMPTY = 0,       /* XXX Dead color pair, doesn't work. */
+    int attrs_for_ident(const char *str, size_t len) {
+        int index = crc32(0, (const Bytef*)str, len);
 
-        VC_BLUE,
-        /* BEGIN highlight colors */
-        VC_CYAN,
-        VC_GREEN,
-        VC_MAGENTA,
-
-        VC_BLUE_ON_WHITE,
-        /*
-         * NOTE: The following colors must match the colors in the above
-         * section.
-         */
-        VC_CYAN_ON_BLACK,
-        VC_GREEN_ON_WHITE,
-        VC_MAGENTA_ON_WHITE,
-        /* END highlight colors */
-
-        VC_RED,
-        VC_YELLOW,
-        VC_WHITE,
-
-        VC_BLACK_ON_WHITE,
-        VC_YELLOW_ON_WHITE,
-        VC_RED_ON_WHITE,
-        VC_CYAN_ON_WHITE,
-
-        VC_CYAN_ON_BLUE,
-
-        VC_WHITE_ON_GREEN,
-        VC_WHITE_ON_CYAN,
-
-        VC_GRAY,
-
-        VC_ANSI_START,
-        VC_ANSI_END = VC_ANSI_START + (8 * 8),
-
-        VC_GRADIENT_START,
+        return this->vc_role_colors[VCR_HIGHLIGHT_START + (index % HL_COLOR_COUNT)];
     };
 
     static inline int ansi_color_pair_index(int fg, int bg)
@@ -440,18 +412,20 @@ public:
         return COLOR_PAIR(ansi_color_pair_index(fg, bg));
     };
 
-private:
+    enum {
+        VC_ANSI_START = 0,
+        VC_ANSI_END = VC_ANSI_START + (8 * 8),
+    };
 
-    /** The number of colors used for highlighting. */
-    static const int HL_COLOR_COUNT = 4;
+private:
 
     /** Private constructor that initializes the member fields. */
     view_colors();
 
     /** Map of role IDs to attribute values. */
-    int vc_role_colors[VCR__MAX + (HL_COLOR_COUNT * 2)];
+    int vc_role_colors[VCR__MAX];
     /** Map of role IDs to reverse-video attribute values. */
-    int vc_role_reverse_colors[VCR__MAX + (HL_COLOR_COUNT * 2)];
+    int vc_role_reverse_colors[VCR__MAX];
     /** The index of the next highlight color to use. */
     int vc_next_highlight;
     int vc_next_plain_highlight;

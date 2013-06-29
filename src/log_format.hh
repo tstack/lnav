@@ -246,10 +246,13 @@ private:
 class logline_value {
 public:
     enum kind_t {
+        VALUE_UNKNOWN = -1,
         VALUE_TEXT,
         VALUE_INTEGER,
         VALUE_FLOAT,
     };
+
+    static kind_t string2kind(const char *kindstr);
 
     logline_value(std::string name, int64_t i)
         : lv_name(name), lv_kind(VALUE_INTEGER), lv_number(i) { };
@@ -257,8 +260,8 @@ public:
         : lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i) { };
     logline_value(std::string name, std::string s)
         : lv_name(name), lv_kind(VALUE_TEXT), lv_string(s) { };
-    logline_value(std::string name, kind_t kind, std::string s)
-        : lv_name(name), lv_kind(kind)
+    logline_value(std::string name, kind_t kind, std::string s, bool ident=false)
+        : lv_name(name), lv_kind(kind), lv_identifier(ident)
     {
         switch (kind) {
         case VALUE_TEXT:
@@ -272,6 +275,10 @@ public:
         case VALUE_FLOAT:
             sscanf(s.c_str(), "%lf", &this->lv_number.d);
             break;
+
+        case VALUE_UNKNOWN:
+        assert(0);
+        break;
         }
     };
 
@@ -290,6 +297,9 @@ public:
         case VALUE_FLOAT:
             snprintf(buffer, sizeof(buffer), "%lf", this->lv_number.d);
             break;
+        case VALUE_UNKNOWN:
+        assert(0);
+        break;
         }
 
         return std::string(buffer);
@@ -306,7 +316,10 @@ public:
         value_u(double d) : d(d) { };
     }           lv_number;
     std::string lv_string;
+    bool lv_identifier;
 };
+
+class log_vtab_impl;
 
 /**
  * Base class for implementations of log format parsers.
@@ -349,7 +362,7 @@ public:
      *
      * @return The log format name.
      */
-    virtual std::string get_name(void) = 0;
+    virtual std::string get_name(void) const = 0;
 
     /**
      * Scan a log line to see if it matches this log format.
@@ -382,6 +395,10 @@ public:
 
     virtual std::auto_ptr<log_format> specialized(void) = 0;
 
+    virtual log_vtab_impl *get_vtab_impl(void) const {
+        return NULL;
+    };
+
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -413,8 +430,22 @@ public:
     };
 
     struct value_def {
+        value_def() :
+            vd_index(-1),
+            vd_kind(logline_value::VALUE_UNKNOWN),
+            vd_identifier(false) {
+
+        };
+
         std::string vd_name;
+        int vd_index;
         logline_value::kind_t vd_kind;
+        std::string vd_collate;
+        bool vd_identifier;
+
+        bool operator<(const value_def &rhs) const {
+            return this->vd_index < rhs.vd_index;
+        };
     };
 
     struct level_pattern {
@@ -424,114 +455,20 @@ public:
 
     external_log_format(const std::string &name) : elf_name(name) { };
 
-    std::string get_name(void) {
+    std::string get_name(void) const {
         return this->elf_name;
     };
 
     bool scan(std::vector<logline> &dst,
               off_t offset,
               char *prefix,
-              int len) {
-        pcre_input pi(prefix, 0, len);
-        pcre_context_static<30> pc;
-        bool retval = false;
-
-        if (this->elf_pcre->match(pc, pi)) {
-            pcre_context::capture_t *ts = pc["timestamp"];
-            pcre_context::capture_t *level_cap = pc[this->elf_level_field];
-            const char *ts_str = pi.get_substr_start(ts);
-            const char *last;
-            time_t line_time;
-            struct tm log_time;
-            uint16_t millis = 0;
-            logline::level_t level = logline::LEVEL_INFO;
-
-            if ((last = this->time_scanf(ts_str,
-                                         NULL,
-                                         &log_time,
-                                         line_time)) == NULL) {
-                return false;
-            }
-
-            /* Try to pull out the milliseconds value. */
-            if (last[0] == ',' || last[0] == '.') {
-                int subsec_len = 0;
-
-                sscanf(last + 1, "%hd%n", &millis, &subsec_len);
-                if (millis >= 1000) {
-                    millis = 0;
-                }
-            }
-
-            if (level_cap != NULL && level_cap->c_begin != -1) {
-                pcre_context_static<30> pc_level;
-                pcre_input pi_level(pi.get_substr_start(level_cap),
-                                    0,
-                                    level_cap->length());
-
-                for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
-                     iter != this->elf_level_patterns.end();
-                     ++iter) {
-                    if (iter->second.lp_pcre->match(pc_level, pi_level)) {
-                        level = iter->first;
-                        break;
-                    }
-                }
-            }
-
-            dst.push_back(logline(offset,
-                          line_time,
-                          millis,
-                          level));
-
-            retval = true;
-        }
-
-        return retval;
-    };
+              int len);
 
     void annotate(const std::string &line,
                   string_attrs_t &sa,
-                  std::vector<logline_value> &values) const
-    {
-        pcre_context_static<30> pc;
-        pcre_input pi(line);
-        struct line_range lr;
-        pcre_context::capture_t *cap;
+                  std::vector<logline_value> &values) const;
 
-        if (!this->elf_pcre->match(pc, pi))
-            return;
-
-        cap = pc["timestamp"];
-        lr.lr_start = cap->c_begin;
-        lr.lr_end = cap->c_end;
-        sa[lr].insert(make_string_attr("timestamp", 0));
-
-        cap = pc["body"];
-        lr.lr_start = cap->c_begin;
-        lr.lr_end = cap->c_end;
-        sa[lr].insert(make_string_attr("body", 0));
-        
-        for (std::vector<value_def>::const_iterator iter =
-                 this->elf_value_defs.begin();
-             iter != this->elf_value_defs.end();
-             ++iter) {
-            cap = pc[iter->vd_name];
-
-            values.push_back(logline_value(iter->vd_name,
-                                           iter->vd_kind,
-                                           pi.get_substr(cap)));
-        }
-    }
-
-    void build(void) {
-        this->elf_pcre = new pcrepp(this->elf_regex.c_str());
-        for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
-             iter != this->elf_level_patterns.end();
-             ++iter) {
-            iter->second.lp_pcre = new pcrepp(iter->second.lp_regex.c_str());
-        }
-    };
+    void build(void);
 
     std::auto_ptr<log_format> specialized() {
         std::auto_ptr<log_format> retval((log_format *)
@@ -540,10 +477,13 @@ public:
         return retval;
     };
 
+    log_vtab_impl *get_vtab_impl(void) const;
+
     std::string elf_regex;
     pcrepp *elf_pcre;
     std::vector<sample> elf_samples;
-    std::vector<value_def> elf_value_defs;
+    std::vector<value_def> elf_value_by_index;
+    std::map<std::string, value_def> elf_value_defs;
     std::string elf_level_field;
     std::map<logline::level_t, level_pattern> elf_level_patterns;
 

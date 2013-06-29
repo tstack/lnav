@@ -63,13 +63,13 @@ public:
         this->tss_fields[TSF_VIEW_NAME].right_justify(true);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_width(2);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_stitch_value(
-            view_colors::VC_CYAN_ON_BLUE);
+            view_colors::ansi_color_pair_index(COLOR_CYAN, COLOR_BLUE));
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].right_justify(true);
         this->tss_fields[TSF_FORMAT].set_width(13);
         this->tss_fields[TSF_FORMAT].right_justify(true);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_width(2);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_stitch_value(
-            view_colors::VC_WHITE_ON_CYAN);
+            view_colors::ansi_color_pair_index(COLOR_WHITE, COLOR_CYAN));
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].right_justify(true);
         this->tss_fields[TSF_FILENAME].set_min_width(35); /* XXX */
         this->tss_fields[TSF_FILENAME].set_share(1);
@@ -138,8 +138,7 @@ public:
             sf_filename.clear();
         }
         sf_format.get_value().get_attrs()[lr].insert(
-            make_string_attr("style", A_REVERSE | COLOR_PAIR(
-                                 view_colors::VC_CYAN_ON_BLACK)));
+            make_string_attr("style", A_REVERSE | view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK)));
     };
 
 private:

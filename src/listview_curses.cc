@@ -110,10 +110,13 @@ bool listview_curses::handle_key(int ch)
 
     case KEY_END: {
             vis_line_t tail_bottom(this->get_inner_height() - height + 1);
+            vis_line_t last_line(this->get_inner_height() - 1);
 
             tail_bottom = max(vis_line_t(0), tail_bottom);
-            if (tail_bottom <= this->get_top())
-                this->set_top(vis_line_t(this->get_inner_height() - 1));
+            if (this->get_top() == last_line)
+                this->set_top(tail_bottom);
+            else if (tail_bottom <= this->get_top())
+                this->set_top(last_line);
             else
                 this->set_top(tail_bottom);
         }

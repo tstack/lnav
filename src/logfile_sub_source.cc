@@ -300,6 +300,13 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         attrs |= A_UNDERLINE;
     }
 
+    log_format *format = this->lss_token_file->get_format();
+    std::vector<logline_value> line_values;
+    
+    if (!(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
+        format->annotate(this->lss_token_value, value_out, line_values);
+    }
+
     lr.lr_start = time_offset_end + this->lss_token_date_end;
     lr.lr_end   = -1;
 
@@ -309,6 +316,16 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         time_offset_end = 13;
         lr.lr_start     = 0;
         lr.lr_end       = time_offset_end;
+
+        for (string_attrs_t::iterator iter = value_out.begin();
+             iter != value_out.end();
+             ++iter) {
+            struct line_range *existing_lr = (line_range *)&iter->first;
+
+            existing_lr->lr_start += time_offset_end;
+            if (existing_lr->lr_end != -1)
+                existing_lr->lr_end += time_offset_end;
+        }
 
         attrs = vc.attrs_for_role(view_colors::VCR_OK);
         value_out[lr].insert(make_string_attr("style", attrs));
@@ -320,11 +337,6 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
         !(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
-        log_format *format = this->lss_token_file->get_format();
-        std::vector<logline_value> line_values;
-
-        format->annotate(this->lss_token_value, value_out, line_values);
-
         struct line_range time_range = find_string_attr_range(value_out,
                                                               "timestamp");
 

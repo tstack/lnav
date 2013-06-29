@@ -98,6 +98,7 @@
 #include "lnav_commands.hh"
 #include "column_namer.hh"
 #include "log_data_table.hh"
+#include "log_format_loader.hh"
 #include "session_data.hh"
 #include "lnav_config.hh"
 #include "sql_util.hh"
@@ -821,8 +822,7 @@ static void update_view_name(void)
     sf.set_value("% 5s ", view_names[tc - lnav_data.ld_views]);
     sf.get_value().get_attrs()[lr].insert(make_string_attr(
                                               "style", A_REVERSE |
-                                              COLOR_PAIR(view_colors::
-                                                         VC_BLUE_ON_WHITE)));
+                                              view_colors::ansi_color_pair(COLOR_BLUE, COLOR_WHITE)));
 }
 
 bool toggle_view(textview_curses *toggle_tc)
@@ -2169,6 +2169,7 @@ static void usage(void)
         "\n"
         "Options:\n"
         "  -h         Print this message, then exit.\n"
+        "  -C         Check configuration and then exit.\n"
         "  -d file    Write debug messages to the given file.\n"
         "  -V         Print version information.\n"
         "  -s         Load the most recent syslog messages file.\n"
@@ -3151,7 +3152,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
                                view_colors::VCR_DIFF_ADD);
     hm["$diffm"] = textview_curses::
                    highlighter(xpcre_compile(
-                                   "^\\-.*"), false,
+                                   "^(?:--- |-[^-].*)"), false,
                                view_colors::VCR_DIFF_DELETE);
     hm["$diffs"] = textview_curses::
                    highlighter(xpcre_compile(
@@ -3194,6 +3195,8 @@ int main(int argc, char *argv[])
     const char *         stdin_out = NULL;
 
     setlocale(LC_NUMERIC, "");
+
+    load_formats();
 
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
@@ -3243,6 +3246,16 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
 
+    for (std::vector<log_format *>::iterator iter = log_format::get_root_formats().begin();
+         iter != log_format::get_root_formats().end();
+         ++iter) {
+        log_vtab_impl *lvi = (*iter)->get_vtab_impl();
+
+        if (lvi != NULL) {
+            lnav_data.ld_vtab_manager->register_vtab(lvi);
+        }
+    }
+
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
@@ -3277,11 +3290,15 @@ int main(int argc, char *argv[])
     lnav_data.ld_looping        = true;
     lnav_data.ld_mode           = LNM_PAGING;
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "harsd:tw:V")) != -1) {
+    while ((c = getopt(argc, argv, "harsCd:tw:V")) != -1) {
         switch (c) {
         case 'h':
             usage();
             exit(retval);
+            break;
+
+        case 'C':
+            exit(0);
             break;
 
         case 'd':
