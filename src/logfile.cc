@@ -136,7 +136,7 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
              ++iter) {
             (*iter)->lf_base_time = this->lf_line_buffer.get_file_time();
             if ((*iter)->lf_base_time == 0) {
-                (*iter)->lf_base_time = this->lf_stat.st_mtimespec.tv_sec;
+                (*iter)->lf_base_time = this->lf_stat.st_mtime;
             }
             (*iter)->clear();
             if ((*iter)->scan(this->lf_index, offset, prefix, len)) {
