@@ -115,6 +115,7 @@ line_buffer::line_buffer()
       lb_bz_file(false),
       lb_file_size((size_t)-1),
       lb_file_offset(0),
+      lb_file_time(0),
       lb_buffer_size(0),
       lb_buffer_max(DEFAULT_LINE_BUFFER_SIZE),
       lb_seekable(false),
@@ -161,7 +162,7 @@ throw (error)
             this->lb_seekable = false;
         }
         else {
-            char gz_id[2];
+            char gz_id[2 + 1 + 1 + 4];
 
             if (pread(fd, gz_id, sizeof(gz_id), 0) == sizeof(gz_id)) {
                 if (gz_id[0] == '\037' && gz_id[1] == '\213') {
@@ -174,6 +175,9 @@ throw (error)
                             throw error(errno);
                         }
                     }
+                    this->lb_file_time = *((time_t *)&gz_id[4]);
+                    if (this->lb_file_time < 0)
+                        this->lb_file_time = 0;
                     this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
                 }
 #ifdef HAVE_BZLIB_H

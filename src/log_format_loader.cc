@@ -54,6 +54,17 @@ static external_log_format *ensure_format(const std::string &name)
     return retval;
 }
 
+static int read_format_regex(void *ctx, const unsigned char *str, size_t len)
+{
+    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
+    string value = string((const char *)str, len);
+
+    elf->elf_patterns.insert(elf->elf_patterns.begin(), value);
+
+    return 1;
+}
+
 static int read_format_field(void *ctx, const unsigned char *str, size_t len)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
@@ -61,9 +72,7 @@ static int read_format_field(void *ctx, const unsigned char *str, size_t len)
     string value = string((const char *)str, len);
     string field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "regex")
-        elf->elf_regex = value;
-    else if (field_name == "level-field")
+    if (field_name == "level-field")
         elf->elf_level_field = value;
 
     return 1;
@@ -116,7 +125,8 @@ static int read_value_ident(void *ctx, int val)
 }
 
 static struct json_path_handler format_handlers[] = {
-    json_path_handler("/\\w+/(regex|level-field)", read_format_field),
+    json_path_handler("/\\w+/regex#", read_format_regex),
+    json_path_handler("/\\w+/(level-field)", read_format_field),
     json_path_handler("/\\w+/level/"
                       "(trace|debug|info|warning|error|critical|fatal)",
                       read_levels),
@@ -126,9 +136,10 @@ static struct json_path_handler format_handlers[] = {
     json_path_handler()
 };
 
-void load_formats(void)
+void load_formats(std::vector<std::string> &errors)
 {
     yajlpp_parse_context ypc(format_handlers);
+    std::vector<std::string> retval;
     yajl_handle handle;
 
     handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
@@ -141,8 +152,10 @@ void load_formats(void)
     for (map<string, external_log_format *>::iterator iter = LOG_FORMATS.begin();
          iter != LOG_FORMATS.end();
          ++iter) {
-        iter->second->build();
+        iter->second->build(errors);
 
-        log_format::get_root_formats().insert(log_format::get_root_formats().begin(), iter->second);
+        if (errors.empty()) {
+            log_format::get_root_formats().insert(log_format::get_root_formats().begin(), iter->second);
+        }
     }
 }

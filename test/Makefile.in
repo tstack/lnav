@@ -119,7 +119,7 @@ am_drive_data_scanner_OBJECTS = drive_data_scanner.$(OBJEXT)
 drive_data_scanner_OBJECTS = $(am_drive_data_scanner_OBJECTS)
 am__DEPENDENCIES_1 =
 drive_data_scanner_DEPENDENCIES = ../src/libdiag.a \
-	$(am__DEPENDENCIES_1)
+	../src/default-log-formats-json.o $(am__DEPENDENCIES_1)
 am_drive_grep_proc_OBJECTS = pcrepp.$(OBJEXT) line_buffer.$(OBJEXT) \
 	grep_proc.$(OBJEXT) drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
@@ -698,7 +698,12 @@ drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
 
-drive_data_scanner_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
+drive_data_scanner_LDADD = \
+	../src/libdiag.a \
+	../src/default-log-formats-json.o \
+	-lcrypto \
+	$(CURSES_LIB)
+
 drive_view_colors_SOURCES = \
 	../src/view_curses.cc \
 	drive_view_colors.cc

@@ -100,8 +100,7 @@ public:
     /** @param filename The new filename for this log file. */
     void set_filename(const std::string &filename)
     {
-        this->lf_filename =
-            filename;
+        this->lf_filename = filename;
     };
 
     /** @return The inode for this log file. */

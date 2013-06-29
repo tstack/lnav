@@ -192,6 +192,28 @@ static bool next_format(const char *fmt[], int &index, int &locked_index)
     return retval;
 }
 
+static bool next_format(const std::vector<external_log_format::pattern> &patterns,
+                        int &index,
+                        int &locked_index)
+{
+    bool retval = true;
+
+    if (locked_index == -1) {
+        index += 1;
+        if (index >= (int)patterns.size()) {
+            retval = false;
+        }
+    }
+    else if (index == locked_index) {
+        retval = false;
+    }
+    else {
+        index = locked_index;
+    }
+
+    return retval;
+}
+
 static const char *std_time_fmt[] = {
     "%Y-%m-%d %H:%M:%S",
     "%Y-%m-%d %H:%M",
@@ -226,17 +248,15 @@ const char *log_format::time_scanf(const char *time_dest,
     while (next_format(time_fmt,
                        curr_time_fmt,
                        this->lf_time_fmt_lock)) {
-        memset(tm_out, 0, sizeof(struct tm));
+        localtime_r(&this->lf_base_time, tm_out);
         if ((retval = strptime(time_dest,
-            time_fmt[curr_time_fmt],
-            tm_out)) != NULL) {
+                               time_fmt[curr_time_fmt],
+                               tm_out)) != NULL) {
             if (tm_out->tm_year < 70) {
-                /* XXX We should pull the time from the file mtime (?) */
                 tm_out->tm_year = 80;
             }
             time_out = tm2sec(tm_out);
 
-            // this->lf_fmt_lock      = curr_fmt;
             this->lf_time_fmt_lock = curr_time_fmt;
             this->lf_time_fmt_len  = retval - time_dest;
 
@@ -303,22 +323,27 @@ bool external_log_format::scan(std::vector<logline> &dst,
     pcre_input pi(prefix, 0, len);
     pcre_context_static<30> pc;
     bool retval = false;
+    int curr_fmt = -1;
 
-    if (this->elf_pcre->match(pc, pi)) {
+    while (next_format(this->elf_patterns, curr_fmt, this->lf_fmt_lock)) {
+        if (!this->elf_patterns[curr_fmt].p_pcre->match(pc, pi)) {
+            continue;
+        }
+
         pcre_context::capture_t *ts = pc["timestamp"];
         pcre_context::capture_t *level_cap = pc[this->elf_level_field];
         const char *ts_str = pi.get_substr_start(ts);
         const char *last;
-        time_t line_time;
-        struct tm log_time;
+        time_t log_time;
+        struct tm log_time_tm;
         uint16_t millis = 0;
         logline::level_t level = logline::LEVEL_INFO;
 
         if ((last = this->time_scanf(ts_str,
                                      NULL,
-                                     &log_time,
-                                     line_time)) == NULL) {
-            return false;
+                                     &log_time_tm,
+                                     log_time)) == NULL) {
+            continue;
         }
 
         /* Try to pull out the milliseconds value. */
@@ -347,12 +372,28 @@ bool external_log_format::scan(std::vector<logline> &dst,
             }
         }
 
+        if (!dst.empty() &&
+            ((dst.back().get_time() - log_time) > (24 * 60 * 60))) {
+            vector<logline>::iterator iter;
+
+            for (iter = dst.begin(); iter != dst.end(); iter++) {
+                time_t     ot = iter->get_time();
+                struct tm *otm;
+
+                otm           = gmtime(&ot);
+                otm->tm_year -= 1;
+                iter->set_time(tm2sec(otm));
+            }
+        }
+
         dst.push_back(logline(offset,
-                      line_time,
+                      log_time,
                       millis,
                       level));
 
+        this->lf_fmt_lock = curr_fmt;
         retval = true;
+        break;
     }
 
     return retval;
@@ -367,7 +408,7 @@ void external_log_format::annotate(const std::string &line,
     struct line_range lr;
     pcre_context::capture_t *cap;
 
-    if (!this->elf_pcre->match(pc, pi)) {
+    if (!this->elf_patterns[this->lf_fmt_lock].p_pcre->match(pc, pi)) {
         return;
     }
 
@@ -389,8 +430,8 @@ void external_log_format::annotate(const std::string &line,
 
     view_colors &vc = view_colors::singleton();
 
-    for (size_t lpc = 0; lpc < this->elf_value_by_index.size(); lpc++) {
-        const value_def &vd = this->elf_value_by_index[lpc];
+    for (size_t lpc = 0; lpc < this->elf_patterns[this->lf_fmt_lock].p_value_by_index.size(); lpc++) {
+        const value_def &vd = this->elf_patterns[this->lf_fmt_lock].p_value_by_index[lpc];
 
         values.push_back(logline_value(vd.vd_name,
                          vd.vd_kind,
@@ -398,7 +439,6 @@ void external_log_format::annotate(const std::string &line,
                          vd.vd_identifier));
 
         if (pc[vd.vd_index]->c_begin != -1 && vd.vd_identifier) {
-            fprintf(stderr, "ident %s \n", vd.vd_name.c_str());
             lr.lr_start = pc[vd.vd_index]->c_begin;
             lr.lr_end = pc[vd.vd_index]->c_end;
             sa[lr].insert(make_string_attr("style", vc.attrs_for_ident(pi.get_substr_start(pc[vd.vd_index]), lr.length())));
@@ -406,29 +446,39 @@ void external_log_format::annotate(const std::string &line,
     }
 }
 
-void external_log_format::build(void)
+void external_log_format::build(std::vector<std::string> &errors)
 {
-    this->elf_pcre = new pcrepp(this->elf_regex.c_str());
+    for (std::vector<pattern>::iterator iter = this->elf_patterns.begin();
+         iter != this->elf_patterns.end();
+         ++iter) {
+        iter->p_pcre = new pcrepp(iter->p_string.c_str());
+        for (pcre_named_capture::iterator name_iter = iter->p_pcre->named_begin();
+             name_iter != iter->p_pcre->named_end();
+             ++name_iter) {
+            std::map<std::string, value_def>::iterator value_iter;
+
+            value_iter = this->elf_value_defs.find(std::string(name_iter->pnc_name));
+            if (value_iter != this->elf_value_defs.end()) {
+                value_iter->second.vd_index = name_iter->index();
+                iter->p_value_by_index.push_back(value_iter->second);
+            }
+        }
+
+        stable_sort(iter->p_value_by_index.begin(),
+                    iter->p_value_by_index.end());
+    }
+
+    if (this->elf_patterns.empty()) {
+        errors.push_back("error:" +
+                         this->elf_name +
+                         ": 'regex' field is empty");
+    }
+
     for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
          iter != this->elf_level_patterns.end();
          ++iter) {
         iter->second.lp_pcre = new pcrepp(iter->second.lp_regex.c_str());
     }
-
-    for (pcre_named_capture::iterator iter = this->elf_pcre->named_begin();
-         iter != this->elf_pcre->named_end();
-         ++iter) {
-        std::map<std::string, value_def>::iterator value_iter;
-
-        value_iter = this->elf_value_defs.find(std::string(iter->pnc_name));
-        if (value_iter != this->elf_value_defs.end()) {
-            value_iter->second.vd_index = iter->index();
-            this->elf_value_by_index.push_back(value_iter->second);
-        }
-    }
-
-    stable_sort(this->elf_value_by_index.begin(),
-                this->elf_value_by_index.end());
 }
 
 class external_log_table : public log_vtab_impl {
@@ -440,8 +490,8 @@ public:
     void get_columns(vector<vtab_column> &cols) {
         std::vector<external_log_format::value_def>::const_iterator iter;
 
-        for (iter = this->elt_format.elf_value_by_index.begin();
-             iter != this->elt_format.elf_value_by_index.end();
+        for (iter = this->elt_format.elf_patterns[0].p_value_by_index.begin();
+             iter != this->elt_format.elf_patterns[0].p_value_by_index.end();
              ++iter) {
             int type;
 

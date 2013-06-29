@@ -352,6 +352,7 @@ public:
 
     virtual void clear(void)
     {
+        this->lf_base_time = 0;
         this->lf_fmt_lock      = -1;
         this->lf_time_fmt_lock = -1;
         this->lf_time_fmt_len = -1;
@@ -399,6 +400,7 @@ public:
         return NULL;
     };
 
+    time_t lf_base_time;
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -448,6 +450,14 @@ public:
         };
     };
 
+    struct pattern {
+        pattern(const std::string &str) : p_string(str) { };
+
+        std::string p_string;
+        pcrepp *p_pcre;
+        std::vector<value_def> p_value_by_index;
+    };
+
     struct level_pattern {
         std::string lp_regex;
         pcrepp *lp_pcre;
@@ -468,7 +478,7 @@ public:
                   string_attrs_t &sa,
                   std::vector<logline_value> &values) const;
 
-    void build(void);
+    void build(std::vector<std::string> &errors);
 
     std::auto_ptr<log_format> specialized() {
         std::auto_ptr<log_format> retval((log_format *)
@@ -479,10 +489,8 @@ public:
 
     log_vtab_impl *get_vtab_impl(void) const;
 
-    std::string elf_regex;
-    pcrepp *elf_pcre;
+    std::vector<pattern> elf_patterns;
     std::vector<sample> elf_samples;
-    std::vector<value_def> elf_value_by_index;
     std::map<std::string, value_def> elf_value_defs;
     std::string elf_level_field;
     std::map<logline::level_t, level_pattern> elf_level_patterns;

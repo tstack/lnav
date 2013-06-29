@@ -397,9 +397,9 @@ public:
     role_t next_plain_highlight();
 
     int attrs_for_ident(const char *str, size_t len) {
-        int index = crc32(0, (const Bytef*)str, len);
+        int index = crc32(1, (const Bytef*)str, len);
 
-        return this->vc_role_colors[VCR_HIGHLIGHT_START + (index % HL_COLOR_COUNT)];
+        return this->vc_role_colors[VCR_HIGHLIGHT_START + (abs(index) % HL_COLOR_COUNT)];
     };
 
     static inline int ansi_color_pair_index(int fg, int bg)

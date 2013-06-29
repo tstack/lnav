@@ -3189,6 +3189,7 @@ int sql_progress(const struct log_cursor &lc)
 
 int main(int argc, char *argv[])
 {
+    std::vector<std::string> loader_errors;
     int lpc, c, retval = EXIT_SUCCESS;
 
     auto_ptr<piper_proc> stdin_reader;
@@ -3196,7 +3197,15 @@ int main(int argc, char *argv[])
 
     setlocale(LC_NUMERIC, "");
 
-    load_formats();
+    load_formats(loader_errors);
+    if (!loader_errors.empty()) {
+        for (std::vector<std::string>::iterator iter = loader_errors.begin();
+             iter != loader_errors.end();
+             ++iter) {
+            fprintf(stderr, "%s\n", iter->c_str());
+        }
+        return EXIT_FAILURE;
+    }
 
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable

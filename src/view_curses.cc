@@ -213,7 +213,7 @@ void view_colors::init(void)
 
             for (int z = 0; z < 6; z++) {
                 for (int x = 1; x < 6; x += 2) {
-                    for (int y = 0; y < 6; y += 2) {
+                    for (int y = 1; y < 6; y += 2) {
                         int fg = 16 + x + (y * 6) + (z * 6 * 6);
 
                         init_pair(color_pair_base,

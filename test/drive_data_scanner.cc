@@ -39,6 +39,7 @@
 #include "data_scanner.hh"
 #include "data_parser.hh"
 #include "log_format.hh"
+#include "log_format_loader.hh"
 
 using namespace std;
 
@@ -48,6 +49,12 @@ int main(int argc, char *argv[])
 {
     int  c, retval = EXIT_SUCCESS;
     bool prompt = false;
+
+    {
+        std::vector<std::string> errors;
+
+        load_formats(errors);
+    }
 
     while ((c = getopt(argc, argv, "p")) != -1) {
         switch (c) {

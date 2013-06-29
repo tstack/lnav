@@ -116,7 +116,11 @@ drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
 
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
-drive_data_scanner_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
+drive_data_scanner_LDADD = \
+	../src/libdiag.a \
+	../src/default-log-formats-json.o \
+	-lcrypto \
+	$(CURSES_LIB)
 
 drive_view_colors_SOURCES = \
 	../src/view_curses.cc \

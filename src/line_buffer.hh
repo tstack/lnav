@@ -74,6 +74,8 @@ public:
     /** @return The file descriptor that data should be pulled from. */
     int get_fd() const { return this->lb_fd; };
 
+    time_t get_file_time() const { return this->lb_file_time; };
+
     /**
      * @return The size of the file or the amount of data pulled from a pipe.
      */
@@ -217,6 +219,7 @@ private:
                                  * Data cached in the buffer comes from this
                                  * offset in the file.
                                  */
+    time_t lb_file_time;
     size_t lb_buffer_size;      /*< The amount of cached data in the buffer. */
     size_t lb_buffer_max;       /*< The size of the buffer memory. */
     bool   lb_seekable;         /*< Flag set for seekable file descriptors. */

@@ -32,6 +32,9 @@
 #ifndef __log_format_loader_hh
 #define __log_format_loader_hh
 
-void load_formats(void);
+#include <vector>
+#include <string>
+
+void load_formats(std::vector<std::string> &errors);
 
 #endif
