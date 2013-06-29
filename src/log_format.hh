@@ -484,6 +484,8 @@ public:
         std::auto_ptr<log_format> retval((log_format *)
                                          new external_log_format(*this));
 
+        retval->lf_base_time = this->lf_base_time;
+
         return retval;
     };
 
