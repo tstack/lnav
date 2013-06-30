@@ -161,3 +161,140 @@ file_format_t detect_file_format(const std::string &filename)
 
     return retval;
 }
+
+static time_t BAD_DATE = -1;
+
+time_t tm2sec(const struct tm *t)
+{
+    int       year;
+    time_t    days;
+    const int dayoffset[12] =
+    { 306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275 };
+
+    year = t->tm_year;
+
+    if (year < 70 || ((sizeof(time_t) <= 4) && (year >= 138))) {
+        return BAD_DATE;
+    }
+
+    /* shift new year to 1st March in order to make leap year calc easy */
+
+    if (t->tm_mon < 2) {
+        year--;
+    }
+
+    /* Find number of days since 1st March 1900 (in the Gregorian calendar). */
+
+    days  = year * 365 + year / 4 - year / 100 + (year / 100 + 3) / 4;
+    days += dayoffset[t->tm_mon] + t->tm_mday - 1;
+    days -= 25508; /* 1 jan 1970 is 25508 days since 1 mar 1900 */
+
+    days = ((days * 24 + t->tm_hour) * 60 + t->tm_min) * 60 + t->tm_sec;
+
+    if (days < 0) {
+        return BAD_DATE;
+    }                          /* must have overflowed */
+    else {
+        if (t->tm_zone) {
+            days -= t->tm_gmtoff;
+        }
+        return days;
+    }                          /* must be a valid time */
+}
+
+bool next_format(const char *fmt[], int &index, int &locked_index)
+{
+    bool retval = true;
+
+    if (locked_index == -1) {
+        index += 1;
+        if (fmt[index] == NULL) {
+            retval = false;
+        }
+    }
+    else if (index == locked_index) {
+        retval = false;
+    }
+    else {
+        index = locked_index;
+    }
+
+    return retval;
+}
+
+const char *std_time_fmt[] = {
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%d %H:%M",
+    "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y/%m/%d %H:%M:%S",
+    "%Y/%m/%d %H:%M",
+
+    "%a %b %d %H:%M:%S %Y",
+    "%a %b %d %H:%M:%S %Z %Y",
+
+    "%d/%b/%Y:%H:%M:%S %z",
+
+    "%b %d %H:%M:%S",
+
+    NULL,
+};
+
+const char *date_time_scanner::scan(const char *time_dest,
+                                    const char *time_fmt[],
+                                    struct tm *tm_out,
+                                    struct timeval &tv_out)
+{
+    int  curr_time_fmt = -1;
+    bool found         = false;
+    const char *retval = NULL;
+
+    if (!time_fmt) {
+        time_fmt = std_time_fmt;
+    }
+
+    while (next_format(time_fmt,
+                       curr_time_fmt,
+                       this->dts_fmt_lock)) {
+        *tm_out = this->dts_base_tm;
+        if ((retval = strptime(time_dest,
+                               time_fmt[curr_time_fmt],
+                               tm_out)) != NULL) {
+            if (tm_out->tm_year < 70) {
+                tm_out->tm_year = 80;
+            }
+            tv_out.tv_sec = tm2sec(tm_out);
+            tv_out.tv_usec = 0;
+
+            this->dts_fmt_lock = curr_time_fmt;
+            this->dts_fmt_len  = retval - time_dest;
+
+            /* Try to pull out the milli/micro-second value. */
+            if (retval[0] == '.' || retval[0] == ',') {
+                int sub_seconds = 0, sub_len = 0;
+
+                if (sscanf(retval + 1, "%d%n", &sub_seconds, &sub_len) == 1) {
+                    switch (sub_len) {
+                    case 3:
+                        tv_out.tv_usec = sub_seconds * 100;
+                        this->dts_fmt_len += 1 + sub_len;
+                        break;
+                    case 6:
+                        tv_out.tv_usec = sub_seconds;
+                        this->dts_fmt_len += 1 + sub_len;
+                        break;
+                    }
+                }
+            }
+
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        retval = NULL;
+    }
+
+    return retval;
+}

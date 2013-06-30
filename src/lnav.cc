@@ -1396,7 +1396,7 @@ static void handle_paging_key(int ch)
             time_t     first_time = lnav_data.ld_top_time;
             int        step       = 24 * 60 * 60;
             vis_line_t line       =
-                lss->find_from_time(roundup(first_time, step));
+                lss->find_from_time(roundup_size(first_time, step));
 
             tc->set_top(line);
         }

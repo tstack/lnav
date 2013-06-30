@@ -118,6 +118,37 @@ public:
      */
     time_t get_modified_time() const { return this->lf_index_time; };
 
+    const struct timeval &get_time_offset() const {
+        return this->lf_time_offset;
+    };
+
+    void adjust_content_time(const struct timeval &tv) {
+        struct timeval old_time = this->lf_time_offset;
+
+        this->lf_time_offset = tv;
+        for (iterator iter = this->begin();
+             iter != this->end();
+             ++iter) {
+            struct timeval curr, diff, new_time;
+
+            curr = iter->get_timeval();
+            timersub(&curr, &old_time, &diff);
+            timeradd(&diff, &this->lf_time_offset, &new_time);
+            iter->set_time(new_time);
+        }
+    };
+
+    void clear_time_offset(void) {
+        struct timeval tv = { 0, 0 };
+
+        this->adjust_content_time(tv);
+    };
+
+    bool is_time_adjusted(void) const {
+        return (this->lf_time_offset.tv_sec != 0 ||
+                this->lf_time_offset.tv_usec != 0);
+    }
+
     iterator begin() { return this->lf_index.begin(); }
 
     const_iterator begin() const { return this->lf_index.begin(); }
@@ -230,5 +261,6 @@ protected:
     time_t      lf_index_time;
     off_t       lf_index_size;
     line_buffer lf_line_buffer;
+    struct timeval lf_time_offset;
 };
 #endif

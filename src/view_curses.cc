@@ -245,6 +245,7 @@ void view_colors::init_roles(void)
     this->vc_role_colors[VCR_ERROR]   = ansi_color_pair(COLOR_RED, COLOR_BLACK) | A_BOLD;
     this->vc_role_colors[VCR_WARNING] = ansi_color_pair(COLOR_YELLOW, COLOR_BLACK) | A_BOLD;
     this->vc_role_colors[VCR_ALT_ROW] = ansi_color_pair(COLOR_WHITE, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_ADJUSTED_TIME] = ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK);
 
     this->vc_role_colors[VCR_STATUS] =
         ansi_color_pair(COLOR_BLACK, COLOR_WHITE);

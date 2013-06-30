@@ -201,6 +201,46 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         lf->scrub(value_out);
     }
 
+    if (this->lss_token_file->is_time_adjusted() &&
+        !(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
+        log_format *format = this->lss_token_file->get_format();
+
+        if (format->lf_date_time.dts_fmt_lock != -1) {
+            std::vector<logline_value> line_values;
+            struct timeval adjusted_time;
+            string_attrs_t sa;
+            char buffer[128];
+            const char *fmt;
+
+            fmt = std_time_fmt[format->lf_date_time.dts_fmt_lock];
+            adjusted_time = this->lss_token_line->get_timeval();
+            strftime(buffer, sizeof(buffer),
+                     fmt,
+                     gmtime(&adjusted_time.tv_sec));
+
+            format->annotate(this->lss_token_value, sa, line_values);
+
+            struct line_range time_range;
+
+            time_range = find_string_attr_range(sa, "timestamp");
+            if (time_range.lr_start != -1) {
+                const char *last = value_out.c_str();
+                int len = strlen(buffer);
+
+                if ((last[time_range.lr_start + len] == '.' ||
+                    last[time_range.lr_start + len] == ',') &&
+                    len + 4 <= time_range.length()) {
+                    snprintf(&buffer[len], sizeof(buffer) - len,
+                             ".%03d",
+                             this->lss_token_line->get_millis());
+                }
+                value_out.replace(time_range.lr_start,
+                                  strlen(buffer),
+                                  string(buffer));
+            }
+        }
+    }
+
     if (this->lss_flags & F_TIME_OFFSET) {
         long long start_millis, curr_millis;
 
@@ -335,8 +375,17 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     lr.lr_end   = -1;
     value_out[lr].insert(make_string_attr("file", this->lss_token_file));
 
-    if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
-        !(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
+    if (this->lss_token_file->is_time_adjusted()) {
+        struct line_range time_range = find_string_attr_range(value_out,
+                                                              "timestamp");
+
+        if (time_range.lr_end != -1) {
+            attrs = vc.attrs_for_role(view_colors::VCR_ADJUSTED_TIME);
+            value_out[time_range].insert(make_string_attr("style", attrs));
+        }
+    }
+    else if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
+             !(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
         struct line_range time_range = find_string_attr_range(value_out,
                                                               "timestamp");
 

@@ -59,7 +59,7 @@ inline int rounddown_offset(size_t size, int step, int offset)
     return size - ((size - offset) % step);
 }
 
-inline int roundup(size_t size, int step)
+inline int roundup_size(size_t size, int step)
 {
     int retval = size + step;
 
@@ -136,4 +136,45 @@ enum file_format_t {
 };
 
 file_format_t detect_file_format(const std::string &filename);
+
+bool next_format(const char *fmt[], int &index, int &locked_index);
+
+/**
+ * Convert the time stored in a 'tm' struct into epoch time.
+ *
+ * @param t The 'tm' structure to convert to epoch time.
+ * @return The given time in seconds since the epoch.
+ */
+time_t tm2sec(const struct tm *t);
+
+extern const char *std_time_fmt[];
+
+struct date_time_scanner {
+    date_time_scanner() {
+        this->clear();
+    };
+
+    void clear(void) {
+        this->dts_base_time = 0;
+        memset(&this->dts_base_tm, 0, sizeof(this->dts_base_tm));
+        this->dts_fmt_lock = -1;
+        this->dts_fmt_len = -1;
+    };
+
+    void set_base_time(time_t base_time) {
+        this->dts_base_time = base_time;
+        localtime_r(&base_time, &this->dts_base_tm);
+    };
+
+    time_t dts_base_time;
+    struct tm dts_base_tm;
+    int dts_fmt_lock;
+    int dts_fmt_len;
+
+    const char *scan(const char *time_src,
+                     const char *time_fmt[],
+                     struct tm *tm_out,
+                     struct timeval &tv_out);
+};
+
 #endif

@@ -301,26 +301,50 @@ void scan_sessions(void)
     }
 }
 
+struct logfile_session_data {
+    logfile_session_data() : lsd_file(NULL), lsd_base_line(0) {
+        this->lsd_time_offset.tv_sec = 0;
+        this->lsd_time_offset.tv_usec = 0;
+    };
+
+    logfile *lsd_file;
+    content_line_t lsd_base_line;
+    struct timeval lsd_time_offset;
+};
+
 static int read_path(void *ctx, const unsigned char *str, size_t len)
 {
+    return 1;
+}
+
+static int read_time_offset(void *ctx, long long val)
+{
+    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    string field_name = ypc->get_path_fragment(1);
+    logfile_session_data *lsd = (logfile_session_data *)ypc->ypc_userdata;
+
+    if (field_name == "sec")
+        lsd->lsd_time_offset.tv_sec = val;
+    else if (field_name == "usec")
+        lsd->lsd_time_offset.tv_usec = val;
+
     return 1;
 }
 
 static int read_marks(void *ctx, long long num)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    logfile_session_data *lsd = (logfile_session_data *)ypc->ypc_userdata;
 
-    pair<logfile *, content_line_t> *pair;
-
-    pair = (std::pair<logfile *, content_line_t> *)ypc->ypc_userdata;
     lnav_data.ld_log_source.set_user_mark(&textview_curses::BM_USER,
-                                          content_line_t(pair->second + num));
+                                          content_line_t(lsd->lsd_base_line + num));
 
     return 1;
 }
 
 static struct json_path_handler file_handlers[] = {
     json_path_handler("/path",   read_path),
+    json_path_handler("/time-offset/(sec|usec)", read_time_offset),
     json_path_handler("/marks#", read_marks),
 
     json_path_handler()
@@ -333,7 +357,7 @@ void load_bookmarks(void)
     for (iter = lnav_data.ld_log_source.begin();
          iter != lnav_data.ld_log_source.end();
          ++iter) {
-        pair<logfile *, content_line_t> logfile_pair;
+        logfile_session_data lsd;
         yajlpp_parse_context            ypc(file_handlers);
 
         if (iter->ld_file == NULL)
@@ -346,9 +370,9 @@ void load_bookmarks(void)
 
         fprintf(stderr, "load %s\n", log_name.c_str());
 
-        logfile_pair.first = lnav_data.ld_log_source.find(log_name.c_str(),
-                                                          logfile_pair.second);
-        if (logfile_pair.first == NULL) {
+        lsd.lsd_file = lnav_data.ld_log_source.find(log_name.c_str(),
+                                                    lsd.lsd_base_line);
+        if (lsd.lsd_file == NULL) {
             fprintf(stderr, "  not found\n");
             continue;
         }
@@ -361,7 +385,7 @@ void load_bookmarks(void)
         fprintf(stderr, "loading %s\n", mark_file_name.c_str());
         handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
 
-        ypc.ypc_userdata = (void *)&logfile_pair;
+        ypc.ypc_userdata = (void *)&lsd;
         if ((fd = open(mark_file_name.c_str(), O_RDONLY)) < 0) {
             perror("cannot open bookmark file");
         }
@@ -375,6 +399,8 @@ void load_bookmarks(void)
             yajl_complete_parse(handle);
         }
         yajl_free(handle);
+
+        lsd.lsd_file->adjust_content_time(lsd.lsd_time_offset);
     }
 }
 
@@ -532,6 +558,19 @@ void save_bookmarks(void)
 
             root_map.gen("path");
             root_map.gen(lf->get_filename());
+
+            yajl_gen_string(handle, "time-offset");
+            {
+                yajlpp_map time_offset_map(handle);
+                struct timeval tv = lf->get_time_offset();
+
+                time_offset_map.gen("sec");
+                yajl_gen_integer(handle, tv.tv_sec);
+                time_offset_map.gen("usec");
+                yajl_gen_integer(handle, tv.tv_usec);
+            }
+
+            root_map.gen("marks");
             {
                 yajlpp_array mark_array(handle);
             }
@@ -574,6 +613,18 @@ void save_bookmarks(void)
             yajl_gen_map_open(handle);
             yajl_gen_string(handle, "path");
             yajl_gen_string(handle, lf->get_filename());
+
+            yajl_gen_string(handle, "time-offset");
+            {
+                yajlpp_map time_offset_map(handle);
+                struct timeval tv = lf->get_time_offset();
+
+                time_offset_map.gen("sec");
+                yajl_gen_integer(handle, tv.tv_sec);
+                time_offset_map.gen("usec");
+                yajl_gen_integer(handle, tv.tv_usec);
+            }
+
             yajl_gen_string(handle, "marks");
             yajl_gen_array_open(handle);
 
@@ -733,4 +784,14 @@ void reset_session(void)
     }
 
     lnav_data.ld_log_source.clear_filters();
+
+    logfile_sub_source::iterator file_iter;
+
+    for (file_iter = lnav_data.ld_log_source.begin();
+         file_iter != lnav_data.ld_log_source.end();
+         ++file_iter) {
+        logfile *lf             = file_iter->ld_file;
+
+        lf->clear_time_offset();
+    }
 }

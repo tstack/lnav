@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <time.h>
+#include <sys/time.h>
 #include <stdint.h>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -44,16 +45,9 @@
 #include <memory>
 
 #include "pcrepp.hh"
+#include "lnav_util.hh"
 #include "byte_array.hh"
 #include "view_curses.hh"
-
-/**
- * Convert the time stored in a 'tm' struct into epoch time.
- *
- * @param t The 'tm' structure to convert to epoch time.
- * @return The given time in seconds since the epoch.
- */
-time_t tm2sec(const struct tm *t);
 
 class logfile_filter {
 public:
@@ -146,6 +140,18 @@ public:
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     };
 
+    logline(off_t off,
+            const struct timeval &tv,
+            level_t l,
+            uint8_t m = 0)
+        : ll_offset(off),
+          ll_level(l),
+          ll_filter_state(logfile_filter::MAYBE)
+    {
+        this->set_time(tv);
+        memset(this->ll_schema, 0, sizeof(this->ll_schema));
+    };
+
     /** @return The offset of the line in the file. */
     off_t get_offset() const { return this->ll_offset; };
 
@@ -157,7 +163,18 @@ public:
     /** @return The millisecond timestamp for the line. */
     uint16_t get_millis() const { return this->ll_millis; };
 
-    void set_millis(uint16_t m) { this->ll_millis = m; }
+    void set_millis(uint16_t m) { this->ll_millis = m; };
+
+    struct timeval get_timeval() const {
+        struct timeval retval = { this->ll_time, this->ll_millis * 1000 };
+
+        return retval;
+    };
+
+    void set_time(const struct timeval &tv) {
+        this->ll_time = tv.tv_sec;
+        this->ll_millis = tv.tv_usec / 1000;
+    };
 
     void set_multiline(void) { this->ll_level |= LEVEL_MULTILINE; };
 
@@ -346,16 +363,14 @@ public:
         };
     };
 
-    log_format() : lf_fmt_lock(-1), lf_time_fmt_lock(-1), lf_time_fmt_len(-1) {
+    log_format() : lf_fmt_lock(-1) {
     };
     virtual ~log_format() { };
 
     virtual void clear(void)
     {
-        this->lf_base_time = 0;
         this->lf_fmt_lock      = -1;
-        this->lf_time_fmt_lock = -1;
-        this->lf_time_fmt_len = -1;
+        this->lf_date_time.clear();
     };
 
     /**
@@ -400,7 +415,8 @@ public:
         return NULL;
     };
 
-    time_t lf_base_time;
+    date_time_scanner lf_date_time;
+    int lf_fmt_lock;
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -410,17 +426,8 @@ protected:
                           const char *time_fmt[],
                           char *time_dest,
                           struct tm *tm_out,
-                          time_t &time_out,
+                          struct timeval &tv_out,
                           ...);
-
-    const char *time_scanf(const char *time_dest,
-                           const char *time_fmt[],
-                           struct tm *tm_out,
-                           time_t &time_out);
-
-    int lf_fmt_lock;
-    int lf_time_fmt_lock;
-    int lf_time_fmt_len;
 };
 
 class external_log_format : public log_format {
@@ -484,7 +491,8 @@ public:
         std::auto_ptr<log_format> retval((log_format *)
                                          new external_log_format(*this));
 
-        retval->lf_base_time = this->lf_base_time;
+        retval->lf_fmt_lock = this->lf_fmt_lock;
+        retval->lf_date_time = this->lf_date_time;
 
         return retval;
     };

@@ -46,6 +46,50 @@
 
 using namespace std;
 
+static string com_adjust_log_time(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting new time value";
+
+    if (args.size() == 0) {
+
+    }
+    else if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
+        retval = "error: no log messages";
+    }
+    else if (args.size() >= 2) {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        struct timeval top_time, time_diff;
+        struct timeval new_time = { 0, 0 };
+        content_line_t top_content;
+        date_time_scanner dts;
+        vis_line_t top_line;
+        struct tm tm;
+        logfile *lf;
+
+        top_line = lnav_data.ld_views[LNV_LOG].get_top();
+        top_content = lss.at(top_line);
+        lf = lss.find(top_content);
+
+        logline &ll = (*lf)[top_content];
+
+        top_time = ll.get_timeval();
+
+        dts.dts_base_time = top_time.tv_sec;
+        args[1] = cmdline.substr(cmdline.find(args[1]));
+        if (dts.scan(args[1].c_str(), NULL, &tm, new_time) != NULL) {
+            timersub(&new_time, &top_time, &time_diff);
+            
+            lf->adjust_content_time(time_diff);
+
+            rebuild_indexes(true);
+
+            retval = "adjusted time";
+        }
+    }
+
+    return retval;
+}
+
 static string com_unix_time(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a unix time value";
@@ -821,6 +865,7 @@ static string com_add_test(string cmdline, vector<string> &args)
 
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
+    cmd_map["adjust-log-time"]      = com_adjust_log_time;
     cmd_map["unix-time"]            = com_unix_time;
     cmd_map["current-time"]         = com_current_time;
     cmd_map["goto"]                 = com_goto;

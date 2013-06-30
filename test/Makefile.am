@@ -102,7 +102,7 @@ drive_logfile_SOURCES = \
 	../src/line_buffer.cc \
 	../src/pcrepp.cc \
 	drive_logfile.cc
-drive_logfile_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
+drive_logfile_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
 
 drive_sequencer_SOURCES = \
 	../src/grep_proc.cc \
@@ -112,7 +112,7 @@ drive_sequencer_SOURCES = \
 	../src/pcrepp.cc \
 	../src/sequence_matcher.cc \
 	drive_sequencer.cc
-drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB)
+drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
 
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
@@ -120,6 +120,7 @@ drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	-lcrypto \
+	$(SQLITE3_LIBS) \
 	$(CURSES_LIB)
 
 drive_view_colors_SOURCES = \

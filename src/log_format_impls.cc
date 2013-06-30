@@ -178,7 +178,7 @@ class generic_log_format : public log_format {
         bool      retval = false;
         struct tm log_time;
         char      timestr[64 + 32];
-        time_t    line_time;
+        struct timeval log_tv;
         char      level[64];
         const char *last_pos;
         int       prefix_len;
@@ -189,14 +189,13 @@ class generic_log_format : public log_format {
                                         NULL,
                                         timestr,
                                         &log_time,
-                                        line_time,
+                                        log_tv,
 
                                         timestr,
                                         level,
                                         &prefix_len)) != NULL) {
             uint16_t millis = 0;
 
-            /* Try to pull out the milliseconds value. */
             if (last_pos[0] == ',' || last_pos[0] == '.') {
                 int subsec_len = 0;
 
@@ -204,11 +203,10 @@ class generic_log_format : public log_format {
                 if (millis >= 1000) {
                     millis = 0;
                 }
-                this->lf_time_fmt_len += 1 + subsec_len;
+                this->lf_date_time.dts_fmt_len += 1 + subsec_len;
             }
             dst.push_back(logline(offset,
-                                  line_time,
-                                  millis,
+                                  log_tv,
                                   logline::string2level(level)));
             retval = true;
         }
@@ -231,7 +229,7 @@ class generic_log_format : public log_format {
         }
 
         lr.lr_start = fmt[0] == '%' ? 0 : 1;
-        lr.lr_end   = lr.lr_start + this->lf_time_fmt_len;
+        lr.lr_end   = lr.lr_start + this->lf_date_time.dts_fmt_len;
         sa[lr].insert(make_string_attr("timestamp", 0));
 
         for (int lpc = 0; level[lpc]; lpc++) {
@@ -426,6 +424,7 @@ class strace_log_format : public log_format {
         bool      retval = false;
         struct tm log_time;
         char      timestr[64];
+        struct timeval log_tv;
         time_t    line_time;
         int       usecs;
 
@@ -435,7 +434,7 @@ class strace_log_format : public log_format {
                             time_fmt,
                             timestr,
                             &log_time,
-                            line_time,
+                            log_tv,
 
                             timestr,
                             &usecs)) {
@@ -453,10 +452,8 @@ class strace_log_format : public log_format {
             if (!dst.empty() && (line_time < dst.back().get_time())) {
                 line_time += (24 * 60 * 60);
             }
-            dst.push_back(logline(offset,
-                                  line_time,
-                                  usecs / 1000,
-                                  level));
+            log_tv.tv_usec = usecs;
+            dst.push_back(logline(offset, log_tv, level));
             retval = true;
         }
 

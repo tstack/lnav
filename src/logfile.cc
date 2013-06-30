@@ -59,6 +59,9 @@ throw (error)
 
     assert(filename.size() > 0);
 
+    this->lf_time_offset.tv_sec = 0;
+    this->lf_time_offset.tv_usec = 0;
+    
     memset(&this->lf_stat, 0, sizeof(this->lf_stat));
     if (fd == -1) {
         char resolved_path[PATH_MAX];
@@ -135,9 +138,9 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
              iter != root_formats.end() && !found;
              ++iter) {
             (*iter)->clear();
-            (*iter)->lf_base_time = this->lf_line_buffer.get_file_time();
-            if ((*iter)->lf_base_time == 0) {
-                (*iter)->lf_base_time = this->lf_stat.st_mtime;
+            (*iter)->lf_date_time.dts_base_time = this->lf_line_buffer.get_file_time();
+            if ((*iter)->lf_date_time.dts_base_time == 0) {
+                (*iter)->lf_date_time.dts_base_time = this->lf_stat.st_mtime;
             }
             if ((*iter)->scan(this->lf_index, offset, prefix, len)) {
 #if 0
