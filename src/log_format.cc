@@ -451,7 +451,16 @@ void external_log_format::build(std::vector<std::string> &errors)
     for (std::vector<pattern>::iterator iter = this->elf_patterns.begin();
          iter != this->elf_patterns.end();
          ++iter) {
-        iter->p_pcre = new pcrepp(iter->p_string.c_str());
+        try {
+            iter->p_pcre = new pcrepp(iter->p_string.c_str());
+        }
+        catch (const pcrepp::error &e) {
+            errors.push_back("error:" +
+                             this->elf_name + ".regex[]" +
+                             ":" +
+                             e.what());
+            continue;
+        }
         for (pcre_named_capture::iterator name_iter = iter->p_pcre->named_begin();
              name_iter != iter->p_pcre->named_end();
              ++name_iter) {
@@ -477,7 +486,38 @@ void external_log_format::build(std::vector<std::string> &errors)
     for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
          iter != this->elf_level_patterns.end();
          ++iter) {
-        iter->second.lp_pcre = new pcrepp(iter->second.lp_regex.c_str());
+        try {
+            iter->second.lp_pcre = new pcrepp(iter->second.lp_regex.c_str());
+        }
+        catch (const pcrepp::error &e) {
+            errors.push_back("error:" +
+                             this->elf_name + ".level:" + e.what());
+        }
+    }
+
+    for (std::vector<sample>::iterator iter = this->elf_samples.begin();
+         iter != this->elf_samples.end();
+         ++iter) {
+        pcre_context_static<30> pc;
+        pcre_input pi(iter->s_line);
+        bool found = false;
+
+        for (std::vector<pattern>::iterator pat_iter = this->elf_patterns.begin();
+             pat_iter != this->elf_patterns.end();
+             ++pat_iter) {
+
+            if (pat_iter->p_pcre->match(pc, pi)) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            errors.push_back("error:" +
+                             this->elf_name +
+                             ":invalid sample -- " +
+                             iter->s_line);
+        }
     }
 }
 

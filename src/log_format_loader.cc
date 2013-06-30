@@ -124,6 +124,27 @@ static int read_value_ident(void *ctx, int val)
     return 1;
 }
 
+static external_log_format::sample &ensure_sample(external_log_format *elf,
+                                                  int index)
+{
+    elf->elf_samples.resize(index + 1);
+
+    return elf->elf_samples[index];
+}
+
+static int read_sample_line(void *ctx, const unsigned char *str, size_t len)
+{
+    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
+    string val = string((const char *)str, len);
+    int index = ypc->ypc_array_index.back();
+    external_log_format::sample &sample = ensure_sample(elf, index);
+
+    sample.s_line = val;
+
+    return 1;
+}
+
 static struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/regex#", read_format_regex),
     json_path_handler("/\\w+/(level-field)", read_format_field),
@@ -132,6 +153,7 @@ static struct json_path_handler format_handlers[] = {
                       read_levels),
     json_path_handler("/\\w+/value/\\w+/(kind)", read_value_def),
     json_path_handler("/\\w+/value/\\w+/identifier", read_value_ident),
+    json_path_handler("/\\w+/sample#/line", read_sample_line),
 
     json_path_handler()
 };

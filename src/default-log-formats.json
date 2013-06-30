@@ -1,7 +1,7 @@
 {
     "syslog_log" : {
         "regex" : [
-            "^(?P<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?P<log_hostname>[a-zA-Z0-9][^ ]+))?(?:(?: (?P<log_procname>[^ \\[:]+)(?:\\[(?P<log_pid>\\d+)])?:(?P<body>.*))|(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+            "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9][^ ]+))?(?:(?: (?<log_procname>[^ \\[:]+)(?:\\[(?<log_pid>\\d+)])?:(?<body>.*))|(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
         ],
         "level-field" : "body",
         "level" : {
@@ -22,7 +22,12 @@
                 "kind" : "string",
                 "identifier" : true
             }
-        }
+        },
+        "sample" : [
+            {
+                "line" : "Jun 27 01:47:20 Tims-MacBook-Air.local configd[17]: network changed: v4(en0-:192.168.1.8) DNS- Proxy- SMB"
+            }
+        ]
     },
     "access_log" : {
         "regex" : ["^(?<c_ip>[\\w\\.\\-]+) [\\w\\.\\-]+ (?<cs_username>[\\w\\.\\-]+) \\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?.*"],
@@ -69,7 +74,12 @@
                 "kind" : "string",
                 "identifier" : true
             }
-        }
+        },
+        "sample" : [
+            {
+                "line" : "10.112.72.172 - - [11/Feb/2013:06:43:36 +0000] \"GET /client/ HTTP/1.1\" 200 5778 \"-\" \"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17\""
+            }
+        ]
     },
     "vmw_log" : {
         "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"],
