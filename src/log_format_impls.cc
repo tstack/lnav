@@ -425,7 +425,6 @@ class strace_log_format : public log_format {
         struct tm log_time;
         char      timestr[64];
         struct timeval log_tv;
-        time_t    line_time;
         int       usecs;
 
         if (this->log_scanf(prefix,
@@ -449,8 +448,8 @@ class strace_log_format : public log_format {
                 }
             }
 
-            if (!dst.empty() && (line_time < dst.back().get_time())) {
-                line_time += (24 * 60 * 60);
+            if (!dst.empty() && (log_tv.tv_sec < dst.back().get_time())) {
+                log_tv.tv_sec += (24 * 60 * 60);
             }
             log_tv.tv_usec = usecs;
             dst.push_back(logline(offset, log_tv, level));

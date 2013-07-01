@@ -1215,6 +1215,8 @@ static void handle_paging_key(int ch)
         break;
 
     case 'u':
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(c, "to copy marked lines to the clipboard; ")
+                                            HELP_MSG_1(C, "to clear marked lines"));
         tc->set_top(tc->get_bookmarks()[&textview_curses::BM_USER].
                     next(tc->get_top()));
         break;
