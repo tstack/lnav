@@ -290,9 +290,9 @@ void view_colors::init_roles(void)
             lpc % HL_BASIC_COLOR_COUNT] | A_BOLD;
 
         this->vc_role_reverse_colors[VCR_HIGHLIGHT_START + (lpc * 2)] = basic_rev_hl_pairs[
-            lpc % HL_BASIC_COLOR_COUNT];
+            lpc % HL_BASIC_COLOR_COUNT] | A_REVERSE;
         this->vc_role_reverse_colors[VCR_HIGHLIGHT_START + (lpc * 2) + 1] = basic_rev_hl_pairs[
-            lpc % HL_BASIC_COLOR_COUNT] | A_BOLD;
+            lpc % HL_BASIC_COLOR_COUNT] | A_BOLD | A_REVERSE;
     }
 
     if (COLORS >= 256) {
