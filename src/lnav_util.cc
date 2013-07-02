@@ -35,7 +35,8 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-
+#include <ctype.h>
+ 
 #include <sqlite3.h>
 
 #include "auto_fd.hh"
