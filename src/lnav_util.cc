@@ -222,6 +222,8 @@ bool next_format(const char *fmt[], int &index, int &locked_index)
     return retval;
 }
 
+static const char *time_fmt_with_zone = "%a %b %d %H:%M:%S ";
+
 const char *std_time_fmt[] = {
     "%Y-%m-%d %H:%M:%S",
     "%Y-%m-%d %H:%M",
@@ -232,6 +234,7 @@ const char *std_time_fmt[] = {
 
     "%a %b %d %H:%M:%S %Y",
     "%a %b %d %H:%M:%S %Z %Y",
+    time_fmt_with_zone,
 
     "%d/%b/%Y:%H:%M:%S %z",
 
@@ -260,6 +263,22 @@ const char *date_time_scanner::scan(const char *time_dest,
         if ((retval = strptime(time_dest,
                                time_fmt[curr_time_fmt],
                                tm_out)) != NULL) {
+            if (time_fmt[curr_time_fmt] == time_fmt_with_zone) {
+                int lpc;
+
+                for (lpc = 0; retval[lpc] && retval[lpc] != ' '; lpc++) {
+
+                }
+                if (retval[lpc] == ' ' &&
+                    sscanf(&retval[lpc], "%d", &tm_out->tm_year) == 1) {
+                    lpc += 1;
+                    for (; retval[lpc] && isnumber(retval[lpc]); lpc++) {
+
+                    }
+                    retval = &retval[lpc];
+                }
+            }
+
             if (tm_out->tm_year < 70) {
                 tm_out->tm_year = 80;
             }

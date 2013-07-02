@@ -1,7 +1,7 @@
 {
     "syslog_log" : {
         "regex" : [
-            "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9][^ ]+))?(?:(?: (?<log_procname>[^ \\[:]+)(?:\\[(?<log_pid>\\d+)])?:(?<body>.*))|(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+            "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9][^ ]+))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>.*))|(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
         ],
         "level-field" : "body",
         "level" : {
@@ -26,11 +26,17 @@
         "sample" : [
             {
                 "line" : "Jun 27 01:47:20 Tims-MacBook-Air.local configd[17]: network changed: v4(en0-:192.168.1.8) DNS- Proxy- SMB"
+            },
+            {
+                "line" : "Jun 20 17:26:13 ip-10-188-149-5 [CLOUDINIT] util.py[DEBUG]: Restoring selinux mode for /var/lib/cloud (recursive=False)"
             }
         ]
     },
     "access_log" : {
-        "regex" : ["^(?<c_ip>[\\w\\.\\-]+) [\\w\\.\\-]+ (?<cs_username>[\\w\\.\\-]+) \\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?.*"],
+        "regex" : [
+            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+",
+            "^(?<c_ip>[\\w\\.\\-]+) [\\w\\.\\-]+ (?<cs_username>[\\w\\.\\-]+) \\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?.*"
+            ],
         "level-field": "sc_status",
         "level" : {
             "error" : "^[^123]"
@@ -108,8 +114,61 @@
             }
         }
     },
+    "choose_repo_log" : {
+        "regex" : [
+            "^\\[(?<level>\\w+):[^\\]]+] [^:]+:\\d+ (?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[\\.,]\\d{3})?):(?<body>.*)"
+        ],
+        "level-field" : "level",
+        "level" : {
+            "error" : "ERROR",
+            "debug" : "DEBUG",
+            "info" : "INFO",
+            "warning" : "WARNING"
+        },
+        "sample" : [
+            {
+                "line": "[INFO:choose_repo] choose_repo:47 2013-06-20 17:26:10,691: Setting region in redhat-rhui.repo"
+            }
+        ]
+    },
+    "dpkg_log" : {
+        "regex" : [
+            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<action>startup|status|configure|install|upgrade|trigproc|remove|purge)(?: (?<status>config-files|failed-config|half-configured|half-installed|installed|not-installed|post-inst-failed|removal-failed|triggers-awaited|triggers-pending|unpacked))? (?<package>[^ ]+) (?<installed_version>[^ ]+)(?: (?<available_version>[^ ]+))?)|update-alternatives: (?<body>.*))$"
+        ],
+        "value" : {
+            "action" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "status" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "package" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "installed_version" : {
+                "kind" : "string"
+            },
+            "available_version" : {
+                "kind" : "string"
+            }
+        },
+        "sample" : [
+            {
+                "line" : "2012-02-14 10:44:10 configure base-files 5.0.0ubuntu20 5.0.0ubuntu20"
+            },
+            {
+                "line" : "2012-02-14 10:44:30 status unpacked rsyslog 4.2.0-2ubuntu8"
+            },
+            {
+                "line" : "2012-02-14 10:44:32 update-alternatives: run with --install /usr/bin/rview rview /usr/bin/vim.tiny 10"
+            }
+        ]
+    },
     "snaplogic_log" : {
-        "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+)(?<body>.*)"],
+        "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:stdout: ))(?<body>.*)"],
         "level-field" : "level",
         "level" : {
             "error" : "ERROR",
