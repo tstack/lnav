@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <ctype.h>
- 
+
 #include <sqlite3.h>
 
 #include "auto_fd.hh"
@@ -273,7 +273,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                 if (retval[lpc] == ' ' &&
                     sscanf(&retval[lpc], "%d", &tm_out->tm_year) == 1) {
                     lpc += 1;
-                    for (; retval[lpc] && isnumber(retval[lpc]); lpc++) {
+                    for (; retval[lpc] && isdigit(retval[lpc]); lpc++) {
 
                     }
                     retval = &retval[lpc];
