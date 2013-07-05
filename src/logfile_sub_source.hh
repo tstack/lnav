@@ -252,6 +252,10 @@ public:
         return this->lss_user_marks;
     };
 
+    std::map<content_line_t, bookmark_metadata> &get_user_bookmark_metadata(void) {
+        return this->lss_user_mark_metadata;
+    };
+
     int get_filtered_count() const { return this->lss_filtered_count; };
 
     logfile *find(const char *fn, content_line_t &line_base);
@@ -393,6 +397,7 @@ private:
     std::vector<content_line_t> lss_index;
 
     bookmarks<content_line_t>::type lss_user_marks;
+    std::map<content_line_t, bookmark_metadata> lss_user_mark_metadata;
 
     logfile *         lss_token_file;
     std::string       lss_token_value;

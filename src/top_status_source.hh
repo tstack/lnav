@@ -46,6 +46,7 @@ public:
 
     typedef enum {
         TSF_TIME,
+        TSF_PARTITION_NAME,
         TSF_VIEW_NAME,
         TSF_STITCH_VIEW_FORMAT,
         TSF_FORMAT,
@@ -59,6 +60,7 @@ public:
         : filename_wire(*this, &top_status_source::update_filename)
     {
         this->tss_fields[TSF_TIME].set_width(24);
+        this->tss_fields[TSF_PARTITION_NAME].set_width(30);
         this->tss_fields[TSF_VIEW_NAME].set_width(6);
         this->tss_fields[TSF_VIEW_NAME].right_justify(true);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_width(2);
@@ -99,6 +101,7 @@ public:
 
     void update_filename(listview_curses *lc)
     {
+        status_field &    sf_partition = this->tss_fields[TSF_PARTITION_NAME];
         status_field &    sf_format   = this->tss_fields[TSF_FORMAT];
         status_field &    sf_filename = this->tss_fields[TSF_FILENAME];
         struct line_range lr          = { 0, -1 };
@@ -131,6 +134,16 @@ public:
             else {
                 sf_format.clear();
                 sf_filename.clear();
+            }
+
+            iter = sa[lr].find("partition");
+            if (iter != sa[lr].end()) {
+                bookmark_metadata *bm = (bookmark_metadata *)iter->second.sa_ptr;
+
+                sf_partition.set_value(bm->bm_name.c_str());
+            }
+            else {
+                sf_partition.clear();
             }
         }
         else {

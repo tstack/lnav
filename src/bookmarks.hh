@@ -35,10 +35,15 @@
 #include <assert.h>
 
 #include <map>
+#include <string>
 #include <vector>
 #include <algorithm>
 
 #include "listview_curses.hh"
+
+struct bookmark_metadata {
+    std::string bm_name;
+};
 
 /**
  * Extension of the STL vector that is used to store bookmarks for

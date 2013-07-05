@@ -41,6 +41,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "byte_array.hh"
 #include "line_buffer.hh"
 #include "log_format.hh"
 
@@ -102,6 +103,8 @@ public:
     {
         this->lf_filename = filename;
     };
+
+    const std::string &get_content_id() const { return this->lf_content_id; };
 
     /** @return The inode for this log file. */
     const struct stat &get_stat() const { return this->lf_stat; };
@@ -255,6 +258,7 @@ protected:
 
     bool        lf_valid_filename;
     std::string lf_filename;
+    std::string lf_content_id;
     struct stat lf_stat;
     std::auto_ptr<log_format> lf_format;
     std::vector<logline>      lf_index;

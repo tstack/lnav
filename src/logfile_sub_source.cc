@@ -129,7 +129,7 @@ logfile_sub_source::~logfile_sub_source()
 logfile *logfile_sub_source::find(const char *fn,
                                   content_line_t &line_base)
 {
-    std::   vector<logfile_data>::iterator iter;
+    std::vector<logfile_data>::iterator iter;
     logfile *retval = NULL;
 
     line_base = content_line_t(0);
@@ -140,7 +140,7 @@ logfile *logfile_sub_source::find(const char *fn,
             retval = iter->ld_file;
         }
         else {
-            line_base += content_line_t(iter->ld_file->size());
+            line_base += content_line_t(MAX_LINES_PER_FILE);
         }
     }
 
@@ -374,6 +374,25 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     lr.lr_start = 0;
     lr.lr_end   = -1;
     value_out[lr].insert(make_string_attr("file", this->lss_token_file));
+
+    {
+        bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_USER];
+        bookmark_vector<vis_line_t>::iterator bv_iter;
+
+        bv_iter = lower_bound(bv.begin(), bv.end(), vis_line_t(row + 1));
+        if (bv_iter != bv.begin()) {
+            --bv_iter;
+            content_line_t part_start_line = this->at(*bv_iter);
+            std::map<content_line_t, bookmark_metadata>::iterator bm_iter;
+
+            if ((bm_iter = this->lss_user_mark_metadata.find(part_start_line))
+                != this->lss_user_mark_metadata.end()) {
+                lr.lr_start = 0;
+                lr.lr_end   = -1;
+                value_out[lr].insert(make_string_attr("partition", &bm_iter->second));
+            }
+        }
+    }
 
     if (this->lss_token_file->is_time_adjusted()) {
         struct line_range time_range = find_string_attr_range(value_out,

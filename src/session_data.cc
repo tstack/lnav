@@ -55,12 +55,12 @@ static const size_t MAX_SESSION_FILE_COUNT = 256;
 
 typedef std::vector<std::pair<int, string> > timestamped_list_t;
 
-static string bookmark_file_name(const string &name)
+static string bookmark_file_name(const logfile *lf)
 {
     char   mark_base_name[256];
     string hash;
 
-    hash = hash_string(name);
+    hash = lf->get_content_id();
 
     snprintf(mark_base_name, sizeof(mark_base_name),
              "file-%s.ts%ld.json",
@@ -70,7 +70,7 @@ static string bookmark_file_name(const string &name)
     return string(mark_base_name);
 }
 
-static string latest_bookmark_file(const string &name)
+static string latest_bookmark_file(const logfile *lf)
 {
     timestamped_list_t file_names;
 
@@ -79,7 +79,7 @@ static string latest_bookmark_file(const string &name)
     char   mark_base_name[256];
     string hash;
 
-    hash = hash_string(name);
+    hash = lf->get_content_id();
 
     snprintf(mark_base_name, sizeof(mark_base_name),
              "file-%s.ts*.json",
@@ -342,10 +342,34 @@ static int read_marks(void *ctx, long long num)
     return 1;
 }
 
+static int read_mark_metadata(void *ctx, const unsigned char *str, size_t len)
+{
+    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    string line_number_str = ypc->get_path_fragment(1);
+    string field_name = ypc->get_path_fragment(2);
+    logfile_session_data *lsd = (logfile_session_data *)ypc->ypc_userdata;
+    int line_number;
+
+    if (sscanf(line_number_str.c_str(), "%d", &line_number) != 1) {
+        fprintf(stderr, "error: invalid mark line number -- %s\n", str);
+        return 0;
+    }
+
+    if (field_name == "name") {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
+
+        bm_meta[content_line_t(line_number + lsd->lsd_base_line)].bm_name = string((const char *)str, len);
+    }
+
+    return 1;
+}
+
 static struct json_path_handler file_handlers[] = {
     json_path_handler("/path",   read_path),
     json_path_handler("/time-offset/(sec|usec)", read_time_offset),
     json_path_handler("/marks#", read_marks),
+    json_path_handler("/mark-metadata/\\d+/name", read_mark_metadata),
 
     json_path_handler()
 };
@@ -377,7 +401,7 @@ void load_bookmarks(void)
             continue;
         }
 
-        mark_file_name = latest_bookmark_file(log_name.c_str());
+        mark_file_name = latest_bookmark_file(iter->ld_file);
         if (mark_file_name.empty()) {
             continue;
         }
@@ -525,6 +549,7 @@ void save_bookmarks(void)
 
     bookmarks<content_line_t>::type &bm =
         lss.get_user_bookmarks();
+    std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
     bookmark_vector<content_line_t> &user_marks =
         bm[&textview_curses::BM_USER];
     logfile_sub_source::iterator file_iter;
@@ -542,7 +567,7 @@ void save_bookmarks(void)
         if (lf == NULL)
             continue;
 
-        string   mark_base_name = bookmark_file_name(lf->get_filename());
+        string   mark_base_name = bookmark_file_name(lf);
 
         mark_file_name     = dotlnav_path(mark_base_name.c_str());
         mark_file_tmp_name = mark_file_name + ".tmp";
@@ -585,6 +610,8 @@ void save_bookmarks(void)
         handle = NULL;
     }
 
+    std::vector<content_line_t> marks_with_metadata;
+
     for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
         content_line_t cl = *iter;
         logfile *      lf;
@@ -593,6 +620,36 @@ void save_bookmarks(void)
         if (curr_lf != lf) {
             if (handle) {
                 yajl_gen_array_close(handle);
+
+                yajl_gen_string(handle, "mark-metadata");
+
+                {
+                    yajlpp_map meta_map(handle);
+
+                    content_line_t line_base;
+
+                    lss.find(curr_lf->get_filename().c_str(), line_base);
+
+                    for (std::vector<content_line_t>::iterator mwm_iter = marks_with_metadata.begin();
+                         mwm_iter != marks_with_metadata.end();
+                         ++mwm_iter) {
+                        bookmark_metadata &bm_line_meta = bm_meta[*mwm_iter];
+                        char buffer[128];
+
+                        snprintf(buffer, sizeof(buffer), "%d", (int)(*mwm_iter - line_base));
+
+                        meta_map.gen(buffer);
+                        {
+                            yajlpp_map meta_line_map(handle);
+
+                            meta_line_map.gen("name");
+                            meta_line_map.gen(bm_line_meta.bm_name);
+                        }
+                    }
+                }
+
+                marks_with_metadata.clear();
+
                 yajl_gen_map_close(handle);
                 yajl_gen_clear(handle);
                 yajl_gen_free(handle);
@@ -601,11 +658,11 @@ void save_bookmarks(void)
                 rename(mark_file_tmp_name.c_str(), mark_file_name.c_str());
             }
 
-            string mark_base_name = bookmark_file_name(lf->get_filename());
+            string mark_base_name = bookmark_file_name(lf);
             mark_file_name     = dotlnav_path(mark_base_name.c_str());
             mark_file_tmp_name = mark_file_name + ".tmp";
 
-            file   = fopen(mark_file_name.c_str(), "w");
+            file   = fopen(mark_file_tmp_name.c_str(), "w");
             handle = yajl_gen_alloc(NULL);
             yajl_gen_config(handle, yajl_gen_beautify, 1);
             yajl_gen_config(handle,
@@ -632,13 +689,48 @@ void save_bookmarks(void)
         }
 
         yajl_gen_integer(handle, (long long)cl);
+        if (bm_meta.find(*iter) != bm_meta.end()) {
+            marks_with_metadata.push_back(*iter);
+        }
     }
     if (handle) {
         yajl_gen_array_close(handle);
+
+        yajl_gen_string(handle, "mark-metadata");
+
+        {
+            yajlpp_map meta_map(handle);
+
+            content_line_t line_base;
+
+            lss.find(curr_lf->get_filename().c_str(), line_base);
+
+            for (std::vector<content_line_t>::iterator mwm_iter = marks_with_metadata.begin();
+                 mwm_iter != marks_with_metadata.end();
+                 ++mwm_iter) {
+                bookmark_metadata &bm_line_meta = bm_meta[*mwm_iter];
+                char buffer[128];
+            
+                snprintf(buffer, sizeof(buffer), "%d", (int)(*mwm_iter - line_base));
+                
+                meta_map.gen(buffer);
+                {
+                    yajlpp_map meta_line_map(handle);
+                    
+                    meta_line_map.gen("name");
+                    meta_line_map.gen(bm_line_meta.bm_name);
+                }
+            }
+        }
+
+        marks_with_metadata.clear();
+
         yajl_gen_map_close(handle);
         yajl_gen_clear(handle);
         yajl_gen_free(handle);
         fclose(file.release());
+        
+        rename(mark_file_tmp_name.c_str(), mark_file_name.c_str());
     }
 }
 

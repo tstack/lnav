@@ -109,31 +109,39 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         char *      line;
         size_t      len;
 
+        fcntl(infd.get(), F_SETFL, O_NONBLOCK);
         lb.set_fd(infd);
-        while ((line = lb.read_line(off, len)) != NULL) {
-            int wrc;
+        do {
+            fd_set rready;
 
-            if (timestamp) {
-                wrc = write_timestamp(this->pp_fd, woff);
+            FD_ZERO(&rready);
+            FD_SET(lb.get_fd(), &rready);
+            select(lb.get_fd() + 1, &rready, NULL, NULL, NULL);
+            while ((line = lb.read_line(off, len)) != NULL) {
+                int wrc;
+
+                if (timestamp) {
+                    wrc = write_timestamp(this->pp_fd, woff);
+                    if (wrc == -1) {
+                        perror("Unable to write to output file for stdin");
+                        break;
+                    }
+                    woff += wrc;
+                }
+
+                line[len] = '\n';
+
+                /* Need to do pwrite here since the fd is used by the main
+                 * lnav process as well.
+                 */
+                wrc = pwrite(this->pp_fd, line, len + 1, woff);
                 if (wrc == -1) {
                     perror("Unable to write to output file for stdin");
                     break;
                 }
                 woff += wrc;
             }
-
-            line[len] = '\n';
-
-            /* Need to do pwrite here since the fd is used by the main
-             * lnav process as well.
-             */
-            wrc = pwrite(this->pp_fd, line, len + 1, woff);
-            if (wrc == -1) {
-                perror("Unable to write to output file for stdin");
-                break;
-            }
-            woff += wrc;
-        }
+        } while (lb.get_file_size() == -1);
 
         if (timestamp) {
             int wrc;

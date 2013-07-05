@@ -196,6 +196,36 @@ static string com_goto(string cmdline, vector<string> &args)
     return retval;
 }
 
+static bool csv_needs_quoting(const string &str)
+{
+    return (str.find_first_of(",\"") != string::npos);
+}
+
+static string csv_quote_string(const string &str)
+{
+    static pcrecpp::RE csv_column_quoter("\"");
+
+    string retval = str;
+
+    csv_column_quoter.GlobalReplace("\"\"", &retval);
+    retval.insert(0, 1, '\"');
+    retval.append(1, '\"');
+
+    return retval;
+}
+
+static void csv_write_string(FILE *outfile, const string &str)
+{
+    if (csv_needs_quoting(str)) {
+        string quoted_str = csv_quote_string(str);
+
+        fprintf(outfile, "%s", quoted_str.c_str());
+    }
+    else {
+        fprintf(outfile, "%s", str.c_str());
+    }
+}
+
 static string com_save_to(string cmdline, vector<string> &args)
 {
     FILE *      outfile = NULL;
@@ -240,23 +270,71 @@ static string com_save_to(string cmdline, vector<string> &args)
     if (args[0] == "append-to") {
         mode = "a";
     }
-    else if (args[0] == "write-to") {
+    else if (args[0] == "write-to" || args[0] == "write-csv-to") {
         mode = "w";
+    }
+
+
+    textview_curses *            tc = lnav_data.ld_view_stack.top();
+    bookmark_vector<vis_line_t> &bv =
+        tc->get_bookmarks()[&textview_curses::BM_USER];
+    db_label_source &dls = lnav_data.ld_db_rows;
+
+    if (args[0] == "write-csv-to") {
+        if (dls.dls_headers.empty()) {
+            return "error: no query result to write, use ';' to execute a query";
+        }
+    }
+    else {
+        if (bv.empty()) {
+            return "error: no lines marked to write, use 'm' to mark lines";
+        }
     }
 
     if ((outfile = fopen(wordmem->we_wordv[0], mode)) == NULL) {
         return "error: unable to open file -- " + string(wordmem->we_wordv[0]);
     }
 
-    textview_curses *            tc = lnav_data.ld_view_stack.top();
-    bookmark_vector<vis_line_t> &bv =
-        tc->get_bookmarks()[&textview_curses::BM_USER];
-    bookmark_vector<vis_line_t>::iterator iter;
-    string line;
+    if (args[0] == "write-csv-to") {
+        std::vector<std::vector<string> >::iterator row_iter;
+        std::vector<string>::iterator iter;
+        bool first = true;
 
-    for (iter = bv.begin(); iter != bv.end(); iter++) {
-        tc->grep_value_for_line(*iter, line);
-        fprintf(outfile, "%s\n", line.c_str());
+        for (iter = dls.dls_headers.begin();
+             iter != dls.dls_headers.end();
+             ++iter) {
+            if (!first) {
+                fprintf(outfile, ",");
+            }
+            csv_write_string(outfile, *iter);
+            first = false;
+        }
+        fprintf(outfile, "\n");
+
+        for (row_iter = dls.dls_rows.begin();
+             row_iter != dls.dls_rows.end();
+             ++row_iter) {
+            first = true;
+            for (iter = row_iter->begin();
+                 iter != row_iter->end();
+                 ++iter) {
+                if (!first) {
+                    fprintf(outfile, ",");
+                }
+                csv_write_string(outfile, *iter);
+                first = false;
+            }
+            fprintf(outfile, "\n");
+        }
+    }
+    else {
+        bookmark_vector<vis_line_t>::iterator iter;
+        string line;
+
+        for (iter = bv.begin(); iter != bv.end(); iter++) {
+            tc->grep_value_for_line(*iter, line);
+            fprintf(outfile, "%s\n", line.c_str());
+        }
     }
 
     fclose(outfile);
@@ -635,6 +713,40 @@ static string com_session(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_partition_name(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting partition name";
+
+    if (args.size() == 0) {
+        args.push_back("enabled-filter");
+    }
+    else if (args.size() > 1) {
+        textview_curses &tc = lnav_data.ld_views[LNV_LOG];
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+
+        args[1] = cmdline.substr(cmdline.find(args[1]));
+
+        bookmark_vector<vis_line_t> &bv = tc.get_bookmarks()[&textview_curses::BM_USER];
+        bookmark_vector<vis_line_t>::iterator iter;
+
+        iter = lower_bound(bv.begin(), bv.end(), vis_line_t(tc.get_top() + 1));
+        if (iter == bv.begin()) {
+            retval = "error: no marks, press 'm' to mark the start of a partition";
+        }
+        else {
+            --iter;
+
+            bookmark_metadata &line_meta = bm[lss.at(*iter)];
+
+            line_meta.bm_name = args[1];
+            retval = "info: name set for partition";
+        }
+    }
+
+    return retval;
+}
+
 static string com_summarize(string cmdline, vector<string> &args)
 {
     static pcrecpp::RE db_column_converter("\"");
@@ -648,39 +760,58 @@ static string com_summarize(string cmdline, vector<string> &args)
     else if (!setup_logline_table()) {
         retval = "error: no log data available";
     }
+    else if (args.size() == 1) {
+        retval = "error: no columns specified";
+    }
     else {
         auto_mem<char, sqlite3_free> query_frag;
         std::vector<string>          other_columns;
         std::vector<string>          num_columns;
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        int retcode;
         string query;
 
+        query = "SELECT ";
         for (size_t lpc = 1; lpc < args.size(); lpc++) {
-            string      quoted_name = args[lpc];
-            const char *datatype;
-            int         rc;
+            if (lpc > 1)
+                query += ", ";
+            query += args[lpc];
+        }
+        query += " FROM logline ";
 
-            rc = sqlite3_table_column_metadata(
-                lnav_data.ld_db.in(),
-                "main",
-                "logline",
-                args[lpc].c_str(),
-                &datatype,
-                NULL,
-                NULL,
-                NULL,
-                NULL);
-            if (rc != SQLITE_OK) {
-                return "error: bad column name -- " + args[lpc];
+        retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                     query.c_str(),
+                                     -1,
+                                     stmt.out(),
+                                     NULL);
+        switch (sqlite3_step(stmt.in())) {
+            case SQLITE_OK:
+            case SQLITE_DONE:
+            {
+                return "error: no data";
             }
+            break;
+            case SQLITE_ROW:
+            break;
+            default:
+            {
+                const char *errmsg;
 
-            db_column_converter.GlobalReplace("\"\"", &quoted_name);
-
-            fprintf(stderr, "dt = %s\n", datatype);
-            if (strcasecmp(datatype, "float") == 0) {
-                num_columns.push_back(quoted_name);
+                errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                return "error: " + string(errmsg);
             }
-            else {
-                other_columns.push_back(quoted_name);
+            break;
+        }
+
+        for (int lpc = 0; lpc < sqlite3_column_count(stmt.in()); lpc++) {
+            switch (sqlite3_column_type(stmt.in(), lpc)) {
+            case SQLITE_INTEGER:
+            case SQLITE_FLOAT:
+                num_columns.push_back(args[lpc + 1]);
+                break;
+            default:
+                other_columns.push_back(args[lpc + 1]);
+                break;
             }
         }
 
@@ -691,7 +822,8 @@ static string com_summarize(string cmdline, vector<string> &args)
             if (iter != other_columns.begin()) {
                 query += ",";
             }
-            query_frag = sqlite3_mprintf(" \"%s\", count(*) as \"count_%s\"",
+            query_frag = sqlite3_mprintf(" %s as \"c_%s\", count(*) as \"count_%s\"",
+                                         iter->c_str(),
                                          iter->c_str(),
                                          iter->c_str());
             query += query_frag;
@@ -722,7 +854,7 @@ static string com_summarize(string cmdline, vector<string> &args)
             query += query_frag;
         }
 
-        query += " FROM logline";
+        query += " FROM logline WHERE substr(logline.log_part,1,1) != '.' ";
 
         for (std::vector<string>::iterator iter = other_columns.begin();
              iter != other_columns.end();
@@ -733,7 +865,7 @@ static string com_summarize(string cmdline, vector<string> &args)
             else{
                 query += ",";
             }
-            query_frag = sqlite3_mprintf(" \"%s\"", iter->c_str());
+            query_frag = sqlite3_mprintf(" \"c_%s\"", iter->c_str());
             query     += query_frag;
         }
 
@@ -746,7 +878,7 @@ static string com_summarize(string cmdline, vector<string> &args)
             else{
                 query += ",";
             }
-            query_frag = sqlite3_mprintf(" \"count_%s\" desc, \"%s\" collate naturalnocase asc",
+            query_frag = sqlite3_mprintf(" \"count_%s\" desc, \"c_%s\" collate naturalnocase asc",
                                          iter->c_str(),
                                          iter->c_str());
             query += query_frag;
@@ -756,8 +888,6 @@ static string com_summarize(string cmdline, vector<string> &args)
 
         db_label_source &      dls = lnav_data.ld_db_rows;
         hist_source &          hs  = lnav_data.ld_db_source;
-        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-        int retcode;
 
         hs.clear();
         dls.clear();
@@ -876,10 +1006,12 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["filter-out"]           = com_filter;
     cmd_map["append-to"]            = com_save_to;
     cmd_map["write-to"]             = com_save_to;
+    cmd_map["write-csv-to"]         = com_save_to;
     cmd_map["enable-filter"]        = com_enable_filter;
     cmd_map["disable-filter"]       = com_disable_filter;
     cmd_map["create-logline-table"] = com_create_logline_table;
     cmd_map["delete-logline-table"] = com_delete_logline_table;
+    cmd_map["partition-name"]       = com_partition_name;
     cmd_map["session"]              = com_session;
     cmd_map["summarize"]            = com_summarize;
 

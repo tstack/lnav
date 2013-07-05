@@ -46,6 +46,7 @@
 #include <time.h>
 
 #include "logfile.hh"
+#include "lnav_util.hh"
 
 using namespace std;
 
@@ -92,6 +93,7 @@ throw (error)
         this->lf_valid_filename = false;
     }
 
+    this->lf_content_id = hash_string(this->lf_filename);
     this->lf_line_buffer.set_fd(fd);
     this->lf_index.reserve(reserve_size);
 
@@ -151,6 +153,7 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
 
                 this->lf_format =
                     auto_ptr<log_format>((*iter)->specialized());
+                this->lf_content_id = hash_string(string(prefix, len));
                 found = true;
 
                 /*

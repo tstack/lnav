@@ -260,7 +260,28 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         iter = lower_bound(bv.begin(), bv.end(), prev_line);
         index = distance(bv.begin(), iter);
         snprintf(part_name, sizeof(part_name), "p.%d", index);
-        sqlite3_result_text(ctx, part_name, strlen(part_name), SQLITE_TRANSIENT);
+
+        if (iter == bv.begin()) {
+            sqlite3_result_text(ctx, part_name, strlen(part_name), SQLITE_TRANSIENT);
+        }
+        else {
+            --iter;
+
+            content_line_t part_line = vt->lss->at(*iter);
+            std::map<content_line_t, bookmark_metadata> &bm_meta = vt->lss->get_user_bookmark_metadata();
+            std::map<content_line_t, bookmark_metadata>::iterator meta_iter;
+
+            meta_iter = bm_meta.find(part_line);
+            if (meta_iter != bm_meta.end()) {
+                sqlite3_result_text(ctx,
+                                    meta_iter->second.bm_name.c_str(),
+                                    meta_iter->second.bm_name.size(),
+                                    SQLITE_TRANSIENT);
+            }
+            else {
+                sqlite3_result_text(ctx, part_name, strlen(part_name), SQLITE_TRANSIENT);
+            }
+        }
     }
     break;
 

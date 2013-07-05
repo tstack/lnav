@@ -446,8 +446,10 @@ throw (error)
     }
 
     len_out = 0;
-    while ((retval == NULL) && this->fill_range(offset, request_size)) {
+    while (retval == NULL) {
         char *line_start, *lf;
+
+        this->fill_range(offset,  request_size);
 
         /* Find the data in the cache and */
         line_start = this->get_range(offset, len_out);
@@ -488,6 +490,10 @@ throw (error)
         }
         else {
             request_size += DEFAULT_INCREMENT;
+        }
+
+        if ((retval == NULL) && !this->fill_range(offset, request_size)) {
+            break;
         }
     }
 
