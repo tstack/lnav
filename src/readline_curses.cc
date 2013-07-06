@@ -89,7 +89,6 @@ static void sigterm(int sig)
 static void line_ready_tramp(char *line)
 {
     child_this->line_ready(line);
-    add_history(line);
     got_line = 1;
     rl_callback_handler_remove();
 }
@@ -496,6 +495,17 @@ void readline_curses::line_ready(const char *line)
                       strlen(msg)) == -1) {
         perror("line_ready: write failed");
         exit(1);
+    }
+
+    {
+        HIST_ENTRY *entry;
+
+        if (line[0] != '\0' && (
+            history_length == 0 ||
+            (entry = history_get(history_base + history_length - 1)) == NULL ||
+            strcmp(entry->line, line) != 0)) {
+            add_history(line);
+        }
     }
 }
 
