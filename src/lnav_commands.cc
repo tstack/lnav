@@ -854,7 +854,7 @@ static string com_summarize(string cmdline, vector<string> &args)
             query += query_frag;
         }
 
-        query += " FROM logline WHERE substr(logline.log_part,1,1) != '.' ";
+        query += " FROM logline WHERE startswith(logline.log_part, '.') = 0 ";
 
         for (std::vector<string>::iterator iter = other_columns.begin();
              iter != other_columns.end();
