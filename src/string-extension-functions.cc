@@ -110,11 +110,66 @@ void regexp(sqlite3_context *ctx, int argc, sqlite3_value **argv)
     }
 }
 
+static
+void sql_startswith(sqlite3_context *context,
+                    int argc, sqlite3_value **argv)
+{
+    const char *str_in;
+    const char *prefix;
+
+    if ((sqlite3_value_type(argv[0]) == SQLITE_NULL) ||
+        (sqlite3_value_type(argv[1]) == SQLITE_NULL)) {
+        sqlite3_result_null(context);
+        return;
+    }
+
+    str_in = (const char *)sqlite3_value_text(argv[0]);
+    prefix = (const char *)sqlite3_value_text(argv[1]);
+
+    if (strncmp(str_in, prefix, strlen(prefix)) == 0)
+        sqlite3_result_int(context, 1);
+    else
+        sqlite3_result_int(context, 0);
+}
+
+static
+void sql_endswith(sqlite3_context *context,
+                  int argc, sqlite3_value **argv)
+{
+    const char *str_in;
+    const char *suffix;
+
+    if ((sqlite3_value_type(argv[0]) == SQLITE_NULL) ||
+        (sqlite3_value_type(argv[1]) == SQLITE_NULL)) {
+        sqlite3_result_null(context);
+        return;
+    }
+
+    str_in = (const char *)sqlite3_value_text(argv[0]);
+    suffix = (const char *)sqlite3_value_text(argv[1]);
+
+    int str_len = strlen(str_in);
+    int suffix_len = strlen(suffix);
+
+    if (str_len < suffix_len) {
+        sqlite3_result_int(context, 0);
+    }
+    else if (strcmp(&str_in[str_len - suffix_len], suffix) == 0) {
+        sqlite3_result_int(context, 1);
+    }
+    else {
+        sqlite3_result_int(context, 0);
+    }
+}
+
 int string_extension_functions(const struct FuncDef **basic_funcs,
                                const struct FuncDefAgg **agg_funcs)
 {
     static const struct FuncDef string_funcs[] = {
         { "regexp", 2, 0, SQLITE_UTF8, 0, regexp },
+
+        { "startswith", 2, 0, SQLITE_UTF8, 0, sql_startswith },
+        { "endswith", 2, 0, SQLITE_UTF8, 0, sql_endswith },
 
         { NULL }
     };

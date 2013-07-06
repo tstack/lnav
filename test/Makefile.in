@@ -97,7 +97,7 @@ TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_grep_proc.sh test_grep_proc2$(EXEEXT) \
 	test_hist_source$(EXEEXT) test_listview.sh \
 	test_pcrepp$(EXEEXT) test_sql_coll_func.sh test_sql_fs_func.sh \
-	test_view_colors.sh test_vt52_curses.sh \
+	test_sql_str_func.sh test_view_colors.sh test_vt52_curses.sh \
 	test_top_status$(EXEEXT) test_data_parser.sh \
 	test_yajlpp$(EXEEXT)
 subdir = test
@@ -1449,6 +1449,13 @@ test_sql_coll_func.sh.log: test_sql_coll_func.sh
 test_sql_fs_func.sh.log: test_sql_fs_func.sh
 	@p='test_sql_fs_func.sh'; \
 	b='test_sql_fs_func.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_sql_str_func.sh.log: test_sql_str_func.sh
+	@p='test_sql_str_func.sh'; \
+	b='test_sql_str_func.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
