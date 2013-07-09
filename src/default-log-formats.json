@@ -88,6 +88,54 @@
             }
         ]
     },
+    "error_log" : {
+        "regex" : [
+            "^(?<level>\\w) \\[(?<timestamp>\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2}) [\\w\\-\\+]+\\] (?<body>.*)"
+        ],
+        "level-field": "level",
+        "level" : {
+            "error" : "E",
+            "warning" : "W",
+            "info" : "I"
+        }
+    },
+    "page_log" : {
+        "regex" : [
+            "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2}) [\\w\\-\\+]+\\] (?<page_number>total|\\d+) (?<copies>\\d+) (?<billing>[^ ]+) (?<hostname>[\\w\\.\\-]+)\\s*(?<title>.*)?"
+        ],
+        "value" : {
+            "printer" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "username" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "job_id" : {
+                "kind" : "integer",
+                "identifier" : true
+            },
+            "page_number" : {
+                "kind" : "string"
+            },
+            "copies" : {
+                "kind" : "integer"
+            },
+            "billing" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "hostname" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "title" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        }
+    },
     "vmw_log" : {
         "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"],
         "level-field": "level",
@@ -167,6 +215,22 @@
                 "line" : "2012-02-14 10:44:32 update-alternatives: run with --install /usr/bin/rview rview /usr/bin/vim.tiny 10"
             }
         ]
+    },
+    "block_log" : {
+        "regex" : [
+            "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})$"
+        ]
+    },
+    "fsck_hfs_log" : {
+        "regex" : [
+            "^(?<device>[^:]+): fsck_hfs run at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})"
+        ],
+        "value" : {
+            "device" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        }
     },
     "snaplogic_log" : {
         "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:stdout: ))(?<body>.*)"],
