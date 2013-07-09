@@ -125,10 +125,15 @@ public:
         return this->lf_time_offset;
     };
 
-    void adjust_content_time(const struct timeval &tv) {
+    void adjust_content_time(const struct timeval &tv, bool abs_offset=true) {
         struct timeval old_time = this->lf_time_offset;
 
-        this->lf_time_offset = tv;
+        if (abs_offset) {
+            this->lf_time_offset = tv;
+        }
+        else {
+            timeradd(&old_time, &tv, &this->lf_time_offset);
+        }
         for (iterator iter = this->begin();
              iter != this->end();
              ++iter) {

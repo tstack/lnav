@@ -51,7 +51,7 @@ static string com_adjust_log_time(string cmdline, vector<string> &args)
     string retval = "error: expecting new time value";
 
     if (args.size() == 0) {
-
+        args.push_back("line-time");
     }
     else if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
         retval = "error: no log messages";
@@ -74,16 +74,16 @@ static string com_adjust_log_time(string cmdline, vector<string> &args)
 
         top_time = ll.get_timeval();
 
-        dts.dts_base_time = top_time.tv_sec;
+        dts.set_base_time(top_time.tv_sec);
         args[1] = cmdline.substr(cmdline.find(args[1]));
         if (dts.scan(args[1].c_str(), NULL, &tm, new_time) != NULL) {
             timersub(&new_time, &top_time, &time_diff);
             
-            lf->adjust_content_time(time_diff);
+            lf->adjust_content_time(time_diff, false);
 
             rebuild_indexes(true);
 
-            retval = "adjusted time";
+            retval = "info: adjusted time";
         }
     }
 

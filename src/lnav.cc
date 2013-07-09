@@ -1457,8 +1457,8 @@ static void handle_paging_key(int ch)
             textview_curses &   log_view = lnav_data.ld_views[LNV_LOG];
             content_line_t      cl       = lss.at(log_view.get_top());
             logfile *           lf       = lss.find(cl);
-            std::string         line     = lf->read_line(
-                lf->begin() + cl);
+            logfile::iterator ll = lf->begin() + cl;
+            std::string         line     = lf->read_line(ll);
             struct line_range          body;
             string_attrs_t             sa;
             std::vector<logline_value> line_values;
@@ -1487,6 +1487,24 @@ static void handle_paging_key(int ch)
                 colname = namer.add_column(colname);
                 lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname",
                                                       colname);
+            }
+
+            lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "line-time");
+            {
+                struct timeval tv = lf->get_time_offset();
+                char buffer[64];
+
+                sql_strftime(buffer, sizeof(buffer),
+                             ll->get_time(), ll->get_millis());
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                      "line-time",
+                                                      buffer);
+                sql_strftime(buffer, sizeof(buffer),
+                             ll->get_time() - tv.tv_sec,
+                             ll->get_millis() - (tv.tv_usec / 1000));
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                      "line-time",
+                                                      buffer);
             }
         }
         lnav_data.ld_mode = LNM_COMMAND;
