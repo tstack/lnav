@@ -90,18 +90,25 @@
     },
     "error_log" : {
         "regex" : [
-            "^(?<level>\\w) \\[(?<timestamp>\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2}) [\\w\\-\\+]+\\] (?<body>.*)"
+            "^(?<level>\\w) \\[(?<timestamp>[^\\]]+)\\] (?<body>.*)"
         ],
         "level-field": "level",
         "level" : {
             "error" : "E",
             "warning" : "W",
             "info" : "I"
-        }
+        },
+        "sample" : [
+            {
+                "line" : "E [08/Jun/2013:11:28:58 -0700] Unknown directive BrowseOrder on line 22 of /private/etc/cups/cupsd.conf."
+            }
+        ]
     },
     "page_log" : {
+        "url" : "http://www.cups.org/documentation.php/doc-1.7/ref-page_log.html",
         "regex" : [
-            "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2}) [\\w\\-\\+]+\\] (?<page_number>total|\\d+) (?<copies>\\d+) (?<billing>[^ ]+) (?<hostname>[\\w\\.\\-]+)\\s*(?<title>.*)?"
+            "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.\\-]+)$",
+            "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.\\-]+) (?<job_name>.+) (?<media>[^ ]+) (?<sides>.+)$"
         ],
         "value" : {
             "printer" : {
@@ -119,22 +126,38 @@
             "page_number" : {
                 "kind" : "string"
             },
-            "copies" : {
+            "num_copies" : {
                 "kind" : "integer"
             },
-            "billing" : {
+            "job_billing" : {
                 "kind" : "string",
                 "identifier" : true
             },
-            "hostname" : {
+            "job_originating_hostname" : {
                 "kind" : "string",
                 "identifier" : true
             },
-            "title" : {
+            "job_name" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "media" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "sides" : {
                 "kind" : "string",
                 "identifier" : true
             }
-        }
+        },
+        "sample" : [
+            {
+                "line" : "Photosmart_7520_series stack 11 [18/May/2013:13:21:15 -0700] total 0 - localhost 5615311548-159003235-tickets.pdf Letter one-sided"
+            },
+            {
+                "line" : "tec_IS2027 kurt 401 [22/Apr/2003:10:28:43 +0100] 1 3 #marketing 10.160.50.13"
+            }
+        ]
     },
     "vmw_log" : {
         "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"],
@@ -219,6 +242,11 @@
     "block_log" : {
         "regex" : [
             "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})$"
+        ],
+        "sample" : [
+            {
+                "line" : "Sat Apr 27 03:33:07 PDT 2013"
+            }
         ]
     },
     "fsck_hfs_log" : {
@@ -230,7 +258,12 @@
                 "kind" : "string",
                 "identifier" : true
             }
-        }
+        },
+        "sample" : [
+            {
+                "line" : "/dev/rdisk0s2: fsck_hfs run at Wed Jul 25 23:01:18 2012"
+            }
+        ]
     },
     "snaplogic_log" : {
         "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:stdout: ))(?<body>.*)"],
