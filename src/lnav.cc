@@ -3481,6 +3481,34 @@ int main(int argc, char *argv[])
                         e.e_filename.c_str());
             }
         }
+
+        // When reading from stdin, dump out the last couple hundred lines so
+        // the user can have the text in their terminal history.
+        if (stdin_reader.get() != NULL) {
+            list<logfile *>::iterator file_iter;
+            struct stat st;
+
+            fstat(stdin_reader->get_fd(), &st);
+            file_iter = find_if(lnav_data.ld_files.begin(),
+                                lnav_data.ld_files.end(),
+                                same_file(st));
+            if (file_iter != lnav_data.ld_files.end()) {
+                logfile::iterator line_iter;
+                logfile *lf = *file_iter;
+                int offset;
+                string str;
+
+                offset = std::max((int)0, (int)lf->size() - 200);
+                for (line_iter = lf->begin();
+                     line_iter != lf->end();
+                     ++line_iter) {
+                    lf->read_line(line_iter, str);
+
+                    write(STDOUT_FILENO, str.c_str(), str.size());
+                    write(STDOUT_FILENO, "\n", 1);
+                }
+            }
+        }
     }
 
     return retval;
