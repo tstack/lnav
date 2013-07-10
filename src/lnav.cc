@@ -187,6 +187,8 @@ public:
         struct line_range body;
         string_attrs_t    sa;
 
+        this->fos_file = lf;
+        this->fos_line = lf->begin() + cl;
         this->fos_line_values.clear();
         this->fos_key_size = 0;
 
@@ -229,6 +231,7 @@ public:
         }
 
         return 1 +
+               1 +
                this->fos_line_values.size() +
                1 +
                this->fos_parser->dp_pairs.size();
@@ -255,6 +258,28 @@ public:
 
         std::string &str = value_out.get_string();
 
+        if (row == 0) {
+            char old_timestamp[64], curr_timestamp[64];
+            struct timeval curr_tv, offset_tv, orig_tv;
+            char log_time[256];
+
+            sql_strftime(curr_timestamp, sizeof(curr_timestamp),
+                         this->fos_line->get_time(),
+                         this->fos_line->get_millis());
+            curr_tv = this->fos_line->get_timeval();
+            offset_tv = this->fos_file->get_time_offset();
+            timersub(&curr_tv, &offset_tv, &orig_tv);
+            sql_strftime(old_timestamp, sizeof(old_timestamp),
+                         orig_tv.tv_sec, orig_tv.tv_usec / 1000);
+            snprintf(log_time, sizeof(log_time),
+                     " Current Time: %s  Original Time: %s  Offset: %+d.%03d",
+                     curr_timestamp,
+                     old_timestamp,
+                     (int)offset_tv.tv_sec, offset_tv.tv_usec / 1000);
+            str = log_time;
+            return true;
+        }
+        row -= 1;
         if (row == 0) {
             if (this->fos_line_values.empty()) {
                 str = " No known message fields";
@@ -314,8 +339,10 @@ public:
     bool          fos_active;
     bool          fos_active_prev;
     data_scanner *fos_scanner;
-    data_parser * fos_parser;
+    data_parser  *fos_parser;
     column_namer *fos_namer;
+    logfile *fos_file;
+    logfile::iterator fos_line;
     std::vector<logline_value> fos_line_values;
     int fos_key_size;
 };
@@ -882,50 +909,30 @@ static void moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
                            vis_line_t top)
 {
     textview_curses *tc = lnav_data.ld_view_stack.top();
+    vis_bookmarks &bm = tc->get_bookmarks();
+    vis_line_t last_top(top);
 
-    if (tc != &lnav_data.ld_views[LNV_LOG]) {
-        flash();
-    }
-    else {
-        logfile_sub_source &lss = lnav_data.ld_log_source;
-        vis_bookmarks &     bm  = tc->get_bookmarks();
-        vis_line_t          vl(-1), last_top(top);
+    while ((top = (bm[bt].*f)(top)) != -1) {
+        int diff = top - last_top;
 
-        logline::level_t last_level;
-        bool             done = false;
-        time_t           last_time;
-        logline *        ll;
-
-        if (lss.empty()) {
-            flash();
+        if (diff > 1) {
+            tc->set_top(top);
             return;
         }
-
-        ll         = lss.find_line(lss.at(top));
-        last_time  = ll->get_time();
-        last_level = ll->get_level();
-        while (vl == -1 && (top = (bm[bt].*f)(top)) != -1) {
-            ll = lss.find_line(lss.at(top));
-            if (std::abs(last_top - top) > 1 ||
-                ll->get_level() != last_level ||
-                ll->get_time() != last_time) {
-                last_time  = ll->get_time();
-                last_level = ll->get_level();
-                vl         = top;
-            }
+        else if (diff < -1) {
             last_top = top;
-        }
-        while (vl > 0 && !done) {
-            ll = lss.find_line(lss.at(vis_line_t(vl - 1)));
-            if (ll->get_level() != last_level || ll->get_time() != last_time) {
-                done = true;
+            while ((top = (bm[bt].*f)(top)) != -1) {
+                if (std::abs(last_top - top) > 1)
+                    break;
+                last_top = top;
             }
-            else {
-                --vl;
-            }
+            tc->set_top(last_top);
+            return;
         }
-        tc->set_top(vl);
+        last_top = top;
     }
+
+    flash();
 }
 
 static void check_for_clipboard(FILE **pfile, const char *execstr)
@@ -1217,13 +1224,15 @@ static void handle_paging_key(int ch)
     case 'u':
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(c, "to copy marked lines to the clipboard; ")
                                             HELP_MSG_1(C, "to clear marked lines"));
-        tc->set_top(tc->get_bookmarks()[&textview_curses::BM_USER].
-                    next(tc->get_top()));
+        moveto_cluster(&bookmark_vector<vis_line_t>::next, 
+            &textview_curses::BM_USER,
+            tc->get_top());
         break;
 
     case 'U':
-        tc->set_top(tc->get_bookmarks()[&textview_curses::BM_USER].
-                    prev(tc->get_top()));
+        moveto_cluster(&bookmark_vector<vis_line_t>::prev, 
+            &textview_curses::BM_USER,
+            tc->get_top());
         break;
 
     case 'm':
