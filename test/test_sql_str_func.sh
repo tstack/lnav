@@ -41,3 +41,38 @@ check_output "" <<EOF
 Row 0:
   Column endswith('a', '.txt'): 0
 EOF
+
+run_test ./drive_sql "select regexp('abcd', 'abcd')"
+
+check_output "" <<EOF
+Row 0:
+  Column regexp('abcd', 'abcd'): 1
+EOF
+
+run_test ./drive_sql "select regexp('bc', 'abcd')"
+
+check_output "" <<EOF
+Row 0:
+  Column regexp('bc', 'abcd'): 1
+EOF
+
+run_test ./drive_sql "select regexp('[e-z]+', 'abcd')"
+
+check_output "" <<EOF
+Row 0:
+  Column regexp('[e-z]+', 'abcd'): 0
+EOF
+
+run_test ./drive_sql "select regexp('[e-z]+', 'ea')"
+
+check_output "" <<EOF
+Row 0:
+  Column regexp('[e-z]+', 'ea'): 1
+EOF
+
+run_test ./drive_sql "select regexp_replace('\\d+', 'test 1 2 3', 'N')"
+
+check_output "" <<EOF
+Row 0:
+  Column regexp_replace('\d+', 'test 1 2 3', 'N'): test N N N
+EOF

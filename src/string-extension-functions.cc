@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sqlite3.h>
+#include <pcrecpp.h>
 
 #include "pcrepp.hh"
 
@@ -20,8 +21,7 @@
 
 typedef struct {
     char *      s;
-    pcre *      p;
-    pcre_extra *e;
+    pcrecpp::RE *re;
 } cache_entry;
 
 #ifndef CACHE_SIZE
@@ -29,11 +29,61 @@ typedef struct {
 #endif
 
 static
+pcrecpp::RE *find_re(sqlite3_context *ctx, const char *re)
+{
+    static cache_entry cache[CACHE_SIZE];
+    int i;
+    int found = 0;
+
+    for (i = 0; i < CACHE_SIZE && cache[i].s; i++) {
+        if (strcmp(re, cache[i].s) == 0) {
+            found = 1;
+            break;
+        }
+    }
+    if (found) {
+        if (i > 0) {
+            cache_entry c = cache[i];
+            memmove(cache + 1, cache, i * sizeof(cache_entry));
+            cache[0] = c;
+        }
+    }
+    else {
+        cache_entry c;
+
+        c.re = new pcrecpp::RE(re);
+        if (!c.re->error().empty()) {
+            char *e2 = sqlite3_mprintf("%s: %s", re, c.re->error().c_str());
+            sqlite3_result_error(ctx, e2, -1);
+            sqlite3_free(e2);
+            delete c.re;
+
+            return NULL;
+        }
+        c.s = strdup(re);
+        if (!c.s) {
+            sqlite3_result_error(ctx, "strdup: ENOMEM", -1);
+            delete c.re;
+            return NULL;
+        }
+        i = CACHE_SIZE - 1;
+        if (cache[i].s) {
+            free(cache[i].s);
+            assert(cache[i].re);
+            delete cache[i].re;
+        }
+        memmove(cache + 1, cache, i * sizeof(cache_entry));
+        cache[0] = c;
+    }
+
+    return cache[0].re;
+}
+
+static
 void regexp(sqlite3_context *ctx, int argc, sqlite3_value **argv)
 {
     const char *re, *str;
-    pcre *      p;
-    pcre_extra *e;
+    pcrecpp::RE *reobj;
 
     assert(argc == 2);
 
@@ -49,63 +99,51 @@ void regexp(sqlite3_context *ctx, int argc, sqlite3_value **argv)
         return;
     }
 
-    /* simple LRU cache */
-    {
-        static cache_entry cache[CACHE_SIZE];
-        int i;
-        int found = 0;
+    reobj = find_re(ctx, re);
+    if (reobj == NULL)
+        return;
 
-        for (i = 0; i < CACHE_SIZE && cache[i].s; i++) {
-            if (strcmp(re, cache[i].s) == 0) {
-                found = 1;
-                break;
-            }
-        }
-        if (found) {
-            if (i > 0) {
-                cache_entry c = cache[i];
-                memmove(cache + 1, cache, i * sizeof(cache_entry));
-                cache[0] = c;
-            }
-        }
-        else {
-            cache_entry c;
-            const char *err;
-            int         pos;
-            c.p = pcre_compile(re, 0, &err, &pos, NULL);
-            if (!c.p) {
-                char *e2 = sqlite3_mprintf("%s: %s (offset %d)", re, err, pos);
-                sqlite3_result_error(ctx, e2, -1);
-                sqlite3_free(e2);
-                return;
-            }
-            c.e = pcre_study(c.p, 0, &err);
-            c.s = strdup(re);
-            if (!c.s) {
-                sqlite3_result_error(ctx, "strdup: ENOMEM", -1);
-                pcre_free(c.p);
-                pcre_free(c.e);
-                return;
-            }
-            i = CACHE_SIZE - 1;
-            if (cache[i].s) {
-                free(cache[i].s);
-                assert(cache[i].p);
-                pcre_free(cache[i].p);
-                pcre_free(cache[i].e);
-            }
-            memmove(cache + 1, cache, i * sizeof(cache_entry));
-            cache[0] = c;
-        }
-        p = cache[0].p;
-        e = cache[0].e;
+    {
+        bool rc = reobj->PartialMatch(str);
+        sqlite3_result_int(ctx, rc);
+        return;
+    }
+}
+
+static
+void regexp_replace(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+{
+    const char *re, *str, *repl;
+    pcrecpp::RE *reobj;
+
+    assert(argc == 3);
+
+    re = (const char *)sqlite3_value_text(argv[0]);
+    if (!re) {
+        sqlite3_result_error(ctx, "no regexp", -1);
+        return;
     }
 
+    str = (const char *)sqlite3_value_text(argv[1]);
+    if (!str) {
+        sqlite3_result_error(ctx, "no string", -1);
+        return;
+    }
+
+    repl = (const char *)sqlite3_value_text(argv[2]);
+    if (!repl) {
+        sqlite3_result_error(ctx, "no string", -1);
+        return;
+    }
+
+    reobj = find_re(ctx, re);
+    if (reobj == NULL)
+        return;
+
     {
-        int rc;
-        assert(p);
-        rc = pcre_exec(p, e, str, strlen(str), 0, 0, NULL, 0);
-        sqlite3_result_int(ctx, rc >= 0);
+        string dest(str);
+        reobj->GlobalReplace(repl, &dest);
+        sqlite3_result_text(ctx, dest.c_str(), dest.length(), SQLITE_TRANSIENT);
         return;
     }
 }
@@ -167,6 +205,7 @@ int string_extension_functions(const struct FuncDef **basic_funcs,
 {
     static const struct FuncDef string_funcs[] = {
         { "regexp", 2, 0, SQLITE_UTF8, 0, regexp },
+        { "regexp_replace", 3, 0, SQLITE_UTF8, 0, regexp_replace },
 
         { "startswith", 2, 0, SQLITE_UTF8, 0, sql_startswith },
         { "endswith", 2, 0, SQLITE_UTF8, 0, sql_endswith },
