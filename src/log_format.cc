@@ -373,6 +373,8 @@ void external_log_format::build(std::vector<std::string> &errors)
         for (std::vector<pattern>::iterator pat_iter = this->elf_patterns.begin();
              pat_iter != this->elf_patterns.end();
              ++pat_iter) {
+            if (!pat_iter->p_pcre)
+                continue;
 
             if (pat_iter->p_pcre->match(pc, pi)) {
                 found = true;

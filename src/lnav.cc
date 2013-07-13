@@ -3157,24 +3157,113 @@ private:
 
 static void setup_highlights(textview_curses::highlight_map_t &hm)
 {
-    hm["$sql"] = textview_curses::
-                 highlighter(xpcre_compile(
-                                 "(?: alter | select | insert | update "
-                                 "| create "
-                                 "| from | where | order by "
-                                 "| group by )", PCRE_CASELESS));
+    hm["$kw"] = textview_curses::highlighter(xpcre_compile(
+        "(?:"
+          "\\balter |"
+          "\\band\\b|"
+          "\\bas |"
+          "\\bbetween\\b|"
+          "\\bbool\\b|"
+          "\\bboolean\\b|"
+          "\\bbreak\\b|"
+          "\\bcase\\b|"
+          "\\bcatch\\b|"
+          "\\bchar\\b|"
+          "\\bclass\\b|"
+          "\\bconst\\b|"
+          "\\bcontinue\\b|"
+          "\\bcreate |"
+          "\\bdef |"
+          "\\bdefault[:\\s]|"
+          "\\bdo\\b|"
+          "\\bdone\\b|"
+          "\\bdouble\\b|"
+          "\\bdrop\\b|"
+          "\\belif |"
+          "\\belse\\b|"
+          "\\benum\\b|"
+          "\\bendif\\b|"
+          "\\besac\\b|"
+          "\\bexcept[\\s:]|"
+          "\\bexists\\b|"
+          "\\bexport\\b|"
+          "\\bextends\\b|"
+          "\\bextern\\b|"
+          "\\bfalse\\b|"
+          "\\bfi\\b|"
+          "\\bfloat\\b|"
+          "\\bfor\\b|"
+          "\\bfrom |"
+          "\\bgoto\\b|"
+          "\\bgroup by |"
+          "\\bif\\b|"
+          "\\bimport |"
+          "\\bimplements\\b|"
+          "\\bin\\b|"
+          "\\binline\\b|"
+          "\\binsert |"
+          "\\bint\\b|"
+          "\\binto\\b|"
+          "\\binterface\\b|"
+          "\\bjoin\\b|"
+          "\\blong\\b|"
+          "\\bnamespace\\b|"
+          "\\bnull\\b|"
+          "\\boperator\\b|"
+          "\\bor\\b|"
+          "\\border by |"
+          "\\bpackage\\b|"
+          "\\bprivate\\b|"
+          "\\bprotected\\b|"
+          "\\bpublic\\b|"
+          "\\braise\\b|"
+          "\\b(?<!@)return\\b|"
+          "\\bselect |"
+          "\\bself\\b|"
+          "\\bshift\\b|"
+          "\\bshort\\b|"
+          "\\bsizeof\\b|"
+          "\\bstatic\\b|"
+          "\\bstruct\\b|"
+          "\\bswitch\\b|"
+          "\\btable\\b|"
+          "\\btemplate\\b|"
+          "\\bthen\\b|"
+          "\\bthis\\b|"
+          "\\b(?<!@)throws?\\b|"
+          "\\btrue\\b|"
+          "\\btry\\b|"
+          "\\btypedef |"
+          "\\btypename |"
+          "\\bunion\\b|"
+          "\\bunsigned |"
+          "\\bupdate |"
+          "\\busing |"
+          "\\bvar\\b|"
+          "\\bvoid\\b|"
+          "\\bvolatile\\b|"
+          "\\bwhere |"
+          "\\bwhile\\b|"
+          "\\b[a-zA-Z][\\w]+_t\\b"
+          ")", PCRE_CASELESS),
+        false, view_colors::VCR_KEYWORD);
     hm["$srcfile"] = textview_curses::
                      highlighter(xpcre_compile(
                                      "[\\w\\-_]+\\."
                                      "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
                                      "\\d+"));
     hm["$xml"] = textview_curses::
-                 highlighter(xpcre_compile("<(/?[^ >]+)[^>]*>"));
+                 highlighter(xpcre_compile("<(/?[^ >=]+)[^>]*>"));
     hm["$stringd"] = textview_curses::
-                     highlighter(xpcre_compile("\"(?:\\\\.|[^\"])*\""));
+                     highlighter(xpcre_compile("\"(?:\\\\.|[^\"])*\""),
+                                 false, view_colors::VCR_STRING);
     hm["$strings"] = textview_curses::
                      highlighter(xpcre_compile(
-                                     "(?<![A-Za-qstv-z])\'(?:\\\\.|[^'])*\'"));
+                                     "(?<![A-WY-Za-qstv-z])\'(?:\\\\.|[^'])*\'"),
+                     false, view_colors::VCR_STRING);
+    hm["$stringb"] = textview_curses::
+                     highlighter(xpcre_compile("`(?:\\\\.|[^`])*`"),
+                                 false, view_colors::VCR_STRING);
     hm["$diffp"] = textview_curses::
                    highlighter(xpcre_compile(
                                    "^\\+.*"), false,
@@ -3189,9 +3278,18 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
                                view_colors::VCR_DIFF_SECTION);
     hm["$ip"] = textview_curses::
                 highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
-    hm["$cdef"] = textview_curses::
-                  highlighter(xpcre_compile(
-                                  "^#\\s*(?:if|ifndef|ifdef|else|define|undef|endif)\\b"));
+    hm["$comment"] = textview_curses::highlighter(xpcre_compile(
+        "(?<!:)//.*|/\\*.*\\*/|#.*|dnl.*"), false, view_colors::VCR_COMMENT);
+    hm["$javadoc"] = textview_curses::highlighter(xpcre_compile(
+        "@(?:author|deprecated|exception|file|param|return|see|since|throws|version)"));
+    hm["$var"] = textview_curses::highlighter(xpcre_compile(
+        "(?:"
+          "(?:var\\s+)?(\\w+)\\s*=|"
+          "(?<!\\$)\\$(\\w+)|"
+          "(?<!\\$)\\$\\((\\w+)\\)|"
+          "(?<!\\$)\\$\\{(\\w+)\\}"
+          ")"),
+        false, view_colors::VCR_VARIABLE);
 }
 
 int sql_progress(const struct log_cursor &lc)

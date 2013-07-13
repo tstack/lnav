@@ -50,6 +50,8 @@
 
 using namespace std;
 
+static const int MAX_UNRECOGNIZED_LINES = 1000;
+
 logfile::logfile(string filename, auto_fd fd)
 throw (error)
     : lf_filename(filename),
@@ -127,7 +129,7 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
         /* We've locked onto a format, just use that scanner. */
         found = this->lf_format->scan(this->lf_index, offset, prefix, len);
     }
-    else {
+    else if (this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
         vector<log_format *> &root_formats =
             log_format::get_root_formats();
         vector<log_format *>::iterator iter;

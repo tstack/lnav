@@ -458,7 +458,7 @@ public:
     };
 
     struct pattern {
-        pattern(const std::string &str) : p_string(str) { };
+        pattern(const std::string &str) : p_string(str), p_pcre(NULL) { };
 
         std::string p_string;
         pcrepp *p_pcre;
@@ -466,6 +466,8 @@ public:
     };
 
     struct level_pattern {
+        level_pattern() : lp_pcre(NULL) { };
+        
         std::string lp_regex;
         pcrepp *lp_pcre;
     };

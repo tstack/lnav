@@ -346,6 +346,11 @@ public:
         VCR_ACTIVE_STATUS2,     /*< */
         VCR_BOLD_STATUS,
 
+        VCR_KEYWORD,
+        VCR_STRING,
+        VCR_COMMENT,
+        VCR_VARIABLE,
+
         VCR_DIFF_DELETE,        /*< Deleted line in a diff. */
         VCR_DIFF_ADD,           /*< Added line in a diff. */
         VCR_DIFF_SECTION,       /*< Section marker in a diff. */

@@ -260,6 +260,11 @@ void view_colors::init_roles(void)
     this->vc_role_colors[VCR_BOLD_STATUS] =
         ansi_color_pair(COLOR_BLACK, COLOR_WHITE) | A_BOLD;
 
+    this->vc_role_colors[VCR_KEYWORD] = ansi_color_pair(COLOR_BLUE, COLOR_BLACK);
+    this->vc_role_colors[VCR_STRING] = ansi_color_pair(COLOR_GREEN, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_COMMENT] = ansi_color_pair(COLOR_GREEN, COLOR_BLACK);
+    this->vc_role_colors[VCR_VARIABLE] = ansi_color_pair(COLOR_CYAN, COLOR_BLACK);
+
     this->vc_role_colors[VCR_DIFF_DELETE]  = ansi_color_pair(COLOR_RED, COLOR_BLACK);
     this->vc_role_colors[VCR_DIFF_ADD]     = ansi_color_pair(COLOR_GREEN, COLOR_BLACK);
     this->vc_role_colors[VCR_DIFF_SECTION] = ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK);
