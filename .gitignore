@@ -1,7 +1,7 @@
 autom4te.cache
-Makefile
 TESTS_ENVIRONMENT
 config.status
+docs/build
 src/.deps/
 src/Makefile
 src/bin2c
