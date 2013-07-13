@@ -68,7 +68,8 @@
                 "identifier" : true
             },
             "sc_status" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key" : true
             },
             "sc_bytes" : {
                 "kind" : "integer"

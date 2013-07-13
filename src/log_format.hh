@@ -451,6 +451,7 @@ public:
         logline_value::kind_t vd_kind;
         std::string vd_collate;
         bool vd_identifier;
+        bool vd_foreign_key;
 
         bool operator<(const value_def &rhs) const {
             return this->vd_index < rhs.vd_index;

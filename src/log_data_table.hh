@@ -50,7 +50,12 @@ public:
     log_data_table(content_line_t template_line,
                    std::string table_name = "logline")
         : log_vtab_impl(table_name),
-          ldt_template_line(template_line) {};
+          ldt_template_line(template_line) {
+        logfile *lf = lnav_data.ld_log_source.find(template_line);
+        log_format *format = lf->get_format();
+
+        this->ldt_format_impl = lnav_data.ld_vtab_manager->lookup_impl(format->get_name());
+    };
 
     void get_columns(std::vector<vtab_column> &cols)
     {
@@ -62,8 +67,12 @@ public:
         struct line_range          body;
         string_attrs_t             sa;
         std::vector<logline_value> line_values;
+        log_format *format = lf->get_format();
 
-        lf->get_format()->annotate(val, sa, line_values);
+        if (this->ldt_format_impl != NULL) {
+            this->ldt_format_impl->get_columns(cols);
+        }
+        format->annotate(val, sa, line_values);
         body = find_string_attr_range(sa, "body");
         if (body.lr_end == -1 || body.length() == 0) {
             this->ldt_schema_id.clear();
@@ -165,6 +174,7 @@ public:
                  const std::string &line,
                  std::vector<logline_value> &values)
     {
+        this->ldt_format_impl->extract(lf, line, values);
         for (data_parser::element_list_t::iterator pair_iter =
                  this->ldt_pairs.begin();
              pair_iter != this->ldt_pairs.end();
@@ -195,5 +205,6 @@ private:
     data_parser::schema_id_t ldt_schema_id;
     std::string ldt_current_line;
     data_parser::element_list_t ldt_pairs;
+    log_vtab_impl *ldt_format_impl;
 };
 #endif

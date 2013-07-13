@@ -246,6 +246,7 @@ public:
         }
 
         size_t total_count = (1 +
+                              1 +
                               this->fos_line_values.size() +
                               1 +
                               this->fos_parser->dp_pairs.size());
@@ -2945,54 +2946,6 @@ static void looper(void)
     }
 }
 
-class access_log_table : public log_vtab_impl {
-public:
-
-    access_log_table()
-        : log_vtab_impl("access_log") {};
-
-    void get_columns(vector<vtab_column> &cols)
-    {
-        cols.push_back(vtab_column("c_ip", SQLITE3_TEXT, "ipaddress"));
-        cols.push_back(vtab_column("cs_username", SQLITE3_TEXT));
-        cols.push_back(vtab_column("cs_method", SQLITE3_TEXT));
-        cols.push_back(vtab_column("cs_uri_stem", SQLITE3_TEXT));
-        cols.push_back(vtab_column("cs_uri_query", SQLITE3_TEXT));
-        cols.push_back(vtab_column("cs_version", SQLITE3_TEXT));
-        cols.push_back(vtab_column("sc_status", SQLITE_INTEGER));
-        cols.push_back(vtab_column("sc_bytes", SQLITE_INTEGER));
-        cols.push_back(vtab_column("cs_referer", SQLITE3_TEXT));
-        cols.push_back(vtab_column("cs_user_agent", SQLITE3_TEXT));
-    };
-
-    void get_foreign_keys(vector<string> &keys_inout)
-    {
-        this->log_vtab_impl::get_foreign_keys(keys_inout);
-
-        keys_inout.push_back("sc_status");
-    };
-};
-
-class syslog_log_table : public log_vtab_impl {
-public:
-
-    syslog_log_table()
-        : log_vtab_impl("syslog_log") {};
-
-    void get_columns(vector<vtab_column> &cols)
-    {
-        cols.push_back(vtab_column("log_hostname", SQLITE3_TEXT));
-        cols.push_back(vtab_column("log_pid", SQLITE_INTEGER));
-    };
-
-    void get_foreign_keys(vector<string> &keys_inout)
-    {
-        this->log_vtab_impl::get_foreign_keys(keys_inout);
-
-        keys_inout.push_back("log_pid");
-    };
-};
-
 class glog_log_table : public log_vtab_impl {
 public:
 
@@ -3279,7 +3232,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
     hm["$ip"] = textview_curses::
                 highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
     hm["$comment"] = textview_curses::highlighter(xpcre_compile(
-        "(?<!:)//.*|/\\*.*\\*/|#.*|dnl.*"), false, view_colors::VCR_COMMENT);
+        "(?<!:)//.*|/\\*.*\\*/|^#.*|\\s+#.*|dnl.*"), false, view_colors::VCR_COMMENT);
     hm["$javadoc"] = textview_curses::highlighter(xpcre_compile(
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|version)"));
     hm["$var"] = textview_curses::highlighter(xpcre_compile(
@@ -3376,9 +3329,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    lnav_data.ld_vtab_manager->register_vtab(new syslog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
-    lnav_data.ld_vtab_manager->register_vtab(new access_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
 

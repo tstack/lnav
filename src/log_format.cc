@@ -425,6 +425,21 @@ public:
         }
     };
 
+    void get_foreign_keys(std::vector<std::string> &keys_inout)
+    {
+        std::map<std::string, external_log_format::value_def>::const_iterator iter;
+
+        log_vtab_impl::get_foreign_keys(keys_inout);
+
+        for (iter = this->elt_format.elf_value_defs.begin();
+             iter != this->elt_format.elf_value_defs.end();
+             ++iter) {
+            if (iter->second.vd_foreign_key) {
+                keys_inout.push_back(iter->first);
+            }
+        }
+    };
+
     const external_log_format &elt_format;
 };
 

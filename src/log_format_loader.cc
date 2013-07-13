@@ -113,13 +113,17 @@ static int read_value_def(void *ctx, const unsigned char *str, size_t len)
     return 1;
 }
 
-static int read_value_ident(void *ctx, int val)
+static int read_value_bool(void *ctx, int val)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
     string value_name = ypc->get_path_fragment(2);
+    string key_name = ypc->get_path_fragment(3);
 
-    elf->elf_value_defs[value_name].vd_identifier = val;
+    if (key_name == "identifier")
+        elf->elf_value_defs[value_name].vd_identifier = val;
+    else if (key_name == "foreign-key")
+        elf->elf_value_defs[value_name].vd_foreign_key = val;
 
     return 1;
 }
@@ -152,7 +156,7 @@ static struct json_path_handler format_handlers[] = {
                       "(trace|debug|info|warning|error|critical|fatal)",
                       read_levels),
     json_path_handler("/\\w+/value/\\w+/(kind)", read_value_def),
-    json_path_handler("/\\w+/value/\\w+/identifier", read_value_ident),
+    json_path_handler("/\\w+/value/\\w+/(identifier|foreign-key)", read_value_bool),
     json_path_handler("/\\w+/sample#/line", read_sample_line),
 
     json_path_handler()
