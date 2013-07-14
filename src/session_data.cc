@@ -44,72 +44,100 @@
 #include "yajlpp.hh"
 #include "lnav.hh"
 #include "logfile.hh"
+#include "sql_util.hh"
 #include "lnav_util.hh"
 #include "lnav_config.hh"
 #include "session_data.hh"
 
 using namespace std;
 
+static const char *LOG_METADATA_NAME = "log_metadata.db";
+
+static const char *BOOKMARK_TABLE_DEF =
+    "CREATE TABLE IF NOT EXISTS bookmarks (\n"
+    "    log_time datetime,\n"
+    "    log_format varchar(64),\n"
+    "    log_hash varchar(128),\n"
+    "    session_time integer,\n"
+    "    part_name text,\n"
+    "    access_time datetime DEFAULT CURRENT_TIMESTAMP,\n"
+    "\n"
+    "    PRIMARY KEY (log_time, log_format, log_hash, session_time)\n"
+    ");\n"
+    "CREATE TABLE IF NOT EXISTS time_offset (\n"
+    "    log_time datetime,\n"
+    "    log_format varchar(64),\n"
+    "    log_hash varchar(128),\n"
+    "    session_time integer,\n"
+    "    offset_sec integer,\n"
+    "    offset_usec integer,\n"
+    "    access_time datetime DEFAULT CURRENT_TIMESTAMP,\n"
+    "\n"
+    "    PRIMARY KEY (log_time, log_format, log_hash, session_time)\n"
+    ");\n";
+
+static const char *BOOKMARK_LRU_STMT =
+    "DELETE FROM bookmarks WHERE access_time <= "
+    "  (SELECT access_time FROM bookmarks "
+    "   ORDER BY access_time DESC LIMIT 1 OFFSET 50000)";
+
 static const size_t MAX_SESSIONS           = 8;
 static const size_t MAX_SESSION_FILE_COUNT = 256;
 
 typedef std::vector<std::pair<int, string> > timestamped_list_t;
 
-static string bookmark_file_name(const logfile *lf)
+static std::vector<content_line_t> marked_session_lines;
+static std::vector<content_line_t> offset_session_lines;
+
+static void bind_line(sqlite3 *db,
+                      sqlite3_stmt *stmt,
+                      content_line_t cl,
+                      time_t session_time)
 {
-    char   mark_base_name[256];
-    string hash;
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    logfile::iterator line_iter;
+    logfile *lf;
 
-    hash = lf->get_content_id();
+    lf = lss.find(cl);
+    line_iter = lf->begin() + cl;
 
-    snprintf(mark_base_name, sizeof(mark_base_name),
-             "file-%s.ts%ld.json",
-             hash.c_str(),
-             lnav_data.ld_session_time);
+    char timestamp[64];
 
-    return string(mark_base_name);
-}
-
-static string latest_bookmark_file(const logfile *lf)
-{
-    timestamped_list_t file_names;
-
-    static_root_mem<glob_t, globfree> file_list;
-    string mark_file_pattern;
-    char   mark_base_name[256];
-    string hash;
-
-    hash = lf->get_content_id();
-
-    snprintf(mark_base_name, sizeof(mark_base_name),
-             "file-%s.ts*.json",
-             hash.c_str());
-
-    mark_file_pattern = dotlnav_path(mark_base_name);
-
-    if (glob(mark_file_pattern.c_str(), 0, NULL, file_list.inout()) == 0) {
-        for (size_t lpc = 0; lpc < file_list->gl_pathc; lpc++) {
-            const char *path = file_list->gl_pathv[lpc];
-            const char *base;
-            int         timestamp;
-
-            base = strrchr(path, '/') + 1;
-            if (sscanf(base, "file-%*[^.].ts%d.json", &timestamp) == 1) {
-                if (timestamp == lnav_data.ld_session_load_time) {
-                    return path;
-                }
-                file_names.push_back(make_pair(timestamp, path));
-            }
-        }
+    sql_strftime(timestamp, sizeof(timestamp),
+                 lf->original_line_time(line_iter));
+    if (sqlite3_bind_text(stmt, 1,
+                          timestamp, strlen(timestamp),
+                          SQLITE_TRANSIENT) != SQLITE_OK) {
+        fprintf(stderr, "error: could not bind log time -- %s\n",
+                sqlite3_errmsg(db));
+        return;
     }
 
-    sort(file_names.begin(), file_names.end());
+    const std::string &format_name = lf->get_format()->get_name();
 
-    if (file_names.empty()) {
-        return "";
+    if (sqlite3_bind_text(stmt, 2,
+                          format_name.c_str(), format_name.length(),
+                          SQLITE_TRANSIENT) != SQLITE_OK) {
+        fprintf(stderr, "error: could not bind log format -- %s\n",
+                    sqlite3_errmsg(db));
+        return;
     }
 
-    return file_names.back().second;
+    std::string line_hash = hash_string(lf->read_line(line_iter));
+
+    if (sqlite3_bind_text(stmt, 3,
+                          line_hash.c_str(), line_hash.length(),
+                          SQLITE_TRANSIENT) != SQLITE_OK) {
+        fprintf(stderr, "error: could not bind log hash -- %s\n",
+                sqlite3_errmsg(db));
+        return;
+    }
+
+    if (sqlite3_bind_int64(stmt, 4, session_time) != SQLITE_OK) {
+        fprintf(stderr, "error: could not bind session time -- %s\n",
+                sqlite3_errmsg(db));
+        return;
+    }
 }
 
 struct session_file_info {
@@ -301,130 +329,334 @@ void scan_sessions(void)
     }
 }
 
-struct logfile_session_data {
-    logfile_session_data() : lsd_file(NULL), lsd_base_line(0) {
-        this->lsd_time_offset.tv_sec = 0;
-        this->lsd_time_offset.tv_usec = 0;
-    };
-
-    logfile *lsd_file;
-    content_line_t lsd_base_line;
-    struct timeval lsd_time_offset;
-};
-
-static int read_path(void *ctx, const unsigned char *str, size_t len)
+static void load_time_bookmarks(void)
 {
-    return 1;
-}
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
+    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    string db_path = dotlnav_path(LOG_METADATA_NAME);
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    logfile_sub_source::iterator file_iter;
 
-static int read_time_offset(void *ctx, long long val)
-{
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
-    string field_name = ypc->get_path_fragment(1);
-    logfile_session_data *lsd = (logfile_session_data *)ypc->ypc_userdata;
+    fprintf(stderr, "load time bookmarks\n");
 
-    if (field_name == "sec")
-        lsd->lsd_time_offset.tv_sec = val;
-    else if (field_name == "usec")
-        lsd->lsd_time_offset.tv_usec = val;
-
-    return 1;
-}
-
-static int read_marks(void *ctx, long long num)
-{
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
-    logfile_session_data *lsd = (logfile_session_data *)ypc->ypc_userdata;
-
-    lnav_data.ld_log_source.set_user_mark(&textview_curses::BM_USER,
-                                          content_line_t(lsd->lsd_base_line + num));
-
-    return 1;
-}
-
-static int read_mark_metadata(void *ctx, const unsigned char *str, size_t len)
-{
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
-    string line_number_str = ypc->get_path_fragment(1);
-    string field_name = ypc->get_path_fragment(2);
-    logfile_session_data *lsd = (logfile_session_data *)ypc->ypc_userdata;
-    int line_number;
-
-    if (sscanf(line_number_str.c_str(), "%d", &line_number) != 1) {
-        fprintf(stderr, "error: invalid mark line number -- %s\n", str);
-        return 0;
+    if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
+        return;
     }
 
-    if (field_name == "name") {
-        logfile_sub_source &lss = lnav_data.ld_log_source;
-        std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
-
-        bm_meta[content_line_t(line_number + lsd->lsd_base_line)].bm_name = string((const char *)str, len);
+    if (sqlite3_prepare_v2(db.in(),
+                           "SELECT *,session_time=? as same_session FROM bookmarks WHERE "
+                           " log_time between ? and ? and log_format = ? "
+                           " ORDER BY same_session DESC, session_time DESC",
+                           -1,
+                           stmt.out(),
+                           NULL) != SQLITE_OK) {
+        fprintf(stderr,
+                "error: could not prepare bookmark select statemnt -- %s\n",
+                sqlite3_errmsg(db));
+        return;
     }
 
-    return 1;
-}
+    for (file_iter = lnav_data.ld_log_source.begin();
+         file_iter != lnav_data.ld_log_source.end();
+         ++file_iter) {
+        char low_timestamp[64], high_timestamp[64];
+        logfile *lf = file_iter->ld_file;
+        content_line_t base_content_line;
 
-static struct json_path_handler file_handlers[] = {
-    json_path_handler("/path",   read_path),
-    json_path_handler("/time-offset/(sec|usec)", read_time_offset),
-    json_path_handler("/marks#", read_marks),
-    json_path_handler("/mark-metadata/\\d+/name", read_mark_metadata),
-
-    json_path_handler()
-};
-
-void load_bookmarks(void)
-{
-    logfile_sub_source::iterator iter;
-
-    for (iter = lnav_data.ld_log_source.begin();
-         iter != lnav_data.ld_log_source.end();
-         ++iter) {
-        logfile_session_data lsd;
-        yajlpp_parse_context            ypc(file_handlers);
-
-        if (iter->ld_file == NULL)
+        if (lf == NULL)
             continue;
 
-        const string &log_name = iter->ld_file->get_filename();
-        string        mark_file_name;
-        yajl_handle   handle;
-        auto_fd       fd;
+        base_content_line = lss.get_file_base_content_line(file_iter);
 
-        fprintf(stderr, "load %s\n", log_name.c_str());
+        fprintf(stderr, "checking bookmarks for %s\n", lf->get_filename().c_str());
 
-        lsd.lsd_file = lnav_data.ld_log_source.find(log_name.c_str(),
-                                                    lsd.lsd_base_line);
-        if (lsd.lsd_file == NULL) {
-            fprintf(stderr, "  not found\n");
-            continue;
+        logfile::iterator line_iter = lf->begin();
+
+        sql_strftime(low_timestamp, sizeof(low_timestamp),
+                     lf->original_line_time(line_iter));
+
+        if (sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind session time -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
         }
 
-        mark_file_name = latest_bookmark_file(iter->ld_file);
-        if (mark_file_name.empty()) {
-            continue;
+        if (sqlite3_bind_text(stmt.in(), 2,
+                              low_timestamp, strlen(low_timestamp),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind low log time -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
         }
 
-        fprintf(stderr, "loading %s\n", mark_file_name.c_str());
-        handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+        line_iter = lf->end();
+        --line_iter;
+        sql_strftime(high_timestamp, sizeof(high_timestamp),
+                     lf->original_line_time(line_iter));
 
-        ypc.ypc_userdata = (void *)&lsd;
-        if ((fd = open(mark_file_name.c_str(), O_RDONLY)) < 0) {
-            perror("cannot open bookmark file");
+        if (sqlite3_bind_text(stmt.in(), 3,
+                              high_timestamp, strlen(high_timestamp),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind high log time -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
         }
-        else {
-            unsigned char buffer[1024];
-            size_t        rc;
 
-            while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
-                yajl_parse(handle, buffer, rc);
+        const std::string &format_name = lf->get_format()->get_name();
+
+        if (sqlite3_bind_text(stmt.in(), 4,
+                              format_name.c_str(), format_name.length(),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind log format -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        date_time_scanner dts;
+        bool done = false;
+        string line;
+
+        fprintf(stderr, "time range %s %s\n", low_timestamp, high_timestamp);
+
+        int64_t last_mark_time = -1;
+
+        while (!done) {
+            int rc = sqlite3_step(stmt.in());
+
+            switch (rc) {
+            case SQLITE_OK:
+            case SQLITE_DONE:
+                done = true;
+                break;
+
+            case SQLITE_ROW: {
+                const char *log_time = (const char *)sqlite3_column_text(stmt.in(), 0);
+                const char *log_hash = (const char *)sqlite3_column_text(stmt.in(), 2);
+                const char *part_name = (const char *)sqlite3_column_text(stmt.in(), 4);
+                int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
+                struct timeval log_tv;
+                struct tm log_tm;
+
+                if (last_mark_time == -1) {
+                    last_mark_time = mark_time;
+                }
+                else if (last_mark_time != mark_time) {
+                    done = true;
+                    continue;
+                }
+
+                if (part_name == NULL)
+                    continue;
+
+                if (!dts.scan(log_time, NULL, &log_tm, log_tv)) {
+                    continue;
+                }
+
+                line_iter = lower_bound(lf->begin(),
+                                        lf->end(),
+                                        log_tv);
+                while (line_iter != lf->end()) {
+                    struct timeval line_tv = line_iter->get_timeval();
+
+                    if ((line_tv.tv_sec != log_tv.tv_sec) ||
+                        (line_tv.tv_usec != log_tv.tv_usec)) {
+                        break;
+                    }
+
+                    lf->read_line(line_iter, line);
+
+                    string line_hash = hash_string(line);
+                    if (line_hash == log_hash) {
+                        content_line_t line_cl = content_line_t(
+                            base_content_line + std::distance(lf->begin(), line_iter));
+
+                        marked_session_lines.push_back(line_cl);
+                        lss.set_user_mark(&textview_curses::BM_USER, line_cl);
+                        if (part_name != NULL && part_name[0] != '\0') {
+                            bm_meta[line_cl].bm_name = part_name;
+                        }
+                    }
+
+                    ++line_iter;
+                }
+                break;
             }
-            yajl_complete_parse(handle);
-        }
-        yajl_free(handle);
 
-        lsd.lsd_file->adjust_content_time(lsd.lsd_time_offset);
+            default:
+                {
+                    const char *errmsg;
+
+                    errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                    fprintf(stderr,
+                            "error: bookmark select error: code %d -- %s\n",
+                            rc,
+                            errmsg);
+                    done = true;
+                }
+                break;
+            }
+        }
+
+        sqlite3_reset(stmt.in());
+    }
+
+    if (sqlite3_prepare_v2(db.in(),
+                           "SELECT *,session_time=? as same_session FROM time_offset WHERE "
+                           " log_time between ? and ? and log_format = ? "
+                           " ORDER BY same_session DESC, session_time DESC",
+                           -1,
+                           stmt.out(),
+                           NULL) != SQLITE_OK) {
+        fprintf(stderr,
+                "error: could not prepare time_offset select statemnt -- %s\n",
+                sqlite3_errmsg(db));
+        return;
+    }
+
+    for (file_iter = lnav_data.ld_log_source.begin();
+         file_iter != lnav_data.ld_log_source.end();
+         ++file_iter) {
+        char low_timestamp[64], high_timestamp[64];
+        logfile *lf = file_iter->ld_file;
+        content_line_t base_content_line;
+
+        if (lf == NULL)
+            continue;
+
+        lss.find(lf->get_filename().c_str(), base_content_line);
+
+        fprintf(stderr, "checking bookmarks for %s\n", lf->get_filename().c_str());
+
+        logfile::iterator line_iter = lf->begin();
+
+        sql_strftime(low_timestamp, sizeof(low_timestamp),
+                     lf->original_line_time(line_iter));
+
+        if (sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind session time -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        if (sqlite3_bind_text(stmt.in(), 2,
+                              low_timestamp, strlen(low_timestamp),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind low log time -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        line_iter = lf->end();
+        --line_iter;
+        sql_strftime(high_timestamp, sizeof(high_timestamp),
+                     lf->original_line_time(line_iter));
+
+        if (sqlite3_bind_text(stmt.in(), 3,
+                              high_timestamp, strlen(high_timestamp),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind high log time -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        const std::string &format_name = lf->get_format()->get_name();
+
+        if (sqlite3_bind_text(stmt.in(), 4,
+                              format_name.c_str(), format_name.length(),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind log format -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        date_time_scanner dts;
+        bool done = false;
+        string line;
+
+        fprintf(stderr, "time range %s %s\n", low_timestamp, high_timestamp);
+
+        int64_t last_mark_time = -1;
+
+        while (!done) {
+            int rc = sqlite3_step(stmt.in());
+
+            switch (rc) {
+            case SQLITE_OK:
+            case SQLITE_DONE:
+                done = true;
+                break;
+
+            case SQLITE_ROW: {
+                const char *log_time = (const char *)sqlite3_column_text(stmt.in(), 0);
+                const char *log_hash = (const char *)sqlite3_column_text(stmt.in(), 2);
+                int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
+                struct timeval log_tv;
+                struct tm log_tm;
+
+                if (last_mark_time == -1) {
+                    last_mark_time = mark_time;
+                }
+                else if (last_mark_time != mark_time) {
+                    done = true;
+                    continue;
+                }
+
+                if (sqlite3_column_type(stmt.in(), 4) == SQLITE_NULL) {
+                    continue;
+                }
+
+                if (!dts.scan(log_time, NULL, &log_tm, log_tv)) {
+                    continue;
+                }
+
+                line_iter = lower_bound(lf->begin(),
+                                        lf->end(),
+                                        log_tv);
+                while (line_iter != lf->end()) {
+                    struct timeval line_tv = line_iter->get_timeval();
+
+                    if ((line_tv.tv_sec != log_tv.tv_sec) ||
+                        (line_tv.tv_usec != log_tv.tv_usec)) {
+                        break;
+                    }
+
+                    lf->read_line(line_iter, line);
+
+                    string line_hash = hash_string(line);
+                    if (line_hash == log_hash) {
+                        int file_line = std::distance(lf->begin(), line_iter);
+                        content_line_t line_cl = content_line_t(
+                            base_content_line + file_line);
+                        struct timeval offset;
+
+                        offset_session_lines.push_back(line_cl);
+                        offset.tv_sec = sqlite3_column_int64(stmt.in(), 4);
+                        offset.tv_usec = sqlite3_column_int64(stmt.in(), 5);
+                        lf->adjust_content_time(file_line, offset);
+                    }
+
+                    ++line_iter;
+                }
+                break;
+            }
+
+            default:
+                {
+                    const char *errmsg;
+
+                    errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                    fprintf(stderr,
+                            "error: bookmark select error: code %d -- %s\n",
+                            rc,
+                            errmsg);
+                    done = true;
+                }
+                break;
+            }
+        }
+
+        sqlite3_reset(stmt.in());
     }
 }
 
@@ -508,7 +740,7 @@ void load_session(void)
     auto_fd fd;
 
     if (lnav_data.ld_session_file_names.empty()) {
-        load_bookmarks();
+        load_time_bookmarks();
         return;
     }
 
@@ -519,7 +751,7 @@ void load_session(void)
     lnav_data.ld_session_save_time = sess_iter->first.second;
     string &view_info_name = sess_iter->second;
 
-    load_bookmarks();
+    load_time_bookmarks();
 
     if ((fd = open(view_info_name.c_str(), O_RDONLY)) < 0) {
         perror("cannot open session file");
@@ -543,194 +775,316 @@ static void yajl_writer(void *context, const char *str, size_t len)
     fwrite(str, len, 1, file);
 }
 
-void save_bookmarks(void)
+static void save_time_bookmarks(void)
 {
-    logfile_sub_source &lss = lnav_data.ld_log_source;
+    auto_mem<sqlite3, sqlite_close_wrapper> db;
+    string db_path = dotlnav_path(LOG_METADATA_NAME);
+    auto_mem<char, sqlite3_free> errmsg;
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
-    bookmarks<content_line_t>::type &bm =
-        lss.get_user_bookmarks();
-    std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
-    bookmark_vector<content_line_t> &user_marks =
-        bm[&textview_curses::BM_USER];
-    logfile_sub_source::iterator file_iter;
-    bookmark_vector<content_line_t>::iterator iter;
-    string         mark_file_name, mark_file_tmp_name;
-    auto_mem<FILE> file(fclose);
-    logfile *      curr_lf = NULL;
-    yajl_gen       handle  = NULL;
-
-    for (file_iter = lnav_data.ld_log_source.begin();
-         file_iter != lnav_data.ld_log_source.end();
-         ++file_iter) {
-        logfile *lf             = file_iter->ld_file;
-
-        if (lf == NULL)
-            continue;
-
-        string   mark_base_name = bookmark_file_name(lf);
-
-        mark_file_name     = dotlnav_path(mark_base_name.c_str());
-        mark_file_tmp_name = mark_file_name + ".tmp";
-
-        file   = fopen(mark_file_tmp_name.c_str(), "w");
-        handle = yajl_gen_alloc(NULL);
-        yajl_gen_config(handle, yajl_gen_beautify, 1);
-        yajl_gen_config(handle,
-                        yajl_gen_print_callback, yajl_writer, file.in());
-
-        {
-            yajlpp_map root_map(handle);
-
-            root_map.gen("path");
-            root_map.gen(lf->get_filename());
-
-            yajl_gen_string(handle, "time-offset");
-            {
-                yajlpp_map time_offset_map(handle);
-                struct timeval tv = lf->get_time_offset();
-
-                time_offset_map.gen("sec");
-                yajl_gen_integer(handle, tv.tv_sec);
-                time_offset_map.gen("usec");
-                yajl_gen_integer(handle, tv.tv_usec);
-            }
-
-            root_map.gen("marks");
-            {
-                yajlpp_array mark_array(handle);
-            }
-        }
-
-        yajl_gen_clear(handle);
-        yajl_gen_free(handle);
-        fclose(file.release());
-
-        rename(mark_file_tmp_name.c_str(), mark_file_name.c_str());
-
-        handle = NULL;
+    if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
+        return;
     }
 
-    std::vector<content_line_t> marks_with_metadata;
+    if (sqlite3_exec(db.in(), BOOKMARK_TABLE_DEF, NULL, NULL, errmsg.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to make bookmark table -- %s\n", errmsg.in());
+        return;
+    }
+
+    if (sqlite3_exec(db.in(), "BEGIN TRANSACTION", NULL, NULL, errmsg.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to begin transaction -- %s\n", errmsg.in());
+        return;
+    }
+
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
+    bookmarks<content_line_t>::type &bm = lss.get_user_bookmarks();
+    bookmark_vector<content_line_t> &user_marks = bm[&textview_curses::BM_USER];
+    bookmark_vector<content_line_t>::iterator iter;
+
+    if (sqlite3_prepare_v2(db.in(),
+                           "DELETE FROM bookmarks WHERE "
+                           " log_time = ? and log_format = ? and log_hash = ? "
+                           " and session_time = ?",
+                           -1,
+                           stmt.out(),
+                           NULL) != SQLITE_OK) {
+        fprintf(stderr,
+                "error: could not prepare bookmark replace statemnt -- %s\n",
+                sqlite3_errmsg(db));
+        return;
+    }
+
+    for (std::vector<content_line_t>::iterator cl_iter = marked_session_lines.begin();
+         cl_iter != marked_session_lines.end();
+         ++cl_iter) {
+        bind_line(db.in(), stmt.in(), *cl_iter, lnav_data.ld_session_time);
+
+        if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+            fprintf(stderr,
+                    "error: could not execute bookmark insert statement -- %s\n",
+                    sqlite3_errmsg(db));
+            return;
+        }
+
+        sqlite3_reset(stmt.in());
+    }
+
+    marked_session_lines.clear();
+
+    if (sqlite3_prepare_v2(db.in(),
+                           "REPLACE INTO bookmarks"
+                           " (log_time, log_format, log_hash, session_time, part_name)"
+                           " VALUES (?, ?, ?, ?, ?)",
+                           -1,
+                           stmt.out(),
+                           NULL) != SQLITE_OK) {
+        fprintf(stderr,
+                "error: could not prepare bookmark replace statemnt -- %s\n",
+                sqlite3_errmsg(db));
+        return;
+    }
+
+    {
+        logfile_sub_source::iterator file_iter;
+
+        for (file_iter = lnav_data.ld_log_source.begin();
+             file_iter != lnav_data.ld_log_source.end();
+             ++file_iter) {
+            logfile *lf = file_iter->ld_file;
+            content_line_t base_content_line;
+
+            if (lf == NULL)
+                continue;
+
+            base_content_line = lss.get_file_base_content_line(file_iter);
+            base_content_line = content_line_t(base_content_line + lf->size() - 1);
+
+            bind_line(db.in(), stmt.in(), base_content_line, lnav_data.ld_session_time);
+
+            if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
+                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                        sqlite3_errmsg(db.in()));
+                return;
+            }
+
+            if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+                fprintf(stderr,
+                        "error: could not execute bookmark insert statement -- %s\n",
+                        sqlite3_errmsg(db));
+                return;
+            }
+
+            sqlite3_reset(stmt.in());
+        }
+    }
 
     for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
+        std::map<content_line_t, bookmark_metadata>::iterator meta_iter;
+        logfile::iterator line_iter;
         content_line_t cl = *iter;
-        logfile *      lf;
 
-        lf = lss.find(cl);
-        if (curr_lf != lf) {
-            if (handle) {
-                yajl_gen_array_close(handle);
+        meta_iter = bm_meta.find(cl);
 
-                yajl_gen_string(handle, "mark-metadata");
+        marked_session_lines.push_back(cl);
 
-                {
-                    yajlpp_map meta_map(handle);
+        bind_line(db.in(), stmt.in(), cl, lnav_data.ld_session_time);
 
-                    content_line_t line_base;
-
-                    lss.find(curr_lf->get_filename().c_str(), line_base);
-
-                    for (std::vector<content_line_t>::iterator mwm_iter = marks_with_metadata.begin();
-                         mwm_iter != marks_with_metadata.end();
-                         ++mwm_iter) {
-                        bookmark_metadata &bm_line_meta = bm_meta[*mwm_iter];
-                        char buffer[128];
-
-                        snprintf(buffer, sizeof(buffer), "%d", (int)(*mwm_iter - line_base));
-
-                        meta_map.gen(buffer);
-                        {
-                            yajlpp_map meta_line_map(handle);
-
-                            meta_line_map.gen("name");
-                            meta_line_map.gen(bm_line_meta.bm_name);
-                        }
-                    }
-                }
-
-                marks_with_metadata.clear();
-
-                yajl_gen_map_close(handle);
-                yajl_gen_clear(handle);
-                yajl_gen_free(handle);
-                fclose(file.release());
-
-                rename(mark_file_tmp_name.c_str(), mark_file_name.c_str());
+        if (meta_iter == bm_meta.end()) {
+            if (sqlite3_bind_text(stmt.in(), 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
+                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                        sqlite3_errmsg(db.in()));
+                return;
             }
-
-            string mark_base_name = bookmark_file_name(lf);
-            mark_file_name     = dotlnav_path(mark_base_name.c_str());
-            mark_file_tmp_name = mark_file_name + ".tmp";
-
-            file   = fopen(mark_file_tmp_name.c_str(), "w");
-            handle = yajl_gen_alloc(NULL);
-            yajl_gen_config(handle, yajl_gen_beautify, 1);
-            yajl_gen_config(handle,
-                            yajl_gen_print_callback, yajl_writer, file.in());
-            yajl_gen_map_open(handle);
-            yajl_gen_string(handle, "path");
-            yajl_gen_string(handle, lf->get_filename());
-
-            yajl_gen_string(handle, "time-offset");
-            {
-                yajlpp_map time_offset_map(handle);
-                struct timeval tv = lf->get_time_offset();
-
-                time_offset_map.gen("sec");
-                yajl_gen_integer(handle, tv.tv_sec);
-                time_offset_map.gen("usec");
-                yajl_gen_integer(handle, tv.tv_usec);
+        }
+        else {
+            if (sqlite3_bind_text(stmt.in(), 5,
+                                  meta_iter->second.bm_name.c_str(),
+                                  meta_iter->second.bm_name.length(),
+                                  SQLITE_TRANSIENT) != SQLITE_OK) {
+                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                        sqlite3_errmsg(db.in()));
+                return;
             }
-
-            yajl_gen_string(handle, "marks");
-            yajl_gen_array_open(handle);
-
-            curr_lf = lf;
         }
 
-        yajl_gen_integer(handle, (long long)cl);
-        if (bm_meta.find(*iter) != bm_meta.end()) {
-            marks_with_metadata.push_back(*iter);
+        if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+            fprintf(stderr,
+                    "error: could not execute bookmark insert statement -- %s\n",
+                    sqlite3_errmsg(db));
+            return;
+        }
+
+        sqlite3_reset(stmt.in());
+    }
+
+    if (sqlite3_prepare_v2(db.in(),
+                           "DELETE FROM time_offset WHERE "
+                           " log_time = ? and log_format = ? and log_hash = ? "
+                           " and session_time = ?",
+                           -1,
+                           stmt.out(),
+                           NULL) != SQLITE_OK) {
+        fprintf(stderr,
+                "error: could not prepare bookmark replace statemnt -- %s\n",
+                sqlite3_errmsg(db));
+        return;
+    }
+
+    for (std::vector<content_line_t>::iterator cl_iter = offset_session_lines.begin();
+         cl_iter != offset_session_lines.end();
+         ++cl_iter) {
+        bind_line(db.in(), stmt.in(), *cl_iter, lnav_data.ld_session_time);
+
+        if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+            fprintf(stderr,
+                    "error: could not execute bookmark insert statement -- %s\n",
+                    sqlite3_errmsg(db));
+            return;
+        }
+
+        sqlite3_reset(stmt.in());
+    }
+
+    offset_session_lines.clear();
+
+    if (sqlite3_prepare_v2(db.in(),
+                           "REPLACE INTO time_offset"
+                           " (log_time, log_format, log_hash, session_time, offset_sec, offset_usec)"
+                           " VALUES (?, ?, ?, ?, ?, ?)",
+                           -1,
+                           stmt.out(),
+                           NULL) != SQLITE_OK) {
+        fprintf(stderr,
+                "error: could not prepare time_offset replace statemnt -- %s\n",
+                sqlite3_errmsg(db));
+        return;
+    }
+
+    {
+        logfile_sub_source::iterator file_iter;
+
+        for (file_iter = lnav_data.ld_log_source.begin();
+             file_iter != lnav_data.ld_log_source.end();
+             ++file_iter) {
+            logfile *lf = file_iter->ld_file;
+            content_line_t base_content_line;
+
+            if (lf == NULL)
+                continue;
+
+            base_content_line = lss.get_file_base_content_line(file_iter);
+
+            bind_line(db.in(), stmt.in(), base_content_line, lnav_data.ld_session_time);
+
+            if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
+                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                        sqlite3_errmsg(db.in()));
+                return;
+            }
+
+            if (sqlite3_bind_null(stmt.in(), 6) != SQLITE_OK) {
+                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                        sqlite3_errmsg(db.in()));
+                return;
+            }
+
+            if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+                fprintf(stderr,
+                        "error: could not execute bookmark insert statement -- %s\n",
+                        sqlite3_errmsg(db));
+                return;
+            }
+
+            sqlite3_reset(stmt.in());
         }
     }
-    if (handle) {
-        yajl_gen_array_close(handle);
 
-        yajl_gen_string(handle, "mark-metadata");
+    for (logfile_sub_source::iterator file_iter = lss.begin();
+         file_iter != lss.end();
+         ++file_iter) {
+        logfile::iterator line_iter;
 
-        {
-            yajlpp_map meta_map(handle);
+        if (file_iter->ld_file == NULL)
+            continue;
 
-            content_line_t line_base;
+        logfile *lf = file_iter->ld_file;
 
-            lss.find(curr_lf->get_filename().c_str(), line_base);
+        if (!lf->is_time_adjusted())
+            continue;
 
-            for (std::vector<content_line_t>::iterator mwm_iter = marks_with_metadata.begin();
-                 mwm_iter != marks_with_metadata.end();
-                 ++mwm_iter) {
-                bookmark_metadata &bm_line_meta = bm_meta[*mwm_iter];
-                char buffer[128];
-            
-                snprintf(buffer, sizeof(buffer), "%d", (int)(*mwm_iter - line_base));
-                
-                meta_map.gen(buffer);
-                {
-                    yajlpp_map meta_line_map(handle);
-                    
-                    meta_line_map.gen("name");
-                    meta_line_map.gen(bm_line_meta.bm_name);
-                }
-            }
+        line_iter = lf->begin() + lf->get_time_offset_line();
+
+        char timestamp[64];
+
+        sql_strftime(timestamp, sizeof(timestamp),
+                     lf->original_line_time(line_iter));
+        if (sqlite3_bind_text(stmt.in(), 1,
+                              timestamp, strlen(timestamp),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind log time -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
         }
 
-        marks_with_metadata.clear();
+        const std::string &format_name = lf->get_format()->get_name();
 
-        yajl_gen_map_close(handle);
-        yajl_gen_clear(handle);
-        yajl_gen_free(handle);
-        fclose(file.release());
-        
-        rename(mark_file_tmp_name.c_str(), mark_file_name.c_str());
+        if (sqlite3_bind_text(stmt.in(), 2,
+                              format_name.c_str(), format_name.length(),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind log format -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        std::string line_hash = hash_string(lf->read_line(line_iter));
+
+        if (sqlite3_bind_text(stmt.in(), 3,
+                              line_hash.c_str(), line_hash.length(),
+                              SQLITE_TRANSIENT) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind log hash -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        if (sqlite3_bind_int64(stmt.in(), 4, lnav_data.ld_session_time) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind session time -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        struct timeval offset = lf->get_time_offset();
+
+        if (sqlite3_bind_int64(stmt.in(), 5, offset.tv_sec) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind offset_sec -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        if (sqlite3_bind_int64(stmt.in(), 6, offset.tv_usec) != SQLITE_OK) {
+            fprintf(stderr, "error: could not bind offset_sec -- %s\n",
+                    sqlite3_errmsg(db.in()));
+            return;
+        }
+
+        if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
+            fprintf(stderr,
+                    "error: could not execute bookmark insert statement -- %s\n",
+                    sqlite3_errmsg(db));
+            return;
+        }
+
+        sqlite3_reset(stmt.in());
+    }
+
+    if (sqlite3_exec(db.in(), "COMMIT", NULL, NULL, errmsg.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to begin transaction -- %s\n", errmsg.in());
+        return;
+    }
+
+    if (sqlite3_exec(db.in(), BOOKMARK_LRU_STMT, NULL, NULL, errmsg.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to delete old bookmarks -- %s\n", errmsg.in());
+        return;
     }
 }
 
@@ -742,7 +1096,7 @@ void save_session(void)
     char           view_base_name[256];
     yajl_gen       handle = NULL;
 
-    save_bookmarks();
+    save_time_bookmarks();
 
     /* TODO: save the last search query */
 
@@ -860,6 +1214,7 @@ void reset_session(void)
     textview_curses::highlight_map_t &hmap =
         lnav_data.ld_views[LNV_LOG].get_highlights();
     textview_curses::highlight_map_t::iterator hl_iter = hmap.begin();
+    logfile_sub_source &lss = lnav_data.ld_log_source;
 
     save_session();
     scan_sessions();
@@ -886,4 +1241,6 @@ void reset_session(void)
 
         lf->clear_time_offset();
     }
+
+    lss.get_user_bookmarks()[&textview_curses::BM_USER].clear();
 }

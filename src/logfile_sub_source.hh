@@ -339,6 +339,12 @@ public:
         return this->lss_files.end();
     };
 
+    content_line_t get_file_base_content_line(iterator iter) {
+        int index = std::distance(this->begin(), iter);
+
+        return content_line_t(index * MAX_LINES_PER_FILE);
+    };
+
     static const size_t MAX_LINES_PER_FILE = 4 * 1024 * 1024;
     static const size_t MAX_FILES          = INT_MAX / MAX_LINES_PER_FILE;
 

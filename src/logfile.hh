@@ -121,13 +121,20 @@ public:
      */
     time_t get_modified_time() const { return this->lf_index_time; };
 
+    int get_time_offset_line() const {
+        return this->lf_time_offset_line;
+    };
+
     const struct timeval &get_time_offset() const {
         return this->lf_time_offset;
     };
 
-    void adjust_content_time(const struct timeval &tv, bool abs_offset=true) {
+    void adjust_content_time(int line,
+                             const struct timeval &tv,
+                             bool abs_offset=true) {
         struct timeval old_time = this->lf_time_offset;
 
+        this->lf_time_offset_line = line;
         if (abs_offset) {
             this->lf_time_offset = tv;
         }
@@ -149,7 +156,7 @@ public:
     void clear_time_offset(void) {
         struct timeval tv = { 0, 0 };
 
-        this->adjust_content_time(tv);
+        this->adjust_content_time(-1, tv);
     };
 
     bool is_time_adjusted(void) const {
@@ -172,6 +179,18 @@ public:
 
     /** @return True if this log file still exists. */
     bool exists() const;
+
+    struct timeval original_line_time(iterator ll) {
+        if (this->is_time_adjusted()) {
+            struct timeval line_time = ll->get_timeval();
+            struct timeval retval;
+
+            timersub(&line_time, &this->lf_time_offset, &retval);
+            return retval;
+        }
+
+        return ll->get_timeval();
+    };
 
     /**
      * Read a line from the file.
@@ -270,6 +289,7 @@ protected:
     time_t      lf_index_time;
     off_t       lf_index_size;
     line_buffer lf_line_buffer;
+    int lf_time_offset_line;
     struct timeval lf_time_offset;
 };
 #endif

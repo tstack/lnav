@@ -79,7 +79,7 @@ static string com_adjust_log_time(string cmdline, vector<string> &args)
         if (dts.scan(args[1].c_str(), NULL, &tm, new_time) != NULL) {
             timersub(&new_time, &top_time, &time_diff);
             
-            lf->adjust_content_time(time_diff, false);
+            lf->adjust_content_time(top_content, time_diff, false);
 
             rebuild_indexes(true);
 

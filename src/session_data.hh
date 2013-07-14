@@ -37,4 +37,5 @@ void load_session(void);
 void save_session(void);
 void reset_session(void);
 void scan_sessions(void);
+
 #endif
