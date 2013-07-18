@@ -43,6 +43,8 @@
 
 #include "byte_array.hh"
 
+#undef rounddown
+
 /**
  * Round down a number based on a given granularity.
  *
