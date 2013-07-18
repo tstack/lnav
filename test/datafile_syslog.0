@@ -1,4 +1,8 @@
              timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
+ key   0:0                                                                                                                       
+word   0:8   ^------^                                                                                                            timstack
+ val   0:8   ^------^                                                                                                            timstack
+pair   0:8   ^------^                                                                                                            timstack
  key  11:14             ^-^                                                                                                      TTY
  sym  15:20                 ^---^                                                                                                pts/6
  val  15:20                 ^---^                                                                                                pts/6

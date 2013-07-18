@@ -48,7 +48,8 @@ data_format_state_t dfs_prefix_next(data_format_state_t state,
     case DFS_INIT:
         switch (next_token) {
         case DT_PATH:
-        case DT_SEPARATOR:
+        case DT_COLON:
+        case DT_EQUALS:
         case DT_CONSTANT:
         case DT_EMAIL:
         case DT_WORD:
@@ -100,7 +101,10 @@ data_format_state_t dfs_semi_next(data_format_state_t state,
 
     case DFS_KEY:
         switch (next_token) {
-        case DT_SEPARATOR: retval = DFS_VALUE; break;
+        case DT_COLON:
+        case DT_EQUALS:
+            retval = DFS_VALUE;
+            break;
 
         case DT_SEMI: retval = DFS_ERROR; break;
 
@@ -146,7 +150,8 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
 
     case DFS_KEY:
         switch (next_token) {
-        case DT_SEPARATOR:
+        case DT_COLON:
+        case DT_EQUALS:
             retval = DFS_VALUE;
             break;
 
@@ -168,7 +173,8 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
 
     case DFS_EXPECTING_SEP:
         switch (next_token) {
-        case DT_SEPARATOR:
+        case DT_COLON:
+        case DT_EQUALS:
             retval = DFS_VALUE;
             break;
 
@@ -187,7 +193,8 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
             retval = DFS_INIT;
             break;
 
-        case DT_SEPARATOR:
+        case DT_COLON:
+        case DT_EQUALS:
             retval = DFS_ERROR;
             break;
 

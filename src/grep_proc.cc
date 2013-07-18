@@ -191,7 +191,7 @@ void grep_proc::child_loop(void)
             line_value.clear();
             done = !this->gp_source.grep_value_for_line(line, line_value);
             if (!done) {
-                pcre_context_static<60> pc;
+                pcre_context_static<128> pc;
                 pcre_input pi(line_value);
 
                 while (this->gp_pcre.match(pc, pi)) {

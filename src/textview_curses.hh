@@ -250,7 +250,7 @@ public:
             this->tc_sub_source->text_value_for_line(*this, start, str);
 
             for (off = 0; off < (int)str.size(); ) {
-                int rc, matches[60];
+                int rc, matches[128];
 
                 rc = pcre_exec(hl.h_code,
                                hl.h_code_extra,
@@ -259,7 +259,7 @@ public:
                                off,
                                0,
                                matches,
-                               60);
+                               128);
                 if (rc > 0) {
                     struct line_range lr;
 

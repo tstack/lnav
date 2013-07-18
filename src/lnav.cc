@@ -3223,7 +3223,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
                                view_colors::VCR_DIFF_ADD);
     hm["$diffm"] = textview_curses::
                    highlighter(xpcre_compile(
-                                   "^(?:--- |-[^-].*)"), false,
+                                   "^(?:--- .*|-[^-].*)"), false,
                                view_colors::VCR_DIFF_DELETE);
     hm["$diffs"] = textview_curses::
                    highlighter(xpcre_compile(

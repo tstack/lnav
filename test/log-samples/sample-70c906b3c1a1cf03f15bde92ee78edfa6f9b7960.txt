@@ -1,4 +1,8 @@
              Jun  3 07:02:37 Tim-Stacks-iMac.local sudo[2717]:    stack : TTY=ttys002 ; PWD=/ ; USER=root ; COMMAND=/usr/bin/env VAR1=foo ls
+ key  53:53                                                      ^                                                                            
+word  53:58                                                       ^---^                                                                       stack
+ val  53:58                                                       ^---^                                                                       stack
+pair  53:58                                                       ^---^                                                                       stack
  key  61:64                                                               ^-^                                                                 TTY
  sym  65:72                                                                   ^-----^                                                         ttys002
  val  65:72                                                                   ^-----^                                                         ttys002

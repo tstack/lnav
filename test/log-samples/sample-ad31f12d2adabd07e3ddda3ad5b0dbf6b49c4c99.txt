@@ -1,10 +1,15 @@
              Jun  2 00:34:32 Tim-Stacks-iMac kernel[0]: vmnet: VNetUserIf_Create: created userIf at 0xffffff802644f400.
- key  50:50                                                   ^                                                         
+ key  43:48                                             ^---^                                                           vmnet
+quot  48:48                                                 ^                                                           
+ val  48:48                                                 ^                                                           
+pair  43:48                                             ^---^                                                           vmnet
  key  50:67                                                    ^---------------^                                        VNetUserIf_Create
-pair  50:67                                                    ^---------------^                                        VNetUserIf_Create
- key  77:77                                                                              ^                              
+word  69:76                                                                       ^-----^                               created
+wspc  76:77                                                                              ^                               
  sym  77:83                                                                               ^----^                        userIf
-pair  77:83                                                                               ^----^                        userIf
- key  87:87                                                                                        ^                    
+wspc  83:84                                                                                     ^                        
+word  84:86                                                                                      ^^                     at
+wspc  86:87                                                                                        ^                     
  hex  87:105                                                                                        ^----------------^  0xffffff802644f400
-pair  87:105                                                                                        ^----------------^  0xffffff802644f400
+ val  69:105                                                                      ^----------------------------------^  created userIf at 0xffffff802644f400
+pair  50:105                                                   ^-----------------------------------------------------^  VNetUserIf_Create: created userIf at 0xffffff802644f400

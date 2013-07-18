@@ -203,7 +203,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
                                int len)
 {
     pcre_input pi(prefix, 0, len);
-    pcre_context_static<30> pc;
+    pcre_context_static<128> pc;
     bool retval = false;
     int curr_fmt = -1;
 
@@ -228,7 +228,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
         }
 
         if (level_cap != NULL && level_cap->c_begin != -1) {
-            pcre_context_static<30> pc_level;
+            pcre_context_static<128> pc_level;
             pcre_input pi_level(pi.get_substr_start(level_cap),
                                 0,
                                 level_cap->length());
@@ -271,7 +271,7 @@ void external_log_format::annotate(const std::string &line,
                                    string_attrs_t &sa,
                                    std::vector<logline_value> &values) const
 {
-    pcre_context_static<30> pc;
+    pcre_context_static<128> pc;
     pcre_input pi(line);
     struct line_range lr;
     pcre_context::capture_t *cap;
@@ -366,7 +366,7 @@ void external_log_format::build(std::vector<std::string> &errors)
     for (std::vector<sample>::iterator iter = this->elf_samples.begin();
          iter != this->elf_samples.end();
          ++iter) {
-        pcre_context_static<30> pc;
+        pcre_context_static<128> pc;
         pcre_input pi(iter->s_line);
         bool found = false;
 

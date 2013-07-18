@@ -111,6 +111,7 @@
  */
 
 #define ELEMENT_LIST_T(var)                var("" #var, __FILE__, __LINE__)
+#define PUSH_FRONT(elem)                   push_front(elem, __FILE__, __LINE__)
 #define PUSH_BACK(elem)                    push_back(elem, __FILE__, __LINE__)
 #define POP_FRONT(elem)                    pop_front(__FILE__, __LINE__)
 #define POP_BACK(elem)                     pop_back(__FILE__, __LINE__)
@@ -140,7 +141,9 @@ struct data_format {
     data_format(const char *name,
                 data_token_t appender = DT_INVALID,
                 data_token_t terminator = DT_INVALID)
-        : df_name(name), df_appender(appender), df_terminator(terminator)
+        : df_name(name),
+          df_appender(appender),
+          df_terminator(terminator)
     {};
 
     const char *       df_name;
@@ -263,6 +266,13 @@ public:
             int         line = __LINE__;
 
             LIST_DEINIT_TRACE;
+        };
+
+        void push_front(const element &elem, const char *fn, int line)
+        {
+            ELEMENT_TRACE;
+
+            this->std::list<element>::push_front(elem);
         };
 
         void push_back(const element &elem, const char *fn, int line)
@@ -462,6 +472,8 @@ private:
         : dp_errors("dp_errors", __FILE__, __LINE__),
           dp_pairs("dp_pairs", __FILE__, __LINE__),
           dp_format(NULL),
+          dp_qualifier(DT_INVALID),
+          dp_separator(DT_INVALID),
           dp_scanner(ds)
     {
         if (TRACE_FILE != NULL) {
@@ -508,7 +520,17 @@ private:
 
                 key_comps.PUSH_BACK(*iter);
             }
-            else if (iter->e_token == DT_SEPARATOR) {
+            else if (iter->e_token == this->dp_qualifier) {
+                value.SPLICE(value.end(),
+                             key_comps,
+                             key_comps.begin(),
+                             key_comps.end());
+                strip(value, element_if(DT_WHITE));
+                if (!value.empty()) {
+                    el_stack.PUSH_BACK(element(value, DNT_VALUE));
+                }
+            }
+            else if (iter->e_token == this->dp_separator) {
                 element_list_t::iterator key_iter = key_comps.end();
                 bool found = false;
 
@@ -633,14 +655,10 @@ private:
                 continue;
             }
 
-            if (kv_iter->e_token != DNT_VALUE) {
-                el_stack.POP_FRONT();
-                continue;
-            }
-
             std::string key_val =
                 this->get_element_string(el_stack.front());
             element_list_t ELEMENT_LIST_T(pair_subs);
+
 
             if (schema != NULL) {
                 SHA_Update(&context, key_val.c_str(), key_val.length());
@@ -660,11 +678,28 @@ private:
                 free_row.POP_FRONT();
             }
 
-            ++kv_iter;
+            bool has_value = false;
+
+            if (kv_iter->e_token == DNT_VALUE) {
+                ++kv_iter;
+                has_value = true;
+            }
+
             pair_subs.SPLICE(pair_subs.begin(),
                              el_stack,
                              el_stack.begin(),
                              kv_iter);
+
+            if (!has_value) {
+                element_list_t ELEMENT_LIST_T(blank_value);
+                struct element blank;
+
+                blank.e_token = DT_QUOTED_STRING;
+                blank.e_capture.c_begin = blank.e_capture.c_end = pair_subs.front().e_capture.c_end;
+                blank_value.PUSH_BACK(blank);
+                pair_subs.PUSH_BACK(element(blank_value, DNT_VALUE));
+            }
+
             pairs_out.PUSH_BACK(element(pair_subs, DNT_PAIR));
         }
 
@@ -709,6 +744,7 @@ private:
                 case DT_IPV4_ADDRESS:
                 case DT_IPV6_ADDRESS:
                 case DT_MAC_ADDRESS:
+                case DT_HEX_DUMP:
                 case DT_UUID:
                 case DT_URL:
                 case DT_PATH:
@@ -750,7 +786,7 @@ private:
             blank.e_token = DNT_KEY;
             pair_subs.PUSH_BACK(blank);
             pair_subs.PUSH_BACK(prefix.front());
-            pairs_out.push_front(element(pair_subs, DNT_PAIR));
+            pairs_out.PUSH_FRONT(element(pair_subs, DNT_PAIR));
         }
 
         if (schema != NULL) {
@@ -766,6 +802,8 @@ private:
 
         this->dp_group_token.push_back(DT_INVALID);
         this->dp_group_stack.resize(1);
+        this->dp_qualifier = DT_INVALID;
+        this->dp_separator = DT_COLON;
 
         data_format_state_t prefix_state = DFS_INIT;
         data_format_state_t semi_state   = DFS_INIT;
@@ -846,6 +884,11 @@ private:
             this->dp_group_stack.pop_back();
         }
 
+        if (hist[DT_EQUALS]) {
+            this->dp_qualifier = DT_COLON;
+            this->dp_separator = DT_EQUALS;
+        }
+
         if (semi_state != DFS_ERROR && hist[DT_SEMI]) {
             this->dp_format = &FORMAT_SEMI;
         }
@@ -902,6 +945,8 @@ private:
     element_list_t dp_pairs;
     schema_id_t    dp_schema_id;
     data_format *  dp_format;
+    data_token_t   dp_qualifier;
+    data_token_t   dp_separator;
 
 private:
     data_scanner *dp_scanner;

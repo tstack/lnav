@@ -49,7 +49,9 @@ static struct {
     { "path",    pcrepp("\\A((?:/|\\./|\\.\\./)[\\w\\.\\-_\\~/]*)"),
     },
     { "mac",     pcrepp(
-          "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})"), },
+          "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})(?!:)"), },
+    { "hex",     pcrepp(
+          "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F])+)"), },
     { "date",
                  pcrepp("\\A(\\d{4}/\\d{1,2}/\\d{1,2}|\\d{4}-\\d{1,2}-\\d{1,2})"), },
     { "time",    pcrepp(
@@ -58,7 +60,9 @@ static struct {
     { "ipv6",    pcrepp("\\A(::|[:\\da-fA-f\\.]+[a-fA-f\\d])"),
     },
 
-    { "sep",     pcrepp("\\A(:|=)"),
+    { "coln",     pcrepp("\\A(:)"),
+    },
+    { "eq",     pcrepp("\\A(=)"),
     },
     { "comm",    pcrepp("\\A(,)"),
     },
@@ -245,12 +249,22 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
         }
         break;
 
-        case DT_SEPARATOR: {
+        case DT_COLON: {
             pi.pi_offset = pi.pi_next_offset;
 
-            if (str[pi.pi_offset] == ':' ||
-                str[pi.pi_offset] == '=') {
-                token_out = data_token_t(DT_SEPARATOR);
+            if (str[pi.pi_offset] == ':') {
+                token_out = data_token_t(DT_COLON);
+                single_char_capture(pc, pi);
+                return true;
+            }
+        }
+        break;
+
+        case DT_EQUALS: {
+            pi.pi_offset = pi.pi_next_offset;
+
+            if (str[pi.pi_offset] == '=') {
+                token_out = data_token_t(DT_EQUALS);
                 single_char_capture(pc, pi);
                 return true;
             }

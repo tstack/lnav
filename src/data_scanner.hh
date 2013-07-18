@@ -41,12 +41,14 @@ enum data_token_t {
     DT_URL,
     DT_PATH,
     DT_MAC_ADDRESS,
+    DT_HEX_DUMP,
     DT_DATE,
     DT_TIME,
     DT_IPV6_ADDRESS,
     /* DT_QUALIFIED_NAME, */
 
-    DT_SEPARATOR,
+    DT_COLON,
+    DT_EQUALS,
     DT_COMMA,
     DT_SEMI,
 

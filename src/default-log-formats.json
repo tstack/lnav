@@ -306,5 +306,88 @@
                 "identifier" : true
             }
         }
+    },
+    "uwsgi_log" : {
+        "regex" : [
+            "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+ \\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)"
+        ],
+        "level-field": "sc_status",
+        "level" : {
+            "error" : "^[^123]"
+            },
+        "value" : {
+            "s_pid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "s_app" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "s_req" : {
+                "kind" : "integer"
+            },
+            "s_worker_reqs" : {
+                "kind" : "integer"
+            },
+            "c_ip" : {
+                "kind" : "string",
+                "collate" : "ipaddress",
+                "identifier" : true
+            },
+            "cs_username" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_vars" : {
+                "kind" : "integer"
+            },
+            "cs_bytes" : {
+                "kind" : "integer"
+            },
+            "cs_method" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_uri_stem" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_uri_query" : {
+                "kind" : "string"
+            },
+            "sc_bytes" : {
+                "kind" : "integer"
+            },
+            "s_runtime" : {
+                "kind" : "string"
+            },
+            "cs_version" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "sc_status" : {
+                "kind" : "integer",
+                "foreign-key" : true
+            },
+            "sc_headers" : {
+                "kind" : "integer"
+            },
+            "sc_header_bytes" : {
+                "kind" : "integer"
+            },
+            "s_switches" : {
+                "kind" : "integer"
+            },
+            "s_core" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "[pid: 24386|app: 0|req: 482950/4125645] 86.221.170.65 () {44 vars in 1322 bytes} [Tue Jan  3 05:01:31 2012] GET /contest/log_presence/shhootter/?_=1325592089910 => generated 192 bytes in 21 msecs (HTTP/1.1 200) 4 headers in 188 bytes (1 switches on core 0)"
+            }
+        ]
     }
 }
