@@ -1984,7 +1984,7 @@ void execute_search(lnav_view_t view, const std::string &regex)
                                   grep_line_t(tc.get_top()));
             }
             gp->start();
-            gp->set_sink(lnav_data.ld_view_stack.top());
+            gp->set_sink(&tc);
 
             tc.set_follow_search(true);
 
@@ -3237,7 +3237,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|version)"));
     hm["$var"] = textview_curses::highlighter(xpcre_compile(
         "(?:"
-          "(?:var\\s+)?(\\w+)\\s*=|"
+          "(?:var\\s+)?([\\-\\w]+)\\s*=|"
           "(?<!\\$)\\$(\\w+)|"
           "(?<!\\$)\\$\\((\\w+)\\)|"
           "(?<!\\$)\\$\\{(\\w+)\\}"
@@ -3282,7 +3282,8 @@ int main(int argc, char *argv[])
         for (std::vector<std::string>::iterator iter = loader_errors.begin();
              iter != loader_errors.end();
              ++iter) {
-            fprintf(stderr, "%s\n", iter->c_str());
+            fprintf(stderr, "%s%s", iter->c_str(),
+                (*iter)[iter->size() - 1] == '\n' ? "" : "\n");
         }
         return EXIT_FAILURE;
     }

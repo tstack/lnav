@@ -41,10 +41,8 @@ const char *TEST_DATA =
 
 static int FOO_COUNT = 0;
 
-static int read_foo(void *ctx, long long value)
+static int read_foo(yajlpp_parse_context *ypc, long long value)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
-
     assert(value == FOO_COUNT);
     assert(ypc->ypc_array_index.back() == FOO_COUNT);
 
@@ -61,7 +59,7 @@ int main(int argc, char *argv[])
         json_path_handler()
     };
 
-    yajlpp_parse_context ypc(test_handlers);
+    yajlpp_parse_context ypc("test_data", test_handlers);
     yajl_handle handle;
 
     handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);

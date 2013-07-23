@@ -207,10 +207,10 @@ public:
      */
     bool has_schema(void) const
     {
-        return this->ll_schema[0] != 0 ||
-               this->ll_schema[1] != 0 ||
-               this->ll_schema[2] != 0 ||
-               this->ll_schema[3] != 0;
+        return (this->ll_schema[0] != 0 ||
+                this->ll_schema[1] != 0 ||
+                this->ll_schema[2] != 0 ||
+                this->ll_schema[3] != 0);
     };
 
     /**
@@ -265,6 +265,33 @@ private:
     char     ll_schema[4];
 };
 
+enum scale_op_t {
+    SO_IDENTITY,
+    SO_MULTIPLY,
+    SO_DIVIDE
+};
+
+struct scaling_factor {
+    scaling_factor() : sf_op(SO_IDENTITY), sf_value(1) { };
+
+    template<typename T>
+    void scale(T &val) const {
+        switch (this->sf_op) {
+        case SO_IDENTITY:
+            break;
+        case SO_DIVIDE:
+            val = val / (T)this->sf_value;
+            break;
+        case SO_MULTIPLY:
+            val = val * (T)this->sf_value;
+            break;
+        }
+    }
+
+    scale_op_t sf_op;
+    double sf_value;
+};
+
 class logline_value {
 public:
     enum kind_t {
@@ -282,7 +309,8 @@ public:
         : lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i) { };
     logline_value(std::string name, std::string s)
         : lv_name(name), lv_kind(VALUE_TEXT), lv_string(s) { };
-    logline_value(std::string name, kind_t kind, std::string s, bool ident=false)
+    logline_value(std::string name, kind_t kind, std::string s,
+                  bool ident=false, const scaling_factor *scaling=NULL)
         : lv_name(name), lv_kind(kind), lv_identifier(ident)
     {
         switch (kind) {
@@ -292,10 +320,16 @@ public:
 
         case VALUE_INTEGER:
             sscanf(s.c_str(), "%" PRId64 "", &this->lv_number.i);
+            if (scaling != NULL) {
+                scaling->scale(this->lv_number.i);
+            }
             break;
 
         case VALUE_FLOAT:
             sscanf(s.c_str(), "%lf", &this->lv_number.d);
+            if (scaling != NULL) {
+                scaling->scale(this->lv_number.d);
+            }
             break;
 
         case VALUE_UNKNOWN:
@@ -447,7 +481,9 @@ public:
         value_def() :
             vd_index(-1),
             vd_kind(logline_value::VALUE_UNKNOWN),
-            vd_identifier(false) {
+            vd_identifier(false),
+            vd_foreign_key(false),
+            vd_unit_field_index(-1) {
 
         };
 
@@ -457,6 +493,9 @@ public:
         std::string vd_collate;
         bool vd_identifier;
         bool vd_foreign_key;
+        std::string vd_unit_field;
+        int vd_unit_field_index;
+        std::map<std::string, scaling_factor> vd_unit_scaling;
 
         bool operator<(const value_def &rhs) const {
             return this->vd_index < rhs.vd_index;

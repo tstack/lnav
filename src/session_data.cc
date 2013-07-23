@@ -660,21 +660,20 @@ static void load_time_bookmarks(void)
     }
 }
 
-static int read_save_time(void *ctx, long long value)
+static int read_save_time(yajlpp_parse_context *ypc, long long value)
 {
     lnav_data.ld_session_save_time = value;
 
     return 1;
 }
 
-static int read_files(void *ctx, const unsigned char *str, size_t len)
+static int read_files(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     return 1;
 }
 
-static int read_last_search(void *ctx, const unsigned char *str, size_t len)
+static int read_last_search(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     string       regex        = std::string((const char *)str, len);
     const char **view_name;
     int          view_index;
@@ -692,9 +691,8 @@ static int read_last_search(void *ctx, const unsigned char *str, size_t len)
     return 1;
 }
 
-static int read_top_line(void *ctx, long long value)
+static int read_top_line(yajlpp_parse_context *ypc, long long value)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     const char **         view_name;
     int view_index;
 
@@ -713,7 +711,7 @@ static int read_top_line(void *ctx, long long value)
     return 1;
 }
 
-static int read_commands(void *ctx, const unsigned char *str, size_t len)
+static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     std::string cmdline = std::string((const char *)str, len);
 
@@ -735,7 +733,6 @@ static struct json_path_handler view_info_handlers[] = {
 void load_session(void)
 {
     std::list<session_pair_t>::iterator sess_iter;
-    yajlpp_parse_context ypc(view_info_handlers);
     yajl_handle          handle;
     auto_fd fd;
 
@@ -744,12 +741,14 @@ void load_session(void)
         return;
     }
 
-    handle    = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
     sess_iter = lnav_data.ld_session_file_names.begin();
     advance(sess_iter, lnav_data.ld_session_file_index);
     lnav_data.ld_session_load_time = sess_iter->first.second;
     lnav_data.ld_session_save_time = sess_iter->first.second;
     string &view_info_name = sess_iter->second;
+
+    yajlpp_parse_context ypc(view_info_name, view_info_handlers);
+    handle    = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
 
     load_time_bookmarks();
 

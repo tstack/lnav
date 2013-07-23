@@ -117,14 +117,17 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
         // XXX testing for '$search' here sucks
         bool internal_hl = iter->first[0] == '$' && iter->first != "$search";
         int off, hcount = 0;
+        size_t re_end;
+
+        re_end = internal_hl ? body.lr_end : str.size();
+        re_end = max(re_end, (size_t)2048);
 
         for (off = internal_hl ? body.lr_start : 0; off < (int)str.size(); ) {
             int rc, matches[60];
-
             rc = pcre_exec(iter->second.h_code,
                            iter->second.h_code_extra,
                            str.c_str(),
-                           internal_hl ? body.lr_end : str.size(),
+                           re_end,
                            off,
                            0,
                            matches,

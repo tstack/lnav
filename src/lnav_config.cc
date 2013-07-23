@@ -80,4 +80,9 @@ void ensure_dotlnav(void)
     if (!path.empty()) {
         mkdir(path.c_str(), 0755);
     }
+
+    path = dotlnav_path("formats");
+    if (!path.empty()) {
+        mkdir(path.c_str(), 0755);
+    }
 }

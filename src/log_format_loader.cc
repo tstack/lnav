@@ -31,10 +31,15 @@
 
 #include "config.h"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <glob.h>
+
 #include <map>
 #include <string>
 
 #include "yajlpp.hh"
+#include "lnav_config.hh"
 #include "log_format.hh"
 #include "default-log-formats-json.hh"
 
@@ -54,9 +59,8 @@ static external_log_format *ensure_format(const std::string &name)
     return retval;
 }
 
-static int read_format_regex(void *ctx, const unsigned char *str, size_t len)
+static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
     string value = string((const char *)str, len);
 
@@ -65,9 +69,8 @@ static int read_format_regex(void *ctx, const unsigned char *str, size_t len)
     return 1;
 }
 
-static int read_format_field(void *ctx, const unsigned char *str, size_t len)
+static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
     string value = string((const char *)str, len);
     string field_name = ypc->get_path_fragment(1);
@@ -78,9 +81,8 @@ static int read_format_field(void *ctx, const unsigned char *str, size_t len)
     return 1;
 }
 
-static int read_levels(void *ctx, const unsigned char *str, size_t len)
+static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
     string regex = string((const char *)str, len);
     logline::level_t level = logline::string2level(ypc->get_path_fragment(2).c_str());
@@ -90,9 +92,8 @@ static int read_levels(void *ctx, const unsigned char *str, size_t len)
     return 1;
 }
 
-static int read_value_def(void *ctx, const unsigned char *str, size_t len)
+static int read_value_def(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
     string value_name = ypc->get_path_fragment(2);
     string field_name = ypc->get_path_fragment(3);
@@ -109,13 +110,18 @@ static int read_value_def(void *ctx, const unsigned char *str, size_t len)
         }
         elf->elf_value_defs[value_name].vd_kind = kind;
     }
+    else if (field_name == "unit" && ypc->get_path_fragment(4) == "field") {
+        elf->elf_value_defs[value_name].vd_unit_field = val;
+    }
+    else if (field_name == "collate") {
+        elf->elf_value_defs[value_name].vd_collate = val;
+    }
 
     return 1;
 }
 
-static int read_value_bool(void *ctx, int val)
+static int read_value_bool(yajlpp_parse_context *ypc, int val)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
     string value_name = ypc->get_path_fragment(2);
     string key_name = ypc->get_path_fragment(3);
@@ -136,9 +142,43 @@ static external_log_format::sample &ensure_sample(external_log_format *elf,
     return elf->elf_samples[index];
 }
 
-static int read_sample_line(void *ctx, const unsigned char *str, size_t len)
+static int read_scaling(yajlpp_parse_context *ypc, double val)
 {
-    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+    external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
+    string value_name = ypc->get_path_fragment(2);
+    string scale_name = ypc->get_path_fragment(5);
+
+    if (scale_name.empty()) {
+        fprintf(stderr,
+                "error:%s:%s: scaling factor field cannot be empty\n",
+                ypc->get_path_fragment(0).c_str(),
+                value_name.c_str());
+        return 0;
+    }
+
+    struct scaling_factor &sf = elf->elf_value_defs[value_name].vd_unit_scaling[scale_name.substr(1)];
+
+    if (scale_name[0] == '/') {
+        sf.sf_op = SO_DIVIDE;
+    }
+    else if (scale_name[0] == '*') {
+        sf.sf_op = SO_MULTIPLY;
+    }
+    else {
+        fprintf(stderr,
+                "error:%s:%s: scaling factor field must start with '/' or '*'\n",
+                ypc->get_path_fragment(0).c_str(),
+                value_name.c_str());
+        return 0;
+    }
+
+    sf.sf_value = val;
+
+    return 1;
+}
+
+static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
     string val = string((const char *)str, len);
     int index = ypc->ypc_array_index.back();
@@ -151,12 +191,14 @@ static int read_sample_line(void *ctx, const unsigned char *str, size_t len)
 
 static struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/regex#", read_format_regex),
-    json_path_handler("/\\w+/(level-field)", read_format_field),
+    json_path_handler("/\\w+/(level-field|url)", read_format_field),
     json_path_handler("/\\w+/level/"
                       "(trace|debug|info|warning|error|critical|fatal)",
                       read_levels),
-    json_path_handler("/\\w+/value/\\w+/(kind)", read_value_def),
+    json_path_handler("/\\w+/value/\\w+/(kind|collate|unit/field)", read_value_def),
     json_path_handler("/\\w+/value/\\w+/(identifier|foreign-key)", read_value_bool),
+    json_path_handler("/\\w+/value/\\w+/unit/scaling-factor/.*",
+        read_scaling),
     json_path_handler("/\\w+/sample#/line", read_sample_line),
 
     json_path_handler()
@@ -164,16 +206,60 @@ static struct json_path_handler format_handlers[] = {
 
 void load_formats(std::vector<std::string> &errors)
 {
-    yajlpp_parse_context ypc(format_handlers);
+    yajlpp_parse_context ypc_builtin("builtin", format_handlers);
     std::vector<std::string> retval;
     yajl_handle handle;
 
-    handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+    handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
     yajl_parse(handle,
                (const unsigned char *)default_log_formats_json,
                strlen(default_log_formats_json));
     yajl_complete_parse(handle);
     yajl_free(handle);
+
+    string format_path = dotlnav_path("formats/*.json");
+    static_root_mem<glob_t, globfree> gl;
+
+    if (glob(format_path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+        for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
+            string filename(gl->gl_pathv[lpc]);
+            int fd;
+
+            yajlpp_parse_context ypc(filename, format_handlers);
+            if ((fd = open(gl->gl_pathv[lpc], O_RDONLY)) != -1) {
+                char buffer[2048];
+                int rc = -1;
+
+                handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+                while (true) {
+                    rc = read(fd, buffer, sizeof(buffer));
+                    if (rc == 0) {
+                        break;
+                    }
+                    else if (rc == -1) {
+                        errors.push_back(filename +
+                                         ":unable to read file -- " +
+                                         string(strerror(errno)));
+                        break;
+                    }
+                    if (yajl_parse(handle, (const unsigned char *)buffer, rc) != yajl_status_ok) {
+                        errors.push_back(filename +
+                            ": invalid json -- " +
+                            string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
+                        break;
+                    }
+                }
+                if (rc == 0) {
+                    if (yajl_complete_parse(handle) != yajl_status_ok) {
+                        errors.push_back(filename +
+                            ": invalid json -- " +
+                            string((char *)yajl_get_error(handle, 0, NULL, 0)));
+                    }
+                }
+                yajl_free(handle);
+            }
+        }
+    }
 
     for (map<string, external_log_format *>::iterator iter = LOG_FORMATS.begin();
          iter != LOG_FORMATS.end();

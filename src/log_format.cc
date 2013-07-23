@@ -300,11 +300,29 @@ void external_log_format::annotate(const std::string &line,
 
     for (size_t lpc = 0; lpc < this->elf_patterns[this->lf_fmt_lock].p_value_by_index.size(); lpc++) {
         const value_def &vd = this->elf_patterns[this->lf_fmt_lock].p_value_by_index[lpc];
+        const struct scaling_factor *scaling = NULL;
+
+        if (vd.vd_unit_field_index >= 0) {
+            pcre_context::iterator unit_cap = pc[vd.vd_unit_field_index];
+
+            if (unit_cap != NULL && unit_cap->c_begin != -1) {
+                std::string unit_val = pi.get_substr(unit_cap);
+                std::map<string, scaling_factor>::const_iterator unit_iter;
+
+                unit_iter = vd.vd_unit_scaling.find(unit_val);
+                if (unit_iter != vd.vd_unit_scaling.end()) {
+                    const struct scaling_factor &sf = unit_iter->second;
+
+                    scaling = &sf;
+                }
+            }
+        }
 
         values.push_back(logline_value(vd.vd_name,
                          vd.vd_kind,
                          pi.get_substr(pc[vd.vd_index]),
-                         vd.vd_identifier));
+                         vd.vd_identifier,
+                         scaling));
 
         if (pc[vd.vd_index]->c_begin != -1 && vd.vd_identifier) {
             lr.lr_start = pc[vd.vd_index]->c_begin;
@@ -337,6 +355,7 @@ void external_log_format::build(std::vector<std::string> &errors)
             value_iter = this->elf_value_defs.find(std::string(name_iter->pnc_name));
             if (value_iter != this->elf_value_defs.end()) {
                 value_iter->second.vd_index = name_iter->index();
+                value_iter->second.vd_unit_field_index = iter->p_pcre->name_index(value_iter->second.vd_unit_field.c_str());
                 iter->p_value_by_index.push_back(value_iter->second);
             }
         }
@@ -399,9 +418,10 @@ public:
 
     void get_columns(vector<vtab_column> &cols) {
         std::vector<external_log_format::value_def>::const_iterator iter;
+        const external_log_format &elf = this->elt_format;
 
-        for (iter = this->elt_format.elf_patterns[0].p_value_by_index.begin();
-             iter != this->elt_format.elf_patterns[0].p_value_by_index.end();
+        for (iter = elf.elf_patterns[0].p_value_by_index.begin();
+             iter != elf.elf_patterns[0].p_value_by_index.end();
              ++iter) {
             int type;
 

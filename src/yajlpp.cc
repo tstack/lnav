@@ -69,12 +69,16 @@ void yajlpp_parse_context::update_callbacks(void)
         const json_path_handler &jph = this->ypc_handlers[lpc];
 
         if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
-            this->ypc_callbacks.yajl_null    = jph.jph_callbacks.yajl_null;
-            this->ypc_callbacks.yajl_boolean = jph.jph_callbacks.yajl_boolean;
-            this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
-            this->ypc_callbacks.yajl_double  = jph.jph_callbacks.yajl_double;
-            this->ypc_callbacks.yajl_string  = jph.jph_callbacks.yajl_string;
-            break;
+            if (jph.jph_callbacks.yajl_null != NULL)
+                this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
+            if (jph.jph_callbacks.yajl_boolean != NULL)
+                this->ypc_callbacks.yajl_boolean = jph.jph_callbacks.yajl_boolean;
+            if (jph.jph_callbacks.yajl_integer != NULL)
+                this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
+            if (jph.jph_callbacks.yajl_double != NULL)
+                this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
+            if (jph.jph_callbacks.yajl_string != NULL)
+                this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
         }
     }
 }
@@ -116,13 +120,50 @@ int yajlpp_parse_context::array_end(void *ctx)
     return 1;
 }
 
+int yajlpp_parse_context::handle_unused(void *ctx)
+{
+    yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
+
+    fprintf(stderr, "warning:%s:%s:unexpected data, expecting one of the following data types --\n",
+        ypc->ypc_source.c_str(),
+        ypc->ypc_path.c_str());
+    if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused) {
+        fprintf(stderr, "warning:%s:%s:  boolean\n",
+                ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+    }
+    if (ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused) {
+        fprintf(stderr, "warning:%s:%s:  integer\n",
+                ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+    }
+    if (ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused) {
+        fprintf(stderr, "warning:%s:%s:  float\n",
+                ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+    }
+    if (ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
+        fprintf(stderr, "warning:%s:%s:  string\n",
+                ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+    }
+
+    fprintf(stderr, "warning:%s:%s:accepted paths --\n",
+            ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+    for (int lpc = 0; ypc->ypc_handlers[lpc].jph_path[0]; lpc++) {
+        fprintf(stderr, "warning:%s:%s:  %s\n",
+            ypc->ypc_source.c_str(),
+            ypc->ypc_path.c_str(),
+            ypc->ypc_handlers[lpc].jph_path);
+    }
+
+    return 1;
+}
+
 const yajl_callbacks yajlpp_parse_context::DEFAULT_CALLBACKS = {
+    yajlpp_parse_context::handle_unused,
+    (int (*)(void *, int))yajlpp_parse_context::handle_unused,
+    (int (*)(void *, long long))yajlpp_parse_context::handle_unused,
+    (int (*)(void *, double))yajlpp_parse_context::handle_unused,
     NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    (int (*)(void *, const unsigned char *, size_t))
+    yajlpp_parse_context::handle_unused,
     yajlpp_parse_context::map_start,
     yajlpp_parse_context::map_key,
     yajlpp_parse_context::map_end,
