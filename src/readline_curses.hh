@@ -199,6 +199,7 @@ public:
 
     void set_perform_action(action va) { this->rc_perform = va; };
     void set_timeout_action(action va) { this->rc_timeout = va; };
+    void set_abort_action(action va) { this->rc_abort = va; };
 
     void set_value(const std::string &value)
     {
@@ -227,6 +228,8 @@ public:
     void check_fd_set(fd_set &ready_rfds);
 
     void focus(int context, const char *prompt);
+
+    void abort();
 
     void start(void);
 
@@ -283,5 +286,6 @@ private:
 
     action rc_perform;
     action rc_timeout;
+    action rc_abort;
 };
 #endif

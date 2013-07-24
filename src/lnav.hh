@@ -174,6 +174,7 @@ struct _lnav_data {
     fd_set                                  ld_read_fds;
 
     std::auto_ptr<grep_highlighter>         ld_grep_child[LG__MAX];
+    std::string                             ld_previous_search;
     std::string                             ld_last_search[LNV__MAX];
 
     log_vtab_manager *                      ld_vtab_manager;

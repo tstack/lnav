@@ -223,6 +223,8 @@ through the file.
                     that can be used in queries.  See the SQL section
                     below for more information.
 
+  CTRL+]            Abort command-line entry started with '/', ':', or ';'.
+
   y/Y               Move forward/backward through the log view based on the
                     "log_line" column in the SQL result view.
 

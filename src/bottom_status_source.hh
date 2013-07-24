@@ -122,11 +122,11 @@ public:
 
     status_field &statusview_value_for_field(int field)
     {
-        if (!this->bss_prompt.empty()) {
-            return this->bss_prompt;
-        }
-        else if (!this->bss_error.empty()) {
+        if (!this->bss_error.empty()) {
             return this->bss_error;
+        }
+        else if (!this->bss_prompt.empty()) {
+            return this->bss_prompt;
         }
         else {
             return this->get_field((field_t)field);

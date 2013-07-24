@@ -62,6 +62,7 @@
 using namespace std;
 
 static int              got_line    = 0;
+static int              got_abort   = 0;
 static sig_atomic_t     got_timeout = 0;
 static sig_atomic_t     got_winch   = 0;
 static readline_curses *child_this;
@@ -368,6 +369,24 @@ void readline_curses::start(void)
                         rl_callback_handler_install(&msg[prompt_start],
                                                     line_ready_tramp);
                     }
+                    else if (strcmp(msg, "a") == 0) {
+                        char reply[4];
+
+                        fprintf(stderr, "abort!!!\n");
+                        rl_done = 1;
+                        got_timeout = 0;
+                        got_line = 1;
+                        rl_callback_handler_remove();
+
+                        snprintf(reply, sizeof(reply), "a");
+
+                        if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
+                                          reply,
+                                          strlen(reply)) == -1) {
+                            perror("abort: write failed");
+                            exit(1);
+                        }
+                    }
                     else if (sscanf(msg,
                                     "ap:%d:%31[^:]:%n",
                                     &context,
@@ -417,6 +436,7 @@ void readline_curses::start(void)
             struct itimerval itv;
 
             got_line                = 0;
+            got_abort = 0;
             itv.it_value.tv_sec     = 0;
             itv.it_value.tv_usec    = 0;
             itv.it_interval.tv_sec  = 0;
@@ -468,28 +488,34 @@ void readline_curses::line_ready(const char *line)
     char           msg[1024];
     int            rc;
 
-    rc = history_expand(rl_line_buffer, expanded.out());
-    switch (rc) {
+    if (got_abort) {
+        snprintf(msg, sizeof(msg), "a");
+    }
+    else {
+        rc = history_expand(rl_line_buffer, expanded.out());
+        switch (rc) {
 #if 0
-    /* TODO: fix clash between history and pcre metacharacters */
-    case -1:
-        /* XXX */
-        snprintf(msg, sizeof(msg),
-                 "e:unable to expand history -- %s",
-                 expanded.in());
-        break;
+        /* TODO: fix clash between history and pcre metacharacters */
+        case -1:
+            /* XXX */
+            snprintf(msg, sizeof(msg),
+                     "e:unable to expand history -- %s",
+                     expanded.in());
+            break;
 #endif
 
-    case -1:
-        snprintf(msg, sizeof(msg), "d:%s", line);
-        break;
+        case -1:
+            snprintf(msg, sizeof(msg), "d:%s", line);
+            break;
 
-    case 0:
-    case 1:
-    case 2: /* XXX */
-        snprintf(msg, sizeof(msg), "d:%s", expanded.in());
-        break;
+        case 0:
+        case 1:
+        case 2: /* XXX */
+            snprintf(msg, sizeof(msg), "d:%s", expanded.in());
+            break;
+        }
     }
+
     if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
                       msg,
                       strlen(msg)) == -1) {
@@ -535,13 +561,21 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
         char msg[1024 + 1];
 
         rc = read(this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);
-        if (rc >= 2) {
+        if (rc >= 1) {
             string old_value = this->rc_value;
 
             msg[rc] = '\0';
             fprintf(stderr, "child command: %s\n", msg);
             this->rc_value = string(&msg[2]);
             switch (msg[0]) {
+            case 'a':
+                fprintf(stderr, "aborted!\n");
+                this->rc_active_context = -1;
+                this->vc_past_lines.clear();
+                this->rc_abort.invoke(this);
+                curs_set(0);
+                break;
+
             case 't':
                 if (this->rc_value != old_value) {
                     this->rc_timeout.invoke(this);
@@ -553,6 +587,7 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
                 this->rc_active_context = -1;
                 this->vc_past_lines.clear();
                 this->rc_perform.invoke(this);
+                curs_set(0);
                 break;
             }
         }
@@ -590,6 +625,18 @@ void readline_curses::focus(int context, const char *prompt)
     }
     wmove(this->vc_window, this->get_actual_y(), 0);
     wclrtoeol(this->vc_window);
+}
+
+void readline_curses::abort()
+{
+    char buffer[1024];
+
+    snprintf(buffer, sizeof(buffer), "a");
+    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
+                      buffer,
+                      strlen(buffer) + 1) == -1) {
+        perror("abort: write failed");
+    }
 }
 
 void readline_curses::add_possibility(int context,

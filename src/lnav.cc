@@ -1524,6 +1524,7 @@ static void handle_paging_key(int ch)
 
     case '/':
         lnav_data.ld_mode = LNM_SEARCH;
+        lnav_data.ld_previous_search = lnav_data.ld_last_search[lnav_data.ld_view_stack.top() - lnav_data.ld_views];
         lnav_data.ld_search_start_line = lnav_data.ld_view_stack.top()->
                                          get_top();
         lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
@@ -1813,6 +1814,10 @@ static void handle_rl_key(int ch)
         handle_paging_key(ch);
         break;
 
+    case KEY_CTRL_RBRACKET:
+        lnav_data.ld_rl_view->abort();
+        break;
+
     default:
         lnav_data.ld_rl_view->handle_key(ch);
         break;
@@ -1999,6 +2004,7 @@ void execute_search(lnav_view_t view, const std::string &regex)
 
 static void rl_search(void *dummy, readline_curses *rc)
 {
+    string term_val;
     string name;
 
     switch (lnav_data.ld_mode) {
@@ -2015,7 +2021,9 @@ static void rl_search(void *dummy, readline_curses *rc)
         return;
 
     case LNM_SQL:
-        if (!sqlite3_complete(rc->get_value().c_str())) {
+        term_val = rc->get_value() + ";";
+
+        if (!sqlite3_complete(term_val.c_str())) {
             lnav_data.ld_bottom_source.
             grep_error("sql error: incomplete statement");
         }
@@ -2050,6 +2058,36 @@ static void rl_search(void *dummy, readline_curses *rc)
 
     tc->set_top(lnav_data.ld_search_start_line);
     execute_search(index, rc->get_value());
+}
+
+static void rl_abort(void *dummy, readline_curses *rc)
+{
+    textview_curses *tc    = lnav_data.ld_view_stack.top();
+    lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
+
+    lnav_data.ld_bottom_source.set_prompt("");
+
+    lnav_data.ld_bottom_source.grep_error("");
+    switch (lnav_data.ld_mode) {
+    case LNM_SEARCH:
+        tc->set_top(lnav_data.ld_search_start_line);
+        execute_search(index, lnav_data.ld_previous_search);
+        break;
+    case LNM_SQL:
+    {
+        field_overlay_source *fos;
+
+        fos =
+            (field_overlay_source *)lnav_data.ld_views[LNV_LOG].
+            get_overlay_source();
+        fos->fos_active = fos->fos_active_prev;
+        tc->reload_data();
+        break;
+    }
+    default:
+        break;
+    }
+    lnav_data.ld_mode = LNM_PAGING;
 }
 
 static void rl_callback(void *dummy, readline_curses *rc)
@@ -2181,8 +2219,6 @@ static void rl_callback(void *dummy, readline_curses *rc)
         lnav_data.ld_mode = LNM_PAGING;
         break;
     }
-
-    curs_set(0);
 }
 
 static void usage(void)
@@ -2687,6 +2723,7 @@ static void looper(void)
         rlc.set_y(-1);
         rlc.set_perform_action(readline_curses::action(rl_callback));
         rlc.set_timeout_action(readline_curses::action(rl_search));
+        rlc.set_abort_action(readline_curses::action(rl_abort));
         rlc.set_alt_value(HELP_MSG_2(
                               e, E,
                               "to move forward/backward through error messages"));
