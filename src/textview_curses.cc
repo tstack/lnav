@@ -119,8 +119,10 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
         int off, hcount = 0;
         size_t re_end;
 
-        re_end = internal_hl ? body.lr_end : str.size();
-        re_end = max(re_end, (size_t)2048);
+        if (body.lr_end > 2048)
+            re_end = 2048;
+        else
+            re_end = body.lr_end;
 
         for (off = internal_hl ? body.lr_start : 0; off < (int)str.size(); ) {
             int rc, matches[60];
