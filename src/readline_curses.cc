@@ -62,7 +62,6 @@
 using namespace std;
 
 static int              got_line    = 0;
-static int              got_abort   = 0;
 static sig_atomic_t     got_timeout = 0;
 static sig_atomic_t     got_winch   = 0;
 static readline_curses *child_this;
@@ -436,7 +435,6 @@ void readline_curses::start(void)
             struct itimerval itv;
 
             got_line                = 0;
-            got_abort = 0;
             itv.it_value.tv_sec     = 0;
             itv.it_value.tv_usec    = 0;
             itv.it_interval.tv_sec  = 0;
@@ -488,12 +486,8 @@ void readline_curses::line_ready(const char *line)
     char           msg[1024];
     int            rc;
 
-    if (got_abort) {
-        snprintf(msg, sizeof(msg), "a");
-    }
-    else {
-        rc = history_expand(rl_line_buffer, expanded.out());
-        switch (rc) {
+    rc = history_expand(rl_line_buffer, expanded.out());
+    switch (rc) {
 #if 0
         /* TODO: fix clash between history and pcre metacharacters */
         case -1:
@@ -504,16 +498,15 @@ void readline_curses::line_ready(const char *line)
             break;
 #endif
 
-        case -1:
-            snprintf(msg, sizeof(msg), "d:%s", line);
-            break;
+    case -1:
+        snprintf(msg, sizeof(msg), "d:%s", line);
+        break;
 
-        case 0:
-        case 1:
-        case 2: /* XXX */
-            snprintf(msg, sizeof(msg), "d:%s", expanded.in());
-            break;
-        }
+    case 0:
+    case 1:
+    case 2: /* XXX */
+        snprintf(msg, sizeof(msg), "d:%s", expanded.in());
+        break;
     }
 
     if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
