@@ -6,11 +6,15 @@
 Welcome to lnav's documentation!
 ================================
 
+The Log File Navigator (lnav) is an advanced log file viewer for the console.
+
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   intro
+   formats
    hotkeys
 
 Indices and tables
