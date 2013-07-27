@@ -38,6 +38,12 @@
 
 using namespace std;
 
+alerter &alerter::singleton() {
+    static alerter retval;
+
+    return retval;
+};
+
 void view_curses::mvwattrline(WINDOW *window,
                               int y,
                               int x,

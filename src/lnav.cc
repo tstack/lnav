@@ -2906,6 +2906,8 @@ static void looper(void)
                     int ch;
 
                     while ((ch = getch()) != ERR) {
+                        alerter::singleton().new_input(ch);
+
                         switch (ch) {
                         case CEOF:
                         case KEY_RESIZE:

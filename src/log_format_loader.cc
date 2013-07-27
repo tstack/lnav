@@ -191,7 +191,7 @@ static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str,
 
 static struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/regex#", read_format_regex),
-    json_path_handler("/\\w+/(level-field|url)", read_format_field),
+    json_path_handler("/\\w+/(level-field|url|title|description)", read_format_field),
     json_path_handler("/\\w+/level/"
                       "(trace|debug|info|warning|error|critical|fatal)",
                       read_levels),

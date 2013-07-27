@@ -82,6 +82,31 @@ private:
     WINDOW *sc_main_window;
 };
 
+class alerter {
+
+public:
+    static alerter &singleton();
+
+    void chime(void) {
+        if (this->a_do_flash)
+            ::flash();
+        this->a_do_flash = false;
+    };
+
+    void new_input(int ch) {
+        if (this->a_last_input != ch) {
+            this->a_do_flash = true;
+        }
+        this->a_last_input = ch;
+    };
+
+private:
+    alerter() : a_do_flash(true), a_last_input(-1) { };
+
+    bool a_do_flash;
+    int a_last_input;
+};
+
 /**
  * Encapsulates a range in a string.
  */

@@ -172,7 +172,7 @@ public:
     {
         if (top < 0 || (top > 0 && top >= this->get_inner_height())) {
             if (suppress_flash == false) {
-                flash();
+                alerter::singleton().chime();
             }
         }
         else if (this->lv_top != top) {
@@ -215,7 +215,7 @@ public:
     {
         if (offset < 0 && this->lv_top == 0) {
             if (suppress_flash == false) {
-                flash();
+                alerter::singleton().chime();
             }
         }
         else {
