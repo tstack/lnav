@@ -1,5 +1,7 @@
 {
     "syslog_log" : {
+        "title" : "Syslog",
+        "description" : "The system logger format found on most posix systems.",
         "regex" : [
             "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>.*))|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
         ],
@@ -33,6 +35,8 @@
         ]
     },
     "access_log" : {
+        "title" : "Common Access Log",
+        "description" : "The default web access log format for servers like Apache.",
         "regex" : [
             "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+",
             "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+",
@@ -90,6 +94,8 @@
         ]
     },
     "error_log" : {
+        "title" : "Common Error Log",
+        "description" : "The default web error log format for servers like Apache.",
         "regex" : [
             "^(?<level>\\w) \\[(?<timestamp>[^\\]]+)\\] (?<body>.*)"
         ],
@@ -106,6 +112,8 @@
         ]
     },
     "page_log" : {
+        "title" : "CUPS Page Log",
+        "description" : "The CUPS server log of printed pages.",
         "url" : "http://www.cups.org/documentation.php/doc-1.7/ref-page_log.html",
         "regex" : [
             "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)$",
@@ -162,6 +170,8 @@
         ]
     },
     "vmw_log" : {
+        "title" : "VMware Logs",
+        "description" : "One of the log formats used in VMware's ESXi and vCenter software.",
         "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"],
         "level-field": "level",
         "level" : {
@@ -189,6 +199,8 @@
         }
     },
     "choose_repo_log" : {
+        "title" : "Yum choose_repo Log",
+        "description" : "The log format for the yum choose_repo tool.",
         "regex" : [
             "^\\[(?<level>\\w+):[^\\]]+] [^:]+:\\d+ (?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[\\.,]\\d{3})?):(?<body>.*)"
         ],
@@ -206,6 +218,8 @@
         ]
     },
     "dpkg_log" : {
+        "title" : "Dpkg Log",
+        "description" : "The debian dpkg log.",
         "regex" : [
             "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<action>startup|status|configure|install|upgrade|trigproc|remove|purge)(?: (?<status>config-files|failed-config|half-configured|half-installed|installed|not-installed|post-inst-failed|removal-failed|triggers-awaited|triggers-pending|unpacked))? (?<package>[^ ]+) (?<installed_version>[^ ]+)(?: (?<available_version>[^ ]+))?)|update-alternatives: (?<body>.*))$"
         ],
@@ -242,6 +256,8 @@
         ]
     },
     "block_log" : {
+        "title" : "Generic Block",
+        "description" : "A generic format for logs, like cron, that have a date at the start of a block.",
         "regex" : [
             "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})$"
         ],
@@ -252,6 +268,8 @@
         ]
     },
     "fsck_hfs_log" : {
+        "title" : "Fsck_hfs Log",
+        "description" : "Log for the fsck_hfs tool on Mac OS X.",
         "regex" : [
             "^(?<device>[^:]+): fsck_hfs run at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})"
         ],
@@ -268,6 +286,8 @@
         ]
     },
     "snaplogic_log" : {
+        "title" : "SnapLogic Server Log",
+        "description" : "The SnapLogic server log format.",
         "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:(?:stdout|stderr): ))(?<body>.*)"],
         "level-field" : "level",
         "level" : {
@@ -308,6 +328,8 @@
         }
     },
     "uwsgi_log" : {
+        "title" : "Uwsgi Log",
+        "description" : "The uwsgi log format.",
         "regex" : [
             "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+) (?<rt_unit>\\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)"
         ],

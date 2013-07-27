@@ -16,7 +16,15 @@ import sys, os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+this_dir = os.path.abspath('.')
+src_dir = os.path.join(this_dir, "..", "..", "src")
+sys.path.insert(0, src_dir)
+
+import format2csv
+
+format2csv.main(["",
+                 os.path.join(src_dir, "default-log-formats.json"),
+                 os.path.join(this_dir, "format-table.csv")])
 
 # -- General configuration -----------------------------------------------------
 

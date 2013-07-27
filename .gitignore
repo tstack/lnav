@@ -13,3 +13,4 @@ src/stamp-h1
 src/static-libs/
 test/.deps/
 test/Makefile
+*.pyc

@@ -14,7 +14,11 @@ Contents:
    :maxdepth: 2
 
    intro
+   ui
+   sessions
    formats
+   data
+   config
    hotkeys
 
 Indices and tables
@@ -23,4 +27,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
