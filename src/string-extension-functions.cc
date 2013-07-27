@@ -118,15 +118,15 @@ void regexp_replace(sqlite3_context *ctx, int argc, sqlite3_value **argv)
 
     assert(argc == 3);
 
-    re = (const char *)sqlite3_value_text(argv[0]);
-    if (!re) {
-        sqlite3_result_error(ctx, "no regexp", -1);
+    str = (const char *)sqlite3_value_text(argv[0]);
+    if (!str) {
+        sqlite3_result_error(ctx, "no string", -1);
         return;
     }
 
-    str = (const char *)sqlite3_value_text(argv[1]);
-    if (!str) {
-        sqlite3_result_error(ctx, "no string", -1);
+    re = (const char *)sqlite3_value_text(argv[1]);
+    if (!re) {
+        sqlite3_result_error(ctx, "no regexp", -1);
         return;
     }
 

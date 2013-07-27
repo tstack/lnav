@@ -70,9 +70,9 @@ Row 0:
   Column regexp('[e-z]+', 'ea'): 1
 EOF
 
-run_test ./drive_sql "select regexp_replace('\\d+', 'test 1 2 3', 'N')"
+run_test ./drive_sql "select regexp_replace('test 1 2 3', '\\d+', 'N')"
 
 check_output "" <<EOF
 Row 0:
-  Column regexp_replace('\d+', 'test 1 2 3', 'N'): test N N N
+  Column regexp_replace('test 1 2 3', '\d+', 'N'): test N N N
 EOF
