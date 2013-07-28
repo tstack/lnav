@@ -121,37 +121,25 @@ am__DEPENDENCIES_1 =
 drive_data_scanner_DEPENDENCIES = ../src/libdiag.a \
 	../src/default-log-formats-json.o $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am__dirstamp = $(am__leading_dot)dirstamp
-am_drive_grep_proc_OBJECTS = ../src/pcrepp.$(OBJEXT) \
-	../src/line_buffer.$(OBJEXT) ../src/grep_proc.$(OBJEXT) \
-	drive_grep_proc.$(OBJEXT)
+am_drive_grep_proc_OBJECTS = drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
-drive_grep_proc_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_drive_line_buffer_OBJECTS = ../src/line_buffer.$(OBJEXT) \
-	drive_line_buffer.$(OBJEXT)
+drive_grep_proc_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
+am_drive_line_buffer_OBJECTS = drive_line_buffer.$(OBJEXT)
 drive_line_buffer_OBJECTS = $(am_drive_line_buffer_OBJECTS)
-drive_line_buffer_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_drive_listview_OBJECTS = ../src/listview_curses.$(OBJEXT) \
-	../src/view_curses.$(OBJEXT) drive_listview.$(OBJEXT)
+drive_line_buffer_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1)
+am_drive_listview_OBJECTS = drive_listview.$(OBJEXT)
 drive_listview_OBJECTS = $(am_drive_listview_OBJECTS)
-drive_listview_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_drive_logfile_OBJECTS = ../src/logfile.$(OBJEXT) \
-	../src/log_format.$(OBJEXT) ../src/line_buffer.$(OBJEXT) \
-	../src/pcrepp.$(OBJEXT) drive_logfile.$(OBJEXT)
+drive_listview_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
+am_drive_logfile_OBJECTS = drive_logfile.$(OBJEXT)
 drive_logfile_OBJECTS = $(am_drive_logfile_OBJECTS)
 drive_logfile_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_drive_readline_curses_OBJECTS = ../src/ansi_scrubber.$(OBJEXT) \
-	../src/pcrepp.$(OBJEXT) ../src/vt52_curses.$(OBJEXT) \
-	../src/readline_curses.$(OBJEXT) ../src/view_curses.$(OBJEXT) \
-	drive_readline_curses.$(OBJEXT)
+am_drive_readline_curses_OBJECTS = drive_readline_curses.$(OBJEXT)
 drive_readline_curses_OBJECTS = $(am_drive_readline_curses_OBJECTS)
-drive_readline_curses_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
-am_drive_sequencer_OBJECTS = ../src/grep_proc.$(OBJEXT) \
-	../src/logfile.$(OBJEXT) ../src/log_format.$(OBJEXT) \
-	../src/line_buffer.$(OBJEXT) ../src/pcrepp.$(OBJEXT) \
-	../src/sequence_matcher.$(OBJEXT) drive_sequencer.$(OBJEXT)
+drive_readline_curses_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_drive_sequencer_OBJECTS = drive_sequencer.$(OBJEXT)
 drive_sequencer_OBJECTS = $(am_drive_sequencer_OBJECTS)
 drive_sequencer_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
@@ -160,22 +148,21 @@ drive_sql_OBJECTS = $(am_drive_sql_OBJECTS)
 drive_sql_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_drive_view_colors_OBJECTS = ../src/view_curses.$(OBJEXT) \
-	drive_view_colors.$(OBJEXT)
+am_drive_view_colors_OBJECTS = drive_view_colors.$(OBJEXT)
 drive_view_colors_OBJECTS = $(am_drive_view_colors_OBJECTS)
-drive_view_colors_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_drive_vt52_curses_OBJECTS = ../src/vt52_curses.$(OBJEXT) \
-	../src/view_curses.$(OBJEXT) drive_vt52_curses.$(OBJEXT)
+drive_view_colors_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1)
+am_drive_vt52_curses_OBJECTS = drive_vt52_curses.$(OBJEXT)
 drive_vt52_curses_OBJECTS = $(am_drive_vt52_curses_OBJECTS)
-drive_vt52_curses_DEPENDENCIES = $(am__DEPENDENCIES_1)
+drive_vt52_curses_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1)
 am_scripty_OBJECTS = scripty.$(OBJEXT)
 scripty_OBJECTS = $(am_scripty_OBJECTS)
 scripty_LDADD = $(LDADD)
 scripty_DEPENDENCIES =
-am_slicer_OBJECTS = ../src/line_buffer.$(OBJEXT) slicer.$(OBJEXT)
+am_slicer_OBJECTS = slicer.$(OBJEXT)
 slicer_OBJECTS = $(am_slicer_OBJECTS)
-slicer_LDADD = $(LDADD)
-slicer_DEPENDENCIES =
+slicer_DEPENDENCIES = ../src/libdiag.a
 am_test_ansi_scrubber_OBJECTS = test_ansi_scrubber.$(OBJEXT)
 test_ansi_scrubber_OBJECTS = $(am_test_ansi_scrubber_OBJECTS)
 test_ansi_scrubber_DEPENDENCIES = ../src/libdiag.a \
@@ -188,29 +175,21 @@ am_test_auto_mem_OBJECTS = test_auto_mem.$(OBJEXT)
 test_auto_mem_OBJECTS = $(am_test_auto_mem_OBJECTS)
 test_auto_mem_LDADD = $(LDADD)
 test_auto_mem_DEPENDENCIES =
-am_test_bookmarks_OBJECTS = test_bookmarks.$(OBJEXT) \
-	../src/bookmarks.$(OBJEXT)
+am_test_bookmarks_OBJECTS = test_bookmarks.$(OBJEXT)
 test_bookmarks_OBJECTS = $(am_test_bookmarks_OBJECTS)
-test_bookmarks_LDADD = $(LDADD)
-test_bookmarks_DEPENDENCIES =
-am_test_grep_proc2_OBJECTS = ../src/line_buffer.$(OBJEXT) \
-	../src/grep_proc.$(OBJEXT) ../src/pcrepp.$(OBJEXT) \
-	test_grep_proc2.$(OBJEXT)
+test_bookmarks_DEPENDENCIES = ../src/libdiag.a
+am_test_grep_proc2_OBJECTS = test_grep_proc2.$(OBJEXT)
 test_grep_proc2_OBJECTS = $(am_test_grep_proc2_OBJECTS)
-test_grep_proc2_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_test_hist_source_OBJECTS = ../src/hist_source.$(OBJEXT) \
-	../src/view_curses.$(OBJEXT) test_hist_source.$(OBJEXT)
+test_grep_proc2_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
+am_test_hist_source_OBJECTS = test_hist_source.$(OBJEXT)
 test_hist_source_OBJECTS = $(am_test_hist_source_OBJECTS)
-test_hist_source_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_test_line_buffer2_OBJECTS = ../src/line_buffer.$(OBJEXT) \
-	test_line_buffer2.$(OBJEXT)
+test_hist_source_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
+am_test_line_buffer2_OBJECTS = test_line_buffer2.$(OBJEXT)
 test_line_buffer2_OBJECTS = $(am_test_line_buffer2_OBJECTS)
-test_line_buffer2_LDADD = $(LDADD)
-test_line_buffer2_DEPENDENCIES =
-am_test_pcrepp_OBJECTS = ../src/pcrepp.$(OBJEXT) test_pcrepp.$(OBJEXT)
+test_line_buffer2_DEPENDENCIES = ../src/libdiag.a
+am_test_pcrepp_OBJECTS = test_pcrepp.$(OBJEXT)
 test_pcrepp_OBJECTS = $(am_test_pcrepp_OBJECTS)
-test_pcrepp_LDADD = $(LDADD)
-test_pcrepp_DEPENDENCIES =
+test_pcrepp_DEPENDENCIES = ../src/libdiag.a
 am_test_top_status_OBJECTS = test_top_status.$(OBJEXT)
 test_top_status_OBJECTS = $(am_test_top_status_OBJECTS)
 test_top_status_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
@@ -637,67 +616,29 @@ test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB)
 test_auto_fd_SOURCES = test_auto_fd.cc
 test_auto_mem_SOURCES = test_auto_mem.cc
-test_bookmarks_SOURCES = test_bookmarks.cc ../src/bookmarks.cc
-test_grep_proc2_SOURCES = \
-	../src/line_buffer.cc \
-	../src/grep_proc.cc \
-	../src/pcrepp.cc \
-	test_grep_proc2.cc
-
-test_grep_proc2_LDADD = $(PCRE_LIBS) -lz
-test_hist_source_SOURCES = \
-	../src/hist_source.cc \
-	../src/view_curses.cc \
-	test_hist_source.cc
-
-test_hist_source_LDADD = $(CURSES_LIB) -lz
-test_line_buffer2_SOURCES = \
-	../src/line_buffer.cc \
-	test_line_buffer2.cc
-
-test_pcrepp_SOURCES = \
-	../src/pcrepp.cc \
-	test_pcrepp.cc
-
+test_bookmarks_SOURCES = test_bookmarks.cc
+test_bookmarks_LDADD = ../src/libdiag.a
+test_grep_proc2_SOURCES = test_grep_proc2.cc
+test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+test_hist_source_SOURCES = test_hist_source.cc
+test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
+test_line_buffer2_SOURCES = test_line_buffer2.cc
+test_line_buffer2_LDADD = ../src/libdiag.a
+test_pcrepp_SOURCES = test_pcrepp.cc
+test_pcrepp_LDADD = ../src/libdiag.a
 test_top_status_SOURCES = test_top_status.cc
 test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
-drive_line_buffer_SOURCES = \
-	../src/line_buffer.cc \
-	drive_line_buffer.cc
-
-drive_line_buffer_LDADD = $(CURSES_LIB) -lz
-drive_grep_proc_SOURCES = \
-	../src/pcrepp.cc \
-	../src/line_buffer.cc \
-	../src/grep_proc.cc \
-	drive_grep_proc.cc
-
-drive_grep_proc_LDADD = $(PCRE_LIBS) -lz
-drive_listview_SOURCES = \
-	../src/listview_curses.cc \
-	../src/view_curses.cc \
-	drive_listview.cc
-
-drive_listview_LDADD = $(CURSES_LIB) -lz
-drive_logfile_SOURCES = \
-	../src/logfile.cc \
-	../src/log_format.cc \
-	../src/line_buffer.cc \
-	../src/pcrepp.cc \
-	drive_logfile.cc
-
+drive_line_buffer_SOURCES = drive_line_buffer.cc
+drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
+drive_grep_proc_SOURCES = drive_grep_proc.cc
+drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+drive_listview_SOURCES = drive_listview.cc
+drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
+drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
-drive_sequencer_SOURCES = \
-	../src/grep_proc.cc \
-	../src/logfile.cc \
-	../src/log_format.cc \
-	../src/line_buffer.cc \
-	../src/pcrepp.cc \
-	../src/sequence_matcher.cc \
-	drive_sequencer.cc
-
+drive_sequencer_SOURCES = drive_sequencer.cc
 drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
@@ -709,26 +650,12 @@ drive_data_scanner_LDADD = \
 	$(SQLITE3_LIBS) \
 	$(CURSES_LIB)
 
-drive_view_colors_SOURCES = \
-	../src/view_curses.cc \
-	drive_view_colors.cc
-
-drive_view_colors_LDADD = $(CURSES_LIB)
-drive_vt52_curses_SOURCES = \
-	../src/vt52_curses.cc \
-	../src/view_curses.cc \
-	drive_vt52_curses.cc
-
-drive_vt52_curses_LDADD = $(CURSES_LIB)
-drive_readline_curses_SOURCES = \
-	../src/ansi_scrubber.cc \
-	../src/pcrepp.cc \
-	../src/vt52_curses.cc \
-	../src/readline_curses.cc \
-	../src/view_curses.cc \
-	drive_readline_curses.cc
-
-drive_readline_curses_LDADD = $(CURSES_LIB) $(READLINE_LIBS)
+drive_view_colors_SOURCES = drive_view_colors.cc
+drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB)
+drive_vt52_curses_SOURCES = drive_vt52_curses.cc
+drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB)
+drive_readline_curses_SOURCES = drive_readline_curses.cc
+drive_readline_curses_LDADD = ../src/libdiag.a $(CURSES_LIB) $(READLINE_LIBS)
 drive_sql_SOURCES = \
 	drive_sql.cc
 
@@ -741,10 +668,8 @@ drive_sql_LDADD = \
 	-lpcrecpp \
 	-lcrypto
 
-slicer_SOURCES = \
-	../src/line_buffer.cc \
-	slicer.cc
-
+slicer_SOURCES = slicer.cc
+slicer_LDADD = ../src/libdiag.a
 scripty_SOURCES = scripty.cc
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
@@ -848,18 +773,6 @@ clean-checkPROGRAMS:
 drive_data_scanner$(EXEEXT): $(drive_data_scanner_OBJECTS) $(drive_data_scanner_DEPENDENCIES) $(EXTRA_drive_data_scanner_DEPENDENCIES) 
 	@rm -f drive_data_scanner$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_data_scanner_OBJECTS) $(drive_data_scanner_LDADD) $(LIBS)
-../src/$(am__dirstamp):
-	@$(MKDIR_P) ../src
-	@: > ../src/$(am__dirstamp)
-../src/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) ../src/$(DEPDIR)
-	@: > ../src/$(DEPDIR)/$(am__dirstamp)
-../src/pcrepp.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/line_buffer.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/grep_proc.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 drive_grep_proc$(EXEEXT): $(drive_grep_proc_OBJECTS) $(drive_grep_proc_DEPENDENCIES) $(EXTRA_drive_grep_proc_DEPENDENCIES) 
 	@rm -f drive_grep_proc$(EXEEXT)
@@ -868,34 +781,18 @@ drive_grep_proc$(EXEEXT): $(drive_grep_proc_OBJECTS) $(drive_grep_proc_DEPENDENC
 drive_line_buffer$(EXEEXT): $(drive_line_buffer_OBJECTS) $(drive_line_buffer_DEPENDENCIES) $(EXTRA_drive_line_buffer_DEPENDENCIES) 
 	@rm -f drive_line_buffer$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_line_buffer_OBJECTS) $(drive_line_buffer_LDADD) $(LIBS)
-../src/listview_curses.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/view_curses.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 drive_listview$(EXEEXT): $(drive_listview_OBJECTS) $(drive_listview_DEPENDENCIES) $(EXTRA_drive_listview_DEPENDENCIES) 
 	@rm -f drive_listview$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_listview_OBJECTS) $(drive_listview_LDADD) $(LIBS)
-../src/logfile.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/log_format.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 drive_logfile$(EXEEXT): $(drive_logfile_OBJECTS) $(drive_logfile_DEPENDENCIES) $(EXTRA_drive_logfile_DEPENDENCIES) 
 	@rm -f drive_logfile$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_logfile_OBJECTS) $(drive_logfile_LDADD) $(LIBS)
-../src/ansi_scrubber.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/vt52_curses.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/readline_curses.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 drive_readline_curses$(EXEEXT): $(drive_readline_curses_OBJECTS) $(drive_readline_curses_DEPENDENCIES) $(EXTRA_drive_readline_curses_DEPENDENCIES) 
 	@rm -f drive_readline_curses$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_readline_curses_OBJECTS) $(drive_readline_curses_LDADD) $(LIBS)
-../src/sequence_matcher.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 drive_sequencer$(EXEEXT): $(drive_sequencer_OBJECTS) $(drive_sequencer_DEPENDENCIES) $(EXTRA_drive_sequencer_DEPENDENCIES) 
 	@rm -f drive_sequencer$(EXEEXT)
@@ -932,8 +829,6 @@ test_auto_fd$(EXEEXT): $(test_auto_fd_OBJECTS) $(test_auto_fd_DEPENDENCIES) $(EX
 test_auto_mem$(EXEEXT): $(test_auto_mem_OBJECTS) $(test_auto_mem_DEPENDENCIES) $(EXTRA_test_auto_mem_DEPENDENCIES) 
 	@rm -f test_auto_mem$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_auto_mem_OBJECTS) $(test_auto_mem_LDADD) $(LIBS)
-../src/bookmarks.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 test_bookmarks$(EXEEXT): $(test_bookmarks_OBJECTS) $(test_bookmarks_DEPENDENCIES) $(EXTRA_test_bookmarks_DEPENDENCIES) 
 	@rm -f test_bookmarks$(EXEEXT)
@@ -942,8 +837,6 @@ test_bookmarks$(EXEEXT): $(test_bookmarks_OBJECTS) $(test_bookmarks_DEPENDENCIES
 test_grep_proc2$(EXEEXT): $(test_grep_proc2_OBJECTS) $(test_grep_proc2_DEPENDENCIES) $(EXTRA_test_grep_proc2_DEPENDENCIES) 
 	@rm -f test_grep_proc2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_grep_proc2_OBJECTS) $(test_grep_proc2_LDADD) $(LIBS)
-../src/hist_source.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 test_hist_source$(EXEEXT): $(test_hist_source_OBJECTS) $(test_hist_source_DEPENDENCIES) $(EXTRA_test_hist_source_DEPENDENCIES) 
 	@rm -f test_hist_source$(EXEEXT)
@@ -967,24 +860,10 @@ test_yajlpp$(EXEEXT): $(test_yajlpp_OBJECTS) $(test_yajlpp_DEPENDENCIES) $(EXTRA
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f ../src/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/ansi_scrubber.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/bookmarks.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/grep_proc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/hist_source.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/line_buffer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/listview_curses.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/log_format.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/logfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/pcrepp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/readline_curses.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/sequence_matcher.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/view_curses.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/vt52_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_data_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_grep_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_line_buffer.Po@am__quote@
@@ -1430,8 +1309,6 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f ../src/$(DEPDIR)/$(am__dirstamp)
-	-rm -f ../src/$(am__dirstamp)
 	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
@@ -1442,7 +1319,7 @@ clean: clean-am
 clean-am: clean-checkPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ../src/$(DEPDIR) ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1488,7 +1365,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ../src/$(DEPDIR) ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

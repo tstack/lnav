@@ -49,28 +49,20 @@ test_auto_fd_SOURCES = test_auto_fd.cc
 
 test_auto_mem_SOURCES = test_auto_mem.cc
 
-test_bookmarks_SOURCES = test_bookmarks.cc ../src/bookmarks.cc
+test_bookmarks_SOURCES = test_bookmarks.cc
+test_bookmarks_LDADD = ../src/libdiag.a
 
-test_grep_proc2_SOURCES = \
-	../src/line_buffer.cc \
-	../src/grep_proc.cc \
-	../src/pcrepp.cc \
-	test_grep_proc2.cc
-test_grep_proc2_LDADD = $(PCRE_LIBS) -lz
+test_grep_proc2_SOURCES = test_grep_proc2.cc
+test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
-test_hist_source_SOURCES = \
-	../src/hist_source.cc \
-	../src/view_curses.cc \
-	test_hist_source.cc
-test_hist_source_LDADD = $(CURSES_LIB) -lz
+test_hist_source_SOURCES = test_hist_source.cc
+test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 
-test_line_buffer2_SOURCES = \
-	../src/line_buffer.cc \
-	test_line_buffer2.cc
+test_line_buffer2_SOURCES = test_line_buffer2.cc
+test_line_buffer2_LDADD = ../src/libdiag.a
 
-test_pcrepp_SOURCES = \
-	../src/pcrepp.cc \
-	test_pcrepp.cc
+test_pcrepp_SOURCES = test_pcrepp.cc
+test_pcrepp_LDADD = ../src/libdiag.a
 
 test_top_status_SOURCES = test_top_status.cc
 test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
@@ -78,40 +70,19 @@ test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
 
-drive_line_buffer_SOURCES = \
-	../src/line_buffer.cc \
-	drive_line_buffer.cc
-drive_line_buffer_LDADD = $(CURSES_LIB) -lz
+drive_line_buffer_SOURCES = drive_line_buffer.cc
+drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 
-drive_grep_proc_SOURCES = \
-	../src/pcrepp.cc \
-	../src/line_buffer.cc \
-	../src/grep_proc.cc \
-	drive_grep_proc.cc
-drive_grep_proc_LDADD = $(PCRE_LIBS) -lz
+drive_grep_proc_SOURCES = drive_grep_proc.cc
+drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
-drive_listview_SOURCES = \
-	../src/listview_curses.cc \
-	../src/view_curses.cc \
-	drive_listview.cc
-drive_listview_LDADD = $(CURSES_LIB) -lz
+drive_listview_SOURCES = drive_listview.cc
+drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 
-drive_logfile_SOURCES = \
-	../src/logfile.cc \
-	../src/log_format.cc \
-	../src/line_buffer.cc \
-	../src/pcrepp.cc \
-	drive_logfile.cc
+drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
 
-drive_sequencer_SOURCES = \
-	../src/grep_proc.cc \
-	../src/logfile.cc \
-	../src/log_format.cc \
-	../src/line_buffer.cc \
-	../src/pcrepp.cc \
-	../src/sequence_matcher.cc \
-	drive_sequencer.cc
+drive_sequencer_SOURCES = drive_sequencer.cc
 drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
 
 drive_data_scanner_SOURCES = \
@@ -123,25 +94,14 @@ drive_data_scanner_LDADD = \
 	$(SQLITE3_LIBS) \
 	$(CURSES_LIB)
 
-drive_view_colors_SOURCES = \
-	../src/view_curses.cc \
-	drive_view_colors.cc
-drive_view_colors_LDADD = $(CURSES_LIB)
+drive_view_colors_SOURCES = drive_view_colors.cc
+drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
-drive_vt52_curses_SOURCES = \
-	../src/vt52_curses.cc \
-	../src/view_curses.cc \
-	drive_vt52_curses.cc
-drive_vt52_curses_LDADD = $(CURSES_LIB)
+drive_vt52_curses_SOURCES = drive_vt52_curses.cc
+drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
-drive_readline_curses_SOURCES = \
-	../src/ansi_scrubber.cc \
-	../src/pcrepp.cc \
-	../src/vt52_curses.cc \
-	../src/readline_curses.cc \
-	../src/view_curses.cc \
-	drive_readline_curses.cc
-drive_readline_curses_LDADD = $(CURSES_LIB) $(READLINE_LIBS)
+drive_readline_curses_SOURCES = drive_readline_curses.cc
+drive_readline_curses_LDADD = ../src/libdiag.a $(CURSES_LIB) $(READLINE_LIBS)
 
 drive_sql_SOURCES = \
 	drive_sql.cc
@@ -154,9 +114,8 @@ drive_sql_LDADD = \
 	-lpcrecpp \
 	-lcrypto
 
-slicer_SOURCES = \
-	../src/line_buffer.cc \
-	slicer.cc
+slicer_SOURCES = slicer.cc
+slicer_LDADD = ../src/libdiag.a
 
 scripty_SOURCES = scripty.cc
 
