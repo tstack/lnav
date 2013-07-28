@@ -406,6 +406,34 @@ void external_log_format::build(std::vector<std::string> &errors)
                              this->elf_name +
                              ":invalid sample -- " +
                              iter->s_line);
+
+            for (std::vector<pattern>::iterator pat_iter = this->elf_patterns.begin();
+                 pat_iter != this->elf_patterns.end();
+                 ++pat_iter) {
+                if (!pat_iter->p_pcre)
+                    continue;
+
+                std::string line_partial = iter->s_line;
+
+                while (!line_partial.empty()) {
+                    pcre_input pi_partial(line_partial);
+
+                    if (pat_iter->p_pcre->match(pc, pi_partial, PCRE_PARTIAL)) {
+                        errors.push_back("error:" +
+                                         this->elf_name +
+                                         ":partial sample matched -- " +
+                                         line_partial);
+                        break;
+                    }
+
+                    line_partial = line_partial.substr(0, line_partial.size() - 1);
+                }
+                if (line_partial.empty()) {
+                    errors.push_back("error:" +
+                                     this->elf_name +
+                                     ":no partial match found");
+                }
+            }
         }
     }
 }

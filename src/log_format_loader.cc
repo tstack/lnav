@@ -69,6 +69,17 @@ static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str
     return 1;
 }
 
+static int read_format_bool(yajlpp_parse_context *ypc, int val)
+{
+    external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
+    string field_name = ypc->get_path_fragment(1);
+
+    if (field_name == "local-time")
+        elf->lf_date_time.dts_local_time = val;
+
+    return 1;
+}
+
 static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
@@ -191,6 +202,7 @@ static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str,
 
 static struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/regex#", read_format_regex),
+    json_path_handler("/\\w+/local-time", read_format_bool),
     json_path_handler("/\\w+/(level-field|url|title|description)", read_format_field),
     json_path_handler("/\\w+/level/"
                       "(trace|debug|info|warning|error|critical|fatal)",

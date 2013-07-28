@@ -2987,22 +2987,6 @@ static void looper(void)
     }
 }
 
-class glog_log_table : public log_vtab_impl {
-public:
-
-    glog_log_table()
-        : log_vtab_impl("glog_log") {};
-
-    void get_columns(vector<vtab_column> &cols)
-    {
-        cols.push_back(vtab_column("micros", SQLITE_INTEGER));
-        cols.push_back(vtab_column("thread", SQLITE3_TEXT));
-        cols.push_back(vtab_column("src_file", SQLITE3_TEXT));
-        cols.push_back(vtab_column("src_line", SQLITE_TEXT));
-        cols.push_back(vtab_column("message", SQLITE3_TEXT));
-    };
-};
-
 class strace_log_table : public log_vtab_impl {
 public:
 
@@ -3373,7 +3357,6 @@ int main(int argc, char *argv[])
     }
 
     lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
-    lnav_data.ld_vtab_manager->register_vtab(new glog_log_table());
     lnav_data.ld_vtab_manager->register_vtab(new strace_log_table());
 
     for (std::vector<log_format *>::iterator iter = log_format::get_root_formats().begin();

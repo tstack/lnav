@@ -152,7 +152,7 @@ time_t tm2sec(const struct tm *t);
 extern const char *std_time_fmt[];
 
 struct date_time_scanner {
-    date_time_scanner() {
+    date_time_scanner() : dts_local_time(false) {
         this->clear();
     };
 
@@ -168,6 +168,7 @@ struct date_time_scanner {
         localtime_r(&base_time, &this->dts_base_tm);
     };
 
+    bool dts_local_time;
     time_t dts_base_time;
     struct tm dts_base_tm;
     int dts_fmt_lock;

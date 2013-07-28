@@ -389,6 +389,9 @@ public:
             switch (rc) {
             case PCRE_ERROR_NOMATCH:
                 break;
+            case PCRE_ERROR_PARTIAL:
+                pc.set_count(1);
+                return true;
 
             default:
                 fprintf(stderr, "pcre err %d\n", rc);

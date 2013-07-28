@@ -243,6 +243,8 @@ const char *std_time_fmt[] = {
 
     "%m/%d/%y %H:%M:%S",
 
+    "+%s",
+
     NULL,
 };
 
@@ -263,9 +265,31 @@ const char *date_time_scanner::scan(const char *time_dest,
                        curr_time_fmt,
                        this->dts_fmt_lock)) {
         *tm_out = this->dts_base_tm;
-        if ((retval = strptime(time_dest,
-                               time_fmt[curr_time_fmt],
-                               tm_out)) != NULL) {
+        if (time_fmt[curr_time_fmt][0] == '+') {
+            int gmt_int, off;
+
+            retval = NULL;
+            if (sscanf(time_dest, "+%d%n", &gmt_int, &off) == 1) {
+                time_t gmt = gmt_int;
+
+                if (this->dts_local_time) {
+                    localtime_r(&gmt, tm_out);
+                    tm_out->tm_zone = NULL;
+                    tm_out->tm_isdst = 0;
+                    gmt = tm2sec(tm_out);
+                }
+                tv_out.tv_sec = gmt;
+
+                this->dts_fmt_lock = curr_time_fmt;
+                this->dts_fmt_len = off;
+                retval = time_dest + off;
+                found = true;
+                break;
+            }
+        }
+        else if ((retval = strptime(time_dest,
+                                    time_fmt[curr_time_fmt],
+                                    tm_out)) != NULL) {
             if (time_fmt[curr_time_fmt] == time_fmt_with_zone) {
                 int lpc;
 
@@ -285,29 +309,18 @@ const char *date_time_scanner::scan(const char *time_dest,
             if (tm_out->tm_year < 70) {
                 tm_out->tm_year = 80;
             }
+            if (this->dts_local_time) {
+                time_t gmt = tm2sec(tm_out);
+
+                localtime_r(&gmt, tm_out);
+                tm_out->tm_zone = NULL;
+                tm_out->tm_isdst = 0;
+            }
             tv_out.tv_sec = tm2sec(tm_out);
             tv_out.tv_usec = 0;
 
             this->dts_fmt_lock = curr_time_fmt;
             this->dts_fmt_len  = retval - time_dest;
-
-            /* Try to pull out the milli/micro-second value. */
-            if (retval[0] == '.' || retval[0] == ',') {
-                int sub_seconds = 0, sub_len = 0;
-
-                if (sscanf(retval + 1, "%d%n", &sub_seconds, &sub_len) == 1) {
-                    switch (sub_len) {
-                    case 3:
-                        tv_out.tv_usec = sub_seconds * 100;
-                        this->dts_fmt_len += 1 + sub_len;
-                        break;
-                    case 6:
-                        tv_out.tv_usec = sub_seconds;
-                        this->dts_fmt_len += 1 + sub_len;
-                        break;
-                    }
-                }
-            }
 
             found = true;
             break;
@@ -316,6 +329,26 @@ const char *date_time_scanner::scan(const char *time_dest,
 
     if (!found) {
         retval = NULL;
+    }
+
+    if (retval != NULL) {
+        /* Try to pull out the milli/micro-second value. */
+        if (retval[0] == '.' || retval[0] == ',') {
+            int sub_seconds = 0, sub_len = 0;
+
+            if (sscanf(retval + 1, "%d%n", &sub_seconds, &sub_len) == 1) {
+                switch (sub_len) {
+                case 3:
+                    tv_out.tv_usec = sub_seconds * 100;
+                    this->dts_fmt_len += 1 + sub_len;
+                    break;
+                case 6:
+                    tv_out.tv_usec = sub_seconds;
+                    this->dts_fmt_len += 1 + sub_len;
+                    break;
+                }
+            }
+        }
     }
 
     return retval;

@@ -93,6 +93,41 @@
             }
         ]
     },
+    "glog_log" : {
+        "title" : "Glog",
+        "description" : "The google glog format.",
+        "regex" : [
+          "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>.*)"
+        ],
+        "level-field" : "level",
+        "level" : {
+            "error" : "E",
+            "warning" : "W",
+            "info" : "I",
+            "critical" : "C",
+            "fatal" : "F"
+        },
+        "value" : {
+            "thread" : {
+                "kind" : "integer",
+                "identifier" : true,
+                "foreign-key" : true
+            },
+            "src_file" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "src_line" : {
+                "kind" : "integer",
+                "foreign-key" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19"
+            }
+        ]
+    },
     "error_log" : {
         "title" : "Common Error Log",
         "description" : "The default web error log format for servers like Apache.",
@@ -326,6 +361,14 @@
                 "identifier" : true
             }
         }
+    },
+    "tcsh_history" : {
+        "title" : "TCSH History",
+        "description" : "The tcsh history file format.",
+        "local-time" : true,
+        "regex" : [
+            "^#(?<timestamp>\\+\\d+)$"
+        ]
     },
     "uwsgi_log" : {
         "title" : "Uwsgi Log",
