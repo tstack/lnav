@@ -1,5 +1,5 @@
 
-AC_INIT(lnav, 0.5.1, lnav@googlegroups.com)
+AC_INIT(lnav, 0.6.0, lnav@googlegroups.com)
 AC_CONFIG_SRCDIR([src/lnav.cc])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
@@ -35,8 +35,8 @@ AC_SUBST(abssrcdir)
 
 AC_PROG_CXX
 
-CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
-CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
+# CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
+# CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
 
 AC_ARG_ENABLE([static],
               AS_HELP_STRING([--disable-static],
