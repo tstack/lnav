@@ -1,39 +1,4 @@
 {
-    "syslog_log" : {
-        "title" : "Syslog",
-        "description" : "The system logger format found on most posix systems.",
-        "regex" : [
-            "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>.*))|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
-        ],
-        "level-field" : "body",
-        "level" : {
-            "error" : "(?:failed|failure|error)",
-            "warning" : "(?:warn|not responding|init: cannot execute)"
-        },
-        "value" : {
-            "log_hostname" : {
-                "kind" : "string",
-                "collate" : "ipaddress",
-                "identifier" : true
-            },
-            "log_procname" : {
-                "kind" : "string",
-                "identifier" : true
-            },
-            "log_pid" : {
-                "kind" : "string",
-                "identifier" : true
-            }
-        },
-        "sample" : [
-            {
-                "line" : "Jun 27 01:47:20 Tims-MacBook-Air.local configd[17]: network changed: v4(en0-:192.168.1.8) DNS- Proxy- SMB"
-            },
-            {
-                "line" : "Jun 20 17:26:13 ip-10-188-149-5 [CLOUDINIT] util.py[DEBUG]: Restoring selinux mode for /var/lib/cloud (recursive=False)"
-            }
-        ]
-    },
     "access_log" : {
         "title" : "Common Access Log",
         "description" : "The default web access log format for servers like Apache.",
@@ -93,6 +58,111 @@
             }
         ]
     },
+    "block_log" : {
+        "title" : "Generic Block",
+        "description" : "A generic format for logs, like cron, that have a date at the start of a block.",
+        "regex" : [
+            "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})$"
+        ],
+        "sample" : [
+            {
+                "line" : "Sat Apr 27 03:33:07 PDT 2013"
+            }
+        ]
+    },
+    "choose_repo_log" : {
+        "title" : "Yum choose_repo Log",
+        "description" : "The log format for the yum choose_repo tool.",
+        "regex" : [
+            "^\\[(?<level>\\w+):[^\\]]+] [^:]+:\\d+ (?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[\\.,]\\d{3})?):(?<body>.*)"
+        ],
+        "level-field" : "level",
+        "level" : {
+            "error" : "ERROR",
+            "debug" : "DEBUG",
+            "info" : "INFO",
+            "warning" : "WARNING"
+        },
+        "sample" : [
+            {
+                "line": "[INFO:choose_repo] choose_repo:47 2013-06-20 17:26:10,691: Setting region in redhat-rhui.repo"
+            }
+        ]
+    },
+    "dpkg_log" : {
+        "title" : "Dpkg Log",
+        "description" : "The debian dpkg log.",
+        "regex" : [
+            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<action>startup|status|configure|install|upgrade|trigproc|remove|purge)(?: (?<status>config-files|failed-config|half-configured|half-installed|installed|not-installed|post-inst-failed|removal-failed|triggers-awaited|triggers-pending|unpacked))? (?<package>[^ ]+) (?<installed_version>[^ ]+)(?: (?<available_version>[^ ]+))?)|update-alternatives: (?<body>.*))$"
+        ],
+        "value" : {
+            "action" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "status" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "package" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "installed_version" : {
+                "kind" : "string"
+            },
+            "available_version" : {
+                "kind" : "string"
+            }
+        },
+        "sample" : [
+            {
+                "line" : "2012-02-14 10:44:10 configure base-files 5.0.0ubuntu20 5.0.0ubuntu20"
+            },
+            {
+                "line" : "2012-02-14 10:44:30 status unpacked rsyslog 4.2.0-2ubuntu8"
+            },
+            {
+                "line" : "2012-02-14 10:44:32 update-alternatives: run with --install /usr/bin/rview rview /usr/bin/vim.tiny 10"
+            }
+        ]
+    },
+    "error_log" : {
+        "title" : "Common Error Log",
+        "description" : "The default web error log format for servers like Apache.",
+        "regex" : [
+            "^(?<level>\\w) \\[(?<timestamp>[^\\]]+)\\] (?<body>.*)"
+        ],
+        "level-field": "level",
+        "level" : {
+            "error" : "E",
+            "warning" : "W",
+            "info" : "I"
+        },
+        "sample" : [
+            {
+                "line" : "E [08/Jun/2013:11:28:58 -0700] Unknown directive BrowseOrder on line 22 of /private/etc/cups/cupsd.conf."
+            }
+        ]
+    },
+    "fsck_hfs_log" : {
+        "title" : "Fsck_hfs Log",
+        "description" : "Log for the fsck_hfs tool on Mac OS X.",
+        "regex" : [
+            "^(?<device>[^:]+): fsck_hfs run at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})"
+        ],
+        "value" : {
+            "device" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "/dev/rdisk0s2: fsck_hfs run at Wed Jul 25 23:01:18 2012"
+            }
+        ]
+    },
     "glog_log" : {
         "title" : "Glog",
         "description" : "The google glog format.",
@@ -125,24 +195,6 @@
         "sample" : [
             {
                 "line" : "E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19"
-            }
-        ]
-    },
-    "error_log" : {
-        "title" : "Common Error Log",
-        "description" : "The default web error log format for servers like Apache.",
-        "regex" : [
-            "^(?<level>\\w) \\[(?<timestamp>[^\\]]+)\\] (?<body>.*)"
-        ],
-        "level-field": "level",
-        "level" : {
-            "error" : "E",
-            "warning" : "W",
-            "info" : "I"
-        },
-        "sample" : [
-            {
-                "line" : "E [08/Jun/2013:11:28:58 -0700] Unknown directive BrowseOrder on line 22 of /private/etc/cups/cupsd.conf."
             }
         ]
     },
@@ -204,122 +256,6 @@
             }
         ]
     },
-    "vmw_log" : {
-        "title" : "VMware Logs",
-        "description" : "One of the log formats used in VMware's ESXi and vCenter software.",
-        "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"],
-        "level-field": "level",
-        "level" : {
-            "error" : "error",
-            "warning" : "warning",
-            "trace" : "verbose"
-            },
-        "value" : {
-            "tid" : {
-                "kind" : "string",
-                "identifier" : true
-            },
-            "comp" : {
-                "kind" : "string",
-                "identifier" : true
-            },
-            "opid" : {
-                "kind" : "string",
-                "identifier" : true
-            },
-            "user" : {
-                "kind" : "string",
-                "identifier" : true
-            }
-        }
-    },
-    "choose_repo_log" : {
-        "title" : "Yum choose_repo Log",
-        "description" : "The log format for the yum choose_repo tool.",
-        "regex" : [
-            "^\\[(?<level>\\w+):[^\\]]+] [^:]+:\\d+ (?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[\\.,]\\d{3})?):(?<body>.*)"
-        ],
-        "level-field" : "level",
-        "level" : {
-            "error" : "ERROR",
-            "debug" : "DEBUG",
-            "info" : "INFO",
-            "warning" : "WARNING"
-        },
-        "sample" : [
-            {
-                "line": "[INFO:choose_repo] choose_repo:47 2013-06-20 17:26:10,691: Setting region in redhat-rhui.repo"
-            }
-        ]
-    },
-    "dpkg_log" : {
-        "title" : "Dpkg Log",
-        "description" : "The debian dpkg log.",
-        "regex" : [
-            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<action>startup|status|configure|install|upgrade|trigproc|remove|purge)(?: (?<status>config-files|failed-config|half-configured|half-installed|installed|not-installed|post-inst-failed|removal-failed|triggers-awaited|triggers-pending|unpacked))? (?<package>[^ ]+) (?<installed_version>[^ ]+)(?: (?<available_version>[^ ]+))?)|update-alternatives: (?<body>.*))$"
-        ],
-        "value" : {
-            "action" : {
-                "kind" : "string",
-                "identifier" : true
-            },
-            "status" : {
-                "kind" : "string",
-                "identifier" : true
-            },
-            "package" : {
-                "kind" : "string",
-                "identifier" : true
-            },
-            "installed_version" : {
-                "kind" : "string"
-            },
-            "available_version" : {
-                "kind" : "string"
-            }
-        },
-        "sample" : [
-            {
-                "line" : "2012-02-14 10:44:10 configure base-files 5.0.0ubuntu20 5.0.0ubuntu20"
-            },
-            {
-                "line" : "2012-02-14 10:44:30 status unpacked rsyslog 4.2.0-2ubuntu8"
-            },
-            {
-                "line" : "2012-02-14 10:44:32 update-alternatives: run with --install /usr/bin/rview rview /usr/bin/vim.tiny 10"
-            }
-        ]
-    },
-    "block_log" : {
-        "title" : "Generic Block",
-        "description" : "A generic format for logs, like cron, that have a date at the start of a block.",
-        "regex" : [
-            "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})$"
-        ],
-        "sample" : [
-            {
-                "line" : "Sat Apr 27 03:33:07 PDT 2013"
-            }
-        ]
-    },
-    "fsck_hfs_log" : {
-        "title" : "Fsck_hfs Log",
-        "description" : "Log for the fsck_hfs tool on Mac OS X.",
-        "regex" : [
-            "^(?<device>[^:]+): fsck_hfs run at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})"
-        ],
-        "value" : {
-            "device" : {
-                "kind" : "string",
-                "identifier" : true
-            }
-        },
-        "sample" : [
-            {
-                "line" : "/dev/rdisk0s2: fsck_hfs run at Wed Jul 25 23:01:18 2012"
-            }
-        ]
-    },
     "snaplogic_log" : {
         "title" : "SnapLogic Server Log",
         "description" : "The SnapLogic server log format.",
@@ -361,6 +297,41 @@
                 "identifier" : true
             }
         }
+    },
+    "syslog_log" : {
+        "title" : "Syslog",
+        "description" : "The system logger format found on most posix systems.",
+        "regex" : [
+            "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>.*))|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+        ],
+        "level-field" : "body",
+        "level" : {
+            "error" : "(?:failed|failure|error)",
+            "warning" : "(?:warn|not responding|init: cannot execute)"
+        },
+        "value" : {
+            "log_hostname" : {
+                "kind" : "string",
+                "collate" : "ipaddress",
+                "identifier" : true
+            },
+            "log_procname" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "log_pid" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "Jun 27 01:47:20 Tims-MacBook-Air.local configd[17]: network changed: v4(en0-:192.168.1.8) DNS- Proxy- SMB"
+            },
+            {
+                "line" : "Jun 20 17:26:13 ip-10-188-149-5 [CLOUDINIT] util.py[DEBUG]: Restoring selinux mode for /var/lib/cloud (recursive=False)"
+            }
+        ]
     },
     "tcsh_history" : {
         "title" : "TCSH History",
@@ -461,5 +432,34 @@
                 "line" : "[pid: 24386|app: 0|req: 482950/4125645] 86.221.170.65 () {44 vars in 1322 bytes} [Tue Jan  3 05:01:31 2012] GET /contest/log_presence/shhootter/?_=1325592089910 => generated 192 bytes in 21 msecs (HTTP/1.1 200) 4 headers in 188 bytes (1 switches on core 0)"
             }
         ]
+    },
+    "vmw_log" : {
+        "title" : "VMware Logs",
+        "description" : "One of the log formats used in VMware's ESXi and vCenter software.",
+        "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"],
+        "level-field": "level",
+        "level" : {
+            "error" : "error",
+            "warning" : "warning",
+            "trace" : "verbose"
+            },
+        "value" : {
+            "tid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "comp" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "opid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "user" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        }
     }
 }
