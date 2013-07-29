@@ -41,6 +41,7 @@
 #include "yajlpp.hh"
 #include "lnav_config.hh"
 #include "log_format.hh"
+#include "auto_fd.hh"
 #include "default-log-formats-json.hh"
 
 using namespace std;
@@ -222,6 +223,22 @@ void load_formats(std::vector<std::string> &errors)
     std::vector<std::string> retval;
     yajl_handle handle;
 
+    {
+        string sample_path = dotlnav_path("formats/default-formats.json.sample");
+        auto_fd sample_fd;
+
+        if ((sample_fd = open(sample_path.c_str(),
+                              O_WRONLY|O_TRUNC|O_CREAT,
+                              0644)) == -1) {
+            perror("error: unable to write default format file");
+        }
+        else {
+            write(sample_fd.get(),
+                  default_log_formats_json,
+                  strlen(default_log_formats_json));
+        }
+    }
+
     handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
     yajl_parse(handle,
                (const unsigned char *)default_log_formats_json,
@@ -235,10 +252,18 @@ void load_formats(std::vector<std::string> &errors)
     if (glob(format_path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             string filename(gl->gl_pathv[lpc]);
-            int fd;
+            auto_fd fd;
 
             yajlpp_parse_context ypc(filename, format_handlers);
-            if ((fd = open(gl->gl_pathv[lpc], O_RDONLY)) != -1) {
+            if ((fd = open(gl->gl_pathv[lpc], O_RDONLY)) == -1) {
+                char errmsg[1024];
+
+                snprintf(errmsg, sizeof(errmsg),
+                         "error: unable to open format file -- %s",
+                         gl->gl_pathv[lpc]);
+                perror(errmsg);
+            }
+            else {
                 char buffer[2048];
                 int rc = -1;
 

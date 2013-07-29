@@ -339,7 +339,7 @@ const char *date_time_scanner::scan(const char *time_dest,
             if (sscanf(retval + 1, "%d%n", &sub_seconds, &sub_len) == 1) {
                 switch (sub_len) {
                 case 3:
-                    tv_out.tv_usec = sub_seconds * 100;
+                    tv_out.tv_usec = sub_seconds * 1000;
                     this->dts_fmt_len += 1 + sub_len;
                     break;
                 case 6:
