@@ -2,6 +2,7 @@
     "access_log" : {
         "title" : "Common Access Log",
         "description" : "The default web access log format for servers like Apache.",
+        "url" : "http://en.wikipedia.org/wiki/Common_Log_Format",
         "regex" : [
             "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+",
             "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+",
@@ -166,8 +167,9 @@
     "glog_log" : {
         "title" : "Glog",
         "description" : "The google glog format.",
+        "url" : "https://code.google.com/p/google-glog/",
         "regex" : [
-          "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>.*)"
+          "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>(?:.|\\n)*)"
         ],
         "level-field" : "level",
         "level" : {
@@ -259,7 +261,10 @@
     "snaplogic_log" : {
         "title" : "SnapLogic Server Log",
         "description" : "The SnapLogic server log format.",
-        "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:(?:stdout|stderr): ))(?<body>.*)"],
+        "url" : "http://www.snaplogic.com/docs/user-guide/user-guide.htm",
+        "regex" : [
+            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:(?:stdout|stderr): ))(?<body>.*)"
+        ],
         "level-field" : "level",
         "level" : {
             "error" : "ERROR",
@@ -296,13 +301,19 @@
                 "kind" : "string",
                 "identifier" : true
             }
-        }
+        },
+        "sample" : [
+            {
+                "line" : "2013-07-30T09:40:25 DEBUG main_process.main PM - 1768839331504132353247612213662950165988626018 - - Pipeline manager '' sending to Leads. Invoker 'admin': PREPARE {'parent_rid': '1768839331504132353247612213662950165988626018', 'resource_name': u'Leads', 'input_views': {}, 'parameters': {u'DELIMITER': u',', u'INPUTFILE': u'file://tutorial/data/leads.csv'}, 'output_views': {u'Output1': {'method': 'GET'}}, 'context_name': u'', 'snap_control_version': '1.2'}"
+            }
+        ]
     },
     "syslog_log" : {
         "title" : "Syslog",
         "description" : "The system logger format found on most posix systems.",
+        "url" : "http://en.wikipedia.org/wiki/Syslog",
         "regex" : [
-            "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>.*))|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+            "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
         ],
         "level-field" : "body",
         "level" : {
@@ -338,7 +349,12 @@
         "description" : "The tcsh history file format.",
         "local-time" : true,
         "regex" : [
-            "^#(?<timestamp>\\+\\d+)$"
+            "^#(?<timestamp>\\+\\d+)\\n?(?<body>.*)?$"
+        ],
+        "sample" : [
+            {
+                "line" : "#+1375138067\necho HELLO=BAR"
+            }
         ]
     },
     "uwsgi_log" : {
@@ -436,7 +452,11 @@
     "vmw_log" : {
         "title" : "VMware Logs",
         "description" : "One of the log formats used in VMware's ESXi and vCenter software.",
-        "regex" : ["^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"],
+        "url" : "http://kb.vmware.com/kb/2004201",
+        "regex" : [
+            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$",
+            "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"
+            ],
         "level-field": "level",
         "level" : {
             "error" : "error",
@@ -460,6 +480,11 @@
                 "kind" : "string",
                 "identifier" : true
             }
-        }
+        },
+        "sample" : [
+            {
+                "line" : "[2011-04-01 15:14:34.203 F5A5AB90 info 'vm:/vmfs/volumes/4d6579ec-23f981cb-465c-00237da0cfee/Vmotion-test/Vmotion-test.vmx' opID=F6FC49D5-000007E6-d] VMotionPrepare: dstMgmtIp=10.21.49.138"
+            }
+        ]
     }
 }

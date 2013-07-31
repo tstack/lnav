@@ -367,7 +367,7 @@ void external_log_format::build(std::vector<std::string> &errors)
     if (this->elf_patterns.empty()) {
         errors.push_back("error:" +
                          this->elf_name +
-                         ": 'regex' field is empty");
+                         ": no regexes specified for format");
     }
 
     for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
@@ -380,6 +380,12 @@ void external_log_format::build(std::vector<std::string> &errors)
             errors.push_back("error:" +
                              this->elf_name + ".level:" + e.what());
         }
+    }
+
+    if (this->elf_samples.empty()) {
+        errors.push_back("error:" +
+            this->elf_name +
+            ":no sample logs provided, all formats must have samples");
     }
 
     for (std::vector<sample>::iterator iter = this->elf_samples.begin();

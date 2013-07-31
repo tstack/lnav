@@ -189,6 +189,10 @@ public:
         return level_names[this->ll_level & 0x0f];
     };
 
+    bool is_continued(void) const {
+        return this->get_level() & LEVEL_CONTINUED;
+    };
+
     uint8_t get_filter_generation(void) const {
         return this->ll_filter_state >> 2;
     };

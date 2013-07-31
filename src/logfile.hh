@@ -215,6 +215,8 @@ public:
         return retval;
     };
 
+    void read_full_message(iterator ll, std::string &msg_out, int max_lines=50);
+
     /**
      * Index any new data in the log file.
      *

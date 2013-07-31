@@ -72,12 +72,14 @@ public:
         if (this->ldt_format_impl != NULL) {
             this->ldt_format_impl->get_columns(cols);
         }
+        lf->read_full_message(lf->begin(), val);
         format->annotate(val, sa, line_values);
         body = find_string_attr_range(sa, "body");
         if (body.lr_end == -1 || body.length() == 0) {
             this->ldt_schema_id.clear();
             return;
         }
+
         data_scanner ds(val, body.lr_start, body.lr_end);
         data_parser  dp(&ds);
         column_namer cn;
@@ -97,7 +99,6 @@ public:
 
             /* XXX LEAK */
             name = strdup(colname.c_str());
-            fprintf(stderr, "name: %s\n", name);
             switch (pair_iter->e_sub_elements->back().e_token) {
             case DT_IPV4_ADDRESS:
             case DT_IPV6_ADDRESS:
@@ -145,7 +146,7 @@ public:
         struct line_range          body;
         std::vector<logline_value> line_values;
 
-        lf->read_line(lf_iter, this->ldt_current_line);
+        lf->read_full_message(lf_iter, this->ldt_current_line);
         lf->get_format()->annotate(this->ldt_current_line, sa, line_values);
         body = find_string_attr_range(sa, "body");
         if (body.lr_end == -1 || body.length() == 0) {

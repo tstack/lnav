@@ -352,3 +352,33 @@ void logfile::read_line(logfile::iterator ll, string &line_out)
         /* ... */
     }
 }
+
+void logfile::read_full_message(logfile::iterator ll,
+                                string &msg_out,
+                                int max_lines)
+{
+    msg_out.clear();
+    do {
+        try {
+            off_t       off = ll->get_offset();
+            const char *line;
+            size_t      len;
+
+            if (!msg_out.empty()) {
+                msg_out.append(1, '\n');
+            }
+            if ((line = this->lf_line_buffer.read_line(off, len)) != NULL) {
+                msg_out.append(line, len);
+            }
+            else {
+                /* XXX */
+            }
+        }
+        catch (line_buffer::error & e) {
+            /* ... */
+        }
+        ++ll;
+        max_lines -= 1;
+    } while (ll != this->end() && ll->is_continued() &&
+             (max_lines == -1 || max_lines > 0));
+}

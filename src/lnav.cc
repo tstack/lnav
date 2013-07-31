@@ -192,6 +192,7 @@ public:
         this->fos_line_values.clear();
         this->fos_key_size = 0;
 
+        lf->read_full_message(this->fos_line, line);
         lf->get_format()->annotate(line, sa, this->fos_line_values);
 
         for (std::vector<logline_value>::iterator iter =
@@ -203,8 +204,9 @@ public:
         }
 
         body = find_string_attr_range(sa, "body");
-        if (body.lr_end != -1) {
-            line = line.substr(body.lr_start);
+        if (body.lr_start == -1) {
+            body.lr_start = line.size();
+            body.lr_end = line.size();
         }
 
         if (this->fos_parser) {
@@ -213,7 +215,7 @@ public:
             delete this->fos_namer;
         }
 
-        this->fos_scanner = new data_scanner(line);
+        this->fos_scanner = new data_scanner(line, body.lr_start, body.lr_end);
         this->fos_parser  = new data_parser(this->fos_scanner);
         this->fos_parser->parse();
         this->fos_namer = new column_namer();
@@ -3184,9 +3186,12 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
           "\\binto\\b|"
           "\\binterface\\b|"
           "\\bjoin\\b|"
+          "\\blambda\\b|"
           "\\blet\\b|"
           "\\blong\\b|"
           "\\bnamespace\\b|"
+          "\\bnew\\b|"
+          "\\bnot\\b|"
           "\\bnull\\b|"
           "\\boperator\\b|"
           "\\bor\\b|"
@@ -3249,7 +3254,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
                                view_colors::VCR_DIFF_ADD);
     hm["$diffm"] = textview_curses::
                    highlighter(xpcre_compile(
-                                   "^(?:--- .*|-[^-].*)"), false,
+                                   "^(?:--- .*|-$|-[^-].*)"), false,
                                view_colors::VCR_DIFF_DELETE);
     hm["$diffs"] = textview_curses::
                    highlighter(xpcre_compile(
@@ -3260,7 +3265,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
     hm["$comment"] = textview_curses::highlighter(xpcre_compile(
         "(?<!:)//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"), false, view_colors::VCR_COMMENT);
     hm["$javadoc"] = textview_curses::highlighter(xpcre_compile(
-        "@(?:author|deprecated|exception|file|param|return|see|since|throws|version)"));
+        "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)"));
     hm["$var"] = textview_curses::highlighter(xpcre_compile(
         "(?:"
           "(?:var\\s+)?([\\-\\w]+)\\s*=|"

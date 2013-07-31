@@ -240,16 +240,19 @@ void load_formats(std::vector<std::string> &errors)
     }
 
     handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
-    yajl_parse(handle,
-               (const unsigned char *)default_log_formats_json,
-               strlen(default_log_formats_json));
+    if (yajl_parse(handle,
+                   (const unsigned char *)default_log_formats_json,
+                   strlen(default_log_formats_json)) != yajl_status_ok) {
+        errors.push_back("builtin: invalid json -- " +
+            string((char *)yajl_get_error(handle, 1, (unsigned char *)default_log_formats_json, strlen(default_log_formats_json))));
+    }
     yajl_complete_parse(handle);
     yajl_free(handle);
 
     string format_path = dotlnav_path("formats/*.json");
     static_root_mem<glob_t, globfree> gl;
 
-    if (glob(format_path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+    if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             string filename(gl->gl_pathv[lpc]);
             auto_fd fd;
