@@ -22,6 +22,7 @@ Contents:
    config
    hotkeys
    commands
+   sqlext
 
 Indices and tables
 ==================

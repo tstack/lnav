@@ -30,10 +30,10 @@ can consult that file when writing your own formats or if you need to modify
 existing ones.
 
 The contents of the format configuration should be a JSON object with a field
-for each format defined by the file.
-
-The symbolic name of the format.  This value will also be
-  used as the SQL table name for the log.
+for each format defined by the file.  Each field name should be the symbolic
+name of the format.  This value will also be used as the SQL table name for
+the log.  The value for each field should be another object with the following
+fields:
 
   :title: The short and human-readable name for the format.
   :description: A longer description of the format.
@@ -51,10 +51,22 @@ The symbolic name of the format.  This value will also be
     in order of severity, are: **fatal**, **critical**, **error**,
     **warning**, **info**, **debug**, **trace**.
 
-  :value:
+  :value: This object contains the definitions for the values captured by the
+    regexes.
 
-    :kind:  **string**, **integer**, **float**.
-    :collate:
+    :kind: The type of data that was captured **string**, **integer**,
+      **float**.
+    :collate: The collation function for this value.
+    :identifier: A boolean that indicates whether or not this field represents
+      an identifier and should be syntax colored.
+    :foreign-key: A boolean that indicates that this field is a key and should
+      not be graphed.  This should only need to be set for integer fields.
+
+  :sample: A list of objects that contain sample log messages.  All formats
+    must include at least one sample and it must be matched by one of the
+    included regexes.  Each object must contain the following field:
+
+    :line: The sample message.
 
 Example format::
 
@@ -89,3 +101,5 @@ Example format::
 
 Modifying an Existing Format
 ----------------------------
+
+

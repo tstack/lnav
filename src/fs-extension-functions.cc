@@ -165,6 +165,10 @@ int fs_extension_functions(const struct FuncDef **basic_funcs,
         { "dirname",   1, 0, SQLITE_UTF8, 0, sql_dirname  },
         { "joinpath", -1, 0, SQLITE_UTF8, 0, sql_joinpath },
 
+        /*
+         * TODO: add other functions like readlink, normpath, ... 
+         */
+
         { NULL }
     };
 
