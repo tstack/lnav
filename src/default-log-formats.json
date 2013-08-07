@@ -3,11 +3,17 @@
         "title" : "Common Access Log",
         "description" : "The default web access log format for servers like Apache.",
         "url" : "http://en.wikipedia.org/wiki/Common_Log_Format",
-        "regex" : [
-            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+",
-            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+",
-            "^(?<c_ip>[\\w\\.:\\-]+) [\\w\\.\\-]+ (?<cs_username>[\\w\\.\\-]+) \\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?.*"
-            ],
+        "regex" : {
+            "ts-first-noquotes" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+"
+            },
+            "ts-first" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+"
+            },
+            "std" : {
+                "pattern" : "^(?<c_ip>[\\w\\.:\\-]+) [\\w\\.\\-]+ (?<cs_username>[\\w\\.\\-]+) \\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?.*"
+            }
+        },
         "level-field": "sc_status",
         "level" : {
             "error" : "^[^123]"
@@ -62,9 +68,11 @@
     "block_log" : {
         "title" : "Generic Block",
         "description" : "A generic format for logs, like cron, that have a date at the start of a block.",
-        "regex" : [
-            "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})$"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})$"
+            }
+        },
         "sample" : [
             {
                 "line" : "Sat Apr 27 03:33:07 PDT 2013"
@@ -74,9 +82,11 @@
     "choose_repo_log" : {
         "title" : "Yum choose_repo Log",
         "description" : "The log format for the yum choose_repo tool.",
-        "regex" : [
-            "^\\[(?<level>\\w+):[^\\]]+] [^:]+:\\d+ (?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[\\.,]\\d{3})?):(?<body>.*)"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^\\[(?<level>\\w+):[^\\]]+] [^:]+:\\d+ (?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[\\.,]\\d{3})?):(?<body>.*)"
+            }
+        },
         "level-field" : "level",
         "level" : {
             "error" : "ERROR",
@@ -93,9 +103,11 @@
     "dpkg_log" : {
         "title" : "Dpkg Log",
         "description" : "The debian dpkg log.",
-        "regex" : [
-            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<action>startup|status|configure|install|upgrade|trigproc|remove|purge)(?: (?<status>config-files|failed-config|half-configured|half-installed|installed|not-installed|post-inst-failed|removal-failed|triggers-awaited|triggers-pending|unpacked))? (?<package>[^ ]+) (?<installed_version>[^ ]+)(?: (?<available_version>[^ ]+))?)|update-alternatives: (?<body>.*))$"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<action>startup|status|configure|install|upgrade|trigproc|remove|purge)(?: (?<status>config-files|failed-config|half-configured|half-installed|installed|not-installed|post-inst-failed|removal-failed|triggers-awaited|triggers-pending|unpacked))? (?<package>[^ ]+) (?<installed_version>[^ ]+)(?: (?<available_version>[^ ]+))?)|update-alternatives: (?<body>.*))$"
+            }
+        },
         "value" : {
             "action" : {
                 "kind" : "string",
@@ -131,9 +143,11 @@
     "error_log" : {
         "title" : "Common Error Log",
         "description" : "The default web error log format for servers like Apache.",
-        "regex" : [
-            "^(?<level>\\w) \\[(?<timestamp>[^\\]]+)\\] (?<body>.*)"
-        ],
+        "regex" : {
+            "cups" : {
+                "pattern" : "^(?<level>\\w) \\[(?<timestamp>[^\\]]+)\\] (?<body>.*)"
+            }
+        },
         "level-field": "level",
         "level" : {
             "error" : "E",
@@ -149,9 +163,11 @@
     "fsck_hfs_log" : {
         "title" : "Fsck_hfs Log",
         "description" : "Log for the fsck_hfs tool on Mac OS X.",
-        "regex" : [
-            "^(?<device>[^:]+): fsck_hfs run at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<device>[^:]+): fsck_hfs run at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})"
+            }
+        },
         "value" : {
             "device" : {
                 "kind" : "string",
@@ -168,9 +184,11 @@
         "title" : "Glog",
         "description" : "The google glog format.",
         "url" : "https://code.google.com/p/google-glog/",
-        "regex" : [
-          "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>(?:.|\\n)*)"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>(?:.|\\n)*)"
+            }
+        },
         "level-field" : "level",
         "level" : {
             "error" : "E",
@@ -204,10 +222,14 @@
         "title" : "CUPS Page Log",
         "description" : "The CUPS server log of printed pages.",
         "url" : "http://www.cups.org/documentation.php/doc-1.7/ref-page_log.html",
-        "regex" : [
-            "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)$",
-            "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+) (?<job_name>.+) (?<media>[^ ]+) (?<sides>.+)$"
-        ],
+        "regex" : {
+            "pre-1.7" : {
+                "pattern" : "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)$"
+            },
+            "1.7" : {
+                "pattern" : "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+) (?<job_name>.+) (?<media>[^ ]+) (?<sides>.+)$"
+            }
+        },
         "value" : {
             "printer" : {
                 "kind" : "string",
@@ -262,9 +284,11 @@
         "title" : "SnapLogic Server Log",
         "description" : "The SnapLogic server log format.",
         "url" : "http://www.snaplogic.com/docs/user-guide/user-guide.htm",
-        "regex" : [
-            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:(?:stdout|stderr): ))(?<body>.*)"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:(?:stdout|stderr): ))(?<body>.*)"
+            }
+        },
         "level-field" : "level",
         "level" : {
             "error" : "ERROR",
@@ -312,9 +336,11 @@
         "title" : "Syslog",
         "description" : "The system logger format found on most posix systems.",
         "url" : "http://en.wikipedia.org/wiki/Syslog",
-        "regex" : [
-            "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+            }
+        },
         "level-field" : "body",
         "level" : {
             "error" : "(?:failed|failure|error)",
@@ -348,9 +374,11 @@
         "title" : "TCSH History",
         "description" : "The tcsh history file format.",
         "local-time" : true,
-        "regex" : [
-            "^#(?<timestamp>\\+\\d+)\\n?(?<body>.*)?$"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^#(?<timestamp>\\+\\d+)\\n?(?<body>.*)?$"
+            }
+        },
         "sample" : [
             {
                 "line" : "#+1375138067\necho HELLO=BAR"
@@ -360,9 +388,11 @@
     "uwsgi_log" : {
         "title" : "Uwsgi Log",
         "description" : "The uwsgi log format.",
-        "regex" : [
-            "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+) (?<rt_unit>\\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)"
-        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+) (?<rt_unit>\\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)"
+            }
+        },
         "level-field": "sc_status",
         "level" : {
             "error" : "^[^123]"
@@ -453,10 +483,14 @@
         "title" : "VMware Logs",
         "description" : "One of the log formats used in VMware's ESXi and vCenter software.",
         "url" : "http://kb.vmware.com/kb/2004201",
-        "regex" : [
-            "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$",
-            "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"
-            ],
+        "regex" : {
+            "5.0+" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"
+            },
+            "pre-5.0" : {
+                "pattern" : "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"
+            }
+        },
         "level-field": "level",
         "level" : {
             "error" : "error",

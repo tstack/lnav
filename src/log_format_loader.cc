@@ -63,9 +63,10 @@ static external_log_format *ensure_format(const std::string &name)
 static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
+    string regex_name = ypc->get_path_fragment(2);
     string value = string((const char *)str, len);
 
-    elf->elf_patterns.insert(elf->elf_patterns.begin(), value);
+    elf->elf_patterns[regex_name].p_string = value;
 
     return 1;
 }
@@ -202,7 +203,7 @@ static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str,
 }
 
 static struct json_path_handler format_handlers[] = {
-    json_path_handler("/\\w+/regex#", read_format_regex),
+    json_path_handler("/\\w+/regex/[^/]+/pattern", read_format_regex),
     json_path_handler("/\\w+/local-time", read_format_bool),
     json_path_handler("/\\w+/(level-field|url|title|description)", read_format_field),
     json_path_handler("/\\w+/level/"

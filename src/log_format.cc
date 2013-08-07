@@ -132,7 +132,7 @@ vector<log_format *> &log_format::get_root_formats(void)
     return lf_root_formats;
 }
 
-static bool next_format(const std::vector<external_log_format::pattern> &patterns,
+static bool next_format(const std::vector<external_log_format::pattern *> &patterns,
                         int &index,
                         int &locked_index)
 {
@@ -207,8 +207,8 @@ bool external_log_format::scan(std::vector<logline> &dst,
     bool retval = false;
     int curr_fmt = -1;
 
-    while (next_format(this->elf_patterns, curr_fmt, this->lf_fmt_lock)) {
-        if (!this->elf_patterns[curr_fmt].p_pcre->match(pc, pi)) {
+    while (next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
+        if (!this->elf_pattern_order[curr_fmt]->p_pcre->match(pc, pi)) {
             continue;
         }
 
@@ -276,7 +276,9 @@ void external_log_format::annotate(const std::string &line,
     struct line_range lr;
     pcre_context::capture_t *cap;
 
-    if (!this->elf_patterns[this->lf_fmt_lock].p_pcre->match(pc, pi)) {
+    pattern &pat = *this->elf_pattern_order[this->lf_fmt_lock];
+
+    if (!pat.p_pcre->match(pc, pi)) {
         return;
     }
 
@@ -298,8 +300,8 @@ void external_log_format::annotate(const std::string &line,
 
     view_colors &vc = view_colors::singleton();
 
-    for (size_t lpc = 0; lpc < this->elf_patterns[this->lf_fmt_lock].p_value_by_index.size(); lpc++) {
-        const value_def &vd = this->elf_patterns[this->lf_fmt_lock].p_value_by_index[lpc];
+    for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
+        const value_def &vd = pat.p_value_by_index[lpc];
         const struct scaling_factor *scaling = NULL;
 
         if (vd.vd_unit_field_index >= 0) {
@@ -334,11 +336,11 @@ void external_log_format::annotate(const std::string &line,
 
 void external_log_format::build(std::vector<std::string> &errors)
 {
-    for (std::vector<pattern>::iterator iter = this->elf_patterns.begin();
+    for (std::map<string, pattern>::iterator iter = this->elf_patterns.begin();
          iter != this->elf_patterns.end();
          ++iter) {
         try {
-            iter->p_pcre = new pcrepp(iter->p_string.c_str());
+            iter->second.p_pcre = new pcrepp(iter->second.p_string.c_str());
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
@@ -347,21 +349,23 @@ void external_log_format::build(std::vector<std::string> &errors)
                              e.what());
             continue;
         }
-        for (pcre_named_capture::iterator name_iter = iter->p_pcre->named_begin();
-             name_iter != iter->p_pcre->named_end();
+        for (pcre_named_capture::iterator name_iter = iter->second.p_pcre->named_begin();
+             name_iter != iter->second.p_pcre->named_end();
              ++name_iter) {
             std::map<std::string, value_def>::iterator value_iter;
 
             value_iter = this->elf_value_defs.find(std::string(name_iter->pnc_name));
             if (value_iter != this->elf_value_defs.end()) {
                 value_iter->second.vd_index = name_iter->index();
-                value_iter->second.vd_unit_field_index = iter->p_pcre->name_index(value_iter->second.vd_unit_field.c_str());
-                iter->p_value_by_index.push_back(value_iter->second);
+                value_iter->second.vd_unit_field_index = iter->second.p_pcre->name_index(value_iter->second.vd_unit_field.c_str());
+                iter->second.p_value_by_index.push_back(value_iter->second);
             }
         }
 
-        stable_sort(iter->p_value_by_index.begin(),
-                    iter->p_value_by_index.end());
+        stable_sort(iter->second.p_value_by_index.begin(),
+                    iter->second.p_value_by_index.end());
+
+        this->elf_pattern_order.push_back(&iter->second);
     }
 
     if (this->elf_patterns.empty()) {
@@ -395,13 +399,15 @@ void external_log_format::build(std::vector<std::string> &errors)
         pcre_input pi(iter->s_line);
         bool found = false;
 
-        for (std::vector<pattern>::iterator pat_iter = this->elf_patterns.begin();
-             pat_iter != this->elf_patterns.end();
+        for (std::vector<pattern *>::iterator pat_iter = this->elf_pattern_order.begin();
+             pat_iter != this->elf_pattern_order.end();
              ++pat_iter) {
-            if (!pat_iter->p_pcre)
+            pattern &pat = *(*pat_iter);
+
+            if (!pat.p_pcre)
                 continue;
 
-            if (pat_iter->p_pcre->match(pc, pi)) {
+            if (pat.p_pcre->match(pc, pi)) {
                 found = true;
                 break;
             }
@@ -413,10 +419,12 @@ void external_log_format::build(std::vector<std::string> &errors)
                              ":invalid sample -- " +
                              iter->s_line);
 
-            for (std::vector<pattern>::iterator pat_iter = this->elf_patterns.begin();
-                 pat_iter != this->elf_patterns.end();
+            for (std::vector<pattern *>::iterator pat_iter = this->elf_pattern_order.begin();
+                 pat_iter != this->elf_pattern_order.end();
                  ++pat_iter) {
-                if (!pat_iter->p_pcre)
+                pattern &pat = *(*pat_iter);
+
+                if (!pat.p_pcre)
                     continue;
 
                 std::string line_partial = iter->s_line;
@@ -424,7 +432,7 @@ void external_log_format::build(std::vector<std::string> &errors)
                 while (!line_partial.empty()) {
                     pcre_input pi_partial(line_partial);
 
-                    if (pat_iter->p_pcre->match(pc, pi_partial, PCRE_PARTIAL)) {
+                    if (pat.p_pcre->match(pc, pi_partial, PCRE_PARTIAL)) {
                         errors.push_back("error:" +
                                          this->elf_name +
                                          ":partial sample matched -- " +
@@ -454,8 +462,8 @@ public:
         std::vector<external_log_format::value_def>::const_iterator iter;
         const external_log_format &elf = this->elt_format;
 
-        for (iter = elf.elf_patterns[0].p_value_by_index.begin();
-             iter != elf.elf_patterns[0].p_value_by_index.end();
+        for (iter = elf.elf_pattern_order[0]->p_value_by_index.begin();
+             iter != elf.elf_pattern_order[0]->p_value_by_index.end();
              ++iter) {
             int type;
 

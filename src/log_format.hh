@@ -507,9 +507,10 @@ public:
     };
 
     struct pattern {
-        pattern(const std::string &str) : p_string(str), p_pcre(NULL) { };
+        pattern() : p_pcre(NULL) { };
 
         std::string p_string;
+        std::vector<std::string> p_before_pattern;
         pcrepp *p_pcre;
         std::vector<value_def> p_value_by_index;
     };
@@ -550,7 +551,8 @@ public:
 
     log_vtab_impl *get_vtab_impl(void) const;
 
-    std::vector<pattern> elf_patterns;
+    std::map<std::string, pattern> elf_patterns;
+    std::vector<pattern *> elf_pattern_order;
     std::vector<sample> elf_samples;
     std::map<std::string, value_def> elf_value_defs;
     std::string elf_level_field;
