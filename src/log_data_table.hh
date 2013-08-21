@@ -62,8 +62,7 @@ public:
         content_line_t cl_copy = this->ldt_template_line;
         logfile *      lf      = lnav_data.ld_log_source.find(
             cl_copy);
-        std::string val = lf->read_line(
-            lf->begin() + cl_copy);
+        std::string val;
         struct line_range          body;
         string_attrs_t             sa;
         std::vector<logline_value> line_values;
@@ -72,7 +71,7 @@ public:
         if (this->ldt_format_impl != NULL) {
             this->ldt_format_impl->get_columns(cols);
         }
-        lf->read_full_message(lf->begin(), val);
+        lf->read_full_message(lf->begin() + cl_copy, val);
         format->annotate(val, sa, line_values);
         body = find_string_attr_range(sa, "body");
         if (body.lr_end == -1 || body.length() == 0) {
