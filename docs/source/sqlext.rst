@@ -1,10 +1,12 @@
 
+.. _sql-ext:
+
 SQLite Extensions Reference
 ===========================
 
 To make it easier to analyze log data from within **lnav**, there are several
 built-in extensions that provide extra functions and collators beyond those
-`provided by sqlite <http://www.sqlite.org/lang_corefunc.html>`_.  The majority
+`provided by SQLite <http://www.sqlite.org/lang_corefunc.html>`_.  The majority
 of the functions are from the
 `extensions-functions.c <http://www.sqlite.org/contrib>`_ file available from
 the `sqlite.org <http://sqlite.org>`_ web site.

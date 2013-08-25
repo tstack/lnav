@@ -39,7 +39,12 @@ fields:
   :description: A longer description of the format.
   :url: A URL to the definition of the format.
 
-  :regex:
+  :regex: This object contains sub-objects that describe the message formats
+    to match in a log file.
+
+    :pattern: The regular expression that should be used to match log messages.
+      The `PCRE <http://www.pcre.org>`_ library is used by **lnav** to do all
+      regular expression matching.
 
   :level-field: The name of the regex capture group that contains the log
     message level.

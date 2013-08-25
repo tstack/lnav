@@ -1055,10 +1055,12 @@ static void handle_paging_key(int ch)
     case 'C':
         if (lss) {
             lss->get_user_bookmarks()[&textview_curses::BM_USER].clear();
-            tc->reload_data();
-
-            lnav_data.ld_rl_view->set_value("Cleared bookmarks");
         }
+
+        tc->get_bookmarks()[&textview_curses::BM_USER].clear();
+        tc->reload_data();
+
+        lnav_data.ld_rl_view->set_value("Cleared bookmarks");
         break;
 
     case 'e':

@@ -201,10 +201,14 @@ static void cleanup_session_data(void)
 
     session_info_list.sort();
 
+    int session_loops = 0;
+
     while (session_info_list.size() > MAX_SESSION_FILE_COUNT) {
         const session_file_info &front = session_info_list.front();
 
-        if (session_count[front.sfi_id] == 1) {
+        session_loops += 1;
+        if (session_loops < MAX_SESSION_FILE_COUNT &&
+            session_count[front.sfi_id] == 1) {
             session_info_list.splice(session_info_list.end(),
                                      session_info_list,
                                      session_info_list.begin());
