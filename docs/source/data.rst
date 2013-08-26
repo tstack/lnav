@@ -137,8 +137,8 @@ results.
     :summarize col_0
 
 
-Recognized Data
----------------
+Recognized Data Types
+---------------------
 
 When searching for data to extract from log messages, **lnav** looks for the
 following set of patterns:

@@ -1,4 +1,6 @@
 
+.. _hotkeys:
+
 Hotkey Reference
 ================
 
@@ -33,6 +35,8 @@ Hotkey Reference
        white-space: nowrap;
    }
    </style>
+
+This reference covers the keys used to control **lnav**.
 
 Spatial Navigation
 ------------------

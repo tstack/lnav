@@ -82,7 +82,7 @@ Example format::
             "url" : "http://example.com/log-format.html",
             "regex" : {
                 "basic" : {
-                    "value" : "^"
+                    "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)>>(?<level>\\w+)>>(?<component>\\w+)>>(?<body>.*)$"
                 }
             },
             "level-field" : "level",
@@ -98,7 +98,7 @@ Example format::
             },
             "sample" : [
                 {
-                    "line" : ""
+                    "line" : "2011-04-01T15:14:34.203Z>>ERROR>>core>>Shit's on fire yo!"
                 }
             ]
         }
@@ -107,4 +107,23 @@ Example format::
 Modifying an Existing Format
 ----------------------------
 
+When loading log formats from files, **lnav** will overlay any new data over
+previously loaded data.  This feature allows you to override existing value or
+append new ones to the format configurations.  For example, you can separately
+add a new regex to the example log format given above by creating another file
+with the following contents::
 
+    {
+        "example_log" : {
+            "regex" : {
+                "custom1" : {
+                    "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z)<<(?<level>\\w+)--(?<component>\\w+)>>(?<body>.*)$"
+                }
+            },
+            "sample" : [
+                {
+                    "line" : "2011-04-01T15:14:34.203Z<<ERROR--core>>Shit's on fire yo!"
+                }
+            ]
+        }
+    }

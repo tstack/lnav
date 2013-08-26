@@ -2,7 +2,7 @@
 Introduction
 ============
 
-The Log File Navigator, lnav, is an enhanced log file viewer that
+The Log File Navigator, **lnav**, is an enhanced log file viewer that
 takes advantage of any semantic information that can be gleaned from
 the files being viewed, such as timestamps and log levels.  Using this
 extra semantic information, lnav can do things like interleaving
@@ -25,7 +25,7 @@ doing::
 Viewing Logs
 ------------
 
-The arguments to **lnav** are simply the log files or directories to be viewed.
+The arguments to **lnav** are the log files or directories to be viewed.
 For example, to view all of the CUPS logs on your system::
 
    $ lnav /var/log/cups
@@ -34,7 +34,7 @@ The formats of the logs are determined automatically and indexed on-the-fly.
 See :ref:`log-formats` for a listing of the predefined formats and how to
 define your own.
 
-If no arguments are given, **lnav** will try to open the default syslog file on
-your system::
+If no arguments are given, **lnav** will try to open the syslog file on your
+system::
 
    $ lnav

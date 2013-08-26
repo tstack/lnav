@@ -16,10 +16,9 @@ Contents:
 
    intro
    ui
-   sessions
    formats
    data
-   config
+   sessions
    hotkeys
    commands
    sqlext

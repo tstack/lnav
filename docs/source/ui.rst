@@ -2,21 +2,28 @@
 User Interface
 ==============
 
-The main part of the display shows the log lines from the files interleaved
-based on time-of-day.  New lines are automatically loaded as they are appended
-to the files and, if you are viewing the bottom of the files, lnav will scroll
-down to display the new lines, much like 'tail -f'.
+The main part of the display shows the log messages from all files sorted by the
+message time.  Status bars at the top and bottom of the screen can given you an
+idea of where you are in the logs.  And, the last line is used for entering
+commands.  Navigation is controlled by a series of hotkeys, see :ref:`hotkeys`
+for more information.
 
-On color displays, the lines will be highlighted as follows:
+.. figure:: lnav-ui.png
+   :align: center
+   :alt: Screenshot showing syslog messages.
+
+   Screenshot of **lnav** viewing syslog messages.
+
+On color displays, the log messages will be highlighted as follows:
 
 * Errors will be colored in red;
 * warnings will be yellow;
-  boundaries between days will be underlined; and
 * various color highlights will be applied to: IP addresses, SQL keywords,
-  XML tags, file and line numbers in Java backtraces, and quoted strings.
+  XML tags, file and line numbers in Java backtraces, and quoted strings;
+* "identifiers" in the messages will be randomly assigned colors based on their
+  content (works best on "xterm-256color" terminals).
 
-To give you an idea of where you are in the file spatially, the right
-side of the display has a proportionally sized 'scrollbar' that
+The right side of the display has a proportionally sized 'scrollbar' that
 indicates your current position in the file.
 
 Above and below the main body are status lines that display:
@@ -27,7 +34,7 @@ Above and below the main body are status lines that display:
 * the current view;
 * the line number for the top line in the display;
 * the total number of warnings and errors;
-* the number of search hits, which updates as more are found; and
+* the number of search hits; and
 * the number of lines not displayed because of filtering.
 
 Finally, the last line on the display is where you can enter search
