@@ -11,6 +11,20 @@ time, and providing hotkeys for navigating through the file.  It is
 hoped that these features will allow the user to quickly and
 efficiently zero in on problems.
 
+Dependencies
+------------
+
+When compiling from source, the following dependencies are required:
+
+* `NCurses <http://www.gnu.org/s/ncurses/>`_
+* `PCRE <http://www.pcre.org>`_ -- Versions greater than 8.20 give better
+  performance since the PCRE JIT will be leveraged.
+* `SQLite <http://www.sqlite.org>`_
+* `OpenSSL <http://www.openssl.org>`_
+* `ZLib <http://wwww.zlib.net>`_
+* `Bzip2 <http://www.bzip.org>`_
+* `Readline <http://www.gnu.org/s/readline>`_
+
 Installation
 ------------
 
