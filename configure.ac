@@ -107,15 +107,22 @@ AC_ARG_ENABLE([static],
               AS_HELP_STRING([--disable-static],
                              [Disable static linking]))
 if test x"${enable_static}" != x"no"; then
-    STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first -L`pwd`/src/static-libs"
+    case "$host_os" in
+    darwin*)
+        STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first"
+        ;;
+    esac
+
+    STATIC_LDFLAGS="$STATIC_LDFLAGS -L`pwd`/src/static-libs"
     # This is a hack to link against static libraries instead of shared
-    # on OS X so that we can build a mostly statically link exe that can
-    # be downloaded and used right away.
+    # so that we can build a mostly statically link exe that can
+    # be downloaded and used right away.  This is required for OS X and
+    # will, hopefully, make a static binary that is compatible with
+    # many different versions of Linux.
     mkdir -p src/static-libs
     rm src/static-libs/*.a
     for libflag in $ALL_LDFLAGS; do
-        echo "current flag $libflag"
-	case $libflag in
+        case $libflag in
 	    -Lstatic-libs)
 		;;
 	    -L*)
@@ -126,7 +133,7 @@ if test x"${enable_static}" != x"no"; then
                     fi
                 done
 		;;
-	esac
+        esac
     done
 fi
 AC_SUBST(STATIC_LDFLAGS)
