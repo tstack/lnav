@@ -8,7 +8,7 @@ AC_PREFIX_DEFAULT(/usr/)
 
 AC_CANONICAL_HOST
 
-for defdir in /usr/local /opt/local; do
+for defdir in /usr /usr/local /opt/local; do
     if test -d "$defdir/include"; then
         CPPFLAGS="$CPPFLAGS -I$defdir/include"
     fi
@@ -37,35 +37,6 @@ AC_PROG_CXX
 
 # CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
 # CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
-
-AC_ARG_ENABLE([static],
-              AS_HELP_STRING([--disable-static],
-                             [Disable static linking]))
-if test x"${enable_static}" != x"no"; then
-    case "$host_os" in
-    darwin*)
-	STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first -Lstatic-libs"
-	# This is a hack to link against static libraries instead of shared
-	# on OS X so that we can build a mostly statically link exe that can
-	# be downloaded and used right away.
-	mkdir -p src/static-libs
-	for libflag in $LDFLAGS; do
-		case $libflag in
-		-Lstatic-libs)
-			;;
-		-L*)
-			ln -sf `echo $libflag/*.a | sed -e 's/-L//'` \
-			    src/static-libs/.;
-			;;
-		esac
-	done
-	;;
-    *)
-   	STATIC_LDFLAGS="$STATIC_LDFLAGS -static"
-	;;
-    esac
-fi
-AC_SUBST(STATIC_LDFLAGS)
 
 AC_ARG_ENABLE([profiling],
               AS_HELP_STRING([--enable-profiling],
@@ -126,6 +97,39 @@ case "$host_os" in
 	AC_DEFINE([_BSD_SOURCE], [1], [Need pread])
 	;;
 esac
+
+ALL_LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS"
+
+static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libcrypto.a"
+static_lib_list="$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"
+
+AC_ARG_ENABLE([static],
+              AS_HELP_STRING([--disable-static],
+                             [Disable static linking]))
+if test x"${enable_static}" != x"no"; then
+    STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first -L`pwd`/src/static-libs"
+    # This is a hack to link against static libraries instead of shared
+    # on OS X so that we can build a mostly statically link exe that can
+    # be downloaded and used right away.
+    mkdir -p src/static-libs
+    rm src/static-libs/*.a
+    for libflag in $ALL_LDFLAGS; do
+        echo "current flag $libflag"
+	case $libflag in
+	    -Lstatic-libs)
+		;;
+	    -L*)
+                libdir=`echo $libflag | sed -e 's/-L//'`
+                for slib in $static_lib_list; do
+                    if test -e "$libdir/$slib"; then
+                        ln -sf "$libdir/$slib" src/static-libs/.
+                    fi
+                done
+		;;
+	esac
+    done
+fi
+AC_SUBST(STATIC_LDFLAGS)
 
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])

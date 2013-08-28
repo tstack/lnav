@@ -627,6 +627,7 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+STATIC_LDFLAGS
 SQLITE3_VERSION
 SQLITE3_LIBS
 SQLITE3_LDFLAGS
@@ -658,7 +659,6 @@ PYTHON
 LN_S
 RANLIB
 CFLAGS_PG
-STATIC_LDFLAGS
 am__fastdepCXX_FALSE
 am__fastdepCXX_TRUE
 CXXDEPMODE
@@ -755,13 +755,13 @@ ac_user_opts='
 enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
-enable_static
 enable_profiling
 with_ncurses
 with_ncursesw
 with_pcre
 with_readline
 with_sqlite3
+enable_static
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1401,8 +1401,8 @@ Optional Features:
                           do not reject slow dependency extractors
   --disable-dependency-tracking
                           speeds up one-time build
-  --disable-static        Disable static linking
   --enable-profiling      Compile with gprof(1) profiling support
+  --disable-static        Disable static linking
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3087,7 +3087,7 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
 
-for defdir in /usr/local /opt/local; do
+for defdir in /usr /usr/local /opt/local; do
     if test -d "$defdir/include"; then
         CPPFLAGS="$CPPFLAGS -I$defdir/include"
     fi
@@ -3811,37 +3811,6 @@ fi
 
 # CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
 # CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
-
-# Check whether --enable-static was given.
-if test "${enable_static+set}" = set; then :
-  enableval=$enable_static;
-fi
-
-if test x"${enable_static}" != x"no"; then
-    case "$host_os" in
-    darwin*)
-	STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first -Lstatic-libs"
-	# This is a hack to link against static libraries instead of shared
-	# on OS X so that we can build a mostly statically link exe that can
-	# be downloaded and used right away.
-	mkdir -p src/static-libs
-	for libflag in $LDFLAGS; do
-		case $libflag in
-		-Lstatic-libs)
-			;;
-		-L*)
-			ln -sf `echo $libflag/*.a | sed -e 's/-L//'` \
-			    src/static-libs/.;
-			;;
-		esac
-	done
-	;;
-    *)
-   	STATIC_LDFLAGS="$STATIC_LDFLAGS -static"
-	;;
-    esac
-fi
-
 
 # Check whether --enable-profiling was given.
 if test "${enable_profiling+set}" = set; then :
@@ -7033,6 +7002,41 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
 
 	;;
 esac
+
+ALL_LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS"
+
+static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libcrypto.a"
+static_lib_list="$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"
+
+# Check whether --enable-static was given.
+if test "${enable_static+set}" = set; then :
+  enableval=$enable_static;
+fi
+
+if test x"${enable_static}" != x"no"; then
+    STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first -L`pwd`/src/static-libs"
+    # This is a hack to link against static libraries instead of shared
+    # on OS X so that we can build a mostly statically link exe that can
+    # be downloaded and used right away.
+    mkdir -p src/static-libs
+    rm src/static-libs/*.a
+    for libflag in $ALL_LDFLAGS; do
+        echo "current flag $libflag"
+	case $libflag in
+	    -Lstatic-libs)
+		;;
+	    -L*)
+                libdir=`echo $libflag | sed -e 's/-L//'`
+                for slib in $static_lib_list; do
+                    if test -e "$libdir/$slib"; then
+                        ln -sf "$libdir/$slib" src/static-libs/.
+                    fi
+                done
+		;;
+	esac
+    done
+fi
+
 
 ac_config_headers="$ac_config_headers src/config.h"
 

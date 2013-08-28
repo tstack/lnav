@@ -38,6 +38,7 @@ check_PROGRAMS = \
 	test_yajlpp
 
 AM_LDFLAGS = \
+	$(STATIC_LDFLAGS) \
 	$(SQLITE3_LDFLAGS)
 
 LDADD = -lz
@@ -62,7 +63,7 @@ test_line_buffer2_SOURCES = test_line_buffer2.cc
 test_line_buffer2_LDADD = ../src/libdiag.a
 
 test_pcrepp_SOURCES = test_pcrepp.cc
-test_pcrepp_LDADD = ../src/libdiag.a
+test_pcrepp_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_top_status_SOURCES = test_top_status.cc
 test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz

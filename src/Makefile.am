@@ -18,10 +18,10 @@ init-sql.c: $(srcdir)/init.sql bin2c
 	./bin2c -z -c $(srcdir)/init.sql $@
 
 AM_LDFLAGS = \
+	$(STATIC_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
 	$(PCRE_LDFLAGS) \
-	-pthread \
-	$(STATIC_LDFLAGS)
+	-pthread
 
 AM_CPPFLAGS = \
 	-Wall \
@@ -169,6 +169,7 @@ lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
 lnav_test_LDADD = help.o init-sql.o default-log-formats-json.o $(LDADD)
 
 bin2c_SOURCES = bin2c.c
+bin2c_LDADD =
 
 DISTCLEANFILES = help.c init-sql.c default-log-formats-json.c
 

@@ -32,6 +32,9 @@
 #ifndef _sql_util_hh
 #define _sql_util_hh
 
+#include <time.h>
+#include <sys/time.h>
+
 #include <sqlite3.h>
 
 #include <map>
