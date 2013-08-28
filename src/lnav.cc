@@ -416,6 +416,8 @@ bool setup_logline_table()
     static const char *hidden_table_columns[] = {
         "log_path",
         "log_text",
+
+        NULL
     };
 
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
