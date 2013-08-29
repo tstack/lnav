@@ -1,7 +1,9 @@
 
 lnav v0.6.0:
      Features:
-     * 
+     * Custom log formats and more builtin formats
+     * Automatic extraction of data from logs
+     * UI improvements, support for 256 color terminals
 
 lnav v0.5.1:
      Features:
