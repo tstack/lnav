@@ -8,7 +8,7 @@ AC_PREFIX_DEFAULT(/usr/)
 
 AC_CANONICAL_HOST
 
-for defdir in /usr /usr/local /opt/local; do
+for defdir in /opt/local /usr/local /usr; do
     if test -d "$defdir/include"; then
         CPPFLAGS="$CPPFLAGS -I$defdir/include"
     fi
@@ -95,6 +95,7 @@ case "$host_os" in
     *)
 	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
 	AC_DEFINE([_BSD_SOURCE], [1], [Need pread])
+    AC_DEFINE([_ISOC99_SOURCE], [1], [Needed for LLONG_MAX])
 	;;
 esac
 
@@ -120,7 +121,7 @@ if test x"${enable_static}" != x"no"; then
     # will, hopefully, make a static binary that is compatible with
     # many different versions of Linux.
     mkdir -p src/static-libs
-    rm src/static-libs/*.a
+    rm -f src/static-libs/*.a
     for libflag in $ALL_LDFLAGS; do
         case $libflag in
 	    -Lstatic-libs)

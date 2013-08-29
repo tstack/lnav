@@ -131,3 +131,6 @@
 
 /* Need pread */
 #undef _BSD_SOURCE
+
+/* Needed for LLONG_MAX */
+#undef _ISOC99_SOURCE
