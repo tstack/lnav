@@ -3312,6 +3312,8 @@ int main(int argc, char *argv[])
 
     setlocale(LC_NUMERIC, "");
 
+    ensure_dotlnav();
+
     load_formats(loader_errors);
     if (!loader_errors.empty()) {
         for (std::vector<std::string>::iterator iter = loader_errors.begin();
@@ -3328,8 +3330,6 @@ int main(int argc, char *argv[])
      * so that it will try the default path.
      */
     setenv("TERMINFO_DIRS", "/usr/share/terminfo", 0);
-
-    ensure_dotlnav();
 
     if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
         fprintf(stderr, "error: unable to create sqlite memory database\n");

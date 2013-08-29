@@ -35,6 +35,8 @@ AC_SUBST(abssrcdir)
 
 AC_PROG_CXX
 
+CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE"
+
 # CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
 # CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
 
@@ -95,7 +97,6 @@ case "$host_os" in
     *)
 	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
 	AC_DEFINE([_BSD_SOURCE], [1], [Need pread])
-    AC_DEFINE([_ISOC99_SOURCE], [1], [Needed for LLONG_MAX])
 	;;
 esac
 

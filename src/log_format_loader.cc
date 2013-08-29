@@ -225,7 +225,7 @@ void load_formats(std::vector<std::string> &errors)
     yajl_handle handle;
 
     {
-        string sample_path = dotlnav_path("formats/default-formats.json.sample");
+        string sample_path = dotlnav_path("formats/default/default-formats.json.sample");
         auto_fd sample_fd;
 
         if ((sample_fd = open(sample_path.c_str(),
@@ -250,7 +250,7 @@ void load_formats(std::vector<std::string> &errors)
     yajl_complete_parse(handle);
     yajl_free(handle);
 
-    string format_path = dotlnav_path("formats/*.json");
+    string format_path = dotlnav_path("formats/*/*.json");
     static_root_mem<glob_t, globfree> gl;
 
     if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {

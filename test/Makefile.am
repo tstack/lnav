@@ -39,7 +39,8 @@ check_PROGRAMS = \
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
-	$(SQLITE3_LDFLAGS)
+	$(SQLITE3_LDFLAGS) \
+	-pthread
 
 LDADD = -lz
 
@@ -102,7 +103,7 @@ drive_vt52_curses_SOURCES = drive_vt52_curses.cc
 drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 drive_readline_curses_SOURCES = drive_readline_curses.cc
-drive_readline_curses_LDADD = ../src/libdiag.a $(CURSES_LIB) $(READLINE_LIBS)
+drive_readline_curses_LDADD = ../src/libdiag.a $(READLINE_LIBS) $(CURSES_LIB)
 
 drive_sql_SOURCES = \
 	drive_sql.cc
