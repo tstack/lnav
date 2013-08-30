@@ -1,5 +1,6 @@
-
 [![Build Status](https://travis-ci.org/tstack/lnav.png)](https://travis-ci.org/tstack/lnav)
+
+_This is the source repository for **lnav**, visit [http://lnav.org](http://lnav.org) for a high level overview._
 
 LNAV -- The Logfile Navigator
 =============================
