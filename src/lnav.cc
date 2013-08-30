@@ -3329,7 +3329,9 @@ int main(int argc, char *argv[])
      * standard path to the terminfo database, we need to set this variable
      * so that it will try the default path.
      */
-    setenv("TERMINFO_DIRS", "/usr/share/terminfo", 0);
+    setenv("TERMINFO_DIRS",
+           "/usr/share/terminfo:/lib/terminfo:/usr/share/lib/terminfo",
+           0);
 
     if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
         fprintf(stderr, "error: unable to create sqlite memory database\n");

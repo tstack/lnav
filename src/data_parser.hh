@@ -695,7 +695,16 @@ private:
                     pair_subs.PUSH_BACK(blank);
                     pair_subs.PUSH_BACK(free_row.front());
                     pairs_out.PUSH_BACK(element(pair_subs, DNT_PAIR));
+
+                    // Throw something into the hash so that the number of
+                    // columns is significant.  I don't think we want to
+                    // use the token ID since some columns values might vary
+                    // between rows.
+                    SHA_Update(&context, " ", 1);
                 }
+                break;
+
+                case DT_WHITE:
                 break;
 
                 default: {
