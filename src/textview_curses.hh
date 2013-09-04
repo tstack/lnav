@@ -109,6 +109,10 @@ public:
      * @param bm The bookmarks data structure used by the text view.
      */
     virtual void text_update_marks(vis_bookmarks &bm) { };
+
+    virtual std::string text_source_name(const textview_curses &tv) {
+        return "";
+    };
 };
 
 /**
@@ -330,6 +334,11 @@ public:
     void listview_value_for_row(const listview_curses &lv,
                                 vis_line_t line,
                                 attr_line_t &value_out);
+
+    std::string listview_source_name(const listview_curses &lv) {
+        return this->tc_sub_source == NULL ? "" :
+               this->tc_sub_source->text_source_name(*this);
+    };
 
     bool grep_value_for_line(int line, std::string &value_out)
     {

@@ -65,6 +65,10 @@ public:
     virtual void listview_value_for_row(const listview_curses &lv,
                                         vis_line_t row,
                                         attr_line_t &value_out) = 0;
+
+    virtual std::string listview_source_name(const listview_curses &lv) {
+        return "";
+    };
 };
 
 struct listview_overlay {

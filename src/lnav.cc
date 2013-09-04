@@ -771,10 +771,8 @@ static bool append_default_files(lnav_flags_t flag)
     if (lnav_data.ld_flags & flag) {
         pair<multimap<lnav_flags_t, string>::iterator,
              multimap<lnav_flags_t, string>::iterator> range;
-        bool found = false;
-
         for (range = DEFAULT_FILES.equal_range(flag);
-             range.first != range.second && !found;
+             range.first != range.second;
              range.first++) {
             string      path = range.first->second;
             struct stat st;
@@ -789,7 +787,6 @@ static bool append_default_files(lnav_flags_t flag)
                 else {
                     lnav_data.ld_file_names.insert(make_pair(abspath.in(),
                                                              -1));
-                    found = true;
                 }
             }
             else if (stat(path.c_str(), &st) == 0) {
@@ -2890,7 +2887,10 @@ static void looper(void)
                         HELP_MSG_2(f, F,
                                    "to switch to the next/previous file"));
                 }
-                initial_build = true;
+                if (lnav_data.ld_log_source.text_line_count() > 0 ||
+                    lnav_data.ld_text_source.text_line_count() > 0) {
+                    initial_build = true;
+                }
 
                 if (!session_loaded) {
                     load_session();

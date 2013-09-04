@@ -148,7 +148,7 @@ public:
         }
         else {
             sf_format.clear();
-            sf_filename.clear();
+            sf_filename.set_value(lc->get_data_source()->listview_source_name(*lc));
         }
         sf_format.get_value().get_attrs()[lr].insert(
             make_string_attr("style", A_REVERSE | view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK)));

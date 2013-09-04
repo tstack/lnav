@@ -87,8 +87,16 @@ public:
             return NULL;
         }
 
-        return *this->tss_files.begin();
+        return this->tss_files.front();
     };
+
+    std::string text_source_name(const textview_curses &tv) {
+        if (this->tss_files.empty()) {
+            return "";
+        }
+
+        return this->tss_files.front()->get_filename();
+    }
 
     std::list<logfile *> tss_files;
 };
