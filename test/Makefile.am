@@ -82,7 +82,13 @@ drive_listview_SOURCES = drive_listview.cc
 drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 
 drive_logfile_SOURCES = drive_logfile.cc
-drive_logfile_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
+drive_logfile_LDADD = \
+	../src/libdiag.a \
+	-lcrypto \
+	$(CURSES_LIB) \
+	$(SQLITE3_LIBS) \
+	$(PCRE_LIBS) \
+	-lpcrecpp
 
 drive_sequencer_SOURCES = drive_sequencer.cc
 drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
@@ -93,7 +99,9 @@ drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	-lcrypto \
+	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \
+	-lpcrecpp \
 	$(CURSES_LIB)
 
 drive_view_colors_SOURCES = drive_view_colors.cc

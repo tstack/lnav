@@ -105,7 +105,39 @@ struct json_path_handler : public json_path_handler_base {
         this->jph_callbacks.yajl_string = (int (*)(void *, const unsigned char *, size_t))str_func;
     }
 
+    json_path_handler(const char *path) : json_path_handler_base(path) { };
+
     json_path_handler() : json_path_handler_base("") {};
+
+    json_path_handler &add_cb(int(*null_func)(yajlpp_parse_context *)) {
+        this->jph_callbacks.yajl_null = (int (*)(void *))null_func;
+        return *this;
+    };
+
+    json_path_handler &add_cb(int(*bool_func)(yajlpp_parse_context *, int))
+    {
+        this->jph_callbacks.yajl_boolean = (int (*)(void *, int))bool_func;
+        return *this;
+    }
+
+    json_path_handler &add_cb(int(*int_func)(yajlpp_parse_context *, long long))
+    {
+        this->jph_callbacks.yajl_integer = (int (*)(void *, long long))int_func;
+        return *this;
+    }
+
+    json_path_handler &add_cb(int(*double_func)(yajlpp_parse_context *, double))
+    {
+        this->jph_callbacks.yajl_double = (int (*)(void *, double))double_func;
+        return *this;
+    }
+
+    json_path_handler &add_cb(int(*str_func)(yajlpp_parse_context *, const unsigned char *, size_t))
+    {
+        this->jph_callbacks.yajl_string = (int (*)(void *, const unsigned char *, size_t))str_func;
+        return *this;
+    }
+
 };
 
 class yajlpp_parse_context {
@@ -129,9 +161,10 @@ public:
 
     yajlpp_parse_context(std::string source,
                          struct json_path_handler *handlers)
-        : ypc_source(source), ypc_handlers(handlers)
+        : ypc_source(source), ypc_handlers(handlers), ypc_ignore_unused(false)
     {
         this->ypc_callbacks = DEFAULT_CALLBACKS;
+        memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
     };
 
     std::string get_path_fragment(int offset) const
@@ -155,10 +188,12 @@ public:
     struct json_path_handler *ypc_handlers;
     void *                  ypc_userdata;
     yajl_callbacks          ypc_callbacks;
+    yajl_callbacks          ypc_alt_callbacks;
     std::string             ypc_path;
     std::vector<size_t>     ypc_path_index_stack;
     std::vector<int>        ypc_array_index;
     pcre_context_static<30> ypc_pcre_context;
+    bool                    ypc_ignore_unused;
 
 private:
     static const yajl_callbacks DEFAULT_CALLBACKS;

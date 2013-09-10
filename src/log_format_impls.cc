@@ -192,7 +192,7 @@ class generic_log_format : public log_format {
             }
         }
 
-        if (logline::string2level(level, true) == logline::LEVEL_UNKNOWN) {
+        if (logline::string2level(level, -1, true) == logline::LEVEL_UNKNOWN) {
             prefix_len = lr.lr_end;
         }
 
@@ -308,7 +308,7 @@ class strace_log_format : public log_format {
                 { "result",   logline_value::VALUE_TEXT },
                 { "duration", logline_value::VALUE_FLOAT },
 
-                { NULL },
+                { NULL, logline_value::VALUE_UNKNOWN },
             };
 
             pcre_context::iterator iter;

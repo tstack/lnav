@@ -59,7 +59,7 @@ public:
         : public logfile_observer {
 public:
         virtual void logfile_sub_source_filtering(logfile_sub_source &lss,
-                                                  content_line_t cl,
+                                                  vis_line_t cl,
                                                   size_t total) = 0;
     };
 

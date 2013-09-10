@@ -201,7 +201,7 @@ static void cleanup_session_data(void)
 
     session_info_list.sort();
 
-    int session_loops = 0;
+    size_t session_loops = 0;
 
     while (session_info_list.size() > MAX_SESSION_FILE_COUNT) {
         const session_file_info &front = session_info_list.front();

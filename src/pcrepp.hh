@@ -224,7 +224,7 @@ public:
     void reset(const std::string &str, size_t off = 0)
     {
         this->reset(str.c_str(), off, str.length());
-    }
+    };
 
     size_t pi_offset;
     size_t pi_next_offset;

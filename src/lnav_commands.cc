@@ -349,23 +349,25 @@ static string com_highlight(string cmdline, vector<string> &args)
 
     if (args.size() == 0) { }
     else if (args.size() > 1) {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses::highlight_map_t &hm = tc->get_highlights();
         const char *errptr;
         pcre *      code;
         int         eoff;
 
         args[1] = cmdline.substr(cmdline.find(args[1]));
-        if ((code = pcre_compile(args[1].c_str(),
-                                 PCRE_CASELESS,
-                                 &errptr,
-                                 &eoff,
-                                 NULL)) == NULL) {
+        if (hm.find(args[1]) != hm.end()) {
+            retval = "error: highlight already exists";
+        }
+        else if ((code = pcre_compile(args[1].c_str(),
+                                      PCRE_CASELESS,
+                                      &errptr,
+                                      &eoff,
+                                      NULL)) == NULL) {
             retval = "error: " + string(errptr);
         }
         else {
-            textview_curses *            tc = lnav_data.ld_view_stack.top();
             textview_curses::highlighter hl(code, false);
-
-            textview_curses::highlight_map_t &hm = tc->get_highlights();
 
             hm[args[1]] = hl;
 
@@ -491,20 +493,23 @@ static string com_filter(string cmdline, vector<string> &args)
         args.push_back("filter");
     }
     else if (args.size() > 1) {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
         const char *errptr;
         pcre *      code;
         int         eoff;
 
         args[1] = cmdline.substr(cmdline.find(args[1]));
-        if ((code = pcre_compile(args[1].c_str(),
-                                 0,
-                                 &errptr,
-                                 &eoff,
-                                 NULL)) == NULL) {
+        if (lss.get_filter(args[1]) != NULL) {
+            retval = "error: filter already exists";
+        }
+        else if ((code = pcre_compile(args[1].c_str(),
+                                      0,
+                                      &errptr,
+                                      &eoff,
+                                      NULL)) == NULL) {
             retval = "error: " + string(errptr);
         }
         else {
-            logfile_sub_source &   lss = lnav_data.ld_log_source;
             logfile_filter::type_t lt  = (args[0] == "filter-out") ?
                                          logfile_filter::EXCLUDE :
                                          logfile_filter::INCLUDE;

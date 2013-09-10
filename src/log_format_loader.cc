@@ -78,6 +78,8 @@ static int read_format_bool(yajlpp_parse_context *ypc, int val)
 
     if (field_name == "local-time")
         elf->lf_date_time.dts_local_time = val;
+    else if (field_name == "json")
+        elf->jlf_json = val;
 
     return 1;
 }
@@ -88,8 +90,14 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
     string value = string((const char *)str, len);
     string field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "level-field")
+    if (field_name == "file-pattern")
+        elf->elf_file_pattern = value;
+    else if (field_name == "level-field")
         elf->elf_level_field = value;
+    else if (field_name == "timestamp-field")
+        elf->lf_timestamp_field = value;
+    else if (field_name == "body-field")
+        elf->elf_body_field = value;
 
     return 1;
 }
@@ -202,18 +210,76 @@ static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str,
     return 1;
 }
 
+static external_log_format::json_format_element &
+    ensure_json_format_element(external_log_format *elf, int index)
+{
+    elf->jlf_line_format.resize(index + 1);
+
+    return elf->jlf_line_format[index];
+}
+
+static int read_json_constant(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
+    string val = string((const char *)str, len);
+
+    ypc->ypc_array_index.back() += 1;
+
+    int index = ypc->ypc_array_index.back();
+    external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
+
+    jfe.jfe_type = external_log_format::JLF_CONSTANT;
+    jfe.jfe_default_value = val;
+
+    return 1;
+}
+
+static int read_json_variable(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
+    string val = string((const char *)str, len);
+    int index = ypc->ypc_array_index.back();
+    external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
+    string field_name = ypc->get_path_fragment(3);
+
+    jfe.jfe_type = external_log_format::JLF_VARIABLE;
+    if (field_name == "field")
+        jfe.jfe_value = val;
+    else if (field_name == "default-value")
+        jfe.jfe_default_value = val;
+
+    return 1;
+}
+
+static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
+{
+    external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
+    int index = ypc->ypc_array_index.back();
+    external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
+    string field_name = ypc->get_path_fragment(2);
+
+    jfe.jfe_type = external_log_format::JLF_VARIABLE;
+    jfe.jfe_min_width = val;
+
+    return 1;
+}
+
 static struct json_path_handler format_handlers[] = {
-    json_path_handler("/\\w+/regex/[^/]+/pattern", read_format_regex),
-    json_path_handler("/\\w+/local-time", read_format_bool),
-    json_path_handler("/\\w+/(level-field|url|title|description)", read_format_field),
-    json_path_handler("/\\w+/level/"
-                      "(trace|debug|info|warning|error|critical|fatal)",
+    json_path_handler("^/\\w+/regex/[^/]+/pattern$", read_format_regex),
+    json_path_handler("^/\\w+/(json|local-time)$", read_format_bool),
+    json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|body-field|url|title|description)$",
+                      read_format_field),
+    json_path_handler("^/\\w+/level/"
+                      "(trace|debug|info|warning|error|critical|fatal)$",
                       read_levels),
-    json_path_handler("/\\w+/value/\\w+/(kind|collate|unit/field)", read_value_def),
-    json_path_handler("/\\w+/value/\\w+/(identifier|foreign-key)", read_value_bool),
-    json_path_handler("/\\w+/value/\\w+/unit/scaling-factor/.*",
+    json_path_handler("^/\\w+/value/\\w+/(kind|collate|unit/field)$", read_value_def),
+    json_path_handler("^/\\w+/value/\\w+/(identifier|foreign-key)$", read_value_bool),
+    json_path_handler("^/\\w+/value/\\w+/unit/scaling-factor/.*$",
         read_scaling),
-    json_path_handler("/\\w+/sample#/line", read_sample_line),
+    json_path_handler("^/\\w+/sample#/line$", read_sample_line),
+    json_path_handler("^/\\w+/line-format#/(field|default-value)$", read_json_variable),
+    json_path_handler("^/\\w+/line-format#/min-width$", read_json_variable_num),
+    json_path_handler("^/\\w+/line-format#$", read_json_constant),
 
     json_path_handler()
 };

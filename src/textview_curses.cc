@@ -85,7 +85,9 @@ void textview_curses::grep_match(grep_proc &gp,
         this->tc_sub_source->text_mark(&BM_SEARCH, line, true);
     }
 
-    listview_curses::reload_data();
+    if (this->get_top() <= line && line <= this->get_bottom()) {
+        listview_curses::reload_data();
+    }
 }
 
 void textview_curses::listview_value_for_row(const listview_curses &lv,

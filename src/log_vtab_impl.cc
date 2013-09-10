@@ -75,6 +75,8 @@ static string declare_table_statement(log_vtab_impl *vi)
     for (iter = cols.begin(); iter != cols.end(); iter++) {
         auto_mem<char, sqlite3_free> coldecl;
 
+        assert(iter->vc_name != NULL);
+
         coldecl = sqlite3_mprintf("  %Q %s collate %Q,\n",
                                   iter->vc_name,
                                   type_to_string(iter->vc_type),
@@ -361,24 +363,30 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
             }
 
             size_t sub_col = col - VT_COL_MAX;
+            std::vector<logline_value>::iterator lv_iter;
 
-            if (sub_col < vc->line_values.size()) {
-                logline_value &lv = vc->line_values[sub_col];
+            lv_iter = find_if(vc->line_values.begin(), vc->line_values.end(),
+                              logline_value_cmp(NULL, sub_col));
 
-                switch (lv.lv_kind) {
+            if (lv_iter != vc->line_values.end()) {
+                switch (lv_iter->lv_kind) {
+                case logline_value::VALUE_NULL:
+                    sqlite3_result_null(ctx);
+                    break;
                 case logline_value::VALUE_TEXT:
                     sqlite3_result_text(ctx,
-                                        lv.lv_string.c_str(),
-                                        lv.lv_string.length(),
+                                        lv_iter->lv_string.c_str(),
+                                        lv_iter->lv_string.length(),
                                         SQLITE_TRANSIENT);
                     break;
 
+                case logline_value::VALUE_BOOLEAN:
                 case logline_value::VALUE_INTEGER:
-                    sqlite3_result_int64(ctx, lv.lv_number.i);
+                    sqlite3_result_int64(ctx, lv_iter->lv_number.i);
                     break;
 
                 case logline_value::VALUE_FLOAT:
-                    sqlite3_result_double(ctx, lv.lv_number.d);
+                    sqlite3_result_double(ctx, lv_iter->lv_number.d);
                     break;
 
                 case logline_value::VALUE_UNKNOWN:

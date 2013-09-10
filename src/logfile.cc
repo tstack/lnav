@@ -50,7 +50,7 @@
 
 using namespace std;
 
-static const int MAX_UNRECOGNIZED_LINES = 1000;
+static const size_t MAX_UNRECOGNIZED_LINES = 1000;
 
 logfile::logfile(string filename, auto_fd fd)
 throw (error)
@@ -141,6 +141,9 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
         for (iter = root_formats.begin();
              iter != root_formats.end() && !found;
              ++iter) {
+            if (!(*iter)->match_name(this->lf_filename))
+                continue;
+
             (*iter)->clear();
             (*iter)->lf_date_time.set_base_time(this->lf_line_buffer.get_file_time());
             if ((*iter)->lf_date_time.dts_base_time == 0) {
@@ -236,6 +239,9 @@ throw (line_buffer::error)
              * Drop the last line we read since it might have been a partial
              * read.
              */
+            while (this->lf_index.back().get_sub_offset() != 0) {
+                this->lf_index.pop_back();
+            }
             this->lf_index.pop_back();
         }
         else {
@@ -342,7 +348,15 @@ void logfile::read_line(logfile::iterator ll, string &line_out)
 
         line_out.clear();
         if ((line = this->lf_line_buffer.read_line(off, len)) != NULL) {
-            line_out.append(line, len);
+            ostringstream stream;
+
+            if (this->lf_format.get() != NULL) {
+                this->lf_format->get_subline(*ll, line, len, stream);
+                line_out = stream.str();
+            }
+            else {
+                line_out.append(line, len);
+            }
         }
         else {
             /* XXX */
@@ -357,18 +371,19 @@ void logfile::read_full_message(logfile::iterator ll,
                                 string &msg_out,
                                 int max_lines)
 {
-    msg_out.clear();
+    ostringstream stream;
+
     do {
         try {
             off_t       off = ll->get_offset();
             const char *line;
             size_t      len;
 
-            if (!msg_out.empty()) {
-                msg_out.append(1, '\n');
+            if (stream.tellp() > 0) {
+                stream.write("\n", 1);
             }
             if ((line = this->lf_line_buffer.read_line(off, len)) != NULL) {
-                msg_out.append(line, len);
+                this->lf_format->get_subline(*ll, line, len, stream);
             }
             else {
                 /* XXX */
@@ -381,4 +396,6 @@ void logfile::read_full_message(logfile::iterator ll,
         max_lines -= 1;
     } while (ll != this->end() && ll->is_continued() &&
              (max_lines == -1 || max_lines > 0));
+
+    msg_out = stream.str();
 }

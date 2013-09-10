@@ -66,7 +66,7 @@ void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis);
 inline void sql_strftime(char *buffer, size_t buffer_size,
                          const struct timeval &tv)
 {
-    sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec);
+    sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec / 1000);
 }
 
 #endif

@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <sstream>
 
 #include "pcrepp.hh"
 #include "lnav_util.hh"
@@ -77,6 +78,10 @@ public:
     virtual bool matches(std::string line) = 0;
 
     virtual std::string to_command(void) = 0;
+
+    bool operator==(const std::string &rhs) {
+        return this->lf_id == rhs;
+    };
 
 protected:
     bool        lf_enabled;
@@ -116,7 +121,7 @@ public:
 
     static const char *level_names[LEVEL__MAX];
 
-    static level_t string2level(const char *levelstr, bool exact = false);
+    static level_t string2level(const char *levelstr, size_t len = -1, bool exact = false);
 
     /**
      * Construct a logline object with the given values.
@@ -129,13 +134,13 @@ public:
     logline(off_t off,
             time_t t,
             uint16_t millis,
-            level_t l,
-            uint8_t m = 0)
+            level_t l)
         : ll_offset(off),
           ll_time(t),
           ll_millis(millis),
           ll_level(l),
-          ll_filter_state(logfile_filter::MAYBE)
+          ll_filter_state(logfile_filter::MAYBE),
+          ll_sub_offset(0)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     };
@@ -146,7 +151,8 @@ public:
             uint8_t m = 0)
         : ll_offset(off),
           ll_level(l),
-          ll_filter_state(logfile_filter::MAYBE)
+          ll_filter_state(logfile_filter::MAYBE),
+          ll_sub_offset(0)
     {
         this->set_time(tv);
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
@@ -154,6 +160,10 @@ public:
 
     /** @return The offset of the line in the file. */
     off_t get_offset() const { return this->ll_offset; };
+
+    uint16_t get_sub_offset() const { return this->ll_sub_offset; };
+
+    void set_sub_offset(uint16_t suboff) { this->ll_sub_offset = suboff; };
 
     /** @return The timestamp for the line. */
     time_t get_time() const { return this->ll_time; };
@@ -266,6 +276,7 @@ private:
     uint16_t ll_millis;
     uint8_t  ll_level;
     uint8_t  ll_filter_state;
+    uint16_t ll_sub_offset;
     char     ll_schema[4];
 };
 
@@ -300,26 +311,40 @@ class logline_value {
 public:
     enum kind_t {
         VALUE_UNKNOWN = -1,
+        VALUE_NULL,
         VALUE_TEXT,
         VALUE_INTEGER,
         VALUE_FLOAT,
+        VALUE_BOOLEAN,
     };
 
     static kind_t string2kind(const char *kindstr);
 
+    logline_value(std::string name)
+        : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1) { };
+    logline_value(std::string name, bool b)
+        : lv_name(name),
+          lv_kind(VALUE_BOOLEAN),
+          lv_number((int64_t)(b ? 1 : 0)),
+          lv_identifier(),
+          lv_column(-1) { };
     logline_value(std::string name, int64_t i)
-        : lv_name(name), lv_kind(VALUE_INTEGER), lv_number(i) { };
+        : lv_name(name), lv_kind(VALUE_INTEGER), lv_number(i), lv_identifier(), lv_column(-1) { };
     logline_value(std::string name, double i)
-        : lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i) { };
+        : lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i), lv_identifier(), lv_column(-1) { };
     logline_value(std::string name, std::string s)
-        : lv_name(name), lv_kind(VALUE_TEXT), lv_string(s) { };
+        : lv_name(name), lv_kind(VALUE_TEXT), lv_string(s), lv_identifier(), lv_column(-1) { };
     logline_value(std::string name, kind_t kind, std::string s,
-                  bool ident=false, const scaling_factor *scaling=NULL)
-        : lv_name(name), lv_kind(kind), lv_identifier(ident)
+                  bool ident=false, const scaling_factor *scaling=NULL,
+                  int col=-1)
+        : lv_name(name), lv_kind(kind), lv_identifier(ident), lv_column(col)
     {
         switch (kind) {
         case VALUE_TEXT:
             this->lv_string = s;
+            break;
+
+        case VALUE_NULL:
             break;
 
         case VALUE_INTEGER:
@@ -336,17 +361,29 @@ public:
             }
             break;
 
+        case VALUE_BOOLEAN:
+            if (s == "true" || s == "yes") {
+                this->lv_number.i = 1;
+            }
+            else {
+                this->lv_number.i = 0;
+            }
+            break;
+
         case VALUE_UNKNOWN:
         assert(0);
         break;
         }
     };
 
-    const std::string to_string()
+    const std::string to_string() const
     {
         char buffer[128];
 
         switch (this->lv_kind) {
+        case VALUE_NULL:
+            return "null";
+
         case VALUE_TEXT:
             return this->lv_string;
 
@@ -357,9 +394,18 @@ public:
         case VALUE_FLOAT:
             snprintf(buffer, sizeof(buffer), "%lf", this->lv_number.d);
             break;
+
+        case VALUE_BOOLEAN:
+            if (this->lv_number.i) {
+                return "true";
+            }
+            else {
+                return "false";
+            }
+            break;
         case VALUE_UNKNOWN:
-        assert(0);
-        break;
+            assert(0);
+            break;
         }
 
         return std::string(buffer);
@@ -377,6 +423,28 @@ public:
     }           lv_number;
     std::string lv_string;
     bool lv_identifier;
+    int lv_column;
+};
+
+struct logline_value_cmp {
+    logline_value_cmp(const std::string *name = NULL, int col = -1) 
+        : lvc_name(name), lvc_column(col) {
+
+    };
+
+    bool operator()(const logline_value &lv) {
+        bool retval = true;
+
+        if (this->lvc_name != NULL)
+            retval = retval && ((*this->lvc_name) == lv.lv_name);
+        if (this->lvc_column != -1)
+            retval = retval && (this->lvc_column == lv.lv_column);
+
+        return retval;
+    };
+
+    const std::string *lvc_name;
+    int lvc_column;
 };
 
 class log_vtab_impl;
@@ -406,7 +474,7 @@ public:
         };
     };
 
-    log_format() : lf_fmt_lock(-1) {
+    log_format() : lf_fmt_lock(-1), lf_timestamp_field("timestamp") {
     };
     virtual ~log_format() { };
 
@@ -422,6 +490,8 @@ public:
      * @return The log format name.
      */
     virtual std::string get_name(void) const = 0;
+
+    virtual bool match_name(const std::string &filename) { return true; };
 
     /**
      * Scan a log line to see if it matches this log format.
@@ -458,8 +528,15 @@ public:
         return NULL;
     };
 
+    virtual void get_subline(const logline &ll,
+                             const char *line, size_t len,
+                             std::ostringstream &stream_out) {
+        stream_out.write(line, len);
+    };
+
     date_time_scanner lf_date_time;
     int lf_fmt_lock;
+    std::string lf_timestamp_field;
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -487,7 +564,8 @@ public:
             vd_kind(logline_value::VALUE_UNKNOWN),
             vd_identifier(false),
             vd_foreign_key(false),
-            vd_unit_field_index(-1) {
+            vd_unit_field_index(-1),
+            vd_column(-1) {
 
         };
 
@@ -500,6 +578,7 @@ public:
         std::string vd_unit_field;
         int vd_unit_field_index;
         std::map<std::string, scaling_factor> vd_unit_scaling;
+        int vd_column;
 
         bool operator<(const value_def &rhs) const {
             return this->vd_index < rhs.vd_index;
@@ -522,10 +601,24 @@ public:
         pcrepp *lp_pcre;
     };
 
-    external_log_format(const std::string &name) : elf_name(name) { };
+    external_log_format(const std::string &name)
+        : elf_file_pattern(".*"),
+          elf_column_count(0),
+          elf_body_field("body"),
+          jlf_cached_offset(-1),
+          elf_name(name) {
+            this->jlf_line_offsets.reserve(128);
+        };
 
     std::string get_name(void) const {
         return this->elf_name;
+    };
+
+    bool match_name(const std::string &filename) {
+        pcre_context_static<10> pc;
+        pcre_input pi(filename);
+
+        return this->elf_filename_pcre->match(pc, pi);
     };
 
     bool scan(std::vector<logline> &dst,
@@ -543,21 +636,50 @@ public:
         std::auto_ptr<log_format> retval((log_format *)
                                          new external_log_format(*this));
 
-        retval->lf_fmt_lock = this->lf_fmt_lock;
-        retval->lf_date_time = this->lf_date_time;
-
         return retval;
     };
 
+    void get_subline(const logline &ll,
+                     const char *line, size_t len,
+                     std::ostringstream &stream_out);
+
     log_vtab_impl *get_vtab_impl(void) const;
 
+    std::string elf_file_pattern;
+    pcrepp *elf_filename_pcre;
     std::map<std::string, pattern> elf_patterns;
     std::vector<pattern *> elf_pattern_order;
     std::vector<sample> elf_samples;
     std::map<std::string, value_def> elf_value_defs;
+    int elf_column_count;
     std::string elf_level_field;
+    std::string elf_body_field;
     std::map<logline::level_t, level_pattern> elf_level_patterns;
 
+    enum json_log_field {
+        JLF_CONSTANT,
+        JLF_VARIABLE,
+    };
+
+    struct json_format_element {
+        json_format_element()
+            : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0)
+        { };
+
+        json_log_field jfe_type;
+        std::string jfe_value;
+        std::string jfe_default_value;
+        int jfe_min_width;
+    };
+
+    bool jlf_json;
+    std::vector<json_format_element> jlf_line_format;
+    std::vector<logline_value> jlf_line_values;
+
+    off_t jlf_cached_offset;
+    std::vector<off_t> jlf_line_offsets;
+    std::string jlf_cached_line;
+    string_attrs_t jlf_line_attrs;
 private:
     const std::string elf_name;
 

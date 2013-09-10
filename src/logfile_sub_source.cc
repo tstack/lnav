@@ -268,7 +268,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
             {   60, "%qd%s",   "s" },
             {   60, "%qd%s",   "m" },
             {    0, "%qd%s",   "h" },
-            {    0, NULL }
+            {    0, NULL, NULL }
         };
 
         struct rel_interval *curr_interval;
@@ -420,6 +420,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 {
     std::vector<logfile_data>::iterator iter;
+    size_t total_lines = 0;
     bool retval = force;
     int file_count = 0;
 
@@ -437,6 +438,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                 retval = true;
             }
             file_count += 1;
+            total_lines += iter->ld_file->size();
         }
     }
     if (force) {
@@ -489,13 +491,6 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
             content_line_t con_line(file_index * MAX_LINES_PER_FILE +
                                     line_index);
 
-            if (obs != NULL) {
-                obs->logfile_sub_source_filtering(
-                    *this,
-                    content_line_t(con_line % MAX_LINES_PER_FILE),
-                    ld->ld_file->size());
-            }
-
             if (!(lf_iter->get_level() & logline::LEVEL_CONTINUED)) {
                 if (action_for_prev_line == logfile_filter::INCLUDE) {
                     while (last_owner->ld_indexing.ld_start <=
@@ -510,6 +505,13 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                 ld->ld_indexing.ld_start = con_line;
             }
 
+            if (obs != NULL) {
+                obs->logfile_sub_source_filtering(
+                    *this,
+                    vis_line_t(this->lss_index.size()),
+                    total_lines);
+            }
+
             ld->ld_indexing.ld_last = con_line;
             action_for_prev_line = ld->ld_file->check_filter(
                 lf_iter, this->lss_filter_generation, this->lss_filters);
@@ -517,6 +519,11 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
             last_owner = ld;
 
             merge.next();
+        }
+        if (obs != NULL) {
+            obs->logfile_sub_source_filtering(*this,
+                                              vis_line_t(total_lines - 1),
+                                              total_lines);
         }
 
         if (action_for_prev_line == logfile_filter::INCLUDE) {

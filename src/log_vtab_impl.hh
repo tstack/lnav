@@ -58,7 +58,9 @@ struct log_cursor {
 class log_vtab_impl {
 public:
     struct vtab_column {
-        vtab_column(const char *name, int type, const char *collator = NULL)
+        vtab_column(const char *name = NULL,
+                    int type = SQLITE3_TEXT,
+                    const char *collator = NULL)
             : vc_name(name), vc_type(type), vc_collator(collator) { };
 
         const char *vc_name;

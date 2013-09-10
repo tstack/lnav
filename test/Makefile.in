@@ -120,7 +120,7 @@ drive_data_scanner_OBJECTS = $(am_drive_data_scanner_OBJECTS)
 am__DEPENDENCIES_1 =
 drive_data_scanner_DEPENDENCIES = ../src/libdiag.a \
 	../src/default-log-formats-json.o $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_drive_grep_proc_OBJECTS = drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
 drive_grep_proc_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
@@ -134,7 +134,7 @@ drive_listview_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
 am_drive_logfile_OBJECTS = drive_logfile.$(OBJEXT)
 drive_logfile_OBJECTS = $(am_drive_logfile_OBJECTS)
 drive_logfile_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_drive_readline_curses_OBJECTS = drive_readline_curses.$(OBJEXT)
 drive_readline_curses_OBJECTS = $(am_drive_readline_curses_OBJECTS)
 drive_readline_curses_DEPENDENCIES = ../src/libdiag.a \
@@ -639,7 +639,14 @@ drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 drive_listview_SOURCES = drive_listview.cc
 drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 drive_logfile_SOURCES = drive_logfile.cc
-drive_logfile_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
+drive_logfile_LDADD = \
+	../src/libdiag.a \
+	-lcrypto \
+	$(CURSES_LIB) \
+	$(SQLITE3_LIBS) \
+	$(PCRE_LIBS) \
+	-lpcrecpp
+
 drive_sequencer_SOURCES = drive_sequencer.cc
 drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
 drive_data_scanner_SOURCES = \
@@ -649,7 +656,9 @@ drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	-lcrypto \
+	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \
+	-lpcrecpp \
 	$(CURSES_LIB)
 
 drive_view_colors_SOURCES = drive_view_colors.cc

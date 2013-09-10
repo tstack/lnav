@@ -183,7 +183,19 @@ public:
 
         content_line_t    cl   = lss.at(lv.get_top());
         logfile *         lf   = lss.find(cl);
-        std::string       line = lf->read_line(lf->begin() + cl);
+        logfile::iterator ll   = lf->begin() + cl;
+
+        if (ll->is_continued()) {
+            if (this->fos_parser) {
+                delete this->fos_parser;
+                delete this->fos_scanner;
+                delete this->fos_namer;
+            }
+            this->fos_parser = NULL;
+            return 0;
+        }
+
+        std::string       line = lf->read_line(ll);
         struct line_range body;
         string_attrs_t    sa;
 
@@ -214,7 +226,7 @@ public:
             delete this->fos_scanner;
             delete this->fos_namer;
         }
-
+        
         this->fos_scanner = new data_scanner(line, body.lr_start, body.lr_end);
         this->fos_parser  = new data_parser(this->fos_scanner);
         this->fos_parser->parse();
@@ -506,10 +518,10 @@ public:
     };
 
     void logfile_sub_source_filtering(logfile_sub_source &lss,
-                                      content_line_t cl,
+                                      vis_line_t cl,
                                       size_t total)
     {
-        if (std::abs(cl - this->lo_last_line) > 1024 || (size_t)cl ==
+        if (std::abs(cl - this->lo_last_line) > (4 * 1024) || (size_t)cl ==
             (total - 1)) {
             lnav_data.ld_bottom_source.update_loading(cl, (total - 1));
             this->do_update();
@@ -531,7 +543,7 @@ private:
     };
 
     off_t          lo_last_offset;
-    content_line_t lo_last_line;
+    vis_line_t lo_last_line;
 };
 
 static void rebuild_hist(size_t old_count, bool force)
@@ -2007,7 +2019,7 @@ void execute_search(lnav_view_t view, const std::string &regex)
     lnav_data.ld_last_search[view] = regex;
 }
 
-static void rl_search(void *dummy, readline_curses *rc)
+static void rl_search_internal(void *dummy, readline_curses *rc, bool complete = false)
 {
     string term_val;
     string name;
@@ -2061,8 +2073,14 @@ static void rl_search(void *dummy, readline_curses *rc)
     textview_curses *tc    = lnav_data.ld_view_stack.top();
     lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
 
-    tc->set_top(lnav_data.ld_search_start_line);
+    if (!complete)
+        tc->set_top(lnav_data.ld_search_start_line);
     execute_search(index, rc->get_value());
+}
+
+static void rl_search(void *dummy, readline_curses *rc)
+{
+    rl_search_internal(dummy, rc);
 }
 
 static void rl_abort(void *dummy, readline_curses *rc)
@@ -2112,7 +2130,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 
     case LNM_SEARCH:
     case LNM_CAPTURE:
-        rl_search(dummy, rc);
+        rl_search_internal(dummy, rc, true);
         if (rc->get_value().size() > 0) {
             lnav_data.ld_view_stack.top()->set_follow_search(false);
             lnav_data.ld_rl_view->

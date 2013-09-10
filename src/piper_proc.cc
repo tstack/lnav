@@ -141,7 +141,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 }
                 woff += wrc;
             }
-        } while (lb.get_file_size() == -1);
+        } while (lb.get_file_size() == (size_t)-1);
 
         if (timestamp) {
             int wrc;

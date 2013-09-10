@@ -50,7 +50,8 @@ public:
     log_data_table(content_line_t template_line,
                    std::string table_name = "logline")
         : log_vtab_impl(table_name),
-          ldt_template_line(template_line) {
+          ldt_template_line(template_line),
+          ldt_parent_column_count(0) {
         logfile *lf = lnav_data.ld_log_source.find(template_line);
         log_format *format = lf->get_format();
 
@@ -71,6 +72,7 @@ public:
         if (this->ldt_format_impl != NULL) {
             this->ldt_format_impl->get_columns(cols);
         }
+        this->ldt_parent_column_count = cols.size();
         lf->read_full_message(lf->begin() + cl_copy, val);
         format->annotate(val, sa, line_values);
         body = find_string_attr_range(sa, "body");
@@ -132,7 +134,7 @@ public:
         logfile *         lf      = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
 
-        if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
+        if (lf_iter->is_continued()) {
             return false;
         }
 
@@ -174,6 +176,8 @@ public:
                  const std::string &line,
                  std::vector<logline_value> &values)
     {
+        int next_column = this->ldt_parent_column_count;
+
         this->ldt_format_impl->extract(lf, line, values);
         for (data_parser::element_list_t::iterator pair_iter =
                  this->ldt_pairs.begin();
@@ -196,6 +200,7 @@ public:
                 values.push_back(logline_value("", tmp));
                 break;
             }
+            values.back().lv_column = next_column++;
         }
     };
 
@@ -206,5 +211,6 @@ private:
     std::string ldt_current_line;
     data_parser::element_list_t ldt_pairs;
     log_vtab_impl *ldt_format_impl;
+    int ldt_parent_column_count;
 };
 #endif
