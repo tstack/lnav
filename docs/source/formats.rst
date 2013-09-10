@@ -39,15 +39,45 @@ fields:
   :description: A longer description of the format.
   :url: A URL to the definition of the format.
 
+  :file-pattern: A regular expression used to match log file paths.  Typically,
+    every file format will be tried during the detection process.  This field
+    can be used to limit which files a format is applied to in case there is
+    a potential for conflicts.
+
   :regex: This object contains sub-objects that describe the message formats
-    to match in a log file.
+    to match in a plain log file.  Log files that contain JSON messages should
+    not specify this field.
 
     :pattern: The regular expression that should be used to match log messages.
       The `PCRE <http://www.pcre.org>`_ library is used by **lnav** to do all
       regular expression matching.
 
+  :json: True if each log line is JSON-encoded.
+
+  :line-format: An array that specifies the text format for JSON-encoded
+    log messages.  Log files that are JSON-encoded will have each message
+    converted from the raw JSON encoding into this format.  Each element
+    is either an object that defines which fields should be inserted into
+    the final message string and or a string constant that should be
+    inserted.  For example, the following configuration will tranform each
+    log message object into a string that contains the timestamp, followed
+    by a space, and then the message body::
+
+    [ { "field": "ts" }, " ", { "field": "msg" } ]
+
+    :field: The name of the message field that should be inserted at this
+      point in the message.
+    :default-value: The default value to use if the field could not be found
+      in the current log message.  The built-in default is "-".
+
+  :timestamp-field: The name of the field that contains the log message
+    timestamp.  Defaults to "timestamp".
+
   :level-field: The name of the regex capture group that contains the log
-    message level.
+    message level.  Defaults to "level".
+
+  :body-field: The name of the field that contains the main body of the
+    message.  Defaults to "body".
 
   :level: A mapping of error levels to regular expressions.  During scanning
     the contents of the capture group specified by *level-field* will be

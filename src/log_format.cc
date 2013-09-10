@@ -381,7 +381,7 @@ static int rewrite_json_int(yajlpp_parse_context *ypc, long long val)
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     string field_name = ypc->get_path_fragment(0);
 
-    jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, val));
+    jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, (int64_t)val));
 
     return 1;
 }
@@ -535,7 +535,7 @@ void external_log_format::annotate(const std::string &line,
     lr.lr_end = cap->c_end;
     sa[lr].insert(make_string_attr("timestamp", 0));
 
-    cap = pc["body"];
+    cap = pc[this->elf_body_field];
     if (cap != NULL && cap->c_begin != -1) {
         lr.lr_start = cap->c_begin;
         lr.lr_end = cap->c_end;
@@ -713,7 +713,6 @@ void external_log_format::get_subline(const logline &ll,
                         else if (lv_iter->lv_name == this->elf_body_field)
                             this->jlf_line_attrs[lr].insert(make_string_attr("body", 0));
                         else if (lv_iter->lv_identifier) {
-                            fprintf(stderr, "ident!! %s\n", lv_iter->lv_name.c_str());
                             this->jlf_line_attrs[lr].insert(make_string_attr("style", vc.attrs_for_ident(str.c_str(), lr.length())));
                         }
                         used_values[distance(this->jlf_line_values.begin(),

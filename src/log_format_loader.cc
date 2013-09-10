@@ -76,7 +76,7 @@ static int read_format_bool(yajlpp_parse_context *ypc, int val)
     external_log_format *elf = ensure_format(ypc->get_path_fragment(0));
     string field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "local-time")
+    if (field_name == "convert-to-local-time")
         elf->lf_date_time.dts_local_time = val;
     else if (field_name == "json")
         elf->jlf_json = val;
@@ -266,7 +266,7 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
 
 static struct json_path_handler format_handlers[] = {
     json_path_handler("^/\\w+/regex/[^/]+/pattern$", read_format_regex),
-    json_path_handler("^/\\w+/(json|local-time)$", read_format_bool),
+    json_path_handler("^/\\w+/(json|convert-to-local-time)$", read_format_bool),
     json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|body-field|url|title|description)$",
                       read_format_field),
     json_path_handler("^/\\w+/level/"
