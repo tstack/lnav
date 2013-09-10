@@ -1,4 +1,11 @@
 
+lnav v0.6.1:
+     Features:
+     * Support for JSON-encoded log files.
+
+     Fixes:
+     * Some minor fixes and performance improvements.
+
 lnav v0.6.0:
      Features:
      * Custom log formats and more builtin formats
