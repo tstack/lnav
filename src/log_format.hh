@@ -603,8 +603,10 @@ public:
 
     external_log_format(const std::string &name)
         : elf_file_pattern(".*"),
+          elf_filename_pcre(NULL),
           elf_column_count(0),
           elf_body_field("body"),
+          jlf_json(false),
           jlf_cached_offset(-1),
           elf_name(name) {
             this->jlf_line_offsets.reserve(128);
