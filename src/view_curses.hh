@@ -428,7 +428,7 @@ public:
 
     role_t next_plain_highlight();
 
-    int attrs_for_ident(const char *str, size_t len) {
+    int attrs_for_ident(const char *str, size_t len) const {
         int index = crc32(1, (const Bytef*)str, len);
 
         return this->vc_role_colors[VCR_HIGHLIGHT_START + (abs(index) % HL_COLOR_COUNT)];

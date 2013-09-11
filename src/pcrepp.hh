@@ -123,7 +123,7 @@ public:
 
 protected:
     pcre_context(capture_t *captures, int max_count)
-        : pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
+        : pc_pcre(NULL), pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
 
     const pcrepp *pc_pcre;
     capture_t *pc_captures;

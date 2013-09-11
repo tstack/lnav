@@ -57,14 +57,13 @@ void view_curses::mvwattrline(WINDOW *window,
     string_attrs_t::iterator iter;
     std::map<size_t, size_t, std::greater<size_t> > tab_list;
     int    tab_count = 0;
-    char * buffer, *expanded_line;
+    char  *expanded_line;
     size_t exp_index = 0;
     string full_line;
 
     assert(lr.lr_end >= 0);
 
     line_width    = lr.length();
-    buffer        = (char *)alloca(line_width + 1);
     tab_count     = count(line.begin(), line.end(), '\t');
     expanded_line = (char *)alloca(line.size() + tab_count * 8 + 1);
 

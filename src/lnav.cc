@@ -600,6 +600,7 @@ void rebuild_indexes(bool force)
     {
         textfile_sub_source *          tss = &lnav_data.ld_text_source;
         std::list<logfile *>::iterator iter;
+        bool new_data = false;
         size_t new_count;
 
         text_view.get_dimensions(height, width);
@@ -609,7 +610,8 @@ void rebuild_indexes(bool force)
         for (iter = tss->tss_files.begin();
              iter != tss->tss_files.end(); ) {
             try {
-                (*iter)->rebuild_index(&obs);
+                bool new_text_data = (*iter)->rebuild_index(&obs);
+
                 if ((*iter)->get_format() != NULL) {
                     logfile *lf = *iter;
 
@@ -622,6 +624,7 @@ void rebuild_indexes(bool force)
                     }
                 }
                 else {
+                    new_data = new_data || new_text_data;
                     ++iter;
                 }
             }
@@ -631,6 +634,12 @@ void rebuild_indexes(bool force)
             }
         }
 
+        if (new_data && lnav_data.ld_search_child[LNV_TEXT].get() != NULL) {
+            lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc()->reset();
+            lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc()->
+            queue_request(grep_line_t(-1));
+            lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc()->start();
+        }
         text_view.reload_data();
 
         new_count = tss->text_line_count();

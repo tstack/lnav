@@ -76,6 +76,7 @@ public:
     auto_mem &operator =(auto_mem & am)
     {
         this->reset(am.release());
+        this->am_free_func = am.am_free_func;
         return *this;
     };
 
