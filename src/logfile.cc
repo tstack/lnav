@@ -56,7 +56,8 @@ logfile::logfile(string filename, auto_fd fd)
 throw (error)
     : lf_filename(filename),
       lf_index_time(0),
-      lf_index_size(0)
+      lf_index_size(0),
+      lf_is_closed(false)
 {
     int reserve_size = 100;
 

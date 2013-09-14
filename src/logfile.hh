@@ -180,6 +180,14 @@ public:
     /** @return True if this log file still exists. */
     bool exists() const;
 
+    void close() {
+        this->lf_is_closed = true;
+    };
+
+    bool is_closed() const {
+        return this->lf_is_closed;
+    };
+
     struct timeval original_line_time(iterator ll) {
         if (this->is_time_adjusted()) {
             struct timeval line_time = ll->get_timeval();
@@ -293,5 +301,6 @@ protected:
     line_buffer lf_line_buffer;
     int lf_time_offset_line;
     struct timeval lf_time_offset;
+    bool lf_is_closed;
 };
 #endif

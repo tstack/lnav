@@ -600,6 +600,8 @@ void rebuild_indexes(bool force)
     {
         textfile_sub_source *          tss = &lnav_data.ld_text_source;
         std::list<logfile *>::iterator iter;
+        logfile *front_file = NULL;
+        int front_top = -1;
         bool new_data = false;
         size_t new_count;
 
@@ -625,12 +627,39 @@ void rebuild_indexes(bool force)
                 }
                 else {
                     new_data = new_data || new_text_data;
+                    if (!lnav_data.ld_files_to_front.empty() &&
+                        lnav_data.ld_files_to_front.front().first ==
+                        (*iter)->get_filename()) {
+                        front_file = *iter;
+                        front_top = lnav_data.ld_files_to_front.front().second;
+
+                        lnav_data.ld_files_to_front.pop_front();
+                    }
                     ++iter;
                 }
             }
             catch (const line_buffer::error &e) {
                 // TODO: log that we dropped this file.
                 iter = tss->tss_files.erase(iter);
+            }
+        }
+
+        if (front_file != NULL) {
+            ensure_view(&text_view);
+
+            if (tss->current_file() != front_file) {
+                tss->tss_files.remove(front_file);
+                tss->tss_files.push_front(front_file);
+                redo_search(LNV_TEXT);
+                text_view.reload_data();
+                old_bottom = vis_line_t(-1);
+
+                new_data = false;
+            }
+
+            if (front_top < text_view.get_inner_height()) {
+                text_view.set_top(vis_line_t(front_top));
+                scroll_down = false;
             }
         }
 
@@ -896,7 +925,7 @@ bool toggle_view(textview_curses *toggle_tc)
     return retval;
 }
 
-static void redo_search(lnav_view_t view_index)
+void redo_search(lnav_view_t view_index)
 {
     textview_curses *tc = &lnav_data.ld_views[view_index];
 
@@ -1492,35 +1521,38 @@ static void handle_paging_key(int ch)
             content_line_t      cl       = lss.at(log_view.get_top());
             logfile *           lf       = lss.find(cl);
             logfile::iterator ll = lf->begin() + cl;
-            std::string         line     = lf->read_line(ll);
-            struct line_range          body;
-            string_attrs_t             sa;
-            std::vector<logline_value> line_values;
-
-            lf->get_format()->annotate(line, sa, line_values);
-
-            body = find_string_attr_range(sa, "body");
-            if (body.lr_end != -1) {
-                line = line.substr(body.lr_start);
-            }
-
-            data_scanner ds(line);
-            data_parser  dp(&ds);
-            dp.parse();
-
-            column_namer namer;
 
             lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "colname");
-            for (data_parser::element_list_t::iterator iter =
-                     dp.dp_pairs.begin();
-                 iter != dp.dp_pairs.end();
-                 ++iter) {
-                std::string colname = dp.get_element_string(
-                    iter->e_sub_elements->front());
 
-                colname = namer.add_column(colname);
-                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname",
-                                                      colname);
+            if (!ll->is_continued()) {
+                std::string         line     = lf->read_line(ll);
+                struct line_range          body;
+                string_attrs_t             sa;
+                std::vector<logline_value> line_values;
+
+                lf->get_format()->annotate(line, sa, line_values);
+
+                body = find_string_attr_range(sa, "body");
+                if (body.lr_end != -1) {
+                    line = line.substr(body.lr_start);
+                }
+
+                data_scanner ds(line);
+                data_parser  dp(&ds);
+                dp.parse();
+
+                column_namer namer;
+
+                for (data_parser::element_list_t::iterator iter =
+                     dp.dp_pairs.begin();
+                     iter != dp.dp_pairs.end();
+                     ++iter) {
+                    std::string colname = dp.get_element_string(iter->e_sub_elements->front());
+
+                    colname = namer.add_column(colname);
+                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname",
+                                                          colname);
+                }
             }
 
             lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "line-time");
@@ -2470,7 +2502,14 @@ static void expand_filename(string path, bool required)
             required = false;
         }
         for (lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
-            watch_logfile(gl->gl_pathv[lpc], -1, required);
+            auto_mem<char> abspath;
+
+            if ((abspath = realpath(gl->gl_pathv[lpc], NULL)) == NULL) {
+                perror("Cannot find file");
+            }
+            else {
+                watch_logfile(abspath.in(), -1, required);
+            }
         }
     }
 }
@@ -2499,19 +2538,16 @@ static bool rescan_files(bool required = false)
 
     for (file_iter = lnav_data.ld_files.begin();
          file_iter != lnav_data.ld_files.end(); ) {
-        if (!(*file_iter)->exists()) {
+        logfile *lf = *file_iter;
+
+        if (!lf->exists() || lf->is_closed()) {
             std::list<logfile *>::iterator tss_iter;
 
-            fprintf(stderr, "file has been deleted -- %s\n",
+            fprintf(stderr, "file has been deleted/closed -- %s\n",
                     (*file_iter)->get_filename().c_str());
             lnav_data.ld_log_source.remove_file(*file_iter);
             file_iter = lnav_data.ld_files.erase(file_iter);
-            tss_iter  = find(lnav_data.ld_text_source.tss_files.begin(),
-                             lnav_data.ld_text_source.tss_files.end(),
-                             *file_iter);
-            if (tss_iter != lnav_data.ld_text_source.tss_files.end()) {
-                lnav_data.ld_text_source.tss_files.erase(tss_iter);
-            }
+            lnav_data.ld_text_source.tss_files.remove(lf);
             retval = true;
         }
         else {
@@ -3527,7 +3563,10 @@ int main(int argc, char *argv[])
         auto_mem<char> abspath;
         struct stat    st;
 
-        if (stat(argv[lpc], &st) == -1) {
+        if (is_glob(argv[lpc])) {
+            lnav_data.ld_file_names.insert(make_pair(argv[lpc], -1));
+        }
+        else if (stat(argv[lpc], &st) == -1) {
             fprintf(stderr,
                     "Cannot stat file: %s -- %s\n",
                     argv[lpc],

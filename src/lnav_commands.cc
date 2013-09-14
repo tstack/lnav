@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include <wordexp.h>
+#include <sys/stat.h>
 
 #include <string>
 #include <vector>
@@ -718,6 +719,117 @@ static string com_session(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_open(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting file name to open";
+
+    if (args.size() == 0) {
+        args.push_back("filename");
+    }
+    else if (args.size() > 1) {
+        list<logfile *>::iterator file_iter;
+        size_t colon_index;
+        int top = 0;
+        string fn;
+
+        fn = cmdline.substr(cmdline.find(args[1]));
+
+        if (access(fn.c_str(), R_OK) != 0 &&
+            (colon_index = fn.rfind(':')) != string::npos) {
+            if (sscanf(&fn.c_str()[colon_index + 1], "%d", &top) == 1 &&
+                top >= 0) {
+                fn = fn.substr(0, colon_index);
+            }
+        }
+
+        for (file_iter = lnav_data.ld_files.begin();
+             file_iter != lnav_data.ld_files.end();
+             ++file_iter) {
+            logfile *lf = *file_iter;
+
+            if (lf->get_filename() == fn) {
+                if (lf->get_format() != NULL) {
+                    retval = "info: log file already loaded";
+                    break;
+                }
+                else {
+                    lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
+                    retval = "";
+                    break;
+                }
+            }
+        }
+        if (file_iter == lnav_data.ld_files.end()) {
+            auto_mem<char> abspath;
+            struct stat    st;
+
+            if (is_glob(fn.c_str())) {
+                lnav_data.ld_file_names.insert(make_pair(fn, -1));
+                retval = "info: watching -- " + fn;
+            }
+            else if (stat(fn.c_str(), &st) == -1) {
+                retval = "error: cannot stat file: " + fn + " " + strerror(errno);
+            }
+            else if ((abspath = realpath(fn.c_str(), NULL)) == NULL) {
+                retval = "error: cannot find file";
+            }
+            else {
+                fn = abspath.in();
+                lnav_data.ld_file_names.insert(make_pair(fn, -1));
+                retval = "info: opened -- " + fn;
+                lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
+            }
+        }
+    }
+
+    return retval;
+}
+
+static string com_close(string cmdline, vector<string> &args)
+{
+    string retval = "error: close must be run in the log or text file views";
+
+    if (args.empty()) {
+
+    }
+    else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        string fn;
+
+        if (tc == &lnav_data.ld_views[LNV_TEXT]) {
+            textfile_sub_source &tss = lnav_data.ld_text_source;
+
+            if (tss.tss_files.empty()) {
+                retval = "error: no text files are opened";
+            }
+            else {
+                fn = tss.current_file()->get_filename();
+                tss.current_file()->close();
+            }
+        }
+        else if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            if (tc->get_inner_height() == 0) {
+                retval = "error: no log files loaded";
+            }
+            else {
+                logfile_sub_source &lss = lnav_data.ld_log_source;
+                vis_line_t vl = tc->get_top();
+                content_line_t cl = lss.at(vl);
+                logfile *lf = lss.find(cl);
+
+                fn = lf->get_filename();
+                lf->close();
+            }
+        }
+        if (!fn.empty()) {
+            lnav_data.ld_file_names.erase(make_pair(fn, -1));
+            retval = "info: closed -- " + fn;
+        }
+    }
+
+    return retval;
+}
+
 static string com_partition_name(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting partition name";
@@ -1016,6 +1128,8 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["disable-filter"]       = com_disable_filter;
     cmd_map["create-logline-table"] = com_create_logline_table;
     cmd_map["delete-logline-table"] = com_delete_logline_table;
+    cmd_map["open"]                 = com_open;
+    cmd_map["close"]                = com_close;
     cmd_map["partition-name"]       = com_partition_name;
     cmd_map["session"]              = com_session;
     cmd_map["summarize"]            = com_summarize;

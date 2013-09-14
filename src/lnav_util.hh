@@ -141,6 +141,13 @@ file_format_t detect_file_format(const std::string &filename);
 
 bool next_format(const char *fmt[], int &index, int &locked_index);
 
+inline bool is_glob(const char *fn)
+{
+    return (strchr(fn, '*') != NULL ||
+            strchr(fn, '?') != NULL ||
+            strchr(fn, '[') != NULL);
+};
+
 /**
  * Convert the time stored in a 'tm' struct into epoch time.
  *

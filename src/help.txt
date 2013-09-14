@@ -321,6 +321,13 @@ COMMANDS
                     Enable a inactive 'filter-in' or 'filter-out'
                     expression.
 
+  open <filename>[:<line>]
+                    Open the given file within lnav and, if it is a
+                    text file, switch to the text view and jump to
+                    the given line number.
+
+  close             Close the current text file or log file.
+
   graph <regex>     Graph the value of numbers in the file(s) over
                     time.  The given regular expression should capture
                     the number to be displayed.  For example:

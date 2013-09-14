@@ -133,6 +133,7 @@ struct _lnav_data {
     std::set<std::pair<std::string, int> >  ld_file_names;
     std::list<logfile *>                    ld_files;
     std::list<std::string>                  ld_other_files;
+    std::list<std::pair<std::string, int> > ld_files_to_front;
     sig_atomic_t                            ld_looping;
     sig_atomic_t                            ld_winched;
     unsigned long                           ld_flags;
@@ -194,4 +195,7 @@ bool setup_logline_table();
 int sql_callback(sqlite3_stmt *stmt);
 
 void execute_search(lnav_view_t view, const std::string &regex);
+
+void redo_search(lnav_view_t view_index);
+
 #endif
