@@ -46,6 +46,7 @@
 #include <sstream>
 
 #include "pcrepp.hh"
+#include "yajlpp.hh"
 #include "lnav_util.hh"
 #include "byte_array.hh"
 #include "view_curses.hh"
@@ -638,6 +639,10 @@ public:
         std::auto_ptr<log_format> retval((log_format *)
                                          new external_log_format(*this));
 
+        if (this->jlf_json) {
+            this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name));
+        }
+
         return retval;
     };
 
@@ -682,6 +687,7 @@ public:
     std::vector<off_t> jlf_line_offsets;
     std::string jlf_cached_line;
     string_attrs_t jlf_line_attrs;
+    std::auto_ptr<yajlpp_parse_context> jlf_parse_context;
 private:
     const std::string elf_name;
 

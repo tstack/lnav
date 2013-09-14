@@ -38,9 +38,10 @@ int yajlpp_parse_context::map_start(void *ctx)
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     int retval = 1;
 
-    ypc->ypc_path_index_stack.push_back(ypc->ypc_path.length());
+    ypc->ypc_path_index_stack.push_back(ypc->ypc_path.size() - 1);
 
-    if (ypc->ypc_path[ypc->ypc_path.size() - 1] == '#') {
+    if (ypc->ypc_path.size() > 1 &&
+        ypc->ypc_path[ypc->ypc_path.size() - 2] == '#') {
         ypc->ypc_array_index.back() += 1;
     }
 
@@ -55,10 +56,14 @@ int yajlpp_parse_context::map_key(void *ctx,
                                   size_t len)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
-    int retval = 1;
+    int start, retval = 1;
 
-    ypc->ypc_path  = ypc->ypc_path.substr(0, ypc->ypc_path_index_stack.back());
-    ypc->ypc_path += "/" + std::string((const char *)key, len);
+    ypc->ypc_path.resize(ypc->ypc_path_index_stack.back());
+    ypc->ypc_path.push_back('/');
+    start = ypc->ypc_path.size();
+    ypc->ypc_path.resize(ypc->ypc_path.size() + len);
+    memcpy(&ypc->ypc_path[start], key, len);
+    ypc->ypc_path.push_back('\0');
 
     if (ypc->ypc_alt_callbacks.yajl_map_key != NULL)
         retval = ypc->ypc_alt_callbacks.yajl_map_key(ctx, key, len);
@@ -69,14 +74,14 @@ int yajlpp_parse_context::map_key(void *ctx,
 
 void yajlpp_parse_context::update_callbacks(void)
 {
-    pcre_input pi(this->ypc_path);
+    pcre_input pi(&this->ypc_path[0], 0, this->ypc_path.size() - 1);
 
     this->ypc_callbacks = DEFAULT_CALLBACKS;
 
     for (int lpc = 0; this->ypc_handlers[lpc].jph_path[0]; lpc++) {
         const json_path_handler &jph = this->ypc_handlers[lpc];
 
-        pi.reset(this->ypc_path);
+        pi.reset(&this->ypc_path[0], 0, this->ypc_path.size() - 1);
 
         if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
             if (jph.jph_callbacks.yajl_null != NULL)
@@ -98,7 +103,8 @@ int yajlpp_parse_context::map_end(void *ctx)
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     int retval = 1;
 
-    ypc->ypc_path = ypc->ypc_path.substr(0, ypc->ypc_path_index_stack.back());
+    ypc->ypc_path.resize(ypc->ypc_path_index_stack.back());
+    ypc->ypc_path.push_back('\0');
     ypc->ypc_path_index_stack.pop_back();
 
     if (ypc->ypc_alt_callbacks.yajl_end_map != NULL)
@@ -113,8 +119,9 @@ int yajlpp_parse_context::array_start(void *ctx)
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     int retval = 1;
 
-    ypc->ypc_path_index_stack.push_back(ypc->ypc_path.length());
-    ypc->ypc_path += "#";
+    ypc->ypc_path_index_stack.push_back(ypc->ypc_path.size() - 1);
+    ypc->ypc_path[ypc->ypc_path.size() - 1] = '#';
+    ypc->ypc_path.push_back('\0');
     ypc->ypc_array_index.push_back(-1);
 
     if (ypc->ypc_alt_callbacks.yajl_start_array != NULL)
@@ -130,7 +137,8 @@ int yajlpp_parse_context::array_end(void *ctx)
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     int retval = 1;
 
-    ypc->ypc_path = ypc->ypc_path.substr(0, ypc->ypc_path_index_stack.back());
+    ypc->ypc_path.resize(ypc->ypc_path_index_stack.back());
+    ypc->ypc_path.push_back('\0');
     ypc->ypc_path_index_stack.pop_back();
     ypc->ypc_array_index.pop_back();
 
@@ -151,30 +159,30 @@ int yajlpp_parse_context::handle_unused(void *ctx)
 
     fprintf(stderr, "warning:%s:%s:unexpected data, expecting one of the following data types --\n",
         ypc->ypc_source.c_str(),
-        ypc->ypc_path.c_str());
+        &ypc->ypc_path[0]);
     if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused) {
         fprintf(stderr, "warning:%s:%s:  boolean\n",
-                ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+                ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
     }
     if (ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused) {
         fprintf(stderr, "warning:%s:%s:  integer\n",
-                ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+                ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
     }
     if (ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused) {
         fprintf(stderr, "warning:%s:%s:  float\n",
-                ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+                ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
     }
     if (ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
         fprintf(stderr, "warning:%s:%s:  string\n",
-                ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+                ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
     }
 
     fprintf(stderr, "warning:%s:%s:accepted paths --\n",
-            ypc->ypc_source.c_str(), ypc->ypc_path.c_str());
+            ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
     for (int lpc = 0; ypc->ypc_handlers[lpc].jph_path[0]; lpc++) {
         fprintf(stderr, "warning:%s:%s:  %s\n",
             ypc->ypc_source.c_str(),
-            ypc->ypc_path.c_str(),
+            &ypc->ypc_path[0],
             ypc->ypc_handlers[lpc].jph_path);
     }
 

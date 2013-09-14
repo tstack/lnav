@@ -3309,6 +3309,8 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
 
 int sql_progress(const struct log_cursor &lc)
 {
+    static int sub_count = 0;
+
     size_t total = lnav_data.ld_log_source.text_line_count();
     off_t  off   = lc.lc_curr_line;
 
@@ -3320,11 +3322,15 @@ int sql_progress(const struct log_cursor &lc)
         return 1;
     }
 
-    lnav_data.ld_bottom_source.update_loading(off, total);
-    lnav_data.ld_top_source.update_time();
-    lnav_data.ld_status[LNS_TOP].do_update();
-    lnav_data.ld_status[LNS_BOTTOM].do_update();
-    refresh();
+    if ((off < (total - 1)) || (sub_count % 64 == 0)) {
+        lnav_data.ld_bottom_source.update_loading(off, total);
+        lnav_data.ld_top_source.update_time();
+        lnav_data.ld_status[LNS_TOP].do_update();
+        lnav_data.ld_status[LNS_BOTTOM].do_update();
+        refresh();
+    }
+
+    sub_count += 1;
 
     return 0;
 }

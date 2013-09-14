@@ -160,9 +160,11 @@ public:
     };
 
     yajlpp_parse_context(std::string source,
-                         struct json_path_handler *handlers)
+                         struct json_path_handler *handlers = NULL)
         : ypc_source(source), ypc_handlers(handlers), ypc_ignore_unused(false)
     {
+        this->ypc_path.reserve(4096);
+        this->ypc_path.push_back('\0');
         this->ypc_callbacks = DEFAULT_CALLBACKS;
         memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
     };
@@ -179,17 +181,27 @@ public:
             end = this->ypc_path_index_stack[offset + 1];
         }
         else{
-            end = std::string::npos;
+            end = this->ypc_path.size() - 1;
         }
-        return this->ypc_path.substr(start, end - start);
+        return std::string(&this->ypc_path[start], end - start);
     };
+
+    void reset(struct json_path_handler *handlers) {
+        this->ypc_handlers = handlers;
+        this->ypc_path.clear();
+        this->ypc_path.push_back('\0');
+        this->ypc_path_index_stack.clear();
+        this->ypc_array_index.clear();
+        this->ypc_callbacks = DEFAULT_CALLBACKS;
+        memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
+    }
 
     const std::string ypc_source;
     struct json_path_handler *ypc_handlers;
     void *                  ypc_userdata;
     yajl_callbacks          ypc_callbacks;
     yajl_callbacks          ypc_alt_callbacks;
-    std::string             ypc_path;
+    std::vector<char>       ypc_path;
     std::vector<size_t>     ypc_path_index_stack;
     std::vector<int>        ypc_array_index;
     pcre_context_static<30> ypc_pcre_context;

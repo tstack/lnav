@@ -218,7 +218,7 @@ static int vt_next(sqlite3_vtab_cursor *cur)
     vc->line_values.clear();
     do {
         log_cursor_latest = vc->log_cursor;
-        if (((log_cursor_latest.lc_curr_line % 50) == 0) &&
+        if (((log_cursor_latest.lc_curr_line % 1024) == 0) &&
             vtab_progress_callback(log_cursor_latest)) {
             done = true;
             break;
@@ -467,7 +467,7 @@ log_vtab_manager::log_vtab_manager(sqlite3 *memdb,
 {
     sqlite3_create_module(this->vm_db, "log_vtab_impl", &vtab_module, this);
     vtab_progress_callback = pc;
-    sqlite3_progress_handler(memdb, 10, progress_callback, NULL);
+    sqlite3_progress_handler(memdb, 32, progress_callback, NULL);
 }
 
 string log_vtab_manager::register_vtab(log_vtab_impl *vi)

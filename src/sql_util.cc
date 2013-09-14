@@ -406,11 +406,16 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
 
 void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis)
 {
-    int len;
+    struct tm gmtm;
 
-    strftime(buffer, buffer_size, "%FT%T", gmtime(&time));
-    len = strlen(buffer);
-    snprintf(&buffer[len], sizeof(buffer) - len,
-             ".%03d",
+    gmtime_r(&time, &gmtm);
+    snprintf(buffer, buffer_size,
+             "% 4d-%02d-%02dT%02d:%02d:%02d.%03d",
+             gmtm.tm_year + 1900,
+             gmtm.tm_mon,
+             gmtm.tm_mday,
+             gmtm.tm_hour,
+             gmtm.tm_min,
+             gmtm.tm_sec,
              millis);
 }

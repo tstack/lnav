@@ -414,21 +414,25 @@ bool external_log_format::scan(std::vector<logline> &dst,
 {
     if (this->jlf_json) {
         auto_mem<yajl_handle_t> handle(yajl_free);
-        yajlpp_parse_context ypc("", json_log_handlers);
+        yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         logline ll(offset, 0, 0, logline::LEVEL_INFO);
         json_log_userdata jlu;
         bool retval = false;
 
+        handle = yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
+                            NULL,
+                            this->jlf_parse_context.get());
+        ypc.reset(json_log_handlers);
         ypc.ypc_userdata = &jlu;
         ypc.ypc_ignore_unused = true;
         ypc.ypc_alt_callbacks.yajl_start_array = json_array_start;
         ypc.ypc_alt_callbacks.yajl_start_map = json_array_start;
-        handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc); // XXX
         jlu.jlu_format = this;
         jlu.jlu_base_line = &ll;
         jlu.jlu_line_value = prefix;
         jlu.jlu_handle = handle;
-        if (yajl_parse(handle.in(), (const unsigned char *)prefix, len) == yajl_status_ok &&
+        if (yajl_parse(handle.in(),
+                       (const unsigned char *)prefix, len) == yajl_status_ok &&
             yajl_complete_parse(handle.in()) == yajl_status_ok) {
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
@@ -646,26 +650,32 @@ void external_log_format::get_subline(const logline &ll,
 
     if (this->jlf_cached_offset != ll.get_offset()) {
         auto_mem<yajl_handle_t> handle(yajl_free);
-        yajlpp_parse_context ypc("", json_log_rewrite_handlers);
+        yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         view_colors &vc = view_colors::singleton();
         json_log_userdata jlu;
 
-        jlu.jlu_format = this;
-        jlu.jlu_line = &ll;
-        ypc.ypc_userdata = &jlu;
-        ypc.ypc_ignore_unused = true;
         this->jlf_cached_line.clear();
         this->jlf_line_values.clear();
         this->jlf_line_offsets.clear();
         this->jlf_line_attrs.clear();
+
+        handle = yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
+                            NULL,
+                            this->jlf_parse_context.get());
+        ypc.reset(json_log_rewrite_handlers);
+        ypc.ypc_userdata = &jlu;
+        ypc.ypc_ignore_unused = true;
         ypc.ypc_alt_callbacks.yajl_start_array = json_array_start;
         ypc.ypc_alt_callbacks.yajl_end_array = json_array_end;
         ypc.ypc_alt_callbacks.yajl_start_map = json_array_start;
         ypc.ypc_alt_callbacks.yajl_end_map = json_array_end;
-        handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
-        jlu.jlu_handle = handle.in();
+        jlu.jlu_format = this;
+        jlu.jlu_line = &ll;
+        jlu.jlu_handle = handle;
         jlu.jlu_line_value = line;
-        if (yajl_parse(handle.in(), (const unsigned char *)line, len) == yajl_status_ok &&
+
+        yajl_status parse_status = yajl_parse(handle.in(), (const unsigned char *)line, len);
+        if (parse_status == yajl_status_ok &&
             yajl_complete_parse(handle.in()) == yajl_status_ok) {
             std::vector<logline_value>::iterator lv_iter;
             std::vector<json_format_element>::iterator iter;
@@ -829,6 +839,10 @@ void external_log_format::build(std::vector<std::string> &errors)
                              this->elf_name +
                              ": JSON logs cannot have regexes");
         }
+        if (this->jlf_json) {
+            this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name));
+        }
+
     }
     else {
         if (this->elf_patterns.empty()) {
