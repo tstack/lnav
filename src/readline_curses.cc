@@ -683,7 +683,7 @@ void readline_curses::do_update(void)
 {
     if (this->rc_active_context == -1) {
         int alt_start        = -1;
-        struct line_range lr = { 0 };
+        struct line_range lr(0, 0);
         attr_line_t       al, alt_al;
 
         wmove(this->vc_window, this->get_actual_y(), 0);
