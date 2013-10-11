@@ -358,7 +358,15 @@
             },
             "log_pid" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "action-list" : ["dump_pid"]
+            }
+        },
+        "action" : {
+            "dump_pid" : {
+                "label" : "Show Process Info",
+                "capture-output" : true,
+                "cmd" : ["dump-pid.sh"]
             }
         },
         "sample" : [

@@ -55,6 +55,8 @@
 #include "textfile_sub_source.hh"
 #include "log_vtab_impl.hh"
 #include "readline_curses.hh"
+#include "xterm_mouse.hh"
+#include "piper_proc.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -136,6 +138,7 @@ struct _lnav_data {
     std::list<std::pair<std::string, int> > ld_files_to_front;
     sig_atomic_t                            ld_looping;
     sig_atomic_t                            ld_winched;
+    sig_atomic_t                            ld_child_terminated;
     unsigned long                           ld_flags;
     WINDOW *                                ld_window;
     ln_mode_t                               ld_mode;
@@ -180,6 +183,10 @@ struct _lnav_data {
 
     log_vtab_manager *                      ld_vtab_manager;
     auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
+
+    std::list<pid_t>                        ld_children;
+    std::list<piper_proc *>                 ld_pipers;
+    xterm_mouse ld_mouse;
 };
 
 extern struct _lnav_data lnav_data;

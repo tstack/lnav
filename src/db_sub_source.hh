@@ -83,8 +83,8 @@ public:
                                const hist_source::bucket_t &bucket,
                                string_attrs_t &sa)
     {
-        struct line_range lr  = { 0, 0 };
-        struct line_range lr2 = { 0, -1 };
+        struct line_range lr(0, 0);
+        struct line_range lr2(0, -1);
 
         if (bucket_start_value >= (int)this->dls_rows.size()) {
             return;
@@ -172,8 +172,8 @@ public:
             int before, total_fill =
                 dls->dls_column_sizes[lpc] - dls->dls_headers[lpc].length();
 
-            struct line_range header_range =
-            { line.length(), line.length() + dls->dls_column_sizes[lpc] };
+            struct line_range header_range(line.length(),
+                                           line.length() + dls->dls_column_sizes[lpc]);
 
             int attrs =
                 vc.attrs_for_role(this->dos_hist_source->get_role_for_type(
@@ -193,7 +193,7 @@ public:
             line.append(total_fill, ' ');
         }
 
-        struct line_range lr = { 0, -1 };
+        struct line_range lr(0);
 
         value_out.get_attrs()[lr].insert(make_string_attr("style", A_BOLD |
                                                           A_UNDERLINE));

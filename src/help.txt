@@ -251,12 +251,16 @@ through the file.
                     This overlay is temporarily enabled when the semicolon
                     key (;) is pressed so that it is easier to write queries.
 
+  X                 Close the current text file or log file.
+
   CTRL-R            Reset the session state.  This will save the current
                     session state (filters, highlights) and then reset the
                     state to the factory default.
 
   r/R               Restore the next/previous session.  The current session is
                     saved and then the new state is restored.
+
+  F2                Toggle mouse support.
 
 
 MOUSE SUPPORT (experimental)
@@ -326,7 +330,8 @@ COMMANDS
                     text file, switch to the text view and jump to
                     the given line number.
 
-  close             Close the current text file or log file.
+  close             Close the current text file or log file.  You can also
+                    close the current file by pressing 'X'.
 
   graph <regex>     Graph the value of numbers in the file(s) over
                     time.  The given regular expression should capture

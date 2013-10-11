@@ -115,6 +115,15 @@ public:
     };
 };
 
+class text_delegate {
+public:
+    virtual void text_overlay(textview_curses &tc) { };
+
+    virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me) {
+        return false;        
+    };
+};
+
 /**
  * The textview_curses class adds user bookmarks and searching to the standard
  * list view interface.
@@ -237,7 +246,13 @@ public:
         this->tc_sub_source = src;
         this->reload_data();
     };
-    text_sub_source *get_sub_source(void) { return this->tc_sub_source; };
+    text_sub_source *get_sub_source(void) const { return this->tc_sub_source; };
+
+    void set_delegate(text_delegate *del) {
+        this->tc_delegate = del;
+    };
+
+    text_delegate *get_delegate(void) const { return this->tc_delegate; };
 
     void horiz_shift(vis_line_t start, vis_line_t end,
                      int off_start,
@@ -382,10 +397,20 @@ public:
 
     highlight_map_t &get_highlights() { return this->tc_highlights; };
 
+    bool handle_mouse(mouse_event &me);
+
     void reload_data(void);
+
+    void do_update(void) {
+        this->listview_curses::do_update();
+        if (this->tc_delegate != NULL) {
+            this->tc_delegate->text_overlay(*this);
+        }
+    };
 
 protected:
     text_sub_source *tc_sub_source;
+    text_delegate *tc_delegate;
 
     vis_bookmarks tc_bookmarks;
 
@@ -398,5 +423,9 @@ protected:
 
     highlight_map_t           tc_highlights;
     highlight_map_t::iterator tc_current_highlight;
+
+    vis_line_t tc_selection_start;
+    vis_line_t tc_selection_last;
+    bool tc_selection_cleared;
 };
 #endif

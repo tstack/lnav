@@ -96,8 +96,7 @@ public:
         sa.clear();
 
         if (this->sf_cylon) {
-            struct line_range lr = { this->sf_cylon_pos,
-                                     this->sf_width };
+            struct line_range lr(this->sf_cylon_pos, this->sf_width);
 
             sa[lr].insert(make_string_attr("style",
                                            view_colors::ansi_color_pair(COLOR_WHITE, COLOR_GREEN) |
@@ -130,7 +129,7 @@ public:
     void set_stitch_value(int color_pair)
     {
         string_attrs_t &  sa = this->sf_value.get_attrs();
-        struct line_range lr = { 0, 1 };
+        struct line_range lr(0, 1);
 
         this->sf_value.get_string() = "::";
         sa[lr].insert(make_string_attr("style",

@@ -98,6 +98,8 @@ public:
     /** @return The filename as given in the constructor. */
     const std::string &get_filename() const { return this->lf_filename; };
 
+    int get_fd() const { return this->lf_line_buffer.get_fd(); };
+
     /** @param filename The new filename for this log file. */
     void set_filename(const std::string &filename)
     {
@@ -113,7 +115,7 @@ public:
      * @return The detected format, rebuild_index() must be called before this
      * will return a value other than NULL.
      */
-    log_format *get_format() { return this->lf_format.get(); };
+    log_format *get_format() const { return this->lf_format.get(); };
 
     /**
      * @return The last modified time of the file when the file was last

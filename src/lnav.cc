@@ -103,6 +103,7 @@
 #include "lnav_config.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.h"
+#include "log_data_helper.hh"
 
 #include "yajlpp.hh"
 
@@ -149,25 +150,10 @@ const char *lnav_view_strings[LNV__MAX] = {
 
 class field_overlay_source : public list_overlay_source {
 public:
-    field_overlay_source()
+    field_overlay_source(logfile_sub_source &lss)
         : fos_active(false),
           fos_active_prev(false),
-          fos_scanner(NULL),
-          fos_parser(NULL),
-          fos_namer(NULL) { };
-
-    ~field_overlay_source()
-    {
-        if (this->fos_scanner) {
-            delete this->fos_scanner;
-        }
-        if (this->fos_parser) {
-            delete this->fos_parser;
-        }
-        if (this->fos_namer) {
-            delete this->fos_namer;
-        }
-    };
+          fos_log_helper(lss) { };
 
     size_t list_overlay_count(const listview_curses &lv)
     {
@@ -182,88 +168,53 @@ public:
         }
 
         content_line_t    cl   = lss.at(lv.get_top());
-        logfile *         lf   = lss.find(cl);
-        logfile::iterator ll   = lf->begin() + cl;
 
-        if (ll->is_continued()) {
-            if (this->fos_parser) {
-                delete this->fos_parser;
-                delete this->fos_scanner;
-                delete this->fos_namer;
-            }
-            this->fos_parser = NULL;
+        if (!this->fos_log_helper.parse_line(cl)) {
             return 0;
         }
 
-        std::string       line = lf->read_line(ll);
-        struct line_range body;
-        string_attrs_t    sa;
-
-        this->fos_file = lf;
-        this->fos_line = lf->begin() + cl;
-        this->fos_line_values.clear();
         this->fos_key_size = 0;
 
-        lf->read_full_message(this->fos_line, line);
-        lf->get_format()->annotate(line, sa, this->fos_line_values);
-
         for (std::vector<logline_value>::iterator iter =
-                 this->fos_line_values.begin();
-             iter != this->fos_line_values.end();
+                 this->fos_log_helper.ldh_line_values.begin();
+             iter != this->fos_log_helper.ldh_line_values.end();
              ++iter) {
             this->fos_key_size = max(this->fos_key_size,
                                      (int)iter->lv_name.length());
         }
 
-        body = find_string_attr_range(sa, "body");
-        if (body.lr_start == -1) {
-            body.lr_start = line.size();
-            body.lr_end = line.size();
-        }
-
-        if (this->fos_parser) {
-            delete this->fos_parser;
-            delete this->fos_scanner;
-            delete this->fos_namer;
-        }
-        
-        this->fos_scanner = new data_scanner(line, body.lr_start, body.lr_end);
-        this->fos_parser  = new data_parser(this->fos_scanner);
-        this->fos_parser->parse();
-        this->fos_namer = new column_namer();
-
         for (data_parser::element_list_t::iterator iter =
-                 this->fos_parser->dp_pairs.begin();
-             iter != this->fos_parser->dp_pairs.end();
+                 this->fos_log_helper.ldh_parser->dp_pairs.begin();
+             iter != this->fos_log_helper.ldh_parser->dp_pairs.end();
              ++iter) {
-            std::string colname = this->fos_parser->get_element_string(
+            std::string colname = this->fos_log_helper.ldh_parser->get_element_string(
                 iter->e_sub_elements->front());
 
-            colname            = this->fos_namer->add_column(colname);
+            colname            = this->fos_log_helper.ldh_namer->add_column(colname);
             this->fos_key_size = max(this->fos_key_size,
                                      (int)colname.length());
         }
 
         return 1 +
                1 +
-               this->fos_line_values.size() +
+               this->fos_log_helper.ldh_line_values.size() +
                1 +
-               this->fos_parser->dp_pairs.size();
+               this->fos_log_helper.ldh_parser->dp_pairs.size();
     };
 
     bool list_value_for_overlay(const listview_curses &lv,
                                 vis_line_t y,
                                 attr_line_t &value_out)
     {
-        if (!this->fos_active || this->fos_parser == NULL) {
+        if (!this->fos_active || this->fos_log_helper.ldh_parser.get() == NULL) {
             return false;
         }
 
         size_t total_count = (1 +
                               1 +
-                              this->fos_line_values.size() +
+                              this->fos_log_helper.ldh_line_values.size() +
                               1 +
-                              this->fos_parser->dp_pairs.size());
+                              this->fos_log_helper.ldh_parser->dp_pairs.size());
         int  row       = (int)y - 1;
         bool last_line = (row == (int)(total_count - 1));
 
@@ -279,10 +230,10 @@ public:
             char log_time[256];
 
             sql_strftime(curr_timestamp, sizeof(curr_timestamp),
-                         this->fos_line->get_time(),
-                         this->fos_line->get_millis());
-            curr_tv = this->fos_line->get_timeval();
-            offset_tv = this->fos_file->get_time_offset();
+                         this->fos_log_helper.ldh_line->get_time(),
+                         this->fos_log_helper.ldh_line->get_millis());
+            curr_tv = this->fos_log_helper.ldh_line->get_timeval();
+            offset_tv = this->fos_log_helper.ldh_file->get_time_offset();
             timersub(&curr_tv, &offset_tv, &orig_tv);
             sql_strftime(old_timestamp, sizeof(old_timestamp),
                          orig_tv.tv_sec, orig_tv.tv_usec / 1000);
@@ -296,7 +247,7 @@ public:
         }
         row -= 1;
         if (row == 0) {
-            if (this->fos_line_values.empty()) {
+            if (this->fos_log_helper.ldh_line_values.empty()) {
                 str = " No known message fields";
             }
             else{
@@ -305,8 +256,8 @@ public:
             return true;
         }
         row -= 1;
-        if (row == (int)this->fos_line_values.size()) {
-            if (this->fos_parser->dp_pairs.empty()) {
+        if (row == (int)this->fos_log_helper.ldh_line_values.size()) {
+            if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
                 str = " No discovered message fields";
             }
             else{
@@ -315,32 +266,32 @@ public:
             return true;
         }
 
-        if (row < (int)this->fos_line_values.size()) {
-            str = "   " + this->fos_line_values[row].lv_name;
+        if (row < (int)this->fos_log_helper.ldh_line_values.size()) {
+            str = "   " + this->fos_log_helper.ldh_line_values[row].lv_name;
 
             int padding = this->fos_key_size - str.length() + 3;
 
             str.append(padding, ' ');
-            str += " = " + this->fos_line_values[row].to_string();
+            str += " = " + this->fos_log_helper.ldh_line_values[row].to_string();
         }
         else {
             data_parser::element_list_t::iterator iter;
 
-            row -= this->fos_line_values.size() + 1;
+            row -= this->fos_log_helper.ldh_line_values.size() + 1;
 
-            iter = this->fos_parser->dp_pairs.begin();
+            iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
             std::advance(iter, row);
 
-            str = "   " + this->fos_namer->cn_names[row];
+            str = "   " + this->fos_log_helper.ldh_namer->cn_names[row];
             int padding = this->fos_key_size - str.length() + 3;
 
             str.append(padding, ' ');
-            str += " = " + this->fos_parser->get_element_string(
+            str += " = " + this->fos_log_helper.ldh_parser->get_element_string(
                 iter->e_sub_elements->back());
         }
 
         string_attrs_t &  sa = value_out.get_attrs();
-        struct line_range lr = { 1, 2 };
+        struct line_range lr(1, 2);
         sa[lr].insert(make_string_attr("graphic",
                                        last_line ? ACS_LLCORNER : ACS_LTEE));
 
@@ -353,12 +304,7 @@ public:
 
     bool          fos_active;
     bool          fos_active_prev;
-    data_scanner *fos_scanner;
-    data_parser  *fos_parser;
-    column_namer *fos_namer;
-    logfile *fos_file;
-    logfile::iterator fos_line;
-    std::vector<logline_value> fos_line_values;
+    log_data_helper fos_log_helper;
     int fos_key_size;
 };
 
@@ -862,6 +808,11 @@ static void sigwinch(int sig)
     lnav_data.ld_winched = true;
 }
 
+static void sigchld(int sig)
+{
+    lnav_data.ld_child_terminated = true;
+}
+
 static void back_ten(int ten_minute)
 {
     textview_curses *   tc  = lnav_data.ld_view_stack.top();
@@ -896,7 +847,7 @@ static void update_view_name(void)
     status_field &sf = lnav_data.ld_top_source.statusview_value_for_field(
         top_status_source::TSF_VIEW_NAME);
     textview_curses * tc = lnav_data.ld_view_stack.top();
-    struct line_range lr = { 0, -1 };
+    struct line_range lr(0);
 
     sf.set_value("% 5s ", view_names[tc - lnav_data.ld_views]);
     sf.get_value().get_attrs()[lr].insert(make_string_attr(
@@ -1094,6 +1045,17 @@ static void handle_paging_key(int ch)
             tc->set_needs_update();
             lnav_data.ld_scroll_broadcaster.invoke(tc);
             update_view_name();
+        }
+        break;
+
+    case KEY_F(2):
+        if (xterm_mouse::is_available()) {
+            lnav_data.ld_mouse.set_enabled(!lnav_data.ld_mouse.is_enabled());
+        }
+        else {
+            lnav_data.ld_rl_view->set_value(
+                "error: mouse support is not available, make sure your TERM is set to "
+                "xterm or xterm-256color");
         }
         break;
 
@@ -1802,6 +1764,10 @@ static void handle_paging_key(int ch)
             lnav_data.ld_log_source.toggle_user_mark(&BM_EXAMPLE,
                                                      vis_line_t(tc->get_top()));
         }
+        break;
+
+    case 'X':
+        execute_command("close");
         break;
 
     case '\\':
@@ -2544,10 +2510,13 @@ static bool rescan_files(bool required = false)
             std::list<logfile *>::iterator tss_iter;
 
             fprintf(stderr, "file has been deleted/closed -- %s\n",
-                    (*file_iter)->get_filename().c_str());
-            lnav_data.ld_log_source.remove_file(*file_iter);
-            file_iter = lnav_data.ld_files.erase(file_iter);
+                    lf->get_filename().c_str());
+            lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
             lnav_data.ld_text_source.tss_files.remove(lf);
+            lnav_data.ld_log_source.remove_file(lf);
+            file_iter = lnav_data.ld_files.erase(file_iter);
+
+            delete lf;
             retval = true;
         }
         else {
@@ -2557,6 +2526,205 @@ static bool rescan_files(bool required = false)
 
     return retval;
 }
+
+static string execute_action(log_data_helper &ldh,
+                             int value_index,
+                             const string &action_name)
+{
+    std::map<string, log_format::action_def>::const_iterator iter;
+    logline_value &lv = ldh.ldh_line_values[value_index];
+    logfile *lf = ldh.ldh_file;
+    const log_format *format = lf->get_format();
+    pid_t child_pid;
+    string retval;
+
+    iter = format->lf_action_defs.find(action_name);
+
+    const log_format::action_def &action = iter->second;
+
+    auto_pipe in_pipe(STDIN_FILENO);
+    auto_pipe out_pipe(STDOUT_FILENO);
+    auto_pipe err_pipe(STDERR_FILENO);
+
+    in_pipe.open();
+    if (action.ad_capture_output)
+        out_pipe.open();
+    err_pipe.open();
+
+    child_pid = fork();
+
+    in_pipe.after_fork(child_pid);
+    out_pipe.after_fork(child_pid);
+    err_pipe.after_fork(child_pid);
+
+    switch (child_pid) {
+    case -1:
+        retval = "error: unable to fork child process -- " + string(strerror(errno));
+        break;
+    case 0: {
+            const char *args[action.ad_cmdline.size() + 1];
+            set<std::string> path_set(format->get_source_path());
+            char env_buffer[64];
+            int value_line;
+            string path;
+
+            setenv("LNAV_ACTION_FILE", lf->get_filename().c_str(), 1);
+            snprintf(env_buffer, sizeof(env_buffer),
+                "%ld",
+                (ldh.ldh_line - lf->begin()) + 1);
+            setenv("LNAV_ACTION_FILE_LINE", env_buffer, 1);
+            snprintf(env_buffer, sizeof(env_buffer), "%d", ldh.ldh_y_offset + 1);
+            setenv("LNAV_ACTION_MSG_LINE", env_buffer, 1);
+            setenv("LNAV_ACTION_VALUE_NAME", lv.lv_name.c_str(), 1);
+            value_line = ldh.ldh_y_offset - ldh.get_value_line(lv) + 1;
+            snprintf(env_buffer, sizeof(env_buffer), "%d", value_line);
+            setenv("LNAV_ACTION_VALUE_LINE", env_buffer, 1);
+
+            for (set<string>::iterator path_iter = path_set.begin();
+                 path_iter != path_set.end();
+                 ++path_iter) {
+                if (!path.empty()) {
+                    path += ":";
+                }
+                path += *path_iter;
+            }
+            path += ":" + string(getenv("PATH"));
+            setenv("PATH", path.c_str(), 1);
+            for (size_t lpc = 0; lpc < action.ad_cmdline.size(); lpc++) {
+                args[lpc] = action.ad_cmdline[lpc].c_str();
+            }
+            args[action.ad_cmdline.size()] = NULL;
+            execvp(args[0], (char *const *) args);
+            fprintf(stderr,
+                "error: could not exec process -- %s:%s\n",
+                args[0],
+                strerror(errno));
+            exit(0);
+        }
+        break;
+    default: {
+            static int exec_count = 0;
+
+            string value = lv.to_string();
+            const char *line;
+            line_buffer lb;
+            size_t len;
+            off_t off = 0;
+
+            lnav_data.ld_children.push_back(child_pid);
+
+            if (write(in_pipe.write_end(), value.c_str(), value.size()) == -1) {
+                perror("execute_action write");
+            }
+            in_pipe.close();
+
+            lb.set_fd(err_pipe.read_end());
+
+            line = lb.read_line(off, len);
+
+            if (out_pipe.read_end() != -1) {
+                piper_proc *pp = new piper_proc(out_pipe.read_end(), false);
+                char desc[128];
+
+                lnav_data.ld_pipers.push_back(pp);
+                snprintf(desc,
+                    sizeof(desc), "[%d] Output of %s",
+                    exec_count++,
+                    action.ad_cmdline[0].c_str());
+                lnav_data.ld_file_names.insert(make_pair(
+                    desc,
+                    pp->get_fd()));
+                lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+            }
+
+            retval = string(line, len);
+        }
+        break;
+    }
+
+    return retval;
+}
+
+class action_delegate : public text_delegate {
+public:
+    action_delegate(logfile_sub_source &lss) : ad_log_helper(lss), ad_press_line(-1) { };
+
+    virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me) {
+        bool retval = false;
+
+        if (me.me_button != BUTTON_LEFT) {
+            return false;
+        }
+
+        vis_line_t mouse_line = vis_line_t(tc.get_top() + me.me_y);
+        int mouse_left = tc.get_left() + me.me_x;
+
+        switch (me.me_state) {
+        case BUTTON_STATE_PRESSED:
+            if (mouse_line >= vis_line_t(0) && mouse_line <= tc.get_bottom()) {
+                size_t line_end_index = 0;
+                int x_offset;
+
+                this->ad_press_line = mouse_line;
+                this->ad_log_helper.parse_line(mouse_line, true);
+
+                this->ad_log_helper.get_line_bounds(this->ad_line_index, line_end_index);
+
+                struct line_range lr(this->ad_line_index, line_end_index);
+
+                this->ad_press_value = -1;
+
+                x_offset = this->ad_line_index + mouse_left;
+                if (lr.contains(x_offset)) {
+                    for (size_t lpc = 0;
+                         lpc < this->ad_log_helper.ldh_line_values.size();
+                         lpc++) {
+                        logline_value &lv = this->ad_log_helper.ldh_line_values[lpc];
+
+                        if (lv.lv_origin.contains(x_offset)) {
+                            this->ad_press_value = lpc;
+                            retval = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            break;
+        case BUTTON_STATE_DRAGGED:
+            if (this->ad_press_value != -1) {
+                retval = true;
+            }
+            break;
+        case BUTTON_STATE_RELEASED:
+            if (this->ad_press_value != -1 && this->ad_press_line == mouse_line) {
+                logline_value &lv = this->ad_log_helper.ldh_line_values[this->ad_press_value];
+                int x_offset = this->ad_line_index + mouse_left;
+
+                if (lv.lv_origin.contains(x_offset)) {
+                    logfile *lf = this->ad_log_helper.ldh_file;
+                    const vector<string> *actions;
+
+                    actions = lf->get_format()->get_actions(lv);
+                    if (actions != NULL && !actions->empty()) {
+                        string rc = execute_action(
+                            this->ad_log_helper, this->ad_press_value, actions->at(0));
+
+                        lnav_data.ld_rl_view->set_value(rc);
+                    }
+                }
+                retval = true;
+            }
+            break;
+        }
+
+        return retval;
+    };
+
+    log_data_helper ad_log_helper;
+    vis_line_t ad_press_line;
+    int ad_press_value;
+    size_t ad_line_index;
+};
 
 class lnav_behavior : public mouse_behavior {
 public:
@@ -2579,146 +2747,51 @@ public:
         return button == xterm_mouse::XT_SCROLL_UP ? -1 : 1;
     };
 
-    void mouse_event(int button, int x, int y)
+    void mouse_event(int button, bool release, int x, int y)
     {
-        logfile_sub_source *lss = NULL;
         textview_curses *   tc  = lnav_data.ld_view_stack.top();
-        vis_line_t          vis_y(tc->get_top() + y - 2);
-        struct timeval      now, diff;
-        unsigned long       width;
-        vis_line_t          height;
+        struct mouse_event me;
 
-        tc->get_dimensions(height, width);
-
-        gettimeofday(&now, NULL);
-        timersub(&now, &this->lb_last_event_time, &diff);
-        this->lb_last_event_time = now;
-
-        lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
-        switch (button) {
+        switch (button & xterm_mouse::XT_BUTTON__MASK) {
         case xterm_mouse::XT_BUTTON1:
-            if (this->lb_selection_start == vis_line_t(-1) &&
-                tc->get_inner_height() &&
-                ((this->lb_scrollbar_y != -1) || (x >= (int)(width - 2)))) {
-                double top_pct, bot_pct, pct;
-                int    scroll_top, scroll_bottom, shift_amount = 0, new_top =
-                    0;
-
-                top_pct = (double)tc->get_top() /
-                          (double)tc->get_inner_height();
-                bot_pct = (double)tc->get_bottom() /
-                          (double)tc->get_inner_height();
-                scroll_top =
-                    (tc->get_y() + (int)(top_pct * (double)height));
-                scroll_bottom =
-                    (tc->get_y() + (int)(bot_pct * (double)height));
-                if (this->lb_mode == LB_MODE_NONE) {
-                    if (scroll_top <= y && y <= scroll_bottom) {
-                        this->lb_mode        = LB_MODE_DRAG;
-                        this->lb_scrollbar_y = y - scroll_top;
-                    }
-                    else if (y < scroll_top) {
-                        this->lb_mode = LB_MODE_UP;
-                    }
-                    else {
-                        this->lb_mode = LB_MODE_DOWN;
-                    }
-                }
-                switch (this->lb_mode) {
-                case LB_MODE_NONE:
-                    assert(0);
-                    break;
-
-                case LB_MODE_UP:
-                    if (y < scroll_top) {
-                        shift_amount = -1 * height;
-                    }
-                    break;
-
-                case LB_MODE_DOWN:
-                    if (y > scroll_bottom) {
-                        shift_amount = height;
-                    }
-                    break;
-
-                case LB_MODE_DRAG:
-                    pct     = (double)tc->get_inner_height() / (double)height;
-                    new_top = y - tc->get_y() - this->lb_scrollbar_y;
-                    new_top = (int)floor(((double)new_top * pct) + 0.5);
-                    tc->set_top(vis_line_t(new_top));
-                    break;
-                }
-                if (shift_amount != 0) {
-                    tc->shift_top(vis_line_t(shift_amount));
-                }
-                return;
-            }
-            if (this->lb_selection_start == vis_line_t(-1)) {
-                this->lb_selection_start = vis_y;
-                this->lb_selection_last  = vis_line_t(-1);
-            }
-            else {
-                if (this->lb_selection_last != vis_line_t(-1)) {
-                    tc->toggle_user_mark(&textview_curses::BM_USER,
-                                         this->lb_selection_start,
-                                         this->lb_selection_last);
-                }
-                if (this->lb_selection_start == vis_y) {
-                    this->lb_selection_last = vis_line_t(-1);
-                }
-                else {
-                    tc->toggle_user_mark(&textview_curses::BM_USER,
-                                         this->lb_selection_start,
-                                         vis_y);
-                    this->lb_selection_last = vis_y;
-                }
-            }
-            tc->reload_data();
+            me.me_button = BUTTON_LEFT;
             break;
-
-        case xterm_mouse::XT_BUTTON_RELEASE:
-            this->lb_mode            = LB_MODE_NONE;
-            this->lb_scrollbar_y     = -1;
-            this->lb_selection_start = vis_line_t(-1);
+        case xterm_mouse::XT_BUTTON2:
+            me.me_button = BUTTON_MIDDLE;
             break;
-
+        case xterm_mouse::XT_BUTTON3:
+            me.me_button = BUTTON_RIGHT;
+            break;
         case xterm_mouse::XT_SCROLL_UP:
+            me.me_button = BUTTON_SCROLL_UP;
+            break;
         case xterm_mouse::XT_SCROLL_DOWN:
-            if (this->lb_scroll_repeat ||
-                (diff.tv_sec == 0 && diff.tv_usec < 30000)) {
-                if (this->lb_scroll_repeat) {
-                    struct timeval scroll_diff;
-
-                    timersub(&now, &this->lb_last_scroll_time, &scroll_diff);
-                    if (scroll_diff.tv_usec > 50000) {
-                        tc->shift_top(vis_line_t(this->scroll_polarity(button)
-                                                 *
-                                                 this->lb_scroll_repeat),
-                                      true);
-                        this->lb_scroll_repeat = 0;
-                    }
-                    else {
-                        this->lb_scroll_repeat += 1;
-                    }
-                }
-                else {
-                    this->lb_scroll_repeat    = 1;
-                    this->lb_last_scroll_time = now;
-                    tc->shift_top(vis_line_t(this->scroll_polarity(
-                                                 button)), true);
-                }
-            }
-            else {
-                tc->shift_top(vis_line_t(this->scroll_polarity(button)), true);
-            }
+            me.me_button = BUTTON_SCROLL_DOWN;
             break;
         }
+
+        if (button & xterm_mouse::XT_DRAG_FLAG) {
+            me.me_state = BUTTON_STATE_DRAGGED;
+        }
+        else if (release) {
+            me.me_state = BUTTON_STATE_RELEASED;
+        }
+        else {
+            me.me_state = BUTTON_STATE_PRESSED;
+        }
+
+        gettimeofday(&me.me_time, NULL);
+        me.me_x = x - 1;
+        me.me_y = y - tc->get_y() - 1;
+
+        tc->handle_mouse(me);
     };
 
 private:
     struct timeval lb_last_event_time;
     vis_line_t     lb_selection_start;
     vis_line_t     lb_selection_last;
+    bool lb_selection_cleared;
 
     int lb_scrollbar_y;
 
@@ -2767,13 +2840,13 @@ static void looper(void)
         (void)signal(SIGINT, sigint);
         (void)signal(SIGTERM, sigint);
         (void)signal(SIGWINCH, sigwinch);
+        (void)signal(SIGCHLD, sigchld);
 
         screen_curses sc;
-        xterm_mouse   mouse;
         lnav_behavior lb;
 
-        mouse.set_enabled(check_experimental("mouse"));
-        mouse.set_behavior(&lb);
+        lnav_data.ld_mouse.set_behavior(&lb);
+        lnav_data.ld_mouse.set_enabled(check_experimental("mouse"));
 
         lnav_data.ld_window = sc.get_window();
         keypad(stdscr, TRUE);
@@ -2972,18 +3045,40 @@ static void looper(void)
             }
             else {
                 if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
+                    static size_t escape_index = 0;
+                    static char escape_buffer[32];
+
                     int ch;
 
                     while ((ch = getch()) != ERR) {
                         alerter::singleton().new_input(ch);
 
+                        if (escape_index > sizeof(escape_buffer) - 1) {
+                            escape_index = 0;
+                        }
+                        else if (escape_index > 0) {
+                            escape_buffer[escape_index++] = ch;
+                            escape_buffer[escape_index] = '\0';
+
+                            if (strcmp("\x1b[<", escape_buffer) == 0) {
+                                lnav_data.ld_mouse.handle_mouse(ch);
+                                escape_index = 0;
+                            }
+                            continue;
+                        }
                         switch (ch) {
                         case CEOF:
                         case KEY_RESIZE:
                             break;
 
+                        case '\x1b':
+                            escape_index = 0;
+                            escape_buffer[escape_index++] = ch;
+                            escape_buffer[escape_index] = '\0';
+                            break;
+
                         case KEY_MOUSE:
-                            mouse.handle_mouse(ch);
+                            lnav_data.ld_mouse.handle_mouse(ch);
                             break;
 
                         default:
@@ -3038,7 +3133,7 @@ static void looper(void)
             if (lnav_data.ld_winched) {
                 struct winsize size;
 
-                fprintf(stderr, "WINCHED\n");
+                lnav_data.ld_winched = false;
 
                 if (ioctl(fileno(stdout), TIOCGWINSZ, &size) == 0) {
                     resizeterm(size.ws_row, size.ws_col);
@@ -3047,7 +3142,31 @@ static void looper(void)
                 lnav_data.ld_status[0].window_change();
                 lnav_data.ld_status[1].window_change();
                 lnav_data.ld_view_stack.top()->set_needs_update();
-                lnav_data.ld_winched = false;
+            }
+
+            if (lnav_data.ld_child_terminated) {
+                lnav_data.ld_child_terminated = false;
+
+                for (std::list<pid_t>::iterator iter = lnav_data.ld_children.begin();
+                    iter != lnav_data.ld_children.end();
+                    ++iter) {
+                    int rc, child_stat;
+
+                    rc = waitpid(*iter, &child_stat, WNOHANG);
+                    if (rc == -1 || rc == 0)
+                        continue;
+
+                    iter = lnav_data.ld_children.erase(iter);
+                }
+
+                for (std::list<piper_proc *>::iterator iter = lnav_data.ld_pipers.begin();
+                    iter != lnav_data.ld_pipers.end();
+                    ++iter) {
+                    if ((*iter)->has_exited()) {
+                        delete *iter;
+                        iter = lnav_data.ld_pipers.erase(iter);
+                    }
+                }
             }
         }
     }
@@ -3460,6 +3579,8 @@ int main(int argc, char *argv[])
     set_sub_source(new plain_text_source(help_txt));
     lnav_data.ld_views[LNV_LOG].
     set_sub_source(&lnav_data.ld_log_source);
+    lnav_data.ld_views[LNV_LOG].
+    set_delegate(new action_delegate(lnav_data.ld_log_source));
     lnav_data.ld_views[LNV_TEXT].
     set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_HISTOGRAM].
@@ -3472,7 +3593,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_DB].
     set_overlay_source(&lnav_data.ld_db_overlay);
     lnav_data.ld_views[LNV_LOG].
-    set_overlay_source(new field_overlay_source());
+    set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
     lnav_data.ld_db_overlay.dos_hist_source = &lnav_data.ld_db_source;
 
     {

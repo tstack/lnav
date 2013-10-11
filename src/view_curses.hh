@@ -114,9 +114,15 @@ struct line_range {
     int lr_start;
     int lr_end;
 
+    line_range(int start = -1, int end = -1) : lr_start(start), lr_end(end) { };
+
     int length() const
     {
         return this->lr_end == -1 ? INT_MAX : this->lr_end - this->lr_start;
+    };
+
+    bool contains(int pos) const {
+        return this->lr_start <= pos && pos < this->lr_end;
     };
 
     bool operator<(const struct line_range &rhs) const
@@ -179,7 +185,7 @@ typedef std::map<struct line_range, attrs_map_t>  string_attrs_t;
 inline struct line_range
 find_string_attr_range(const string_attrs_t &sa, const std::string &name)
 {
-    struct line_range retval = { -1, -1 };
+    struct line_range retval;
 
     for (string_attrs_t::const_iterator iter = sa.begin();
          iter != sa.end();
@@ -463,6 +469,35 @@ private:
     int vc_next_plain_highlight;
 };
 
+enum mouse_button_t {
+    BUTTON_LEFT,
+    BUTTON_MIDDLE,
+    BUTTON_RIGHT,
+
+    BUTTON_SCROLL_UP,
+    BUTTON_SCROLL_DOWN,
+};
+
+enum mouse_button_state_t {
+    BUTTON_STATE_PRESSED,
+    BUTTON_STATE_DRAGGED,
+    BUTTON_STATE_RELEASED,
+};
+
+struct mouse_event {
+    mouse_event(mouse_button_t button = BUTTON_LEFT,
+                mouse_button_state_t state = BUTTON_STATE_PRESSED,
+                int x = -1,
+                int y = -1) : me_button(button), me_state(state), me_x(x), me_y(y) {
+    };
+
+    mouse_button_t me_button;
+    mouse_button_state_t me_state;
+    struct timeval me_time;
+    int me_x;
+    int me_y;
+};
+
 /**
  * Interface for "view" classes that will update a curses(3) display.
  */
@@ -474,6 +509,8 @@ public:
      * Update the curses display.
      */
     virtual void do_update(void) = 0;
+
+    virtual bool handle_mouse(mouse_event &me) { return false; };
 
     static void mvwattrline(WINDOW *window,
                             int y,

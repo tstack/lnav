@@ -89,6 +89,10 @@ throw (error)
             throw error(filename, errno);
         }
 
+        if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1) {
+            throw error(filename, errno);
+        }
+
         this->lf_valid_filename = true;
     }
     else {

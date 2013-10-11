@@ -106,14 +106,16 @@ void grep_proc::start(void)
         return;
     }
 
-    auto_fd out_fd[2], err_fd[2];
+    auto_pipe in_pipe(STDIN_FILENO);
+    auto_pipe out_pipe(STDOUT_FILENO);
+    auto_pipe err_pipe(STDERR_FILENO);
 
     /* Get ahold of some pipes for stdout and stderr. */
-    if (auto_fd::pipe(out_fd) < 0) {
+    if (out_pipe.open() < 0) {
         throw error(errno);
     }
 
-    if (auto_fd::pipe(err_fd) < 0) {
+    if (err_pipe.open() < 0) {
         throw error(errno);
     }
 
@@ -121,15 +123,19 @@ void grep_proc::start(void)
         throw error(errno);
     }
 
-    if (this->gp_child != 0) {
-        fcntl(out_fd[0], F_SETFL, O_NONBLOCK);
-        fcntl(out_fd[0], F_SETFD, 1);
-        this->gp_line_buffer.set_fd(out_fd[0]);
+    in_pipe.after_fork(this->gp_child);
+    out_pipe.after_fork(this->gp_child);
+    err_pipe.after_fork(this->gp_child);
 
-        fcntl(err_fd[0], F_SETFL, O_NONBLOCK);
-        fcntl(err_fd[0], F_SETFD, 1);
+    if (this->gp_child != 0) {
+        fcntl(out_pipe.read_end(), F_SETFL, O_NONBLOCK);
+        fcntl(out_pipe.read_end(), F_SETFD, 1);
+        this->gp_line_buffer.set_fd(out_pipe.read_end());
+
+        fcntl(err_pipe.read_end(), F_SETFL, O_NONBLOCK);
+        fcntl(err_pipe.read_end(), F_SETFD, 1);
         assert(this->gp_err_pipe.get() == -1);
-        this->gp_err_pipe      = err_fd[0];
+        this->gp_err_pipe      = err_pipe.read_end();
         this->gp_child_started = true;
 
         FD_SET(this->gp_line_buffer.get_fd(), &this->gp_readfds);
@@ -144,18 +150,11 @@ void grep_proc::start(void)
     /* In the child... */
 
     /*
-     * First, restore the default signal handlers so we don't hang around
+     * Restore the default signal handlers so we don't hang around
      * forever if there is a problem.
      */
     signal(SIGINT, SIG_DFL);
     signal(SIGTERM, SIG_DFL);
-
-    /* Get rid of stdin, then */
-    close(STDIN_FILENO);
-    open("/dev/null", O_RDONLY);
-    /* ... wire up the pipes. */
-    dup2(out_fd[1].release(), STDOUT_FILENO);
-    /* dup2(err_fd[1].release(), STDERR_FILENO); */
 
     this->child_init();
 

@@ -40,6 +40,7 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
+#include <set>
 #include <string>
 #include <vector>
 #include <memory>
@@ -337,8 +338,9 @@ public:
         : lv_name(name), lv_kind(VALUE_TEXT), lv_string(s), lv_identifier(), lv_column(-1) { };
     logline_value(std::string name, kind_t kind, std::string s,
                   bool ident=false, const scaling_factor *scaling=NULL,
-                  int col=-1)
-        : lv_name(name), lv_kind(kind), lv_identifier(ident), lv_column(col)
+                  int col=-1, int start=-1, int end=-1)
+        : lv_name(name), lv_kind(kind), lv_identifier(ident), lv_column(col),
+          lv_origin(start, end)
     {
         switch (kind) {
         case VALUE_TEXT:
@@ -425,6 +427,7 @@ public:
     std::string lv_string;
     bool lv_identifier;
     int lv_column;
+    struct line_range lv_origin;
 };
 
 struct logline_value_cmp {
@@ -472,6 +475,19 @@ public:
             static T format;
 
             log_format::lf_root_formats.push_back(&format);
+        };
+    };
+
+    struct action_def {
+        std::string ad_name;
+        std::string ad_label;
+        std::vector<std::string> ad_cmdline;
+        bool ad_capture_output;
+
+        action_def() : ad_capture_output(false) { };
+
+        bool operator<(const action_def &rhs) const {
+            return this->ad_name < rhs.ad_name;
         };
     };
 
@@ -535,9 +551,22 @@ public:
         stream_out.write(line, len);
     };
 
+    virtual const std::vector<std::string> *get_actions(const logline_value &lv) const {
+        return NULL;
+    };
+
+    virtual const std::set<std::string> get_source_path() const {
+        std::set<std::string> retval;
+
+        retval.insert("default");
+
+        return retval;
+    };
+
     date_time_scanner lf_date_time;
     int lf_fmt_lock;
     std::string lf_timestamp_field;
+    std::map<std::string, action_def> lf_action_defs;
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -566,7 +595,8 @@ public:
             vd_identifier(false),
             vd_foreign_key(false),
             vd_unit_field_index(-1),
-            vd_column(-1) {
+            vd_column(-1),
+            vd_hidden(false) {
 
         };
 
@@ -580,6 +610,8 @@ public:
         int vd_unit_field_index;
         std::map<std::string, scaling_factor> vd_unit_scaling;
         int vd_column;
+        bool vd_hidden;
+        std::vector<std::string> vd_action_list;
 
         bool operator<(const value_def &rhs) const {
             return this->vd_index < rhs.vd_index;
@@ -652,6 +684,23 @@ public:
 
     log_vtab_impl *get_vtab_impl(void) const;
 
+    const std::vector<std::string> *get_actions(const logline_value &lv) const {
+        std::map<std::string, value_def>::const_iterator iter;
+        const std::vector<std::string> *retval = NULL;
+
+        iter = this->elf_value_defs.find(lv.lv_name);
+        if (iter != this->elf_value_defs.end()) {
+            retval = &iter->second.vd_action_list;
+        }
+
+        return retval;
+    };
+
+    const std::set<std::string> get_source_path() const {
+        return this->elf_source_path;
+    };
+
+    std::set<std::string> elf_source_path;
     std::string elf_file_pattern;
     pcrepp *elf_filename_pcre;
     std::map<std::string, pattern> elf_patterns;

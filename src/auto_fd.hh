@@ -33,6 +33,7 @@
 #define __auto_fd_hh
 
 #include <assert.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/select.h>
 
@@ -51,7 +52,7 @@ public:
      * Wrapper for the posix pipe(2) function that stores the file descriptor
      * results in an auto_fd array.
      *
-     * @param af An array of atleast two auto_fd elements, where the first
+     * @param af An array of at least two auto_fd elements, where the first
      * contains the reader end of the pipe and the second contains the writer.
      * @return The result of the pipe(2) function.
      */
@@ -198,5 +199,85 @@ public:
 
 private:
     int af_fd;  /*< The managed file descriptor. */
+};
+
+class auto_pipe {
+public:
+    static const int STDIO_FD_COUNT = 3;
+
+    auto_pipe(int child_fd = -1, int child_flags = O_RDONLY)
+        : ap_child_flags(child_flags), ap_child_fd(child_fd)
+    {
+        switch (child_fd) {
+        case STDIN_FILENO:
+            this->ap_child_flags = O_RDONLY;
+            break;
+        case STDOUT_FILENO:
+        case STDERR_FILENO:
+            this->ap_child_flags = O_WRONLY;
+            break;
+        }
+    };
+
+    int open() {
+        return auto_fd::pipe(this->ap_fd);
+    };
+
+    void close() {
+        this->ap_fd[0].reset();
+        this->ap_fd[1].reset();
+    };
+
+    auto_fd &read_end() {
+        return this->ap_fd[0];
+    };
+
+    auto_fd &write_end() {
+        return this->ap_fd[1];
+    };
+
+    void after_fork(pid_t child_pid) {
+        int new_fd = -1;
+
+        switch (child_pid) {
+        case -1:
+            this->close();
+            break;
+        case 0:
+            if (this->ap_child_flags == O_RDONLY) {
+                this->write_end().reset();
+                if (this->read_end() == -1) {
+                    this->read_end() = ::open("/dev/null", O_RDONLY);
+                }
+                new_fd = this->read_end();
+            }
+            else {
+                this->read_end().reset();
+                if (this->write_end() == -1) {
+                    this->write_end() = ::open("/dev/null", O_WRONLY);
+                }
+                new_fd = this->write_end();
+            }
+            if (this->ap_child_fd != -1) {
+                if (new_fd != this->ap_child_fd) {
+                    dup2(new_fd, this->ap_child_fd);
+                    this->close();
+                }
+            }
+            break;
+        default:
+            if (this->ap_child_flags == O_RDONLY) {
+                this->read_end().reset();
+            }
+            else {
+                this->write_end().reset();
+            }
+            break;
+        }
+    };
+
+    int ap_child_flags;
+    int ap_child_fd;
+    auto_fd ap_fd[2];
 };
 #endif

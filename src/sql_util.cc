@@ -412,7 +412,7 @@ void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis)
     snprintf(buffer, buffer_size,
              "% 4d-%02d-%02dT%02d:%02d:%02d.%03d",
              gmtm.tm_year + 1900,
-             gmtm.tm_mon,
+             gmtm.tm_mon + 1,
              gmtm.tm_mday,
              gmtm.tm_hour,
              gmtm.tm_min,

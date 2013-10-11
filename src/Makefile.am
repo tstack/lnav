@@ -8,6 +8,9 @@ noinst_LIBRARIES = libdiag.a
 help.c: $(srcdir)/help.txt bin2c
 	./bin2c -z -c $(srcdir)/help.txt $@
 
+dump-pid-sh.c: $(srcdir)/dump-pid.sh bin2c
+	./bin2c -z -c $(srcdir)/dump-pid.sh $@
+
 default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
 	./bin2c -z -c $(srcdir)/default-log-formats.json $@
 
@@ -36,12 +39,14 @@ LDADD = \
 	-lcrypto
 
 dist_noinst_DATA = \
-	default-log-formats.json
+	default-log-formats.json \
+	dump-pid.sh
 
 noinst_HEADERS = \
 	ansi_scrubber.hh \
 	auto_fd.hh \
 	auto_mem.hh \
+	auto_pid.hh \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \
@@ -50,6 +55,7 @@ noinst_HEADERS = \
 	data_parser.hh \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
+	format-text-files.hh \
 	grapher.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
@@ -65,6 +71,7 @@ noinst_HEADERS = \
 	lnav_commands.hh \
 	lnav_config.hh \
 	lnav_util.hh \
+    log_data_helper.hh \
     log_data_table.hh \
 	log_format.hh \
 	log_format_loader.hh \
@@ -162,16 +169,30 @@ libdiag_a_SOURCES = \
 dist_noinst_SCRIPTS = \
 	init_sql.py
 
+TEXT2C_FILES = \
+	dump-pid-sh.o \
+	help.o \
+	init-sql.o \
+	default-log-formats-json.o
+
 lnav_SOURCES = lnav.cc $(HELP_SRC)
-lnav_LDADD = help.o init-sql.o default-log-formats-json.o $(LDADD)
+lnav_LDADD = \
+	$(TEXT2C_FILES) \
+	$(LDADD)
 
 lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
-lnav_test_LDADD = help.o init-sql.o default-log-formats-json.o $(LDADD)
+lnav_test_LDADD = \
+	$(TEXT2C_FILES) \
+	$(LDADD)
 
 bin2c_SOURCES = bin2c.c
 bin2c_LDADD =
 
-DISTCLEANFILES = help.c init-sql.c default-log-formats-json.c
+DISTCLEANFILES = \
+	dump-pid-sh.c \
+	help.c \
+	init-sql.c \
+	default-log-formats-json.c
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

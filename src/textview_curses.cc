@@ -44,8 +44,12 @@ bookmark_type_t textview_curses::BM_USER;
 bookmark_type_t textview_curses::BM_SEARCH;
 
 textview_curses::textview_curses()
-    : tc_searching(false),
-      tc_follow_search(false)
+    : tc_sub_source(NULL),
+      tc_delegate(NULL),
+      tc_searching(false),
+      tc_follow_search(false),
+      tc_selection_start(-1),
+      tc_selection_last(-1)
 {
     this->set_data_source(this);
 }
@@ -217,7 +221,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 #endif
 
     if (binary_search(user_marks.begin(), user_marks.end(), row)) {
-        struct line_range        lr = { 0, -1 };
+        struct line_range        lr(0);
         string_attrs_t::iterator iter;
 
         for (iter = sa.begin(); iter != sa.end(); iter++) {
@@ -233,4 +237,76 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 
         sa[lr].insert(make_string_attr("style", A_REVERSE));
     }
+}
+
+bool textview_curses::handle_mouse(mouse_event &me)
+{
+    if (this->tc_selection_start == -1 &&
+        listview_curses::handle_mouse(me)) {
+        return true;
+    }
+
+    if (this->tc_delegate != NULL &&
+        this->tc_delegate->text_handle_mouse(*this, me)) {
+        return true;
+    }
+
+    if (me.me_button != BUTTON_LEFT) {
+        return false;
+    }
+
+    vis_line_t mouse_line(this->get_top() + me.me_y);
+
+    if (mouse_line > this->get_bottom()) {
+        mouse_line = this->get_bottom();
+    }
+
+    switch (me.me_state) {
+    case BUTTON_STATE_PRESSED:
+        this->tc_selection_start = mouse_line;
+        this->tc_selection_last = vis_line_t(-1);
+        this->tc_selection_cleared = false;
+        break;
+    case BUTTON_STATE_DRAGGED:
+        if (me.me_y <= 0) {
+            this->shift_top(vis_line_t(-1));
+            me.me_y = 0;
+            mouse_line = this->get_top();
+        }
+
+        if (this->tc_selection_last == mouse_line)
+            break;
+
+        if (this->tc_selection_last != -1) {
+            this->toggle_user_mark(&textview_curses::BM_USER,
+               this->tc_selection_start,
+               this->tc_selection_last);
+        }
+        if (this->tc_selection_start == mouse_line) {
+            this->tc_selection_last = vis_line_t(-1);
+        }
+        else {
+            if (!this->tc_selection_cleared) {
+                if (this->tc_sub_source != NULL) {
+                    this->tc_sub_source->text_clear_marks(&BM_USER);
+                }
+                this->tc_bookmarks[&BM_USER].clear();
+
+                this->tc_selection_cleared = true;
+            }
+            this->toggle_user_mark(&BM_USER,
+               this->tc_selection_start,
+               mouse_line);
+            this->tc_selection_last = mouse_line;
+        }
+        this->reload_data();
+        break;
+    case BUTTON_STATE_RELEASED:
+        this->tc_selection_start = vis_line_t(-1);
+        this->tc_selection_last = vis_line_t(-1);
+        this->tc_selection_cleared = false;
+        break;
+    }
+
+    return true;
 }

@@ -54,7 +54,7 @@ public:
      * @param x      The X coordinate where the event occurred.
      * @param y      The Y coordinate where the event occurred.
      */
-    virtual void mouse_event(int button, int x, int y) = 0;
+    virtual void mouse_event(int button, bool release, int x, int y) = 0;
 };
 
 /**
@@ -62,13 +62,11 @@ public:
  */
 class xterm_mouse {
 public:
-    static const int XT_MAGIC = 32;
-
     static const int XT_BUTTON1        = 0;
     static const int XT_BUTTON2        = 1;
     static const int XT_BUTTON3        = 2;
-    static const int XT_BUTTON_RELEASE = 3;
 
+    static const int XT_DRAG_FLAG = 32;
     static const int XT_SCROLL_WHEEL_FLAG = 64;
     static const int XT_SCROLL_UP         =
         XT_SCROLL_WHEEL_FLAG | XT_BUTTON1;
@@ -83,17 +81,18 @@ public:
 
     static const char *XT_TERMCAP;
     static const char *XT_TERMCAP_TRACKING;
+    static const char *XT_TERMCAP_SGR;
 
     /**
      * @return True if the user's terminal supports xterm-mouse events.
      */
     static bool is_available()
     {
-        static const char *termname = getenv("TERM");
+        const char *termname = getenv("TERM");
         bool retval = false;
 
         if (termname and strstr(termname, "xterm") != NULL) {
-            retval = true;
+            retval = isatty(STDOUT_FILENO);
         }
         return retval;
     };
@@ -102,7 +101,8 @@ public:
 
     ~xterm_mouse()
     {
-        set_enabled(false);
+        if (this->is_enabled())
+            set_enabled(false);
     };
 
     /**
@@ -114,6 +114,7 @@ public:
         if (is_available()) {
             putp(tparm((char *)XT_TERMCAP, enabled ? 1 : 0));
             putp(tparm((char *)XT_TERMCAP_TRACKING, enabled ? 1 : 0));
+            putp(tparm((char *)XT_TERMCAP_SGR, enabled ? 1 : 0));
             this->xm_enabled = enabled;
         }
     };
@@ -140,15 +141,42 @@ public:
      * Handle a KEY_MOUSE character from ncurses.
      * @param ch unused
      */
-    void handle_mouse(int ch)
+    void handle_mouse(int ch_unused)
     {
-        /* The button event and coordinates follow the KEY_MOUSE char */
-        int bstate = (getch() - XT_MAGIC) & XT_BUTTON__MASK;
-        int x      = getch() - XT_MAGIC - 1;
-        int y      = getch() - XT_MAGIC - 1;
+        bool release = false;
+        int ch;
+        size_t index = 0;
+        int bstate, x, y;
+        char buffer[64];
+        bool done = false;
 
-        if (this->xm_behavior) {
-            this->xm_behavior->mouse_event(bstate, x, y);
+        while (!done) {
+            if (index >= sizeof(buffer) - 1) {
+                break;
+            }
+            ch = getch();
+            switch (ch) {
+            case 'm':
+                release = true;
+                done = true;
+                break;
+            case 'M':
+                done = true;
+                break;
+            default:
+                buffer[index++] = (char)ch;
+                break;
+            }
+        }
+        buffer[index] = '\0';
+
+        if (sscanf(buffer, "%d;%d;%d", &bstate, &x, &y) == 3) {
+            if (this->xm_behavior) {
+                this->xm_behavior->mouse_event(bstate, release, x, y);
+            }
+        }
+        else {
+            fprintf(stderr, "bad mouse escape sequence: %s\n", buffer);
         }
     };
 

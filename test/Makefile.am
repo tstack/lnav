@@ -98,6 +98,7 @@ drive_data_scanner_SOURCES = \
 drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
+	../src/dump-pid-sh.o \
 	-lcrypto \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \

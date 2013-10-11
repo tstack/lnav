@@ -119,8 +119,9 @@ am_drive_data_scanner_OBJECTS = drive_data_scanner.$(OBJEXT)
 drive_data_scanner_OBJECTS = $(am_drive_data_scanner_OBJECTS)
 am__DEPENDENCIES_1 =
 drive_data_scanner_DEPENDENCIES = ../src/libdiag.a \
-	../src/default-log-formats-json.o $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	../src/default-log-formats-json.o ../src/dump-pid-sh.o \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_drive_grep_proc_OBJECTS = drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
 drive_grep_proc_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
@@ -655,6 +656,7 @@ drive_data_scanner_SOURCES = \
 drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
+	../src/dump-pid-sh.o \
 	-lcrypto \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \

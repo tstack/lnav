@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
                 }
 
                 string sub_line = line.substr(13);
-                struct line_range body = { 0, sub_line.length() };
+                struct line_range body(0, sub_line.length());
 
                 if (format.get() != NULL) {
                     vector<logline_value> ll_values;

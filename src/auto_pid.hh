@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2013, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,62 +26,75 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file piper_proc.hh
+ * @file auto_pid.hh
  */
 
-#ifndef __piper_proc_hh
-#define __piper_proc_hh
+#ifndef __auto_pid_hh
+#define __auto_pid_hh
 
-#include <string>
+#include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
-/**
- * Creates a subprocess that reads data from a pipe and writes it to a file so
- * lnav can treat it like any other file and do preads.
- *
- * TODO: Add support for gzipped files.
- */
-class piper_proc {
+class auto_pid {
 public:
-    class error
-        : public std::exception {
-public:
-        error(int err)
-            : e_err(err) { };
+    auto_pid(pid_t child = -1) : ap_child(child), ap_status(0) {};
 
-        int e_err;
+    auto_pid(auto_pid &other) : ap_child(other.release()), ap_status(0) { };
+
+    ~auto_pid() { this->reset(); };
+
+    auto_pid &operator =(auto_pid &other) {
+        this->reset(other.release());
+        this->ap_status = other.ap_status;
+        return *this;
     };
 
-    /**
-     * Forks a subprocess that will read data from the given file descriptor
-     * and write it to a temporary file.
-     *
-     * @param pipefd The file descriptor to read the file contents from.
-     * @param timestamp True if an ISO 8601 timestamp should be prepended onto
-     *   the lines read from pipefd.
-     * @param filename The name of the file to save the input to, otherwise a
-     *   temporary file will be created.
-     */
-    piper_proc(int pipefd, bool timestamp, const char *filename = NULL);
+    pid_t release() {
+        pid_t retval = this->ap_child;
 
-    bool has_exited();
+        this->ap_child = -1;
+        return retval;
+    };
 
-    /**
-     * Terminates the child process.
-     */
-    virtual ~piper_proc();
+    int status() const {
+        return this->ap_status;
+    };
 
-    /** @return The file descriptor for the temporary file. */
-    int get_fd() const { return this->pp_fd; };
+    bool wait_for_child(int options = 0) {
+        if (this->ap_child != -1) {
+            int rc;
+
+            while ((rc = waitpid(this->ap_child,
+                                 &this->ap_status,
+                                 options)) < 0 && (errno == EINTR)) {
+                ;
+            }
+            if (rc > 0) {
+                this->ap_child = -1;
+            }
+        }
+
+        return this->ap_child == -1;
+    };
+
+    void reset(pid_t child = -1) {
+        if (this->ap_child != child) {
+            this->ap_status = 0;
+            if (this->ap_child != -1) {
+                kill(this->ap_child, SIGTERM);
+                this->wait_for_child();
+            }
+            this->ap_child = child;
+        }
+    };
 
 private:
-    /** A file descriptor that refers to the temporary file. */
-    int pp_fd;
+    auto_pid(const auto_pid &other) { };
 
-    /** Indicates whether timestamps should be added to the input. */
-    bool pp_timestamp;
-
-    /** The child process' pid. */
-    pid_t pp_child;
+    pid_t ap_child;
+    int ap_status;
 };
+
 #endif

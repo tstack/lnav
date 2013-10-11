@@ -104,7 +104,7 @@ public:
         status_field &    sf_partition = this->tss_fields[TSF_PARTITION_NAME];
         status_field &    sf_format   = this->tss_fields[TSF_FORMAT];
         status_field &    sf_filename = this->tss_fields[TSF_FILENAME];
-        struct line_range lr          = { 0, -1 };
+        struct line_range lr(0);
 
         if (lc->get_inner_height() > 0) {
             attrs_map_t::iterator iter;

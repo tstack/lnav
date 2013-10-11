@@ -329,9 +329,18 @@ public:
     /**
      * Query the data source and draw the visible lines on the display.
      */
-    void do_update(void);
+    virtual void do_update(void);
+
+    bool handle_mouse(mouse_event &me);
 
 protected:
+    enum lv_mode_t {
+        LV_MODE_NONE,
+        LV_MODE_DOWN,
+        LV_MODE_UP,
+        LV_MODE_DRAG
+    };
+
     list_data_source *   lv_source; /*< The data source delegate. */
     list_overlay_source *lv_overlay_source;
     action       lv_scroll;         /*< The scroll action. */
@@ -344,5 +353,11 @@ protected:
                                      *  is needed.
                                      */
     bool lv_show_scrollbar;         /*< Draw the scrollbar in the view. */
+
+    struct timeval lv_mouse_time;
+    int lv_scroll_accel;
+    int lv_scroll_velo;
+    int lv_mouse_y;
+    lv_mode_t lv_mouse_mode;
 };
 #endif

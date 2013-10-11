@@ -577,7 +577,9 @@ void external_log_format::annotate(const std::string &line,
                          pi.get_substr(pc[vd.vd_index]),
                          vd.vd_identifier,
                          scaling,
-                         vd.vd_column));
+                         vd.vd_column,
+                         pc[vd.vd_index]->c_begin,
+                         pc[vd.vd_index]->c_end));
 
         if (pc[vd.vd_index]->c_begin != -1 && vd.vd_identifier) {
             lr.lr_start = pc[vd.vd_index]->c_begin;
@@ -725,6 +727,7 @@ void external_log_format::get_subline(const logline &ll,
                         else if (lv_iter->lv_identifier) {
                             this->jlf_line_attrs[lr].insert(make_string_attr("style", vc.attrs_for_ident(str.c_str(), lr.length())));
                         }
+                        lv_iter->lv_origin = lr;
                         used_values[distance(this->jlf_line_values.begin(),
                                              lv_iter)] = true;
                     }
@@ -736,16 +739,18 @@ void external_log_format::get_subline(const logline &ll,
             }
             lines << endl;
             for (size_t lpc = 0; lpc < this->jlf_line_values.size(); lpc++) {
-                const logline_value &lv = this->jlf_line_values[lpc];
+                logline_value &lv = this->jlf_line_values[lpc];
 
                 if (used_values[lpc] ||
                     lv.lv_name == "body" ||
-                    lv.lv_name == this->elf_level_field)
+                    lv.lv_name == this->elf_level_field) {
                     continue;
+                }
 
                 const std::string str = lv.to_string();
                 size_t curr_pos = 0, nl_pos, line_len = -1;
 
+                lv.lv_origin.lr_start = lines.tellp();
                 do {
                     nl_pos = str.find('\n', curr_pos);
                     if (nl_pos != std::string::npos) {
@@ -760,6 +765,7 @@ void external_log_format::get_subline(const logline &ll,
                     line_len = -1;
                 } while (nl_pos != std::string::npos &&
                          nl_pos < str.size());
+                lv.lv_origin.lr_end = lines.tellp();
             }
             this->jlf_cached_line = lines.str();
 
@@ -867,8 +873,21 @@ void external_log_format::build(std::vector<std::string> &errors)
     for (std::map<string, value_def>::iterator iter = this->elf_value_defs.begin();
          iter != this->elf_value_defs.end();
          ++iter) {
+        std::vector<std::string>::iterator act_iter;
+
         if (iter->second.vd_column == -1) {
             iter->second.vd_column = this->elf_column_count++;
+        }
+
+        for (act_iter = iter->second.vd_action_list.begin();
+            act_iter != iter->second.vd_action_list.end();
+            ++act_iter) {
+            if (this->lf_action_defs.find(*act_iter) ==
+                this->lf_action_defs.end()) {
+                errors.push_back("error:" +
+                    this->elf_name + ":" + iter->first +
+                    ": cannot find action -- " + (*act_iter));
+            }
         }
     }
 

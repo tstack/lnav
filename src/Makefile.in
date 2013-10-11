@@ -142,12 +142,10 @@ lnav_OBJECTS = $(am_lnav_OBJECTS)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-lnav_DEPENDENCIES = help.o init-sql.o default-log-formats-json.o \
-	$(am__DEPENDENCIES_2)
+lnav_DEPENDENCIES = $(TEXT2C_FILES) $(am__DEPENDENCIES_2)
 am_lnav_test_OBJECTS = lnav.$(OBJEXT) test_override.$(OBJEXT)
 lnav_test_OBJECTS = $(am_lnav_test_OBJECTS)
-lnav_test_DEPENDENCIES = help.o init-sql.o default-log-formats-json.o \
-	$(am__DEPENDENCIES_2)
+lnav_test_DEPENDENCIES = $(TEXT2C_FILES) $(am__DEPENDENCIES_2)
 SCRIPTS = $(dist_noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -365,12 +363,14 @@ LDADD = \
 	-lcrypto
 
 dist_noinst_DATA = \
-	default-log-formats.json
+	default-log-formats.json \
+	dump-pid.sh
 
 noinst_HEADERS = \
 	ansi_scrubber.hh \
 	auto_fd.hh \
 	auto_mem.hh \
+	auto_pid.hh \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \
@@ -379,6 +379,7 @@ noinst_HEADERS = \
 	data_parser.hh \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
+	format-text-files.hh \
 	grapher.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
@@ -394,6 +395,7 @@ noinst_HEADERS = \
 	lnav_commands.hh \
 	lnav_config.hh \
 	lnav_util.hh \
+    log_data_helper.hh \
     log_data_table.hh \
 	log_format.hh \
 	log_format_loader.hh \
@@ -491,13 +493,30 @@ libdiag_a_SOURCES = \
 dist_noinst_SCRIPTS = \
 	init_sql.py
 
+TEXT2C_FILES = \
+	dump-pid-sh.o \
+	help.o \
+	init-sql.o \
+	default-log-formats-json.o
+
 lnav_SOURCES = lnav.cc $(HELP_SRC)
-lnav_LDADD = help.o init-sql.o default-log-formats-json.o $(LDADD)
+lnav_LDADD = \
+	$(TEXT2C_FILES) \
+	$(LDADD)
+
 lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
-lnav_test_LDADD = help.o init-sql.o default-log-formats-json.o $(LDADD)
+lnav_test_LDADD = \
+	$(TEXT2C_FILES) \
+	$(LDADD)
+
 bin2c_SOURCES = bin2c.c
 bin2c_LDADD = 
-DISTCLEANFILES = help.c init-sql.c default-log-formats-json.c
+DISTCLEANFILES = \
+	dump-pid-sh.c \
+	help.c \
+	init-sql.c \
+	default-log-formats-json.c
+
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -939,6 +958,9 @@ uninstall-am: uninstall-binPROGRAMS
 
 help.c: $(srcdir)/help.txt bin2c
 	./bin2c -z -c $(srcdir)/help.txt $@
+
+dump-pid-sh.c: $(srcdir)/dump-pid.sh bin2c
+	./bin2c -z -c $(srcdir)/dump-pid.sh $@
 
 default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
 	./bin2c -z -c $(srcdir)/default-log-formats.json $@

@@ -95,6 +95,8 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         unlink(piper_tmpname);
     }
 
+    fcntl(this->pp_fd, F_SETFD, FD_CLOEXEC);
+
     this->pp_child = fork();
     switch (this->pp_child) {
     case -1:
@@ -108,7 +110,10 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         off_t       off  = 0;
         char *      line;
         size_t      len;
+        int nullfd;
 
+        nullfd = open("/dev/null", O_RDWR);
+        dup2(nullfd, STDOUT_FILENO);
         fcntl(infd.get(), F_SETFL, O_NONBLOCK);
         lb.set_fd(infd);
         do {
@@ -168,6 +173,21 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
     default:
         break;
     }
+}
+
+bool piper_proc::has_exited()
+{
+    if (this->pp_child > 0) {
+        int rc, status;
+
+        rc = waitpid(this->pp_child, &status, WNOHANG);
+        if (rc == -1 || rc == 0) {
+            return false;
+        }
+        this->pp_child = -1;
+    }
+
+    return true;
 }
 
 piper_proc::~piper_proc()

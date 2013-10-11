@@ -243,6 +243,8 @@ const char *std_time_fmt[] = {
 
     "%m/%d/%y %H:%M:%S",
 
+    "%m%d %H:%M:%S",
+
     "+%s",
 
     NULL,

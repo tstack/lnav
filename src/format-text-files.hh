@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2013, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,12 +25,14 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file format-text-files.hh
  */
 
-#include "config.h"
+#ifndef __format_text_files_hh
+#define __format_text_files_hh
 
-#include "xterm_mouse.hh"
-
-const char *xterm_mouse::XT_TERMCAP          = "\033[?1000%?%p1%{1}%=%th%el%;";
-const char *xterm_mouse::XT_TERMCAP_TRACKING = "\033[?1002%?%p1%{1}%=%th%el%;";
-const char *xterm_mouse::XT_TERMCAP_SGR      = "\033[?1006%?%p1%{1}%=%th%el%;";
+extern "C" {
+extern const char dump_pid_sh[];
+}
+#endif

@@ -313,9 +313,6 @@ public:
 
         void     clear(void)
         {
-            if (this->ld_file != NULL) {
-                delete this->ld_file;
-            }
             this->ld_file = NULL;
         };
 

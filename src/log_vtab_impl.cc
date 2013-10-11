@@ -77,9 +77,10 @@ static string declare_table_statement(log_vtab_impl *vi)
 
         assert(iter->vc_name != NULL);
 
-        coldecl = sqlite3_mprintf("  %Q %s collate %Q,\n",
+        coldecl = sqlite3_mprintf("  %Q %s %s collate %Q,\n",
                                   iter->vc_name,
                                   type_to_string(iter->vc_type),
+                                  iter->vc_hidden ? "hidden" : "",
                                   (iter->vc_collator == NULL ||
                                    iter->vc_collator[0] == '\0') ?
                                   "BINARY" : iter->vc_collator);

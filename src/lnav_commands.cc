@@ -805,6 +805,10 @@ static string com_close(string cmdline, vector<string> &args)
             else {
                 fn = tss.current_file()->get_filename();
                 tss.current_file()->close();
+
+                if (tss.tss_files.size() == 1) {
+                    lnav_data.ld_view_stack.pop();
+                }
             }
         }
         else if (tc == &lnav_data.ld_views[LNV_LOG]) {
