@@ -54,6 +54,7 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 
 #include <readline/readline.h>
 
