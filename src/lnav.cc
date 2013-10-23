@@ -2736,12 +2736,7 @@ public:
         LB_MODE_DRAG
     };
 
-    lnav_behavior()
-        : lb_selection_start(-1),
-          lb_selection_last(-1),
-          lb_scrollbar_y(-1),
-          lb_scroll_repeat(0),
-          lb_mode(LB_MODE_NONE) {};
+    lnav_behavior() {};
 
     int scroll_polarity(int button)
     {
@@ -2789,17 +2784,6 @@ public:
     };
 
 private:
-    struct timeval lb_last_event_time;
-    vis_line_t     lb_selection_start;
-    vis_line_t     lb_selection_last;
-    bool lb_selection_cleared;
-
-    int lb_scrollbar_y;
-
-    struct timeval lb_last_scroll_time;
-    int            lb_scroll_repeat;
-
-    lb_mode_t lb_mode;
 };
 
 static void looper(void)

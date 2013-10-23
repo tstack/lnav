@@ -205,7 +205,6 @@ public:
     };
 
 private:
-    int ldt_column;
     const content_line_t     ldt_template_line;
     data_parser::schema_id_t ldt_schema_id;
     std::string ldt_current_line;

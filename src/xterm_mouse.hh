@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <curses.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <string>
 

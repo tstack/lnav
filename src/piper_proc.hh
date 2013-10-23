@@ -78,9 +78,6 @@ private:
     /** A file descriptor that refers to the temporary file. */
     int pp_fd;
 
-    /** Indicates whether timestamps should be added to the input. */
-    bool pp_timestamp;
-
     /** The child process' pid. */
     pid_t pp_child;
 };

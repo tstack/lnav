@@ -6642,6 +6642,51 @@ _ACEOF
 
 fi
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE in -lpcrecpp" >&5
+$as_echo_n "checking for _ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE in -lpcrecpp... " >&6; }
+if ${ac_cv_lib_pcrecpp__ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpcrecpp  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char _ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE ();
+int
+main ()
+{
+return _ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_pcrecpp__ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE=yes
+else
+  ac_cv_lib_pcrecpp__ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcrecpp__ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE" >&5
+$as_echo "$ac_cv_lib_pcrecpp__ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE" >&6; }
+if test "x$ac_cv_lib_pcrecpp__ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPCRECPP 1
+_ACEOF
+
+  LIBS="-lpcrecpp $LIBS"
+
+fi
+
   for ac_header in pcre.h pcre/pcre.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -6656,7 +6701,7 @@ fi
 done
 
   if test "$ac_cv_lib_pcre_pcre_study" = "yes" ; then
-     PCRE_LIBS="-lpcre"
+     PCRE_LIBS="-lpcre -lpcrecpp"
      { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib pcre" >&5
 $as_echo_n "checking lib pcre... " >&6; }
      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PCRE_LIBS" >&5
@@ -6716,7 +6761,7 @@ fi
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: .setting PCRE_LIBS -L$with_pcre/lib -lpcre" >&5
 $as_echo ".setting PCRE_LIBS -L$with_pcre/lib -lpcre" >&6; }
         PCRE_LDFLAGS="-L$with_pcre/lib"
-        PCRE_LIBS="-lpcre"
+        PCRE_LIBS="-lpcre -lpcrecpp"
         test -d "$with_pcre/include" && PCRE_CFLAGS="-I$with_pcre/include"
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib pcre" >&5
 $as_echo_n "checking lib pcre... " >&6; }
@@ -6897,8 +6942,8 @@ $as_echo_n "checking for SQLite3 library >= $sqlite3_version_req... " >&6; }
                 if test -f "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header" \
                     && test -r "$ac_sqlite3_path_tmp/include/$ac_sqlite3_header"; then
                     ac_sqlite3_path=$ac_sqlite3_path_tmp
-                    ac_sqlite3_ldflags="-I$ac_sqlite3_path_tmp/include"
-                    ac_sqlite3_cppflags="-L$ac_sqlite3_path_tmp/lib"
+                    ac_sqlite3_cppflags="-I$ac_sqlite3_path_tmp/include"
+                    ac_sqlite3_ldflags="-L$ac_sqlite3_path_tmp/lib"
                     break;
                 fi
             done

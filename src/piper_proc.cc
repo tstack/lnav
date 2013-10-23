@@ -67,7 +67,7 @@ static int write_timestamp(int fd, off_t woff)
 }
 
 piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
-    : pp_fd(-1), pp_timestamp(timestamp), pp_child(-1)
+    : pp_fd(-1), pp_child(-1)
 {
     assert(pipefd >= 0);
 

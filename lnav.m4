@@ -9,9 +9,10 @@ if test ".$with_pcre" = ".no" ; then
 else
   AC_MSG_RESULT([(testing)])
   AC_CHECK_LIB(pcre, pcre_study)
+  AC_CHECK_LIB(pcrecpp, _ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE)
   AC_CHECK_HEADERS(pcre.h pcre/pcre.h)
   if test "$ac_cv_lib_pcre_pcre_study" = "yes" ; then
-     PCRE_LIBS="-lpcre"
+     PCRE_LIBS="-lpcre -lpcrecpp"
      AC_MSG_CHECKING([lib pcre])
      AC_MSG_RESULT([$PCRE_LIBS])
      m4_ifval($1,$1)
@@ -24,7 +25,7 @@ else
      if test "$ac_cv_lib_pcre_pcre_compile" = "yes" ; then
         AC_MSG_RESULT(.setting PCRE_LIBS -L$with_pcre/lib -lpcre)
         PCRE_LDFLAGS="-L$with_pcre/lib"
-        PCRE_LIBS="-lpcre"
+        PCRE_LIBS="-lpcre -lpcrecpp"
         test -d "$with_pcre/include" && PCRE_CFLAGS="-I$with_pcre/include"
         AC_MSG_CHECKING([lib pcre])
         AC_MSG_RESULT([$PCRE_LIBS])
