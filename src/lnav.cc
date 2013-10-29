@@ -2213,18 +2213,26 @@ static void rl_callback(void *dummy, readline_curses *rc)
                 lnav_data.ld_views[LNV_DB].set_left(0);
 
                 if (dls.dls_rows.size() > 0) {
-                    char row_count[32];
 
-                    ensure_view(&lnav_data.ld_views[LNV_DB]);
+                    if (dls.dls_rows.size() == 1) {
+                        string row;
 
-                    snprintf(row_count, sizeof(row_count),
-                             ANSI_BOLD("%'d") " row(s) matched",
-                             (int)dls.dls_rows.size());
-                    rc->set_value(row_count);
-                    rc->set_alt_value(HELP_MSG_2(
-                                          y, Y,
-                                          "to move forward/backward through query results "
-                                          "in the log view"));
+                        hs.text_value_for_line(lnav_data.ld_views[LNV_DB], 1, row, true);
+                        rc->set_value("SQL Result: " + row);
+                    }
+                    else {
+                        char row_count[32];
+
+                        ensure_view(&lnav_data.ld_views[LNV_DB]);
+                        snprintf(row_count, sizeof(row_count),
+                           ANSI_BOLD("%'d") " row(s) matched",
+                           (int)dls.dls_rows.size());
+                        rc->set_value(row_count);
+                        rc->set_alt_value(HELP_MSG_2(
+                          y, Y,
+                          "to move forward/backward through query results "
+                          "in the log view"));
+                    }
                 }
                 else {
                     rc->set_value("No rows matched");
@@ -2786,6 +2794,32 @@ public:
 private:
 };
 
+static void handle_key(int ch)
+{
+    switch (ch) {
+    case CEOF:
+    case KEY_RESIZE:
+        break;
+    default:
+        switch (lnav_data.ld_mode) {
+        case LNM_PAGING:
+            handle_paging_key(ch);
+            break;
+
+        case LNM_COMMAND:
+        case LNM_SEARCH:
+        case LNM_CAPTURE:
+        case LNM_SQL:
+            handle_rl_key(ch);
+            break;
+
+        default:
+            assert(0);
+            break;
+        }
+    }
+}
+
 static void looper(void)
 {
     int fd;
@@ -3047,8 +3081,13 @@ static void looper(void)
 
                             if (strcmp("\x1b[<", escape_buffer) == 0) {
                                 lnav_data.ld_mouse.handle_mouse(ch);
-                                escape_index = 0;
                             }
+                            else {
+                                for (int lpc = 0; lpc < escape_index; lpc++) {
+                                    handle_key(escape_buffer[lpc]);
+                                }
+                            }
+                            escape_index = 0;
                             continue;
                         }
                         switch (ch) {
@@ -3067,22 +3106,7 @@ static void looper(void)
                             break;
 
                         default:
-                            switch (lnav_data.ld_mode) {
-                            case LNM_PAGING:
-                                handle_paging_key(ch);
-                                break;
-
-                            case LNM_COMMAND:
-                            case LNM_SEARCH:
-                            case LNM_CAPTURE:
-                            case LNM_SQL:
-                                handle_rl_key(ch);
-                                break;
-
-                            default:
-                                assert(0);
-                                break;
-                            }
+                            handle_key(ch);
                             break;
                         }
                     }

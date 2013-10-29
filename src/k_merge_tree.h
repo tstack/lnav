@@ -398,7 +398,13 @@ void kmerge_tree_c<T, owner_t, iterator_t, comparitor>::compare_nodes(kmerge_tre
 	}
 	
 	long				result;
-	if ( (node1_ptr->current_iterator != node1_ptr->end_iterator) && (node2_ptr->current_iterator != node2_ptr->end_iterator) )
+    if ( !node2_ptr->has_iterator ) {
+        result = -1;
+    }
+    else if ( !node1_ptr->has_iterator) {
+        result = 1;
+    }
+	else if ( (node1_ptr->current_iterator != node1_ptr->end_iterator) && (node2_ptr->current_iterator != node2_ptr->end_iterator) )
 	{
 		// no need to check for exact equality - we just want the lesser of the two
 		result = comparitor_mbr(*node1_ptr->current_iterator, *node2_ptr->current_iterator) ? -1 : 1;
