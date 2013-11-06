@@ -169,11 +169,11 @@ public:
         if (this->lv_word_wrap) {
             size_t row_count = this->lv_source->listview_rows(*this);
 
-            while ((height > 0) && (line >= 0) && (line < row_count)) {
+            while ((height > 0) && (line >= 0) && ((size_t)line < row_count)) {
                 size_t len = this->lv_source->listview_size_for_row(*this, line);
 
                 do {
-                    len -= std::min(width, len);
+                    len -= std::min((size_t)width, len);
                     --height;
                 } while (len > 0);
                 line += vis_line_t(dir);
