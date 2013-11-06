@@ -69,6 +69,10 @@ public:
         }
     };
 
+    size_t listview_size_for_row(const listview_curses &lv, vis_line_t row) {
+        return 100;
+    };
+
     bool attrline_next_token(const view_curses &vc,
                              int line,
                              struct line_range &lr,

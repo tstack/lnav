@@ -170,8 +170,6 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
 {
     content_line_t line(0);
 
-    size_t tab;
-
     assert(row >= 0);
     assert((size_t)row < this->lss_index.size());
 
@@ -188,10 +186,6 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
 
     this->lss_token_value =
         this->lss_token_file->read_line(this->lss_token_line);
-
-    while ((tab = this->lss_token_value.find('\t')) != string::npos) {
-        this->lss_token_value = this->lss_token_value.replace(tab, 1, 8, ' ');
-    }
 
     this->lss_token_date_end = 0;
     value_out = this->lss_token_value;

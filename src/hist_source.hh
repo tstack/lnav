@@ -148,6 +148,10 @@ public:
                              int row,
                              string_attrs_t &value_out);
 
+    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+        return 0;
+    };
+
     int value_for_row(vis_line_t row)
     {
         int grow   = row / (this->buckets_per_group() + 1);

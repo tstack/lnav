@@ -69,6 +69,8 @@ public:
                                      std::string &value_out,
                                      bool raw = false) = 0;
 
+    virtual size_t text_size_for_line(textview_curses &tc, int line, bool raw = false) = 0;
+
     /**
      * Inform the source that the given line has been marked/unmarked.  This
      * callback function can be used to translate between between visible line
@@ -349,6 +351,10 @@ public:
     void listview_value_for_row(const listview_curses &lv,
                                 vis_line_t line,
                                 attr_line_t &value_out);
+
+    size_t listview_size_for_row(const listview_curses &lv, vis_line_t row) {
+        return this->tc_sub_source->text_size_for_line(*this, row);
+    };
 
     std::string listview_source_name(const listview_curses &lv) {
         return this->tc_sub_source == NULL ? "" :

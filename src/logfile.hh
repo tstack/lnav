@@ -225,6 +225,20 @@ public:
         return retval;
     };
 
+    size_t line_length(iterator ll) {
+        iterator next_line = ll + 1;
+        size_t retval;
+
+        if (next_line == this->end()) {
+            retval = this->lf_index_size - ll->get_offset();
+        }
+        else {
+            retval = next_line->get_offset() - ll->get_offset() - 1;
+        }
+
+        return retval;
+    };
+
     void read_full_message(iterator ll, std::string &msg_out, int max_lines=50);
 
     /**

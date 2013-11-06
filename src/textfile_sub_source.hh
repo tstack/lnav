@@ -81,6 +81,16 @@ public:
         value_out[lr].insert(make_string_attr("file", this->current_file()));
     };
 
+    size_t text_size_for_line(textview_curses &tc, int line, bool raw) {
+        size_t retval = 0;
+
+        if (!this->tss_files.empty()) {
+            retval = this->current_file()->line_length(this->current_file()->begin() + line);
+        }
+
+        return retval;
+    };
+
     logfile *current_file(void) const
     {
         if (this->tss_files.empty()) {

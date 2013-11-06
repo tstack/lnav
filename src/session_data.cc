@@ -450,8 +450,9 @@ static void load_time_bookmarks(void)
                     continue;
                 }
 
-                if (part_name == NULL)
+                if (part_name == NULL) {
                     continue;
+                }
 
                 if (!dts.scan(log_time, NULL, &log_tm, log_tv)) {
                     continue;
@@ -530,7 +531,7 @@ static void load_time_bookmarks(void)
 
         lss.find(lf->get_filename().c_str(), base_content_line);
 
-        fprintf(stderr, "checking bookmarks for %s\n", lf->get_filename().c_str());
+        fprintf(stderr, "checking time offsets for %s\n", lf->get_filename().c_str());
 
         logfile::iterator line_iter = lf->begin();
 
@@ -687,7 +688,7 @@ static int read_last_search(yajlpp_parse_context *ypc, const unsigned char *str,
                      ypc->get_path_fragment(-2));
     view_index = view_name - lnav_view_strings;
 
-    if (view_index < LNV__MAX) {
+    if (view_index < LNV__MAX && !regex.empty()) {
         execute_search((lnav_view_t)view_index, regex);
         lnav_data.ld_views[view_index].set_follow_search(false);
     }
@@ -786,6 +787,7 @@ static void save_time_bookmarks(void)
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to open bookmark DB -- %s\n", db_path.c_str());
         return;
     }
 
@@ -813,7 +815,7 @@ static void save_time_bookmarks(void)
                            stmt.out(),
                            NULL) != SQLITE_OK) {
         fprintf(stderr,
-                "error: could not prepare bookmark replace statemnt -- %s\n",
+                "error: could not prepare bookmark delete statemnt -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1065,7 +1067,7 @@ static void save_time_bookmarks(void)
         }
 
         if (sqlite3_bind_int64(stmt.in(), 6, offset.tv_usec) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind offset_sec -- %s\n",
+            fprintf(stderr, "error: could not bind offset_usec -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }

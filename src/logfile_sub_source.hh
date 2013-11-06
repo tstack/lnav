@@ -130,6 +130,14 @@ public:
                              int row,
                              string_attrs_t &value_out);
 
+    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+        content_line_t line = this->lss_index[row];
+        logfile *lf = this->find(line);
+        logfile::iterator ll = lf->begin() + line;
+
+        return lf->line_length(ll) + (this->lss_flags & F_TIME_OFFSET ? 13 : 0);
+    };
+
     void text_mark(bookmark_type_t *bm, int line, bool added)
     {
         content_line_t cl = this->lss_index[line];

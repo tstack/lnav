@@ -86,9 +86,14 @@ public:
 	// if false is returned, the merge is complete
 	bool			get_top(owner_t *&owner, iterator_t& iterator)
 	{
-        owner = top_node_ptr_mbr->owner_ptr;
-		iterator = top_node_ptr_mbr->current_iterator;
-		return iterator != top_node_ptr_mbr->end_iterator;
+        if (top_node_ptr_mbr->has_iterator) {
+            owner = top_node_ptr_mbr->owner_ptr;
+            iterator = top_node_ptr_mbr->current_iterator;
+            return iterator != top_node_ptr_mbr->end_iterator;
+        }
+        else {
+            return false;
+        }
 	}
 	
 private:
@@ -422,6 +427,7 @@ void kmerge_tree_c<T, owner_t, iterator_t, comparitor>::compare_nodes(kmerge_tre
 	node_rec*	parent_ptr = node_ptr->parent_ptr;
 	
     parent_ptr->owner_ptr = winner_ptr->owner_ptr;
+    parent_ptr->has_iterator = winner_ptr->has_iterator;
 	parent_ptr->current_iterator = winner_ptr->current_iterator;
 	parent_ptr->end_iterator = winner_ptr->end_iterator;
 	parent_ptr->source_node_ptr = winner_ptr;

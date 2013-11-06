@@ -592,6 +592,36 @@ static string com_disable_filter(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_enable_word_wrap(string cmdline, vector<string> &args)
+{
+    string retval = "";
+
+    if (args.size() == 0) {
+
+    }
+    else {
+        lnav_data.ld_views[LNV_LOG].set_word_wrap(true);
+        lnav_data.ld_views[LNV_TEXT].set_word_wrap(true);
+    }
+
+    return retval;
+}
+
+static string com_disable_word_wrap(string cmdline, vector<string> &args)
+{
+    string retval = "";
+
+    if (args.size() == 0) {
+
+    }
+    else {
+        lnav_data.ld_views[LNV_LOG].set_word_wrap(false);
+        lnav_data.ld_views[LNV_TEXT].set_word_wrap(false);
+    }
+
+    return retval;
+}
+
 static std::vector<string> custom_logline_tables;
 
 static string com_create_logline_table(string cmdline, vector<string> &args)
@@ -656,14 +686,16 @@ static string com_session(string cmdline, vector<string> &args)
     string retval = "error: expecting a command to save to the session file";
 
     if (args.size() == 0) {}
-    else if (args.size() > 2) {
+    else if (args.size() >= 2) {
         /* XXX put these in a map */
         if (args[1] != "highlight" &&
+            args[1] != "enable-word-wrap" &&
+            args[1] != "disable-word-wrap" &&
             args[1] != "filter-in" &&
             args[1] != "filter-out" &&
             args[1] != "enable-filter" &&
             args[1] != "disable-filter") {
-            retval = "error: only the highlight and filter commands are "
+            retval = "error: only the highlight, filter, and word-wrap commands are "
                      "supported";
         }
         else if (getenv("HOME") == NULL) {
@@ -1130,6 +1162,8 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["write-csv-to"]         = com_save_to;
     cmd_map["enable-filter"]        = com_enable_filter;
     cmd_map["disable-filter"]       = com_disable_filter;
+    cmd_map["enable-word-wrap"]     = com_enable_word_wrap;
+    cmd_map["disable-word-wrap"]    = com_disable_word_wrap;
     cmd_map["create-logline-table"] = com_create_logline_table;
     cmd_map["delete-logline-table"] = com_delete_logline_table;
     cmd_map["open"]                 = com_open;

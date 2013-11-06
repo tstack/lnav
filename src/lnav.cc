@@ -529,10 +529,9 @@ void rebuild_indexes(bool force)
     logfile_sub_source &lss       = lnav_data.ld_log_source;
     textview_curses &   log_view  = lnav_data.ld_views[LNV_LOG];
     textview_curses &   text_view = lnav_data.ld_views[LNV_TEXT];
-    vis_line_t          old_bottom(0), height(0);
+    vis_line_t          old_bottom(0);
     content_line_t      top_content = content_line_t(-1);
 
-    unsigned long width;
     bool          scroll_down;
     size_t        old_count;
     time_t        old_time;
@@ -552,9 +551,8 @@ void rebuild_indexes(bool force)
         bool new_data = false;
         size_t new_count;
 
-        text_view.get_dimensions(height, width);
-        old_bottom  = text_view.get_top() + height;
-        scroll_down = (size_t)old_bottom > tss->text_line_count();
+        old_bottom  = text_view.get_top_for_last_row();
+        scroll_down = text_view.get_top() >= old_bottom;
 
         for (iter = tss->tss_files.begin();
              iter != tss->tss_files.end(); ) {
@@ -619,15 +617,14 @@ void rebuild_indexes(bool force)
         text_view.reload_data();
 
         new_count = tss->text_line_count();
-        if (scroll_down && new_count >= (size_t)old_bottom) {
-            text_view.set_top(vis_line_t(new_count - height + 1));
+        if (scroll_down && text_view.get_top_for_last_row() > text_view.get_top()) {
+            text_view.set_top(text_view.get_top_for_last_row());
         }
     }
 
     old_time = lnav_data.ld_top_time;
-    log_view.get_dimensions(height, width);
-    old_bottom  = log_view.get_top() + height;
-    scroll_down = (size_t)old_bottom > old_count;
+    old_bottom  = log_view.get_top_for_last_row();
+    scroll_down = log_view.get_top() >= old_bottom;
     if (force) {
         old_count = 0;
     }
@@ -638,8 +635,8 @@ void rebuild_indexes(bool force)
 
         log_view.reload_data();
 
-        if (scroll_down && new_count >= (size_t)old_bottom) {
-            log_view.set_top(vis_line_t(new_count - height + 1));
+        if (scroll_down && log_view.get_top_for_last_row() > log_view.get_top()) {
+            log_view.set_top(log_view.get_top_for_last_row());
         }
         else if (!scroll_down && force) {
             content_line_t new_top_content = content_line_t(-1);
@@ -658,6 +655,9 @@ void rebuild_indexes(bool force)
         start_line = force ? grep_line_t(0) : grep_line_t(-1);
 
         if (force) {
+            if (lnav_data.ld_search_child[LNV_LOG].get() != NULL) {
+                lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->invalidate();
+            }
             log_view.match_reset();
         }
 
@@ -705,6 +705,10 @@ public:
                              bool no_scrub)
     {
         value_out = this->tds_lines[row];
+    };
+
+    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+        return this->tds_lines[row].length();
     };
 
 private:
@@ -1981,7 +1985,7 @@ void execute_search(lnav_view_t view, const std::string &regex)
         }
         gc.reset();
 
-        fprintf(stderr, "start search for: %s\n", regex.c_str());
+        fprintf(stderr, "start search for: '%s'\n", regex.c_str());
 
         if (regex.empty()) {
             lnav_data.ld_bottom_source.grep_error("");

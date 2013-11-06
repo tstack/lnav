@@ -213,6 +213,8 @@ public:
     /** @return The attributes for the string. */
     string_attrs_t &get_attrs() { return this->al_attrs; };
 
+    size_t length() const { return this->al_string.length(); };
+
     void operator=(const std::string &rhs) { this->al_string = rhs; };
 
     /** Clear the string and the attributes for the string. */

@@ -189,6 +189,10 @@ public:
         }
     };
 
+    void invalidate() {
+        this->cleanup();
+    };
+
     /** @param gpd The sink to send results to. */
     void set_control(grep_proc_control *gpc)
     {

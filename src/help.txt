@@ -325,6 +325,9 @@ COMMANDS
                     Enable a inactive 'filter-in' or 'filter-out'
                     expression.
 
+  disable-word-wrap Disable word wrapping in the log and text file views.
+  enable-word-wrap  Enable word wrapping in the log and text file views.
+
   open <filename>[:<line>]
                     Open the given file within lnav and, if it is a
                     text file, switch to the text view and jump to
@@ -348,7 +351,7 @@ COMMANDS
 
   session <cmd>     Add the given command to the session file
                     (~/.lnav/session).  Any commands listed in the session file
-                    are executed on startup.  Only the highlight and
+                    are executed on startup.  Only the highlight, word-wrap, and
                     filter-related commands can be added to the session file.
 
   create-logline-table <table-name>

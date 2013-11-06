@@ -66,6 +66,9 @@ public:
                                         vis_line_t row,
                                         attr_line_t &value_out) = 0;
 
+    virtual size_t listview_size_for_row(const listview_curses &lv,
+        vis_line_t row) = 0;
+
     virtual std::string listview_source_name(const listview_curses &lv) {
         return "";
     };
@@ -149,6 +152,49 @@ public:
     void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
     bool get_show_scrollbar() const { return this->lv_show_scrollbar; };
 
+    void set_word_wrap(bool ww) { this->lv_word_wrap = ww; };
+    bool get_word_wrap() const { return this->lv_word_wrap; };
+
+    enum row_direction_t {
+        RD_UP = -1,
+        RD_DOWN = 1,
+    };
+
+    vis_line_t rows_available(vis_line_t line, row_direction_t dir) {
+        unsigned long width;
+        vis_line_t height;
+        vis_line_t retval(0);
+
+        this->get_dimensions(height, width);
+        if (this->lv_word_wrap) {
+            size_t row_count = this->lv_source->listview_rows(*this);
+
+            while ((height > 0) && (line >= 0) && (line < row_count)) {
+                size_t len = this->lv_source->listview_size_for_row(*this, line);
+
+                do {
+                    len -= std::min(width, len);
+                    --height;
+                } while (len > 0);
+                line += vis_line_t(dir);
+                ++retval;
+            }
+        }
+        else {
+            switch (dir) {
+            case RD_UP:
+                retval = std::min(height, line + vis_line_t(1));
+                break;
+            case RD_DOWN:
+                retval = std::min(height,
+                    vis_line_t(this->lv_source->listview_rows(*this) - line));
+                break;
+            }
+        }
+
+        return retval;
+    };
+
     /** @param win The curses window this view is attached to. */
     void set_window(WINDOW *win) { this->lv_window = win; };
 
@@ -192,12 +238,24 @@ public:
     /** @return The line number that is displayed at the bottom. */
     vis_line_t get_bottom()
     {
-        vis_line_t    retval, height;
-        unsigned long width;
+        vis_line_t retval = this->lv_top;
 
-        this->get_dimensions(height, width);
-        retval = std::min(this->lv_top + height - vis_line_t(1),
-                          vis_line_t(this->get_inner_height() - 1));
+        retval += vis_line_t(this->rows_available(retval, RD_DOWN) - 1);
+
+        return retval;
+    };
+
+    vis_line_t get_top_for_last_row() {
+        vis_line_t retval(0);
+
+        if (this->get_inner_height() > 0) {
+            vis_line_t last_line(this->get_inner_height() - 1);
+
+            retval = last_line - vis_line_t(this->rows_available(last_line, RD_UP) - 1);
+            if ((retval + 1) < this->get_inner_height()) {
+                ++retval;
+            }
+        }
 
         return retval;
     };
@@ -259,7 +317,10 @@ public:
      */
     unsigned int shift_left(int offset)
     {
-        if (offset < 0 && this->lv_left < (unsigned int)-offset) {
+        if (this->lv_word_wrap) {
+            alerter::singleton().chime();
+        }
+        else if (offset < 0 && this->lv_left < (unsigned int)-offset) {
             this->set_left(0);
         }
         else {
@@ -353,6 +414,7 @@ protected:
                                      *  is needed.
                                      */
     bool lv_show_scrollbar;         /*< Draw the scrollbar in the view. */
+    bool lv_word_wrap;
 
     struct timeval lv_mouse_time;
     int lv_scroll_accel;
