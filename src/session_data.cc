@@ -716,6 +716,25 @@ static int read_top_line(yajlpp_parse_context *ypc, long long value)
     return 1;
 }
 
+static int read_word_wrap(yajlpp_parse_context *ypc, int value)
+{
+    const char **         view_name;
+    int view_index;
+
+    view_name = find(lnav_view_strings,
+                     lnav_view_strings + LNV__MAX,
+                     ypc->get_path_fragment(-2));
+    view_index = view_name - lnav_view_strings;
+    if (view_index < LNV__MAX) {
+        textview_curses &tc = lnav_data.ld_views[view_index];
+
+        fprintf(stderr, "set word wrap %d\n", value);
+        tc.set_word_wrap(value);
+    }
+
+    return 1;
+}
+
 static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     std::string cmdline = std::string((const char *)str, len);
@@ -726,11 +745,12 @@ static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, si
 }
 
 static struct json_path_handler view_info_handlers[] = {
-    json_path_handler("/save-time",              read_save_time),
-    json_path_handler("/files#",                 read_files),
-    json_path_handler("/views/([^.]+)/top_line", read_top_line),
-    json_path_handler("/views/([^.]+)/search",   read_last_search),
-    json_path_handler("/commands#",              read_commands),
+    json_path_handler("/save-time",               read_save_time),
+    json_path_handler("/files#",                  read_files),
+    json_path_handler("/views/([^/]+)/top_line",  read_top_line),
+    json_path_handler("/views/([^/]+)/search",    read_last_search),
+    json_path_handler("/views/([^/]+)/word_wrap", read_word_wrap),
+    json_path_handler("/commands#",               read_commands),
 
     json_path_handler()
 };
@@ -1129,7 +1149,7 @@ void save_session(void)
             yajlpp_map root_map(handle);
 
             root_map.gen("save-time");
-            root_map.gen(time(NULL));
+            root_map.gen((long long)time(NULL));
 
             root_map.gen("files");
 
@@ -1159,8 +1179,8 @@ void save_session(void)
                     view_map.gen("top_line");
 
                     tc.get_dimensions(height, width);
-                    if ((tc.get_top() + height) > tc.get_inner_height()) {
-                        view_map.gen(-1);
+                    if (tc.get_top() >= tc.get_top_for_last_row()) {
+                        view_map.gen(-1LL);
                     }
                     else{
                         view_map.gen((long long)tc.get_top());
@@ -1168,6 +1188,9 @@ void save_session(void)
 
                     view_map.gen("search");
                     view_map.gen(lnav_data.ld_last_search[lpc]);
+
+                    view_map.gen("word_wrap");
+                    view_map.gen(tc.get_word_wrap());
                 }
             }
 

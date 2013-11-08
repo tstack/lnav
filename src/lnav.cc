@@ -911,7 +911,7 @@ void ensure_view(textview_curses *expected_tc)
     }
 }
 
-static void moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
+static bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
                                vis_line_t),
                            bookmark_type_t *bt,
                            vis_line_t top)
@@ -925,7 +925,7 @@ static void moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
 
         if (diff > 1) {
             tc->set_top(top);
-            return;
+            return true;
         }
         else if (diff < -1) {
             last_top = top;
@@ -935,12 +935,14 @@ static void moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
                 last_top = top;
             }
             tc->set_top(last_top);
-            return;
+            return true;
         }
         last_top = top;
     }
 
     flash();
+
+    return false;
 }
 
 static void check_for_clipboard(FILE **pfile, const char *execstr)
@@ -1823,6 +1825,11 @@ static void handle_paging_key(int ch)
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
                                                 r, R,
                                                 "to restore the next/previous session"));
+        break;
+
+    case KEY_CTRL_W:
+        execute_command(lnav_data.ld_views[LNV_LOG].get_word_wrap() ?
+            "disable-word-wrap" : "enable-word-wrap");
         break;
 
     default:
@@ -2923,18 +2930,6 @@ static void looper(void)
         sb.push_back(&lnav_data.ld_bottom_source.line_number_wire);
         sb.push_back(&lnav_data.ld_bottom_source.percent_wire);
         sb.push_back(&lnav_data.ld_bottom_source.marks_wire);
-
-        {
-            vis_line_t top(0), height(0);
-
-            unsigned long width;
-
-            tc->get_dimensions(height, width);
-            top = vis_line_t(tc->get_inner_height()) - height + vis_line_t(1);
-            if (top > 0) {
-                tc->set_top(top);
-            }
-        }
 
         {
             hist_source &hs = lnav_data.ld_hist_source;

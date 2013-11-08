@@ -601,7 +601,9 @@ static string com_enable_word_wrap(string cmdline, vector<string> &args)
     }
     else {
         lnav_data.ld_views[LNV_LOG].set_word_wrap(true);
+        lnav_data.ld_views[LNV_LOG].set_needs_update();
         lnav_data.ld_views[LNV_TEXT].set_word_wrap(true);
+        lnav_data.ld_views[LNV_TEXT].set_needs_update();
     }
 
     return retval;
@@ -616,7 +618,9 @@ static string com_disable_word_wrap(string cmdline, vector<string> &args)
     }
     else {
         lnav_data.ld_views[LNV_LOG].set_word_wrap(false);
+        lnav_data.ld_views[LNV_LOG].set_needs_update();
         lnav_data.ld_views[LNV_TEXT].set_word_wrap(false);
+        lnav_data.ld_views[LNV_TEXT].set_needs_update();
     }
 
     return retval;

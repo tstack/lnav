@@ -159,7 +159,7 @@ void listview_curses::do_update(void)
         attr_line_t       overlay_line;
         vis_line_t        overlay_height(0);
         struct line_range lr;
-        unsigned long     width;
+        unsigned long     width, wrap_width;
         size_t            row_count;
 
         if (this->lv_overlay_source != NULL) {
@@ -168,13 +168,14 @@ void listview_curses::do_update(void)
         }
 
         this->get_dimensions(height, width);
+        wrap_width = width - (this->lv_word_wrap ? 1 : 0);
 
         row_count = this->get_inner_height();
         row   = this->lv_top;
         bottom = y + height;
         while (y < bottom) {
             lr.lr_start = this->lv_left;
-            lr.lr_end   = this->lv_left + width;
+            lr.lr_end   = this->lv_left + wrap_width;
             if (this->lv_overlay_source != NULL &&
                 this->lv_overlay_source->list_value_for_overlay(
                     *this,
@@ -190,8 +191,12 @@ void listview_curses::do_update(void)
                 this->lv_source->listview_value_for_row(*this, row, al);
                 do {
                     this->mvwattrline(this->lv_window, y, 0, al, lr);
-                    lr.lr_start += width;
-                    lr.lr_end += width;
+                    if (this->lv_word_wrap) {
+                        wmove(this->lv_window, y, wrap_width);
+                        wclrtoeol(this->lv_window);
+                    }
+                    lr.lr_start += wrap_width;
+                    lr.lr_end += wrap_width;
                     ++y;
                 } while (this->lv_word_wrap && y < bottom && lr.lr_start < al.length());
                 ++row;

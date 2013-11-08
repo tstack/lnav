@@ -257,6 +257,8 @@ through the file.
                     session state (filters, highlights) and then reset the
                     state to the factory default.
 
+  CTRL-W            Toggle word-wrapping.
+
   r/R               Restore the next/previous session.  The current session is
                     saved and then the new state is restored.
 

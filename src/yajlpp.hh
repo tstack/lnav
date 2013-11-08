@@ -229,9 +229,19 @@ public:
         yajl_gen_string(this->yg_handle, str);
     };
 
+    void operator()(const char *str)
+    {
+        yajl_gen_string(this->yg_handle, (const unsigned char *)str, strlen(str));
+    };
+
     void operator()(long long value)
     {
         yajl_gen_integer(this->yg_handle, value);
+    };
+
+    void operator()(bool value)
+    {
+        yajl_gen_bool(this->yg_handle, value);
     };
 
 private:
@@ -242,16 +252,6 @@ class yajlpp_container_base {
 public:
     yajlpp_container_base(yajl_gen handle)
         : gen(handle), ycb_handle(handle) {};
-
-    void operator()(const std::string &str)
-    {
-        yajl_gen_string(this->ycb_handle, str);
-    };
-
-    void operator()(long long value)
-    {
-        yajl_gen_integer(this->ycb_handle, value);
-    };
 
     yajlpp_generator gen;
 

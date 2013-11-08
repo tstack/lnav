@@ -152,7 +152,14 @@ public:
     void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
     bool get_show_scrollbar() const { return this->lv_show_scrollbar; };
 
-    void set_word_wrap(bool ww) { this->lv_word_wrap = ww; };
+    void set_word_wrap(bool ww) {
+        bool scroll_down = this->lv_top >= this->get_top_for_last_row();
+
+        this->lv_word_wrap = ww;
+        if (ww && scroll_down && this->lv_top < this->get_top_for_last_row()) {
+            this->lv_top = this->get_top_for_last_row();
+        }
+    };
     bool get_word_wrap() const { return this->lv_word_wrap; };
 
     enum row_direction_t {
