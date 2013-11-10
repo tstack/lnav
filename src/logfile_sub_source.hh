@@ -110,9 +110,15 @@ public:
         return retval;
     };
 
-    void toggle_scrub(void) { this->lss_flags ^= F_SCRUB; };
+    void toggle_scrub(void) { 
+        this->lss_flags ^= F_SCRUB;
+        this->clear_line_size_cache();
+    };
 
-    void toggle_time_offset(void) { this->lss_flags ^= F_TIME_OFFSET; };
+    void toggle_time_offset(void) {
+        this->lss_flags ^= F_TIME_OFFSET;
+        this->clear_line_size_cache();
+    };
 
     size_t text_line_count()
     {
@@ -131,11 +137,16 @@ public:
                              string_attrs_t &value_out);
 
     size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
-        content_line_t line = this->lss_index[row];
-        logfile *lf = this->find(line);
-        logfile::iterator ll = lf->begin() + line;
+        size_t index = row % LINE_SIZE_CACHE_SIZE;
 
-        return lf->line_length(ll) + (this->lss_flags & F_TIME_OFFSET ? 13 : 0);
+        if (this->lss_line_size_cache[index].first != row) {
+            std::string value;
+
+            this->text_value_for_line(tc, row, value, raw);
+            this->lss_line_size_cache[index].second = value.size();
+            this->lss_line_size_cache[index].first = row;
+        }
+        return this->lss_line_size_cache[index].second;
     };
 
     void text_mark(bookmark_type_t *bm, int line, bool added)
@@ -354,6 +365,8 @@ public:
     static const size_t MAX_FILES          = INT_MAX / MAX_LINES_PER_FILE;
 
 private:
+    static const size_t LINE_SIZE_CACHE_SIZE = 512;
+
     enum {
         B_SCRUB,
         B_TIME_OFFSET,
@@ -398,6 +411,10 @@ private:
         logfile *lde_file;
     };
 
+    void clear_line_size_cache(void) {
+        memset(this->lss_line_size_cache, 0, sizeof(this->lss_line_size_cache));
+    };
+
     unsigned long             lss_flags;
     std::vector<logfile_data> lss_files;
 
@@ -416,5 +433,6 @@ private:
     int               lss_token_offset;
     int               lss_token_date_end;
     logfile::iterator lss_token_line;
+    std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];
 };
 #endif

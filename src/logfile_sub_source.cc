@@ -121,7 +121,9 @@ logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
       lss_filter_generation(1),
       lss_filtered_count(0)
-{}
+{
+    this->clear_line_size_cache();
+}
 
 logfile_sub_source::~logfile_sub_source()
 { }
