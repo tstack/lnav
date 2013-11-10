@@ -119,6 +119,8 @@ public:
 
 class text_delegate {
 public:
+    virtual ~text_delegate() { };
+    
     virtual void text_overlay(textview_curses &tc) { };
 
     virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me) {

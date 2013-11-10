@@ -132,7 +132,7 @@ bool listview_curses::handle_key(int ch)
         {
             double tenth = ((double)this->get_inner_height()) / 10.0;
 
-            this->shift_top(vis_line_t(tenth));
+            this->shift_top(vis_line_t((int)tenth));
         }
         break;
 
@@ -140,7 +140,7 @@ bool listview_curses::handle_key(int ch)
         {
             double tenth = ((double)this->get_inner_height()) / 10.0;
 
-            this->shift_top(vis_line_t(-tenth));
+            this->shift_top(vis_line_t((int)-tenth));
         }
         break;
 
@@ -185,7 +185,7 @@ void listview_curses::do_update(void)
                 overlay_line.clear();
                 ++y;
             }
-            else if (row < row_count) {
+            else if (row < (int)row_count) {
                 attr_line_t al;
 
                 this->lv_source->listview_value_for_row(*this, row, al);
@@ -198,7 +198,7 @@ void listview_curses::do_update(void)
                     lr.lr_start += wrap_width;
                     lr.lr_end += wrap_width;
                     ++y;
-                } while (this->lv_word_wrap && y < bottom && lr.lr_start < al.length());
+                } while (this->lv_word_wrap && y < bottom && lr.lr_start < (int)al.length());
                 ++row;
             }
             else {

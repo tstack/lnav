@@ -1,4 +1,11 @@
 
+lnav v0.6.2:
+     Features:
+     * Word-wrap support.
+
+     Fixes:
+     * Fix some OS X Mavericks build/runtime issues.
+
 lnav v0.6.1:
      Features:
      * Support for JSON-encoded log files.

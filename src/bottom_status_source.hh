@@ -232,7 +232,7 @@ public:
             sf.clear();
         }
         else {
-            int pct = ((double)off / (double)total) * 100.0;
+            int pct = (int)(((double)off / (double)total) * 100.0);
 
             if (this->bss_load_percent != pct) {
                 this->bss_load_percent = pct;
