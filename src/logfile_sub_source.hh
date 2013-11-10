@@ -413,6 +413,7 @@ private:
 
     void clear_line_size_cache(void) {
         memset(this->lss_line_size_cache, 0, sizeof(this->lss_line_size_cache));
+        this->lss_line_size_cache[0].first = -1;
     };
 
     unsigned long             lss_flags;

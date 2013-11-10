@@ -176,6 +176,7 @@ public:
         if (this->lv_word_wrap) {
             size_t row_count = this->lv_source->listview_rows(*this);
 
+            width -= 1;
             while ((height > 0) && (line >= 0) && ((size_t)line < row_count)) {
                 size_t len = this->lv_source->listview_size_for_row(*this, line);
 
@@ -184,7 +185,9 @@ public:
                     --height;
                 } while (len > 0);
                 line += vis_line_t(dir);
-                ++retval;
+                if (height >= 0) {
+                    ++retval;
+                }
             }
         }
         else {
