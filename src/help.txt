@@ -102,8 +102,8 @@ through the file.
   q                 Leave the current view or quit the program when in
                     the log file view.
 
-  home              Move to the top of the file.
-  end               Move to the end of the file.  If the view is already
+  g/home            Move to the top of the file.
+  G/end             Move to the end of the file.  If the view is already
                     at the end, it will move to the last line.
   space/pgdn        Move down a page.
   b/bs/pgup         Move up a page.

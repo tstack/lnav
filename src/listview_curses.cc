@@ -111,10 +111,12 @@ bool listview_curses::handle_key(int ch)
         this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - vis_line_t(1));
         break;
 
+    case 'g':
     case KEY_HOME:
         this->set_top(vis_line_t(0));
         break;
 
+    case 'G':
     case KEY_END: {
             vis_line_t last_line(this->get_inner_height() - 1);
             vis_line_t tail_bottom(this->get_top_for_last_row());

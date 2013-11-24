@@ -1643,7 +1643,7 @@ static void handle_paging_key(int ch)
     }
     break;
 
-    case 'g':
+    case KEY_CTRL_G:
         toggle_view(&lnav_data.ld_views[LNV_GRAPH]);
         break;
 
