@@ -11,7 +11,7 @@
                 "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+"
             },
             "std" : {
-                "pattern" : "^(?<c_ip>[\\w\\.:\\-]+) [\\w\\.\\-]+ (?<cs_username>[\\w\\.\\-]+) \\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?.*"
+                "pattern" : "^(?<c_ip>[\\w\\.:\\-]+) [\\w\\.\\-]+ (?<cs_username>\\S+) \\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?.*"
             }
         },
         "level-field": "sc_status",

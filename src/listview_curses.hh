@@ -159,6 +159,10 @@ public:
         if (ww && scroll_down && this->lv_top < this->get_top_for_last_row()) {
             this->lv_top = this->get_top_for_last_row();
         }
+        if (ww) {
+            this->lv_left = 0;
+        }
+        this->set_needs_update();
     };
     bool get_word_wrap() const { return this->lv_word_wrap; };
 
