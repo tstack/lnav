@@ -305,7 +305,7 @@ throw (error)
         retval = true;
     }
     else if (this->lb_fd != -1) {
-        int rc;
+        ssize_t rc;
 
         /* Make sure there is enough space, then */
         this->ensure_available(start, max_length);
@@ -386,6 +386,12 @@ throw (error)
                       &this->lb_buffer[this->lb_buffer_size],
                       this->lb_buffer_max - this->lb_buffer_size);
         }
+        // XXX For some reason, cygwin is giving us a bogus return value when
+        // up to the end of the file.
+        if (rc > (this->lb_buffer_max - this->lb_buffer_size)) {
+            rc = -1;
+            errno = ENODATA;
+        }
         switch (rc) {
         case 0:
             this->lb_file_size = this->lb_file_offset + this->lb_buffer_size;
@@ -404,7 +410,7 @@ throw (error)
             }
             break;
 
-        case -1:
+        case (ssize_t)-1:
             switch (errno) {
 #ifdef ENODATA
             /* Cygwin seems to return this when pread reaches the end of the */

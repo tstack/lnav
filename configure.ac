@@ -72,6 +72,8 @@ fi
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(size_t)
 
+AC_STRUCT_TIMEZONE
+
 AC_SEARCH_LIBS(openpty, util)
 AC_SEARCH_LIBS(gzseek, z, [], [AC_MSG_ERROR([libz required to build])])
 AC_SEARCH_LIBS(BZ2_bzopen, bz2)

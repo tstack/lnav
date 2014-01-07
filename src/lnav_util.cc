@@ -196,9 +196,11 @@ time_t tm2sec(const struct tm *t)
         return BAD_DATE;
     }                          /* must have overflowed */
     else {
+#ifdef HAVE_STRUCT_TM_TM_ZONE
         if (t->tm_zone) {
             days -= t->tm_gmtoff;
         }
+#endif
         return days;
     }                          /* must be a valid time */
 }
@@ -276,7 +278,9 @@ const char *date_time_scanner::scan(const char *time_dest,
 
                 if (this->dts_local_time) {
                     localtime_r(&gmt, tm_out);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
                     tm_out->tm_zone = NULL;
+#endif
                     tm_out->tm_isdst = 0;
                     gmt = tm2sec(tm_out);
                 }
@@ -315,7 +319,9 @@ const char *date_time_scanner::scan(const char *time_dest,
                 time_t gmt = tm2sec(tm_out);
 
                 localtime_r(&gmt, tm_out);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
                 tm_out->tm_zone = NULL;
+#endif
                 tm_out->tm_isdst = 0;
             }
             tv_out.tv_sec = tm2sec(tm_out);

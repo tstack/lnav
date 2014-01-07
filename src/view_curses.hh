@@ -38,6 +38,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <limits.h>
+#include <sys/time.h>
 
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
