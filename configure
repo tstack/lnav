@@ -6015,7 +6015,7 @@ if test "$ac_res" != no; then :
 fi
 
 
-for ac_header in pty.h util.h zlib.h bzlib.h libutil.h
+for ac_header in pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"

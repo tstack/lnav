@@ -36,7 +36,9 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#ifdef HAVE_SYS_TTYDEFAULTS_H
 #include <sys/ttydefaults.h>
+#endif
 
 #include <algorithm>
 
