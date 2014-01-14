@@ -279,14 +279,14 @@ void view_colors::init_roles(void)
             this->vc_role_colors[lpc] | A_REVERSE;
     }
 
-    static short basic_hl_pairs[HL_BASIC_COLOR_COUNT] = {
+    static int basic_hl_pairs[HL_BASIC_COLOR_COUNT] = {
         ansi_color_pair(COLOR_BLUE, COLOR_BLACK),
         ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
         ansi_color_pair(COLOR_GREEN, COLOR_BLACK),
         ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK),
     };
 
-    static short basic_rev_hl_pairs[HL_BASIC_COLOR_COUNT] = {
+    static int basic_rev_hl_pairs[HL_BASIC_COLOR_COUNT] = {
         ansi_color_pair(COLOR_BLUE, COLOR_WHITE),
         ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
         ansi_color_pair(COLOR_GREEN, COLOR_WHITE),

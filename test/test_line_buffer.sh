@@ -1,19 +1,19 @@
 #! /bin/bash
 
-run_test ./drive_line_buffer ${top_srcdir}/src/line_buffer.hh
+run_test ./drive_line_buffer "${top_srcdir}/src/line_buffer.hh"
 
 check_output "Line buffer output doesn't match input?" < \
-    ${top_srcdir}/src/line_buffer.hh
+    "${top_srcdir}/src/line_buffer.hh"
 
 run_test ./drive_line_buffer < ${top_srcdir}/src/line_buffer.hh
 
 check_output "Line buffer output doesn't match input from pipe?" < \
-    ${top_srcdir}/src/line_buffer.hh
+    "${top_srcdir}/src/line_buffer.hh"
 
-run_test ./drive_line_buffer -d " " ${top_srcdir}/src/line_buffer.hh
+run_test ./drive_line_buffer -d " " "${top_srcdir}/src/line_buffer.hh"
 
 check_output "Line buffer with delim output doesn't match input?" < \
-    ${top_srcdir}/src/line_buffer.hh
+    "${top_srcdir}/src/line_buffer.hh"
 
 cat > lb.dat <<EOF
 1
@@ -32,7 +32,7 @@ check_output "Seeking in the line buffer doesn't work?" <<EOF
 5
 EOF
 
-cat ${top_srcdir}/src/*.hh ${top_srcdir}/src/*.cc > lb-2.dat
+cat "${top_srcdir}/src/"*.hh "${top_srcdir}/src/"*.cc > lb-2.dat
 grep -b '$' lb-2.dat | cut -f 1 -d : > lb.index
 line_count=`wc -l lb-2.dat`
 

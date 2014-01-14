@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 top_srcdir="@abssrcdir@"
 export top_srcdir

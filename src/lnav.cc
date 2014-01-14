@@ -549,7 +549,6 @@ void rebuild_indexes(bool force)
         logfile *front_file = NULL;
         int front_top = -1;
         bool new_data = false;
-        size_t new_count;
 
         old_bottom  = text_view.get_top_for_last_row();
         scroll_down = text_view.get_top() >= old_bottom;
@@ -616,7 +615,6 @@ void rebuild_indexes(bool force)
         }
         text_view.reload_data();
 
-        new_count = tss->text_line_count();
         if (scroll_down && text_view.get_top_for_last_row() > text_view.get_top()) {
             text_view.set_top(text_view.get_top_for_last_row());
         }
@@ -2847,7 +2845,6 @@ static void looper(void)
         readline_context search_context("search");
         readline_context index_context("capture");
         readline_context sql_context("sql", NULL, false);
-        textview_curses *tc;
         readline_curses  rlc;
         int lpc;
 
@@ -2903,8 +2900,6 @@ static void looper(void)
 
         lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
         update_view_name();
-
-        tc = lnav_data.ld_view_stack.top();
 
         for (lpc = 0; lpc < LNV__MAX; lpc++) {
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
@@ -3082,7 +3077,7 @@ static void looper(void)
                                 lnav_data.ld_mouse.handle_mouse(ch);
                             }
                             else {
-                                for (int lpc = 0; lpc < escape_index; lpc++) {
+                                for (size_t lpc = 0; lpc < escape_index; lpc++) {
                                     handle_key(escape_buffer[lpc]);
                                 }
                             }
@@ -3782,10 +3777,8 @@ int main(int argc, char *argv[])
             if (file_iter != lnav_data.ld_files.end()) {
                 logfile::iterator line_iter;
                 logfile *lf = *file_iter;
-                int offset;
                 string str;
 
-                offset = std::max((int)0, (int)lf->size() - 200);
                 for (line_iter = lf->begin();
                      line_iter != lf->end();
                      ++line_iter) {
