@@ -3457,7 +3457,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
     hm["$ip"] = textview_curses::
                 highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
     hm["$comment"] = textview_curses::highlighter(xpcre_compile(
-        "(?<!:)//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"), false, view_colors::VCR_COMMENT);
+        "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"), false, view_colors::VCR_COMMENT);
     hm["$javadoc"] = textview_curses::highlighter(xpcre_compile(
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)"));
     hm["$var"] = textview_curses::highlighter(xpcre_compile(

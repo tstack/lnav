@@ -313,7 +313,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
             prev_time      += prev_ll->get_millis();
             curr_line_time  = ll->get_time() * 1000ULL;
             curr_line_time += ll->get_millis();
-            assert(curr_line_time >= prev_time);
+            // assert(curr_line_time >= prev_time);
             sqlite3_result_int64(ctx, curr_line_time - prev_time);
         }
         break;

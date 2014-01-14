@@ -125,8 +125,8 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
         int off, hcount = 0;
         size_t re_end;
 
-        if (body.lr_end > 2048)
-            re_end = 2048;
+        if (body.lr_end > 8192)
+            re_end = 8192;
         else
             re_end = body.lr_end;
 

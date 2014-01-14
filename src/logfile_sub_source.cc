@@ -489,6 +489,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 
             if (!(lf_iter->get_level() & logline::LEVEL_CONTINUED)) {
                 if (action_for_prev_line == logfile_filter::INCLUDE) {
+                    // Append all of the lines from the previous message.
                     while (last_owner->ld_indexing.ld_start <=
                            last_owner->ld_indexing.ld_last) {
                         this->lss_index.push_back(last_owner->ld_indexing.ld_start);
@@ -499,6 +500,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                     this->lss_filtered_count += 1;
                 }
                 ld->ld_indexing.ld_start = con_line;
+                action_for_prev_line = logfile_filter::MAYBE;
             }
 
             if (obs != NULL) {
@@ -509,8 +511,10 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
             }
 
             ld->ld_indexing.ld_last = con_line;
-            action_for_prev_line = ld->ld_file->check_filter(
-                lf_iter, this->lss_filter_generation, this->lss_filters);
+            if (action_for_prev_line != logfile_filter::INCLUDE) {
+                action_for_prev_line = ld->ld_file->check_filter(
+                    lf_iter, this->lss_filter_generation, this->lss_filters);
+            }
 
             last_owner = ld;
 
