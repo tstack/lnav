@@ -488,16 +488,18 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                                     line_index);
 
             if (!(lf_iter->get_level() & logline::LEVEL_CONTINUED)) {
-                if (action_for_prev_line == logfile_filter::INCLUDE) {
-                    // Append all of the lines from the previous message.
-                    while (last_owner->ld_indexing.ld_start <=
+                if (last_owner != NULL) {
+                    if (action_for_prev_line != logfile_filter::EXCLUDE) {
+                        // Append all of the lines from the previous message.
+                        while (last_owner->ld_indexing.ld_start <=
                            last_owner->ld_indexing.ld_last) {
-                        this->lss_index.push_back(last_owner->ld_indexing.ld_start);
-                        ++last_owner->ld_indexing.ld_start;
+                            this->lss_index.push_back(last_owner->ld_indexing.ld_start);
+                            ++last_owner->ld_indexing.ld_start;
+                        }
                     }
-                }
-                else if (action_for_prev_line == logfile_filter::EXCLUDE) {
-                    this->lss_filtered_count += 1;
+                    else {
+                        this->lss_filtered_count += 1;
+                    }
                 }
                 ld->ld_indexing.ld_start = con_line;
                 action_for_prev_line = logfile_filter::MAYBE;
@@ -512,8 +514,16 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 
             ld->ld_indexing.ld_last = con_line;
             if (action_for_prev_line != logfile_filter::INCLUDE) {
-                action_for_prev_line = ld->ld_file->check_filter(
+                // We haven't decided to include yet, so check the filter again.
+                // Once we decide to include a sub-line, the whole log message will
+                // always be included.
+                logfile_filter::type_t action_for_this_line = ld->ld_file->check_filter(
                     lf_iter, this->lss_filter_generation, this->lss_filters);
+
+                // Only record the filter results for this line if it's not decisive.
+                if (action_for_this_line != logfile_filter::MAYBE) {
+                    action_for_prev_line = action_for_this_line;
+                }
             }
 
             last_owner = ld;

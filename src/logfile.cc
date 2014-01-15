@@ -298,45 +298,42 @@ logfile_filter::type_t logfile::check_filter(iterator ll,
         retval = logfile_filter::MAYBE;
     }
 
-    if (retval == logfile_filter::MAYBE) {
-        string line_value;
+    string line_value;
 
-        for (size_t lpc = 0; lpc < filters.size(); lpc++) {
-            logfile_filter *filter = filters[lpc];
-            bool matched;
+    for (size_t lpc = 0; lpc < filters.size(); lpc++) {
+        logfile_filter *filter = filters[lpc];
+        bool matched;
 
-            if (!filter->is_enabled())
-                continue;
+        if (!filter->is_enabled())
+            continue;
 
-            if (line_value.empty())
-                this->read_line(ll, line_value);
-            matched = filter->matches(line_value);
+        if (line_value.empty())
+            this->read_line(ll, line_value);
+        matched = filter->matches(line_value);
 
-            switch (filter->get_type()) {
-            case logfile_filter::INCLUDE:
-                if (matched) {
-                    retval = logfile_filter::INCLUDE;
-                }
-                else if (retval == logfile_filter::MAYBE) {
-                    retval = logfile_filter::EXCLUDE;
-                }
-                break;
-
-            case logfile_filter::EXCLUDE:
-                if (matched) {
-                    retval = logfile_filter::EXCLUDE;
-                }
-                break;
-
-            default:
-                assert(0);
-                break;
+        switch (filter->get_type()) {
+        case logfile_filter::INCLUDE:
+            if (matched) {
+                // Always prefer including something.
+                retval = logfile_filter::INCLUDE;
             }
-        }
-    }
+            else if (retval == logfile_filter::MAYBE) {
+                // Only exclude if we haven't made a decision yet.
+                retval = logfile_filter::EXCLUDE;
+            }
+            break;
 
-    if (retval == logfile_filter::MAYBE) {
-        retval = logfile_filter::INCLUDE;
+        case logfile_filter::EXCLUDE:
+            if (matched && retval == logfile_filter::MAYBE) {
+                // Only exclude if we haven't decide to include the line.
+                retval = logfile_filter::EXCLUDE;
+            }
+            break;
+
+        default:
+            assert(0);
+            break;
+        }
     }
 
     ll->set_filter_state(generation, retval);
