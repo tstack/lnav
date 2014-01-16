@@ -44,6 +44,13 @@ class log_data_helper
 public:
     log_data_helper(logfile_sub_source &lss) : ldh_log_source(lss) { };
 
+    void clear() {
+        this->ldh_file = NULL;
+        this->ldh_parser.reset();
+        this->ldh_scanner.reset();
+        this->ldh_namer.reset();
+    };
+
     bool parse_line(vis_line_t line, bool allow_middle = false) {
         return this->parse_line(this->ldh_log_source.at(line), allow_middle);
     }

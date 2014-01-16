@@ -165,6 +165,7 @@ public:
         }
 
         if (lss.text_line_count() == 0) {
+            this->fos_log_helper.clear();
             return 0;
         }
 

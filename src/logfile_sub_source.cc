@@ -536,15 +536,17 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                                               total_lines);
         }
 
-        if (action_for_prev_line == logfile_filter::INCLUDE) {
-            while (last_owner->ld_indexing.ld_start <=
+        if (last_owner != NULL) {
+            if (action_for_prev_line != logfile_filter::EXCLUDE) {
+                while (last_owner->ld_indexing.ld_start <=
                    last_owner->ld_indexing.ld_last) {
-                this->lss_index.push_back(last_owner->ld_indexing.ld_start);
-                ++last_owner->ld_indexing.ld_start;
+                    this->lss_index.push_back(last_owner->ld_indexing.ld_start);
+                    ++last_owner->ld_indexing.ld_start;
+                }
             }
-        }
-        else if (action_for_prev_line == logfile_filter::EXCLUDE) {
-            this->lss_filtered_count += 1;
+            else {
+                this->lss_filtered_count += 1;
+            }
         }
 
         for (iter = this->lss_files.begin();
