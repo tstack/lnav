@@ -391,6 +391,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                     break;
 
                 case logline_value::VALUE_UNKNOWN:
+                case logline_value::VALUE__MAX:
                     assert(0);
                     break;
                 }

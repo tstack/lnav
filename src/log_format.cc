@@ -118,6 +118,14 @@ logline::level_t logline::string2level(const char *levelstr, size_t len, bool ex
     return retval;
 }
 
+const char *logline_value::value_names[VALUE__MAX] = {
+    "null",
+    "text",
+    "int",
+    "float",
+    "bool"
+};
+
 logline_value::kind_t logline_value::string2kind(const char *kindstr)
 {
     if (strcmp(kindstr, "string") == 0) {
@@ -987,6 +995,7 @@ public:
                 type = SQLITE_INTEGER;
                 break;
             case logline_value::VALUE_UNKNOWN:
+            case logline_value::VALUE__MAX:
                 assert(0);
                 break;
             }

@@ -318,8 +318,11 @@ public:
         VALUE_INTEGER,
         VALUE_FLOAT,
         VALUE_BOOLEAN,
+
+        VALUE__MAX
     };
 
+    static const char *value_names[VALUE__MAX];
     static kind_t string2kind(const char *kindstr);
 
     logline_value(std::string name)
@@ -374,6 +377,7 @@ public:
             break;
 
         case VALUE_UNKNOWN:
+        case VALUE__MAX:
         assert(0);
         break;
         }
@@ -407,6 +411,7 @@ public:
             }
             break;
         case VALUE_UNKNOWN:
+        case VALUE__MAX:
             assert(0);
             break;
         }

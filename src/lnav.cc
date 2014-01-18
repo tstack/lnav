@@ -193,8 +193,7 @@ public:
                 iter->e_sub_elements->front());
 
             colname            = this->fos_log_helper.ldh_namer->add_column(colname);
-            this->fos_key_size = max(this->fos_key_size,
-                                     (int)colname.length());
+            this->fos_key_size = max(this->fos_key_size, (int)colname.length());
         }
 
         return 1 +

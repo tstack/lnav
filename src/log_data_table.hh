@@ -100,7 +100,7 @@ public:
 
             /* XXX LEAK */
             name = strdup(colname.c_str());
-            switch (pair_iter->e_sub_elements->back().e_token) {
+            switch (pair_iter->e_sub_elements->back().value_token()) {
             case DT_IPV4_ADDRESS:
             case DT_IPV6_ADDRESS:
                 collator = "ipaddress";
