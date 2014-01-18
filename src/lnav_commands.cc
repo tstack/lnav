@@ -76,7 +76,7 @@ static string com_adjust_log_time(string cmdline, vector<string> &args)
         top_time = ll.get_timeval();
 
         dts.set_base_time(top_time.tv_sec);
-        args[1] = cmdline.substr(cmdline.find(args[1]));
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
         if (dts.scan(args[1].c_str(), NULL, &tm, new_time) != NULL) {
             timersub(&new_time, &top_time, &time_diff);
             
@@ -109,7 +109,7 @@ static string com_unix_time(string cmdline, vector<string> &args)
 
         log_time.tm_isdst = -1;
 
-        args[1] = cmdline.substr(cmdline.find(args[1]));
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
         if ((millis = args[1].find('.')) != string::npos ||
             (millis = args[1].find(',')) != string::npos) {
             args[1] = args[1].erase(millis, 4);
@@ -356,7 +356,7 @@ static string com_highlight(string cmdline, vector<string> &args)
         pcre *      code;
         int         eoff;
 
-        args[1] = cmdline.substr(cmdline.find(args[1]));
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
         if (hm.find(args[1]) != hm.end()) {
             retval = "error: highlight already exists";
         }
@@ -391,7 +391,7 @@ static string com_graph(string cmdline, vector<string> &args)
         pcre *      code;
         int         eoff;
 
-        args[1] = cmdline.substr(cmdline.find(args[1]));
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
         if ((code = pcre_compile(args[1].c_str(),
                                  PCRE_CASELESS,
                                  &errptr,
@@ -466,12 +466,6 @@ public:
                        MATCH_COUNT);
         retval = (rc >= 0);
 
-#if 0
-        fprintf(stderr, " out %d %s\n",
-                retval,
-                line.c_str());
-#endif
-
         return retval;
     };
 
@@ -499,12 +493,12 @@ static string com_filter(string cmdline, vector<string> &args)
         pcre *      code;
         int         eoff;
 
-        args[1] = cmdline.substr(cmdline.find(args[1]));
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
         if (lss.get_filter(args[1]) != NULL) {
             retval = "error: filter already exists";
         }
         else if ((code = pcre_compile(args[1].c_str(),
-                                      0,
+                                      PCRE_CASELESS,
                                       &errptr,
                                       &eoff,
                                       NULL)) == NULL) {
@@ -538,7 +532,7 @@ static string com_enable_filter(string cmdline, vector<string> &args)
     else if (args.size() > 1) {
         logfile_filter *lf;
 
-        args[1] = cmdline.substr(cmdline.find(args[1]));
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
         lf      = lnav_data.ld_log_source.get_filter(args[1]);
         if (lf == NULL) {
             retval = "error: no such filter -- " + args[1];
@@ -570,7 +564,7 @@ static string com_disable_filter(string cmdline, vector<string> &args)
     else if (args.size() > 1) {
         logfile_filter *lf;
 
-        args[1] = cmdline.substr(cmdline.find(args[1]));
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
         lf      = lnav_data.ld_log_source.get_filter(args[1]);
         if (lf == NULL) {
             retval = "error: no such filter -- " + args[1];
@@ -768,7 +762,7 @@ static string com_open(string cmdline, vector<string> &args)
         int top = 0;
         string fn;
 
-        fn = cmdline.substr(cmdline.find(args[1]));
+        fn = cmdline.substr(cmdline.find(args[1], args[0].size()));
 
         if (access(fn.c_str(), R_OK) != 0 &&
             (colon_index = fn.rfind(':')) != string::npos) {
@@ -882,7 +876,7 @@ static string com_partition_name(string cmdline, vector<string> &args)
         logfile_sub_source &lss = lnav_data.ld_log_source;
         std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
 
-        args[1] = cmdline.substr(cmdline.find(args[1]));
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
 
         bookmark_vector<vis_line_t> &bv = tc.get_bookmarks()[&textview_curses::BM_USER];
         bookmark_vector<vis_line_t>::iterator iter;
