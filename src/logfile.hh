@@ -248,7 +248,8 @@ public:
      * indexing.
      * @return True if any new lines were indexed.
      */
-    bool rebuild_index(logfile_observer *lo = NULL) throw (line_buffer::error);
+    bool rebuild_index(logfile_observer *lo = NULL)
+        throw (line_buffer::error, logfile::error);
 
     /**
      * Check a line to see if it should be filtered out or not.

@@ -222,7 +222,7 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
 }
 
 bool logfile::rebuild_index(logfile_observer *lo)
-throw (line_buffer::error)
+throw (line_buffer::error, logfile::error)
 {
     bool        retval = false;
     struct stat st;

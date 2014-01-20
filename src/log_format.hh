@@ -64,7 +64,7 @@ public:
         LFT__MASK = (MAYBE|INCLUDE|EXCLUDE)
     } type_t;
 
-    logfile_filter(type_t type, std::string id)
+    logfile_filter(type_t type, const std::string id)
         : lf_enabled(true),
           lf_type(type),
           lf_id(id) { };
@@ -77,7 +77,7 @@ public:
     void enable(void) { this->lf_enabled = true; };
     void disable(void) { this->lf_enabled = false; };
 
-    virtual bool matches(std::string line) = 0;
+    virtual bool matches(const std::string &line) = 0;
 
     virtual std::string to_command(void) = 0;
 

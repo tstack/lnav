@@ -445,28 +445,17 @@ static string com_help(string cmdline, vector<string> &args)
 class pcre_filter
     : public logfile_filter {
 public:
-    pcre_filter(type_t type, string id, pcre *code)
+    pcre_filter(type_t type, const string id, pcre *code)
         : logfile_filter(type, id),
-          pf_code(code) { };
+          pf_pcre(code) { };
     virtual ~pcre_filter() { };
 
-    bool matches(string line)
+    bool matches(const string &line)
     {
-        static const int MATCH_COUNT = 20 * 3;
-        int  matches[MATCH_COUNT], rc;
-        bool retval;
+        pcre_context_static<30> pc;
+        pcre_input pi(line);
 
-        rc = pcre_exec(this->pf_code,
-                       NULL,
-                       line.c_str(),
-                       line.size(),
-                       0,
-                       0,
-                       matches,
-                       MATCH_COUNT);
-        retval = (rc >= 0);
-
-        return retval;
+        return this->pf_pcre.match(pc, pi);
     };
 
     std::string to_command(void)
@@ -477,7 +466,7 @@ public:
     };
 
 protected:
-    auto_mem<pcre> pf_code;
+    pcrepp pf_pcre;
 };
 
 static string com_filter(string cmdline, vector<string> &args)
