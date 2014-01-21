@@ -239,6 +239,7 @@ const char *std_time_fmt[] = {
     "%a %b %d %H:%M:%S %Z %Y",
     time_fmt_with_zone,
 
+    "%d/%b/%Y:%H:%M:%S +0000",
     "%d/%b/%Y:%H:%M:%S %z",
 
     "%b %d %H:%M:%S",
