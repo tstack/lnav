@@ -104,6 +104,7 @@ struct vtab {
 struct vtab_cursor {
     sqlite3_vtab_cursor        base;
     struct log_cursor          log_cursor;
+    std::string                log_msg;
     std::vector<logline_value> line_values;
 };
 
@@ -356,11 +357,10 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         else {
             if (vc->line_values.empty()) {
                 logfile::iterator line_iter;
-                string            line, value;
 
                 line_iter = lf->begin() + cl;
-                lf->read_line(line_iter, line);
-                vt->vi->extract(lf, line, vc->line_values);
+                lf->read_line(line_iter, vc->log_msg);
+                vt->vi->extract(lf, vc->log_msg, vc->line_values);
             }
 
             size_t sub_col = col - VT_COL_MAX;
@@ -374,12 +374,15 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                 case logline_value::VALUE_NULL:
                     sqlite3_result_null(ctx);
                     break;
-                case logline_value::VALUE_TEXT:
+                case logline_value::VALUE_TEXT: {
+                    const char *text_value = lv_iter->lv_string.c_str();
+
                     sqlite3_result_text(ctx,
-                                        lv_iter->lv_string.c_str(),
-                                        lv_iter->lv_string.length(),
+                                        &text_value[lv_iter->lv_string_offset],
+                                        lv_iter->lv_string_size,
                                         SQLITE_TRANSIENT);
                     break;
+                }
 
                 case logline_value::VALUE_BOOLEAN:
                 case logline_value::VALUE_INTEGER:

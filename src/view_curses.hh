@@ -38,6 +38,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <limits.h>
+#include <signal.h>
 #include <sys/time.h>
 
 #if defined HAVE_NCURSESW_CURSES_H
@@ -73,7 +74,9 @@ class view_curses;
 class screen_curses {
 public:
     screen_curses()
-        : sc_main_window(initscr()) {};
+        : sc_main_window(initscr()) {
+    };
+
     virtual ~screen_curses()
     {
         endwin();
@@ -83,6 +86,28 @@ public:
 
 private:
     WINDOW *sc_main_window;
+};
+
+class ui_periodic_timer {
+public:
+    static const struct itimerval INTERVAL;
+
+    static ui_periodic_timer &singleton();
+
+    bool time_to_update(sig_atomic_t &counter) const {
+        if (this->upt_counter != counter) {
+            counter = this->upt_counter;
+            return true;
+        }
+        return false;
+    };
+
+private:
+    ui_periodic_timer();
+
+    static void sigalrm(int sig);
+
+    volatile sig_atomic_t upt_counter;
 };
 
 class alerter {
@@ -211,8 +236,12 @@ find_string_attr_range(const string_attrs_t &sa, string_attr_type_t type)
  */
 class attr_line_t {
 public:
-    attr_line_t() { };
-    attr_line_t(const std::string &str) : al_string(str) { };
+    attr_line_t() { 
+        this->al_attrs.reserve(RESERVE_SIZE);
+    };
+    attr_line_t(const std::string &str) : al_string(str) {
+        this->al_attrs.reserve(RESERVE_SIZE);
+    };
 
     /** @return The string itself. */
     std::string &get_string() { return this->al_string; };
@@ -232,6 +261,8 @@ public:
     };
 
 private:
+    const static size_t RESERVE_SIZE = 128;
+
     std::string    al_string;
     string_attrs_t al_attrs;
 };

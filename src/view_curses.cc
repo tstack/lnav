@@ -41,6 +41,31 @@ using namespace std;
 string_attr_type view_curses::VC_STYLE;
 string_attr_type view_curses::VC_GRAPHIC;
 
+const struct itimerval ui_periodic_timer::INTERVAL = {
+    { 0, 350 * 1000 },
+    { 0, 350 * 1000 }
+};
+
+ui_periodic_timer::ui_periodic_timer()
+{
+    signal(SIGALRM, ui_periodic_timer::sigalrm);
+    if (setitimer(ITIMER_REAL, &INTERVAL, NULL) == -1) {
+        perror("setitimer");
+    }
+}
+
+ui_periodic_timer &ui_periodic_timer::singleton()
+{
+    static ui_periodic_timer retval;
+
+    return retval;
+}
+
+void ui_periodic_timer::sigalrm(int sig)
+{
+    singleton().upt_counter += 1;
+}
+
 alerter &alerter::singleton() {
     static alerter retval;
 

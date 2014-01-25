@@ -67,7 +67,8 @@ class pcrepp;
 class pcre_context {
 public:
     typedef struct capture {
-        capture() : c_begin(-1), c_end(-1) { };
+        capture() {};
+        
         capture(int begin, int end) : c_begin(begin), c_end(end)
         {
             assert(begin <= end);

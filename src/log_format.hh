@@ -342,13 +342,26 @@ public:
     logline_value(std::string name, double i)
         : lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i), lv_identifier(), lv_column(-1) { };
     logline_value(std::string name, std::string s)
-        : lv_name(name), lv_kind(VALUE_TEXT), lv_string(s), lv_identifier(), lv_column(-1) { };
-    logline_value(std::string name, kind_t kind, std::string s,
+        : lv_name(name), lv_kind(VALUE_TEXT),
+          lv_string(s), lv_string_offset(0), lv_identifier(), lv_column(-1) { 
+        this->lv_string_size = s.length();
+    };
+    logline_value(std::string name, kind_t kind, const std::string &s,
+                  off_t off = 0, ssize_t size = -1,
                   bool ident=false, const scaling_factor *scaling=NULL,
                   int col=-1, int start=-1, int end=-1)
-        : lv_name(name), lv_kind(kind), lv_identifier(ident), lv_column(col),
+        : lv_name(name), lv_kind(kind), lv_string_offset(off), lv_string_size(size),
+          lv_identifier(ident), lv_column(col),
           lv_origin(start, end)
     {
+        const char *substr = &(s.c_str()[off]);
+
+        if (off == -1) {
+            this->lv_kind = kind = VALUE_NULL;
+        } else if (size == (ssize_t)-1) {
+            this->lv_string_size = s.length() - off;
+        }
+
         switch (kind) {
         case VALUE_TEXT:
             this->lv_string = s;
@@ -358,14 +371,14 @@ public:
             break;
 
         case VALUE_INTEGER:
-            sscanf(s.c_str(), "%" PRId64 "", &this->lv_number.i);
+            this->lv_number.i = strtoll(substr, NULL, 0);
             if (scaling != NULL) {
                 scaling->scale(this->lv_number.i);
             }
             break;
 
         case VALUE_FLOAT:
-            sscanf(s.c_str(), "%lf", &this->lv_number.d);
+            this->lv_number.d = strtod(substr, NULL);
             if (scaling != NULL) {
                 scaling->scale(this->lv_number.d);
             }
@@ -396,7 +409,7 @@ public:
             return "null";
 
         case VALUE_TEXT:
-            return this->lv_string;
+            return this->lv_string.substr(this->lv_string_offset, this->lv_string_size);
 
         case VALUE_INTEGER:
             snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_number.i);
@@ -434,6 +447,8 @@ public:
         value_u(double d) : d(d) { };
     }           lv_number;
     std::string lv_string;
+    off_t lv_string_offset;
+    size_t lv_string_size;
     bool lv_identifier;
     int lv_column;
     struct line_range lv_origin;

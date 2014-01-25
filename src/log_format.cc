@@ -356,6 +356,7 @@ static int json_array_end(void *ctx)
 
     return 1;
 }
+
 static struct json_path_handler json_log_handlers[] = {
     json_path_handler("^/\\w+$").
     add_cb(read_json_null).
@@ -587,7 +588,9 @@ void external_log_format::annotate(const std::string &line,
 
         values.push_back(logline_value(vd.vd_name,
                          vd.vd_kind,
-                         pi.get_substr(pc[vd.vd_index]),
+                         line,
+                         pc[vd.vd_index]->c_begin,
+                         pc[vd.vd_index]->length(),
                          vd.vd_identifier,
                          scaling,
                          vd.vd_column,

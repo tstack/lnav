@@ -445,14 +445,15 @@ public:
 
     void logfile_indexing(logfile &lf, off_t off, size_t total)
     {
+        static sig_atomic_t index_counter = 0;
+
         /* XXX assert(off <= total); */
         if (off > (off_t)total) {
             off = total;
         }
 
-        if ((std::abs((long int)(off - this->lo_last_offset)) >
-             (off_t)(128 * 1024)) ||
-            (size_t)off == total) {
+        if ((size_t)off == total ||
+            ui_periodic_timer::singleton().time_to_update(index_counter)) {
             lnav_data.ld_bottom_source.update_loading(off, total);
             this->do_update();
             this->lo_last_offset = off;
@@ -467,8 +468,10 @@ public:
                                       vis_line_t cl,
                                       size_t total)
     {
-        if (std::abs(cl - this->lo_last_line) > (4 * 1024) || (size_t)cl ==
-            (total - 1)) {
+        static sig_atomic_t filter_counter = 0;
+
+        if ((size_t)cl == (total - 1) ||
+            ui_periodic_timer::singleton().time_to_update(filter_counter)) {
             lnav_data.ld_bottom_source.update_loading(cl, (total - 1));
             this->do_update();
             this->lo_last_line = cl;
@@ -2871,6 +2874,8 @@ static void looper(void)
         screen_curses sc;
         lnav_behavior lb;
 
+        ui_periodic_timer::singleton();
+
         lnav_data.ld_mouse.set_behavior(&lb);
         lnav_data.ld_mouse.set_enabled(check_experimental("mouse"));
 
@@ -2996,11 +3001,12 @@ static void looper(void)
                         &ready_rfds, NULL, NULL,
                         &to);
 
+            if (rc == -1 && errno == EINTR) {
+                rc = 0;
+            }
+
             if (rc < 0) {
                 switch (errno) {
-                case EINTR:
-                    break;
-
                 case EBADF:
                 {
                     int lpc, fd_flags;
@@ -3466,7 +3472,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
 
 int sql_progress(const struct log_cursor &lc)
 {
-    static int sub_count = 0;
+    static sig_atomic_t sql_counter = 0;
 
     size_t total = lnav_data.ld_log_source.text_line_count();
     off_t  off   = lc.lc_curr_line;
@@ -3479,15 +3485,13 @@ int sql_progress(const struct log_cursor &lc)
         return 1;
     }
 
-    if ((off < (total - 1)) || (sub_count % 64 == 0)) {
+    if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
         lnav_data.ld_bottom_source.update_loading(off, total);
         lnav_data.ld_top_source.update_time();
         lnav_data.ld_status[LNS_TOP].do_update();
         lnav_data.ld_status[LNS_BOTTOM].do_update();
         refresh();
     }
-
-    sub_count += 1;
 
     return 0;
 }
