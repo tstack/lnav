@@ -78,7 +78,7 @@ public:
 
         lr.lr_start = 0;
         lr.lr_end   = -1;
-        value_out[lr].insert(make_string_attr("file", this->current_file()));
+        value_out.push_back(string_attr(lr, &logline::L_FILE, this->current_file()));
     };
 
     size_t text_size_for_line(textview_curses &tc, int line, bool raw) {

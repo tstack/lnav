@@ -218,7 +218,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
 
             struct line_range time_range;
 
-            time_range = find_string_attr_range(sa, "timestamp");
+            time_range = find_string_attr_range(sa, &logline::L_TIMESTAMP);
             if (time_range.lr_start != -1) {
                 const char *last = value_out.c_str();
                 int len = strlen(buffer);
@@ -346,7 +346,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     lr.lr_start = time_offset_end + this->lss_token_date_end;
     lr.lr_end   = -1;
 
-    value_out[lr].insert(make_string_attr("style", attrs));
+    value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
 
     if (this->lss_flags & F_TIME_OFFSET) {
         time_offset_end = 13;
@@ -356,7 +356,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         for (string_attrs_t::iterator iter = value_out.begin();
              iter != value_out.end();
              ++iter) {
-            struct line_range *existing_lr = (line_range *)&iter->first;
+            struct line_range *existing_lr = (line_range *)&iter->sa_range;
 
             existing_lr->lr_start += time_offset_end;
             if (existing_lr->lr_end != -1)
@@ -364,12 +364,12 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         }
 
         attrs = vc.attrs_for_role(view_colors::VCR_OK);
-        value_out[lr].insert(make_string_attr("style", attrs));
+        value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
     }
 
     lr.lr_start = 0;
     lr.lr_end   = -1;
-    value_out[lr].insert(make_string_attr("file", this->lss_token_file));
+    value_out.push_back(string_attr(lr, &logline::L_FILE, this->lss_token_file));
 
     {
         bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_USER];
@@ -385,30 +385,30 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                 != this->lss_user_mark_metadata.end()) {
                 lr.lr_start = 0;
                 lr.lr_end   = -1;
-                value_out[lr].insert(make_string_attr("partition", &bm_iter->second));
+                value_out.push_back(string_attr(lr, &logline::L_PARTITION, &bm_iter->second));
             }
         }
     }
 
     if (this->lss_token_file->is_time_adjusted()) {
-        struct line_range time_range = find_string_attr_range(value_out,
-                                                              "timestamp");
+        struct line_range time_range = find_string_attr_range(
+            value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
             attrs = vc.attrs_for_role(view_colors::VCR_ADJUSTED_TIME);
-            value_out[time_range].insert(make_string_attr("style", attrs));
+            value_out.push_back(string_attr(time_range, &view_curses::VC_STYLE, attrs));
         }
     }
     else if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
              !(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
-        struct line_range time_range = find_string_attr_range(value_out,
-                                                              "timestamp");
+        struct line_range time_range = find_string_attr_range(
+            value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
             time_range.lr_start += time_offset_end;
             time_range.lr_end   += time_offset_end;
             attrs = vc.attrs_for_role(view_colors::VCR_ALT_ROW);
-            value_out[time_range].insert(make_string_attr("style", attrs));
+            value_out.push_back(string_attr(time_range, &view_curses::VC_STYLE, attrs));
         }
     }
 }

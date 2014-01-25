@@ -144,6 +144,8 @@ public:
     static bookmark_type_t BM_USER;
     static bookmark_type_t BM_SEARCH;
 
+    static string_attr_type SA_BODY;
+
     struct highlighter {
         highlighter()
             : h_code(NULL),

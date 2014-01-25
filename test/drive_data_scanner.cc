@@ -36,6 +36,7 @@
 #include <iostream>
 
 #include "pcrepp.hh"
+#include "textview_curses.hh"
 #include "data_scanner.hh"
 #include "data_parser.hh"
 #include "log_format.hh"
@@ -138,7 +139,7 @@ int main(int argc, char *argv[])
                     string_attrs_t sa;
 
                     format->annotate(sub_line, sa, ll_values);
-                    body = find_string_attr_range(sa, "body");
+                    body = find_string_attr_range(sa, &textview_curses::SA_BODY);
                 }
 
                 data_parser::TRACE_FILE = fopen("scanned.dpt", "w");

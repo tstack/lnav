@@ -56,6 +56,11 @@ using namespace std;
  *   iostat
  */
 
+string_attr_type logline::L_PREFIX;
+string_attr_type logline::L_TIMESTAMP;
+string_attr_type logline::L_FILE;
+string_attr_type logline::L_PARTITION;
+
 const char *logline::level_names[LEVEL__MAX] = {
     "unknown",
     "trace",
@@ -545,7 +550,7 @@ void external_log_format::annotate(const std::string &line,
     cap = pc[this->lf_timestamp_field];
     lr.lr_start = cap->c_begin;
     lr.lr_end = cap->c_end;
-    sa[lr].insert(make_string_attr("timestamp", 0));
+    sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
 
     cap = pc[this->elf_body_field];
     if (cap != NULL && cap->c_begin != -1) {
@@ -556,7 +561,7 @@ void external_log_format::annotate(const std::string &line,
         lr.lr_start = line.size();
         lr.lr_end = line.size();
     }
-    sa[lr].insert(make_string_attr("body", 0));
+    sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
 
     view_colors &vc = view_colors::singleton();
 
@@ -592,7 +597,8 @@ void external_log_format::annotate(const std::string &line,
         if (pc[vd.vd_index]->c_begin != -1 && vd.vd_identifier) {
             lr.lr_start = pc[vd.vd_index]->c_begin;
             lr.lr_end = pc[vd.vd_index]->c_end;
-            sa[lr].insert(make_string_attr("style", vc.attrs_for_ident(pi.get_substr_start(pc[vd.vd_index]), lr.length())));
+            sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
+                vc.attrs_for_ident(pi.get_substr_start(pc[vd.vd_index]), lr.length())));
         }
     }
 }
@@ -728,12 +734,18 @@ void external_log_format::get_subline(const logline &ll,
                             lr.lr_end = lines.tellp();
                         else
                             lr.lr_end = lr.lr_start + nl_pos;
-                        if (lv_iter->lv_name == this->lf_timestamp_field)
-                            this->jlf_line_attrs[lr].insert(make_string_attr("timestamp", 0));
-                        else if (lv_iter->lv_name == this->elf_body_field)
-                            this->jlf_line_attrs[lr].insert(make_string_attr("body", 0));
+                        if (lv_iter->lv_name == this->lf_timestamp_field) {
+                            this->jlf_line_attrs.push_back(
+                                string_attr(lr, &logline::L_TIMESTAMP));
+                        }
+                        else if (lv_iter->lv_name == this->elf_body_field) {
+                            this->jlf_line_attrs.push_back(
+                                string_attr(lr, &textview_curses::SA_BODY));
+                        }
                         else if (lv_iter->lv_identifier) {
-                            this->jlf_line_attrs[lr].insert(make_string_attr("style", vc.attrs_for_ident(str.c_str(), lr.length())));
+                            this->jlf_line_attrs.push_back(
+                                string_attr(lr, &view_curses::VC_STYLE,
+                                    vc.attrs_for_ident(str.c_str(), lr.length())));
                         }
                         lv_iter->lv_origin = lr;
                         used_values[distance(this->jlf_line_values.begin(),

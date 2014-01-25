@@ -293,12 +293,11 @@ public:
 
         string_attrs_t &  sa = value_out.get_attrs();
         struct line_range lr(1, 2);
-        sa[lr].insert(make_string_attr("graphic",
-                                       last_line ? ACS_LLCORNER : ACS_LTEE));
+        sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, last_line ? ACS_LLCORNER : ACS_LTEE));
 
         lr.lr_start = 3 + this->fos_key_size + 3;
         lr.lr_end   = -1;
-        sa[lr].insert(make_string_attr("style", A_BOLD));
+        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD));
 
         return true;
     };
@@ -853,9 +852,9 @@ static void update_view_name(void)
     struct line_range lr(0);
 
     sf.set_value("% 5s ", view_names[tc - lnav_data.ld_views]);
-    sf.get_value().get_attrs()[lr].insert(make_string_attr(
-                                              "style", A_REVERSE |
-                                              view_colors::ansi_color_pair(COLOR_BLUE, COLOR_WHITE)));
+    sf.get_value().get_attrs().push_back(
+        string_attr(lr, &view_curses::VC_STYLE,
+            A_REVERSE | view_colors::ansi_color_pair(COLOR_BLUE, COLOR_WHITE)));
 }
 
 bool toggle_view(textview_curses *toggle_tc)
@@ -1499,7 +1498,7 @@ static void handle_paging_key(int ch)
 
                 lf->get_format()->annotate(line, sa, line_values);
 
-                body = find_string_attr_range(sa, "body");
+                body = find_string_attr_range(sa, &textview_curses::SA_BODY);
                 if (body.lr_end != -1) {
                     line = line.substr(body.lr_start);
                 }

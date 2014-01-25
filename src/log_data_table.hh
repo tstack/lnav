@@ -75,7 +75,7 @@ public:
         this->ldt_parent_column_count = cols.size();
         lf->read_full_message(lf->begin() + cl_copy, val);
         format->annotate(val, sa, line_values);
-        body = find_string_attr_range(sa, "body");
+        body = find_string_attr_range(sa, &textview_curses::SA_BODY);
         if (body.lr_end == -1 || body.length() == 0) {
             this->ldt_schema_id.clear();
             return;
@@ -149,7 +149,7 @@ public:
 
         lf->read_full_message(lf_iter, this->ldt_current_line);
         lf->get_format()->annotate(this->ldt_current_line, sa, line_values);
-        body = find_string_attr_range(sa, "body");
+        body = find_string_attr_range(sa, &textview_curses::SA_BODY);
         if (body.lr_end == -1 || body.length() == 0) {
             return false;
         }

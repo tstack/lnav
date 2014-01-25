@@ -83,7 +83,7 @@ public:
             this->ldh_line_values.clear();
             format->annotate(this->ldh_msg, sa, this->ldh_line_values);
 
-            body = find_string_attr_range(sa, "body");
+            body = find_string_attr_range(sa, &textview_curses::SA_BODY);
             if (body.lr_start == -1) {
                 body.lr_start = this->ldh_msg.size();
                 body.lr_end = this->ldh_msg.size();

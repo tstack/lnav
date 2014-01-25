@@ -38,6 +38,9 @@
 
 using namespace std;
 
+string_attr_type view_curses::VC_STYLE;
+string_attr_type view_curses::VC_GRAPHIC;
+
 alerter &alerter::singleton() {
     static alerter retval;
 
@@ -111,8 +114,9 @@ void view_curses::mvwattrline(WINDOW *window,
     std::vector<line_range> graphic_range;
     std::vector<int>        graphic_in;
 
+    stable_sort(sa.begin(), sa.end());
     for (iter = sa.begin(); iter != sa.end(); ++iter) {
-        struct line_range attr_range = iter->first;
+        struct line_range attr_range = iter->sa_range;
         std::map<size_t, size_t>::iterator tab_iter;
 
         assert(attr_range.lr_start >= 0);
@@ -140,24 +144,23 @@ void view_curses::mvwattrline(WINDOW *window,
         }
 
         if (attr_range.lr_end > 0) {
+            string_attrs_t::iterator range_iter;
             int awidth = attr_range.length();
-            attrs_map_t &         am = iter->second;
-            attrs_map_t::iterator am_iter;
 
             attrs = 0;
-            for (am_iter = am.begin(); am_iter != am.end(); ++am_iter) {
-                if (am_iter->first == "style") {
-                    attrs |= am_iter->second.sa_int;
+            for (range_iter = iter; range_iter->sa_range == iter->sa_range; ++range_iter) {
+                if (range_iter->sa_type == &VC_STYLE) {
+                    attrs |= range_iter->sa_value.sav_int;
                 }
             }
 
             if (attrs != 0) {
                 mvwchgat(window, y, x + attr_range.lr_start, awidth, attrs, PAIR_NUMBER(attrs), NULL);
             }
-            for (am_iter = am.begin(); am_iter != am.end(); ++am_iter) {
-                if (am_iter->first == "graphic") {
+            for (range_iter = iter; range_iter->sa_range == iter->sa_range; ++range_iter) {
+                if (range_iter->sa_type == &VC_GRAPHIC) {
                     graphic_range.push_back(attr_range);
-                    graphic_in.push_back(am_iter->second.sa_int | attrs);
+                    graphic_in.push_back(range_iter->sa_value.sav_int | attrs);
                 }
             }
         }

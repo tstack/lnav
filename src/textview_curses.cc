@@ -43,6 +43,8 @@ using namespace std;
 bookmark_type_t textview_curses::BM_USER;
 bookmark_type_t textview_curses::BM_SEARCH;
 
+string_attr_type textview_curses::SA_BODY;
+
 textview_curses::textview_curses()
     : tc_sub_source(NULL),
       tc_delegate(NULL),
@@ -111,7 +113,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 
     struct line_range body;
 
-    body = find_string_attr_range(sa, "body");
+    body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_start == -1) {
         body.lr_start = 0;
         body.lr_end = str.size();
@@ -153,8 +155,8 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
                 }
 
                 if (lr.lr_end > lr.lr_start) {
-                    sa[lr].insert(make_string_attr("style", iter->second.
-                                                   get_attrs(hcount)));
+                    sa.push_back(string_attr(
+                        lr, &view_curses::VC_STYLE, iter->second.get_attrs(hcount)));
                     hcount++;
 
                     off = matches[1];
@@ -225,17 +227,12 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
         string_attrs_t::iterator iter;
 
         for (iter = sa.begin(); iter != sa.end(); iter++) {
-            attrs_map_t &         am = iter->second;
-            attrs_map_t::iterator am_iter;
-
-            for (am_iter = am.begin(); am_iter != am.end(); am_iter++) {
-                if (am_iter->first == "style") {
-                    am_iter->second.sa_int ^= A_REVERSE;
-                }
+            if (iter->sa_type == &view_curses::VC_STYLE) {
+                iter->sa_value.sav_int ^= A_REVERSE;
             }
         }
 
-        sa[lr].insert(make_string_attr("style", A_REVERSE));
+        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_REVERSE));
     }
 }
 

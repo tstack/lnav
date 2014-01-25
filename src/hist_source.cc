@@ -140,7 +140,7 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
             }
 
             lr.lr_end = lr.lr_start + amount;
-            value_out[lr].insert(make_string_attr("style", attrs));
+            value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
 
             lr.lr_start = lr.lr_end;
         }

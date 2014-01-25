@@ -98,6 +98,10 @@ typedef std::vector<logfile_filter *> filter_stack_t;
  */
 class logline {
 public:
+    static string_attr_type L_PREFIX;
+    static string_attr_type L_TIMESTAMP;
+    static string_attr_type L_FILE;
+    static string_attr_type L_PARTITION;
 
     /**
      * The logging level identifiers for a line(s).

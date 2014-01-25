@@ -57,12 +57,13 @@ int main(int argc, char *argv[])
     scrub_ansi_string(str_cp, sa);
     assert(str_cp == "Hello, World!");
     
-    iter = sa.begin();
-    assert(iter->second.find("style")->second.sa_int == vc.ansi_color_pair(0, 4));
-    assert(iter->first.lr_start == 5);
-    assert(iter->first.lr_end == 7);
-    ++iter;
-    assert(iter->second.find("style")->second.sa_int == vc.ansi_color_pair(3, 0));
-    assert(iter->first.lr_start == 7);
-    assert(iter->first.lr_end == 12);
+    assert(sa[0].sa_range.lr_start == 5);
+    assert(sa[0].sa_range.lr_end == 7);
+    assert(sa[0].sa_type == &view_curses::VC_STYLE);
+    assert(sa[0].sa_value.sav_int == vc.ansi_color_pair(0, 4));
+
+    assert(sa[1].sa_range.lr_start == 7);
+    assert(sa[1].sa_range.lr_end == 12);
+    assert(sa[1].sa_type == &view_curses::VC_STYLE);
+    assert(sa[1].sa_value.sav_int == vc.ansi_color_pair(3, 0));
 }

@@ -107,16 +107,16 @@ public:
         struct line_range lr(0);
 
         if (lc->get_inner_height() > 0) {
-            attrs_map_t::iterator iter;
+            string_attrs_t::const_iterator line_attr;
             string_attrs_t        sa;
             attr_line_t           al;
 
             lc->get_data_source()->
             listview_value_for_row(*lc, lc->get_top(), al);
             sa   = al.get_attrs();
-            iter = sa[lr].find("file");
-            if (iter != sa[lr].end()) {
-                logfile *lf = (logfile *)iter->second.sa_ptr;
+            line_attr = find_string_attr(sa, &logline::L_FILE);
+            if (line_attr != sa.end()) {
+                logfile *lf = (logfile *)line_attr->sa_value.sav_ptr;
 
                 if (lf->get_format()) {
                     sf_format.set_value("% 13s",
@@ -136,9 +136,9 @@ public:
                 sf_filename.clear();
             }
 
-            iter = sa[lr].find("partition");
-            if (iter != sa[lr].end()) {
-                bookmark_metadata *bm = (bookmark_metadata *)iter->second.sa_ptr;
+            line_attr = find_string_attr(sa, &logline::L_PARTITION);
+            if (line_attr != sa.end()) {
+                bookmark_metadata *bm = (bookmark_metadata *)line_attr->sa_value.sav_ptr;
 
                 sf_partition.set_value(bm->bm_name.c_str());
             }
@@ -150,8 +150,9 @@ public:
             sf_format.clear();
             sf_filename.set_value(lc->get_data_source()->listview_source_name(*lc));
         }
-        sf_format.get_value().get_attrs()[lr].insert(
-            make_string_attr("style", A_REVERSE | view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK)));
+        sf_format.get_value().get_attrs().push_back(
+            string_attr(lr, &view_curses::VC_STYLE,
+                A_REVERSE | view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK)));
     };
 
 private:

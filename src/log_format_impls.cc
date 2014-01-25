@@ -182,7 +182,7 @@ class generic_log_format : public log_format {
 
         lr.lr_start = fmt[0] == '%' ? 0 : 1;
         lr.lr_end   = lr.lr_start + this->lf_date_time.dts_fmt_len;
-        sa[lr].insert(make_string_attr("timestamp", 0));
+        sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
 
         for (int lpc = 0; level[lpc]; lpc++) {
             if (!isalpha(level[lpc])) {
@@ -198,11 +198,11 @@ class generic_log_format : public log_format {
 
         lr.lr_start = 0;
         lr.lr_end   = prefix_len;
-        sa[lr].insert(make_string_attr("prefix", 0));
+        sa.push_back(string_attr(lr, &logline::L_PREFIX));
 
         lr.lr_start = prefix_len;
         lr.lr_end   = line.length();
-        sa[lr].insert(make_string_attr("body", 0));
+        sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
     };
 
     auto_ptr<log_format> specialized()
@@ -318,16 +318,16 @@ class strace_log_format : public log_format {
             if (iter->c_begin != -1) {
                 lr.lr_start = iter->c_begin;
                 lr.lr_end   = iter->c_end;
-                sa[lr].insert(make_string_attr("timestamp", 0));
+                sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
             }
 
             lr.lr_start = 0;
             lr.lr_end   = line.length();
-            sa[lr].insert(make_string_attr("prefix", 0));
+            sa.push_back(string_attr(lr, &logline::L_PREFIX));
 
             lr.lr_start = line.length();
             lr.lr_end   = line.length();
-            sa[lr].insert(make_string_attr("body", 0));
+            sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
 
             for (int lpc = 0; columns[lpc].name; lpc++) {
                 if (columns[lpc].name[0] == '\0') {

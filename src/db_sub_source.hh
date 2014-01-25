@@ -91,11 +91,11 @@ public:
         }
         for (size_t lpc = 0; lpc < this->dls_column_sizes.size() - 1; lpc++) {
             if (bucket_start_value % 2 == 0) {
-                sa[lr2].insert(make_string_attr("style", A_BOLD));
+                sa.push_back(string_attr(lr2, &view_curses::VC_STYLE, A_BOLD));
             }
             lr.lr_start += this->dls_column_sizes[lpc] - 1;
             lr.lr_end    = lr.lr_start + 1;
-            sa[lr].insert(make_string_attr("graphic", ACS_VLINE));
+            sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_VLINE));
             lr.lr_start += 1;
         }
     }
@@ -165,6 +165,7 @@ public:
 
         std::string &    line = value_out.get_string();
         db_label_source *dls  = this->dos_labels;
+        string_attrs_t &sa = value_out.get_attrs();
 
         for (size_t lpc = 0;
              lpc < this->dos_labels->dls_column_sizes.size();
@@ -183,8 +184,7 @@ public:
             if (!this->dos_labels->dls_headers_to_graph[lpc]) {
                 attrs = A_UNDERLINE;
             }
-            value_out.get_attrs()[header_range].insert(make_string_attr("style",
-                                                                        attrs));
+            sa.push_back(string_attr(header_range, &view_curses::VC_STYLE, attrs));
 
             before      = total_fill / 2;
             total_fill -= before;
@@ -195,8 +195,7 @@ public:
 
         struct line_range lr(0);
 
-        value_out.get_attrs()[lr].insert(make_string_attr("style", A_BOLD |
-                                                          A_UNDERLINE));
+        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD | A_UNDERLINE));
 
         return true;
     };

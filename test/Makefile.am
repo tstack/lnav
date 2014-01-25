@@ -67,7 +67,7 @@ test_pcrepp_SOURCES = test_pcrepp.cc
 test_pcrepp_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_top_status_SOURCES = test_top_status.cc
-test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
+test_top_status_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(PCRE_LIBS) $(SQLITE3_LIBS) -lz
 
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a

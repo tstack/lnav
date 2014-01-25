@@ -138,68 +138,72 @@ struct line_range {
         if (this->lr_end < rhs.lr_end) { return true; }
         return false;
     };
+
+    bool operator==(const struct line_range &rhs) const {
+        return (this->lr_start == rhs.lr_start && this->lr_end == rhs.lr_end);
+    };
 };
 
 /**
  * Container for attribute values for a substring.
  */
 typedef union {
-    void *sa_ptr;
-    int   sa_int;
-} string_attr_t;
+    void *sav_ptr;
+    int   sav_int;
+} string_attr_value_t;
 
-/**
- * Construct a string_attr_t the a void pointer value.
- *
- * @param name The name of the attribute.
- * @param val The value to store in the attribute.
- */
-inline std::pair<std::string, string_attr_t>
-make_string_attr(const std::string &name, void *val)
-{
-    string_attr_t sa;
+class string_attr_type { };
+typedef string_attr_type *string_attr_type_t;
 
-    sa.sa_ptr = val;
+struct string_attr {
+    string_attr(struct line_range &lr, string_attr_type_t type, void *val)
+        : sa_range(lr), sa_type(type) {
+        this->sa_value.sav_ptr = val;
+    };
 
-    return std::make_pair(name, sa);
-}
+    string_attr(struct line_range &lr, string_attr_type_t type, int val = 0)
+        : sa_range(lr), sa_type(type) {
+        this->sa_value.sav_int = val;
+    };
 
-/**
- * Construct a string_attr_t the an integer value.
- *
- * @param name The name of the attribute.
- * @param val The value to store in the attribute.
- */
-inline std::pair<std::string, string_attr_t>
-make_string_attr(const std::string &name, int val)
-{
-    string_attr_t sa;
+    bool operator<(const struct string_attr &rhs) const
+    {
+        return this->sa_range < rhs.sa_range;
+    };
 
-    sa.sa_int = val;
+    struct line_range sa_range;
+    string_attr_type_t sa_type;
+    string_attr_value_t sa_value;
+};
 
-    return std::make_pair(name, sa);
-}
-
-/** A map of symbolic names to attribute values. */
-typedef std::multimap<std::string, string_attr_t> attrs_map_t;
 /** A map of line ranges to attributes for that range. */
-typedef std::map<struct line_range, attrs_map_t>  string_attrs_t;
+typedef std::vector<string_attr> string_attrs_t;
 
-inline struct line_range
-find_string_attr_range(const string_attrs_t &sa, const std::string &name)
+inline string_attrs_t::const_iterator
+find_string_attr(const string_attrs_t &sa, string_attr_type_t type)
 {
+    string_attrs_t::const_iterator iter;
     struct line_range retval;
 
-    for (string_attrs_t::const_iterator iter = sa.begin();
-         iter != sa.end();
-         ++iter) {
-        if (iter->second.find(name) != iter->second.end()) {
-            retval = iter->first;
+    for (iter = sa.begin(); iter != sa.end(); ++iter) {
+        if (iter->sa_type == type) {
             break;
         }
     }
 
-    return retval;
+    return iter;
+}
+
+inline struct line_range
+find_string_attr_range(const string_attrs_t &sa, string_attr_type_t type)
+{
+    string_attrs_t::const_iterator iter = find_string_attr(sa, type);
+
+    if (iter != sa.end()) {
+        return iter->sa_range;
+    }
+
+    return line_range();
 }
 
 /**
@@ -516,6 +520,9 @@ public:
     virtual void do_update(void) = 0;
 
     virtual bool handle_mouse(mouse_event &me) { return false; };
+
+    static string_attr_type VC_STYLE;
+    static string_attr_type VC_GRAPHIC;
 
     static void mvwattrline(WINDOW *window,
                             int y,

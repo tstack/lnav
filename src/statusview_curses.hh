@@ -98,9 +98,8 @@ public:
         if (this->sf_cylon) {
             struct line_range lr(this->sf_cylon_pos, this->sf_width);
 
-            sa[lr].insert(make_string_attr("style",
-                                           view_colors::ansi_color_pair(COLOR_WHITE, COLOR_GREEN) |
-                                           A_BOLD));
+            sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
+                view_colors::ansi_color_pair(COLOR_WHITE, COLOR_GREEN) | A_BOLD));
 
             this->sf_cylon_pos += 1;
             if (this->sf_cylon_pos > this->sf_width) {
@@ -132,11 +131,11 @@ public:
         struct line_range lr(0, 1);
 
         this->sf_value.get_string() = "::";
-        sa[lr].insert(make_string_attr("style",
-                                       A_REVERSE | COLOR_PAIR(color_pair)));
+        sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
+            A_REVERSE | COLOR_PAIR(color_pair)));
         lr.lr_start = 1;
         lr.lr_end   = 2;
-        sa[lr].insert(make_string_attr("style", COLOR_PAIR(color_pair)));
+        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, COLOR_PAIR(color_pair)));
     };
 
     /** @return The string value for this field. */

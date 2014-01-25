@@ -49,9 +49,7 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
 {
     view_colors &vc = view_colors::singleton();
 
-    vector<pair<string, string_attr_t> > attr_queue;
     pcre_context_static<60> context;
-    vector<line_range>      range_queue;
     pcrepp &   regex = ansi_regex();
     pcre_input pi(str);
 
@@ -125,19 +123,14 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
                   str.begin() + caps[0].c_end);
 
         if (has_attrs) {
-            if (!range_queue.empty()) {
-                range_queue.back().lr_end = caps[0].c_begin;
+            if (!sa.empty()) {
+                sa.back().sa_range.lr_end = caps[0].c_begin;
             }
             lr.lr_start = caps[0].c_begin;
             lr.lr_end   = -1;
-            range_queue.push_back(lr);
-            attr_queue.push_back(make_string_attr("style", attrs));
+            sa.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
         }
 
         pi.reset(str);
-    }
-
-    for (size_t lpc = 0; lpc < range_queue.size(); lpc++) {
-        sa[range_queue[lpc]].insert(attr_queue[lpc]);
     }
 }
