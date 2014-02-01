@@ -384,5 +384,11 @@ size_t strtonum(T &num_out, const char *string, size_t len)
     return retval;
 }
 
-template 
+template
 size_t strtonum<long long>(long long &num_out, const char *string, size_t len);
+
+template
+size_t strtonum<long>(long &num_out, const char *string, size_t len);
+
+template
+size_t strtonum<int>(int &num_out, const char *string, size_t len);
