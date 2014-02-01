@@ -213,7 +213,10 @@ class generic_log_format : public log_format {
         const char *level = &line.get_data()[pc[1]->c_begin];
 
         if (logline::string2level(level, pc[1]->length(), true) == logline::LEVEL_UNKNOWN) {
-            prefix_len = lr.lr_end;
+            prefix_len = pc[0]->c_end;
+        }
+        else {
+            prefix_len = pc[1]->c_end;
         }
 
         lr.lr_start = 0;
