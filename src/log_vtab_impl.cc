@@ -104,7 +104,7 @@ struct vtab {
 struct vtab_cursor {
     sqlite3_vtab_cursor        base;
     struct log_cursor          log_cursor;
-    std::string                log_msg;
+    shared_buffer_ref          log_msg;
     std::vector<logline_value> line_values;
 };
 
@@ -345,13 +345,14 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                     SQLITE_STATIC);
             }
             else {
-                string line;
+                shared_buffer_ref line;
 
-                lf->read_line(ll, line);
-                sqlite3_result_text(ctx,
-                                    line.c_str(),
-                                    line.length(),
-                                    SQLITE_TRANSIENT);
+                if (lf->read_line(ll, line)) {
+                    sqlite3_result_text(ctx,
+                                        line.get_data(),
+                                        line.length(),
+                                        SQLITE_TRANSIENT);
+                }
             }
         }
         else {
@@ -375,11 +376,11 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                     sqlite3_result_null(ctx);
                     break;
                 case logline_value::VALUE_TEXT: {
-                    const char *text_value = lv_iter->lv_string.c_str();
+                    const char *text_value = lv_iter->lv_sbr.get_data();
 
                     sqlite3_result_text(ctx,
-                                        &text_value[lv_iter->lv_string_offset],
-                                        lv_iter->lv_string_size,
+                                        text_value,
+                                        lv_iter->lv_sbr.length(),
                                         SQLITE_TRANSIENT);
                     break;
                 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2014, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,65 +26,38 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file column_namer.hh
+ * @file shared_buffer.cc
  */
 
-#ifndef _column_namer_hh
-#define _column_namer_hh
+#include "shared_buffer.hh"
 
-#include <map>
-#include <string>
-#include <vector>
-#include <algorithm>
+ void shared_buffer_ref::share(shared_buffer &sb, char *data, size_t len)
+ {
+    this->disown();
 
-class column_namer {
-public:
-    column_namer()
-    {
-        this->cn_builtin_names.push_back("col");
-    };
+    LIST_INSERT_HEAD(&sb.sb_refs, this, sb_link);
+    this->sb_owner = &sb;
+    this->sb_data = data;
+    this->sb_length = len;
+}
 
-    bool existing_name(const std::string &in_name) const
-    {
-        if (find(this->cn_builtin_names.begin(),
-                 this->cn_builtin_names.end(),
-                 in_name) != this->cn_builtin_names.end()) {
-            return true;
+bool shared_buffer_ref::subset(shared_buffer_ref &other, off_t offset, size_t len)
+{
+    this->disown();
+
+    if (offset != -1) {
+        this->sb_owner = other.sb_owner;
+        this->sb_length = len;
+        if (this->sb_owner == NULL) {
+            if ((this->sb_data = (char *)malloc(this->sb_length)) == NULL) {
+                return false;
+            }
+
+            memcpy(this->sb_data, &other.sb_data[offset], len);
+        } else {
+            LIST_INSERT_HEAD(&this->sb_owner->sb_refs, this, sb_link);
+            this->sb_data = &other.sb_data[offset];
         }
-        else if (find(this->cn_names.begin(),
-                      this->cn_names.end(),
-                      in_name) != this->cn_names.end()) {
-            return true;
-        }
-
-        return false;
-    };
-
-    std::string add_column(const std::string &in_name)
-    {
-        std::string base_name = in_name, retval;
-        size_t      buf_size;
-        int         num = 0;
-
-        buf_size = in_name.length() + 64;
-        char buffer[buf_size];
-        if (in_name == "") {
-            base_name = "col";
-        }
-
-        retval = base_name;
-        while (this->existing_name(retval)) {
-            snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
-            retval = buffer;
-            num   += 1;
-        }
-
-        this->cn_names.push_back(retval);
-
-        return retval;
-    };
-
-    std::vector<std::string> cn_builtin_names;
-    std::vector<std::string> cn_names;
-};
-#endif
+    }
+    return true;
+}

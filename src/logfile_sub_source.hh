@@ -430,6 +430,7 @@ private:
 
     logfile *         lss_token_file;
     std::string       lss_token_value;
+    shared_buffer     lss_share_manager;
     int               lss_scrub_len;
     int               lss_token_offset;
     int               lss_token_date_end;

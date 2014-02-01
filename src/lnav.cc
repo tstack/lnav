@@ -1490,39 +1490,19 @@ static void handle_paging_key(int ch)
             content_line_t      cl       = lss.at(log_view.get_top());
             logfile *           lf       = lss.find(cl);
             logfile::iterator ll = lf->begin() + cl;
+            log_data_helper ldh(lss);
 
             lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "colname");
 
-            if (!ll->is_continued()) {
-                std::string         line     = lf->read_line(ll);
-                struct line_range          body;
-                string_attrs_t             sa;
-                std::vector<logline_value> line_values;
+            ldh.parse_line(log_view.get_top(), true);
 
-                lf->get_format()->annotate(line, sa, line_values);
-
-                body = find_string_attr_range(sa, &textview_curses::SA_BODY);
-                if (body.lr_end != -1) {
-                    line = line.substr(body.lr_start);
-                }
-
-                data_scanner ds(line);
-                data_parser  dp(&ds);
-                dp.parse();
-
-                column_namer namer;
-
-                for (data_parser::element_list_t::iterator iter =
-                     dp.dp_pairs.begin();
-                     iter != dp.dp_pairs.end();
-                     ++iter) {
-                    std::string colname = dp.get_element_string(iter->e_sub_elements->front());
-
-                    colname = namer.add_column(colname);
-                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname",
-                                                          colname);
-                }
+            for (vector<string>::iterator iter = ldh.ldh_namer->cn_names.begin();
+                 iter != ldh.ldh_namer->cn_names.end();
+                 ++iter) {
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname", *iter);
             }
+
+            ldh.clear();
 
             lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "line-time");
             {
@@ -1718,7 +1698,7 @@ static void handle_paging_key(int ch)
         hist_source &hs = lnav_data.ld_db_source;
         db_label_source &dls   = lnav_data.ld_db_rows;
         std::vector<bucket_type_t> &displayed = hs.get_displayed_buckets();
-        std::vector<bool>::iterator start_iter, iter;
+        std::vector<int>::iterator start_iter, iter;
 
         start_iter = dls.dls_headers_to_graph.begin();
         if (!displayed.empty()) {
@@ -1746,7 +1726,7 @@ static void handle_paging_key(int ch)
         hist_source &hs = lnav_data.ld_db_source;
         db_label_source &dls   = lnav_data.ld_db_rows;
         std::vector<bucket_type_t> &displayed = hs.get_displayed_buckets();
-        std::vector<bool>::reverse_iterator start_iter, iter;
+        std::vector<int>::reverse_iterator start_iter, iter;
 
         start_iter = dls.dls_headers_to_graph.rbegin();
         if (!displayed.empty()) {

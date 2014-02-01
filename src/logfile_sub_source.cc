@@ -186,6 +186,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         return;
     }
 
+    this->lss_share_manager.invalidate_refs();
     this->lss_token_value =
         this->lss_token_file->read_line(this->lss_token_line);
 
@@ -202,6 +203,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         log_format *format = this->lss_token_file->get_format();
 
         if (format->lf_date_time.dts_fmt_lock != -1) {
+            shared_buffer_ref sbr;
             std::vector<logline_value> line_values;
             struct timeval adjusted_time;
             string_attrs_t sa;
@@ -214,7 +216,9 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                      fmt,
                      gmtime(&adjusted_time.tv_sec));
 
-            format->annotate(this->lss_token_value, sa, line_values);
+            sbr.share(this->lss_share_manager,
+                (char *)this->lss_token_value.c_str(), this->lss_token_value.size());
+            format->annotate(sbr, sa, line_values);
 
             struct line_range time_range;
 
@@ -340,7 +344,11 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     std::vector<logline_value> line_values;
     
     if (!(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
-        format->annotate(this->lss_token_value, value_out, line_values);
+        shared_buffer_ref sbr;
+
+        sbr.share(this->lss_share_manager,
+            (char *)this->lss_token_value.c_str(), this->lss_token_value.size());
+        format->annotate(sbr, value_out, line_values);
     }
 
     lr.lr_start = time_offset_end + this->lss_token_date_end;

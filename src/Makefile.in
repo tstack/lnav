@@ -120,7 +120,8 @@ am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
 	session_data.$(OBJEXT) sequence_matcher.$(OBJEXT) \
-	sqlite-extension-func.$(OBJEXT) statusview_curses.$(OBJEXT) \
+	shared_buffer.$(OBJEXT) sqlite-extension-func.$(OBJEXT) \
+	statusview_curses.$(OBJEXT) \
 	string-extension-functions.$(OBJEXT) pcrepp.$(OBJEXT) \
 	piper_proc.$(OBJEXT) sql_util.$(OBJEXT) \
 	state-extension-functions.$(OBJEXT) strnatcmp.$(OBJEXT) \
@@ -407,6 +408,7 @@ noinst_HEADERS = \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	session_data.hh \
+	shared_buffer.hh \
 	sql_util.hh \
 	sqlite-extension-func.h \
     status_controllers.hh \
@@ -460,6 +462,7 @@ libdiag_a_SOURCES = \
 	readline_curses.cc \
 	session_data.cc \
 	sequence_matcher.cc \
+	shared_buffer.cc \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
 	string-extension-functions.cc \
@@ -691,6 +694,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/session_data.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shared_buffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sql_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sqlite-extension-func.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state-extension-functions.Po@am__quote@

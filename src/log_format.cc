@@ -347,11 +347,11 @@ static int json_array_end(void *ctx)
     if (ypc->ypc_path_index_stack.size() == 1) {
         string field_name = ypc->get_path_fragment(0);
         size_t sub_end = yajl_get_bytes_consumed(jlu->jlu_handle);
-        string str = string(&jlu->jlu_line_value[jlu->jlu_sub_start],
-                            sub_end - jlu->jlu_sub_start);
+        tmp_shared_buffer tsb(&jlu->jlu_line_value[jlu->jlu_sub_start],
+            sub_end - jlu->jlu_sub_start);
 
         jlu->jlu_format->jlf_line_values.push_back(
-            logline_value(field_name, str));
+            logline_value(field_name, tsb.tsb_ref));
     }
 
     return 1;
@@ -527,12 +527,12 @@ bool external_log_format::scan(std::vector<logline> &dst,
     return retval;
 }
 
-void external_log_format::annotate(const std::string &line,
+void external_log_format::annotate(shared_buffer_ref &line,
                                    string_attrs_t &sa,
                                    std::vector<logline_value> &values) const
 {
     pcre_context_static<128> pc;
-    pcre_input pi(line);
+    pcre_input pi(line.get_data(), 0, line.length());
     struct line_range lr;
     pcre_context::capture_t *cap;
 
@@ -559,8 +559,8 @@ void external_log_format::annotate(const std::string &line,
         lr.lr_end = cap->c_end;
     }
     else {
-        lr.lr_start = line.size();
-        lr.lr_end = line.size();
+        lr.lr_start = line.length();
+        lr.lr_end = line.length();
     }
     sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
 
@@ -569,6 +569,7 @@ void external_log_format::annotate(const std::string &line,
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const value_def &vd = pat.p_value_by_index[lpc];
         const struct scaling_factor *scaling = NULL;
+        shared_buffer_ref field;
 
         if (vd.vd_unit_field_index >= 0) {
             pcre_context::iterator unit_cap = pc[vd.vd_unit_field_index];
@@ -586,11 +587,11 @@ void external_log_format::annotate(const std::string &line,
             }
         }
 
+        field.subset(line, pc[vd.vd_index]->c_begin, pc[vd.vd_index]->length());
+
         values.push_back(logline_value(vd.vd_name,
                          vd.vd_kind,
-                         line,
-                         pc[vd.vd_index]->c_begin,
-                         pc[vd.vd_index]->length(),
+                         field,
                          vd.vd_identifier,
                          scaling,
                          vd.vd_column,
@@ -642,28 +643,29 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     string field_name = ypc->get_path_fragment(0);
-    string val = string((const char *)str, len);
 
     if (field_name == jlu->jlu_format->lf_timestamp_field) {
         char time_buf[64];
 
         sql_strftime(time_buf, sizeof(time_buf), jlu->jlu_line->get_timeval());
-        val = time_buf;
+        tmp_shared_buffer tsb(time_buf);
+        jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, tsb.tsb_ref));
     }
-    if (field_name == jlu->jlu_format->elf_body_field) {
-        jlu->jlu_format->jlf_line_values.push_back(logline_value("body", val));
+    else {
+        tmp_shared_buffer tsb((const char *)str, len);
+
+        if (field_name == jlu->jlu_format->elf_body_field) {
+            jlu->jlu_format->jlf_line_values.push_back(logline_value("body", tsb.tsb_ref));
+        }
+        jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, tsb.tsb_ref));
     }
-    jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, val));
 
     return 1;
 }
 
-void external_log_format::get_subline(const logline &ll,
-                                      const char *line, size_t len,
-                                      ostringstream &stream_out)
+void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
 {
     if (!this->jlf_json) {
-        stream_out.write(line, len);
         return;
     }
 
@@ -673,6 +675,7 @@ void external_log_format::get_subline(const logline &ll,
         view_colors &vc = view_colors::singleton();
         json_log_userdata jlu;
 
+        this->jlf_share_manager.invalidate_refs();
         this->jlf_cached_line.clear();
         this->jlf_line_values.clear();
         this->jlf_line_offsets.clear();
@@ -691,9 +694,10 @@ void external_log_format::get_subline(const logline &ll,
         jlu.jlu_format = this;
         jlu.jlu_line = &ll;
         jlu.jlu_handle = handle;
-        jlu.jlu_line_value = line;
+        jlu.jlu_line_value = sbr.get_data();
 
-        yajl_status parse_status = yajl_parse(handle.in(), (const unsigned char *)line, len);
+        yajl_status parse_status = yajl_parse(handle.in(),
+            (const unsigned char *)sbr.get_data(), sbr.length());
         if (parse_status == yajl_status_ok &&
             yajl_complete_parse(handle.in()) == yajl_status_ok) {
             std::vector<logline_value>::iterator lv_iter;
@@ -811,8 +815,9 @@ void external_log_format::get_subline(const logline &ll,
         this_off += 1;
     next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
 
-    stream_out.write(this->jlf_cached_line.c_str() + this_off,
-                     next_off - this_off);
+    sbr.share(this->jlf_share_manager,
+              (char *)this->jlf_cached_line.c_str() + this_off,
+              next_off - this_off);
 }
 
 void external_log_format::build(std::vector<std::string> &errors)

@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 
+#include "pcrepp.hh"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
 
@@ -103,6 +104,31 @@ class generic_log_format : public log_format {
         return log_fmt;
     };
 
+    struct pcre_format {
+        const char *name;
+        pcrepp pcre;
+    };
+
+    static pcre_format *get_pcre_log_formats() {
+        static pcre_format log_fmt[] = {
+            { "", pcrepp("([\\dTZ: ,\\.-]+)([^:]+)") },
+            { "", pcrepp("([\\w:+/\\.-]+) \\[\\w (.*)") },
+            { "", pcrepp("([\\w:,/\\.-]+) (.*)") },
+            { "", pcrepp("([\\w: \\.,/-]+) \\[[^\\]+](.*)") },
+            { "", pcrepp("([\\w: \\.,/-]+) (.*)") },
+
+            { "", pcrepp("\\[([\\d: \\.-]+) \\w+ (.*)") },
+            { "", pcrepp("\\[([\\w: +/-]+)\\] (.*)") },
+            { "", pcrepp("\\[([\\w: +/-]+)\\] \\[(\\w+)\\]") },
+            { "", pcrepp("\\[([\\w: \\.+/-]+)\\] \\w+ (.*)") },
+            { "", pcrepp("\\[([\\w: +/-]+)\\] \\(\\d+\\) (.*)") },
+
+            { NULL, pcrepp("") }
+        };
+
+        return log_fmt;
+    };
+
     string get_name() const { return "generic_log"; };
 
     void scrub(string &line)
@@ -166,33 +192,27 @@ class generic_log_format : public log_format {
         return retval;
     };
 
-    void annotate(const string &line,
+    void annotate(shared_buffer_ref &line,
                   string_attrs_t &sa,
                   std::vector<logline_value> &values) const
     {
-        const char *      fmt = get_log_formats()[this->lf_fmt_lock];
-        char              timestr[64 + 32] = "";
-        char              level[64]        = "";
+        pcre_format &fmt = get_pcre_log_formats()[this->lf_fmt_lock];
         struct line_range lr;
         int prefix_len = 0;
+        pcre_input pi(line.get_data(), 0, line.length());
+        pcre_context_static<30> pc;
 
-        if (sscanf(line.c_str(), fmt, timestr, level, &prefix_len) != 2) {
+        if (!fmt.pcre.match(pc, pi)) {
             return;
         }
 
-        lr.lr_start = fmt[0] == '%' ? 0 : 1;
-        lr.lr_end   = lr.lr_start + this->lf_date_time.dts_fmt_len;
+        lr.lr_start = pc[0]->c_begin;
+        lr.lr_end   = pc[0]->c_end;
         sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
 
-        for (int lpc = 0; level[lpc]; lpc++) {
-            if (!isalpha(level[lpc])) {
-                level[lpc] = '\0';
-                prefix_len = strlen(timestr) + lpc;
-                break;
-            }
-        }
+        const char *level = &line.get_data()[pc[1]->c_begin];
 
-        if (logline::string2level(level, -1, true) == logline::LEVEL_UNKNOWN) {
+        if (logline::string2level(level, pc[1]->length(), true) == logline::LEVEL_UNKNOWN) {
             prefix_len = lr.lr_end;
         }
 
@@ -290,12 +310,12 @@ class strace_log_format : public log_format {
         return retval;
     };
 
-    void annotate(const std::string &line,
+    void annotate(shared_buffer_ref &line,
                   string_attrs_t &sa,
                   std::vector<logline_value> &values) const
     {
         pcre_context_static<30> pc;
-        pcre_input pi(line);
+        pcre_input pi(line.get_data(), 0, line.length());
 
         if (value_pattern().match(pc, pi)) {
             static struct {
@@ -330,17 +350,17 @@ class strace_log_format : public log_format {
             sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
 
             for (int lpc = 0; columns[lpc].name; lpc++) {
+                pcre_context::iterator cap = pc.begin() + lpc;
+                shared_buffer_ref value_str;
+
                 if (columns[lpc].name[0] == '\0') {
                     continue;
                 }
+                value_str.subset(line, cap->c_begin, cap->length());
                 values.push_back(logline_value(columns[lpc].name,
                                                columns[lpc].kind,
-                                               pi.get_substr(pc.begin() +
-                                                             lpc)));
+                                               value_str));
             }
-        }
-        else {
-            fprintf(stderr, "bad match! %s\n", line.c_str());
         }
     };
 };

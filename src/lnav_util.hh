@@ -187,4 +187,7 @@ struct date_time_scanner {
                      struct timeval &tv_out);
 };
 
+template<typename T>
+size_t strtonum(T &num_out, const char *data, size_t len);
+
 #endif

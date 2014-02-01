@@ -61,27 +61,26 @@ public:
     void get_columns(std::vector<vtab_column> &cols)
     {
         content_line_t cl_copy = this->ldt_template_line;
-        logfile *      lf      = lnav_data.ld_log_source.find(
-            cl_copy);
-        std::string val;
+        logfile *      lf      = lnav_data.ld_log_source.find(cl_copy);
         struct line_range          body;
         string_attrs_t             sa;
         std::vector<logline_value> line_values;
         log_format *format = lf->get_format();
+        shared_buffer_ref line;
 
         if (this->ldt_format_impl != NULL) {
             this->ldt_format_impl->get_columns(cols);
         }
         this->ldt_parent_column_count = cols.size();
-        lf->read_full_message(lf->begin() + cl_copy, val);
-        format->annotate(val, sa, line_values);
+        lf->read_full_message(lf->begin() + cl_copy, line);
+        format->annotate(line, sa, line_values);
         body = find_string_attr_range(sa, &textview_curses::SA_BODY);
         if (body.lr_end == -1 || body.length() == 0) {
             this->ldt_schema_id.clear();
             return;
         }
 
-        data_scanner ds(val, body.lr_start, body.lr_end);
+        data_scanner ds(line, body.lr_start, body.lr_end);
         data_parser  dp(&ds);
         column_namer cn;
 
@@ -173,7 +172,7 @@ public:
     };
 
     void extract(logfile *lf,
-                 const std::string &line,
+                 shared_buffer_ref &line,
                  std::vector<logline_value> &values)
     {
         int next_column = this->ldt_parent_column_count;
@@ -184,20 +183,23 @@ public:
              pair_iter != this->ldt_pairs.end();
              ++pair_iter) {
             const data_parser::element &pvalue = pair_iter->get_pair_value();
-            const std::string           tmp    = this->ldt_current_line.substr(
-                pvalue.e_capture.c_begin, pvalue.e_capture.length());
 
             switch (pvalue.value_token()) {
             case DT_NUMBER: {
+                char scan_value[line.length() + 1];
                 double d = 0;
 
-                sscanf(tmp.c_str(), "%lf", &d);
+                memcpy(scan_value,
+                    line.get_data() + pvalue.e_capture.c_begin,
+                    pvalue.e_capture.length());
+                scan_value[line.length()] = '\0';
+                sscanf(scan_value, "%lf", &d);
                 values.push_back(logline_value("", d));
             }
             break;
 
             default:
-                values.push_back(logline_value("", tmp));
+                values.push_back(logline_value("", logline_value::VALUE_TEXT, line));
                 break;
             }
             values.back().lv_column = next_column++;
@@ -207,7 +209,7 @@ public:
 private:
     const content_line_t     ldt_template_line;
     data_parser::schema_id_t ldt_schema_id;
-    std::string ldt_current_line;
+    shared_buffer_ref ldt_current_line;
     data_parser::element_list_t ldt_pairs;
     log_vtab_impl *ldt_format_impl;
     int ldt_parent_column_count;

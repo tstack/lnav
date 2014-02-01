@@ -290,6 +290,8 @@ throw (error)
             this->resize_buffer(this->lb_buffer_max +
                                 DEFAULT_LINE_BUFFER_SIZE);
         }
+
+        this->lb_share_manager.invalidate_refs();
     }
 }
 
@@ -459,7 +461,7 @@ throw (error)
     while (retval == NULL) {
         char *line_start, *lf;
 
-        this->fill_range(offset,  request_size);
+        this->fill_range(offset, request_size);
 
         /* Find the data in the cache and */
         line_start = this->get_range(offset, len_out);
@@ -514,4 +516,45 @@ throw (error)
     assert(this->invariant());
 
     return retval;
+}
+
+bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, char delim)
+    throw (error)
+{
+    char *line;
+    size_t len;
+
+    // Clear the incoming ref right away so that an invalidate
+    // does not cause a wasted malloc/copy.
+    sbr.disown();
+    line = this->read_line(offset_inout, len, delim);
+    if (line != NULL) {
+        sbr.share(this->lb_share_manager, line, len);
+    }
+
+    return line != NULL;
+}
+
+bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
+    throw (error)
+{
+    char *line_start;
+    size_t avail;
+
+    sbr.disown();
+
+    if (this->lb_last_line_offset != -1 && offset > this->lb_last_line_offset) {
+        /*
+         * Don't return anything past the last known line.  The caller needs
+         * to try reading at the offset of the last line again.
+         */
+        return false;
+    }
+
+    this->fill_range(offset, len);
+    line_start = this->get_range(offset, avail);
+
+    sbr.share(this->lb_share_manager, line_start, len);
+
+    return true;
 }

@@ -83,6 +83,7 @@ noinst_HEADERS = \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	session_data.hh \
+	shared_buffer.hh \
 	sql_util.hh \
 	sqlite-extension-func.h \
     status_controllers.hh \
@@ -136,6 +137,7 @@ libdiag_a_SOURCES = \
 	readline_curses.cc \
 	session_data.cc \
 	sequence_matcher.cc \
+	shared_buffer.cc \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
 	string-extension-functions.cc \

@@ -46,6 +46,7 @@ public:
 
     void clear() {
         this->ldh_file = NULL;
+        this->ldh_msg.disown();
         this->ldh_parser.reset();
         this->ldh_scanner.reset();
         this->ldh_namer.reset();
@@ -62,7 +63,7 @@ public:
         this->ldh_source_line = this->ldh_line_index = line;
 
         this->ldh_file = this->ldh_log_source.find(this->ldh_line_index);
-        ll =  this->ldh_file->begin() + this->ldh_line_index;
+        ll = this->ldh_file->begin() + this->ldh_line_index;
         this->ldh_y_offset = 0;
         while (allow_middle && ll->is_continued()) {
             --ll;
@@ -85,10 +86,9 @@ public:
 
             body = find_string_attr_range(sa, &textview_curses::SA_BODY);
             if (body.lr_start == -1) {
-                body.lr_start = this->ldh_msg.size();
-                body.lr_end = this->ldh_msg.size();
+                body.lr_start = this->ldh_msg.length();
+                body.lr_end = this->ldh_msg.length();
             }
-
             this->ldh_scanner.reset(new data_scanner(
                 this->ldh_msg, body.lr_start, body.lr_end));
             this->ldh_parser.reset(new data_parser(this->ldh_scanner.get()));
@@ -106,21 +106,31 @@ public:
 
         line_end_index_out = 0;
         do {
+            const char *line_end;
+
             line_index_out = line_end_index_out;
-            line_end_index_out = this->ldh_msg.find('\n', line_index_out + 1);
+            line_end = (const char *)memchr(
+                this->ldh_msg.get_data() + line_index_out + 1,
+                '\n',
+                this->ldh_msg.length() - line_index_out - 1);
+            if (line_end != NULL) {
+                line_end_index_out = line_end - this->ldh_msg.get_data();
+            } else {
+                line_end_index_out = std::string::npos;
+            }
             retval += 1;
         } while (retval <= this->ldh_y_offset);
 
         if (line_end_index_out == std::string::npos) {
-            line_end_index_out = this->ldh_msg.size();
+            line_end_index_out = this->ldh_msg.length();
         }
 
         return retval;
     };
 
     int get_value_line(const logline_value &lv) const {
-        return std::count(this->ldh_msg.begin(),
-                          this->ldh_msg.begin() + lv.lv_origin.lr_start,
+        return std::count(this->ldh_msg.get_data(),
+                          this->ldh_msg.get_data() + lv.lv_origin.lr_start,
                           '\n');
     };
 
@@ -129,7 +139,7 @@ public:
     logfile *ldh_file;
     int ldh_y_offset;
     logfile::iterator ldh_line;
-    std::string ldh_msg;
+    shared_buffer_ref ldh_msg;
     content_line_t ldh_line_index;
     std::auto_ptr<data_scanner> ldh_scanner;
     std::auto_ptr<data_parser> ldh_parser;

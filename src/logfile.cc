@@ -345,20 +345,17 @@ void logfile::read_line(logfile::iterator ll, string &line_out)
 {
     try {
         off_t       off = ll->get_offset();
-        const char *line;
-        size_t      len;
+        shared_buffer_ref sbr;
 
         line_out.clear();
-        if ((line = this->lf_line_buffer.read_line(off, len)) != NULL) {
+        if (this->lf_line_buffer.read_line(off, sbr)) {
             ostringstream stream;
 
             if (this->lf_format.get() != NULL) {
-                this->lf_format->get_subline(*ll, line, len, stream);
-                line_out = stream.str();
+                this->lf_format->get_subline(*ll, sbr);
+
             }
-            else {
-                line_out.append(line, len);
-            }
+            line_out.append(sbr.get_data(), sbr.length());
         }
         else {
             /* XXX */
@@ -367,6 +364,23 @@ void logfile::read_line(logfile::iterator ll, string &line_out)
     catch (line_buffer::error & e) {
         /* ... */
     }
+}
+
+bool logfile::read_line(logfile::iterator ll, shared_buffer_ref &sbr)
+{
+    try {
+        off_t       off = ll->get_offset();
+
+        if (this->lf_line_buffer.read_line(off, sbr)) {
+            if (this->lf_format.get() != NULL) {
+                this->lf_format->get_subline(*ll, sbr);
+            }
+            return true;
+        }
+    }
+    catch (line_buffer::error & e) {
+    }
+    return false;
 }
 
 void logfile::read_full_message(logfile::iterator ll,
@@ -378,14 +392,14 @@ void logfile::read_full_message(logfile::iterator ll,
     do {
         try {
             off_t       off = ll->get_offset();
-            const char *line;
-            size_t      len;
+            shared_buffer_ref sbr;
 
             if (stream.tellp() > 0) {
                 stream.write("\n", 1);
             }
-            if ((line = this->lf_line_buffer.read_line(off, len)) != NULL) {
-                this->lf_format->get_subline(*ll, line, len, stream);
+            if (this->lf_line_buffer.read_line(off, sbr)) {
+                this->lf_format->get_subline(*ll, sbr);
+                stream.write(sbr.get_data(), sbr.length());
             }
             else {
                 /* XXX */
@@ -400,4 +414,29 @@ void logfile::read_full_message(logfile::iterator ll,
              (max_lines == -1 || max_lines > 0));
 
     msg_out = stream.str();
+}
+
+void logfile::read_full_message(logfile::iterator ll,
+                                shared_buffer_ref &msg_out,
+                                int max_lines)
+{
+    assert(ll->get_sub_offset() == 0);
+
+    size_t line_len = this->line_length(ll);
+
+    try {
+        off_t       off = ll->get_offset();
+
+        if (this->lf_line_buffer.read_range(off, line_len, msg_out)) {
+            if (this->lf_format.get() != NULL) {
+                this->lf_format->get_subline(*ll, msg_out);
+            }
+        }
+        else {
+                /* XXX */
+        }
+    }
+    catch (line_buffer::error & e) {
+        /* ... */
+    }
 }

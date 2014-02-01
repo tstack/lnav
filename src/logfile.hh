@@ -44,6 +44,7 @@
 #include "byte_array.hh"
 #include "line_buffer.hh"
 #include "log_format.hh"
+#include "shared_buffer.hh"
 
 class logfile;
 
@@ -210,6 +211,8 @@ public:
      */
     void read_line(iterator ll, std::string &line_out);
 
+    bool read_line(iterator ll, shared_buffer_ref &sbr);
+
     /**
      * Read a line from the file.
      *
@@ -226,8 +229,12 @@ public:
     };
 
     size_t line_length(iterator ll) {
-        iterator next_line = ll + 1;
+        iterator next_line = ll;
         size_t retval;
+
+        do {
+            ++next_line;
+        } while (next_line != this->end() && ll->get_offset() == next_line->get_offset());
 
         if (next_line == this->end()) {
             retval = this->lf_index_size - ll->get_offset();
@@ -240,6 +247,8 @@ public:
     };
 
     void read_full_message(iterator ll, std::string &msg_out, int max_lines=50);
+
+    void read_full_message(iterator ll, shared_buffer_ref &msg_out, int max_lines=50);
 
     /**
      * Index any new data in the log file.

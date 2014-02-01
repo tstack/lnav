@@ -71,7 +71,9 @@ public:
     };
 
     log_vtab_impl(const std::string name)
-        : vi_name(name) {};
+        : vi_name(name) {
+        this->vi_attrs.resize(128);
+    };
     virtual ~log_vtab_impl() { };
 
     const std::string &get_name(void) const
@@ -112,17 +114,18 @@ public:
     };
 
     virtual void extract(logfile *lf,
-                         const std::string &line,
+                         shared_buffer_ref &line,
                          std::vector<logline_value> &values)
     {
         log_format *   format = lf->get_format();
-        string_attrs_t sa;
 
-        format->annotate(line, sa, values);
+        this->vi_attrs.clear();
+        format->annotate(line, this->vi_attrs, values);
     };
 
     int vi_column_count;
 private:
+    string_attrs_t vi_attrs;
     const std::string vi_name;
 };
 

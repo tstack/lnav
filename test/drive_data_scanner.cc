@@ -133,12 +133,15 @@ int main(int argc, char *argv[])
 
                 string sub_line = line.substr(13);
                 struct line_range body(0, sub_line.length());
+                shared_buffer share_manager;
+                shared_buffer_ref sbr;
 
+                sbr.share(share_manager, (char *)sub_line.c_str(), sub_line.size());
                 if (format.get() != NULL) {
                     vector<logline_value> ll_values;
                     string_attrs_t sa;
 
-                    format->annotate(sub_line, sa, ll_values);
+                    format->annotate(sbr, sa, ll_values);
                     body = find_string_attr_range(sa, &textview_curses::SA_BODY);
                 }
 

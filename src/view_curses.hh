@@ -191,6 +191,8 @@ struct string_attr {
         this->sa_value.sav_int = val;
     };
 
+    string_attr() { };
+
     bool operator<(const struct string_attr &rhs) const
     {
         return this->sa_range < rhs.sa_range;

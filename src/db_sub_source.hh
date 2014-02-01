@@ -138,7 +138,7 @@ public:
     }
 
     std::vector<std::string> dls_headers;
-    std::vector<bool>        dls_headers_to_graph;
+    std::vector<int>         dls_headers_to_graph;
     std::vector<int>         dls_column_types;
     std::vector<std::vector<std::string> > dls_rows;
     std::vector<size_t> dls_column_sizes;

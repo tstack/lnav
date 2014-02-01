@@ -33,6 +33,7 @@
 #include <string>
 
 #include "pcrepp.hh"
+#include "shared_buffer.hh"
 
 enum data_token_t {
     DT_INVALID       = -1,
@@ -114,12 +115,21 @@ public:
         }
     };
 
+    data_scanner(shared_buffer_ref &line, size_t off = 0, size_t len = -1)
+        : ds_sbr(line), ds_pcre_input(line.get_data(), off, len)
+    {
+        if (line.length() > 0 && line.get_data()[line.length() - 1] == '.') {
+            this->ds_pcre_input.pi_length -= 1;
+        }
+    };
+
     bool tokenize(pcre_context &pc, data_token_t &token_out);
 
     pcre_input &get_input() { return this->ds_pcre_input; };
 
 private:
     std::string ds_line;
+    shared_buffer_ref ds_sbr;
     pcre_input  ds_pcre_input;
 };
 #endif

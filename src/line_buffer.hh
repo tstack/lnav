@@ -42,6 +42,7 @@
 
 #include "auto_fd.hh"
 #include "auto_mem.hh"
+#include "shared_buffer.hh"
 
 /**
  * Buffer for reading whole lines out of file descriptors.  The class presents
@@ -108,7 +109,13 @@ public:
      * line to refresh the buffer.
      */
     char *read_line(off_t &offset_inout, size_t &len_out, char delim = '\n')
-    throw (error);
+        throw (error);
+
+    bool read_line(off_t &offset_inout, shared_buffer_ref &sbr, char delim = '\n')
+        throw (error);
+
+    bool read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
+        throw (error);
 
     /**
      * Signal that the contents of the internal buffer have been modified and
@@ -202,6 +209,8 @@ private:
 
         return retval;
     };
+
+    shared_buffer lb_share_manager;
 
     auto_fd lb_fd;              /*< The file to read data from. */
     gzFile  lb_gz_file;         /*< File handle for gzipped files. */

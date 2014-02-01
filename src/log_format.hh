@@ -51,6 +51,7 @@
 #include "lnav_util.hh"
 #include "byte_array.hh"
 #include "view_curses.hh"
+#include "shared_buffer.hh"
 
 class logfile_filter {
 public:
@@ -341,51 +342,51 @@ public:
         : lv_name(name), lv_kind(VALUE_INTEGER), lv_number(i), lv_identifier(), lv_column(-1) { };
     logline_value(std::string name, double i)
         : lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i), lv_identifier(), lv_column(-1) { };
-    logline_value(std::string name, std::string s)
-        : lv_name(name), lv_kind(VALUE_TEXT),
-          lv_string(s), lv_string_offset(0), lv_identifier(), lv_column(-1) { 
-        this->lv_string_size = s.length();
+    logline_value(std::string name, shared_buffer_ref &sbr)
+        : lv_name(name), lv_kind(VALUE_TEXT), lv_sbr(sbr),
+          lv_identifier(), lv_column(-1) {
     };
-    logline_value(std::string name, kind_t kind, const std::string &s,
-                  off_t off = 0, ssize_t size = -1,
+    logline_value(std::string name, kind_t kind, shared_buffer_ref &sbr,
                   bool ident=false, const scaling_factor *scaling=NULL,
                   int col=-1, int start=-1, int end=-1)
-        : lv_name(name), lv_kind(kind), lv_string_offset(off), lv_string_size(size),
+        : lv_name(name), lv_kind(kind),
           lv_identifier(ident), lv_column(col),
           lv_origin(start, end)
     {
-        const char *substr = &(s.c_str()[off]);
-
-        if (off == -1) {
+        if (sbr.get_data() == NULL) {
             this->lv_kind = kind = VALUE_NULL;
-        } else if (size == (ssize_t)-1) {
-            this->lv_string_size = s.length() - off;
         }
 
         switch (kind) {
         case VALUE_TEXT:
-            this->lv_string = s;
+            this->lv_sbr = sbr;
             break;
 
         case VALUE_NULL:
             break;
 
         case VALUE_INTEGER:
-            this->lv_number.i = strtoll(substr, NULL, 0);
+            strtonum(this->lv_number.i, sbr.get_data(), sbr.length());
             if (scaling != NULL) {
                 scaling->scale(this->lv_number.i);
             }
             break;
 
-        case VALUE_FLOAT:
-            this->lv_number.d = strtod(substr, NULL);
+        case VALUE_FLOAT: {
+            char scan_value[sbr.length() + 1];
+
+            memcpy(scan_value, sbr.get_data(), sbr.length());
+            scan_value[sbr.length()] = '\0';
+            this->lv_number.d = strtod(scan_value, NULL);
             if (scaling != NULL) {
                 scaling->scale(this->lv_number.d);
             }
             break;
+        }
 
         case VALUE_BOOLEAN:
-            if (s == "true" || s == "yes") {
+            if (strncmp(sbr.get_data(), "true", sbr.length()) == 0 ||
+                strncmp(sbr.get_data(), "yes", sbr.length()) == 0) {
                 this->lv_number.i = 1;
             }
             else {
@@ -395,8 +396,8 @@ public:
 
         case VALUE_UNKNOWN:
         case VALUE__MAX:
-        assert(0);
-        break;
+            assert(0);
+            break;
         }
     };
 
@@ -409,7 +410,7 @@ public:
             return "null";
 
         case VALUE_TEXT:
-            return this->lv_string.substr(this->lv_string_offset, this->lv_string_size);
+            return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
 
         case VALUE_INTEGER:
             snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_number.i);
@@ -446,9 +447,7 @@ public:
         value_u(int64_t i) : i(i) { };
         value_u(double d) : d(d) { };
     }           lv_number;
-    std::string lv_string;
-    off_t lv_string_offset;
-    size_t lv_string_size;
+    shared_buffer_ref lv_sbr;
     bool lv_identifier;
     int lv_column;
     struct line_range lv_origin;
@@ -558,7 +557,7 @@ public:
      */
     virtual void scrub(std::string &line) { };
 
-    virtual void annotate(const std::string &line,
+    virtual void annotate(shared_buffer_ref &sbr,
                           string_attrs_t &sa,
                           std::vector<logline_value> &values) const
     { };
@@ -569,10 +568,7 @@ public:
         return NULL;
     };
 
-    virtual void get_subline(const logline &ll,
-                             const char *line, size_t len,
-                             std::ostringstream &stream_out) {
-        stream_out.write(line, len);
+    virtual void get_subline(const logline &ll, shared_buffer_ref &sbr) {
     };
 
     virtual const std::vector<std::string> *get_actions(const logline_value &lv) const {
@@ -684,8 +680,8 @@ public:
               off_t offset,
               char *prefix,
               int len);
-
-    void annotate(const std::string &line,
+    
+    void annotate(shared_buffer_ref &line,
                   string_attrs_t &sa,
                   std::vector<logline_value> &values) const;
 
@@ -702,9 +698,7 @@ public:
         return retval;
     };
 
-    void get_subline(const logline &ll,
-                     const char *line, size_t len,
-                     std::ostringstream &stream_out);
+    void get_subline(const logline &ll, shared_buffer_ref &sbr);
 
     log_vtab_impl *get_vtab_impl(void) const;
 
@@ -758,6 +752,7 @@ public:
 
     off_t jlf_cached_offset;
     std::vector<off_t> jlf_line_offsets;
+    shared_buffer jlf_share_manager;
     std::string jlf_cached_line;
     string_attrs_t jlf_line_attrs;
     std::auto_ptr<yajlpp_parse_context> jlf_parse_context;
