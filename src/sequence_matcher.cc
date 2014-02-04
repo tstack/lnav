@@ -77,6 +77,5 @@ void sequence_matcher::identity(const std::vector<string> &values,
                             values[lpc].length() + 1);
         }
     }
-    context.Final((uint64 *)id_out.ba_data,
-                  (uint64 *)((uint64 *)(id_out.ba_data)+1));
+    context.Final(id_out.out(0), id_out.out(1));
 }

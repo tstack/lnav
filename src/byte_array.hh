@@ -36,8 +36,10 @@
 
 #include <string>
 
-template<size_t BYTE_COUNT>
+template<size_t COUNT, typename T = unsigned char>
 struct byte_array {
+    static const size_t BYTE_COUNT = COUNT * sizeof(T);
+
     byte_array() { };
 
     byte_array(const byte_array &other)
@@ -78,7 +80,12 @@ struct byte_array {
     }
 
     const unsigned char *in() const { return this->ba_data; };
-    unsigned char *      out() { return this->ba_data; };
+
+    T *out(int offset = 0) {
+        T *ptr = (T *)this->ba_data;
+
+        return &ptr[offset];
+    };
 
     unsigned char        ba_data[BYTE_COUNT];
 };

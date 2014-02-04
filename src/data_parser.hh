@@ -173,7 +173,7 @@ public:
 
     static FILE *TRACE_FILE;
 
-    typedef byte_array<16> schema_id_t;
+    typedef byte_array<2, uint64> schema_id_t;
 
     struct element;
     /* typedef std::list<element> element_list_t; */
@@ -733,8 +733,7 @@ private:
         }
 
         if (schema != NULL) {
-            context.Final((uint64 *)(this->dp_schema_id.ba_data),
-                          (uint64 *)((uint64 *)(this->dp_schema_id.ba_data)+1));
+            context.Final(this->dp_schema_id.out(0), this->dp_schema_id.out(1));
         }
     };
 

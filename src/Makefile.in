@@ -131,7 +131,8 @@ am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	yajl/yajl_alloc.$(OBJEXT) yajl/yajl_buf.$(OBJEXT) \
 	yajl/yajl_encode.$(OBJEXT) yajl/yajl_gen.$(OBJEXT) \
 	yajl/yajl_lex.$(OBJEXT) yajl/yajl_parser.$(OBJEXT) \
-	yajl/yajl_tree.$(OBJEXT) yajl/yajl_version.$(OBJEXT)
+	yajl/yajl_tree.$(OBJEXT) yajl/yajl_version.$(OBJEXT) \
+	spookyhash/SpookyV2.$(OBJEXT)
 libdiag_a_OBJECTS = $(am_libdiag_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
@@ -437,7 +438,8 @@ noinst_HEADERS = \
 	yajl/yajl_encode.h \
 	yajl/yajl_lex.h \
 	yajl/yajl_parser.h \
-	yajl/yajl_version.h
+	yajl/yajl_version.h \
+	spookyhash/SpookyV2.h
 
 libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
@@ -491,7 +493,8 @@ libdiag_a_SOURCES = \
 	yajl/yajl_parser.c \
 	yajl/yajl_parser.h \
 	yajl/yajl_tree.c \
-	yajl/yajl_version.c
+	yajl/yajl_version.c \
+	spookyhash/SpookyV2.cpp
 
 dist_noinst_SCRIPTS = \
 	init_sql.py
@@ -524,7 +527,7 @@ all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .o .obj
+.SUFFIXES: .c .cc .cpp .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -597,6 +600,14 @@ yajl/yajl_tree.$(OBJEXT): yajl/$(am__dirstamp) \
 	yajl/$(DEPDIR)/$(am__dirstamp)
 yajl/yajl_version.$(OBJEXT): yajl/$(am__dirstamp) \
 	yajl/$(DEPDIR)/$(am__dirstamp)
+spookyhash/$(am__dirstamp):
+	@$(MKDIR_P) spookyhash
+	@: > spookyhash/$(am__dirstamp)
+spookyhash/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) spookyhash/$(DEPDIR)
+	@: > spookyhash/$(DEPDIR)/$(am__dirstamp)
+spookyhash/SpookyV2.$(OBJEXT): spookyhash/$(am__dirstamp) \
+	spookyhash/$(DEPDIR)/$(am__dirstamp)
 
 libdiag.a: $(libdiag_a_OBJECTS) $(libdiag_a_DEPENDENCIES) $(EXTRA_libdiag_a_DEPENDENCIES) 
 	$(AM_V_at)-rm -f libdiag.a
@@ -662,6 +673,7 @@ lnav-test$(EXEEXT): $(lnav_test_OBJECTS) $(lnav_test_DEPENDENCIES) $(EXTRA_lnav_
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f spookyhash/*.$(OBJEXT)
 	-rm -f yajl/*.$(OBJEXT)
 
 distclean-compile:
@@ -707,6 +719,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vt52_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xterm_mouse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/yajlpp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@spookyhash/$(DEPDIR)/SpookyV2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@yajl/$(DEPDIR)/yajl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@yajl/$(DEPDIR)/yajl_alloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@yajl/$(DEPDIR)/yajl_buf.Po@am__quote@
@@ -742,6 +755,22 @@ distclean-compile:
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
 
 .cc.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
 @am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
@@ -865,6 +894,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f spookyhash/$(DEPDIR)/$(am__dirstamp)
+	-rm -f spookyhash/$(am__dirstamp)
 	-rm -f yajl/$(DEPDIR)/$(am__dirstamp)
 	-rm -f yajl/$(am__dirstamp)
 	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
@@ -878,7 +909,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-noinstLIBRARIES \
 	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR) yajl/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) spookyhash/$(DEPDIR) yajl/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -924,7 +955,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR) yajl/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) spookyhash/$(DEPDIR) yajl/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

@@ -243,7 +243,7 @@ static void cleanup_session_data(void)
 
 void init_session(void)
 {
-    byte_array<16> hash;
+    byte_array<2, uint64> hash;
     SpookyHash context;
 
     lnav_data.ld_session_time = time(NULL);
@@ -253,7 +253,7 @@ void init_session(void)
     for_each(lnav_data.ld_file_names.begin(),
              lnav_data.ld_file_names.end(),
              object_field(updater, &pair<string, int>::first));
-    context.Final((uint64 *)hash.out(), (uint64 *)((uint64 *)(hash.out())+1));
+    context.Final(hash.out(0), hash.out(1));
 
     lnav_data.ld_session_id = hash.to_string();
 }

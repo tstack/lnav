@@ -241,7 +241,7 @@ public:
      *
      * @param ba The SHA-1 hash of the constant parts of this log line.
      */
-    void set_schema(const byte_array<16> &ba)
+    void set_schema(const byte_array<2, uint64_t> &ba)
     {
         memcpy(this->ll_schema, ba.in(), sizeof(this->ll_schema));
     };
@@ -255,7 +255,7 @@ public:
      * @return    True if the first four bytes of the given schema match the
      *   schema stored in this log line.
      */
-    bool match_schema(const byte_array<16> &ba) const
+    bool match_schema(const byte_array<2, uint64_t> &ba) const
     {
         return memcmp(this->ll_schema, ba.in(), sizeof(this->ll_schema)) == 0;
     }
