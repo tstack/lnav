@@ -53,6 +53,7 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
     pcrepp &   regex = ansi_regex();
     pcre_input pi(str);
 
+    replace(str.begin(), str.end(), '\0', ' ');
     while (regex.match(context, pi)) {
         pcre_context::capture_t *caps = context.all();
         struct line_range        lr;

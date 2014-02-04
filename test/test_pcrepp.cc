@@ -97,5 +97,12 @@ int main(int argc, char *argv[])
         assert(pi.get_substr(context["var1"]) == "123");
     }
 
+    {
+        pcre_context::capture cap(1, 4);
+        pcre_input pi("\0foo", 0, 4);
+
+        assert("foo" == pi.get_substr(&cap));
+    }
+
     return retval;
 }

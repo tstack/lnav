@@ -204,8 +204,8 @@ public:
         if (iter->c_begin == -1) {
             return "";
         }
-        return std::string(this->pi_string,
-                           iter->c_begin,
+        return std::string(&this->pi_string[iter->c_begin],
+                           0,
                            iter->length());
     };
 
