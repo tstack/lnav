@@ -41,7 +41,7 @@ public:
     typedef std::vector<std::string> field_row_t;
     typedef std::list<field_row_t>   field_col_t;
 
-    typedef byte_array<20>           id_t;
+    typedef byte_array<16>           id_t;
 
     enum field_type_t {
         FT_VARIABLE,

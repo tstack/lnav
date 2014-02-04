@@ -37,7 +37,7 @@
 #include <time.h>
 #include <sys/types.h>
 
-#include <openssl/sha.h>
+#include "spookyhash/SpookyV2.h"
 
 #include <string>
 
@@ -90,15 +90,15 @@ std::string time_ago(time_t last_time);
 #error "off_t has unhandled size..."
 #endif
 
-struct sha_updater {
-    sha_updater(SHA_CTX *context) : su_context(context) { };
+struct hash_updater {
+    hash_updater(SpookyHash *context) : su_context(context) { };
 
     void operator()(const std::string &str)
     {
-        SHA_Update(this->su_context, str.c_str(), str.length());
+        this->su_context->Update(str.c_str(), str.length());
     }
 
-    SHA_CTX *su_context;
+    SpookyHash *su_context;
 };
 
 std::string hash_string(const std::string &str);

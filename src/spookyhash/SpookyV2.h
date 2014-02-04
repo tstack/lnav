@@ -26,6 +26,8 @@
 // slower than MD5.
 //
 
+#ifndef _SPOOKYHASH_V2_H
+#define _SPOOKYHASH_V2_H
 #include <stddef.h>
 
 #ifdef _MSC_VER
@@ -296,4 +298,4 @@ private:
 };
 
 
-
+#endif

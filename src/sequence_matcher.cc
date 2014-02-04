@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include <openssl/sha.h>
+#include "spookyhash/SpookyV2.h"
 
 #include "sequence_matcher.hh"
 
@@ -65,18 +65,18 @@ sequence_matcher::sequence_matcher(field_col_t &example)
 void sequence_matcher::identity(const std::vector<string> &values,
                                 id_t &id_out)
 {
-    SHA_CTX context;
+    SpookyHash context;
     int     lpc = 0;
 
-    SHA_Init(&context);
+    context.Init(0, 0);
     for (std::list<field>::iterator iter = sm_fields.begin();
          iter != sm_fields.end();
          ++iter, lpc++) {
         if (iter->sf_type == FT_VARIABLE) {
-            SHA_Update(&context,
-                       values[lpc].c_str(),
-                       values[lpc].length() + 1);
+            context.Update( values[lpc].c_str(),
+                            values[lpc].length() + 1);
         }
     }
-    SHA_Final(id_out.ba_data, &context);
+    context.Final((uint64 *)id_out.ba_data,
+                  (uint64 *)((uint64 *)(id_out.ba_data)+1));
 }

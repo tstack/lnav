@@ -44,12 +44,12 @@
 
 std::string hash_string(const std::string &str)
 {
-    byte_array<SHA_DIGEST_LENGTH> hash;
-    SHA_CTX context;
+    byte_array<16> hash;
+    SpookyHash context;
 
-    SHA_Init(&context);
-    SHA_Update(&context, str.c_str(), str.length());
-    SHA_Final(hash.out(), &context);
+    context.Init(0, 0);
+    context.Update(str.c_str(), str.length());
+    context.Final((uint64 *)hash.out(), (uint64 *)((uint64 *)(hash.out())+1));
 
     return hash.to_string();
 }

@@ -20,7 +20,6 @@ When compiling from source, the following dependencies are required:
 * `PCRE <http://www.pcre.org>`_ -- Versions greater than 8.20 give better
   performance since the PCRE JIT will be leveraged.
 * `SQLite <http://www.sqlite.org>`_
-* `OpenSSL <http://www.openssl.org>`_
 * `ZLib <http://wwww.zlib.net>`_
 * `Bzip2 <http://www.bzip.org>`_
 * `Readline <http://www.gnu.org/s/readline>`_
