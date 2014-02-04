@@ -37,7 +37,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include <openssl/sha.h>
+#include "spookyhash/SpookyV2.h"
 
 #include <algorithm>
 
@@ -243,17 +243,17 @@ static void cleanup_session_data(void)
 
 void init_session(void)
 {
-    byte_array<SHA_DIGEST_LENGTH> hash;
-    SHA_CTX context;
+    byte_array<16> hash;
+    SpookyHash context;
 
     lnav_data.ld_session_time = time(NULL);
 
-    SHA_Init(&context);
-    sha_updater updater(&context);
+    context.Init(0, 0);
+    hash_updater updater(&context);
     for_each(lnav_data.ld_file_names.begin(),
              lnav_data.ld_file_names.end(),
              object_field(updater, &pair<string, int>::first));
-    SHA_Final(hash.out(), &context);
+    context.Final((uint64 *)hash.out(), (uint64 *)((uint64 *)(hash.out())+1));
 
     lnav_data.ld_session_id = hash.to_string();
 }

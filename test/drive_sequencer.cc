@@ -38,8 +38,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#include <openssl/sha.h>
-
 #include <map>
 #include <list>
 #include <vector>

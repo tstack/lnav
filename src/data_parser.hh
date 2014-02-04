@@ -32,7 +32,7 @@
 
 #include <stdio.h>
 
-#include <openssl/sha.h>
+#include "spookyhash/SpookyV2.h"
 
 #include <list>
 #include <vector>
@@ -173,7 +173,7 @@ public:
 
     static FILE *TRACE_FILE;
 
-    typedef byte_array<SHA_DIGEST_LENGTH> schema_id_t;
+    typedef byte_array<16> schema_id_t;
 
     struct element;
     /* typedef std::list<element> element_list_t; */
@@ -421,7 +421,7 @@ private:
         element_list_t ELEMENT_LIST_T(el_stack), ELEMENT_LIST_T(free_row),
         ELEMENT_LIST_T(key_comps), ELEMENT_LIST_T(value),
         ELEMENT_LIST_T(prefix);
-        SHA_CTX context;
+        SpookyHash context;
 
         POINT_TRACE("pairup_start");
 
@@ -558,7 +558,7 @@ private:
 
         POINT_TRACE("pairup_stack");
 
-        SHA_Init(&context);
+        context.Init(0, 0);
         while (!el_stack.empty()) {
             element_list_t::iterator kv_iter = el_stack.begin();
             if (kv_iter->e_token == DNT_VALUE) {
@@ -595,7 +595,7 @@ private:
 
 
             if (schema != NULL) {
-                SHA_Update(&context, key_val.c_str(), key_val.length());
+                context.Update(key_val.c_str(), key_val.length());
             }
 
             while (!free_row.empty()) {
@@ -658,7 +658,7 @@ private:
                                 value.e_sub_elements->begin(),
                                 value.e_sub_elements->end());
                 pairs_out.clear();
-                SHA_Init(&context);
+                context.Init(0, 0);
             }
         }
 
@@ -700,7 +700,7 @@ private:
                     // columns is significant.  I don't think we want to
                     // use the token ID since some columns values might vary
                     // between rows.
-                    SHA_Update(&context, " ", 1);
+                    context.Update(" ", 1);
                 }
                 break;
 
@@ -711,7 +711,7 @@ private:
                     std::string key_val = this->get_element_string(
                         free_row.front());
 
-                    SHA_Update(&context, key_val.c_str(), key_val.length());
+                    context.Update(key_val.c_str(), key_val.length());
                 }
                 break;
                 }
@@ -733,7 +733,8 @@ private:
         }
 
         if (schema != NULL) {
-            SHA_Final(this->dp_schema_id.ba_data, &context);
+            context.Final((uint64 *)(this->dp_schema_id.ba_data),
+                          (uint64 *)((uint64 *)(this->dp_schema_id.ba_data)+1));
         }
     };
 

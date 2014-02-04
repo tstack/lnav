@@ -112,7 +112,8 @@ noinst_HEADERS = \
 	yajl/yajl_encode.h \
 	yajl/yajl_lex.h \
 	yajl/yajl_parser.h \
-	yajl/yajl_version.h
+	yajl/yajl_version.h \
+	spookyhash/SpookyV2.h
 
 libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
@@ -166,7 +167,8 @@ libdiag_a_SOURCES = \
 	yajl/yajl_parser.c \
 	yajl/yajl_parser.h \
 	yajl/yajl_tree.c \
-	yajl/yajl_version.c
+	yajl/yajl_version.c \
+	spookyhash/SpookyV2.cpp
 
 dist_noinst_SCRIPTS = \
 	init_sql.py

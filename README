@@ -23,8 +23,6 @@ Lnav requires the following software packages:
   readline  - The readline line editing library.
   zlib      - The zlib compression library.
   bz2       - The bzip2 compression library.
-  openssl   - The OpenSSL cryptographic library.  (Only the hash
-              functions from this library are used.)
 
 
 INSTALLATION
