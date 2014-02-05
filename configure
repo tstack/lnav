@@ -7271,6 +7271,9 @@ if test x"${enable_static}" != x"no"; then
     darwin*)
         STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first"
         ;;
+    *)
+        STATIC_LDFLAGS="$STATIC_LDFLAGS -static"
+        ;;
     esac
 
     STATIC_LDFLAGS="$STATIC_LDFLAGS -L`pwd`/src/static-libs"
