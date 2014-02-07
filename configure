@@ -7262,8 +7262,9 @@ esac
 
 ALL_LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS"
 
-static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libcrypto.a"
+static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"
 static_lib_list="$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"
+static_lib_list="$static_lib_list libgpm.a"
 
 # Check whether --enable-static was given.
 if test "${enable_static+set}" = set; then :
