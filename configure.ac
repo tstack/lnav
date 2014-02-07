@@ -8,7 +8,7 @@ AC_PREFIX_DEFAULT(/usr/)
 
 AC_CANONICAL_HOST
 
-for defdir in /opt/local /usr/local /usr; do
+for defdir in /opt/local /usr/local /usr /; do
     if test -d "$defdir/include"; then
         CPPFLAGS="$CPPFLAGS -I$defdir/include"
     fi
@@ -18,6 +18,10 @@ for defdir in /opt/local /usr/local /usr; do
     fi
     if test -d "$defdir/lib64"; then
         LDFLAGS="$LDFLAGS -L$defdir/lib64"
+    fi
+
+    if test -d "$defdir/lib/x86_64-linux-gnu"; then
+        LDFLAGS="$LDFLAGS -L$defdir/lib/x86_64-linux-gnu"
     fi
 done
 
