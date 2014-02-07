@@ -35,8 +35,7 @@ LDADD = \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
-	-lpcrecpp \
-	-lcrypto
+	-lpcrecpp
 
 dist_noinst_DATA = \
 	default-log-formats.json \

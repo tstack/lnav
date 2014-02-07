@@ -67,7 +67,7 @@ test_pcrepp_SOURCES = test_pcrepp.cc
 test_pcrepp_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_top_status_SOURCES = test_top_status.cc
-test_top_status_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(PCRE_LIBS) $(SQLITE3_LIBS) -lz
+test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) $(PCRE_LIBS) $(SQLITE3_LIBS) -lz
 
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
@@ -84,14 +84,13 @@ drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = \
 	../src/libdiag.a \
-	-lcrypto \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
 	-lpcrecpp
 
 drive_sequencer_SOURCES = drive_sequencer.cc
-drive_sequencer_LDADD = ../src/libdiag.a -lcrypto $(CURSES_LIB) $(SQLITE3_LIBS)
+drive_sequencer_LDADD = ../src/libdiag.a $(CURSES_LIB) $(SQLITE3_LIBS)
 
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
@@ -99,7 +98,6 @@ drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	../src/dump-pid-sh.o \
-	-lcrypto \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \
 	-lpcrecpp \
@@ -122,8 +120,7 @@ drive_sql_LDADD = \
 	$(PCRE_LIBS) \
 	$(CURSES_LIB) \
 	$(READLINE_LIBS) \
-	-lpcrecpp \
-	-lcrypto
+	-lpcrecpp
 
 slicer_SOURCES = slicer.cc
 slicer_LDADD = ../src/libdiag.a
