@@ -347,6 +347,10 @@ public:
                                             this->p_name_len);
     };
 
+    int name_index(const std::string &name) const {
+        return this->name_index(name.c_str());
+    };
+
     int name_index(const char *name) const {
         int retval = pcre_get_stringnumber(this->p_code, name);
 

@@ -468,12 +468,19 @@ bool external_log_format::scan(std::vector<logline> &dst,
     int curr_fmt = -1;
 
     while (next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
-        if (!this->elf_pattern_order[curr_fmt]->p_pcre->match(pc, pi)) {
+        pcrepp *pat = this->elf_pattern_order[curr_fmt]->p_pcre;
+
+        if (!pat->match(pc, pi)) {
             continue;
         }
 
-        pcre_context::capture_t *ts = pc[this->lf_timestamp_field];
-        pcre_context::capture_t *level_cap = pc[this->elf_level_field];
+        if (this->lf_fmt_lock == -1) {
+            this->lf_timestamp_field_index = pat->name_index(this->lf_timestamp_field);
+            this->elf_level_field_index = pat->name_index(this->elf_level_field);
+        }
+
+        pcre_context::capture_t *ts = pc[this->lf_timestamp_field_index];
+        pcre_context::capture_t *level_cap = pc[this->elf_level_field_index];
         const char *ts_str = pi.get_substr_start(ts);
         const char *last;
         struct tm log_time_tm;
@@ -548,12 +555,12 @@ void external_log_format::annotate(shared_buffer_ref &line,
         return;
     }
 
-    cap = pc[this->lf_timestamp_field];
+    cap = pc[this->lf_timestamp_field_index];
     lr.lr_start = cap->c_begin;
     lr.lr_end = cap->c_end;
     sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
 
-    cap = pc[this->elf_body_field];
+    cap = pc[this->elf_body_field_index];
     if (cap != NULL && cap->c_begin != -1) {
         lr.lr_start = cap->c_begin;
         lr.lr_end = cap->c_end;

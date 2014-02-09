@@ -586,6 +586,7 @@ public:
     date_time_scanner lf_date_time;
     int lf_fmt_lock;
     std::string lf_timestamp_field;
+    int lf_timestamp_field_index;
     std::map<std::string, action_def> lf_action_defs;
 protected:
     static std::vector<log_format *> lf_root_formats;
@@ -688,11 +689,18 @@ public:
     void build(std::vector<std::string> &errors);
 
     std::auto_ptr<log_format> specialized() {
-        std::auto_ptr<log_format> retval((log_format *)
-                                         new external_log_format(*this));
+        external_log_format *elf = new external_log_format(*this);
+        std::auto_ptr<log_format> retval((log_format *)elf);
 
         if (this->jlf_json) {
             this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name));
+        }
+        else if (this->lf_fmt_lock != -1) {
+            pcrepp *pat = this->elf_pattern_order[this->lf_fmt_lock]->p_pcre;
+
+            retval->lf_timestamp_field_index = pat->name_index(this->lf_timestamp_field);
+            elf->elf_level_field_index = pat->name_index(elf->elf_level_field);
+            elf->elf_body_field_index = pat->name_index(elf->elf_body_field);
         }
 
         return retval;
@@ -727,7 +735,9 @@ public:
     std::map<std::string, value_def> elf_value_defs;
     int elf_column_count;
     std::string elf_level_field;
+    int elf_level_field_index;
     std::string elf_body_field;
+    int elf_body_field_index;
     std::map<logline::level_t, level_pattern> elf_level_patterns;
 
     enum json_log_field {
