@@ -1007,6 +1007,49 @@ static void copy_to_xclip(void)
     lnav_data.ld_rl_view->set_value(buffer);
 }
 
+static void add_text_possibilities(const std::string &str)
+{
+    static pcrecpp::RE re_escape("([.\\^$*+?()\\[\\]{}\\\\|])");
+    static pcrecpp::RE re_escape_no_dot("([\\^$*+?()\\[\\]{}\\\\|])");
+
+    readline_curses *rlc = lnav_data.ld_rl_view;
+    pcre_context_static<30> pc;
+    data_scanner ds(str);
+    data_token_t dt;
+
+    while (ds.tokenize(pc, dt)) {
+        string token_value, token_value_no_dot;
+
+        if (pc[0]->length() < 4) {
+            continue;
+        }
+
+        switch (dt) {
+        case DT_DATE:
+        case DT_TIME:
+            continue;
+            default:
+            break;
+        }
+
+        token_value_no_dot = token_value = ds.get_input().get_substr(pc.all());
+        re_escape.GlobalReplace("\\\\\\1", &token_value);
+        re_escape_no_dot.GlobalReplace("\\\\\\1", &token_value_no_dot);
+        rlc->add_possibility(LNM_SEARCH, "*", token_value);
+        if (token_value != token_value_no_dot) {
+            rlc->add_possibility(LNM_SEARCH, "*", token_value_no_dot);
+        }
+
+        switch (dt) {
+        case DT_QUOTED_STRING:
+            add_text_possibilities(ds.get_input().get_substr(pc[0]));
+            break;
+        default:
+            break;
+        }
+    }
+}
+
 static void handle_paging_key(int ch)
 {
     textview_curses *   tc  = lnav_data.ld_view_stack.top();
@@ -1530,9 +1573,23 @@ static void handle_paging_key(int ch)
 
     case '/':
         lnav_data.ld_mode = LNM_SEARCH;
-        lnav_data.ld_previous_search = lnav_data.ld_last_search[lnav_data.ld_view_stack.top() - lnav_data.ld_views];
-        lnav_data.ld_search_start_line = lnav_data.ld_view_stack.top()->
-                                         get_top();
+        lnav_data.ld_previous_search = lnav_data.ld_last_search[tc - lnav_data.ld_views];
+        lnav_data.ld_search_start_line = tc->get_top();
+        {
+            text_sub_source *tss = tc->get_sub_source();
+            readline_curses *rlc = lnav_data.ld_rl_view;
+
+            rlc->clear_possibilities(LNM_SEARCH, "*");
+            for (vis_line_t curr_line = tc->get_top();
+                 curr_line < tc->get_bottom();
+                 ++curr_line) {
+                string line;
+
+                tss->text_value_for_line(*tc, curr_line, line);
+
+                add_text_possibilities(line);
+            }
+        }
         lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
         lnav_data.ld_bottom_source.set_prompt(
             "Enter a regular expression to search for: "
@@ -2829,6 +2886,8 @@ static void looper(void)
         readline_context sql_context("sql", NULL, false);
         readline_curses  rlc;
         int lpc;
+
+        search_context.set_append_character(0);
 
         listview_curses::action::broadcaster &sb =
             lnav_data.ld_scroll_broadcaster;

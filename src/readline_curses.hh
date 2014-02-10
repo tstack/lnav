@@ -94,6 +94,8 @@ public:
             read_history(hpath);
             this->save();
         }
+
+        this->rc_append_character = ' ';
     };
 
     const std::string &get_name() const { return this->rc_name; };
@@ -150,6 +152,10 @@ public:
         return this->rc_case_sensitive;
     };
 
+    void set_append_character(int ch) {
+        this->rc_append_character = ch;
+    };
+
 private:
     static char **attempted_completion(const char *text, int start, int end);
     static char *completion_generator(const char *text, int state);
@@ -162,6 +168,7 @@ private:
     std::map<std::string, std::set<std::string> >    rc_possibilities;
     std::map<std::string, std::vector<std::string> > rc_prototypes;
     bool rc_case_sensitive;
+    int rc_append_character;
 };
 
 /**

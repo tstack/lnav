@@ -193,7 +193,10 @@ through the file.
                     typing, the currently running search will be
                     canceled and a new one started.  History is
                     maintained for your searches so you can rerun them
-                    easily.  If there is an error encountered while
+                    easily.  Words that are currently displayed are also
+                    available for tab-completion, so you can easily
+                    search for values without needing to copy-and-paste
+                    the string.  If there is an error encountered while
                     trying to interpret the expression, the error will
                     be displayed in red on the status line.  While the
                     search is active, the 'hits' field in the status

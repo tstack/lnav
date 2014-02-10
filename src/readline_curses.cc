@@ -68,6 +68,17 @@ static readline_curses *child_this;
 static sig_atomic_t     looping      = 1;
 static const int        HISTORY_SIZE = 256;
 
+static const char *RL_INIT[] = {
+    /*
+     * XXX Need to keep the input on a single line since the display screws
+     * up if it wraps around.
+     */
+    "set horizontal-scroll-mode on",
+    "set completion-prefix-display-length 3",
+
+    NULL
+};
+
 readline_context *readline_context::loaded_context;
 set<string> *     readline_context::arg_possibilities;
 
@@ -168,11 +179,11 @@ char **readline_context::attempted_completion(const char *text,
         loaded_context->rc_possibilities.end()) {
         fprintf(stderr, "all poss\n");
         arg_possibilities = &loaded_context->rc_possibilities["*"];
-        rl_completion_append_character = ' ';
+        rl_completion_append_character = loaded_context->rc_append_character;
     }
     else if (start == 0) {
         arg_possibilities = &loaded_context->rc_possibilities["__command"];
-        rl_completion_append_character = ' ';
+        rl_completion_append_character = loaded_context->rc_append_character;
     }
     else {
         char * space;
@@ -260,12 +271,10 @@ readline_curses::readline_curses()
         using_history();
         stifle_history(HISTORY_SIZE);
 
-        /*
-         * XXX Need to keep the input on a single line since the display screws
-         * up if it wraps around.
-         */
-        strcpy(buffer, "set horizontal-scroll-mode on");
-        rl_parse_and_bind(buffer); /* NOTE: buffer is modified */
+        for (int lpc = 0; RL_INIT[lpc]; lpc++) {
+            strcpy(buffer, RL_INIT[lpc]);
+            rl_parse_and_bind(buffer); /* NOTE: buffer is modified */
+        }
 
         child_this = this;
     }

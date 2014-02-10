@@ -234,6 +234,9 @@ public:
      */
     void set_top(vis_line_t top, bool suppress_flash = false)
     {
+        if (this->get_inner_height() > 0 && top >= this->get_inner_height()) {
+            top = vis_line_t(this->get_inner_height() - 1);
+        }
         if (top < 0 || (top > 0 && top >= this->get_inner_height())) {
             if (suppress_flash == false) {
                 alerter::singleton().chime();
@@ -295,9 +298,7 @@ public:
             }
         }
         else {
-            this->set_top(std::max(vis_line_t(
-                                       0),
-                                   this->lv_top + offset), suppress_flash);
+            this->set_top(std::max(vis_line_t(0), this->lv_top + offset), suppress_flash);
         }
 
         return this->lv_top;
