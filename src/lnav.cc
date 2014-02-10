@@ -2323,6 +2323,7 @@ static void usage(void)
         "\n"
         "Options:\n"
         "  -h         Print this message, then exit.\n"
+        "  -H         Display the internal help text.\n"
         "  -C         Check configuration and then exit.\n"
         "  -d file    Write debug messages to the given file.\n"
         "  -V         Print version information.\n"
@@ -3082,6 +3083,10 @@ static void looper(void)
                         HELP_MSG_2(f, F,
                                    "to switch to the next/previous file"));
                 }
+                if (!initial_build && lnav_data.ld_flags & LNF_HELP) {
+                    toggle_view(&lnav_data.ld_views[LNV_HELP]);
+                    initial_build = true;
+                }
                 if (lnav_data.ld_log_source.text_line_count() > 0 ||
                     lnav_data.ld_text_source.text_line_count() > 0) {
                     initial_build = true;
@@ -3655,11 +3660,15 @@ int main(int argc, char *argv[])
     lnav_data.ld_looping        = true;
     lnav_data.ld_mode           = LNM_PAGING;
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "harsCd:tw:V")) != -1) {
+    while ((c = getopt(argc, argv, "hHarsCd:tw:V")) != -1) {
         switch (c) {
         case 'h':
             usage();
             exit(retval);
+            break;
+
+        case 'H':
+            lnav_data.ld_flags |= LNF_HELP;
             break;
 
         case 'C':
@@ -3779,7 +3788,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (lnav_data.ld_file_names.empty()) {
+    if (lnav_data.ld_file_names.empty() && !lnav_data.ld_flags & LNF_HELP) {
         fprintf(stderr, "error: no log files given/found.\n");
         retval = EXIT_FAILURE;
     }

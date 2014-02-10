@@ -70,11 +70,11 @@ typedef enum {
 
 enum {
     LNB_SYSLOG,
-    LNB_TIMESTAMP,
-
     LNB__MAX,
 
-    LNB_ROTATED
+    LNB_TIMESTAMP,
+    LNB_HELP,
+    LNB_ROTATED,
 };
 
 /** Flags set on the lnav command-line. */
@@ -84,8 +84,9 @@ typedef enum {
     LNF_ROTATED   = (1L << LNB_ROTATED),
 
     LNF_TIMESTAMP = (1L << LNB_TIMESTAMP),
+    LNF_HELP      = (1L << LNB_HELP),
 
-    LNF__ALL      = (LNF_SYSLOG)
+    LNF__ALL      = (LNF_SYSLOG|LNF_HELP)
 } lnav_flags_t;
 
 /** The different views available. */
