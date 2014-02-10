@@ -41,8 +41,6 @@ public:
 
     typedef listview_curses::action::mem_functor_t<
             top_status_source> lv_functor_t;
-    typedef textview_curses::action::mem_functor_t<
-            top_status_source> tv_functor_t;
 
     typedef enum {
         TSF_TIME,
@@ -108,12 +106,11 @@ public:
 
         if (lc->get_inner_height() > 0) {
             string_attrs_t::const_iterator line_attr;
-            string_attrs_t        sa;
             attr_line_t           al;
 
             lc->get_data_source()->
             listview_value_for_row(*lc, lc->get_top(), al);
-            sa   = al.get_attrs();
+            string_attrs_t &sa = al.get_attrs();
             line_attr = find_string_attr(sa, &logline::L_FILE);
             if (line_attr != sa.end()) {
                 logfile *lf = (logfile *)line_attr->sa_value.sav_ptr;

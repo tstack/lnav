@@ -104,6 +104,7 @@
 #include "lnav_config.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.h"
+#include "term_extra.hh"
 #include "log_data_helper.hh"
 
 #include "yajlpp.hh"
@@ -147,6 +148,16 @@ const char *lnav_view_strings[LNV__MAX] = {
     "graph",
     "db",
     "example",
+};
+
+static const char *view_titles[LNV__MAX] = {
+    "LOG",
+    "TEXT",
+    "HELP",
+    "HIST",
+    "GRAPH",
+    "DB",
+    "EXAMPLE",
 };
 
 class field_overlay_source : public list_overlay_source {
@@ -839,22 +850,12 @@ static void back_ten(int ten_minute)
 
 static void update_view_name(void)
 {
-    static const char *view_names[LNV__MAX] = {
-        "LOG",
-        "TEXT",
-        "HELP",
-        "HIST",
-        "GRAPH",
-        "DB",
-        "EXAMPLE",
-    };
-
     status_field &sf = lnav_data.ld_top_source.statusview_value_for_field(
         top_status_source::TSF_VIEW_NAME);
     textview_curses * tc = lnav_data.ld_view_stack.top();
     struct line_range lr(0);
 
-    sf.set_value("% 5s ", view_names[tc - lnav_data.ld_views]);
+    sf.set_value("% 5s ", tc->get_title().c_str());
     sf.get_value().get_attrs().push_back(
         string_attr(lr, &view_curses::VC_STYLE,
             A_REVERSE | view_colors::ansi_color_pair(COLOR_BLUE, COLOR_WHITE)));
@@ -2968,6 +2969,7 @@ static void looper(void)
         sb.push_back(&lnav_data.ld_bottom_source.line_number_wire);
         sb.push_back(&lnav_data.ld_bottom_source.percent_wire);
         sb.push_back(&lnav_data.ld_bottom_source.marks_wire);
+        sb.push_back(&lnav_data.ld_term_extra.filename_wire);
 
         {
             hist_source &hs = lnav_data.ld_hist_source;
@@ -3644,6 +3646,10 @@ int main(int argc, char *argv[])
     {
         setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
         setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
+    }
+
+    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+        lnav_data.ld_views[lpc].set_title(view_titles[lpc]);
     }
 
     lnav_data.ld_looping        = true;

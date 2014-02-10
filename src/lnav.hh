@@ -57,6 +57,7 @@
 #include "readline_curses.hh"
 #include "xterm_mouse.hh"
 #include "piper_proc.hh"
+#include "term_extra.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -187,6 +188,7 @@ struct _lnav_data {
     std::list<pid_t>                        ld_children;
     std::list<piper_proc *>                 ld_pipers;
     xterm_mouse ld_mouse;
+    term_extra ld_term_extra;
 };
 
 extern struct _lnav_data lnav_data;

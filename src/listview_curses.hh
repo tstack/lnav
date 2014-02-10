@@ -114,6 +114,14 @@ public:
 
     virtual ~listview_curses();
 
+    void set_title(const std::string &title) {
+        this->lv_title = title;
+    };
+
+    const std::string &get_title() const {
+        return this->lv_title;
+    };
+
     /** @param src The data source delegate. */
     void set_data_source(list_data_source *src)
     {
@@ -417,6 +425,7 @@ protected:
         LV_MODE_DRAG
     };
 
+    std::string lv_title;
     list_data_source *   lv_source; /*< The data source delegate. */
     list_overlay_source *lv_overlay_source;
     action       lv_scroll;         /*< The scroll action. */
