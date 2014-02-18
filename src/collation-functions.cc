@@ -29,6 +29,8 @@
  * @file logfile_sub_source.hh
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <sqlite3.h>
@@ -38,6 +40,8 @@
 #include <sys/socket.h>
 
 #include <algorithm>
+
+#include "log_format.hh"
 
 extern "C" {
         #include "strnatcmp.h"
@@ -153,6 +157,15 @@ int sql_strnatcasecmp(void *ptr,
     return strnatcasecmp(a_len, (char *)a_in, b_len, (char *)b_in);
 }
 
+static
+int sql_loglevelcmp(void *ptr,
+    int a_len, const void *a_in,
+    int b_len, const void *b_in)
+{
+    return logline::levelcmp((const char *)a_in, a_len,
+        (const char *)b_in, b_len);
+}
+
 int register_collation_functions(sqlite3 *db)
 {
     sqlite3_create_collation(db, "ipaddress", SQLITE_UTF8, NULL, ipaddress);
@@ -160,6 +173,8 @@ int register_collation_functions(sqlite3 *db)
                              sql_strnatcmp);
     sqlite3_create_collation(db, "naturalnocase", SQLITE_UTF8, NULL,
                              sql_strnatcasecmp);
+    sqlite3_create_collation(db, "loglevel", SQLITE_UTF8, NULL,
+                             sql_loglevelcmp);
 
     return 0;
 }

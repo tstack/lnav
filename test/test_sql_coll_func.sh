@@ -63,3 +63,25 @@ check_output "" <<EOF
 Row 0:
   Column 'file10.txt' < 'file2.txt' collate naturalcase: 0
 EOF
+
+
+run_test ./drive_sql "select 'w' < 'e' collate loglevel"
+
+check_output "" <<EOF
+Row 0:
+  Column 'w' < 'e' collate loglevel: 1
+EOF
+
+run_test ./drive_sql "select 'e' < 'w' collate loglevel"
+
+check_output "" <<EOF
+Row 0:
+  Column 'e' < 'w' collate loglevel: 0
+EOF
+
+run_test ./drive_sql "select 'info' collate loglevel between 'trace' and 'fatal'"
+
+check_output "" <<EOF
+Row 0:
+  Column 'info' collate loglevel between 'trace' and 'fatal': 1
+EOF

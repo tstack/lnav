@@ -123,6 +123,41 @@ logline::level_t logline::string2level(const char *levelstr, size_t len, bool ex
     return retval;
 }
 
+logline::level_t logline::abbrev2level(const char *levelstr, size_t len)
+{
+    if (len == -1) {
+        len = strlen(levelstr);
+    }
+
+    if (len == 0) {
+        return LEVEL_UNKNOWN;
+    }
+
+    switch (toupper(levelstr[0])) {
+        case 'T':
+        return LEVEL_TRACE;
+        case 'D':
+        return LEVEL_DEBUG;
+        case 'I':
+        return LEVEL_INFO;
+        case 'W':
+        return LEVEL_WARNING;
+        case 'E':
+        return LEVEL_ERROR;
+        case 'C':
+        return LEVEL_CRITICAL;
+        case 'F':
+        return LEVEL_FATAL;
+    }
+
+    return LEVEL_UNKNOWN;
+}
+
+int logline::levelcmp(const char *l1, size_t l1_len, const char *l2, size_t l2_len)
+{
+    return abbrev2level(l1, l1_len) - abbrev2level(l2, l2_len);
+}
+
 const char *logline_value::value_names[VALUE__MAX] = {
     "null",
     "text",

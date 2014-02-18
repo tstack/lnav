@@ -69,7 +69,7 @@ static string declare_table_statement(log_vtab_impl *vi)
         << "  log_part text collate naturalnocase,\n"
         << "  log_time datetime,\n"
         << "  log_idle_msecs int,\n"
-        << "  log_level text,\n";
+        << "  log_level text collate loglevel,\n";
     vi->get_columns(cols);
     vi->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {

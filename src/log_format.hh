@@ -130,6 +130,11 @@ public:
 
     static level_t string2level(const char *levelstr, size_t len = -1, bool exact = false);
 
+    static level_t abbrev2level(const char *levelstr, size_t len = -1);
+
+    static int levelcmp(const char *l1, size_t l1_len,
+        const char *l2, size_t l2_len);
+
     /**
      * Construct a logline object with the given values.
      *
