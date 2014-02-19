@@ -108,7 +108,6 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         line_buffer lb;
         off_t       woff = 0, last_woff = 0;
         off_t       off  = 0, last_off = 0;
-        char *      line;
         size_t      len;
         int nullfd;
 
@@ -118,6 +117,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         lb.set_fd(infd);
         do {
             fd_set rready;
+            char * line;
 
             FD_ZERO(&rready);
             FD_SET(lb.get_fd(), &rready);

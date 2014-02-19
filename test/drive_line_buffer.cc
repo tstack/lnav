@@ -155,7 +155,6 @@ int main(int argc, char *argv[])
 
 		    random_shuffle(index.begin(), index.end());
 		    for (lpc = 0; lpc < index.size(); lpc++) {
-			string line_str;
 
 			offset = index[lpc].second;
 			line = lb.read_line(offset, len);

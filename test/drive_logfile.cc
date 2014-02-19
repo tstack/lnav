@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     case MODE_NONE:
       break;
     case MODE_ECHO:
-      for (logfile::iterator iter = lf.begin(); iter != lf.end(); iter++) {
+      for (logfile::iterator iter = lf.begin(); iter != lf.end(); ++iter) {
 	printf("%s\n", lf.read_line(iter).c_str());
       }
       break;
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
       printf("%zd\n", lf.size());
       break;
     case MODE_TIMES:
-      for (logfile::iterator iter = lf.begin(); iter != lf.end(); iter++) {
+      for (logfile::iterator iter = lf.begin(); iter != lf.end(); ++iter) {
 	char buffer[1024];
 	time_t lt;
 
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
       }
       break;
     case MODE_LEVELS:
-      for (logfile::iterator iter = lf.begin(); iter != lf.end(); iter++) {
+      for (logfile::iterator iter = lf.begin(); iter != lf.end(); ++iter) {
 	printf("0x%02x\n", iter->get_level());
       }
       break;

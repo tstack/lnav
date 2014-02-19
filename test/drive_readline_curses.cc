@@ -71,7 +71,7 @@ static void rl_timeout(void *dummy, readline_curses *rc)
 
 int main(int argc, char *argv[])
 {
-    int lpc, c, fd, maxfd, retval = EXIT_SUCCESS;
+    int c, fd, maxfd, retval = EXIT_SUCCESS;
 
     fd = open("/tmp/lnav.err", O_WRONLY|O_CREAT|O_APPEND, 0666);
     dup2(fd, STDERR_FILENO);
@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
     
     readline_context context("test", &COMMANDS);
     readline_curses rlc;
-    bool done = false;
     fd_set rfds;
 
     rlc.add_context(1, context);

@@ -191,7 +191,7 @@ struct string_attr {
         this->sa_value.sav_int = val;
     };
 
-    string_attr() { };
+    string_attr() : sa_type(NULL) { };
 
     bool operator<(const struct string_attr &rhs) const
     {

@@ -67,7 +67,9 @@ class pcrepp;
 class pcre_context {
 public:
     typedef struct capture {
-        capture() {};
+        capture() {
+            /* We don't initialize anything since it's a perf hit. */
+        };
         
         capture(int begin, int end) : c_begin(begin), c_end(end)
         {

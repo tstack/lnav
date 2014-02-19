@@ -50,6 +50,8 @@ listview_curses::listview_curses()
       lv_needs_update(true),
       lv_show_scrollbar(true),
       lv_word_wrap(false),
+      lv_scroll_accel(0),
+      lv_scroll_velo(0),
       lv_mouse_y(-1),
       lv_mouse_mode(LV_MODE_NONE)
 { }
