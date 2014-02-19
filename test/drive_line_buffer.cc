@@ -54,11 +54,10 @@ int main(int argc, char *argv[])
     int c, rnd_iters = 5, retval = EXIT_SUCCESS;
     vector<pair<int, int> > index;
     auto_fd fd = STDIN_FILENO;
-    char delim = '\n';
     off_t offset = 0;
     struct stat st;
     
-    while ((c = getopt(argc, argv, "o:d:i:n:")) != -1) {
+    while ((c = getopt(argc, argv, "o:i:n:")) != -1) {
 	switch (c) {
 	case 'o':
 	    if (sscanf(optarg, FORMAT_OFF_T, &offset) != 1) {
@@ -97,9 +96,6 @@ int main(int argc, char *argv[])
 		}
 	    }
 	    break;
-	case 'd':
-	    delim = optarg[0];
-	    break;
 	default:
 	    retval = EXIT_FAILURE;
 	    break;
@@ -133,11 +129,11 @@ int main(int argc, char *argv[])
 
 	    lb.set_fd(fd);
 	    if (index.size() == 0) {
-		while ((line = lb.read_line(offset, len, delim)) != NULL) {
+		while ((line = lb.read_line(offset, len)) != NULL) {
 		    line[len] = '\0';
 		    printf("%s", line);
 		    if ((last_offset + len) < offset)
-			printf("%c", delim);
+			printf("\n");
 		    last_offset = offset;
 		}
 	    }
@@ -162,7 +158,7 @@ int main(int argc, char *argv[])
 			string line_str;
 
 			offset = index[lpc].second;
-			line = lb.read_line(offset, len, delim);
+			line = lb.read_line(offset, len);
 
                         assert(line != NULL);
 			assert(offset >= 0);

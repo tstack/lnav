@@ -80,7 +80,7 @@ public:
     /**
      * @return The size of the file or the amount of data pulled from a pipe.
      */
-    size_t get_file_size() const { return this->lb_file_size; };
+    ssize_t get_file_size() const { return this->lb_file_size; };
 
     off_t get_read_offset(off_t off) const
     {
@@ -108,10 +108,11 @@ public:
      * NULL termination, the invalidate() must be called before re-reading the
      * line to refresh the buffer.
      */
-    char *read_line(off_t &offset_inout, size_t &len_out, char delim = '\n')
+    char *read_line(off_t &offset_inout, size_t &len_out,
+        bool include_delim = false)
         throw (error);
 
-    bool read_line(off_t &offset_inout, shared_buffer_ref &sbr, char delim = '\n')
+    bool read_line(off_t &offset_inout, shared_buffer_ref &sbr)
         throw (error);
 
     bool read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
@@ -219,7 +220,7 @@ private:
 
     auto_mem<char> lb_buffer;   /*< The internal buffer where data is cached */
 
-    size_t lb_file_size;        /*<
+    ssize_t lb_file_size;       /*<
                                  * The size of the file.  When lb_fd refers to
                                  * a pipe, this is set to the amount of data
                                  * read from the pipe when EOF is reached.
@@ -230,7 +231,7 @@ private:
                                  */
     time_t lb_file_time;
     size_t lb_buffer_size;      /*< The amount of cached data in the buffer. */
-    size_t lb_buffer_max;       /*< The size of the buffer memory. */
+    ssize_t lb_buffer_max;      /*< The size of the buffer memory. */
     bool   lb_seekable;         /*< Flag set for seekable file descriptors. */
     off_t  lb_last_line_offset; /*< */
 };

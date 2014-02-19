@@ -440,7 +440,7 @@ throw (error)
     return retval;
 }
 
-char *line_buffer::read_line(off_t &offset, size_t &len_out, char delim)
+char *line_buffer::read_line(off_t &offset, size_t &len_out, bool include_delim)
 throw (error)
 {
     size_t request_size = DEFAULT_INCREMENT;
@@ -466,13 +466,18 @@ throw (error)
         /* Find the data in the cache and */
         line_start = this->get_range(offset, len_out);
         /* ... look for the end-of-line or end-of-file. */
-        if (((lf = (char *)memchr(line_start, delim, len_out)) != NULL) ||
+        if (((lf = (char *)memchr(line_start, '\n', len_out)) != NULL) ||
             (request_size >= (MAX_LINE_BUFFER_SIZE - DEFAULT_INCREMENT)) ||
             (((offset + len_out) == this->lb_file_size) && len_out > 0)) {
             if (lf != NULL) {
                 len_out = lf - line_start;
-                offset += 1; /* Skip the delimiter. */
-                if (offset > this->lb_last_line_offset) {
+                if (include_delim) {
+                    len_out += 1;
+                }
+                else {
+                    offset += 1; /* Skip the delimiter. */
+                }
+                if (offset >= this->lb_last_line_offset) {
                     this->lb_last_line_offset = offset + len_out;
                 }
             }
@@ -518,7 +523,7 @@ throw (error)
     return retval;
 }
 
-bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, char delim)
+bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr)
     throw (error)
 {
     char *line;
@@ -527,7 +532,7 @@ bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, char de
     // Clear the incoming ref right away so that an invalidate
     // does not cause a wasted malloc/copy.
     sbr.disown();
-    line = this->read_line(offset_inout, len, delim);
+    line = this->read_line(offset_inout, len);
     if (line != NULL) {
         sbr.share(this->lb_share_manager, line, len);
     }

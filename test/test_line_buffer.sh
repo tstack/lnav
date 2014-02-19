@@ -10,11 +10,6 @@ run_test ./drive_line_buffer < ${top_srcdir}/src/line_buffer.hh
 check_output "Line buffer output doesn't match input from pipe?" < \
     "${top_srcdir}/src/line_buffer.hh"
 
-run_test ./drive_line_buffer -d " " "${top_srcdir}/src/line_buffer.hh"
-
-check_output "Line buffer with delim output doesn't match input?" < \
-    "${top_srcdir}/src/line_buffer.hh"
-
 cat > lb.dat <<EOF
 1
 2
