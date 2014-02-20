@@ -173,7 +173,9 @@ void view_curses::mvwattrline(WINDOW *window,
             int awidth = attr_range.length();
 
             attrs = 0;
-            for (range_iter = iter; range_iter->sa_range == iter->sa_range; ++range_iter) {
+            for (range_iter = iter;
+                 range_iter != sa.end() && range_iter->sa_range == iter->sa_range;
+                 ++range_iter) {
                 if (range_iter->sa_type == &VC_STYLE) {
                     attrs |= range_iter->sa_value.sav_int;
                 }
@@ -182,7 +184,9 @@ void view_curses::mvwattrline(WINDOW *window,
             if (attrs != 0) {
                 mvwchgat(window, y, x + attr_range.lr_start, awidth, attrs, PAIR_NUMBER(attrs), NULL);
             }
-            for (range_iter = iter; range_iter->sa_range == iter->sa_range; ++range_iter) {
+            for (range_iter = iter;
+                 range_iter != sa.end() && range_iter->sa_range == iter->sa_range;
+                 ++range_iter) {
                 if (range_iter->sa_type == &VC_GRAPHIC) {
                     graphic_range.push_back(attr_range);
                     graphic_in.push_back(range_iter->sa_value.sav_int | attrs);
