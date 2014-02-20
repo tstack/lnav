@@ -624,7 +624,7 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
         }
         else {
             vis_line_t      vl  = log_view.get_top();
-            content_line_t  cl  = lnav_data.ld_log_source.at(vl);
+            content_line_t  cl  = lnav_data.ld_log_source.at_base(vl);
             log_data_table *ldt = new log_data_table(cl, args[1]);
             string          errmsg;
 

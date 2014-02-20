@@ -307,6 +307,14 @@ public:
 
     content_line_t at(vis_line_t vl) { return this->lss_index[vl]; };
 
+    content_line_t at_base(vis_line_t vl) {
+        while (this->find_line(this->at(vl))->get_sub_offset() != 0) {
+            --vl;
+        }
+
+        return this->at(vl);
+    };
+
     /**
      * Container for logfile references that keeps of how many lines in the
      * logfile have been indexed.

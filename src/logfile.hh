@@ -228,6 +228,16 @@ public:
         return retval;
     };
 
+    iterator line_base(iterator ll) {
+        iterator retval = ll;
+
+        while (retval != this->begin() && retval->get_sub_offset() != 0) {
+            --retval;
+        }
+
+        return retval;
+    };
+
     size_t line_length(iterator ll) {
         iterator next_line = ll;
         size_t retval;
