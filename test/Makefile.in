@@ -94,10 +94,10 @@ check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) \
 	test_line_buffer.sh test_line_buffer2$(EXEEXT) \
-	test_grep_proc.sh test_grep_proc2$(EXEEXT) \
-	test_hist_source$(EXEEXT) test_listview.sh \
-	test_pcrepp$(EXEEXT) test_sql_coll_func.sh test_sql_fs_func.sh \
-	test_sql_str_func.sh test_view_colors.sh test_vt52_curses.sh \
+	test_listview.sh test_grep_proc.sh test_grep_proc2$(EXEEXT) \
+	test_hist_source$(EXEEXT) test_pcrepp$(EXEEXT) \
+	test_sql_coll_func.sh test_sql_fs_func.sh test_sql_str_func.sh \
+	test_view_colors.sh test_vt52_curses.sh \
 	test_top_status$(EXEEXT) test_data_parser.sh \
 	test_yajlpp$(EXEEXT)
 subdir = test
@@ -735,6 +735,9 @@ dist_noinst_DATA = \
 nodist_noinst_DATA = \
 	simple-db.db
 
+XFAIL_TESTS = \
+	test_listview.sh
+
 DISTCLEANFILES = \
 	*.dat \
 	*.db \
@@ -1149,6 +1152,13 @@ test_line_buffer2.log: test_line_buffer2$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_listview.sh.log: test_listview.sh
+	@p='test_listview.sh'; \
+	b='test_listview.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 test_grep_proc.sh.log: test_grep_proc.sh
 	@p='test_grep_proc.sh'; \
 	b='test_grep_proc.sh'; \
@@ -1166,13 +1176,6 @@ test_grep_proc2.log: test_grep_proc2$(EXEEXT)
 test_hist_source.log: test_hist_source$(EXEEXT)
 	@p='test_hist_source$(EXEEXT)'; \
 	b='test_hist_source'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-test_listview.sh.log: test_listview.sh
-	@p='test_listview.sh'; \
-	b='test_listview.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

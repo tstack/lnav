@@ -230,7 +230,7 @@ private:
                                  * offset in the file.
                                  */
     time_t lb_file_time;
-    size_t lb_buffer_size;      /*< The amount of cached data in the buffer. */
+    ssize_t lb_buffer_size;     /*< The amount of cached data in the buffer. */
     ssize_t lb_buffer_max;      /*< The size of the buffer memory. */
     bool   lb_seekable;         /*< Flag set for seekable file descriptors. */
     off_t  lb_last_line_offset; /*< */

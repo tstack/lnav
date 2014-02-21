@@ -74,6 +74,19 @@ public:
     };
 };
 
+class list_gutter_source {
+public:
+    virtual ~list_gutter_source() {
+
+    };
+
+    virtual void listview_gutter_value_for_range(const listview_curses &lv, int start, int end,
+        int &ch, int &attrs_out) {
+        ch = ACS_VLINE;
+        attrs_out = 0;
+    };
+};
+
 struct listview_overlay {
     listview_overlay(int y, const attr_line_t &al) : lo_y(y), lo_line(al) { };
 
@@ -131,6 +144,10 @@ public:
 
     /** @return The data source delegate. */
     list_data_source *get_data_source() const { return this->lv_source; };
+
+    void set_gutter_source(list_gutter_source *src) {
+        this->lv_gutter_source = src;
+    };
 
     /** @param src The data source delegate. */
     void set_overlay_source(list_overlay_source *src)
@@ -425,6 +442,8 @@ protected:
         LV_MODE_DRAG
     };
 
+    static list_gutter_source DEFAULT_GUTTER_SOURCE;
+
     std::string lv_title;
     list_data_source *   lv_source; /*< The data source delegate. */
     list_overlay_source *lv_overlay_source;
@@ -438,6 +457,7 @@ protected:
                                      *  is needed.
                                      */
     bool lv_show_scrollbar;         /*< Draw the scrollbar in the view. */
+    list_gutter_source *lv_gutter_source;
     bool lv_word_wrap;
 
     struct timeval lv_mouse_time;

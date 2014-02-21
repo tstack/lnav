@@ -40,7 +40,7 @@
 
 class shared_buffer;
 
-class shared_buffer_ref {
+struct shared_buffer_ref {
 public:
     shared_buffer_ref(char *data = NULL, size_t len = 0)
         : sb_owner(NULL), sb_data(data), sb_length(len) {
@@ -168,7 +168,7 @@ public:
 
 struct tmp_shared_buffer {
     tmp_shared_buffer(const char *str, size_t len = -1) {
-        if (len == -1) {
+        if (len == (size_t)-1) {
             len = strlen(str);
         }
 

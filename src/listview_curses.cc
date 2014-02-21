@@ -39,6 +39,8 @@
 
 using namespace std;
 
+list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
+
 listview_curses::listview_curses()
     : lv_source(NULL),
       lv_overlay_source(NULL),
@@ -49,6 +51,7 @@ listview_curses::listview_curses()
       lv_height(0),
       lv_needs_update(true),
       lv_show_scrollbar(true),
+      lv_gutter_source(&DEFAULT_GUTTER_SOURCE),
       lv_word_wrap(false),
       lv_scroll_accel(0),
       lv_scroll_velo(0),
@@ -172,7 +175,7 @@ void listview_curses::do_update(void)
         }
 
         this->get_dimensions(height, width);
-        wrap_width = width - (this->lv_word_wrap ? 1 : 0);
+        wrap_width = width - (this->lv_word_wrap ? 1 : this->lv_show_scrollbar ? 1 : 0);
 
         row_count = this->get_inner_height();
         row   = this->lv_top;
@@ -215,9 +218,10 @@ void listview_curses::do_update(void)
         if (this->lv_show_scrollbar) {
             double progress = 1.0;
             double coverage = 1.0;
+            double adjusted_height = (double)row_count / (double)height;
             vis_line_t lines;
 
-            if (this->get_inner_height() > 0) {
+            if (row_count > 0) {
                 progress = (double)this->lv_top / (double)row_count;
                 coverage = (double)height / (double)row_count;
             }
@@ -226,13 +230,23 @@ void listview_curses::do_update(void)
                 vis_line_t((int)(progress * (double)height));
             lines = y + min(height, vis_line_t(
                                 (int)(coverage * (double)height)));
-            for (; y <= lines; ++y) {
-                mvwchgat(this->lv_window,
-                         y, width - 1,
-                         1,
-                         A_REVERSE, view_colors::ansi_color_pair(
-                            COLOR_WHITE, COLOR_BLACK),
-                         NULL);
+
+            for (int gutter_y = this->lv_y; gutter_y <= height; gutter_y++) {
+                int range_start = 0, range_end, ch, attrs = 0;
+
+                if (row_count > 0) {
+                    range_start = (double)(gutter_y - this->lv_y) * adjusted_height;
+                }
+                range_end = range_start + adjusted_height;
+
+                this->lv_gutter_source->listview_gutter_value_for_range(
+                    *this, range_start, range_end, ch, attrs);
+                if (gutter_y >= y && gutter_y <= lines) {
+                    attrs |= A_REVERSE;
+                }
+                wattron(this->lv_window, attrs);
+                mvwaddch(this->lv_window, gutter_y, width - 1, ch);
+                wattroff(this->lv_window, attrs);
             }
             wmove(this->lv_window, this->lv_y + height - 1, 0);
         }

@@ -160,6 +160,34 @@ static const char *view_titles[LNV__MAX] = {
     "EXAMPLE",
 };
 
+class log_gutter_source : public list_gutter_source {
+public:
+    void listview_gutter_value_for_range(const listview_curses &lv, int start, int end,
+        int &ch, int &attrs_out) {
+        textview_curses *tc = (textview_curses *)&lv;
+        vis_bookmarks &bm = tc->get_bookmarks();
+        vis_line_t next;
+
+        next = bm[&textview_curses::BM_USER].next(vis_line_t(start));
+        if (next != -1 && next <= end) {
+            ch = ACS_LTEE;
+        }
+        else {
+            ch = ACS_VLINE;
+        }
+        next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
+        if (next != -1 && next <= end) {
+            attrs_out = view_colors::singleton().attrs_for_role(view_colors::VCR_ERROR);
+        }
+        else {
+            next = bm[&logfile_sub_source::BM_WARNINGS].next(vis_line_t(start));
+            if (next != -1 && next <= end) {
+                attrs_out = view_colors::singleton().attrs_for_role(view_colors::VCR_WARNING);
+            }
+        }
+    };
+};
+
 class field_overlay_source : public list_overlay_source {
 public:
     field_overlay_source(logfile_sub_source &lss)
@@ -3633,6 +3661,7 @@ int main(int argc, char *argv[])
     set_sub_source(&lnav_data.ld_log_source);
     lnav_data.ld_views[LNV_LOG].
     set_delegate(new action_delegate(lnav_data.ld_log_source));
+    lnav_data.ld_views[LNV_LOG].set_gutter_source(new log_gutter_source());
     lnav_data.ld_views[LNV_TEXT].
     set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_HISTOGRAM].

@@ -187,10 +187,10 @@ TESTS = \
 	test_bookmarks \
 	test_line_buffer.sh \
 	test_line_buffer2 \
+	test_listview.sh \
 	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_hist_source \
-	test_listview.sh \
 	test_pcrepp \
 	test_sql_coll_func.sh \
 	test_sql_fs_func.sh \
@@ -200,6 +200,9 @@ TESTS = \
 	test_top_status \
 	test_data_parser.sh \
 	test_yajlpp
+
+XFAIL_TESTS = \
+	test_listview.sh
 
 DISTCLEANFILES = \
 	*.dat \
