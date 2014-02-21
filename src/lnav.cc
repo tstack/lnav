@@ -167,13 +167,19 @@ public:
         textview_curses *tc = (textview_curses *)&lv;
         vis_bookmarks &bm = tc->get_bookmarks();
         vis_line_t next;
+        bool search_hit = false;
+
+        start -= 1;
+
+        next = bm[&textview_curses::BM_SEARCH].next(vis_line_t(start));
+        search_hit = (next != -1 && next <= end);
 
         next = bm[&textview_curses::BM_USER].next(vis_line_t(start));
         if (next != -1 && next <= end) {
-            ch = ACS_LTEE;
+            ch = search_hit ? ACS_PLUS : ACS_LTEE;
         }
         else {
-            ch = ACS_VLINE;
+            ch = search_hit ? ACS_RTEE : ACS_VLINE;
         }
         next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
         if (next != -1 && next <= end) {
