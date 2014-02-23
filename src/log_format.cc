@@ -689,7 +689,8 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
     if (field_name == jlu->jlu_format->lf_timestamp_field) {
         char time_buf[64];
 
-        sql_strftime(time_buf, sizeof(time_buf), jlu->jlu_line->get_timeval());
+        sql_strftime(time_buf, sizeof(time_buf),
+            jlu->jlu_line->get_timeval(), 'T');
         tmp_shared_buffer tsb(time_buf);
         jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, tsb.tsb_ref));
     }

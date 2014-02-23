@@ -137,6 +137,7 @@ public:
         this->dls_column_sizes.clear();
     }
 
+    std::string dls_stmt_str;
     std::vector<std::string> dls_headers;
     std::vector<int>         dls_headers_to_graph;
     std::vector<int>         dls_column_types;

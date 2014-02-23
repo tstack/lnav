@@ -212,6 +212,13 @@ const char *sql_function_names[] = {
     "upper",
     "zeroblob",
 
+    /* http://www.sqlite.org/lang_datefunc.html */
+    "date",
+    "time",
+    "datetime",
+    "julianday",
+    "strftime",
+
     NULL
 };
 
@@ -404,16 +411,18 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
     }
 }
 
-void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis)
+void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
+    char sep)
 {
     struct tm gmtm;
 
     gmtime_r(&time, &gmtm);
     snprintf(buffer, buffer_size,
-             "%4d-%02d-%02dT%02d:%02d:%02d.%03d",
+             "%4d-%02d-%02d%c%02d:%02d:%02d.%03d",
              gmtm.tm_year + 1900,
              gmtm.tm_mon + 1,
              gmtm.tm_mday,
+             sep,
              gmtm.tm_hour,
              gmtm.tm_min,
              gmtm.tm_sec,

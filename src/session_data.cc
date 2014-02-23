@@ -104,7 +104,7 @@ static void bind_line(sqlite3 *db,
     char timestamp[64];
 
     sql_strftime(timestamp, sizeof(timestamp),
-                 lf->original_line_time(line_iter));
+                 lf->original_line_time(line_iter), 'T');
     if (sqlite3_bind_text(stmt, 1,
                           timestamp, strlen(timestamp),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
@@ -378,7 +378,7 @@ static void load_time_bookmarks(void)
         logfile::iterator line_iter = lf->begin();
 
         sql_strftime(low_timestamp, sizeof(low_timestamp),
-                     lf->original_line_time(line_iter));
+                     lf->original_line_time(line_iter), 'T');
 
         if (sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time) != SQLITE_OK) {
             fprintf(stderr, "error: could not bind session time -- %s\n",
@@ -397,7 +397,7 @@ static void load_time_bookmarks(void)
         line_iter = lf->end();
         --line_iter;
         sql_strftime(high_timestamp, sizeof(high_timestamp),
-                     lf->original_line_time(line_iter));
+                     lf->original_line_time(line_iter), 'T');
 
         if (sqlite3_bind_text(stmt.in(), 3,
                               high_timestamp, strlen(high_timestamp),
@@ -536,7 +536,7 @@ static void load_time_bookmarks(void)
         logfile::iterator line_iter = lf->begin();
 
         sql_strftime(low_timestamp, sizeof(low_timestamp),
-                     lf->original_line_time(line_iter));
+                     lf->original_line_time(line_iter), 'T');
 
         if (sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time) != SQLITE_OK) {
             fprintf(stderr, "error: could not bind session time -- %s\n",
@@ -555,7 +555,7 @@ static void load_time_bookmarks(void)
         line_iter = lf->end();
         --line_iter;
         sql_strftime(high_timestamp, sizeof(high_timestamp),
-                     lf->original_line_time(line_iter));
+                     lf->original_line_time(line_iter), 'T');
 
         if (sqlite3_bind_text(stmt.in(), 3,
                               high_timestamp, strlen(high_timestamp),
@@ -1043,7 +1043,7 @@ static void save_time_bookmarks(void)
         char timestamp[64];
 
         sql_strftime(timestamp, sizeof(timestamp),
-                     lf->original_line_time(line_iter));
+                     lf->original_line_time(line_iter), 'T');
         if (sqlite3_bind_text(stmt.in(), 1,
                               timestamp, strlen(timestamp),
                               SQLITE_TRANSIENT) != SQLITE_OK) {

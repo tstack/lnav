@@ -280,12 +280,14 @@ public:
 
             sql_strftime(curr_timestamp, sizeof(curr_timestamp),
                          this->fos_log_helper.ldh_line->get_time(),
-                         this->fos_log_helper.ldh_line->get_millis());
+                         this->fos_log_helper.ldh_line->get_millis(),
+                         'T');
             curr_tv = this->fos_log_helper.ldh_line->get_timeval();
             offset_tv = this->fos_log_helper.ldh_file->get_time_offset();
             timersub(&curr_tv, &offset_tv, &orig_tv);
             sql_strftime(old_timestamp, sizeof(old_timestamp),
-                         orig_tv.tv_sec, orig_tv.tv_usec / 1000);
+                         orig_tv.tv_sec, orig_tv.tv_usec / 1000,
+                         'T');
             snprintf(log_time, sizeof(log_time),
                      " Current Time: %s  Original Time: %s  Offset: %+d.%03d",
                      curr_timestamp,
@@ -1626,13 +1628,14 @@ static void handle_paging_key(int ch)
                 char buffer[64];
 
                 sql_strftime(buffer, sizeof(buffer),
-                             ll->get_time(), ll->get_millis());
+                             ll->get_time(), ll->get_millis(), 'T');
                 lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
                                                       "line-time",
                                                       buffer);
                 sql_strftime(buffer, sizeof(buffer),
                              ll->get_time() - tv.tv_sec,
-                             ll->get_millis() - (tv.tv_usec / 1000));
+                             ll->get_millis() - (tv.tv_usec / 1000),
+                             'T');
                 lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
                                                       "line-time",
                                                       buffer);
@@ -2269,6 +2272,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
         hs.clear();
         hs.get_displayed_buckets().clear();
         dls.clear();
+        dls.dls_stmt_str = rc->get_value();
         retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
                                      rc->get_value().c_str(),
                                      -1,

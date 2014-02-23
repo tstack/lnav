@@ -61,12 +61,13 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc);
 
 void attach_sqlite_db(sqlite3 *db, const std::string &filename);
 
-void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis);
+void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
+    char sep = ' ');
 
 inline void sql_strftime(char *buffer, size_t buffer_size,
-                         const struct timeval &tv)
+                         const struct timeval &tv, char sep = ' ')
 {
-    sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec / 1000);
+    sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec / 1000, sep);
 }
 
 #endif
