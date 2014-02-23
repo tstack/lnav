@@ -90,6 +90,7 @@ noinst_HEADERS = \
 	strnatcmp.h \
 	strong_int.hh \
 	termios_guard.hh \
+	term_extra.hh \
 	textfile_sub_source.hh \
 	textview_curses.hh \
 	time_T.hh \
