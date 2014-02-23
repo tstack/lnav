@@ -924,6 +924,12 @@ static string com_summarize(string cmdline, vector<string> &args)
                                      -1,
                                      stmt.out(),
                                      NULL);
+        if (retcode != SQLITE_OK) {
+            const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
+
+            return "error: " + string(errmsg);
+        }
+
         switch (sqlite3_step(stmt.in())) {
             case SQLITE_OK:
             case SQLITE_DONE:

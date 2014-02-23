@@ -143,7 +143,7 @@ static int vt_create(sqlite3 *db,
     /* Success. Set *pp_vt and return */
     *pp_vt = &p_vt->base;
 
-    return SQLITE_OK;
+    return rc;
 }
 
 static int vt_destructor(sqlite3_vtab *p_svt)
@@ -222,7 +222,6 @@ static int vt_next(sqlite3_vtab_cursor *cur)
         log_cursor_latest = vc->log_cursor;
         if (((log_cursor_latest.lc_curr_line % 1024) == 0) &&
             vtab_progress_callback(log_cursor_latest)) {
-            done = true;
             break;
         }
         done = vt->vi->next(vc->log_cursor, *vt->lss);

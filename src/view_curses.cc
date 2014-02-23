@@ -193,8 +193,6 @@ void view_curses::mvwattrline(WINDOW *window,
                 }
             }
         }
-
-        attrs = text_attrs; /* Reset attrs to regular text. */
     }
 
     for (size_t lpc = 0; lpc < graphic_range.size(); lpc++) {

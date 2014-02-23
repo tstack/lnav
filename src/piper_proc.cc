@@ -170,7 +170,6 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 perror("Unable to write to output file for stdin");
                 break;
             }
-            woff += wrc;
         }
     }
         exit(0);
