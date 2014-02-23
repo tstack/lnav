@@ -49,6 +49,13 @@ Row 0:
   Column '192.168.1.2' < 'fe80::a85f:80b4:5cbe:8691' collate ipaddress: 1
 EOF
 
+run_test ./drive_sql "select 'h9.example.com' < 'h10.example.com' collate ipaddress"
+
+check_output "" <<EOF
+Row 0:
+  Column 'h9.example.com' < 'h10.example.com' collate ipaddress: 1
+EOF
+
 
 run_test ./drive_sql "select 'file10.txt' < 'file2.txt'"
 

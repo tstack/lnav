@@ -338,7 +338,7 @@
         "url" : "http://en.wikipedia.org/wiki/Syslog",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^ \\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             }
         },
         "level-field" : "body",

@@ -163,7 +163,7 @@ static const char *view_titles[LNV__MAX] = {
 class log_gutter_source : public list_gutter_source {
 public:
     void listview_gutter_value_for_range(const listview_curses &lv, int start, int end,
-        int &ch, int &attrs_out) {
+        int &ch, int &fg_out) {
         textview_curses *tc = (textview_curses *)&lv;
         vis_bookmarks &bm = tc->get_bookmarks();
         vis_line_t next;
@@ -174,6 +174,9 @@ public:
         next = bm[&textview_curses::BM_SEARCH].next(vis_line_t(start));
         search_hit = (next != -1 && next <= end);
 
+        next = bm[&BM_QUERY].next(vis_line_t(start));
+        search_hit = search_hit || (next != -1 && next <= end);
+
         next = bm[&textview_curses::BM_USER].next(vis_line_t(start));
         if (next != -1 && next <= end) {
             ch = search_hit ? ACS_PLUS : ACS_LTEE;
@@ -183,12 +186,12 @@ public:
         }
         next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
         if (next != -1 && next <= end) {
-            attrs_out = view_colors::singleton().attrs_for_role(view_colors::VCR_ERROR);
+            fg_out = COLOR_RED;
         }
         else {
             next = bm[&logfile_sub_source::BM_WARNINGS].next(vis_line_t(start));
             if (next != -1 && next <= end) {
-                attrs_out = view_colors::singleton().attrs_for_role(view_colors::VCR_WARNING);
+                fg_out = COLOR_YELLOW;
             }
         }
     };
@@ -413,6 +416,82 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
     handle_foreign_key_list,
 };
 
+static void add_text_possibilities(int context, const std::string &str)
+{
+    static pcrecpp::RE re_escape("([.\\^$*+?()\\[\\]{}\\\\|])");
+    static pcrecpp::RE re_escape_no_dot("([\\^$*+?()\\[\\]{}\\\\|])");
+    static pcrecpp::RE re_escape_quote("'");
+
+    readline_curses *rlc = lnav_data.ld_rl_view;
+    pcre_context_static<30> pc;
+    data_scanner ds(str);
+    data_token_t dt;
+
+    while (ds.tokenize(pc, dt)) {
+
+        if (pc[0]->length() < 4) {
+            continue;
+        }
+
+        switch (dt) {
+        case DT_DATE:
+        case DT_TIME:
+            continue;
+            default:
+            break;
+        }
+
+        switch (context) {
+        case LNM_SEARCH: {
+            string token_value, token_value_no_dot;
+
+            token_value_no_dot = token_value =
+                ds.get_input().get_substr(pc.all());
+            re_escape.GlobalReplace("\\\\\\1", &token_value);
+            re_escape_no_dot.GlobalReplace("\\\\\\1", &token_value_no_dot);
+            rlc->add_possibility(context, "*", token_value);
+            if (token_value != token_value_no_dot) {
+                rlc->add_possibility(context, "*", token_value_no_dot);
+            }
+            break;
+        }
+        case LNM_SQL: {
+            string token_value = ds.get_input().get_substr(pc.all());
+
+            re_escape_quote.GlobalReplace("''", &token_value);
+            token_value = "'" + token_value + "'";
+            rlc->add_possibility(context, "*", token_value);
+            break;
+        }
+        }
+
+        switch (dt) {
+        case DT_QUOTED_STRING:
+            add_text_possibilities(context, ds.get_input().get_substr(pc[0]));
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+static void add_view_text_possibilities(int context, textview_curses *tc)
+{
+    text_sub_source *tss = tc->get_sub_source();
+    readline_curses *rlc = lnav_data.ld_rl_view;
+
+    rlc->clear_possibilities(context, "*");
+    for (vis_line_t curr_line = tc->get_top();
+         curr_line < tc->get_bottom();
+         ++curr_line) {
+        string line;
+
+        tss->text_value_for_line(*tc, curr_line, line);
+
+        add_text_possibilities(context, line);
+    }
+}
+
 bool setup_logline_table()
 {
     // Hidden columns don't show up in the table_info pragma.
@@ -438,6 +517,8 @@ bool setup_logline_table()
 
     lnav_data.ld_db_key_names.clear();
     lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
+
+    add_view_text_possibilities(LNM_SQL, &log_view);
 
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_function_names);
@@ -1042,49 +1123,6 @@ static void copy_to_xclip(void)
     lnav_data.ld_rl_view->set_value(buffer);
 }
 
-static void add_text_possibilities(const std::string &str)
-{
-    static pcrecpp::RE re_escape("([.\\^$*+?()\\[\\]{}\\\\|])");
-    static pcrecpp::RE re_escape_no_dot("([\\^$*+?()\\[\\]{}\\\\|])");
-
-    readline_curses *rlc = lnav_data.ld_rl_view;
-    pcre_context_static<30> pc;
-    data_scanner ds(str);
-    data_token_t dt;
-
-    while (ds.tokenize(pc, dt)) {
-        string token_value, token_value_no_dot;
-
-        if (pc[0]->length() < 4) {
-            continue;
-        }
-
-        switch (dt) {
-        case DT_DATE:
-        case DT_TIME:
-            continue;
-            default:
-            break;
-        }
-
-        token_value_no_dot = token_value = ds.get_input().get_substr(pc.all());
-        re_escape.GlobalReplace("\\\\\\1", &token_value);
-        re_escape_no_dot.GlobalReplace("\\\\\\1", &token_value_no_dot);
-        rlc->add_possibility(LNM_SEARCH, "*", token_value);
-        if (token_value != token_value_no_dot) {
-            rlc->add_possibility(LNM_SEARCH, "*", token_value_no_dot);
-        }
-
-        switch (dt) {
-        case DT_QUOTED_STRING:
-            add_text_possibilities(ds.get_input().get_substr(pc[0]));
-            break;
-        default:
-            break;
-        }
-    }
-}
-
 static void handle_paging_key(int ch)
 {
     textview_curses *   tc  = lnav_data.ld_view_stack.top();
@@ -1610,21 +1648,7 @@ static void handle_paging_key(int ch)
         lnav_data.ld_mode = LNM_SEARCH;
         lnav_data.ld_previous_search = lnav_data.ld_last_search[tc - lnav_data.ld_views];
         lnav_data.ld_search_start_line = tc->get_top();
-        {
-            text_sub_source *tss = tc->get_sub_source();
-            readline_curses *rlc = lnav_data.ld_rl_view;
-
-            rlc->clear_possibilities(LNM_SEARCH, "*");
-            for (vis_line_t curr_line = tc->get_top();
-                 curr_line < tc->get_bottom();
-                 ++curr_line) {
-                string line;
-
-                tss->text_value_for_line(*tc, curr_line, line);
-
-                add_text_possibilities(line);
-            }
-        }
+        add_view_text_possibilities(LNM_SEARCH, tc);
         lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
         lnav_data.ld_bottom_source.set_prompt(
             "Enter a regular expression to search for: "

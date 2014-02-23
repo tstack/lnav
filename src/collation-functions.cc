@@ -49,22 +49,6 @@ extern "C" {
 
 #define MAX_ADDR_LEN    128
 
-static int strncmp2(int a_len, const char *a_str,
-                    int b_len, const char *b_str)
-{
-    int retval = strncmp(a_str, b_str, std::min(a_len, b_len));
-
-    if (retval == 0) {
-        if (a_len < b_len) {
-            retval = -1;
-        }
-        else {
-            retval = 1;
-        }
-    }
-    return retval;
-}
-
 static int try_inet_pton(int p_len, const char *p, char *n)
 {
     static int family[] = { AF_INET6, AF_INET, AF_MAX };
@@ -109,13 +93,16 @@ int ipaddress(void *ptr,
     int         a_family, b_family, retval;
 
     if (a_len > MAX_ADDR_LEN || b_len > MAX_ADDR_LEN) {
-        return strncmp2(a_len, a_str, b_len, b_str);
+        return strnatcasecmp(a_len, a_str, b_len, b_str);
     }
 
     a_family = try_inet_pton(a_len, a_str, a_addr);
     b_family = try_inet_pton(b_len, b_str, b_addr);
 
-    if (a_family == AF_MAX && b_family != AF_MAX) {
+    if (a_family == AF_MAX && b_family == AF_MAX) {
+        return strnatcasecmp(a_len, a_str, b_len, b_str);
+    }
+    else if (a_family == AF_MAX && b_family != AF_MAX) {
         retval = -1;
     }
     else if (a_family != AF_MAX && b_family == AF_MAX) {

@@ -454,7 +454,7 @@ For example, if you wanted to save the results from the earlier
 example of a top ten query into the "/tmp/topten.db" file, you can do:
 
   ;attach database "/tmp/topten.db" as topten;
-  ;create table topten as select cs_uri_stem, count(*) as total
+  ;create table topten.foo as select cs_uri_stem, count(*) as total
      from access_log group by cs_uri_stem order by total desc
      limit 10;
 

@@ -232,7 +232,8 @@ void listview_curses::do_update(void)
                                 (int)(coverage * (double)height)));
 
             for (int gutter_y = this->lv_y; gutter_y <= height; gutter_y++) {
-                int range_start = 0, range_end, ch, attrs = 0;
+                int range_start = 0, range_end, ch;
+                int fg = COLOR_WHITE, bg = COLOR_BLACK, attrs;
 
                 if (row_count > 0) {
                     range_start = (double)(gutter_y - this->lv_y) * adjusted_height;
@@ -240,10 +241,14 @@ void listview_curses::do_update(void)
                 range_end = range_start + adjusted_height;
 
                 this->lv_gutter_source->listview_gutter_value_for_range(
-                    *this, range_start, range_end, ch, attrs);
+                    *this, range_start, range_end, ch, fg);
                 if (gutter_y >= y && gutter_y <= lines) {
-                    attrs |= A_REVERSE;
+                    bg = COLOR_WHITE;
+                    if (fg == bg) {
+                        fg = COLOR_BLACK;
+                    }
                 }
+                attrs = view_colors::ansi_color_pair(fg, bg);
                 wattron(this->lv_window, attrs);
                 mvwaddch(this->lv_window, gutter_y, width - 1, ch);
                 wattroff(this->lv_window, attrs);
