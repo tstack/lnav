@@ -81,6 +81,8 @@ public:
         return this->vi_name;
     };
 
+    std::string get_table_statement(void);
+
     virtual bool next(log_cursor &lc, logfile_sub_source &lss)
     {
         lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);

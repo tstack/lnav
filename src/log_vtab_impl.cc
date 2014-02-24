@@ -58,20 +58,20 @@ static const char *type_to_string(int type)
     return NULL;
 }
 
-static string declare_table_statement(log_vtab_impl *vi)
+std::string log_vtab_impl::get_table_statement(void)
 {
     std::vector<log_vtab_impl::vtab_column> cols;
     std::vector<log_vtab_impl::vtab_column>::const_iterator iter;
     std::ostringstream oss;
 
-    oss << "CREATE TABLE unused (\n"
+    oss << "CREATE TABLE " << this->get_name() << " (\n"
         << "  log_line integer PRIMARY KEY,\n"
         << "  log_part text collate naturalnocase,\n"
         << "  log_time datetime,\n"
         << "  log_idle_msecs int,\n"
         << "  log_level text collate loglevel,\n";
-    vi->get_columns(cols);
-    vi->vi_column_count = cols.size();
+    this->get_columns(cols);
+    this->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {
         auto_mem<char, sqlite3_free> coldecl;
 
@@ -88,7 +88,7 @@ static string declare_table_statement(log_vtab_impl *vi)
     }
     oss << "  log_path text hidden collate naturalnocase,\n"
         << "  log_text text hidden\n"
-        << ");";
+        << ");\n";
 
     return oss.str();
 }
@@ -137,8 +137,7 @@ static int vt_create(sqlite3 *db,
     }
     p_vt->tc = vm->get_view();
     p_vt->lss = vm->get_source();
-    rc        = sqlite3_declare_vtab(db, declare_table_statement(
-                                         p_vt->vi).c_str());
+    rc        = sqlite3_declare_vtab(db, p_vt->vi->get_table_statement().c_str());
 
     /* Success. Set *pp_vt and return */
     *pp_vt = &p_vt->base;

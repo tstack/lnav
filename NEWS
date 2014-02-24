@@ -1,4 +1,8 @@
 
+lnav v0.6.3:
+     Features:
+     * Add the '.schema' SQL command.
+
 lnav v0.6.2:
      Features:
      * Word-wrap support.

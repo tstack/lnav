@@ -381,7 +381,7 @@ being accessed in any loaded Apache log files, you can execute:
   ;select cs_uri_stem, count(*) as total from access_log 
      group by cs_uri_stem order by total desc limit 10;
 
-The query result view shows the results as text and graphs any number
+The query result view shows the results and graphs any numeric
 values found in the result, much like the histogram view.
 
 The builtin set of log tables are listed below.  Note that only the
@@ -399,6 +399,9 @@ The log table names are as follows:
   generic_log      'Generic' log format.  This table contains messages
                    from files that have a very simple format with a
                    leading timestamp followed by the message.
+
+NOTE: You can get a dump of the schema for the internal tables, and
+any attached databases, by running the '.schema' SQL command.
 
 The columns available for the top log line in the view will
 automatically be displayed after pressing the semicolon (;) key.

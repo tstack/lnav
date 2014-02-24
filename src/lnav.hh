@@ -98,6 +98,7 @@ typedef enum {
     LNV_GRAPH,
     LNV_DB,
     LNV_EXAMPLE,
+    LNV_SCHEMA,
 
     LNV__MAX
 } lnav_view_t;

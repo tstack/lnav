@@ -15,6 +15,14 @@ the `sqlite.org <http://sqlite.org>`_ web site.
 **lnav**'s interface to perform queries.  The database will be attached with
 a name based on the database file name.
 
+Commands
+--------
+
+A SQL command is an internal macro implemented by lnav.
+
+* .schema - Open the schema view.  This view contains a dump of the schema
+  for the internal tables and any tables in attached databases.
+
 Math
 ----
 

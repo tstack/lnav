@@ -148,6 +148,7 @@ const char *lnav_view_strings[LNV__MAX] = {
     "graph",
     "db",
     "example",
+    "schema",
 };
 
 static const char *view_titles[LNV__MAX] = {
@@ -158,6 +159,7 @@ static const char *view_titles[LNV__MAX] = {
     "GRAPH",
     "DB",
     "EXAMPLE",
+    "SCHEMA",
 };
 
 class log_gutter_source : public list_gutter_source {
@@ -422,7 +424,6 @@ static void add_text_possibilities(int context, const std::string &str)
 {
     static pcrecpp::RE re_escape("([.\\^$*+?()\\[\\]{}\\\\|])");
     static pcrecpp::RE re_escape_no_dot("([\\^$*+?()\\[\\]{}\\\\|])");
-    static pcrecpp::RE re_escape_quote("'");
 
     readline_curses *rlc = lnav_data.ld_rl_view;
     pcre_context_static<30> pc;
@@ -459,10 +460,10 @@ static void add_text_possibilities(int context, const std::string &str)
         }
         case LNM_SQL: {
             string token_value = ds.get_input().get_substr(pc.all());
+            auto_mem<char, sqlite3_free> quoted_token;
 
-            re_escape_quote.GlobalReplace("''", &token_value);
-            token_value = "'" + token_value + "'";
-            rlc->add_possibility(context, "*", token_value);
+            quoted_token = sqlite3_mprintf("%Q", token_value.c_str());
+            rlc->add_possibility(context, "*", std::string(quoted_token));
             break;
         }
         }
@@ -504,6 +505,12 @@ bool setup_logline_table()
         NULL
     };
 
+    static const char *commands[] = {
+        ".schema",
+
+        NULL
+    };
+
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
     bool             retval   = false;
 
@@ -525,6 +532,7 @@ bool setup_logline_table()
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_function_names);
     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", hidden_table_columns);
+    lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", commands);
 
     for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
         const struct FuncDef *basic_funcs;
@@ -1660,7 +1668,8 @@ static void handle_paging_key(int ch)
 
     case ';':
         if (tc == &lnav_data.ld_views[LNV_LOG] ||
-            tc == &lnav_data.ld_views[LNV_DB]) {
+            tc == &lnav_data.ld_views[LNV_DB] ||
+            tc == &lnav_data.ld_views[LNV_SCHEMA]) {
             textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
 
             lnav_data.ld_mode = LNM_SQL;
@@ -2073,6 +2082,29 @@ int sql_callback(sqlite3_stmt *stmt)
     return retval;
 }
 
+static void open_schema_view(void)
+{
+    textview_curses *schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
+    string schema;
+
+    dump_sqlite_schema(lnav_data.ld_db, schema);
+
+    schema += "\n\n-- Virtual Table Definitions --\n\n";
+    for (log_vtab_manager::iterator vtab_iter =
+       lnav_data.ld_vtab_manager->begin();
+       vtab_iter != lnav_data.ld_vtab_manager->end();
+       ++vtab_iter) {
+        schema += vtab_iter->second->get_table_statement();
+    }
+
+    if (schema_tc->get_sub_source() != NULL) {
+        delete schema_tc->get_sub_source();
+    }
+
+    schema_tc->set_sub_source(new plain_text_source(schema));
+    ensure_view(schema_tc);
+}
+
 void execute_search(lnav_view_t view, const std::string &regex)
 {
     auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
@@ -2156,9 +2188,12 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         return;
 
     case LNM_SQL:
-        term_val = rc->get_value() + ";";
+        term_val = trim(rc->get_value() + ";");
 
-        if (!sqlite3_complete(term_val.c_str())) {
+        if (term_val.size() > 0 && term_val[0] == '.') {
+            lnav_data.ld_bottom_source.grep_error("");
+        }
+        else if (!sqlite3_complete(term_val.c_str())) {
             lnav_data.ld_bottom_source.
             grep_error("sql error: incomplete statement");
         }
@@ -2266,9 +2301,21 @@ static void rl_callback(void *dummy, readline_curses *rc)
         db_label_source &      dls = lnav_data.ld_db_rows;
         hist_source &          hs  = lnav_data.ld_db_source;
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        string stmt_str = trim(rc->get_value());
         int retcode;
 
         lnav_data.ld_bottom_source.grep_error("");
+
+        if (stmt_str == ".schema") {
+            rc->set_value("");
+            rc->set_alt_value("");
+
+            open_schema_view();
+
+            lnav_data.ld_mode = LNM_PAGING;
+            return;
+        }
+
         hs.clear();
         hs.get_displayed_buckets().clear();
         dls.clear();
@@ -3145,12 +3192,19 @@ static void looper(void)
                         HELP_MSG_2(f, F,
                                    "to switch to the next/previous file"));
                 }
+                if (!initial_build &&
+                    lnav_data.ld_log_source.text_line_count() == 0 &&
+                    !lnav_data.ld_other_files.empty()) {
+                    open_schema_view();
+                }
+
                 if (!initial_build && lnav_data.ld_flags & LNF_HELP) {
                     toggle_view(&lnav_data.ld_views[LNV_HELP]);
                     initial_build = true;
                 }
                 if (lnav_data.ld_log_source.text_line_count() > 0 ||
-                    lnav_data.ld_text_source.text_line_count() > 0) {
+                    lnav_data.ld_text_source.text_line_count() > 0 ||
+                    !lnav_data.ld_other_files.empty()) {
                     initial_build = true;
                 }
 

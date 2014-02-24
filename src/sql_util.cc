@@ -289,8 +289,8 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
         struct table_list_data       tld = { &smc, &iter };
         auto_mem<char, sqlite3_free> query;
 
-        query = sqlite3_mprintf("SELECT name FROM %Q.sqlite_master "
-                                "WHERE type='table'",
+        query = sqlite3_mprintf("SELECT name,sql FROM %Q.sqlite_master "
+                                "WHERE type in ('table', 'view')",
                                 iter->first.c_str());
 
         retval = sqlite3_exec(db,
@@ -322,7 +322,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
             retval = sqlite3_exec(db,
                                   table_query,
                                   smc.smc_table_info,
-                                  &table_name,
+                                  &smc,
                                   errmsg.out());
             if (retval != SQLITE_OK) {
                 fprintf(stderr,
@@ -342,7 +342,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
             retval = sqlite3_exec(db,
                                   table_query,
                                   smc.smc_foreign_key_list,
-                                  &table_name,
+                                  &smc,
                                   errmsg.out());
             if (retval != SQLITE_OK) {
                 fprintf(stderr,
@@ -354,6 +354,77 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
     }
 
     return retval;
+}
+
+static int schema_collation_list(void *ptr,
+                                 int ncols,
+                                 char **colvalues,
+                                 char **colnames)
+{
+    return 0;
+}
+
+static int schema_db_list(void *ptr,
+                          int ncols,
+                          char **colvalues,
+                          char **colnames)
+{
+    struct sqlite_metadata_callbacks *smc = (sqlite_metadata_callbacks *)ptr;
+    string &schema_out = *((string *)smc->smc_userdata);
+    auto_mem<char, sqlite3_free> attach_sql;
+
+    attach_sql = sqlite3_mprintf("ATTACH DATABASE %Q AS %Q;\n",
+        colvalues[2], colvalues[1]);
+
+    schema_out += attach_sql;
+
+    return 0;
+}
+
+static int schema_table_list(void *ptr,
+                             int ncols,
+                             char **colvalues,
+                             char **colnames)
+{
+    struct sqlite_metadata_callbacks *smc = (sqlite_metadata_callbacks *)ptr;
+    string &schema_out = *((string *)smc->smc_userdata);
+    auto_mem<char, sqlite3_free> create_sql;
+
+    create_sql = sqlite3_mprintf("%s;\n", colvalues[1]);
+
+    schema_out += create_sql;
+
+    return 0;
+}
+
+static int schema_table_info(void *ptr,
+                             int ncols,
+                             char **colvalues,
+                             char **colnames)
+{
+    return 0;
+}
+
+static int schema_foreign_key_list(void *ptr,
+                                   int ncols,
+                                   char **colvalues,
+                                   char **colnames)
+{
+    return 0;
+}
+
+void dump_sqlite_schema(sqlite3 *db, std::string &schema_out)
+{
+    struct sqlite_metadata_callbacks schema_sql_meta_callbacks = {
+        schema_collation_list,
+        schema_db_list,
+        schema_table_list,
+        schema_table_info,
+        schema_foreign_key_list,
+        &schema_out
+    };
+
+    walk_sqlite_metadata(db, schema_sql_meta_callbacks);
 }
 
 void attach_sqlite_db(sqlite3 *db, const std::string &filename)
