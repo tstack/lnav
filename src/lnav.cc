@@ -111,12 +111,6 @@
 
 using namespace std;
 
-#define HELP_MSG_1(x, msg) \
-    "Press '" ANSI_BOLD(#x) "' " msg
-
-#define HELP_MSG_2(x, y, msg) \
-    "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
-
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
 struct _lnav_data lnav_data;
@@ -2277,8 +2271,8 @@ static void rl_callback(void *dummy, readline_curses *rc)
 
     case LNM_COMMAND:
         lnav_data.ld_mode = LNM_PAGING;
-        rc->set_value(execute_command(rc->get_value()));
         rc->set_alt_value("");
+        rc->set_value(execute_command(rc->get_value()));
         break;
 
     case LNM_SEARCH:
@@ -3749,7 +3743,6 @@ int main(int argc, char *argv[])
     set_sub_source(&lnav_data.ld_log_source);
     lnav_data.ld_views[LNV_LOG].
     set_delegate(new action_delegate(lnav_data.ld_log_source));
-    lnav_data.ld_views[LNV_LOG].set_gutter_source(new log_gutter_source());
     lnav_data.ld_views[LNV_TEXT].
     set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_HISTOGRAM].
@@ -3764,6 +3757,10 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_LOG].
     set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
     lnav_data.ld_db_overlay.dos_hist_source = &lnav_data.ld_db_source;
+
+    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+        lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
+    }
 
     {
         setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());

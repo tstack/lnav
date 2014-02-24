@@ -1,7 +1,29 @@
 
 lnav v0.6.3:
      Features:
-     * Add the '.schema' SQL command.
+     * Add the '.schema' SQL command to open a view that displays the schema
+       for the internal tables and any attached databases.  If lnav was only
+       executed with a SQLite database and no text files, this view will open
+       by default.
+     * The scroll bar now indicates the location of errors/warnings, search
+       hits, and bookmarks.
+     * The xterm title is update to reflect the file name for the top line
+       in the view.
+     * When doing a search or SQL query, any text that is currently being
+       displayed can be tab-completed.
+     * The '-H' option was added so you can view the internal help text.
+     * Added the 'g/G' hotkeys to move to the top/bottom of the file.
+
+     Fixes:
+     * Performance improvements.
+     * Multi-line filtering has been fixed.
+     * A collator has been added to the log_level column in the log tables
+       so that you can write expressions like "log_level > 'warning'".
+     * The log_time datetime format now matches what is returned by
+       "datetime('now')" so that collating works correctly.
+     * Static-linking has been cleaned up.
+     * OpenSSL is no longer a requirement.
+     * Alpha support for Windows/cygwin.
 
 lnav v0.6.2:
      Features:

@@ -58,6 +58,7 @@
 #include "xterm_mouse.hh"
 #include "piper_proc.hh"
 #include "term_extra.hh"
+#include "ansi_scrubber.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -194,6 +195,12 @@ struct _lnav_data {
 };
 
 extern struct _lnav_data lnav_data;
+
+#define HELP_MSG_1(x, msg) \
+    "Press '" ANSI_BOLD(#x) "' " msg
+
+#define HELP_MSG_2(x, y, msg) \
+    "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
 
 void rebuild_indexes(bool force);
 

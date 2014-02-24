@@ -369,7 +369,8 @@ public:
     {
         bool retval = false;
 
-        if (line < (int)this->tc_sub_source->text_line_count()) {
+        if (this->tc_sub_source != NULL &&
+            line < (int)this->tc_sub_source->text_line_count()) {
             this->tc_sub_source->text_value_for_line(*this,
                                                      line,
                                                      value_out,

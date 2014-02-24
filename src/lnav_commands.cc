@@ -797,6 +797,9 @@ static string com_open(string cmdline, vector<string> &args)
                 lnav_data.ld_file_names.insert(make_pair(fn, -1));
                 retval = "info: opened -- " + fn;
                 lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
+
+                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                    X, "to close the file"));
             }
         }
     }
