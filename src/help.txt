@@ -74,8 +74,7 @@ Above and below the main body are status lines that display:
   * the log format for the top line;
   * the current view;
   * the line number for the top line in the display;
-  * the total number of warnings and errors;
-  * the number of search hits, which updates as more are found; and
+  * the current search hit and the total number of hits;
   * the number of lines not displayed because of filtering.
 
 Finally, the last line on the display is where you can enter search

@@ -51,8 +51,6 @@ public:
         BSF_LINE_NUMBER,
         BSF_PERCENT,
         BSF_HITS,
-        BSF_WARNINGS,
-        BSF_ERRORS,
         BSF_FILTERED,
         BSF_LOADING,
         BSF_HELP,
@@ -72,11 +70,8 @@ public:
     {
         this->bss_fields[BSF_LINE_NUMBER].set_width(10);
         this->bss_fields[BSF_PERCENT].set_width(4);
-        this->bss_fields[BSF_HITS].set_width(16);
+        this->bss_fields[BSF_HITS].set_width(36);
         this->bss_fields[BSF_HITS].set_cylon(true);
-        this->bss_fields[BSF_WARNINGS].set_width(10);
-        this->bss_fields[BSF_ERRORS].set_width(10);
-        this->bss_fields[BSF_ERRORS].set_role(view_colors::VCR_ALERT_STATUS);
         this->bss_fields[BSF_FILTERED].set_width(20);
         this->bss_fields[BSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
         this->bss_fields[BSF_LOADING].set_width(13);
@@ -170,32 +165,24 @@ public:
 
     void update_marks(listview_curses *lc)
     {
-        textview_curses *tc  = static_cast<textview_curses *>(lc);
-        status_field &   sfw = this->bss_fields[BSF_WARNINGS];
-        status_field &   sfe = this->bss_fields[BSF_ERRORS];
-        vis_bookmarks &  bm  = tc->get_bookmarks();
-        unsigned long    width;
-        vis_line_t       height;
+        textview_curses *tc = static_cast<textview_curses *>(lc);
+        vis_bookmarks   &bm = tc->get_bookmarks();
+        status_field    &sf = this->bss_fields[BSF_HITS];
 
-        tc->get_dimensions(height, width);
-        if (bm.find(&logfile_sub_source::BM_WARNINGS) != bm.end()) {
-            bookmark_vector<vis_line_t> &bv =
-                bm[&logfile_sub_source::BM_WARNINGS];
+        if (bm.find(&textview_curses::BM_SEARCH) != bm.end()) {
+            bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_SEARCH];
+            bookmark_vector<vis_line_t>::iterator lb;
 
-            sfw.set_value("%'9dW", bv.size());
+            lb = std::lower_bound(bv.begin(), bv.end(), tc->get_top());
+            if (lb != bv.end() && *lb == tc->get_top()) {
+                sf.set_value(" Hit %'d of %'d",
+                    std::distance(bv.begin(), lb) + 1, tc->get_match_count());
+            } else {
+                sf.set_value("%'9d hits", tc->get_match_count());
+            }
         }
         else {
-            sfw.clear();
-        }
-
-        if (bm.find(&logfile_sub_source::BM_ERRORS) != bm.end()) {
-            bookmark_vector<vis_line_t> &bv =
-                bm[&logfile_sub_source::BM_ERRORS];
-
-            sfe.set_value("%'9dE", bv.size());
-        }
-        else {
-            sfe.clear();
+            sf.clear();
         }
     };
 
@@ -220,7 +207,7 @@ public:
         }
         this->bss_error.clear();
         sf.set_role(new_role);
-        sf.set_value("%'9d hits", tc->get_match_count());
+        this->update_marks(tc);
     };
 
     void update_loading(off_t off, size_t total)
