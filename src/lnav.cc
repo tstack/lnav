@@ -2365,8 +2365,17 @@ static void rl_callback(void *dummy, readline_curses *rc)
                 lnav_data.ld_views[LNV_DB].set_left(0);
 
                 if (dls.dls_rows.size() > 0) {
+                    vis_bookmarks &bm =
+                        lnav_data.ld_views[LNV_LOG].get_bookmarks();
 
-                    if (dls.dls_rows.size() == 1) {
+                    if (dls.dls_headers.size() == 1 && !bm[&BM_QUERY].empty()) {
+                        rc->set_value("");
+                        rc->set_alt_value(HELP_MSG_2(
+                          y, Y,
+                          "to move forward/backward through query results "
+                          "in the log view"));
+                    }
+                    else if (dls.dls_rows.size() == 1) {
                         string row;
 
                         hs.text_value_for_line(lnav_data.ld_views[LNV_DB], 1, row, true);
