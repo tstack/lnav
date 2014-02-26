@@ -198,9 +198,16 @@ public:
             }
             break;
 
-            default:
-                values.push_back(logline_value("", logline_value::VALUE_TEXT, line));
+            default: {
+                shared_buffer_ref value_sbr;
+
+                value_sbr.subset(line,
+                    pvalue.e_capture.c_begin, pvalue.e_capture.length());
+                values.push_back(logline_value("",
+                    logline_value::VALUE_TEXT, value_sbr));
                 break;
+            }
+
             }
             values.back().lv_column = next_column++;
         }
