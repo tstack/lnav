@@ -44,8 +44,6 @@ public:
 
     typedef listview_curses::action::mem_functor_t<
             bottom_status_source> lv_functor_t;
-    typedef textview_curses::action::mem_functor_t<
-            bottom_status_source> tv_functor_t;
 
     typedef enum {
         BSF_LINE_NUMBER,
@@ -62,7 +60,6 @@ public:
         : line_number_wire(*this, &bottom_status_source::update_line_number),
           percent_wire(*this, &bottom_status_source::update_percent),
           marks_wire(*this, &bottom_status_source::update_marks),
-          hits_wire(*this, &bottom_status_source::update_hits),
           bss_prompt(80, view_colors::VCR_STATUS),
           bss_error(80, view_colors::VCR_ALERT_STATUS),
           bss_hit_spinner(0),
@@ -71,7 +68,6 @@ public:
         this->bss_fields[BSF_LINE_NUMBER].set_width(10);
         this->bss_fields[BSF_PERCENT].set_width(4);
         this->bss_fields[BSF_HITS].set_width(36);
-        this->bss_fields[BSF_HITS].set_cylon(true);
         this->bss_fields[BSF_FILTERED].set_width(20);
         this->bss_fields[BSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
         this->bss_fields[BSF_LOADING].set_width(13);
@@ -87,7 +83,6 @@ public:
     lv_functor_t line_number_wire;
     lv_functor_t percent_wire;
     lv_functor_t marks_wire;
-    tv_functor_t hits_wire;
 
     status_field &get_field(field_t id) { return this->bss_fields[id]; };
 

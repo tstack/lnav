@@ -751,7 +751,7 @@ static string com_open(string cmdline, vector<string> &args)
         int top = 0;
         string fn;
 
-        fn = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        fn = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
 
         if (access(fn.c_str(), R_OK) != 0 &&
             (colon_index = fn.rfind(':')) != string::npos) {
@@ -868,7 +868,7 @@ static string com_partition_name(string cmdline, vector<string> &args)
         logfile_sub_source &lss = lnav_data.ld_log_source;
         std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
 
         bookmark_vector<vis_line_t> &bv = tc.get_bookmarks()[&textview_curses::BM_USER];
         bookmark_vector<vis_line_t>::iterator iter;

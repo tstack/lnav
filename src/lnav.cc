@@ -2982,6 +2982,13 @@ static void handle_key(int ch)
     }
 }
 
+void update_hits(void *dummy, textview_curses *tc)
+{
+    if (tc == lnav_data.ld_view_stack.top()) {
+        lnav_data.ld_bottom_source.update_hits(tc);
+    }
+}
+
 static void looper(void)
 {
     int fd;
@@ -3065,8 +3072,8 @@ static void looper(void)
             set_height(vis_line_t(-(rlc.get_height() + 1 + 1)));
             lnav_data.ld_views[lpc].
             set_scroll_action(sb.get_functor());
-            lnav_data.ld_views[lpc].
-            set_search_action(&lnav_data.ld_bottom_source.hits_wire);
+            lnav_data.ld_views[lpc].set_search_action(
+                textview_curses::action(update_hits));
         }
 
         lnav_data.ld_status[LNS_TOP].set_top(0);

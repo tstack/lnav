@@ -45,7 +45,7 @@
 
 inline std::string trim(const std::string &str)
 {
-    int start, end;
+    std::string::size_type start, end;
 
     for (start = 0; start < str.size() && isspace(str[start]); start++);
     for (end = str.size(); end > 0 && isspace(str[end - 1]); end--);
