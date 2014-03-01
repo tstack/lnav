@@ -2076,6 +2076,21 @@ string execute_sql(string sql, string &alt_msg)
     }
     else {
         bool done = false;
+        int param_count;
+
+        param_count = sqlite3_bind_parameter_count(stmt.in());
+        for (int lpc = 0; lpc < param_count; lpc++) {
+            const char *name;
+
+            name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
+            if (name[0] == '$') {
+                const char *env_value;
+
+                if ((env_value = getenv(&name[1])) != NULL) {
+                    sqlite3_bind_text(stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
+                }
+            }
+        }
 
         lnav_data.ld_log_source.text_clear_marks(&BM_QUERY);
         while (!done) {

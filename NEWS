@@ -27,6 +27,8 @@ lnav v0.6.3:
      * Static-linking has been cleaned up.
      * OpenSSL is no longer a requirement.
      * Alpha support for Windows/cygwin.
+     * Environment variables can now be accessed in SQL queries using
+       the syntax: $VAR_NAME
 
 lnav v0.6.2:
      Features:

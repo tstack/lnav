@@ -23,6 +23,16 @@ A SQL command is an internal macro implemented by lnav.
 * .schema - Open the schema view.  This view contains a dump of the schema
   for the internal tables and any tables in attached databases.
 
+Environment
+-----------
+
+Environment variables can be accessed in queries using the usual syntax of
+"$VAR_NAME".  For example, to read the value of the "USER" variable, you can
+write:
+
+    ;SELECT $USER;
+
+
 Math
 ----
 
