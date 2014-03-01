@@ -49,4 +49,5 @@
  * @param sa  The container for any style attributes.
  */
 void scrub_ansi_string(std::string &str, string_attrs_t &sa);
+
 #endif

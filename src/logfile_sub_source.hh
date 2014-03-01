@@ -303,7 +303,13 @@ public:
         return retval;
     };
 
-    vis_line_t find_from_time(time_t start);
+    vis_line_t find_from_time(const struct timeval &start);
+
+    vis_line_t find_from_time(time_t start) {
+        struct timeval tv = { start, 0 };
+
+        return this->find_from_time(tv);
+    };
 
     content_line_t at(vis_line_t vl) { return this->lss_index[vl]; };
 
@@ -399,7 +405,13 @@ private:
         {
             logline *ll_lhs = this->llss_controller.find_line(lhs);
 
-            return ll_lhs->get_time() < rhs;
+            return *ll_lhs < rhs;
+        };
+        bool operator()(const content_line_t &lhs, const struct timeval &rhs)
+        {
+            logline *ll_lhs = this->llss_controller.find_line(lhs);
+
+            return *ll_lhs < rhs;
         };
 
         logfile_sub_source & llss_controller;

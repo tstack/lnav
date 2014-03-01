@@ -9,6 +9,9 @@ lnav v0.6.3:
        hits, and bookmarks.
      * The xterm title is update to reflect the file name for the top line
        in the view.
+     * Added a "headless" mode so that you can execute commands and run SQL
+       queries from the command-line without having to do it from the curses
+       UI.
      * When doing a search or SQL query, any text that is currently being
        displayed can be tab-completed.
      * The '-H' option was added so you can view the internal help text.

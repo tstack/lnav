@@ -171,15 +171,31 @@ static string com_current_time(string cmdline, vector<string> &args)
 
 static string com_goto(string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting line number/percentage";
+    string retval = "error: expecting line number/percentage or timestamp";
 
-    if (args.size() == 0) { }
+    if (args.size() == 0) {
+        args.push_back("line-time");
+    }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.top();
         int   line_number, consumed;
+        date_time_scanner dts;
+        struct timeval tv;
+        struct tm tm;
         float value;
 
-        if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
+        if (dts.scan(args[1].c_str(), NULL, &tm, tv) != NULL) {
+            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+                vis_line_t vl;
+
+                vl = lnav_data.ld_log_source.find_from_time(tv);
+                tc->set_top(vl);
+                retval = "";
+            } else {
+                retval = "error: time values only work in the log view";
+            }
+        }
+        else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
             if (args[1][consumed] == '%') {
                 line_number = (int)
                               ((double)tc->get_inner_height() *
@@ -187,6 +203,9 @@ static string com_goto(string cmdline, vector<string> &args)
             }
             else {
                 line_number = (int)value;
+                if (line_number < 0) {
+                    line_number = tc->get_inner_height() + line_number;
+                }
             }
             tc->set_top(vis_line_t(line_number));
 
@@ -292,7 +311,14 @@ static string com_save_to(string cmdline, vector<string> &args)
         }
     }
 
-    if ((outfile = fopen(wordmem->we_wordv[0], mode)) == NULL) {
+    if (strcmp(wordmem->we_wordv[0], "-") == 0) {
+        if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
+            return "error: writing to stdout is only available in headless mode";
+        }
+        outfile = stdout;
+        lnav_data.ld_stdout_used = true;
+    }
+    else if ((outfile = fopen(wordmem->we_wordv[0], mode)) == NULL) {
         return "error: unable to open file -- " + string(wordmem->we_wordv[0]);
     }
 
@@ -338,7 +364,9 @@ static string com_save_to(string cmdline, vector<string> &args)
         }
     }
 
-    fclose(outfile);
+    if (outfile != stdout) {
+        fclose(outfile);
+    }
     outfile = NULL;
 
     return "";
@@ -500,8 +528,10 @@ static string com_filter(string cmdline, vector<string> &args)
             auto_ptr<pcre_filter> pf(new pcre_filter(lt, args[1], code));
 
             lss.add_filter(pf.release());
-            lnav_data.ld_rl_view->
-            add_possibility(LNM_COMMAND, "enabled-filter", args[1]);
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->add_possibility(
+                    LNM_COMMAND, "enabled-filter", args[1]);
+            }
             rebuild_indexes(true);
 
             retval = "info: filter now active";
@@ -531,10 +561,12 @@ static string com_enable_filter(string cmdline, vector<string> &args)
         }
         else {
             lnav_data.ld_log_source.set_filter_enabled(lf, true);
-            lnav_data.ld_rl_view->
-            rem_possibility(LNM_COMMAND, "disabled-filter", args[1]);
-            lnav_data.ld_rl_view->
-            add_possibility(LNM_COMMAND, "enabled-filter", args[1]);
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->rem_possibility(
+                    LNM_COMMAND, "disabled-filter", args[1]);
+                lnav_data.ld_rl_view->add_possibility(
+                    LNM_COMMAND, "enabled-filter", args[1]);
+            }
             rebuild_indexes(true);
             retval = "info: filter enabled";
         }
@@ -563,10 +595,12 @@ static string com_disable_filter(string cmdline, vector<string> &args)
         }
         else {
             lnav_data.ld_log_source.set_filter_enabled(lf, false);
-            lnav_data.ld_rl_view->
-            rem_possibility(LNM_COMMAND, "disabled-filter", args[1]);
-            lnav_data.ld_rl_view->
-            add_possibility(LNM_COMMAND, "enabled-filter", args[1]);
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->rem_possibility(
+                    LNM_COMMAND, "disabled-filter", args[1]);
+                lnav_data.ld_rl_view->add_possibility(
+                    LNM_COMMAND, "enabled-filter", args[1]);
+            }
             rebuild_indexes(true);
             retval = "info: filter disabled";
         }
@@ -630,9 +664,11 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
 
             errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
             if (errmsg.empty()) {
-                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
-                                                      "custom-table",
-                                                      args[1]);
+                if (lnav_data.ld_rl_view != NULL) {
+                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                      "custom-table",
+                      args[1]);
+                }
                 retval = "info: created new log table -- " + args[1];
             }
             else {
@@ -655,9 +691,11 @@ static string com_delete_logline_table(string cmdline, vector<string> &args)
         string rc = lnav_data.ld_vtab_manager->unregister_vtab(args[1]);
 
         if (rc.empty()) {
-            lnav_data.ld_rl_view->rem_possibility(LNM_COMMAND,
-                                                  "custom-table",
-                                                  args[1]);
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->rem_possibility(LNM_COMMAND,
+                  "custom-table",
+                  args[1]);
+            }
             retval = "info: deleted logline table";
         }
         else {
@@ -755,8 +793,7 @@ static string com_open(string cmdline, vector<string> &args)
 
         if (access(fn.c_str(), R_OK) != 0 &&
             (colon_index = fn.rfind(':')) != string::npos) {
-            if (sscanf(&fn.c_str()[colon_index + 1], "%d", &top) == 1 &&
-                top >= 0) {
+            if (sscanf(&fn.c_str()[colon_index + 1], "%d", &top) == 1) {
                 fn = fn.substr(0, colon_index);
             }
         }
@@ -798,8 +835,10 @@ static string com_open(string cmdline, vector<string> &args)
                 retval = "info: opened -- " + fn;
                 lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
 
-                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                    X, "to close the file"));
+                if (lnav_data.ld_rl_view != NULL) {
+                    lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                        X, "to close the file"));
+                }
             }
         }
     }

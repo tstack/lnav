@@ -43,6 +43,44 @@ following options are available when doing so:
              on the standard input.
   -w file    Write the contents of the standard input to this file.
 
+To automatically execute queries or lnav commands after the files
+have been loaded, you can use the following options:
+
+  -c cmd     A command, query, or file to execute.  The first character
+             determines the type of operation: a colon is used for the
+             built-in commands; a semi-colon for SQL queries; and a
+             pipe symbol (|) for executing a file containing other
+             commands.  For example, to open the file "foo.log" and go
+             to the tenth line in the file, you can do:
+
+               lnav -c ':goto 10' foo.log
+
+             This option can be given multiple times to execute multiple
+             operations in sequence.
+
+  -f file    A file that contains commands, queries, or files to execute.
+             This option is a shortcut for "-c '|file'".
+
+To execute commands/queries without the opening the interactive text UI,
+you can pass the '-n' option.  This combination of options allows you to
+write scripts for processing logs with lnav.  For example, to get a list
+of IP addresses that dhclient has bound to in CSV format:
+
+  #! /usr/bin/lnav -nf
+
+  # Usage: dhcp_ip.lnav /var/log/messages
+
+  # Only include lines that look like:
+  #    Apr 29 00:31:56 example-centos5 dhclient: bound to 10.1.10.103 -- renewal in 9938 seconds.
+  :filter-in dhclient: bound to
+
+  # The log message parser will extract the IP address as col_0, so we
+  # select that and alias it to "dhcp_ip".
+  ;select distinct col_0 as dhcp_ip from logline;
+
+  # Finally, write the results of the query to stdout.
+  :write-csv-to -
+
 
 DISPLAY
 -------
@@ -302,8 +340,11 @@ COMMANDS
   current-time      Print the current time in human-readable form and
                     as a unix-timestamp.
 
-  goto <line#|N%>   Go to the given line number or N percent into the
-                    file.
+  goto <line#|N%|time>
+                    Go to the given line number, N percent into the
+                    file, or the given timestamp in the log view.  If the
+                    line number is negative, it is considered an offset
+                    from the last line.
 
   highlight <regex> Highlight strings that match the given regular
                     expression.
@@ -355,6 +396,9 @@ COMMANDS
   append-to <file>  Append any marked lines to the given file.
 
   write-to <file>   Write any marked lines to the given file.
+
+  write-csv-to <file>
+                    Write the results of a SQL query to a CSV-formatted file.
 
   session <cmd>     Add the given command to the session file
                     (~/.lnav/session).  Any commands listed in the session file

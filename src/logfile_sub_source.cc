@@ -149,7 +149,7 @@ logfile *logfile_sub_source::find(const char *fn,
     return retval;
 }
 
-vis_line_t logfile_sub_source::find_from_time(time_t start)
+vis_line_t logfile_sub_source::find_from_time(const struct timeval &start)
 {
     vector<content_line_t>::iterator lb;
     vis_line_t retval(-1);

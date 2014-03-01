@@ -407,14 +407,20 @@ public:
     {
         unsigned long height;
 
-        getmaxyx(this->lv_window, height, width_out);
-        if (this->lv_height < 1) {
-            height_out = vis_line_t(height) +
-                         this->lv_height -
-                         vis_line_t(this->lv_y);
+        if (this->lv_window == NULL) {
+            height_out = vis_line_t(1);
+            width_out = 0;
         }
         else {
-            height_out = this->lv_height;
+            getmaxyx(this->lv_window, height, width_out);
+            if (this->lv_height < 1) {
+                height_out = vis_line_t(height) +
+                    this->lv_height -
+                    vis_line_t(this->lv_y);
+            }
+            else {
+                height_out = this->lv_height;
+            }
         }
     };
 

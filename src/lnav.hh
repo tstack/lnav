@@ -75,6 +75,7 @@ enum {
 
     LNB_TIMESTAMP,
     LNB_HELP,
+    LNB_HEADLESS,
     LNB_ROTATED,
 };
 
@@ -86,6 +87,7 @@ typedef enum {
 
     LNF_TIMESTAMP = (1L << LNB_TIMESTAMP),
     LNF_HELP      = (1L << LNB_HELP),
+    LNF_HEADLESS  = (1L << LNB_HEADLESS),
 
     LNF__ALL      = (LNF_SYSLOG|LNF_HELP)
 } lnav_flags_t;
@@ -136,10 +138,12 @@ struct _lnav_data {
     const char *                            ld_program_name;
     const char *                            ld_debug_log_name;
 
+    std::list<std::string>                  ld_commands;
     std::set<std::pair<std::string, int> >  ld_file_names;
     std::list<logfile *>                    ld_files;
     std::list<std::string>                  ld_other_files;
     std::list<std::pair<std::string, int> > ld_files_to_front;
+    bool                                    ld_stdout_used;
     sig_atomic_t                            ld_looping;
     sig_atomic_t                            ld_winched;
     sig_atomic_t                            ld_child_terminated;

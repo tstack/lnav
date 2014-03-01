@@ -115,9 +115,16 @@ class alerter {
 public:
     static alerter &singleton();
 
+    void enabled(bool enable) { this->a_enabled = enable; };
+
     void chime(void) {
-        if (this->a_do_flash)
+        if (!this->a_enabled) {
+            return;
+        }
+
+        if (this->a_do_flash) {
             ::flash();
+        }
         this->a_do_flash = false;
     };
 
@@ -129,8 +136,9 @@ public:
     };
 
 private:
-    alerter() : a_do_flash(true), a_last_input(-1) { };
+    alerter() : a_enabled(false), a_do_flash(true), a_last_input(-1) { };
 
+    bool a_enabled;
     bool a_do_flash;
     int a_last_input;
 };

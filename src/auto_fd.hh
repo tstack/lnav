@@ -114,7 +114,7 @@ public:
         this->reset();
     };
 
-    /** @return The file descriptor as a pain integer. */
+    /** @return The file descriptor as a plain integer. */
     operator int(void) const { return this->af_fd;  };
 
     /**
