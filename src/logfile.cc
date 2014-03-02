@@ -252,9 +252,19 @@ throw (line_buffer::error, logfile::error)
             off = 0;
         }
         last_off = off;
-        while ((line = this->lf_line_buffer.read_line(off, len)) != NULL) {
-            line[len] = '\0';
+        while ((line = this->lf_line_buffer.read_line(off, len, true)) != NULL) {
+            if (len > 0 && line[len - 1] == '\n') {
+                this->lf_partial_line = false;
+                line[len - 1] = '\0';
+            }
+            else {
+                this->lf_partial_line = true;
+                line[len] = '\0';
+            }
             this->process_prefix(last_off, line, len);
+            if (!this->lf_partial_line) {
+                line[len - 1] = '\n';
+            }
             last_off = off;
 
             if (lo != NULL) {

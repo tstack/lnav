@@ -248,7 +248,7 @@ public:
 
         if (next_line == this->end()) {
             retval = this->lf_index_size - ll->get_offset();
-            if (retval > 0) {
+            if (retval > 0 && !this->lf_partial_line) {
                 retval -= 1;
             }
         }
@@ -341,5 +341,6 @@ protected:
     int lf_time_offset_line;
     struct timeval lf_time_offset;
     bool lf_is_closed;
+    bool lf_partial_line;
 };
 #endif

@@ -4077,8 +4077,24 @@ int main(int argc, char *argv[])
         try {
             rescan_files(true);
             
-            log_info("startup");
+            log_info("startup: %s", PACKAGE_STRING);
             log_host_info();
+            log_info("lnav_data:");
+            log_info("  flags=%x", lnav_data.ld_flags);
+            log_info("  commands:");
+            for (std::list<string>::iterator cmd_iter =
+                 lnav_data.ld_commands.begin();
+                 cmd_iter != lnav_data.ld_commands.end();
+                 ++cmd_iter) {
+                log_info("    %s", cmd_iter->c_str());
+            }
+            log_info("  files:");
+            for (std::set<pair<string, int> >::iterator file_iter =
+                 lnav_data.ld_file_names.begin();
+                 file_iter != lnav_data.ld_file_names.end();
+                 ++file_iter) {
+                log_info("    %s", file_iter->first.c_str());
+            }
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 textview_curses *tc;
@@ -4127,6 +4143,8 @@ int main(int argc, char *argv[])
             }
             else {
                 init_session();
+
+                log_info("  session_id=%s", lnav_data.ld_session_id.c_str());
 
                 scan_sessions();
 

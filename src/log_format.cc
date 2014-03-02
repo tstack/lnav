@@ -635,7 +635,6 @@ void external_log_format::annotate(shared_buffer_ref &line,
             }
         }
 
-        log_info("field %s %s", vd.vd_name.c_str(), string(&line.get_data()[cap->c_begin], cap->length()).c_str());
         field.subset(line, cap->c_begin, cap->length());
 
         values.push_back(logline_value(vd.vd_name,
