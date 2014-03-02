@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2014, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,52 +26,51 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file termios_guard.hh
+ * @file lnav_log.hh
  */
 
-#ifndef __termios_guard_hh
-#define __termios_guard_hh
+#ifndef __lnav_log_hh
+#define __lnav_log_hh
 
 #include <stdio.h>
 #include <termios.h>
-#include <unistd.h>
 
-/**
- * RAII class that saves the current termios for a tty and then restores them
- * during destruction.
- */
-class guard_termios {
-public:
-
-    /**
-     * Store the TTY termios settings in this object.
-     *
-     * @param fd The tty file descriptor.
-     */
-    guard_termios(const int fd) : gt_fd(fd)
-    {
-        if (isatty(this->gt_fd) &&
-            tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
-            perror("tcgetattr");
-        }
-    };
-
-    /**
-     * Restore the TTY termios settings that were captured when this object was
-     * instantiated.
-     */
-    ~guard_termios()
-    {
-        if (isatty(this->gt_fd) &&
-            tcsetattr(this->gt_fd, TCSANOW, &this->gt_termios) == -1) {
-            perror("tcsetattr");
-        }
-    };
-
-    const struct termios *get_termios() const { return &this->gt_termios; };
-
-private:
-    const int      gt_fd;
-    struct termios gt_termios;
+enum lnav_log_level_t {
+    LOG_LEVEL_DEBUG,
+    LOG_LEVEL_INFO,
+    LOG_LEVEL_WARNING,
+    LOG_LEVEL_ERROR,
 };
+
+void log_host_info(void);
+void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
+    const char *fmt, ...);
+void log_install_handlers(void);
+
+extern FILE *lnav_log_file;
+extern const char *lnav_log_crash_dir;
+extern const struct termios *lnav_log_orig_termios;
+extern lnav_log_level_t lnav_log_level;
+
+#define log_msg_wrapper(level, fmt...) \
+    do { \
+        if (lnav_log_level <= level) { \
+            log_msg(level, __FILE__, __LINE__, fmt); \
+        } \
+    } \
+    while (false)
+
+#define log_error(fmt...) \
+    log_msg_wrapper(LOG_LEVEL_ERROR, fmt);
+
+#define log_warning(fmt...) \
+    log_msg_wrapper(LOG_LEVEL_WARNING, fmt);
+
+#define log_info(fmt...) \
+    log_msg_wrapper(LOG_LEVEL_INFO, fmt);
+
+#define log_debug(fmt...) \
+    log_msg_wrapper(LOG_LEVEL_DEBUG, fmt);
+
+
 #endif

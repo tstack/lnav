@@ -1072,8 +1072,6 @@ static string com_summarize(string cmdline, vector<string> &args)
             query += query_frag;
         }
 
-        fprintf(stderr, "query %s\n", query.c_str());
-
         db_label_source &      dls = lnav_data.ld_db_rows;
         hist_source &          hs  = lnav_data.ld_db_source;
 
@@ -1113,7 +1111,6 @@ static string com_summarize(string cmdline, vector<string> &args)
                 {
                     const char *errmsg;
 
-                    fprintf(stderr, "code %d\n", retcode);
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
                     retval = "error: " + string(errmsg);
                     done   = true;

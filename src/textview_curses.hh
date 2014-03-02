@@ -37,6 +37,7 @@
 #include "grep_proc.hh"
 #include "bookmarks.hh"
 #include "listview_curses.hh"
+#include "lnav_log.hh"
 
 class textview_curses;
 
@@ -169,7 +170,7 @@ public:
             }
             this->h_code_extra = pcre_study(this->h_code, 0, &errptr);
             if (!this->h_code_extra && errptr) {
-                fprintf(stderr, "pcre_study error: %s\n", errptr);
+                log_error("pcre_study error: %s", errptr);
             }
             if (this->h_code_extra != NULL) {
                 pcre_extra *extra = this->h_code_extra;

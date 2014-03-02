@@ -29,6 +29,7 @@ lnav v0.6.3:
      * Alpha support for Windows/cygwin.
      * Environment variables can now be accessed in SQL queries using
        the syntax: $VAR_NAME
+     * An internal log is kept and written out on a crash.
 
 lnav v0.6.2:
      Features:

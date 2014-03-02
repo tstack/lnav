@@ -75,6 +75,7 @@
 #include "help.hh"
 #include "init-sql.hh"
 #include "logfile.hh"
+#include "lnav_log.hh"
 #include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "listview_curses.hh"
@@ -890,7 +891,7 @@ public:
                      bucket_tm);
         }
         else {
-            fprintf(stderr, "bad time %d\n", bucket_start_value);
+            log_error("bad time %d", bucket_start_value);
             buffer[0] = '\0';
         }
         for (iter = bucket.begin(); iter != bucket.end(); iter++) {
@@ -1957,7 +1958,7 @@ static void handle_paging_key(int ch)
         break;
 
     default:
-        fprintf(stderr, "unhandled %d\n", ch);
+        log_warning("unhandled %d", ch);
         lnav_data.ld_rl_view->set_value("Unrecognized keystroke, press "
                                         ANSI_BOLD("?")
                                         " to view help");
@@ -1992,6 +1993,8 @@ string execute_command(string cmdline)
 
     vector<string> args;
     string         buf, msg;
+
+    log_info("Executing: %s", cmdline.c_str());
 
     while (ss >> buf) {
         args.push_back(buf);
@@ -2043,6 +2046,8 @@ string execute_sql(string sql, string &alt_msg)
     string stmt_str = trim(sql);
     string retval;
     int retcode;
+
+    log_info("Executing SQL: %s", sql.c_str());
 
     lnav_data.ld_bottom_source.grep_error("");
 
@@ -2109,7 +2114,7 @@ string execute_sql(string sql, string &alt_msg)
             default: {
                 const char *errmsg;
 
-                fprintf(stderr, "code %d\n", retcode);
+                log_error("code %d", retcode);
                 errmsg = sqlite3_errmsg(lnav_data.ld_db);
                 retval = errmsg;
                 done = true;
@@ -2211,7 +2216,6 @@ static void execute_file(string path)
         if (line[line_size - 1] == '\n') {
             line[line_size - 1] = '\0';
         }
-        fprintf(stderr, "line %s--\n", line);
         switch (line[0]) {
         case ':':
             rc = execute_command(&line[1]);
@@ -2348,7 +2352,7 @@ void execute_search(lnav_view_t view, const std::string &regex)
         }
         gc.reset();
 
-        fprintf(stderr, "start search for: '%s'\n", regex.c_str());
+        log_debug("start search for: '%s'", regex.c_str());
 
         if (regex.empty()) {
             lnav_data.ld_bottom_source.grep_error("");
@@ -2793,7 +2797,7 @@ static bool rescan_files(bool required = false)
         if (!lf->exists() || lf->is_closed()) {
             std::list<logfile *>::iterator tss_iter;
 
-            fprintf(stderr, "file has been deleted/closed -- %s\n",
+            log_info("file has been deleted/closed -- %s",
                     lf->get_filename().c_str());
             lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
             lnav_data.ld_text_source.tss_files.remove(lf);
@@ -2883,7 +2887,7 @@ static string execute_action(log_data_helper &ldh,
                 "error: could not exec process -- %s:%s\n",
                 args[0],
                 strerror(errno));
-            exit(0);
+            _exit(0);
         }
         break;
     default: {
@@ -3247,11 +3251,11 @@ static void looper(void)
                 {
                     int lpc, fd_flags;
 
-                    fprintf(stderr, "bad file descriptor\n");
+                    log_error("bad file descriptor");
                     for (lpc = 0; lpc < FD_SETSIZE; lpc++) {
                         if (fcntl(lpc, F_GETFD, &fd_flags) == -1 &&
                             FD_ISSET(lpc, &lnav_data.ld_read_fds)) {
-                            fprintf(stderr, "bad fd %d\n", lpc);
+                            log_error("bad fd %d", lpc);
                         }
                     }
                     lnav_data.ld_looping = false;
@@ -3259,7 +3263,7 @@ static void looper(void)
                 break;
 
                 default:
-                    fprintf(stderr, "select %s\n", strerror(errno));
+                    log_error("select %s", strerror(errno));
                     lnav_data.ld_looping = false;
                     break;
                 }
@@ -3428,7 +3432,7 @@ static void looper(void)
         }
     }
     catch (readline_curses::error & e) {
-        fprintf(stderr, "error: %s\n", strerror(e.e_err));
+        log_error("error: %s", strerror(e.e_err));
     }
 }
 
@@ -3757,6 +3761,8 @@ int main(int argc, char *argv[])
 
     ensure_dotlnav();
 
+    log_install_handlers();
+
     load_formats(loader_errors);
     if (!loader_errors.empty()) {
         for (std::vector<std::string>::iterator iter = loader_errors.begin();
@@ -3981,6 +3987,8 @@ int main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
+    lnav_log_file = fopen(lnav_data.ld_debug_log_name, "a");
+
     if (isatty(STDIN_FILENO) && argc == 0 &&
         !(lnav_data.ld_flags & LNF__ALL)) {
         lnav_data.ld_flags |= LNF_SYSLOG;
@@ -4066,15 +4074,10 @@ int main(int argc, char *argv[])
     }
     else {
         try {
-            int fd;
-
             rescan_files(true);
-
-            fd = open(lnav_data.ld_debug_log_name,
-                O_WRONLY | O_CREAT | O_APPEND, 0666);
-            dup2(fd, STDERR_FILENO);
-            close(fd);
-            fprintf(stderr, "startup\n");
+            
+            log_info("startup");
+            log_host_info();
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 textview_curses *tc;
@@ -4126,6 +4129,9 @@ int main(int argc, char *argv[])
                 scan_sessions();
 
                 guard_termios gt(STDIN_FILENO);
+
+                lnav_log_orig_termios = gt.get_termios();
+
                 looper();
 
                 save_session();

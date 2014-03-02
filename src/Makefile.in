@@ -114,9 +114,9 @@ am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	fs-extension-functions.$(OBJEXT) grep_proc.$(OBJEXT) \
 	hist_source.$(OBJEXT) line_buffer.$(OBJEXT) \
 	listview_curses.$(OBJEXT) lnav_commands.$(OBJEXT) \
-	lnav_config.$(OBJEXT) lnav_util.$(OBJEXT) log_format.$(OBJEXT) \
-	log_format_loader.$(OBJEXT) logfile.$(OBJEXT) \
-	logfile_sub_source.$(OBJEXT) \
+	lnav_config.$(OBJEXT) lnav_log.$(OBJEXT) lnav_util.$(OBJEXT) \
+	log_format.$(OBJEXT) log_format_loader.$(OBJEXT) \
+	logfile.$(OBJEXT) logfile_sub_source.$(OBJEXT) \
 	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
 	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
 	session_data.$(OBJEXT) sequence_matcher.$(OBJEXT) \
@@ -395,6 +395,7 @@ noinst_HEADERS = \
 	lnav.hh \
 	lnav_commands.hh \
 	lnav_config.hh \
+	lnav_log.hh \
 	lnav_util.hh \
     log_data_helper.hh \
     log_data_table.hh \
@@ -453,6 +454,7 @@ libdiag_a_SOURCES = \
 	listview_curses.cc \
 	lnav_commands.cc \
 	lnav_config.cc \
+	lnav_log.cc \
 	lnav_util.cc \
 	log_format.cc \
 	log_format_loader.cc \
@@ -694,6 +696,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav_commands.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav_config.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav_log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log_format.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log_format_loader.Po@am__quote@

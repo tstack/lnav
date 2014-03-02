@@ -342,8 +342,6 @@ static void load_time_bookmarks(void)
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     logfile_sub_source::iterator file_iter;
 
-    fprintf(stderr, "load time bookmarks\n");
-
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return;
     }
@@ -372,8 +370,6 @@ static void load_time_bookmarks(void)
             continue;
 
         base_content_line = lss.get_file_base_content_line(file_iter);
-
-        fprintf(stderr, "checking bookmarks for %s\n", lf->get_filename().c_str());
 
         logfile::iterator line_iter = lf->begin();
 
@@ -420,9 +416,6 @@ static void load_time_bookmarks(void)
         date_time_scanner dts;
         bool done = false;
         string line;
-
-        fprintf(stderr, "time range %s %s\n", low_timestamp, high_timestamp);
-
         int64_t last_mark_time = -1;
 
         while (!done) {
@@ -531,8 +524,6 @@ static void load_time_bookmarks(void)
 
         lss.find(lf->get_filename().c_str(), base_content_line);
 
-        fprintf(stderr, "checking time offsets for %s\n", lf->get_filename().c_str());
-
         logfile::iterator line_iter = lf->begin();
 
         sql_strftime(low_timestamp, sizeof(low_timestamp),
@@ -578,9 +569,6 @@ static void load_time_bookmarks(void)
         date_time_scanner dts;
         bool done = false;
         string line;
-
-        fprintf(stderr, "time range %s %s\n", low_timestamp, high_timestamp);
-
         int64_t last_mark_time = -1;
 
         while (!done) {
@@ -728,7 +716,6 @@ static int read_word_wrap(yajlpp_parse_context *ypc, int value)
     if (view_index < LNV__MAX) {
         textview_curses &tc = lnav_data.ld_views[view_index];
 
-        fprintf(stderr, "set word wrap %d\n", value);
         tc.set_word_wrap(value);
     }
 

@@ -69,6 +69,7 @@ noinst_HEADERS = \
 	lnav.hh \
 	lnav_commands.hh \
 	lnav_config.hh \
+	lnav_log.hh \
 	lnav_util.hh \
     log_data_helper.hh \
     log_data_table.hh \
@@ -127,6 +128,7 @@ libdiag_a_SOURCES = \
 	listview_curses.cc \
 	lnav_commands.cc \
 	lnav_config.cc \
+	lnav_log.cc \
 	lnav_util.cc \
 	log_format.cc \
 	log_format_loader.cc \

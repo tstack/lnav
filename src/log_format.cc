@@ -95,6 +95,11 @@ logline::level_t logline::string2level(const char *levelstr, size_t len, bool ex
         cmpfunc = strncasestr_i;
     }
 
+    if (((len == 1) || ((len > 1) && (levelstr[1] == ' '))) &&
+        (retval = abbrev2level(levelstr, len)) != LEVEL_UNKNOWN) {
+        return retval;
+    }
+
     if (cmpfunc(levelstr, "TRACE", len) == 0) {
         retval = logline::LEVEL_TRACE;
     }

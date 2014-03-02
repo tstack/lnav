@@ -172,7 +172,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
             }
         }
     }
-        exit(0);
+        _exit(0);
         break;
 
     default:

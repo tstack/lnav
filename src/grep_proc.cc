@@ -41,6 +41,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "lnav_log.hh"
 #include "grep_proc.hh"
 
 #include "time_T.hh"
@@ -160,7 +161,7 @@ void grep_proc::start(void)
 
     this->child_loop();
 
-    exit(0);
+    _exit(0);
 }
 
 void grep_proc::child_loop(void)
@@ -315,7 +316,7 @@ void grep_proc::dispatch_line(char *line)
         }
     }
     else {
-        fprintf(stderr, "bad line from child -- %s\n", line);
+        log_error("bad line from child -- %s", line);
     }
 }
 

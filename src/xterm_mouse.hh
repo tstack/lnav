@@ -52,6 +52,8 @@
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
+#include "lnav_log.hh"
+
 /**
  * Base class for delegates of the xterm_mouse class.
  */
@@ -190,7 +192,7 @@ public:
             }
         }
         else {
-            fprintf(stderr, "bad mouse escape sequence: %s\n", buffer);
+            log_error("bad mouse escape sequence: %s", buffer);
         }
     };
 

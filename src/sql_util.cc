@@ -37,6 +37,7 @@
 
 #include "auto_mem.hh"
 #include "sql_util.hh"
+#include "lnav_log.hh"
 
 /**
  * Copied from -- http://www.sqlite.org/lang_keywords.html
@@ -267,9 +268,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
                           &smc,
                           errmsg.out());
     if (retval != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not get collation list -- %s\n",
-                errmsg.in());
+        log_error("could not get collation list -- %s", errmsg.in());
         return retval;
     }
 
@@ -279,7 +278,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
                           &smc,
                           errmsg.out());
     if (retval != SQLITE_OK) {
-        fprintf(stderr, "error: could not get DB list -- %s\n", errmsg.in());
+        log_error("could not get DB list -- %s", errmsg.in());
         return retval;
     }
 
@@ -299,9 +298,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
                               &tld,
                               errmsg.out());
         if (retval != SQLITE_OK) {
-            fprintf(stderr,
-                    "error: could not get table list -- %s\n",
-                    errmsg.in());
+            log_error("could not get table list -- %s", errmsg.in());
             return retval;
         }
 
@@ -325,9 +322,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
                                   &smc,
                                   errmsg.out());
             if (retval != SQLITE_OK) {
-                fprintf(stderr,
-                        "error: could not get table info -- %s\n",
-                        errmsg.in());
+                log_error("could not get table info -- %s", errmsg.in());
                 return retval;
             }
 
@@ -345,9 +340,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
                                   &smc,
                                   errmsg.out());
             if (retval != SQLITE_OK) {
-                fprintf(stderr,
-                        "error: could not get foreign key list -- %s\n",
-                        errmsg.in());
+                log_error("could not get foreign key list -- %s", errmsg.in());
                 return retval;
             }
         }
@@ -438,18 +431,16 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
                            -1,
                            stmt.out(),
                            NULL) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not prepare DB attach statement -- %s\n",
-                sqlite3_errmsg(db));
+        log_error("could not prepare DB attach statement -- %s",
+            sqlite3_errmsg(db));
         return;
     }
 
     if (sqlite3_bind_text(stmt.in(), 1,
                           filename.c_str(), filename.length(),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not bind DB attach statement -- %s\n",
-                sqlite3_errmsg(db));
+        log_error("could not bind DB attach statement -- %s",
+            sqlite3_errmsg(db));
         return;
     }
 
@@ -468,16 +459,14 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
     if (sqlite3_bind_text(stmt.in(), 2,
                           db_name.c_str(), db_name.length(),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not bind DB attach statement -- %s\n",
-                sqlite3_errmsg(db));
+        log_error("could not bind DB attach statement -- %s",
+            sqlite3_errmsg(db));
         return;
     }
 
     if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-        fprintf(stderr,
-                "error: could not execute DB attach statement -- %s\n",
-                sqlite3_errmsg(db));
+        log_error("could not execute DB attach statement -- %s",
+            sqlite3_errmsg(db));
         return;
     }
 }

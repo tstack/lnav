@@ -130,11 +130,6 @@ public:
     void add_possibility(std::string type, std::string value)
     {
         this->rc_possibilities[type].insert(value);
-        fprintf(stderr, "pos %d %p %s %s\n",
-                (int)this->rc_possibilities[type].size(),
-                &this->rc_possibilities[type],
-                type.c_str(),
-                value.c_str());
     };
 
     void rem_possibility(std::string type, std::string value)

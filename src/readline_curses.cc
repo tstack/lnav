@@ -56,6 +56,7 @@
 #include <string>
 
 #include "auto_mem.hh"
+#include "lnav_log.hh"
 #include "ansi_scrubber.hh"
 #include "readline_curses.hh"
 
@@ -145,12 +146,9 @@ char *readline_context::completion_generator(const char *text, int state)
                  ++iter) {
                 int (*cmpfunc)(const char *, const char *, size_t);
 
-                fprintf(stderr, " cmp %s %s\n", text, iter->c_str());
                 cmpfunc = (loaded_context->is_case_sensitive() ?
                            strncmp : strncasecmp);
                 if (cmpfunc(text, iter->c_str(), len) == 0) {
-                    fprintf(stderr, "match!!! %d %s  %s\n", len, text,
-                            iter->c_str());
                     matches.push_back(*iter);
                 }
             }
@@ -160,8 +158,6 @@ char *readline_context::completion_generator(const char *text, int state)
     if (!matches.empty()) {
         retval = strdup(matches.back().c_str());
         matches.pop_back();
-
-        fprintf(stderr, "comp gen %s\n", retval);
     }
 
     return retval;
@@ -173,11 +169,8 @@ char **readline_context::attempted_completion(const char *text,
 {
     char **retval = NULL;
 
-    fprintf(stderr, "attempted %s\n", text);
-
     if (loaded_context->rc_possibilities.find("*") !=
         loaded_context->rc_possibilities.end()) {
-        fprintf(stderr, "all poss\n");
         arg_possibilities = &loaded_context->rc_possibilities["*"];
         rl_completion_append_character = loaded_context->rc_append_character;
     }
@@ -193,7 +186,6 @@ char **readline_context::attempted_completion(const char *text,
         space = strchr(rl_line_buffer, ' ');
         assert(space != NULL);
         cmd = string(rl_line_buffer, 0, space - rl_line_buffer);
-        fprintf(stderr, "cmd %s\n", cmd.c_str());
 
         vector<string> &proto = loaded_context->rc_prototypes[cmd];
 
@@ -204,11 +196,7 @@ char **readline_context::attempted_completion(const char *text,
             return NULL; /* XXX */
         }
         else {
-            fprintf(stderr, "proto %s\n", proto[0].c_str());
             arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);
-            fprintf(stderr, "ag %p %d\n",
-                    arg_possibilities,
-                    (int)arg_possibilities->size());
         }
     }
 
@@ -287,7 +275,7 @@ readline_curses::readline_curses()
 readline_curses::~readline_curses()
 {
     if (this->rc_child == 0) {
-        exit(0);
+        _exit(0);
     }
     else if (this->rc_child > 0) {
         int status;
@@ -338,7 +326,10 @@ void readline_curses::start(void)
             if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
                 struct itimerval itv;
 
-                assert(current_context != this->rc_contexts.end());
+                if (current_context == this->rc_contexts.end()) {
+                    looping = false;
+                    break;
+                }
 
                 itv.it_value.tv_sec     = 0;
                 itv.it_value.tv_usec    = KEY_TIMEOUT;
@@ -352,22 +343,18 @@ void readline_curses::start(void)
                     this->line_ready("");
                     rl_callback_handler_remove();
                 }
-                /* fprintf(stderr, " is done: %d\n", RL_ISSTATE(RL_STATE_DONE)); */
             }
             if (FD_ISSET(this->rc_command_pipe[RCF_SLAVE], &ready_rfds)) {
                 char msg[1024 + 1];
 
-                /* fprintf(stderr, "rl cmd\n"); */
                 if ((rc = read(this->rc_command_pipe[RCF_SLAVE],
                                msg,
                                sizeof(msg) - 1)) < 0) {
-                    fprintf(stderr, "read\n");
                 }
                 else {
                     int  context, prompt_start = 0;
                     char type[32];
 
-                    fprintf(stderr, "msg: %s\n", msg);
                     msg[rc] = '\0';
                     if (sscanf(msg, "f:%d:%n", &context, &prompt_start) == 1 &&
                         prompt_start != 0 &&
@@ -380,7 +367,6 @@ void readline_curses::start(void)
                     else if (strcmp(msg, "a") == 0) {
                         char reply[4];
 
-                        fprintf(stderr, "abort!!!\n");
                         rl_done = 1;
                         got_timeout = 0;
                         got_line = 1;
@@ -421,7 +407,7 @@ void readline_curses::start(void)
                         this->rc_contexts[context]->clear_possibilities(type);
                     }
                     else {
-                        fprintf(stderr, "unhandled message: %s\n", msg);
+                        log_error("unhandled message: %s", msg);
                     }
                 }
             }
@@ -430,13 +416,11 @@ void readline_curses::start(void)
         if (got_timeout) {
             char msg[1024];
 
-            fprintf(stderr, "got timeout\n");
             got_timeout = 0;
             snprintf(msg, sizeof(msg), "t:%s", rl_line_buffer);
             if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
                               msg,
                               strlen(msg)) == -1) {
-                perror("got_timeout: write failed");
                 exit(1);
             }
         }
@@ -449,7 +433,7 @@ void readline_curses::start(void)
             itv.it_interval.tv_sec  = 0;
             itv.it_interval.tv_usec = 0;
             if (setitimer(ITIMER_REAL, &itv, NULL) < 0) {
-                fprintf(stderr, "setitimer");
+                log_error("setitimer: %s", strerror(errno));
             }
             current_context->second->save();
             current_context = this->rc_contexts.end();
@@ -460,13 +444,11 @@ void readline_curses::start(void)
             if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
                 throw error(errno);
             }
-            fprintf(stderr, "rl winched %d %d\n", ws.ws_row, ws.ws_col);
             got_winch = 0;
             rl_set_screen_size(ws.ws_row, ws.ws_col);
         }
     }
 
-    fprintf(stderr, "writing history\n");
     std::map<int, readline_context *>::iterator citer;
     for (citer = this->rc_contexts.begin();
          citer != this->rc_contexts.end();
@@ -546,16 +528,6 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
 
         rc = read(this->rc_pty[RCF_MASTER], buffer, sizeof(buffer));
         if (rc > 0) {
-            {
-                int lpc;
-
-                fprintf(stderr, "from child %d|", rc);
-                for (lpc = 0; lpc < rc; lpc++) {
-                    fprintf(stderr, " %d", buffer[lpc]);
-                }
-                fprintf(stderr, "\n");
-            }
-
             this->map_output(buffer, rc);
         }
     }
@@ -567,11 +539,9 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
             string old_value = this->rc_value;
 
             msg[rc] = '\0';
-            fprintf(stderr, "child command: %s\n", msg);
             this->rc_value = string(&msg[2]);
             switch (msg[0]) {
             case 'a':
-                fprintf(stderr, "aborted!\n");
                 this->rc_active_context = -1;
                 this->vc_past_lines.clear();
                 this->rc_abort.invoke(this);
@@ -585,7 +555,6 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
                 break;
 
             case 'd':
-                fprintf(stderr, "done!\n");
                 this->rc_active_context = -1;
                 this->vc_past_lines.clear();
                 this->rc_perform.invoke(this);
@@ -605,7 +574,6 @@ void readline_curses::handle_key(int ch)
     if (write(this->rc_pty[RCF_MASTER], bch, len) == -1) {
         perror("handle_key: write failed");
     }
-    fprintf(stderr, "to child %d\n", bch[0]);
     if (ch == '\t' || ch == '\r') {
         this->vc_past_lines.clear();
     }
@@ -650,7 +618,6 @@ void readline_curses::add_possibility(int context,
     snprintf(buffer, sizeof(buffer),
              "ap:%d:%s:%s",
              context, type.c_str(), value.c_str());
-    fprintf(stderr, "msg: %s\n", buffer);
     if (reliable_send(this->rc_command_pipe[RCF_MASTER],
                       buffer,
                       strlen(buffer) + 1) == -1) {

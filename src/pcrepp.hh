@@ -53,6 +53,7 @@
 #include <memory>
 #include <exception>
 
+#include "lnav_log.hh"
 #include "auto_mem.hh"
 
 #include <stdio.h>
@@ -401,7 +402,7 @@ public:
                 return true;
 
             default:
-                fprintf(stderr, "pcre err %d\n", rc);
+                log_error("pcre err %d", rc);
                 break;
             }
         }
@@ -450,7 +451,7 @@ private:
 #endif
                                         &errptr);
         if (!this->p_code_extra && errptr) {
-            fprintf(stderr, "pcre_study error: %s\n", errptr);
+            log_error("pcre_study error: %s", errptr);
         }
         if (this->p_code_extra != NULL) {
             pcre_extra *extra = this->p_code_extra;

@@ -35,11 +35,16 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glob.h>
 #include <sys/stat.h>
 
+#include "lnav_log.hh"
+#include "auto_mem.hh"
 #include "lnav_config.hh"
 
 using namespace std;
+
+static const int MAX_CRASH_LOG_COUNT = 16;
 
 string dotlnav_path(const char *sub)
 {
@@ -84,6 +89,25 @@ void ensure_dotlnav(void)
     path = dotlnav_path("formats");
     if (!path.empty()) {
         mkdir(path.c_str(), 0755);
+    }
+    
+    path = dotlnav_path("crash");
+    if (!path.empty()) {
+        mkdir(path.c_str(), 0755);
+    }
+    lnav_log_crash_dir = strdup(path.c_str());
+
+    {
+        static_root_mem<glob_t, globfree> gl;
+
+        path += "/*";
+        if (glob(path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+            for (int lpc = 0;
+                 lpc < (gl->gl_pathc - MAX_CRASH_LOG_COUNT);
+                 lpc++) {
+                remove(gl->gl_pathv[lpc]);
+            }
+        }
     }
     
     path = dotlnav_path("formats/default");
