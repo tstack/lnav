@@ -391,11 +391,13 @@ void load_formats(std::vector<std::string> &errors)
     string format_path = dotlnav_path("formats/*/*.json");
     static_root_mem<glob_t, globfree> gl;
 
+    log_info("loading formats from path: %s", format_path.c_str());
     if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             string filename(gl->gl_pathv[lpc]);
             auto_fd fd;
 
+            log_info("loading formats from file: %s", filename.c_str());
             yajlpp_parse_context ypc(filename, format_handlers);
             if ((fd = open(gl->gl_pathv[lpc], O_RDONLY)) == -1) {
                 char errmsg[1024];

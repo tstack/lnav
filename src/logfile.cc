@@ -256,6 +256,7 @@ throw (line_buffer::error, logfile::error)
             if (len > 0 && line[len - 1] == '\n') {
                 this->lf_partial_line = false;
                 line[len - 1] = '\0';
+                len -= 1;
             }
             else {
                 this->lf_partial_line = true;
