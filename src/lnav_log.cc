@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <time.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdlib.h>
