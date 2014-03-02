@@ -4087,9 +4087,9 @@ int main(int argc, char *argv[])
 
                 alerter::singleton().enabled(false);
 
+                lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
                 rebuild_indexes(true);
 
-                lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
                 lnav_data.ld_views[LNV_LOG].set_top(vis_line_t(0));
 
                 execute_init_commands(NULL);
