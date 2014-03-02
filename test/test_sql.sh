@@ -27,6 +27,8 @@ log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_r
 EOF
 
 
+# XXX The timestamp on the file is used to determine the year for syslog files.
+touch -t 201311030923 ${test_dir}/logfile_syslog.0
 run_test ${lnav_test} -n \
     -c ";select * from syslog_log" \
     -c ':write-csv-to -' \
