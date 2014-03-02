@@ -106,7 +106,7 @@ typedef enum {
     LNV__MAX
 } lnav_view_t;
 
-extern const char *lnav_view_strings[LNV__MAX];
+extern const char *lnav_view_strings[LNV__MAX + 1];
 
 /** The status bars. */
 typedef enum {

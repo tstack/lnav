@@ -1178,6 +1178,31 @@ static string com_add_test(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_switch_to_view(string cmdline, vector<string> &args)
+{
+    string retval = "";
+
+    if (args.size() == 0) {
+        args.push_back("viewname");
+    }
+    else if (args.size() > 1) {
+        bool found = false;
+
+        for (int lpc = 0; lnav_view_strings[lpc] && !found; lpc++) {
+            if (strcasecmp(args[1].c_str(), lnav_view_strings[lpc]) == 0) {
+                ensure_view(&lnav_data.ld_views[lpc]);
+                found = true;
+            }
+        }
+
+        if (!found) {
+            retval = "error: invalid view name -- " + args[1];
+        }
+    }
+
+    return retval;
+}
+
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
     cmd_map["adjust-log-time"]      = com_adjust_log_time;
@@ -1203,6 +1228,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["partition-name"]       = com_partition_name;
     cmd_map["session"]              = com_session;
     cmd_map["summarize"]            = com_summarize;
+    cmd_map["switch-to-view"]       = com_switch_to_view;
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;

@@ -248,6 +248,9 @@ public:
 
         if (next_line == this->end()) {
             retval = this->lf_index_size - ll->get_offset();
+            if (retval > 0) {
+                retval -= 1;
+            }
         }
         else {
             retval = next_line->get_offset() - ll->get_offset() - 1;

@@ -616,6 +616,7 @@ void external_log_format::annotate(shared_buffer_ref &line,
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const value_def &vd = pat.p_value_by_index[lpc];
         const struct scaling_factor *scaling = NULL;
+        pcre_context::capture_t *cap = pc[vd.vd_index];
         shared_buffer_ref field;
 
         if (vd.vd_unit_field_index >= 0) {
@@ -634,7 +635,8 @@ void external_log_format::annotate(shared_buffer_ref &line,
             }
         }
 
-        field.subset(line, pc[vd.vd_index]->c_begin, pc[vd.vd_index]->length());
+        log_info("field %s %s", vd.vd_name.c_str(), string(&line.get_data()[cap->c_begin], cap->length()).c_str());
+        field.subset(line, cap->c_begin, cap->length());
 
         values.push_back(logline_value(vd.vd_name,
                          vd.vd_kind,
@@ -642,8 +644,8 @@ void external_log_format::annotate(shared_buffer_ref &line,
                          vd.vd_identifier,
                          scaling,
                          vd.vd_column,
-                         pc[vd.vd_index]->c_begin,
-                         pc[vd.vd_index]->c_end));
+                         cap->c_begin,
+                         cap->c_end));
 
         if (pc[vd.vd_index]->c_begin != -1 && vd.vd_identifier) {
             lr.lr_start = pc[vd.vd_index]->c_begin;

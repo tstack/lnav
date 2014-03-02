@@ -135,7 +135,7 @@ static const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) /
 static bookmark_type_t BM_EXAMPLE;
 static bookmark_type_t BM_QUERY;
 
-const char *lnav_view_strings[LNV__MAX] = {
+const char *lnav_view_strings[LNV__MAX + 1] = {
     "log",
     "text",
     "help",
@@ -144,6 +144,8 @@ const char *lnav_view_strings[LNV__MAX] = {
     "db",
     "example",
     "schema",
+
+    NULL
 };
 
 static const char *view_titles[LNV__MAX] = {
@@ -1040,6 +1042,28 @@ void redo_search(lnav_view_t view_index)
     lnav_data.ld_scroll_broadcaster.invoke(tc);
 }
 
+static void open_schema_view(void)
+{
+    textview_curses *schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
+    string schema;
+
+    dump_sqlite_schema(lnav_data.ld_db, schema);
+
+    schema += "\n\n-- Virtual Table Definitions --\n\n";
+    for (log_vtab_manager::iterator vtab_iter =
+       lnav_data.ld_vtab_manager->begin();
+       vtab_iter != lnav_data.ld_vtab_manager->end();
+       ++vtab_iter) {
+        schema += vtab_iter->second->get_table_statement();
+    }
+
+    if (schema_tc->get_sub_source() != NULL) {
+        delete schema_tc->get_sub_source();
+    }
+
+    schema_tc->set_sub_source(new plain_text_source(schema));
+}
+
 /**
  * Ensure that the view is on the top of the view stack.
  *
@@ -1050,6 +1074,10 @@ void ensure_view(textview_curses *expected_tc)
     textview_curses *tc = lnav_data.ld_view_stack.top();
 
     if (tc != expected_tc) {
+        if (expected_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
+            open_schema_view();
+        }
+
         toggle_view(expected_tc);
     }
 }
@@ -2008,29 +2036,6 @@ string execute_command(string cmdline)
     return msg;
 }
 
-static void open_schema_view(void)
-{
-    textview_curses *schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
-    string schema;
-
-    dump_sqlite_schema(lnav_data.ld_db, schema);
-
-    schema += "\n\n-- Virtual Table Definitions --\n\n";
-    for (log_vtab_manager::iterator vtab_iter =
-       lnav_data.ld_vtab_manager->begin();
-       vtab_iter != lnav_data.ld_vtab_manager->end();
-       ++vtab_iter) {
-        schema += vtab_iter->second->get_table_statement();
-    }
-
-    if (schema_tc->get_sub_source() != NULL) {
-        delete schema_tc->get_sub_source();
-    }
-
-    schema_tc->set_sub_source(new plain_text_source(schema));
-    ensure_view(schema_tc);
-}
-
 string execute_sql(string sql, string &alt_msg)
 {
     db_label_source &      dls = lnav_data.ld_db_rows;
@@ -2047,7 +2052,7 @@ string execute_sql(string sql, string &alt_msg)
     if (stmt_str == ".schema") {
         alt_msg = "";
 
-        open_schema_view();
+        ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
 
         lnav_data.ld_mode = LNM_PAGING;
         return "";
@@ -3123,10 +3128,13 @@ static void looper(void)
 
         lnav_data.ld_rl_view = &rlc;
 
-        lnav_data.ld_rl_view->
-        add_possibility(LNM_COMMAND, "graph", "\\d+(?:\\.\\d+)?");
-        lnav_data.ld_rl_view->
-        add_possibility(LNM_COMMAND, "graph", "([:= \\t]\\d+(?:\\.\\d+)?)");
+        lnav_data.ld_rl_view->add_possibility(
+            LNM_COMMAND, "graph", "\\d+(?:\\.\\d+)?");
+        lnav_data.ld_rl_view->add_possibility(
+            LNM_COMMAND, "graph", "([:= \\t]\\d+(?:\\.\\d+)?)");
+
+        lnav_data.ld_rl_view->add_possibility(
+            LNM_COMMAND, "viewname", lnav_view_strings);
 
         (void)signal(SIGINT, sigint);
         (void)signal(SIGTERM, sigint);
@@ -3277,7 +3285,7 @@ static void looper(void)
                 if (!initial_build &&
                     lnav_data.ld_log_source.text_line_count() == 0 &&
                     !lnav_data.ld_other_files.empty()) {
-                    open_schema_view();
+                    ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
                 }
 
                 if (!initial_build && lnav_data.ld_flags & LNF_HELP) {
@@ -4102,7 +4110,8 @@ int main(int argc, char *argv[])
                     for (vis_line_t vl = tc->get_top();
                          vl < tc->get_inner_height();
                          ++vl, ++y) {
-                        while (los->list_value_for_overlay(*tc, y, al)) {
+                        while (los != NULL &&
+                               los->list_value_for_overlay(*tc, y, al)) {
                             printf("%s\n", line.c_str());
                             ++y;
                         }

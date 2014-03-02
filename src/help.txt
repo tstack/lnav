@@ -414,6 +414,10 @@ COMMANDS
                     Delete an SQL table created by the 'create-logline-table'
                     command.
 
+  switch-to-view <view-name>
+                    Switch the display to the given view, which can be one of:
+                    help, log, text, histogram, db, and schema.
+
 
 SQL QUERIES (experimental)
 -----------

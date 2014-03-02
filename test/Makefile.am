@@ -192,6 +192,7 @@ TESTS = \
 	test_grep_proc2 \
 	test_hist_source \
 	test_pcrepp \
+	test_sql.sh \
 	test_sql_coll_func.sh \
 	test_sql_fs_func.sh \
 	test_sql_str_func.sh \

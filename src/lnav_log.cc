@@ -209,8 +209,6 @@ static void sigabrt(int sig)
     }
 
     if (lnav_log_orig_termios != NULL) {
-        char *bp, buf[1024];
-
         tcsetattr(STDOUT_FILENO, TCSAFLUSH, lnav_log_orig_termios);
     }
     fprintf(stderr, CRASH_MSG, crash_path);

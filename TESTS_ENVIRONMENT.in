@@ -5,7 +5,10 @@ export top_srcdir
 
 # The top build directory, derived from the path to this script.
 top_builddir=`dirname $0`
+export top_builddir
 
+test_dir="@abssrcdir@/test"
+export test_dir
 
 # The full path of the test case
 test_file=$1
@@ -52,8 +55,8 @@ run_test() {
 check_output() {
     diff -u ${test_file_base}_${test_num}.tmp - > ${test_file_base}_${test_num}.diff
     if test $? -ne 0; then
-	echo $LAST_TEST
-	echo $1
+        echo $LAST_TEST
+        echo $1
         cat ${test_file_base}_${test_num}.diff
 	exit 1
     fi
