@@ -103,7 +103,7 @@ void ensure_dotlnav(void)
         path += "/*";
         if (glob(path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
             for (int lpc = 0;
-                 lpc < (gl->gl_pathc - MAX_CRASH_LOG_COUNT);
+                 lpc < ((int)gl->gl_pathc - MAX_CRASH_LOG_COUNT);
                  lpc++) {
                 remove(gl->gl_pathv[lpc]);
             }

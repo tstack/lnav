@@ -206,7 +206,6 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
              * Assume this line is part of the previous one(s) and copy the
              * metadata over.
              */
-            ll.set_multiline();
             last_time   = ll.get_time();
             last_millis = ll.get_millis();
             if (this->lf_format.get() != NULL) {

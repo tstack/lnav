@@ -590,22 +590,28 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
         content_line_t cl = this->lss_index[vl];
         logfile *      lf;
 
+        lf = this->find(cl);
+
         for (bookmarks<content_line_t>::type::iterator iter =
                  this->lss_user_marks.begin();
              iter != this->lss_user_marks.end();
              ++iter) {
             if (binary_search(iter->second.begin(), iter->second.end(), cl)) {
                 bm[iter->first].insert_once(vl);
+
+                if (iter->first == &textview_curses::BM_USER) {
+                    logfile::iterator ll = lf->begin() + cl;
+
+                    ll->set_mark(true);
+                }
             }
         }
-
-        lf = this->find(cl);
 
         if (lf != last_file) {
             bm[&BM_FILES].insert_once(vl);
         }
 
-        switch ((*lf)[cl].get_level() & ~logline::LEVEL_MULTILINE) {
+        switch ((*lf)[cl].get_level() & ~logline::LEVEL_MARK) {
         case logline::LEVEL_WARNING:
             bm[&BM_WARNINGS].insert_once(vl);
             break;

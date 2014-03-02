@@ -1891,13 +1891,6 @@ static void handle_paging_key(int ch)
     }
     break;
 
-    case 'x':
-        if (tc == &lnav_data.ld_views[LNV_LOG]) {
-            lnav_data.ld_log_source.toggle_user_mark(&BM_EXAMPLE,
-                                                     vis_line_t(tc->get_top()));
-        }
-        break;
-
     case 'X':
         execute_command("close");
         break;

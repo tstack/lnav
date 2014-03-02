@@ -45,6 +45,7 @@ enum {
     VT_COL_LOG_TIME,
     VT_COL_IDLE_MSECS,
     VT_COL_LEVEL,
+    VT_COL_MARK,
     VT_COL_MAX
 };
 
@@ -113,6 +114,7 @@ public:
     virtual void get_foreign_keys(std::vector<std::string> &keys_inout)
     {
         keys_inout.push_back("log_line");
+        keys_inout.push_back("log_mark");
     };
 
     virtual void extract(logfile *lf,

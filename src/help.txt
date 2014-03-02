@@ -458,6 +458,8 @@ All log tables contain at least the following columns:
     log_idle_msecs  The amount of time, in milliseconds, between the
                     current log message and the previous one.
     log_level       The log level (e.g. info, error, etc...).
+    log_mark        The bookmark status for the line.  This column
+                    can be written to using an UPDATE query.
     log_path        The full path to the file.
     log_text        The raw line of text.  Note that this column is
                     not included in the result of a 'select *', but

@@ -154,6 +154,11 @@ public:
         content_line_t cl = this->lss_index[line];
         std::vector<content_line_t>::iterator lb;
 
+        if (bm == &textview_curses::BM_USER) {
+            logline *ll = this->find_line(cl);
+
+            ll->set_mark(added);
+        }
         lb = std::lower_bound(this->lss_user_marks[bm].begin(),
                               this->lss_user_marks[bm].end(),
                               cl);
@@ -171,6 +176,15 @@ public:
 
     void text_clear_marks(bookmark_type_t *bm)
     {
+        std::vector<content_line_t>::iterator iter;
+
+        if (bm == &textview_curses::BM_USER) {
+            for (iter = this->lss_user_marks[bm].begin();
+                 iter != this->lss_user_marks[bm].end();
+                 ++iter) {
+                this->find_line(*iter)->set_mark(false);
+            }
+        }
         this->lss_user_marks[bm].clear();
     };
 
@@ -236,30 +250,6 @@ public:
     bool rebuild_index(observer *obs = NULL, bool force = false);
 
     void text_update_marks(vis_bookmarks &bm);
-
-    void toggle_user_mark(bookmark_type_t *bm,
-                          vis_line_t start_line,
-                          vis_line_t end_line = vis_line_t(-1))
-    {
-        if (end_line == -1) {
-            end_line = start_line;
-        }
-        if (start_line > end_line) {
-            std::swap(start_line, end_line);
-        }
-        for (vis_line_t curr_line = start_line; curr_line <= end_line;
-             ++curr_line) {
-            bookmark_vector<content_line_t> &bv =
-                this->lss_user_marks[bm];
-            bookmark_vector<content_line_t>::iterator iter;
-
-            iter = bv.insert_once(this->at(curr_line));
-            if (iter == bv.end()) {}
-            else {
-                bv.erase(iter);
-            }
-        }
-    };
 
     void set_user_mark(bookmark_type_t *bm, content_line_t cl)
     {

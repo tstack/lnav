@@ -69,7 +69,8 @@ std::string log_vtab_impl::get_table_statement(void)
         << "  log_part text collate naturalnocase,\n"
         << "  log_time datetime,\n"
         << "  log_idle_msecs int,\n"
-        << "  log_level text collate loglevel,\n";
+        << "  log_level text collate loglevel,\n"
+        << "  log_mark boolean,\n";
     this->get_columns(cols);
     this->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {
@@ -328,6 +329,12 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     }
     break;
 
+    case VT_COL_MARK:
+    {
+        sqlite3_result_int(ctx, ll->is_marked());
+    }
+    break;
+
     default:
         if (col > (VT_COL_MAX + vt->vi->vi_column_count - 1)) {
             int post_col_number = col -
@@ -430,6 +437,27 @@ static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
     return SQLITE_OK;
 }
 
+static int vt_update(sqlite3_vtab *tab,
+                     int argc,
+                     sqlite3_value **argv,
+                     sqlite_int64 *rowid)
+{
+    vtab *vt = (vtab *)tab;
+    int retval = SQLITE_READONLY;
+
+    if (argc > 1 && sqlite3_value_type(argv[0]) != SQLITE_NULL &&
+        sqlite3_value_int64(argv[0]) == sqlite3_value_int64(argv[1])) {
+        int64_t rowid = sqlite3_value_int64(argv[0]) >> 8;
+        int val = sqlite3_value_int(argv[2 + VT_COL_MARK]);
+
+        vt->tc->set_user_mark(&textview_curses::BM_USER, vis_line_t(rowid), val);
+
+        retval = SQLITE_OK;
+    }
+
+    return retval;
+}
+
 static sqlite3_module vtab_module = {
     0,              /* iVersion */
     vt_create,      /* xCreate       - create a vtable */
@@ -444,7 +472,7 @@ static sqlite3_module vtab_module = {
     vt_eof,         /* xEof          - inidicate end of result set*/
     vt_column,      /* xColumn       - read data */
     vt_rowid,       /* xRowid        - read data */
-    NULL,           /* xUpdate       - write data */
+    vt_update,      /* xUpdate       - write data */
     NULL,           /* xBegin        - begin transaction */
     NULL,           /* xSync         - sync transaction */
     NULL,           /* xCommit       - commit transaction */

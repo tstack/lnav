@@ -16,6 +16,9 @@ lnav v0.6.3:
        displayed can be tab-completed.
      * The '-H' option was added so you can view the internal help text.
      * Added the 'g/G' hotkeys to move to the top/bottom of the file.
+     * Added a 'log_mark' column to the log tables that indicates whether or
+       not a log message is bookmarked.  The field is writable, so you can
+       bookmark lines using an SQL UPDATE query.
 
      Fixes:
      * Performance improvements.

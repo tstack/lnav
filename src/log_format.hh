@@ -119,11 +119,11 @@ public:
 
         LEVEL__MAX,
 
-        LEVEL_MULTILINE = 0x40,  /*< Start of a multiline entry. */
+        LEVEL_MARK      = 0x40,  /*< Bookmarked line. */
         LEVEL_CONTINUED = 0x80,  /*< Continuation of multiline entry. */
 
         /** Mask of flags for the level field. */
-        LEVEL__FLAGS    = (LEVEL_MULTILINE | LEVEL_CONTINUED)
+        LEVEL__FLAGS    = (LEVEL_MARK | LEVEL_CONTINUED)
     } level_t;
 
     static const char *level_names[LEVEL__MAX];
@@ -198,7 +198,16 @@ public:
         this->ll_millis = tv.tv_usec / 1000;
     };
 
-    void set_multiline(void) { this->ll_level |= LEVEL_MULTILINE; };
+    void set_mark(bool val) {
+        if (val) {
+            this->ll_level |= LEVEL_MARK;
+        }
+        else {
+            this->ll_level &= ~LEVEL_MARK;
+        }
+    };
+
+    bool is_marked(void) const { return this->ll_level & LEVEL_MARK; };
 
     /** @param l The logging level. */
     void set_level(level_t l) { this->ll_level = l; };

@@ -248,6 +248,24 @@ public:
         }
     };
 
+    void set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked) {
+        bookmark_vector<vis_line_t> &bv = this->tc_bookmarks[bm];
+        bookmark_vector<vis_line_t>::iterator iter;
+
+        if (marked) {
+            bv.insert_once(vl);
+        }
+        else {
+            iter = std::lower_bound(bv.begin(), bv.end(), vl);
+            if (iter != bv.end() && *iter == vl) {
+                bv.erase(iter);
+            }
+        }
+        if (this->tc_sub_source != NULL) {
+            this->tc_sub_source->text_mark(bm, (int)vl, marked);
+        }
+    };
+
     void set_sub_source(text_sub_source *src)
     {
         this->tc_sub_source = src;
