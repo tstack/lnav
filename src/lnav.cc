@@ -846,7 +846,9 @@ public:
             this->tds_lines.push_back(text.substr(start, end - start));
             start = end + 1;
         }
-        this->tds_lines.push_back(text.substr(start));
+        if (start < text.length()) {
+            this->tds_lines.push_back(text.substr(start));
+        }
     };
 
     size_t text_line_count()
@@ -2070,7 +2072,7 @@ string execute_sql(string sql, string &alt_msg)
     if (retcode != SQLITE_OK) {
         const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
-        retval = errmsg;
+        retval = "error: " + string(errmsg);
         alt_msg = "";
     }
     else if (stmt == NULL) {
@@ -2112,9 +2114,9 @@ string execute_sql(string sql, string &alt_msg)
             default: {
                 const char *errmsg;
 
-                log_error("code %d", retcode);
+                log_error("sqlite3_step error code: %d", retcode);
                 errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                retval = errmsg;
+                retval = "error: " + string(errmsg);
                 done = true;
             }
                 break;
@@ -2158,7 +2160,7 @@ string execute_sql(string sql, string &alt_msg)
                   "in the log view");
             }
         }
-        else {
+        else if (sqlite3_stmt_readonly(stmt.in())) {
             retval = "No rows matched";
             alt_msg = "";
         }
@@ -2243,7 +2245,7 @@ static void execute_file(string path)
     }
 }
 
-void execute_init_commands(readline_curses *rc)
+void execute_init_commands(vector<pair<string, string> > &msgs)
 {
     if (lnav_data.ld_commands.empty()) {
         return;
@@ -2267,10 +2269,8 @@ void execute_init_commands(readline_curses *rc)
             execute_file(iter->substr(1));
             break;
         }
-        if (rc != NULL) {
-            rc->set_value(msg);
-            rc->set_alt_value(alt_msg);
-        }
+
+        msgs.push_back(make_pair(msg, alt_msg));
     }
     lnav_data.ld_commands.clear();
 }
@@ -3313,7 +3313,18 @@ static void looper(void)
                     session_loaded = true;
                 }
 
-                execute_init_commands(lnav_data.ld_rl_view);
+                {
+                    vector<pair<string, string> > msgs;
+
+                    execute_init_commands(msgs);
+
+                    if (!msgs.empty()) {
+                        pair<string, string> last_msg = msgs.back();
+
+                        lnav_data.ld_rl_view->set_value(last_msg.first);
+                        lnav_data.ld_rl_view->set_alt_value(last_msg.second);
+                    }
+                }
             }
             else {
                 if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
@@ -4097,9 +4108,12 @@ int main(int argc, char *argv[])
             }
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
+                std::vector<pair<string, string> > msgs;
+                std::vector<pair<string, string> >::iterator msg_iter;
                 textview_curses *tc;
                 attr_line_t al;
                 const std::string &line = al.get_string();
+                bool found_error = false;
 
                 alerter::singleton().enabled(false);
 
@@ -4108,9 +4122,24 @@ int main(int argc, char *argv[])
 
                 lnav_data.ld_views[LNV_LOG].set_top(vis_line_t(0));
 
-                execute_init_commands(NULL);
+                execute_init_commands(msgs);
+                if (rescan_files()) {
+                    rebuild_indexes(true);
+                }
 
-                if (!lnav_data.ld_view_stack.empty() &&
+                for (msg_iter = msgs.begin();
+                     msg_iter != msgs.end();
+                     ++msg_iter) {
+                    if (strncmp("error:", msg_iter->first.c_str(), 6) != 0) {
+                        continue;
+                    }
+
+                    fprintf(stderr, "%s\n", msg_iter->first.c_str());
+                    found_error = true;
+                }
+
+                if (!found_error &&
+                    !lnav_data.ld_view_stack.empty() &&
                     !lnav_data.ld_stdout_used) {
                     bool suppress_empty_lines = false;
                     list_overlay_source *los;

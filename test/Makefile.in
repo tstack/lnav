@@ -92,7 +92,7 @@ check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 	test_pcrepp$(EXEEXT) test_top_status$(EXEEXT) \
 	test_yajlpp$(EXEEXT)
 TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
-	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) \
+	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) test_cmds.sh \
 	test_line_buffer.sh test_line_buffer2$(EXEEXT) \
 	test_listview.sh test_grep_proc.sh test_grep_proc2$(EXEEXT) \
 	test_hist_source$(EXEEXT) test_pcrepp$(EXEEXT) test_sql.sh \
@@ -684,11 +684,13 @@ slicer_LDADD = ../src/libdiag.a
 scripty_SOURCES = scripty.cc
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
+	test_cmds.sh \
 	test_data_parser.sh \
 	test_grep_proc.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_sql.sh \
 	test_sql_coll_func.sh \
 	test_sql_str_func.sh \
 	test_sql_fs_func.sh \
@@ -717,6 +719,7 @@ dist_noinst_DATA = \
 	logfile_empty.0 \
 	logfile_generic.0 \
 	logfile_glog.0 \
+	logfile_multiline.0 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
@@ -1134,6 +1137,13 @@ test_auto_mem.log: test_auto_mem$(EXEEXT)
 test_bookmarks.log: test_bookmarks$(EXEEXT)
 	@p='test_bookmarks$(EXEEXT)'; \
 	b='test_bookmarks'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_cmds.sh.log: test_cmds.sh
+	@p='test_cmds.sh'; \
+	b='test_cmds.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

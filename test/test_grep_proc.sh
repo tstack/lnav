@@ -41,7 +41,10 @@ EOF
 
 run_test grep_capture '(\w+), World' gp.dat
 
-check_output "grep_proc didn't capture matches?" <<EOF
+check_error_output "grep_proc didn't capture matches?" <<EOF
 0(0:5)Hello
 1(0:7)Goodbye
+EOF
+
+check_output "grep_proc didn't capture matches?" <<EOF
 EOF

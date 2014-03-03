@@ -104,3 +104,27 @@ CREATE TABLE http_status_codes (
     FOREIGN KEY(status) REFERENCES access_log(sc_status)
 );
 EOF
+
+
+run_test ${lnav_test} -n \
+    -c ";select * from nonexistent_table" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "errors are not reported" <<EOF
+error: no such table: nonexistent_table
+EOF
+
+check_output "errors are not reported" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ";delete from access_log" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "errors are not reported" <<EOF
+error: attempt to write a readonly database
+EOF
+
+check_output "errors are not reported" <<EOF
+EOF

@@ -129,11 +129,13 @@ scripty_SOURCES = scripty.cc
 
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
+	test_cmds.sh \
 	test_data_parser.sh \
 	test_grep_proc.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_sql.sh \
 	test_sql_coll_func.sh \
 	test_sql_str_func.sh \
 	test_sql_fs_func.sh \
@@ -162,6 +164,7 @@ dist_noinst_DATA = \
 	logfile_empty.0 \
 	logfile_generic.0 \
 	logfile_glog.0 \
+	logfile_multiline.0 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
@@ -185,6 +188,7 @@ TESTS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
+	test_cmds.sh \
 	test_line_buffer.sh \
 	test_line_buffer2 \
 	test_listview.sh \

@@ -34,7 +34,7 @@ LAST_TEST=""
 #
 run_test() {
     LAST_TEST="test: $@"
-    "$@" > ${test_file_base}_${test_num}.tmp 2>&1
+    "$@" > ${test_file_base}_${test_num}.tmp 2> ${test_file_base}_${test_num}.err
 }
 
 #
@@ -58,9 +58,20 @@ check_output() {
         echo $LAST_TEST
         echo $1
         cat ${test_file_base}_${test_num}.diff
-	exit 1
+	    exit 1
     fi
     test_num=`expr ${test_num} \+ 1`
+}
+
+check_error_output() {
+    diff -u ${test_file_base}_${test_num}.err - \
+        > ${test_file_base}_${test_num}.err.diff
+    if test $? -ne 0; then
+        echo $LAST_TEST
+        echo $1
+        cat ${test_file_base}_${test_num}.err.diff
+        exit 1
+    fi
 }
 
 #
