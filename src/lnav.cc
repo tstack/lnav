@@ -2758,7 +2758,10 @@ static void expand_filename(string path, bool required)
             auto_mem<char> abspath;
 
             if ((abspath = realpath(gl->gl_pathv[lpc], NULL)) == NULL) {
-                perror("Cannot find file");
+                if (required) {
+                    fprintf(stderr, "Cannot find file: %s -- %s",
+                        gl->gl_pathv[lpc], strerror(errno));
+                }
             }
             else {
                 watch_logfile(abspath.in(), -1, required);
