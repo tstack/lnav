@@ -77,6 +77,7 @@ enum {
     LNB_HELP,
     LNB_HEADLESS,
     LNB_ROTATED,
+    LNB_CHECK_CONFIG,
 };
 
 /** Flags set on the lnav command-line. */
@@ -88,6 +89,7 @@ typedef enum {
     LNF_TIMESTAMP = (1L << LNB_TIMESTAMP),
     LNF_HELP      = (1L << LNB_HELP),
     LNF_HEADLESS  = (1L << LNB_HEADLESS),
+    LNF_CHECK_CONFIG = (1L << LNB_CHECK_CONFIG),
 
     LNF__ALL      = (LNF_SYSLOG|LNF_HELP)
 } lnav_flags_t;
@@ -139,6 +141,7 @@ struct _lnav_data {
     const char *                            ld_debug_log_name;
 
     std::list<std::string>                  ld_commands;
+    std::vector<std::string>                ld_config_paths;
     std::set<std::pair<std::string, int> >  ld_file_names;
     std::list<logfile *>                    ld_files;
     std::list<std::string>                  ld_other_files;

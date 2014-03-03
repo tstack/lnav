@@ -1,0 +1,24 @@
+{
+    "test_log" : {
+        "title" : "Test JSON Log",
+        "json" : true,
+        "file-pattern" : ".*\\.json.*",
+        "description" : "Test config",
+        "line-format" : [
+            { "field" : "ts" },
+            " ",
+            { "field" : "lvl" },
+            " ",
+            { "field" : "msg" }
+        ],
+        "level-field" : "lvl",
+        "timestamp-field": "ts",
+        "body-field" : "msg",
+        "value" : {
+            "user" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        }
+    }
+}

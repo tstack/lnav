@@ -52,9 +52,9 @@ int main(int argc, char *argv[])
     bool prompt = false;
 
     {
-        std::vector<std::string> errors;
+        std::vector<std::string> paths, errors;
 
-        load_formats(errors);
+        load_formats(paths, errors);
     }
 
     while ((c = getopt(argc, argv, "p")) != -1) {

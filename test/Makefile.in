@@ -95,11 +95,11 @@ TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) test_cmds.sh \
 	test_line_buffer.sh test_line_buffer2$(EXEEXT) \
 	test_listview.sh test_grep_proc.sh test_grep_proc2$(EXEEXT) \
-	test_hist_source$(EXEEXT) test_pcrepp$(EXEEXT) test_sql.sh \
-	test_sql_coll_func.sh test_sql_fs_func.sh test_sql_str_func.sh \
-	test_view_colors.sh test_vt52_curses.sh \
-	test_top_status$(EXEEXT) test_data_parser.sh \
-	test_yajlpp$(EXEEXT)
+	test_hist_source$(EXEEXT) test_json_format.sh \
+	test_pcrepp$(EXEEXT) test_sql.sh test_sql_coll_func.sh \
+	test_sql_fs_func.sh test_sql_str_func.sh test_view_colors.sh \
+	test_vt52_curses.sh test_top_status$(EXEEXT) \
+	test_data_parser.sh test_yajlpp$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/mkinstalldirs $(dist_noinst_SCRIPTS) \
@@ -687,6 +687,7 @@ dist_noinst_SCRIPTS = \
 	test_cmds.sh \
 	test_data_parser.sh \
 	test_grep_proc.sh \
+	test_json_format.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
@@ -719,6 +720,7 @@ dist_noinst_DATA = \
 	logfile_empty.0 \
 	logfile_generic.0 \
 	logfile_glog.0 \
+	logfile_json.json \
 	logfile_multiline.0 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
@@ -731,6 +733,7 @@ dist_noinst_DATA = \
 	vt52_curses_input.1 \
 	vt52_curses_output.0 \
 	vt52_curses_output.1 \
+	formats/jsontest/format.json \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
 	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
 	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
@@ -743,6 +746,7 @@ XFAIL_TESTS = \
 
 DISTCLEANFILES = \
 	*.dat \
+	*.err \
 	*.db \
 	*.dpt \
 	*.diff \
@@ -1186,6 +1190,13 @@ test_grep_proc2.log: test_grep_proc2$(EXEEXT)
 test_hist_source.log: test_hist_source$(EXEEXT)
 	@p='test_hist_source$(EXEEXT)'; \
 	b='test_hist_source'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_json_format.sh.log: test_json_format.sh
+	@p='test_json_format.sh'; \
+	b='test_json_format.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

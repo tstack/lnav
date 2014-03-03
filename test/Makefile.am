@@ -132,6 +132,7 @@ dist_noinst_SCRIPTS = \
 	test_cmds.sh \
 	test_data_parser.sh \
 	test_grep_proc.sh \
+	test_json_format.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
@@ -164,6 +165,7 @@ dist_noinst_DATA = \
 	logfile_empty.0 \
 	logfile_generic.0 \
 	logfile_glog.0 \
+	logfile_json.json \
 	logfile_multiline.0 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
@@ -176,6 +178,7 @@ dist_noinst_DATA = \
 	vt52_curses_input.1 \
 	vt52_curses_output.0 \
 	vt52_curses_output.1 \
+	formats/jsontest/format.json \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
 	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
 	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
@@ -195,6 +198,7 @@ TESTS = \
 	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_hist_source \
+	test_json_format.sh \
 	test_pcrepp \
 	test_sql.sh \
 	test_sql_coll_func.sh \
@@ -211,6 +215,7 @@ XFAIL_TESTS = \
 
 DISTCLEANFILES = \
 	*.dat \
+	*.err \
 	*.db \
 	*.dpt \
 	*.diff \

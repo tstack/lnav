@@ -586,7 +586,7 @@ PACKAGE_BUGREPORT='lnav@googlegroups.com'
 PACKAGE_URL=''
 
 ac_unique_file="src/lnav.cc"
-ac_default_prefix=/usr/
+ac_default_prefix=/usr
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>

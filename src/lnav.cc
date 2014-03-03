@@ -2547,6 +2547,7 @@ static void usage(void)
         "Options:\n"
         "  -h         Print this message, then exit.\n"
         "  -H         Display the internal help text.\n"
+        "  -I path    An additional configuration directory.\n"
         "  -C         Check configuration and then exit.\n"
         "  -d file    Write debug messages to the given file.\n"
         "  -V         Print version information.\n"
@@ -3775,7 +3776,102 @@ int main(int argc, char *argv[])
 
     log_install_handlers();
 
-    load_formats(loader_errors);
+    lnav_data.ld_debug_log_name = "/dev/null";
+    while ((c = getopt(argc, argv, "hHarsCc:I:f:d:ntw:V")) != -1) {
+        switch (c) {
+        case 'h':
+            usage();
+            exit(retval);
+            break;
+
+        case 'H':
+            lnav_data.ld_flags |= LNF_HELP;
+            break;
+
+        case 'C':
+            lnav_data.ld_flags |= LNF_CHECK_CONFIG;
+            break;
+
+        case 'c':
+            switch (optarg[0]) {
+            case ':':
+            case '/':
+            case ';':
+            case '|':
+                break;
+            default:
+                fprintf(stderr, "error: command arguments should start with a "
+                    "colon, semi-colon, or pipe-symbol to denote:\n");
+                fprintf(stderr, "error: a built-in command, SQL query, "
+                    "or a file path that contains commands to execute\n");
+                usage();
+                exit(EXIT_FAILURE);
+                break;
+            }
+            lnav_data.ld_commands.push_back(optarg);
+            break;
+
+        case 'f':
+            if (access(optarg, R_OK) != 0) {
+                perror("invalid command file");
+                exit(EXIT_FAILURE);
+            }
+            lnav_data.ld_commands.push_back("|" + string(optarg));
+            break;
+
+        case 'I':
+            if (access(optarg, X_OK) != 0) {
+                perror("invalid config path");
+                exit(EXIT_FAILURE);
+            }
+            lnav_data.ld_config_paths.push_back(optarg);
+            break;
+
+        case 'd':
+            lnav_data.ld_debug_log_name = optarg;
+            break;
+
+        case 'a':
+            lnav_data.ld_flags |= LNF__ALL;
+            break;
+
+        case 'n':
+            lnav_data.ld_flags |= LNF_HEADLESS;
+            break;
+
+        case 'r':
+            lnav_data.ld_flags |= LNF_ROTATED;
+            break;
+
+        case 's':
+            lnav_data.ld_flags |= LNF_SYSLOG;
+            break;
+
+        case 't':
+            lnav_data.ld_flags |= LNF_TIMESTAMP;
+            break;
+
+        case 'w':
+            stdin_out = optarg;
+            break;
+
+        case 'V':
+            printf("%s\n", PACKAGE_STRING);
+            exit(0);
+            break;
+
+        default:
+            retval = EXIT_FAILURE;
+            break;
+        }
+    }
+
+    argc -= optind;
+    argv += optind;
+
+    lnav_log_file = fopen(lnav_data.ld_debug_log_name, "a");
+
+    load_formats(lnav_data.ld_config_paths, loader_errors);
     if (!loader_errors.empty()) {
         for (std::vector<std::string>::iterator iter = loader_errors.begin();
              iter != loader_errors.end();
@@ -3784,6 +3880,10 @@ int main(int argc, char *argv[])
                 (*iter)[iter->size() - 1] == '\n' ? "" : "\n");
         }
         return EXIT_FAILURE;
+    }
+
+    if (lnav_data.ld_flags & LNF_CHECK_CONFIG) {
+        return EXIT_SUCCESS;
     }
 
     /* If we statically linked against an ncurses library that had a non-
@@ -3914,92 +4014,6 @@ int main(int argc, char *argv[])
 
     lnav_data.ld_looping        = true;
     lnav_data.ld_mode           = LNM_PAGING;
-    lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarsCc:f:d:ntw:V")) != -1) {
-        switch (c) {
-        case 'h':
-            usage();
-            exit(retval);
-            break;
-
-        case 'H':
-            lnav_data.ld_flags |= LNF_HELP;
-            break;
-
-        case 'C':
-            exit(EXIT_SUCCESS);
-            break;
-
-        case 'c':
-            switch (optarg[0]) {
-            case ':':
-            case '/':
-            case ';':
-            case '|':
-                break;
-            default:
-                fprintf(stderr, "error: command arguments should start with a "
-                    "colon, semi-colon, or pipe-symbol to denote:\n");
-                fprintf(stderr, "error: a built-in command, SQL query, "
-                    "or a file path that contains commands to execute\n");
-                usage();
-                exit(EXIT_FAILURE);
-                break;
-            }
-            lnav_data.ld_commands.push_back(optarg);
-            break;
-
-        case 'f':
-            if (access(optarg, R_OK) != 0) {
-                perror("invalid command file");
-                exit(EXIT_FAILURE);
-            }
-            lnav_data.ld_commands.push_back("|" + string(optarg));
-            break;
-
-        case 'd':
-            lnav_data.ld_debug_log_name = optarg;
-            break;
-
-        case 'a':
-            lnav_data.ld_flags |= LNF__ALL;
-            break;
-
-        case 'n':
-            lnav_data.ld_flags |= LNF_HEADLESS;
-            break;
-
-        case 'r':
-            lnav_data.ld_flags |= LNF_ROTATED;
-            break;
-
-        case 's':
-            lnav_data.ld_flags |= LNF_SYSLOG;
-            break;
-
-        case 't':
-            lnav_data.ld_flags |= LNF_TIMESTAMP;
-            break;
-
-        case 'w':
-            stdin_out = optarg;
-            break;
-
-        case 'V':
-            printf("%s\n", PACKAGE_STRING);
-            exit(0);
-            break;
-
-        default:
-            retval = EXIT_FAILURE;
-            break;
-        }
-    }
-
-    argc -= optind;
-    argv += optind;
-
-    lnav_log_file = fopen(lnav_data.ld_debug_log_name, "a");
 
     if (isatty(STDIN_FILENO) && argc == 0 &&
         !(lnav_data.ld_flags & LNF__ALL)) {

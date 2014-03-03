@@ -27,6 +27,7 @@ AM_LDFLAGS = \
 	-pthread
 
 AM_CPPFLAGS = \
+	-DSYSCONFDIR='"$(sysconfdir)"' \
 	-Wall \
 	$(SQLITE3_CFLAGS)
 

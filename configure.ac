@@ -4,7 +4,7 @@ AC_CONFIG_SRCDIR([src/lnav.cc])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
-AC_PREFIX_DEFAULT(/usr/)
+AC_PREFIX_DEFAULT(/usr)
 
 AC_CANONICAL_HOST
 

@@ -45,6 +45,10 @@
 #include "format-text-files.hh"
 #include "default-log-formats-json.hh"
 
+#ifndef SYSCONFDIR
+#define SYSCONFDIR "/usr/etc"
+#endif
+
 using namespace std;
 
 static map<string, external_log_format *> LOG_FORMATS;
@@ -343,53 +347,38 @@ static struct json_path_handler format_handlers[] = {
     json_path_handler()
 };
 
-void load_formats(std::vector<std::string> &errors)
+static void write_sample_file(void)
 {
-    string default_source = string(dotlnav_path("formats") + "/default/");
-    yajlpp_parse_context ypc_builtin(default_source, format_handlers);
-    std::vector<std::string> retval;
-    yajl_handle handle;
+    string sample_path = dotlnav_path("formats/default/default-formats.json.sample");
+    auto_fd sample_fd;
 
-    {
-        string sample_path = dotlnav_path("formats/default/default-formats.json.sample");
-        auto_fd sample_fd;
-
-        if ((sample_fd = open(sample_path.c_str(),
-                              O_WRONLY|O_TRUNC|O_CREAT,
-                              0644)) == -1) {
-            perror("error: unable to write default format file");
-        }
-        else {
-            write(sample_fd.get(),
-                  default_log_formats_json,
-                  strlen(default_log_formats_json));
-        }
+    if ((sample_fd = open(sample_path.c_str(),
+                          O_WRONLY|O_TRUNC|O_CREAT,
+                          0644)) == -1) {
+        perror("error: unable to write default format file");
+    }
+    else {
+        write(sample_fd.get(),
+              default_log_formats_json,
+              strlen(default_log_formats_json));
     }
 
-    {
-        string sh_path = dotlnav_path("formats/default/dump-pid.sh");
-        auto_fd sh_fd;
+    string sh_path = dotlnav_path("formats/default/dump-pid.sh");
+    auto_fd sh_fd;
 
-        if ((sh_fd = open(sh_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1) {
-            perror("error: unable to write default text file");
-        }
-        else {
-            write(sh_fd.get(), dump_pid_sh, strlen(dump_pid_sh));
-        }
+    if ((sh_fd = open(sh_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1) {
+        perror("error: unable to write default text file");
     }
-
-    handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
-    if (yajl_parse(handle,
-                   (const unsigned char *)default_log_formats_json,
-                   strlen(default_log_formats_json)) != yajl_status_ok) {
-        errors.push_back("builtin: invalid json -- " +
-            string((char *)yajl_get_error(handle, 1, (unsigned char *)default_log_formats_json, strlen(default_log_formats_json))));
+    else {
+        write(sh_fd.get(), dump_pid_sh, strlen(dump_pid_sh));
     }
-    yajl_complete_parse(handle);
-    yajl_free(handle);
+}
 
-    string format_path = dotlnav_path("formats/*/*.json");
+static void load_from_path(const string &path, std::vector<string> &errors)
+{
+    string format_path = path + "/formats/*/*.json";
     static_root_mem<glob_t, globfree> gl;
+    yajl_handle handle;
 
     log_info("loading formats from path: %s", format_path.c_str());
     if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
@@ -440,6 +429,37 @@ void load_formats(std::vector<std::string> &errors)
                 yajl_free(handle);
             }
         }
+    }
+}
+
+void load_formats(const std::vector<std::string> &extra_paths,
+                  std::vector<std::string> &errors)
+{
+    string default_source = string(dotlnav_path("formats") + "/default/");
+    yajlpp_parse_context ypc_builtin(default_source, format_handlers);
+    std::vector<std::string> retval;
+    yajl_handle handle;
+
+    write_sample_file();
+
+    handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
+    if (yajl_parse(handle,
+                   (const unsigned char *)default_log_formats_json,
+                   strlen(default_log_formats_json)) != yajl_status_ok) {
+        errors.push_back("builtin: invalid json -- " +
+            string((char *)yajl_get_error(handle, 1, (unsigned char *)default_log_formats_json, strlen(default_log_formats_json))));
+    }
+    yajl_complete_parse(handle);
+    yajl_free(handle);
+
+    load_from_path("/etc/lnav", errors);
+    load_from_path(SYSCONFDIR "/lnav", errors);
+    load_from_path(dotlnav_path(""), errors);
+
+    for (vector<string>::const_iterator path_iter = extra_paths.begin();
+         path_iter != extra_paths.end();
+         ++path_iter) {
+        load_from_path(*path_iter, errors);
     }
 
     for (map<string, external_log_format *>::iterator iter = LOG_FORMATS.begin();
