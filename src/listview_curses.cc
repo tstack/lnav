@@ -35,6 +35,7 @@
 #include <math.h>
 #include <sys/time.h>
 
+#include "lnav_log.hh"
 #include "listview_curses.hh"
 
 using namespace std;
@@ -283,7 +284,7 @@ bool listview_curses::handle_mouse(mouse_event &me)
             this->lv_scroll_velo = 0;
         }
         else {
-            this->lv_scroll_accel += 3;
+            this->lv_scroll_accel += 2;
         }
         this->lv_scroll_velo += this->lv_scroll_accel;
 
@@ -317,7 +318,7 @@ bool listview_curses::handle_mouse(mouse_event &me)
     scroll_bottom = (this->get_y() + (int)(bot_pct * (double)height));
 
     if (this->lv_mouse_mode == LV_MODE_NONE) {
-        if (scroll_top <= me.me_y && me.me_y <= scroll_bottom) {
+        if ((scroll_top - 1) <= me.me_y && me.me_y <= (scroll_bottom + 1)) {
             this->lv_mouse_mode        = LV_MODE_DRAG;
             this->lv_mouse_y = me.me_y - scroll_top;
         }

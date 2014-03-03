@@ -186,7 +186,7 @@ public:
         }
         buffer[index] = '\0';
 
-        if (sscanf(buffer, "%d;%d;%d", &bstate, &x, &y) == 3) {
+        if (sscanf(buffer, "<%d;%d;%d", &bstate, &x, &y) == 3) {
             if (this->xm_behavior) {
                 this->xm_behavior->mouse_event(bstate, release, x, y);
             }

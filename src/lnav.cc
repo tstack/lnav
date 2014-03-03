@@ -3344,7 +3344,7 @@ static void looper(void)
                             escape_buffer[escape_index++] = ch;
                             escape_buffer[escape_index] = '\0';
 
-                            if (strcmp("\x1b[<", escape_buffer) == 0) {
+                            if (strcmp("\x1b[", escape_buffer) == 0) {
                                 lnav_data.ld_mouse.handle_mouse(ch);
                             }
                             else {
