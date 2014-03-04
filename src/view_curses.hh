@@ -235,10 +235,10 @@ find_string_attr(const string_attrs_t &sa, string_attr_type_t type)
     return iter;
 }
 
-inline string_attrs_t::const_iterator
-find_string_attr(const string_attrs_t &sa, const struct line_range &lr)
+inline string_attrs_t::iterator
+find_string_attr(string_attrs_t &sa, const struct line_range &lr)
 {
-    string_attrs_t::const_iterator iter;
+    string_attrs_t::iterator iter;
     struct line_range retval;
 
     for (iter = sa.begin(); iter != sa.end(); ++iter) {
