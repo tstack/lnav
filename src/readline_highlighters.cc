@@ -336,7 +336,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         pcre_context::capture_t *cap = pc.all();
         struct line_range lr(cap->c_begin, cap->c_end);
         string_attrs_t &sa = al.get_attrs();
-        string_attrs_t::const_iterator iter;
+        string_attrs_t::iterator iter;
 
         while ((iter = find_string_attr(sa, lr)) != sa.end()) {
             sa.erase(iter);
