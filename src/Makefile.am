@@ -81,6 +81,7 @@ noinst_HEADERS = \
 	pcrepp.hh \
 	piper_proc.hh \
 	readline_curses.hh \
+	readline_highlighters.hh \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	session_data.hh \
@@ -139,6 +140,7 @@ libdiag_a_SOURCES = \
 	data_scanner.cc \
 	data_parser.cc \
 	readline_curses.cc \
+	readline_highlighters.cc \
 	session_data.cc \
 	sequence_matcher.cc \
 	shared_buffer.cc \

@@ -19,6 +19,7 @@ lnav v0.6.3:
      * Added a 'log_mark' column to the log tables that indicates whether or
        not a log message is bookmarked.  The field is writable, so you can
        bookmark lines using an SQL UPDATE query.
+     * Added syntax-highlighting when editing SQL queries or search regexes.
 
      Fixes:
      * Performance improvements.
@@ -27,6 +28,8 @@ lnav v0.6.3:
        so that you can write expressions like "log_level > 'warning'".
      * The log_time datetime format now matches what is returned by
        "datetime('now')" so that collating works correctly.
+     * If a search string is not valid PCRE syntax, a search is done for
+       the exact string instead of just returning an error.
      * Static-linking has been cleaned up.
      * OpenSSL is no longer a requirement.
      * Alpha support for Windows/cygwin.

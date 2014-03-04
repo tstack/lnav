@@ -52,6 +52,8 @@
 #include "auto_fd.hh"
 #include "vt52_curses.hh"
 
+typedef void (*readline_highlighter_t)(attr_line_t &line, int x);
+
 /**
  * Container for information related to different readline contexts.  Since
  * lnav uses readline for different inputs, we need a way to keep things like
@@ -147,8 +149,19 @@ public:
         return this->rc_case_sensitive;
     };
 
-    void set_append_character(int ch) {
+    readline_context &set_append_character(int ch) {
         this->rc_append_character = ch;
+
+        return *this;
+    };
+
+    readline_context &set_highlighter(readline_highlighter_t hl) {
+        this->rc_highlighter = hl;
+        return *this;
+    };
+
+    readline_highlighter_t get_highlighter() const {
+        return this->rc_highlighter;
     };
 
 private:
@@ -164,6 +177,7 @@ private:
     std::map<std::string, std::vector<std::string> > rc_prototypes;
     bool rc_case_sensitive;
     int rc_append_character;
+    readline_highlighter_t rc_highlighter;
 };
 
 /**

@@ -200,7 +200,7 @@ public:
             new_role = view_colors::VCR_STATUS;
             sf.set_cylon(false);
         }
-        this->bss_error.clear();
+        // this->bss_error.clear();
         sf.set_role(new_role);
         this->update_marks(tc);
     };

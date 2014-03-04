@@ -61,6 +61,8 @@
 #include <functional>
 #include <algorithm>
 
+#include "lnav_log.hh"
+
 #define KEY_CTRL_G    7
 #define KEY_CTRL_R    18
 #define KEY_CTRL_W    23
@@ -161,6 +163,10 @@ struct line_range {
         return this->lr_start <= pos && pos < this->lr_end;
     };
 
+    bool contains(const struct line_range &other) const {
+        return this->contains(other.lr_start) && other.lr_end <= this->lr_end;
+    };
+
     bool operator<(const struct line_range &rhs) const
     {
         if (this->lr_start < rhs.lr_start) { return true; }
@@ -189,12 +195,12 @@ class string_attr_type { };
 typedef string_attr_type *string_attr_type_t;
 
 struct string_attr {
-    string_attr(struct line_range &lr, string_attr_type_t type, void *val)
+    string_attr(const struct line_range &lr, string_attr_type_t type, void *val)
         : sa_range(lr), sa_type(type) {
         this->sa_value.sav_ptr = val;
     };
 
-    string_attr(struct line_range &lr, string_attr_type_t type, int val = 0)
+    string_attr(const struct line_range &lr, string_attr_type_t type, int val = 0)
         : sa_range(lr), sa_type(type) {
         this->sa_value.sav_int = val;
     };
@@ -222,6 +228,21 @@ find_string_attr(const string_attrs_t &sa, string_attr_type_t type)
 
     for (iter = sa.begin(); iter != sa.end(); ++iter) {
         if (iter->sa_type == type) {
+            break;
+        }
+    }
+
+    return iter;
+}
+
+inline string_attrs_t::const_iterator
+find_string_attr(const string_attrs_t &sa, const struct line_range &lr)
+{
+    string_attrs_t::const_iterator iter;
+    struct line_range retval;
+
+    for (iter = sa.begin(); iter != sa.end(); ++iter) {
+        if (lr.contains(iter->sa_range)) {
             break;
         }
     }
@@ -490,6 +511,10 @@ public:
         return this->vc_role_colors[VCR_HIGHLIGHT_START + (abs(index) % HL_COLOR_COUNT)];
     };
 
+    int attrs_for_ident(const std::string &str) const {
+        return this->attrs_for_ident(str.c_str(), str.length());
+    };
+
     static inline int ansi_color_pair_index(int fg, int bg)
     {
         return VC_ANSI_START + ((fg * 8) + bg);
@@ -569,7 +594,7 @@ public:
                             int y,
                             int x,
                             attr_line_t &al,
-                            struct line_range &lr,
+                            const struct line_range &lr,
                             view_colors::role_t base_role =
                                 view_colors::VCR_TEXT);
 };

@@ -55,6 +55,7 @@
 
 #include <string>
 
+#include "pcrepp.hh"
 #include "auto_mem.hh"
 #include "lnav_log.hh"
 #include "ansi_scrubber.hh"
@@ -697,4 +698,67 @@ void readline_curses::do_update(void)
         this->set_x(0);
     }
     vt52_curses::do_update();
+
+    if (this->rc_active_context != -1) {
+        readline_context *rc = this->rc_contexts[this->rc_active_context];
+        readline_highlighter_t hl = rc->get_highlighter();
+
+        if (hl != NULL) {
+            char line[1024];
+            attr_line_t al;
+            string &str = al.get_string();
+            int rc;
+
+            rc = mvwinnstr(this->vc_window,
+                           this->get_actual_y(), 0,
+                           line, sizeof(line));
+
+            str = string(line, rc);
+
+            hl(al, this->vc_x);
+            view_curses::mvwattrline(this->vc_window,
+                this->get_actual_y(), 0, al, line_range(0, rc));
+
+            wmove(this->vc_window, this->get_actual_y(), this->vc_x);
+        }
+    }
+#if 0
+    {
+        static pcrepp captures("(?<!\\\\)\\((?:\\\\\\)|[^)])+$");
+
+        pcre_context_static<30> pc;
+
+        pcre_input pi(line, 0, rc);
+
+        while (captures.match(pc, pi)) {
+            pcre_context::capture_t *cap = pc.all();
+
+            mvwchgat(this->vc_window, this->get_actual_y(), cap->c_begin, 1, 0,
+                view_colors::ansi_color_pair_index(COLOR_RED, COLOR_BLACK),
+                NULL);
+        }
+
+        if (line[this->vc_x] == ')' && line[this->vc_x - 1] != '\\') {
+            for (int lpc = this->vc_x; lpc > 0; lpc--) {
+                if (line[lpc] == '(' && line[lpc - 1] != '\\') {
+                    mvwchgat(this->vc_window, this->get_actual_y(), lpc, 1, A_BOLD | A_REVERSE,
+                        view_colors::ansi_color_pair_index(COLOR_CYAN, COLOR_BLACK),
+                        NULL);
+                    break;
+                }
+            }
+        }
+        if (line[this->vc_x] == '(' && line[this->vc_x - 1] != '\\') {
+            for (int lpc = this->vc_x; lpc < rc; lpc++) {
+                if (line[lpc] == ')' && line[lpc - 1] != '\\') {
+                    mvwchgat(this->vc_window, this->get_actual_y(), lpc, 1, A_BOLD | A_REVERSE,
+                        view_colors::ansi_color_pair_index(COLOR_CYAN, COLOR_BLACK),
+                        NULL);
+                    break;
+                }
+            }
+        }
+
+    }
+#endif
 }

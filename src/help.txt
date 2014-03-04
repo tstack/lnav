@@ -255,6 +255,10 @@ through the file.
 
                       http://perldoc.perl.org/perlre.html
 
+                    If the search string is not valid PCRE, a search
+                    is done for the exact string instead of doing a
+                    regex search.
+
   :<command>        Execute an internal command.  The commands are
                     listed below.  History is also supported in this
                     context as well as tab-completion for commands and

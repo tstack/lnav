@@ -107,6 +107,7 @@
 #include "sqlite-extension-func.h"
 #include "term_extra.hh"
 #include "log_data_helper.hh"
+#include "readline_highlighters.hh"
 
 #include "yajlpp.hh"
 
@@ -254,6 +255,8 @@ public:
                                 vis_line_t y,
                                 attr_line_t &value_out)
     {
+        view_colors &vc = view_colors::singleton();
+
         if (!this->fos_active || this->fos_log_helper.ldh_parser.get() == NULL) {
             return false;
         }
@@ -317,10 +320,16 @@ public:
         }
 
         if (row < (int)this->fos_log_helper.ldh_line_values.size()) {
-            str = "   " + this->fos_log_helper.ldh_line_values[row].lv_name;
+            string &name = this->fos_log_helper.ldh_line_values[row].lv_name;
+
+            str = "   " + name;
 
             int padding = this->fos_key_size - str.length() + 3;
 
+            value_out.get_attrs().push_back(string_attr(
+                line_range(3, 3 + name.length()),
+                &view_curses::VC_STYLE,
+                vc.attrs_for_ident(name)));
             str.append(padding, ' ');
             str += " = " + this->fos_log_helper.ldh_line_values[row].to_string();
         }
@@ -332,9 +341,15 @@ public:
             iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
             std::advance(iter, row);
 
-            str = "   " + this->fos_log_helper.ldh_namer->cn_names[row];
+            string &name = this->fos_log_helper.ldh_namer->cn_names[row];
+
+            str = "   " + name;
             int padding = this->fos_key_size - str.length() + 3;
 
+            value_out.get_attrs().push_back(string_attr(
+                line_range(3, 3 + name.length()),
+                &view_curses::VC_STYLE,
+                vc.attrs_for_ident(name)));
             str.append(padding, ' ');
             str += " = " + this->fos_log_helper.ldh_parser->get_element_string(
                 iter->e_sub_elements->back());
@@ -1292,6 +1307,7 @@ static void handle_paging_key(int ch)
 
     case 'n':
         tc->set_top(bm[&textview_curses::BM_SEARCH].next(tc->get_top()));
+        lnav_data.ld_bottom_source.grep_error("");
         lnav_data.ld_rl_view->set_alt_value(
             "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
             "' to scroll horizontally to a search result");
@@ -1299,6 +1315,7 @@ static void handle_paging_key(int ch)
 
     case 'N':
         tc->set_top(bm[&textview_curses::BM_SEARCH].prev(tc->get_top()));
+        lnav_data.ld_bottom_source.grep_error("");
         lnav_data.ld_rl_view->set_alt_value(
             "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
             "' to scroll horizontally to a search result");
@@ -2332,15 +2349,17 @@ int sql_callback(sqlite3_stmt *stmt)
     return retval;
 }
 
-void execute_search(lnav_view_t view, const std::string &regex)
+void execute_search(lnav_view_t view, const std::string &regex_orig)
 {
     auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
     textview_curses &           tc = lnav_data.ld_views[view];
+    std::string regex = regex_orig;
 
     if ((gc.get() == NULL) || (regex != lnav_data.ld_last_search[view])) {
         const char *errptr;
-        pcre *      code;
+        pcre *      code = NULL;
         int         eoff;
+        bool quoted = false;
 
         tc.match_reset();
 
@@ -2360,35 +2379,50 @@ void execute_search(lnav_view_t view, const std::string &regex)
                                       &errptr,
                                       &eoff,
                                       NULL)) == NULL) {
-            lnav_data.ld_bottom_source.
-            grep_error("regexp error: " + string(errptr));
-        }
-        else {
-            textview_curses::highlighter
-                hl(code, false, view_colors::VCR_SEARCH);
+            lnav_data.ld_bottom_source.grep_error(
+                "regexp error: " + string(errptr));
 
+            quoted = true;
+            regex = pcrecpp::RE::QuoteMeta(regex);
+
+            log_info("invalid search regex, using quoted: %s", regex.c_str());
+            if ((code = pcre_compile(regex.c_str(),
+                                     PCRE_CASELESS,
+                                     &errptr,
+                                     &eoff,
+                                     NULL)) == NULL) {
+                log_error("Unable to compile quoted regex: %s", regex.c_str());
+            }
+        }
+
+        if (code != NULL) {
+            textview_curses::highlighter hl(
+                code, false, view_colors::VCR_SEARCH);
+
+            if (!quoted) {
+                lnav_data.ld_bottom_source.grep_error("");
+            }
             lnav_data.ld_bottom_source.set_prompt("");
 
             textview_curses::highlight_map_t &hm = tc.get_highlights();
             hm["$search"] = hl;
 
             auto_ptr<grep_proc> gp(new grep_proc(code,
-                                                 tc,
-                                                 lnav_data.ld_max_fd,
-                                                 lnav_data.ld_read_fds));
+               tc,
+               lnav_data.ld_max_fd,
+               lnav_data.ld_read_fds));
 
             gp->queue_request(grep_line_t(tc.get_top()));
             if (tc.get_top() > 0) {
-                gp->queue_request(grep_line_t(0),
-                                  grep_line_t(tc.get_top()));
+                gp->queue_request(grep_line_t(0), grep_line_t(tc.get_top()));
             }
             gp->start();
             gp->set_sink(&tc);
 
             tc.set_follow_search(true);
 
-            auto_ptr<grep_highlighter> gh(new grep_highlighter(gp, "$search",
-                                                               hm));
+            auto_ptr<grep_highlighter> gh(
+                new grep_highlighter(gp, "$search", hm));
             gc = gh;
         }
     }
@@ -3121,7 +3155,10 @@ static void looper(void)
         readline_curses  rlc;
         int lpc;
 
-        search_context.set_append_character(0);
+        search_context
+            .set_append_character(0)
+            .set_highlighter(readline_regex_highlighter);
+        sql_context.set_highlighter(readline_sqlite_highlighter);
 
         listview_curses::action::broadcaster &sb =
             lnav_data.ld_scroll_broadcaster;

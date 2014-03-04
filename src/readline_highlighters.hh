@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2014, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,48 +26,16 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file pcrepp.cc
+ * @file readline_highlighters.hh
  */
 
-#include "config.h"
+#ifndef __readline_highlighters_hh
+#define __readline_highlighters_hh
 
-#include <pcrecpp.h>
+#include "view_curses.hh"
 
-#include "pcrepp.hh"
+void readline_regex_highlighter(attr_line_t &line, int x);
 
-const int JIT_STACK_MIN_SIZE = 32 * 1024;
-const int JIT_STACK_MAX_SIZE = 512 * 1024;
+void readline_sqlite_highlighter(attr_line_t &line, int x);
 
-pcre_context::capture_t *pcre_context::operator[](const char *name) const
-{
-    capture_t *retval = NULL;
-    int index;
-
-    index = this->pc_pcre->name_index(name);
-    if (index != PCRE_ERROR_NOSUBSTRING) {
-        retval = &this->pc_captures[index + 1];
-    }
-
-    return retval;
-}
-
-#ifdef PCRE_STUDY_JIT_COMPILE
-pcre_jit_stack *pcrepp::jit_stack(void)
-{
-    static pcre_jit_stack *retval = NULL;
-
-    if (retval == NULL) {
-        retval = pcre_jit_stack_alloc(JIT_STACK_MIN_SIZE, JIT_STACK_MAX_SIZE);
-    }
-
-    return retval;
-}
-
-#else
-#warning "pcrejit is not available, search performance will be degraded"
-
-void pcrepp::pcre_free_study(pcre_extra *extra)
-{
-    free(extra);
-}
 #endif

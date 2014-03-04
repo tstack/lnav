@@ -125,6 +125,16 @@ public:
         return (*this)[name.c_str()];
     };
 
+    capture_t *first_valid(void) const {
+        for (int lpc = 1; lpc < this->pc_count; lpc++) {
+            if (this->pc_captures[lpc].is_valid()) {
+                return &this->pc_captures[lpc];
+            }
+        }
+
+        return NULL;
+    };
+
 protected:
     pcre_context(capture_t *captures, int max_count)
         : pc_pcre(NULL), pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
@@ -484,4 +494,5 @@ private:
     int p_name_len;
     pcre_named_capture *p_named_entries;
 };
+
 #endif

@@ -34,6 +34,7 @@
 #include <string>
 #include <algorithm>
 
+#include "lnav_log.hh"
 #include "view_curses.hh"
 
 using namespace std;
@@ -76,7 +77,7 @@ void view_curses::mvwattrline(WINDOW *window,
                               int y,
                               int x,
                               attr_line_t &al,
-                              struct line_range &lr,
+                              const struct line_range &lr,
                               view_colors::role_t base_role)
 {
     int text_attrs, attrs, line_width;
