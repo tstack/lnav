@@ -587,7 +587,8 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
     }
 
     for (; vl < (int)this->lss_index.size(); ++vl) {
-        content_line_t cl = this->lss_index[vl];
+        const content_line_t orig_cl = this->lss_index[vl];
+        content_line_t cl = orig_cl;
         logfile *      lf;
 
         lf = this->find(cl);
@@ -596,7 +597,9 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
                  this->lss_user_marks.begin();
              iter != this->lss_user_marks.end();
              ++iter) {
-            if (binary_search(iter->second.begin(), iter->second.end(), cl)) {
+            if (binary_search(iter->second.begin(),
+                              iter->second.end(),
+                              orig_cl)) {
                 bm[iter->first].insert_once(vl);
 
                 if (iter->first == &textview_curses::BM_USER) {

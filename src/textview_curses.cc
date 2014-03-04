@@ -238,6 +238,9 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 
 bool textview_curses::handle_mouse(mouse_event &me)
 {
+    unsigned long width;
+    vis_line_t height;
+
     if (this->tc_selection_start == -1 &&
         listview_curses::handle_mouse(me)) {
         return true;
@@ -258,6 +261,8 @@ bool textview_curses::handle_mouse(mouse_event &me)
         mouse_line = this->get_bottom();
     }
 
+    this->get_dimensions(height, width);
+
     switch (me.me_state) {
     case BUTTON_STATE_PRESSED:
         this->tc_selection_start = mouse_line;
@@ -269,6 +274,11 @@ bool textview_curses::handle_mouse(mouse_event &me)
             this->shift_top(vis_line_t(-1));
             me.me_y = 0;
             mouse_line = this->get_top();
+        }
+        if (me.me_y >= height && this->get_top() < this->get_top_for_last_row()) {
+            this->shift_top(vis_line_t(1));
+            me.me_y = height;
+            mouse_line = this->get_bottom();
         }
 
         if (this->tc_selection_last == mouse_line)

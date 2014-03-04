@@ -2973,7 +2973,6 @@ public:
 
                         if (lv.lv_origin.contains(x_offset)) {
                             this->ad_press_value = lpc;
-                            retval = true;
                             break;
                         }
                     }
@@ -2981,6 +2980,9 @@ public:
             }
             break;
         case BUTTON_STATE_DRAGGED:
+            if (mouse_line != this->ad_press_line) {
+                this->ad_press_value = -1;
+            }
             if (this->ad_press_value != -1) {
                 retval = true;
             }
