@@ -90,7 +90,7 @@ void view_curses::mvwattrline(WINDOW *window,
     size_t exp_index = 0;
     string full_line;
 
-    assert(lr.lr_end >= 0);
+    require(lr.lr_end >= 0);
 
     line_width    = lr.length();
     tab_count     = count(line.begin(), line.end(), '\t');
@@ -145,8 +145,8 @@ void view_curses::mvwattrline(WINDOW *window,
         struct line_range attr_range = iter->sa_range;
         std::map<size_t, size_t>::iterator tab_iter;
 
-        assert(attr_range.lr_start >= 0);
-        assert(attr_range.lr_end >= -1);
+        require(attr_range.lr_start >= 0);
+        require(attr_range.lr_end >= -1);
 
         tab_iter = tab_list.lower_bound(attr_range.lr_start);
         if (tab_iter != tab_list.end()) {

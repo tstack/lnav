@@ -39,6 +39,7 @@
 #include <iterator>
 #include <algorithm>
 
+#include "lnav_log.hh"
 #include "yajlpp.hh"
 #include "pcrepp.hh"
 #include "byte_array.hh"
@@ -260,7 +261,7 @@ public:
 
         element(const element &other)
         {
-            /* assert(other.e_sub_elements == NULL); */
+            /* require(other.e_sub_elements == NULL); */
 
             this->e_capture      = other.e_capture;
             this->e_token        = other.e_token;
@@ -311,7 +312,7 @@ public:
 
         const element &         get_pair_value(void) const
         {
-            assert(this->e_token == DNT_PAIR);
+            require(this->e_token == DNT_PAIR);
 
             return this->e_sub_elements->back();
         };
@@ -757,12 +758,12 @@ private:
             pcre_context::iterator pc_iter;
 
             pc_iter = std::find_if(pc.begin(), pc.end(), capture_if_not(-1));
-            assert(pc_iter != pc.end());
+            require(pc_iter != pc.end());
 
             elem.e_capture = *pc_iter;
 
-            assert(elem.e_capture.c_begin != -1);
-            assert(elem.e_capture.c_end != -1);
+            require(elem.e_capture.c_begin != -1);
+            require(elem.e_capture.c_end != -1);
 
             prefix_state = dfs_prefix_next(prefix_state, elem.e_token);
             semi_state   = dfs_semi_next(semi_state, elem.e_token);

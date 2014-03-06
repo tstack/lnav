@@ -40,6 +40,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "lnav_log.hh"
 #include "strong_int.hh"
 #include "logfile.hh"
 #include "bookmarks.hh"
@@ -168,7 +169,7 @@ public:
             }
         }
         else if (lb != this->lss_user_marks[bm].end() && *lb == cl) {
-            assert(lb != this->lss_user_marks[bm].end());
+            require(lb != this->lss_user_marks[bm].end());
 
             this->lss_user_marks[bm].erase(lb);
         }
@@ -192,7 +193,7 @@ public:
     {
         std::vector<logfile_data>::iterator existing;
 
-        assert(lf->size() < MAX_LINES_PER_FILE);
+        require(lf->size() < MAX_LINES_PER_FILE);
 
         existing = std::find_if(this->lss_files.begin(),
                                 this->lss_files.end(),

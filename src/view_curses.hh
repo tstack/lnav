@@ -35,7 +35,6 @@
 #include "config.h"
 
 #include <zlib.h>
-#include <assert.h>
 #include <stdint.h>
 #include <limits.h>
 #include <signal.h>
@@ -482,16 +481,16 @@ public:
      */
     int attrs_for_role(role_t role) const
     {
-        assert(role >= 0);
-        assert(role < VCR__MAX);
+        require(role >= 0);
+        require(role < VCR__MAX);
 
         return this->vc_role_colors[role];
     };
 
     int reverse_attrs_for_role(role_t role) const
     {
-        assert(role >= 0);
-        assert(role < VCR__MAX);
+        require(role >= 0);
+        require(role < VCR__MAX);
 
         return this->vc_role_reverse_colors[role];
     };

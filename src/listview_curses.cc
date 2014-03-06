@@ -332,7 +332,7 @@ bool listview_curses::handle_mouse(mouse_event &me)
 
     switch (this->lv_mouse_mode) {
     case LV_MODE_NONE:
-        assert(0);
+        require(0);
         break;
 
     case LV_MODE_UP:

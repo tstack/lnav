@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "lnav_log.hh"
 #include "sql_util.hh"
 #include "log_vtab_impl.hh"
 
@@ -53,7 +54,7 @@ static const char *type_to_string(int type)
         return "text";
     }
 
-    assert("Invalid sqlite type");
+    ensure("Invalid sqlite type");
 
     return NULL;
 }
@@ -76,7 +77,7 @@ std::string log_vtab_impl::get_table_statement(void)
     for (iter = cols.begin(); iter != cols.end(); iter++) {
         auto_mem<char, sqlite3_free> coldecl;
 
-        assert(iter->vc_name != NULL);
+        require(iter->vc_name != NULL);
 
         coldecl = sqlite3_mprintf("  %Q %s %s collate %Q,\n",
                                   iter->vc_name,
@@ -239,7 +240,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     logfile *         lf = vt->lss->find(cl);
     logfile::iterator ll = lf->begin() + cl;
 
-    assert(col >= 0);
+    require(col >= 0);
 
     /* Just return the ordinal of the column requested. */
     switch (col) {
@@ -313,7 +314,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
             prev_time      += prev_ll->get_millis();
             curr_line_time  = ll->get_time() * 1000ULL;
             curr_line_time += ll->get_millis();
-            // assert(curr_line_time >= prev_time);
+            // require(curr_line_time >= prev_time);
             sqlite3_result_int64(ctx, curr_line_time - prev_time);
         }
         break;
@@ -401,7 +402,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 
                 case logline_value::VALUE_UNKNOWN:
                 case logline_value::VALUE__MAX:
-                    assert(0);
+                    require(0);
                     break;
                 }
             }
@@ -552,7 +553,7 @@ string log_vtab_manager::unregister_vtab(std::string name)
                            NULL,
                            NULL,
                            NULL);
-        assert(rc == SQLITE_OK);
+        require(rc == SQLITE_OK);
 
         sqlite3_free(sql);
 

@@ -39,6 +39,7 @@
 #include <string>
 #include <vector>
 
+#include "lnav_log.hh"
 #include "strong_int.hh"
 #include "textview_curses.hh"
 
@@ -93,7 +94,7 @@ public:
 
     void set_bucket_size(unsigned int bs)
     {
-        assert(bs > 0);
+        require(bs > 0);
 
         this->hs_bucket_size = bs;
     };
@@ -101,7 +102,7 @@ public:
 
     void set_group_size(unsigned int gs)
     {
-        assert(gs > 0);
+        require(gs > 0);
         this->hs_group_size = gs;
     };
     unsigned int get_group_size(void) const { return this->hs_group_size; };

@@ -611,7 +611,7 @@ public:
             return;
         }
 
-        /* XXX assert(off <= total); */
+        /* XXX require(off <= total); */
         if (off > (off_t)total) {
             off = total;
         }
@@ -2441,7 +2441,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         break;
 
     case LNM_CAPTURE:
-        assert(0);
+        require(0);
         name = "$capture";
         break;
 
@@ -2480,7 +2480,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         return;
 
     default:
-        assert(0);
+        require(0);
         break;
     }
 
@@ -2534,7 +2534,7 @@ static void rl_callback(void *dummy, readline_curses *rc)
 
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
-        assert(0);
+        require(0);
         break;
 
     case LNM_COMMAND:
@@ -3131,7 +3131,7 @@ static void handle_key(int ch)
             break;
 
         default:
-            assert(0);
+            require(0);
             break;
         }
     }
@@ -4143,7 +4143,7 @@ int main(int argc, char *argv[])
     else {
         try {
             rescan_files(true);
-            
+
             log_info("startup: %s", PACKAGE_STRING);
             log_host_info();
             log_info("lnav_data:");

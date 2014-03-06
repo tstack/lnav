@@ -320,7 +320,7 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
         }
     }
 
-    assert((0 <= token_out && token_out < DT_TERMINAL_MAX));
+    ensure((0 <= token_out && token_out < DT_TERMINAL_MAX));
 
     return true;
 }

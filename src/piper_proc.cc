@@ -31,7 +31,6 @@
 
 #include "config.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -45,6 +44,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "lnav_log.hh"
 #include "piper_proc.hh"
 #include "line_buffer.hh"
 
@@ -69,7 +69,7 @@ static int write_timestamp(int fd, off_t woff)
 piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
     : pp_fd(-1), pp_child(-1)
 {
-    assert(pipefd >= 0);
+    require(pipefd >= 0);
 
     if (filename) {
         if ((this->pp_fd =

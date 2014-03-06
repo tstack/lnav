@@ -33,7 +33,6 @@
 #define __auto_mem_hh
 
 #include <string.h>
-#include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
 

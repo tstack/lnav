@@ -33,7 +33,6 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -64,7 +63,7 @@ grep_proc::grep_proc(pcre *code,
       gp_sink(NULL),
       gp_control(NULL)
 {
-    assert(this->invariant());
+    require(this->invariant());
 }
 
 grep_proc::~grep_proc()
@@ -101,7 +100,7 @@ void grep_proc::handle_match(int line,
 
 void grep_proc::start(void)
 {
-    assert(this->invariant());
+    require(this->invariant());
 
     if (this->gp_child_started || this->gp_queue.empty()) {
         return;
@@ -135,7 +134,7 @@ void grep_proc::start(void)
 
         fcntl(err_pipe.read_end(), F_SETFL, O_NONBLOCK);
         fcntl(err_pipe.read_end(), F_SETFD, 1);
-        assert(this->gp_err_pipe.get() == -1);
+        require(this->gp_err_pipe.get() == -1);
         this->gp_err_pipe      = err_pipe.read_end();
         this->gp_child_started = true;
 
@@ -245,7 +244,7 @@ void grep_proc::cleanup(void)
         while (waitpid(this->gp_child, &status, 0) < 0 && (errno == EINTR)) {
             ;
         }
-        assert(!WIFSIGNALED(status) || WTERMSIG(status) != SIGABRT);
+        require(!WIFSIGNALED(status) || WTERMSIG(status) != SIGABRT);
         this->gp_child         = -1;
         this->gp_child_started = false;
 
@@ -266,7 +265,7 @@ void grep_proc::cleanup(void)
     this->gp_pipe_offset = 0;
     this->gp_line_buffer.reset();
 
-    assert(this->invariant());
+    ensure(this->invariant());
 
     if (!this->gp_queue.empty()) {
         this->start();
@@ -277,7 +276,7 @@ void grep_proc::dispatch_line(char *line)
 {
     int start, end, capture_start;
 
-    assert(line != NULL);
+    require(line != NULL);
 
     if (sscanf(line, "%d", this->gp_last_line.out()) == 1) {
         /* Starting a new line with matches. */
@@ -285,11 +284,11 @@ void grep_proc::dispatch_line(char *line)
         if (this->gp_last_line > this->gp_highest_line) {
             this->gp_highest_line = this->gp_last_line;
         }
-        assert(this->gp_last_line >= 0);
+        ensure(this->gp_last_line >= 0);
     }
     else if (sscanf(line, "[%d:%d]", &start, &end) == 2) {
-        assert(start >= 0);
-        assert(end >= 0);
+        require(start >= 0);
+        require(end >= 0);
 
         /* Pass the match offsets to the sink delegate. */
         if (this->gp_sink != NULL) {
@@ -297,8 +296,8 @@ void grep_proc::dispatch_line(char *line)
         }
     }
     else if (sscanf(line, "(%d:%d)%n", &start, &end, &capture_start) == 2) {
-        assert(start == -1 || start >= 0);
-        assert(end >= 0);
+        require(start == -1 || start >= 0);
+        require(end >= 0);
 
         /* Pass the captured strings to the sink delegate. */
         if (this->gp_sink != NULL) {
@@ -322,7 +321,7 @@ void grep_proc::dispatch_line(char *line)
 
 void grep_proc::check_fd_set(fd_set &ready_fds)
 {
-    assert(this->invariant());
+    require(this->invariant());
 
     if (this->gp_err_pipe != -1 && FD_ISSET(this->gp_err_pipe, &ready_fds)) {
         char buffer[1024 + 1];
@@ -381,5 +380,5 @@ void grep_proc::check_fd_set(fd_set &ready_fds)
         }
     }
 
-    assert(this->invariant());
+    ensure(this->invariant());
 }

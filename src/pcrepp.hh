@@ -74,7 +74,7 @@ public:
         
         capture(int begin, int end) : c_begin(begin), c_end(end)
         {
-            assert(begin <= end);
+            require(begin <= end);
         };
 
         int c_begin;

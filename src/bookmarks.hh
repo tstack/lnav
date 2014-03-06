@@ -32,13 +32,12 @@
 #ifndef __bookmarks_hh
 #define __bookmarks_hh
 
-#include <assert.h>
-
 #include <map>
 #include <string>
 #include <vector>
 #include <algorithm>
 
+#include "lnav_log.hh"
 #include "listview_curses.hh"
 
 struct bookmark_metadata {
@@ -72,7 +71,7 @@ public:
     {
         typename bookmark_vector::iterator lb, retval;
 
-        assert(vl >= 0);
+        require(vl >= 0);
 
         lb = std::lower_bound(this->begin(), this->end(), vl);
         if (lb == this->end() || *lb != vl) {

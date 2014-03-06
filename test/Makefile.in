@@ -170,8 +170,7 @@ test_ansi_scrubber_DEPENDENCIES = ../src/libdiag.a \
 	$(am__DEPENDENCIES_1)
 am_test_auto_fd_OBJECTS = test_auto_fd.$(OBJEXT)
 test_auto_fd_OBJECTS = $(am_test_auto_fd_OBJECTS)
-test_auto_fd_LDADD = $(LDADD)
-test_auto_fd_DEPENDENCIES =
+test_auto_fd_DEPENDENCIES = ../src/libdiag.a
 am_test_auto_mem_OBJECTS = test_auto_mem.$(OBJEXT)
 test_auto_mem_OBJECTS = $(am_test_auto_mem_OBJECTS)
 test_auto_mem_LDADD = $(LDADD)
@@ -619,6 +618,7 @@ LDADD = -lz
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB)
 test_auto_fd_SOURCES = test_auto_fd.cc
+test_auto_fd_LDADD = ../src/libdiag.a
 test_auto_mem_SOURCES = test_auto_mem.cc
 test_bookmarks_SOURCES = test_bookmarks.cc
 test_bookmarks_LDADD = ../src/libdiag.a

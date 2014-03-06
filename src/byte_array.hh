@@ -31,10 +31,11 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <sys/types.h>
 
 #include <string>
+
+#include "lnav_log.hh"
 
 template<size_t COUNT, typename T = unsigned char>
 struct byte_array {
@@ -64,7 +65,7 @@ struct byte_array {
 
     void                 to_string(char *buffer) const
     {
-        assert(buffer != NULL);
+        require(buffer != NULL);
 
         for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
             snprintf(&buffer[lpc * 2], 3, "%02x", this->ba_data[lpc]);

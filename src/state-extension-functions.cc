@@ -39,6 +39,7 @@
 #include "sqlite3.h"
 
 #include "lnav.hh"
+#include "lnav_log.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.h"
 
@@ -54,7 +55,7 @@ static void sql_log_top_datetime(sqlite3_context *context,
 {
     char buffer[64];
 
-    assert(argc == 0);
+    require(argc == 0);
 
     sql_strftime(buffer, sizeof(buffer),
                  lnav_data.ld_top_time,

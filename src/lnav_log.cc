@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <time.h>
+#include <ctype.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -212,6 +213,51 @@ static void sigabrt(int sig)
         tcsetattr(STDOUT_FILENO, TCSAFLUSH, lnav_log_orig_termios);
     }
     fprintf(stderr, CRASH_MSG, crash_path);
+
+    if (isatty(STDIN_FILENO)) {
+        char response;
+
+        fprintf(stderr, "\nWould you like to attach a debugger? (y/N) ");
+        fflush(stderr);
+
+        scanf("%c", &response);
+
+        if (tolower(response) == 'y') {
+            pid_t lnav_pid = getpid();
+            pid_t child_pid;
+
+            switch ((child_pid = fork())) {
+                case 0: {
+                    char pid_str[32];
+
+                    snprintf(pid_str, sizeof(pid_str), "--pid=%d", lnav_pid);
+                    execlp("gdb", "gdb", pid_str, NULL);
+
+                    snprintf(pid_str, sizeof(pid_str),
+                        "--attach-pid=%d", lnav_pid);
+                    execlp("lldb", "lldb", pid_str, NULL);
+
+                    fprintf(stderr, "Could not attach gdb or lldb, exiting.\n");
+                    _exit(1);
+                    break;
+                }
+
+                case -1: {
+                    break;
+                }
+
+                default: {
+                    int status;
+
+                    while (wait(&status) < 0) {
+
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
     _exit(1);
 }
 
@@ -222,4 +268,10 @@ void log_install_handlers(void)
     signal(SIGBUS, sigabrt);
     signal(SIGILL, sigabrt);
     signal(SIGFPE, sigabrt);
+}
+
+void log_abort(void)
+{
+    sigabrt(SIGABRT);
+    _exit(1);
 }

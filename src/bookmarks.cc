@@ -40,14 +40,14 @@ LineType bookmark_vector<LineType>::next(LineType start)
 
     LineType retval(-1);
 
-    assert(start >= -1);
+    require(start >= -1);
 
     ub = upper_bound(this->begin(), this->end(), start);
     if (ub != this->end()) {
         retval = *ub;
     }
 
-    assert(retval == -1 || start < retval);
+    ensure(retval == -1 || start < retval);
 
     return retval;
 }
@@ -59,7 +59,7 @@ LineType bookmark_vector<LineType>::prev(LineType start)
 
     LineType retval(-1);
 
-    assert(start >= 0);
+    require(start >= 0);
 
     lb = lower_bound(this->begin(), this->end(), start);
     if (lb != this->begin()) {
@@ -67,7 +67,7 @@ LineType bookmark_vector<LineType>::prev(LineType start)
         retval = *lb;
     }
 
-    assert(retval < start);
+    ensure(retval < start);
 
     return retval;
 }

@@ -41,6 +41,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "lnav_log.hh"
 #include "byte_array.hh"
 #include "line_buffer.hh"
 #include "log_format.hh"
@@ -313,7 +314,7 @@ public:
     /** Check the invariants for this object. */
     bool invariant(void)
     {
-        assert(this->lf_filename.size() > 0);
+        require(this->lf_filename.size() > 0);
 
         return true;
     };

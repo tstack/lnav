@@ -83,7 +83,7 @@ logline::level_t logline::string2level(const char *levelstr, size_t len, bool ex
 
     int (*cmpfunc)(const char *, const char *, size_t);
 
-    assert(len == (size_t)-1 || (len != (size_t)-1 && exact));
+    require(len == (size_t)-1 || (len != (size_t)-1 && exact));
 
     if (len == (size_t)-1)
         len = strlen(levelstr);
@@ -1065,7 +1065,7 @@ public:
                 break;
             case logline_value::VALUE_UNKNOWN:
             case logline_value::VALUE__MAX:
-                assert(0);
+                ensure(0);
                 break;
             }
             cols[vd.vd_column].vc_name = vd.vd_name.c_str();

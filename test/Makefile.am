@@ -48,6 +48,7 @@ test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 test_auto_fd_SOURCES = test_auto_fd.cc
+test_auto_fd_LDADD = ../src/libdiag.a
 
 test_auto_mem_SOURCES = test_auto_mem.cc
 

@@ -32,7 +32,6 @@
 #ifndef __log_format_hh
 #define __log_format_hh
 
-#include <assert.h>
 #include <time.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -48,6 +47,7 @@
 
 #include "pcrepp.hh"
 #include "yajlpp.hh"
+#include "lnav_log.hh"
 #include "lnav_util.hh"
 #include "byte_array.hh"
 #include "view_curses.hh"
@@ -410,7 +410,7 @@ public:
 
         case VALUE_UNKNOWN:
         case VALUE__MAX:
-            assert(0);
+            ensure(0);
             break;
         }
     };
@@ -444,7 +444,7 @@ public:
             break;
         case VALUE_UNKNOWN:
         case VALUE__MAX:
-            assert(0);
+            ensure(0);
             break;
         }
 

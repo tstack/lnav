@@ -32,7 +32,6 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <glob.h>
@@ -69,7 +68,7 @@ bool check_experimental(const char *feature_name)
 {
     const char *env_value = getenv("LNAV_EXP");
 
-    assert(feature_name != NULL);
+    require(feature_name != NULL);
 
     if (env_value && strcasestr(env_value, feature_name)) {
         return true;

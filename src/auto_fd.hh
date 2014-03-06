@@ -32,13 +32,14 @@
 #ifndef __auto_fd_hh
 #define __auto_fd_hh
 
-#include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/select.h>
 
 #include <new>
 #include <exception>
+
+#include "lnav_log.hh"
 
 /**
  * Resource management class for file descriptors.
@@ -60,7 +61,7 @@ public:
     {
         int retval, fd[2];
 
-        assert(fd != NULL);
+        require(fd != NULL);
 
         if ((retval = ::pipe(fd)) == 0) {
             af[0] = fd[0];
@@ -78,8 +79,8 @@ public:
     auto_fd(int fd = -1)
         : af_fd(fd)
     {
-        assert(fd >= -1);
-        assert(fd < (int)FD_SETSIZE);
+        require(fd >= -1);
+        require(fd < (int)FD_SETSIZE);
     };
 
     /**
@@ -126,8 +127,8 @@ public:
      */
     auto_fd &operator =(int fd)
     {
-        assert(fd >= -1);
-        assert(fd < (int)FD_SETSIZE);
+        require(fd >= -1);
+        require(fd < (int)FD_SETSIZE);
 
         this->reset(fd);
         return *this;
@@ -186,8 +187,8 @@ public:
      */
     void reset(int fd = -1)
     {
-        assert(fd >= -1);
-        assert(fd < (int)FD_SETSIZE);
+        require(fd >= -1);
+        require(fd < (int)FD_SETSIZE);
 
         if (this->af_fd != fd) {
             if (this->af_fd != -1) {

@@ -172,8 +172,8 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
 {
     content_line_t line(0);
 
-    assert(row >= 0);
-    assert((size_t)row < this->lss_index.size());
+    require(row >= 0);
+    require((size_t)row < this->lss_index.size());
 
     line = this->lss_index[row];
     this->lss_token_file   = this->find(line);

@@ -126,7 +126,7 @@ line_buffer::line_buffer()
         throw bad_alloc();
     }
 
-    assert(this->invariant());
+    ensure(this->invariant());
 }
 
 line_buffer::~line_buffer()
@@ -204,7 +204,7 @@ throw (error)
     this->lb_buffer_size = 0;
     this->lb_fd          = fd;
 
-    assert(this->invariant());
+    ensure(this->invariant());
 }
 
 void line_buffer::resize_buffer(size_t new_max)
@@ -268,11 +268,11 @@ throw (error)
          */
         prefill = start - this->lb_file_offset;
     }
-    assert(this->lb_file_offset <= start);
-    assert(prefill <= this->lb_buffer_size);
+    require(this->lb_file_offset <= start);
+    require(prefill <= this->lb_buffer_size);
 
     available = this->lb_buffer_max - this->lb_buffer_size;
-    assert(available <= this->lb_buffer_max);
+    require(available <= this->lb_buffer_max);
 
     if (max_length > available) {
         /*
@@ -300,7 +300,7 @@ throw (error)
 {
     bool retval = false;
 
-    assert(start >= 0);
+    require(start >= 0);
 
     if (this->in_range(start) && this->in_range(start + max_length)) {
         /* Cache already has the data, nothing to do. */
@@ -434,7 +434,7 @@ throw (error)
             break;
         }
 
-        assert(this->lb_buffer_size <= this->lb_buffer_max);
+        ensure(this->lb_buffer_size <= this->lb_buffer_max);
     }
 
     return retval;
@@ -446,7 +446,7 @@ throw (error)
     size_t request_size = DEFAULT_INCREMENT;
     char * retval       = NULL;
 
-    assert(this->lb_fd != -1);
+    require(this->lb_fd != -1);
 
     if (this->lb_last_line_offset != -1 && offset >
         this->lb_last_line_offset) {
@@ -514,11 +514,11 @@ throw (error)
         }
     }
 
-    assert((retval == NULL) ||
+    ensure((retval == NULL) ||
            (retval >= this->lb_buffer &&
             retval < (this->lb_buffer + this->lb_buffer_size)));
-    assert(len_out <= this->lb_buffer_size);
-    assert(this->invariant());
+    ensure(len_out <= this->lb_buffer_size);
+    ensure(this->invariant());
 
     return retval;
 }

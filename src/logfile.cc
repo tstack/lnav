@@ -36,7 +36,6 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <assert.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -61,7 +60,7 @@ throw (error)
 {
     int reserve_size = 100;
 
-    assert(filename.size() > 0);
+    require(filename.size() > 0);
 
     this->lf_time_offset.tv_sec = 0;
     this->lf_time_offset.tv_usec = 0;
@@ -104,7 +103,7 @@ throw (error)
     this->lf_line_buffer.set_fd(fd);
     this->lf_index.reserve(reserve_size);
 
-    assert(this->invariant());
+    ensure(this->invariant());
 }
 
 logfile::~logfile()
@@ -156,7 +155,7 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
             }
             if ((*iter)->scan(this->lf_index, offset, prefix, len)) {
 #if 0
-                assert(this->lf_index.size() == 1 ||
+                require(this->lf_index.size() == 1 ||
                        (this->lf_index[this->lf_index.size() - 2] <
                         this->lf_index[this->lf_index.size() - 1]));
 #endif
@@ -341,7 +340,7 @@ logfile_filter::type_t logfile::check_filter(iterator ll,
             break;
 
         default:
-            assert(0);
+            require(0);
             break;
         }
     }
@@ -430,7 +429,7 @@ void logfile::read_full_message(logfile::iterator ll,
                                 shared_buffer_ref &msg_out,
                                 int max_lines)
 {
-    assert(ll->get_sub_offset() == 0);
+    require(ll->get_sub_offset() == 0);
 
     size_t line_len = this->line_length(ll);
 

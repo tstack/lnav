@@ -36,6 +36,8 @@
 
 #include "config.h"
 
+#include <assert.h>
+
 #include "ansi_scrubber.hh"
 
 using namespace std;

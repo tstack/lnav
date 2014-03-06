@@ -34,6 +34,12 @@
 
 #include <stdio.h>
 #include <termios.h>
+#include <stdlib.h>
+#include <sys/cdefs.h>
+
+#ifndef __dead2
+#define __dead2 __attribute__((noreturn))
+#endif
 
 enum lnav_log_level_t {
     LOG_LEVEL_DEBUG,
@@ -43,14 +49,15 @@ enum lnav_log_level_t {
 };
 
 void log_host_info(void);
-void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
+void log_msg(enum lnav_log_level_t level, const char *src_file, int line_number,
     const char *fmt, ...);
 void log_install_handlers(void);
+void log_abort(void) __dead2;
 
 extern FILE *lnav_log_file;
 extern const char *lnav_log_crash_dir;
 extern const struct termios *lnav_log_orig_termios;
-extern lnav_log_level_t lnav_log_level;
+extern enum lnav_log_level_t lnav_log_level;
 
 #define log_msg_wrapper(level, fmt...) \
     do { \
@@ -72,5 +79,14 @@ extern lnav_log_level_t lnav_log_level;
 #define log_debug(fmt...) \
     log_msg_wrapper(LOG_LEVEL_DEBUG, fmt);
 
+#define require(e)  \
+    ((void) ((e) ? 0 : __require (#e, __FILE__, __LINE__)))
+#define __require(e, file, line) \
+    (log_msg(LOG_LEVEL_ERROR, file, line, "failed precondition `%s'", e), log_abort(), 1)
+
+#define ensure(e)  \
+    ((void) ((e) ? 0 : __ensure (#e, __FILE__, __LINE__)))
+#define __ensure(e, file, line) \
+    (log_msg(LOG_LEVEL_ERROR, file, line, "failed postcondition `%s'", e), log_abort(), 1)
 
 #endif

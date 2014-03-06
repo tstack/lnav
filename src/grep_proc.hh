@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <assert.h>
 
 #ifdef HAVE_PCRE_H
 #include <pcre.h>
@@ -51,6 +50,7 @@
 #include "pcrepp.hh"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
+#include "lnav_log.hh"
 #include "strong_int.hh"
 #include "line_buffer.hh"
 
@@ -212,8 +212,8 @@ public:
     void queue_request(grep_line_t start = grep_line_t(0),
                        grep_line_t stop = grep_line_t(-1))
     {
-        assert(start != -1 || stop == -1);
-        assert(stop == -1 || start < stop);
+        require(start != -1 || stop == -1);
+        require(stop == -1 || start < stop);
 
         this->gp_queue.push_back(std::make_pair(start, stop));
     };
@@ -233,16 +233,16 @@ public:
     /** Check the invariants for this object. */
     bool invariant(void)
     {
-        assert(this->gp_code != NULL);
+        require(this->gp_code != NULL);
         if (this->gp_child_started) {
-            assert(this->gp_child > 0);
-            assert(this->gp_line_buffer.get_fd() != -1);
-            assert(FD_ISSET(this->gp_line_buffer.get_fd(), &this->gp_readfds));
+            require(this->gp_child > 0);
+            require(this->gp_line_buffer.get_fd() != -1);
+            require(FD_ISSET(this->gp_line_buffer.get_fd(), &this->gp_readfds));
         }
         else {
-            assert(this->gp_pipe_offset == 0);
-            /* assert(this->gp_child == -1); XXX doesnt work with static destr */
-            assert(this->gp_line_buffer.get_fd() == -1);
+            require(this->gp_pipe_offset == 0);
+            /* require(this->gp_child == -1); XXX doesnt work with static destr */
+            require(this->gp_line_buffer.get_fd() == -1);
         }
 
         return true;

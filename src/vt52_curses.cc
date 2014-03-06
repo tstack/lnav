@@ -31,12 +31,12 @@
 
 #include "config.h"
 
-#include <assert.h>
 #include <unistd.h>
 #include <string.h>
 
 #include <map>
 
+#include "lnav_log.hh"
 #include "vt52_curses.hh"
 
 #if defined HAVE_NCURSESW_CURSES_H
@@ -96,7 +96,7 @@ public:
         map<string, const char *>::const_iterator iter;
         const char *retval = NULL;
 
-        assert(seq != NULL);
+        require(seq != NULL);
 
         if ((iter = this->vem_input_map.find(seq)) !=
             this->vem_input_map.end()) {
@@ -175,8 +175,8 @@ const char *vt52_curses::map_input(int ch, int &len_out)
         len_out = 1;
     }
 
-    assert(retval != NULL);
-    assert(len_out > 0);
+    ensure(retval != NULL);
+    ensure(len_out > 0);
 
     return retval;
 }
@@ -185,7 +185,7 @@ void vt52_curses::map_output(const char *output, int len)
 {
     int y, lpc;
 
-    assert(this->vc_window != NULL);
+    require(this->vc_window != NULL);
 
     y = this->get_actual_y();
     wmove(this->vc_window, y, this->vc_x);
@@ -214,7 +214,7 @@ void vt52_curses::map_output(const char *output, int len)
                     this->vc_escape_len = 0;
                 }
                 else {
-                    assert(0);
+                    ensure(0);
                 }
             }
         }

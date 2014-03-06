@@ -69,7 +69,8 @@ public:
                      command_map_t *commands = NULL,
                      bool case_sensitive = true)
         : rc_name(name),
-          rc_case_sensitive(case_sensitive)
+          rc_case_sensitive(case_sensitive),
+          rc_highlighter(NULL)
     {
         char *home;
 

@@ -30,9 +30,9 @@
  * negative chars in their default char type.
  */
 
+#include <assert.h>
 #include <ctype.h>
 #include <string.h>
-#include <assert.h>
 #include <stdio.h>
 
 #include "strnatcmp.h"

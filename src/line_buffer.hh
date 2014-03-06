@@ -33,13 +33,13 @@
 #define __line_buffer_hh
 
 #include <errno.h>
-#include <assert.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <zlib.h>
 
 #include <exception>
 
+#include "lnav_log.hh"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
 #include "shared_buffer.hh"
@@ -144,8 +144,8 @@ public:
     /** Check the invariants for this object. */
     bool invariant(void)
     {
-        assert(this->lb_buffer != NULL);
-        assert(this->lb_buffer_size <= this->lb_buffer_max);
+        require(this->lb_buffer != NULL);
+        require(this->lb_buffer_size <= this->lb_buffer_max);
 
         return true;
     };
@@ -203,7 +203,7 @@ private:
         off_t buffer_offset = start - this->lb_file_offset;
         char *retval;
 
-        assert(buffer_offset >= 0);
+        require(buffer_offset >= 0);
 
         retval    = &this->lb_buffer[buffer_offset];
         avail_out = this->lb_buffer_size - buffer_offset;

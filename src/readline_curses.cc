@@ -185,7 +185,7 @@ char **readline_context::attempted_completion(const char *text,
 
         rl_completion_append_character = 0;
         space = strchr(rl_line_buffer, ' ');
-        assert(space != NULL);
+        require(space != NULL);
         cmd = string(rl_line_buffer, 0, space - rl_line_buffer);
 
         vector<string> &proto = loaded_context->rc_prototypes[cmd];
@@ -300,7 +300,7 @@ void readline_curses::start(void)
     fd_set rfds;
     int    maxfd;
 
-    assert(!this->rc_contexts.empty());
+    require(!this->rc_contexts.empty());
 
     rl_completer_word_break_characters = (char *)" \t\n"; /* XXX */
 
@@ -387,7 +387,7 @@ void readline_curses::start(void)
                                     &context,
                                     type,
                                     &prompt_start) == 2) {
-                        assert(this->rc_contexts[context] != NULL);
+                        require(this->rc_contexts[context] != NULL);
 
                         this->rc_contexts[context]->
                         add_possibility(string(type),
@@ -398,7 +398,7 @@ void readline_curses::start(void)
                                     &context,
                                     type,
                                     &prompt_start) == 2) {
-                        assert(this->rc_contexts[context] != NULL);
+                        require(this->rc_contexts[context] != NULL);
 
                         this->rc_contexts[context]->
                         rem_possibility(string(type),
@@ -722,43 +722,4 @@ void readline_curses::do_update(void)
             wmove(this->vc_window, this->get_actual_y(), this->vc_x);
         }
     }
-#if 0
-    {
-        static pcrepp captures("(?<!\\\\)\\((?:\\\\\\)|[^)])+$");
-
-        pcre_context_static<30> pc;
-
-        pcre_input pi(line, 0, rc);
-
-        while (captures.match(pc, pi)) {
-            pcre_context::capture_t *cap = pc.all();
-
-            mvwchgat(this->vc_window, this->get_actual_y(), cap->c_begin, 1, 0,
-                view_colors::ansi_color_pair_index(COLOR_RED, COLOR_BLACK),
-                NULL);
-        }
-
-        if (line[this->vc_x] == ')' && line[this->vc_x - 1] != '\\') {
-            for (int lpc = this->vc_x; lpc > 0; lpc--) {
-                if (line[lpc] == '(' && line[lpc - 1] != '\\') {
-                    mvwchgat(this->vc_window, this->get_actual_y(), lpc, 1, A_BOLD | A_REVERSE,
-                        view_colors::ansi_color_pair_index(COLOR_CYAN, COLOR_BLACK),
-                        NULL);
-                    break;
-                }
-            }
-        }
-        if (line[this->vc_x] == '(' && line[this->vc_x - 1] != '\\') {
-            for (int lpc = this->vc_x; lpc < rc; lpc++) {
-                if (line[lpc] == ')' && line[lpc - 1] != '\\') {
-                    mvwchgat(this->vc_window, this->get_actual_y(), lpc, 1, A_BOLD | A_REVERSE,
-                        view_colors::ansi_color_pair_index(COLOR_CYAN, COLOR_BLACK),
-                        NULL);
-                    break;
-                }
-            }
-        }
-
-    }
-#endif
 }
