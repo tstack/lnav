@@ -44,6 +44,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 #include <termcap.h>
 
 #include "lnav_log.hh"
