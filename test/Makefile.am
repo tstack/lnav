@@ -127,6 +127,7 @@ slicer_SOURCES = slicer.cc
 slicer_LDADD = ../src/libdiag.a
 
 scripty_SOURCES = scripty.cc
+scripty_LDADD = ../src/libdiag.a
 
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \

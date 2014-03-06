@@ -159,8 +159,7 @@ drive_vt52_curses_DEPENDENCIES = ../src/libdiag.a \
 	$(am__DEPENDENCIES_1)
 am_scripty_OBJECTS = scripty.$(OBJEXT)
 scripty_OBJECTS = $(am_scripty_OBJECTS)
-scripty_LDADD = $(LDADD)
-scripty_DEPENDENCIES =
+scripty_DEPENDENCIES = ../src/libdiag.a
 am_slicer_OBJECTS = slicer.$(OBJEXT)
 slicer_OBJECTS = $(am_slicer_OBJECTS)
 slicer_DEPENDENCIES = ../src/libdiag.a
@@ -682,6 +681,7 @@ drive_sql_LDADD = \
 slicer_SOURCES = slicer.cc
 slicer_LDADD = ../src/libdiag.a
 scripty_SOURCES = scripty.cc
+scripty_LDADD = ../src/libdiag.a
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
 	test_cmds.sh \
