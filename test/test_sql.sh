@@ -137,9 +137,41 @@ run_test ${lnav_test} -n \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_access_log.0
 
-check_output "errors are not reported" <<EOF
+check_output "partition-name does not work" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
 0,p.0,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
 1,middle,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
 2,middle,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":partition-name middle" \
+    -c ":clear-partition" \
+    -c ";select * from access_log" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "clear-partition does not work" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
+0,p.0,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,p.0,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,p.0,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":partition-name middle" \
+    -c ":goto 2" \
+    -c ":clear-partition" \
+    -c ";select * from access_log" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "clear-partition does not work when in the middle of a part" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
+0,p.0,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,p.0,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,p.0,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
 EOF

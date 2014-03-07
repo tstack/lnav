@@ -920,6 +920,42 @@ static string com_partition_name(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_clear_partition(string cmdline, vector<string> &args)
+{
+    string retval = "";
+
+    if (args.size() == 0) {
+        return "";
+    }
+    else if (args.size() == 1) {
+        textview_curses &tc = lnav_data.ld_views[LNV_LOG];
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        bookmark_vector<vis_line_t> &bv = tc.get_bookmarks()[
+            &textview_curses::BM_PARTITION];
+        std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+        vis_line_t part_start;
+
+        if (binary_search(bv.begin(), bv.end(), tc.get_top())) {
+            part_start = tc.get_top();
+        }
+        else {
+            part_start = bv.prev(tc.get_top());
+        }
+        if (part_start == -1) {
+            retval = "error: top line is not in a partition";
+        }
+        else {
+            tc.set_user_mark(
+                &textview_curses::BM_PARTITION, part_start, false);
+
+            bm.erase(lss.at(part_start));
+            retval = "info: cleared partition name";
+        }
+    }
+
+    return retval;
+}
+
 static string com_summarize(string cmdline, vector<string> &args)
 {
     static pcrecpp::RE db_column_converter("\"");
@@ -1217,6 +1253,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["open"]                 = com_open;
     cmd_map["close"]                = com_close;
     cmd_map["partition-name"]       = com_partition_name;
+    cmd_map["clear-partition"]      = com_clear_partition;
     cmd_map["session"]              = com_session;
     cmd_map["summarize"]            = com_summarize;
     cmd_map["switch-to-view"]       = com_switch_to_view;

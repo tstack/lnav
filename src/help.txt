@@ -204,7 +204,9 @@ through the file.
   C                 Clear all marked lines.
 
   u/U               Move forward/backward through any user bookmarks
-                    you have added using the 'm' key.
+                    you have added using the 'm' key.  This hotkey will
+                    also jump to the start of any log partitions that have
+                    been created with the 'partition-name' command.
 
   T                 Toggle the display of the "time offset" column that shows
                     the time elapsed since the beginning of the logs or the
@@ -422,6 +424,17 @@ COMMANDS
                     Switch the display to the given view, which can be one of:
                     help, log, text, histogram, db, and schema.
 
+  partition-name <name>
+                    Mark the top line in the log view as the start of a new
+                    partition with the given name.  The current partition name
+                    will be reflected in the top status bar next to the current
+                    time as well as being available in the 'log_part' column
+                    of the SQL log tables.  Partitions can be used to make it
+                    easier to query subsections of log messages.
+
+  clear-partition
+                    Clear the partition the top line is a part of.
+
 
 SQL QUERIES (experimental)
 -----------
@@ -462,6 +475,9 @@ automatically be displayed after pressing the semicolon (;) key.
 All log tables contain at least the following columns:
 
     log_line        The line number in the file, starting at zero.
+    log_part        The name of the partition.  Use the 'partition-name'
+                    command to mark the start of a new partition in
+                    the log view.
     log_time        The time of the log entry.
     log_idle_msecs  The amount of time, in milliseconds, between the
                     current log message and the previous one.

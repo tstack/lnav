@@ -36,6 +36,9 @@ lnav v0.6.3:
      * Environment variables can now be accessed in SQL queries using
        the syntax: $VAR_NAME
      * An internal log is kept and written out on a crash.
+     * Partition bookmarks are now tracked separately from regular user
+       bookmarks.  You can start a partition with the 'partition-name'
+       command and remove it with the 'clear-partition' command.
 
 lnav v0.6.2:
      Features:

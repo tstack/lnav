@@ -224,8 +224,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
     }
 #endif
 
-    if (binary_search(user_marks.begin(), user_marks.end(), row) ||
-        binary_search(part_marks.begin(), part_marks.end(), row)) {
+    if (binary_search(user_marks.begin(), user_marks.end(), row)) {
         struct line_range        lr(0);
         string_attrs_t::iterator iter;
 
@@ -236,6 +235,10 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
         }
 
         sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_REVERSE));
+    }
+    else if (binary_search(part_marks.begin(), part_marks.end(), row + 1)) {
+        sa.push_back(string_attr(
+            line_range(0), &view_curses::VC_STYLE, A_UNDERLINE));
     }
 }
 

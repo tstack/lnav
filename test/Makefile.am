@@ -195,7 +195,6 @@ TESTS = \
 	test_auto_mem \
 	test_bookmarks \
 	test_cmds.sh \
-	test_line_buffer.sh \
 	test_line_buffer2 \
 	test_listview.sh \
 	test_grep_proc.sh \
@@ -225,3 +224,6 @@ DISTCLEANFILES = \
 	*.diff \
 	*.index \
 	*.tmp
+
+distclean-local:
+	rm -rf sessions
