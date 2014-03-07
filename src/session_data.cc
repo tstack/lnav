@@ -256,6 +256,9 @@ void init_session(void)
     context.Final(hash.out(0), hash.out(1));
 
     lnav_data.ld_session_id = hash.to_string();
+
+    log_info("init_session: time=%d; id=%s", lnav_data.ld_session_time,
+        lnav_data.ld_session_id.c_str());
 }
 
 void scan_sessions(void)
@@ -341,6 +344,8 @@ static void load_time_bookmarks(void)
     string db_path = dotlnav_path(LOG_METADATA_NAME);
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     logfile_sub_source::iterator file_iter;
+
+    log_info("loading bookmark db: %s", db_path.c_str());
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return;
@@ -469,10 +474,16 @@ static void load_time_bookmarks(void)
                         content_line_t line_cl = content_line_t(
                             base_content_line + std::distance(lf->begin(), line_iter));
 
-                        marked_session_lines.push_back(line_cl);
-                        lss.set_user_mark(&textview_curses::BM_USER, line_cl);
                         if (part_name != NULL && part_name[0] != '\0') {
+                            lss.set_user_mark(&textview_curses::BM_PARTITION,
+                                line_cl);
                             bm_meta[line_cl].bm_name = part_name;
+                        }
+                        else {
+                            marked_session_lines.push_back(line_cl);
+                            lss.set_user_mark(&textview_curses::BM_USER,
+                                line_cl);
+
                         }
                     }
 
@@ -771,6 +782,7 @@ void load_session(void)
         unsigned char buffer[1024];
         size_t        rc;
 
+        log_info("loading session file: %s", view_info_name.c_str());
         while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
             yajl_parse(handle, buffer, rc);
         }
@@ -784,6 +796,55 @@ static void yajl_writer(void *context, const char *str, size_t len)
     FILE *file = (FILE *)context;
 
     fwrite(str, len, 1, file);
+}
+
+static void save_user_bookmarks(
+    sqlite3 *db, sqlite3_stmt *stmt, bookmark_vector<content_line_t> &user_marks)
+{
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    std::map<content_line_t, bookmark_metadata> &bm_meta =
+        lss.get_user_bookmark_metadata();
+    bookmark_vector<content_line_t>::iterator iter;
+
+    for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
+        std::map<content_line_t, bookmark_metadata>::iterator meta_iter;
+        logfile::iterator line_iter;
+        content_line_t cl = *iter;
+
+        meta_iter = bm_meta.find(cl);
+
+        marked_session_lines.push_back(cl);
+
+        bind_line(db, stmt, cl, lnav_data.ld_session_time);
+
+        if (meta_iter == bm_meta.end()) {
+            if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
+                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                        sqlite3_errmsg(db));
+                return;
+            }
+        }
+        else {
+            if (sqlite3_bind_text(stmt, 5,
+                                  meta_iter->second.bm_name.c_str(),
+                                  meta_iter->second.bm_name.length(),
+                                  SQLITE_TRANSIENT) != SQLITE_OK) {
+                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                        sqlite3_errmsg(db));
+                return;
+            }
+        }
+
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            fprintf(stderr,
+                    "error: could not execute bookmark insert statement -- %s\n",
+                    sqlite3_errmsg(db));
+            return;
+        }
+
+        sqlite3_reset(stmt);
+    }
+
 }
 
 static void save_time_bookmarks(void)
@@ -809,10 +870,7 @@ static void save_time_bookmarks(void)
     }
 
     logfile_sub_source &lss = lnav_data.ld_log_source;
-    std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
     bookmarks<content_line_t>::type &bm = lss.get_user_bookmarks();
-    bookmark_vector<content_line_t> &user_marks = bm[&textview_curses::BM_USER];
-    bookmark_vector<content_line_t>::iterator iter;
 
     if (sqlite3_prepare_v2(db.in(),
                            "DELETE FROM bookmarks WHERE "
@@ -891,44 +949,8 @@ static void save_time_bookmarks(void)
         }
     }
 
-    for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
-        std::map<content_line_t, bookmark_metadata>::iterator meta_iter;
-        logfile::iterator line_iter;
-        content_line_t cl = *iter;
-
-        meta_iter = bm_meta.find(cl);
-
-        marked_session_lines.push_back(cl);
-
-        bind_line(db.in(), stmt.in(), cl, lnav_data.ld_session_time);
-
-        if (meta_iter == bm_meta.end()) {
-            if (sqlite3_bind_text(stmt.in(), 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
-                fprintf(stderr, "error: could not bind log hash -- %s\n",
-                        sqlite3_errmsg(db.in()));
-                return;
-            }
-        }
-        else {
-            if (sqlite3_bind_text(stmt.in(), 5,
-                                  meta_iter->second.bm_name.c_str(),
-                                  meta_iter->second.bm_name.length(),
-                                  SQLITE_TRANSIENT) != SQLITE_OK) {
-                fprintf(stderr, "error: could not bind log hash -- %s\n",
-                        sqlite3_errmsg(db.in()));
-                return;
-            }
-        }
-
-        if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-            fprintf(stderr,
-                    "error: could not execute bookmark insert statement -- %s\n",
-                    sqlite3_errmsg(db));
-            return;
-        }
-
-        sqlite3_reset(stmt.in());
-    }
+    save_user_bookmarks(db.in(), stmt.in(), bm[&textview_curses::BM_USER]);
+    save_user_bookmarks(db.in(), stmt.in(), bm[&textview_curses::BM_PARTITION]);
 
     if (sqlite3_prepare_v2(db.in(),
                            "DELETE FROM time_offset WHERE "
@@ -938,7 +960,7 @@ static void save_time_bookmarks(void)
                            stmt.out(),
                            NULL) != SQLITE_OK) {
         fprintf(stderr,
-                "error: could not prepare bookmark replace statemnt -- %s\n",
+                "error: could not prepare time_offset delete statemnt -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1231,6 +1253,8 @@ void reset_session(void)
     textview_curses::highlight_map_t::iterator hl_iter = hmap.begin();
     logfile_sub_source &lss = lnav_data.ld_log_source;
 
+    log_info("reset session: time=%d", lnav_data.ld_session_time);
+
     save_session();
     scan_sessions();
 
@@ -1258,4 +1282,5 @@ void reset_session(void)
     }
 
     lss.get_user_bookmarks()[&textview_curses::BM_USER].clear();
+    lss.get_user_bookmarks()[&textview_curses::BM_PARTITION].clear();
 }

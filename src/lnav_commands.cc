@@ -900,7 +900,7 @@ static string com_partition_name(string cmdline, vector<string> &args)
     string retval = "error: expecting partition name";
 
     if (args.size() == 0) {
-        args.push_back("enabled-filter");
+        return "";
     }
     else if (args.size() > 1) {
         textview_curses &tc = lnav_data.ld_views[LNV_LOG];
@@ -909,21 +909,12 @@ static string com_partition_name(string cmdline, vector<string> &args)
 
         args[1] = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
 
-        bookmark_vector<vis_line_t> &bv = tc.get_bookmarks()[&textview_curses::BM_USER];
-        bookmark_vector<vis_line_t>::iterator iter;
+        tc.set_user_mark(&textview_curses::BM_PARTITION, tc.get_top(), true);
 
-        iter = lower_bound(bv.begin(), bv.end(), vis_line_t(tc.get_top() + 1));
-        if (iter == bv.begin()) {
-            retval = "error: no marks, press 'm' to mark the start of a partition";
-        }
-        else {
-            --iter;
+        bookmark_metadata &line_meta = bm[lss.at(tc.get_top())];
 
-            bookmark_metadata &line_meta = bm[lss.at(*iter)];
-
-            line_meta.bm_name = args[1];
-            retval = "info: name set for partition";
-        }
+        line_meta.bm_name = args[1];
+        retval = "info: name set for partition";
     }
 
     return retval;

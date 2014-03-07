@@ -143,6 +143,7 @@ public:
     typedef view_action<textview_curses> action;
 
     static bookmark_type_t BM_USER;
+    static bookmark_type_t BM_PARTITION;
     static bookmark_type_t BM_SEARCH;
 
     static string_attr_type SA_BODY;

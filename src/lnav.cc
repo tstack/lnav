@@ -178,6 +178,9 @@ public:
         search_hit = search_hit || (next != -1 && next <= end);
 
         next = bm[&textview_curses::BM_USER].next(vis_line_t(start));
+        if (next == -1) {
+            next = bm[&textview_curses::BM_PARTITION].next(vis_line_t(start));
+        }
         if (next != -1 && next <= end) {
             ch = search_hit ? ACS_PLUS : ACS_LTEE;
         }
@@ -1099,10 +1102,10 @@ void ensure_view(textview_curses *expected_tc)
     }
 }
 
-static bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
-                               vis_line_t),
-                           bookmark_type_t *bt,
-                           vis_line_t top)
+static vis_line_t next_cluster(
+    vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
+    bookmark_type_t *bt,
+    vis_line_t top)
 {
     textview_curses *tc = lnav_data.ld_view_stack.top();
     vis_bookmarks &bm = tc->get_bookmarks();
@@ -1112,8 +1115,7 @@ static bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
         int diff = top - last_top;
 
         if (diff > 1) {
-            tc->set_top(top);
-            return true;
+            return top;
         }
         else if (diff < -1) {
             last_top = top;
@@ -1122,13 +1124,29 @@ static bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
                     break;
                 last_top = top;
             }
-            tc->set_top(last_top);
-            return true;
+            return last_top;
         }
         last_top = top;
     }
 
-    flash();
+    return vis_line_t(-1);
+}
+
+static bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
+                               vis_line_t),
+                           bookmark_type_t *bt,
+                           vis_line_t top)
+{
+    textview_curses *tc = lnav_data.ld_view_stack.top();
+    vis_line_t new_top;
+
+    new_top = next_cluster(f, bt, top);
+    if (new_top != -1) {
+        tc->set_top(new_top);
+        return true;
+    }
+
+    alerter::singleton().chime();
 
     return false;
 }
@@ -1434,19 +1452,57 @@ static void handle_paging_key(int ch)
         }
         break;
 
-    case 'u':
-        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(c, "to copy marked lines to the clipboard; ")
-                                            HELP_MSG_1(C, "to clear marked lines"));
-        moveto_cluster(&bookmark_vector<vis_line_t>::next, 
-            &textview_curses::BM_USER,
-            tc->get_top());
-        break;
+    case 'u': {
+        vis_line_t user_top, part_top;
 
-    case 'U':
-        moveto_cluster(&bookmark_vector<vis_line_t>::prev, 
+        lnav_data.ld_rl_view->set_alt_value(
+            HELP_MSG_1(c, "to copy marked lines to the clipboard; ")
+            HELP_MSG_1(C, "to clear marked lines"));
+
+        user_top = next_cluster(&bookmark_vector<vis_line_t>::next, 
             &textview_curses::BM_USER,
             tc->get_top());
+        part_top = next_cluster(&bookmark_vector<vis_line_t>::next, 
+            &textview_curses::BM_PARTITION,
+            tc->get_top());
+        if (part_top == -1 && user_top == -1) {
+            alerter::singleton().chime();
+        }
+        else if (part_top == -1) {
+            tc->set_top(user_top);
+        }
+        else if (user_top == -1) {
+            tc->set_top(part_top);
+        }
+        else {
+            tc->set_top(min(user_top, part_top));
+        }
         break;
+    }
+
+    case 'U': {
+        vis_line_t user_top, part_top;
+
+        user_top = next_cluster(&bookmark_vector<vis_line_t>::prev, 
+            &textview_curses::BM_USER,
+            tc->get_top());
+        part_top = next_cluster(&bookmark_vector<vis_line_t>::prev, 
+            &textview_curses::BM_PARTITION,
+            tc->get_top());
+        if (part_top == -1 && user_top == -1) {
+            alerter::singleton().chime();
+        }
+        else if (part_top == -1) {
+            tc->set_top(user_top);
+        }
+        else if (user_top == -1) {
+            tc->set_top(part_top);
+        }
+        else {
+            tc->set_top(max(user_top, part_top));
+        }
+        break;
+    }
 
     case 'm':
         lnav_data.ld_last_user_mark[tc] = tc->get_top();
@@ -3819,7 +3875,7 @@ int main(int argc, char *argv[])
     log_install_handlers();
 
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarsCc:I:f:d:ntw:V")) != -1) {
+    while ((c = getopt(argc, argv, "hHarsCc:I:f:d:nSqtw:V")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -3879,6 +3935,14 @@ int main(int argc, char *argv[])
 
         case 'n':
             lnav_data.ld_flags |= LNF_HEADLESS;
+            break;
+
+        case 'S':
+            lnav_data.ld_flags |= LNF_LOAD_SESSION;
+            break;
+
+        case 'q':
+            lnav_data.ld_flags |= LNF_QUIET;
             break;
 
         case 'r':
@@ -4176,11 +4240,22 @@ int main(int argc, char *argv[])
                 lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
                 rebuild_indexes(true);
 
+                if (lnav_data.ld_flags & LNF_LOAD_SESSION) {
+                    init_session();
+                    scan_sessions();
+                    load_session();
+                    lnav_data.ld_views[LNV_LOG].reload_data();
+                }
+
                 lnav_data.ld_views[LNV_LOG].set_top(vis_line_t(0));
 
                 execute_init_commands(msgs);
                 if (rescan_files()) {
                     rebuild_indexes(true);
+                }
+
+                if (lnav_data.ld_flags & LNF_LOAD_SESSION) {
+                    save_session();
                 }
 
                 for (msg_iter = msgs.begin();
@@ -4195,6 +4270,7 @@ int main(int argc, char *argv[])
                 }
 
                 if (!found_error &&
+                    !(lnav_data.ld_flags & LNF_QUIET) &&
                     !lnav_data.ld_view_stack.empty() &&
                     !lnav_data.ld_stdout_used) {
                     bool suppress_empty_lines = false;

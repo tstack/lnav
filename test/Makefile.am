@@ -138,6 +138,7 @@ dist_noinst_SCRIPTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_sessions.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
 	test_sql_str_func.sh \
@@ -202,6 +203,7 @@ TESTS = \
 	test_hist_source \
 	test_json_format.sh \
 	test_pcrepp \
+	test_sessions.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
 	test_sql_fs_func.sh \

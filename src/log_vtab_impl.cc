@@ -253,7 +253,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     case VT_COL_PARTITION:
     {
         vis_bookmarks &vb = vt->tc->get_bookmarks();
-        bookmark_vector<vis_line_t> &bv = vb[&textview_curses::BM_USER];
+        bookmark_vector<vis_line_t> &bv = vb[&textview_curses::BM_PARTITION];
         bookmark_vector<vis_line_t>::iterator iter;
         vis_line_t prev_line;
         char part_name[64];

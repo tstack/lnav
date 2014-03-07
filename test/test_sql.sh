@@ -75,8 +75,8 @@ check_output "setting log_mark is not working" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
-export SQL_ENV_VALUE="foo bar,baz"
 
+export SQL_ENV_VALUE="foo bar,baz"
 
 run_test ${lnav_test} -n \
     -c ';select $SQL_ENV_VALUE as val' \
@@ -127,4 +127,19 @@ error: attempt to write a readonly database
 EOF
 
 check_output "errors are not reported" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":partition-name middle" \
+    -c ";select * from access_log" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "errors are not reported" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
+0,p.0,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,middle,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,middle,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
 EOF

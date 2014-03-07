@@ -41,6 +41,7 @@
 using namespace std;
 
 bookmark_type_t textview_curses::BM_USER;
+bookmark_type_t textview_curses::BM_PARTITION;
 bookmark_type_t textview_curses::BM_SEARCH;
 
 string_attr_type textview_curses::SA_BODY;
@@ -101,6 +102,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
                                              attr_line_t &value_out)
 {
     bookmark_vector<vis_line_t> &user_marks = this->tc_bookmarks[&BM_USER];
+    bookmark_vector<vis_line_t> &part_marks = this->tc_bookmarks[&BM_PARTITION];
     string_attrs_t &             sa         = value_out.get_attrs();
     string &                     str        = value_out.get_string();
     highlight_map_t::iterator    iter;
@@ -222,7 +224,8 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
     }
 #endif
 
-    if (binary_search(user_marks.begin(), user_marks.end(), row)) {
+    if (binary_search(user_marks.begin(), user_marks.end(), row) ||
+        binary_search(part_marks.begin(), part_marks.end(), row)) {
         struct line_range        lr(0);
         string_attrs_t::iterator iter;
 

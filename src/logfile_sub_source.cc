@@ -380,7 +380,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     value_out.push_back(string_attr(lr, &logline::L_FILE, this->lss_token_file));
 
     {
-        bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_USER];
+        bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_PARTITION];
         bookmark_vector<vis_line_t>::iterator bv_iter;
 
         bv_iter = lower_bound(bv.begin(), bv.end(), vis_line_t(row + 1));
