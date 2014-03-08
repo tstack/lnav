@@ -41,12 +41,28 @@ static bool check_re_prev(const string &line, int x)
 {
     bool retval = false;
 
-    if ((x > 0 && line[x - 1] != ')' && line[x - 1] != ']') &&
+    if ((x > 0 &&
+         line[x - 1] != ')' &&
+         line[x - 1] != ']' &&
+         line[x - 1] != '*' &&
+         line[x - 1] != '?' &&
+         line[x - 1] != '+') &&
         (x < 2 || line[x - 2] != '\\')) {
         retval = true;
     }
 
     return retval;
+}
+
+static bool is_bracket(const string &str, int index, bool is_lit)
+{
+    if (is_lit && str[index - 1] == '\\') {
+        return true;
+    }
+    if (!is_lit && str[index - 1] != '\\') {
+        return true;
+    }
+    return false;
 }
 
 static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
@@ -56,11 +72,12 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
     static int missing_bracket_attrs = (
         A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK));
 
+    bool is_lit = (left == 'Q');
     const string &line = al.get_string();
 
-    if (line[x] == right && line[x - 1] != '\\') {
+    if (line[x] == right && is_bracket(line, x, is_lit)) {
         for (int lpc = x; lpc > 0; lpc--) {
-            if (line[lpc] == left && line[lpc - 1] != '\\') {
+            if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 al.get_attrs().push_back(string_attr(
                     line_range(lpc, lpc + 1),
                     &view_curses::VC_STYLE,
@@ -70,9 +87,9 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
         }
     }
 
-    if (line[x] == left && line[x - 1] != '\\') {
+    if (line[x] == left && is_bracket(line, x, is_lit)) {
         for (int lpc = x; lpc < line.length(); lpc++) {
-            if (line[lpc] == right && line[lpc - 1] != '\\') {
+            if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
                 al.get_attrs().push_back(string_attr(
                     line_range(lpc, lpc + 1),
                     &view_curses::VC_STYLE,
@@ -85,17 +102,17 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
     int depth = 0, last_left = -1;
 
     for (int lpc = 1; lpc < line.length(); lpc++) {
-        if (line[lpc] == left && line[lpc - 1] != '\\') {
+        if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
             depth += 1;
             last_left = lpc;
         }
-        else if (line[lpc] == right && line[lpc - 1] != '\\') {
+        else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
             if (depth > 0) {
                 depth -= 1;
             }
             else {
                 al.get_attrs().push_back(string_attr(
-                    line_range(lpc, lpc + 1),
+                    line_range(is_lit ? lpc - 1 : lpc, lpc + 1),
                     &view_curses::VC_STYLE,
                     missing_bracket_attrs));
             }
@@ -104,10 +121,19 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
 
     if (depth > 0) {
         al.get_attrs().push_back(string_attr(
-            line_range(last_left, last_left + 1),
+            line_range(is_lit ? last_left - 1 : last_left, last_left + 1),
             &view_curses::VC_STYLE,
             missing_bracket_attrs));
     }
+}
+
+static char safe_read(const string &str, string::size_type index)
+{
+    if (index < str.length()) {
+        return str.at(index);
+    }
+
+    return 0;
 }
 
 void readline_regex_highlighter(attr_line_t &al, int x)
@@ -127,6 +153,7 @@ void readline_regex_highlighter(attr_line_t &al, int x)
         "[]",
         "{}",
         "()",
+        "QE",
 
         NULL
     };
@@ -205,14 +232,24 @@ void readline_regex_highlighter(attr_line_t &al, int x)
         }
         if (line[lpc - 1] == '\\') {
             switch (line[lpc]) {
-            case 'A':
-            case 'b':
-            case 'w':
-            case 'W':
-            case 's':
-            case 'S':
             case 'd':
             case 'D':
+            case 'h':
+            case 'H':
+            case 'N':
+            case 'R':
+            case 's':
+            case 'S':
+            case 'v':
+            case 'V':
+            case 'w':
+            case 'W':
+            case 'X':
+
+            case 'A':
+            case 'b':
+            case 'B':
+            case 'G':
             case 'Z':
             case 'z':
                 al.get_attrs().push_back(string_attr(
@@ -225,6 +262,35 @@ void readline_regex_highlighter(attr_line_t &al, int x)
                     line_range(lpc - 1, lpc + 1),
                     &view_curses::VC_STYLE,
                     error_attrs));
+                break;
+            case '0':
+            case 'x':
+                if (safe_read(line, lpc + 1) == '{') {
+                    al.with_attr(string_attr(
+                        line_range(lpc - 1, lpc + 1),
+                        &view_curses::VC_STYLE,
+                        special_char));
+                }
+                else if (isdigit(safe_read(line, lpc + 1)) &&
+                         isdigit(safe_read(line, lpc + 2))) {
+                    al.with_attr(string_attr(
+                        line_range(lpc - 1, lpc + 3),
+                        &view_curses::VC_STYLE,
+                        special_char));
+                }
+                else {
+                    al.with_attr(string_attr(
+                        line_range(lpc - 1, lpc + 1),
+                        &view_curses::VC_STYLE,
+                        error_attrs));
+                }
+                break;
+            case 'Q':
+            case 'E':
+                al.with_attr(string_attr(
+                    line_range(lpc - 1, lpc + 1),
+                    &view_curses::VC_STYLE,
+                    bracket_attrs));
                 break;
             default:
                 if (isdigit(line[lpc])) {
@@ -336,11 +402,8 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         pcre_context::capture_t *cap = pc.all();
         struct line_range lr(cap->c_begin, cap->c_end);
         string_attrs_t &sa = al.get_attrs();
-        string_attrs_t::iterator iter;
 
-        while ((iter = find_string_attr(sa, lr)) != sa.end()) {
-            sa.erase(iter);
-        }
+        remove_string_attr(sa, lr);
 
         if (line[cap->c_end - 1] != '\'') {
             sa.push_back(string_attr(

@@ -265,6 +265,15 @@ find_string_attr_range(const string_attrs_t &sa, string_attr_type_t type)
     return line_range();
 }
 
+inline void remove_string_attr(string_attrs_t &sa, const struct line_range &lr)
+{
+    string_attrs_t::iterator iter;
+
+    while ((iter = find_string_attr(sa, lr)) != sa.end()) {
+        sa.erase(iter);
+    }
+}
+
 /**
  * A line that has attributes.
  */
