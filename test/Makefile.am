@@ -19,6 +19,7 @@ check_PROGRAMS = \
 	drive_grep_proc \
 	drive_listview \
 	drive_logfile \
+	drive_mvwattrline \
 	drive_sequencer \
 	drive_sql \
 	drive_view_colors \
@@ -104,6 +105,9 @@ drive_data_scanner_LDADD = \
 	-lpcrecpp \
 	$(CURSES_LIB)
 
+drive_mvwattrline_SOURCES = drive_mvwattrline.cc
+drive_mvwattrline_LDADD = ../src/libdiag.a $(CURSES_LIB)
+
 drive_view_colors_SOURCES = drive_view_colors.cc
 drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
@@ -138,6 +142,7 @@ dist_noinst_SCRIPTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_mvwattrline.sh \
 	test_sessions.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
@@ -175,6 +180,7 @@ dist_noinst_DATA = \
 	logfile_syslog.1 \
 	logfile_tcsh_history.0 \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
+	mvwattrline_output.0 \
 	simple-db.sql \
 	view_colors_output.0 \
 	vt52_curses_input.0 \
@@ -198,6 +204,7 @@ TESTS = \
 	test_line_buffer2 \
 	test_line_buffer.sh \
 	test_listview.sh \
+	test_mvwattrline.sh \
 	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_hist_source \

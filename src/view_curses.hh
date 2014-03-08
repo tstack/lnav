@@ -283,15 +283,27 @@ public:
     /** @return The attributes for the string. */
     string_attrs_t &get_attrs() { return this->al_attrs; };
 
+    attr_line_t &with_string(const std::string &str) {
+        this->al_string = str;
+        return *this;
+    }
+
+    attr_line_t &with_attr(const string_attr &sa) {
+        this->al_attrs.push_back(sa);
+        return *this;
+    };
+
     size_t length() const { return this->al_string.length(); };
 
     void operator=(const std::string &rhs) { this->al_string = rhs; };
 
     /** Clear the string and the attributes for the string. */
-    void clear()
+    attr_line_t &clear()
     {
         this->al_string.clear();
         this->al_attrs.clear();
+
+        return *this;
     };
 
 private:

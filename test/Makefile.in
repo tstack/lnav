@@ -82,10 +82,10 @@ host_triplet = @host@
 check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 	drive_line_buffer$(EXEEXT) drive_grep_proc$(EXEEXT) \
 	drive_listview$(EXEEXT) drive_logfile$(EXEEXT) \
-	drive_sequencer$(EXEEXT) drive_sql$(EXEEXT) \
-	drive_view_colors$(EXEEXT) drive_vt52_curses$(EXEEXT) \
-	drive_readline_curses$(EXEEXT) slicer$(EXEEXT) \
-	scripty$(EXEEXT) test_ansi_scrubber$(EXEEXT) \
+	drive_mvwattrline$(EXEEXT) drive_sequencer$(EXEEXT) \
+	drive_sql$(EXEEXT) drive_view_colors$(EXEEXT) \
+	drive_vt52_curses$(EXEEXT) drive_readline_curses$(EXEEXT) \
+	slicer$(EXEEXT) scripty$(EXEEXT) test_ansi_scrubber$(EXEEXT) \
 	test_auto_fd$(EXEEXT) test_auto_mem$(EXEEXT) \
 	test_bookmarks$(EXEEXT) test_grep_proc2$(EXEEXT) \
 	test_hist_source$(EXEEXT) test_line_buffer2$(EXEEXT) \
@@ -94,11 +94,11 @@ check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) test_cmds.sh \
 	test_line_buffer2$(EXEEXT) test_line_buffer.sh \
-	test_listview.sh test_grep_proc.sh test_grep_proc2$(EXEEXT) \
-	test_hist_source$(EXEEXT) test_json_format.sh \
-	test_pcrepp$(EXEEXT) test_sessions.sh test_sql.sh \
-	test_sql_coll_func.sh test_sql_fs_func.sh test_sql_str_func.sh \
-	test_view_colors.sh test_vt52_curses.sh \
+	test_listview.sh test_mvwattrline.sh test_grep_proc.sh \
+	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
+	test_json_format.sh test_pcrepp$(EXEEXT) test_sessions.sh \
+	test_sql.sh test_sql_coll_func.sh test_sql_fs_func.sh \
+	test_sql_str_func.sh test_view_colors.sh test_vt52_curses.sh \
 	test_top_status$(EXEEXT) test_data_parser.sh \
 	test_yajlpp$(EXEEXT)
 subdir = test
@@ -137,6 +137,10 @@ am_drive_logfile_OBJECTS = drive_logfile.$(OBJEXT)
 drive_logfile_OBJECTS = $(am_drive_logfile_OBJECTS)
 drive_logfile_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_drive_mvwattrline_OBJECTS = drive_mvwattrline.$(OBJEXT)
+drive_mvwattrline_OBJECTS = $(am_drive_mvwattrline_OBJECTS)
+drive_mvwattrline_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1)
 am_drive_readline_curses_OBJECTS = drive_readline_curses.$(OBJEXT)
 drive_readline_curses_OBJECTS = $(am_drive_readline_curses_OBJECTS)
 drive_readline_curses_DEPENDENCIES = ../src/libdiag.a \
@@ -229,18 +233,7 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(drive_data_scanner_SOURCES) $(drive_grep_proc_SOURCES) \
 	$(drive_line_buffer_SOURCES) $(drive_listview_SOURCES) \
-	$(drive_logfile_SOURCES) $(drive_readline_curses_SOURCES) \
-	$(drive_sequencer_SOURCES) $(drive_sql_SOURCES) \
-	$(drive_view_colors_SOURCES) $(drive_vt52_curses_SOURCES) \
-	$(scripty_SOURCES) $(slicer_SOURCES) \
-	$(test_ansi_scrubber_SOURCES) $(test_auto_fd_SOURCES) \
-	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
-	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
-	$(test_line_buffer2_SOURCES) $(test_pcrepp_SOURCES) \
-	$(test_top_status_SOURCES) $(test_yajlpp_SOURCES)
-DIST_SOURCES = $(drive_data_scanner_SOURCES) \
-	$(drive_grep_proc_SOURCES) $(drive_line_buffer_SOURCES) \
-	$(drive_listview_SOURCES) $(drive_logfile_SOURCES) \
+	$(drive_logfile_SOURCES) $(drive_mvwattrline_SOURCES) \
 	$(drive_readline_curses_SOURCES) $(drive_sequencer_SOURCES) \
 	$(drive_sql_SOURCES) $(drive_view_colors_SOURCES) \
 	$(drive_vt52_curses_SOURCES) $(scripty_SOURCES) \
@@ -250,6 +243,18 @@ DIST_SOURCES = $(drive_data_scanner_SOURCES) \
 	$(test_hist_source_SOURCES) $(test_line_buffer2_SOURCES) \
 	$(test_pcrepp_SOURCES) $(test_top_status_SOURCES) \
 	$(test_yajlpp_SOURCES)
+DIST_SOURCES = $(drive_data_scanner_SOURCES) \
+	$(drive_grep_proc_SOURCES) $(drive_line_buffer_SOURCES) \
+	$(drive_listview_SOURCES) $(drive_logfile_SOURCES) \
+	$(drive_mvwattrline_SOURCES) $(drive_readline_curses_SOURCES) \
+	$(drive_sequencer_SOURCES) $(drive_sql_SOURCES) \
+	$(drive_view_colors_SOURCES) $(drive_vt52_curses_SOURCES) \
+	$(scripty_SOURCES) $(slicer_SOURCES) \
+	$(test_ansi_scrubber_SOURCES) $(test_auto_fd_SOURCES) \
+	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
+	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
+	$(test_line_buffer2_SOURCES) $(test_pcrepp_SOURCES) \
+	$(test_top_status_SOURCES) $(test_yajlpp_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -662,6 +667,8 @@ drive_data_scanner_LDADD = \
 	-lpcrecpp \
 	$(CURSES_LIB)
 
+drive_mvwattrline_SOURCES = drive_mvwattrline.cc
+drive_mvwattrline_LDADD = ../src/libdiag.a $(CURSES_LIB)
 drive_view_colors_SOURCES = drive_view_colors.cc
 drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB)
 drive_vt52_curses_SOURCES = drive_vt52_curses.cc
@@ -692,6 +699,7 @@ dist_noinst_SCRIPTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_mvwattrline.sh \
 	test_sessions.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
@@ -729,6 +737,7 @@ dist_noinst_DATA = \
 	logfile_syslog.1 \
 	logfile_tcsh_history.0 \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
+	mvwattrline_output.0 \
 	simple-db.sql \
 	view_colors_output.0 \
 	vt52_curses_input.0 \
@@ -813,6 +822,10 @@ drive_logfile$(EXEEXT): $(drive_logfile_OBJECTS) $(drive_logfile_DEPENDENCIES) $
 	@rm -f drive_logfile$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_logfile_OBJECTS) $(drive_logfile_LDADD) $(LIBS)
 
+drive_mvwattrline$(EXEEXT): $(drive_mvwattrline_OBJECTS) $(drive_mvwattrline_DEPENDENCIES) $(EXTRA_drive_mvwattrline_DEPENDENCIES) 
+	@rm -f drive_mvwattrline$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(drive_mvwattrline_OBJECTS) $(drive_mvwattrline_LDADD) $(LIBS)
+
 drive_readline_curses$(EXEEXT): $(drive_readline_curses_OBJECTS) $(drive_readline_curses_DEPENDENCIES) $(EXTRA_drive_readline_curses_DEPENDENCIES) 
 	@rm -f drive_readline_curses$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_readline_curses_OBJECTS) $(drive_readline_curses_LDADD) $(LIBS)
@@ -892,6 +905,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_line_buffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_listview.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_logfile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_mvwattrline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_sequencer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_sql.Po@am__quote@
@@ -1171,6 +1185,13 @@ test_line_buffer.sh.log: test_line_buffer.sh
 test_listview.sh.log: test_listview.sh
 	@p='test_listview.sh'; \
 	b='test_listview.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_mvwattrline.sh.log: test_mvwattrline.sh
+	@p='test_mvwattrline.sh'; \
+	b='test_mvwattrline.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
