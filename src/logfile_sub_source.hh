@@ -121,6 +121,18 @@ public:
         this->clear_line_size_cache();
     };
 
+    void set_time_offset(bool enabled) {
+        if (enabled)
+            this->lss_flags |= F_TIME_OFFSET;
+        else
+            this->lss_flags &= ~F_TIME_OFFSET;
+        this->clear_line_size_cache();
+    };
+
+    bool is_time_offset_enabled(void) const {
+        return this->lss_flags & F_TIME_OFFSET;
+    };
+
     size_t text_line_count()
     {
         return this->lss_index.size();

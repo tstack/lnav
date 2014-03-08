@@ -196,6 +196,7 @@ TESTS = \
 	test_bookmarks \
 	test_cmds.sh \
 	test_line_buffer2 \
+	test_line_buffer.sh \
 	test_listview.sh \
 	test_grep_proc.sh \
 	test_grep_proc2 \

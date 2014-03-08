@@ -671,6 +671,13 @@ static int read_save_time(yajlpp_parse_context *ypc, long long value)
     return 1;
 }
 
+static int read_time_offset(yajlpp_parse_context *ypc, int value)
+{
+    lnav_data.ld_log_source.set_time_offset(value);
+
+    return 1;
+}
+
 static int read_files(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     return 1;
@@ -744,6 +751,7 @@ static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, si
 
 static struct json_path_handler view_info_handlers[] = {
     json_path_handler("/save-time",               read_save_time),
+    json_path_handler("/time-offset",             read_time_offset),
     json_path_handler("/files#",                  read_files),
     json_path_handler("/views/([^/]+)/top_line",  read_top_line),
     json_path_handler("/views/([^/]+)/search",    read_last_search),
@@ -1159,6 +1167,9 @@ void save_session(void)
 
             root_map.gen("save-time");
             root_map.gen((long long)time(NULL));
+
+            root_map.gen("time-offset");
+            root_map.gen(lnav_data.ld_log_source.is_time_offset_enabled());
 
             root_map.gen("files");
 
