@@ -166,6 +166,10 @@ struct line_range {
         return this->contains(other.lr_start) && other.lr_end <= this->lr_end;
     };
 
+    bool intersects(const struct line_range &other) const {
+        return this->contains(other.lr_start) || this->contains(other.lr_end);
+    };
+
     bool operator<(const struct line_range &rhs) const
     {
         if (this->lr_start < rhs.lr_start) { return true; }

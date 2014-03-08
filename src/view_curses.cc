@@ -162,28 +162,44 @@ void view_curses::mvwattrline(WINDOW *window,
 
         attr_range.lr_start = max(0, attr_range.lr_start - lr.lr_start);
         if (attr_range.lr_end == -1) {
-            attr_range.lr_end = line_width;
-        }
-        else {
-            attr_range.lr_end = min((int)line_width,
-                                    attr_range.lr_end - lr.lr_start);
+            attr_range.lr_end = lr.lr_start + line_width;
         }
 
-        if (attr_range.lr_end > 0) {
+        attr_range.lr_end = min((int)line_width,
+            attr_range.lr_end - lr.lr_start);
+
+        if (attr_range.lr_end > attr_range.lr_start) {
             string_attrs_t::iterator range_iter;
             int awidth = attr_range.length();
+            int color_pair = -1;
 
             attrs = 0;
             for (range_iter = iter;
                  range_iter != sa.end() && range_iter->sa_range == iter->sa_range;
                  ++range_iter) {
                 if (range_iter->sa_type == &VC_STYLE) {
+                    if (color_pair <= 0) {
+                        color_pair = PAIR_NUMBER(range_iter->sa_value.sav_int);
+                    }
                     attrs |= range_iter->sa_value.sav_int;
                 }
             }
 
             if (attrs != 0) {
-                mvwchgat(window, y, x + attr_range.lr_start, awidth, attrs, PAIR_NUMBER(attrs), NULL);
+                int x_pos = x + attr_range.lr_start;
+                int ch_width = min(awidth, (line_width - attr_range.lr_start));
+                chtype row_ch[ch_width + 1];
+
+                mvwinchnstr(window, y, x_pos, row_ch, ch_width);
+                for (int lpc = 0; lpc < ch_width; lpc++) {
+                    if (color_pair > 0) {
+                        row_ch[lpc] &= ~A_COLOR;
+                        row_ch[lpc] |= (attrs & ~A_COLOR) | COLOR_PAIR(color_pair);
+                    } else {
+                        row_ch[lpc] |= (attrs);
+                    }
+                }
+                mvwaddchnstr(window, y, x_pos, row_ch, ch_width);
             }
             for (range_iter = iter;
                  range_iter != sa.end() && range_iter->sa_range == iter->sa_range;
