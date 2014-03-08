@@ -367,8 +367,9 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             struct line_range *existing_lr = (line_range *)&iter->sa_range;
 
             existing_lr->lr_start += time_offset_end;
-            if (existing_lr->lr_end != -1)
+            if (existing_lr->lr_end != -1) {
                 existing_lr->lr_end += time_offset_end;
+            }
         }
 
         attrs = vc.attrs_for_role(view_colors::VCR_OK);
@@ -413,8 +414,6 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             value_out, &logline::L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
-            time_range.lr_start += time_offset_end;
-            time_range.lr_end   += time_offset_end;
             attrs = vc.attrs_for_role(view_colors::VCR_ALT_ROW);
             value_out.push_back(string_attr(time_range, &view_curses::VC_STYLE, attrs));
         }
