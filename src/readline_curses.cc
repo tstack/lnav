@@ -283,10 +283,13 @@ readline_curses::readline_curses()
     : rc_active_context(-1),
       rc_child(-1),
       rc_value_expiration(0),
-      rc_matches_remaining(0)
+      rc_matches_remaining(0),
+      rc_max_match_length(0)
 {
     struct winsize ws;
     int            sp[2];
+
+    log_info("readline: %s", rl_library_version);
 
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
         throw error(errno);
@@ -650,8 +653,10 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
                 }
             }
             else if (msg[0] == 'm') {
-                sscanf(msg, "m:%d:%d", &this->rc_matches_remaining,
-                    &this->rc_max_match_length);
+                if (sscanf(msg, "m:%d:%d", &this->rc_matches_remaining,
+                           &this->rc_max_match_length) != 2) {
+                    require(0);
+                }
                 this->rc_matches.clear();
                 if (this->rc_matches_remaining == 0) {
                     this->rc_display_match.invoke(this);

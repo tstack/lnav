@@ -42,10 +42,10 @@ enum data_token_t {
     DT_URL,
     DT_PATH,
     DT_MAC_ADDRESS,
-    DT_HEX_DUMP,
     DT_DATE,
     DT_TIME,
     DT_IPV6_ADDRESS,
+    DT_HEX_DUMP,
     /* DT_QUALIFIED_NAME, */
 
     DT_COLON,

@@ -454,7 +454,6 @@ static void add_text_possibilities(int context, const std::string &str)
     data_token_t dt;
 
     while (ds.tokenize(pc, dt)) {
-
         if (pc[0]->length() < 4) {
             continue;
         }
@@ -2637,7 +2636,7 @@ static void rl_display_matches(void *dummy, readline_curses *rc)
     getmaxyx(lnav_data.ld_window, height, width);
 
     max_len = rc->get_max_match_length() + 2;
-    cols = width / max_len;
+    cols = max(1UL, width / max_len);
     rows = (matches.size() + cols - 1) / cols;
 
     match_height = min((unsigned long)rows, (height - 4) / 2);

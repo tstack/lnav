@@ -50,15 +50,14 @@ static struct {
     },
     { "mac",     pcrepp(
           "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F]){5})(?!:)"), },
-    { "hex",     pcrepp(
-          "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F])+)"), },
     { "date",
-                 pcrepp("\\A(\\d{4}/\\d{1,2}/\\d{1,2}|\\d{4}-\\d{1,2}-\\d{1,2})"), },
+                 pcrepp("\\A(\\d{4}/\\d{1,2}/\\d{1,2}|\\d{4}-\\d{1,2}-\\d{1,2})T?"), },
     { "time",    pcrepp(
-          "\\A(\\d?\\d:\\d\\d(:\\d\\d)?(:\\d\\d)?([,.]\\d{3,6})?)\\b"), },            /* XXX be more specific */
+          "\\A([\\s\\d]\\d:\\d\\d(?:(?!:\\d)|:\\d\\d(?:\\.\\d{3,6})?Z?))\\b"), },
     /* { "qual", pcrepp("\\A([^\\s:=]+:[^\\s:=,]+(?!,)(?::[^\\s:=,]+)*)"), }, */
-    { "ipv6",    pcrepp("\\A(::|[:\\da-fA-f\\.]+[a-fA-f\\d](?:%\\w+)?)"),
-    },
+    { "ipv6",    pcrepp("\\A(::|[:\\da-fA-f\\.]+[a-fA-f\\d](?:%\\w+)?)"), },
+    { "hexd",    pcrepp(
+          "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F])+)"), },
 
     { "coln",     pcrepp("\\A(:)"),
     },
@@ -211,6 +210,7 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
             size_t      str_start, str_end;
             bool        found = false;
 
+
             pi.pi_offset = pi.pi_next_offset;
             str_end      = str_start = pi.pi_offset + 1;
             switch (str[pi.pi_offset]) {
@@ -224,7 +224,7 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
                     found      = find_string_end(str,
                                                  str_end,
                                                  pi.pi_length,
-                                                 str[pi.pi_offset]);
+                                                 str[pi.pi_offset + 1]);
                 }
                 break;
 

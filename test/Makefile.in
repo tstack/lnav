@@ -718,6 +718,9 @@ dist_noinst_DATA = \
 	datafile_simple.5 \
 	datafile_simple.6 \
 	datafile_simple.7 \
+	datafile_simple.8 \
+	datafile_simple.9 \
+	datafile_simple.10 \
 	listview_output.0 \
 	listview_output.1 \
 	listview_output.2 \
