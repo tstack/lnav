@@ -337,7 +337,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
     static int error_attrs = (
         A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK));
 
-    static string keyword_re_str = sql_keyword_re();
+    static string keyword_re_str = sql_keyword_re() + "|\\.schema";
     static pcrepp keyword_pcre(keyword_re_str.c_str(), PCRE_CASELESS);
     static pcrepp string_literal_pcre("'[^']*('(?:'[^']*')*|$)");
     static pcrepp ident_pcre("(\\b[a-z_]\\w*)|\"([^\"]+)\"|\\[([^\\]]+)]", PCRE_CASELESS);
@@ -359,7 +359,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         int attrs = vc.attrs_for_ident(pi.get_substr_start(cap), cap->length());
         struct line_range lr(cap->c_begin, cap->c_end);
 
-        if (line[cap->c_end] == '(') {
+        if (line[cap->c_begin] == '.' || line[cap->c_end] == '(') {
 
         }
         else if (!lr.contains(x) && !lr.contains(x - 1)) {

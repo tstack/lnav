@@ -76,13 +76,14 @@ static const char *RL_INIT[] = {
      * up if it wraps around.
      */
     "set horizontal-scroll-mode on",
-    "set completion-prefix-display-length 3",
 
     NULL
 };
 
 readline_context *readline_context::loaded_context;
 set<string> *     readline_context::arg_possibilities;
+static string last_match_str;
+static bool last_match_str_valid;
 
 static void sigalrm(int sig)
 {
@@ -106,24 +107,80 @@ static void line_ready_tramp(char *line)
     rl_callback_handler_remove();
 }
 
-static int reliable_send(int sock, char *buf, size_t len)
+static int sendall(int sock, const char *buf, size_t len)
 {
-    int retval;
+    off_t offset = 0;
 
-    while ((retval = send(sock, buf, len, 0)) == -1) {
-        if (errno == ENOBUFS) {
-            fd_set ready_wfds;
+    while (len > 0) {
+        int rc = send(sock, &buf[offset], len, 0);
 
-            FD_ZERO(&ready_wfds);
-            FD_SET(sock, &ready_wfds);
-            select(sock + 1, NULL, &ready_wfds, NULL, NULL);
-        }
-        else if (errno == EINTR) {
-            continue;
+        if (rc == -1) {
+            switch (errno) {
+            case EAGAIN:
+            case EINTR:
+                break;
+            default:
+                return -1;
+            }
         }
         else {
-            break;
+            len -= rc;
+            offset += rc;
         }
+    }
+
+    return 0;
+}
+
+static int sendstring(int sock, const char *buf, size_t len)
+{
+    if (sendall(sock, (char *)&len, sizeof(len)) == -1) {
+        return -1;
+    }
+    else if (sendall(sock, buf, len) == -1) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int recvall(int sock, char *buf, size_t len)
+{
+    off_t offset = 0;
+
+    while (len > 0) {
+        int rc = recv(sock, &buf[offset], len, 0);
+
+        if (rc == -1) {
+            switch (errno) {
+            case EAGAIN:
+            case EINTR:
+                break;
+            default:
+                return -1;
+            }
+        }
+        else {
+            len -= rc;
+            offset += rc;
+        }
+    }
+
+    return 0;
+}
+
+static ssize_t recvstring(int sock, char *buf, size_t len)
+{
+    ssize_t retval;
+
+    if (recvall(sock, (char *)&retval, sizeof(retval)) == -1) {
+        return -1;
+    }
+    else if (retval > len) {
+        return -1;
+    }
+    else if (recvall(sock, buf, retval) == -1) {
+        return -1;
     }
 
     return retval;
@@ -153,6 +210,19 @@ char *readline_context::completion_generator(const char *text, int state)
                     matches.push_back(*iter);
                 }
             }
+        }
+    }
+
+    if (matches.size() == 1) {
+        if (strcmp(text, matches[0].c_str()) == 0) {
+            matches.pop_back();
+        }
+
+        last_match_str_valid = false;
+        if (sendstring(child_this->rc_command_pipe[readline_curses::RCF_SLAVE],
+                       "m:0:0",
+                       5) == -1) {
+            _exit(1);
         }
     }
 
@@ -212,12 +282,13 @@ char **readline_context::attempted_completion(const char *text,
 readline_curses::readline_curses()
     : rc_active_context(-1),
       rc_child(-1),
-      rc_value_expiration(0)
+      rc_value_expiration(0),
+      rc_matches_remaining(0)
 {
     struct winsize ws;
     int            sp[2];
 
-    if (socketpair(PF_UNIX, SOCK_DGRAM, 0, sp) < 0) {
+    if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
         throw error(errno);
     }
 
@@ -290,6 +361,35 @@ readline_curses::~readline_curses()
     }
 }
 
+void readline_curses::store_matches(
+    char **matches, int num_matches, int max_len)
+{
+    char msg[64];
+    int rc;
+
+    if (last_match_str_valid && strcmp(last_match_str.c_str(), matches[0]) == 0) {
+        if (sendstring(child_this->rc_command_pipe[RCF_SLAVE], "n", 1) == -1) {
+            _exit(1);
+        }
+    }
+    else {
+        rc = snprintf(msg, sizeof(msg), "m:%d:%d", num_matches, max_len);
+        if (sendstring(child_this->rc_command_pipe[RCF_SLAVE], msg, rc) == -1) {
+            _exit(1);
+        }
+        for (int lpc = 1; lpc <= num_matches; lpc++) {
+            if (sendstring(child_this->rc_command_pipe[RCF_SLAVE],
+                           matches[lpc],
+                           strlen(matches[lpc])) == -1) {
+                _exit(1);
+            }
+        }
+
+        last_match_str = matches[0];
+        last_match_str_valid = true;
+    }
+}
+
 void readline_curses::start(void)
 {
     if (this->rc_child != 0) {
@@ -303,6 +403,7 @@ void readline_curses::start(void)
     require(!this->rc_contexts.empty());
 
     rl_completer_word_break_characters = (char *)" \t\n"; /* XXX */
+    rl_completion_display_matches_hook = store_matches;
 
     current_context = this->rc_contexts.end();
 
@@ -348,9 +449,9 @@ void readline_curses::start(void)
             if (FD_ISSET(this->rc_command_pipe[RCF_SLAVE], &ready_rfds)) {
                 char msg[1024 + 1];
 
-                if ((rc = read(this->rc_command_pipe[RCF_SLAVE],
-                               msg,
-                               sizeof(msg) - 1)) < 0) {
+                if ((rc = recvstring(this->rc_command_pipe[RCF_SLAVE],
+                                     msg,
+                                     sizeof(msg) - 1)) < 0) {
                 }
                 else {
                     int  context, prompt_start = 0;
@@ -364,6 +465,7 @@ void readline_curses::start(void)
                         current_context->second->load();
                         rl_callback_handler_install(&msg[prompt_start],
                                                     line_ready_tramp);
+                        last_match_str_valid = false;
                     }
                     else if (strcmp(msg, "a") == 0) {
                         char reply[4];
@@ -375,11 +477,11 @@ void readline_curses::start(void)
 
                         snprintf(reply, sizeof(reply), "a");
 
-                        if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
-                                          reply,
-                                          strlen(reply)) == -1) {
+                        if (sendstring(this->rc_command_pipe[RCF_SLAVE],
+                                       reply,
+                                       strlen(reply)) == -1) {
                             perror("abort: write failed");
-                            exit(1);
+                            _exit(1);
                         }
                     }
                     else if (sscanf(msg,
@@ -419,10 +521,10 @@ void readline_curses::start(void)
 
             got_timeout = 0;
             snprintf(msg, sizeof(msg), "t:%s", rl_line_buffer);
-            if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
-                              msg,
-                              strlen(msg)) == -1) {
-                exit(1);
+            if (sendstring(this->rc_command_pipe[RCF_SLAVE],
+                           msg,
+                           strlen(msg)) == -1) {
+                _exit(1);
             }
         }
         if (got_line) {
@@ -469,7 +571,7 @@ void readline_curses::start(void)
         citer->second->save();
     }
 
-    exit(0);
+    _exit(0);
 }
 
 void readline_curses::line_ready(const char *line)
@@ -501,11 +603,11 @@ void readline_curses::line_ready(const char *line)
         break;
     }
 
-    if (reliable_send(this->rc_command_pipe[RCF_SLAVE],
-                      msg,
-                      strlen(msg)) == -1) {
+    if (sendstring(this->rc_command_pipe[RCF_SLAVE],
+                   msg,
+                   strlen(msg)) == -1) {
         perror("line_ready: write failed");
-        exit(1);
+        _exit(1);
     }
 
     {
@@ -535,32 +637,59 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
     if (FD_ISSET(this->rc_command_pipe[RCF_MASTER], &ready_rfds)) {
         char msg[1024 + 1];
 
-        rc = read(this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);
-        if (rc >= 1) {
+        rc = recvstring(this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);
+        if (rc >= 0) {
             string old_value = this->rc_value;
 
             msg[rc] = '\0';
-            this->rc_value = string(&msg[2]);
-            switch (msg[0]) {
-            case 'a':
-                this->rc_active_context = -1;
-                this->vc_past_lines.clear();
-                this->rc_abort.invoke(this);
-                curs_set(0);
-                break;
-
-            case 't':
-                if (this->rc_value != old_value) {
-                    this->rc_timeout.invoke(this);
+            if (this->rc_matches_remaining > 0) {
+                this->rc_matches.push_back(msg);
+                this->rc_matches_remaining -= 1;
+                if (this->rc_matches_remaining == 0) {
+                    this->rc_display_match.invoke(this);
                 }
-                break;
+            }
+            else if (msg[0] == 'm') {
+                sscanf(msg, "m:%d:%d", &this->rc_matches_remaining,
+                    &this->rc_max_match_length);
+                this->rc_matches.clear();
+                if (this->rc_matches_remaining == 0) {
+                    this->rc_display_match.invoke(this);
+                }
+            }
+            else {
+                this->rc_value = string(&msg[2]);
+                switch (msg[0]) {
+                case 'a':
+                    require(rc == 1);
 
-            case 'd':
-                this->rc_active_context = -1;
-                this->vc_past_lines.clear();
-                this->rc_perform.invoke(this);
-                curs_set(0);
-                break;
+                    this->rc_active_context = -1;
+                    this->vc_past_lines.clear();
+                    this->rc_matches.clear();
+                    this->rc_abort.invoke(this);
+                    this->rc_display_match.invoke(this);
+                    curs_set(0);
+                    break;
+
+                case 't':
+                    if (this->rc_value != old_value) {
+                        this->rc_timeout.invoke(this);
+                    }
+                    break;
+
+                case 'd':
+                    this->rc_active_context = -1;
+                    this->vc_past_lines.clear();
+                    this->rc_matches.clear();
+                    this->rc_perform.invoke(this);
+                    this->rc_display_match.invoke(this);
+                    curs_set(0);
+                    break;
+
+                case 'n':
+                    this->rc_display_next.invoke(this);
+                    break;
+                }
             }
         }
     }
@@ -589,9 +718,9 @@ void readline_curses::focus(int context, const char *prompt)
     this->rc_active_context = context;
 
     snprintf(buffer, sizeof(buffer), "f:%d:%s", context, prompt);
-    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
-                      buffer,
-                      strlen(buffer) + 1) == -1) {
+    if (sendstring(this->rc_command_pipe[RCF_MASTER],
+                   buffer,
+                   strlen(buffer) + 1) == -1) {
         perror("focus: write failed");
     }
     wmove(this->vc_window, this->get_actual_y(), 0);
@@ -603,9 +732,9 @@ void readline_curses::abort()
     char buffer[1024];
 
     snprintf(buffer, sizeof(buffer), "a");
-    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
-                      buffer,
-                      strlen(buffer) + 1) == -1) {
+    if (sendstring(this->rc_command_pipe[RCF_MASTER],
+                   buffer,
+                   strlen(buffer)) == -1) {
         perror("abort: write failed");
     }
 }
@@ -616,12 +745,16 @@ void readline_curses::add_possibility(int context,
 {
     char buffer[1024];
 
+    if (value.empty()) {
+        return;
+    }
+
     snprintf(buffer, sizeof(buffer),
              "ap:%d:%s:%s",
              context, type.c_str(), value.c_str());
-    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
-                      buffer,
-                      strlen(buffer) + 1) == -1) {
+    if (sendstring(this->rc_command_pipe[RCF_MASTER],
+                   buffer,
+                   strlen(buffer) + 1) == -1) {
         perror("add_possibility: write failed");
     }
 }
@@ -635,9 +768,9 @@ void readline_curses::rem_possibility(int context,
     snprintf(buffer, sizeof(buffer),
              "rp:%d:%s:%s",
              context, type.c_str(), value.c_str());
-    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
-                      buffer,
-                      strlen(buffer) + 1) == -1) {
+    if (sendstring(this->rc_command_pipe[RCF_MASTER],
+                   buffer,
+                   strlen(buffer) + 1) == -1) {
         perror("rem_possiblity: write failed");
     }
 }
@@ -649,9 +782,9 @@ void readline_curses::clear_possibilities(int context, string type)
     snprintf(buffer, sizeof(buffer),
              "cp:%d:%s",
              context, type.c_str());
-    if (reliable_send(this->rc_command_pipe[RCF_MASTER],
-                      buffer,
-                      strlen(buffer) + 1) == -1) {
+    if (sendstring(this->rc_command_pipe[RCF_MASTER],
+                   buffer,
+                   strlen(buffer) + 1) == -1) {
         perror("clear_possiblity: write failed");
     }
 }

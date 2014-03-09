@@ -52,6 +52,7 @@ listview_curses::listview_curses()
       lv_height(0),
       lv_needs_update(true),
       lv_show_scrollbar(true),
+      lv_show_bottom_border(false),
       lv_gutter_source(&DEFAULT_GUTTER_SOURCE),
       lv_word_wrap(false),
       lv_scroll_accel(0),
@@ -176,6 +177,7 @@ void listview_curses::do_update(void)
         }
 
         this->get_dimensions(height, width);
+
         wrap_width = width - (this->lv_word_wrap ? 1 : this->lv_show_scrollbar ? 1 : 0);
 
         row_count = this->get_inner_height();
@@ -232,9 +234,12 @@ void listview_curses::do_update(void)
             lines = y + min(height, vis_line_t(
                                 (int)(coverage * (double)height)));
 
-            for (int gutter_y = this->lv_y; gutter_y <= height; gutter_y++) {
-                int range_start = 0, range_end, ch;
+            for (int gutter_y = this->lv_y;
+                 gutter_y < (this->lv_y + height);
+                 gutter_y++) {
+                int range_start = 0, range_end;
                 int fg = COLOR_WHITE, bg = COLOR_BLACK, attrs;
+                chtype ch = ACS_VLINE;
 
                 if (row_count > 0) {
                     range_start = (double)(gutter_y - this->lv_y) * adjusted_height;
@@ -255,6 +260,11 @@ void listview_curses::do_update(void)
                 wattroff(this->lv_window, attrs);
             }
             wmove(this->lv_window, this->lv_y + height - 1, 0);
+        }
+
+        if (this->lv_show_bottom_border) {
+            mvwchgat(this->lv_window,
+                this->lv_y + height - 1, 0, width - 1, A_UNDERLINE, 0, NULL);
         }
 
         this->lv_needs_update = false;

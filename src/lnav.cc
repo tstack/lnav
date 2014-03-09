@@ -162,8 +162,8 @@ static const char *view_titles[LNV__MAX] = {
 
 class log_gutter_source : public list_gutter_source {
 public:
-    void listview_gutter_value_for_range(const listview_curses &lv, int start, int end,
-        int &ch, int &fg_out) {
+    void listview_gutter_value_for_range(
+        const listview_curses &lv, int start, int end, chtype &ch, int &fg_out) {
         textview_curses *tc = (textview_curses *)&lv;
         vis_bookmarks &bm = tc->get_bookmarks();
         vis_line_t next;
@@ -462,8 +462,9 @@ static void add_text_possibilities(int context, const std::string &str)
         switch (dt) {
         case DT_DATE:
         case DT_TIME:
+        case DT_WHITE:
             continue;
-            default:
+        default:
             break;
         }
 
@@ -867,6 +868,10 @@ public:
         if (start < text.length()) {
             this->tds_lines.push_back(text.substr(start));
         }
+    };
+
+    plain_text_source(const vector<string> &lines) {
+        this->tds_lines = lines;
     };
 
     size_t text_line_count()
@@ -2622,6 +2627,71 @@ static void rl_callback(void *dummy, readline_curses *rc)
     }
 }
 
+static void rl_display_matches(void *dummy, readline_curses *rc)
+{
+    const std::vector<std::string> &matches = rc->get_matches();
+    textview_curses &tc = lnav_data.ld_match_view;
+    unsigned long width, height;
+    int max_len, cols, rows, match_height, bottom_height;
+
+    getmaxyx(lnav_data.ld_window, height, width);
+
+    max_len = rc->get_max_match_length() + 2;
+    cols = width / max_len;
+    rows = (matches.size() + cols - 1) / cols;
+
+    match_height = min((unsigned long)rows, (height - 4) / 2);
+    bottom_height = match_height + 1 + rc->get_height();
+
+    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+        lnav_data.ld_views[lpc].set_height(vis_line_t(-bottom_height));
+    }
+    lnav_data.ld_status[LNS_BOTTOM].set_top(-bottom_height);
+
+    if (tc.get_sub_source() != NULL) {
+        delete tc.get_sub_source();
+    }
+
+    if (cols == 1) {
+        tc.set_sub_source(new plain_text_source(rc->get_matches()));
+    }
+    else {
+        std::vector<std::string> horiz_matches;
+
+        horiz_matches.resize(rows);
+        for (int lpc = 0; lpc < matches.size(); lpc++) {
+            int curr_row = lpc % rows;
+
+            horiz_matches[curr_row].append(matches[lpc]);
+            horiz_matches[curr_row].append(
+                max_len - matches[lpc].length(), ' ');
+        }
+        tc.set_sub_source(new plain_text_source(horiz_matches));
+    }
+
+    if (match_height > 0) {
+        tc.set_window(lnav_data.ld_window);
+        tc.set_y(height - bottom_height + 1);
+        tc.set_height(vis_line_t(match_height));
+        tc.reload_data();
+    }
+    else {
+        tc.set_window(NULL);
+    }
+}
+
+static void rl_display_next(void *dummy, readline_curses *rc)
+{
+    textview_curses &tc = lnav_data.ld_match_view;
+
+    if (tc.get_top() >= (tc.get_top_for_last_row() - 1)) {
+        tc.set_top(vis_line_t(0));
+    }
+    else {
+        tc.shift_top(tc.get_height());
+    }
+}
+
 static void usage(void)
 {
     const char *usage_msg =
@@ -3269,9 +3339,12 @@ static void looper(void)
         rlc.set_perform_action(readline_curses::action(rl_callback));
         rlc.set_timeout_action(readline_curses::action(rl_search));
         rlc.set_abort_action(readline_curses::action(rl_abort));
+        rlc.set_display_match_action(
+            readline_curses::action(rl_display_matches));
+        rlc.set_display_next_action(
+            readline_curses::action(rl_display_next));
         rlc.set_alt_value(HELP_MSG_2(
-                              e, E,
-                              "to move forward/backward through error messages"));
+            e, E, "to move forward/backward through error messages"));
 
         (void)curs_set(0);
 
@@ -3282,7 +3355,7 @@ static void looper(void)
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
             lnav_data.ld_views[lpc].set_y(1);
             lnav_data.ld_views[lpc].
-            set_height(vis_line_t(-(rlc.get_height() + 1 + 1)));
+            set_height(vis_line_t(-(rlc.get_height() + 1)));
             lnav_data.ld_views[lpc].
             set_scroll_action(sb.get_functor());
             lnav_data.ld_views[lpc].set_search_action(
@@ -3290,13 +3363,17 @@ static void looper(void)
         }
 
         lnav_data.ld_status[LNS_TOP].set_top(0);
+        lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
         for (lpc = 0; lpc < LNS__MAX; lpc++) {
             lnav_data.ld_status[lpc].set_window(lnav_data.ld_window);
         }
-        lnav_data.ld_status[LNS_TOP].
-        set_data_source(&lnav_data.ld_top_source);
-        lnav_data.ld_status[LNS_BOTTOM].
-        set_data_source(&lnav_data.ld_bottom_source);
+        lnav_data.ld_status[LNS_TOP].set_data_source(
+            &lnav_data.ld_top_source);
+        lnav_data.ld_status[LNS_BOTTOM].set_data_source(
+            &lnav_data.ld_bottom_source);
+
+        lnav_data.ld_match_view.set_show_bottom_border(true);
+
         sb.push_back(view_action<listview_curses>(update_times));
         sb.push_back(&lnav_data.ld_top_source.filename_wire);
         sb.push_back(&lnav_data.ld_bottom_source.line_number_wire);
@@ -3329,14 +3406,9 @@ static void looper(void)
                 rebuild_indexes(true);
             }
 
-            for (lpc = 0; lpc < LNV__MAX; lpc++) {
-                lnav_data.ld_views[lpc]
-                .set_height(vis_line_t(-(rlc.get_height() + 1)));
-            }
-            lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
-
-            lnav_data.ld_view_stack.top()->do_update();
             lnav_data.ld_status[LNS_TOP].do_update();
+            lnav_data.ld_view_stack.top()->do_update();
+            lnav_data.ld_match_view.do_update();
             lnav_data.ld_status[LNS_BOTTOM].do_update();
             rlc.do_update();
             refresh();
@@ -3712,9 +3784,11 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
           "\\bcatch\\b|"
           "\\bchar\\b|"
           "\\bclass\\b|"
+          "\\bcollate\\b|"
           "\\bconst\\b|"
           "\\bcontinue\\b|"
-          "\\bcreate |"
+          "\\bcreate\\s+(?:virtual)?|"
+          "\\bdatetime\\b|"
           "\\bdef |"
           "\\bdefault[:\\s]|"
           "\\bdo\\b|"
@@ -3735,6 +3809,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
           "\\bfi\\b|"
           "\\bfloat\\b|"
           "\\bfor\\b|"
+          "\\bforeign\\s+key\\b|"
           "\\bfrom |"
           "\\bgoto\\b|"
           "\\bgroup by |"
@@ -3743,6 +3818,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
           "\\bimplements\\b|"
           "\\bin\\b|"
           "\\binline\\b|"
+          "\\binner\\b|"
           "\\binsert |"
           "\\bint\\b|"
           "\\binto\\b|"
@@ -3759,10 +3835,12 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
           "\\bor\\b|"
           "\\border by |"
           "\\bpackage\\b|"
+          "\\bprimary\\s+key\\b|"
           "\\bprivate\\b|"
           "\\bprotected\\b|"
           "\\bpublic\\b|"
           "\\braise\\b|"
+          "\\breferences\\b|"
           "\\b(?<!@)return\\b|"
           "\\bselect |"
           "\\bself\\b|"
@@ -3786,6 +3864,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
           "\\bupdate |"
           "\\busing |"
           "\\bvar\\b|"
+          "\\bview\\b|"
           "\\bvoid\\b|"
           "\\bvolatile\\b|"
           "\\bwhere |"
@@ -4079,6 +4158,8 @@ int main(int argc, char *argv[])
     set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
     lnav_data.ld_db_overlay.dos_hist_source = &lnav_data.ld_db_source;
 
+    lnav_data.ld_match_view.set_left(0);
+
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
     }
@@ -4086,6 +4167,7 @@ int main(int argc, char *argv[])
     {
         setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
         setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
+        setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
     }
 
     {

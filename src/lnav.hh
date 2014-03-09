@@ -168,6 +168,8 @@ struct _lnav_data {
     time_t                                  ld_bottom_time;
     int                                     ld_bottom_time_millis;
 
+    textview_curses                         ld_match_view;
+
     std::stack<textview_curses *>           ld_view_stack;
     textview_curses                         ld_views[LNV__MAX];
     std::auto_ptr<grep_highlighter>         ld_search_child[LNV__MAX];

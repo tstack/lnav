@@ -80,8 +80,9 @@ public:
 
     };
 
-    virtual void listview_gutter_value_for_range(const listview_curses &lv, int start, int end,
-        int &ch_out, int &fg_out) {
+    virtual void listview_gutter_value_for_range(
+        const listview_curses &lv, int start, int end,
+        chtype &ch_out, int &fg_out) {
         ch_out = ACS_VLINE;
         fg_out = COLOR_WHITE;
     };
@@ -176,6 +177,9 @@ public:
 
     void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
     bool get_show_scrollbar() const { return this->lv_show_scrollbar; };
+
+    void set_show_bottom_border(bool val) { this->lv_show_bottom_border = val; };
+    bool get_show_bottom_border() const { return this->lv_show_bottom_border; };
 
     void set_word_wrap(bool ww) {
         bool scroll_down = this->lv_top >= this->get_top_for_last_row();
@@ -463,6 +467,7 @@ protected:
                                      *  is needed.
                                      */
     bool lv_show_scrollbar;         /*< Draw the scrollbar in the view. */
+    bool lv_show_bottom_border;
     list_gutter_source *lv_gutter_source;
     bool lv_word_wrap;
 

@@ -217,6 +217,8 @@ public:
     void set_perform_action(action va) { this->rc_perform = va; };
     void set_timeout_action(action va) { this->rc_timeout = va; };
     void set_abort_action(action va) { this->rc_abort = va; };
+    void set_display_match_action(action va) { this->rc_display_match = va; };
+    void set_display_next_action(action va) { this->rc_display_next = va; };
 
     void set_value(const std::string &value)
     {
@@ -284,6 +286,14 @@ public:
                          const std::string &value);
     void clear_possibilities(int context, std::string type);
 
+    const std::vector<std::string> &get_matches() const {
+        return this->rc_matches;
+    };
+
+    int get_max_match_length() const {
+        return this->rc_max_match_length;
+    };
+
 private:
     enum {
         RCF_MASTER,
@@ -291,6 +301,10 @@ private:
 
         RCF_MAX_VALUE,
     };
+
+    static void store_matches(char **matches, int num_matches, int max_len);
+
+    friend class readline_context;
 
     int     rc_active_context;
     pid_t   rc_child;
@@ -300,9 +314,14 @@ private:
     std::string rc_value;
     time_t      rc_value_expiration;
     std::string rc_alt_value;
+    int rc_matches_remaining;
+    int rc_max_match_length;
+    std::vector<std::string> rc_matches;
 
     action rc_perform;
     action rc_timeout;
     action rc_abort;
+    action rc_display_match;
+    action rc_display_next;
 };
 #endif
