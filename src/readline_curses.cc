@@ -211,18 +211,18 @@ char *readline_context::completion_generator(const char *text, int state)
                 }
             }
         }
-    }
 
-    if (matches.size() == 1) {
-        if (strcmp(text, matches[0].c_str()) == 0) {
-            matches.pop_back();
-        }
+        if (matches.size() == 1) {
+            if (strcmp(text, matches[0].c_str()) == 0) {
+                matches.pop_back();
+            }
 
-        last_match_str_valid = false;
-        if (sendstring(child_this->rc_command_pipe[readline_curses::RCF_SLAVE],
-                       "m:0:0",
-                       5) == -1) {
-            _exit(1);
+            last_match_str_valid = false;
+            if (sendstring(child_this->rc_command_pipe[readline_curses::RCF_SLAVE],
+                           "m:0:0",
+                           5) == -1) {
+                _exit(1);
+            }
         }
     }
 

@@ -3953,6 +3953,8 @@ int main(int argc, char *argv[])
 
     setlocale(LC_NUMERIC, "");
 
+    rl_readline_name = "lnav";
+
     ensure_dotlnav();
 
     log_install_handlers();

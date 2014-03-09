@@ -34,6 +34,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +47,8 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <termcap.h>
+
+#include <readline/readline.h>
 
 #include "lnav_log.hh"
 
@@ -119,6 +122,8 @@ void log_host_info(void)
     log_info("  machine=%s", un.machine);
     log_info("  release=%s", un.release);
     log_info("  version=%s", un.version);
+    log_info("Libraries:");
+    log_info("  readline=%s", rl_library_version);
     log_info("Environment:");
     log_info("  TERM=%s", getenv("TERM"));
 }

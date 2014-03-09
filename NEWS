@@ -39,6 +39,9 @@ lnav v0.6.3:
      * Partition bookmarks are now tracked separately from regular user
        bookmarks.  You can start a partition with the 'partition-name'
        command and remove it with the 'clear-partition' command.
+     * Improved display of possible matches during tab-completion in the
+       command-prompt.  The matches are now shown in a separate view and
+       pressing tab repeatedly will scroll through the view.
 
 lnav v0.6.2:
      Features:
