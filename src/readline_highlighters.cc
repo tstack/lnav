@@ -159,6 +159,7 @@ void readline_regex_highlighter(attr_line_t &al, int x)
     };
 
     string &line = al.get_string();
+    bool backslash_is_quoted = false;
 
     for (int lpc = 1; lpc < line.length(); lpc++) {
         if (line[lpc - 1] != '\\') {
@@ -231,7 +232,18 @@ void readline_regex_highlighter(attr_line_t &al, int x)
             }
         }
         if (line[lpc - 1] == '\\') {
+            if (backslash_is_quoted) {
+                backslash_is_quoted = false;
+                continue;
+            }
             switch (line[lpc]) {
+            case '\\':
+                backslash_is_quoted = true;
+                al.with_attr(string_attr(
+                    line_range(lpc - 1, lpc + 1),
+                    &view_curses::VC_STYLE,
+                    special_char));
+                break;
             case 'd':
             case 'D':
             case 'h':
@@ -359,7 +371,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         int attrs = vc.attrs_for_ident(pi.get_substr_start(cap), cap->length());
         struct line_range lr(cap->c_begin, cap->c_end);
 
-        if (line[cap->c_begin] == '.' || line[cap->c_end] == '(') {
+        if (line[cap->c_end] == '(') {
 
         }
         else if (!lr.contains(x) && !lr.contains(x - 1)) {
