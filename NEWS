@@ -1,5 +1,5 @@
 
-lnav v0.6.3:
+lnav v0.7.0:
      Features:
      * Add the '.schema' SQL command to open a view that displays the schema
        for the internal tables and any attached databases.  If lnav was only
