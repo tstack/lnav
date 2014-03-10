@@ -207,7 +207,7 @@ public:
 
     const char *get_string() const { return this->pi_string; };
 
-    const char *get_substr_start(const pcre_context::iterator iter) const
+    const char *get_substr_start(pcre_context::const_iterator iter) const
     {
         return &this->pi_string[iter->c_begin];
     };
@@ -220,6 +220,11 @@ public:
         return std::string(&this->pi_string[iter->c_begin],
                            0,
                            iter->length());
+    };
+
+    void get_substr(pcre_context::const_iterator iter, char *dst) const {
+        memcpy(dst, &this->pi_string[iter->c_begin], iter->length());
+        dst[iter->length()] = '\0';
     };
 
     void reset(const char *str, size_t off = 0, size_t len = -1)

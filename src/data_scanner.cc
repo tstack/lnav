@@ -301,19 +301,21 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
             if (MATCHERS[lpc].pcre.match(pc, this->ds_pcre_input,
                                          PCRE_ANCHORED)) {
                 switch (lpc) {
-                case DT_IPV6_ADDRESS: {
-                    std::string addr =
-                        this->ds_pcre_input.get_substr(pc.all());
-                    char buf[sizeof(struct in6_addr)];
+                case DT_IPV6_ADDRESS:
+                    if (pc.all()->length() <= INET6_ADDRSTRLEN) {
+                        char in6str[INET6_ADDRSTRLEN];
+                        char buf[sizeof(struct in6_addr)];
 
-                    if (inet_pton(AF_INET6, addr.c_str(), buf) == 1) {
-                        token_out = data_token_t(lpc);
-                        return true;
+                        this->ds_pcre_input.get_substr(pc.all(), in6str);
+
+                        if (inet_pton(AF_INET6, in6str, buf) == 1) {
+                            token_out = data_token_t(lpc);
+                            return true;
+                        }
+                        this->ds_pcre_input.pi_next_offset =
+                            this->ds_pcre_input.pi_offset;
                     }
-                    this->ds_pcre_input.pi_next_offset =
-                        this->ds_pcre_input.pi_offset;
                     break;
-                }
 
                 default:
                     token_out = data_token_t(lpc);

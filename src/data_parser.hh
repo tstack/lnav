@@ -590,13 +590,13 @@ private:
                 continue;
             }
 
-            std::string key_val =
-                this->get_element_string(el_stack.front());
             element_list_t ELEMENT_LIST_T(pair_subs);
 
-
             if (schema != NULL) {
-                context.Update(key_val.c_str(), key_val.length());
+                size_t key_len;
+                const char *key_val =
+                    this->get_element_string(el_stack.front(), key_len);
+                context.Update(key_val, key_len);
             }
 
             while (!free_row.empty()) {
@@ -709,10 +709,11 @@ private:
                 break;
 
                 default: {
-                    std::string key_val = this->get_element_string(
-                        free_row.front());
+                    size_t key_len;
+                    const char *key_val = this->get_element_string(
+                        free_row.front(), key_len);
 
-                    context.Update(key_val.c_str(), key_val.length());
+                    context.Update(key_val, key_len);
                 }
                 break;
                 }
@@ -868,6 +869,13 @@ private:
         pcre_input &pi = this->dp_scanner->get_input();
 
         return pi.get_substr(&elem.e_capture);
+    };
+
+    const char *get_element_string(const element &elem, size_t &len_out) {
+        pcre_input &pi = this->dp_scanner->get_input();
+
+        len_out = elem.e_capture.length();
+        return pi.get_substr_start(&elem.e_capture);
     };
 
     void print(FILE *out, element_list_t &el)
