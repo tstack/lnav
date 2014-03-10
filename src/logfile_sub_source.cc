@@ -151,7 +151,7 @@ logfile *logfile_sub_source::find(const char *fn,
 
 vis_line_t logfile_sub_source::find_from_time(const struct timeval &start)
 {
-    vector<content_line_t>::iterator lb;
+    vector<indexed_content>::iterator lb;
     vis_line_t retval(-1);
 
     lb = lower_bound(this->lss_index.begin(),
@@ -175,7 +175,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     require(row >= 0);
     require((size_t)row < this->lss_index.size());
 
-    line = this->lss_index[row];
+    line = this->at(vis_line_t(row));
     this->lss_token_file   = this->find(line);
     this->lss_token_line   = this->lss_token_file->begin() + line;
     this->lss_token_offset = 0;
@@ -331,7 +331,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     }
 
     if ((row + 1) < (int)this->lss_index.size()) {
-        next_line = this->find_line(this->lss_index[row + 1]);
+        next_line = this->find_line(this->at(vis_line_t(row + 1)));
     }
 
     if (next_line != NULL &&
@@ -586,7 +586,7 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
     }
 
     for (; vl < (int)this->lss_index.size(); ++vl) {
-        const content_line_t orig_cl = this->lss_index[vl];
+        const content_line_t orig_cl = this->at(vl);
         content_line_t cl = orig_cl;
         logfile *      lf;
 

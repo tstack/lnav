@@ -160,6 +160,10 @@ static int recvall(int sock, char *buf, size_t len)
                 return -1;
             }
         }
+        else if (rc == 0) {
+            errno = EIO;
+            return -1;
+        }
         else {
             len -= rc;
             offset += rc;

@@ -46,7 +46,7 @@
 #include "bookmarks.hh"
 #include "textview_curses.hh"
 
-STRONG_INT_TYPE(int, content_line);
+STRONG_INT_TYPE(uint64_t, content_line);
 
 /**
  * Delegate class that merges the contents of multiple log files into a single
@@ -164,7 +164,7 @@ public:
 
     void text_mark(bookmark_type_t *bm, int line, bool added)
     {
-        content_line_t cl = this->lss_index[line];
+        content_line_t cl = this->at(vis_line_t(line));
         std::vector<content_line_t>::iterator lb;
 
         if (bm == &textview_curses::BM_USER) {
@@ -314,7 +314,9 @@ public:
         return this->find_from_time(tv);
     };
 
-    content_line_t at(vis_line_t vl) { return this->lss_index[vl]; };
+    content_line_t at(vis_line_t vl) {
+        return this->lss_index[vl];
+    };
 
     content_line_t at_base(vis_line_t vl) {
         while (this->find_line(this->at(vl))->get_sub_offset() != 0) {
@@ -378,8 +380,10 @@ public:
         return content_line_t(index * MAX_LINES_PER_FILE);
     };
 
-    static const size_t MAX_LINES_PER_FILE = 4 * 1024 * 1024;
-    static const size_t MAX_FILES          = INT_MAX / MAX_LINES_PER_FILE;
+    static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
+    static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
+    static const uint64_t MAX_FILES          = (
+        MAX_CONTENT_LINES / MAX_LINES_PER_FILE);
 
 private:
     static const size_t LINE_SIZE_CACHE_SIZE = 512;
@@ -394,6 +398,18 @@ private:
         F_TIME_OFFSET = (1L << B_TIME_OFFSET),
     };
 
+    struct __attribute__((__packed__)) indexed_content {
+        indexed_content(content_line_t cl) : ic_value(cl) {
+
+        };
+
+        operator content_line_t () {
+            return content_line_t(this->ic_value);
+        };
+
+        uint64_t ic_value : 40;
+    };
+
     struct logline_cmp {
         logline_cmp(logfile_sub_source & lc)
             : llss_controller(lc) { };
@@ -404,6 +420,15 @@ private:
 
             return (*ll_lhs) < (*ll_rhs);
         };
+#if 0
+        bool operator()(const indexed_content &lhs, const indexed_content &rhs)
+        {
+            logline *ll_lhs = this->llss_controller.find_line(lhs.ic_value);
+            logline *ll_rhs = this->llss_controller.find_line(rhs.ic_value);
+
+            return (*ll_lhs) < (*ll_rhs);
+        };
+#endif
         bool operator()(const content_line_t &lhs, const time_t &rhs)
         {
             logline *ll_lhs = this->llss_controller.find_line(lhs);
@@ -446,7 +471,7 @@ private:
     uint8_t        lss_filter_generation;
     int            lss_filtered_count;
 
-    std::vector<content_line_t> lss_index;
+    std::vector<indexed_content> lss_index;
 
     bookmarks<content_line_t>::type lss_user_marks;
     std::map<content_line_t, bookmark_metadata> lss_user_mark_metadata;

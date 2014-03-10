@@ -3268,7 +3268,8 @@ static void handle_key(int ch)
 
 void update_hits(void *dummy, textview_curses *tc)
 {
-    if (lnav_data.ld_looping && tc == lnav_data.ld_view_stack.top()) {
+    if (!lnav_data.ld_view_stack.empty() &&
+        tc == lnav_data.ld_view_stack.top()) {
         lnav_data.ld_bottom_source.update_hits(tc);
     }
 }
