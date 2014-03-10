@@ -96,5 +96,5 @@ private:
  */
 #define STRONG_INT_TYPE(T, name)   \
     class __ ## name ## _distinct; \
-    typedef strong_int<int, __ ## name ## _distinct> name ## _t
+    typedef strong_int<T, __ ## name ## _distinct> name ## _t
 #endif
