@@ -673,6 +673,7 @@ public:
         : elf_file_pattern(".*"),
           elf_filename_pcre(NULL),
           elf_column_count(0),
+          elf_timestamp_divisor(1.0),
           elf_body_field("body"),
           jlf_json(false),
           jlf_cached_offset(-1),
@@ -748,6 +749,7 @@ public:
     std::vector<sample> elf_samples;
     std::map<std::string, value_def> elf_value_defs;
     int elf_column_count;
+    double elf_timestamp_divisor;
     std::string elf_level_field;
     int elf_level_field_index;
     std::string elf_body_field;
@@ -756,7 +758,7 @@ public:
 
     enum json_log_field {
         JLF_CONSTANT,
-        JLF_VARIABLE,
+        JLF_VARIABLE
     };
 
     struct json_format_element {

@@ -91,6 +91,42 @@ static int read_format_bool(yajlpp_parse_context *ypc, int val)
     return 1;
 }
 
+static int read_format_double(yajlpp_parse_context *ypc, double val)
+{
+    external_log_format *elf = ensure_format(ypc);
+    string field_name = ypc->get_path_fragment(1);
+
+    if (field_name == "timestamp-divisor") {
+        if (val <= 0) {
+            fprintf(stderr, "error:%s: timestamp-divisor cannot be less "
+                "than or equal to zero\n",
+                ypc->get_path_fragment(0).c_str());
+            return 0;
+        }
+        elf->elf_timestamp_divisor = val;
+    }
+
+    return 1;
+}
+
+static int read_format_int(yajlpp_parse_context *ypc, long long val)
+{
+    external_log_format *elf = ensure_format(ypc);
+    string field_name = ypc->get_path_fragment(1);
+
+    if (field_name == "timestamp-divisor") {
+        if (val <= 0) {
+            fprintf(stderr, "error:%s: timestamp-divisor cannot be less "
+                "than or equal to zero\n",
+                ypc->get_path_fragment(0).c_str());
+            return 0;
+        }
+        elf->elf_timestamp_divisor = val;
+    }
+
+    return 1;
+}
+
 static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     external_log_format *elf = ensure_format(ypc);
@@ -326,6 +362,8 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
 static struct json_path_handler format_handlers[] = {
     json_path_handler("^/\\w+/regex/[^/]+/pattern$", read_format_regex),
     json_path_handler("^/\\w+/(json|convert-to-local-time)$", read_format_bool),
+    json_path_handler("^/\\w+/timestamp-divisor$", read_format_double)
+        .add_cb(read_format_int),
     json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|body-field|url|title|description)$",
                       read_format_field),
     json_path_handler("^/\\w+/level/"

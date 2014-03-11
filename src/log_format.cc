@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -332,9 +333,17 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
         jlu->jlu_format->jlf_line_format;
     string field_name = ypc->get_path_fragment(0);
 
-    if (find_if(line_format.begin(), line_format.end(),
-                json_field_cmp(external_log_format::JLF_VARIABLE,
-                               field_name)) == line_format.end()) {
+    if (field_name == jlu->jlu_format->lf_timestamp_field) {
+        long long divisor = jlu->jlu_format->elf_timestamp_divisor;
+        struct timeval tv;
+
+        tv.tv_sec = val / divisor;
+        tv.tv_usec = (val % divisor) * (1000000.0 / divisor);
+        jlu->jlu_base_line->set_time(tv);
+    }
+    else if (find_if(line_format.begin(), line_format.end(),
+                     json_field_cmp(external_log_format::JLF_VARIABLE,
+                         field_name)) == line_format.end()) {
         jlu->jlu_sub_line_count += 1;
     }
 
@@ -348,9 +357,17 @@ static int read_json_double(yajlpp_parse_context *ypc, double val)
         jlu->jlu_format->jlf_line_format;
     string field_name = ypc->get_path_fragment(0);
 
-    if (find_if(line_format.begin(), line_format.end(),
-                json_field_cmp(external_log_format::JLF_VARIABLE,
-                               field_name)) == line_format.end()) {
+    if (field_name == jlu->jlu_format->lf_timestamp_field) {
+        double divisor = jlu->jlu_format->elf_timestamp_divisor;
+        struct timeval tv;
+
+        tv.tv_sec = val / divisor;
+        tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
+        jlu->jlu_base_line->set_time(tv);
+    }
+    else if (find_if(line_format.begin(), line_format.end(),
+                     json_field_cmp(external_log_format::JLF_VARIABLE,
+                         field_name)) == line_format.end()) {
         jlu->jlu_sub_line_count += 1;
     }
 
@@ -515,8 +532,10 @@ bool external_log_format::scan(std::vector<logline> &dst,
         }
 
         if (this->lf_fmt_lock == -1) {
-            this->lf_timestamp_field_index = pat->name_index(this->lf_timestamp_field);
-            this->elf_level_field_index = pat->name_index(this->elf_level_field);
+            this->lf_timestamp_field_index = pat->name_index(
+                this->lf_timestamp_field);
+            this->elf_level_field_index = pat->name_index(
+                this->elf_level_field);
         }
 
         pcre_context::capture_t *ts = pc[this->lf_timestamp_field_index];
@@ -807,6 +826,17 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
                         used_values[distance(this->jlf_line_values.begin(),
                                              lv_iter)] = true;
                     }
+                    else if (iter->jfe_value == "__timestamp__") {
+                        struct line_range lr;
+                        char ts[64];
+
+                        sql_strftime(ts, sizeof(ts), ll.get_timeval(), 'T');
+                        lr.lr_start = lines.tellp();
+                        lines << ts;
+                        lr.lr_end = lines.tellp();
+                        this->jlf_line_attrs.push_back(
+                            string_attr(lr, &logline::L_TIMESTAMP));
+                    }
                     else {
                         lines << iter->jfe_default_value;
                     }
@@ -818,6 +848,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
                 logline_value &lv = this->jlf_line_values[lpc];
 
                 if (used_values[lpc] ||
+                    lv.lv_name == this->lf_timestamp_field ||
                     lv.lv_name == "body" ||
                     lv.lv_name == this->elf_level_field) {
                     continue;
