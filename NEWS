@@ -20,6 +20,8 @@ lnav v0.7.0:
        not a log message is bookmarked.  The field is writable, so you can
        bookmark lines using an SQL UPDATE query.
      * Added syntax-highlighting when editing SQL queries or search regexes.
+     * Added a "write-json-to" command that writes the result of a SQL query
+       to a JSON-formatted file.
 
      Fixes:
      * Performance improvements.

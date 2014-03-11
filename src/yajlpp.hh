@@ -244,6 +244,11 @@ public:
         yajl_gen_bool(this->yg_handle, value);
     };
 
+    void operator()()
+    {
+        yajl_gen_null(this->yg_handle);
+    };
+
 private:
     yajl_gen yg_handle;
 };

@@ -246,6 +246,39 @@ static void csv_write_string(FILE *outfile, const string &str)
     }
 }
 
+static void yajl_writer(void *context, const char *str, size_t len)
+{
+    FILE *file = (FILE *)context;
+
+    fwrite(str, len, 1, file);
+}
+
+static void json_write_row(yajl_gen handle, int row)
+{
+    db_label_source &dls = lnav_data.ld_db_rows;
+    yajlpp_map obj_map(handle);
+
+    for (int col = 0; col < dls.dls_column_types.size(); col++) {
+        obj_map.gen(dls.dls_headers[col]);
+
+        if (dls.dls_rows[row][col] == db_label_source::NULL_STR) {
+            obj_map.gen();
+            continue;
+        }
+
+        switch (dls.dls_column_types[col]) {
+        case SQLITE_FLOAT:
+        case SQLITE_INTEGER:
+            yajl_gen_number(handle, dls.dls_rows[row][col],
+                strlen(dls.dls_rows[row][col]));
+            break;
+        default:
+            obj_map.gen(dls.dls_rows[row][col]);
+            break;
+        }
+    }
+}
+
 static string com_save_to(string cmdline, vector<string> &args)
 {
     FILE *      outfile = NULL;
@@ -290,7 +323,7 @@ static string com_save_to(string cmdline, vector<string> &args)
     if (args[0] == "append-to") {
         mode = "a";
     }
-    else if (args[0] == "write-to" || args[0] == "write-csv-to") {
+    else {
         mode = "w";
     }
 
@@ -300,7 +333,7 @@ static string com_save_to(string cmdline, vector<string> &args)
         tc->get_bookmarks()[&textview_curses::BM_USER];
     db_label_source &dls = lnav_data.ld_db_rows;
 
-    if (args[0] == "write-csv-to") {
+    if (args[0] == "write-csv-to" || args[0] == "write-json-to") {
         if (dls.dls_headers.empty()) {
             return "error: no query result to write, use ';' to execute a query";
         }
@@ -323,17 +356,18 @@ static string com_save_to(string cmdline, vector<string> &args)
     }
 
     if (args[0] == "write-csv-to") {
-        std::vector<std::vector<string> >::iterator row_iter;
-        std::vector<string>::iterator iter;
+        std::vector<std::vector<const char *> >::iterator row_iter;
+        std::vector<const char *>::iterator iter;
+        std::vector<string>::iterator hdr_iter;
         bool first = true;
 
-        for (iter = dls.dls_headers.begin();
-             iter != dls.dls_headers.end();
-             ++iter) {
+        for (hdr_iter = dls.dls_headers.begin();
+             hdr_iter != dls.dls_headers.end();
+             ++hdr_iter) {
             if (!first) {
                 fprintf(outfile, ",");
             }
-            csv_write_string(outfile, *iter);
+            csv_write_string(outfile, *hdr_iter);
             first = false;
         }
         fprintf(outfile, "\n");
@@ -352,6 +386,26 @@ static string com_save_to(string cmdline, vector<string> &args)
                 first = false;
             }
             fprintf(outfile, "\n");
+        }
+    }
+    else if (args[0] == "write-json-to") {
+        yajl_gen handle = NULL;
+
+        if ((handle = yajl_gen_alloc(NULL)) == NULL) {
+            return "error: unable to allocate memory";
+        }
+        else {
+            yajl_gen_config(handle, yajl_gen_beautify, 1);
+            yajl_gen_config(handle,
+                yajl_gen_print_callback, yajl_writer, outfile);
+
+            {
+                yajlpp_array root_array(handle);
+
+                for (int row = 0; row < dls.dls_rows.size(); row++) {
+                    json_write_row(handle, row);
+                }
+            }
         }
     }
     else {
@@ -1244,6 +1298,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["append-to"]            = com_save_to;
     cmd_map["write-to"]             = com_save_to;
     cmd_map["write-csv-to"]         = com_save_to;
+    cmd_map["write-json-to"]        = com_save_to;
     cmd_map["enable-filter"]        = com_enable_filter;
     cmd_map["disable-filter"]       = com_disable_filter;
     cmd_map["enable-word-wrap"]     = com_enable_word_wrap;

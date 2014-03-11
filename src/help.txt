@@ -406,6 +406,15 @@ COMMANDS
 
   write-csv-to <file>
                     Write the results of a SQL query to a CSV-formatted file.
+                    When running in non-interactive mode, a dash can be used
+                    to write to standard out.
+
+  write-json-to <file>
+                    Write the results of a SQL query to a JSON-formatted file.
+                    The contents of the file will be an array of objects with
+                    each column in the query being a field in the objects.
+                    When running in non-interactive mode, a dash can be used
+                    to write to standard out.
 
   session <cmd>     Add the given command to the session file
                     (~/.lnav/session).  Any commands listed in the session file

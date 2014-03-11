@@ -65,7 +65,7 @@ public:
         for (int lpc = 0; lpc < (int)this->dls_rows[bucket_start_value].size();
              lpc++) {
             int padding = (this->dls_column_sizes[lpc] -
-                           this->dls_rows[bucket_start_value][lpc].length() -
+                           strlen(this->dls_rows[bucket_start_value][lpc]) -
                            1);
 
             if (this->dls_column_types[lpc] != SQLITE3_TEXT) {
@@ -106,6 +106,16 @@ public:
     {
         int index = this->dls_rows.back().size();
 
+        if (colstr == NULL) {
+            colstr = NULL_STR;
+        }
+        else {
+            colstr = strdup(colstr);
+            if (colstr == NULL) {
+                throw "out of memory";
+            }
+        }
+
         this->dls_rows.back().push_back(colstr);
         if (this->dls_rows.back().size() > this->dls_column_sizes.size()) {
             this->dls_column_sizes.push_back(1);
@@ -133,6 +143,13 @@ public:
         this->dls_headers.clear();
         this->dls_headers_to_graph.clear();
         this->dls_column_types.clear();
+        for (int row = 0; row < this->dls_rows.size(); row++) {
+            for (int col = 0; col < this->dls_rows[row].size(); col++) {
+                if (this->dls_rows[row][col] != NULL_STR) {
+                    free((void *)this->dls_rows[row][col]);
+                }
+            }
+        }
         this->dls_rows.clear();
         this->dls_column_sizes.clear();
     }
@@ -141,8 +158,10 @@ public:
     std::vector<std::string> dls_headers;
     std::vector<int>         dls_headers_to_graph;
     std::vector<int>         dls_column_types;
-    std::vector<std::vector<std::string> > dls_rows;
+    std::vector<std::vector<const char *> > dls_rows;
     std::vector<size_t> dls_column_sizes;
+
+    static const char *NULL_STR;
 };
 
 class db_overlay_source : public list_overlay_source {

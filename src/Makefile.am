@@ -122,6 +122,7 @@ libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
 	bookmarks.cc \
 	collation-functions.cc \
+	db_sub_source.cc \
 	extension-functions.c \
     fs-extension-functions.cc \
 	grep_proc.cc \

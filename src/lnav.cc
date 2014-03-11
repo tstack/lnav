@@ -1907,7 +1907,7 @@ static void handle_paging_key(int ch)
 
                 snprintf(linestr, sizeof(linestr), "%d", line_number);
                 for (row = 0; row < dls.dls_rows.size(); row++) {
-                    if (strcmp(dls.dls_rows[row][lpc].c_str(),
+                    if (strcmp(dls.dls_rows[row][lpc],
                                linestr) == 0) {
                         vis_line_t db_line(hs.row_for_value(row));
 
@@ -1931,7 +1931,7 @@ static void handle_paging_key(int ch)
                 unsigned int line_number;
 
                 tc = &lnav_data.ld_views[LNV_LOG];
-                if (sscanf(dls.dls_rows[db_row][lpc].c_str(),
+                if (sscanf(dls.dls_rows[db_row][lpc],
                            "%d",
                            &line_number) &&
                     line_number < tc->listview_rows(*tc)) {
@@ -2386,9 +2386,6 @@ int sql_callback(sqlite3_stmt *stmt)
         const char *value     = (const char *)sqlite3_column_text(stmt, lpc);
         double      num_value = 0.0;
 
-        if (value == NULL) {
-            value = "<NULL>";
-        }
         dls.push_column(value);
         if (dls.dls_headers[lpc] == "log_line") {
             int line_number = -1;
