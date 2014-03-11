@@ -188,6 +188,7 @@ static int vt_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
 
     p_cur->base.pVtab = p_svt;
     p_cur->log_cursor.lc_curr_line = vis_line_t(-1);
+    p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
     p_cur->log_cursor.lc_sub_index = 0;
     vt_next((sqlite3_vtab_cursor *)p_cur);
 
@@ -207,9 +208,8 @@ static int vt_close(sqlite3_vtab_cursor *cur)
 static int vt_eof(sqlite3_vtab_cursor *cur)
 {
     vtab_cursor *vc = (vtab_cursor *)cur;
-    vtab *       vt = (vtab *)cur->pVtab;
 
-    return vc->log_cursor.lc_curr_line == (int)vt->lss->text_line_count();
+    return vc->log_cursor.is_eof();
 }
 
 static int vt_next(sqlite3_vtab_cursor *cur)
@@ -426,15 +426,130 @@ static int vt_rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *p_rowid)
     return SQLITE_OK;
 }
 
+void log_cursor::update(unsigned char op, vis_line_t vl, bool exact)
+{
+    switch (op) {
+    case SQLITE_INDEX_CONSTRAINT_EQ:
+        this->lc_curr_line = vl;
+        this->lc_end_line = vis_line_t(this->lc_curr_line + 1);
+        break;
+    case SQLITE_INDEX_CONSTRAINT_GE:
+        this->lc_curr_line = vl;
+        break;
+    case SQLITE_INDEX_CONSTRAINT_GT:
+        this->lc_curr_line = vis_line_t(vl + (exact ? 1 : 0));
+        break;
+    case SQLITE_INDEX_CONSTRAINT_LE:
+        this->lc_end_line = vis_line_t(vl + (exact ? 1 : 0));
+        break;
+    case SQLITE_INDEX_CONSTRAINT_LT:
+        this->lc_end_line = vl;
+        break;
+    }
+}
+
 static int vt_filter(sqlite3_vtab_cursor *p_vtc,
                      int idxNum, const char *idxStr,
                      int argc, sqlite3_value **argv)
 {
+    vtab_cursor *p_cur = (vtab_cursor *)p_vtc;
+    vtab *       vt = (vtab *)p_vtc->pVtab;
+    sqlite3_index_info::sqlite3_index_constraint *index = (
+        sqlite3_index_info::sqlite3_index_constraint *)idxStr;
+
+    log_info("filter called: %d", idxNum);
+    if (!idxNum) {
+        return SQLITE_OK;
+    }
+
+    p_cur->log_cursor.lc_curr_line = vis_line_t(0);
+    p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
+    for (int lpc = 0; lpc < idxNum; lpc++) {
+        switch (index[lpc].iColumn) {
+        case VT_COL_LINE_NUMBER:
+            p_cur->log_cursor.update(index[lpc].op,
+                vis_line_t(sqlite3_value_int64(argv[lpc])));
+            break;
+
+        case VT_COL_LOG_TIME: {
+            const unsigned char *datestr = sqlite3_value_text(argv[lpc]);
+            date_time_scanner dts;
+            struct timeval tv;
+            struct tm mytm;
+            vis_line_t vl;
+
+            dts.scan((const char *)datestr, NULL, &mytm, tv);
+            if ((vl = vt->lss->find_from_time(tv)) == -1) {
+                p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
+            }
+            else {
+                p_cur->log_cursor.update(index[lpc].op, vl, false);
+            }
+            break;
+        }
+
+        }
+    }
+
     return SQLITE_OK;
 }
 
 static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
 {
+    std::vector<sqlite3_index_info::sqlite3_index_constraint> indexes;
+    int argvInUse = 0;
+
+    log_info("best index called: nConstraint=%d", p_info->nConstraint);
+    for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
+        if (!p_info->aConstraint[lpc].usable ||
+            p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH) {
+            continue;
+        }
+
+        switch (p_info->aConstraint[lpc].iColumn) {
+        case VT_COL_LINE_NUMBER:
+            argvInUse += 1;
+            indexes.push_back(p_info->aConstraint[lpc]);
+            p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
+            break;
+        }
+    }
+
+    if (!argvInUse) {
+        for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
+            if (!p_info->aConstraint[lpc].usable ||
+                p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH) {
+                continue;
+            }
+
+            switch (p_info->aConstraint[lpc].iColumn) {
+            case VT_COL_LOG_TIME:
+                argvInUse += 1;
+                indexes.push_back(p_info->aConstraint[lpc]);
+                p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
+                break;
+            }
+        }
+    }
+
+    if (argvInUse) {
+        sqlite3_index_info::sqlite3_index_constraint *index_copy;
+        size_t len = indexes.size() * sizeof(*index_copy);
+
+        log_info("found index, passing %d args", argvInUse);
+
+        index_copy = (sqlite3_index_info::sqlite3_index_constraint *)
+            sqlite3_malloc(len);
+        if (!index_copy) {
+            return SQLITE_NOMEM;
+        }
+        memcpy(index_copy, &indexes[0], len);
+        p_info->idxNum = argvInUse;
+        p_info->idxStr = (char *) index_copy;
+        p_info->needToFreeIdxStr = 1;
+        p_info->estimatedCost = 1.0;
+    }
+
     return SQLITE_OK;
 }
 

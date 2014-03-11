@@ -1966,6 +1966,15 @@ static void handle_paging_key(int ch)
             type = bucket_type_t(distance(dls.dls_headers_to_graph.begin(), iter));
             displayed.push_back(type);
         }
+        if (displayed.empty()) {
+            lnav_data.ld_rl_view->set_value("Graphing all values");
+        }
+        else {
+            int index = displayed[0];
+
+            lnav_data.ld_rl_view->set_value("Graphing column " ANSI_BOLD_START +
+                dls.dls_headers[index] + ANSI_NORM);
+        }
         tc->reload_data();
     }
     break;
@@ -2172,6 +2181,11 @@ string execute_sql(string sql, string &alt_msg)
                     sqlite3_bind_text(stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
                 }
             }
+        }
+
+        if (lnav_data.ld_rl_view != NULL) {
+            lnav_data.ld_rl_view->set_value("Executing query: " + sql + " ...");
+            lnav_data.ld_rl_view->do_update();
         }
 
         lnav_data.ld_log_source.text_clear_marks(&BM_QUERY);

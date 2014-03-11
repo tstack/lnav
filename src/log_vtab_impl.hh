@@ -54,6 +54,17 @@ class logfile_sub_source;
 struct log_cursor {
     vis_line_t lc_curr_line;
     int        lc_sub_index;
+    vis_line_t lc_end_line;
+
+    void update(unsigned char op, vis_line_t vl, bool exact = true);
+
+    void set_eof() {
+        this->lc_curr_line = this->lc_end_line = vis_line_t(0);
+    };
+
+    bool is_eof() const {
+        return this->lc_curr_line == this->lc_end_line;
+    };
 };
 
 class log_vtab_impl {
@@ -89,7 +100,7 @@ public:
         lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
         lc.lc_sub_index = 0;
 
-        if (lc.lc_curr_line == (int)lss.text_line_count()) {
+        if (lc.is_eof()) {
             return true;
         }
 
