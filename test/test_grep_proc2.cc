@@ -74,8 +74,8 @@ public:
 
 class my_sleeper_source : public grep_proc_source {
     bool grep_value_for_line(int line_number, string &value_out) {
-	sleep(1000);
-	return true;
+       sleep(1000);
+       return true;
     };
 };
 
@@ -91,7 +91,7 @@ public:
     };
 
     void grep_end(grep_proc &gp) {
-	this->ms_finished = true;
+       this->ms_finished = true;
     };
 
     bool ms_finished;
@@ -107,11 +107,11 @@ static void looper(grep_proc &gp)
     gp.set_sink(&msink);
     
     while (!msink.ms_finished) {
-	fd_set rfds = READFDS;
+       fd_set rfds = READFDS;
 	
-	select(MAXFD + 1, &rfds, NULL, NULL, NULL);
+       select(MAXFD + 1, &rfds, NULL, NULL, NULL);
 	
-	gp.check_fd_set(rfds);
+       gp.check_fd_set(rfds);
     }
 }
 
@@ -132,32 +132,32 @@ int main(int argc, char *argv[])
     assert(code != NULL);
 
     {
-	my_source ms;
-	grep_proc gp(code, ms, MAXFD, READFDS);
+       my_source ms;
+       grep_proc gp(code, ms, MAXFD, READFDS);
 	
-	gp.queue_request(grep_line_t(10), grep_line_t(14));
-	gp.queue_request(grep_line_t(0), grep_line_t(3));
-	gp.start();
-	looper(gp);
+       gp.queue_request(grep_line_t(10), grep_line_t(14));
+       gp.queue_request(grep_line_t(0), grep_line_t(3));
+       gp.start();
+       looper(gp);
     }
 
     {
-	my_sleeper_source mss;
-	grep_proc *gp = new grep_proc(code, mss, MAXFD, READFDS);
-	int status;
-	
-	gp->queue_request();
-	gp->start();
+       my_sleeper_source mss;
+       grep_proc *gp = new grep_proc(code, mss, MAXFD, READFDS);
+       int status;
 
-	assert(wait3(&status, WNOHANG, NULL) == 0);
-	
-	delete gp;
+       gp->queue_request();
+       gp->start();
 
-	assert(wait(&status) == -1);
-	assert(errno == ECHILD);
+       assert(wait3(&status, WNOHANG, NULL) == 0);
+
+       delete gp;
+
+       assert(wait(&status) == -1);
+       assert(errno == ECHILD);
     }
 
     free(code);
-    
+
     return retval;
 }

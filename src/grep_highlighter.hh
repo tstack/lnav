@@ -54,6 +54,6 @@ public:
 private:
     std::auto_ptr<grep_proc> gh_grep_proc;
     std::string gh_hl_name;
-    textview_curses::highlight_map_t gh_hl_map;
+    textview_curses::highlight_map_t &gh_hl_map;
 };
 #endif
