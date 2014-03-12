@@ -100,14 +100,14 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":close" \
-    -c ":open /" \
+    -c ":open /non-existent" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "open dir is working" <<EOF
-error: not a regular file
+check_error_output "open non-existent is working" <<EOF
+error: cannot stat file: /non-existent -- No such file or directory
 EOF
 
-check_output "open dir is not working" <<EOF
+check_output "open non-existent is not working" <<EOF
 EOF
 
 

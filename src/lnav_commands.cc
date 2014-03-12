@@ -884,8 +884,17 @@ static string com_open(string cmdline, vector<string> &args)
             else if ((abspath = realpath(fn.c_str(), NULL)) == NULL) {
                 retval = "error: cannot find file";
             }
+            else if (S_ISDIR(st.st_mode)) {
+                string dir_wild(abspath.in());
+
+                if (dir_wild[dir_wild.size() - 1] == '/') {
+                    dir_wild.resize(dir_wild.size() - 1);
+                }
+                lnav_data.ld_file_names.insert(make_pair(dir_wild + "/*", -1));
+                retval = "info: watching -- " + dir_wild;
+            }
             else if (!S_ISREG(st.st_mode)) {
-                retval = "error: not a regular file";
+                retval = "error: not a regular file or directory";
             }
             else if (access(fn.c_str(), R_OK) == -1) {
                 retval = (string("error: cannot read file -- ") +
