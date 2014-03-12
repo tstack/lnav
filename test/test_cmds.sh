@@ -99,6 +99,19 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ":close" \
+    -c ":open /" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "open dir is working" <<EOF
+error: not a regular file
+EOF
+
+check_output "open dir is not working" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ";select * from access_log" \
     -c ':write-json-to -' \
     ${test_dir}/logfile_access_log.0

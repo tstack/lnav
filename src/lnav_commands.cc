@@ -878,10 +878,18 @@ static string com_open(string cmdline, vector<string> &args)
                 retval = "info: watching -- " + fn;
             }
             else if (stat(fn.c_str(), &st) == -1) {
-                retval = "error: cannot stat file: " + fn + " " + strerror(errno);
+                retval = ("error: cannot stat file: " + fn + " -- "
+                    + strerror(errno));
             }
             else if ((abspath = realpath(fn.c_str(), NULL)) == NULL) {
                 retval = "error: cannot find file";
+            }
+            else if (!S_ISREG(st.st_mode)) {
+                retval = "error: not a regular file";
+            }
+            else if (access(fn.c_str(), R_OK) == -1) {
+                retval = (string("error: cannot read file -- ") +
+                    strerror(errno));
             }
             else {
                 fn = abspath.in();
