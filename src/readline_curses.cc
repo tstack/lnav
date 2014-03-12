@@ -374,6 +374,11 @@ void readline_curses::store_matches(
     char msg[64];
     int rc;
 
+    max_len = 0;
+    for (int lpc = 0; lpc < num_matches; lpc++) {
+        max_len = max(max_len, (int)strlen(matches[lpc]));
+    }
+
     if (last_match_str_valid && strcmp(last_match_str.c_str(), matches[0]) == 0) {
         if (sendstring(child_this->rc_command_pipe[RCF_SLAVE], "n", 1) == -1) {
             _exit(1);
