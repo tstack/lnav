@@ -34,6 +34,18 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ":goto invalid" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "goto invalid is working" <<EOF
+error: expecting line number/percentage or timestamp
+EOF
+
+check_output "goto invalid is not working" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ":filter-in vmk" \
     ${test_dir}/logfile_access_log.0
 

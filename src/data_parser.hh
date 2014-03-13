@@ -852,16 +852,6 @@ private:
         this->pairup(&this->dp_schema_id,
                      this->dp_pairs,
                      this->dp_group_stack.front());
-
-        for (element_list_t::iterator iter = this->dp_pairs.begin();
-             iter != this->dp_pairs.end();
-             ++iter) {
-            if (iter->e_token == DNT_PAIR) {
-                element_list_t &pair_subs = *iter->e_sub_elements;
-                std::string     key_val   = this->get_element_string(
-                    pair_subs.front());
-            }
-        }
     };
 
     std::string get_element_string(const element &elem) const

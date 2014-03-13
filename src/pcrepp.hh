@@ -218,7 +218,6 @@ public:
             return "";
         }
         return std::string(&this->pi_string[iter->c_begin],
-                           0,
                            iter->length());
     };
 
