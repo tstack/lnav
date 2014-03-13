@@ -375,7 +375,7 @@ void readline_curses::store_matches(
     int rc;
 
     max_len = 0;
-    for (int lpc = 0; lpc < num_matches; lpc++) {
+    for (int lpc = 0; lpc <= num_matches; lpc++) {
         max_len = max(max_len, (int)strlen(matches[lpc]));
     }
 
