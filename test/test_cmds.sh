@@ -100,6 +100,19 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":close" \
+    -c ":close" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "double close works" <<EOF
+error: no log files loaded
+EOF
+
+check_output "double close is working" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":close" \
     -c ":open ${test_dir}/logfile_multiline.0" \
     ${test_dir}/logfile_access_log.0
 

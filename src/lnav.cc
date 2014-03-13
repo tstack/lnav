@@ -160,6 +160,8 @@ static const char *view_titles[LNV__MAX] = {
     "SCHEMA",
 };
 
+static bool rescan_files(bool required = false);
+
 class log_gutter_source : public list_gutter_source {
 public:
     void listview_gutter_value_for_range(
@@ -725,7 +727,8 @@ void rebuild_indexes(bool force)
         bool new_data = false;
 
         old_bottom  = text_view.get_top_for_last_row();
-        scroll_down = text_view.get_top() >= old_bottom;
+        scroll_down = (text_view.get_top() >= old_bottom &&
+            !(lnav_data.ld_flags & LNF_HEADLESS));
 
         for (iter = tss->tss_files.begin();
              iter != tss->tss_files.end(); ) {
@@ -799,7 +802,8 @@ void rebuild_indexes(bool force)
 
     old_time = lnav_data.ld_top_time;
     old_bottom  = log_view.get_top_for_last_row();
-    scroll_down = log_view.get_top() >= old_bottom;
+    scroll_down = (log_view.get_top() >= old_bottom &&
+        !(lnav_data.ld_flags & LNF_HEADLESS));
     if (force) {
         old_count = 0;
     }
@@ -2328,8 +2332,11 @@ static void execute_file(string path)
             break;
         }
 
-        fprintf(stderr,
-            "%s:%d:execute result -- %s\n",
+        if (rescan_files()) {
+            rebuild_indexes(true);
+        }
+
+        log_info("%s:%d:execute result -- %s",
             path.c_str(),
             line_number,
             rc.c_str());
@@ -2366,6 +2373,10 @@ void execute_init_commands(vector<pair<string, string> > &msgs)
         }
 
         msgs.push_back(make_pair(msg, alt_msg));
+
+        if (rescan_files()) {
+            rebuild_indexes(true);
+        }
     }
     lnav_data.ld_commands.clear();
 }
@@ -2948,7 +2959,7 @@ static void expand_filename(string path, bool required)
     }
 }
 
-static bool rescan_files(bool required = false)
+static bool rescan_files(bool required)
 {
     set<pair<string, int> >::iterator iter;
     list<logfile *>::iterator         file_iter;
@@ -4353,9 +4364,7 @@ int main(int argc, char *argv[])
                 lnav_data.ld_views[LNV_LOG].set_top(vis_line_t(0));
 
                 execute_init_commands(msgs);
-                if (rescan_files()) {
-                    rebuild_indexes(true);
-                }
+                rebuild_indexes(false);
 
                 if (lnav_data.ld_flags & LNF_LOAD_SESSION) {
                     save_session();
