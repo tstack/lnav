@@ -2251,10 +2251,12 @@ string execute_sql(string sql, string &alt_msg)
                   "in the log view");
             }
         }
+#ifdef HAVE_SQLITE3_STMT_READONLY
         else if (sqlite3_stmt_readonly(stmt.in())) {
             retval = "No rows matched";
             alt_msg = "";
         }
+#endif
     }
 
     if (!(lnav_data.ld_flags & LNF_HEADLESS)) {

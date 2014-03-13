@@ -99,6 +99,12 @@ if test x"$SQLITE3_LIBS" = x""; then
     AC_MSG_ERROR([The sqlite3 developement package must be installed.])
 fi
 
+OLD_LIBS="$LIBS"
+LIBS="$LIBS ${SQLITE3_LIBS}"
+AC_CHECK_FUNC(sqlite3_stmt_readonly,
+    AC_DEFINE([HAVE_SQLITE3_STMT_READONLY], [], [Have the sqlite3_stmt_readonly function]))
+LIBS="$OLD_LIBS"
+
 case "$host_os" in
     *)
 	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])

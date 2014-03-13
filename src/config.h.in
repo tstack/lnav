@@ -76,6 +76,9 @@
 /* sqlite3 */
 #undef HAVE_SQLITE3
 
+/* Have the sqlite3_stmt_readonly function */
+#undef HAVE_SQLITE3_STMT_READONLY
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
