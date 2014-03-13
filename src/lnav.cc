@@ -2010,7 +2010,7 @@ static void handle_paging_key(int ch)
     break;
 
     case 'X':
-        execute_command("close");
+        lnav_data.ld_rl_view->set_value(execute_command("close"));
         break;
 
     case '\\':
