@@ -205,7 +205,9 @@ public:
     field_overlay_source(logfile_sub_source &lss)
         : fos_active(false),
           fos_active_prev(false),
-          fos_log_helper(lss) { };
+          fos_log_helper(lss) {
+
+    };
 
     size_t list_overlay_count(const listview_curses &lv)
     {
@@ -243,7 +245,7 @@ public:
             std::string colname = this->fos_log_helper.ldh_parser->get_element_string(
                 iter->e_sub_elements->front());
 
-            colname            = this->fos_log_helper.ldh_namer->add_column(colname);
+            colname = this->fos_log_helper.ldh_namer->add_column(colname);
             this->fos_key_size = max(this->fos_key_size, (int)colname.length());
         }
 

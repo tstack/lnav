@@ -29,13 +29,27 @@
  * @file shared_buffer.cc
  */
 
+#include "config.h"
+
+#include <execinfo.h>
+
 #include "shared_buffer.hh"
 
- void shared_buffer_ref::share(shared_buffer &sb, char *data, size_t len)
- {
+static const bool DEBUG_TRACE = false;
+
+void shared_buffer_ref::share(shared_buffer &sb, char *data, size_t len)
+{
+    if (DEBUG_TRACE) {
+        void *frames[128];
+        int rc;
+
+        rc = backtrace(frames, 128);
+        this->sb_backtrace.reset(backtrace_symbols(frames, rc));
+    }
+
     this->disown();
 
-    LIST_INSERT_HEAD(&sb.sb_refs, this, sb_link);
+    sb.add_ref(*this);
     this->sb_owner = &sb;
     this->sb_data = data;
     this->sb_length = len;

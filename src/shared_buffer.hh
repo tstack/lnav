@@ -37,6 +37,9 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 
+#include "auto_mem.hh"
+#include "lnav_log.hh"
+
 class shared_buffer;
 
 struct shared_buffer_ref {
@@ -130,6 +133,7 @@ private:
         }
     }
 
+    auto_mem<char *> sb_backtrace;
     shared_buffer *sb_owner;
     char *sb_data;
     size_t sb_length;

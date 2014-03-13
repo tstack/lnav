@@ -133,6 +133,8 @@ line_buffer::~line_buffer()
 {
     auto_fd fd = -1;
 
+    // Make sure any shared refs take ownership of the data.
+    this->lb_share_manager.invalidate_refs();
     this->set_fd(fd);
 }
 
