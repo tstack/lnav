@@ -260,7 +260,7 @@ char **readline_context::attempted_completion(const char *text,
         rl_completion_append_character = 0;
         space = strchr(rl_line_buffer, ' ');
         require(space != NULL);
-        cmd = string(rl_line_buffer, 0, space - rl_line_buffer);
+        cmd = string(rl_line_buffer, space - rl_line_buffer);
 
         vector<string> &proto = loaded_context->rc_prototypes[cmd];
 
@@ -672,7 +672,12 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
                 }
             }
             else {
-                this->rc_value = string(&msg[2]);
+                switch (msg[0]) {
+                case 't':
+                case 'd':
+                    this->rc_value = string(&msg[2]);
+                    break;
+                }
                 switch (msg[0]) {
                 case 'a':
                     require(rc == 1);
