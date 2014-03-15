@@ -66,13 +66,15 @@ Jan 03 09:47:02 2007 -- 000
 EOF
 fi
 
+# The TCSH format converts to local time, so we need to specify a TZ
+export TZ="UTC"
 run_test ./drive_logfile -t -f tcsh_history ${srcdir}/logfile_tcsh_history.0
 
 check_output "TCSH timestamp interpreted incorrectly?" <<EOF
-Nov 02 09:59:26 2006 -- 000
-Nov 02 09:59:26 2006 -- 000
-Nov 02 09:59:45 2006 -- 000
-Nov 02 09:59:45 2006 -- 000
+Nov 02 17:59:26 2006 -- 000
+Nov 02 17:59:26 2006 -- 000
+Nov 02 17:59:45 2006 -- 000
+Nov 02 17:59:45 2006 -- 000
 EOF
 
 run_test ./drive_logfile -t -f access_log ${srcdir}/logfile_access_log.0
