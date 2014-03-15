@@ -2747,7 +2747,6 @@ static void usage(void)
         "  -c cmd     Execute a command after the files have been loaded.\n"
         "  -f path    Execute the commands in the given file.\n"
         "  -n         Run without the curses UI. (headless mode)\n"
-        "  -S         Load session data.\n"
         "  -q         Do not print the log messages after executing all\n"
         "             of the commands.\n"
         "\n"
@@ -3985,7 +3984,7 @@ int main(int argc, char *argv[])
     log_install_handlers();
 
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarsCc:I:f:d:nSqtw:V")) != -1) {
+    while ((c = getopt(argc, argv, "hHarsCc:I:f:d:nqtw:V")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -4045,10 +4044,6 @@ int main(int argc, char *argv[])
 
         case 'n':
             lnav_data.ld_flags |= LNF_HEADLESS;
-            break;
-
-        case 'S':
-            lnav_data.ld_flags |= LNF_LOAD_SESSION;
             break;
 
         case 'q':
@@ -4354,21 +4349,10 @@ int main(int argc, char *argv[])
                 lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
                 rebuild_indexes(true);
 
-                if (lnav_data.ld_flags & LNF_LOAD_SESSION) {
-                    init_session();
-                    scan_sessions();
-                    load_session();
-                    lnav_data.ld_views[LNV_LOG].reload_data();
-                }
-
                 lnav_data.ld_views[LNV_LOG].set_top(vis_line_t(0));
 
                 execute_init_commands(msgs);
                 rebuild_indexes(false);
-
-                if (lnav_data.ld_flags & LNF_LOAD_SESSION) {
-                    save_session();
-                }
 
                 for (msg_iter = msgs.begin();
                      msg_iter != msgs.end();

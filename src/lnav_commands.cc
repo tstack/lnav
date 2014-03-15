@@ -44,6 +44,7 @@
 #include "auto_mem.hh"
 #include "log_data_table.hh"
 #include "lnav_commands.hh"
+#include "session_data.hh"
 
 using namespace std;
 
@@ -1301,6 +1302,32 @@ static string com_switch_to_view(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_load_session(string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+
+    }
+    else {
+        scan_sessions();
+        load_session();
+        lnav_data.ld_views[LNV_LOG].reload_data();
+    }
+
+    return "";
+}
+
+static string com_save_session(string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+
+    }
+    else {
+        save_session();
+    }
+
+    return "";
+}
+
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
     cmd_map["adjust-log-time"]      = com_adjust_log_time;
@@ -1329,6 +1356,8 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["session"]              = com_session;
     cmd_map["summarize"]            = com_summarize;
     cmd_map["switch-to-view"]       = com_switch_to_view;
+    cmd_map["load-session"]         = com_load_session;
+    cmd_map["save-session"]         = com_save_session;
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;

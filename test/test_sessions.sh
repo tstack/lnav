@@ -5,16 +5,18 @@ lnav_test="${top_builddir}/src/lnav-test"
 export HOME="./sessions"
 mkdir -p $HOME
 
-run_test ${lnav_test} -nSq \
+run_test ${lnav_test} -nq \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
     -c ":goto 1" \
     -c ":partition-name middle" \
+    -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
 check_output "setting log_mark is not working" <<EOF
 EOF
 
-run_test ${lnav_test} -nS \
+run_test ${lnav_test} -n \
+    -c ":load-session" \
     -c ':write-to -' \
     ${test_dir}/logfile_access_log.0
 
@@ -23,7 +25,8 @@ check_output "log mark was not saved in session" <<EOF
 EOF
 
 
-run_test ${lnav_test} -nS \
+run_test ${lnav_test} -n \
+    -c ":load-session" \
     -c ';select log_line,log_part from access_log' \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
@@ -36,15 +39,17 @@ log_line,log_part
 EOF
 
 
-run_test ${lnav_test} -nSq \
+run_test ${lnav_test} -nq \
     -c ":adjust-log-time 2010-01-01T00:00:00" \
+    -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
 check_output "adjust time is not working" <<EOF
 EOF
 
 
-run_test ${lnav_test} -nS \
+run_test ${lnav_test} -n \
+    -c ":load-session" \
     ${test_dir}/logfile_access_log.0
 
 check_output "adjust time is not saved in session" <<EOF
