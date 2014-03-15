@@ -124,16 +124,15 @@ int main(int argc, char *argv[])
 	try {
 	    off_t last_offset = offset;
 	    line_buffer lb;
+        line_value lv;
 	    char *maddr;
-	    char *line;
-	    size_t len;
 
 	    lb.set_fd(fd);
 	    if (index.size() == 0) {
-		while ((line = lb.read_line(offset, len)) != NULL) {
-		    line[len] = '\0';
-		    printf("%s", line);
-		    if ((last_offset + len) < offset)
+		while (lb.read_line(offset, lv)) {
+            lv.terminate();
+		    printf("%s", lv.lv_start);
+		    if ((last_offset + lv.lv_len) < offset)
 			printf("\n");
 		    last_offset = offset;
 		}
@@ -150,22 +149,23 @@ int main(int argc, char *argv[])
 	    else {
                 off_t seq_offset = 0;
 
-                while (lb.read_line(seq_offset, len) != NULL) { }
+                while (lb.read_line(seq_offset, lv)) { }
 		do {
+            bool ret;
 		    int lpc;
 
 		    random_shuffle(index.begin(), index.end());
 		    for (lpc = 0; lpc < index.size(); lpc++) {
 
 			offset = index[lpc].second;
-			line = lb.read_line(offset, len);
+			ret = lb.read_line(offset, lv);
 
-                        assert(line != NULL);
+                        assert(ret);
 			assert(offset >= 0);
 			assert(offset <= st.st_size);
-			assert(memcmp(line,
+			assert(memcmp(lv.lv_start,
 				      &maddr[index[lpc].second],
-				      len) == 0);
+				      lv.lv_len) == 0);
 		    }
 
 		    rnd_iters -= 1;

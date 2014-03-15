@@ -286,6 +286,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                     gmt = tm2sec(tm_out);
                 }
                 tv_out.tv_sec = gmt;
+                tv_out.tv_usec = 0;
 
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len = off;

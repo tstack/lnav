@@ -96,11 +96,11 @@ TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_line_buffer2$(EXEEXT) test_line_buffer.sh \
 	test_listview.sh test_mvwattrline.sh test_grep_proc.sh \
 	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
-	test_json_format.sh test_pcrepp$(EXEEXT) test_sessions.sh \
-	test_sql.sh test_sql_coll_func.sh test_sql_fs_func.sh \
-	test_sql_str_func.sh test_view_colors.sh test_vt52_curses.sh \
-	test_top_status$(EXEEXT) test_data_parser.sh \
-	test_yajlpp$(EXEEXT)
+	test_json_format.sh test_logfile.sh test_pcrepp$(EXEEXT) \
+	test_sessions.sh test_sql.sh test_sql_coll_func.sh \
+	test_sql_fs_func.sh test_sql_str_func.sh test_view_colors.sh \
+	test_vt52_curses.sh test_top_status$(EXEEXT) \
+	test_data_parser.sh test_yajlpp$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/mkinstalldirs $(dist_noinst_SCRIPTS) \
@@ -135,8 +135,10 @@ drive_listview_OBJECTS = $(am_drive_listview_OBJECTS)
 drive_listview_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
 am_drive_logfile_OBJECTS = drive_logfile.$(OBJEXT)
 drive_logfile_OBJECTS = $(am_drive_logfile_OBJECTS)
-drive_logfile_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+drive_logfile_DEPENDENCIES = ../src/libdiag.a \
+	../src/default-log-formats-json.o ../src/dump-pid-sh.o \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_drive_mvwattrline_OBJECTS = drive_mvwattrline.$(OBJEXT)
 drive_mvwattrline_OBJECTS = $(am_drive_mvwattrline_OBJECTS)
 drive_mvwattrline_DEPENDENCIES = ../src/libdiag.a \
@@ -492,6 +494,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BZIP2_CMD = @BZIP2_CMD@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -648,6 +651,8 @@ drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = \
 	../src/libdiag.a \
+	../src/default-log-formats-json.o \
+	../src/dump-pid-sh.o \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
@@ -766,7 +771,9 @@ DISTCLEANFILES = \
 	*.dpt \
 	*.diff \
 	*.index \
-	*.tmp
+	*.tmp \
+	*.gz \
+	*.bz2
 
 all: all-am
 
@@ -1224,6 +1231,13 @@ test_hist_source.log: test_hist_source$(EXEEXT)
 test_json_format.sh.log: test_json_format.sh
 	@p='test_json_format.sh'; \
 	b='test_json_format.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_logfile.sh.log: test_logfile.sh
+	@p='test_logfile.sh'; \
+	b='test_logfile.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

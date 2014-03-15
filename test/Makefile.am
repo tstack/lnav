@@ -86,6 +86,8 @@ drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = \
 	../src/libdiag.a \
+	../src/default-log-formats-json.o \
+	../src/dump-pid-sh.o \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
@@ -213,6 +215,7 @@ TESTS = \
 	test_grep_proc2 \
 	test_hist_source \
 	test_json_format.sh \
+	test_logfile.sh \
 	test_pcrepp \
 	test_sessions.sh \
 	test_sql.sh \
@@ -235,7 +238,9 @@ DISTCLEANFILES = \
 	*.dpt \
 	*.diff \
 	*.index \
-	*.tmp
+	*.tmp \
+	*.gz \
+	*.bz2
 
 distclean-local:
 	rm -rf sessions

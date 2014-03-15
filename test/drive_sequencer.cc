@@ -61,12 +61,10 @@ public:
 	bool retval = false;
 
 	try {
-	    size_t len;
-	    char *line;
+        line_value lv;
 	    
-	    if ((line = this->ms_buffer.read_line(this->ms_offset,
-						  len)) != NULL) {
-		value_out = string(line, len);
+	    if (this->ms_buffer.read_line(this->ms_offset, lv)) {
+		value_out = string(lv.lv_start, lv.lv_len);
 		retval = true;
 	    }
 	}

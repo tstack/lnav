@@ -40,15 +40,17 @@
 #include <algorithm>
 
 #include "logfile.hh"
+#include "log_format.hh"
+#include "log_format_loader.hh"
 
 using namespace std;
 
 typedef enum {
-  MODE_NONE,
-  MODE_ECHO,
-  MODE_LINE_COUNT,
-  MODE_TIMES,
-  MODE_LEVELS,
+    MODE_NONE,
+    MODE_ECHO,
+    MODE_LINE_COUNT,
+    MODE_TIMES,
+    MODE_LEVELS,
 } dl_mode_t;
 
 time_t time(time_t *_unused)
@@ -62,10 +64,16 @@ int main(int argc, char *argv[])
   dl_mode_t mode = MODE_NONE;
   string expected_format;
 
+  {
+    std::vector<std::string> paths, errors;
+
+    load_formats(paths, errors);
+  }
+
   while ((c = getopt(argc, argv, "ef:ltv")) != -1) {
     switch (c) {
     case 'f':
-	expected_format = optarg;
+    expected_format = optarg;
       break;
     case 'e':
       mode = MODE_ECHO;
@@ -102,10 +110,12 @@ int main(int argc, char *argv[])
 	assert(lf.get_format() == NULL);
     }
     else {
-	// printf("%s %s\n", lf.get_format()->get_name().c_str(), expected_format.c_str());
+	 //printf("%s %s\n", lf.get_format()->get_name().c_str(), expected_format.c_str());
 	assert(lf.get_format()->get_name() == expected_format);
     }
-    assert(lf.get_modified_time() == st.st_mtime);
+    if (!lf.is_compressed()) {
+        assert(lf.get_modified_time() == st.st_mtime);
+    }
 
     switch (mode) {
     case MODE_NONE:

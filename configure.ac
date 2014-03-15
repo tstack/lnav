@@ -73,6 +73,8 @@ if test x"$SQLITE3_CMD" = x""; then
     AC_MSG_ERROR([The sqlite3 command is required])
 fi
 
+AC_PATH_PROG(BZIP2_CMD, [bzip2])
+
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(size_t)
 

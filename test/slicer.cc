@@ -58,12 +58,11 @@ int main(int argc, char *argv[])
 	int line_number, start, end;
 	off_t offset = 0;
 	line_buffer lb;
-	char *line;
-	size_t len;
+    line_value lv;
 	
 	lb.set_fd(fd);
 	index.push_back(offset);
-	while ((line = lb.read_line(offset, len)) != NULL) {
+	while (lb.read_line(offset, lv)) {
 	    index.push_back(offset);
 	}
 	index.pop_back();
@@ -73,8 +72,8 @@ int main(int argc, char *argv[])
 		string str;
 		
 		offset = index[line_number];
-		line = lb.read_line(offset, len);
-		str = string(line, len);
+		lb.read_line(offset, lv);
+		str = string(lv.lv_start, lv.lv_len);
 		str = str.substr(start, end);
 		printf("%s\n", str.c_str());
 	    }

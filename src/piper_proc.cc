@@ -108,7 +108,6 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         line_buffer lb;
         off_t       woff = 0, last_woff = 0;
         off_t       off  = 0, last_off = 0;
-        size_t      len;
         int nullfd;
 
         nullfd = open("/dev/null", O_RDWR);
@@ -116,14 +115,14 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         fcntl(infd.get(), F_SETFL, O_NONBLOCK);
         lb.set_fd(infd);
         do {
+            line_value lv;
             fd_set rready;
-            char * line;
 
             FD_ZERO(&rready);
             FD_SET(lb.get_fd(), &rready);
             select(lb.get_fd() + 1, &rready, NULL, NULL, NULL);
             last_off = off;
-            while ((line = lb.read_line(off, len, true)) != NULL) {
+            while (lb.read_line(off, lv, true)) {
                 int wrc;
 
                 last_woff = woff;
@@ -139,14 +138,14 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 /* Need to do pwrite here since the fd is used by the main
                  * lnav process as well.
                  */
-                wrc = pwrite(this->pp_fd, line, len, woff);
+                wrc = pwrite(this->pp_fd, lv.lv_start, lv.lv_len, woff);
                 if (wrc == -1) {
                     perror("Unable to write to output file for stdin");
                     break;
                 }
                 woff += wrc;
 
-                if (line[len - 1] != '\n') {
+                if (lv.lv_start[lv.lv_len - 1] != '\n') {
                     off = last_off;
                     woff = last_woff;
                 }

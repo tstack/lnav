@@ -114,6 +114,7 @@ private:
 line_buffer::line_buffer()
     : lb_gz_file(NULL),
       lb_bz_file(false),
+      lb_gz_offset(0),
       lb_file_size((size_t)-1),
       lb_file_offset(0),
       lb_file_time(0),
@@ -181,7 +182,7 @@ throw (error)
                             throw error(errno);
                         }
                     }
-                    this->lb_file_time = *((time_t *)&gz_id[4]);
+                    this->lb_file_time = *((int32_t *)&gz_id[4]);
                     if (this->lb_file_time < 0)
                         this->lb_file_time = 0;
                     this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
@@ -214,6 +215,9 @@ throw (error)
 {
     char *tmp, *old;
 
+    require(this->lb_bz_file || this->lb_gz_file ||
+        new_max <= MAX_LINE_BUFFER_SIZE);
+
     /* Still need more space, try a realloc. */
     old = this->lb_buffer.release();
     tmp = (char *)realloc(old, new_max);
@@ -233,10 +237,7 @@ throw (error)
 {
     size_t prefill, available;
 
-    /* The file is probably bogus if a line has gotten this big. */
-    if (max_length > MAX_LINE_BUFFER_SIZE) {
-        throw error(EFBIG);
-    }
+    require(max_length <= MAX_LINE_BUFFER_SIZE);
 
     /*
      * Check to see if the start is inside the cached range or immediately
@@ -273,7 +274,7 @@ throw (error)
     require(this->lb_file_offset <= start);
     require(prefill <= this->lb_buffer_size);
 
-    available = this->lb_buffer_max - this->lb_buffer_size;
+    available = this->lb_buffer_max - (start - this->lb_file_offset);
     require(available <= this->lb_buffer_max);
 
     if (max_length > available) {
@@ -287,7 +288,7 @@ throw (error)
                 &this->lb_buffer[prefill],
                 this->lb_buffer_size);
 
-        available = this->lb_buffer_max - this->lb_buffer_size;
+        available = this->lb_buffer_max - (start - this->lb_file_offset);
         if (max_length > available) {
             this->resize_buffer(this->lb_buffer_max +
                                 DEFAULT_LINE_BUFFER_SIZE);
@@ -376,6 +377,12 @@ throw (error)
                                 &this->lb_buffer[this->lb_buffer_size],
                                 this->lb_buffer_max - this->lb_buffer_size);
                 BZ2_bzclose(bz_file);
+
+                if (rc != -1 && (
+                    rc < (this->lb_buffer_max - this->lb_buffer_size))) {
+                    this->lb_file_size = (
+                        this->lb_file_offset + this->lb_buffer_size + rc);
+                }
             }
         }
 #endif
@@ -398,7 +405,9 @@ throw (error)
         }
         switch (rc) {
         case 0:
-            this->lb_file_size = this->lb_file_offset + this->lb_buffer_size;
+            if (!this->lb_seekable) {
+                this->lb_file_size = this->lb_file_offset + this->lb_buffer_size;
+            }
             if (start < (off_t) this->lb_file_size) {
                 retval = true;
             }
@@ -408,9 +417,7 @@ throw (error)
                  * For compressed files, increase the buffer size so we don't
                  * have to spend as much time uncompressing the data.
                  */
-                this->resize_buffer(std::min(this->lb_file_size +
-                                             DEFAULT_INCREMENT,
-                                             MAX_COMPRESSED_BUFFER_SIZE));
+                this->resize_buffer(MAX_COMPRESSED_BUFFER_SIZE);
             }
             break;
 
@@ -442,11 +449,11 @@ throw (error)
     return retval;
 }
 
-char *line_buffer::read_line(off_t &offset, size_t &len_out, bool include_delim)
+bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
 throw (error)
 {
     size_t request_size = DEFAULT_INCREMENT;
-    char * retval       = NULL;
+    bool retval = false;
 
     require(this->lb_fd != -1);
 
@@ -456,70 +463,92 @@ throw (error)
          * Don't return anything past the last known line.  The caller needs
          * to try reading at the offset of the last line again.
          */
-        return NULL;
+        return false;
     }
 
-    len_out = 0;
-    while (retval == NULL) {
+    lv.lv_len = 0;
+    lv.lv_partial = false;
+    while (!retval) {
         char *line_start, *lf;
 
         this->fill_range(offset, request_size);
 
         /* Find the data in the cache and */
-        line_start = this->get_range(offset, len_out);
+        line_start = this->get_range(offset, lv.lv_len);
         /* ... look for the end-of-line or end-of-file. */
-        if (((lf = (char *)memchr(line_start, '\n', len_out)) != NULL) ||
-            (request_size >= (MAX_LINE_BUFFER_SIZE - DEFAULT_INCREMENT)) ||
-            (((offset + len_out) == this->lb_file_size) && len_out > 0)) {
+        if (((lf = (char *)memchr(line_start, '\n', lv.lv_len)) != NULL) ||
+            (lv.lv_len >= MAX_LINE_BUFFER_SIZE) ||
+            (request_size == MAX_LINE_BUFFER_SIZE) ||
+            ((request_size > lv.lv_len) && lv.lv_len > 0)) {
+            if ((lf != NULL) && ((lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1)) {
+                lf = NULL;
+            }
             if (lf != NULL) {
-                len_out = lf - line_start;
+                lv.lv_partial = false;
+                lv.lv_len = lf - line_start;
                 if (include_delim) {
-                    len_out += 1;
+                    lv.lv_len += 1;
                 }
                 else {
                     offset += 1; /* Skip the delimiter. */
                 }
                 if (offset >= this->lb_last_line_offset) {
-                    this->lb_last_line_offset = offset + len_out;
+                    this->lb_last_line_offset = offset + lv.lv_len;
                 }
             }
             else {
+                if (lv.lv_len >= MAX_LINE_BUFFER_SIZE) {
+                    lv.lv_len = MAX_LINE_BUFFER_SIZE - 1;
+                    lv.lv_partial = false;
+                }
+                else {
+                    lv.lv_partial = true;
+                }
                 /*
                  * Be nice and make sure there is room for the caller to
                  * add a NULL-terminator.
                  */
-                this->ensure_available(offset, len_out + 1);
-                line_start = this->get_range(offset, len_out);
+                this->ensure_available(offset, lv.lv_len + 1);
+                line_start = this->get_range(offset, lv.lv_len);
 
-                /*
-                 * Since no delimiter was seen, we need to remember the offset
-                 * of the last line in the file so we don't mistakenly return
-                 * two partial lines to the caller.
-                 *
-                 *   1. read_line() - returns partial line
-                 *   2. file is written
-                 *   3. read_line() - returns the middle of partial line.
-                 */
-                this->lb_last_line_offset = offset;
+                if (lv.lv_len >= MAX_LINE_BUFFER_SIZE) {
+                    lv.lv_len = MAX_LINE_BUFFER_SIZE - 1;
+                }
+                if (lv.lv_partial) {
+                    /*
+                     * Since no delimiter was seen, we need to remember the offset
+                     * of the last line in the file so we don't mistakenly return
+                     * two partial lines to the caller.
+                     *
+                     *   1. read_line() - returns partial line
+                     *   2. file is written
+                     *   3. read_line() - returns the middle of partial line.
+                     */
+                    this->lb_last_line_offset = offset;
+                }
+                else if (offset >= this->lb_last_line_offset) {
+                    this->lb_last_line_offset = offset + lv.lv_len;
+                }
             }
 
-            offset += len_out;
+            lv.lv_start = line_start;
+            offset += lv.lv_len;
 
-            retval = line_start;
+            retval = true;
         }
         else {
             request_size += DEFAULT_INCREMENT;
         }
 
-        if ((retval == NULL) && !this->fill_range(offset, request_size)) {
+        if (!retval && !this->fill_range(offset, request_size)) {
             break;
         }
     }
 
-    ensure((retval == NULL) ||
-           (retval >= this->lb_buffer &&
-            retval < (this->lb_buffer + this->lb_buffer_size)));
-    ensure(len_out <= this->lb_buffer_size);
+    ensure(lv.lv_len <= this->lb_buffer_size);
+    ensure(!retval ||
+           (lv.lv_start >= this->lb_buffer &&
+            (lv.lv_start + lv.lv_len) <= (this->lb_buffer + this->lb_buffer_size)));
     ensure(this->invariant());
 
     return retval;
@@ -528,18 +557,17 @@ throw (error)
 bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr)
     throw (error)
 {
-    char *line;
-    size_t len;
+    line_value lv;
+    bool retval;
 
     // Clear the incoming ref right away so that an invalidate
     // does not cause a wasted malloc/copy.
     sbr.disown();
-    line = this->read_line(offset_inout, len);
-    if (line != NULL) {
-        sbr.share(this->lb_share_manager, line, len);
+    if ((retval = this->read_line(offset_inout, lv))) {
+        sbr.share(this->lb_share_manager, lv.lv_start, lv.lv_len);
     }
 
-    return line != NULL;
+    return retval;
 }
 
 bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)

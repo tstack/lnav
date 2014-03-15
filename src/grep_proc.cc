@@ -355,14 +355,12 @@ void grep_proc::check_fd_set(fd_set &ready_fds)
             static const int MAX_LOOPS = 100;
 
             int    loop_count = 0;
-            size_t len;
-            char * line;
+            line_value lv;
 
             while ((loop_count < MAX_LOOPS) &&
-                   (line = this->gp_line_buffer.read_line(this->gp_pipe_offset,
-                                                          len)) != NULL) {
-                line[len] = '\0';
-                this->dispatch_line(line);
+                   (this->gp_line_buffer.read_line(this->gp_pipe_offset, lv))) {
+                lv.lv_start[lv.lv_len] = '\0';
+                this->dispatch_line(lv.lv_start);
                 loop_count += 1;
             }
 

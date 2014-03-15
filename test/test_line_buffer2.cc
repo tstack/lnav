@@ -40,24 +40,23 @@
 static void single_line(const char *data, int lendiff)
 {
     line_buffer lb;
+    line_value lv;
     auto_fd pi[2];
     off_t off = 0;
-    size_t len;
-    char *line;
+    bool ret;
     
     assert(auto_fd::pipe(pi) == 0);
     write(pi[1], data, strlen(data));
     pi[1].reset();
     
     lb.set_fd(pi[0]);
-    line = lb.read_line(off, len);
-    assert(line != NULL);
+    ret = lb.read_line(off, lv);
+    assert(ret);
     assert(off == strlen(data));
-    assert(len == strlen(data) - lendiff);
+    assert(lv.lv_len == strlen(data) - lendiff);
     
-    line = lb.read_line(off, len);
-    assert(line == NULL);
-    assert(lb.get_file_size() == strlen(data));
+    ret = lb.read_line(off, lv);
+    assert(!ret);
 }
 
 int main(int argc, char *argv[])

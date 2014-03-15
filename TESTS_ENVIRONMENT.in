@@ -3,12 +3,18 @@
 top_srcdir="@abssrcdir@"
 export top_srcdir
 
+srcdir="@abssrcdir@/test"
+export srcdir
+
 # The top build directory, derived from the path to this script.
 top_builddir=`dirname $0`
 export top_builddir
 
 test_dir="@abssrcdir@/test"
 export test_dir
+
+BZIP2_CMD="@BZIP2_CMD@"
+export BZIP2_CMD
 
 # The full path of the test case
 test_file=$1

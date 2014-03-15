@@ -113,6 +113,10 @@ public:
     /** @return The inode for this log file. */
     const struct stat &get_stat() const { return this->lf_stat; };
 
+    bool is_compressed() const {
+        return this->lf_line_buffer.is_compressed();
+    };
+
     /**
      * @return The detected format, rebuild_index() must be called before this
      * will return a value other than NULL.

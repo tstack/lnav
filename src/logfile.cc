@@ -232,8 +232,7 @@ throw (line_buffer::error, logfile::error)
     /* Check for new data based on the file size. */
     if (this->lf_index_size < st.st_size) {
         off_t  last_off, off;
-        char * line;
-        size_t len;
+        line_value lv;
 
         if (!this->lf_index.empty()) {
             off = this->lf_index.back().get_offset();
@@ -251,26 +250,20 @@ throw (line_buffer::error, logfile::error)
             off = 0;
         }
         last_off = off;
-        while ((line = this->lf_line_buffer.read_line(off, len, true)) != NULL) {
-            if (len > 0 && line[len - 1] == '\n') {
-                this->lf_partial_line = false;
-                line[len - 1] = '\0';
-                len -= 1;
-            }
-            else {
-                this->lf_partial_line = true;
-                line[len] = '\0';
-            }
-            this->process_prefix(last_off, line, len);
-            if (!this->lf_partial_line) {
-                line[len - 1] = '\n';
-            }
+        while (this->lf_line_buffer.read_line(off, lv)) {
+            char tmp = lv.lv_start[lv.lv_len];
+
+            this->lf_partial_line = lv.lv_partial;
+            lv.lv_start[lv.lv_len] = '\0';
+            this->process_prefix(last_off, lv.lv_start, lv.lv_len);
+            lv.lv_start[lv.lv_len] = tmp;
             last_off = off;
 
             if (lo != NULL) {
-                lo->logfile_indexing(*this,
-                                     this->lf_line_buffer.get_read_offset(off),
-                                     st.st_size);
+                lo->logfile_indexing(
+                    *this,
+                    this->lf_line_buffer.get_read_offset(off),
+                    st.st_size);
             }
         }
 
@@ -279,9 +272,9 @@ throw (line_buffer::error, logfile::error)
          * doing the scanning, so use the line buffer's notion of the file
          * size.
          */
-        this->lf_index_size = this->lf_line_buffer.get_file_size();
+        this->lf_index_size = off;
 
-        this->lf_line_buffer.invalidate();
+        // this->lf_line_buffer.invalidate();
 
         retval = true;
     }

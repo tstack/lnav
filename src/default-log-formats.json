@@ -286,7 +286,7 @@
         "url" : "http://www.snaplogic.com/docs/user-guide/user-guide.htm",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w+) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>[^ \\.]+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:(?:stdout|stderr): ))(?<body>.*)"
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w{4,}) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>-|\\d+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:(?:stdout|stderr): ))(?<body>.*)"
             }
         },
         "level-field" : "level",

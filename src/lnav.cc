@@ -623,7 +623,7 @@ public:
             off = total;
         }
 
-        if ((size_t)off == total ||
+        if ((((size_t)off == total) && (this->lo_last_offset != off)) ||
             ui_periodic_timer::singleton().time_to_update(index_counter)) {
             lnav_data.ld_bottom_source.update_loading(off, total);
             this->do_update();
@@ -3085,10 +3085,9 @@ static string execute_action(log_data_helper &ldh,
             static int exec_count = 0;
 
             string value = lv.to_string();
-            const char *line;
             line_buffer lb;
-            size_t len;
             off_t off = 0;
+            line_value lv;
 
             lnav_data.ld_children.push_back(child_pid);
 
@@ -3099,7 +3098,7 @@ static string execute_action(log_data_helper &ldh,
 
             lb.set_fd(err_pipe.read_end());
 
-            line = lb.read_line(off, len);
+            lb.read_line(off, lv);
 
             if (out_pipe.read_end() != -1) {
                 piper_proc *pp = new piper_proc(out_pipe.read_end(), false);
@@ -3116,7 +3115,7 @@ static string execute_action(log_data_helper &ldh,
                 lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
             }
 
-            retval = string(line, len);
+            retval = string(lv.lv_start, lv.lv_len);
         }
         break;
     }

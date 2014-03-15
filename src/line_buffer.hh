@@ -44,6 +44,16 @@
 #include "auto_mem.hh"
 #include "shared_buffer.hh"
 
+struct line_value {
+    char *lv_start;
+    size_t lv_len;
+    bool lv_partial;
+
+    void terminate() {
+        this->lv_start[this->lv_len] = '\0';
+    };
+};
+
 /**
  * Buffer for reading whole lines out of file descriptors.  The class presents
  * a stateless interface, callers specify the offset where a line starts and
@@ -82,6 +92,10 @@ public:
      */
     ssize_t get_file_size() const { return this->lb_file_size; };
 
+    bool is_compressed() const {
+        return this->lb_gz_file != NULL || this->lb_bz_file;
+    };
+
     off_t get_read_offset(off_t off) const
     {
         if (this->lb_gz_file) {
@@ -108,7 +122,7 @@ public:
      * NULL termination, the invalidate() must be called before re-reading the
      * line to refresh the buffer.
      */
-    char *read_line(off_t &offset_inout, size_t &len_out,
+    bool read_line(off_t &offset_inout, line_value &lv,
         bool include_delim = false)
         throw (error);
 
@@ -128,6 +142,7 @@ public:
         this->lb_file_offset += this->lb_buffer_size;
         this->lb_buffer_size  = 0;
         this->lb_file_size    = -1;
+        log_info("invalidate %p", this);
     };
 
     /** Release any resources held by this object. */
