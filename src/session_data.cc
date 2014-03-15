@@ -731,7 +731,10 @@ static int read_word_wrap(yajlpp_parse_context *ypc, int value)
                      lnav_view_strings + LNV__MAX,
                      ypc->get_path_fragment(-2));
     view_index = view_name - lnav_view_strings;
-    if (view_index < LNV__MAX) {
+    if (view_index == LNV_HELP) {
+
+    }
+    else if (view_index < LNV__MAX) {
         textview_curses &tc = lnav_data.ld_views[view_index];
 
         tc.set_word_wrap(value);
