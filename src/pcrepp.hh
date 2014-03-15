@@ -116,6 +116,9 @@ public:
     iterator end() { return pc_captures + pc_count; };
 
     capture_t *operator[](int offset) {
+        if (offset < 0) {
+            return NULL;
+        }
         return &this->pc_captures[offset + 1];
     };
 
