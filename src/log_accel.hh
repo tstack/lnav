@@ -33,6 +33,8 @@
 #define __log_accel_h
 
 #include <math.h>
+
+#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 
 #include <algorithm>
