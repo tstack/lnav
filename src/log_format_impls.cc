@@ -183,6 +183,8 @@ class generic_log_format : public log_format {
                 }
                 this->lf_date_time.dts_fmt_len += 1 + subsec_len;
             }
+            this->check_for_new_year(dst, log_tv);
+
             dst.push_back(logline(offset,
                                   log_tv,
                                   logline::string2level(level)));

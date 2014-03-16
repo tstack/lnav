@@ -569,19 +569,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
             }
         }
 
-        if (!dst.empty() &&
-            ((dst.back().get_time() - log_tv.tv_sec) > (24 * 60 * 60))) {
-            vector<logline>::iterator iter;
-
-            for (iter = dst.begin(); iter != dst.end(); iter++) {
-                time_t     ot = iter->get_time();
-                struct tm *otm;
-
-                otm           = gmtime(&ot);
-                otm->tm_year -= 1;
-                iter->set_time(tm2sec(otm));
-            }
-        }
+        this->check_for_new_year(dst, log_tv);
 
         dst.push_back(logline(offset, log_tv, level));
 

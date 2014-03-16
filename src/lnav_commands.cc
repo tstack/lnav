@@ -48,6 +48,36 @@
 
 using namespace std;
 
+static bool wordexperr(int rc, string &msg)
+{
+    switch (rc) {
+    case WRDE_BADCHAR:
+        msg = "error: invalid filename character";
+        return false;
+
+    case WRDE_CMDSUB:
+        msg = "error: command substitution is not allowed";
+        return false;
+
+    case WRDE_BADVAL:
+        msg = "error: unknown environment variable in file name";
+        return false;
+
+    case WRDE_NOSPACE:
+        msg = "error: out of memory";
+        return false;
+
+    case WRDE_SYNTAX:
+        msg = "error: invalid syntax";
+        return false;
+
+    default:
+        break;
+    }
+    
+    return true;
+}
+
 static string com_adjust_log_time(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting new time value";
@@ -284,37 +314,25 @@ static string com_save_to(string cmdline, vector<string> &args)
 {
     FILE *      outfile = NULL;
     const char *mode    = "";
+    string fn, retval;
 
     if (args.size() == 0) {
         args.push_back("filename");
         return "";
     }
 
-    if (args.size() != 2) {
+    if (args.size() < 2) {
         return "error: expecting file name";
     }
 
+    fn = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
+
     static_root_mem<wordexp_t, wordfree> wordmem;
 
-    switch (wordexp(args[1].c_str(), wordmem.inout(), WRDE_NOCMD |
-                    WRDE_UNDEF)) {
-    case WRDE_BADCHAR:
-        return "error: invalid filename character";
+    int rc = wordexp(fn.c_str(), wordmem.inout(), WRDE_NOCMD | WRDE_UNDEF);
 
-    case WRDE_CMDSUB:
-        return "error: command substitution is not allowed";
-
-    case WRDE_BADVAL:
-        return "error: unknown environment variable in file name";
-
-    case WRDE_NOSPACE:
-        return "error: out of memory";
-
-    case WRDE_SYNTAX:
-        return "error: invalid syntax";
-
-    default:
-        break;
+    if (!wordexperr(rc, retval)) {
+        return retval;
     }
 
     if (wordmem->we_wordc > 1) {
@@ -837,14 +855,28 @@ static string com_open(string cmdline, vector<string> &args)
 
     if (args.size() == 0) {
         args.push_back("filename");
+        return "";
     }
-    else if (args.size() > 1) {
-        list<logfile *>::iterator file_iter;
-        size_t colon_index;
-        int top = 0;
-        string fn;
+    else if (args.size() < 2) {
+        return retval;
+    }
 
-        fn = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
+    static_root_mem<wordexp_t, wordfree> wordmem;
+    list<logfile *>::iterator file_iter;
+    size_t colon_index;
+    int top = 0;
+    string pat;
+
+    pat = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
+
+    int rc = wordexp(pat.c_str(), wordmem.inout(), WRDE_NOCMD | WRDE_UNDEF);
+
+    if (!wordexperr(rc, retval)) {
+        return retval;
+    }
+
+    for (int lpc = 0; lpc < wordmem->we_wordc; lpc++) {
+        string fn = wordmem->we_wordv[lpc];
 
         if (access(fn.c_str(), R_OK) != 0 &&
             (colon_index = fn.rfind(':')) != string::npos) {
