@@ -53,6 +53,8 @@
 #include "view_curses.hh"
 #include "shared_buffer.hh"
 
+class logline;
+
 class logfile_filter {
 public:
     typedef enum {
@@ -78,7 +80,7 @@ public:
     void enable(void) { this->lf_enabled = true; };
     void disable(void) { this->lf_enabled = false; };
 
-    virtual bool matches(const std::string &line) = 0;
+    virtual bool matches(const logline &ll, const std::string &line) = 0;
 
     virtual std::string to_command(void) = 0;
 
@@ -126,7 +128,7 @@ public:
         LEVEL__FLAGS    = (LEVEL_MARK | LEVEL_CONTINUED)
     } level_t;
 
-    static const char *level_names[LEVEL__MAX];
+    static const char *level_names[LEVEL__MAX + 1];
 
     static level_t string2level(const char *levelstr, size_t len = -1, bool exact = false);
 

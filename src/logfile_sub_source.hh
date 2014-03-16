@@ -86,6 +86,10 @@ public:
         this->lss_filter_generation += 1;
     };
 
+    void filter_changed(void) {
+        this->lss_filter_generation += 1;
+    };
+
     void set_filter_enabled(logfile_filter *filter, bool enabled) {
         if (enabled) {
             filter->enable();

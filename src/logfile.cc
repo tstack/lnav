@@ -311,7 +311,7 @@ logfile_filter::type_t logfile::check_filter(iterator ll,
 
         if (line_value.empty())
             this->read_line(ll, line_value);
-        matched = filter->matches(line_value);
+        matched = filter->matches(*ll, line_value);
 
         switch (filter->get_type()) {
         case logfile_filter::INCLUDE:

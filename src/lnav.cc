@@ -1779,6 +1779,8 @@ static void handle_paging_key(int ch)
                                                       buffer);
             }
         }
+        lnav_data.ld_rl_view->add_possibility(
+            LNM_COMMAND, "levelname", logline::level_names);
         lnav_data.ld_mode = LNM_COMMAND;
         lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
         lnav_data.ld_bottom_source.set_prompt("Enter an lnav command: "
@@ -4158,6 +4160,8 @@ int main(int argc, char *argv[])
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog.log")));
 
     init_lnav_commands(lnav_commands);
+
+    lnav_data.ld_log_source.add_filter(&lnav_data.ld_level_filter);
 
     lnav_data.ld_views[LNV_HELP].
     set_sub_source(new plain_text_source(help_txt));

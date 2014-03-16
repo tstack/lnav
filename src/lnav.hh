@@ -132,6 +132,27 @@ void sqlite_close_wrapper(void *mem);
 typedef std::pair<int, int>                      ppid_time_pair_t;
 typedef std::pair<ppid_time_pair_t, std::string> session_pair_t;
 
+class level_filter : public logfile_filter {
+public:
+    level_filter()
+        : logfile_filter(EXCLUDE, ""),
+          lf_min_level(logline::LEVEL_UNKNOWN) {
+    };
+
+    bool matches(const logline &ll, const std::string &line)
+    {
+        return (ll.get_level() & ~logline::LEVEL__FLAGS) < this->lf_min_level;
+    };
+
+    std::string to_command(void)
+    {
+        return ("set-min-log-level " +
+            std::string(logline::level_names[this->lf_min_level]));
+    };
+
+    logline::level_t lf_min_level;
+};
+
 struct _lnav_data {
     std::string                             ld_session_id;
     time_t                                  ld_session_time;
@@ -174,6 +195,7 @@ struct _lnav_data {
     vis_line_t                              ld_search_start_line;
     readline_curses *                       ld_rl_view;
 
+    level_filter                            ld_level_filter;
     logfile_sub_source                      ld_log_source;
     hist_source                             ld_hist_source;
     int                                     ld_hist_zoom;

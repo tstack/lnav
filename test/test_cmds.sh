@@ -199,3 +199,12 @@ check_output "write-json-to is not working" <<EOF
     }
 ]
 EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":set-min-log-level error" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "set-min-log-level is not working" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+EOF

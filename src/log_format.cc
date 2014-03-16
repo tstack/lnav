@@ -62,7 +62,7 @@ string_attr_type logline::L_TIMESTAMP;
 string_attr_type logline::L_FILE;
 string_attr_type logline::L_PARTITION;
 
-const char *logline::level_names[LEVEL__MAX] = {
+const char *logline::level_names[LEVEL__MAX + 1] = {
     "unknown",
     "trace",
     "debug",
@@ -71,6 +71,8 @@ const char *logline::level_names[LEVEL__MAX] = {
     "error",
     "critical",
     "fatal",
+
+    NULL
 };
 
 static int strncasestr_i(const char *s1, const char *s2, size_t len)

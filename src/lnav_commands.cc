@@ -551,7 +551,7 @@ public:
           pf_pcre(code) { };
     virtual ~pcre_filter() { };
 
-    bool matches(const string &line)
+    bool matches(const logline &ll, const string &line)
     {
         pcre_context_static<30> pc;
         pcre_input pi(line);
@@ -1360,6 +1360,32 @@ static string com_save_session(string cmdline, vector<string> &args)
     return "";
 }
 
+static string com_set_min_log_level(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting log level name";
+
+    if (args.empty()) {
+        args.push_back("levelname");
+    }
+    else if (args.size() == 2) {
+        logline::level_t new_level;
+
+        new_level = logline::string2level(
+            args[1].c_str(), args[1].size(), true);
+        if (lnav_data.ld_level_filter.lf_min_level != new_level) {
+            lnav_data.ld_level_filter.lf_min_level = new_level;
+            lnav_data.ld_log_source.filter_changed();
+
+            rebuild_indexes(true);
+        }
+
+        retval = ("info: minimum log level is now -- " +
+            string(logline::level_names[new_level]));
+    }
+
+    return retval;
+}
+
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
     cmd_map["adjust-log-time"]      = com_adjust_log_time;
@@ -1390,6 +1416,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["switch-to-view"]       = com_switch_to_view;
     cmd_map["load-session"]         = com_load_session;
     cmd_map["save-session"]         = com_save_session;
+    cmd_map["set-min-log-level"]    = com_set_min_log_level;
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;
