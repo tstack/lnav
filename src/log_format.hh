@@ -189,6 +189,10 @@ public:
 
     void set_millis(uint16_t m) { this->ll_millis = m; };
 
+    uint64_t get_time_in_millis() const {
+        return (this->ll_time * 1000ULL + (uint64_t) this->ll_millis);
+    };
+
     struct timeval get_timeval() const {
         struct timeval retval = { this->ll_time, this->ll_millis * 1000 };
 

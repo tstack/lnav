@@ -162,11 +162,6 @@ through the file.
 
   >/<               Move horizontally to the next/previous search hit.
 
-  s                 Toggle "scrubbing" of log lines in the log view.  Log
-                    formats that support scrubbing will try to eliminate
-                    redundant information on a single line.  For example, the
-                    year part of a timestamp or the log level text.
-
   t                 Switch to/from the text file view.  The text file view is
                     for any files that are not recognized as log files.
 
@@ -209,9 +204,22 @@ through the file.
                     also jump to the start of any log partitions that have
                     been created with the 'partition-name' command.
 
-  T                 Toggle the display of the "time offset" column that shows
+  T                 Toggle the display of the "elapsed time" column that shows
                     the time elapsed since the beginning of the logs or the
-                    offset from the previous bookmark.
+                    offset from the previous bookmark.  Sharp changes in the
+                    message rate are highlighted by coloring the separator
+                    between the time column and the log message.  A red
+                    highlight means the message rate has slowed down and green
+                    means it has sped up.  You can use the "s/S" hotkeys to
+                    scan through the slow downs.
+
+  s/S               Move to the next/previous "slow down" in the log message
+                    rate.  A slow down is detected by measuring how quickly
+                    the message rate has changed over the previous several
+                    messages.  For example, if one message is logged every
+                    second for five seconds and then the last message arrives
+                    five seconds later, the last message will be highlighted
+                    as a slow down.
 
   i                 View/leave a histogram of the log messages over
                     time.  The histogram counts the number of

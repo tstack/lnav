@@ -36,6 +36,7 @@
 #include <vector>
 
 #include "view_curses.hh"
+#include "ansi_scrubber.hh"
 
 /**
  * Container for individual status values.
@@ -62,6 +63,12 @@ public:
     /** @param value The new value for this field. */
     void set_value(std::string value)
     {
+        string_attrs_t &sa = this->sf_value.get_attrs();
+
+        sa.clear();
+
+        scrub_ansi_string(value, sa);
+
         if (value.size() > this->get_width()) {
             if (value.size() <= 11) {
                 value.resize(11);
@@ -91,9 +98,6 @@ public:
         }
 
         this->sf_value = value;
-
-        string_attrs_t &sa = this->sf_value.get_attrs();
-        sa.clear();
 
         if (this->sf_cylon) {
             struct line_range lr(this->sf_cylon_pos, this->sf_width);

@@ -72,6 +72,7 @@ noinst_HEADERS = \
 	lnav_config.hh \
 	lnav_log.hh \
 	lnav_util.hh \
+	log_accel.hh \
     log_data_helper.hh \
     log_data_table.hh \
 	log_format.hh \
@@ -133,6 +134,7 @@ libdiag_a_SOURCES = \
 	lnav_config.cc \
 	lnav_log.cc \
 	lnav_util.cc \
+	log_accel.cc \
 	log_format.cc \
 	log_format_loader.cc \
 	logfile.cc \

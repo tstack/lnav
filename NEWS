@@ -22,6 +22,8 @@ lnav v0.7.0:
      * Added syntax-highlighting when editing SQL queries or search regexes.
      * Added a "write-json-to" command that writes the result of a SQL query
        to a JSON-formatted file.
+     * The "elapsed time" column now uses red/green coloring to indicate
+       sharp changes in the message rate.
 
      Fixes:
      * Performance improvements.
@@ -44,6 +46,7 @@ lnav v0.7.0:
      * Improved display of possible matches during tab-completion in the
        command-prompt.  The matches are now shown in a separate view and
        pressing tab repeatedly will scroll through the view.
+     * The "open" command now does shell word expansion for file names.
 
 lnav v0.6.2:
      Features:

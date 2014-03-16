@@ -41,6 +41,7 @@
 #include <algorithm>
 
 #include "lnav_log.hh"
+#include "log_accel.hh"
 #include "strong_int.hh"
 #include "logfile.hh"
 #include "bookmarks.hh"
@@ -115,7 +116,7 @@ public:
         return retval;
     };
 
-    void toggle_scrub(void) { 
+    void toggle_scrub(void) {
         this->lss_flags ^= F_SCRUB;
         this->clear_line_size_cache();
     };
@@ -329,6 +330,8 @@ public:
 
         return this->at(vl);
     };
+
+    log_accel::direction_t get_line_accel_direction(vis_line_t vl);
 
     /**
      * Container for logfile references that keeps of how many lines in the

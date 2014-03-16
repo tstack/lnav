@@ -34,6 +34,7 @@ check_PROGRAMS = \
 	test_grep_proc2 \
 	test_hist_source \
 	test_line_buffer2 \
+	test_log_accel \
 	test_pcrepp \
 	test_top_status \
 	test_yajlpp
@@ -64,6 +65,9 @@ test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 
 test_line_buffer2_SOURCES = test_line_buffer2.cc
 test_line_buffer2_LDADD = ../src/libdiag.a
+
+test_log_accel_SOURCES = test_log_accel.cc
+test_log_accel_LDADD = ../src/libdiag.a
 
 test_pcrepp_SOURCES = test_pcrepp.cc
 test_pcrepp_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
@@ -215,6 +219,7 @@ TESTS = \
 	test_grep_proc2 \
 	test_hist_source \
 	test_json_format.sh \
+	test_log_accel \
 	test_logfile.sh \
 	test_pcrepp \
 	test_sessions.sh \

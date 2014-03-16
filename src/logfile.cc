@@ -280,8 +280,9 @@ throw (line_buffer::error, logfile::error)
     }
 
     this->lf_index_time = this->lf_line_buffer.get_file_time();
-    if (!this->lf_index_time)
+    if (!this->lf_index_time) {
         this->lf_index_time = st.st_mtime;
+    }
 
     return retval;
 }

@@ -33,8 +33,8 @@
 
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
+#include "log_accel.hh"
 #include "logfile_sub_source.hh"
-
 
 using namespace std;
 
@@ -242,7 +242,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     }
 
     if (this->lss_flags & F_TIME_OFFSET) {
-        long long start_millis, curr_millis;
+        int64_t start_millis, curr_millis;
 
         vis_line_t prev_mark =
             tc.get_bookmarks()[&textview_curses::BM_USER].prev(vis_line_t(row));
@@ -251,11 +251,9 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         }
 
         logline *first_line = this->find_line(this->at(prev_mark));
-        start_millis = first_line->get_time() * 1000 +
-                       first_line->get_millis();
-        curr_millis = this->lss_token_line->get_time() * 1000 +
-                      this->lss_token_line->get_millis();
-        long long diff = curr_millis - start_millis;
+        start_millis = first_line->get_time_in_millis();
+        curr_millis = this->lss_token_line->get_time_in_millis();
+        int64_t diff = curr_millis - start_millis;
 
         /* 24h22m33s111 */
 
@@ -372,8 +370,26 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             }
         }
 
-        attrs = vc.attrs_for_role(view_colors::VCR_OK);
+        // attrs = vc.attrs_for_role(view_colors::VCR_OK);
+        attrs = view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK);
         value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
+        value_out.push_back(string_attr(line_range(12, 13),
+            &view_curses::VC_GRAPHIC, ACS_VLINE));
+
+        int bar_attrs = 0;
+
+        switch (this->get_line_accel_direction(vis_line_t(row))) {
+        case log_accel::A_STEADY:
+            break;
+        case log_accel::A_DECEL:
+            bar_attrs = view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK);
+            break;
+        case log_accel::A_ACCEL:
+            bar_attrs = view_colors::ansi_color_pair(COLOR_GREEN, COLOR_BLACK);
+            break;
+        }
+        value_out.push_back(
+            string_attr(line_range(12, 13), &view_curses::VC_STYLE, bar_attrs));
     }
 
     lr.lr_start = 0;
@@ -630,6 +646,29 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
 
         last_file = lf;
     }
+}
+
+log_accel::direction_t logfile_sub_source::get_line_accel_direction(
+    vis_line_t vl)
+{
+    log_accel la;
+
+    while (vl >= 0) {
+        logline *curr_line = this->find_line(this->at(vl));
+
+        if (curr_line->is_continued()) {
+            --vl;
+            continue;
+        }
+
+        if (!la.add_point(curr_line->get_time_in_millis())) {
+            break;
+        }
+
+        --vl;
+    }
+
+    return la.get_direction();
 }
 
 #if 0

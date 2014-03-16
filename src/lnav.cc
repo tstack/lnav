@@ -76,6 +76,7 @@
 #include "init-sql.hh"
 #include "logfile.hh"
 #include "lnav_log.hh"
+#include "log_accel.hh"
 #include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "listview_curses.hh"
@@ -1607,6 +1608,7 @@ static void handle_paging_key(int ch)
         }
         break;
 
+#if 0
     case 'S':
         {
             bookmark_vector<vis_line_t>::iterator iter;
@@ -1619,6 +1621,55 @@ static void handle_paging_key(int ch)
 
             lnav_data.ld_last_user_mark[tc] = -1;
             tc->reload_data();
+        }
+        break;
+#endif
+
+    case 's':
+        if (lss) {
+            vis_line_t next_top = vis_line_t(tc->get_top() + 2);
+
+            if (!lss->is_time_offset_enabled()) {
+                lnav_data.ld_rl_view->set_alt_value(
+                    HELP_MSG_1(T, "to disable elapsed-time mode"));
+            }
+            lss->set_time_offset(true);
+            while (next_top < tc->get_inner_height()) {
+                if (lss->find_line(lss->at(next_top))->is_continued()) {
+                }
+                else if (lss->get_line_accel_direction(next_top) ==
+                         log_accel::A_DECEL) {
+                    --next_top;
+                    tc->set_top(next_top);
+                    break;
+                }
+
+                ++next_top;
+            }
+        }
+        break;
+
+    case 'S':
+        if (lss) {
+            vis_line_t next_top = tc->get_top();
+
+            if (!lss->is_time_offset_enabled()) {
+                lnav_data.ld_rl_view->set_alt_value(
+                    HELP_MSG_1(T, "to disable elapsed-time mode"));
+            }
+            lss->set_time_offset(true);
+            while (next_top < tc->get_inner_height()) {
+                if (lss->find_line(lss->at(next_top))->is_continued()) {
+                }
+                else if (lss->get_line_accel_direction(next_top) ==
+                         log_accel::A_DECEL) {
+                    --next_top;
+                    tc->set_top(next_top);
+                    break;
+                }
+
+                --next_top;
+            }
         }
         break;
 
@@ -1734,11 +1785,6 @@ static void handle_paging_key(int ch)
         }
         break;
 
-    case 's':
-        lnav_data.ld_log_source.toggle_scrub();
-        tc->reload_data();
-        break;
-
     case ':':
         if (lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
             logfile_sub_source &lss      = lnav_data.ld_log_source;
@@ -1784,7 +1830,7 @@ static void handle_paging_key(int ch)
         lnav_data.ld_mode = LNM_COMMAND;
         lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
         lnav_data.ld_bottom_source.set_prompt("Enter an lnav command: "
-            "(Press CTRL+] to abort)");
+            "(Press " ANSI_BOLD("CTRL+]") " to abort)");
         break;
 
     case '/':
@@ -1795,7 +1841,7 @@ static void handle_paging_key(int ch)
         lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
         lnav_data.ld_bottom_source.set_prompt(
             "Enter a regular expression to search for: "
-            "(Press CTRL+] to abort)");
+            "(Press " ANSI_BOLD("CTRL+]") " to abort)");
         break;
 
     case ';':
@@ -1819,8 +1865,8 @@ static void handle_paging_key(int ch)
                 fos->fos_active = true;
                 tc->reload_data();
             }
-            lnav_data.ld_bottom_source.set_prompt(
-                "Enter an SQL query: (Press CTRL+] to abort)");
+            lnav_data.ld_bottom_source.set_prompt("Enter an SQL query: (Press "
+                ANSI_BOLD("CTRL+]") " to abort)");
         }
         break;
 
@@ -1848,6 +1894,10 @@ static void handle_paging_key(int ch)
 
     case 'T':
         lnav_data.ld_log_source.toggle_time_offset();
+        if (lss->is_time_offset_enabled()) {
+            lnav_data.ld_rl_view->set_alt_value(
+                HELP_MSG_2(s, S, "to move forward/backward through slow downs"));
+        }
         tc->reload_data();
         break;
 
