@@ -305,7 +305,7 @@ throw (error)
 
     require(start >= 0);
 
-    if (this->in_range(start) && this->in_range(start + max_length)) {
+    if (this->in_range(start) && this->in_range(start + max_length - 1)) {
         /* Cache already has the data, nothing to do. */
         retval = true;
     }
@@ -480,7 +480,8 @@ throw (error)
             (lv.lv_len >= MAX_LINE_BUFFER_SIZE) ||
             (request_size == MAX_LINE_BUFFER_SIZE) ||
             ((request_size > lv.lv_len) && lv.lv_len > 0)) {
-            if ((lf != NULL) && ((lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1)) {
+            if ((lf != NULL) &&
+                ((lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1)) {
                 lf = NULL;
             }
             if (lf != NULL) {

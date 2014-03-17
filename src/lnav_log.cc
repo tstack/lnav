@@ -35,6 +35,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,12 +99,18 @@ static char *log_alloc(void)
         log_ring.lr_frag_start = new_start - log_ring.lr_data;
         log_ring.lr_frag_end = log_ring.lr_length;
         log_ring.lr_length = 0;
+
+        assert(log_ring.lr_frag_start >= 0);
+        assert(log_ring.lr_frag_start <= BUFFER_SIZE);
     } else if (data_end >= log_ring.lr_frag_start) {
         const char *new_start = &log_ring.lr_data[log_ring.lr_frag_start];
 
         new_start = (const char *)memchr(
-            new_start, '\n', log_ring.lr_length - MAX_LOG_LINE_SIZE);
+            new_start, '\n', log_ring.lr_frag_end - log_ring.lr_frag_start);
+        assert(new_start != NULL);
         log_ring.lr_frag_start = new_start - log_ring.lr_data;
+        assert(log_ring.lr_frag_start >= 0);
+        assert(log_ring.lr_frag_start <= BUFFER_SIZE);
     }
 
     return &log_ring.lr_data[log_ring.lr_length];
