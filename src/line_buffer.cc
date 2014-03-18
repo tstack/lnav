@@ -401,7 +401,11 @@ throw (error)
         // up to the end of the file.
         if (rc > (this->lb_buffer_max - this->lb_buffer_size)) {
             rc = -1;
+#ifdef ENODATA
             errno = ENODATA;
+#else
+            errno = EAGAIN;
+#endif
         }
         switch (rc) {
         case 0:
