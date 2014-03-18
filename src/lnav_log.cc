@@ -51,7 +51,20 @@
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
-#include <termcap.h>
+
+#if defined HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/termcap.h>
+#elif defined HAVE_NCURSESW_H
+#  include <termcap.h>
+#elif defined HAVE_NCURSES_CURSES_H
+#  include <ncurses/termcap.h>
+#elif defined HAVE_NCURSES_H
+#  include <termcap.h>
+#elif defined HAVE_CURSES_H
+#  include <termcap.h>
+#else
+#  error "SysV or X/Open-compatible Curses header file required"
+#endif
 
 #include "lnav_log.hh"
 
