@@ -31,7 +31,9 @@
 
 #include "config.h"
 
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
+#endif
 
 #include "shared_buffer.hh"
 
@@ -39,6 +41,7 @@ static const bool DEBUG_TRACE = false;
 
 void shared_buffer_ref::share(shared_buffer &sb, char *data, size_t len)
 {
+#ifdef HAVE_EXECINFO_H
     if (DEBUG_TRACE) {
         void *frames[128];
         int rc;
@@ -46,6 +49,7 @@ void shared_buffer_ref::share(shared_buffer &sb, char *data, size_t len)
         rc = backtrace(frames, 128);
         this->sb_backtrace.reset(backtrace_symbols(frames, rc));
     }
+#endif
 
     this->disown();
 

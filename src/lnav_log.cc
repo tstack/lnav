@@ -42,7 +42,11 @@
 #include <unistd.h>
 #include <signal.h>
 #include <libgen.h>
+
+#ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
+#endif
+
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/utsname.h>
@@ -190,7 +194,9 @@ static void sigabrt(int sig)
 
     log_error("Received signal: %d", sig);
 
+#ifdef HAVE_EXECINFO_H
     frame_count = backtrace(frames, 128);
+#endif
     curr_time = time(NULL);
     localtime_r(&curr_time, &localtm);
     snprintf(crash_path, sizeof(crash_path),
@@ -211,7 +217,9 @@ static void sigabrt(int sig)
                 log_ring.lr_frag_end - log_ring.lr_frag_start);
         }
         write(fd, log_ring.lr_data, log_ring.lr_length);
+#ifdef HAVE_EXECINFO_H
         backtrace_symbols_fd(frames, frame_count, fd);
+#endif
         close(fd);
 
         remove(latest_crash_path);

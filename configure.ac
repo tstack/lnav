@@ -89,7 +89,7 @@ AC_SEARCH_LIBS(dlopen, dl)
 AC_SEARCH_LIBS(cur_term, tinfo)
 AC_SEARCH_LIBS(Gpm_Open, gpm)
 
-AC_CHECK_HEADERS(pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h)
+AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h)
 
 AX_WITH_CURSES
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
