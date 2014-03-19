@@ -89,7 +89,7 @@ typedef std::vector<std::pair<int, string> > timestamped_list_t;
 static std::vector<content_line_t> marked_session_lines;
 static std::vector<content_line_t> offset_session_lines;
 
-static void bind_line(sqlite3 *db,
+static bool bind_line(sqlite3 *db,
                       sqlite3_stmt *stmt,
                       content_line_t cl,
                       time_t session_time)
@@ -99,6 +99,11 @@ static void bind_line(sqlite3 *db,
     logfile *lf;
 
     lf = lss.find(cl);
+
+    if (lf == NULL) {
+        return false;
+    }
+
     line_iter = lf->begin() + cl;
 
     char timestamp[64];
@@ -110,7 +115,7 @@ static void bind_line(sqlite3 *db,
                           SQLITE_TRANSIENT) != SQLITE_OK) {
         fprintf(stderr, "error: could not bind log time -- %s\n",
                 sqlite3_errmsg(db));
-        return;
+        return false;
     }
 
     const std::string &format_name = lf->get_format()->get_name();
@@ -120,7 +125,7 @@ static void bind_line(sqlite3 *db,
                           SQLITE_TRANSIENT) != SQLITE_OK) {
         fprintf(stderr, "error: could not bind log format -- %s\n",
                     sqlite3_errmsg(db));
-        return;
+        return false;
     }
 
     std::string line_hash = hash_string(lf->read_line(line_iter));
@@ -130,14 +135,16 @@ static void bind_line(sqlite3 *db,
                           SQLITE_TRANSIENT) != SQLITE_OK) {
         fprintf(stderr, "error: could not bind log hash -- %s\n",
                 sqlite3_errmsg(db));
-        return;
+        return false;
     }
 
     if (sqlite3_bind_int64(stmt, 4, session_time) != SQLITE_OK) {
         fprintf(stderr, "error: could not bind session time -- %s\n",
                 sqlite3_errmsg(db));
-        return;
+        return false;
     }
+
+    return true;
 }
 
 struct session_file_info {
@@ -826,7 +833,9 @@ static void save_user_bookmarks(
 
         marked_session_lines.push_back(cl);
 
-        bind_line(db, stmt, cl, lnav_data.ld_session_time);
+        if (!bind_line(db, stmt, cl, lnav_data.ld_session_time)) {
+            continue;
+        }
 
         if (meta_iter == bm_meta.end()) {
             if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
@@ -899,7 +908,10 @@ static void save_time_bookmarks(void)
     for (std::vector<content_line_t>::iterator cl_iter = marked_session_lines.begin();
          cl_iter != marked_session_lines.end();
          ++cl_iter) {
-        bind_line(db.in(), stmt.in(), *cl_iter, lnav_data.ld_session_time);
+        if (!bind_line(
+            db.in(), stmt.in(), *cl_iter, lnav_data.ld_session_time)) {
+            continue;
+        }
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
             fprintf(stderr,
@@ -939,9 +951,13 @@ static void save_time_bookmarks(void)
                 continue;
 
             base_content_line = lss.get_file_base_content_line(file_iter);
-            base_content_line = content_line_t(base_content_line + lf->size() - 1);
+            base_content_line = content_line_t(
+                base_content_line + lf->size() - 1);
 
-            bind_line(db.in(), stmt.in(), base_content_line, lnav_data.ld_session_time);
+            if (!bind_line(db.in(), stmt.in(), base_content_line,
+                lnav_data.ld_session_time)) {
+                continue;
+            }
 
             if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
                 fprintf(stderr, "error: could not bind log hash -- %s\n",
@@ -979,7 +995,10 @@ static void save_time_bookmarks(void)
     for (std::vector<content_line_t>::iterator cl_iter = offset_session_lines.begin();
          cl_iter != offset_session_lines.end();
          ++cl_iter) {
-        bind_line(db.in(), stmt.in(), *cl_iter, lnav_data.ld_session_time);
+        if (!bind_line(
+            db.in(), stmt.in(), *cl_iter, lnav_data.ld_session_time)) {
+            continue;
+        }
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
             fprintf(stderr,
@@ -1020,7 +1039,10 @@ static void save_time_bookmarks(void)
 
             base_content_line = lss.get_file_base_content_line(file_iter);
 
-            bind_line(db.in(), stmt.in(), base_content_line, lnav_data.ld_session_time);
+            if (!bind_line(db.in(), stmt.in(), base_content_line,
+                lnav_data.ld_session_time)) {
+                continue;
+            }
 
             if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
                 fprintf(stderr, "error: could not bind log hash -- %s\n",
