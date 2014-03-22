@@ -6955,6 +6955,11 @@ fi
 
     LIBS=$ax_saved_LIBS
 
+
+if test "x$ax_cv_curses" != xyes; then
+    as_fn_error $? "requires an X/Open-compatible Curses library with color" "$LINENO" 5
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib pcre" >&5
 $as_echo_n "checking lib pcre... " >&6; }
 

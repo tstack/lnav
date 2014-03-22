@@ -66,9 +66,9 @@ int main(int argc, char *argv[])
         struct tm en_tm, es_tm;
         date_time_scanner dts;
 
-        setlocale(LC_TIME, "es_ES");
-        assert(dts.scan(en_date, NULL, &en_tm, en_tv) != NULL);
-        assert(dts.scan(bg_date, NULL, &es_tm, es_tv) != NULL);
-
+        if (setlocale(LC_TIME, "es_ES.utf8") != NULL) {
+            assert(dts.scan(en_date, NULL, &en_tm, en_tv) != NULL);
+            assert(dts.scan(bg_date, NULL, &es_tm, es_tv) != NULL);
+        }
     }
 }
