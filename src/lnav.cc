@@ -3470,10 +3470,11 @@ static void looper(void)
         lnav_data.ld_scroll_broadcaster.invoke(lnav_data.ld_view_stack.top());
 
         bool session_loaded = false;
+        struct timeval curr_to = { 0, 330000 };
 
         while (lnav_data.ld_looping) {
             fd_set         ready_rfds = lnav_data.ld_read_fds;
-            struct timeval to         = { 0, 330000 };
+            struct timeval to = curr_to;
             int            rc;
 
             lnav_data.ld_top_source.update_time();
@@ -3563,6 +3564,7 @@ static void looper(void)
                     rebuild_indexes(true);
                     session_loaded = true;
                 }
+                curr_to.tv_usec = 330000;
 
                 {
                     vector<pair<string, string> > msgs;

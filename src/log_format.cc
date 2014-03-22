@@ -1003,7 +1003,7 @@ void external_log_format::build(std::vector<std::string> &errors)
         bool found = false;
 
         for (std::vector<pattern *>::iterator pat_iter = this->elf_pattern_order.begin();
-             pat_iter != this->elf_pattern_order.end();
+             pat_iter != this->elf_pattern_order.end() && !found;
              ++pat_iter) {
             pattern &pat = *(*pat_iter);
 
@@ -1011,8 +1011,16 @@ void external_log_format::build(std::vector<std::string> &errors)
                 continue;
 
             if (pat.p_pcre->match(pc, pi)) {
-                found = true;
-                break;
+                const char *ts = pi.get_substr_start(
+                    pc[this->lf_timestamp_field]);
+                date_time_scanner dts;
+                struct timeval tv;
+                struct tm tm;
+
+                if (dts.scan(ts, NULL, &tm, tv) != NULL) {
+                    found = true;
+                    break;
+                }
             }
         }
 

@@ -206,7 +206,6 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
              this->ds_pcre_input.pi_length) {
         this->ds_pcre_input.pi_next_offset += 1;
         token_out = DT_LINE;
-
         return false;
     }
 
@@ -316,9 +315,9 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
                             token_out = data_token_t(lpc);
                             return true;
                         }
-                        this->ds_pcre_input.pi_next_offset =
-                            this->ds_pcre_input.pi_offset;
                     }
+                    this->ds_pcre_input.pi_next_offset =
+                        this->ds_pcre_input.pi_offset;
                     break;
 
                 default:

@@ -83,7 +83,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = lnav$(EXEEXT)
-noinst_PROGRAMS = bin2c$(EXEEXT) lnav-test$(EXEEXT)
+noinst_PROGRAMS = bin2c$(EXEEXT) ptimec$(EXEEXT) lnav-test$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/config.h.in $(top_srcdir)/mkinstalldirs \
@@ -119,21 +119,22 @@ am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	log_format.$(OBJEXT) log_format_loader.$(OBJEXT) \
 	logfile.$(OBJEXT) logfile_sub_source.$(OBJEXT) \
 	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
-	data_parser.$(OBJEXT) readline_curses.$(OBJEXT) \
-	readline_highlighters.$(OBJEXT) session_data.$(OBJEXT) \
-	sequence_matcher.$(OBJEXT) shared_buffer.$(OBJEXT) \
-	sqlite-extension-func.$(OBJEXT) statusview_curses.$(OBJEXT) \
+	data_parser.$(OBJEXT) ptimec_rt.$(OBJEXT) \
+	readline_curses.$(OBJEXT) readline_highlighters.$(OBJEXT) \
+	session_data.$(OBJEXT) sequence_matcher.$(OBJEXT) \
+	shared_buffer.$(OBJEXT) sqlite-extension-func.$(OBJEXT) \
+	statusview_curses.$(OBJEXT) \
 	string-extension-functions.$(OBJEXT) pcrepp.$(OBJEXT) \
 	piper_proc.$(OBJEXT) sql_util.$(OBJEXT) \
 	state-extension-functions.$(OBJEXT) strnatcmp.$(OBJEXT) \
-	textview_curses.$(OBJEXT) view_curses.$(OBJEXT) \
-	vt52_curses.$(OBJEXT) log_vtab_impl.$(OBJEXT) \
-	xterm_mouse.$(OBJEXT) yajlpp.$(OBJEXT) yajl/yajl.$(OBJEXT) \
-	yajl/yajl_alloc.$(OBJEXT) yajl/yajl_buf.$(OBJEXT) \
-	yajl/yajl_encode.$(OBJEXT) yajl/yajl_gen.$(OBJEXT) \
-	yajl/yajl_lex.$(OBJEXT) yajl/yajl_parser.$(OBJEXT) \
-	yajl/yajl_tree.$(OBJEXT) yajl/yajl_version.$(OBJEXT) \
-	spookyhash/SpookyV2.$(OBJEXT)
+	textview_curses.$(OBJEXT) time_fmts.$(OBJEXT) \
+	view_curses.$(OBJEXT) vt52_curses.$(OBJEXT) \
+	log_vtab_impl.$(OBJEXT) xterm_mouse.$(OBJEXT) yajlpp.$(OBJEXT) \
+	yajl/yajl.$(OBJEXT) yajl/yajl_alloc.$(OBJEXT) \
+	yajl/yajl_buf.$(OBJEXT) yajl/yajl_encode.$(OBJEXT) \
+	yajl/yajl_gen.$(OBJEXT) yajl/yajl_lex.$(OBJEXT) \
+	yajl/yajl_parser.$(OBJEXT) yajl/yajl_tree.$(OBJEXT) \
+	yajl/yajl_version.$(OBJEXT) spookyhash/SpookyV2.$(OBJEXT)
 libdiag_a_OBJECTS = $(am_libdiag_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
@@ -149,6 +150,9 @@ lnav_DEPENDENCIES = $(TEXT2C_FILES) $(am__DEPENDENCIES_2)
 am_lnav_test_OBJECTS = lnav.$(OBJEXT) test_override.$(OBJEXT)
 lnav_test_OBJECTS = $(am_lnav_test_OBJECTS)
 lnav_test_DEPENDENCIES = $(TEXT2C_FILES) $(am__DEPENDENCIES_2)
+am_ptimec_OBJECTS = ptimec.$(OBJEXT)
+ptimec_OBJECTS = $(am_ptimec_OBJECTS)
+ptimec_DEPENDENCIES =
 SCRIPTS = $(dist_noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -192,9 +196,9 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libdiag_a_SOURCES) $(bin2c_SOURCES) $(lnav_SOURCES) \
-	$(lnav_test_SOURCES)
+	$(lnav_test_SOURCES) $(ptimec_SOURCES)
 DIST_SOURCES = $(libdiag_a_SOURCES) $(bin2c_SOURCES) $(lnav_SOURCES) \
-	$(lnav_test_SOURCES)
+	$(lnav_test_SOURCES) $(ptimec_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -348,6 +352,21 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libdiag.a
+TIME_FORMATS = \
+    "%Y-%m-%d %H:%M:%S" \
+    "%Y-%m-%d %H:%M" \
+    "%Y-%m-%dT%H:%M:%S" \
+    "%Y-%m-%dT%H:%M:%SZ" \
+    "%Y/%m/%d %H:%M:%S" \
+    "%Y/%m/%d %H:%M" \
+    "%a %b %d %H:%M:%S %Y" \
+    "%a %b %d %H:%M:%S %Z %Y" \
+    "%a %b %d %H:%M:%S " \
+    "%d/%b/%Y:%H:%M:%S %z" \
+    "%b %d %H:%M:%S" \
+    "%m/%d/%y %H:%M:%S" \
+    "%m%d %H:%M:%S"
+
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
@@ -409,6 +428,7 @@ noinst_HEADERS = \
 	logfile_sub_source.hh \
 	pcrepp.hh \
 	piper_proc.hh \
+	ptimec.hh \
 	readline_curses.hh \
 	readline_highlighters.hh \
 	sequence_matcher.hh \
@@ -470,6 +490,7 @@ libdiag_a_SOURCES = \
 	network-extension-functions.cc \
 	data_scanner.cc \
 	data_parser.cc \
+	ptimec_rt.cc \
 	readline_curses.cc \
 	readline_highlighters.cc \
 	session_data.cc \
@@ -484,6 +505,7 @@ libdiag_a_SOURCES = \
 	state-extension-functions.cc \
 	strnatcmp.c \
 	textview_curses.cc \
+	time_fmts.cc \
 	view_curses.cc \
 	vt52_curses.cc \
 	log_vtab_impl.cc \
@@ -527,11 +549,14 @@ lnav_test_LDADD = \
 
 bin2c_SOURCES = bin2c.c
 bin2c_LDADD = 
+ptimec_SOURCES = ptimec.cc
+ptimec_LDADD = 
 DISTCLEANFILES = \
 	dump-pid-sh.c \
 	help.c \
 	init-sql.c \
-	default-log-formats-json.c
+	default-log-formats-json.c \
+    time_fmts.cc
 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -681,6 +706,10 @@ lnav-test$(EXEEXT): $(lnav_test_OBJECTS) $(lnav_test_DEPENDENCIES) $(EXTRA_lnav_
 	@rm -f lnav-test$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(lnav_test_OBJECTS) $(lnav_test_LDADD) $(LIBS)
 
+ptimec$(EXEEXT): $(ptimec_OBJECTS) $(ptimec_DEPENDENCIES) $(EXTRA_ptimec_DEPENDENCIES) 
+	@rm -f ptimec$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(ptimec_OBJECTS) $(ptimec_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f spookyhash/*.$(OBJEXT)
@@ -716,6 +745,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/network-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcrepp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/piper_proc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptimec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ptimec_rt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readline_highlighters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence_matcher.Po@am__quote@
@@ -729,6 +760,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strnatcmp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_override.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textview_curses.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/time_fmts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vt52_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xterm_mouse.Po@am__quote@
@@ -1019,6 +1051,9 @@ init.sql: $(srcdir)/init_sql.py
 
 init-sql.c: $(srcdir)/init.sql bin2c
 	./bin2c -z -c $(srcdir)/init.sql $@
+
+time_fmts.cc: ptimec
+	./ptimec $(TIME_FORMATS) > $@
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

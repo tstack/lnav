@@ -1,7 +1,7 @@
 
 bin_PROGRAMS = lnav
 
-noinst_PROGRAMS = bin2c lnav-test
+noinst_PROGRAMS = bin2c ptimec lnav-test
 
 noinst_LIBRARIES = libdiag.a
 
@@ -19,6 +19,24 @@ init.sql: $(srcdir)/init_sql.py
 
 init-sql.c: $(srcdir)/init.sql bin2c
 	./bin2c -z -c $(srcdir)/init.sql $@
+
+TIME_FORMATS = \
+    "%Y-%m-%d %H:%M:%S" \
+    "%Y-%m-%d %H:%M" \
+    "%Y-%m-%dT%H:%M:%S" \
+    "%Y-%m-%dT%H:%M:%SZ" \
+    "%Y/%m/%d %H:%M:%S" \
+    "%Y/%m/%d %H:%M" \
+    "%a %b %d %H:%M:%S %Y" \
+    "%a %b %d %H:%M:%S %Z %Y" \
+    "%a %b %d %H:%M:%S " \
+    "%d/%b/%Y:%H:%M:%S %z" \
+    "%b %d %H:%M:%S" \
+    "%m/%d/%y %H:%M:%S" \
+    "%m%d %H:%M:%S"
+
+time_fmts.cc: ptimec
+	./ptimec $(TIME_FORMATS) > $@
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
@@ -81,6 +99,7 @@ noinst_HEADERS = \
 	logfile_sub_source.hh \
 	pcrepp.hh \
 	piper_proc.hh \
+	ptimec.hh \
 	readline_curses.hh \
 	readline_highlighters.hh \
 	sequence_matcher.hh \
@@ -142,6 +161,7 @@ libdiag_a_SOURCES = \
 	network-extension-functions.cc \
 	data_scanner.cc \
 	data_parser.cc \
+	ptimec_rt.cc \
 	readline_curses.cc \
 	readline_highlighters.cc \
 	session_data.cc \
@@ -156,6 +176,7 @@ libdiag_a_SOURCES = \
 	state-extension-functions.cc \
 	strnatcmp.c \
 	textview_curses.cc \
+	time_fmts.cc \
 	view_curses.cc \
 	vt52_curses.cc \
 	log_vtab_impl.cc \
@@ -200,11 +221,15 @@ lnav_test_LDADD = \
 bin2c_SOURCES = bin2c.c
 bin2c_LDADD =
 
+ptimec_SOURCES = ptimec.cc
+ptimec_LDADD =
+
 DISTCLEANFILES = \
 	dump-pid-sh.c \
 	help.c \
 	init-sql.c \
-	default-log-formats-json.c
+	default-log-formats-json.c \
+    time_fmts.cc
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

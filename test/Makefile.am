@@ -31,6 +31,7 @@ check_PROGRAMS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
+	test_date_time_scanner \
 	test_grep_proc2 \
 	test_hist_source \
 	test_line_buffer2 \
@@ -56,6 +57,9 @@ test_auto_mem_SOURCES = test_auto_mem.cc
 
 test_bookmarks_SOURCES = test_bookmarks.cc
 test_bookmarks_LDADD = ../src/libdiag.a
+
+test_date_time_scanner_SOURCES = test_date_time_scanner.cc
+test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS) -lcrypto
 
 test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
@@ -210,6 +214,7 @@ TESTS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
+	test_date_time_scanner \
 	test_cmds.sh \
 	test_line_buffer2 \
 	test_line_buffer.sh \

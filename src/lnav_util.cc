@@ -40,6 +40,7 @@
 #include <sqlite3.h>
 
 #include "auto_fd.hh"
+#include "ptimec.hh"
 #include "lnav_util.hh"
 
 std::string hash_string(const std::string &str)
@@ -263,14 +264,14 @@ const char *date_time_scanner::scan(const char *time_dest,
     const char *retval = NULL;
 
     if (!time_fmt) {
-        time_fmt = std_time_fmt;
+        time_fmt = PTIMEC_FORMAT_STR;
     }
 
     while (next_format(time_fmt,
                        curr_time_fmt,
                        this->dts_fmt_lock)) {
         *tm_out = this->dts_base_tm;
-        if (time_fmt[curr_time_fmt][0] == '+') {
+        if (time_dest[0] == '+') {
             int gmt_int, off;
 
             retval = NULL;
@@ -291,6 +292,38 @@ const char *date_time_scanner::scan(const char *time_dest,
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len = off;
                 retval = time_dest + off;
+                found = true;
+                break;
+            }
+        }
+        else if (time_fmt == PTIMEC_FORMAT_STR) {
+            ptime_func func = PTIMEC_FORMATS[curr_time_fmt].pf_func;
+            off_t off = 0;
+
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+            tm_out->tm_zone = NULL;
+#endif
+            if (func(tm_out, time_dest, off, strlen(time_dest))) {
+                retval = &time_dest[off];
+
+                if (tm_out->tm_year < 70) {
+                    tm_out->tm_year = 80;
+                }
+                if (this->dts_local_time) {
+                    time_t gmt = tm2sec(tm_out);
+
+                    localtime_r(&gmt, tm_out);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+                    tm_out->tm_zone = NULL;
+#endif
+                    tm_out->tm_isdst = 0;
+                }
+                tv_out.tv_sec = tm2sec(tm_out);
+                tv_out.tv_usec = 0;
+
+                this->dts_fmt_lock = curr_time_fmt;
+                this->dts_fmt_len  = retval - time_dest;
+
                 found = true;
                 break;
             }
@@ -326,6 +359,7 @@ const char *date_time_scanner::scan(const char *time_dest,
 #endif
                 tm_out->tm_isdst = 0;
             }
+
             tv_out.tv_sec = tm2sec(tm_out);
             tv_out.tv_usec = 0;
 

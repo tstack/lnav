@@ -87,12 +87,14 @@ check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 	drive_vt52_curses$(EXEEXT) drive_readline_curses$(EXEEXT) \
 	slicer$(EXEEXT) scripty$(EXEEXT) test_ansi_scrubber$(EXEEXT) \
 	test_auto_fd$(EXEEXT) test_auto_mem$(EXEEXT) \
-	test_bookmarks$(EXEEXT) test_grep_proc2$(EXEEXT) \
-	test_hist_source$(EXEEXT) test_line_buffer2$(EXEEXT) \
-	test_log_accel$(EXEEXT) test_pcrepp$(EXEEXT) \
-	test_top_status$(EXEEXT) test_yajlpp$(EXEEXT)
+	test_bookmarks$(EXEEXT) test_date_time_scanner$(EXEEXT) \
+	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
+	test_line_buffer2$(EXEEXT) test_log_accel$(EXEEXT) \
+	test_pcrepp$(EXEEXT) test_top_status$(EXEEXT) \
+	test_yajlpp$(EXEEXT)
 TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
-	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) test_cmds.sh \
+	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) \
+	test_date_time_scanner$(EXEEXT) test_cmds.sh \
 	test_line_buffer2$(EXEEXT) test_line_buffer.sh \
 	test_listview.sh test_mvwattrline.sh test_grep_proc.sh \
 	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
@@ -185,6 +187,10 @@ test_auto_mem_DEPENDENCIES =
 am_test_bookmarks_OBJECTS = test_bookmarks.$(OBJEXT)
 test_bookmarks_OBJECTS = $(am_test_bookmarks_OBJECTS)
 test_bookmarks_DEPENDENCIES = ../src/libdiag.a
+am_test_date_time_scanner_OBJECTS = test_date_time_scanner.$(OBJEXT)
+test_date_time_scanner_OBJECTS = $(am_test_date_time_scanner_OBJECTS)
+test_date_time_scanner_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1)
 am_test_grep_proc2_OBJECTS = test_grep_proc2.$(OBJEXT)
 test_grep_proc2_OBJECTS = $(am_test_grep_proc2_OBJECTS)
 test_grep_proc2_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
@@ -245,10 +251,11 @@ SOURCES = $(drive_data_scanner_SOURCES) $(drive_grep_proc_SOURCES) \
 	$(drive_vt52_curses_SOURCES) $(scripty_SOURCES) \
 	$(slicer_SOURCES) $(test_ansi_scrubber_SOURCES) \
 	$(test_auto_fd_SOURCES) $(test_auto_mem_SOURCES) \
-	$(test_bookmarks_SOURCES) $(test_grep_proc2_SOURCES) \
-	$(test_hist_source_SOURCES) $(test_line_buffer2_SOURCES) \
-	$(test_log_accel_SOURCES) $(test_pcrepp_SOURCES) \
-	$(test_top_status_SOURCES) $(test_yajlpp_SOURCES)
+	$(test_bookmarks_SOURCES) $(test_date_time_scanner_SOURCES) \
+	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
+	$(test_line_buffer2_SOURCES) $(test_log_accel_SOURCES) \
+	$(test_pcrepp_SOURCES) $(test_top_status_SOURCES) \
+	$(test_yajlpp_SOURCES)
 DIST_SOURCES = $(drive_data_scanner_SOURCES) \
 	$(drive_grep_proc_SOURCES) $(drive_line_buffer_SOURCES) \
 	$(drive_listview_SOURCES) $(drive_logfile_SOURCES) \
@@ -258,10 +265,10 @@ DIST_SOURCES = $(drive_data_scanner_SOURCES) \
 	$(scripty_SOURCES) $(slicer_SOURCES) \
 	$(test_ansi_scrubber_SOURCES) $(test_auto_fd_SOURCES) \
 	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
-	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
-	$(test_line_buffer2_SOURCES) $(test_log_accel_SOURCES) \
-	$(test_pcrepp_SOURCES) $(test_top_status_SOURCES) \
-	$(test_yajlpp_SOURCES)
+	$(test_date_time_scanner_SOURCES) $(test_grep_proc2_SOURCES) \
+	$(test_hist_source_SOURCES) $(test_line_buffer2_SOURCES) \
+	$(test_log_accel_SOURCES) $(test_pcrepp_SOURCES) \
+	$(test_top_status_SOURCES) $(test_yajlpp_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -635,6 +642,8 @@ test_auto_fd_LDADD = ../src/libdiag.a
 test_auto_mem_SOURCES = test_auto_mem.cc
 test_bookmarks_SOURCES = test_bookmarks.cc
 test_bookmarks_LDADD = ../src/libdiag.a
+test_date_time_scanner_SOURCES = test_date_time_scanner.cc
+test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS) -lcrypto
 test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 test_hist_source_SOURCES = test_hist_source.cc
@@ -888,6 +897,10 @@ test_bookmarks$(EXEEXT): $(test_bookmarks_OBJECTS) $(test_bookmarks_DEPENDENCIES
 	@rm -f test_bookmarks$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_bookmarks_OBJECTS) $(test_bookmarks_LDADD) $(LIBS)
 
+test_date_time_scanner$(EXEEXT): $(test_date_time_scanner_OBJECTS) $(test_date_time_scanner_DEPENDENCIES) $(EXTRA_test_date_time_scanner_DEPENDENCIES) 
+	@rm -f test_date_time_scanner$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_date_time_scanner_OBJECTS) $(test_date_time_scanner_LDADD) $(LIBS)
+
 test_grep_proc2$(EXEEXT): $(test_grep_proc2_OBJECTS) $(test_grep_proc2_DEPENDENCIES) $(EXTRA_test_grep_proc2_DEPENDENCIES) 
 	@rm -f test_grep_proc2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_grep_proc2_OBJECTS) $(test_grep_proc2_LDADD) $(LIBS)
@@ -939,6 +952,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_auto_fd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_auto_mem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_bookmarks.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_date_time_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_grep_proc2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_hist_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_line_buffer2.Po@am__quote@
@@ -1180,6 +1194,13 @@ test_auto_mem.log: test_auto_mem$(EXEEXT)
 test_bookmarks.log: test_bookmarks$(EXEEXT)
 	@p='test_bookmarks$(EXEEXT)'; \
 	b='test_bookmarks'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_date_time_scanner.log: test_date_time_scanner$(EXEEXT)
+	@p='test_date_time_scanner$(EXEEXT)'; \
+	b='test_date_time_scanner'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
