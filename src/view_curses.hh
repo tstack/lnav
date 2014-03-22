@@ -531,8 +531,19 @@ public:
 
     int attrs_for_ident(const char *str, size_t len) const {
         int index = crc32(1, (const Bytef*)str, len);
+        int retval;
 
-        return this->vc_role_colors[VCR_HIGHLIGHT_START + (abs(index) % HL_COLOR_COUNT)];
+        if (COLORS >= 256) {
+            retval = this->vc_role_colors[
+                VCR_HIGHLIGHT_START + HL_BASIC_COLOR_COUNT * 2 +
+                (abs(index) % (HL_COLOR_COUNT - HL_BASIC_COLOR_COUNT * 2))];
+        }
+        else {
+            retval = this->vc_role_colors[
+                VCR_HIGHLIGHT_START + (abs(index) % HL_COLOR_COUNT)];
+        }
+
+        return retval;
     };
 
     int attrs_for_ident(const std::string &str) const {

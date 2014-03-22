@@ -388,6 +388,10 @@ COMMANDS
                     Enable a inactive 'filter-in' or 'filter-out'
                     expression.
 
+  set-min-log-level <level>
+                    Set the minimum level to display in the log view.
+                    You can use TAB to view the possible values.
+
   disable-word-wrap Disable word wrapping in the log and text file views.
   enable-word-wrap  Enable word wrapping in the log and text file views.
 

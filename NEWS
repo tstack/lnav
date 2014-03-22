@@ -24,6 +24,8 @@ lnav v0.7.0:
        to a JSON-formatted file.
      * The "elapsed time" column now uses red/green coloring to indicate
        sharp changes in the message rate.
+     * Added a "set-min-log-level" command to filter out log messages that
+       are below a given level.
 
      Fixes:
      * Performance improvements.
@@ -47,6 +49,8 @@ lnav v0.7.0:
        command-prompt.  The matches are now shown in a separate view and
        pressing tab repeatedly will scroll through the view.
      * The "open" command now does shell word expansion for file names.
+     * More config directory paths have been added: /etc/lnav,
+       $prefix/etc/lnav, and directories passed on the command-line with -I.
 
 lnav v0.6.2:
      Features:
