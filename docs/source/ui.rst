@@ -18,13 +18,20 @@ On color displays, the log messages will be highlighted as follows:
 
 * Errors will be colored in red;
 * warnings will be yellow;
+* search hits are reverse video;
 * various color highlights will be applied to: IP addresses, SQL keywords,
   XML tags, file and line numbers in Java backtraces, and quoted strings;
 * "identifiers" in the messages will be randomly assigned colors based on their
   content (works best on "xterm-256color" terminals).
 
 The right side of the display has a proportionally sized 'scrollbar' that
-indicates your current position in the file.
+shows:
+
+* your current position in the file;
+* the locations of errors/warnings in the log files by using a red or yellow
+  coloring;
+* the locations of search hits by using a tick-mark pointing to the left;
+* the locations of bookmarks by using a tick-mark pointing to the right.
 
 Above and below the main body are status lines that display:
 
@@ -34,7 +41,7 @@ Above and below the main body are status lines that display:
 * the current view;
 * the line number for the top line in the display;
 * the current search hit and the total number of hits;
-* the number of lines not displayed because of filtering.
+* the number of lines that are **not** displayed because of filtering.
 
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a

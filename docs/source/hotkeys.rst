@@ -36,7 +36,9 @@ Hotkey Reference
    }
    </style>
 
-This reference covers the keys used to control **lnav**.
+This reference covers the keys used to control **lnav**.  Consult the `built-in
+help <https://github.com/tstack/lnav/blob/master/src/help.txt>`_ in **lnav** for
+a more detailed explanation of each key.
 
 Spatial Navigation
 ------------------
@@ -74,11 +76,11 @@ Spatial Navigation
      -
      - Right half a page
    * - |ks| Home |ke|
-     -
+     - |ks| g |ke|
      -
      - Top of the view
    * - |ks| End |ke|
-     -
+     - |ks| G |ke|
      -
      - Bottom of the view
    * - |ks| e |ke|
@@ -109,6 +111,10 @@ Spatial Navigation
      - |ks| Shift |ke| + |ks| y |ke|
      -
      - Next/prevous SQL result
+   * - |ks| s |ke|
+     - |ks| Shift |ke| + |ks| s |ke|
+     -
+     - Next/prevous slow down in the log message rate
 
 Chronological Navigation
 ------------------------
@@ -174,7 +180,7 @@ Display
      - Switch to/from the text file view
    * - |ks| i |ke|
      - Switch to/from the histogram view
-   * - |ks| Shift |ke| + |ks| i |ke|-
+   * - |ks| Shift |ke| + |ks| i |ke|
      - Switch to/from the histogram view 
    * - |ks| v |ke|
      - Switch to/from the SQL result view
@@ -200,4 +206,6 @@ Query
    * - |ks| ; |ke|
      - Execute an SQL query
    * - |ks| : |ke|
-     - Execute an internal command
+     - Execute an internal command, see :ref:`commands` for more information
+   * - |ks| Ctrl |ke| + |ks| ] |ke|
+     - Abort a 
