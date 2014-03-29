@@ -777,9 +777,6 @@ dist_noinst_DATA = \
 nodist_noinst_DATA = \
 	simple-db.db
 
-XFAIL_TESTS = \
-	test_listview.sh
-
 DISTCLEANFILES = \
 	*.dat \
 	*.err \

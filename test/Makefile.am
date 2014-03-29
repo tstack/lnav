@@ -238,9 +238,6 @@ TESTS = \
 	test_data_parser.sh \
 	test_yajlpp
 
-XFAIL_TESTS = \
-	test_listview.sh
-
 DISTCLEANFILES = \
 	*.dat \
 	*.err \
