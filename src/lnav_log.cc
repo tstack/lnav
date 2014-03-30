@@ -244,6 +244,7 @@ static void sigabrt(int sig)
     }
     fprintf(stderr, CRASH_MSG, crash_path);
 
+#ifdef ATTACH_ON_SIGNAL
     if (isatty(STDIN_FILENO)) {
         char response;
 
@@ -287,6 +288,7 @@ static void sigabrt(int sig)
             }
         }
     }
+#endif
 
     _exit(1);
 }
