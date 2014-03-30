@@ -221,6 +221,7 @@ inline bool ptime_y(struct tm *dst, const char *str, off_t &off_inout, size_t le
 
 inline bool ptime_z(struct tm *dst, const char *str, off_t &off_inout, size_t len)
 {
+#ifdef HAVE_STRUCT_TM_TM_ZONE
     PTIME_CONSUME(5, {
         long sign;
         long hours;
@@ -244,6 +245,7 @@ inline bool ptime_z(struct tm *dst, const char *str, off_t &off_inout, size_t le
             (str[off_inout + 3] - '0') *    1) * 60;
         dst->tm_gmtoff = hours + mins;
     });
+#endif
 
     return true;
 }
