@@ -4031,6 +4031,8 @@ int main(int argc, char *argv[])
 
     setlocale(LC_NUMERIC, "");
 
+    lnav_data.ld_program_name = argv[0];
+
     rl_readline_name = "lnav";
 
     ensure_dotlnav();
@@ -4170,8 +4172,6 @@ int main(int argc, char *argv[])
         register_sqlite_funcs(lnav_data.ld_db.in(), sqlite_registration_funcs);
         register_collation_functions(lnav_data.ld_db.in());
     }
-
-    lnav_data.ld_program_name = argv[0];
 
     lnav_data.ld_vtab_manager =
         new log_vtab_manager(lnav_data.ld_db,
