@@ -80,6 +80,15 @@ inline int roundup_size(size_t size, int step)
     return retval;
 }
 
+inline int32_t read_le32(const unsigned char *data)
+{
+    return (
+        (data[0] <<  0) |
+        (data[1] <<  8) |
+        (data[2] << 16) |
+        (data[3] << 24));
+}
+
 inline time_t day_num(time_t ti)
 {
     return ti / (24 * 60 * 60);

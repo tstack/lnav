@@ -36,7 +36,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <endian.h>
 
 #ifdef HAVE_BZLIB_H
 #include <bzlib.h>
@@ -44,6 +43,7 @@
 
 #include <set>
 
+#include "lnav_util.hh"
 #include "line_buffer.hh"
 
 using namespace std;
@@ -183,7 +183,8 @@ throw (error)
                             throw error(errno);
                         }
                     }
-                    this->lb_file_time = le32toh(*((int32_t *)&gz_id[4]));
+                    this->lb_file_time = read_le32(
+                        (const unsigned char *)&gz_id[4]);
                     if (this->lb_file_time < 0)
                         this->lb_file_time = 0;
                     this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
