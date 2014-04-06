@@ -59,7 +59,7 @@ test_bookmarks_SOURCES = test_bookmarks.cc
 test_bookmarks_LDADD = ../src/libdiag.a
 
 test_date_time_scanner_SOURCES = test_date_time_scanner.cc
-test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS) -lcrypto
+test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
 
 test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
