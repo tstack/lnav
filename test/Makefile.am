@@ -253,3 +253,4 @@ DISTCLEANFILES = \
 
 distclean-local:
 	rm -rf sessions
+	rm -rf .lnav

@@ -16,6 +16,9 @@ export test_dir
 BZIP2_CMD="@BZIP2_CMD@"
 export BZIP2_CMD
 
+HOME="${top_builddir}/test"
+export HOME
+
 # The full path of the test case
 test_file=$1
 # The base name of the test case
