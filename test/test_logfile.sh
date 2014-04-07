@@ -66,7 +66,7 @@ Jan 03 09:47:02 2007 -- 000
 EOF
 fi
 
-touch -t 20140406110923 ${srcdir}/logfile_tcf.1
+touch -t 201404061109 ${srcdir}/logfile_tcf.1
 run_test ./drive_logfile -t -f tcf_log ${srcdir}/logfile_tcf.1
 
 check_output "TCF timestamp interpreted incorrectly for hour wrap?" <<EOF
