@@ -364,7 +364,7 @@ static struct json_path_handler format_handlers[] = {
     json_path_handler("^/\\w+/(json|convert-to-local-time)$", read_format_bool),
     json_path_handler("^/\\w+/timestamp-divisor$", read_format_double)
         .add_cb(read_format_int),
-    json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|body-field|url|title|description)$",
+    json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|body-field|url|url#|title|description)$",
                       read_format_field),
     json_path_handler("^/\\w+/level/"
                       "(trace|debug|info|warning|error|critical|fatal)$",

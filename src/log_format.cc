@@ -264,6 +264,43 @@ const char *log_format::log_scanf(const char *line,
     return retval;
 }
 
+void log_format::check_for_new_year(std::vector<logline> &dst,
+    const struct timeval &log_tv)
+{
+    if (dst.empty()) {
+        return;
+    }
+
+    time_t diff = dst.back().get_time() - log_tv.tv_sec;
+
+    if (diff > (5 * 60)) {
+        int off_year = 0, off_month = 0, off_day = 0, off_hour = 0;
+        std::vector<logline>::iterator iter;
+
+        if (diff > (60 * 24 * 60 * 60)) {
+            off_year = 1;
+        } else if (diff > (15 * 24 * 60 * 60)) {
+            off_month = 1;
+        } else if (diff > (12 * 60 * 60)) {
+            off_day = 1;
+        } else {
+            off_hour = 1;
+        }
+
+        for (iter = dst.begin(); iter != dst.end(); iter++) {
+            time_t     ot = iter->get_time();
+            struct tm *otm;
+
+            otm           = gmtime(&ot);
+            otm->tm_year -= off_year;
+            otm->tm_mon  -= off_month;
+            otm->tm_yday -= off_day;
+            otm->tm_hour -= off_hour;
+            iter->set_time(tm2sec(otm));
+        }
+    }
+}
+
 /*
  * XXX This needs some cleanup. 
  */
@@ -1010,6 +1047,16 @@ void external_log_format::build(std::vector<std::string> &errors)
             if (!pat.p_pcre)
                 continue;
 
+            if (pat.p_pcre->name_index(this->lf_timestamp_field) < 0) {
+                errors.push_back("error:" +
+                    this->elf_name +
+                    ":timestamp field '" +
+                    this->lf_timestamp_field +
+                    "' not found in pattern -- " +
+                    pat.p_string);
+                continue;
+            }
+
             if (pat.p_pcre->match(pc, pi)) {
                 const char *ts = pi.get_substr_start(
                     pc[this->lf_timestamp_field]);
@@ -1017,9 +1064,15 @@ void external_log_format::build(std::vector<std::string> &errors)
                 struct timeval tv;
                 struct tm tm;
 
-                if (dts.scan(ts, NULL, &tm, tv) != NULL) {
-                    found = true;
-                    break;
+                found = true;
+                if (dts.scan(ts, NULL, &tm, tv) == NULL) {
+                    errors.push_back("error:" +
+                        this->elf_name +
+                        ":invalid sample -- " +
+                        iter->s_line);
+                    errors.push_back("error:" +
+                        this->elf_name +
+                        ":unrecognized timestamp format");
                 }
             }
         }

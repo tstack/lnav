@@ -33,7 +33,8 @@ TIME_FORMATS = \
     "%d/%b/%Y:%H:%M:%S %z" \
     "%b %d %H:%M:%S" \
     "%m/%d/%y %H:%M:%S" \
-    "%m%d %H:%M:%S"
+    "%m%d %H:%M:%S" \
+    "%M:%S"
 
 time_fmts.cc: ptimec
 	./ptimec $(TIME_FORMATS) > $@

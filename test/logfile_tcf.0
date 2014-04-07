@@ -1,0 +1,30 @@
+TCF 29:47.191: Server-Properties: {"Name":"TCF Protocol Logger","OSName":"Linux 3.2.0-60-generic","UserName":"xavier","AgentID":"1fde3dd1-d4be-4f79-8090-6f8d212f03bf","TransportName":"TCP","Proxy":"","ValueAdd":"1","Port":"1534"}
+TCF 30:04.735: channel server connecting
+TCF 30:04.735: channel server connected
+TCF 30:11.474: 0: ---> C 2 RunControl getChildren null <eom>
+TCF 30:11.475: 0: <--- R 2  ["P1"] <eom>
+TCF 30:11.475: 0: ---> C 3 RunControl getContext "P1" <eom>
+TCF 30:11.475: 0: <--- R 3  {"ID":"P1","ProcessID":"P1","Name":"VxWorks","CanSuspend":true,"CanResume":1,"IsContainer":true,"WordSize":4,"CanTerminate":true,"CanDetach":true,"RCGroup":"P1","SymbolsGroup":"P1","CPUGroup":"P1","DiagnosticTestProcess":true} <eom>
+TCF 30:11.475: 0: ---> C 4 RunControl getChildren "P1" <eom>
+TCF 30:11.475: 0: <--- R 4  ["P2"] <eom>
+TCF 30:11.475: 0: ---> C 5 RunControl getContext "P2" <eom>
+TCF 30:11.476: 0: <--- R 5  {"ID":"P2","ParentID":"P1","ProcessID":"P2","Name":"Kernel","CanSuspend":true,"CanResume":1,"IsContainer":true,"WordSize":4,"CanTerminate":true,"CanDetach":true,"RCGroup":"P2","BPGroup":"P2","SymbolsGroup":"P2","CPUGroup":"P2","DiagnosticTestProcess":true} <eom>
+TCF 30:11.476: 0: ---> C 6 RunControl getChildren "P2" <eom>
+TCF 30:11.476: 0: <--- R 6  [] <eom>
+TCF 30:11.523: 0: ---> C RR4 RunControl getChildren null <eom>
+TCF 30:11.524: 0: <--- R RR4  ["P1"] <eom>
+TCF 30:11.525: 0: ---> C RR6 RunControl getContext "P1" <eom>
+TCF 30:11.526: 0: <--- R RR6  {"ID":"P1","ProcessID":"P1","Name":"VxWorks","CanSuspend":true,"CanResume":1,"IsContainer":true,"WordSize":4,"CanTerminate":true,"CanDetach":true,"RCGroup":"P1","SymbolsGroup":"P1","CPUGroup":"P1","DiagnosticTestProcess":true} <eom>
+TCF 30:11.530: 0: ---> C RR7 RunControl getChildren "P1" <eom>
+TCF 30:11.530: 0: <--- R RR7  ["P2"] <eom>
+TCF 30:11.531: 0: ---> C RR8 RunControl getContext "P2" <eom>
+TCF 30:11.531: 0: <--- R RR8  {"ID":"P2","ParentID":"P1","ProcessID":"P2","Name":"Kernel","CanSuspend":true,"CanResume":1,"IsContainer":true,"WordSize":4,"CanTerminate":true,"CanDetach":true,"RCGroup":"P2","BPGroup":"P2","SymbolsGroup":"P2","CPUGroup":"P2","DiagnosticTestProcess":true} <eom>
+TCF 30:11.533: 0: ---> C RR9 RunControl getChildren "P2" <eom>
+TCF 30:11.533: 0: <--- R RR9  [] <eom>
+TCF 30:11.536: 0: ---> C RR10 Locator getAgentID <eom>
+TCF 30:11.536: 0: <--- R RR10  "00000000-0000-4daa-8665-a704d3dc0000" <eom>
+TCF 30:21.573: 0: ---> C RR11 ProcessesV1 getChildren null false <eom>
+TCF 30:21.573: 0: <--- R RR11  ["P1"] <eom>
+TCF 30:21.577: 0: ---> C RR12 ProcessesV1 getContext "P1" <eom>
+TCF 30:21.577: 0: <--- R RR12  {"Name":"VxWorks","CanTerminate":false,"CanAttach":true,"IsProcess":false,"ID":"P1"} <eom>
+TCF 30:21.756: 0: <--- E RunControl contextAdded [{"ID":"P2.1623333904","ParentID":"P2","ProcessID":"P2","Name":"ipcom_syslogd","CanSuspend":true,"CanResume":12351,"HasState":true,"WordSize":4,"CanTerminate":true,"CanDetach":true,"RCGroup":"P2.1623333904","BPGroup":"P2","SymbolsGroup":"P2","CPUGroup":"P2","DiagnosticTestProcess":true}] <eom>

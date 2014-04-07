@@ -334,6 +334,8 @@ protected:
      */
     void process_prefix(off_t offset, char *prefix, int len);
 
+    void set_format_base_time(log_format *lf);
+
     bool        lf_valid_filename;
     std::string lf_filename;
     std::string lf_content_id;

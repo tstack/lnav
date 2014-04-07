@@ -76,6 +76,137 @@ static string scrub_rdns(const string &str)
     return retval;
 }
 
+class strace_log_format : public log_format {
+    static pcrepp &value_pattern(void)
+    {
+        static pcrepp VALUE_PATTERN(
+            "([0-9:.]*) ([a-zA-Z_][a-zA-Z_0-9]*)\\("
+            "(.*)\\)"
+            "\\s+= ([-xa-fA-F\\d\\?]+)[^<]+(?:<(\\d+\\.\\d+)>)?");
+
+        return VALUE_PATTERN;
+    };
+
+    string get_name() const { return "strace_log"; };
+
+    bool scan(vector<logline> &dst,
+              off_t offset,
+              char *prefix,
+              int len)
+    {
+        static const char *log_fmt[] = {
+            "%63[0-9:].%d",
+            NULL
+        };
+
+        static const char *time_fmt[] = {
+            "%H:%M:%S",
+            NULL
+        };
+
+        bool      retval = false;
+        struct tm log_time;
+        char      timestr[64];
+        struct timeval log_tv;
+        int       usecs;
+
+        if (this->log_scanf(prefix,
+                            log_fmt,
+                            2,
+                            time_fmt,
+                            timestr,
+                            &log_time,
+                            log_tv,
+
+                            timestr,
+                            &usecs)) {
+            logline::level_t level = logline::LEVEL_UNKNOWN;
+            const char *     eq;
+
+            if ((eq = strrchr(prefix, '=')) != NULL) {
+                int rc;
+
+                if (sscanf(eq, "= %d", &rc) == 1 && rc < 0) {
+                    level = logline::LEVEL_ERROR;
+                }
+            }
+
+            if (!dst.empty() && (log_tv.tv_sec < dst.back().get_time())) {
+                log_tv.tv_sec += (24 * 60 * 60);
+            }
+            log_tv.tv_usec = usecs;
+            dst.push_back(logline(offset, log_tv, level));
+            retval = true;
+        }
+
+        return retval;
+    };
+
+    auto_ptr<log_format> specialized()
+    {
+        auto_ptr<log_format> retval((log_format *)
+                                    new strace_log_format(*this));
+
+        return retval;
+    };
+
+    void annotate(shared_buffer_ref &line,
+                  string_attrs_t &sa,
+                  std::vector<logline_value> &values) const
+    {
+        pcre_context_static<30> pc;
+        pcre_input pi(line.get_data(), 0, line.length());
+
+        if (value_pattern().match(pc, pi)) {
+            static struct {
+                const char *          name;
+                logline_value::kind_t kind;
+            } columns[] = {
+                { "",         logline_value::VALUE_TEXT },
+                { "funcname", logline_value::VALUE_TEXT },
+                { "args",     logline_value::VALUE_TEXT },
+                { "result",   logline_value::VALUE_TEXT },
+                { "duration", logline_value::VALUE_FLOAT },
+
+                { NULL, logline_value::VALUE_UNKNOWN },
+            };
+
+            pcre_context::iterator iter;
+            struct line_range      lr;
+
+            iter        = pc.begin();
+            if (iter->c_begin != -1) {
+                lr.lr_start = iter->c_begin;
+                lr.lr_end   = iter->c_end;
+                sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
+            }
+
+            lr.lr_start = 0;
+            lr.lr_end   = line.length();
+            sa.push_back(string_attr(lr, &logline::L_PREFIX));
+
+            lr.lr_start = line.length();
+            lr.lr_end   = line.length();
+            sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
+
+            for (int lpc = 0; columns[lpc].name; lpc++) {
+                pcre_context::iterator cap = pc.begin() + lpc;
+                shared_buffer_ref value_str;
+
+                if (columns[lpc].name[0] == '\0') {
+                    continue;
+                }
+                value_str.subset(line, cap->c_begin, cap->length());
+                values.push_back(logline_value(columns[lpc].name,
+                                               columns[lpc].kind,
+                                               value_str));
+            }
+        }
+    };
+};
+
+log_format::register_root_format<strace_log_format> strace_log_instance;
+
 class generic_log_format : public log_format {
     static pcrepp &scrub_pattern(void)
     {
@@ -240,134 +371,3 @@ class generic_log_format : public log_format {
 };
 
 log_format::register_root_format<generic_log_format> generic_log_instance;
-
-class strace_log_format : public log_format {
-    static pcrepp &value_pattern(void)
-    {
-        static pcrepp VALUE_PATTERN(
-            "([0-9:.]*) ([a-zA-Z_][a-zA-Z_0-9]*)\\("
-            "(.*)\\)"
-            "\\s+= ([-xa-fA-F\\d\\?]+)[^<]+(?:<(\\d+\\.\\d+)>)?");
-
-        return VALUE_PATTERN;
-    };
-
-    string get_name() const { return "strace_log"; };
-
-    bool scan(vector<logline> &dst,
-              off_t offset,
-              char *prefix,
-              int len)
-    {
-        static const char *log_fmt[] = {
-            "%63[0-9:].%d",
-            NULL
-        };
-
-        static const char *time_fmt[] = {
-            "%H:%M:%S",
-            NULL
-        };
-
-        bool      retval = false;
-        struct tm log_time;
-        char      timestr[64];
-        struct timeval log_tv;
-        int       usecs;
-
-        if (this->log_scanf(prefix,
-                            log_fmt,
-                            2,
-                            time_fmt,
-                            timestr,
-                            &log_time,
-                            log_tv,
-
-                            timestr,
-                            &usecs)) {
-            logline::level_t level = logline::LEVEL_UNKNOWN;
-            const char *     eq;
-
-            if ((eq = strrchr(prefix, '=')) != NULL) {
-                int rc;
-
-                if (sscanf(eq, "= %d", &rc) == 1 && rc < 0) {
-                    level = logline::LEVEL_ERROR;
-                }
-            }
-
-            if (!dst.empty() && (log_tv.tv_sec < dst.back().get_time())) {
-                log_tv.tv_sec += (24 * 60 * 60);
-            }
-            log_tv.tv_usec = usecs;
-            dst.push_back(logline(offset, log_tv, level));
-            retval = true;
-        }
-
-        return retval;
-    };
-
-    auto_ptr<log_format> specialized()
-    {
-        auto_ptr<log_format> retval((log_format *)
-                                    new strace_log_format(*this));
-
-        return retval;
-    };
-
-    void annotate(shared_buffer_ref &line,
-                  string_attrs_t &sa,
-                  std::vector<logline_value> &values) const
-    {
-        pcre_context_static<30> pc;
-        pcre_input pi(line.get_data(), 0, line.length());
-
-        if (value_pattern().match(pc, pi)) {
-            static struct {
-                const char *          name;
-                logline_value::kind_t kind;
-            } columns[] = {
-                { "",         logline_value::VALUE_TEXT },
-                { "funcname", logline_value::VALUE_TEXT },
-                { "args",     logline_value::VALUE_TEXT },
-                { "result",   logline_value::VALUE_TEXT },
-                { "duration", logline_value::VALUE_FLOAT },
-
-                { NULL, logline_value::VALUE_UNKNOWN },
-            };
-
-            pcre_context::iterator iter;
-            struct line_range      lr;
-
-            iter        = pc.begin();
-            if (iter->c_begin != -1) {
-                lr.lr_start = iter->c_begin;
-                lr.lr_end   = iter->c_end;
-                sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
-            }
-
-            lr.lr_start = 0;
-            lr.lr_end   = line.length();
-            sa.push_back(string_attr(lr, &logline::L_PREFIX));
-
-            lr.lr_start = line.length();
-            lr.lr_end   = line.length();
-            sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
-
-            for (int lpc = 0; columns[lpc].name; lpc++) {
-                pcre_context::iterator cap = pc.begin() + lpc;
-                shared_buffer_ref value_str;
-
-                if (columns[lpc].name[0] == '\0') {
-                    continue;
-                }
-                value_str.subset(line, cap->c_begin, cap->length());
-                values.push_back(logline_value(columns[lpc].name,
-                                               columns[lpc].kind,
-                                               value_str));
-            }
-        }
-    };
-};
-
-log_format::register_root_format<strace_log_format> strace_log_instance;

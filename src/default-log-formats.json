@@ -378,6 +378,51 @@
             }
         ]
     },
+    "tcf_log" : {
+        "title" : "TCF Log",
+        "description" : "Target Communication Framework log",
+        "url" : [
+            "http://wiki.eclipse.org/TCF",
+            "http://git.eclipse.org/c/tcf/org.eclipse.tcf.git/tree/target_explorer/plugins/org.eclipse.tm.te.tcf.log.core/src/org/eclipse/tm/te/tcf/log/core/internal/listener/ChannelTraceListener.java?id=b6e81bb8405f99dda2764b22cff876fa00f734f5#n144"
+        ],
+        "regex" : {
+            "std" : {
+                "pattern" : "^TCF (?<timestamp>\\d{2}:\\d{2}.\\d{3}): (?:Server-Properties: |channel server|\\w+: (?<dir>--->|<---) (?<type>\\w)(?: (?<token>\\w+))?(?: (?<service>\\w+))?(?: (?<name>\\w+))? )(?<body>.*)"
+            }
+        },
+        "value" : {
+            "dir" : {
+                "kind" : "string"
+            },
+            "type" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "token" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "service" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "name" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "TCF 29:47.191: Server-Properties: {\"Name\":\"TCF Protocol Logger\",\"OSName\":\"Linux 3.2.0-60-generic\",\"UserName\":\"xavier\",\"AgentID\":\"1fde3dd1-d4be-4f79-8090-6f8d212f03bf\",\"TransportName\":\"TCP\",\"Proxy\":\"\",\"ValueAdd\":\"1\",\"Port\":\"1534\"}"
+            },
+            {
+                "line" : "TCF 30:11.475: 0: <--- R 2  [\"P1\"] <eom>"
+            },
+            {
+                "line" : "TCF 30:11.475: 0: ---> C 4 RunControl getChildren \"P1\" <eom>"
+            }
+        ]
+    },
     "tcsh_history" : {
         "title" : "TCSH History",
         "description" : "The tcsh history file format.",

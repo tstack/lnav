@@ -49,7 +49,7 @@ const char *TMP_NAME = "scanned.tmp";
 int main(int argc, char *argv[])
 {
     int  c, retval = EXIT_SUCCESS;
-    bool prompt = false;
+    bool prompt = false, is_log = false;
 
     {
         std::vector<std::string> paths, errors;
@@ -57,10 +57,14 @@ int main(int argc, char *argv[])
         load_formats(paths, errors);
     }
 
-    while ((c = getopt(argc, argv, "p")) != -1) {
+    while ((c = getopt(argc, argv, "pl")) != -1) {
         switch (c) {
         case 'p':
             prompt = true;
+            break;
+
+        case 'l':
+            is_log = true;
             break;
 
         default:
@@ -121,13 +125,16 @@ int main(int argc, char *argv[])
                 vector<log_format *>::iterator iter;
                 vector<logline> index;
 
-                for (iter = root_formats.begin();
-                     iter != root_formats.end() && !found;
-                     ++iter) {
-                    (*iter)->clear();
-                    if ((*iter)->scan(index, 13, log_line, strlen(log_line))) {
-                        format = (*iter)->specialized();
-                        found = true;
+                if (is_log) {
+                    for (iter = root_formats.begin();
+                       iter != root_formats.end() && !found;
+                       ++iter) {
+                        (*iter)->clear();
+                        if ((*iter)->scan(
+                            index, 13, log_line, strlen(log_line))) {
+                            format = (*iter)->specialized();
+                            found = true;
+                        }
                     }
                 }
 

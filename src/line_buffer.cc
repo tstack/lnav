@@ -185,8 +185,9 @@ throw (error)
                     }
                     this->lb_file_time = read_le32(
                         (const unsigned char *)&gz_id[4]);
-                    if (this->lb_file_time < 0)
+                    if (this->lb_file_time < 0) {
                         this->lb_file_time = 0;
+                    }
                     this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
                 }
 #ifdef HAVE_BZLIB_H

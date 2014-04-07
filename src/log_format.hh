@@ -604,21 +604,7 @@ public:
     };
 
     void check_for_new_year(std::vector<logline> &dst,
-        const struct timeval &log_tv) {
-        if (!dst.empty() &&
-            ((dst.back().get_time() - log_tv.tv_sec) > (24 * 60 * 60))) {
-            std::vector<logline>::iterator iter;
-
-            for (iter = dst.begin(); iter != dst.end(); iter++) {
-                time_t     ot = iter->get_time();
-                struct tm *otm;
-
-                otm           = gmtime(&ot);
-                otm->tm_year -= 1;
-                iter->set_time(tm2sec(otm));
-            }
-        }
-    };
+        const struct timeval &log_tv);
 
     date_time_scanner lf_date_time;
     int lf_fmt_lock;

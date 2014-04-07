@@ -66,6 +66,15 @@ Jan 03 09:47:02 2007 -- 000
 EOF
 fi
 
+touch -t 20140406110923 ${srcdir}/logfile_tcf.1
+run_test ./drive_logfile -t -f tcf_log ${srcdir}/logfile_tcf.1
+
+check_output "TCF timestamp interpreted incorrectly for hour wrap?" <<EOF
+Apr 06 20:59:47 2014 -- 191
+Apr 06 21:30:11 2014 -- 474
+Apr 06 22:01:11 2014 -- 475
+EOF
+
 # The TCSH format converts to local time, so we need to specify a TZ
 export TZ="UTC"
 run_test ./drive_logfile -t -f tcsh_history ${srcdir}/logfile_tcsh_history.0

@@ -194,6 +194,8 @@ dist_noinst_DATA = \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
+	logfile_tcf.0 \
+	logfile_tcf.1 \
 	logfile_tcsh_history.0 \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
 	mvwattrline_output.0 \

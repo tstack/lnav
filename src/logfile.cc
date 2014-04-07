@@ -125,12 +125,23 @@ bool logfile::exists(void) const
            this->lf_stat.st_ino == st.st_ino;
 }
 
+void logfile::set_format_base_time(log_format *lf)
+{
+    time_t file_time = this->lf_line_buffer.get_file_time();
+
+    if (file_time == 0) {
+        file_time = this->lf_stat.st_mtime;
+    }
+    lf->lf_date_time.set_base_time(file_time);
+}
+
 void logfile::process_prefix(off_t offset, char *prefix, int len)
 {
     bool found = false;
 
     if (this->lf_format.get() != NULL) {
         /* We've locked onto a format, just use that scanner. */
+        this->set_format_base_time(this->lf_format.get());
         found = this->lf_format->scan(this->lf_index, offset, prefix, len);
     }
     else if (this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
@@ -145,20 +156,28 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
         for (iter = root_formats.begin();
              iter != root_formats.end() && !found;
              ++iter) {
-            if (!(*iter)->match_name(this->lf_filename))
+            if (!(*iter)->match_name(this->lf_filename)) {
                 continue;
+            }
 
             (*iter)->clear();
-            (*iter)->lf_date_time.set_base_time(this->lf_line_buffer.get_file_time());
-            if ((*iter)->lf_date_time.dts_base_time == 0) {
-                (*iter)->lf_date_time.set_base_time(this->lf_stat.st_mtime);
+            this->set_format_base_time(*iter);
+            if (!(*iter)->scan(this->lf_index, offset, prefix, len)) {
+                log_debug("%s:%d:log format does not match -- %s",
+                    this->lf_filename.c_str(),
+                    this->lf_index.size(),
+                    (*iter)->get_name().c_str());
             }
-            if ((*iter)->scan(this->lf_index, offset, prefix, len)) {
+            else {
 #if 0
                 require(this->lf_index.size() == 1 ||
                        (this->lf_index[this->lf_index.size() - 2] <
                         this->lf_index[this->lf_index.size() - 1]));
 #endif
+                log_debug("%s:%d:log format found -- %s",
+                    this->lf_filename.c_str(),
+                    this->lf_index.size(),
+                    (*iter)->get_name().c_str());
 
                 this->lf_format =
                     auto_ptr<log_format>((*iter)->specialized());
