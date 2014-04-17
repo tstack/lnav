@@ -74,37 +74,58 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
 
     bool is_lit = (left == 'Q');
     const string &line = al.get_string();
+    int depth = 0;
 
     if (line[x] == right && is_bracket(line, x, is_lit)) {
-        for (int lpc = x; lpc > 0; lpc--) {
-            if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
-                al.get_attrs().push_back(string_attr(
-                    line_range(lpc, lpc + 1),
-                    &view_curses::VC_STYLE,
-                    matching_bracket_attrs));
-                break;
+        for (int lpc = x - 1; lpc > 0; lpc--) {
+            if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
+                depth += 1;
+            }
+            else if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
+                if (depth == 0) {
+                    al.get_attrs().push_back(string_attr(
+                        line_range(lpc, lpc + 1),
+                        &view_curses::VC_STYLE,
+                        matching_bracket_attrs));
+                    break;
+                }
+                else {
+                    depth -= 1;
+                }
             }
         }
     }
 
     if (line[x] == left && is_bracket(line, x, is_lit)) {
-        for (int lpc = x; lpc < line.length(); lpc++) {
-            if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
-                al.get_attrs().push_back(string_attr(
-                    line_range(lpc, lpc + 1),
-                    &view_curses::VC_STYLE,
-                    matching_bracket_attrs));
-                break;
+        for (int lpc = x + 1; lpc < line.length(); lpc++) {
+            if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
+                depth += 1;
+            }
+            else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
+                if (depth == 0) {
+                    al.get_attrs().push_back(string_attr(
+                        line_range(lpc, lpc + 1),
+                        &view_curses::VC_STYLE,
+                        matching_bracket_attrs));
+                    break;
+                }
+                else {
+                    depth -= 1;
+                }
             }
         }
     }
 
-    int depth = 0, last_left = -1;
+    int first_left = -1;
+
+    depth = 0;
 
     for (int lpc = 1; lpc < line.length(); lpc++) {
         if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
             depth += 1;
-            last_left = lpc;
+            if (first_left == -1) {
+                first_left = lpc;
+            }
         }
         else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
             if (depth > 0) {
@@ -121,7 +142,7 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
 
     if (depth > 0) {
         al.get_attrs().push_back(string_attr(
-            line_range(is_lit ? last_left - 1 : last_left, last_left + 1),
+            line_range(is_lit ? first_left - 1 : first_left, first_left + 1),
             &view_curses::VC_STYLE,
             missing_bracket_attrs));
     }
@@ -352,7 +373,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
     static string keyword_re_str = sql_keyword_re() + "|\\.schema";
     static pcrepp keyword_pcre(keyword_re_str.c_str(), PCRE_CASELESS);
     static pcrepp string_literal_pcre("'[^']*('(?:'[^']*')*|$)");
-    static pcrepp ident_pcre("(\\b[a-z_]\\w*)|\"([^\"]+)\"|\\[([^\\]]+)]", PCRE_CASELESS);
+    static pcrepp ident_pcre("(\\$?\\b[a-z_]\\w*)|\"([^\"]+)\"|\\[([^\\]]+)]", PCRE_CASELESS);
 
     static const char *brackets[] = {
         "[]",
