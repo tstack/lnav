@@ -523,6 +523,16 @@ static void add_view_text_possibilities(int context, textview_curses *tc)
     }
 }
 
+static void add_env_possibilities(int context)
+{
+    extern char **environ;
+    readline_curses *rlc = lnav_data.ld_rl_view;
+
+    for (char **var = environ; *var != NULL; var++) {
+        rlc->add_possibility(context, "*", "$" + string(*var, strchr(*var, '=')));
+    }
+}
+
 bool setup_logline_table()
 {
     // Hidden columns don't show up in the table_info pragma.
@@ -558,6 +568,7 @@ bool setup_logline_table()
         lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
 
         add_view_text_possibilities(LNM_SQL, &log_view);
+        add_env_possibilities(LNM_SQL);
 
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_function_names);
