@@ -1300,7 +1300,7 @@ static void handle_paging_key(int ch)
 
     case 'C':
         if (lss) {
-            lss->get_user_bookmarks()[&textview_curses::BM_USER].clear();
+            lss->text_clear_marks(&textview_curses::BM_USER);
         }
 
         tc->get_bookmarks()[&textview_curses::BM_USER].clear();
