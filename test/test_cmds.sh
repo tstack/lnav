@@ -1,8 +1,5 @@
 #! /bin/bash
 
-lnav_test="${top_builddir}/src/lnav-test"
-
-
 run_test ${lnav_test} -n \
     -c ":adjust-log-time 2010-01-01T00:00:00" \
     ${test_dir}/logfile_access_log.0

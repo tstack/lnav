@@ -2967,6 +2967,7 @@ static void watch_logfile(string filename, int fd, bool required)
                 /* It's a new file, load it in. */
                 logfile *lf = new logfile(filename, fd);
 
+                log_info("loading new file: %s", filename.c_str());
                 lnav_data.ld_files.push_back(lf);
                 lnav_data.ld_text_source.tss_files.push_back(lf);
                 break;
@@ -3048,8 +3049,6 @@ static bool rescan_files(bool required)
         logfile *lf = *file_iter;
 
         if (!lf->exists() || lf->is_closed()) {
-            std::list<logfile *>::iterator tss_iter;
-
             log_info("file has been deleted/closed -- %s",
                     lf->get_filename().c_str());
             lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));

@@ -26,6 +26,9 @@ test_file_base=`basename $1`
 # The current test number for shell based tests.
 test_num=0
 
+lnav_test="${top_builddir}/src/lnav-test"
+export lnav_test
+
 ## BEGIN Functions
 
 LAST_TEST=""

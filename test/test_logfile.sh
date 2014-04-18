@@ -187,3 +187,15 @@ check_output "glog_log level interpreted incorrectly?" <<EOF
 0x03
 0x05
 EOF
+
+cp ${srcdir}/logfile_syslog.0 truncfile.0
+
+run_test ${lnav_test} -n \
+    -c ";update syslog_log set log_mark = 1 where log_line = 1" \
+    -c ":write-to truncfile.0" \
+    -c ":goto 1" \
+    truncfile.0
+
+check_output "truncated log file not detected" <<EOF
+Nov  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
+EOF

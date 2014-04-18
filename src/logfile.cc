@@ -122,7 +122,8 @@ bool logfile::exists(void) const
     }
 
     return this->lf_stat.st_dev == st.st_dev &&
-           this->lf_stat.st_ino == st.st_ino;
+           this->lf_stat.st_ino == st.st_ino &&
+           this->lf_stat.st_size <= st.st_size;
 }
 
 void logfile::set_format_base_time(log_format *lf)
