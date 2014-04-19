@@ -73,4 +73,6 @@ inline void sql_strftime(char *buffer, size_t buffer_size,
     sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec / 1000, sep);
 }
 
+void sql_install_logger(void);
+
 #endif

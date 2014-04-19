@@ -488,3 +488,30 @@ void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
              gmtm.tm_sec,
              millis);
 }
+
+static void sqlite_logger(void *dummy, int code, const char *msg)
+{
+    lnav_log_level_t level;
+
+    switch (code) {
+    case SQLITE_OK:
+        level = LOG_LEVEL_DEBUG;
+        break;
+    case SQLITE_NOTICE:
+        level = LOG_LEVEL_INFO;
+        break;
+    case SQLITE_WARNING:
+        level = LOG_LEVEL_WARNING;
+        break;
+    default:
+        level = LOG_LEVEL_ERROR;
+        break;
+    }
+
+    log_msg(level, __FILE__, __LINE__, "%s", msg);
+}
+
+void sql_install_logger(void)
+{
+    sqlite3_config(SQLITE_CONFIG_LOG, sqlite_logger, NULL);
+}

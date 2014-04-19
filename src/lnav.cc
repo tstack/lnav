@@ -4048,6 +4048,7 @@ int main(int argc, char *argv[])
     ensure_dotlnav();
 
     log_install_handlers();
+    sql_install_logger();
 
     lnav_data.ld_debug_log_name = "/dev/null";
     while ((c = getopt(argc, argv, "hHarsCc:I:f:d:nqtw:V")) != -1) {
