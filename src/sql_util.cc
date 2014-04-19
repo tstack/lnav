@@ -497,12 +497,16 @@ static void sqlite_logger(void *dummy, int code, const char *msg)
     case SQLITE_OK:
         level = LOG_LEVEL_DEBUG;
         break;
+#ifdef SQLITE_NOTICE
     case SQLITE_NOTICE:
         level = LOG_LEVEL_INFO;
         break;
+#endif
+#ifdef SQLITE_WARNING
     case SQLITE_WARNING:
         level = LOG_LEVEL_WARNING;
         break;
+#endif
     default:
         level = LOG_LEVEL_ERROR;
         break;
