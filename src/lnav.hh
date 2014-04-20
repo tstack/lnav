@@ -168,6 +168,7 @@ struct _lnav_data {
     std::set<std::pair<std::string, int> >  ld_file_names;
     std::list<logfile *>                    ld_files;
     std::list<std::string>                  ld_other_files;
+    std::set<std::string>                   ld_closed_files;
     std::list<std::pair<std::string, int> > ld_files_to_front;
     bool                                    ld_stdout_used;
     sig_atomic_t                            ld_looping;

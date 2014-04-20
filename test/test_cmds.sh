@@ -134,6 +134,17 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":close" \
+    -c ":goto 0" \
+    "${test_dir}/logfile_access_log.*"
+
+check_output "close not sticking" <<EOF
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ";select * from access_log" \
     -c ':write-json-to -' \
     ${test_dir}/logfile_access_log.0

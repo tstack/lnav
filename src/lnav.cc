@@ -2920,6 +2920,10 @@ static void watch_logfile(string filename, int fd, bool required)
     struct stat st;
     int         rc;
 
+    if (lnav_data.ld_closed_files.count(filename)) {
+        return;
+    }
+
     if (fd != -1) {
         rc = fstat(fd, &st);
     }
