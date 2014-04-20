@@ -87,23 +87,23 @@ check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 	drive_vt52_curses$(EXEEXT) drive_readline_curses$(EXEEXT) \
 	slicer$(EXEEXT) scripty$(EXEEXT) test_ansi_scrubber$(EXEEXT) \
 	test_auto_fd$(EXEEXT) test_auto_mem$(EXEEXT) \
-	test_bookmarks$(EXEEXT) test_date_time_scanner$(EXEEXT) \
-	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
-	test_line_buffer2$(EXEEXT) test_log_accel$(EXEEXT) \
-	test_pcrepp$(EXEEXT) test_top_status$(EXEEXT) \
-	test_yajlpp$(EXEEXT)
+	test_bookmarks$(EXEEXT) test_concise$(EXEEXT) \
+	test_date_time_scanner$(EXEEXT) test_grep_proc2$(EXEEXT) \
+	test_hist_source$(EXEEXT) test_line_buffer2$(EXEEXT) \
+	test_log_accel$(EXEEXT) test_pcrepp$(EXEEXT) \
+	test_top_status$(EXEEXT) test_yajlpp$(EXEEXT)
 TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) \
 	test_date_time_scanner$(EXEEXT) test_cmds.sh \
-	test_line_buffer2$(EXEEXT) test_line_buffer.sh \
-	test_listview.sh test_mvwattrline.sh test_grep_proc.sh \
-	test_grep_proc2$(EXEEXT) test_hist_source$(EXEEXT) \
-	test_json_format.sh test_log_accel$(EXEEXT) test_logfile.sh \
-	test_pcrepp$(EXEEXT) test_sessions.sh test_sql.sh \
-	test_sql_coll_func.sh test_sql_fs_func.sh test_sql_str_func.sh \
-	test_view_colors.sh test_vt52_curses.sh \
-	test_top_status$(EXEEXT) test_data_parser.sh \
-	test_yajlpp$(EXEEXT)
+	test_concise$(EXEEXT) test_line_buffer2$(EXEEXT) \
+	test_line_buffer.sh test_listview.sh test_mvwattrline.sh \
+	test_grep_proc.sh test_grep_proc2$(EXEEXT) \
+	test_hist_source$(EXEEXT) test_json_format.sh \
+	test_log_accel$(EXEEXT) test_logfile.sh test_pcrepp$(EXEEXT) \
+	test_sessions.sh test_sql.sh test_sql_coll_func.sh \
+	test_sql_fs_func.sh test_sql_str_func.sh test_view_colors.sh \
+	test_vt52_curses.sh test_top_status$(EXEEXT) \
+	test_data_parser.sh test_yajlpp$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/mkinstalldirs $(dist_noinst_SCRIPTS) \
@@ -187,6 +187,9 @@ test_auto_mem_DEPENDENCIES =
 am_test_bookmarks_OBJECTS = test_bookmarks.$(OBJEXT)
 test_bookmarks_OBJECTS = $(am_test_bookmarks_OBJECTS)
 test_bookmarks_DEPENDENCIES = ../src/libdiag.a
+am_test_concise_OBJECTS = test_concise.$(OBJEXT)
+test_concise_OBJECTS = $(am_test_concise_OBJECTS)
+test_concise_DEPENDENCIES = ../src/libdiag.a
 am_test_date_time_scanner_OBJECTS = test_date_time_scanner.$(OBJEXT)
 test_date_time_scanner_OBJECTS = $(am_test_date_time_scanner_OBJECTS)
 test_date_time_scanner_DEPENDENCIES = ../src/libdiag.a \
@@ -251,11 +254,11 @@ SOURCES = $(drive_data_scanner_SOURCES) $(drive_grep_proc_SOURCES) \
 	$(drive_vt52_curses_SOURCES) $(scripty_SOURCES) \
 	$(slicer_SOURCES) $(test_ansi_scrubber_SOURCES) \
 	$(test_auto_fd_SOURCES) $(test_auto_mem_SOURCES) \
-	$(test_bookmarks_SOURCES) $(test_date_time_scanner_SOURCES) \
-	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
-	$(test_line_buffer2_SOURCES) $(test_log_accel_SOURCES) \
-	$(test_pcrepp_SOURCES) $(test_top_status_SOURCES) \
-	$(test_yajlpp_SOURCES)
+	$(test_bookmarks_SOURCES) $(test_concise_SOURCES) \
+	$(test_date_time_scanner_SOURCES) $(test_grep_proc2_SOURCES) \
+	$(test_hist_source_SOURCES) $(test_line_buffer2_SOURCES) \
+	$(test_log_accel_SOURCES) $(test_pcrepp_SOURCES) \
+	$(test_top_status_SOURCES) $(test_yajlpp_SOURCES)
 DIST_SOURCES = $(drive_data_scanner_SOURCES) \
 	$(drive_grep_proc_SOURCES) $(drive_line_buffer_SOURCES) \
 	$(drive_listview_SOURCES) $(drive_logfile_SOURCES) \
@@ -265,10 +268,11 @@ DIST_SOURCES = $(drive_data_scanner_SOURCES) \
 	$(scripty_SOURCES) $(slicer_SOURCES) \
 	$(test_ansi_scrubber_SOURCES) $(test_auto_fd_SOURCES) \
 	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
-	$(test_date_time_scanner_SOURCES) $(test_grep_proc2_SOURCES) \
-	$(test_hist_source_SOURCES) $(test_line_buffer2_SOURCES) \
-	$(test_log_accel_SOURCES) $(test_pcrepp_SOURCES) \
-	$(test_top_status_SOURCES) $(test_yajlpp_SOURCES)
+	$(test_concise_SOURCES) $(test_date_time_scanner_SOURCES) \
+	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
+	$(test_line_buffer2_SOURCES) $(test_log_accel_SOURCES) \
+	$(test_pcrepp_SOURCES) $(test_top_status_SOURCES) \
+	$(test_yajlpp_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -658,6 +662,8 @@ test_top_status_SOURCES = test_top_status.cc
 test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) $(PCRE_LIBS) $(SQLITE3_LIBS) -lz
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
+test_concise_SOURCES = test_concise.cc
+test_concise_LDADD = ../src/libdiag.a
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 drive_grep_proc_SOURCES = drive_grep_proc.cc
@@ -898,6 +904,10 @@ test_bookmarks$(EXEEXT): $(test_bookmarks_OBJECTS) $(test_bookmarks_DEPENDENCIES
 	@rm -f test_bookmarks$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_bookmarks_OBJECTS) $(test_bookmarks_LDADD) $(LIBS)
 
+test_concise$(EXEEXT): $(test_concise_OBJECTS) $(test_concise_DEPENDENCIES) $(EXTRA_test_concise_DEPENDENCIES) 
+	@rm -f test_concise$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_concise_OBJECTS) $(test_concise_LDADD) $(LIBS)
+
 test_date_time_scanner$(EXEEXT): $(test_date_time_scanner_OBJECTS) $(test_date_time_scanner_DEPENDENCIES) $(EXTRA_test_date_time_scanner_DEPENDENCIES) 
 	@rm -f test_date_time_scanner$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_date_time_scanner_OBJECTS) $(test_date_time_scanner_LDADD) $(LIBS)
@@ -953,6 +963,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_auto_fd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_auto_mem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_bookmarks.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_concise.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_date_time_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_grep_proc2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_hist_source.Po@am__quote@
@@ -1209,6 +1220,13 @@ test_date_time_scanner.log: test_date_time_scanner$(EXEEXT)
 test_cmds.sh.log: test_cmds.sh
 	@p='test_cmds.sh'; \
 	b='test_cmds.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_concise.log: test_concise$(EXEEXT)
+	@p='test_concise$(EXEEXT)'; \
+	b='test_concise'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -31,6 +31,7 @@ check_PROGRAMS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
+	test_concise \
 	test_date_time_scanner \
 	test_grep_proc2 \
 	test_hist_source \
@@ -81,6 +82,9 @@ test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) $(PCRE_LIBS) $(SQLITE3_LI
 
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
+
+test_concise_SOURCES = test_concise.cc
+test_concise_LDADD = ../src/libdiag.a
 
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
@@ -220,6 +224,7 @@ TESTS = \
 	test_bookmarks \
 	test_date_time_scanner \
 	test_cmds.sh \
+	test_concise \
 	test_line_buffer2 \
 	test_line_buffer.sh \
 	test_listview.sh \
