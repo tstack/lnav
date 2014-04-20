@@ -63,7 +63,9 @@ public:
           bss_prompt(80, view_colors::VCR_STATUS),
           bss_error(80, view_colors::VCR_ALERT_STATUS),
           bss_hit_spinner(0),
-          bss_load_percent(0)
+          bss_load_percent(0),
+          bss_last_filtered_count(0),
+          bss_filter_counter(0)
     {
         this->bss_fields[BSF_LINE_NUMBER].set_width(10);
         this->bss_fields[BSF_PERCENT].set_width(4);
@@ -232,7 +234,22 @@ public:
         if (lss.get_filtered_count() == 0) {
             sf.clear();
         }
-        else{
+        else {
+            ui_periodic_timer &timer = ui_periodic_timer::singleton();
+
+            if (lss.get_filtered_count() == this->bss_last_filtered_count) {
+
+                if (timer.fade_diff(this->bss_filter_counter) == 0) {
+                    this->bss_fields[BSF_FILTERED].set_role(
+                        view_colors::VCR_BOLD_STATUS);
+                }
+            }
+            else {
+                this->bss_fields[BSF_FILTERED].set_role(
+                    view_colors::VCR_ALERT_STATUS);
+                this->bss_last_filtered_count = lss.get_filtered_count();
+                timer.start_fade(this->bss_filter_counter, 3);
+            }
             sf.set_value("%'9d Not Shown", lss.get_filtered_count());
         }
     };
@@ -243,5 +260,7 @@ private:
     status_field bss_fields[BSF__MAX];
     int          bss_hit_spinner;
     int          bss_load_percent;
+    int          bss_last_filtered_count;
+    sig_atomic_t bss_filter_counter;
 };
 #endif

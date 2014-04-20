@@ -103,6 +103,17 @@ public:
         return false;
     };
 
+    void start_fade(sig_atomic_t &counter, size_t decay) {
+        counter = this->upt_counter + decay;
+    };
+
+    int fade_diff(sig_atomic_t &counter) {
+        if (this->upt_counter >= counter) {
+            return 0;
+        }
+        return counter - this->upt_counter;
+    };
+
 private:
     ui_periodic_timer();
 
