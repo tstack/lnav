@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
     ci.clear();
 
-    ci.push_back(0, 0);
+    ci.push_back_word(0, 0);
     assert(ci.size() == 0);
     assert(ci.empty());
     v = iter.get_word(valid_bits);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
     ci.clear();
 
-    ci.push_back(~0ULL, concise_index::BITS_PER_WORD - 1);
+    ci.push_back_word(~0ULL, concise_index::BITS_PER_WORD - 1);
     assert(ci.size() == concise_index::BITS_PER_WORD - 1);
     iter = ci.begin();
     v = iter.get_word(valid_bits);
@@ -119,8 +119,8 @@ int main(int argc, char *argv[])
 
 
     ci.clear();
-    ci.push_back(~0ULL);
-    ci.push_back(0ULL);
+    ci.push_back_word(~0ULL);
+    ci.push_back_word(0ULL);
     iter = ci.begin();
     v = iter.get_word(valid_bits);
     assert(v == ~0ULL);

@@ -103,7 +103,7 @@ public:
         return true;
     };
 
-    bool push_back(uint64_t v, uint64_t len = BITS_PER_WORD) {
+    bool push_back_word(uint64_t v, uint64_t len = BITS_PER_WORD) {
         uint64_t &lit_or_rle_word = this->get_last_word();
 
         require(len <= BITS_PER_WORD);
