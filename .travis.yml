@@ -4,3 +4,19 @@ compiler: gcc
 before_install:
     - sudo apt-get install -y -qq libgpm-dev
 script: ./autogen.sh && ./configure && make && make check
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "P3wQLswiGYWrZwO4bxFmsA4XG5s/pS+renL0RMeotMTQwQQXmy1ZCvwMnAgaYWQmF82fN8WjuhO3OX0gpDbydxRktqI5ZqblsryV6poB0g+OkCqThbDUp3TL6TjPqySTI1CZ8qoOBYFMubAZYVJAEfxl0UxoQE+uTsRarRqr8rI="
+
+addons:
+  coverity_scan:
+    project:
+      name: "tstack/lnav"
+      description: "Your project description here"
+    notification_email: timothyshanestack@gmail.com
+    build_command_prepend: ./autogen.sh && ./configure
+    build_command: make
+    branch_pattern: master
