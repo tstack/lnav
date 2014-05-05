@@ -215,6 +215,7 @@ public:
     size_t list_overlay_count(const listview_curses &lv)
     {
         logfile_sub_source &lss = lnav_data.ld_log_source;
+        view_colors &vc = view_colors::singleton();
 
         if (!this->fos_active) {
             return 0;
@@ -231,13 +232,13 @@ public:
             return 0;
         }
 
-        this->fos_key_size = 0;
+        this->fos_known_key_size = 0;
 
         for (std::vector<logline_value>::iterator iter =
                  this->fos_log_helper.ldh_line_values.begin();
              iter != this->fos_log_helper.ldh_line_values.end();
              ++iter) {
-            this->fos_key_size = max(this->fos_key_size,
+            this->fos_known_key_size = max(this->fos_known_key_size,
                                      (int)iter->lv_name.length());
         }
 
@@ -249,127 +250,134 @@ public:
                 iter->e_sub_elements->front());
 
             colname = this->fos_log_helper.ldh_namer->add_column(colname);
-            this->fos_key_size = max(this->fos_key_size, (int)colname.length());
+            this->fos_unknown_key_size = max(
+                this->fos_unknown_key_size, (int)colname.length());
         }
 
-        return 1 +
-               1 +
-               this->fos_log_helper.ldh_line_values.size() +
-               1 +
-               this->fos_log_helper.ldh_parser->dp_pairs.size();
+        this->fos_lines.clear();
+
+        char old_timestamp[64], curr_timestamp[64];
+        struct timeval curr_tv, offset_tv, orig_tv;
+        char log_time[256];
+
+        sql_strftime(curr_timestamp, sizeof(curr_timestamp),
+           this->fos_log_helper.ldh_line->get_time(),
+           this->fos_log_helper.ldh_line->get_millis(),
+           'T');
+        curr_tv = this->fos_log_helper.ldh_line->get_timeval();
+        offset_tv = this->fos_log_helper.ldh_file->get_time_offset();
+        timersub(&curr_tv, &offset_tv, &orig_tv);
+        sql_strftime(old_timestamp, sizeof(old_timestamp),
+           orig_tv.tv_sec, orig_tv.tv_usec / 1000,
+           'T');
+        snprintf(log_time, sizeof(log_time),
+           " Current Time: %s  Original Time: %s  Offset: %+d.%03d",
+           curr_timestamp,
+           old_timestamp,
+           (int)offset_tv.tv_sec, offset_tv.tv_usec / 1000);
+        this->fos_lines.push_back(log_time);
+
+        if (this->fos_log_helper.ldh_line_values.empty()) {
+            this->fos_lines.push_back(" No known message fields");
+        }
+        else{
+            this->fos_lines.push_back(" Known message fields:");
+        }
+
+        for (size_t lpc = 0; lpc < this->fos_log_helper.ldh_line_values.size(); lpc++) {
+            logline_value &lv = this->fos_log_helper.ldh_line_values[lpc];
+            attr_line_t al;
+            string str;
+
+            str = "   " + lv.lv_name;
+            str.append(this->fos_known_key_size - lv.lv_name.size() + 3, ' ');
+            str += " = " + lv.to_string();
+
+
+            al.with_string(str)
+              .with_attr(string_attr(
+                line_range(3, 3 + lv.lv_name.length()),
+                &view_curses::VC_STYLE,
+                vc.attrs_for_ident(lv.lv_name)));
+
+            this->fos_lines.push_back(al);
+            this->add_key_line_attrs(this->fos_known_key_size);
+        }
+
+        std::map<std::string, json_ptr_walk::pair_list_t>::iterator json_iter;
+
+        if (!this->fos_log_helper.ldh_json_pairs.empty()) {
+            this->fos_lines.push_back(" JSON fields:");
+        }
+
+        for (json_iter = this->fos_log_helper.ldh_json_pairs.begin();
+             json_iter != this->fos_log_helper.ldh_json_pairs.end();
+             ++json_iter) {
+            json_ptr_walk::pair_list_t &jpairs = json_iter->second;
+
+            for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
+                this->fos_lines.push_back("   " +
+                    this->fos_log_helper.format_json_getter(json_iter->first, lpc) + " = " +
+                    jpairs[lpc].second);
+                this->add_key_line_attrs(0);
+            }
+        }
+
+        if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
+            this->fos_lines.push_back(" No discovered message fields");
+        }
+        else {
+            this->fos_lines.push_back(" Discovered message fields:");
+        }
+
+        data_parser::element_list_t::iterator iter;
+
+        iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
+        for (size_t lpc = 0;
+             lpc < this->fos_log_helper.ldh_parser->dp_pairs.size(); lpc++, ++iter) {
+            string &name = this->fos_log_helper.ldh_namer->cn_names[lpc];
+            string val = this->fos_log_helper.ldh_parser->get_element_string(
+                    iter->e_sub_elements->back());
+            attr_line_t al("   " + name + " = " + val);
+
+            al.with_attr(string_attr(
+                line_range(3, 3 + name.length()),
+                &view_curses::VC_STYLE,
+                vc.attrs_for_ident(name)));
+
+            this->fos_lines.push_back(al);
+            this->add_key_line_attrs(this->fos_unknown_key_size,
+                lpc == (this->fos_log_helper.ldh_parser->dp_pairs.size() - 1));
+        }
+
+        return this->fos_lines.size();
+    };
+
+    void add_key_line_attrs(int key_size, bool last_line = false) {
+        string_attrs_t &sa = this->fos_lines.back().get_attrs();
+        struct line_range lr(1, 2);
+        sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, last_line ? ACS_LLCORNER : ACS_LTEE));
+
+        lr.lr_start = 3 + key_size + 3;
+        lr.lr_end   = -1;
+        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD));
     };
 
     bool list_value_for_overlay(const listview_curses &lv,
                                 vis_line_t y,
                                 attr_line_t &value_out)
     {
-        view_colors &vc = view_colors::singleton();
-
         if (!this->fos_active || this->fos_log_helper.ldh_parser.get() == NULL) {
             return false;
         }
 
-        size_t total_count = (1 +
-                              1 +
-                              this->fos_log_helper.ldh_line_values.size() +
-                              1 +
-                              this->fos_log_helper.ldh_parser->dp_pairs.size());
         int  row       = (int)y - 1;
-        bool last_line = (row == (int)(total_count - 1));
 
-        if (row < 0 || row >= (int)total_count) {
+        if (row < 0 || row >= (int)this->fos_lines.size()) {
             return false;
         }
 
-        std::string &str = value_out.get_string();
-
-        if (row == 0) {
-            char old_timestamp[64], curr_timestamp[64];
-            struct timeval curr_tv, offset_tv, orig_tv;
-            char log_time[256];
-
-            sql_strftime(curr_timestamp, sizeof(curr_timestamp),
-                         this->fos_log_helper.ldh_line->get_time(),
-                         this->fos_log_helper.ldh_line->get_millis(),
-                         'T');
-            curr_tv = this->fos_log_helper.ldh_line->get_timeval();
-            offset_tv = this->fos_log_helper.ldh_file->get_time_offset();
-            timersub(&curr_tv, &offset_tv, &orig_tv);
-            sql_strftime(old_timestamp, sizeof(old_timestamp),
-                         orig_tv.tv_sec, orig_tv.tv_usec / 1000,
-                         'T');
-            snprintf(log_time, sizeof(log_time),
-                     " Current Time: %s  Original Time: %s  Offset: %+d.%03d",
-                     curr_timestamp,
-                     old_timestamp,
-                     (int)offset_tv.tv_sec, offset_tv.tv_usec / 1000);
-            str = log_time;
-            return true;
-        }
-        row -= 1;
-        if (row == 0) {
-            if (this->fos_log_helper.ldh_line_values.empty()) {
-                str = " No known message fields";
-            }
-            else{
-                str = " Known message fields:";
-            }
-            return true;
-        }
-        row -= 1;
-        if (row == (int)this->fos_log_helper.ldh_line_values.size()) {
-            if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
-                str = " No discovered message fields";
-            }
-            else{
-                str = " Discovered message fields:";
-            }
-            return true;
-        }
-
-        if (row < (int)this->fos_log_helper.ldh_line_values.size()) {
-            string &name = this->fos_log_helper.ldh_line_values[row].lv_name;
-
-            str = "   " + name;
-
-            int padding = this->fos_key_size - str.length() + 3;
-
-            value_out.get_attrs().push_back(string_attr(
-                line_range(3, 3 + name.length()),
-                &view_curses::VC_STYLE,
-                vc.attrs_for_ident(name)));
-            str.append(padding, ' ');
-            str += " = " + this->fos_log_helper.ldh_line_values[row].to_string();
-        }
-        else {
-            data_parser::element_list_t::iterator iter;
-
-            row -= this->fos_log_helper.ldh_line_values.size() + 1;
-
-            iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
-            std::advance(iter, row);
-
-            string &name = this->fos_log_helper.ldh_namer->cn_names[row];
-
-            str = "   " + name;
-            int padding = this->fos_key_size - str.length() + 3;
-
-            value_out.get_attrs().push_back(string_attr(
-                line_range(3, 3 + name.length()),
-                &view_curses::VC_STYLE,
-                vc.attrs_for_ident(name)));
-            str.append(padding, ' ');
-            str += " = " + this->fos_log_helper.ldh_parser->get_element_string(
-                iter->e_sub_elements->back());
-        }
-
-        string_attrs_t &  sa = value_out.get_attrs();
-        struct line_range lr(1, 2);
-        sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, last_line ? ACS_LLCORNER : ACS_LTEE));
-
-        lr.lr_start = 3 + this->fos_key_size + 3;
-        lr.lr_end   = -1;
-        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD));
+        value_out = this->fos_lines[row];
 
         return true;
     };
@@ -377,7 +385,9 @@ public:
     bool          fos_active;
     bool          fos_active_prev;
     log_data_helper fos_log_helper;
-    int fos_key_size;
+    int fos_known_key_size;
+    int fos_unknown_key_size;
+    vector<attr_line_t> fos_lines;
 };
 
 static int handle_collation_list(void *ptr,
@@ -552,6 +562,11 @@ bool setup_logline_table()
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
     bool             retval   = false;
 
+    if (lnav_data.ld_rl_view != NULL) {
+        lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
+        add_view_text_possibilities(LNM_SQL, &log_view);
+    }
+
     if (log_view.get_inner_height()) {
         vis_line_t     vl = log_view.get_top();
         content_line_t cl = lnav_data.ld_log_source.at_base(vl);
@@ -559,15 +574,28 @@ bool setup_logline_table()
         lnav_data.ld_vtab_manager->unregister_vtab("logline");
         lnav_data.ld_vtab_manager->register_vtab(new log_data_table(cl));
 
+        if (lnav_data.ld_rl_view != NULL) {
+            log_data_helper ldh(lnav_data.ld_log_source);
+
+            ldh.parse_line(cl);
+
+            std::map<std::string, json_ptr_walk::pair_list_t>::const_iterator pair_iter;
+            for (pair_iter = ldh.ldh_json_pairs.begin();
+               pair_iter != ldh.ldh_json_pairs.end();
+               ++pair_iter) {
+                for (int lpc = 0; lpc < pair_iter->second.size(); lpc++) {
+                    lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*",
+                        ldh.format_json_getter(pair_iter->first, lpc));
+                }
+            }
+        }
+
         retval = true;
     }
 
     lnav_data.ld_db_key_names.clear();
 
     if (lnav_data.ld_rl_view != NULL) {
-        lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
-
-        add_view_text_possibilities(LNM_SQL, &log_view);
         add_env_possibilities(LNM_SQL);
 
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);

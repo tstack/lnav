@@ -343,6 +343,7 @@ public:
         VALUE_INTEGER,
         VALUE_FLOAT,
         VALUE_BOOLEAN,
+        VALUE_JSON,
 
         VALUE__MAX
     };
@@ -378,6 +379,7 @@ public:
         }
 
         switch (kind) {
+        case VALUE_JSON:
         case VALUE_TEXT:
             this->lv_sbr = sbr;
             break;
@@ -429,6 +431,7 @@ public:
         case VALUE_NULL:
             return "null";
 
+        case VALUE_JSON:
         case VALUE_TEXT:
             return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
 

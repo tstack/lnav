@@ -3986,8 +3986,8 @@ fi
 
 CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE -D__STDC_LIMIT_MACROS"
 
-CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
-CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
+# CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
+# CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
 
 # Check whether --enable-profiling was given.
 if test "${enable_profiling+set}" = set; then :

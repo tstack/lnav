@@ -41,8 +41,8 @@ AC_PROG_CXX
 
 CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE -D__STDC_LIMIT_MACROS"
 
-CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
-CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
+# CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
+# CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
 
 AC_ARG_ENABLE([profiling],
               AS_HELP_STRING([--enable-profiling],

@@ -133,6 +133,20 @@ static char *log_alloc(void)
     return &log_ring.lr_data[log_ring.lr_length];
 }
 
+void log_argv(int argc, char *argv[])
+{
+    const char *log_path = getenv("LNAV_LOG_PATH");
+
+    if (log_path != NULL) {
+        lnav_log_file = fopen(log_path, "a");
+    }
+
+    log_info("argv[%d] =", argc);
+    for (int lpc = 0; lpc < argc; lpc++) {
+        log_info("    [%d] = %s", lpc, argv[lpc]);
+    }
+}
+
 void log_host_info(void)
 {
     struct utsname un;

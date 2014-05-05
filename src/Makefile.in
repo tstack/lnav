@@ -113,11 +113,13 @@ am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	collation-functions.$(OBJEXT) db_sub_source.$(OBJEXT) \
 	extension-functions.$(OBJEXT) fs-extension-functions.$(OBJEXT) \
 	grep_proc.$(OBJEXT) hist_source.$(OBJEXT) \
-	line_buffer.$(OBJEXT) listview_curses.$(OBJEXT) \
-	lnav_commands.$(OBJEXT) lnav_config.$(OBJEXT) \
-	lnav_log.$(OBJEXT) lnav_util.$(OBJEXT) log_accel.$(OBJEXT) \
-	log_format.$(OBJEXT) log_format_loader.$(OBJEXT) \
-	logfile.$(OBJEXT) logfile_sub_source.$(OBJEXT) \
+	json-extension-functions.$(OBJEXT) json_op.$(OBJEXT) \
+	json_ptr.$(OBJEXT) line_buffer.$(OBJEXT) \
+	listview_curses.$(OBJEXT) lnav_commands.$(OBJEXT) \
+	lnav_config.$(OBJEXT) lnav_log.$(OBJEXT) lnav_util.$(OBJEXT) \
+	log_accel.$(OBJEXT) log_format.$(OBJEXT) \
+	log_format_loader.$(OBJEXT) logfile.$(OBJEXT) \
+	logfile_sub_source.$(OBJEXT) \
 	network-extension-functions.$(OBJEXT) data_scanner.$(OBJEXT) \
 	data_parser.$(OBJEXT) ptimec_rt.$(OBJEXT) \
 	readline_curses.$(OBJEXT) readline_highlighters.$(OBJEXT) \
@@ -412,6 +414,8 @@ noinst_HEADERS = \
 	hist_source.hh \
 	init.sql \
 	init-sql.hh \
+	json_op.hh \
+	json_ptr.hh \
 	k_merge_tree.h \
 	line_buffer.hh \
 	listview_curses.hh \
@@ -477,6 +481,9 @@ libdiag_a_SOURCES = \
     fs-extension-functions.cc \
 	grep_proc.cc \
 	hist_source.cc \
+	json-extension-functions.cc \
+	json_op.cc \
+	json_ptr.cc \
 	line_buffer.cc \
 	listview_curses.cc \
 	lnav_commands.cc \
@@ -730,6 +737,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fs-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grep_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hist_source.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json-extension-functions.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_op.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_ptr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/line_buffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/listview_curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lnav.Po@am__quote@

@@ -37,6 +37,8 @@ int main(int argc, char *argv[])
     int retval = EXIT_SUCCESS;
     auto_mem<sqlite3> db(sqlite3_close);
 
+    log_argv(argc, argv);
+
     if (argc != 2) {
         fprintf(stderr, "error: expecting an SQL statement\n");
         retval = EXIT_FAILURE;

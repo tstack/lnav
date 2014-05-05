@@ -293,7 +293,12 @@ public:
     attr_line_t() { 
         this->al_attrs.reserve(RESERVE_SIZE);
     };
+
     attr_line_t(const std::string &str) : al_string(str) {
+        this->al_attrs.reserve(RESERVE_SIZE);
+    };
+
+    attr_line_t(const char *str) : al_string(str) {
         this->al_attrs.reserve(RESERVE_SIZE);
     };
 
@@ -314,8 +319,6 @@ public:
     };
 
     size_t length() const { return this->al_string.length(); };
-
-    void operator=(const std::string &rhs) { this->al_string = rhs; };
 
     /** Clear the string and the attributes for the string. */
     attr_line_t &clear()

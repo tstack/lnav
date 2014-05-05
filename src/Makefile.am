@@ -83,6 +83,8 @@ noinst_HEADERS = \
 	hist_source.hh \
 	init.sql \
 	init-sql.hh \
+	json_op.hh \
+	json_ptr.hh \
 	k_merge_tree.h \
 	line_buffer.hh \
 	listview_curses.hh \
@@ -148,6 +150,9 @@ libdiag_a_SOURCES = \
     fs-extension-functions.cc \
 	grep_proc.cc \
 	hist_source.cc \
+	json-extension-functions.cc \
+	json_op.cc \
+	json_ptr.cc \
 	line_buffer.cc \
 	listview_curses.cc \
 	lnav_commands.cc \

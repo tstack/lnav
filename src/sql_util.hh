@@ -75,4 +75,6 @@ inline void sql_strftime(char *buffer, size_t buffer_size,
 
 void sql_install_logger(void);
 
+char *sql_quote_ident(const char *ident);
+
 #endif

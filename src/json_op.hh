@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2014, Timothy Stack
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
+ * THIS SOFTWARE IS PROVIDED BY TIMOTHY STACK AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -26,56 +26,56 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file state-extension-functions.cc
+ * @file json_op.hh
  */
 
-#include "config.h"
+#ifndef __json_op_hh
+#define __json_op_hh
 
-#include <stdio.h>
-#include <string.h>
 #include <sys/types.h>
-#include <stdint.h>
 
 #include <string>
 
-#include "sqlite3.h"
+#include "json_ptr.hh"
+#include "yajlpp.hh"
 
-#include "lnav.hh"
-#include "lnav_log.hh"
-#include "sql_util.hh"
-#include "sqlite-extension-func.h"
+class json_op {
+    static int handle_null(void *ctx);
+    static int handle_boolean(void *ctx, int boolVal);
+    static int handle_number(void *ctx, const char *numberVal, size_t numberLen);
+    static int handle_string(void *ctx, const unsigned char * stringVal, size_t len);
+    static int handle_start_map(void *ctx);
+    static int handle_map_key(void *ctx, const unsigned char * key, size_t len);
+    static int handle_end_map(void *ctx);
+    static int handle_start_array(void *ctx);
+    static int handle_end_array(void *ctx);
 
-static void sql_log_top_line(sqlite3_context *context,
-                             int argc, sqlite3_value **argv)
-{
-    sqlite3_result_int64(context,
-                         (int64_t)lnav_data.ld_views[LNV_LOG].get_top());
-}
+public:
 
-static void sql_log_top_datetime(sqlite3_context *context,
-                                 int argc, sqlite3_value **argv)
-{
-    char buffer[64];
+    const static yajl_callbacks gen_callbacks;
+    const static yajl_callbacks ptr_callbacks;
 
-    require(argc == 0);
-
-    sql_strftime(buffer, sizeof(buffer),
-                 lnav_data.ld_top_time,
-                 lnav_data.ld_top_time_millis);
-    sqlite3_result_text(context, buffer, strlen(buffer), SQLITE_TRANSIENT);
-}
-
-int state_extension_functions(const struct FuncDef **basic_funcs,
-                              const struct FuncDefAgg **agg_funcs)
-{
-    static const struct FuncDef datetime_funcs[] = {
-        { "log_top_line", 0, 0, SQLITE_UTF8, 0, sql_log_top_line },
-        { "log_top_datetime", 0, 0, SQLITE_UTF8, 0, sql_log_top_datetime },
-
-        { NULL }
+    json_op(json_ptr &ptr)
+        : jo_depth(0),
+          jo_array_index(-1),
+          jo_ptr(ptr),
+          jo_ptr_data(NULL),
+          jo_ptr_error_code(0) {
+        memset(&this->jo_ptr_callbacks, 0, sizeof(this->jo_ptr_callbacks));
     };
 
-    *basic_funcs = datetime_funcs;
+    bool check_index(bool primitive = true) {
+        return this->jo_ptr.at_index(this->jo_depth, this->jo_array_index, primitive);
+    };
 
-    return SQLITE_OK;
-}
+    int jo_depth;
+    int jo_array_index;
+
+    json_ptr jo_ptr;
+    yajl_callbacks jo_ptr_callbacks;
+    void *jo_ptr_data;
+    std::string jo_ptr_error;
+    int jo_ptr_error_code;
+};
+
+#endif

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2014, Timothy Stack
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
+ * THIS SOFTWARE IS PROVIDED BY TIMOTHY STACK AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -26,56 +26,48 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file state-extension-functions.cc
+ * @file test_json_ptr.cc
  */
 
 #include "config.h"
 
+#include <assert.h>
 #include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <stdint.h>
+#include <stdlib.h>
 
-#include <string>
+#include "json_ptr.hh"
 
-#include "sqlite3.h"
-
-#include "lnav.hh"
-#include "lnav_log.hh"
-#include "sql_util.hh"
-#include "sqlite-extension-func.h"
-
-static void sql_log_top_line(sqlite3_context *context,
-                             int argc, sqlite3_value **argv)
+int main(int argc, const char *argv[])
 {
-    sqlite3_result_int64(context,
-                         (int64_t)lnav_data.ld_views[LNV_LOG].get_top());
-}
+    int32_t depth, index;
 
-static void sql_log_top_datetime(sqlite3_context *context,
-                                 int argc, sqlite3_value **argv)
-{
-    char buffer[64];
+    {
+        json_ptr jptr("");
 
-    require(argc == 0);
+        depth = 0;
+        index = -1;
+        assert(jptr.at_index(depth, index));
+    }
 
-    sql_strftime(buffer, sizeof(buffer),
-                 lnav_data.ld_top_time,
-                 lnav_data.ld_top_time_millis);
-    sqlite3_result_text(context, buffer, strlen(buffer), SQLITE_TRANSIENT);
-}
+    {
+        json_ptr jptr("/");
 
-int state_extension_functions(const struct FuncDef **basic_funcs,
-                              const struct FuncDefAgg **agg_funcs)
-{
-    static const struct FuncDef datetime_funcs[] = {
-        { "log_top_line", 0, 0, SQLITE_UTF8, 0, sql_log_top_line },
-        { "log_top_datetime", 0, 0, SQLITE_UTF8, 0, sql_log_top_datetime },
+        depth = 0;
+        index = -1;
+        assert(!jptr.at_index(depth, index));
+        assert(jptr.expect_map(depth));
+        assert(jptr.at_index(depth, index));
+    }
 
-        { NULL }
-    };
+    {
+        json_ptr jptr("/foo/bar");
 
-    *basic_funcs = datetime_funcs;
-
-    return SQLITE_OK;
+        depth = 0;
+        index = -1;
+        assert(jptr.expect_map(depth));
+        assert(jptr.at_key(depth, "foo"));
+        assert(jptr.expect_map(depth));
+        assert(jptr.at_key(depth, "bar"));
+        assert(jptr.at_index(depth, index));
+    }
 }

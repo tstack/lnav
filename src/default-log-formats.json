@@ -387,7 +387,7 @@
         ],
         "regex" : {
             "std" : {
-                "pattern" : "^TCF (?<timestamp>\\d{2}:\\d{2}.\\d{3}): (?:Server-Properties: |channel server|\\w+: (?<dir>--->|<---) (?<type>\\w)(?: (?<token>\\w+))?(?: (?<service>\\w+))?(?: (?<name>\\w+))? )(?<body>.*)"
+                "pattern" : "^TCF (?<timestamp>\\d{2}:\\d{2}.\\d{3}): (?:Server-Properties: (?:.*)|channel server|\\w+: (?<dir>--->|<---) (?<type>\\w)(?: (?<token>\\w+))?(?: (?<service>\\w+))?(?: (?<name>\\w+))?(?: (?<msg>.*))?(?: <eom>))$"
             }
         },
         "value" : {
@@ -409,6 +409,9 @@
             "name" : {
                 "kind" : "string",
                 "identifier" : true
+            },
+            "msg" : {
+                "kind" : "json"
             }
         },
         "sample" : [

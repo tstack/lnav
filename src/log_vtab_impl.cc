@@ -381,6 +381,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                 case logline_value::VALUE_NULL:
                     sqlite3_result_null(ctx);
                     break;
+                case logline_value::VALUE_JSON:
                 case logline_value::VALUE_TEXT: {
                     const char *text_value = lv_iter->lv_sbr.get_data();
 

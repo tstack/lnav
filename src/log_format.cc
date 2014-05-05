@@ -171,7 +171,8 @@ const char *logline_value::value_names[VALUE__MAX] = {
     "text",
     "int",
     "float",
-    "bool"
+    "bool",
+    "json"
 };
 
 logline_value::kind_t logline_value::string2kind(const char *kindstr)
@@ -187,6 +188,9 @@ logline_value::kind_t logline_value::string2kind(const char *kindstr)
     }
     else if (strcmp(kindstr, "boolean") == 0) {
         return VALUE_BOOLEAN;
+    }
+    else if (strcmp(kindstr, "json") == 0) {
+        return VALUE_JSON;
     }
 
     return VALUE_UNKNOWN;
@@ -448,6 +452,7 @@ static int json_array_end(void *ctx)
 
         jlu->jlu_format->jlf_line_values.push_back(
             logline_value(field_name, tsb.tsb_ref));
+        jlu->jlu_format->jlf_line_values.back().lv_kind = logline_value::VALUE_JSON;
     }
 
     return 1;
@@ -1136,6 +1141,7 @@ public:
             switch (vd.vd_kind) {
             case logline_value::VALUE_NULL:
             case logline_value::VALUE_TEXT:
+            case logline_value::VALUE_JSON:
                 type = SQLITE3_TEXT;
                 break;
             case logline_value::VALUE_FLOAT:

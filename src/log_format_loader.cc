@@ -169,7 +169,7 @@ static int read_value_def(yajlpp_parse_context *ypc, const unsigned char *str, s
 
         if ((kind = logline_value::string2kind(val.c_str())) ==
             logline_value::VALUE_UNKNOWN) {
-            fprintf(stderr, "unknown value kind %s\n", val.c_str());
+            fprintf(stderr, "error: unknown value kind %s\n", val.c_str());
             return 0;
         }
         elf->elf_value_defs[value_name].vd_kind = kind;

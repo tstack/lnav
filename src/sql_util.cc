@@ -32,7 +32,7 @@
 #include "config.h"
 
 #include <stdio.h>
-
+#include <string.h>
 #include <pcrecpp.h>
 
 #include "auto_mem.hh"
@@ -518,4 +518,46 @@ static void sqlite_logger(void *dummy, int code, const char *msg)
 void sql_install_logger(void)
 {
     sqlite3_config(SQLITE_CONFIG_LOG, sqlite_logger, NULL);
+}
+
+char *sql_quote_ident(const char *ident)
+{
+    char *quote = (char *)ident;
+    size_t quote_count = 0;
+    char *retval;
+
+    while ((quote = strchr(quote, '"')) != NULL) {
+        quote_count += 1;
+        quote += 1;
+    }
+
+    if ((retval = (char *)sqlite3_malloc(
+        strlen(ident) + quote_count * 2 + (quote_count ? 2: 0))) == NULL) {
+        retval = NULL;
+    }
+    else {
+        char *curr = retval;
+
+        if (quote_count) {
+            curr[0] = '"';
+            curr += 1;
+        }
+        for (size_t lpc = 0; ident[lpc] != '\0'; lpc++) {
+            switch (ident[lpc]) {
+            case '"':
+                curr[0] = '"';
+                curr += 1;
+            default:
+                curr[0] = ident[lpc];
+                break;
+            }
+            curr += 1;
+        }
+        if (quote_count) {
+            curr[0] = '"';
+            curr += 1;
+        }
+    }
+
+    return retval;
 }

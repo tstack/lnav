@@ -48,6 +48,7 @@ enum lnav_log_level_t {
     LOG_LEVEL_ERROR,
 };
 
+void log_argv(int argc, char *argv[]);
 void log_host_info(void);
 void log_msg(enum lnav_log_level_t level, const char *src_file, int line_number,
     const char *fmt, ...);

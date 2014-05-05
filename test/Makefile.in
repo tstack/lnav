@@ -81,6 +81,7 @@ build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 	drive_line_buffer$(EXEEXT) drive_grep_proc$(EXEEXT) \
+	drive_json_op$(EXEEXT) drive_json_ptr_walk$(EXEEXT) \
 	drive_listview$(EXEEXT) drive_logfile$(EXEEXT) \
 	drive_mvwattrline$(EXEEXT) drive_sequencer$(EXEEXT) \
 	drive_sql$(EXEEXT) drive_view_colors$(EXEEXT) \
@@ -89,18 +90,20 @@ check_PROGRAMS = drive_data_scanner$(EXEEXT) \
 	test_auto_fd$(EXEEXT) test_auto_mem$(EXEEXT) \
 	test_bookmarks$(EXEEXT) test_concise$(EXEEXT) \
 	test_date_time_scanner$(EXEEXT) test_grep_proc2$(EXEEXT) \
-	test_hist_source$(EXEEXT) test_line_buffer2$(EXEEXT) \
-	test_log_accel$(EXEEXT) test_pcrepp$(EXEEXT) \
-	test_top_status$(EXEEXT) test_yajlpp$(EXEEXT)
+	test_hist_source$(EXEEXT) test_json_ptr$(EXEEXT) \
+	test_line_buffer2$(EXEEXT) test_log_accel$(EXEEXT) \
+	test_pcrepp$(EXEEXT) test_top_status$(EXEEXT) \
+	test_yajlpp$(EXEEXT)
 TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_auto_mem$(EXEEXT) test_bookmarks$(EXEEXT) \
 	test_date_time_scanner$(EXEEXT) test_cmds.sh \
 	test_concise$(EXEEXT) test_line_buffer2$(EXEEXT) \
 	test_line_buffer.sh test_listview.sh test_mvwattrline.sh \
 	test_grep_proc.sh test_grep_proc2$(EXEEXT) \
-	test_hist_source$(EXEEXT) test_json_format.sh \
-	test_log_accel$(EXEEXT) test_logfile.sh test_pcrepp$(EXEEXT) \
-	test_sessions.sh test_sql.sh test_sql_coll_func.sh \
+	test_hist_source$(EXEEXT) test_json_format.sh test_json_op.sh \
+	test_json_ptr_walk.sh test_log_accel$(EXEEXT) test_logfile.sh \
+	test_pcrepp$(EXEEXT) test_sessions.sh test_sql.sh \
+	test_sql_coll_func.sh test_sql_json_func.sh \
 	test_sql_fs_func.sh test_sql_str_func.sh test_view_colors.sh \
 	test_vt52_curses.sh test_top_status$(EXEEXT) \
 	test_data_parser.sh test_yajlpp$(EXEEXT)
@@ -129,6 +132,13 @@ drive_data_scanner_DEPENDENCIES = ../src/libdiag.a \
 am_drive_grep_proc_OBJECTS = drive_grep_proc.$(OBJEXT)
 drive_grep_proc_OBJECTS = $(am_drive_grep_proc_OBJECTS)
 drive_grep_proc_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
+am_drive_json_op_OBJECTS = drive_json_op.$(OBJEXT)
+drive_json_op_OBJECTS = $(am_drive_json_op_OBJECTS)
+drive_json_op_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
+am_drive_json_ptr_walk_OBJECTS = drive_json_ptr_walk.$(OBJEXT)
+drive_json_ptr_walk_OBJECTS = $(am_drive_json_ptr_walk_OBJECTS)
+drive_json_ptr_walk_DEPENDENCIES = ../src/libdiag.a \
+	$(am__DEPENDENCIES_1)
 am_drive_line_buffer_OBJECTS = drive_line_buffer.$(OBJEXT)
 drive_line_buffer_OBJECTS = $(am_drive_line_buffer_OBJECTS)
 drive_line_buffer_DEPENDENCIES = ../src/libdiag.a \
@@ -200,6 +210,9 @@ test_grep_proc2_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
 am_test_hist_source_OBJECTS = test_hist_source.$(OBJEXT)
 test_hist_source_OBJECTS = $(am_test_hist_source_OBJECTS)
 test_hist_source_DEPENDENCIES = ../src/libdiag.a $(am__DEPENDENCIES_1)
+am_test_json_ptr_OBJECTS = test_json_ptr.$(OBJEXT)
+test_json_ptr_OBJECTS = $(am_test_json_ptr_OBJECTS)
+test_json_ptr_DEPENDENCIES = ../src/libdiag.a
 am_test_line_buffer2_OBJECTS = test_line_buffer2.$(OBJEXT)
 test_line_buffer2_OBJECTS = $(am_test_line_buffer2_OBJECTS)
 test_line_buffer2_DEPENDENCIES = ../src/libdiag.a
@@ -247,6 +260,7 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(drive_data_scanner_SOURCES) $(drive_grep_proc_SOURCES) \
+	$(drive_json_op_SOURCES) $(drive_json_ptr_walk_SOURCES) \
 	$(drive_line_buffer_SOURCES) $(drive_listview_SOURCES) \
 	$(drive_logfile_SOURCES) $(drive_mvwattrline_SOURCES) \
 	$(drive_readline_curses_SOURCES) $(drive_sequencer_SOURCES) \
@@ -256,11 +270,13 @@ SOURCES = $(drive_data_scanner_SOURCES) $(drive_grep_proc_SOURCES) \
 	$(test_auto_fd_SOURCES) $(test_auto_mem_SOURCES) \
 	$(test_bookmarks_SOURCES) $(test_concise_SOURCES) \
 	$(test_date_time_scanner_SOURCES) $(test_grep_proc2_SOURCES) \
-	$(test_hist_source_SOURCES) $(test_line_buffer2_SOURCES) \
-	$(test_log_accel_SOURCES) $(test_pcrepp_SOURCES) \
-	$(test_top_status_SOURCES) $(test_yajlpp_SOURCES)
+	$(test_hist_source_SOURCES) $(test_json_ptr_SOURCES) \
+	$(test_line_buffer2_SOURCES) $(test_log_accel_SOURCES) \
+	$(test_pcrepp_SOURCES) $(test_top_status_SOURCES) \
+	$(test_yajlpp_SOURCES)
 DIST_SOURCES = $(drive_data_scanner_SOURCES) \
-	$(drive_grep_proc_SOURCES) $(drive_line_buffer_SOURCES) \
+	$(drive_grep_proc_SOURCES) $(drive_json_op_SOURCES) \
+	$(drive_json_ptr_walk_SOURCES) $(drive_line_buffer_SOURCES) \
 	$(drive_listview_SOURCES) $(drive_logfile_SOURCES) \
 	$(drive_mvwattrline_SOURCES) $(drive_readline_curses_SOURCES) \
 	$(drive_sequencer_SOURCES) $(drive_sql_SOURCES) \
@@ -270,9 +286,9 @@ DIST_SOURCES = $(drive_data_scanner_SOURCES) \
 	$(test_auto_mem_SOURCES) $(test_bookmarks_SOURCES) \
 	$(test_concise_SOURCES) $(test_date_time_scanner_SOURCES) \
 	$(test_grep_proc2_SOURCES) $(test_hist_source_SOURCES) \
-	$(test_line_buffer2_SOURCES) $(test_log_accel_SOURCES) \
-	$(test_pcrepp_SOURCES) $(test_top_status_SOURCES) \
-	$(test_yajlpp_SOURCES)
+	$(test_json_ptr_SOURCES) $(test_line_buffer2_SOURCES) \
+	$(test_log_accel_SOURCES) $(test_pcrepp_SOURCES) \
+	$(test_top_status_SOURCES) $(test_yajlpp_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -664,10 +680,16 @@ test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
 test_concise_SOURCES = test_concise.cc
 test_concise_LDADD = ../src/libdiag.a
+test_json_ptr_SOURCES = test_json_ptr.cc
+test_json_ptr_LDADD = ../src/libdiag.a
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 drive_grep_proc_SOURCES = drive_grep_proc.cc
 drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+drive_json_op_SOURCES = drive_json_op.cc
+drive_json_op_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+drive_json_ptr_walk_SOURCES = drive_json_ptr_walk.cc
+drive_json_ptr_walk_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 drive_listview_SOURCES = drive_listview.cc
 drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 drive_logfile_SOURCES = drive_logfile.cc
@@ -730,6 +752,7 @@ dist_noinst_SCRIPTS = \
 	test_sessions.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
+	test_sql_json_func.sh \
 	test_sql_str_func.sh \
 	test_sql_fs_func.sh \
 	test_view_colors.sh \
@@ -844,6 +867,14 @@ drive_grep_proc$(EXEEXT): $(drive_grep_proc_OBJECTS) $(drive_grep_proc_DEPENDENC
 	@rm -f drive_grep_proc$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_grep_proc_OBJECTS) $(drive_grep_proc_LDADD) $(LIBS)
 
+drive_json_op$(EXEEXT): $(drive_json_op_OBJECTS) $(drive_json_op_DEPENDENCIES) $(EXTRA_drive_json_op_DEPENDENCIES) 
+	@rm -f drive_json_op$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(drive_json_op_OBJECTS) $(drive_json_op_LDADD) $(LIBS)
+
+drive_json_ptr_walk$(EXEEXT): $(drive_json_ptr_walk_OBJECTS) $(drive_json_ptr_walk_DEPENDENCIES) $(EXTRA_drive_json_ptr_walk_DEPENDENCIES) 
+	@rm -f drive_json_ptr_walk$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(drive_json_ptr_walk_OBJECTS) $(drive_json_ptr_walk_LDADD) $(LIBS)
+
 drive_line_buffer$(EXEEXT): $(drive_line_buffer_OBJECTS) $(drive_line_buffer_DEPENDENCIES) $(EXTRA_drive_line_buffer_DEPENDENCIES) 
 	@rm -f drive_line_buffer$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(drive_line_buffer_OBJECTS) $(drive_line_buffer_LDADD) $(LIBS)
@@ -920,6 +951,10 @@ test_hist_source$(EXEEXT): $(test_hist_source_OBJECTS) $(test_hist_source_DEPEND
 	@rm -f test_hist_source$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_hist_source_OBJECTS) $(test_hist_source_LDADD) $(LIBS)
 
+test_json_ptr$(EXEEXT): $(test_json_ptr_OBJECTS) $(test_json_ptr_DEPENDENCIES) $(EXTRA_test_json_ptr_DEPENDENCIES) 
+	@rm -f test_json_ptr$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_json_ptr_OBJECTS) $(test_json_ptr_LDADD) $(LIBS)
+
 test_line_buffer2$(EXEEXT): $(test_line_buffer2_OBJECTS) $(test_line_buffer2_DEPENDENCIES) $(EXTRA_test_line_buffer2_DEPENDENCIES) 
 	@rm -f test_line_buffer2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_line_buffer2_OBJECTS) $(test_line_buffer2_LDADD) $(LIBS)
@@ -948,6 +983,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_data_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_grep_proc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_json_op.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_json_ptr_walk.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_line_buffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_listview.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drive_logfile.Po@am__quote@
@@ -967,6 +1004,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_date_time_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_grep_proc2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_hist_source.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_json_ptr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_line_buffer2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_log_accel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_pcrepp.Po@am__quote@
@@ -1287,6 +1325,20 @@ test_json_format.sh.log: test_json_format.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_json_op.sh.log: test_json_op.sh
+	@p='test_json_op.sh'; \
+	b='test_json_op.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_json_ptr_walk.sh.log: test_json_ptr_walk.sh
+	@p='test_json_ptr_walk.sh'; \
+	b='test_json_ptr_walk.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 test_log_accel.log: test_log_accel$(EXEEXT)
 	@p='test_log_accel$(EXEEXT)'; \
 	b='test_log_accel'; \
@@ -1325,6 +1377,13 @@ test_sql.sh.log: test_sql.sh
 test_sql_coll_func.sh.log: test_sql_coll_func.sh
 	@p='test_sql_coll_func.sh'; \
 	b='test_sql_coll_func.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_sql_json_func.sh.log: test_sql_json_func.sh
+	@p='test_sql_json_func.sh'; \
+	b='test_sql_json_func.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

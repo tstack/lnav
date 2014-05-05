@@ -142,23 +142,6 @@ struct json_path_handler : public json_path_handler_base {
 
 class yajlpp_parse_context {
 public:
-
-    struct json_path_element {
-        json_path_element(int index = 0) : jpe_index(index) { };
-        json_path_element(const std::string &name)
-            : jpe_name(name), jpe_index(0) {};
-        json_path_element(const unsigned char *name)
-            : jpe_name((const char *)name), jpe_index(0) {};
-
-        void        set_name(const unsigned char *name, size_t len)
-        {
-            this->jpe_name = std::string((const char *)name, len);
-        };
-
-        std::string jpe_name;
-        int         jpe_index;
-    };
-
     yajlpp_parse_context(std::string source,
                          struct json_path_handler *handlers = NULL)
         : ypc_source(source), ypc_handlers(handlers), ypc_ignore_unused(false)

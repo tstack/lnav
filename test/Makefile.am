@@ -17,6 +17,8 @@ check_PROGRAMS = \
 	drive_data_scanner \
 	drive_line_buffer \
 	drive_grep_proc \
+	drive_json_op \
+	drive_json_ptr_walk \
 	drive_listview \
 	drive_logfile \
 	drive_mvwattrline \
@@ -35,6 +37,7 @@ check_PROGRAMS = \
 	test_date_time_scanner \
 	test_grep_proc2 \
 	test_hist_source \
+	test_json_ptr \
 	test_line_buffer2 \
 	test_log_accel \
 	test_pcrepp \
@@ -86,11 +89,20 @@ test_yajlpp_LDADD = ../src/libdiag.a
 test_concise_SOURCES = test_concise.cc
 test_concise_LDADD = ../src/libdiag.a
 
+test_json_ptr_SOURCES = test_json_ptr.cc
+test_json_ptr_LDADD = ../src/libdiag.a
+
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
 
 drive_grep_proc_SOURCES = drive_grep_proc.cc
 drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+
+drive_json_op_SOURCES = drive_json_op.cc
+drive_json_op_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+
+drive_json_ptr_walk_SOURCES = drive_json_ptr_walk.cc
+drive_json_ptr_walk_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 drive_listview_SOURCES = drive_listview.cc
 drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
@@ -160,6 +172,7 @@ dist_noinst_SCRIPTS = \
 	test_sessions.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
+	test_sql_json_func.sh \
 	test_sql_str_func.sh \
 	test_sql_fs_func.sh \
 	test_view_colors.sh \
@@ -233,12 +246,15 @@ TESTS = \
 	test_grep_proc2 \
 	test_hist_source \
 	test_json_format.sh \
+	test_json_op.sh \
+	test_json_ptr_walk.sh \
 	test_log_accel \
 	test_logfile.sh \
 	test_pcrepp \
 	test_sessions.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
+	test_sql_json_func.sh \
 	test_sql_fs_func.sh \
 	test_sql_str_func.sh \
 	test_view_colors.sh \

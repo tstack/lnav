@@ -29,6 +29,8 @@
  * @file nextwork-extension-functions.cc
  */
 
+#include "config.h"
+
 #include <stdio.h>
 
 #include <assert.h>

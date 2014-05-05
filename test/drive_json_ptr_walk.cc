@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2014, Timothy Stack
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
+ * THIS SOFTWARE IS PROVIDED BY TIMOTHY STACK AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -26,56 +26,54 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file state-extension-functions.cc
+ * @file drive_json_ptr_dump.cc
  */
 
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <stdint.h>
+#include <stdlib.h>
 
-#include <string>
+#include "json_ptr.hh"
 
-#include "sqlite3.h"
-
-#include "lnav.hh"
-#include "lnav_log.hh"
-#include "sql_util.hh"
-#include "sqlite-extension-func.h"
-
-static void sql_log_top_line(sqlite3_context *context,
-                             int argc, sqlite3_value **argv)
+int main(int argc, char *argv[])
 {
-    sqlite3_result_int64(context,
-                         (int64_t)lnav_data.ld_views[LNV_LOG].get_top());
-}
+    int retval = EXIT_SUCCESS;
 
-static void sql_log_top_datetime(sqlite3_context *context,
-                                 int argc, sqlite3_value **argv)
-{
-    char buffer[64];
+    char buffer[1024];
+    yajl_status status;
+    json_ptr_walk jpw;
+    ssize_t rc;
 
-    require(argc == 0);
+    log_argv(argc, argv);
 
-    sql_strftime(buffer, sizeof(buffer),
-                 lnav_data.ld_top_time,
-                 lnav_data.ld_top_time_millis);
-    sqlite3_result_text(context, buffer, strlen(buffer), SQLITE_TRANSIENT);
-}
+    while ((rc = read(STDIN_FILENO, buffer, sizeof(buffer))) > 0) {
+        status = jpw.parse(buffer, rc);
+        if (status == yajl_status_error) {
+            fprintf(stderr, "error:cannot parse JSON input -- %s\n",
+                jpw.jpw_error_msg.c_str());
+            retval = EXIT_FAILURE;
+            break;
+        }
+        else if (status == yajl_status_client_canceled) {
+            fprintf(stderr, "client cancel\n");
+            break;
+        }
+    }
+    status = jpw.complete_parse();
+    if (status == yajl_status_error) {
+        fprintf(stderr, "error:cannot parse JSON input -- %s\n",
+            jpw.jpw_error_msg.c_str());
+        retval = EXIT_FAILURE;
+    }
+    else if (status == yajl_status_client_canceled) {
+        fprintf(stderr, "client cancel\n");
+    }
 
-int state_extension_functions(const struct FuncDef **basic_funcs,
-                              const struct FuncDefAgg **agg_funcs)
-{
-    static const struct FuncDef datetime_funcs[] = {
-        { "log_top_line", 0, 0, SQLITE_UTF8, 0, sql_log_top_line },
-        { "log_top_datetime", 0, 0, SQLITE_UTF8, 0, sql_log_top_datetime },
+    for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+         iter != jpw.jpw_values.end();
+         ++iter) {
+        printf("%s = %s\n", iter->first.c_str(), iter->second.c_str());
+    }
 
-        { NULL }
-    };
-
-    *basic_funcs = datetime_funcs;
-
-    return SQLITE_OK;
+    return retval;
 }

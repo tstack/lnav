@@ -29,6 +29,8 @@
  * @file fs-extension-functions.cc
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
