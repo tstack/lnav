@@ -1,4 +1,13 @@
 
+lnav v0.7.1:
+     Features:
+     * Added an 'environ' SQL table that reflects lnav's environment
+       variables.  The table can be read and written to using SQL
+       SELECT, INSERT, UPDATE, and DELETE statements.  Setting variables
+       can be a way to use SQL query results in lnav commands.
+     * Added a 'jget' SQLite function that can extract fields from a JSON-
+       encoded value.
+
 lnav v0.7.0:
      Features:
      * Add the '.schema' SQL command to open a view that displays the schema

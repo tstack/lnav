@@ -109,6 +109,7 @@
 #include "term_extra.hh"
 #include "log_data_helper.hh"
 #include "readline_highlighters.hh"
+#include "environ_vtab.hh"
 
 #include "yajlpp.hh"
 
@@ -1120,6 +1121,7 @@ static void open_schema_view(void)
     dump_sqlite_schema(lnav_data.ld_db, schema);
 
     schema += "\n\n-- Virtual Table Definitions --\n\n";
+    schema += ENVIRON_CREATE_STMT;
     for (log_vtab_manager::iterator vtab_iter =
        lnav_data.ld_vtab_manager->begin();
        vtab_iter != lnav_data.ld_vtab_manager->end();
@@ -4215,6 +4217,8 @@ int main(int argc, char *argv[])
         register_sqlite_funcs(lnav_data.ld_db.in(), sqlite_registration_funcs);
         register_collation_functions(lnav_data.ld_db.in());
     }
+
+    register_environ_vtab(lnav_data.ld_db.in());
 
     lnav_data.ld_vtab_manager =
         new log_vtab_manager(lnav_data.ld_db,

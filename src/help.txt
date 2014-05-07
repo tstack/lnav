@@ -607,3 +607,44 @@ If you would like to execute queries against log messages of different
 formats at the same time, you can use the 'create-logline-table' command
 to permanently create a table using the top line of the log view as a
 template.
+
+
+OTHER SQL FEATURES
+------------------
+
+Environment variables can be used in SQL statements by prefixing the
+variable name with a dollar-sign ($).  For example, to read the value of
+the HOME variable, you can do:
+
+  ;SELECT $HOME;
+
+To select the syslog messages that have a hostname field that is equal
+to the HOSTNAME variable:
+
+  ;SELECT * FROM syslog_log WHERE log_hostname = $HOSTNAME;
+
+NOTE: Variable substitution is done for fields in the query and is not
+a plain text substitution.  For example, the following statement
+WILL NOT WORK:
+
+  ;SELECT * FROM $TABLE_NAME; -- Syntax error
+
+
+Access to lnav's environment variables is also available via the "environ"
+table.  The table has two columns (name, value) and can be read and written
+to using SQL SELECT, INSERT, UPDATE, and DELETE statements.  For example,
+to set the "FOO" variable to the value "BAR":
+
+  ;INSERT INTO environ SELECT 'FOO', 'BAR';
+
+As a more complex example, you can set the variable "LAST" to the last
+syslog line number by doing:
+
+  ;INSERT INTO environ SELECT 'LAST', (SELECT max(log_line) FROM syslog_log);
+
+A delete will unset the environment variable:
+
+  ;DELETE FROM environ WHERE name='LAST';
+
+The table allows you to easily use the results of a SQL query in lnav
+commands, which is especially useful when scripting lnav.

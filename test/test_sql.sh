@@ -89,14 +89,154 @@ val
 EOF
 
 
+run_test ${lnav_test} -n \
+    -c ';SELECT name,value FROM environ WHERE name = "SQL_ENV_VALUE"' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "environ table is not working in SQL" <<EOF
+name,value
+SQL_ENV_VALUE,"foo bar,baz"
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';INSERT INTO environ (name) VALUES (null)' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "insert into environ table works" <<EOF
+error: A non-empty name and value must be provided when inserting an environment variable
+EOF
+
+check_output "insert into environ table works" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';INSERT INTO environ (name, value) VALUES (null, null)' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "insert into environ table works" <<EOF
+error: A non-empty name and value must be provided when inserting an environment variable
+EOF
+
+check_output "insert into environ table works" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';INSERT INTO environ (name, value) VALUES ("", null)' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "insert into environ table works" <<EOF
+error: A non-empty name and value must be provided when inserting an environment variable
+EOF
+
+check_output "insert into environ table works" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';INSERT INTO environ (name, value) VALUES ("foo=bar", "bar")' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "insert into environ table works" <<EOF
+error: Environment variable names cannot contain an equals sign (=)
+EOF
+
+check_output "insert into environ table works" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';INSERT INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "insert into environ table works" <<EOF
+error: An environment variable with the name 'SQL_ENV_VALUE' already exists
+EOF
+
+check_output "insert into environ table works" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';INSERT OR IGNORE INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")' \
+    -c ';SELECT * FROM environ WHERE name = "SQL_ENV_VALUE"' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "insert into environ table works" <<EOF
+name,value
+SQL_ENV_VALUE,"foo bar,baz"
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';REPLACE INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")' \
+    -c ';SELECT * FROM environ WHERE name = "SQL_ENV_VALUE"' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "replace into environ table works" <<EOF
+name,value
+SQL_ENV_VALUE,bar
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';INSERT INTO environ (name, value) VALUES ("foo_env", "bar")' \
+    -c ';SELECT $foo_env as val' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "insert into environ table does not work" <<EOF
+val
+bar
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';UPDATE environ SET name="NEW_ENV_VALUE" WHERE name="SQL_ENV_VALUE"' \
+    -c ';SELECT * FROM environ WHERE name like "%ENV_VALUE"' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "update environ table does not work" <<EOF
+name,value
+NEW_ENV_VALUE,"foo bar,baz"
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';DELETE FROM environ WHERE name="SQL_ENV_VALUE"' \
+    -c ';SELECT * FROM environ WHERE name like "%ENV_VALUE"' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "delete from environ table does not work" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';DELETE FROM environ' \
+    -c ';SELECT * FROM environ' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "delete environ table does not work" <<EOF
+EOF
+
+
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n7
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n8
 }
 
 run_test schema_dump
 
 check_output "schema view is not working" <<EOF
 ATTACH DATABASE '' AS 'main';
+CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
 CREATE TABLE http_status_codes (
     status integer PRIMARY KEY,
     message text,

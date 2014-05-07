@@ -74,6 +74,7 @@ noinst_HEADERS = \
 	data_parser.hh \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
+	environ_vtab.hh \
 	format-text-files.hh \
 	grapher.hh \
 	grep_highlighter.hh \
@@ -146,6 +147,7 @@ libdiag_a_SOURCES = \
 	bookmarks.cc \
 	collation-functions.cc \
 	db_sub_source.cc \
+	environ_vtab.cc \
 	extension-functions.c \
     fs-extension-functions.cc \
 	grep_proc.cc \

@@ -111,10 +111,10 @@ libdiag_a_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	collation-functions.$(OBJEXT) db_sub_source.$(OBJEXT) \
-	extension-functions.$(OBJEXT) fs-extension-functions.$(OBJEXT) \
-	grep_proc.$(OBJEXT) hist_source.$(OBJEXT) \
-	json-extension-functions.$(OBJEXT) json_op.$(OBJEXT) \
-	json_ptr.$(OBJEXT) line_buffer.$(OBJEXT) \
+	environ_vtab.$(OBJEXT) extension-functions.$(OBJEXT) \
+	fs-extension-functions.$(OBJEXT) grep_proc.$(OBJEXT) \
+	hist_source.$(OBJEXT) json-extension-functions.$(OBJEXT) \
+	json_op.$(OBJEXT) json_ptr.$(OBJEXT) line_buffer.$(OBJEXT) \
 	listview_curses.$(OBJEXT) lnav_commands.$(OBJEXT) \
 	lnav_config.$(OBJEXT) lnav_log.$(OBJEXT) lnav_util.$(OBJEXT) \
 	log_accel.$(OBJEXT) log_format.$(OBJEXT) \
@@ -405,6 +405,7 @@ noinst_HEADERS = \
 	data_parser.hh \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
+	environ_vtab.hh \
 	format-text-files.hh \
 	grapher.hh \
 	grep_highlighter.hh \
@@ -477,6 +478,7 @@ libdiag_a_SOURCES = \
 	bookmarks.cc \
 	collation-functions.cc \
 	db_sub_source.cc \
+	environ_vtab.cc \
 	extension-functions.c \
     fs-extension-functions.cc \
 	grep_proc.cc \
@@ -733,6 +735,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data_scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/db_sub_source.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/environ_vtab.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fs-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grep_proc.Po@am__quote@
