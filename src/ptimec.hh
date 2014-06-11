@@ -176,6 +176,88 @@ inline bool ptime_d(struct tm *dst, const char *str, off_t &off_inout, size_t le
     return (dst->tm_mday >= 1 && dst->tm_mday <= 31);
 }
 
+inline bool ptime_e(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+{
+    dst->tm_mday = 0;
+    PTIME_CONSUME(1, {
+        if (str[off_inout] < '1' || str[off_inout] > '9') {
+            return false;
+        }
+        dst->tm_mday = str[off_inout] - '0';
+    });
+    if (off_inout + 1 < len) {
+        if (str[off_inout] >= '0' && str[off_inout] <= '9') {
+            dst->tm_mday *= 10;
+            dst->tm_mday += str[off_inout] - '0';
+            off_inout += 1;
+        }
+    }
+
+    return (dst->tm_mday >= 1 && dst->tm_mday <= 31);
+}
+
+inline bool ptime_N(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+{
+    dst->tm_mon = 0;
+    PTIME_CONSUME(1, {
+        if (str[off_inout] < '1' || str[off_inout] > '9') {
+            return false;
+        }
+        dst->tm_mon = str[off_inout] - '0';
+    });
+    if (off_inout + 1 < len) {
+        if (str[off_inout] >= '0' && str[off_inout] <= '9') {
+            dst->tm_mon *= 10;
+            dst->tm_mon += str[off_inout] - '0';
+            off_inout += 1;
+        }
+    }
+
+    dst->tm_mon -= 1;
+
+    return (dst->tm_mon >= 0 && dst->tm_mon <= 11);
+}
+
+inline bool ptime_k(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+{
+    dst->tm_hour = 0;
+    PTIME_CONSUME(1, {
+        if (str[off_inout] < '0' || str[off_inout] > '9') {
+            return false;
+        }
+        dst->tm_hour = str[off_inout] - '0';
+    });
+    if (off_inout + 1 < len) {
+        if (str[off_inout] >= '0' && str[off_inout] <= '9') {
+            dst->tm_hour *= 10;
+            dst->tm_hour += str[off_inout] - '0';
+            off_inout += 1;
+        }
+    }
+
+    return (dst->tm_hour >= 0 && dst->tm_hour <= 23);
+}
+
+inline bool ptime_l(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+{
+    dst->tm_hour = 0;
+    PTIME_CONSUME(1, {
+        if (str[off_inout] < '1' || str[off_inout] > '9') {
+            return false;
+        }
+        dst->tm_hour = str[off_inout] - '0';
+    });
+    if (off_inout + 1 < len) {
+        if (str[off_inout] >= '0' && str[off_inout] <= '9') {
+            dst->tm_hour *= 10;
+            dst->tm_hour += str[off_inout] - '0';
+            off_inout += 1;
+        }
+    }
+
+    return (dst->tm_hour >= 1 && dst->tm_hour <= 12);
+}
+
 inline bool ptime_m(struct tm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(2, {
@@ -186,6 +268,27 @@ inline bool ptime_m(struct tm *dst, const char *str, off_t &off_inout, size_t le
     });
 
     return (0 <= dst->tm_mon && dst->tm_mon <= 11);
+}
+
+inline bool ptime_p(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+{
+    PTIME_CONSUME(2, {
+        char lead = str[off_inout];
+
+        if ((str[off_inout + 1] & 0xdf) != 'M') {
+            return false;
+        }
+        else if ((lead & 0xdf) == 'A') {
+        }
+        else if ((lead & 0xdf) == 'P') {
+            dst->tm_hour += 12;
+        }
+        else {
+            return false;
+        }
+    });
+
+    return true;
 }
 
 inline bool ptime_Y(struct tm *dst, const char *str, off_t &off_inout, size_t len)
