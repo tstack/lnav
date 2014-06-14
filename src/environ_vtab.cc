@@ -245,14 +245,13 @@ static int vt_update(sqlite3_vtab *tab,
 
         retval = SQLITE_OK;
     } else if (getenv(name) != NULL) {
+#ifdef SQLITE_FAIL
         int rc;
 
         rc = sqlite3_vtab_on_conflict(p_vt->db);
         // fprintf(stderr, "got rc %d\n", rc);
         switch (rc) {
-#ifdef SQLITE_FAIL
         case SQLITE_FAIL:
-#endif
         case SQLITE_ABORT:
             tab->zErrMsg = sqlite3_mprintf(
                 "An environment variable with the name '%s' already exists",
@@ -260,13 +259,12 @@ static int vt_update(sqlite3_vtab *tab,
             return rc;
         case SQLITE_IGNORE:
             return SQLITE_OK;
-#ifdef SQLITE_REPLACE
         case SQLITE_REPLACE:
-#endif
             break;
         default:
             return rc;
         }
+#endif
     }
 
     if (argc == 4) {

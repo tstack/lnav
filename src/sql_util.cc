@@ -517,7 +517,9 @@ static void sqlite_logger(void *dummy, int code, const char *msg)
 
 void sql_install_logger(void)
 {
+#ifdef SQLITE_CONFIG_LOG
     sqlite3_config(SQLITE_CONFIG_LOG, sqlite_logger, NULL);
+#endif
 }
 
 char *sql_quote_ident(const char *ident)
