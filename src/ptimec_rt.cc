@@ -39,9 +39,13 @@
 
 bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
+    size_t zone_len = len - off_inout;
+    char zone[zone_len + 1];
     const char *end_of_date;
 
-    if ((end_of_date = strptime(&str[off_inout], "%b", &dst->et_tm)) != NULL) {
+    memcpy(zone, &str[off_inout], zone_len);
+    zone[zone_len] = '\0';
+    if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != NULL) {
         off_inout = end_of_date - str;
         return true;
     }
