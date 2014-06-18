@@ -39,6 +39,7 @@
 #include "sql_util.hh"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
+#include "ptimec.hh"
 
 using namespace std;
 
@@ -124,6 +125,9 @@ logline::level_t logline::string2level(const char *levelstr, size_t len, bool ex
     else if (cmpfunc(levelstr, "CRITICAL", len) == 0) {
         retval = logline::LEVEL_CRITICAL;
     }
+    else if (cmpfunc(levelstr, "SEVERE", len) == 0) {
+        retval = logline::LEVEL_CRITICAL;
+    }
     else if (cmpfunc(levelstr, "FATAL", len) == 0) {
         retval = logline::LEVEL_FATAL;
     }
@@ -192,6 +196,9 @@ logline_value::kind_t logline_value::string2kind(const char *kindstr)
     else if (strcmp(kindstr, "json") == 0) {
         return VALUE_JSON;
     }
+    else if (strcmp(kindstr, "quoted") == 0) {
+        return VALUE_QUOTED;
+    }
 
     return VALUE_UNKNOWN;
 }
@@ -230,7 +237,7 @@ const char *log_format::log_scanf(const char *line,
                                   int expected_matches,
                                   const char *time_fmt[],
                                   char *time_dest,
-                                  struct tm *tm_out,
+                                  struct exttm *tm_out,
                                   struct timeval &tv_out,
                                   ...)
 {
@@ -586,7 +593,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
         pcre_context::capture_t *level_cap = pc[this->elf_level_field_index];
         const char *ts_str = pi.get_substr_start(ts);
         const char *last;
-        struct tm log_time_tm;
+        struct exttm log_time_tm;
         struct timeval log_tv;
         logline::level_t level = logline::LEVEL_INFO;
 
@@ -712,7 +719,7 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
     vector<external_log_format::json_format_element> &line_format =
         jlu->jlu_format->jlf_line_format;
     string field_name = ypc->get_path_fragment(0);
-    struct tm tm_out;
+    struct exttm tm_out;
     struct timeval tv_out;
 
     if (field_name == jlu->jlu_format->lf_timestamp_field) {
@@ -1067,7 +1074,7 @@ void external_log_format::build(std::vector<std::string> &errors)
                     pc[this->lf_timestamp_field]);
                 date_time_scanner dts;
                 struct timeval tv;
-                struct tm tm;
+                struct exttm tm;
 
                 found = true;
                 if (dts.scan(ts, NULL, &tm, tv) == NULL) {
@@ -1077,7 +1084,16 @@ void external_log_format::build(std::vector<std::string> &errors)
                         iter->s_line);
                     errors.push_back("error:" +
                         this->elf_name +
-                        ":unrecognized timestamp format");
+                        ":unrecognized timestamp format -- " + ts);
+
+                    for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != NULL; lpc++) {
+                        off_t off = 0;
+
+                        PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off,
+                            pc[this->lf_timestamp_field]->length());
+                        errors.push_back("  format: " + string(PTIMEC_FORMATS[lpc].pf_fmt) +
+                            "; matched: " + string(ts, off));
+                    }
                 }
             }
         }
@@ -1142,6 +1158,7 @@ public:
             case logline_value::VALUE_NULL:
             case logline_value::VALUE_TEXT:
             case logline_value::VALUE_JSON:
+            case logline_value::VALUE_QUOTED:
                 type = SQLITE3_TEXT;
                 break;
             case logline_value::VALUE_FLOAT:

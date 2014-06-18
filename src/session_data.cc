@@ -445,7 +445,7 @@ static void load_time_bookmarks(void)
                 const char *part_name = (const char *)sqlite3_column_text(stmt.in(), 4);
                 int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
                 struct timeval log_tv;
-                struct tm log_tm;
+                struct exttm log_tm;
 
                 if (last_mark_time == -1) {
                     last_mark_time = mark_time;
@@ -603,7 +603,7 @@ static void load_time_bookmarks(void)
                 const char *log_hash = (const char *)sqlite3_column_text(stmt.in(), 2);
                 int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
                 struct timeval log_tv;
-                struct tm log_tm;
+                struct exttm log_tm;
 
                 if (last_mark_time == -1) {
                     last_mark_time = mark_time;

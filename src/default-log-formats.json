@@ -218,6 +218,93 @@
             }
         ]
     },
+    "openam_log": {
+        "title" : "OpenAM Log",
+        "description" : "The OpenAM identity provider.",
+        "url" : "http://openam.forgerock.org",
+        "level-field" : "level",
+        "level" : {
+            "error" : "ERROR",
+            "warning" : "WARNING",
+            "info" : "INFO",
+            "critical" : "SEVERE",
+            "trace" : "FINE|FINEST"
+        },
+        "regex" : {
+            "std" : {
+                "pattern" : "^\"(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\"\\s+(?<data>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<loginid>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<contextid>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<ipaddr>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<level>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<domain>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<loggedby>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<messageid>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<modulename>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<nameid>[^ \"]+|\"(?:[^\"]|\"\")+\")\\s+(?<hostname>[^ \"]+|\"(?:[^\"]|\"\")+\")"
+            }
+        },
+        "value" : {
+            "data" : {
+                "kind" : "quoted"
+            },
+            "loginid" : {
+                "kind" : "quoted",
+                "identifier" : true
+            },
+            "contextid" : {
+                "kind" : "quoted",
+                "identifier" : true
+            },
+            "ipaddr" : {
+                "kind" : "quoted",
+                "identifier" : true,
+                "collate" : "ipaddress"
+            },
+            "domain" : {
+                "kind" : "quoted",
+                "identifier" : true
+            },
+            "loggedby" : {
+                "kind" : "quoted",
+                "identifier" : true
+            },
+            "messageid" : {
+                "kind" : "quoted",
+                "identifier" : true
+            },
+            "modulename" : {
+                "kind" : "quoted",
+                "identifier" : true
+            },
+            "nameid" : {
+                "kind" : "quoted",
+                "identifier" : true
+            },
+            "hostname" : {
+                "kind" : "quoted",
+                "identifier" : true,
+                "collate" : "ipaddress"
+            }
+        },
+        "sample" : [
+            {
+                "line" : "\"2014-06-14 17:08:39\" \"http://localhost:8086|/|<samlp:AuthnRequest ID=\"\"139a40bba4d340108d91022750c2a3a8\"\" Version=\"\"2.0\"\" IssueInstant=\"\"2014-06-14T17:09:04Z\"\" ProtocolBinding=\"\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\" AssertionConsumerServiceURL=\"\"http://localhost:8086/api/1/rest/admin/org/530e42ccd6f45fd16d0d0717/saml/consume\"\">\\n<saml:Issuer>http://localhost:8086</saml:Issuer>\\n<samlp:NameIDPolicy  Format=\"\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\"\" AllowCreate=\"\"true\"\"></samlp:NameIDPolicy>\\n<samlp:RequestedAuthnContext Comparison=\"\"exact\"\"><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></samlp:RequestedAuthnContext>\\n</samlp:AuthnRequest>\"  \"cn=dsameuser,ou=DSAME Users,dc=openam\" 8fc43a8f6a8c14101   \"Not Available\" INFO    dc=openam   \"cn=dsameuser,ou=DSAME Users,dc=openam\" SAML2-36    SAML2.access    \"Not Available\" 127.0.1.1"
+            },
+            {
+                "line" : "\"2014-06-09 14:49:56\" /etc/openam/openam/log/ \"cn=dsameuser,ou=DSAME Users,dc=openam\" 3d956febb91fed31    \"Not Available\" INFO    dc=openam   \"cn=dsameuser,ou=DSAME Users,dc=openam\" LOG-1   amPolicy.access \"Not Available\" 127.0.1.1"
+            }
+        ]
+    },
+    "openamdb_log": {
+        "title" : "OpenAM Debug Log",
+        "description" : "Debug logs for the OpenAM identity provider.",
+        "url" : "http://openam.forgerock.org",
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<module>[\\w]+):(?<timestamp>\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2}:\\d{3} [AP]M \\w+): Thread\\[(?<thread>[^,]+,\\d+,[^,]+)\\]\\n?(?:\\*+|(?<body>.*))$"
+            }
+        },
+        "sample" : [
+            {
+                "line" : "amMonitoring:06/09/2014 02:49:59:447 PM UTC: Thread[http-80-1,5,main]\n**********************************************"
+            },
+            {
+                "line" : "amLog:06/09/2014 04:08:22:515 PM UTC: Thread[http-80-8,5,main]\nERROR: LogMessageProviderBase.createLogRecord: unable to locate message ID object for ATTEMPT_GET_METAALIAS"
+            }
+        ]
+    },
     "page_log" : {
         "title" : "CUPS Page Log",
         "description" : "The CUPS server log of printed pages.",

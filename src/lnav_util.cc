@@ -40,7 +40,6 @@
 #include <sqlite3.h>
 
 #include "auto_fd.hh"
-#include "ptimec.hh"
 #include "lnav_util.hh"
 
 std::string hash_string(const std::string &str)
@@ -53,6 +52,24 @@ std::string hash_string(const std::string &str)
     context.Final(hash.out(0), hash.out(1));
 
     return hash.to_string();
+}
+
+size_t unquote(char *dst, const char *str, size_t len)
+{
+    char quote_char = str[0];
+    size_t index = 0;
+
+    require(str[0] == '\'' || str[0] == '"');
+
+    for (int lpc = 1; lpc < (len - 1); lpc++, index++) {
+        dst[index] = str[lpc];
+        if (str[lpc] == quote_char) {
+            lpc += 1;
+        }
+    }
+    dst[index] = '\0';
+
+    return index;
 }
 
 std::string time_ago(time_t last_time)
@@ -256,7 +273,7 @@ const char *std_time_fmt[] = {
 
 const char *date_time_scanner::scan(const char *time_dest,
                                     const char *time_fmt[],
-                                    struct tm *tm_out,
+                                    struct exttm *tm_out,
                                     struct timeval &tv_out)
 {
     int  curr_time_fmt = -1;
@@ -279,12 +296,12 @@ const char *date_time_scanner::scan(const char *time_dest,
                 time_t gmt = gmt_int;
 
                 if (this->dts_local_time) {
-                    localtime_r(&gmt, tm_out);
+                    localtime_r(&gmt, &tm_out->et_tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-                    tm_out->tm_zone = NULL;
+                    tm_out->et_tm.tm_zone = NULL;
 #endif
-                    tm_out->tm_isdst = 0;
-                    gmt = tm2sec(tm_out);
+                    tm_out->et_tm.tm_isdst = 0;
+                    gmt = tm2sec(&tm_out->et_tm);
                 }
                 tv_out.tv_sec = gmt;
                 tv_out.tv_usec = 0;
@@ -301,25 +318,25 @@ const char *date_time_scanner::scan(const char *time_dest,
             off_t off = 0;
 
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-            tm_out->tm_zone = NULL;
+            tm_out->et_tm.tm_zone = NULL;
 #endif
             if (func(tm_out, time_dest, off, strlen(time_dest))) {
                 retval = &time_dest[off];
 
-                if (tm_out->tm_year < 70) {
-                    tm_out->tm_year = 80;
+                if (tm_out->et_tm.tm_year < 70) {
+                    tm_out->et_tm.tm_year = 80;
                 }
                 if (this->dts_local_time) {
-                    time_t gmt = tm2sec(tm_out);
+                    time_t gmt = tm2sec(&tm_out->et_tm);
 
-                    localtime_r(&gmt, tm_out);
+                    localtime_r(&gmt, &tm_out->et_tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-                    tm_out->tm_zone = NULL;
+                    tm_out->et_tm.tm_zone = NULL;
 #endif
-                    tm_out->tm_isdst = 0;
+                    tm_out->et_tm.tm_isdst = 0;
                 }
-                tv_out.tv_sec = tm2sec(tm_out);
-                tv_out.tv_usec = 0;
+                tv_out.tv_sec = tm2sec(&tm_out->et_tm);
+                tv_out.tv_usec = tm_out->et_nsec / 1000;
 
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len  = retval - time_dest;
@@ -330,7 +347,7 @@ const char *date_time_scanner::scan(const char *time_dest,
         }
         else if ((retval = strptime(time_dest,
                                     time_fmt[curr_time_fmt],
-                                    tm_out)) != NULL) {
+                                    &tm_out->et_tm)) != NULL) {
             if (time_fmt[curr_time_fmt] == time_fmt_with_zone) {
                 int lpc;
 
@@ -338,7 +355,7 @@ const char *date_time_scanner::scan(const char *time_dest,
 
                 }
                 if (retval[lpc] == ' ' &&
-                    sscanf(&retval[lpc], "%d", &tm_out->tm_year) == 1) {
+                    sscanf(&retval[lpc], "%d", &tm_out->et_tm.tm_year) == 1) {
                     lpc += 1;
                     for (; retval[lpc] && isdigit(retval[lpc]); lpc++) {
 
@@ -347,21 +364,21 @@ const char *date_time_scanner::scan(const char *time_dest,
                 }
             }
 
-            if (tm_out->tm_year < 70) {
-                tm_out->tm_year = 80;
+            if (tm_out->et_tm.tm_year < 70) {
+                tm_out->et_tm.tm_year = 80;
             }
             if (this->dts_local_time) {
-                time_t gmt = tm2sec(tm_out);
+                time_t gmt = tm2sec(&tm_out->et_tm);
 
-                localtime_r(&gmt, tm_out);
+                localtime_r(&gmt, &tm_out->et_tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-                tm_out->tm_zone = NULL;
+                tm_out->et_tm.tm_zone = NULL;
 #endif
-                tm_out->tm_isdst = 0;
+                tm_out->et_tm.tm_isdst = 0;
             }
 
-            tv_out.tv_sec = tm2sec(tm_out);
-            tv_out.tv_usec = 0;
+            tv_out.tv_sec = tm2sec(&tm_out->et_tm);
+            tv_out.tv_usec = tm_out->et_nsec / 1000;
 
             this->dts_fmt_lock = curr_time_fmt;
             this->dts_fmt_len  = retval - time_dest;

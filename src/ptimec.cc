@@ -62,15 +62,20 @@ int main(int argc, char *argv[])
         const char *arg = argv[lpc];
 
         fputs(PRELUDE, stdout);
-        printf("bool ptime_f%d(struct tm *dst, const char *str, off_t &off, size_t len) {\n",
+        printf("bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, size_t len) {\n",
             lpc);
         for (int index = 0; arg[index]; arg++) {
             if (arg[index] == '%') {
                 switch (arg[index + 1]) {
                 case 'a':
                 case 'Z':
-                    printf("    if (!ptime_upto('%s', str, off, len)) return false;\n",
-                        escape_char(arg[index + 2]));
+                    if (arg[index + 2]) {
+                        printf("    if (!ptime_upto('%s', str, off, len)) return false;\n",
+                            escape_char(arg[index + 2]));
+                    }
+                    else {
+                        printf("    if (!ptime_upto_end(str, off, len)) return false;\n");
+                    }
                     arg += 1;
                     break;
                 default:

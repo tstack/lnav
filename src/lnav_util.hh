@@ -41,6 +41,7 @@
 
 #include <string>
 
+#include "ptimec.hh"
 #include "byte_array.hh"
 
 inline std::string trim(const std::string &str)
@@ -52,6 +53,8 @@ inline std::string trim(const std::string &str)
 
     return str.substr(start, end - start);
 }
+
+size_t unquote(char *dst, const char *str, size_t len);
 
 #undef rounddown
 
@@ -191,18 +194,18 @@ struct date_time_scanner {
 
     void set_base_time(time_t base_time) {
         this->dts_base_time = base_time;
-        localtime_r(&base_time, &this->dts_base_tm);
+        localtime_r(&base_time, &this->dts_base_tm.et_tm);
     };
 
     bool dts_local_time;
     time_t dts_base_time;
-    struct tm dts_base_tm;
+    struct exttm dts_base_tm;
     int dts_fmt_lock;
     int dts_fmt_len;
 
     const char *scan(const char *time_src,
                      const char *time_fmt[],
-                     struct tm *tm_out,
+                     struct exttm *tm_out,
                      struct timeval &tv_out);
 };
 

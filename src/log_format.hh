@@ -344,6 +344,7 @@ public:
         VALUE_FLOAT,
         VALUE_BOOLEAN,
         VALUE_JSON,
+        VALUE_QUOTED,
 
         VALUE__MAX
     };
@@ -381,6 +382,7 @@ public:
         switch (kind) {
         case VALUE_JSON:
         case VALUE_TEXT:
+        case VALUE_QUOTED:
             this->lv_sbr = sbr;
             break;
 
@@ -434,6 +436,25 @@ public:
         case VALUE_JSON:
         case VALUE_TEXT:
             return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
+
+        case VALUE_QUOTED:
+            if (this->lv_sbr.length() == 0) {
+                return "";
+            } else {
+                switch (this->lv_sbr.get_data()[0]) {
+                case '\'':
+                case '"': {
+                    char unquoted_str[this->lv_sbr.length()];
+                    size_t unquoted_len;
+
+                    unquoted_len = unquote(unquoted_str, this->lv_sbr.get_data(),
+                        this->lv_sbr.length());
+                    return std::string(unquoted_str, unquoted_len);
+                }
+                default:
+                    return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
+                }
+            }
 
         case VALUE_INTEGER:
             snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_number.i);
@@ -622,7 +643,7 @@ protected:
                           int expected_matches,
                           const char *time_fmt[],
                           char *time_dest,
-                          struct tm *tm_out,
+                          struct exttm *tm_out,
                           struct timeval &tv_out,
                           ...);
 };

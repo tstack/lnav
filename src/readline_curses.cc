@@ -592,7 +592,12 @@ void readline_curses::line_ready(const char *line)
     char           msg[1024];
     int            rc;
 
-    rc = history_expand(rl_line_buffer, expanded.out());
+    if (rl_line_buffer[0] == '^') {
+        rc = -1;
+    }
+    else {
+        rc = history_expand(rl_line_buffer, expanded.out());
+    }
     switch (rc) {
 #if 0
         /* TODO: fix clash between history and pcre metacharacters */

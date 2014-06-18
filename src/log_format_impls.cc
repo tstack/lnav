@@ -105,7 +105,7 @@ class strace_log_format : public log_format {
         };
 
         bool      retval = false;
-        struct tm log_time;
+        struct exttm log_time;
         char      timestr[64];
         struct timeval log_tv;
         int       usecs;
@@ -285,7 +285,7 @@ class generic_log_format : public log_format {
               int len)
     {
         bool      retval = false;
-        struct tm log_time;
+        struct exttm log_time;
         char      timestr[64 + 32];
         struct timeval log_tv;
         char      level[64];

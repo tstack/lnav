@@ -391,6 +391,36 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                         SQLITE_TRANSIENT);
                     break;
                 }
+                case logline_value::VALUE_QUOTED:
+                    if (lv_iter->lv_sbr.length() == 0) {
+                        sqlite3_result_text(ctx, "", 0, SQLITE_STATIC);
+                    }
+                    else {
+                        const char *text_value = lv_iter->lv_sbr.get_data();
+                        size_t text_len = lv_iter->lv_sbr.length();
+
+                        switch (text_value[0]) {
+                        case '\'':
+                        case '"': {
+                            char *val = (char *)sqlite3_malloc(text_len);
+
+                            if (val == NULL) {
+                                sqlite3_result_error_nomem(ctx);
+                            }
+                            else {
+                                size_t unquoted_len = unquote(val, text_value, text_len);
+                                sqlite3_result_text(ctx, val, unquoted_len, sqlite3_free);
+                            }
+                            break;
+                        }
+                        default: {
+                            sqlite3_result_text(ctx, text_value,
+                                lv_iter->lv_sbr.length(), SQLITE_TRANSIENT);
+                            break;
+                        }
+                        }
+                    }
+                    break;
 
                 case logline_value::VALUE_BOOLEAN:
                 case logline_value::VALUE_INTEGER:
@@ -476,7 +506,7 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
             const unsigned char *datestr = sqlite3_value_text(argv[lpc]);
             date_time_scanner dts;
             struct timeval tv;
-            struct tm mytm;
+            struct exttm mytm;
             vis_line_t vl;
 
             dts.scan((const char *)datestr, NULL, &mytm, tv);

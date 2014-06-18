@@ -39,6 +39,11 @@
 #include <time.h>
 #include <sys/types.h>
 
+struct exttm {
+    struct tm et_tm;
+    int32_t et_nsec;
+};
+
 #define PTIME_CONSUME(amount, block) \
     if (off_inout + amount > len) { \
         return false; \
@@ -63,9 +68,17 @@ bool ptime_upto(char ch, const char *str, off_t &off_inout, size_t len)
     return false;
 }
 
-bool ptime_b_slow(struct tm *dst, const char *str, off_t &off_inout, size_t len);
+inline
+bool ptime_upto_end(const char *str, off_t &off_inout, size_t len)
+{
+    off_inout = len;
 
-inline bool ptime_b(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+    return true;
+}
+
+bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, size_t len);
+
+inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     if (off_inout + 3 < len) {
         int *iptr = (int *)(&str[off_inout]);
@@ -114,7 +127,7 @@ inline bool ptime_b(struct tm *dst, const char *str, off_t &off_inout, size_t le
         }
         if (val >= 0) {
             off_inout += 3;
-            dst->tm_mon = val;
+            dst->et_tm.tm_mon = val;
             return true;
         }
     }
@@ -122,155 +135,186 @@ inline bool ptime_b(struct tm *dst, const char *str, off_t &off_inout, size_t le
     return ptime_b_slow(dst, str, off_inout, len);
 }
 
-inline bool ptime_S(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_S(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
             return false;
         }
-        dst->tm_sec = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        dst->et_tm.tm_sec = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
     });
 
-    return (dst->tm_sec >= 0 && dst->tm_sec <= 59);
+    return (dst->et_tm.tm_sec >= 0 && dst->et_tm.tm_sec <= 59);
 }
 
-inline bool ptime_M(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+{
+    int ms = 0;
+
+    PTIME_CONSUME(3, {
+        if (str[off_inout + 1] > '9') {
+            return false;
+        }
+        ms = ((str[off_inout] - '0') * 100 + (str[off_inout + 1] - '0') * 10 +
+            (str[off_inout + 2] - '0'));
+    });
+
+    if ((ms >= 0 && ms <= 999)) {
+        dst->et_nsec = ms * 1000000;
+        return true;
+    }
+    return false;
+}
+
+inline bool ptime_M(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
             return false;
         }
-        dst->tm_min = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        dst->et_tm.tm_min = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
     });
 
-    return (dst->tm_min >= 0 && dst->tm_min <= 59);
+    return (dst->et_tm.tm_min >= 0 && dst->et_tm.tm_min <= 59);
 }
 
-inline bool ptime_H(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_H(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
             return false;
         }
-        dst->tm_hour = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        dst->et_tm.tm_hour = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
     });
 
-    return (dst->tm_hour >= 0 && dst->tm_hour <= 23);
+    return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
 }
 
-inline bool ptime_d(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+{
+    PTIME_CONSUME(2, {
+        if (str[off_inout + 1] > '9') {
+            return false;
+        }
+        dst->et_tm.tm_hour = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+    });
+
+    return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
+}
+
+inline bool ptime_d(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout] == ' ') {
-            dst->tm_mday = 0;
+            dst->et_tm.tm_mday = 0;
         }
         else {
-            dst->tm_mday = (str[off_inout] - '0') * 10;
+            dst->et_tm.tm_mday = (str[off_inout] - '0') * 10;
         }
         if (str[off_inout + 1] > '9') {
             return false;
         }
-        dst->tm_mday += (str[off_inout + 1] - '0');
+        dst->et_tm.tm_mday += (str[off_inout + 1] - '0');
     });
 
-    return (dst->tm_mday >= 1 && dst->tm_mday <= 31);
+    return (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31);
 }
 
-inline bool ptime_e(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
-    dst->tm_mday = 0;
+    dst->et_tm.tm_mday = 0;
     PTIME_CONSUME(1, {
         if (str[off_inout] < '1' || str[off_inout] > '9') {
             return false;
         }
-        dst->tm_mday = str[off_inout] - '0';
+        dst->et_tm.tm_mday = str[off_inout] - '0';
     });
     if (off_inout + 1 < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
-            dst->tm_mday *= 10;
-            dst->tm_mday += str[off_inout] - '0';
+            dst->et_tm.tm_mday *= 10;
+            dst->et_tm.tm_mday += str[off_inout] - '0';
             off_inout += 1;
         }
     }
 
-    return (dst->tm_mday >= 1 && dst->tm_mday <= 31);
+    return (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31);
 }
 
-inline bool ptime_N(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_N(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
-    dst->tm_mon = 0;
+    dst->et_tm.tm_mon = 0;
     PTIME_CONSUME(1, {
         if (str[off_inout] < '1' || str[off_inout] > '9') {
             return false;
         }
-        dst->tm_mon = str[off_inout] - '0';
+        dst->et_tm.tm_mon = str[off_inout] - '0';
     });
     if (off_inout + 1 < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
-            dst->tm_mon *= 10;
-            dst->tm_mon += str[off_inout] - '0';
+            dst->et_tm.tm_mon *= 10;
+            dst->et_tm.tm_mon += str[off_inout] - '0';
             off_inout += 1;
         }
     }
 
-    dst->tm_mon -= 1;
+    dst->et_tm.tm_mon -= 1;
 
-    return (dst->tm_mon >= 0 && dst->tm_mon <= 11);
+    return (dst->et_tm.tm_mon >= 0 && dst->et_tm.tm_mon <= 11);
 }
 
-inline bool ptime_k(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_k(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
-    dst->tm_hour = 0;
+    dst->et_tm.tm_hour = 0;
     PTIME_CONSUME(1, {
         if (str[off_inout] < '0' || str[off_inout] > '9') {
             return false;
         }
-        dst->tm_hour = str[off_inout] - '0';
+        dst->et_tm.tm_hour = str[off_inout] - '0';
     });
     if (off_inout + 1 < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
-            dst->tm_hour *= 10;
-            dst->tm_hour += str[off_inout] - '0';
+            dst->et_tm.tm_hour *= 10;
+            dst->et_tm.tm_hour += str[off_inout] - '0';
             off_inout += 1;
         }
     }
 
-    return (dst->tm_hour >= 0 && dst->tm_hour <= 23);
+    return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
 }
 
-inline bool ptime_l(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
-    dst->tm_hour = 0;
+    dst->et_tm.tm_hour = 0;
     PTIME_CONSUME(1, {
         if (str[off_inout] < '1' || str[off_inout] > '9') {
             return false;
         }
-        dst->tm_hour = str[off_inout] - '0';
+        dst->et_tm.tm_hour = str[off_inout] - '0';
     });
     if (off_inout + 1 < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
-            dst->tm_hour *= 10;
-            dst->tm_hour += str[off_inout] - '0';
+            dst->et_tm.tm_hour *= 10;
+            dst->et_tm.tm_hour += str[off_inout] - '0';
             off_inout += 1;
         }
     }
 
-    return (dst->tm_hour >= 1 && dst->tm_hour <= 12);
+    return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
 }
 
-inline bool ptime_m(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
             return false;
         }
-        dst->tm_mon = ((str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0')) - 1;
+        dst->et_tm.tm_mon = ((str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0')) - 1;
     });
 
-    return (0 <= dst->tm_mon && dst->tm_mon <= 11);
+    return (0 <= dst->et_tm.tm_mon && dst->et_tm.tm_mon <= 11);
 }
 
-inline bool ptime_p(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(2, {
         char lead = str[off_inout];
@@ -281,7 +325,7 @@ inline bool ptime_p(struct tm *dst, const char *str, off_t &off_inout, size_t le
         else if ((lead & 0xdf) == 'A') {
         }
         else if ((lead & 0xdf) == 'P') {
-            dst->tm_hour += 12;
+            dst->et_tm.tm_hour += 12;
         }
         else {
             return false;
@@ -291,10 +335,10 @@ inline bool ptime_p(struct tm *dst, const char *str, off_t &off_inout, size_t le
     return true;
 }
 
-inline bool ptime_Y(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_Y(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(4, {
-        dst->tm_year = (
+        dst->et_tm.tm_year = (
             (str[off_inout + 0] - '0') * 1000 +
             (str[off_inout + 1] - '0') *  100 +
             (str[off_inout + 2] - '0') *   10 +
@@ -304,16 +348,16 @@ inline bool ptime_Y(struct tm *dst, const char *str, off_t &off_inout, size_t le
     return true;
 }
 
-inline bool ptime_y(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     PTIME_CONSUME(2, {
-        dst->tm_year = (
+        dst->et_tm.tm_year = (
             (str[off_inout + 0] - '0') * 10 +
             (str[off_inout + 1] - '0') *  1);
 
-        if (dst->tm_year >= 0 && dst->tm_year < 100) {
-            if (dst->tm_year < 69) {
-                dst->tm_year += 100;
+        if (dst->et_tm.tm_year >= 0 && dst->et_tm.tm_year < 100) {
+            if (dst->et_tm.tm_year < 69) {
+                dst->et_tm.tm_year += 100;
             }
             return true;
         }
@@ -322,7 +366,7 @@ inline bool ptime_y(struct tm *dst, const char *str, off_t &off_inout, size_t le
     return true;
 }
 
-inline bool ptime_z(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     PTIME_CONSUME(5, {
@@ -346,7 +390,7 @@ inline bool ptime_z(struct tm *dst, const char *str, off_t &off_inout, size_t le
         mins = (
             (str[off_inout + 2] - '0') *   10 +
             (str[off_inout + 3] - '0') *    1) * 60;
-        dst->tm_gmtoff = hours + mins;
+        dst->et_tm.tm_gmtoff = hours + mins;
     });
 #endif
 
@@ -364,7 +408,7 @@ inline bool ptime_char(char val, const char *str, off_t &off_inout, size_t len)
     return true;
 }
 
-typedef bool (*ptime_func)(struct tm *dst, const char *str, off_t &off, size_t len);
+typedef bool (*ptime_func)(struct exttm *dst, const char *str, off_t &off, size_t len);
 
 struct ptime_fmt {
     const char *pf_fmt;

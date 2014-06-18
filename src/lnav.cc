@@ -2666,8 +2666,9 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
     textview_curses *tc    = lnav_data.ld_view_stack.top();
     lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
 
-    if (!complete)
+    if (!complete) {
         tc->set_top(lnav_data.ld_search_start_line);
+    }
     execute_search(index, rc->get_value());
 }
 

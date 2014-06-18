@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     for (int lpc = 0; BAD_TIMES[lpc]; lpc++) {
         date_time_scanner dts;
         struct timeval tv;
-        struct tm tm;
+        struct exttm tm;
 
         assert(dts.scan(BAD_TIMES[lpc], NULL, &tm, tv) == NULL);
     }
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
         const char *en_date = "Jan  1 12:00:00";
         const char *bg_date = "Ene  1 12:00:00";
         struct timeval en_tv, es_tv;
-        struct tm en_tm, es_tm;
+        struct exttm en_tm, es_tm;
         date_time_scanner dts;
 
         if (setlocale(LC_TIME, "es_ES.utf8") != NULL) {

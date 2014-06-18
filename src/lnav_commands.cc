@@ -95,7 +95,7 @@ static string com_adjust_log_time(string cmdline, vector<string> &args)
         content_line_t top_content;
         date_time_scanner dts;
         vis_line_t top_line;
-        struct tm tm;
+        struct exttm tm;
         logfile *lf;
 
         top_line = lnav_data.ld_views[LNV_LOG].get_top();
@@ -212,7 +212,7 @@ static string com_goto(string cmdline, vector<string> &args)
         int   line_number, consumed;
         date_time_scanner dts;
         struct timeval tv;
-        struct tm tm;
+        struct exttm tm;
         float value;
 
         if (dts.scan(args[1].c_str(), NULL, &tm, tv) != NULL) {

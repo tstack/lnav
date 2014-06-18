@@ -33,6 +33,7 @@ TIME_FORMATS = \
     "%d/%b/%Y:%H:%M:%S %z" \
     "%b %d %H:%M:%S" \
     "%m/%d/%y %H:%M:%S" \
+    "%m/%d/%Y %I:%M:%S:%L %p %Z" \
     "%N/%e/%Y %l:%M:%S %p" \
     "%m%d %H:%M:%S" \
     "%M:%S"

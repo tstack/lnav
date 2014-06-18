@@ -37,11 +37,11 @@
 
 #include "ptimec.hh"
 
-bool ptime_b_slow(struct tm *dst, const char *str, off_t &off_inout, size_t len)
+bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
 {
     const char *end_of_date;
 
-    if ((end_of_date = strptime(&str[off_inout], "%b", dst)) != NULL) {
+    if ((end_of_date = strptime(&str[off_inout], "%b", &dst->et_tm)) != NULL) {
         off_inout = end_of_date - str;
         return true;
     }

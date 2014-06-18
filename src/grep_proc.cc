@@ -204,6 +204,9 @@ void grep_proc::child_loop(void)
                     fprintf(stdout, "[%d:%d]\n", m->c_begin, m->c_end);
                     for (pc_iter = pc.begin(); pc_iter != pc.end();
                          pc_iter++) {
+                        if (!pc_iter->is_valid()) {
+                            continue;
+                        }
                         fprintf(stdout,
                                 "(%d:%d)",
                                 pc_iter->c_begin,
@@ -359,7 +362,7 @@ void grep_proc::check_fd_set(fd_set &ready_fds)
 
             while ((loop_count < MAX_LOOPS) &&
                    (this->gp_line_buffer.read_line(this->gp_pipe_offset, lv))) {
-                lv.lv_start[lv.lv_len] = '\0';
+                lv.terminate();
                 this->dispatch_line(lv.lv_start);
                 loop_count += 1;
             }

@@ -90,7 +90,7 @@ fields:
     regexes.
 
     :kind: The type of data that was captured **string**, **integer**,
-      **float**.
+      **float**, **json**, **quoted**.
     :collate: The collation function for this value.
     :identifier: A boolean that indicates whether or not this field represents
       an identifier and should be syntax colored.
