@@ -927,12 +927,15 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
         this->jlf_cached_offset = ll.get_offset();
     }
 
-    off_t this_off, next_off;
+    off_t this_off = 0, next_off = 0;
 
-    this_off = this->jlf_line_offsets[ll.get_sub_offset()];
-    if (this->jlf_cached_line[this_off] == '\n')
-        this_off += 1;
-    next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
+    if (!this->jlf_line_offsets.empty()) {
+        this_off = this->jlf_line_offsets[ll.get_sub_offset()];
+        if (this->jlf_cached_line[this_off] == '\n') {
+            this_off += 1;
+        }
+        next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
+    }
 
     sbr.share(this->jlf_share_manager,
               (char *)this->jlf_cached_line.c_str() + this_off,
