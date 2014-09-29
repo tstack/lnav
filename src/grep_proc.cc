@@ -39,7 +39,6 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <IOKit/IODataQueueClient.h>
 
 #include "lnav_log.hh"
 #include "grep_proc.hh"
