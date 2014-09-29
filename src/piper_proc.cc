@@ -43,7 +43,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <IOKit/IODataQueueClient.h>
 
 #include "lnav_log.hh"
 #include "piper_proc.hh"
