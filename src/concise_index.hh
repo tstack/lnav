@@ -36,7 +36,7 @@
 
 #include <algorithm>
 
-#include <lnav_log.hh>
+#include "lnav_log.hh"
 
 class concise_index {
 
@@ -112,7 +112,7 @@ public:
             return true;
         }
 
-        for (int lpc = len; lpc < BITS_PER_WORD; lpc++) {
+        for (uint64_t lpc = len; lpc < BITS_PER_WORD; lpc++) {
             uint64_t mask = 1ULL << (len - 1);
             uint64_t bit_to_set_or_clear = (1ULL << lpc);
 
@@ -125,7 +125,7 @@ public:
 
         if ((v == 0ULL || v == ~0ULL) &&
             (this->is_rle(lit_or_rle_word) || this->ci_literal_size == 0)) {
-            bool bv = v;
+            bool bv = (bool) v;
 
             if (this->is_rle(lit_or_rle_word)) {
                 if (this->get_rle_value(lit_or_rle_word) == bv &&
@@ -267,7 +267,7 @@ public:
                 return this->i_parent->get_rle_value(word);
             }
 
-            return word & this->i_parent->bit_in_word(this->i_bit_index);
+            return (bool) (word & this->i_parent->bit_in_word(this->i_bit_index));
         };
 
         uint64_t get_word(size_t &valid_bits_out) const {
@@ -367,11 +367,11 @@ public:
     };
 
     bool get_rle_value(uint64_t v) const {
-        return (v & VAL_MASK);
+        return (bool) (v & VAL_MASK);
     };
 
     int pos_index(uint64_t v) const {
-        return (v & POS_MASK) >> (64 - 6 - 1);
+        return (int) ((v & POS_MASK) >> (64 - 6 - 1));
     };
 
     uint64_t run_length(uint64_t v) const {

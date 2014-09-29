@@ -243,9 +243,10 @@ const char *log_format::log_scanf(const char *line,
 {
     int     curr_fmt = -1;
     const char *  retval   = NULL;
+    bool done = false;
     va_list args;
 
-    while (next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
+    while (!done && next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
         va_start(args, tv_out);
         int matches;
 
@@ -254,10 +255,8 @@ const char *log_format::log_scanf(const char *line,
         matches = vsscanf(line, fmt[curr_fmt], args);
         if (matches < expected_matches) {
             retval = NULL;
-            continue;
         }
-
-        if (time_dest[0] == '\0') {
+        else if (time_dest[0] == '\0') {
             retval = NULL;
         }
         else {
@@ -265,7 +264,7 @@ const char *log_format::log_scanf(const char *line,
 
             if (retval) {
                 this->lf_fmt_lock = curr_fmt;
-                break;
+                done = true;
             }
         }
 

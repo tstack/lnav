@@ -32,6 +32,8 @@
 #ifndef __grep_proc_hh
 #define __grep_proc_hh
 
+#include "config.h"
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>

@@ -39,6 +39,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <IOKit/IODataQueueClient.h>
 
 #include "lnav_log.hh"
 #include "grep_proc.hh"
@@ -328,7 +329,7 @@ void grep_proc::check_fd_set(fd_set &ready_fds)
 
     if (this->gp_err_pipe != -1 && FD_ISSET(this->gp_err_pipe, &ready_fds)) {
         char buffer[1024 + 1];
-        int  rc;
+        ssize_t rc;
 
         rc = read(this->gp_err_pipe, buffer, sizeof(buffer) - 1);
         if (rc > 0) {

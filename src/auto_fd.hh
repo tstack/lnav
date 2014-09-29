@@ -204,8 +204,6 @@ private:
 
 class auto_pipe {
 public:
-    static const int STDIO_FD_COUNT = 3;
-
     auto_pipe(int child_fd = -1, int child_flags = O_RDONLY)
         : ap_child_flags(child_flags), ap_child_fd(child_fd)
     {
@@ -238,7 +236,7 @@ public:
     };
 
     void after_fork(pid_t child_pid) {
-        int new_fd = -1;
+        int new_fd;
 
         switch (child_pid) {
         case -1:

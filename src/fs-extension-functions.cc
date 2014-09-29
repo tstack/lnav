@@ -37,6 +37,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <stddef.h>
 
 #include "sqlite3.h"
 
@@ -60,17 +61,17 @@ static void sql_basename(sqlite3_context *context,
         return;
     }
 
-    for (int lpc = strlen(path_in) - 1; lpc >= 0; lpc--) {
+    for (ssize_t lpc = strlen(path_in) - 1; lpc >= 0; lpc--) {
         if (path_in[lpc] == '/' || path_in[lpc] == '\\') {
             if (text_end != -1) {
                 sqlite3_result_text(context,
-                                    &path_in[lpc + 1], text_end - lpc - 1,
+                                    &path_in[lpc + 1], (int) (text_end - lpc - 1),
                                     SQLITE_TRANSIENT);
                 return;
             }
         }
         else if (text_end == -1) {
-            text_end = lpc + 1;
+            text_end = (int) (lpc + 1);
         }
     }
 
@@ -88,7 +89,7 @@ static void sql_dirname(sqlite3_context *context,
                         int argc, sqlite3_value **argv)
 {
     const char *path_in;
-    int         text_end;
+    ssize_t     text_end;
 
     if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
         sqlite3_result_null(context);
@@ -106,7 +107,7 @@ static void sql_dirname(sqlite3_context *context,
     while (text_end >= 0) {
         if (path_in[text_end] == '/' || path_in[text_end] == '\\') {
             sqlite3_result_text(context,
-                                path_in, text_end == 0 ? 1 : text_end,
+                                path_in, (int) (text_end == 0 ? 1 : text_end),
                                 SQLITE_TRANSIENT);
             return;
         }

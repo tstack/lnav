@@ -53,7 +53,7 @@ static int try_inet_pton(int p_len, const char *p, char *n)
 {
     static int family[] = { AF_INET6, AF_INET, AF_MAX };
 
-    char buf[MAX_ADDR_LEN];
+    char buf[MAX_ADDR_LEN + 1];
     int  retval = AF_MAX;
 
     strncpy(buf, p, p_len);

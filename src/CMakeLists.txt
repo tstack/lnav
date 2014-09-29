@@ -68,6 +68,7 @@ set(diag_STAT_SRCS
     auto_pid.hh
     bottom_status_source.hh
     byte_array.hh
+    chunky_index.hh
     concise_index.hh
     column_namer.hh
     format-text-files.hh

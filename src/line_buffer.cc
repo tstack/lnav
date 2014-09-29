@@ -108,7 +108,7 @@ private:
         unlink(lockname);
     };
 
-    int lh_fd;
+    auto_fd lh_fd;
 };
 /* XXX END */
 

@@ -339,7 +339,7 @@ readline_curses::readline_curses()
         stifle_history(HISTORY_SIZE);
 
         for (int lpc = 0; RL_INIT[lpc]; lpc++) {
-            strcpy(buffer, RL_INIT[lpc]);
+            snprintf(buffer, sizeof(buffer), "%s", RL_INIT[lpc]);
             rl_parse_and_bind(buffer); /* NOTE: buffer is modified */
         }
 

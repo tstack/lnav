@@ -61,12 +61,12 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
         int  attrs     = 0;
         int  bg        = 0;
         int  fg        = 0;
-        int  lpc;
+        unsigned long lpc;
 
         switch (pi.get_substr_start(&caps[2])[0]) {
         case 'm':
-            for (lpc = caps[1].c_begin;
-                 lpc != (int)string::npos && lpc < caps[1].c_end; ) {
+            for (lpc = (unsigned long) caps[1].c_begin;
+                 lpc != string::npos && lpc < caps[1].c_end; ) {
                 int ansi_code = 0;
 
                 if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
@@ -111,11 +111,11 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
 
         case 'C':
         {
-            int spaces = 0;
+            unsigned int spaces = 0;
 
-            if (sscanf(&(str[caps[1].c_begin]), "%d", &spaces) == 1 &&
+            if (sscanf(&(str[caps[1].c_begin]), "%u", &spaces) == 1 &&
                 spaces > 0) {
-                str.insert(caps[0].c_end, spaces, ' ');
+                str.insert((unsigned long) caps[0].c_end, spaces, ' ');
             }
         }
         break;

@@ -34,6 +34,7 @@
 
 #include <string>
 #include <sys/types.h>
+#include "auto_fd.hh"
 
 /**
  * Creates a subprocess that reads data from a pipe and writes it to a file so
@@ -76,7 +77,7 @@ public:
 
 private:
     /** A file descriptor that refers to the temporary file. */
-    int pp_fd;
+    auto_fd pp_fd;
 
     /** The child process' pid. */
     pid_t pp_child;

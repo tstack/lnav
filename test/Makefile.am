@@ -33,6 +33,7 @@ check_PROGRAMS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
+	test_chunky_index \
 	test_concise \
 	test_date_time_scanner \
 	test_grep_proc2 \
@@ -61,6 +62,9 @@ test_auto_mem_SOURCES = test_auto_mem.cc
 
 test_bookmarks_SOURCES = test_bookmarks.cc
 test_bookmarks_LDADD = ../src/libdiag.a
+
+test_chunky_index_SOURCES = test_chunky_index.cc
+test_chunky_index_LDADD = ../src/libdiag.a
 
 test_date_time_scanner_SOURCES = test_date_time_scanner.cc
 test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
@@ -235,6 +239,7 @@ TESTS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
+	test_chunky_index \
 	test_date_time_scanner \
 	test_cmds.sh \
 	test_concise \

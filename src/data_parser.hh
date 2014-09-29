@@ -640,11 +640,11 @@ private:
 
         if (pairs_out.size() == 1) {
             element &pair  = pairs_out.front();
-            element &value = pair.e_sub_elements->back();
+            element &evalue = pair.e_sub_elements->back();
 
-            if (value.e_token == DNT_VALUE &&
-                value.e_sub_elements != NULL &&
-                value.e_sub_elements->size() > 1) {
+            if (evalue.e_token == DNT_VALUE &&
+                evalue.e_sub_elements != NULL &&
+                evalue.e_sub_elements->size() > 1) {
                 element_list_t::iterator next_sub;
 
                 next_sub = pair.e_sub_elements->begin();
@@ -655,9 +655,9 @@ private:
                               next_sub);
                 free_row.clear();
                 free_row.SPLICE(free_row.begin(),
-                                *value.e_sub_elements,
-                                value.e_sub_elements->begin(),
-                                value.e_sub_elements->end());
+                                *evalue.e_sub_elements,
+                                evalue.e_sub_elements->begin(),
+                                evalue.e_sub_elements->end());
                 pairs_out.clear();
                 context.Init(0, 0);
             }

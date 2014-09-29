@@ -342,20 +342,6 @@ public:
             : ld_file(lf),
               ld_lines_indexed(0) { };
 
-        bool operator<(const logfile_data &rhs)
-        {
-            if (this->ld_file == rhs.ld_file) {
-                return false;
-            }
-            if (this->ld_file == NULL) {
-                return true;
-            }
-            if (this->ld_file != NULL) {
-                return true;
-            }
-            return (*this->ld_file) < (*rhs.ld_file);
-        };
-
         void     clear(void)
         {
             this->ld_file = NULL;

@@ -4409,7 +4409,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (lnav_data.ld_file_names.empty() && !lnav_data.ld_flags & LNF_HELP) {
+    if (lnav_data.ld_file_names.empty() && !(lnav_data.ld_flags & LNF_HELP)) {
         fprintf(stderr, "error: no log files given/found.\n");
         retval = EXIT_FAILURE;
     }

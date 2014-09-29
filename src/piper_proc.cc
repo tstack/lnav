@@ -43,6 +43,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <IOKit/IODataQueueClient.h>
 
 #include "lnav_log.hh"
 #include "piper_proc.hh"
@@ -52,7 +53,7 @@ using namespace std;
 
 static const char *STDIN_EOF_MSG = "---- END-OF-STDIN ----";
 
-static int write_timestamp(int fd, off_t woff)
+static ssize_t write_timestamp(int fd, off_t woff)
 {
     char           time_str[64];
     struct timeval tv;
@@ -79,15 +80,15 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         }
     }
     else {
-        char        piper_tmpname[PATH_MAX];
+        char piper_tmpname[PATH_MAX];
         const char *tmpdir;
 
         if ((tmpdir = getenv("TMPDIR")) == NULL) {
             tmpdir = _PATH_VARTMP;
         }
         snprintf(piper_tmpname, sizeof(piper_tmpname),
-                 "%s/lnav.piper.XXXXXX",
-                 tmpdir);
+                "%s/lnav.piper.XXXXXX",
+                tmpdir);
         if ((this->pp_fd = mkstemp(piper_tmpname)) == -1) {
             throw error(errno);
         }
@@ -95,7 +96,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         unlink(piper_tmpname);
     }
 
-    fcntl(this->pp_fd, F_SETFD, FD_CLOEXEC);
+    fcntl(this->pp_fd.get(), F_SETFD, FD_CLOEXEC);
 
     this->pp_child = fork();
     switch (this->pp_child) {
@@ -123,7 +124,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
             select(lb.get_fd() + 1, &rready, NULL, NULL, NULL);
             last_off = off;
             while (lb.read_line(off, lv, true)) {
-                int wrc;
+                ssize_t wrc;
 
                 last_woff = woff;
                 if (timestamp) {
@@ -154,7 +155,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         } while (lb.get_file_size() == (ssize_t)-1);
 
         if (timestamp) {
-            int wrc;
+            ssize_t wrc;
 
             wrc = write_timestamp(this->pp_fd, woff);
             if (wrc == -1) {

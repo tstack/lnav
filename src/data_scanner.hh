@@ -106,7 +106,7 @@ class data_scanner {
 public:
     static const char *token2name(data_token_t token);
 
-    data_scanner(const std::string &line, size_t off = 0, size_t len = -1)
+    data_scanner(const std::string &line, size_t off = 0, size_t len = (size_t) -1)
         : ds_line(line),
           ds_pcre_input(ds_line.c_str(), off, len)
     {
@@ -115,7 +115,7 @@ public:
         }
     };
 
-    data_scanner(shared_buffer_ref &line, size_t off = 0, size_t len = -1)
+    data_scanner(shared_buffer_ref &line, size_t off = 0, size_t len = (size_t) -1)
         : ds_sbr(line), ds_pcre_input(line.get_data(), off, len)
     {
         if (line.length() > 0 && line.get_data()[line.length() - 1] == '.') {
