@@ -32,6 +32,7 @@
 #ifndef __chunky_index_hh
 #define __chunky_index_hh
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include <list>
@@ -43,6 +44,48 @@ template<typename T, size_t CHUNK_SIZE = 4096>
 class chunky_index {
 
 public:
+
+    class iterator {
+    public:
+        typedef std::random_access_iterator_tag iterator_category;
+        typedef T value_type;
+        typedef T *pointer;
+        typedef T &reference;
+        typedef std::ptrdiff_t difference_type;
+
+        iterator(chunky_index *ci = NULL, off_t offset = 0) : i_chunky(ci), i_offset(offset) {
+        };
+
+        iterator &operator++() {
+            this->i_offset += 1;
+            return *this;
+        };
+
+        T &operator*() {
+            return (*this->i_chunky)[this->i_offset];
+        };
+
+        bool operator!=(const iterator &other) const {
+            return (this->i_chunky != other.i_chunky) || (this->i_offset != other.i_offset);
+        };
+
+        bool operator==(const iterator &other) const {
+            return (this->i_chunky == other.i_chunky) && (this->i_offset == other.i_offset);
+        };
+
+        difference_type operator-(const iterator &other) const {
+            return this->i_offset - other.i_offset;
+        };
+
+        void operator+=(difference_type n) {
+            this->i_offset += n;
+        };
+
+    private:
+        chunky_index *i_chunky;
+        off_t i_offset;
+    };
+
     chunky_index() : ci_generation(0), ci_merge_chunk(NULL), ci_size(0) {
     };
 
@@ -50,8 +93,20 @@ public:
         this->clear();
     };
 
+    iterator begin() {
+        return iterator(this);
+    };
+
+    iterator end() {
+        return iterator(this, this->ci_size);
+    };
+
     size_t size() const {
         return this->ci_size;
+    };
+
+    bool empty() const {
+        return this->ci_size == 0;
     };
 
     size_t chunk_count() const {
@@ -90,15 +145,23 @@ public:
     };
 
     template<typename Comparator>
-    void merge_value(const T &val, Comparator comparator) {
+    off_t merge_value(const T &val, Comparator comparator) {
+        off_t retval;
+
         this->merge_up_to(&val, comparator);
+        retval = (this->ci_completed_chunks.size() * CHUNK_SIZE);
+        if (this->ci_merge_chunk != NULL) {
+            retval += this->ci_merge_chunk->c_used;
+        }
         this->ci_merge_chunk->push_back(val);
 
         this->ci_size += 1;
+
+        return retval;
     };
 
-    void merge_value(const T &val) {
-        this->merge_value(val, less_comparator());
+    off_t merge_value(const T &val) {
+        return this->merge_value(val, less_comparator());
     };
 
     void finish() {
@@ -116,8 +179,10 @@ public:
     };
 
 private:
-    void skip_chunks(const T *val) {
-        while (!this->ci_pending_chunks.empty() && this->ci_pending_chunks.front()->skippable(val)) {
+    template<typename Comparator>
+    void skip_chunks(const T *val, Comparator comparator) {
+        while (!this->ci_pending_chunks.empty() &&
+                this->ci_pending_chunks.front()->skippable(val, comparator)) {
             struct chunk *skipped_chunk = this->ci_pending_chunks.front();
             this->ci_pending_chunks.pop_front();
             skipped_chunk->c_consumed = 0;
@@ -133,22 +198,14 @@ private:
     };
 
     struct less_comparator {
-        int operator()(const T &val, const T &other) const {
-            if (val < other) {
-                return -1;
-            }
-            else if (other < val) {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+        bool operator()(const T &val, const T &other) const {
+            return (val < other);
         };
     };
 
     template<typename Comparator>
     void merge_up_to(const T *val, Comparator comparator) {
-        this->skip_chunks(val);
+        this->skip_chunks(val, comparator);
 
         do {
             if (this->ci_merge_chunk != NULL && this->ci_merge_chunk->full()) {
@@ -161,7 +218,7 @@ private:
 
             if (!this->ci_pending_chunks.empty()) {
                 struct chunk *next_chunk = this->ci_pending_chunks.front();
-                while (((val == NULL) || (comparator(next_chunk->front(), *val) < 0)) &&
+                while (((val == NULL) || comparator(next_chunk->front(), *val)) &&
                         !this->ci_merge_chunk->full()) {
                     this->ci_merge_chunk->push_back(next_chunk->consume());
                     if (next_chunk->empty()) {
@@ -189,9 +246,10 @@ private:
             return this->c_used == CHUNK_SIZE;
         };
 
-        bool skippable(const T *val) const {
+        template<typename Comparator>
+        bool skippable(const T *val, Comparator comparator) const {
             return this->c_consumed == 0 && this->full() && (
-                    val == NULL || (this->back() <= *val));
+                    val == NULL || (comparator(this->back(), *val) || !comparator(*val, this->back())));
         };
 
         const T &front() const {

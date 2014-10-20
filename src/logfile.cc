@@ -56,9 +56,10 @@ throw (error)
     : lf_filename(filename),
       lf_index_time(0),
       lf_index_size(0),
-      lf_is_closed(false)
+      lf_is_closed(false),
+      lf_logline_observer(NULL)
 {
-    int reserve_size = 100;
+    ssize_t reserve_size = 100;
 
     require(filename.size() > 0);
 
@@ -136,14 +137,13 @@ void logfile::set_format_base_time(log_format *lf)
     lf->lf_date_time.set_base_time(file_time);
 }
 
-void logfile::process_prefix(off_t offset, char *prefix, int len)
+void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 {
     bool found = false;
 
     if (this->lf_format.get() != NULL) {
         /* We've locked onto a format, just use that scanner. */
-        this->set_format_base_time(this->lf_format.get());
-        found = this->lf_format->scan(this->lf_index, offset, prefix, len);
+        found = this->lf_format->scan(this->lf_index, offset, sbr);
     }
     else if (this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
         vector<log_format *> &root_formats =
@@ -163,7 +163,7 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
 
             (*iter)->clear();
             this->set_format_base_time(*iter);
-            if (!(*iter)->scan(this->lf_index, offset, prefix, len)) {
+            if (!(*iter)->scan(this->lf_index, offset, sbr)) {
                 log_debug("%s:%d:log format does not match -- %s",
                     this->lf_filename.c_str(),
                     this->lf_index.size(),
@@ -182,7 +182,8 @@ void logfile::process_prefix(off_t offset, char *prefix, int len)
 
                 this->lf_format =
                     auto_ptr<log_format>((*iter)->specialized());
-                this->lf_content_id = hash_string(string(prefix, len));
+                this->set_format_base_time(this->lf_format.get());
+                this->lf_content_id = hash_string(string(sbr.get_data(), sbr.length()));
                 found = true;
 
                 /*
@@ -251,6 +252,8 @@ throw (line_buffer::error, logfile::error)
 
     /* Check for new data based on the file size. */
     if (this->lf_index_size < st.st_size) {
+        bool has_format = this->lf_format.get() != NULL;
+        shared_buffer_ref sbr;
         off_t  last_off, off;
         line_value lv;
 
@@ -270,14 +273,25 @@ throw (line_buffer::error, logfile::error)
             off = 0;
         }
         last_off = off;
-        while (this->lf_line_buffer.read_line(off, lv)) {
-            char tmp = lv.lv_start[lv.lv_len];
+        if (this->lf_logline_observer != NULL) {
+            this->lf_logline_observer->logline_restart(*this);
+        }
+        while (this->lf_line_buffer.read_line(off, sbr, &lv)) {
+            size_t old_size = this->lf_index.size();
 
             this->lf_partial_line = lv.lv_partial;
-            lv.lv_start[lv.lv_len] = '\0';
-            this->process_prefix(last_off, lv.lv_start, lv.lv_len);
-            lv.lv_start[lv.lv_len] = tmp;
+            this->process_prefix(last_off, sbr);
             last_off = off;
+
+            for (logfile::iterator iter = this->begin() + old_size;
+                    iter != this->end(); ++iter) {
+                if (this->lf_format.get() != NULL) {
+                    this->lf_format->get_subline(*iter, sbr);
+                }
+                if (this->lf_logline_observer != NULL) {
+                    this->lf_logline_observer->logline_new_line(*this, iter, sbr);
+                }
+            }
 
             if (lo != NULL) {
                 lo->logfile_indexing(
@@ -285,6 +299,13 @@ throw (line_buffer::error, logfile::error)
                     this->lf_line_buffer.get_read_offset(off),
                     st.st_size);
             }
+
+            if (!has_format && this->lf_format.get() != NULL) {
+                break;
+            }
+        }
+        if (this->lf_logline_observer != NULL) {
+            this->lf_logline_observer->logline_eof(*this);
         }
 
         /*
@@ -294,8 +315,6 @@ throw (line_buffer::error, logfile::error)
          */
         this->lf_index_size = off;
 
-        // this->lf_line_buffer.invalidate();
-
         retval = true;
     }
 
@@ -303,63 +322,6 @@ throw (line_buffer::error, logfile::error)
     if (!this->lf_index_time) {
         this->lf_index_time = st.st_mtime;
     }
-
-    return retval;
-}
-
-logfile_filter::type_t logfile::check_filter(iterator ll,
-                                             uint8_t generation,
-                                             const filter_stack_t &filters)
-{
-    logfile_filter::type_t retval;
-    uint8_t this_generation = ll->get_filter_generation();
-
-    if (this_generation == generation) {
-        return ll->get_filter_state();
-    }
-    else {
-        retval = logfile_filter::MAYBE;
-    }
-
-    string line_value;
-
-    for (size_t lpc = 0; lpc < filters.size(); lpc++) {
-        logfile_filter *filter = filters[lpc];
-        bool matched;
-
-        if (!filter->is_enabled())
-            continue;
-
-        if (line_value.empty())
-            this->read_line(ll, line_value);
-        matched = filter->matches(*ll, line_value);
-
-        switch (filter->get_type()) {
-        case logfile_filter::INCLUDE:
-            if (matched) {
-                // Always prefer including something.
-                retval = logfile_filter::INCLUDE;
-            }
-            else if (retval == logfile_filter::MAYBE) {
-                // Only exclude if we haven't made a decision yet.
-                retval = logfile_filter::EXCLUDE;
-            }
-            break;
-
-        case logfile_filter::EXCLUDE:
-            if (matched && retval == logfile_filter::MAYBE) {
-                // Only exclude if we haven't decide to include the line.
-                retval = logfile_filter::EXCLUDE;
-            }
-            break;
-
-        default:
-            require(0);
-            break;
-        }
-    }
-
-    ll->set_filter_state(generation, retval);
 
     return retval;
 }
@@ -461,5 +423,24 @@ void logfile::read_full_message(logfile::iterator ll,
     }
     catch (line_buffer::error & e) {
         /* ... */
+    }
+}
+
+void logfile::set_logline_observer(logline_observer *llo)
+{
+    this->lf_logline_observer = llo;
+    this->reobserve_from(this->begin());
+}
+
+void logfile::reobserve_from(iterator iter)
+{
+    if (this->lf_logline_observer != NULL) {
+        for (; iter != this->end(); ++iter) {
+            shared_buffer_ref sbr;
+
+            this->read_line(iter, sbr);
+            this->lf_logline_observer->logline_new_line(*this, iter, sbr);
+        }
+        this->lf_logline_observer->logline_eof(*this);
     }
 }

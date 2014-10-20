@@ -76,27 +76,20 @@ const char *logline::level_names[LEVEL__MAX + 1] = {
     NULL
 };
 
+static pcrepp LEVEL_RE(
+        "(?i)(TRACE|VERBOSE|DEBUG|INFO|WARN(?:ING)?|ERROR|CRITICAL|SEVERE|FATAL)");
+
 static int strncasestr_i(const char *s1, const char *s2, size_t len)
 {
     return strcasestr(s1, s2) == NULL;
 }
 
-logline::level_t logline::string2level(const char *levelstr, size_t len, bool exact)
+logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool exact)
 {
     logline::level_t retval = logline::LEVEL_UNKNOWN;
 
-    int (*cmpfunc)(const char *, const char *, size_t);
-
-    require(len == (size_t)-1 || (len != (size_t)-1 && exact));
-
-    if (len == (size_t)-1)
+    if (len == (size_t)-1) {
         len = strlen(levelstr);
-
-    if (exact) {
-        cmpfunc = strncasecmp;
-    }
-    else{
-        cmpfunc = strncasestr_i;
     }
 
     if (((len == 1) || ((len > 1) && (levelstr[1] == ' '))) &&
@@ -104,68 +97,45 @@ logline::level_t logline::string2level(const char *levelstr, size_t len, bool ex
         return retval;
     }
 
-    if (cmpfunc(levelstr, "TRACE", len) == 0) {
-        retval = logline::LEVEL_TRACE;
-    }
-    else if (cmpfunc(levelstr, "VERBOSE", len) == 0) {
-        retval = logline::LEVEL_DEBUG;
-    }
-    else if (cmpfunc(levelstr, "DEBUG", len) == 0) {
-        retval = logline::LEVEL_DEBUG;
-    }
-    else if (cmpfunc(levelstr, "INFO", len) == 0) {
-        retval = logline::LEVEL_INFO;
-    }
-    else if (cmpfunc(levelstr, "WARNING", len) == 0) {
-        retval = logline::LEVEL_WARNING;
-    }
-    else if (cmpfunc(levelstr, "ERROR", len) == 0) {
-        retval = logline::LEVEL_ERROR;
-    }
-    else if (cmpfunc(levelstr, "CRITICAL", len) == 0) {
-        retval = logline::LEVEL_CRITICAL;
-    }
-    else if (cmpfunc(levelstr, "SEVERE", len) == 0) {
-        retval = logline::LEVEL_CRITICAL;
-    }
-    else if (cmpfunc(levelstr, "FATAL", len) == 0) {
-        retval = logline::LEVEL_FATAL;
+    pcre_input pi(levelstr, 0, len);
+    pcre_context_static<10> pc;
+
+    if (LEVEL_RE.match(pc, pi)) {
+        retval = abbrev2level(pi.get_substr_start(pc.begin()), 1);
     }
 
     return retval;
 }
 
-logline::level_t logline::abbrev2level(const char *levelstr, size_t len)
+logline::level_t logline::abbrev2level(const char *levelstr, ssize_t len)
 {
-    if (len == -1) {
-        len = strlen(levelstr);
-    }
-
-    if (len == 0) {
+    if (levelstr[0] == '\0') {
         return LEVEL_UNKNOWN;
     }
 
     switch (toupper(levelstr[0])) {
         case 'T':
-        return LEVEL_TRACE;
+            return LEVEL_TRACE;
         case 'D':
-        return LEVEL_DEBUG;
+            return LEVEL_DEBUG;
         case 'I':
-        return LEVEL_INFO;
+            return LEVEL_INFO;
         case 'W':
-        return LEVEL_WARNING;
+            return LEVEL_WARNING;
         case 'E':
-        return LEVEL_ERROR;
+            return LEVEL_ERROR;
         case 'C':
-        return LEVEL_CRITICAL;
+            return LEVEL_CRITICAL;
+        case 'S':
+            return LEVEL_CRITICAL;
         case 'F':
-        return LEVEL_FATAL;
+            return LEVEL_FATAL;
+        default:
+            return LEVEL_UNKNOWN;
     }
-
-    return LEVEL_UNKNOWN;
 }
 
-int logline::levelcmp(const char *l1, size_t l1_len, const char *l2, size_t l2_len)
+int logline::levelcmp(const char *l1, ssize_t l1_len, const char *l2, ssize_t l2_len)
 {
     return abbrev2level(l1, l1_len) - abbrev2level(l2, l2_len);
 }
@@ -232,11 +202,30 @@ static bool next_format(const std::vector<external_log_format::pattern *> &patte
     return retval;
 }
 
+bool log_format::next_format(pcre_format *fmt, int &index, int &locked_index)
+{
+    bool retval = true;
+
+    if (locked_index == -1) {
+        index += 1;
+        if (fmt[index].name == NULL) {
+            retval = false;
+        }
+    }
+    else if (index == locked_index) {
+        retval = false;
+    }
+    else {
+        index = locked_index;
+    }
+
+    return retval;
+}
+
 const char *log_format::log_scanf(const char *line,
-                                  const char *fmt[],
-                                  int expected_matches,
+                                  size_t len,
+                                  pcre_format *fmt,
                                   const char *time_fmt[],
-                                  char *time_dest,
                                   struct exttm *tm_out,
                                   struct timeval &tv_out,
                                   ...)
@@ -244,23 +233,30 @@ const char *log_format::log_scanf(const char *line,
     int     curr_fmt = -1;
     const char *  retval   = NULL;
     bool done = false;
+    pcre_input pi(line, 0, len);
+    pcre_context_static<128> pc;
     va_list args;
 
     while (!done && next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
         va_start(args, tv_out);
-        int matches;
 
-        time_dest[0] = '\0';
-
-        matches = vsscanf(line, fmt[curr_fmt], args);
-        if (matches < expected_matches) {
-            retval = NULL;
-        }
-        else if (time_dest[0] == '\0') {
+        if (!fmt[curr_fmt].pcre.match(pc, pi)) {
             retval = NULL;
         }
         else {
-            retval = this->lf_date_time.scan(time_dest, time_fmt, tm_out, tv_out);
+            pcre_context::capture_t *ts = pc["timestamp"];
+
+            for (pcre_context::iterator iter = pc.begin();
+                    iter != pc.end();
+                    ++iter) {
+                pcre_context::capture_t *cap = va_arg(
+                        args, pcre_context::capture_t *);
+
+                *cap = *iter;
+            }
+
+            retval = this->lf_date_time.scan(
+                    pi.get_substr_start(ts), ts->length(), NULL, tm_out, tv_out);
 
             if (retval) {
                 this->lf_fmt_lock = curr_fmt;
@@ -530,8 +526,7 @@ static struct json_path_handler json_log_rewrite_handlers[] = {
 
 bool external_log_format::scan(std::vector<logline> &dst,
                                off_t offset,
-                               char *prefix,
-                               int len)
+                               shared_buffer_ref &sbr)
 {
     if (this->jlf_json) {
         auto_mem<yajl_handle_t> handle(yajl_free);
@@ -550,10 +545,10 @@ bool external_log_format::scan(std::vector<logline> &dst,
         ypc.ypc_alt_callbacks.yajl_start_map = json_array_start;
         jlu.jlu_format = this;
         jlu.jlu_base_line = &ll;
-        jlu.jlu_line_value = prefix;
+        jlu.jlu_line_value = sbr.get_data();
         jlu.jlu_handle = handle;
         if (yajl_parse(handle.in(),
-                       (const unsigned char *)prefix, len) == yajl_status_ok &&
+                       (const unsigned char *)sbr.get_data(), sbr.length()) == yajl_status_ok &&
             yajl_complete_parse(handle.in()) == yajl_status_ok) {
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
@@ -569,12 +564,12 @@ bool external_log_format::scan(std::vector<logline> &dst,
         return retval;
     }
 
-    pcre_input pi(prefix, 0, len);
+    pcre_input pi(sbr.get_data(), 0, sbr.length());
     pcre_context_static<128> pc;
     bool retval = false;
     int curr_fmt = -1;
 
-    while (next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
+    while (::next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
         pcrepp *pat = this->elf_pattern_order[curr_fmt]->p_pcre;
 
         if (!pat->match(pc, pi)) {
@@ -597,6 +592,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
         logline::level_t level = logline::LEVEL_INFO;
 
         if ((last = this->lf_date_time.scan(ts_str,
+                                            ts->length(),
                                             NULL,
                                             &log_time_tm,
                                             log_tv)) == NULL) {
@@ -722,7 +718,7 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
     struct timeval tv_out;
 
     if (field_name == jlu->jlu_format->lf_timestamp_field) {
-        jlu->jlu_format->lf_date_time.scan((const char *)str, NULL, &tm_out, tv_out);
+        jlu->jlu_format->lf_date_time.scan((const char *)str, len, NULL, &tm_out, tv_out);
         jlu->jlu_base_line->set_time(tv_out);
     }
     else if (field_name == jlu->jlu_format->elf_level_field) {
@@ -1074,12 +1070,13 @@ void external_log_format::build(std::vector<std::string> &errors)
             if (pat.p_pcre->match(pc, pi)) {
                 const char *ts = pi.get_substr_start(
                     pc[this->lf_timestamp_field]);
+                ssize_t ts_len = pc[this->lf_timestamp_field]->length();
                 date_time_scanner dts;
                 struct timeval tv;
                 struct exttm tm;
 
                 found = true;
-                if (dts.scan(ts, NULL, &tm, tv) == NULL) {
+                if (ts_len == -1 || dts.scan(ts, ts_len, NULL, &tm, tv) == NULL) {
                     errors.push_back("error:" +
                         this->elf_name +
                         ":invalid sample -- " +
@@ -1091,8 +1088,7 @@ void external_log_format::build(std::vector<std::string> &errors)
                     for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != NULL; lpc++) {
                         off_t off = 0;
 
-                        PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off,
-                            pc[this->lf_timestamp_field]->length());
+                        PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
                         errors.push_back("  format: " + string(PTIMEC_FORMATS[lpc].pf_fmt) +
                             "; matched: " + string(ts, off));
                     }

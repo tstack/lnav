@@ -4086,7 +4086,7 @@ int main(int argc, char *argv[])
     sql_install_logger();
 
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarsCc:I:f:d:nqtw:V")) != -1) {
+    while ((c = getopt(argc, argv, "hHarsCc:I:f:d:nqtw:VW")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -4166,6 +4166,13 @@ int main(int argc, char *argv[])
 
         case 'w':
             stdin_out = optarg;
+            break;
+
+        case 'W':
+        {
+            char b;
+            read(STDIN_FILENO, &b, 1);
+        }
             break;
 
         case 'V':
@@ -4260,8 +4267,6 @@ int main(int argc, char *argv[])
     DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog.log")));
 
     init_lnav_commands(lnav_commands);
-
-    lnav_data.ld_log_source.add_filter(&lnav_data.ld_level_filter);
 
     lnav_data.ld_views[LNV_HELP].
     set_sub_source(new plain_text_source(help_txt));

@@ -562,17 +562,21 @@ throw (error)
     return retval;
 }
 
-bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr)
+bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_value *lv)
     throw (error)
 {
-    line_value lv;
+    line_value lv_tmp;
     bool retval;
+
+    if (lv == NULL) {
+        lv = &lv_tmp;
+    }
 
     // Clear the incoming ref right away so that an invalidate
     // does not cause a wasted malloc/copy.
     sbr.disown();
-    if ((retval = this->read_line(offset_inout, lv))) {
-        sbr.share(this->lb_share_manager, lv.lv_start, lv.lv_len);
+    if ((retval = this->read_line(offset_inout, *lv))) {
+        sbr.share(this->lb_share_manager, lv->lv_start, lv->lv_len);
     }
 
     return retval;

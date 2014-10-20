@@ -204,6 +204,7 @@ struct date_time_scanner {
     int dts_fmt_len;
 
     const char *scan(const char *time_src,
+                     size_t time_len,
                      const char *time_fmt[],
                      struct exttm *tm_out,
                      struct timeval &tv_out);

@@ -375,7 +375,7 @@ static void load_time_bookmarks(void)
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
         char low_timestamp[64], high_timestamp[64];
-        logfile *lf = file_iter->ld_file;
+        logfile *lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
         if (lf == NULL)
@@ -459,7 +459,7 @@ static void load_time_bookmarks(void)
                     continue;
                 }
 
-                if (!dts.scan(log_time, NULL, &log_tm, log_tv)) {
+                if (!dts.scan(log_time, strlen(log_time), NULL, &log_tm, log_tv)) {
                     continue;
                 }
 
@@ -534,7 +534,7 @@ static void load_time_bookmarks(void)
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
         char low_timestamp[64], high_timestamp[64];
-        logfile *lf = file_iter->ld_file;
+        logfile *lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
         if (lf == NULL)
@@ -617,7 +617,7 @@ static void load_time_bookmarks(void)
                     continue;
                 }
 
-                if (!dts.scan(log_time, NULL, &log_tm, log_tv)) {
+                if (!dts.scan(log_time, strlen(log_time), NULL, &log_tm, log_tv)) {
                     continue;
                 }
 
@@ -944,7 +944,7 @@ static void save_time_bookmarks(void)
         for (file_iter = lnav_data.ld_log_source.begin();
              file_iter != lnav_data.ld_log_source.end();
              ++file_iter) {
-            logfile *lf = file_iter->ld_file;
+            logfile *lf = (*file_iter)->get_file();
             content_line_t base_content_line;
 
             if (lf == NULL)
@@ -1031,7 +1031,7 @@ static void save_time_bookmarks(void)
         for (file_iter = lnav_data.ld_log_source.begin();
              file_iter != lnav_data.ld_log_source.end();
              ++file_iter) {
-            logfile *lf = file_iter->ld_file;
+            logfile *lf = (*file_iter)->get_file();
             content_line_t base_content_line;
 
             if (lf == NULL)
@@ -1072,10 +1072,10 @@ static void save_time_bookmarks(void)
          ++file_iter) {
         logfile::iterator line_iter;
 
-        if (file_iter->ld_file == NULL)
+        if ((*file_iter)->get_file() == NULL)
             continue;
 
-        logfile *lf = file_iter->ld_file;
+        logfile *lf = (*file_iter)->get_file();
 
         if (!lf->is_time_adjusted())
             continue;
@@ -1236,40 +1236,47 @@ void save_session(void)
 
                     view_map.gen("word_wrap");
                     view_map.gen(tc.get_word_wrap());
+
+                    text_sub_source *tss = tc.get_sub_source();
+                    if (tss == NULL) {
+                        continue;
+                    }
+
+                    filter_stack::iterator filter_iter;
+                    filter_stack &fs = tss->get_filters();
+
+                    view_map.gen("commands");
+                    yajlpp_array cmd_array(handle);
+
+                    for (filter_iter = fs.begin();
+                         filter_iter != fs.end();
+                         ++filter_iter) {
+                        if (!(*filter_iter)->is_enabled()) {
+                            continue;
+                        }
+
+                        cmd_array.gen((*filter_iter)->to_command());
+                    }
+
+                    textview_curses::highlight_map_t &hmap =
+                            lnav_data.ld_views[LNV_LOG].get_highlights();
+                    textview_curses::highlight_map_t::iterator hl_iter;
+
+                    for (hl_iter = hmap.begin();
+                         hl_iter != hmap.end();
+                         ++hl_iter) {
+                        if (hl_iter->first[0] == '$') {
+                            continue;
+                        }
+                        cmd_array.gen("highlight " + hl_iter->first);
+                    }
                 }
             }
 
             root_map.gen("commands");
 
             {
-                filter_stack_t::const_iterator filter_iter;
-                logfile_sub_source &lss = lnav_data.ld_log_source;
-                const filter_stack_t &fs = lss.get_filters();
 
-                yajlpp_array cmd_array(handle);
-
-                for (filter_iter = fs.begin();
-                     filter_iter != fs.end();
-                     ++filter_iter) {
-                    if (!(*filter_iter)->is_enabled()) {
-                        continue;
-                    }
-
-                    cmd_array.gen((*filter_iter)->to_command());
-                }
-
-                textview_curses::highlight_map_t &hmap =
-                    lnav_data.ld_views[LNV_LOG].get_highlights();
-                textview_curses::highlight_map_t::iterator hl_iter;
-
-                for (hl_iter = hmap.begin();
-                     hl_iter != hmap.end();
-                     ++hl_iter) {
-                    if (hl_iter->first[0] == '$') {
-                        continue;
-                    }
-                    cmd_array.gen("highlight " + hl_iter->first);
-                }
             }
         }
 
@@ -1305,17 +1312,17 @@ void reset_session(void)
         }
     }
 
-    lnav_data.ld_log_source.clear_filters();
-
     logfile_sub_source::iterator file_iter;
 
     for (file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
-        logfile *lf             = file_iter->ld_file;
+        logfile *lf             = (*file_iter)->get_file();
 
         lf->clear_time_offset();
     }
+
+    lnav_data.ld_log_source.get_filters().clear_filters();
 
     lss.get_user_bookmarks()[&textview_curses::BM_USER].clear();
     lss.get_user_bookmarks()[&textview_curses::BM_PARTITION].clear();

@@ -41,6 +41,7 @@
 #include "data_parser.hh"
 #include "log_format.hh"
 #include "log_format_loader.hh"
+#include "../src/shared_buffer.hh"
 
 using namespace std;
 
@@ -120,6 +121,12 @@ int main(int argc, char *argv[])
 
                 log_line = (char *)alloca(line.length());
                 strcpy(log_line, &line[13]);
+                string sub_line = line.substr(13);
+                struct line_range body(0, sub_line.length());
+                shared_buffer share_manager;
+                shared_buffer_ref sbr;
+
+                sbr.share(share_manager, (char *)sub_line.c_str(), sub_line.size());
 
                 vector<log_format *> &root_formats = log_format::get_root_formats();
                 vector<log_format *>::iterator iter;
@@ -130,20 +137,13 @@ int main(int argc, char *argv[])
                        iter != root_formats.end() && !found;
                        ++iter) {
                         (*iter)->clear();
-                        if ((*iter)->scan(
-                            index, 13, log_line, strlen(log_line))) {
+                        if ((*iter)->scan(index, 13, sbr)) {
                             format = (*iter)->specialized();
                             found = true;
                         }
                     }
                 }
 
-                string sub_line = line.substr(13);
-                struct line_range body(0, sub_line.length());
-                shared_buffer share_manager;
-                shared_buffer_ref sbr;
-
-                sbr.share(share_manager, (char *)sub_line.c_str(), sub_line.size());
                 if (format.get() != NULL) {
                     vector<logline_value> ll_values;
                     string_attrs_t sa;

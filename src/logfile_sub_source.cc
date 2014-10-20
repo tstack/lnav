@@ -38,89 +38,14 @@
 
 using namespace std;
 
-#if 0
-/* XXX */
-class logfile_scrub_map {
-public:
-
-    static logfile_scrub_map &singleton()
-    {
-        static logfile_scrub_map s_lsm;
-
-        return s_lsm;
-    };
-
-    const pcre *include(logfile::format_t format) const
-    {
-        map<logfile::format_t, pcre *>::const_iterator iter;
-        pcre *retval = NULL;
-
-        if ((iter = this->lsm_include.find(format)) !=
-            this->lsm_include.end()) {
-            retval = iter->second;
-        }
-
-        return retval;
-    };
-
-    const pcre *exclude(logfile::format_t format) const
-    {
-        map<logfile::format_t, pcre *>::const_iterator iter;
-        pcre *retval = NULL;
-
-        if ((iter = this->lsm_exclude.find(format)) !=
-            this->lsm_exclude.end()) {
-            retval = iter->second;
-        }
-
-        return retval;
-    };
-
-private:
-
-    pcre *build_pcre(const char *pattern)
-    {
-        const char *errptr;
-        pcre *      retval;
-        int         eoff;
-
-        retval = pcre_compile(pattern, PCRE_CASELESS, &errptr, &eoff, NULL);
-        if (retval == NULL) {
-            throw errptr;
-        }
-
-        return retval;
-    };
-
-    logfile_scrub_map()
-    {
-        this->lsm_include[logfile::FORMAT_JBOSS] = this->
-                                                   build_pcre(
-            "\\d+-(\\d+-\\d+ \\d+:\\d+:\\d+),\\d+ [^ ]+( .*)");
-        this->lsm_exclude[logfile::FORMAT_JBOSS] = this->
-                                                   build_pcre("(?:"
-                                                              "\\[((?:[0-9a-zA-Z]+\\.)+)\\w+"
-                                                              "|\\[[\\w: ]+ ((?:[0-9a-zA-Z]+\\.)+)\\w+[^ \\]]+"
-                                                              "| ((?:[0-9a-zA-Z]+\\.)+)\\w+\\])");
-
-        this->lsm_include[logfile::FORMAT_SYSLOG] = this->
-                                                    build_pcre(
-            "(\\w+\\s[\\s\\d]\\d \\d+:\\d+:\\d+) \\w+( .*)");
-    };
-
-    map<logfile::format_t, pcre *> lsm_include;
-    map<logfile::format_t, pcre *> lsm_exclude;
-};
-#endif
-
 bookmark_type_t logfile_sub_source::BM_ERRORS;
 bookmark_type_t logfile_sub_source::BM_WARNINGS;
 bookmark_type_t logfile_sub_source::BM_FILES;
 
 logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
-      lss_filter_generation(1),
-      lss_filtered_count(0)
+      lss_filtered_count(0),
+      lss_min_log_level(logline::LEVEL_UNKNOWN)
 {
     this->clear_line_size_cache();
 }
@@ -131,15 +56,19 @@ logfile_sub_source::~logfile_sub_source()
 logfile *logfile_sub_source::find(const char *fn,
                                   content_line_t &line_base)
 {
-    std::vector<logfile_data>::iterator iter;
+    iterator iter;
     logfile *retval = NULL;
 
     line_base = content_line_t(0);
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end() && retval == NULL;
          iter++) {
-        if (strcmp(iter->ld_file->get_filename().c_str(), fn) == 0) {
-            retval = iter->ld_file;
+        logfile_data &ld = *(*iter);
+        if (ld.get_file() == NULL) {
+            continue;
+        }
+        if (strcmp(ld.get_file()->get_filename().c_str(), fn) == 0) {
+            retval = ld.get_file();
         }
         else {
             line_base += content_line_t(MAX_LINES_PER_FILE);
@@ -151,7 +80,7 @@ logfile *logfile_sub_source::find(const char *fn,
 
 vis_line_t logfile_sub_source::find_from_time(const struct timeval &start)
 {
-    vector<indexed_content>::iterator lb;
+    chunky_index<indexed_content>::iterator lb;
     vis_line_t retval(-1);
 
     lb = lower_bound(this->lss_index.begin(),
@@ -173,7 +102,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     content_line_t line(0);
 
     require(row >= 0);
-    require((size_t)row < this->lss_index.size());
+    require((size_t)row < this->lss_filtered_index.size());
 
     line = this->at(vis_line_t(row));
     this->lss_token_file   = this->find(line);
@@ -328,7 +257,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         break;
     }
 
-    if ((row + 1) < (int)this->lss_index.size()) {
+    if ((row + 1) < (int)this->lss_filtered_index.size()) {
         next_line = this->find_line(this->at(vis_line_t(row + 1)));
     }
 
@@ -438,7 +367,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
 bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 {
-    std::vector<logfile_data>::iterator iter;
+    iterator iter;
     size_t total_lines = 0;
     bool retval = force;
     int file_count = 0;
@@ -446,54 +375,50 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end();
          iter++) {
-        if (iter->ld_file == NULL) {
-            if (iter->ld_lines_indexed > 0) {
+        if ((*iter)->get_file() == NULL) {
+            if ((*iter)->ld_lines_indexed > 0) {
                 force  = true;
                 retval = true;
             }
         }
         else {
-            if (iter->ld_file->rebuild_index(obs)) {
+            if ((*iter)->get_file()->rebuild_index(obs)) {
                 retval = true;
             }
             file_count += 1;
-            total_lines += iter->ld_file->size();
+            total_lines += (*iter)->get_file()->size();
         }
     }
     if (force) {
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
              iter++) {
-            iter->ld_lines_indexed = 0;
+            (*iter)->ld_lines_indexed = 0;
         }
+
+        this->lss_index.clear();
+        this->lss_filtered_index.clear();
+        this->lss_filtered_count = 0;
     }
 
     if (retval || force) {
-        size_t index_size = 0;
-
-        if (force) {
-            this->lss_index.clear();
-            this->lss_filtered_count = 0;
-        }
+        size_t index_size = 0, start_size = this->lss_index.size();
 
         kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(file_count);
 
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
              iter++) {
-            if (iter->ld_file == NULL)
+            if ((*iter)->get_file() == NULL)
                 continue;
 
-            merge.add(&(*iter),
-                      iter->ld_file->begin() + iter->ld_lines_indexed,
-                      iter->ld_file->end());
-            index_size += iter->ld_file->size();
+            merge.add((*iter),
+                    (*iter)->get_file()->begin() + (*iter)->ld_lines_indexed,
+                    (*iter)->get_file()->end());
+            index_size += (*iter)->get_file()->size();
         }
 
-        this->lss_index.reserve(index_size);
-
-        logfile_filter::type_t action_for_prev_line = logfile_filter::MAYBE;
-        logfile_data *last_owner = NULL;
+        this->lss_index.reset();
 
         merge.execute();
         for (;;) {
@@ -504,29 +429,11 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                 break;
             }
 
-            int file_index = ld - &(*this->lss_files.begin());
-            int line_index = lf_iter - ld->ld_file->begin();
+            int file_index = ld->ld_file_index;
+            int line_index = lf_iter - ld->get_file()->begin();
 
             content_line_t con_line(file_index * MAX_LINES_PER_FILE +
                                     line_index);
-
-            if (!(lf_iter->get_level() & logline::LEVEL_CONTINUED)) {
-                if (last_owner != NULL) {
-                    if (action_for_prev_line != logfile_filter::EXCLUDE) {
-                        // Append all of the lines from the previous message.
-                        while (last_owner->ld_indexing.ld_start <=
-                           last_owner->ld_indexing.ld_last) {
-                            this->lss_index.push_back(last_owner->ld_indexing.ld_start);
-                            ++last_owner->ld_indexing.ld_start;
-                        }
-                    }
-                    else {
-                        this->lss_filtered_count += 1;
-                    }
-                }
-                ld->ld_indexing.ld_start = con_line;
-                action_for_prev_line = logfile_filter::MAYBE;
-            }
 
             if (obs != NULL) {
                 obs->logfile_sub_source_filtering(
@@ -535,21 +442,12 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                     total_lines);
             }
 
-            ld->ld_indexing.ld_last = con_line;
-            if (action_for_prev_line != logfile_filter::INCLUDE) {
-                // We haven't decided to include yet, so check the filter again.
-                // Once we decide to include a sub-line, the whole log message will
-                // always be included.
-                logfile_filter::type_t action_for_this_line = ld->ld_file->check_filter(
-                    lf_iter, this->lss_filter_generation, this->lss_filters);
-
-                // Only record the filter results for this line if it's not decisive.
-                if (action_for_this_line != logfile_filter::MAYBE) {
-                    action_for_prev_line = action_for_this_line;
-                }
+            off_t insert_point = this->lss_index.merge_value(
+                    con_line, logline_cmp(*this));
+            if (insert_point < start_size) {
+                start_size = 0;
+                this->lss_filtered_index.clear();
             }
-
-            last_owner = ld;
 
             merge.next();
         }
@@ -559,26 +457,33 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
                                               total_lines);
         }
 
-        if (last_owner != NULL) {
-            if (action_for_prev_line != logfile_filter::EXCLUDE) {
-                while (last_owner->ld_indexing.ld_start <=
-                   last_owner->ld_indexing.ld_last) {
-                    this->lss_index.push_back(last_owner->ld_indexing.ld_start);
-                    ++last_owner->ld_indexing.ld_start;
-                }
-            }
-            else {
-                this->lss_filtered_count += 1;
-            }
-        }
-
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
              iter++) {
-            if (iter->ld_file == NULL)
+            if ((*iter)->get_file() == NULL)
                 continue;
 
-            iter->ld_lines_indexed = iter->ld_file->size();
+            (*iter)->ld_lines_indexed = (*iter)->get_file()->size();
+        }
+
+        this->lss_index.finish();
+
+        this->lss_filtered_index.reserve(this->lss_index.size());
+
+        uint32_t enabled_mask = this->get_filters().get_enabled_mask();
+
+        for (size_t index_index = start_size;
+             index_index < this->lss_index.size();
+             index_index++) {
+            content_line_t cl = (content_line_t) this->lss_index[index_index];
+            uint64_t line_number;
+            logfile_data *ld = this->find_data(cl, line_number);
+
+            if (!ld->ld_filter_state.excluded(enabled_mask, line_number) &&
+                    (*(ld->get_file()->begin() + line_number)).get_msg_level() >=
+                    this->lss_min_log_level) {
+                this->lss_filtered_index.push_back(index_index);
+            }
         }
     }
 
@@ -601,7 +506,7 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
         bm[iter->first].clear();
     }
 
-    for (; vl < (int)this->lss_index.size(); ++vl) {
+    for (; vl < (int)this->lss_filtered_index.size(); ++vl) {
         const content_line_t orig_cl = this->at(vl);
         content_line_t cl = orig_cl;
         logfile *      lf;
@@ -671,70 +576,29 @@ log_accel::direction_t logfile_sub_source::get_line_accel_direction(
     return la.get_direction();
 }
 
-#if 0
-void logfile_sub_source::handle_scroll(listview_curses *lc)
+void logfile_sub_source::text_filters_changed()
 {
-    printf("hello, world!\n");
-    return;
+    for (iterator iter = this->begin(); iter != this->end(); ++iter) {
+        logfile_data *ld = *iter;
+        logfile *lf = ld->get_file();
 
-    vis_line_t top = lc->get_top();
-
-    if (this->lss_index.empty()) {
-        this->lss_top_time    = -1;
-        this->lss_bottom_time = -1;
+        if (lf != NULL) {
+            lf->reobserve_from(lf->begin() + ld->ld_filter_state.get_min_count(lf->size()));
+        }
     }
-    else {
-        time_t     top_day, bottom_day, today, yesterday, now = time(NULL);
-        vis_line_t bottom(0), height(0);
 
-        unsigned long width;
-        char          status[32];
-        logline *     ll;
+    uint32_t enabled_mask = this->get_filters().get_enabled_mask();
 
-        today     = day_num(now);
-        yesterday = today - 1;
+    this->lss_filtered_index.clear();
+    for (size_t index_index = 0; index_index < this->lss_index.size(); index_index++) {
+        content_line_t cl = (content_line_t) this->lss_index[index_index];
+        uint64_t line_number;
+        logfile_data *ld = this->find_data(cl, line_number);
 
-        lc->get_dimensions(height, width);
-
-        ll = this->find_line(this->lss_index[top]);
-        this->lss_top_time = ll->get_time();
-
-        bottom = min(top + height - vis_line_t(1),
-                     vis_line_t(this->lss_index.size() - 1));
-
-        ll = this->find_line(this->lss_index[bottom]);
-        this->lss_bottom_time = ll->get_time();
-
-        top_day    = day_num(this->lss_top_time);
-        bottom_day = day_num(this->lss_bottom_time);
-        if (top_day == today) {
-            snprintf(status, sizeof(status), "Today");
+        if (!ld->ld_filter_state.excluded(enabled_mask, line_number) &&
+                (*(ld->get_file()->begin() + line_number)).get_msg_level() >=
+                        this->lss_min_log_level) {
+            this->lss_filtered_index.push_back(index_index);
         }
-        else if (top_day == yesterday) {
-            snprintf(status, sizeof(status), "Yesterday");
-        }
-        else {
-            strftime(status, sizeof(status),
-                     "%a %b %d",
-                     gmtime(&this->lss_top_time));
-        }
-        if (top_day != bottom_day) {
-            int len = strlen(status);
-
-            if (bottom_day == today) {
-                snprintf(&status[len], sizeof(status) - len, " - Today");
-            }
-            else if (bottom_day == yesterday) {
-                snprintf(&status[len], sizeof(status) - len, " - Yesterday");
-            }
-            else {
-                strftime(&status[len], sizeof(status) - len,
-                         " - %b %d",
-                         gmtime(&this->lss_bottom_time));
-            }
-        }
-
-        this->lss_date_field.set_value(string(status));
     }
 }
-#endif

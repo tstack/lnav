@@ -362,3 +362,19 @@ check_output "" <<EOF
     }
 ]
 EOF
+
+run_test ${lnav_test} -d "/tmp/lnav.err" -n \
+    -c ":goto 1" \
+    -c ":create-logline-table join_group" \
+    -c ":goto 2" \
+    -c ";select logline.log_line as llline, join_group.log_line as jgline from logline, join_group where logline.col_0 = join_group.col_2" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_for_join.0
+
+check_output "create-logline-table is not working" <<EOF
+llline,jgline
+2,1
+2,8
+9,1
+9,8
+EOF

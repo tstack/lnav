@@ -140,15 +140,15 @@ EOF
 run_test ./drive_logfile -v -f strace_log ${srcdir}/logfile_strace_log.0
 
 check_output "strace_log level interpreted incorrectly?" <<EOF
-0x00
-0x00
-0x00
+0x03
+0x03
+0x03
 0x05
-0x00
+0x03
 0x05
-0x00
-0x00
-0x00
+0x03
+0x03
+0x03
 EOF
 
 run_test ./drive_logfile -t -f generic_log ${srcdir}/logfile_generic.0

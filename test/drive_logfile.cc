@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
     assert(strcmp(argv[0], lf.get_filename().c_str()) == 0);
 
     lf.rebuild_index();
+    lf.rebuild_index();
     if (expected_format == "") {
 	assert(lf.get_format() == NULL);
     }

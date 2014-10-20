@@ -45,9 +45,68 @@
 #include "strong_int.hh"
 #include "logfile.hh"
 #include "bookmarks.hh"
+#include "chunky_index.hh"
 #include "textview_curses.hh"
 
 STRONG_INT_TYPE(uint64_t, content_line);
+
+class line_filter_observer : public logline_observer {
+public:
+    line_filter_observer(filter_stack &fs, logfile *lf)
+            : lfo_filter_stack(fs), lfo_filter_state(lf) {
+
+    };
+
+    void logline_restart(const logfile &lf) {
+        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
+             iter != this->lfo_filter_stack.end();
+             ++iter) {
+            (*iter)->revert_to_last(this->lfo_filter_state);
+        }
+    };
+
+    void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr) {
+        long offset = std::distance(lf.begin(), ll);
+
+        require(&lf == this->lfo_filter_state.tfs_logfile);
+
+        this->lfo_filter_state.resize(lf.size());
+        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
+             iter != this->lfo_filter_stack.end();
+             ++iter) {
+            if (offset >= this->lfo_filter_state.tfs_filter_count[(*iter)->get_index()]) {
+                (*iter)->add_line(this->lfo_filter_state, ll, sbr);
+            }
+        }
+    };
+
+    void logline_eof(const logfile &lf) {
+        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
+             iter != this->lfo_filter_stack.end();
+             ++iter) {
+            (*iter)->end_of_message(this->lfo_filter_state);
+        }
+    };
+
+    bool excluded(uint32_t enabled_mask, size_t offset) const {
+        return (this->lfo_filter_state.tfs_mask[offset] & enabled_mask) != 0;
+    };
+
+    size_t get_min_count(size_t max) const {
+        size_t retval = max;
+
+        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
+             iter != this->lfo_filter_stack.end();
+             ++iter) {
+            retval = std::min(retval, this->lfo_filter_state.tfs_filter_count[(*iter)->get_index()]);
+        }
+
+        return retval;
+    };
+
+    filter_stack &lfo_filter_stack;
+    logfile_filter_state lfo_filter_state;
+};
 
 /**
  * Delegate class that merges the contents of multiple log files into a single
@@ -69,52 +128,10 @@ public:
     static bookmark_type_t BM_WARNINGS;
     static bookmark_type_t BM_FILES;
 
+    virtual void text_filters_changed();
+
     logfile_sub_source();
     virtual ~logfile_sub_source();
-
-    const filter_stack_t &get_filters(void) const
-    {
-        return this->lss_filters;
-    };
-
-    void add_filter(logfile_filter *filter) {
-        this->lss_filters.push_back(filter);
-        this->lss_filter_generation += 1;
-    };
-
-    void clear_filters(void) { 
-        this->lss_filters.clear(); 
-        this->lss_filter_generation += 1;
-    };
-
-    void filter_changed(void) {
-        this->lss_filter_generation += 1;
-    };
-
-    void set_filter_enabled(logfile_filter *filter, bool enabled) {
-        if (enabled) {
-            filter->enable();
-        }
-        else {
-            filter->disable();
-        }
-        this->lss_filter_generation += 1;
-    }
-
-    logfile_filter *get_filter(std::string id)
-    {
-        filter_stack_t::iterator iter;
-        logfile_filter *         retval = NULL;
-
-        for (iter = this->lss_filters.begin();
-             iter != this->lss_filters.end() && (*iter)->get_id() != id;
-             iter++) { }
-        if (iter != this->lss_filters.end()) {
-            retval = *iter;
-        }
-
-        return retval;
-    };
 
     void toggle_scrub(void) {
         this->lss_flags ^= F_SCRUB;
@@ -135,15 +152,26 @@ public:
     };
 
     bool is_time_offset_enabled(void) const {
-        return this->lss_flags & F_TIME_OFFSET;
+        return (bool) (this->lss_flags & F_TIME_OFFSET);
+    };
+
+    logline::level_t get_min_log_level(void) const {
+        return this->lss_min_log_level;
+    };
+
+    void set_min_log_level(logline::level_t level) {
+        if (this->lss_min_log_level != level) {
+            this->lss_min_log_level = level;
+            this->text_filters_changed();
+        }
     };
 
     size_t text_line_count()
     {
-        return this->lss_index.size();
+        return this->lss_filtered_index.size();
     };
 
-    bool empty() const { return this->lss_index.empty(); };
+    bool empty() const { return this->lss_filtered_index.empty(); };
 
     void text_value_for_line(textview_curses &tc,
                              int row,
@@ -208,7 +236,7 @@ public:
 
     bool insert_file(logfile *lf)
     {
-        std::vector<logfile_data>::iterator existing;
+        iterator existing;
 
         require(lf->size() < MAX_LINES_PER_FILE);
 
@@ -220,11 +248,10 @@ public:
                 return false;
             }
 
-            this->lss_files.push_back(logfile_data(lf));
-            this->lss_index.clear();
+            this->lss_files.push_back(new logfile_data(this->lss_files.size(), this->get_filters(), lf));
         }
         else {
-            existing->ld_file = lf;
+            (*existing)->set_file(lf);
         }
 
         return true;
@@ -232,7 +259,7 @@ public:
 
     void remove_file(logfile *lf)
     {
-        std::vector<logfile_data>::iterator iter;
+        iterator iter;
 
         iter = std::find_if(this->lss_files.begin(),
                             this->lss_files.end(),
@@ -241,7 +268,7 @@ public:
             bookmarks<content_line_t>::type::iterator mark_iter;
             int file_index = iter - this->lss_files.begin();
 
-            iter->clear();
+            (*iter)->clear();
             for (mark_iter = this->lss_user_marks.begin();
                  mark_iter != this->lss_user_marks.end();
                  ++mark_iter) {
@@ -291,7 +318,7 @@ public:
     {
         logfile *retval;
 
-        retval = this->lss_files[line / MAX_LINES_PER_FILE].ld_file;
+        retval = this->lss_files[line / MAX_LINES_PER_FILE]->get_file();
         line   = content_line_t(line % MAX_LINES_PER_FILE);
 
         return retval;
@@ -320,7 +347,7 @@ public:
     };
 
     content_line_t at(vis_line_t vl) {
-        return this->lss_index[vl];
+        return this->lss_index[this->lss_filtered_index[vl]];
     };
 
     content_line_t at_base(vis_line_t vl) {
@@ -338,16 +365,27 @@ public:
      * logfile have been indexed.
      */
     struct logfile_data {
-        logfile_data(logfile *lf = NULL)
-            : ld_file(lf),
-              ld_lines_indexed(0) { };
+        logfile_data(size_t index, filter_stack &fs, logfile *lf)
+            : ld_file_index(index),
+              ld_filter_state(fs, lf),
+              ld_lines_indexed(0) {
+            lf->set_logline_observer(&this->ld_filter_state);
+        };
 
         void     clear(void)
         {
-            this->ld_file = NULL;
+            this->ld_filter_state.lfo_filter_state.clear();
         };
 
-        logfile *ld_file;
+        void set_file(logfile *lf) {
+            this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
+            lf->set_logline_observer(&this->ld_filter_state);
+        };
+
+        logfile *get_file() const { return this->ld_filter_state.lfo_filter_state.tfs_logfile; };
+
+        size_t ld_file_index;
+        line_filter_observer ld_filter_state;
         size_t   ld_lines_indexed;
         struct {
             content_line_t ld_start;
@@ -355,7 +393,7 @@ public:
         } ld_indexing;
     };
 
-    typedef std::vector<logfile_data>::iterator iterator;
+    typedef std::vector<logfile_data *>::iterator iterator;
 
     iterator begin()
     {
@@ -365,6 +403,16 @@ public:
     iterator end()
     {
         return this->lss_files.end();
+    };
+
+    logfile_data *find_data(content_line_t line, uint64_t &offset_out)
+    {
+        logfile_data *retval;
+
+        retval = this->lss_files[line / MAX_LINES_PER_FILE];
+        offset_out = line % MAX_LINES_PER_FILE;
+
+        return retval;
     };
 
     content_line_t get_file_base_content_line(iterator iter) {
@@ -392,11 +440,15 @@ private:
     };
 
     struct __attribute__((__packed__)) indexed_content {
+        indexed_content() {
+
+        };
+
         indexed_content(content_line_t cl) : ic_value(cl) {
 
         };
 
-        operator content_line_t () {
+        operator content_line_t () const {
             return content_line_t(this->ic_value);
         };
 
@@ -406,13 +458,14 @@ private:
     struct logline_cmp {
         logline_cmp(logfile_sub_source & lc)
             : llss_controller(lc) { };
-        bool operator()(const content_line_t &lhs, const content_line_t &rhs)
+        bool operator()(const content_line_t &lhs, const content_line_t &rhs) const
         {
             logline *ll_lhs = this->llss_controller.find_line(lhs);
             logline *ll_rhs = this->llss_controller.find_line(rhs);
 
             return (*ll_lhs) < (*ll_rhs);
         };
+
 #if 0
         bool operator()(const indexed_content &lhs, const indexed_content &rhs)
         {
@@ -422,13 +475,13 @@ private:
             return (*ll_lhs) < (*ll_rhs);
         };
 #endif
-        bool operator()(const content_line_t &lhs, const time_t &rhs)
+        bool operator()(const content_line_t &lhs, const time_t &rhs) const
         {
             logline *ll_lhs = this->llss_controller.find_line(lhs);
 
             return *ll_lhs < rhs;
         };
-        bool operator()(const content_line_t &lhs, const struct timeval &rhs)
+        bool operator()(const content_line_t &lhs, const struct timeval &rhs) const
         {
             logline *ll_lhs = this->llss_controller.find_line(lhs);
 
@@ -444,9 +497,9 @@ private:
     struct logfile_data_eq {
         logfile_data_eq(logfile *lf) : lde_file(lf) { };
 
-        bool operator()(const logfile_data &ld)
+        bool operator()(const logfile_data *ld)
         {
-            return this->lde_file == ld.ld_file;
+            return this->lde_file == ld->get_file();
         }
 
         logfile *lde_file;
@@ -458,13 +511,12 @@ private:
     };
 
     unsigned long             lss_flags;
-    std::vector<logfile_data> lss_files;
+    std::vector<logfile_data *> lss_files;
 
-    filter_stack_t lss_filters;
-    uint8_t        lss_filter_generation;
     int            lss_filtered_count;
 
-    std::vector<indexed_content> lss_index;
+    chunky_index<indexed_content> lss_index;
+    std::vector<uint32_t> lss_filtered_index;
 
     bookmarks<content_line_t>::type lss_user_marks;
     std::map<content_line_t, bookmark_metadata> lss_user_mark_metadata;
@@ -477,5 +529,6 @@ private:
     int               lss_token_date_end;
     logfile::iterator lss_token_line;
     std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];
+    logline::level_t  lss_min_log_level;
 };
 #endif

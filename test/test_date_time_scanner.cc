@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
         struct timeval tv;
         struct exttm tm;
 
-        assert(dts.scan(BAD_TIMES[lpc], NULL, &tm, tv) == NULL);
+        assert(dts.scan(BAD_TIMES[lpc], strlen(BAD_TIMES[lpc]), NULL, &tm, tv) == NULL);
     }
 
     {
@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
         date_time_scanner dts;
 
         if (setlocale(LC_TIME, "es_ES.utf8") != NULL) {
-            assert(dts.scan(en_date, NULL, &en_tm, en_tv) != NULL);
-            assert(dts.scan(bg_date, NULL, &es_tm, es_tv) != NULL);
+            assert(dts.scan(en_date, strlen(en_date), NULL, &en_tm, en_tv) != NULL);
+            assert(dts.scan(bg_date, strlen(bg_date), NULL, &es_tm, es_tv) != NULL);
         }
     }
 }

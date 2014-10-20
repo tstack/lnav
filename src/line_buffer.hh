@@ -126,7 +126,7 @@ public:
         bool include_delim = false)
         throw (error);
 
-    bool read_line(off_t &offset_inout, shared_buffer_ref &sbr)
+    bool read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_value *lv = NULL)
         throw (error);
 
     bool read_range(off_t offset, size_t len, shared_buffer_ref &sbr)

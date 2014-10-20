@@ -272,6 +272,7 @@ const char *std_time_fmt[] = {
 };
 
 const char *date_time_scanner::scan(const char *time_dest,
+                                    size_t time_len,
                                     const char *time_fmt[],
                                     struct exttm *tm_out,
                                     struct timeval &tv_out)
@@ -320,7 +321,7 @@ const char *date_time_scanner::scan(const char *time_dest,
 #ifdef HAVE_STRUCT_TM_TM_ZONE
             tm_out->et_tm.tm_zone = NULL;
 #endif
-            if (func(tm_out, time_dest, off, strlen(time_dest))) {
+            if (func(tm_out, time_dest, off, time_len)) {
                 retval = &time_dest[off];
 
                 if (tm_out->et_tm.tm_year < 70) {
@@ -395,19 +396,16 @@ const char *date_time_scanner::scan(const char *time_dest,
     if (retval != NULL) {
         /* Try to pull out the milli/micro-second value. */
         if (retval[0] == '.' || retval[0] == ',') {
-            int sub_seconds = 0, sub_len = 0;
+            off_t off = (retval - time_dest) + 1;
+            int sub_seconds = 0;
 
-            if (sscanf(retval + 1, "%d%n", &sub_seconds, &sub_len) == 1) {
-                switch (sub_len) {
-                case 3:
-                    tv_out.tv_usec = sub_seconds * 1000;
-                    this->dts_fmt_len += 1 + sub_len;
-                    break;
-                case 6:
-                    tv_out.tv_usec = sub_seconds;
-                    this->dts_fmt_len += 1 + sub_len;
-                    break;
-                }
+            if (ptime_f(sub_seconds, time_dest, off, time_len)) {
+                tv_out.tv_usec = sub_seconds;
+                this->dts_fmt_len += 7;
+            }
+            else if (ptime_F(sub_seconds, time_dest, off, time_len)) {
+                tv_out.tv_usec = sub_seconds * 1000;
+                this->dts_fmt_len += 4;
             }
         }
     }

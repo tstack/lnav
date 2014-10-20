@@ -34,7 +34,7 @@
 
 // XXX
 #include <stdio.h>
-
+#include <stdlib.h>
 #include <ctype.h>
 #include <time.h>
 #include <sys/types.h>
@@ -361,6 +361,7 @@ inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, size_t
             }
             return true;
         }
+        return false;
     });
 
     return true;
@@ -390,9 +391,41 @@ inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, size_t
         mins = (
             (str[off_inout + 2] - '0') *   10 +
             (str[off_inout + 3] - '0') *    1) * 60;
-        dst->et_tm.tm_gmtoff = hours + mins;
+        dst->et_tm.tm_gmtoff = sign * (hours + mins);
     });
 #endif
+
+    return true;
+}
+
+inline bool ptime_f(int &sub_seconds, const char *str, off_t &off_inout, size_t len)
+{
+    PTIME_CONSUME(6, {
+        for (int lpc = 0; lpc < 6; lpc++) {
+            if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
+                return false;
+            }
+        }
+        sub_seconds = (
+                (str[off_inout + 0] - '0') * 100000 +
+                (str[off_inout + 1] - '0') *  10000 +
+                (str[off_inout + 2] - '0') *   1000 +
+                (str[off_inout + 3] - '0') *    100 +
+                (str[off_inout + 4] - '0') *     10 +
+                (str[off_inout + 5] - '0') *      1);
+    });
+
+    return true;
+}
+
+inline bool ptime_F(int &sub_seconds, const char *str, off_t &off_inout, size_t len)
+{
+    PTIME_CONSUME(3, {
+        sub_seconds = (
+                        (str[off_inout + 0] - '0') * 100 +
+                        (str[off_inout + 1] - '0') *  10 +
+                        (str[off_inout + 2] - '0') *   1);
+    });
 
     return true;
 }

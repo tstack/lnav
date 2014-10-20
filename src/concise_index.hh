@@ -85,7 +85,9 @@ public:
         }
 
         if (this->ci_literal_size == LITERAL_SIZE) {
-            this->ensure_size(this->ci_map_size + 1);
+            if (!this->ensure_size(this->ci_map_size + 1)) {
+                return false;
+            }
             this->ci_literal_size = 0;
         }
 
@@ -101,6 +103,25 @@ public:
         ensure(this->ci_literal_size <= LITERAL_SIZE);
 
         return true;
+    };
+
+    void pop_back() {
+        uint64_t &lit_or_rle_word = this->get_last_word();
+
+        this->ci_size -= 1;
+        if (this->is_rle(lit_or_rle_word)) {
+            this->dec_run_length(lit_or_rle_word);
+            if (this->run_length(lit_or_rle_word) == 0) {
+                lit_or_rle_word = 0;
+                this->ci_literal_size = 0;
+            }
+            return;
+        }
+
+        this->ci_literal_size -= 1;
+        if (this->ci_literal_size == 0 && this->ci_map_size > 1) {
+            this->ci_map_size -= 1;
+        }
     };
 
     bool push_back_word(uint64_t v, uint64_t len = BITS_PER_WORD) {
@@ -380,6 +401,10 @@ public:
 
     void inc_run_length(uint64_t &v, uint64_t len = 1) const {
         v += len;
+    };
+
+    void dec_run_length(uint64_t &v, uint64_t len = 1) const {
+        v -= len;
     };
 
     bool have_run_length_available(uint64_t v, uint64_t len = 1) const {

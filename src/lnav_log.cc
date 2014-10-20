@@ -60,6 +60,9 @@
 #  include <ncurses/termcap.h>
 #elif defined HAVE_NCURSES_H
 #  include <termcap.h>
+#include <Tcl/tcl.h>
+#include <sys/param.h>
+
 #elif defined HAVE_CURSES_H
 #  include <termcap.h>
 #else
@@ -149,6 +152,7 @@ void log_argv(int argc, char *argv[])
 
 void log_host_info(void)
 {
+    char cwd[MAXPATHLEN];
     struct utsname un;
 
     uname(&un);
@@ -159,7 +163,21 @@ void log_host_info(void)
     log_info("  release=%s", un.release);
     log_info("  version=%s", un.version);
     log_info("Environment:");
+    log_info("  HOME=%s", getenv("HOME"));
+    log_info("  LANG=%s", getenv("LANG"));
+    log_info("  PATH=%s", getenv("PATH"));
     log_info("  TERM=%s", getenv("TERM"));
+    log_info("  TZ=%s", getenv("TZ"));
+    log_info("Process:")
+    log_info("  pid=%d", getpid());
+    log_info("  ppid=%d", getppid());
+    log_info("  pgrp=%d", getpgrp());
+    log_info("  uid=%d", getuid());
+    log_info("  gid=%d", getgid());
+    log_info("  euid=%d", geteuid());
+    log_info("  egid=%d", getegid());
+    getcwd(cwd, sizeof(cwd));
+    log_info("  cwd=%s", cwd);
 }
 
 void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
@@ -167,10 +185,10 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
 {
     struct timeval curr_time;
     struct tm localtm;
-    size_t prefix_size;
+    ssize_t prefix_size;
     va_list args;
     char *line;
-    int rc;
+    ssize_t rc;
 
     if (level < lnav_log_level) {
         return;

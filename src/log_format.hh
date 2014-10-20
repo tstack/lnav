@@ -53,49 +53,6 @@
 #include "view_curses.hh"
 #include "shared_buffer.hh"
 
-class logline;
-
-class logfile_filter {
-public:
-    typedef enum {
-        MAYBE,
-        INCLUDE,
-        EXCLUDE,
-
-        LFT__MAX,
-
-        LFT__MASK = (MAYBE|INCLUDE|EXCLUDE)
-    } type_t;
-
-    logfile_filter(type_t type, const std::string id)
-        : lf_enabled(true),
-          lf_type(type),
-          lf_id(id) { };
-    virtual ~logfile_filter() { };
-
-    type_t get_type(void) const { return this->lf_type; };
-    std::string get_id(void) const { return this->lf_id; };
-
-    bool is_enabled(void) { return this->lf_enabled; };
-    void enable(void) { this->lf_enabled = true; };
-    void disable(void) { this->lf_enabled = false; };
-
-    virtual bool matches(const logline &ll, const std::string &line) = 0;
-
-    virtual std::string to_command(void) = 0;
-
-    bool operator==(const std::string &rhs) {
-        return this->lf_id == rhs;
-    };
-
-protected:
-    bool        lf_enabled;
-    type_t      lf_type;
-    std::string lf_id;
-};
-
-typedef std::vector<logfile_filter *> filter_stack_t;
-
 /**
  * Metadata for a single line in a log file.
  */
@@ -130,12 +87,12 @@ public:
 
     static const char *level_names[LEVEL__MAX + 1];
 
-    static level_t string2level(const char *levelstr, size_t len = -1, bool exact = false);
+    static level_t string2level(const char *levelstr, ssize_t len = -1, bool exact = false);
 
-    static level_t abbrev2level(const char *levelstr, size_t len = -1);
+    static level_t abbrev2level(const char *levelstr, ssize_t len = -1);
 
-    static int levelcmp(const char *l1, size_t l1_len,
-        const char *l2, size_t l2_len);
+    static int levelcmp(const char *l1, ssize_t l1_len,
+        const char *l2, ssize_t l2_len);
 
     /**
      * Construct a logline object with the given values.
@@ -153,7 +110,6 @@ public:
           ll_time(t),
           ll_millis(millis),
           ll_level(l),
-          ll_filter_state(logfile_filter::MAYBE),
           ll_sub_offset(0)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
@@ -165,7 +121,6 @@ public:
             uint8_t m = 0)
         : ll_offset(off),
           ll_level(l),
-          ll_filter_state(logfile_filter::MAYBE),
           ll_sub_offset(0)
     {
         this->set_time(tv);
@@ -221,6 +176,10 @@ public:
     /** @return The logging level. */
     level_t get_level() const { return (level_t)(this->ll_level & 0xff); };
 
+    level_t get_msg_level() const {
+        return (level_t)(this->ll_level & ~LEVEL__FLAGS);
+    };
+
     const char *get_level_name() const
     {
         return level_names[this->ll_level & 0x0f];
@@ -228,19 +187,6 @@ public:
 
     bool is_continued(void) const {
         return this->get_level() & LEVEL_CONTINUED;
-    };
-
-    uint8_t get_filter_generation(void) const {
-        return this->ll_filter_state >> 2;
-    };
-
-    logfile_filter::type_t get_filter_state(void) const {
-        return (logfile_filter::type_t)(this->ll_filter_state &
-                                        logfile_filter::LFT__MASK);
-    };
-
-    void set_filter_state(uint8_t generation, logfile_filter::type_t filter) {
-        this->ll_filter_state = (generation << 2) | filter;
     };
 
     /**
@@ -302,7 +248,6 @@ private:
     time_t   ll_time;
     uint16_t ll_millis;
     uint8_t  ll_level;
-    uint8_t  ll_filter_state;
     uint16_t ll_sub_offset;
     char     ll_schema[4];
 };
@@ -588,8 +533,7 @@ public:
      */
     virtual bool scan(std::vector<logline> &dst,
                       off_t offset,
-                      char *prefix,
-                      int len) = 0;
+                      shared_buffer_ref &sbr) = 0;
 
     /**
      * Remove redundant data from the log line string.
@@ -638,11 +582,17 @@ public:
 protected:
     static std::vector<log_format *> lf_root_formats;
 
+    struct pcre_format {
+        const char *name;
+        pcrepp pcre;
+    };
+
+    static bool next_format(pcre_format *fmt, int &index, int &locked_index);
+
     const char *log_scanf(const char *line,
-                          const char *fmt[],
-                          int expected_matches,
+                          size_t len,
+                          pcre_format *fmt,
                           const char *time_fmt[],
-                          char *time_dest,
                           struct exttm *tm_out,
                           struct timeval &tv_out,
                           ...);
@@ -727,8 +677,7 @@ public:
 
     bool scan(std::vector<logline> &dst,
               off_t offset,
-              char *prefix,
-              int len);
+              shared_buffer_ref &sbr);
     
     void annotate(shared_buffer_ref &line,
                   string_attrs_t &sa,

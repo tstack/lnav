@@ -21,12 +21,15 @@ int main(int argc, char *argv[])
 
     {
         chunky_index<int> ci;
+        off_t off;
 
         ci.reset();
-        ci.merge_value(1);
+        off = ci.merge_value(1);
+        assert(off == 0);
         ci.finish();
         ci.reset();
-        ci.merge_value(2);
+        off = ci.merge_value(2);
+        assert(off == 1);
         ci.finish();
 
         assert(ci.size() == 2);
@@ -42,6 +45,7 @@ int main(int argc, char *argv[])
     {
         int expected[] = {0, 10, 11, 20, 30, 40, 50, 60, 70, 80, 90, 100};
         chunky_index<int, 4> ci;
+        off_t off;
 
         ci.reset();
         for (int lpc = 0; lpc < 11; lpc++) {
@@ -49,7 +53,8 @@ int main(int argc, char *argv[])
         }
         ci.finish();
         ci.reset();
-        ci.merge_value(11);
+        off = ci.merge_value(11);
+        assert(off == 2);
         ci.finish();
         for (int lpc = 0; lpc < 12; lpc++) {
             assert(expected[lpc] == ci[lpc]);

@@ -36,9 +36,22 @@
 #include "lnav_util.hh"
 #include "data_parser.hh"
 #include "ansi_scrubber.hh"
+#include "log_format.hh"
 #include "textview_curses.hh"
 
 using namespace std;
+
+void text_filter::add_line(
+        logfile_filter_state &lfs, logfile::const_iterator ll, shared_buffer_ref &line) {
+    bool match_state = this->matches(*lfs.tfs_logfile, *ll, line);
+
+    if (!ll->is_continued()) {
+        this->end_of_message(lfs);
+    }
+
+    this->lf_message_matched = this->lf_message_matched || match_state;
+    this->lf_lines_for_message += 1;
+}
 
 bookmark_type_t textview_curses::BM_USER;
 bookmark_type_t textview_curses::BM_PARTITION;

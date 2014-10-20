@@ -96,5 +96,5 @@ set(diag_STAT_SRCS
 
 set(lnav_SRCS lnav.cc)
 
-include_directories(../../lbuild/src)
+include_directories(../../lbuild/src /opt/local/include)
 add_executable(lnav ${lnav_SRCS} ${diag_STAT_SRCS})

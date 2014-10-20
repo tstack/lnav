@@ -429,7 +429,7 @@ public:
     };
 
     /** This method should be called when the data source has changed. */
-    void reload_data(void);
+    virtual void reload_data(void);
 
     /**
      * @param ch The input to be handled.

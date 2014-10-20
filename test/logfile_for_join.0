@@ -1,0 +1,10 @@
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: New relevant interface eth0.IPv4 for mDNS.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Registering new address record for 10.1.10.103 on eth0.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Withdrawing address record for 10.1.10.103 on eth0.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: iface.c: interface_mdns_mcast_join() called but no local address available.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Interface eth0.IPv4 no longer relevant for mDNS.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: New relevant interface eth0.IPv4 for mDNS.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Registering new address record for 10.1.10.103 on eth0.

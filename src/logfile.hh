@@ -48,6 +48,7 @@
 #include "shared_buffer.hh"
 
 class logfile;
+class logline_observer;
 
 /**
  * Observer interface for logfile indexing progress.
@@ -181,12 +182,12 @@ public:
     const_iterator end() const { return this->lf_index.end(); }
 
     /** @return The number of lines in the index. */
-    size_t size() { return this->lf_index.size(); }
+    size_t size() const { return this->lf_index.size(); }
 
     logline &operator[](int index) { return this->lf_index[index]; };
 
     /** @return True if this log file still exists. */
-    bool exists() const;
+    bool exists(void) const;
 
     void close() {
         this->lf_is_closed = true;
@@ -278,25 +279,9 @@ public:
     bool rebuild_index(logfile_observer *lo = NULL)
         throw (line_buffer::error, logfile::error);
 
-    /**
-     * Check a line to see if it should be filtered out or not.
-     *
-     * XXX This code doesn't really belong here, it's something more
-     * approprtiate for the logfile_sub_source.  The reason it is here right
-     * now is because we cache the result of the check in the logline object.
-     * 
-     * @param  ll         The log line to check.
-     * @param  generation The "generation" that the given filters belong to.
-     *                    If the cached value for this check is from the same
-     *                    filter generation, then we just return the cached
-     *                    value.
-     * @param  filters    The filters to apply.
-     * @return            Whether or not the line should be included in the
-     *                    view.
-     */
-    logfile_filter::type_t check_filter(iterator ll,
-                                        uint8_t generation,
-                                        const filter_stack_t &filters);
+    void reobserve_from(iterator iter);
+
+    void set_logline_observer(logline_observer *llo);
 
     bool operator<(const logfile &rhs) const
     {
@@ -332,7 +317,7 @@ protected:
      * @param prefix The contents of the line.
      * @param len The length of the 'prefix' string.
      */
-    void process_prefix(off_t offset, char *prefix, int len);
+    void process_prefix(off_t offset, shared_buffer_ref &sbr);
 
     void set_format_base_time(log_format *lf);
 
@@ -349,5 +334,18 @@ protected:
     struct timeval lf_time_offset;
     bool lf_is_closed;
     bool lf_partial_line;
+    logline_observer *lf_logline_observer;
 };
+
+class logline_observer {
+public:
+    virtual ~logline_observer() { };
+
+    virtual void logline_restart(const logfile &lf) = 0;
+
+    virtual void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr) = 0;
+
+    virtual void logline_eof(const logfile &lf) = 0;
+};
+
 #endif

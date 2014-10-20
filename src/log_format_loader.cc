@@ -73,6 +73,7 @@ static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str
     string regex_name = ypc->get_path_fragment(2);
     string value = string((const char *)str, len);
 
+    log_debug("regex: %s", value.c_str());
     elf->elf_patterns[regex_name].p_string = value;
 
     return 1;

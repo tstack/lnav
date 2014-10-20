@@ -108,7 +108,7 @@ static string com_adjust_log_time(string cmdline, vector<string> &args)
 
         dts.set_base_time(top_time.tv_sec);
         args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
-        if (dts.scan(args[1].c_str(), NULL, &tm, new_time) != NULL) {
+        if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
             timersub(&new_time, &top_time, &time_diff);
             
             lf->adjust_content_time(top_content, time_diff, false);
@@ -184,7 +184,7 @@ static string com_current_time(string cmdline, vector<string> &args)
     struct tm localtm;
     string    retval;
     time_t    u_time;
-    int       len;
+    size_t    len;
 
     memset(&localtm, 0, sizeof(localtm));
     u_time = time(NULL);
@@ -215,7 +215,7 @@ static string com_goto(string cmdline, vector<string> &args)
         struct exttm tm;
         float value;
 
-        if (dts.scan(args[1].c_str(), NULL, &tm, tv) != NULL) {
+        if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, tv) != NULL) {
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
                 vis_line_t vl;
 
@@ -544,24 +544,24 @@ static string com_help(string cmdline, vector<string> &args)
 }
 
 class pcre_filter
-    : public logfile_filter {
+    : public text_filter {
 public:
-    pcre_filter(type_t type, const string id, pcre *code)
-        : logfile_filter(type, id),
+    pcre_filter(type_t type, const string id, size_t index, pcre *code)
+        : text_filter(type, id, index),
           pf_pcre(code) { };
     virtual ~pcre_filter() { };
 
-    bool matches(const logline &ll, const string &line)
+    bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line)
     {
         pcre_context_static<30> pc;
-        pcre_input pi(line);
+        pcre_input pi(line.get_data(), 0, line.length());
 
         return this->pf_pcre.match(pc, pi);
     };
 
     std::string to_command(void)
     {
-        return (this->lf_type == logfile_filter::INCLUDE ?
+        return (this->lf_type == text_filter::INCLUDE ?
                 "filter-in " : "filter-out ") +
                this->lf_id;
     };
@@ -578,13 +578,15 @@ static string com_filter(string cmdline, vector<string> &args)
         args.push_back("filter");
     }
     else if (args.size() > 1) {
-        logfile_sub_source &lss = lnav_data.ld_log_source;
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        text_sub_source *tss = tc->get_sub_source();
+        filter_stack &fs = tss->get_filters();
         const char *errptr;
         pcre *      code;
         int         eoff;
 
         args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
-        if (lss.get_filter(args[1]) != NULL) {
+        if (fs.get_filter(args[1]) != NULL) {
             retval = "error: filter already exists";
         }
         else if ((code = pcre_compile(args[1].c_str(),
@@ -595,12 +597,13 @@ static string com_filter(string cmdline, vector<string> &args)
             retval = "error: " + string(errptr);
         }
         else {
-            logfile_filter::type_t lt  = (args[0] == "filter-out") ?
-                                         logfile_filter::EXCLUDE :
-                                         logfile_filter::INCLUDE;
-            auto_ptr<pcre_filter> pf(new pcre_filter(lt, args[1], code));
+            text_filter::type_t lt  = (args[0] == "filter-out") ?
+                                         text_filter::EXCLUDE :
+                                         text_filter::INCLUDE;
+            auto_ptr<pcre_filter> pf(new pcre_filter(lt, args[1], fs.next_index(), code));
 
-            lss.add_filter(pf.release());
+            fs.add_filter(pf.release());
+            tss->text_filters_changed();
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->add_possibility(
                     LNM_COMMAND, "enabled-filter", args[1]);
@@ -622,10 +625,13 @@ static string com_enable_filter(string cmdline, vector<string> &args)
         args.push_back("disabled-filter");
     }
     else if (args.size() > 1) {
-        logfile_filter *lf;
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        text_sub_source *tss = tc->get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        text_filter *lf;
 
         args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
-        lf      = lnav_data.ld_log_source.get_filter(args[1]);
+        lf      = fs.get_filter(args[1]);
         if (lf == NULL) {
             retval = "error: no such filter -- " + args[1];
         }
@@ -633,7 +639,8 @@ static string com_enable_filter(string cmdline, vector<string> &args)
             retval = "info: filter already enabled";
         }
         else {
-            lnav_data.ld_log_source.set_filter_enabled(lf, true);
+            fs.set_filter_enabled(lf, true);
+            tss->text_filters_changed();
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->rem_possibility(
                     LNM_COMMAND, "disabled-filter", args[1]);
@@ -656,10 +663,13 @@ static string com_disable_filter(string cmdline, vector<string> &args)
         args.push_back("enabled-filter");
     }
     else if (args.size() > 1) {
-        logfile_filter *lf;
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        text_sub_source *tss = tc->get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        text_filter *lf;
 
         args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
-        lf      = lnav_data.ld_log_source.get_filter(args[1]);
+        lf      = fs.get_filter(args[1]);
         if (lf == NULL) {
             retval = "error: no such filter -- " + args[1];
         }
@@ -667,7 +677,8 @@ static string com_disable_filter(string cmdline, vector<string> &args)
             retval = "info: filter already disabled";
         }
         else {
-            lnav_data.ld_log_source.set_filter_enabled(lf, false);
+            fs.set_filter_enabled(lf, false);
+            tss->text_filters_changed();
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->rem_possibility(
                     LNM_COMMAND, "disabled-filter", args[1]);
@@ -1370,16 +1381,13 @@ static string com_set_min_log_level(string cmdline, vector<string> &args)
         args.push_back("levelname");
     }
     else if (args.size() == 2) {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
         logline::level_t new_level;
 
         new_level = logline::string2level(
             args[1].c_str(), args[1].size(), true);
-        if (lnav_data.ld_level_filter.lf_min_level != new_level) {
-            lnav_data.ld_level_filter.lf_min_level = new_level;
-            lnav_data.ld_log_source.filter_changed();
-
-            rebuild_indexes(true);
-        }
+        lss.set_min_log_level(new_level);
+        rebuild_indexes(true);
 
         retval = ("info: minimum log level is now -- " +
             string(logline::level_names[new_level]));

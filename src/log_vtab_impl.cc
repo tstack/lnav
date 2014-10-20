@@ -144,6 +144,8 @@ static int vt_create(sqlite3 *db,
     /* Success. Set *pp_vt and return */
     *pp_vt = &p_vt->base;
 
+    log_debug("create %s -> %p", argv[3], p_vt);
+
     return rc;
 }
 
@@ -461,8 +463,10 @@ void log_cursor::update(unsigned char op, vis_line_t vl, bool exact)
 {
     switch (op) {
     case SQLITE_INDEX_CONSTRAINT_EQ:
-        this->lc_curr_line = vl;
-        this->lc_end_line = vis_line_t(this->lc_curr_line + 1);
+        if (vl < this->lc_end_line) {
+            this->lc_curr_line = vl;
+            this->lc_end_line = vis_line_t(this->lc_curr_line + 1);
+        }
         break;
     case SQLITE_INDEX_CONSTRAINT_GE:
         this->lc_curr_line = vl;
@@ -488,13 +492,13 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
     sqlite3_index_info::sqlite3_index_constraint *index = (
         sqlite3_index_info::sqlite3_index_constraint *)idxStr;
 
-    log_info("filter called: %d", idxNum);
+    log_info("(%p) filter called: %d", vt, idxNum);
+    p_cur->log_cursor.lc_curr_line = vis_line_t(0);
+    p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
     if (!idxNum) {
         return SQLITE_OK;
     }
 
-    p_cur->log_cursor.lc_curr_line = vis_line_t(0);
-    p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
     for (int lpc = 0; lpc < idxNum; lpc++) {
         switch (index[lpc].iColumn) {
         case VT_COL_LINE_NUMBER:
@@ -509,7 +513,7 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
             struct exttm mytm;
             vis_line_t vl;
 
-            dts.scan((const char *)datestr, NULL, &mytm, tv);
+            dts.scan((const char *)datestr, strlen((const char *)datestr), NULL, &mytm, tv);
             if ((vl = vt->lss->find_from_time(tv)) == -1) {
                 p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
             }
@@ -530,7 +534,7 @@ static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
     std::vector<sqlite3_index_info::sqlite3_index_constraint> indexes;
     int argvInUse = 0;
 
-    log_info("best index called: nConstraint=%d", p_info->nConstraint);
+    log_info("(%p) best index called: nConstraint=%d", tab, p_info->nConstraint);
     for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
         if (!p_info->aConstraint[lpc].usable ||
             p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH) {

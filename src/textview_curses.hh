@@ -38,8 +38,215 @@
 #include "bookmarks.hh"
 #include "listview_curses.hh"
 #include "lnav_log.hh"
+#include "concise_index.hh"
+#include "logfile.hh"
 
+class logfile;
+class logline;
 class textview_curses;
+
+class logfile_filter_state {
+public:
+    logfile_filter_state(logfile *lf = NULL) : tfs_logfile(lf) {
+        memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
+        this->tfs_mask.reserve(64 * 1024);
+    };
+
+    void clear(void) {
+        this->tfs_logfile = NULL;
+        memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
+        this->tfs_mask.clear();
+    };
+
+    void resize(size_t newsize) {
+        size_t old_mask_size = this->tfs_mask.size();
+
+        this->tfs_mask.resize(newsize);
+        memset(&this->tfs_mask[old_mask_size], 0, sizeof(uint32_t) * (newsize - old_mask_size));
+    };
+
+    const static int MAX_FILTERS = 32;
+
+    logfile *tfs_logfile;
+    size_t tfs_filter_count[MAX_FILTERS];
+    std::vector<uint32_t> tfs_mask;
+};
+
+class text_filter {
+public:
+    typedef enum {
+        MAYBE,
+        INCLUDE,
+        EXCLUDE,
+
+        LFT__MAX,
+
+        LFT__MASK = (MAYBE|INCLUDE|EXCLUDE)
+    } type_t;
+
+    text_filter(type_t type, const std::string id, size_t index)
+            : lf_message_matched(false),
+              lf_lines_for_message(0),
+              lf_enabled(true),
+              lf_type(type),
+              lf_id(id),
+              lf_index(index) { };
+    virtual ~text_filter() { };
+
+    type_t get_type(void) const { return this->lf_type; };
+    std::string get_id(void) const { return this->lf_id; };
+    size_t get_index(void) const { return this->lf_index; };
+
+    bool is_enabled(void) { return this->lf_enabled; };
+    void enable(void) { this->lf_enabled = true; };
+    void disable(void) { this->lf_enabled = false; };
+
+    void revert_to_last(logfile_filter_state &lfs) {
+        this->lf_message_matched = this->lf_last_message_matched;
+        this->lf_lines_for_message = this->lf_last_lines_for_message;
+
+        for (size_t lpc = 0; lpc < this->lf_lines_for_message; lpc++) {
+            lfs.tfs_filter_count[this->lf_index] -= 1;
+            size_t line_number = lfs.tfs_filter_count[this->lf_index];
+
+            lfs.tfs_mask[line_number] &= ~(((uint32_t) 1) << this->lf_index);
+        }
+    }
+
+    void add_line(logfile_filter_state &lfs, const logfile::const_iterator ll, shared_buffer_ref &line);
+
+    void end_of_message(logfile_filter_state &lfs) {
+        uint32_t mask = 0;
+
+        switch (this->get_type()) {
+            case INCLUDE:
+                if (!this->lf_message_matched) {
+                    mask = ((uint32_t) 1) << this->lf_index;
+                }
+                break;
+            case EXCLUDE:
+                if (this->lf_message_matched) {
+                    mask = ((uint32_t) 1) << this->lf_index;
+                }
+                break;
+            default:
+                break;
+        }
+
+        for (size_t lpc = 0; lpc < this->lf_lines_for_message; lpc++) {
+            size_t line_number = lfs.tfs_filter_count[this->lf_index];
+
+            lfs.tfs_mask[line_number] |= mask;
+            lfs.tfs_filter_count[this->lf_index] += 1;
+        }
+        this->lf_last_message_matched = this->lf_message_matched;
+        this->lf_last_lines_for_message = this->lf_lines_for_message;
+        this->lf_message_matched = false;
+        this->lf_lines_for_message = 0;
+    };
+
+    virtual bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) = 0;
+
+    virtual std::string to_command(void) = 0;
+
+    bool operator==(const std::string &rhs) {
+        return this->lf_id == rhs;
+    };
+
+    bool lf_message_matched;
+    size_t lf_lines_for_message;
+    bool lf_last_message_matched;
+    size_t lf_last_lines_for_message;
+
+protected:
+    bool        lf_enabled;
+    type_t      lf_type;
+    std::string lf_id;
+    size_t lf_index;
+};
+
+class filter_stack {
+public:
+    typedef std::vector<text_filter *>::iterator iterator;
+
+    iterator begin() {
+        return this->fs_filters.begin();
+    }
+
+    iterator end() {
+        return this->fs_filters.end();
+    }
+
+    size_t size() const {
+        return this->fs_filters.size();
+    }
+
+    size_t next_index() {
+        bool used[32];
+
+        memset(used, 0, sizeof(used));
+        for (iterator iter = this->begin(); iter != this->end(); ++iter) {
+            size_t index = (*iter)->get_index();
+
+            require(used[index] == false);
+
+            used[index] = true;
+        }
+        for (size_t lpc = 0; lpc < logfile_filter_state::MAX_FILTERS; lpc++) {
+            if (!used[lpc]) {
+                return lpc;
+            }
+        }
+        throw "No more filters";
+    };
+
+    void add_filter(text_filter *filter) {
+        this->fs_filters.push_back(filter);
+    };
+
+    void clear_filters(void) {
+        this->fs_filters.clear();
+    };
+
+    void set_filter_enabled(text_filter *filter, bool enabled) {
+        if (enabled) {
+            filter->enable();
+        }
+        else {
+            filter->disable();
+        }
+    }
+
+    text_filter *get_filter(std::string id)
+    {
+        std::vector<text_filter *>::iterator iter;
+        text_filter *         retval = NULL;
+
+        for (iter = this->fs_filters.begin();
+             iter != this->fs_filters.end() && (*iter)->get_id() != id;
+             iter++) { }
+        if (iter != this->fs_filters.end()) {
+            retval = *iter;
+        }
+
+        return retval;
+    };
+
+    uint32_t get_enabled_mask() {
+        uint32_t retval = 0;
+
+        for (iterator iter = this->begin(); iter != this->end(); ++iter) {
+            if ((*iter)->is_enabled()) {
+                retval |= (1L << (*iter)->get_index());
+            }
+        }
+
+        return retval;
+    };
+
+private:
+    std::vector<text_filter *> fs_filters;
+};
 
 /**
  * Source for the text to be shown in a textview_curses view.
@@ -116,6 +323,17 @@ public:
     virtual std::string text_source_name(const textview_curses &tv) {
         return "";
     };
+
+    filter_stack &get_filters() {
+        return this->tss_filters;
+    };
+
+    virtual void text_filters_changed() {
+
+    };
+
+private:
+    filter_stack tss_filters;
 };
 
 class text_delegate {
