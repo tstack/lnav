@@ -51,6 +51,7 @@
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <sys/param.h>
 
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/termcap.h>
@@ -60,9 +61,6 @@
 #  include <ncurses/termcap.h>
 #elif defined HAVE_NCURSES_H
 #  include <termcap.h>
-#include <Tcl/tcl.h>
-#include <sys/param.h>
-
 #elif defined HAVE_CURSES_H
 #  include <termcap.h>
 #else
