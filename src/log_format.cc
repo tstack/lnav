@@ -966,7 +966,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
                         line_len = nl_pos - curr_pos;
                     }
                     else {
-                        line_len = str.size();
+                        line_len = str.size() - curr_pos;
                     }
                     this->json_append_to_cache("  ", 2);
                     this->json_append_to_cache(lv.lv_name.get(),
