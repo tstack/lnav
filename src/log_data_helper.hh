@@ -160,12 +160,12 @@ public:
                           '\n');
     };
 
-    std::string format_json_getter(std::string field, int index) {
+    std::string format_json_getter(const intern_string_t field, int index) {
         auto_mem<char, sqlite3_free> qname;
         auto_mem<char, sqlite3_free> jget;
         std::string retval;
 
-        qname = sql_quote_ident(field.c_str());
+        qname = sql_quote_ident(field.get());
         jget = sqlite3_mprintf("jget(%s,%Q)", qname.in(),
             this->ldh_json_pairs[field][index].first.c_str());
         retval = std::string(jget);
@@ -184,7 +184,7 @@ public:
     std::auto_ptr<data_parser> ldh_parser;
     std::auto_ptr<column_namer> ldh_namer;
     std::vector<logline_value> ldh_line_values;
-    std::map<std::string, json_ptr_walk::pair_list_t> ldh_json_pairs;
+    std::map<const intern_string_t, json_ptr_walk::pair_list_t> ldh_json_pairs;
 };
 
 #endif

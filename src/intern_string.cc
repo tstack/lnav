@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2014, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,55 +26,60 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file sql_util.hh
+ * @file intern_string.cc
  */
 
-#ifndef _sql_util_hh
-#define _sql_util_hh
+#include "config.h"
 
-#include <time.h>
-#include <sys/time.h>
+#include <string.h>
 
-#include <sqlite3.h>
+#include "intern_string.hh"
 
-#include <map>
-#include <string>
-#include <vector>
+const static int TABLE_SIZE = 4095;
+static intern_string *TABLE[TABLE_SIZE];
 
-extern const char *sql_keywords[];
-extern const char *sql_function_names[];
-
-typedef int (*sqlite_exec_callback)(void *, int, char **, char **);
-typedef std::vector<std::string>               db_table_list_t;
-typedef std::map<std::string, db_table_list_t> db_table_map_t;
-
-struct sqlite_metadata_callbacks {
-    sqlite_exec_callback smc_collation_list;
-    sqlite_exec_callback smc_database_list;
-    sqlite_exec_callback smc_table_list;
-    sqlite_exec_callback smc_table_info;
-    sqlite_exec_callback smc_foreign_key_list;
-    void *smc_userdata;
-    db_table_map_t       smc_db_list;
-};
-
-int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc);
-
-void dump_sqlite_schema(sqlite3 *db, std::string &schema_out);
-
-void attach_sqlite_db(sqlite3 *db, const std::string &filename);
-
-ssize_t sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
-    char sep = ' ');
-
-inline ssize_t sql_strftime(char *buffer, size_t buffer_size,
-                            const struct timeval &tv, char sep = ' ')
+unsigned long
+hash_str(const char *str, size_t len)
 {
-    return sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec / 1000, sep);
+    unsigned long retval = 5381;
+
+    for (size_t lpc = 0; lpc < len; lpc++) {
+        /* retval * 33 + c */
+        retval = ((retval << 5) + retval) + (unsigned char)str[lpc];
+    }
+
+    return retval;
 }
 
-void sql_install_logger(void);
+const intern_string *intern_string::lookup(const char *str, ssize_t len)
+{
+    unsigned long h;
+    intern_string *curr;
 
-char *sql_quote_ident(const char *ident);
+    if (len == -1) {
+        len = strlen(str);
+    }
+    h = hash_str(str, len) % TABLE_SIZE;
 
-#endif
+    curr = TABLE[h];
+    while (curr != NULL) {
+        if (curr->is_len == len && strncmp(curr->is_str, str, len) == 0) {
+            return curr;
+        }
+        curr = curr->is_next;
+    }
+
+    char *strcp = new char[len + 1];
+    memcpy(strcp, str, len);
+    strcp[len] = '\0';
+    curr = new intern_string(strcp, len);
+    curr->is_next = TABLE[h];
+    TABLE[h] = curr;
+
+    return curr;
+}
+
+const intern_string *intern_string::lookup(const std::string &str)
+{
+    return lookup(str.c_str(), str.size());
+}

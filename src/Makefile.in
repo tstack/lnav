@@ -113,8 +113,9 @@ am_libdiag_a_OBJECTS = ansi_scrubber.$(OBJEXT) bookmarks.$(OBJEXT) \
 	collation-functions.$(OBJEXT) db_sub_source.$(OBJEXT) \
 	environ_vtab.$(OBJEXT) extension-functions.$(OBJEXT) \
 	fs-extension-functions.$(OBJEXT) grep_proc.$(OBJEXT) \
-	hist_source.$(OBJEXT) json-extension-functions.$(OBJEXT) \
-	json_op.$(OBJEXT) json_ptr.$(OBJEXT) line_buffer.$(OBJEXT) \
+	hist_source.$(OBJEXT) intern_string.$(OBJEXT) \
+	json-extension-functions.$(OBJEXT) json_op.$(OBJEXT) \
+	json_ptr.$(OBJEXT) line_buffer.$(OBJEXT) \
 	listview_curses.$(OBJEXT) lnav_commands.$(OBJEXT) \
 	lnav_config.$(OBJEXT) lnav_log.$(OBJEXT) lnav_util.$(OBJEXT) \
 	log_accel.$(OBJEXT) log_format.$(OBJEXT) \
@@ -418,6 +419,7 @@ noinst_HEADERS = \
 	hist_source.hh \
 	init.sql \
 	init-sql.hh \
+	intern_string.hh \
 	json_op.hh \
 	json_ptr.hh \
 	k_merge_tree.h \
@@ -486,6 +488,7 @@ libdiag_a_SOURCES = \
     fs-extension-functions.cc \
 	grep_proc.cc \
 	hist_source.cc \
+	intern_string.cc \
 	json-extension-functions.cc \
 	json_op.cc \
 	json_ptr.cc \
@@ -743,6 +746,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fs-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/grep_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hist_source.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intern_string.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json-extension-functions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_op.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/json_ptr.Po@am__quote@

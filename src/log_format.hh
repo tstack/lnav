@@ -51,6 +51,7 @@
 #include "lnav_util.hh"
 #include "byte_array.hh"
 #include "view_curses.hh"
+#include "intern_string.hh"
 #include "shared_buffer.hh"
 
 /**
@@ -297,23 +298,23 @@ public:
     static const char *value_names[VALUE__MAX];
     static kind_t string2kind(const char *kindstr);
 
-    logline_value(std::string name)
+    logline_value(const intern_string_t name)
         : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1) { };
-    logline_value(std::string name, bool b)
+    logline_value(const intern_string_t name, bool b)
         : lv_name(name),
           lv_kind(VALUE_BOOLEAN),
           lv_number((int64_t)(b ? 1 : 0)),
           lv_identifier(),
           lv_column(-1) { };
-    logline_value(std::string name, int64_t i)
+    logline_value(const intern_string_t name, int64_t i)
         : lv_name(name), lv_kind(VALUE_INTEGER), lv_number(i), lv_identifier(), lv_column(-1) { };
-    logline_value(std::string name, double i)
+    logline_value(const intern_string_t name, double i)
         : lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i), lv_identifier(), lv_column(-1) { };
-    logline_value(std::string name, shared_buffer_ref &sbr)
+    logline_value(const intern_string_t name, shared_buffer_ref &sbr)
         : lv_name(name), lv_kind(VALUE_TEXT), lv_sbr(sbr),
           lv_identifier(), lv_column(-1) {
     };
-    logline_value(std::string name, kind_t kind, shared_buffer_ref &sbr,
+    logline_value(const intern_string_t name, kind_t kind, shared_buffer_ref &sbr,
                   bool ident=false, const scaling_factor *scaling=NULL,
                   int col=-1, int start=-1, int end=-1)
         : lv_name(name), lv_kind(kind),
@@ -426,7 +427,7 @@ public:
         return std::string(buffer);
     };
 
-    std::string lv_name;
+    intern_string_t lv_name;
     kind_t      lv_kind;
     union value_u {
         int64_t i;
@@ -443,7 +444,7 @@ public:
 };
 
 struct logline_value_cmp {
-    logline_value_cmp(const std::string *name = NULL, int col = -1) 
+    logline_value_cmp(const intern_string_t *name = NULL, int col = -1)
         : lvc_name(name), lvc_column(col) {
 
     };
@@ -451,15 +452,17 @@ struct logline_value_cmp {
     bool operator()(const logline_value &lv) {
         bool retval = true;
 
-        if (this->lvc_name != NULL)
+        if (this->lvc_name != NULL) {
             retval = retval && ((*this->lvc_name) == lv.lv_name);
-        if (this->lvc_column != -1)
+        }
+        if (this->lvc_column != -1) {
             retval = retval && (this->lvc_column == lv.lv_column);
+        }
 
         return retval;
     };
 
-    const std::string *lvc_name;
+    const intern_string_t *lvc_name;
     int lvc_column;
 };
 
@@ -503,7 +506,8 @@ public:
         };
     };
 
-    log_format() : lf_fmt_lock(-1), lf_timestamp_field("timestamp") {
+    log_format() : lf_fmt_lock(-1),
+                   lf_timestamp_field(intern_string::lookup("timestamp", -1)) {
     };
     virtual ~log_format() { };
 
@@ -576,7 +580,7 @@ public:
 
     date_time_scanner lf_date_time;
     int lf_fmt_lock;
-    std::string lf_timestamp_field;
+    intern_string_t lf_timestamp_field;
     int lf_timestamp_field_index;
     std::map<std::string, action_def> lf_action_defs;
 protected:
@@ -618,13 +622,13 @@ public:
 
         };
 
-        std::string vd_name;
+        intern_string_t vd_name;
         int vd_index;
         logline_value::kind_t vd_kind;
         std::string vd_collate;
         bool vd_identifier;
         bool vd_foreign_key;
-        std::string vd_unit_field;
+        intern_string_t vd_unit_field;
         int vd_unit_field_index;
         std::map<std::string, scaling_factor> vd_unit_scaling;
         int vd_column;
@@ -657,7 +661,7 @@ public:
           elf_filename_pcre(NULL),
           elf_column_count(0),
           elf_timestamp_divisor(1.0),
-          elf_body_field("body"),
+          elf_body_field(intern_string::lookup("body", -1)),
           jlf_json(false),
           jlf_cached_offset(-1),
           elf_name(name) {
@@ -691,13 +695,25 @@ public:
 
         if (this->jlf_json) {
             this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name));
+            this->jlf_cached_line.reserve(1024 * 1024);
         }
         else if (this->lf_fmt_lock != -1) {
             pcrepp *pat = this->elf_pattern_order[this->lf_fmt_lock]->p_pcre;
 
-            retval->lf_timestamp_field_index = pat->name_index(this->lf_timestamp_field);
-            elf->elf_level_field_index = pat->name_index(elf->elf_level_field);
-            elf->elf_body_field_index = pat->name_index(elf->elf_body_field);
+            retval->lf_timestamp_field_index = pat->name_index(
+                    this->lf_timestamp_field.to_string());
+            if (this->elf_level_field.empty()) {
+                this->elf_level_field_index = -1;
+            }
+            else {
+                elf->elf_level_field_index = pat->name_index(elf->elf_level_field.to_string());
+            }
+            if (this->elf_body_field.empty()) {
+                this->elf_body_field_index = -1;
+            }
+            else {
+                elf->elf_body_field_index = pat->name_index(elf->elf_body_field.to_string());
+            }
         }
 
         return retval;
@@ -708,7 +724,7 @@ public:
     log_vtab_impl *get_vtab_impl(void) const;
 
     const std::vector<std::string> *get_actions(const logline_value &lv) const {
-        std::map<std::string, value_def>::const_iterator iter;
+        std::map<const intern_string_t, value_def>::const_iterator iter;
         const std::vector<std::string> *retval = NULL;
 
         iter = this->elf_value_defs.find(lv.lv_name);
@@ -729,12 +745,12 @@ public:
     std::map<std::string, pattern> elf_patterns;
     std::vector<pattern *> elf_pattern_order;
     std::vector<sample> elf_samples;
-    std::map<std::string, value_def> elf_value_defs;
+    std::map<const intern_string_t, value_def> elf_value_defs;
     int elf_column_count;
     double elf_timestamp_divisor;
-    std::string elf_level_field;
+    intern_string_t elf_level_field;
     int elf_level_field_index;
-    std::string elf_body_field;
+    intern_string_t elf_body_field;
     int elf_body_field_index;
     std::map<logline::level_t, level_pattern> elf_level_patterns;
 
@@ -749,9 +765,15 @@ public:
         { };
 
         json_log_field jfe_type;
-        std::string jfe_value;
+        intern_string_t jfe_value;
         std::string jfe_default_value;
         int jfe_min_width;
+    };
+
+    void json_append_to_cache(const char *value, size_t len) {
+        size_t old_size = this->jlf_cached_line.size();
+        this->jlf_cached_line.resize(old_size + len);
+        memcpy(&this->jlf_cached_line[old_size], value, len);
     };
 
     bool jlf_json;
@@ -761,7 +783,7 @@ public:
     off_t jlf_cached_offset;
     std::vector<off_t> jlf_line_offsets;
     shared_buffer jlf_share_manager;
-    std::string jlf_cached_line;
+    std::vector<char> jlf_cached_line;
     string_attrs_t jlf_line_attrs;
     std::auto_ptr<yajlpp_parse_context> jlf_parse_context;
 private:

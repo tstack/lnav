@@ -9,6 +9,7 @@ set(diag_STAT_SRCS
     fs-extension-functions.cc
     grep_proc.cc
     hist_source.cc
+    intern_string.cc
     json-extension-functions.cc
     json_op.cc
     json_ptr.cc
@@ -76,6 +77,7 @@ set(diag_STAT_SRCS
     grep_highlighter.hh
     help.hh
     init-sql.hh
+    intern_string.hh
     k_merge_tree.h
     log_data_helper.hh
     log_data_table.hh

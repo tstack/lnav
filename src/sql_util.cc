@@ -471,22 +471,41 @@ void attach_sqlite_db(sqlite3 *db, const std::string &filename)
     }
 }
 
-void sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
+ssize_t sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
     char sep)
 {
     struct tm gmtm;
+    int year, month, index = 0;
 
     gmtime_r(&time, &gmtm);
-    snprintf(buffer, buffer_size,
-             "%4d-%02d-%02d%c%02d:%02d:%02d.%03d",
-             gmtm.tm_year + 1900,
-             gmtm.tm_mon + 1,
-             gmtm.tm_mday,
-             sep,
-             gmtm.tm_hour,
-             gmtm.tm_min,
-             gmtm.tm_sec,
-             millis);
+    year = gmtm.tm_year + 1900;
+    month = gmtm.tm_mon + 1;
+    buffer[index++] = '0' + ((year / 1000) % 10);
+    buffer[index++] = '0' + ((year /  100) % 10);
+    buffer[index++] = '0' + ((year /   10) % 10);
+    buffer[index++] = '0' + ((year /    1) % 10);
+    buffer[index++] = '-';
+    buffer[index++] = '0' + ((month / 10) % 10);
+    buffer[index++] = '0' + ((month /  1) % 10);
+    buffer[index++] = '-';
+    buffer[index++] = '0' + ((gmtm.tm_mday / 10) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_mday /  1) % 10);
+    buffer[index++] = sep;
+    buffer[index++] = '0' + ((gmtm.tm_hour / 10) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_hour /  1) % 10);
+    buffer[index++] = ':';
+    buffer[index++] = '0' + ((gmtm.tm_min / 10) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_min /  1) % 10);
+    buffer[index++] = ':';
+    buffer[index++] = '0' + ((gmtm.tm_sec / 10) % 10);
+    buffer[index++] = '0' + ((gmtm.tm_sec /  1) % 10);
+    buffer[index++] = '.';
+    buffer[index++] = '0' + ((millis / 100) % 10);
+    buffer[index++] = '0' + ((millis /  10) % 10);
+    buffer[index++] = '0' + ((millis /   1) % 10);
+    buffer[index++] = '\0';
+
+    return index;
 }
 
 static void sqlite_logger(void *dummy, int code, const char *msg)

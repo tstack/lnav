@@ -39,6 +39,7 @@
 #include <string>
 
 #include "pcrepp.hh"
+#include "intern_string.hh"
 
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_gen.h"
@@ -152,8 +153,7 @@ public:
         memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
     };
 
-    std::string get_path_fragment(int offset) const
-    {
+    void get_path_fragment(int offset, const char **frag, size_t &len_out) const {
         size_t start, end;
 
         if (offset < 0) {
@@ -166,7 +166,29 @@ public:
         else{
             end = this->ypc_path.size() - 1;
         }
-        return std::string(&this->ypc_path[start], end - start);
+        *frag = &this->ypc_path[start];
+        len_out = end - start;
+    }
+
+    const intern_string_t get_path_fragment_i(int offset) const {
+        const char *frag;
+        size_t len;
+
+        this->get_path_fragment(offset, &frag, len);
+        return intern_string::lookup(frag, len);
+    };
+
+    std::string get_path_fragment(int offset) const
+    {
+        const char *frag;
+        size_t len;
+
+        this->get_path_fragment(offset, &frag, len);
+        return std::string(frag, len);
+    };
+
+    bool is_level(size_t level) const {
+        return this->ypc_path_index_stack.size() == level;
     };
 
     void reset(struct json_path_handler *handlers) {
@@ -177,6 +199,23 @@ public:
         this->ypc_array_index.clear();
         this->ypc_callbacks = DEFAULT_CALLBACKS;
         memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
+    }
+
+    void set_static_handler(struct json_path_handler &jph) {
+        this->ypc_path.clear();
+        this->ypc_path.push_back('\0');
+        this->ypc_path_index_stack.clear();
+        this->ypc_array_index.clear();
+        if (jph.jph_callbacks.yajl_null != NULL)
+            this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
+        if (jph.jph_callbacks.yajl_boolean != NULL)
+            this->ypc_callbacks.yajl_boolean = jph.jph_callbacks.yajl_boolean;
+        if (jph.jph_callbacks.yajl_integer != NULL)
+            this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
+        if (jph.jph_callbacks.yajl_double != NULL)
+            this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
+        if (jph.jph_callbacks.yajl_string != NULL)
+            this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
     }
 
     const std::string ypc_source;

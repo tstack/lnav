@@ -194,7 +194,7 @@ public:
                     pvalue.e_capture.length());
                 scan_value[line.length()] = '\0';
                 sscanf(scan_value, "%lf", &d);
-                values.push_back(logline_value("", d));
+                values.push_back(logline_value(intern_string::lookup("", 0), d));
             }
             break;
 
@@ -203,7 +203,7 @@ public:
 
                 value_sbr.subset(line,
                     pvalue.e_capture.c_begin, pvalue.e_capture.length());
-                values.push_back(logline_value("",
+                values.push_back(logline_value(intern_string::lookup("", 0),
                     logline_value::VALUE_TEXT, value_sbr));
                 break;
             }

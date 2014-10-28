@@ -425,7 +425,7 @@
         "url" : "http://en.wikipedia.org/wiki/Strace",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<syscall>\\w+)\\((?<args>.*)\\)\\s+=\\s+(?<rc>[-\\w]+)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
+                "pattern" : "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?<rc>[-\\w]+)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
             }
         },
         "level-field" : "errno",

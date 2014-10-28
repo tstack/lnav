@@ -137,11 +137,11 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
     if (field_name == "file-pattern")
         elf->elf_file_pattern = value;
     else if (field_name == "level-field")
-        elf->elf_level_field = value;
+        elf->elf_level_field = intern_string::lookup(value);
     else if (field_name == "timestamp-field")
-        elf->lf_timestamp_field = value;
+        elf->lf_timestamp_field = intern_string::lookup(value);
     else if (field_name == "body-field")
-        elf->elf_body_field = value;
+        elf->elf_body_field = intern_string::lookup(value);
 
     return 1;
 }
@@ -160,7 +160,7 @@ static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size
 static int read_value_def(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     external_log_format *elf = ensure_format(ypc);
-    string value_name = ypc->get_path_fragment(2);
+    const intern_string_t value_name = ypc->get_path_fragment_i(2);
     string field_name = ypc->get_path_fragment(3);
     string val = string((const char *)str, len);
 
@@ -176,7 +176,7 @@ static int read_value_def(yajlpp_parse_context *ypc, const unsigned char *str, s
         elf->elf_value_defs[value_name].vd_kind = kind;
     }
     else if (field_name == "unit" && ypc->get_path_fragment(4) == "field") {
-        elf->elf_value_defs[value_name].vd_unit_field = val;
+        elf->elf_value_defs[value_name].vd_unit_field = intern_string::lookup(val);
     }
     else if (field_name == "collate") {
         elf->elf_value_defs[value_name].vd_collate = val;
@@ -188,7 +188,7 @@ static int read_value_def(yajlpp_parse_context *ypc, const unsigned char *str, s
 static int read_value_action(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     external_log_format *elf = ensure_format(ypc);
-    string value_name = ypc->get_path_fragment(2);
+    const intern_string_t value_name = ypc->get_path_fragment_i(2);
     string field_name = ypc->get_path_fragment(3);
     string val = string((const char *)str, len);
 
@@ -200,7 +200,7 @@ static int read_value_action(yajlpp_parse_context *ypc, const unsigned char *str
 static int read_value_bool(yajlpp_parse_context *ypc, int val)
 {
     external_log_format *elf = ensure_format(ypc);
-    string value_name = ypc->get_path_fragment(2);
+    const intern_string_t value_name = ypc->get_path_fragment_i(2);
     string key_name = ypc->get_path_fragment(3);
 
     if (key_name == "identifier")
@@ -262,14 +262,14 @@ static external_log_format::sample &ensure_sample(external_log_format *elf,
 static int read_scaling(yajlpp_parse_context *ypc, double val)
 {
     external_log_format *elf = ensure_format(ypc);
-    string value_name = ypc->get_path_fragment(2);
+    const intern_string_t value_name = ypc->get_path_fragment_i(2);
     string scale_name = ypc->get_path_fragment(5);
 
     if (scale_name.empty()) {
         fprintf(stderr,
                 "error:%s:%s: scaling factor field cannot be empty\n",
                 ypc->get_path_fragment(0).c_str(),
-                value_name.c_str());
+                value_name.get());
         return 0;
     }
 
@@ -285,7 +285,7 @@ static int read_scaling(yajlpp_parse_context *ypc, double val)
         fprintf(stderr,
                 "error:%s:%s: scaling factor field must start with '/' or '*'\n",
                 ypc->get_path_fragment(0).c_str(),
-                value_name.c_str());
+                value_name.get());
         return 0;
     }
 
@@ -339,10 +339,12 @@ static int read_json_variable(yajlpp_parse_context *ypc, const unsigned char *st
     string field_name = ypc->get_path_fragment(3);
 
     jfe.jfe_type = external_log_format::JLF_VARIABLE;
-    if (field_name == "field")
-        jfe.jfe_value = val;
-    else if (field_name == "default-value")
+    if (field_name == "field") {
+        jfe.jfe_value = intern_string::lookup(val);
+    }
+    else if (field_name == "default-value") {
         jfe.jfe_default_value = val;
+    }
 
     return 1;
 }

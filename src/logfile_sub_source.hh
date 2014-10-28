@@ -71,11 +71,16 @@ public:
         require(&lf == this->lfo_filter_state.tfs_logfile);
 
         this->lfo_filter_state.resize(lf.size());
-        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
-             iter != this->lfo_filter_stack.end();
-             ++iter) {
-            if (offset >= this->lfo_filter_state.tfs_filter_count[(*iter)->get_index()]) {
-                (*iter)->add_line(this->lfo_filter_state, ll, sbr);
+        if (!this->lfo_filter_stack.empty()) {
+            if (lf.get_format() != NULL) {
+                lf.get_format()->get_subline(*ll, sbr);
+            }
+            for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
+                 iter != this->lfo_filter_stack.end();
+                 ++iter) {
+                if (offset >= this->lfo_filter_state.tfs_filter_count[(*iter)->get_index()]) {
+                    (*iter)->add_line(this->lfo_filter_state, ll, sbr);
+                }
             }
         }
     };

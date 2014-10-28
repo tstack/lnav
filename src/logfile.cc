@@ -285,9 +285,6 @@ throw (line_buffer::error, logfile::error)
 
             for (logfile::iterator iter = this->begin() + old_size;
                     iter != this->end(); ++iter) {
-                if (this->lf_format.get() != NULL) {
-                    this->lf_format->get_subline(*iter, sbr);
-                }
                 if (this->lf_logline_observer != NULL) {
                     this->lf_logline_observer->logline_new_line(*this, iter, sbr);
                 }
@@ -334,8 +331,6 @@ void logfile::read_line(logfile::iterator ll, string &line_out)
 
         line_out.clear();
         if (this->lf_line_buffer.read_line(off, sbr)) {
-            ostringstream stream;
-
             if (this->lf_format.get() != NULL) {
                 this->lf_format->get_subline(*ll, sbr);
 

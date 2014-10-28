@@ -62,7 +62,11 @@ public:
         size_t old_mask_size = this->tfs_mask.size();
 
         this->tfs_mask.resize(newsize);
-        memset(&this->tfs_mask[old_mask_size], 0, sizeof(uint32_t) * (newsize - old_mask_size));
+        if (newsize > old_mask_size) {
+            memset(&this->tfs_mask[old_mask_size],
+                    0,
+                    sizeof(uint32_t) * (newsize - old_mask_size));
+        }
     };
 
     const static int MAX_FILTERS = 32;
@@ -180,6 +184,10 @@ public:
     size_t size() const {
         return this->fs_filters.size();
     }
+
+    bool empty() const {
+        return this->fs_filters.empty();
+    };
 
     size_t next_index() {
         bool used[32];

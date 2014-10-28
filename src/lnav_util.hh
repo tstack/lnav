@@ -181,7 +181,9 @@ time_t tm2sec(const struct tm *t);
 extern const char *std_time_fmt[];
 
 struct date_time_scanner {
-    date_time_scanner() : dts_local_time(false) {
+    date_time_scanner() : dts_local_time(false),
+                          dts_local_offset_valid(0),
+                          dts_local_offset_expiry(0) {
         this->clear();
     };
 
@@ -197,11 +199,47 @@ struct date_time_scanner {
         localtime_r(&base_time, &this->dts_base_tm.et_tm);
     };
 
+    /**
+     * Convert a timestamp to local time.
+     *
+     * Calling localtime_r is slow since it wants to lookup the timezone on
+     * every call, so we cache the result and only call it again if the
+     * requested time falls outside of a fifteen minute range.
+     */
+    void to_localtime(time_t t, struct exttm &tm_out) {
+        if (t < this->dts_local_offset_valid ||
+                t >= this->dts_local_offset_expiry) {
+            time_t new_gmt;
+
+            localtime_r(&t, &tm_out.et_tm);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+            tm_out.et_tm.tm_zone = NULL;
+#endif
+            tm_out.et_tm.tm_isdst = 0;
+
+            new_gmt = tm2sec(&tm_out.et_tm);
+            this->dts_local_offset_cache = t - new_gmt;
+            this->dts_local_offset_valid = t;
+            this->dts_local_offset_expiry = t + (EXPIRE_TIME - 1);
+            this->dts_local_offset_expiry -=
+                    this->dts_local_offset_expiry % EXPIRE_TIME;
+        }
+        else {
+            time_t adjust_gmt = t - this->dts_local_offset_cache;
+            gmtime_r(&adjust_gmt, &tm_out.et_tm);
+        }
+    };
+
     bool dts_local_time;
     time_t dts_base_time;
     struct exttm dts_base_tm;
     int dts_fmt_lock;
     int dts_fmt_len;
+    time_t dts_local_offset_cache;
+    time_t dts_local_offset_valid;
+    time_t dts_local_offset_expiry;
+
+    static const int EXPIRE_TIME = 15 * 60;
 
     const char *scan(const char *time_src,
                      size_t time_len,

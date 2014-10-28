@@ -45,8 +45,9 @@ int yajlpp_parse_context::map_start(void *ctx)
         ypc->ypc_array_index.back() += 1;
     }
 
-    if (ypc->ypc_alt_callbacks.yajl_start_map != NULL)
+    if (ypc->ypc_alt_callbacks.yajl_start_map != NULL) {
         retval = ypc->ypc_alt_callbacks.yajl_start_map(ypc);
+    }
 
     return retval;
 }
@@ -65,8 +66,9 @@ int yajlpp_parse_context::map_key(void *ctx,
     memcpy(&ypc->ypc_path[start], key, len);
     ypc->ypc_path.push_back('\0');
 
-    if (ypc->ypc_alt_callbacks.yajl_map_key != NULL)
+    if (ypc->ypc_alt_callbacks.yajl_map_key != NULL) {
         retval = ypc->ypc_alt_callbacks.yajl_map_key(ctx, key, len);
+    }
 
     ypc->update_callbacks();
     return retval;
@@ -74,6 +76,10 @@ int yajlpp_parse_context::map_key(void *ctx,
 
 void yajlpp_parse_context::update_callbacks(void)
 {
+    if (this->ypc_handlers == NULL) {
+        return;
+    }
+
     pcre_input pi(&this->ypc_path[0], 0, this->ypc_path.size() - 1);
 
     this->ypc_callbacks = DEFAULT_CALLBACKS;
@@ -107,8 +113,9 @@ int yajlpp_parse_context::map_end(void *ctx)
     ypc->ypc_path.push_back('\0');
     ypc->ypc_path_index_stack.pop_back();
 
-    if (ypc->ypc_alt_callbacks.yajl_end_map != NULL)
+    if (ypc->ypc_alt_callbacks.yajl_end_map != NULL) {
         retval = ypc->ypc_alt_callbacks.yajl_end_map(ctx);
+    }
 
     ypc->update_callbacks();
     return retval;
@@ -124,8 +131,9 @@ int yajlpp_parse_context::array_start(void *ctx)
     ypc->ypc_path.push_back('\0');
     ypc->ypc_array_index.push_back(-1);
 
-    if (ypc->ypc_alt_callbacks.yajl_start_array != NULL)
+    if (ypc->ypc_alt_callbacks.yajl_start_array != NULL) {
         retval = ypc->ypc_alt_callbacks.yajl_start_array(ctx);
+    }
 
     ypc->update_callbacks();
 
@@ -142,8 +150,9 @@ int yajlpp_parse_context::array_end(void *ctx)
     ypc->ypc_path_index_stack.pop_back();
     ypc->ypc_array_index.pop_back();
 
-    if (ypc->ypc_alt_callbacks.yajl_end_array != NULL)
+    if (ypc->ypc_alt_callbacks.yajl_end_array != NULL) {
         retval = ypc->ypc_alt_callbacks.yajl_end_array(ctx);
+    }
 
     ypc->update_callbacks();
 
@@ -154,8 +163,9 @@ int yajlpp_parse_context::handle_unused(void *ctx)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
 
-    if (ypc->ypc_ignore_unused)
+    if (ypc->ypc_ignore_unused) {
         return 1;
+    }
 
     fprintf(stderr, "warning:%s:%s:unexpected data, expecting one of the following data types --\n",
         ypc->ypc_source.c_str(),

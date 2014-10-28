@@ -240,7 +240,7 @@ public:
              iter != this->fos_log_helper.ldh_line_values.end();
              ++iter) {
             this->fos_known_key_size = max(this->fos_known_key_size,
-                                     (int)iter->lv_name.length());
+                                     (int)iter->lv_name.size());
         }
 
         for (data_parser::element_list_t::iterator iter =
@@ -290,22 +290,22 @@ public:
             attr_line_t al;
             string str;
 
-            str = "   " + lv.lv_name;
+            str = "   " + lv.lv_name.to_string();
             str.append(this->fos_known_key_size - lv.lv_name.size() + 3, ' ');
             str += " = " + lv.to_string();
 
 
             al.with_string(str)
               .with_attr(string_attr(
-                line_range(3, 3 + lv.lv_name.length()),
+                line_range(3, 3 + lv.lv_name.size()),
                 &view_curses::VC_STYLE,
-                vc.attrs_for_ident(lv.lv_name)));
+                vc.attrs_for_ident(lv.lv_name.to_string())));
 
             this->fos_lines.push_back(al);
             this->add_key_line_attrs(this->fos_known_key_size);
         }
 
-        std::map<std::string, json_ptr_walk::pair_list_t>::iterator json_iter;
+        std::map<const intern_string_t, json_ptr_walk::pair_list_t>::iterator json_iter;
 
         if (!this->fos_log_helper.ldh_json_pairs.empty()) {
             this->fos_lines.push_back(" JSON fields:");
@@ -580,7 +580,7 @@ bool setup_logline_table()
 
             ldh.parse_line(cl);
 
-            std::map<std::string, json_ptr_walk::pair_list_t>::const_iterator pair_iter;
+            std::map<const intern_string_t, json_ptr_walk::pair_list_t>::const_iterator pair_iter;
             for (pair_iter = ldh.ldh_json_pairs.begin();
                pair_iter != ldh.ldh_json_pairs.end();
                ++pair_iter) {
@@ -3150,7 +3150,7 @@ static string execute_action(log_data_helper &ldh,
             setenv("LNAV_ACTION_FILE_LINE", env_buffer, 1);
             snprintf(env_buffer, sizeof(env_buffer), "%d", ldh.ldh_y_offset + 1);
             setenv("LNAV_ACTION_MSG_LINE", env_buffer, 1);
-            setenv("LNAV_ACTION_VALUE_NAME", lv.lv_name.c_str(), 1);
+            setenv("LNAV_ACTION_VALUE_NAME", lv.lv_name.get(), 1);
             value_line = ldh.ldh_y_offset - ldh.get_value_line(lv) + 1;
             snprintf(env_buffer, sizeof(env_buffer), "%d", value_line);
             setenv("LNAV_ACTION_VALUE_LINE", env_buffer, 1);
