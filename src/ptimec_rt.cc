@@ -37,7 +37,7 @@
 
 #include "ptimec.hh"
 
-bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     size_t zone_len = len - off_inout;
     char zone[zone_len + 1];

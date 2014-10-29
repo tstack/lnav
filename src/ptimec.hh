@@ -57,7 +57,7 @@ struct exttm {
     ((a) | (b << 8) | (c << 16))
 
 inline
-bool ptime_upto(char ch, const char *str, off_t &off_inout, size_t len)
+bool ptime_upto(char ch, const char *str, off_t &off_inout, ssize_t len)
 {
     for (; off_inout < len; off_inout++) {
         if (str[off_inout] == ch) {
@@ -69,16 +69,16 @@ bool ptime_upto(char ch, const char *str, off_t &off_inout, size_t len)
 }
 
 inline
-bool ptime_upto_end(const char *str, off_t &off_inout, size_t len)
+bool ptime_upto_end(const char *str, off_t &off_inout, ssize_t len)
 {
     off_inout = len;
 
     return true;
 }
 
-bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, size_t len);
+bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len);
 
-inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     if (off_inout + 3 < len) {
         int *iptr = (int *)(&str[off_inout]);
@@ -135,7 +135,7 @@ inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return ptime_b_slow(dst, str, off_inout, len);
 }
 
-inline bool ptime_S(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_S(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
@@ -147,7 +147,7 @@ inline bool ptime_S(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_sec >= 0 && dst->et_tm.tm_sec <= 59);
 }
 
-inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     int ms = 0;
 
@@ -166,7 +166,7 @@ inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return false;
 }
 
-inline bool ptime_M(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_M(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
@@ -178,7 +178,7 @@ inline bool ptime_M(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_min >= 0 && dst->et_tm.tm_min <= 59);
 }
 
-inline bool ptime_H(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_H(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
@@ -190,7 +190,7 @@ inline bool ptime_H(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
 }
 
-inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
@@ -202,7 +202,7 @@ inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
 }
 
-inline bool ptime_d(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_d(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout] == ' ') {
@@ -220,7 +220,7 @@ inline bool ptime_d(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31);
 }
 
-inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     dst->et_tm.tm_mday = 0;
     PTIME_CONSUME(1, {
@@ -240,7 +240,7 @@ inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31);
 }
 
-inline bool ptime_N(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_N(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     dst->et_tm.tm_mon = 0;
     PTIME_CONSUME(1, {
@@ -262,7 +262,7 @@ inline bool ptime_N(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_mon >= 0 && dst->et_tm.tm_mon <= 11);
 }
 
-inline bool ptime_k(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_k(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     dst->et_tm.tm_hour = 0;
     PTIME_CONSUME(1, {
@@ -282,7 +282,7 @@ inline bool ptime_k(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
 }
 
-inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     dst->et_tm.tm_hour = 0;
     PTIME_CONSUME(1, {
@@ -302,7 +302,7 @@ inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
 }
 
-inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
         if (str[off_inout + 1] > '9') {
@@ -314,7 +314,7 @@ inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return (0 <= dst->et_tm.tm_mon && dst->et_tm.tm_mon <= 11);
 }
 
-inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
         char lead = str[off_inout];
@@ -335,7 +335,7 @@ inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return true;
 }
 
-inline bool ptime_Y(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_Y(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(4, {
         dst->et_tm.tm_year = (
@@ -348,7 +348,7 @@ inline bool ptime_Y(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return true;
 }
 
-inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
         dst->et_tm.tm_year = (
@@ -367,7 +367,7 @@ inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return true;
 }
 
-inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
     PTIME_CONSUME(5, {
@@ -398,7 +398,7 @@ inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, size_t
     return true;
 }
 
-inline bool ptime_f(int &sub_seconds, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_f(int &sub_seconds, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(6, {
         for (int lpc = 0; lpc < 6; lpc++) {
@@ -418,7 +418,7 @@ inline bool ptime_f(int &sub_seconds, const char *str, off_t &off_inout, size_t 
     return true;
 }
 
-inline bool ptime_F(int &sub_seconds, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_F(int &sub_seconds, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(3, {
         sub_seconds = (
@@ -430,7 +430,7 @@ inline bool ptime_F(int &sub_seconds, const char *str, off_t &off_inout, size_t 
     return true;
 }
 
-inline bool ptime_char(char val, const char *str, off_t &off_inout, size_t len)
+inline bool ptime_char(char val, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(1, {
         if (str[off_inout] != val) {
@@ -441,7 +441,7 @@ inline bool ptime_char(char val, const char *str, off_t &off_inout, size_t len)
     return true;
 }
 
-typedef bool (*ptime_func)(struct exttm *dst, const char *str, off_t &off, size_t len);
+typedef bool (*ptime_func)(struct exttm *dst, const char *str, off_t &off, ssize_t len);
 
 struct ptime_fmt {
     const char *pf_fmt;

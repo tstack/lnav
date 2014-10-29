@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         const char *arg = argv[lpc];
 
         fputs(PRELUDE, stdout);
-        printf("bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, size_t len) {\n",
+        printf("bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, ssize_t len) {\n",
             lpc);
         for (int index = 0; arg[index]; arg++) {
             if (arg[index] == '%') {
