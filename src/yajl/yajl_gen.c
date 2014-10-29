@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2011, Lloyd Hilaiel <lloyd@hilaiel.com>
+ * Copyright (c) 2007-2014, Lloyd Hilaiel <me@lloyd.io>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -57,6 +57,7 @@ yajl_gen_config(yajl_gen g, yajl_gen_option opt, ...)
     switch(opt) {
         case yajl_gen_beautify:
         case yajl_gen_validate_utf8:
+        case yajl_gen_escape_solidus:
             if (va_arg(ap, int)) g->flags |= opt;
             else g->flags &= ~opt;
             break;
@@ -125,6 +126,14 @@ yajl_gen_alloc(const yajl_alloc_funcs * afs)
 }
 
 void
+yajl_gen_reset(yajl_gen g, const char * sep)
+{
+    g->depth = 0;
+    memset((void *) &(g->state), 0, sizeof(g->state));
+    if (sep != NULL) g->print(g->ctx, sep, strlen(sep));
+}
+
+void
 yajl_gen_free(yajl_gen g)
 {
     if (g->print == (yajl_print_t)&yajl_buf_append) yajl_buf_free((yajl_buf)g->ctx);
@@ -139,7 +148,7 @@ yajl_gen_free(yajl_gen g)
     } else if (g->state[g->depth] == yajl_gen_map_val) {        \
         g->print(g->ctx, ":", 1);                               \
         if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, " ", 1);                \
-   } 
+   }
 
 #define INSERT_WHITESPACE                                               \
     if ((g->flags & yajl_gen_beautify)) {                                                    \
@@ -171,7 +180,7 @@ yajl_gen_free(yajl_gen g)
     if (++(g->depth) >= YAJL_MAX_DEPTH) return yajl_max_depth_exceeded;
 
 #define DECREMENT_DEPTH \
-  if (--(g->depth) >= YAJL_MAX_DEPTH) return yajl_gen_error;
+  if (--(g->depth) >= YAJL_MAX_DEPTH) return yajl_gen_generation_complete;
 
 #define APPENDED_ATOM \
     switch (g->state[g->depth]) {                   \
@@ -208,7 +217,7 @@ yajl_gen_integer(yajl_gen g, long long int number)
     return yajl_gen_status_ok;
 }
 
-#ifdef WIN32
+#if defined(_WIN32) || defined(WIN32)
 #include <float.h>
 #define isnan _isnan
 #define isinf !_finite
@@ -218,10 +227,13 @@ yajl_gen_status
 yajl_gen_double(yajl_gen g, double number)
 {
     char i[32];
-    ENSURE_VALID_STATE; ENSURE_NOT_KEY; 
+    ENSURE_VALID_STATE; ENSURE_NOT_KEY;
     if (isnan(number) || isinf(number)) return yajl_gen_invalid_number;
     INSERT_SEP; INSERT_WHITESPACE;
     sprintf(i, "%.20g", number);
+    if (strspn(i, "0123456789-") == strlen(i)) {
+        strcat(i, ".0");
+    }
     g->print(g->ctx, i, (unsigned int)strlen(i));
     APPENDED_ATOM;
     FINAL_NEWLINE;
@@ -285,8 +297,8 @@ yajl_gen_status
 yajl_gen_map_open(yajl_gen g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
-    INCREMENT_DEPTH; 
-    
+    INCREMENT_DEPTH;
+
     g->state[g->depth] = yajl_gen_map_start;
     g->print(g->ctx, "{", 1);
     if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, "\n", 1);
@@ -297,9 +309,9 @@ yajl_gen_map_open(yajl_gen g)
 yajl_gen_status
 yajl_gen_map_close(yajl_gen g)
 {
-    ENSURE_VALID_STATE; 
+    ENSURE_VALID_STATE;
     DECREMENT_DEPTH;
-    
+
     if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, "\n", 1);
     APPENDED_ATOM;
     INSERT_WHITESPACE;
@@ -312,7 +324,7 @@ yajl_gen_status
 yajl_gen_array_open(yajl_gen g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
-    INCREMENT_DEPTH; 
+    INCREMENT_DEPTH;
     g->state[g->depth] = yajl_gen_array_start;
     g->print(g->ctx, "[", 1);
     if ((g->flags & yajl_gen_beautify)) g->print(g->ctx, "\n", 1);

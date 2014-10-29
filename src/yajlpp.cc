@@ -70,7 +70,9 @@ int yajlpp_parse_context::map_key(void *ctx,
         retval = ypc->ypc_alt_callbacks.yajl_map_key(ctx, key, len);
     }
 
-    ypc->update_callbacks();
+    if (ypc->ypc_handlers != NULL) {
+        ypc->update_callbacks();
+    }
     return retval;
 }
 

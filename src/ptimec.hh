@@ -45,7 +45,7 @@ struct exttm {
 };
 
 #define PTIME_CONSUME(amount, block) \
-    if (off_inout + amount > len) { \
+    if ((off_inout + amount) > len) { \
         return false; \
     } \
     \

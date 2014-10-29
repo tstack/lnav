@@ -25,7 +25,7 @@
 
 #include "yajl_parser.h"
 
-#ifdef WIN32
+#if defined(_WIN32) || defined(WIN32)
 #define snprintf sprintf_s
 #endif
 
@@ -194,7 +194,7 @@ static int array_add_value (context_t *ctx,
 
     /* "context_add_value" will only call us with array values. */
     assert(YAJL_IS_ARRAY(array));
-    
+
     tmp = realloc(array->u.array.values,
                   sizeof(*(array->u.array.values)) * (array->u.array.len + 1));
     if (tmp == NULL)
@@ -309,11 +309,10 @@ static int handle_number (void *ctx, const char *string, size_t string_length)
 
     v->u.number.flags = 0;
 
-    endptr = NULL;
     errno = 0;
     v->u.number.i = yajl_parse_integer((const unsigned char *) v->u.number.r,
                                        strlen(v->u.number.r));
-    if ((errno == 0) && (endptr != NULL) && (*endptr == 0))
+    if (errno == 0)
         v->u.number.flags |= YAJL_NUMBER_INT_VALID;
 
     endptr = NULL;
@@ -421,6 +420,7 @@ yajl_val yajl_tree_parse (const char *input,
 
     yajl_handle handle;
     yajl_status status;
+    char * internal_err_str;
 	context_t ctx = { NULL, NULL, NULL, 0 };
 
 	ctx.errbuf = error_buffer;
@@ -438,11 +438,11 @@ yajl_val yajl_tree_parse (const char *input,
     status = yajl_complete_parse (handle);
     if (status != yajl_status_ok) {
         if (error_buffer != NULL && error_buffer_size > 0) {
-            snprintf(
-                error_buffer, error_buffer_size, "%s",
-                (char *) yajl_get_error(handle, 1,
-                                        (const unsigned char *) input,
-                                        strlen(input)));
+               internal_err_str = (char *) yajl_get_error(handle, 1,
+                     (const unsigned char *) input,
+                     strlen(input));
+             snprintf(error_buffer, error_buffer_size, "%s", internal_err_str);
+             YA_FREE(&(handle->alloc), internal_err_str);
         }
         yajl_free (handle);
         return NULL;
@@ -456,16 +456,18 @@ yajl_val yajl_tree_get(yajl_val n, const char ** path, yajl_type type)
 {
     if (!path) return NULL;
     while (n && *path) {
-        unsigned int i;
+        size_t i;
+        size_t len;
 
         if (n->type != yajl_t_object) return NULL;
-        for (i = 0; i < n->u.object.len; i++) {
+        len = n->u.object.len;
+        for (i = 0; i < len; i++) {
             if (!strcmp(*path, n->u.object.keys[i])) {
                 n = n->u.object.values[i];
                 break;
             }
         }
-        if (i == n->u.object.len) return NULL;
+        if (i == len) return NULL;
         path++;
     }
     if (n && type != yajl_t_any && type != n->type) n = NULL;

@@ -74,6 +74,12 @@ public:
 
     size_t length() const { return this->sb_length; };
 
+    bool contains(const char *ptr) const {
+        const char *buffer_end = this->sb_data + this->sb_length;
+
+        return (this->sb_data <= ptr && ptr < buffer_end);
+    };
+
     char *get_writable_data() {
         if (this->take_ownership()) {
             return this->sb_data;

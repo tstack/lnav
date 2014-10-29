@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2011, Lloyd Hilaiel <lloyd@hilaiel.com>
+ * Copyright (c) 2007-2014, Lloyd Hilaiel <me@lloyd.io>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -48,6 +48,10 @@ yajl_parse_integer(const unsigned char *number, unsigned int length)
         }
         ret *= 10;
         if (LLONG_MAX - ret < (*pos - '0')) {
+            errno = ERANGE;
+            return sign == 1 ? LLONG_MAX : LLONG_MIN;
+        }
+        if (*pos < '0' || *pos > '9') {
             errno = ERANGE;
             return sign == 1 ? LLONG_MAX : LLONG_MIN;
         }
@@ -279,6 +283,7 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
                                         hand->ctx,(const char *) buf, bufLen));
                         } else if (hand->callbacks->yajl_integer) {
                             long long int i = 0;
+                            errno = 0;
                             i = yajl_parse_integer(buf, bufLen);
                             if ((i == LLONG_MIN || i == LLONG_MAX) &&
                                 errno == ERANGE)
@@ -306,6 +311,7 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
                             yajl_buf_clear(hand->decodeBuf);
                             yajl_buf_append(hand->decodeBuf, buf, bufLen);
                             buf = yajl_buf_data(hand->decodeBuf);
+                            errno = 0;
                             d = strtod((char *) buf, NULL);
                             if ((d == HUGE_VAL || d == -HUGE_VAL) &&
                                 errno == ERANGE)

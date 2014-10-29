@@ -311,7 +311,10 @@ void log_format::check_for_new_year(std::vector<logline> &dst,
  * XXX This needs some cleanup. 
  */
 struct json_log_userdata {
-    json_log_userdata() : jlu_sub_line_count(1) { };
+    json_log_userdata(shared_buffer_ref &sbr)
+            : jlu_sub_line_count(1), jlu_shared_buffer(sbr) {
+
+    };
 
     external_log_format *jlu_format;
     const logline *jlu_line;
@@ -321,6 +324,7 @@ struct json_log_userdata {
     const char *jlu_line_value;
     size_t jlu_line_size;
     size_t jlu_sub_start;
+    shared_buffer_ref &jlu_shared_buffer;
 };
 
 struct json_field_cmp {
@@ -565,13 +569,13 @@ bool external_log_format::scan(std::vector<logline> &dst,
         auto_mem<yajl_handle_t> handle(yajl_free);
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         logline ll(offset, 0, 0, logline::LEVEL_INFO);
-        json_log_userdata jlu;
+        json_log_userdata jlu(sbr);
         bool retval = false;
 
         handle = yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
                             NULL,
                             this->jlf_parse_context.get());
-        yajl_config(handle, yajl_dont_validate_strings, 0);
+        yajl_config(handle, yajl_dont_validate_strings, 1);
         ypc.set_static_handler(json_log_handlers[0]);
         ypc.ypc_userdata = &jlu;
         ypc.ypc_ignore_unused = true;
@@ -808,10 +812,24 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         char time_buf[64];
 
+        // TODO add a timeval kind to logline_value
         sql_strftime(time_buf, sizeof(time_buf),
             jlu->jlu_line->get_timeval(), 'T');
         tmp_shared_buffer tsb(time_buf);
         jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, tsb.tsb_ref));
+    }
+    else if (jlu->jlu_shared_buffer.contains((const char *)str)) {
+        shared_buffer_ref sbr;
+
+        sbr.subset(jlu->jlu_shared_buffer,
+                (off_t) ((const char *)str - jlu->jlu_line_value),
+                len);
+        if (field_name == jlu->jlu_format->elf_body_field) {
+            jlu->jlu_format->jlf_line_values.push_back(logline_value(body_name,
+                    sbr));
+        }
+        jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name,
+                sbr));
     }
     else {
         tmp_shared_buffer tsb((const char *)str, len);
@@ -835,7 +853,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
         auto_mem<yajl_handle_t> handle(yajl_free);
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         view_colors &vc = view_colors::singleton();
-        json_log_userdata jlu;
+        json_log_userdata jlu(sbr);
 
         this->jlf_share_manager.invalidate_refs();
         this->jlf_cached_line.clear();
@@ -846,7 +864,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
         handle = yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
                             NULL,
                             this->jlf_parse_context.get());
-        yajl_config(handle, yajl_dont_validate_strings, 0);
+        yajl_config(handle, yajl_dont_validate_strings, 1);
         ypc.set_static_handler(json_log_rewrite_handlers[0]);
         ypc.ypc_userdata = &jlu;
         ypc.ypc_ignore_unused = true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2011, Lloyd Hilaiel <lloyd@hilaiel.com>
+ * Copyright (c) 2007-2014, Lloyd Hilaiel <me@lloyd.io>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,14 +21,14 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif    
+#endif
 
 #define YAJL_MAX_DEPTH 128
 
 /* msft dll export gunk.  To build a DLL on windows, you
  * must define WIN32, YAJL_SHARED, and YAJL_BUILD.  To use a shared
  * DLL, you must define YAJL_SHARED and WIN32 */
-#if defined(WIN32) && defined(YAJL_SHARED)
+#if (defined(_WIN32) || defined(WIN32)) && defined(YAJL_SHARED)
 #  ifdef YAJL_BUILD
 #    define YAJL_API __declspec(dllexport)
 #  else
@@ -40,7 +40,7 @@ extern "C" {
 #  else
 #    define YAJL_API
 #  endif
-#endif 
+#endif
 
 /** pointer to a malloc function, supporting client overriding memory
  *  allocation routines */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2011, Lloyd Hilaiel <lloyd@hilaiel.com>
+ * Copyright (c) 2007-2014, Lloyd Hilaiel <me@lloyd.io>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,17 +25,20 @@
 
 static void * yajl_internal_malloc(void *ctx, size_t sz)
 {
+    (void)ctx;
     return malloc(sz);
 }
 
 static void * yajl_internal_realloc(void *ctx, void * previous,
                                     size_t sz)
 {
+    (void)ctx;
     return realloc(previous, sz);
 }
 
 static void yajl_internal_free(void *ctx, void * ptr)
 {
+    (void)ctx;
     free(ptr);
 }
 

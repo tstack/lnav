@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2011, Lloyd Hilaiel <lloyd@hilaiel.com>
+ * Copyright (c) 2007-2014, Lloyd Hilaiel <me@lloyd.io>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -43,7 +43,7 @@ extern "C" {
          *  state */
         yajl_gen_in_error_state,
         /** A complete JSON document has been generated */
-        yajl_gen_generation_complete,                
+        yajl_gen_generation_complete,
         /** yajl_gen_double was passed an invalid floating point value
          *  (infinity or NaN). */
         yajl_gen_invalid_number,
@@ -150,8 +150,16 @@ extern "C" {
      *  intended to enable incremental JSON outputing. */
     YAJL_API void yajl_gen_clear(yajl_gen hand);
 
+    /** Reset the generator state.  Allows a client to generate multiple
+     *  json entities in a stream. The "sep" string will be inserted to
+     *  separate the previously generated entity from the current,
+     *  NULL means *no separation* of entites (clients beware, generating
+     *  multiple JSON numbers, for instance, will result in inscrutable
+     *  output) */
+    YAJL_API void yajl_gen_reset(yajl_gen hand, const char * sep);
+
 #ifdef __cplusplus
 }
-#endif    
+#endif
 
 #endif
