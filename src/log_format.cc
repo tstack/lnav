@@ -566,16 +566,13 @@ bool external_log_format::scan(std::vector<logline> &dst,
                                shared_buffer_ref &sbr)
 {
     if (this->jlf_json) {
-        auto_mem<yajl_handle_t> handle(yajl_free);
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         logline ll(offset, 0, 0, logline::LEVEL_INFO);
+        yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
         bool retval = false;
 
-        handle = yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
-                            NULL,
-                            this->jlf_parse_context.get());
-        yajl_config(handle, yajl_dont_validate_strings, 1);
+        yajl_reset(handle);
         ypc.set_static_handler(json_log_handlers[0]);
         ypc.ypc_userdata = &jlu;
         ypc.ypc_ignore_unused = true;
@@ -586,9 +583,9 @@ bool external_log_format::scan(std::vector<logline> &dst,
         jlu.jlu_line_value = sbr.get_data();
         jlu.jlu_line_size = sbr.length();
         jlu.jlu_handle = handle;
-        if (yajl_parse(handle.in(),
+        if (yajl_parse(handle,
                        (const unsigned char *)sbr.get_data(), sbr.length()) == yajl_status_ok &&
-            yajl_complete_parse(handle.in()) == yajl_status_ok) {
+            yajl_complete_parse(handle) == yajl_status_ok) {
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
                 if (lpc > 0) {
@@ -600,7 +597,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
             retval = true;
         }
         else {
-            unsigned char *msg = yajl_get_error(handle.in(), 1, (const unsigned char *)sbr.get_data(), sbr.length());
+            unsigned char *msg = yajl_get_error(handle, 1, (const unsigned char *)sbr.get_data(), sbr.length());
             log_debug("bad line %s", msg);
         }
 
@@ -850,9 +847,9 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
     }
 
     if (this->jlf_cached_offset != ll.get_offset()) {
-        auto_mem<yajl_handle_t> handle(yajl_free);
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         view_colors &vc = view_colors::singleton();
+        yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
 
         this->jlf_share_manager.invalidate_refs();
@@ -861,10 +858,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
         this->jlf_line_offsets.clear();
         this->jlf_line_attrs.clear();
 
-        handle = yajl_alloc(&this->jlf_parse_context->ypc_callbacks,
-                            NULL,
-                            this->jlf_parse_context.get());
-        yajl_config(handle, yajl_dont_validate_strings, 1);
+        yajl_reset(handle);
         ypc.set_static_handler(json_log_rewrite_handlers[0]);
         ypc.ypc_userdata = &jlu;
         ypc.ypc_ignore_unused = true;
@@ -877,10 +871,10 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
         jlu.jlu_handle = handle;
         jlu.jlu_line_value = sbr.get_data();
 
-        yajl_status parse_status = yajl_parse(handle.in(),
+        yajl_status parse_status = yajl_parse(handle,
             (const unsigned char *)sbr.get_data(), sbr.length());
         if (parse_status == yajl_status_ok &&
-            yajl_complete_parse(handle.in()) == yajl_status_ok) {
+            yajl_complete_parse(handle) == yajl_status_ok) {
             std::vector<logline_value>::iterator lv_iter;
             std::vector<json_format_element>::iterator iter;
             bool used_values[this->jlf_line_values.size()];
@@ -1088,6 +1082,11 @@ void external_log_format::build(std::vector<std::string> &errors)
         }
         if (this->jlf_json) {
             this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name));
+            this->jlf_yajl_handle.reset(yajl_alloc(
+                    &this->jlf_parse_context->ypc_callbacks,
+                    NULL,
+                    this->jlf_parse_context.get()));
+            yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings, 1);
         }
 
     }

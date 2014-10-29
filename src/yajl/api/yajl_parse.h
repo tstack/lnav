@@ -165,6 +165,8 @@ extern "C" {
      */
     YAJL_API int yajl_config(yajl_handle h, yajl_option opt, ...);
 
+    YAJL_API void yajl_reset(yajl_handle handle);
+
     /** free a parser handle */
     YAJL_API void yajl_free(yajl_handle handle);
 

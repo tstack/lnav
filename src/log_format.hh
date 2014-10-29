@@ -664,6 +664,7 @@ public:
           elf_body_field(intern_string::lookup("body", -1)),
           jlf_json(false),
           jlf_cached_offset(-1),
+          jlf_yajl_handle(yajl_free),
           elf_name(name) {
             this->jlf_line_offsets.reserve(128);
         };
@@ -695,6 +696,11 @@ public:
 
         if (this->jlf_json) {
             this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name));
+            this->jlf_yajl_handle.reset(yajl_alloc(
+                    &this->jlf_parse_context->ypc_callbacks,
+                    NULL,
+                    this->jlf_parse_context.get()));
+            yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings, 1);
             this->jlf_cached_line.reserve(1024 * 1024);
         }
         else if (this->lf_fmt_lock != -1) {
@@ -786,6 +792,7 @@ public:
     std::vector<char> jlf_cached_line;
     string_attrs_t jlf_line_attrs;
     std::auto_ptr<yajlpp_parse_context> jlf_parse_context;
+    auto_mem<yajl_handle_t> jlf_yajl_handle;
 private:
     const std::string elf_name;
 

@@ -103,6 +103,13 @@ yajl_config(yajl_handle h, yajl_option opt, ...)
 }
 
 void
+yajl_reset(yajl_handle handle)
+{
+    handle->bytesConsumed = 0;
+    yajl_bs_push(handle->stateStack, yajl_state_start);
+}
+
+void
 yajl_free(yajl_handle handle)
 {
     yajl_bs_free(handle->stateStack);
