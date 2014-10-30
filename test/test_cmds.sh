@@ -216,3 +216,19 @@ run_test ${lnav_test} -n \
 check_output "set-min-log-level is not working" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 EOF
+
+run_test ${lnav_test} -d/tmp/lnav.err -n \
+    -c ":highlight foobar" \
+    -c ":clear-highlight foobar" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "clear-highlight is not working?" <<EOF
+EOF
+
+run_test ${lnav_test} -d/tmp/lnav.err -n \
+    -c ":clear-highlight foobar" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "clear-highlight did not report an error?" <<EOF
+error: highlight does not exist
+EOF

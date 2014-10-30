@@ -49,6 +49,7 @@ Display
 * enable-word-wrap - Enable word wrapping in the log and text file views.
 
 * highlight <regex> - Colorize text that matches the given regex.
+* clear-highlight <regex> - Clear a previous highlight.
 
 * switch-to-view <name> - Switch to the given view name (e.g. log, text, ...)
 

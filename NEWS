@@ -8,6 +8,8 @@ lnav v0.7.1:
      * Added a 'jget' SQLite function that can extract fields from a JSON-
        encoded value.
      * Added log formats for the OpenAM identity provider.
+     * Added a 'clear-highlight' command to clear previous calls to the
+       'highlight' command.
 
 lnav v0.7.0:
      Features:

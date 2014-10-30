@@ -364,6 +364,10 @@ COMMANDS
   highlight <regex> Highlight strings that match the given regular
                     expression.
 
+  clear-highlight <regex>
+                    Clear an existing highlight created with the 'highlight'
+                    command.
+
   filter-in <regex> Only display lines that match the given regular
                     expression.  This command can be used multiple
                     times to add more lines to the display.  The number

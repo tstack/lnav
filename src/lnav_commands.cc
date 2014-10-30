@@ -473,7 +473,38 @@ static string com_highlight(string cmdline, vector<string> &args)
 
             hm[args[1]] = hl;
 
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->add_possibility(
+                        LNM_COMMAND, "highlight", args[1]);
+            }
+
             retval = "info: highlight pattern now active";
+        }
+    }
+
+    return retval;
+}
+
+static string com_clear_highlight(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting highlight expression to clear";
+
+    if (args.size() == 0) {
+        args.push_back("highlight");
+    }
+    else if (args.size() > 1 && args[1][0] != '$') {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses::highlight_map_t &hm = tc->get_highlights();
+        textview_curses::highlight_map_t::iterator hm_iter;
+
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        hm_iter = hm.find(args[1]);
+        if (hm_iter == hm.end()) {
+            retval = "error: highlight does not exist";
+        }
+        else {
+            hm.erase(hm_iter);
+            retval = "info: highlight pattern cleared";
         }
     }
 
@@ -1405,6 +1436,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["graph"]                = com_graph;
     cmd_map["help"]                 = com_help;
     cmd_map["highlight"]            = com_highlight;
+    cmd_map["clear-highlight"]      = com_clear_highlight;
     cmd_map["filter-in"]            = com_filter;
     cmd_map["filter-out"]           = com_filter;
     cmd_map["append-to"]            = com_save_to;
