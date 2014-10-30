@@ -712,9 +712,9 @@ static string com_disable_filter(string cmdline, vector<string> &args)
             tss->text_filters_changed();
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->rem_possibility(
-                    LNM_COMMAND, "disabled-filter", args[1]);
-                lnav_data.ld_rl_view->add_possibility(
                     LNM_COMMAND, "enabled-filter", args[1]);
+                lnav_data.ld_rl_view->add_possibility(
+                    LNM_COMMAND, "disabled-filter", args[1]);
             }
             rebuild_indexes(true);
             retval = "info: filter disabled";

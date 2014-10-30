@@ -157,7 +157,7 @@ static char safe_read(const string &str, string::size_type index)
     return 0;
 }
 
-void readline_regex_highlighter(attr_line_t &al, int x)
+static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
 {
     static int special_char = (
         A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));
@@ -182,7 +182,7 @@ void readline_regex_highlighter(attr_line_t &al, int x)
     string &line = al.get_string();
     bool backslash_is_quoted = false;
 
-    for (int lpc = 1; lpc < line.length(); lpc++) {
+    for (int lpc = skip; lpc < line.length(); lpc++) {
         if (line[lpc - 1] != '\\') {
             switch (line[lpc]) {
             case '^':
@@ -339,6 +339,24 @@ void readline_regex_highlighter(attr_line_t &al, int x)
 
     for (int lpc = 0; brackets[lpc]; lpc++) {
         find_matching_bracket(al, x, brackets[lpc][0], brackets[lpc][1]);
+    }
+}
+
+void readline_regex_highlighter(attr_line_t &al, int x)
+{
+    readline_regex_highlighter_int(al, x, 1);
+}
+
+void readline_command_highlighter(attr_line_t &al, int x)
+{
+    static const pcrepp PREFIXES("^:(filter-in|filter-out|highlight|graph)");
+
+    const string &line = al.get_string();
+    pcre_context_static<30> pc;
+    pcre_input pi(line);
+
+    if (PREFIXES.match(pc, pi)) {
+        readline_regex_highlighter_int(al, x, 1 + pc[1]->length());
     }
 }
 

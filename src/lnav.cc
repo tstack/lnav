@@ -459,7 +459,8 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
     handle_foreign_key_list,
 };
 
-static void add_text_possibilities(int context, const std::string &str)
+static void add_text_possibilities(
+        int context, const string &type, const std::string &str)
 {
     static pcrecpp::RE re_escape("([.\\^$*+?()\\[\\]{}\\\\|])");
     static pcrecpp::RE re_escape_no_dot("([\\^$*+?()\\[\\]{}\\\\|])");
@@ -484,16 +485,17 @@ static void add_text_possibilities(int context, const std::string &str)
         }
 
         switch (context) {
-        case LNM_SEARCH: {
+        case LNM_SEARCH:
+        case LNM_COMMAND: {
             string token_value, token_value_no_dot;
 
             token_value_no_dot = token_value =
                 ds.get_input().get_substr(pc.all());
             re_escape.GlobalReplace("\\\\\\1", &token_value);
             re_escape_no_dot.GlobalReplace("\\\\\\1", &token_value_no_dot);
-            rlc->add_possibility(context, "*", token_value);
+            rlc->add_possibility(context, type, token_value);
             if (token_value != token_value_no_dot) {
-                rlc->add_possibility(context, "*", token_value_no_dot);
+                rlc->add_possibility(context, type, token_value_no_dot);
             }
             break;
         }
@@ -502,14 +504,14 @@ static void add_text_possibilities(int context, const std::string &str)
             auto_mem<char, sqlite3_free> quoted_token;
 
             quoted_token = sqlite3_mprintf("%Q", token_value.c_str());
-            rlc->add_possibility(context, "*", std::string(quoted_token));
+            rlc->add_possibility(context, type, std::string(quoted_token));
             break;
         }
         }
 
         switch (dt) {
         case DT_QUOTED_STRING:
-            add_text_possibilities(context, ds.get_input().get_substr(pc[0]));
+            add_text_possibilities(context, type, ds.get_input().get_substr(pc[0]));
             break;
         default:
             break;
@@ -517,12 +519,13 @@ static void add_text_possibilities(int context, const std::string &str)
     }
 }
 
-static void add_view_text_possibilities(int context, textview_curses *tc)
+static void add_view_text_possibilities(
+        int context, const string &type, textview_curses *tc)
 {
     text_sub_source *tss = tc->get_sub_source();
     readline_curses *rlc = lnav_data.ld_rl_view;
 
-    rlc->clear_possibilities(context, "*");
+    rlc->clear_possibilities(context, type);
     for (vis_line_t curr_line = tc->get_top();
          curr_line < tc->get_bottom();
          ++curr_line) {
@@ -530,7 +533,7 @@ static void add_view_text_possibilities(int context, textview_curses *tc)
 
         tss->text_value_for_line(*tc, curr_line, line);
 
-        add_text_possibilities(context, line);
+        add_text_possibilities(context, type, line);
     }
 }
 
@@ -565,7 +568,7 @@ bool setup_logline_table()
 
     if (lnav_data.ld_rl_view != NULL) {
         lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
-        add_view_text_possibilities(LNM_SQL, &log_view);
+        add_view_text_possibilities(LNM_SQL, "*", &log_view);
     }
 
     if (log_view.get_inner_height()) {
@@ -1865,9 +1868,15 @@ static void handle_paging_key(int ch)
                                                       "line-time",
                                                       buffer);
             }
+
         }
-        lnav_data.ld_rl_view->add_possibility(
-            LNM_COMMAND, "levelname", logline::level_names);
+
+            add_view_text_possibilities(LNM_COMMAND, "filter", tc);
+            lnav_data.ld_rl_view->
+                    add_possibility(LNM_COMMAND, "filter",
+                    lnav_data.ld_last_search[tc - lnav_data.ld_views]);
+            lnav_data.ld_rl_view->add_possibility(
+                    LNM_COMMAND, "levelname", logline::level_names);
         lnav_data.ld_mode = LNM_COMMAND;
         lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
         lnav_data.ld_bottom_source.set_prompt("Enter an lnav command: "
@@ -1878,7 +1887,7 @@ static void handle_paging_key(int ch)
         lnav_data.ld_mode = LNM_SEARCH;
         lnav_data.ld_previous_search = lnav_data.ld_last_search[tc - lnav_data.ld_views];
         lnav_data.ld_search_start_line = tc->get_top();
-        add_view_text_possibilities(LNM_SEARCH, tc);
+        add_view_text_possibilities(LNM_SEARCH, "*", tc);
         lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
         lnav_data.ld_bottom_source.set_prompt(
             "Enter a regular expression to search for: "
@@ -2709,9 +2718,9 @@ static void rl_abort(void *dummy, readline_curses *rc)
 
 static void rl_callback(void *dummy, readline_curses *rc)
 {
-    lnav_data.ld_bottom_source.set_prompt("");
     string alt_msg;
 
+    lnav_data.ld_bottom_source.set_prompt("");
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
         require(0);
@@ -2728,8 +2737,6 @@ static void rl_callback(void *dummy, readline_curses *rc)
         rl_search_internal(dummy, rc, true);
         if (rc->get_value().size() > 0) {
             lnav_data.ld_view_stack.top()->set_follow_search(false);
-            lnav_data.ld_rl_view->
-            add_possibility(LNM_COMMAND, "filter", rc->get_value());
             rc->set_value("search: " + rc->get_value());
             rc->set_alt_value(HELP_MSG_2(
                                   n, N,
@@ -3406,6 +3413,7 @@ static void looper(void)
         readline_curses  rlc;
         int lpc;
 
+        command_context.set_highlighter(readline_command_highlighter);
         search_context
             .set_append_character(0)
             .set_highlighter(readline_regex_highlighter);

@@ -36,6 +36,8 @@
 
 void readline_regex_highlighter(attr_line_t &line, int x);
 
+void readline_command_highlighter(attr_line_t &line, int x);
+
 void readline_sqlite_highlighter(attr_line_t &line, int x);
 
 #endif
