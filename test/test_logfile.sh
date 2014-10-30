@@ -155,12 +155,14 @@ run_test ./drive_logfile -t -f generic_log ${srcdir}/logfile_generic.0
 
 check_output "generic_log timestamp interpreted incorrectly?" <<EOF
 Jul 02 10:22:40 2012 -- 672
+Oct 08 16:56:38 2014 -- 344
 EOF
 
 run_test ./drive_logfile -v -f generic_log ${srcdir}/logfile_generic.0
 
 check_output "generic_log level interpreted incorrectly?" <<EOF
 0x02
+0x04
 EOF
 
 touch -t 200711030923 ${srcdir}/logfile_glog.0
