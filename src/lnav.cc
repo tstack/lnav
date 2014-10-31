@@ -3119,7 +3119,7 @@ static bool rescan_files(bool required)
         logfile *lf = *file_iter;
 
         if (!lf->exists() || lf->is_closed()) {
-            retval = true;
+            return true;
         }
         else {
             ++file_iter;
