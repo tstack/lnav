@@ -110,8 +110,8 @@ public:
         : ll_offset(off),
           ll_time(t),
           ll_millis(millis),
-          ll_level(l),
-          ll_sub_offset(0)
+          ll_sub_offset(0),
+          ll_level(l)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     };
@@ -121,8 +121,8 @@ public:
             level_t l,
             uint8_t m = 0)
         : ll_offset(off),
-          ll_level(l),
-          ll_sub_offset(0)
+          ll_sub_offset(0),
+          ll_level(l)
     {
         this->set_time(tv);
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
@@ -197,8 +197,7 @@ public:
     {
         return (this->ll_schema[0] != 0 ||
                 this->ll_schema[1] != 0 ||
-                this->ll_schema[2] != 0 ||
-                this->ll_schema[3] != 0);
+                this->ll_schema[2] != 0);
     };
 
     /**
@@ -248,9 +247,9 @@ private:
     off_t    ll_offset;
     time_t   ll_time;
     uint16_t ll_millis;
-    uint8_t  ll_level;
     uint16_t ll_sub_offset;
-    char     ll_schema[4];
+    uint8_t  ll_level;
+    char     ll_schema[3];
 };
 
 enum scale_op_t {

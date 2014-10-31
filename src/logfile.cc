@@ -50,6 +50,8 @@
 using namespace std;
 
 static const size_t MAX_UNRECOGNIZED_LINES = 1000;
+static const size_t INDEX_RESERVE_LOW_MARK = 10;
+static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
 logfile::logfile(string filename, auto_fd fd)
 throw (error)
@@ -59,8 +61,6 @@ throw (error)
       lf_is_closed(false),
       lf_logline_observer(NULL)
 {
-    ssize_t reserve_size = 100;
-
     require(filename.size() > 0);
 
     this->lf_time_offset.tv_sec = 0;
@@ -79,7 +79,6 @@ throw (error)
         if (stat(filename.c_str(), &this->lf_stat) == -1) {
             throw error(filename, errno);
         }
-        reserve_size = this->lf_stat.st_size / 100;
 
         if (!S_ISREG(this->lf_stat.st_mode)) {
             throw error(filename, EINVAL);
@@ -102,7 +101,7 @@ throw (error)
 
     this->lf_content_id = hash_string(this->lf_filename);
     this->lf_line_buffer.set_fd(fd);
-    this->lf_index.reserve(reserve_size);
+    this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
     ensure(this->invariant());
 }
@@ -248,6 +247,12 @@ throw (line_buffer::error, logfile::error)
 
     if (fstat(this->lf_line_buffer.get_fd(), &st) == -1) {
         throw error(this->lf_filename, errno);
+    }
+
+    if ((this->lf_index.capacity() - this->lf_index.size()) <
+        INDEX_RESERVE_LOW_MARK) {
+        this->lf_index.reserve(
+            this->lf_index.capacity() + INDEX_RESERVE_INCREMENT);
     }
 
     /* Check for new data based on the file size. */
