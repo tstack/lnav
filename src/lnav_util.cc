@@ -290,10 +290,13 @@ const char *date_time_scanner::scan(const char *time_dest,
                        this->dts_fmt_lock)) {
         *tm_out = this->dts_base_tm;
         if (time_dest[0] == '+') {
+            char time_cp[time_len + 1];
             int gmt_int, off;
 
             retval = NULL;
-            if (sscanf(time_dest, "+%d%n", &gmt_int, &off) == 1) {
+            memcpy(time_cp, time_dest, time_len);
+            time_cp[time_len] = '\0';
+            if (sscanf(time_cp, "+%d%n", &gmt_int, &off) == 1) {
                 time_t gmt = gmt_int;
 
                 if (this->dts_local_time) {

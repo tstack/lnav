@@ -776,6 +776,15 @@ void rebuild_indexes(bool force)
 
         for (iter = tss->tss_files.begin();
              iter != tss->tss_files.end(); ) {
+            logfile *lf = (*iter);
+
+            if (!lf->exists() || lf->is_closed()) {
+                lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
+                iter = tss->tss_files.erase(iter);
+                lnav_data.ld_files.remove(lf);
+                continue;
+            }
+
             try {
                 bool new_text_data = (*iter)->rebuild_index(&obs);
 
@@ -851,6 +860,25 @@ void rebuild_indexes(bool force)
     if (force) {
         old_count = 0;
     }
+
+    list<logfile *>::iterator         file_iter;
+    for (file_iter = lnav_data.ld_files.begin();
+         file_iter != lnav_data.ld_files.end(); ) {
+        logfile *lf = *file_iter;
+
+        if (!lf->exists() || lf->is_closed()) {
+            lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
+            lnav_data.ld_text_source.tss_files.remove(lf);
+            lnav_data.ld_log_source.remove_file(lf);
+            file_iter = lnav_data.ld_files.erase(file_iter);
+
+            delete lf;
+        }
+        else {
+            ++file_iter;
+        }
+    }
+
     if (lss.rebuild_index(&obs, force)) {
         size_t      new_count = lss.text_line_count();
         grep_line_t start_line;
@@ -3091,14 +3119,6 @@ static bool rescan_files(bool required)
         logfile *lf = *file_iter;
 
         if (!lf->exists() || lf->is_closed()) {
-            log_info("file has been deleted/closed -- %s",
-                    lf->get_filename().c_str());
-            lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
-            lnav_data.ld_text_source.tss_files.remove(lf);
-            lnav_data.ld_log_source.remove_file(lf);
-            file_iter = lnav_data.ld_files.erase(file_iter);
-
-            delete lf;
             retval = true;
         }
         else {
