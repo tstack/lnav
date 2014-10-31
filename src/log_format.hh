@@ -700,7 +700,7 @@ public:
                     NULL,
                     this->jlf_parse_context.get()));
             yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings, 1);
-            this->jlf_cached_line.reserve(1024 * 1024);
+            this->jlf_cached_line.reserve(16 * 1024);
         }
         else if (this->lf_fmt_lock != -1) {
             pcrepp *pat = this->elf_pattern_order[this->lf_fmt_lock]->p_pcre;

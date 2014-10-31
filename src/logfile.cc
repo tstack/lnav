@@ -50,7 +50,6 @@
 using namespace std;
 
 static const size_t MAX_UNRECOGNIZED_LINES = 1000;
-static const size_t INDEX_RESERVE_LOW_MARK = 10;
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
 logfile::logfile(string filename, auto_fd fd)
@@ -247,12 +246,6 @@ throw (line_buffer::error, logfile::error)
 
     if (fstat(this->lf_line_buffer.get_fd(), &st) == -1) {
         throw error(this->lf_filename, errno);
-    }
-
-    if ((this->lf_index.capacity() - this->lf_index.size()) <
-        INDEX_RESERVE_LOW_MARK) {
-        this->lf_index.reserve(
-            this->lf_index.capacity() + INDEX_RESERVE_INCREMENT);
     }
 
     /* Check for new data based on the file size. */

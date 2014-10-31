@@ -470,11 +470,12 @@ static int json_array_end(void *ctx)
     if (ypc->ypc_path_index_stack.size() == 1) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);
         size_t sub_end = yajl_get_bytes_consumed(jlu->jlu_handle);
-        tmp_shared_buffer tsb(&jlu->jlu_line_value[jlu->jlu_sub_start],
-            sub_end - jlu->jlu_sub_start);
+        shared_buffer_ref sbr;
 
+        sbr.subset(jlu->jlu_shared_buffer, jlu->jlu_sub_start,
+            sub_end - jlu->jlu_sub_start);
         jlu->jlu_format->jlf_line_values.push_back(
-            logline_value(field_name, tsb.tsb_ref));
+            logline_value(field_name, sbr));
         jlu->jlu_format->jlf_line_values.back().lv_kind = logline_value::VALUE_JSON;
     }
 
@@ -578,6 +579,8 @@ bool external_log_format::scan(std::vector<logline> &dst,
         ypc.ypc_ignore_unused = true;
         ypc.ypc_alt_callbacks.yajl_start_array = json_array_start;
         ypc.ypc_alt_callbacks.yajl_start_map = json_array_start;
+        ypc.ypc_alt_callbacks.yajl_end_array = NULL;
+        ypc.ypc_alt_callbacks.yajl_end_map = NULL;
         jlu.jlu_format = this;
         jlu.jlu_base_line = &ll;
         jlu.jlu_line_value = sbr.get_data();
