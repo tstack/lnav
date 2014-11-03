@@ -39,9 +39,22 @@
 #include <time.h>
 #include <sys/types.h>
 
+enum exttm_bits_t {
+    ETB_YEAR_SET,
+    ETB_MONTH_SET,
+    ETB_DAY_SET,
+};
+
+enum exttm_flags_t {
+    ETF_YEAR_SET = (1L << ETB_YEAR_SET),
+    ETF_MONTH_SET = (1L << ETB_MONTH_SET),
+    ETF_DAY_SET = (1L << ETB_DAY_SET),
+};
+
 struct exttm {
     struct tm et_tm;
     int32_t et_nsec;
+    int et_flags;
 };
 
 #define PTIME_CONSUME(amount, block) \
@@ -128,6 +141,7 @@ inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         if (val >= 0) {
             off_inout += 3;
             dst->et_tm.tm_mon = val;
+            dst->et_flags |= ETF_MONTH_SET;
             return true;
         }
     }
@@ -217,7 +231,11 @@ inline bool ptime_d(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         dst->et_tm.tm_mday += (str[off_inout + 1] - '0');
     });
 
-    return (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31);
+    if (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31) {
+        dst->et_flags |= ETF_DAY_SET;
+        return true;
+    }
+    return false;
 }
 
 inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -237,7 +255,11 @@ inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         }
     }
 
-    return (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31);
+    if (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31) {
+        dst->et_flags |= ETF_DAY_SET;
+        return true;
+    }
+    return false;
 }
 
 inline bool ptime_N(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -259,7 +281,11 @@ inline bool ptime_N(struct exttm *dst, const char *str, off_t &off_inout, ssize_
 
     dst->et_tm.tm_mon -= 1;
 
-    return (dst->et_tm.tm_mon >= 0 && dst->et_tm.tm_mon <= 11);
+    if (dst->et_tm.tm_mon >= 0 && dst->et_tm.tm_mon <= 11) {
+        dst->et_flags |= ETF_MONTH_SET;
+        return true;
+    }
+    return false;
 }
 
 inline bool ptime_k(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -311,7 +337,11 @@ inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         dst->et_tm.tm_mon = ((str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0')) - 1;
     });
 
-    return (0 <= dst->et_tm.tm_mon && dst->et_tm.tm_mon <= 11);
+    if (0 <= dst->et_tm.tm_mon && dst->et_tm.tm_mon <= 11) {
+        dst->et_flags |= ETF_MONTH_SET;
+        return true;
+    }
+    return false;
 }
 
 inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -343,6 +373,8 @@ inline bool ptime_Y(struct exttm *dst, const char *str, off_t &off_inout, ssize_
             (str[off_inout + 1] - '0') *  100 +
             (str[off_inout + 2] - '0') *   10 +
             (str[off_inout + 3] - '0') *    1) - 1900;
+
+        dst->et_flags |= ETF_YEAR_SET;
     });
 
     return true;
@@ -359,6 +391,8 @@ inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, ssize_
             if (dst->et_tm.tm_year < 69) {
                 dst->et_tm.tm_year += 100;
             }
+
+            dst->et_flags |= ETF_YEAR_SET;
             return true;
         }
         return false;

@@ -295,14 +295,14 @@ void log_format::check_for_new_year(std::vector<logline> &dst,
 
         for (iter = dst.begin(); iter != dst.end(); iter++) {
             time_t     ot = iter->get_time();
-            struct tm *otm;
+            struct tm otm;
 
-            otm           = gmtime(&ot);
-            otm->tm_year -= off_year;
-            otm->tm_mon  -= off_month;
-            otm->tm_yday -= off_day;
-            otm->tm_hour -= off_hour;
-            iter->set_time(tm2sec(otm));
+            gmtime_r(&ot, &otm);
+            otm.tm_year -= off_year;
+            otm.tm_mon  -= off_month;
+            otm.tm_yday -= off_day;
+            otm.tm_hour -= off_hour;
+            iter->set_time(tm2sec(&otm));
         }
     }
 }
@@ -670,7 +670,11 @@ bool external_log_format::scan(std::vector<logline> &dst,
             }
         }
 
-        this->check_for_new_year(dst, log_tv);
+        if (!((log_time_tm.et_flags & ETF_DAY_SET) &&
+                (log_time_tm.et_flags & ETF_MONTH_SET) &&
+                (log_time_tm.et_flags & ETF_YEAR_SET))) {
+            this->check_for_new_year(dst, log_tv);
+        }
 
         dst.push_back(logline(offset, log_tv, level));
 

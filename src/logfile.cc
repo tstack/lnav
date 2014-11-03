@@ -58,7 +58,8 @@ throw (error)
       lf_index_time(0),
       lf_index_size(0),
       lf_is_closed(false),
-      lf_logline_observer(NULL)
+      lf_logline_observer(NULL),
+      lf_logfile_observer(NULL)
 {
     require(filename.size() > 0);
 
@@ -238,7 +239,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
     }
 }
 
-bool logfile::rebuild_index(logfile_observer *lo)
+bool logfile::rebuild_index()
 throw (line_buffer::error, logfile::error)
 {
     bool        retval = false;
@@ -288,8 +289,8 @@ throw (line_buffer::error, logfile::error)
                 }
             }
 
-            if (lo != NULL) {
-                lo->logfile_indexing(
+            if (this->lf_logfile_observer != NULL) {
+                this->lf_logfile_observer->logfile_indexing(
                     *this,
                     this->lf_line_buffer.get_read_offset(off),
                     st.st_size);
@@ -429,11 +430,22 @@ void logfile::reobserve_from(iterator iter)
 {
     if (this->lf_logline_observer != NULL) {
         for (; iter != this->end(); ++iter) {
+            off_t offset = std::distance(this->begin(), iter);
             shared_buffer_ref sbr;
+
+            if (this->lf_logfile_observer != NULL) {
+                this->lf_logfile_observer->logfile_indexing(
+                        *this, offset, this->size());
+            }
 
             this->read_line(iter, sbr);
             this->lf_logline_observer->logline_new_line(*this, iter, sbr);
         }
+        if (this->lf_logfile_observer != NULL) {
+            this->lf_logfile_observer->logfile_indexing(
+                    *this, this->size(), this->size());
+        }
+
         this->lf_logline_observer->logline_eof(*this);
     }
 }

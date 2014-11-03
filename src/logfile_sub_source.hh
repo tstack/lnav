@@ -121,14 +121,6 @@ class logfile_sub_source
     : public text_sub_source {
 public:
 
-    class observer
-        : public logfile_observer {
-public:
-        virtual void logfile_sub_source_filtering(logfile_sub_source &lss,
-                                                  vis_line_t cl,
-                                                  size_t total) = 0;
-    };
-
     static bookmark_type_t BM_ERRORS;
     static bookmark_type_t BM_WARNINGS;
     static bookmark_type_t BM_FILES;
@@ -167,7 +159,6 @@ public:
     void set_min_log_level(logline::level_t level) {
         if (this->lss_min_log_level != level) {
             this->lss_min_log_level = level;
-            this->text_filters_changed();
         }
     };
 
@@ -297,7 +288,7 @@ public:
         }
     };
 
-    bool rebuild_index(observer *obs = NULL, bool force = false);
+    bool rebuild_index(bool force = false);
 
     void text_update_marks(vis_bookmarks &bm);
 

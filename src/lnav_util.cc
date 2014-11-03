@@ -379,6 +379,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                        curr_time_fmt,
                        this->dts_fmt_lock)) {
         *tm_out = this->dts_base_tm;
+        tm_out->et_flags = 0;
         if (time_dest[0] == '+') {
             char time_cp[time_len + 1];
             int gmt_int, off;

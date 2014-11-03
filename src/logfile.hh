@@ -276,10 +276,14 @@ public:
      * indexing.
      * @return True if any new lines were indexed.
      */
-    bool rebuild_index(logfile_observer *lo = NULL)
+    bool rebuild_index()
         throw (line_buffer::error, logfile::error);
 
     void reobserve_from(iterator iter);
+
+    void set_logfile_observer(logfile_observer *lo) {
+        this->lf_logfile_observer = lo;
+    };
 
     void set_logline_observer(logline_observer *llo);
 
@@ -335,6 +339,7 @@ protected:
     bool lf_is_closed;
     bool lf_partial_line;
     logline_observer *lf_logline_observer;
+    logfile_observer *lf_logfile_observer;
 };
 
 class logline_observer {

@@ -648,11 +648,12 @@ bool setup_logline_table()
  * Observer for loading progress that updates the bottom status bar.
  */
 class loading_observer
-    : public logfile_sub_source::observer {
+    : public logfile_observer {
 public:
     loading_observer()
-        : lo_last_offset(0),
-          lo_last_line(0) { };
+        : lo_last_offset(0) {
+
+    };
 
     void logfile_indexing(logfile &lf, off_t off, size_t total)
     {
@@ -679,28 +680,6 @@ public:
         }
     };
 
-    void logfile_sub_source_filtering(logfile_sub_source &lss,
-                                      vis_line_t cl,
-                                      size_t total)
-    {
-        static sig_atomic_t filter_counter = 0;
-
-        if (lnav_data.ld_flags & LNF_HEADLESS) {
-            return;
-        }
-
-        if ((size_t)cl == (total - 1) ||
-            ui_periodic_timer::singleton().time_to_update(filter_counter)) {
-            lnav_data.ld_bottom_source.update_loading(cl, (total - 1));
-            this->do_update();
-            this->lo_last_line = cl;
-        }
-
-        if (!lnav_data.ld_looping) {
-            throw logfile::error("", EINTR);
-        }
-    };
-
 private:
     void do_update(void)
     {
@@ -711,7 +690,6 @@ private:
     };
 
     off_t          lo_last_offset;
-    vis_line_t lo_last_line;
 };
 
 static void rebuild_hist(size_t old_count, bool force)
@@ -745,8 +723,6 @@ static void rebuild_hist(size_t old_count, bool force)
 
 void rebuild_indexes(bool force)
 {
-    static loading_observer obs;
-
     logfile_sub_source &lss       = lnav_data.ld_log_source;
     textview_curses &   log_view  = lnav_data.ld_views[LNV_LOG];
     textview_curses &   text_view = lnav_data.ld_views[LNV_TEXT];
@@ -786,7 +762,7 @@ void rebuild_indexes(bool force)
             }
 
             try {
-                bool new_text_data = (*iter)->rebuild_index(&obs);
+                bool new_text_data = (*iter)->rebuild_index();
 
                 if ((*iter)->get_format() != NULL) {
                     logfile *lf = *iter;
@@ -879,7 +855,7 @@ void rebuild_indexes(bool force)
         }
     }
 
-    if (lss.rebuild_index(&obs, force)) {
+    if (lss.rebuild_index(force)) {
         size_t      new_count = lss.text_line_count();
         grep_line_t start_line;
         int         lpc;
@@ -2982,6 +2958,7 @@ struct same_file {
  */
 static void watch_logfile(string filename, int fd, bool required)
 {
+    static loading_observer obs;
     list<logfile *>::iterator file_iter;
     struct stat st;
     int         rc;
@@ -3038,6 +3015,7 @@ static void watch_logfile(string filename, int fd, bool required)
                 logfile *lf = new logfile(filename, fd);
 
                 log_info("loading new file: %s", filename.c_str());
+                    lf->set_logfile_observer(&obs);
                 lnav_data.ld_files.push_back(lf);
                 lnav_data.ld_text_source.tss_files.push_back(lf);
                 break;

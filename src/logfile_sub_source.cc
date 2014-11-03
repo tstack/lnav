@@ -134,6 +134,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
             shared_buffer_ref sbr;
             std::vector<logline_value> line_values;
             struct timeval adjusted_time;
+            struct tm adjusted_tm;
             string_attrs_t sa;
             char buffer[128];
             const char *fmt;
@@ -142,7 +143,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
             adjusted_time = this->lss_token_line->get_timeval();
             strftime(buffer, sizeof(buffer),
                      fmt,
-                     gmtime(&adjusted_time.tv_sec));
+                     gmtime_r(&adjusted_time.tv_sec, &adjusted_tm));
 
             sbr.share(this->lss_share_manager,
                 (char *)this->lss_token_value.c_str(), this->lss_token_value.size());
@@ -364,7 +365,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     }
 }
 
-bool logfile_sub_source::rebuild_index(observer *obs, bool force)
+bool logfile_sub_source::rebuild_index(bool force)
 {
     iterator iter;
     size_t total_lines = 0;
@@ -381,7 +382,7 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
             }
         }
         else {
-            if ((*iter)->get_file()->rebuild_index(obs)) {
+            if ((*iter)->get_file()->rebuild_index()) {
                 retval = true;
             }
             file_count += 1;
@@ -433,13 +434,6 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
             content_line_t con_line(file_index * MAX_LINES_PER_FILE +
                                     line_index);
 
-            if (obs != NULL) {
-                obs->logfile_sub_source_filtering(
-                    *this,
-                    vis_line_t(this->lss_index.size()),
-                    total_lines);
-            }
-
             off_t insert_point = this->lss_index.merge_value(
                     con_line, logline_cmp(*this));
             if (insert_point < start_size) {
@@ -448,11 +442,6 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
             }
 
             merge.next();
-        }
-        if (obs != NULL) {
-            obs->logfile_sub_source_filtering(*this,
-                                              vis_line_t(total_lines - 1),
-                                              total_lines);
         }
 
         for (iter = this->lss_files.begin();
