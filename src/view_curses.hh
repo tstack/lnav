@@ -478,6 +478,7 @@ public:
         VCR_OK,
         VCR_ERROR,              /*< An error message. */
         VCR_WARNING,            /*< A warning message. */
+        VCR_WARN,            /*< A warning message. */
         VCR_ALT_ROW,            /*< Highlight for alternating rows in a list */
         VCR_ADJUSTED_TIME,
         VCR_STATUS,             /*< Normal status line text. */
