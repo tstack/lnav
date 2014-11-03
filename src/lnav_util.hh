@@ -178,6 +178,8 @@ inline bool is_glob(const char *fn)
  */
 time_t tm2sec(const struct tm *t);
 
+struct tm *secs2tm(time_t *tim_p, struct tm *res);
+
 extern const char *std_time_fmt[];
 
 struct date_time_scanner {
@@ -226,7 +228,7 @@ struct date_time_scanner {
         }
         else {
             time_t adjust_gmt = t - this->dts_local_offset_cache;
-            gmtime_r(&adjust_gmt, &tm_out.et_tm);
+            secs2tm(&adjust_gmt, &tm_out.et_tm);
         }
     };
 

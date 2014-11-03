@@ -38,6 +38,7 @@
 #include "auto_mem.hh"
 #include "sql_util.hh"
 #include "lnav_log.hh"
+#include "lnav_util.hh"
 
 /**
  * Copied from -- http://www.sqlite.org/lang_keywords.html
@@ -477,7 +478,7 @@ ssize_t sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
     struct tm gmtm;
     int year, month, index = 0;
 
-    gmtime_r(&time, &gmtm);
+    secs2tm(&time, &gmtm);
     year = gmtm.tm_year + 1900;
     month = gmtm.tm_mon + 1;
     buffer[index++] = '0' + ((year / 1000) % 10);
