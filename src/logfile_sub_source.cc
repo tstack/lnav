@@ -44,7 +44,6 @@ bookmark_type_t logfile_sub_source::BM_FILES;
 
 logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
-      lss_filtered_count(0),
       lss_min_log_level(logline::LEVEL_UNKNOWN)
 {
     this->clear_line_size_cache();
@@ -398,7 +397,6 @@ bool logfile_sub_source::rebuild_index(observer *obs, bool force)
 
         this->lss_index.clear();
         this->lss_filtered_index.clear();
-        this->lss_filtered_count = 0;
     }
 
     if (retval || force) {

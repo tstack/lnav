@@ -315,7 +315,9 @@ public:
         return this->lss_user_mark_metadata;
     };
 
-    int get_filtered_count() const { return this->lss_filtered_count; };
+    int get_filtered_count() const {
+        return this->lss_index.size() - this->lss_filtered_index.size();
+    };
 
     logfile *find(const char *fn, content_line_t &line_base);
 
@@ -517,8 +519,6 @@ private:
 
     unsigned long             lss_flags;
     std::vector<logfile_data *> lss_files;
-
-    int            lss_filtered_count;
 
     chunky_index<indexed_content> lss_index;
     std::vector<uint32_t> lss_filtered_index;
