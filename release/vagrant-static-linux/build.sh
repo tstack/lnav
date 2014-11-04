@@ -2,6 +2,8 @@
 
 FAKE_ROOT=/home/vagrant/fake.root
 
+mkdir -p ~/github
+
 cd ~/github
 if ! test -d lnav; then
     git clone git://github.com/tstack/lnav.git
