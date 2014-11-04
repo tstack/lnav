@@ -191,6 +191,7 @@ check_output "glog_log level interpreted incorrectly?" <<EOF
 EOF
 
 cp ${srcdir}/logfile_syslog.0 truncfile.0
+chmod u+w truncfile.0
 
 run_test ${lnav_test} -n \
     -c ";update syslog_log set log_mark = 1 where log_line = 1" \

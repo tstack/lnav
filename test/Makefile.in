@@ -751,6 +751,8 @@ dist_noinst_SCRIPTS = \
 	test_data_parser.sh \
 	test_grep_proc.sh \
 	test_json_format.sh \
+	test_json_op.sh \
+	test_json_ptr_walk.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
@@ -790,13 +792,16 @@ dist_noinst_DATA = \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
 	logfile_empty.0 \
+	logfile_for_join.0 \
 	logfile_generic.0 \
 	logfile_glog.0 \
 	logfile_json.json \
 	logfile_multiline.0 \
+	logfile_openam.0 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
+	logfile_syslog.2 \
 	logfile_tcf.0 \
 	logfile_tcf.1 \
 	logfile_tcsh_history.0 \
@@ -825,7 +830,9 @@ DISTCLEANFILES = \
 	*.index \
 	*.tmp \
 	*.gz \
-	*.bz2
+	*.bz2 \
+	truncfile.0 \
+	test.log
 
 all: all-am
 

@@ -404,7 +404,9 @@ noinst_HEADERS = \
 	bookmarks.hh \
 	bottom_status_source.hh \
 	byte_array.hh \
+	chunky_index.hh \
 	column_namer.hh \
+	concise_index.hh \
 	data_scanner.hh \
 	data_parser.hh \
 	default-log-formats-json.hh \
