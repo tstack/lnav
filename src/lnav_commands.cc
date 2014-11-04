@@ -449,7 +449,9 @@ static string com_highlight(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting regular expression to highlight";
 
-    if (args.size() == 0) { }
+    if (args.size() == 0) {
+        args.push_back("filter");
+    }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.top();
         textview_curses::highlight_map_t &hm = tc->get_highlights();

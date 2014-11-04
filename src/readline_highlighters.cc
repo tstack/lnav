@@ -350,13 +350,23 @@ void readline_regex_highlighter(attr_line_t &al, int x)
 void readline_command_highlighter(attr_line_t &al, int x)
 {
     static const pcrepp PREFIXES("^:(filter-in|filter-out|highlight|graph)");
+    static int keyword_attrs = (
+            A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));
 
     const string &line = al.get_string();
     pcre_context_static<30> pc;
     pcre_input pi(line);
+    size_t ws_index;
 
+    ws_index = line.find(' ');
+    if (ws_index != string::npos) {
+        al.get_attrs().push_back(string_attr(
+                line_range(1, ws_index),
+                &view_curses::VC_STYLE,
+                keyword_attrs));
+    }
     if (PREFIXES.match(pc, pi)) {
-        readline_regex_highlighter_int(al, x, 1 + pc[1]->length());
+        readline_regex_highlighter_int(al, x, 1 + pc[0]->length());
     }
 }
 

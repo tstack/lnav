@@ -71,6 +71,10 @@
 
 #include <sqlite3.h>
 
+#ifdef HAVE_BZLIB_H
+#include <bzlib.h>
+#endif
+
 #include "lnav.hh"
 #include "help.hh"
 #include "init-sql.hh"
@@ -4287,6 +4291,15 @@ int main(int argc, char *argv[])
 
             log_info("startup: %s", PACKAGE_STRING);
             log_host_info();
+            log_info("Libraries:");
+#ifdef HAVE_BZLIB_H
+            log_info("  bzip=%s", BZ2_bzlibVersion());
+#endif
+            log_info("  ncurses=%s", NCURSES_VERSION);
+            log_info("  pcre=%s", pcre_version());
+            log_info("  readline=%s", rl_library_version);
+            log_info("  sqlite=%s", sqlite3_version);
+            log_info("  zlib=%s", zlibVersion());
             log_info("lnav_data:");
             log_info("  flags=%x", lnav_data.ld_flags);
             log_info("  commands:");

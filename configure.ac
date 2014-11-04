@@ -1,5 +1,5 @@
 
-AC_INIT(lnav, 0.7.0, lnav@googlegroups.com)
+AC_INIT(lnav, 0.7.1, lnav@googlegroups.com)
 AC_CONFIG_SRCDIR([src/lnav.cc])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
