@@ -228,7 +228,7 @@ struct date_time_scanner {
         }
         else {
             time_t adjust_gmt = t - this->dts_local_offset_cache;
-            secs2tm(&adjust_gmt, &tm_out.et_tm);
+            gmtime_r(&adjust_gmt, &tm_out.et_tm);
         }
     };
 

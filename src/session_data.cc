@@ -113,7 +113,7 @@ static bool bind_line(sqlite3 *db,
     if (sqlite3_bind_text(stmt, 1,
                           timestamp, strlen(timestamp),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
-        fprintf(stderr, "error: could not bind log time -- %s\n",
+        log_error("could not bind log time -- %s\n",
                 sqlite3_errmsg(db));
         return false;
     }
@@ -123,7 +123,7 @@ static bool bind_line(sqlite3 *db,
     if (sqlite3_bind_text(stmt, 2,
                           format_name.c_str(), format_name.length(),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
-        fprintf(stderr, "error: could not bind log format -- %s\n",
+        log_error("could not bind log format -- %s\n",
                     sqlite3_errmsg(db));
         return false;
     }
@@ -133,13 +133,13 @@ static bool bind_line(sqlite3 *db,
     if (sqlite3_bind_text(stmt, 3,
                           line_hash.c_str(), line_hash.length(),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
-        fprintf(stderr, "error: could not bind log hash -- %s\n",
+        log_error("could not bind log hash -- %s\n",
                 sqlite3_errmsg(db));
         return false;
     }
 
     if (sqlite3_bind_int64(stmt, 4, session_time) != SQLITE_OK) {
-        fprintf(stderr, "error: could not bind session time -- %s\n",
+        log_error("could not bind session time -- %s\n",
                 sqlite3_errmsg(db));
         return false;
     }
@@ -222,8 +222,8 @@ static void cleanup_session_data(void)
         }
         else {
             if (remove(front.sfi_path.c_str()) != 0) {
-                fprintf(stderr,
-                        "error: Unable to remove session file: %s -- %s\n",
+                log_error(
+                        "Unable to remove session file: %s -- %s\n",
                         front.sfi_path.c_str(),
                         strerror(errno));
             }
@@ -238,8 +238,8 @@ static void cleanup_session_data(void)
         const session_file_info &front = session_info_list.front();
 
         if (remove(front.sfi_path.c_str()) != 0) {
-            fprintf(stderr,
-                    "error: Unable to remove session file: %s -- %s\n",
+            log_error(
+                    "Unable to remove session file: %s -- %s\n",
                     front.sfi_path.c_str(),
                     strerror(errno));
         }
@@ -323,8 +323,8 @@ void scan_sessions(void)
         const std::string &name = session_file_names.front().second;
 
         if (remove(name.c_str()) != 0) {
-            fprintf(stderr,
-                    "error: Unable to remove session: %s -- %s\n",
+            log_error(
+                    "Unable to remove session: %s -- %s\n",
                     name.c_str(),
                     strerror(errno));
         }
@@ -365,8 +365,8 @@ static void load_time_bookmarks(void)
                            -1,
                            stmt.out(),
                            NULL) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not prepare bookmark select statemnt -- %s\n",
+        log_error(
+                "could not prepare bookmark select statemnt -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -389,7 +389,7 @@ static void load_time_bookmarks(void)
                      lf->original_line_time(line_iter), 'T');
 
         if (sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind session time -- %s\n",
+            log_error("could not bind session time -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -397,7 +397,7 @@ static void load_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 2,
                               low_timestamp, strlen(low_timestamp),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind low log time -- %s\n",
+            log_error("could not bind low log time -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -410,7 +410,7 @@ static void load_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 3,
                               high_timestamp, strlen(high_timestamp),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind high log time -- %s\n",
+            log_error("could not bind high log time -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -420,7 +420,7 @@ static void load_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 4,
                               format_name.c_str(), format_name.length(),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind log format -- %s\n",
+            log_error("could not bind log format -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -504,8 +504,8 @@ static void load_time_bookmarks(void)
                     const char *errmsg;
 
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                    fprintf(stderr,
-                            "error: bookmark select error: code %d -- %s\n",
+                    log_error(
+                            "bookmark select error: code %d -- %s\n",
                             rc,
                             errmsg);
                     done = true;
@@ -524,8 +524,8 @@ static void load_time_bookmarks(void)
                            -1,
                            stmt.out(),
                            NULL) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not prepare time_offset select statemnt -- %s\n",
+        log_error(
+                "could not prepare time_offset select statemnt -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -548,7 +548,7 @@ static void load_time_bookmarks(void)
                      lf->original_line_time(line_iter), 'T');
 
         if (sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind session time -- %s\n",
+            log_error("could not bind session time -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -556,7 +556,7 @@ static void load_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 2,
                               low_timestamp, strlen(low_timestamp),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind low log time -- %s\n",
+            log_error("could not bind low log time -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -569,7 +569,7 @@ static void load_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 3,
                               high_timestamp, strlen(high_timestamp),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind high log time -- %s\n",
+            log_error("could not bind high log time -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -579,7 +579,7 @@ static void load_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 4,
                               format_name.c_str(), format_name.length(),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind log format -- %s\n",
+            log_error("could not bind log format -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -657,8 +657,8 @@ static void load_time_bookmarks(void)
                     const char *errmsg;
 
                     errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                    fprintf(stderr,
-                            "error: bookmark select error: code %d -- %s\n",
+                    log_error(
+                            "bookmark select error: code %d -- %s\n",
                             rc,
                             errmsg);
                     done = true;
@@ -839,7 +839,7 @@ static void save_user_bookmarks(
 
         if (meta_iter == bm_meta.end()) {
             if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
-                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s\n",
                         sqlite3_errmsg(db));
                 return;
             }
@@ -849,15 +849,15 @@ static void save_user_bookmarks(
                                   meta_iter->second.bm_name.c_str(),
                                   meta_iter->second.bm_name.length(),
                                   SQLITE_TRANSIENT) != SQLITE_OK) {
-                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s\n",
                         sqlite3_errmsg(db));
                 return;
             }
         }
 
         if (sqlite3_step(stmt) != SQLITE_DONE) {
-            fprintf(stderr,
-                    "error: could not execute bookmark insert statement -- %s\n",
+            log_error(
+                    "could not execute bookmark insert statement -- %s\n",
                     sqlite3_errmsg(db));
             return;
         }
@@ -875,17 +875,17 @@ static void save_time_bookmarks(void)
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
     if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
-        fprintf(stderr, "error: unable to open bookmark DB -- %s\n", db_path.c_str());
+        log_error("unable to open bookmark DB -- %s\n", db_path.c_str());
         return;
     }
 
     if (sqlite3_exec(db.in(), BOOKMARK_TABLE_DEF, NULL, NULL, errmsg.out()) != SQLITE_OK) {
-        fprintf(stderr, "error: unable to make bookmark table -- %s\n", errmsg.in());
+        log_error("unable to make bookmark table -- %s\n", errmsg.in());
         return;
     }
 
     if (sqlite3_exec(db.in(), "BEGIN TRANSACTION", NULL, NULL, errmsg.out()) != SQLITE_OK) {
-        fprintf(stderr, "error: unable to begin transaction -- %s\n", errmsg.in());
+        log_error("unable to begin transaction -- %s\n", errmsg.in());
         return;
     }
 
@@ -899,8 +899,8 @@ static void save_time_bookmarks(void)
                            -1,
                            stmt.out(),
                            NULL) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not prepare bookmark delete statemnt -- %s\n",
+        log_error(
+                "could not prepare bookmark delete statemnt -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -914,8 +914,8 @@ static void save_time_bookmarks(void)
         }
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-            fprintf(stderr,
-                    "error: could not execute bookmark insert statement -- %s\n",
+            log_error(
+                    "could not execute bookmark insert statement -- %s\n",
                     sqlite3_errmsg(db));
             return;
         }
@@ -932,8 +932,8 @@ static void save_time_bookmarks(void)
                            -1,
                            stmt.out(),
                            NULL) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not prepare bookmark replace statemnt -- %s\n",
+        log_error(
+                "could not prepare bookmark replace statemnt -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -960,14 +960,14 @@ static void save_time_bookmarks(void)
             }
 
             if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
-                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s\n",
                         sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-                fprintf(stderr,
-                        "error: could not execute bookmark insert statement -- %s\n",
+                log_error(
+                        "could not execute bookmark insert statement -- %s\n",
                         sqlite3_errmsg(db));
                 return;
             }
@@ -986,8 +986,8 @@ static void save_time_bookmarks(void)
                            -1,
                            stmt.out(),
                            NULL) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not prepare time_offset delete statemnt -- %s\n",
+        log_error(
+                "could not prepare time_offset delete statemnt -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1001,8 +1001,8 @@ static void save_time_bookmarks(void)
         }
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-            fprintf(stderr,
-                    "error: could not execute bookmark insert statement -- %s\n",
+            log_error(
+                    "could not execute bookmark insert statement -- %s\n",
                     sqlite3_errmsg(db));
             return;
         }
@@ -1019,8 +1019,8 @@ static void save_time_bookmarks(void)
                            -1,
                            stmt.out(),
                            NULL) != SQLITE_OK) {
-        fprintf(stderr,
-                "error: could not prepare time_offset replace statemnt -- %s\n",
+        log_error(
+                "could not prepare time_offset replace statemnt -- %s\n",
                 sqlite3_errmsg(db));
         return;
     }
@@ -1045,20 +1045,20 @@ static void save_time_bookmarks(void)
             }
 
             if (sqlite3_bind_null(stmt.in(), 5) != SQLITE_OK) {
-                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s\n",
                         sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_bind_null(stmt.in(), 6) != SQLITE_OK) {
-                fprintf(stderr, "error: could not bind log hash -- %s\n",
+                log_error("could not bind log hash -- %s\n",
                         sqlite3_errmsg(db.in()));
                 return;
             }
 
             if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-                fprintf(stderr,
-                        "error: could not execute bookmark insert statement -- %s\n",
+                log_error(
+                        "could not execute bookmark insert statement -- %s\n",
                         sqlite3_errmsg(db));
                 return;
             }
@@ -1089,7 +1089,7 @@ static void save_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 1,
                               timestamp, strlen(timestamp),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind log time -- %s\n",
+            log_error("could not bind log time -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -1099,7 +1099,7 @@ static void save_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 2,
                               format_name.c_str(), format_name.length(),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind log format -- %s\n",
+            log_error("could not bind log format -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -1109,13 +1109,13 @@ static void save_time_bookmarks(void)
         if (sqlite3_bind_text(stmt.in(), 3,
                               line_hash.c_str(), line_hash.length(),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind log hash -- %s\n",
+            log_error("could not bind log hash -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
 
         if (sqlite3_bind_int64(stmt.in(), 4, lnav_data.ld_session_time) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind session time -- %s\n",
+            log_error("could not bind session time -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
@@ -1123,20 +1123,20 @@ static void save_time_bookmarks(void)
         struct timeval offset = lf->get_time_offset();
 
         if (sqlite3_bind_int64(stmt.in(), 5, offset.tv_sec) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind offset_sec -- %s\n",
+            log_error("could not bind offset_sec -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
 
         if (sqlite3_bind_int64(stmt.in(), 6, offset.tv_usec) != SQLITE_OK) {
-            fprintf(stderr, "error: could not bind offset_usec -- %s\n",
+            log_error("could not bind offset_usec -- %s\n",
                     sqlite3_errmsg(db.in()));
             return;
         }
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
-            fprintf(stderr,
-                    "error: could not execute bookmark insert statement -- %s\n",
+            log_error(
+                    "could not execute bookmark insert statement -- %s\n",
                     sqlite3_errmsg(db));
             return;
         }
@@ -1145,12 +1145,12 @@ static void save_time_bookmarks(void)
     }
 
     if (sqlite3_exec(db.in(), "COMMIT", NULL, NULL, errmsg.out()) != SQLITE_OK) {
-        fprintf(stderr, "error: unable to begin transaction -- %s\n", errmsg.in());
+        log_error("unable to begin transaction -- %s\n", errmsg.in());
         return;
     }
 
     if (sqlite3_exec(db.in(), BOOKMARK_LRU_STMT, NULL, NULL, errmsg.out()) != SQLITE_OK) {
-        fprintf(stderr, "error: unable to delete old bookmarks -- %s\n", errmsg.in());
+        log_error("unable to delete old bookmarks -- %s\n", errmsg.in());
         return;
     }
 }

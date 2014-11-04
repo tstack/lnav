@@ -14,3 +14,9 @@ src/static-libs/
 test/.deps/
 test/Makefile
 *.pyc
+release/vagrant-static-linux/.vagrant
+release/vagrant-static-linux/lnav
+release/linux-pkg/
+release/osx-build-dir/
+release/osx-pkg/
+release/outbox/
