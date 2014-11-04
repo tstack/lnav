@@ -366,7 +366,8 @@ public:
         logfile_data(size_t index, filter_stack &fs, logfile *lf)
             : ld_file_index(index),
               ld_filter_state(fs, lf),
-              ld_lines_indexed(0) {
+              ld_lines_indexed(0),
+              ld_enabled(true) {
             lf->set_logline_observer(&this->ld_filter_state);
         };
 
@@ -374,6 +375,10 @@ public:
         {
             this->ld_filter_state.lfo_filter_state.clear();
         };
+
+        void set_enabled(bool enabled) {
+            this->ld_enabled = enabled;
+        }
 
         void set_file(logfile *lf) {
             this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
@@ -389,6 +394,7 @@ public:
             content_line_t ld_start;
             content_line_t ld_last;
         } ld_indexing;
+        bool ld_enabled;
     };
 
     typedef std::vector<logfile_data *>::iterator iterator;

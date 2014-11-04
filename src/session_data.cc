@@ -798,7 +798,7 @@ void load_session(void)
     }
     else {
         unsigned char buffer[1024];
-        size_t        rc;
+        ssize_t        rc;
 
         log_info("loading session file: %s", view_info_name.c_str());
         while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {

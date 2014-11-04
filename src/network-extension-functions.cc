@@ -79,6 +79,10 @@ static void sql_gethostbyname(sqlite3_context *context,
     case AF_INET6:
         addr_ptr = &((struct sockaddr_in6 *)ai->ai_addr)->sin6_addr;
         break;
+
+        default:
+            sqlite3_result_error(context, "unknown address family", -1);
+            return;
     }
 
     inet_ntop(ai->ai_family, addr_ptr, buffer, sizeof(buffer));

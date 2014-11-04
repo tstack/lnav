@@ -211,7 +211,7 @@ public:
     {
         status_field &sf = this->bss_fields[BSF_LOADING];
 
-        if ((size_t)off == total) {
+        if (total == 0 || (size_t)off == total) {
             sf.set_role(view_colors::VCR_STATUS);
             sf.clear();
         }
