@@ -2842,11 +2842,11 @@ static void usage(void)
         "  -h         Print this message, then exit.\n"
         "  -H         Display the internal help text.\n"
         "  -I path    An additional configuration directory.\n"
+        "  -i         Install the given format files and exit.\n"
         "  -C         Check configuration and then exit.\n"
         "  -d file    Write debug messages to the given file.\n"
         "  -V         Print version information.\n"
         "\n"
-        "  -s         Load the most recent syslog messages file.\n"
         "  -a         Load all of the most recent log file types.\n"
         "  -r         Load older rotated log files as well.\n"
         "  -t         Prepend timestamps to the lines of data being read in\n"
@@ -3930,6 +3930,16 @@ int sql_progress(const struct log_cursor &lc)
     return 0;
 }
 
+static void print_errors(vector<string> error_list)
+{
+    for (std::vector<std::string>::iterator iter = error_list.begin();
+         iter != error_list.end();
+         ++iter) {
+        fprintf(stderr, "%s%s", iter->c_str(),
+                (*iter)[iter->size() - 1] == '\n' ? "" : "\n");
+    }
+}
+
 int main(int argc, char *argv[])
 {
     std::vector<std::string> loader_errors;
@@ -3950,7 +3960,7 @@ int main(int argc, char *argv[])
     sql_install_logger();
 
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarsCc:I:f:d:nqtw:VW")) != -1) {
+    while ((c = getopt(argc, argv, "hHarsCc:I:if:d:nqtw:VW")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -3999,6 +4009,10 @@ int main(int argc, char *argv[])
             }
             lnav_data.ld_config_paths.push_back(optarg);
             break;
+
+            case 'i':
+                lnav_data.ld_flags |= LNF_INSTALL;
+                break;
 
         case 'd':
             lnav_data.ld_debug_log_name = optarg;
@@ -4055,14 +4069,55 @@ int main(int argc, char *argv[])
 
     lnav_log_file = fopen(lnav_data.ld_debug_log_name, "a");
 
+    if (lnav_data.ld_flags & LNF_INSTALL) {
+        string installed_path = dotlnav_path("formats/installed/");
+
+        if (argc == 0) {
+            fprintf(stderr, "error: expecting file format paths\n");
+            return EXIT_FAILURE;
+        }
+
+        for (lpc = 0; lpc < argc; lpc++) {
+            vector<string> format_list = load_format_file(argv[lpc], loader_errors);
+
+            if (!loader_errors.empty()) {
+                print_errors(loader_errors);
+                return EXIT_FAILURE;
+            }
+            if (format_list.empty()) {
+                fprintf(stderr, "error: format file is empty: %s\n", argv[lpc]);
+                return EXIT_FAILURE;
+            }
+
+            string dst_name = format_list[0] + ".json";
+            string dst_path = installed_path + dst_name;
+            auto_fd in_fd, out_fd;
+
+            if ((in_fd = open(argv[lpc], O_RDONLY)) == -1) {
+                perror("unable to open file to install");
+            }
+            else if ((out_fd = open(dst_path.c_str(),
+                    O_WRONLY | O_CREAT, 0644)) == -1) {
+                fprintf(stderr, "error: unable to open destination: %s -- %s\n",
+                        dst_path.c_str(), strerror(errno));
+            }
+            else {
+                char buffer[2048];
+                ssize_t rc;
+
+                while ((rc = read(in_fd, buffer, sizeof(buffer))) > 0) {
+                    write(out_fd, buffer, rc);
+                }
+
+                fprintf(stderr, "info: installed: %s\n", dst_path.c_str());
+            }
+        }
+        return EXIT_SUCCESS;
+    }
+
     load_formats(lnav_data.ld_config_paths, loader_errors);
     if (!loader_errors.empty()) {
-        for (std::vector<std::string>::iterator iter = loader_errors.begin();
-             iter != loader_errors.end();
-             ++iter) {
-            fprintf(stderr, "%s%s", iter->c_str(),
-                (*iter)[iter->size() - 1] == '\n' ? "" : "\n");
-        }
+        print_errors(loader_errors);
         return EXIT_FAILURE;
     }
 

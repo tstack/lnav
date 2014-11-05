@@ -93,6 +93,11 @@ set(diag_STAT_SRCS
     time_T.hh
     top_status_source.hh
 
+    yajl/api/yajl_common.h
+    yajl/api/yajl_gen.h
+    yajl/api/yajl_parse.h
+    yajl/api/yajl_tree.h
+
     ../../lbuild/src/config.h
     )
 

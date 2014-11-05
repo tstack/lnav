@@ -56,6 +56,7 @@ static map<string, external_log_format *> LOG_FORMATS;
 static external_log_format *ensure_format(yajlpp_parse_context *ypc)
 {
     const string &name = ypc->get_path_fragment(0);
+    vector<string> *formats = (vector<string> *)ypc->ypc_userdata;
     external_log_format *retval;
 
     retval = LOG_FORMATS[name];
@@ -63,6 +64,10 @@ static external_log_format *ensure_format(yajlpp_parse_context *ypc)
         LOG_FORMATS[name] = retval = new external_log_format(name);
     }
     retval->elf_source_path.insert(ypc->ypc_source.substr(0, ypc->ypc_source.rfind('/')));
+
+    if (find(formats->begin(), formats->end(), name) == formats->end()) {
+        formats->push_back(name);
+    }
 
     return retval;
 }
@@ -415,59 +420,81 @@ static void write_sample_file(void)
     }
 }
 
+std::vector<string> load_format_file(const string &filename, std::vector<string> &errors)
+{
+    std::vector<string> retval;
+    auto_fd fd;
+
+    log_info("loading formats from file: %s", filename.c_str());
+    yajlpp_parse_context ypc(filename, format_handlers);
+    ypc.ypc_userdata = &retval;
+    if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
+        char errmsg[1024];
+
+        snprintf(errmsg, sizeof(errmsg),
+                "error: unable to open format file -- %s",
+                filename.c_str());
+        errors.push_back(errmsg);
+    }
+    else {
+        yajl_handle handle;
+        char buffer[2048];
+        off_t offset = 0;
+        int rc = -1;
+
+        handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+        yajl_config(handle, yajl_allow_comments, 1);
+        while (true) {
+            rc = read(fd, buffer, sizeof(buffer));
+            if (rc == 0) {
+                break;
+            }
+            else if (rc == -1) {
+                errors.push_back(filename +
+                        ":unable to read file -- " +
+                        string(strerror(errno)));
+                break;
+            }
+            if (offset == 0 && (rc > 2) &&
+                    (buffer[0] == '#') && (buffer[1] == '!')) {
+                // Turn it into a JavaScript comment.
+                buffer[0] = buffer[1] = '/';
+            }
+            if (yajl_parse(handle, (const unsigned char *)buffer, rc) != yajl_status_ok) {
+                errors.push_back(filename +
+                        ": invalid json -- " +
+                        string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
+                break;
+            }
+            offset += rc;
+        }
+        if (rc == 0) {
+            if (yajl_complete_parse(handle) != yajl_status_ok) {
+                errors.push_back(filename +
+                        ": invalid json -- " +
+                        string((char *)yajl_get_error(handle, 0, NULL, 0)));
+            }
+        }
+        yajl_free(handle);
+    }
+
+    return retval;
+}
+
 static void load_from_path(const string &path, std::vector<string> &errors)
 {
     string format_path = path + "/formats/*/*.json";
     static_root_mem<glob_t, globfree> gl;
-    yajl_handle handle;
 
     log_info("loading formats from path: %s", format_path.c_str());
     if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             string filename(gl->gl_pathv[lpc]);
-            auto_fd fd;
+            vector<string> format_list;
 
-            log_info("loading formats from file: %s", filename.c_str());
-            yajlpp_parse_context ypc(filename, format_handlers);
-            if ((fd = open(gl->gl_pathv[lpc], O_RDONLY)) == -1) {
-                char errmsg[1024];
-
-                snprintf(errmsg, sizeof(errmsg),
-                         "error: unable to open format file -- %s",
-                         gl->gl_pathv[lpc]);
-                perror(errmsg);
-            }
-            else {
-                char buffer[2048];
-                int rc = -1;
-
-                handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
-                while (true) {
-                    rc = read(fd, buffer, sizeof(buffer));
-                    if (rc == 0) {
-                        break;
-                    }
-                    else if (rc == -1) {
-                        errors.push_back(filename +
-                                         ":unable to read file -- " +
-                                         string(strerror(errno)));
-                        break;
-                    }
-                    if (yajl_parse(handle, (const unsigned char *)buffer, rc) != yajl_status_ok) {
-                        errors.push_back(filename +
-                            ": invalid json -- " +
-                            string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
-                        break;
-                    }
-                }
-                if (rc == 0) {
-                    if (yajl_complete_parse(handle) != yajl_status_ok) {
-                        errors.push_back(filename +
-                            ": invalid json -- " +
-                            string((char *)yajl_get_error(handle, 0, NULL, 0)));
-                    }
-                }
-                yajl_free(handle);
+            format_list = load_format_file(filename, errors);
+            if (format_list.empty()) {
+                log_warning("Empty format file: %s", filename.c_str());
             }
         }
     }
@@ -484,6 +511,8 @@ void load_formats(const std::vector<std::string> &extra_paths,
     write_sample_file();
 
     handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
+    ypc_builtin.ypc_userdata = &retval;
+    yajl_config(handle, yajl_allow_comments, 1);
     if (yajl_parse(handle,
                    (const unsigned char *)default_log_formats_json,
                    strlen(default_log_formats_json)) != yajl_status_ok) {

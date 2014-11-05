@@ -35,6 +35,9 @@
 #include <vector>
 #include <string>
 
+std::vector<std::string> load_format_file(
+        const std::string &filename, std::vector<std::string> &errors);
+
 void load_formats(const std::vector<std::string> &extra_paths,
                   std::vector<std::string> &errors);
 

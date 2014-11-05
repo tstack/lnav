@@ -16,6 +16,7 @@ lnav v0.7.1:
        filters should be almost instantaneous.
      * The filter-in, filter-out, and highlight commands now support
        tab-completion of text in the current view.
+     * Add a '-i' flag that installs format files in: ~/.lnav/formats/installed
 
 lnav v0.7.0:
      Features:

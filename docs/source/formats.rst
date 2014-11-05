@@ -157,3 +157,31 @@ with the following contents::
             ]
         }
     }
+
+Installing Formats
+------------------
+
+File formats are loaded from subdirectories in :file:`/etc/lnav/formats` and
+:file:`~/.lnav/formats/`.  You can manually create these subdirectories and
+copy the format files into there.  Or, you can pass the '-i' option to **lnav**
+to automatically install formats from the command-line.  For example::
+
+    $ lnav -i myformat.json
+    info: installed: /home/example/.lnav/formats/installed/myformat_log.json
+
+Formats installed using this method will be placed in the :file:`installed`
+subdirectory and named based on the first format name found in the file.
+
+Format files can also be made executable by adding a shebang (#!) line to the
+top of the file, like so::
+
+    #! /usr/bin/env lnav -i
+    {
+        "myformat_log" : ...
+    }
+
+Executing the format file should then install it automatically::
+
+    $ chmod ugo+rx myformat.json
+    $ ./myformat.json
+    info: installed: /home/example/.lnav/formats/installed/myformat_log.json

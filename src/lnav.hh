@@ -79,6 +79,7 @@ enum {
     LNB_QUIET,
     LNB_ROTATED,
     LNB_CHECK_CONFIG,
+    LNB_INSTALL,
 };
 
 /** Flags set on the lnav command-line. */
@@ -92,6 +93,7 @@ typedef enum {
     LNF_HEADLESS  = (1L << LNB_HEADLESS),
     LNF_QUIET     = (1L << LNB_QUIET),
     LNF_CHECK_CONFIG = (1L << LNB_CHECK_CONFIG),
+    LNF_INSTALL   = (1L << LNB_INSTALL),
 
     LNF__ALL      = (LNF_SYSLOG|LNF_HELP)
 } lnav_flags_t;
