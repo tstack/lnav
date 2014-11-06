@@ -1431,6 +1431,30 @@ static string com_set_min_log_level(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_rebuild(string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+
+    }
+    else {
+        rebuild_indexes(false);
+    }
+
+    return "";
+}
+
+static string com_shexec(string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+
+    }
+    else {
+        system(cmdline.substr(args[0].size()).c_str());
+    }
+
+    return "";
+}
+
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
     cmd_map["adjust-log-time"]      = com_adjust_log_time;
@@ -1466,5 +1490,9 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;
+    }
+    if (getenv("lnav_test") != NULL) {
+        cmd_map["rebuild"] = com_rebuild;
+        cmd_map["shexec"] = com_shexec;
     }
 }

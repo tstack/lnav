@@ -21,7 +21,6 @@ Lnav takes a list of files to view and/or you can use the flag
 arguments to load well-known log files, such as the syslog or apache
 log files.  The flag arguments are:
 
-  -s         Load the most recent syslog messages file. (Default)
   -a         Load all of the most recent log file types.
   -r         Load older rotated log files as well.
 
