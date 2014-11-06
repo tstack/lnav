@@ -91,6 +91,8 @@ public:
     text_filter(type_t type, const std::string id, size_t index)
             : lf_message_matched(false),
               lf_lines_for_message(0),
+              lf_last_message_matched(false),
+              lf_last_lines_for_message(0),
               lf_enabled(true),
               lf_type(type),
               lf_id(id),
@@ -114,6 +116,12 @@ public:
             size_t line_number = lfs.tfs_filter_count[this->lf_index];
 
             lfs.tfs_mask[line_number] &= ~(((uint32_t) 1) << this->lf_index);
+        }
+        if (this->lf_lines_for_message > 0) {
+            this->lf_lines_for_message -= 1;
+        }
+        if (this->lf_lines_for_message == 0) {
+            this->lf_message_matched = false;
         }
     }
 

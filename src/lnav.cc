@@ -1337,6 +1337,8 @@ static void handle_paging_key(int ch)
 
     case 'c':
         copy_to_xclip();
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                C, "to clear marked messages"));
         break;
 
     case 'C':
