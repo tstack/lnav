@@ -1183,7 +1183,6 @@ void save_session(void)
         perror("Unable to create yajl_gen object");
     }
     else {
-        yajl_gen_config(handle, yajl_gen_beautify, 1);
         yajl_gen_config(handle,
                         yajl_gen_print_callback, yajl_writer, file.in());
 
@@ -1274,10 +1273,6 @@ void save_session(void)
             }
 
             root_map.gen("commands");
-
-            {
-
-            }
         }
 
         yajl_gen_clear(handle);
