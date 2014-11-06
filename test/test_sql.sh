@@ -67,6 +67,18 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ':goto 1' \
+    -c ";select * from logline" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_syslog.1
+
+check_output "logline table is not working" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,col_0
+1,p.0,2006-12-03 09:23:38.000,0,info,0,veridian,16442,automount,/auto/opt
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
     -c ':write-to -' \
     ${test_dir}/logfile_access_log.0

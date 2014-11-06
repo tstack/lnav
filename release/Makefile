@@ -22,13 +22,14 @@ linux-package: clean-outbox linux-build
 osx-build:
 	rm -rf osx-build-dir
 	mkdir -p osx-build-dir
-	cd osx-build-dir && ../../configure && make -j && make distcheck -j8
+	cd osx-build-dir && ../../configure && make -j && make distcheck -j8 && make dist-bzip2
 
 osx-package: clean-outbox osx-build
 	mkdir -p osx-pkg/lnav-${VERSION}
 	cp ../README ../NEWS osx-pkg/lnav-${VERSION}
 	cp osx-build-dir/src/lnav osx-pkg/lnav-${VERSION}
 	cp osx-build-dir/lnav-${VERSION}.tar.gz outbox/
+	cp osx-build-dir/lnav-${VERSION}.tar.bz2 outbox/
 	cd osx-pkg && zip -r ../outbox/lnav-${VERSION}-os-x.zip lnav-${VERSION}
 
 release: linux-package osx-package

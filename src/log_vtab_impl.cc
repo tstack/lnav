@@ -493,8 +493,9 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
         sqlite3_index_info::sqlite3_index_constraint *)idxStr;
 
     log_info("(%p) filter called: %d", vt, idxNum);
-    p_cur->log_cursor.lc_curr_line = vis_line_t(0);
+    p_cur->log_cursor.lc_curr_line = vis_line_t(-1);
     p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
+    vt_next(p_vtc);
     if (!idxNum) {
         return SQLITE_OK;
     }

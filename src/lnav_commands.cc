@@ -603,6 +603,8 @@ protected:
     pcrepp pf_pcre;
 };
 
+static string com_enable_filter(string cmdline, vector<string> &args);
+
 static string com_filter(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting regular expression to filter out";
@@ -620,7 +622,7 @@ static string com_filter(string cmdline, vector<string> &args)
 
         args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
         if (fs.get_filter(args[1]) != NULL) {
-            retval = "error: filter already exists";
+            retval = com_enable_filter(cmdline, args);
         }
         else if ((code = pcre_compile(args[1].c_str(),
                                       PCRE_CASELESS,
@@ -637,11 +639,11 @@ static string com_filter(string cmdline, vector<string> &args)
 
             fs.add_filter(pf.release());
             tss->text_filters_changed();
+            tc->reload_data();
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->add_possibility(
                     LNM_COMMAND, "enabled-filter", args[1]);
             }
-            rebuild_indexes(true);
 
             retval = "info: filter now active";
         }
@@ -674,13 +676,13 @@ static string com_enable_filter(string cmdline, vector<string> &args)
         else {
             fs.set_filter_enabled(lf, true);
             tss->text_filters_changed();
+            tc->reload_data();
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->rem_possibility(
                     LNM_COMMAND, "disabled-filter", args[1]);
                 lnav_data.ld_rl_view->add_possibility(
                     LNM_COMMAND, "enabled-filter", args[1]);
             }
-            rebuild_indexes(true);
             retval = "info: filter enabled";
         }
     }
@@ -712,13 +714,13 @@ static string com_disable_filter(string cmdline, vector<string> &args)
         else {
             fs.set_filter_enabled(lf, false);
             tss->text_filters_changed();
+            tc->reload_data();
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->rem_possibility(
                     LNM_COMMAND, "enabled-filter", args[1]);
                 lnav_data.ld_rl_view->add_possibility(
                     LNM_COMMAND, "disabled-filter", args[1]);
             }
-            rebuild_indexes(true);
             retval = "info: filter disabled";
         }
     }

@@ -2148,12 +2148,14 @@ static void handle_paging_key(int ch)
     break;
 
     case 'r':
-        lnav_data.ld_session_file_index =
-            (lnav_data.ld_session_file_index + 1) %
-            lnav_data.ld_session_file_names.size();
-        reset_session();
-        load_session();
-        rebuild_indexes(true);
+        if (!lnav_data.ld_session_file_names.empty()) {
+            lnav_data.ld_session_file_index =
+                    (lnav_data.ld_session_file_index + 1) %
+                            lnav_data.ld_session_file_names.size();
+            reset_session();
+            load_session();
+            rebuild_indexes(true);
+        }
         break;
 
     case 'R':
