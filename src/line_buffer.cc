@@ -252,6 +252,7 @@ throw (error)
          * The request is outside the cached range, need to reload the
          * whole thing.
          */
+        this->lb_share_manager.invalidate_refs();
         prefill = 0;
         this->lb_buffer_size = 0;
         if ((this->lb_file_size != (size_t)-1) &&
