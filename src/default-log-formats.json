@@ -668,11 +668,14 @@
         "description" : "One of the log formats used in VMware's ESXi and vCenter software.",
         "url" : "http://kb.vmware.com/kb/2004201",
         "regex" : {
+            "6.0+" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:Section for VMware VirtualCenter,.*|(?<level>\\w+) (?<prc>\\w+)\\[(?<tid>\\w+)\\] \\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>[^ \\]]+))?(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>(?:.|\\n)*))$"
+            },
             "5.0+" : {
-                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>(?:.|\\n)*)$"
             },
             "pre-5.0" : {
-                "pattern" : "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)$"
+                "pattern" : "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>(?:.|\\n)*)$"
             }
         },
         "level-field": "level",
@@ -682,11 +685,23 @@
             "trace" : "verbose"
             },
         "value" : {
+            "prc" : {
+                "kind" : "string",
+                "identifier" : true
+            },
             "tid" : {
                 "kind" : "string",
                 "identifier" : true
             },
+            "src" : {
+                "kind" : "string",
+                "identifier" : true
+            },
             "comp" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "sub" : {
                 "kind" : "string",
                 "identifier" : true
             },
@@ -702,6 +717,15 @@
         "sample" : [
             {
                 "line" : "[2011-04-01 15:14:34.203 F5A5AB90 info 'vm:/vmfs/volumes/4d6579ec-23f981cb-465c-00237da0cfee/Vmotion-test/Vmotion-test.vmx' opID=F6FC49D5-000007E6-d] VMotionPrepare: dstMgmtIp=10.21.49.138"
+            },
+            {
+                "line" : "2014-11-04T15:53:31.075+05:30 verbose vpxd[05160] [Originator@6876 sub=PropertyProvider opID=ProcessAlarmFiring-427c3c55] RecordOp ASSIGN: declaredAlarmState[\"alarm-1.host-23\"], host-23. Applied change to temp map.\nfoo"
+            },
+            {
+                "line" : "2014-01-17T04:55:50.347Z [7F03ECE76700 verbose 'Default' opID=2140bc71] [VpxVmomi] Invoke done: vmodl.query.PropertyCollector.waitForUpdatesEx session: c580b3ef-0011-88a5-b2af-7ca7e74114c8"
+            },
+            {
+                "line" : "2014-11-04T12:46:42.990+05:30 Section for VMware VirtualCenter, pid=6432, version=6.0.0, build=2255588, option=BETA"
             }
         ]
     }

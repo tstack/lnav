@@ -1046,7 +1046,7 @@ void external_log_format::build(std::vector<std::string> &errors)
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
-                             this->elf_name + ".regex[]" +
+                             this->elf_name + ".regex[" + iter->first + "]" +
                              ":" +
                              e.what());
             continue;
@@ -1222,6 +1222,8 @@ void external_log_format::build(std::vector<std::string> &errors)
                                          this->elf_name +
                                          ":partial sample matched -- " +
                                          line_partial);
+                        errors.push_back("error:  against pattern -- " +
+                                (*pat_iter)->p_string);
                         break;
                     }
 
