@@ -680,7 +680,7 @@
         },
         "level-field": "level",
         "level" : {
-            "error" : "error",
+            "error" : "(error|panic)",
             "warning" : "warning",
             "trace" : "verbose"
             },
