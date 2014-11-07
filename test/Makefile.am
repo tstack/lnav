@@ -284,6 +284,7 @@ DISTCLEANFILES = \
 	*.gz \
 	*.bz2 \
 	truncfile.0 \
+	logfile_append.0 \
 	test.log
 
 distclean-local:
