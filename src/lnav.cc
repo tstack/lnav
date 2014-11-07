@@ -238,6 +238,7 @@ public:
         }
 
         this->fos_known_key_size = 0;
+        this->fos_unknown_key_size = 0;
 
         for (std::vector<logline_value>::iterator iter =
                  this->fos_log_helper.ldh_line_values.begin();
