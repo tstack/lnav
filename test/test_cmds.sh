@@ -80,6 +80,7 @@ check_output "filter-out multiline is not working" <<EOF
 EOF
 
 cp ${test_dir}/logfile_multiline.0 logfile_append.0
+chmod ug+w logfile_append.0
 
 run_test ${lnav_test} -n \
     -c ";update generic_log set log_mark=1" \
@@ -94,6 +95,7 @@ check_output "filter-in append is not working" <<EOF
 EOF
 
 cp ${test_dir}/logfile_multiline.0 logfile_append.0
+chmod ug+w logfile_append.0
 
 run_test ${lnav_test} -n \
     -c ":filter-out Goodbye" \
