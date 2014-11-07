@@ -250,7 +250,9 @@ public:
 
         do {
             ++next_line;
-        } while (next_line != this->end() && ll->get_offset() == next_line->get_offset());
+        } while ((next_line != this->end()) &&
+                ((ll->get_offset() == next_line->get_offset()) ||
+                        next_line->is_continued()));
 
         if (next_line == this->end()) {
             retval = this->lf_index_size - ll->get_offset();

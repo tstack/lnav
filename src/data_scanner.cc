@@ -63,9 +63,9 @@ static struct {
     { "hexd",    pcrepp(
           "\\A([0-9a-fA-F][0-9a-fA-F](?::[0-9a-fA-F][0-9a-fA-F])+)"), },
 
-    { "coln",     pcrepp("\\A(:)"),
+    { "coln",    pcrepp("\\A(:)"),
     },
-    { "eq",     pcrepp("\\A(=)"),
+    { "eq",      pcrepp("\\A(=)"),
     },
     { "comm",    pcrepp("\\A(,)"),
     },
