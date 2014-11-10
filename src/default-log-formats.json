@@ -663,6 +663,49 @@
             }
         ]
     },
+    "vdsm_log" : {
+        "title" : "Vdsm Logs",
+        "description" : "The Open Virtual Datacenter VDSM log format",
+        "url" : "http://www.ovirt.org/Vdsm_Log_Files",
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<tid>.+)::(?<level>.+)::(?<timestamp>.+)::(?<module>.+)::(?<src_line>.+)::(?<logger>.+)::\\((?<func>[^\\)]+)\\)(?<body>(?:.|\\n)*)"
+            }
+        },
+        "level" : {
+            "error" : "ERROR",
+            "debug" : "DEBUG",
+            "info" : "INFO",
+            "warning" : "WARNING"
+        },
+        "value" : {
+            "tid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "module" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "src_line" : {
+                "kind" : "integer",
+                "foreign-key" : true
+            },
+            "logger" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "func" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "Thread-1950::INFO::2011-12-07 12:14:15,018::dispatcher::94::Storage.Dispatcher.Protect::(run) Run and protect: getDeviceList, args: ( storageType=2)"
+            }
+        ]
+    },
     "vmw_log" : {
         "title" : "VMware Logs",
         "description" : "One of the log formats used in VMware's ESXi and vCenter software.",

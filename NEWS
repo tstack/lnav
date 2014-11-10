@@ -1,4 +1,7 @@
 
+lnav v0.7.2:
+     * Added a log format for vdsm.
+
 lnav v0.7.1:
      Features:
      * Added an 'environ' SQL table that reflects lnav's environment

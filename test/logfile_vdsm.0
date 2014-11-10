@@ -1,0 +1,16 @@
+MainThread::INFO::2011-12-05 07:04:56,101::vdsm::71::vds::(run) I am the actual vdsm 4.9-0
+MainThread::ERROR::2011-12-05 07:04:56,300::vdsm::74::vds::(run) Traceback (most recent call last):
+File "/usr/share/vdsm/vdsm", line 72, in run
+    serve_clients(log)
+File "/usr/share/vdsm/vdsm", line 40, in serve_clients
+    cif = clientIF.clientIF(log)
+File "/usr/share/vdsm/clientIF.py", line 111, in init
+    self._libvirt = libvirtconnection.get()
+File "/usr/share/vdsm/libvirtconnection.py", line 111, in get
+    conn = libvirt.openAuth('qemu:///system', auth, 0)
+File "/usr/lib64/python2.6/site-packages/libvirt.py", line 102, in openAuth
+    if ret is None:raise libvirtError('virConnectOpenAuth() failed')
+libvirtError: Failed to connect socket to '/var/run/libvirt/libvirt-sock': No such file or directory
+Thread-15::DEBUG::2011-12-07 11:44:17,737::clientIF::54::vds::(wrapper) [10.35.17.240]::call getVdsCapabilities with () {}
+Thread-16::DEBUG::2011-06-23 19:03:11,607::clientIF::225::Storage.Dispatcher.Protect::(wrapper) [10.35.16.71]
+Thread-1950::INFO::2011-12-07 12:14:15,018::dispatcher::94::Storage.Dispatcher.Protect::(run) Run and protect: getDeviceList, args: ( storageType=2)
