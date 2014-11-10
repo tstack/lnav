@@ -707,6 +707,7 @@
                 "pattern" : "^(?<tid>.+)::(?<level>.+)::(?<timestamp>.+)::(?<module>.+)::(?<src_line>.+)::(?<logger>.+)::\\((?<func>[^\\)]+)\\)(?<body>(?:.|\\n)*)"
             }
         },
+	"level-field" : "level",
         "level" : {
             "error" : "ERROR",
             "debug" : "DEBUG",
