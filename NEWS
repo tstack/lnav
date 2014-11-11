@@ -1,6 +1,11 @@
 
 lnav v0.7.2:
      * Added a log format for vdsm.
+     * Added a "lo-fi" mode (L hotkey) that dumps the displayed log lines
+       to the terminal without any decorations.  The write-to, write-json-to,
+       and write-csv-to commands will also write their output to the terminal
+       when passed '-' as the file name.  This mode can be useful for copying
+       plain text lines to the clipboard.
 
 lnav v0.7.1:
      Features:

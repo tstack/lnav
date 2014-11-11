@@ -1645,6 +1645,36 @@ static void handle_paging_key(int ch)
         }
         break;
 
+    case 'L': {
+        vis_line_t top = tc->get_top();
+        vis_line_t bottom = tc->get_bottom();
+        char line_break[80];
+
+        nodelay(lnav_data.ld_window, 0);
+        endwin();
+        {
+            guard_termios tguard(STDOUT_FILENO);
+            struct termios new_termios = *tguard.get_termios();
+            new_termios.c_oflag |= ONLCR | OPOST | OXTABS;
+            tcsetattr(STDOUT_FILENO, TCSANOW, &new_termios);
+            snprintf(line_break, sizeof(line_break),
+                    "\n---------------- Lines %'d-%'d ----------------\n\n",
+                    (int) top, (int) bottom);
+            write(STDOUT_FILENO, line_break, strlen(line_break));
+            for (; top <= bottom; ++top) {
+                attr_line_t al;
+                tc->listview_value_for_row(*tc, top, al);
+                write(STDOUT_FILENO, al.get_string().c_str(), al.length());
+                write(STDOUT_FILENO, "\n", 1);
+            }
+        }
+        cbreak();
+        getch();
+        refresh();
+        nodelay(lnav_data.ld_window, 1);
+        break;
+    }
+
     case 'M':
         if (lnav_data.ld_last_user_mark.find(tc) ==
             lnav_data.ld_last_user_mark.end()) {

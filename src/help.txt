@@ -164,6 +164,12 @@ through the file.
   t                 Switch to/from the text file view.  The text file view is
                     for any files that are not recognized as log files.
 
+  L                 (Lo-fi mode) Exit screen-mode and write the
+                    displayed log lines in plain text to the terminal
+                    until a key is pressed.  Useful for copying long lines
+                    from the terminal without picking up any of the extra
+                    decorations.
+
   o/O               Move forward/backward 60 minutes from the current
                     position in the log file.
 
@@ -417,19 +423,22 @@ COMMANDS
 
   append-to <file>  Append any marked lines to the given file.
 
-  write-to <file>   Write any marked lines to the given file.
+  write-to <file>   Write any marked lines to the given file.  Use '-' to
+                    write the lines to the terminal.
 
   write-csv-to <file>
                     Write the results of a SQL query to a CSV-formatted file.
                     When running in non-interactive mode, a dash can be used
-                    to write to standard out.
+                    to write to standard out.  Use '-' to write the data to
+                    the terminal.
 
   write-json-to <file>
                     Write the results of a SQL query to a JSON-formatted file.
                     The contents of the file will be an array of objects with
                     each column in the query being a field in the objects.
                     When running in non-interactive mode, a dash can be used
-                    to write to standard out.
+                    to write to standard out.  Use '-' to write the data to
+                    the terminal.
 
   session <cmd>     Add the given command to the session file
                     (~/.lnav/session).  Any commands listed in the session file

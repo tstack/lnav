@@ -59,7 +59,8 @@ Output
 * append-to <file> - Append any bookmarked lines in the current view to the
   given file.
 * write-to <file> - Overwrite the given file with any bookmarked lines in
-  the current view.
+  the current view.  Use '-' to write the lines to the terminal.
 * write-csv-to <file> - Write SQL query results to the given file in CSV format.
+  Use '-' to write the lines to the terminal.
 * write-json-to <file> - Write SQL query results to the given file in JSON
-  format.
+  format.  Use '-' to write the lines to the terminal.

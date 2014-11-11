@@ -315,6 +315,7 @@ static string com_save_to(string cmdline, vector<string> &args)
     FILE *      outfile = NULL;
     const char *mode    = "";
     string fn, retval;
+    bool to_term = false;
 
     if (args.size() == 0) {
         args.push_back("filename");
@@ -322,7 +323,7 @@ static string com_save_to(string cmdline, vector<string> &args)
     }
 
     if (args.size() < 2) {
-        return "error: expecting file name";
+        return "error: expecting file name or '-' to write to the terminal";
     }
 
     fn = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
@@ -364,11 +365,24 @@ static string com_save_to(string cmdline, vector<string> &args)
     }
 
     if (strcmp(wordmem->we_wordv[0], "-") == 0) {
-        if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
-            return "error: writing to stdout is only available in headless mode";
-        }
         outfile = stdout;
-        lnav_data.ld_stdout_used = true;
+        if (lnav_data.ld_flags & LNF_HEADLESS) {
+            lnav_data.ld_stdout_used = true;
+        }
+        else {
+            nodelay(lnav_data.ld_window, 0);
+            endwin();
+            struct termios curr_termios;
+            tcgetattr(1, &curr_termios);
+            curr_termios.c_oflag |= ONLCR|OPOST|OXTABS;
+            tcsetattr(1, TCSANOW, &curr_termios);
+            setvbuf(stdout, NULL, _IONBF, 0);
+            to_term = true;
+            fprintf(outfile,
+                    "\n---------------- %s output, press any key to exit "
+                            "----------------\n\n",
+                    args[0].c_str());
+        }
     }
     else if ((outfile = fopen(wordmem->we_wordv[0], mode)) == NULL) {
         return "error: unable to open file -- " + string(wordmem->we_wordv[0]);
@@ -437,6 +451,12 @@ static string com_save_to(string cmdline, vector<string> &args)
         }
     }
 
+    if (to_term) {
+        cbreak();
+        getch();
+        refresh();
+        nodelay(lnav_data.ld_window, 1);
+    }
     if (outfile != stdout) {
         fclose(outfile);
     }
