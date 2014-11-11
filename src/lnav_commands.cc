@@ -374,7 +374,7 @@ static string com_save_to(string cmdline, vector<string> &args)
             endwin();
             struct termios curr_termios;
             tcgetattr(1, &curr_termios);
-            curr_termios.c_oflag |= ONLCR|OPOST|OXTABS;
+            curr_termios.c_oflag |= ONLCR|OPOST;
             tcsetattr(1, TCSANOW, &curr_termios);
             setvbuf(stdout, NULL, _IONBF, 0);
             to_term = true;
