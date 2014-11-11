@@ -191,7 +191,7 @@ Display
      - Toggle the display of the log parser results
    * - |ks| Tab |ke|
      - Cycle through colums to graph in the SQL result view
-   * - |ks| L |ke|
+   * - |ks| Shift |ke| + |ks| l |ke|
      - Switch to lo-fi mode.  The displayed log lines will be dumped to the
        terminal without any decorations so they can be copied easily.
 
