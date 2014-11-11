@@ -1655,7 +1655,7 @@ static void handle_paging_key(int ch)
         {
             guard_termios tguard(STDOUT_FILENO);
             struct termios new_termios = *tguard.get_termios();
-            new_termios.c_oflag |= ONLCR | OPOST | OXTABS;
+            new_termios.c_oflag |= ONLCR | OPOST;
             tcsetattr(STDOUT_FILENO, TCSANOW, &new_termios);
             snprintf(line_break, sizeof(line_break),
                     "\n---------------- Lines %'d-%'d ----------------\n\n",
