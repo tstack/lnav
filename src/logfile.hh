@@ -264,6 +264,10 @@ public:
             retval = next_line->get_offset() - ll->get_offset() - 1;
         }
 
+        if (retval > line_buffer::MAX_LINE_BUFFER_SIZE / 2) {
+            retval = line_buffer::MAX_LINE_BUFFER_SIZE / 2;
+        }
+
         return retval;
     };
 

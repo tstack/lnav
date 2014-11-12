@@ -240,6 +240,7 @@ const char *log_format::log_scanf(const char *line,
     while (!done && next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
         va_start(args, tv_out);
 
+        pi.reset(line, 0, len);
         if (!fmt[curr_fmt].pcre.match(pc, pi)) {
             retval = NULL;
         }

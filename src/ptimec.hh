@@ -166,11 +166,16 @@ inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     int ms = 0;
 
     PTIME_CONSUME(3, {
-        if (str[off_inout + 1] > '9') {
+        char c0 = str[off_inout];
+        char c1 = str[off_inout + 1];
+        char c2 = str[off_inout + 2];
+        if (!isdigit(c0) || !isdigit(c1) || !isdigit(c2)) {
             return false;
         }
-        ms = ((str[off_inout] - '0') * 100 + (str[off_inout + 1] - '0') * 10 +
-            (str[off_inout + 2] - '0'));
+        ms = (
+                (str[off_inout    ] - '0') * 100 +
+                (str[off_inout + 1] - '0') * 10 +
+                (str[off_inout + 2] - '0'));
     });
 
     if ((ms >= 0 && ms <= 999)) {

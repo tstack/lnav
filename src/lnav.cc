@@ -1743,7 +1743,7 @@ static void handle_paging_key(int ch)
                     HELP_MSG_1(T, "to disable elapsed-time mode"));
             }
             lss->set_time_offset(true);
-            while (next_top < tc->get_inner_height()) {
+            while (0 <= next_top && next_top < tc->get_inner_height()) {
                 if (lss->find_line(lss->at(next_top))->is_continued()) {
                 }
                 else if (lss->get_line_accel_direction(next_top) ==

@@ -139,7 +139,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
             char buffer[128];
             const char *fmt;
 
-            fmt = std_time_fmt[format->lf_date_time.dts_fmt_lock];
+            fmt = PTIMEC_FORMAT_STR[format->lf_date_time.dts_fmt_lock];
             adjusted_time = this->lss_token_line->get_timeval();
             strftime(buffer, sizeof(buffer),
                      fmt,

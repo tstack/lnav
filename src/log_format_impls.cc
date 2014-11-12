@@ -87,17 +87,17 @@ class generic_log_format : public log_format {
 
     static pcre_format *get_pcre_log_formats() {
         static pcre_format log_fmt[] = {
-            { "", pcrepp("(?<timestamp>[\\dTZ: ,\\.-]+)([^:]+)") },
-            { "", pcrepp("(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)") },
-            { "", pcrepp("(?<timestamp>[\\w:,/\\.-]+) (.*)") },
-            { "", pcrepp("(?<timestamp>[\\w: \\.,/-]+) \\[[^\\]+](.*)") },
-            { "", pcrepp("(?<timestamp>[\\w: \\.,/-]+) (.*)") },
+            { "", pcrepp("^(?<timestamp>[\\dTZ: ,\\.-]+)([^:]+)") },
+            { "", pcrepp("^(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)") },
+            { "", pcrepp("^(?<timestamp>[\\w:,/\\.-]+) (.*)") },
+            { "", pcrepp("^(?<timestamp>[\\w: \\.,/-]+)\\[[^\\]]+\\](.*)") },
+            { "", pcrepp("^(?<timestamp>[\\w: \\.,/-]+) (.*)") },
 
-            { "", pcrepp("\\[(?<timestamp>[\\d: \\.-]+) \\w+ (.*)") },
-            { "", pcrepp("\\[(?<timestamp>[\\w: +/-]+)\\] (.*)") },
-            { "", pcrepp("\\[(?<timestamp>[\\w: +/-]+)\\] \\[(\\w+)\\]") },
-            { "", pcrepp("\\[(?<timestamp>[\\w: \\.+/-]+)\\] \\w+ (.*)") },
-            { "", pcrepp("\\[(?<timestamp>[\\w: +/-]+)\\] \\(\\d+\\) (.*)") },
+            { "", pcrepp("^\\[(?<timestamp>[\\d: \\.-]+) \\w+ (.*)") },
+            { "", pcrepp("^\\[(?<timestamp>[\\w: +/-]+)\\] (.*)") },
+            { "", pcrepp("^\\[(?<timestamp>[\\w: +/-]+)\\] \\[(\\w+)\\]") },
+            { "", pcrepp("^\\[(?<timestamp>[\\w: \\.+/-]+)\\] \\w+ (.*)") },
+            { "", pcrepp("^\\[(?<timestamp>[\\w: +/-]+)\\] \\(\\d+\\) (.*)") },
 
             { NULL, pcrepp("") }
         };
