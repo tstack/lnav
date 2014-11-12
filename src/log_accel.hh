@@ -107,9 +107,8 @@ public:
 
         range = std::max(range, MIN_RANGE);
         for (int lpc = 0; lpc < (this->la_velocity_size - 1); lpc++) {
-            double accel = (
-                (this->la_velocity[lpc] - this->la_min_velocity) / range -
-                (this->la_velocity[lpc + 1] - this->la_min_velocity) / range);
+            double accel =
+                (this->la_velocity[lpc] - this->la_velocity[lpc + 1]) / range;
             total_accel += accel;
         }
 
