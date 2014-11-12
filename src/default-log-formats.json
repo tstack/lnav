@@ -343,9 +343,10 @@
     "openstack_log" : {
         "title" : "OpenStack log format",
         "description" : "The log format for the OpenStack log files",
+	"url" : "http://docs.openstack.org/openstack-ops/content/logging_monitoring.html",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>.+) (?<pid>\\d+) (?<level>\\w+) (?<logger>.+) \\[(?<tid>.+)\\] (?<body>.*)"
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3}) (?<pid>\\d+) (?<level>\\w+) (?<logger>.+) \\[(?<tid>.+)\\] (?<body>.*)"
             }
         },
         "level-field" : "level",
