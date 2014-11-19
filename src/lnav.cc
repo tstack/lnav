@@ -110,6 +110,7 @@
 #include "lnav_config.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.h"
+#include "sysclip.hh"
 #include "term_extra.hh"
 #include "log_data_helper.hh"
 #include "readline_highlighters.hh"
@@ -531,8 +532,28 @@ static void add_view_text_possibilities(
     readline_curses *rlc = lnav_data.ld_rl_view;
 
     rlc->clear_possibilities(context, type);
+
+    {
+        auto_mem<FILE> pfile(pclose);
+
+        pfile = open_clipboard(CT_FIND, CO_READ);
+        if (pfile.in() != NULL) {
+            char buffer[64];
+
+            if (fgets(buffer, sizeof(buffer), pfile) != NULL) {
+                char *nl;
+
+                buffer[sizeof(buffer) - 1] = '\0';
+                if ((nl = strchr(buffer, '\n')) != NULL) {
+                    *nl = '\0';
+                }
+                rlc->add_possibility(context, type, std::string(buffer));
+            }
+        }
+    }
+
     for (vis_line_t curr_line = tc->get_top();
-         curr_line < tc->get_bottom();
+         curr_line <= tc->get_bottom();
          ++curr_line) {
         string line;
 
@@ -1215,22 +1236,6 @@ static bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
     return false;
 }
 
-static void check_for_clipboard(FILE **pfile, const char *execstr)
-{
-    if (execstr == NULL || pfile == NULL || *pfile != NULL) {
-        return;
-    }
-
-    if ((*pfile = popen(execstr, "w")) != NULL && pclose(*pfile) == 0) {
-        *pfile = popen(execstr, "w");
-    }
-    else {
-        *pfile = NULL;
-    }
-
-    return;
-}
-
 /* XXX For one, this code is kinda crappy.  For two, we should probably link
  * directly with X so we don't need to have xclip installed and it'll work if
  * we're ssh'd into a box.
@@ -1242,17 +1247,13 @@ static void copy_to_xclip(void)
     bookmark_vector<vis_line_t> &bv =
         tc->get_bookmarks()[&textview_curses::BM_USER];
     bookmark_vector<vis_line_t>::iterator iter;
-    FILE * pfile      = NULL;
+    auto_mem<FILE> pfile(pclose);
     int    line_count = 0;
     string line;
 
-    /* XXX : Check if this is linux or MAC. Probably not the best solution but */
-    /* better than traversing the PATH to stat for the binaries or trying to */
-    /* forkexec. */
-    check_for_clipboard(&pfile, "xclip -i > /dev/null 2>&1");
-    check_for_clipboard(&pfile, "pbcopy > /dev/null 2>&1");
+    pfile = open_clipboard(CT_GENERAL);
 
-    if (!pfile) {
+    if (!pfile.in()) {
         flash();
         lnav_data.ld_rl_view->set_value(
             "error: Unable to copy to clipboard.  "
@@ -1265,9 +1266,6 @@ static void copy_to_xclip(void)
         fprintf(pfile, "%s\n", line.c_str());
         line_count += 1;
     }
-
-    pclose(pfile);
-    pfile = NULL;
 
     char buffer[128];
 
@@ -2779,6 +2777,12 @@ static void rl_callback(void *dummy, readline_curses *rc)
     case LNM_CAPTURE:
         rl_search_internal(dummy, rc, true);
         if (rc->get_value().size() > 0) {
+            auto_mem<FILE> pfile(pclose);
+
+            pfile = open_clipboard(CT_FIND);
+            if (pfile.in() != NULL) {
+                fprintf(pfile, "%s", rc->get_value().c_str());
+            }
             lnav_data.ld_view_stack.top()->set_follow_search(false);
             rc->set_value("search: " + rc->get_value());
             rc->set_alt_value(HELP_MSG_2(
@@ -2864,7 +2868,7 @@ static void rl_display_next(void *dummy, readline_curses *rc)
 static void usage(void)
 {
     const char *usage_msg =
-        "usage: %s [-hVsar] [logfile1 logfile2 ...]\n"
+        "usage: %s [options] [logfile1 logfile2 ...]\n"
         "\n"
         "A curses-based log file viewer that indexes log messages by type\n"
         "and time to make it easier to navigate through files quickly.\n"
@@ -2901,7 +2905,7 @@ static void usage(void)
         "\n"
         "Examples:\n"
         "  To load and follow the syslog file:\n"
-        "    $ lnav -s\n"
+        "    $ lnav\n"
         "\n"
         "  To load all of the files in /var/log:\n"
         "    $ lnav /var/log\n"

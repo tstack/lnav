@@ -36,6 +36,7 @@ set(diag_STAT_SRCS
     sqlite-extension-func.c
     statusview_curses.cc
     string-extension-functions.cc
+    sysclip.cc
     pcrepp.cc
     piper_proc.cc
     sql_util.cc
@@ -87,6 +88,7 @@ set(diag_STAT_SRCS
     sequence_sink.hh
     status_controllers.hh
     strong_int.hh
+    sysclip.hh
     term_extra.hh
     termios_guard.hh
     textfile_sub_source.hh

@@ -221,6 +221,7 @@ throw (error)
 
     /* Still need more space, try a realloc. */
     old = this->lb_buffer.release();
+    this->lb_share_manager.invalidate_refs();
     tmp = (char *)realloc(old, new_max);
     if (tmp != NULL) {
         this->lb_buffer     = tmp;
@@ -250,7 +251,6 @@ throw (error)
          * The request is outside the cached range, need to reload the
          * whole thing.
          */
-        this->lb_share_manager.invalidate_refs();
         prefill = 0;
         this->lb_buffer_size = 0;
         if ((this->lb_file_size != (size_t)-1) &&
@@ -284,6 +284,8 @@ throw (error)
          * Need more space, move any existing data to the front of the
          * buffer.
          */
+        this->lb_share_manager.invalidate_refs();
+
         this->lb_buffer_size -= prefill;
         this->lb_file_offset += prefill;
         memmove(&this->lb_buffer[0],
@@ -295,8 +297,6 @@ throw (error)
             this->resize_buffer(this->lb_buffer_max +
                                 DEFAULT_LINE_BUFFER_SIZE);
         }
-
-        this->lb_share_manager.invalidate_refs();
     }
 }
 

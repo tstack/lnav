@@ -124,6 +124,7 @@ noinst_HEADERS = \
 	statusview_curses.hh \
 	strnatcmp.h \
 	strong_int.hh \
+	sysclip.hh \
 	termios_guard.hh \
 	term_extra.hh \
 	textfile_sub_source.hh \
@@ -192,6 +193,7 @@ libdiag_a_SOURCES = \
 	sql_util.cc \
 	state-extension-functions.cc \
 	strnatcmp.c \
+	sysclip.cc \
 	textview_curses.cc \
 	time_fmts.cc \
 	view_curses.cc \

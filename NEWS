@@ -6,6 +6,9 @@ lnav v0.7.2:
        and write-csv-to commands will also write their output to the terminal
        when passed '-' as the file name.  This mode can be useful for copying
        plain text lines to the clipboard.
+     * (OS X) Text search strings are copied to the system's "find" clipboard.
+       Also, when starting a new search, the current value in the "find"
+       clipboard can be tab-completed.
 
 lnav v0.7.1:
      Features:
