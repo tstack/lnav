@@ -740,46 +740,75 @@
         ]
     },
     "vdsm_log" : {
-        "title" : "Vdsm Logs",
-        "description" : "The Open Virtual Datacenter VDSM log format",
-        "url" : "http://www.ovirt.org/Vdsm_Log_Files",
-        "regex" : {
-            "std" : {
-                "pattern" : "^(?<tid>.+)::(?<level>.+)::(?<timestamp>.+)::(?<module>.+)::(?<src_line>.+)::(?<logger>.+)::\\((?<func>[^\\)]+)\\)(?<body>(?:.|\\n)*)"
+        "title": "Vdsm Logs",
+        "description": "The Open Virtual Datacenter VDSM log format",
+        "url": "http://www.ovirt.org/Vdsm_Log_Files",
+        "regex": {
+            "std": {
+                "pattern": "^(?<tid>.+)::(?<level>.+)::(?<timestamp>.+)::(?<module>.+)::(?<src_line>.+)::(?<logger>.+)::\\((?<func>[^\\)]+)\\)(?<body>(?:.|\\n)*)"
             }
         },
-	"level-field" : "level",
-        "level" : {
-            "error" : "ERROR",
-            "debug" : "DEBUG",
-            "info" : "INFO",
-            "warning" : "WARNING"
+        "level-field": "level",
+        "level": {
+            "error": "ERROR",
+            "debug": "DEBUG",
+            "info": "INFO",
+            "warning": "WARNING"
         },
-        "value" : {
-            "tid" : {
-                "kind" : "string",
-                "identifier" : true
+        "value": {
+            "tid": {
+                "kind": "string",
+                "identifier": true
             },
-            "module" : {
-                "kind" : "string",
-                "identifier" : true
+            "module": {
+                "kind": "string",
+                "identifier": true
             },
-            "src_line" : {
-                "kind" : "integer",
-                "foreign-key" : true
+            "src_line": {
+                "kind": "integer",
+                "foreign-key": true
             },
-            "logger" : {
-                "kind" : "string",
-                "identifier" : true
+            "logger": {
+                "kind": "string",
+                "identifier": true
             },
-            "func" : {
-                "kind" : "string",
-                "identifier" : true
+            "func": {
+                "kind": "string",
+                "identifier": true
             }
         },
-        "sample" : [
+        "sample": [
             {
-                "line" : "Thread-1950::INFO::2011-12-07 12:14:15,018::dispatcher::94::Storage.Dispatcher.Protect::(run) Run and protect: getDeviceList, args: ( storageType=2)"
+                "line": "Thread-1950::INFO::2011-12-07 12:14:15,018::dispatcher::94::Storage.Dispatcher.Protect::(run) Run and protect: getDeviceList, args: ( storageType=2)"
+            }
+        ]
+    },
+    "vmk_log" : {
+        "title": "VMKernel Logs",
+        "description": "The VMKernel's log format",
+        "url": "",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) cpu(?<cpu>\\d+):(?<world_id>\\d+)\\)((?<level>WARNING): )?(?<body>.*)"
+            }
+        },
+        "level-field": "level",
+        "level": {
+            "warning": "WARNING"
+        },
+        "value": {
+            "cpu": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "world_id": {
+                "kind": "integer",
+                "identifier": true
+            }
+        },
+        "sample": [
+            {
+                "line": "2014-11-14T19:19:51.559Z cpu7:35233)VC: 2002: Device rescan time 704 msec (total number of devices 91)"
             }
         ]
     },
