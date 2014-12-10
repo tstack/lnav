@@ -130,20 +130,7 @@ public:
     void end_of_message(logfile_filter_state &lfs) {
         uint32_t mask = 0;
 
-        switch (this->get_type()) {
-            case INCLUDE:
-                if (!this->lf_message_matched) {
-                    mask = ((uint32_t) 1) << this->lf_index;
-                }
-                break;
-            case EXCLUDE:
-                if (this->lf_message_matched) {
-                    mask = ((uint32_t) 1) << this->lf_index;
-                }
-                break;
-            default:
-                break;
-        }
+        mask = ((uint32_t) this->lf_message_matched ? 1U : 0) << this->lf_index;
 
         for (size_t lpc = 0; lpc < this->lf_lines_for_message; lpc++) {
             size_t line_number = lfs.tfs_filter_count[this->lf_index];
@@ -248,16 +235,26 @@ public:
         return retval;
     };
 
-    uint32_t get_enabled_mask() {
-        uint32_t retval = 0;
-
+    void get_enabled_mask(uint32_t &filter_in_mask, uint32_t &filter_out_mask) {
+        filter_in_mask = filter_out_mask = 0;
         for (iterator iter = this->begin(); iter != this->end(); ++iter) {
-            if ((*iter)->is_enabled()) {
-                retval |= (1L << (*iter)->get_index());
+            text_filter *tf = (*iter);
+            if (tf->is_enabled()) {
+                uint32_t bit = (1UL << tf->get_index());
+
+                switch (tf->get_type()) {
+                    case text_filter::EXCLUDE:
+                        filter_out_mask |= bit;
+                        break;
+                    case text_filter::INCLUDE:
+                        filter_in_mask |= bit;
+                        break;
+                    default:
+                        ensure(0);
+                        break;
+                }
             }
         }
-
-        return retval;
     };
 
 private:

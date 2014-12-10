@@ -457,7 +457,8 @@ bool logfile_sub_source::rebuild_index(bool force)
 
         this->lss_filtered_index.reserve(this->lss_index.size());
 
-        uint32_t enabled_mask = this->get_filters().get_enabled_mask();
+        uint32_t filter_in_mask, filter_out_mask;
+        this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
 
         for (size_t index_index = start_size;
              index_index < this->lss_index.size();
@@ -466,7 +467,8 @@ bool logfile_sub_source::rebuild_index(bool force)
             uint64_t line_number;
             logfile_data *ld = this->find_data(cl, line_number);
 
-            if (!ld->ld_filter_state.excluded(enabled_mask, line_number) &&
+            if (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
+                    line_number) &&
                     (*(ld->get_file()->begin() + line_number)).get_msg_level() >=
                     this->lss_min_log_level) {
                 this->lss_filtered_index.push_back(index_index);
@@ -574,7 +576,9 @@ void logfile_sub_source::text_filters_changed()
         }
     }
 
-    uint32_t enabled_mask = this->get_filters().get_enabled_mask();
+    uint32_t filtered_in_mask, filtered_out_mask;
+
+    this->get_filters().get_enabled_mask(filtered_in_mask, filtered_out_mask);
 
     this->lss_filtered_index.clear();
     for (size_t index_index = 0; index_index < this->lss_index.size(); index_index++) {
@@ -582,7 +586,8 @@ void logfile_sub_source::text_filters_changed()
         uint64_t line_number;
         logfile_data *ld = this->find_data(cl, line_number);
 
-        if (!ld->ld_filter_state.excluded(enabled_mask, line_number) &&
+        if (!ld->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
+                line_number) &&
                 (*(ld->get_file()->begin() + line_number)).get_msg_level() >=
                         this->lss_min_log_level) {
             this->lss_filtered_index.push_back(index_index);

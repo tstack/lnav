@@ -93,8 +93,13 @@ public:
         }
     };
 
-    bool excluded(uint32_t enabled_mask, size_t offset) const {
-        return (this->lfo_filter_state.tfs_mask[offset] & enabled_mask) != 0;
+    bool excluded(uint32_t filter_in_mask, uint32_t filter_out_mask,
+            size_t offset) const {
+        bool filtered_in = (filter_in_mask == 0) || (
+                this->lfo_filter_state.tfs_mask[offset] & filter_in_mask) != 0;
+        bool filtered_out = (
+                this->lfo_filter_state.tfs_mask[offset] & filter_out_mask) != 0;
+        return !filtered_in || filtered_out;
     };
 
     size_t get_min_count(size_t max) const {

@@ -792,6 +792,7 @@ dist_noinst_DATA = \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
 	logfile_empty.0 \
+	logfile_filter.0 \
 	logfile_for_join.0 \
 	logfile_generic.0 \
 	logfile_glog.0 \
