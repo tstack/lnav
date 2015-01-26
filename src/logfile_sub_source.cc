@@ -79,15 +79,15 @@ logfile *logfile_sub_source::find(const char *fn,
 
 vis_line_t logfile_sub_source::find_from_time(const struct timeval &start)
 {
-    chunky_index<indexed_content>::iterator lb;
+    vector<uint32_t>::iterator lb;
     vis_line_t retval(-1);
 
-    lb = lower_bound(this->lss_index.begin(),
-                     this->lss_index.end(),
+    lb = lower_bound(this->lss_filtered_index.begin(),
+                     this->lss_filtered_index.end(),
                      start,
-                     logline_cmp(*this));
-    if (lb != this->lss_index.end()) {
-        retval = vis_line_t(lb - this->lss_index.begin());
+                     filtered_logline_cmp(*this));
+    if (lb != this->lss_filtered_index.end()) {
+        retval = vis_line_t(lb - this->lss_filtered_index.begin());
     }
 
     return retval;

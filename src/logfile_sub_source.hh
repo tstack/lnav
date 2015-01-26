@@ -475,6 +475,17 @@ private:
             return (*ll_lhs) < (*ll_rhs);
         };
 
+        bool operator()(const uint32_t &lhs, const uint32_t &rhs) const
+        {
+            content_line_t cl_lhs = (content_line_t)
+                    llss_controller.lss_index[lhs];
+            content_line_t cl_rhs = (content_line_t)
+                    llss_controller.lss_index[rhs];
+            logline *ll_lhs = this->llss_controller.find_line(cl_lhs);
+            logline *ll_rhs = this->llss_controller.find_line(cl_rhs);
+
+            return (*ll_lhs) < (*ll_rhs);
+        };
 #if 0
         bool operator()(const indexed_content &lhs, const indexed_content &rhs)
         {
@@ -495,6 +506,33 @@ private:
             logline *ll_lhs = this->llss_controller.find_line(lhs);
 
             return *ll_lhs < rhs;
+        };
+
+        logfile_sub_source & llss_controller;
+    };
+
+    struct filtered_logline_cmp {
+        filtered_logline_cmp(logfile_sub_source & lc)
+                : llss_controller(lc) { };
+        bool operator()(const uint32_t &lhs, const uint32_t &rhs) const
+        {
+            content_line_t cl_lhs = (content_line_t)
+                    llss_controller.lss_index[lhs];
+            content_line_t cl_rhs = (content_line_t)
+                    llss_controller.lss_index[rhs];
+            logline *ll_lhs = this->llss_controller.find_line(cl_lhs);
+            logline *ll_rhs = this->llss_controller.find_line(cl_rhs);
+
+            return (*ll_lhs) < (*ll_rhs);
+        };
+
+        bool operator()(const uint32_t &lhs, const struct timeval &rhs) const
+        {
+            content_line_t cl_lhs = (content_line_t)
+                    llss_controller.lss_index[lhs];
+            logline *ll_lhs = this->llss_controller.find_line(cl_lhs);
+
+            return (*ll_lhs) < rhs;
         };
 
         logfile_sub_source & llss_controller;
