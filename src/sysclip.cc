@@ -72,7 +72,7 @@ FILE *open_clipboard(clip_type_t type, clip_op_t op)
     clip_command *cc = get_commands();
     FILE *pfile = NULL;
 
-    if (cc != NULL) {
+    if (cc != NULL && cc[type].cc_cmd[op] != NULL) {
         pfile = popen(cc[type].cc_cmd[op], mode);
     }
 
