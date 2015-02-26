@@ -996,7 +996,6 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
                             &str.c_str()[curr_pos], line_len);
                     this->json_append_to_cache("\n", 1);
                     curr_pos = nl_pos + 1;
-                    line_len = -1;
                 } while (nl_pos != std::string::npos &&
                          nl_pos < str.size());
                 lv.lv_origin.lr_end = this->jlf_cached_line.size();

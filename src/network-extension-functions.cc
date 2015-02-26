@@ -44,6 +44,7 @@
 
 #include "sqlite3.h"
 
+#include "auto_mem.hh"
 #include "sqlite-extension-func.h"
 
 static void sql_gethostbyname(sqlite3_context *context,
@@ -51,7 +52,7 @@ static void sql_gethostbyname(sqlite3_context *context,
 {
     char             buffer[INET6_ADDRSTRLEN];
     const char *     name_in;
-    struct addrinfo *ai;
+    auto_mem<struct addrinfo> ai(freeaddrinfo);
     void *           addr_ptr = NULL;
     int rc;
 
@@ -63,7 +64,7 @@ static void sql_gethostbyname(sqlite3_context *context,
     }
 
     name_in = (const char *)sqlite3_value_text(argv[0]);
-    while ((rc = getaddrinfo(name_in, NULL, NULL, &ai)) == EAI_AGAIN) {
+    while ((rc = getaddrinfo(name_in, NULL, NULL, ai.out())) == EAI_AGAIN) {
         sqlite3_sleep(10);
     }
     if (rc != 0) {
@@ -71,25 +72,23 @@ static void sql_gethostbyname(sqlite3_context *context,
         return;
     }
 
-    switch (ai->ai_family) {
+    switch (ai.in()->ai_family) {
     case AF_INET:
-        addr_ptr = &((struct sockaddr_in *)ai->ai_addr)->sin_addr;
+        addr_ptr = &((struct sockaddr_in *)ai.in()->ai_addr)->sin_addr;
         break;
 
     case AF_INET6:
-        addr_ptr = &((struct sockaddr_in6 *)ai->ai_addr)->sin6_addr;
+        addr_ptr = &((struct sockaddr_in6 *)ai.in()->ai_addr)->sin6_addr;
         break;
 
-        default:
-            sqlite3_result_error(context, "unknown address family", -1);
-            return;
+    default:
+        sqlite3_result_error(context, "unknown address family", -1);
+        return;
     }
 
-    inet_ntop(ai->ai_family, addr_ptr, buffer, sizeof(buffer));
+    inet_ntop(ai.in()->ai_family, addr_ptr, buffer, sizeof(buffer));
 
     sqlite3_result_text(context, buffer, -1, SQLITE_TRANSIENT);
-
-    freeaddrinfo(ai);
 }
 
 static void sql_gethostbyaddr(sqlite3_context *context,

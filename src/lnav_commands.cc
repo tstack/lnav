@@ -425,6 +425,9 @@ static string com_save_to(string cmdline, vector<string> &args)
         yajl_gen handle = NULL;
 
         if ((handle = yajl_gen_alloc(NULL)) == NULL) {
+            if (outfile != stdout) {
+                fclose(outfile);
+            }
             return "error: unable to allocate memory";
         }
         else {

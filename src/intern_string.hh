@@ -57,7 +57,8 @@ public:
     }
 
 private:
-    intern_string(const char *str, ssize_t len) : is_str(str), is_len(len) {
+    intern_string(const char *str, ssize_t len)
+            : is_next(NULL), is_str(str), is_len(len) {
 
     }
 

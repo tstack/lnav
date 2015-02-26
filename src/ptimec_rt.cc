@@ -46,7 +46,7 @@ bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, ssize_t 
     memcpy(zone, &str[off_inout], zone_len);
     zone[zone_len] = '\0';
     if ((end_of_date = strptime(zone, "%b", &dst->et_tm)) != NULL) {
-        off_inout = end_of_date - str;
+        off_inout = end_of_date - zone;
         return true;
     }
 
