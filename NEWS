@@ -1,6 +1,6 @@
 
 lnav v0.7.2:
-     * Added a log format for vdsm.
+     * Added log formats for vdsm, openstack, and the vmkernel.
      * Added a "lo-fi" mode (L hotkey) that dumps the displayed log lines
        to the terminal without any decorations.  The write-to, write-json-to,
        and write-csv-to commands will also write their output to the terminal
