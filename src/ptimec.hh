@@ -68,7 +68,7 @@ struct exttm {
     off_inout += amount;
 
 #define ABR_TO_INT(a, b, c) \
-    htonl((a) | (b << 8) | (c << 16))
+    HTONL((a) | (b << 8) | (c << 16))
 
 inline
 bool ptime_upto(char ch, const char *str, off_t &off_inout, ssize_t len)
