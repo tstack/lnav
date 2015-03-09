@@ -38,6 +38,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
 
 enum exttm_bits_t {
     ETB_YEAR_SET,
@@ -67,7 +68,7 @@ struct exttm {
     off_inout += amount;
 
 #define ABR_TO_INT(a, b, c) \
-    ((a) | (b << 8) | (c << 16))
+    htonl((a) | (b << 8) | (c << 16))
 
 inline
 bool ptime_upto(char ch, const char *str, off_t &off_inout, ssize_t len)
@@ -97,7 +98,7 @@ inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         int *iptr = (int *)(&str[off_inout]);
         int val;
 
-        switch (*iptr & 0xdfdfdf) {
+        switch (htonl(*iptr) & 0xdfdfdfdf) {
         case ABR_TO_INT('J', 'A', 'N'):
             val = 0;
             break;

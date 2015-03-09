@@ -33,6 +33,7 @@
 #include <locale.h>
 
 #include "lnav_util.hh"
+#include "../src/lnav_util.hh"
 
 static const char *BAD_TIMES[] = {
     "1-2-3 1:2:3",
@@ -61,14 +62,15 @@ int main(int argc, char *argv[])
 
     {
         const char *en_date = "Jan  1 12:00:00";
-        const char *bg_date = "Ene  1 12:00:00";
+        const char *es_date = " 1/Ene/2014:12:00:00 +0000";
         struct timeval en_tv, es_tv;
         struct exttm en_tm, es_tm;
         date_time_scanner dts;
 
-        if (setlocale(LC_TIME, "es_ES.utf8") != NULL) {
+        if (setlocale(LC_TIME, "es_ES.UTF-8") != NULL) {
             assert(dts.scan(en_date, strlen(en_date), NULL, &en_tm, en_tv) != NULL);
-            assert(dts.scan(bg_date, strlen(bg_date), NULL, &es_tm, es_tv) != NULL);
+            dts.clear();
+            assert(dts.scan(es_date, strlen(es_date), NULL, &es_tm, es_tv) != NULL);
         }
     }
 }

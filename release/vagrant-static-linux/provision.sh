@@ -18,7 +18,7 @@ cd ~/github
 
 PACKAGE_URLS="\
     http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz \
-    http://ftp.gnu.org/gnu/automake/automake-1.14.tar.gz \
+    http://ftp.gnu.org/gnu/automake/automake-1.14.1.tar.gz \
     ftp://invisible-island.net/ncurses/ncurses-5.9.tar.gz \
     ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.36.tar.gz \
     ftp://ftp.cwru.edu/pub/bash/readline-6.3.tar.gz \
@@ -40,7 +40,7 @@ done
 
 (cd autoconf-2.69 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
-(cd automake-1.14 && ./configure --prefix=${FAKE_ROOT} && make && make install)
+(cd automake-1.14.1 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
 (cd ncurses-5.9 && \
  ./configure --prefix=${FAKE_ROOT} \
