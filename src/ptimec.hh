@@ -68,7 +68,7 @@ struct exttm {
     off_inout += amount;
 
 #define ABR_TO_INT(a, b, c) \
-    HTONL((a) | (b << 8) | (c << 16))
+    ((a << 24) | (b << 16) | (c << 8))
 
 inline
 bool ptime_upto(char ch, const char *str, off_t &off_inout, ssize_t len)
@@ -95,10 +95,10 @@ bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, ssize_t 
 inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     if (off_inout + 3 < len) {
-        int *iptr = (int *)(&str[off_inout]);
+        uint32_t *iptr = (uint32_t *)(&str[off_inout]);
         int val;
 
-        switch (htonl(*iptr) & 0xdfdfdfdf) {
+        switch (htonl(*iptr) & 0xdfdfdf00) {
         case ABR_TO_INT('J', 'A', 'N'):
             val = 0;
             break;
