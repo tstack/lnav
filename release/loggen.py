@@ -146,13 +146,13 @@ except OSError:
     pass
 
 FILES = [
-    (open("/tmp/demo/access_log", "w"), access_log_msgs()),
-    (open("/tmp/demo/messages", "w"), syslog_msgs()),
+    ("/tmp/demo/access_log", access_log_msgs()),
+    ("/tmp/demo/messages", syslog_msgs()),
 ]
 
 while True:
-    for fp, gen in FILES:
+    for fname, gen in FILES:
         for i in range(random.randrange(0, 4)):
-            fp.write(gen.next())
-            fp.flush()
+            with open(fname, "a+") as fp:
+                fp.write(gen.next())
             time.sleep(random.uniform(0.25, 0.75))

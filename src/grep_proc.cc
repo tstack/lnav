@@ -233,7 +233,12 @@ void grep_proc::child_loop(void)
             }
         }
 
-        fprintf(stdout, "%d\n", line - 1);
+        if (stop_line == -1) {
+            // When scanning to the end of the source, we need to return the
+            // highest line that was seen so that the next request that
+            // continues from the end works properly.
+            fprintf(stdout, "h%d\n", line - 1);
+        }
         this->child_term();
     }
 }
@@ -281,12 +286,10 @@ void grep_proc::dispatch_line(char *line)
 
     require(line != NULL);
 
-    if (sscanf(line, "%d", this->gp_last_line.out()) == 1) {
-        /* Starting a new line with matches. */
+    if (sscanf(line, "h%d", this->gp_highest_line.out()) == 1) {
 
-        if (this->gp_last_line > this->gp_highest_line) {
-            this->gp_highest_line = this->gp_last_line;
-        }
+    } else if (sscanf(line, "%d", this->gp_last_line.out()) == 1) {
+        /* Starting a new line with matches. */
         ensure(this->gp_last_line >= 0);
     }
     else if (sscanf(line, "[%d:%d]", &start, &end) == 2) {

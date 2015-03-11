@@ -75,8 +75,6 @@ public:
      * @param value_out The destination for the line value.
      */
     virtual bool grep_value_for_line(int line, std::string &value_out) = 0;
-
-    virtual std::string grep_source_name(void) { return ""; };
 };
 
 /**
