@@ -28,6 +28,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the <jemalloc/jemalloc.h> header file. */
+#undef HAVE_JEMALLOC_JEMALLOC_H
+
 /* Define to 1 if you have the `pcre' library (-lpcre). */
 #undef HAVE_LIBPCRE
 

@@ -637,6 +637,7 @@ READLINE_LIBS
 PCRE_CFLAGS
 PCRE_LIBS
 CURSES_LIB
+jemalloch
 EGREP
 GREP
 CPP
@@ -757,6 +758,7 @@ enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
 enable_profiling
+with_jemalloc
 with_ncurses
 with_ncursesw
 with_pcre
@@ -1408,6 +1410,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-jemalloc=DIR     use a specific jemalloc library
   --with-ncurses          force the use of Ncurses or NcursesW
   --without-ncursesw      do not use NcursesW (wide character support)
   --with-pcre[=prefix]
@@ -2537,7 +2540,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-am__api_version='1.14'
+am__api_version='1.15'
 
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
@@ -2738,8 +2741,8 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-# expand $ac_aux_dir to an absolute path
-am_aux_dir=`cd $ac_aux_dir && pwd`
+# Expand $ac_aux_dir to an absolute path.
+am_aux_dir=`cd "$ac_aux_dir" && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -2758,7 +2761,7 @@ else
 $as_echo "$as_me: WARNING: 'missing' script is too old or missing" >&2;}
 fi
 
-if test x"${install_sh}" != xset; then
+if test x"${install_sh+set}" != xset; then
   case $am_aux_dir in
   *\ * | *\	*)
     install_sh="\${SHELL} '$am_aux_dir/install-sh'" ;;
@@ -3086,8 +3089,8 @@ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 # <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 mkdir_p='$(MKDIR_P)'
 
-# We need awk for the "check" target.  The system "awk" is bad on
-# some platforms.
+# We need awk for the "check" target (and possibly the TAP driver).  The
+# system "awk" is bad on some platforms.
 # Always define AMTAR for backward compatibility.  Yes, it's still used
 # in the wild :-(  We should find a proper way to deprecate it ...
 AMTAR='$${TAR-tar}'
@@ -3144,6 +3147,7 @@ END
     as_fn_error $? "Your 'rm' program is bad, sorry." "$LINENO" 5
   fi
 fi
+
 # Check whether --enable-silent-rules was given.
 if test "${enable_silent_rules+set}" = set; then :
   enableval=$enable_silent_rules;
@@ -6196,6 +6200,279 @@ _ACEOF
 fi
 
 done
+
+
+
+enable_jemalloc=no
+
+# Check whether --with-jemalloc was given.
+if test "${with_jemalloc+set}" = set; then :
+  withval=$with_jemalloc;
+    if test "$withval" != "no"; then
+        enable_jemalloc=yes
+        modify_env_variables=no
+        case "$withval" in
+            yes)
+                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for jemalloc libs" >&5
+$as_echo "$as_me: Checking for jemalloc libs" >&6;}
+                ;;
+            *)
+                jemalloc_include="$withval/include"
+                jemalloc_ldflags="$withval/lib"
+                modify_env_variables="yes"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for jemalloc libs in $withval" >&5
+$as_echo "$as_me: Checking for jemalloc libs in $withval" >&6;}
+                ;;
+        esac
+    fi
+
+fi
+
+
+jemalloch=0
+if test "$enable_jemalloc" != "no"; then
+    saved_ldflags=$LDFLAGS
+    saved_cppflags=$CPPFLAGS
+    saved_libtool_link_flags=$LIBTOOL_LINK_FLAGS
+    jemalloc_have_headers=0
+    jemalloc_have_libs=0
+
+    if test "$modify_env_variables" != "no"; then
+
+  if test "x$CPPFLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \"-I${jemalloc_include}\""
+    CPPFLAGS="-I${jemalloc_include}"
+  else
+    ats_addto_bugger="-I${jemalloc_include}"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $CPPFLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$LDFLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting LDFLAGS to \"-L${jemalloc_ldflags}\""
+    LDFLAGS="-L${jemalloc_ldflags}"
+  else
+    ats_addto_bugger="-L${jemalloc_ldflags}"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $LDFLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to LDFLAGS"
+        LDFLAGS="$LDFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$LIBTOOL_LINK_FLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting LIBTOOL_LINK_FLAGS to \"-R${jemalloc_ldflags}\""
+    LIBTOOL_LINK_FLAGS="-R${jemalloc_ldflags}"
+  else
+    ats_addto_bugger="-R${jemalloc_ldflags}"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $LIBTOOL_LINK_FLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to LIBTOOL_LINK_FLAGS"
+        LIBTOOL_LINK_FLAGS="$LIBTOOL_LINK_FLAGS $i"
+      fi
+    done
+  fi
+
+    fi
+    # On Darwin, jemalloc symbols are prefixed with je_. Search for that first,
+    # then fall back to unadorned symbols.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing je_malloc_stats_print" >&5
+$as_echo_n "checking for library containing je_malloc_stats_print... " >&6; }
+if ${ac_cv_search_je_malloc_stats_print+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char je_malloc_stats_print ();
+int
+main ()
+{
+return je_malloc_stats_print ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' jemalloc; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_je_malloc_stats_print=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_je_malloc_stats_print+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_je_malloc_stats_print+:} false; then :
+
+else
+  ac_cv_search_je_malloc_stats_print=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_je_malloc_stats_print" >&5
+$as_echo "$ac_cv_search_je_malloc_stats_print" >&6; }
+ac_res=$ac_cv_search_je_malloc_stats_print
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  jemalloc_have_libs=1
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing malloc_stats_print" >&5
+$as_echo_n "checking for library containing malloc_stats_print... " >&6; }
+if ${ac_cv_search_malloc_stats_print+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char malloc_stats_print ();
+int
+main ()
+{
+return malloc_stats_print ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' jemalloc; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_malloc_stats_print=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_malloc_stats_print+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_malloc_stats_print+:} false; then :
+
+else
+  ac_cv_search_malloc_stats_print=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_malloc_stats_print" >&5
+$as_echo "$ac_cv_search_malloc_stats_print" >&6; }
+ac_res=$ac_cv_search_malloc_stats_print
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  jemalloc_have_libs=1
+fi
+
+
+fi
+
+    if test "$jemalloc_have_libs" != "0"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for jemalloc includes" >&5
+$as_echo "$as_me: Checking for jemalloc includes" >&6;}
+        for ac_header in jemalloc/jemalloc.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "jemalloc/jemalloc.h" "ac_cv_header_jemalloc_jemalloc_h" "$ac_includes_default"
+if test "x$ac_cv_header_jemalloc_jemalloc_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_JEMALLOC_JEMALLOC_H 1
+_ACEOF
+ jemalloc_have_headers=1
+fi
+
+done
+
+        if test "$jemalloc_have_headers" != "0"; then
+            jemalloch=1
+
+  if test "x$LIBS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting LIBS to \"-ljemalloc\""
+    LIBS="-ljemalloc"
+  else
+    ats_addto_bugger="-ljemalloc"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $LIBS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to LIBS"
+        LIBS="$LIBS $i"
+      fi
+    done
+  fi
+
+        else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: jemalloc headers not found" >&5
+$as_echo "$as_me: WARNING: jemalloc headers not found" >&2;}
+        fi
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: jemalloc libs not found" >&5
+$as_echo "$as_me: WARNING: jemalloc libs not found" >&2;}
+    fi
+    if test "$jemalloc_have_libs" = "0"; then
+        CPPFLAGS=$saved_cppflags
+        LDFLAGS=$saved_ldflags
+        LIBTOOL_LINK_FLAGS=$saved_libtool_link_flags
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: jemalloc not found" >&5
+$as_echo "$as_me: WARNING: jemalloc not found" >&2;}
+    fi
+fi
+
 
 
 
