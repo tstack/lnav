@@ -92,6 +92,8 @@ AC_SEARCH_LIBS(Gpm_Open, gpm)
 
 AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h)
 
+AX_WITH_JEMALLOC
+
 AX_WITH_CURSES
 
 if test "x$ax_cv_curses" != xyes; then
