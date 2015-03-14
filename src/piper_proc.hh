@@ -73,7 +73,7 @@ public:
     virtual ~piper_proc();
 
     /** @return The file descriptor for the temporary file. */
-    int get_fd() const { return this->pp_fd; };
+    int get_fd() { return this->pp_fd.release(); };
 
 private:
     /** A file descriptor that refers to the temporary file. */

@@ -784,6 +784,7 @@ void rebuild_indexes(bool force)
                 lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
                 iter = tss->tss_files.erase(iter);
                 lnav_data.ld_files.remove(lf);
+                delete lf;
                 continue;
             }
 
@@ -791,8 +792,6 @@ void rebuild_indexes(bool force)
                 bool new_text_data = (*iter)->rebuild_index();
 
                 if ((*iter)->get_format() != NULL) {
-                    logfile *lf = *iter;
-
                     if (lnav_data.ld_log_source.insert_file(lf)) {
                         iter  = tss->tss_files.erase(iter);
                         force = true;
@@ -3780,11 +3779,12 @@ static void looper(void)
                 }
 
                 for (std::list<piper_proc *>::iterator iter = lnav_data.ld_pipers.begin();
-                    iter != lnav_data.ld_pipers.end();
-                    ++iter) {
+                    iter != lnav_data.ld_pipers.end(); ) {
                     if ((*iter)->has_exited()) {
                         delete *iter;
                         iter = lnav_data.ld_pipers.erase(iter);
+                    } else {
+                        ++iter;
                     }
                 }
             }
@@ -3986,6 +3986,7 @@ int main(int argc, char *argv[])
 
     auto_ptr<piper_proc> stdin_reader;
     const char *         stdin_out = NULL;
+    int                  stdin_out_fd = -1;
 
     setlocale(LC_NUMERIC, "");
 
@@ -4364,8 +4365,8 @@ int main(int argc, char *argv[])
             auto_ptr<piper_proc>(new piper_proc(STDIN_FILENO,
                                                 lnav_data.ld_flags &
                                                 LNF_TIMESTAMP, stdin_out));
-        lnav_data.ld_file_names.insert(make_pair("stdin",
-                                                 stdin_reader->get_fd()));
+        stdin_out_fd = stdin_reader->get_fd();
+        lnav_data.ld_file_names.insert(make_pair("stdin", stdin_out_fd));
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
             perror("cannot dup stdout to stdin");
         }
@@ -4503,11 +4504,11 @@ int main(int argc, char *argv[])
 
         // When reading from stdin, dump out the last couple hundred lines so
         // the user can have the text in their terminal history.
-        if (stdin_reader.get() != NULL) {
+        if (stdin_out_fd != -1) {
             list<logfile *>::iterator file_iter;
             struct stat st;
 
-            fstat(stdin_reader->get_fd(), &st);
+            fstat(stdin_out_fd, &st);
             file_iter = find_if(lnav_data.ld_files.begin(),
                                 lnav_data.ld_files.end(),
                                 same_file(st));
