@@ -95,6 +95,8 @@ AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefault
 
 LNAV_WITH_JEMALLOC
 
+LNAV_WITH_LOCAL_YAJL
+
 AX_WITH_CURSES
 
 if test "x$ax_cv_curses" != xyes; then
