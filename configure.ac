@@ -166,6 +166,8 @@ if test x"${enable_static}" != x"no"; then
 fi
 AC_SUBST(STATIC_LDFLAGS)
 
+AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
+
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([TESTS_ENVIRONMENT])
