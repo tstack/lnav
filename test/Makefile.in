@@ -119,9 +119,9 @@ TESTS = test_ansi_scrubber$(EXEEXT) test_auto_fd$(EXEEXT) \
 	test_data_parser.sh test_yajlpp$(EXEEXT)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/ax_sqlite3.m4 \
-	$(top_srcdir)/ax_with_curses.m4 \
-	$(top_srcdir)/ax_with_jemalloc.m4 $(top_srcdir)/lnav.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_sqlite3.m4 \
+	$(top_srcdir)/m4/ax_with_curses.m4 $(top_srcdir)/m4/lnav.m4 \
+	$(top_srcdir)/m4/lnav_with_jemalloc.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)

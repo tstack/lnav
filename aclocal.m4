@@ -1385,7 +1385,7 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
-m4_include([ax_sqlite3.m4])
-m4_include([ax_with_curses.m4])
-m4_include([ax_with_jemalloc.m4])
-m4_include([lnav.m4])
+m4_include([m4/ax_sqlite3.m4])
+m4_include([m4/ax_with_curses.m4])
+m4_include([m4/lnav.m4])
+m4_include([m4/lnav_with_jemalloc.m4])
