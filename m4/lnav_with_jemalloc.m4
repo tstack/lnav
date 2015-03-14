@@ -15,10 +15,10 @@ dnl See the License for the specific language governing permissions and
 dnl limitations under the License.
 
 dnl
-dnl jemalloc.m4: Trafficserver's jemalloc autoconf macros
+dnl lnav_with_jemalloc.m4: lnav's jemalloc autoconf macros
 dnl
 dnl
-AC_DEFUN([AX_ADDTO], [
+AC_DEFUN([LNAV_ADDTO], [
   if test "x$$1" = "x"; then
     test "x$verbose" = "xyes" && echo "  setting $1 to \"$2\""
     $1="$2"
@@ -40,7 +40,7 @@ AC_DEFUN([AX_ADDTO], [
   fi
 ])dnl
 
-AC_DEFUN([AX_WITH_JEMALLOC], [
+AC_DEFUN([LNAV_WITH_JEMALLOC], [
 enable_jemalloc=no
 AC_ARG_WITH([jemalloc], [AC_HELP_STRING([--with-jemalloc=DIR], [use a specific jemalloc library])],
 [
@@ -70,9 +70,9 @@ if test "$enable_jemalloc" != "no"; then
     jemalloc_have_libs=0
 
     if test "$modify_env_variables" != "no"; then
-        AX_ADDTO(CPPFLAGS, [-I${jemalloc_include}])
-        AX_ADDTO(LDFLAGS, [-L${jemalloc_ldflags}])
-        AX_ADDTO(LIBTOOL_LINK_FLAGS, [-R${jemalloc_ldflags}])
+        LNAV_ADDTO(CPPFLAGS, [-I${jemalloc_include}])
+        LNAV_ADDTO(LDFLAGS, [-L${jemalloc_ldflags}])
+        LNAV_ADDTO(LIBTOOL_LINK_FLAGS, [-R${jemalloc_ldflags}])
     fi
     # On Darwin, jemalloc symbols are prefixed with je_. Search for that first,
     # then fall back to unadorned symbols.
@@ -84,7 +84,7 @@ if test "$enable_jemalloc" != "no"; then
         AC_CHECK_HEADERS(jemalloc/jemalloc.h, [jemalloc_have_headers=1])
         if test "$jemalloc_have_headers" != "0"; then
             jemalloch=1
-            AX_ADDTO(LIBS, [-ljemalloc])
+            LNAV_ADDTO(LIBS, [-ljemalloc])
         else
             AC_MSG_WARN([jemalloc headers not found])
         fi

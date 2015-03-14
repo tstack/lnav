@@ -1,6 +1,7 @@
 
 AC_INIT(lnav, 0.7.2, lnav@googlegroups.com)
 AC_CONFIG_SRCDIR([src/lnav.cc])
+AC_CONFIG_MACRO_DIRS([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
 
@@ -92,7 +93,7 @@ AC_SEARCH_LIBS(Gpm_Open, gpm)
 
 AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h)
 
-AX_WITH_JEMALLOC
+LNAV_WITH_JEMALLOC
 
 AX_WITH_CURSES
 
