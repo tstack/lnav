@@ -3,6 +3,8 @@ language: cpp
 compiler: gcc
 before_install:
     - sudo apt-get install -y -qq libgpm-dev
+    - sudo apt-get autoremove -y automake
+    - sudo apt-get install -y automake
 script: ./autogen.sh && ./configure && make && make check
 
 env:
