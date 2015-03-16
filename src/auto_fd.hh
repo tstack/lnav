@@ -198,6 +198,13 @@ public:
         }
     };
 
+    void close_on_exec() const {
+        if (this->af_fd == -1) {
+            return;
+        }
+        log_perror(fcntl(this->af_fd, F_SETFD, FD_CLOEXEC));
+    }
+
 private:
     int af_fd;  /*< The managed file descriptor. */
 };

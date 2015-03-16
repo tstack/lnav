@@ -603,6 +603,17 @@ static int vt_update(sqlite3_vtab *tab,
         int val = sqlite3_value_int(argv[2 + VT_COL_MARK]);
 
         vt->tc->set_user_mark(&textview_curses::BM_USER, vis_line_t(rowid), val);
+        rowid += 1;
+        while (rowid < vt->lss->text_line_count()) {
+            vis_line_t vl(rowid);
+            content_line_t cl = vt->lss->at(vl);
+            logline *ll = vt->lss->find_line(cl);
+            if (!ll->is_continued()) {
+                break;
+            }
+            vt->tc->set_user_mark(&textview_curses::BM_USER, vl, val);
+            rowid += 1;
+        }
 
         retval = SQLITE_OK;
     }

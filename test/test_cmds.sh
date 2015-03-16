@@ -260,6 +260,31 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ";update generic_log set log_mark=1" \
+    -c ":pipe-to sed -e 's/World!/Bork!/g'" \
+    ${test_dir}/logfile_multiline.0
+check_output "pipe-to is not working" <<EOF
+2009-07-20 22:59:27,672:DEBUG:Hello, Bork!
+  How are you today?
+2009-07-20 22:59:27,672:DEBUG:Hello, World!
+  How are you today?
+2009-07-20 22:59:30,221:ERROR:Goodbye, Bork!
+2009-07-20 22:59:30,221:ERROR:Goodbye, World!
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":goto 2" \
+    -c ":pipe-line-to sed -e 's/World!/Bork!/g'" \
+    ${test_dir}/logfile_multiline.0
+check_output "pipe-line-to is not working" <<EOF
+2009-07-20 22:59:27,672:DEBUG:Hello, World!
+  How are you today?
+2009-07-20 22:59:30,221:ERROR:Goodbye, Bork!
+2009-07-20 22:59:30,221:ERROR:Goodbye, World!
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ":set-min-log-level error" \
     ${test_dir}/logfile_access_log.0
 

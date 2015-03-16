@@ -42,6 +42,8 @@
 #include "auto_fd.hh"
 #include "lnav_util.hh"
 
+using namespace std;
+
 std::string hash_string(const std::string &str)
 {
     byte_array<2, uint64> hash;
@@ -532,3 +534,22 @@ size_t strtonum<long>(long &num_out, const char *string, size_t len);
 
 template
 size_t strtonum<int>(int &num_out, const char *string, size_t len);
+
+string build_path(const vector<string> &paths)
+{
+    string retval;
+
+    for (vector<string>::const_iterator path_iter = paths.begin();
+         path_iter != paths.end();
+         ++path_iter) {
+        if (path_iter->empty()) {
+            continue;
+        }
+        if (!retval.empty()) {
+            retval += ":";
+        }
+        retval += *path_iter;
+    }
+    retval += ":" + string(getenv("PATH"));
+    return retval;
+}

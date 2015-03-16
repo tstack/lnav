@@ -3442,6 +3442,19 @@ void update_hits(void *dummy, textview_curses *tc)
     }
 }
 
+static void gather_pipers(void)
+{
+    for (std::list<piper_proc *>::iterator iter = lnav_data.ld_pipers.begin();
+         iter != lnav_data.ld_pipers.end(); ) {
+        if ((*iter)->has_exited()) {
+            delete *iter;
+            iter = lnav_data.ld_pipers.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+}
+
 static void looper(void)
 {
     try {
@@ -3482,6 +3495,7 @@ static void looper(void)
         (void)signal(SIGTERM, sigint);
         (void)signal(SIGWINCH, sigwinch);
         (void)signal(SIGCHLD, sigchld);
+        (void)signal(SIGPIPE, SIG_IGN);
 
         screen_curses sc;
         lnav_behavior lb;
@@ -3778,15 +3792,7 @@ static void looper(void)
                     iter = lnav_data.ld_children.erase(iter);
                 }
 
-                for (std::list<piper_proc *>::iterator iter = lnav_data.ld_pipers.begin();
-                    iter != lnav_data.ld_pipers.end(); ) {
-                    if ((*iter)->has_exited()) {
-                        delete *iter;
-                        iter = lnav_data.ld_pipers.erase(iter);
-                    } else {
-                        ++iter;
-                    }
-                }
+                gather_pipers();
             }
         }
     }
@@ -4428,6 +4434,16 @@ int main(int argc, char *argv[])
                 lnav_data.ld_views[LNV_LOG].set_top(vis_line_t(0));
 
                 execute_init_commands(msgs);
+                for (;;) {
+                    gather_pipers();
+                    if (lnav_data.ld_pipers.empty()) {
+                        break;
+                    }
+                    else {
+                        usleep(10000);
+                        rebuild_indexes(false);
+                    }
+                }
                 rebuild_indexes(false);
 
                 for (msg_iter = msgs.begin();

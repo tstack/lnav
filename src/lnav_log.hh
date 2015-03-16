@@ -32,9 +32,11 @@
 #ifndef __lnav_log_hh
 #define __lnav_log_hh
 
+#include <errno.h>
 #include <stdio.h>
 #include <termios.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/cdefs.h>
 
 #ifndef __dead2
@@ -89,5 +91,10 @@ extern enum lnav_log_level_t lnav_log_level;
     ((void) ((e) ? 0 : __ensure (#e, __FILE__, __LINE__)))
 #define __ensure(e, file, line) \
     (log_msg(LOG_LEVEL_ERROR, file, line, "failed postcondition `%s'", e), log_abort(), 1)
+
+#define log_perror(e)  \
+    ((void) ((e != -1) ? 0 : __log_perror (#e, __FILE__, __LINE__)))
+#define __log_perror(e, file, line) \
+    (log_msg(LOG_LEVEL_ERROR, file, line, "syscall failed `%s' -- %s", e, strerror(errno)), 1)
 
 #endif

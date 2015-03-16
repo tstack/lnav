@@ -111,7 +111,21 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         int nullfd;
 
         nullfd = open("/dev/null", O_RDWR);
+        dup2(nullfd, STDIN_FILENO);
         dup2(nullfd, STDOUT_FILENO);
+        for (int fd_to_close = 0; fd_to_close < 1024; fd_to_close++) {
+            int flags;
+
+            if (fd_to_close == this->pp_fd.get()) {
+                continue;
+            }
+            if ((flags = fcntl(fd_to_close, F_GETFD)) == -1) {
+                continue;
+            }
+            if (flags & FD_CLOEXEC) {
+                close(fd_to_close);
+            }
+        }
         fcntl(infd.get(), F_SETFL, O_NONBLOCK);
         lb.set_fd(infd);
         do {

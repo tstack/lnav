@@ -40,6 +40,7 @@
 #include "spookyhash/SpookyV2.h"
 
 #include <string>
+#include <vector>
 
 #include "ptimec.hh"
 #include "byte_array.hh"
@@ -169,6 +170,8 @@ inline bool is_glob(const char *fn)
             strchr(fn, '?') != NULL ||
             strchr(fn, '[') != NULL);
 };
+
+std::string build_path(const std::vector<std::string> &paths);
 
 /**
  * Convert the time stored in a 'tm' struct into epoch time.

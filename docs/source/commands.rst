@@ -64,3 +64,7 @@ Output
   Use '-' to write the lines to the terminal.
 * write-json-to <file> - Write SQL query results to the given file in JSON
   format.  Use '-' to write the lines to the terminal.
+* pipe-to <shell-cmd> - Pipe the bookmarked lines in the current view to a
+  shell command and open the output in lnav.
+* pipe-line-to <shell-cmd> - Pipe the top line in the current view to a shell
+  command and open the output in lnav.

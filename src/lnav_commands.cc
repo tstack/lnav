@@ -468,6 +468,120 @@ static string com_save_to(string cmdline, vector<string> &args)
     return "";
 }
 
+static string com_pipe_to(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting command to execute";
+
+    if (args.size() == 0) {
+        args.push_back("filename");
+        return "";
+    }
+
+    if (args.size() < 2) {
+        return retval;
+    }
+
+    textview_curses *            tc = lnav_data.ld_view_stack.top();
+    bookmark_vector<vis_line_t> &bv =
+            tc->get_bookmarks()[&textview_curses::BM_USER];
+
+    string cmd = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
+    auto_pipe in_pipe(STDIN_FILENO);
+    auto_pipe out_pipe(STDOUT_FILENO);
+
+    in_pipe.open();
+    out_pipe.open();
+
+    pid_t child_pid = fork();
+
+    in_pipe.after_fork(child_pid);
+    out_pipe.after_fork(child_pid);
+
+    switch (child_pid) {
+        case -1:
+            return "error: unable to fork child process -- " + string(strerror(errno));
+
+        case 0: {
+            const char *args[] = {
+                    "sh", "-c", cmd.c_str(), NULL,
+            };
+            vector<std::string> path_v;
+            string path;
+
+            dup2(STDOUT_FILENO, STDERR_FILENO);
+            path_v.push_back(dotlnav_path("formats/default"));
+            setenv("PATH", build_path(path_v).c_str(), 1);
+            execvp(args[0], (char *const *) args);
+            _exit(1);
+            break;
+        }
+
+        default:
+            bookmark_vector<vis_line_t>::iterator iter;
+            static int exec_count = 0;
+            string line;
+
+            in_pipe.read_end().close_on_exec();
+            in_pipe.write_end().close_on_exec();
+
+            lnav_data.ld_children.push_back(child_pid);
+            if (out_pipe.read_end() != -1) {
+                piper_proc *pp = new piper_proc(out_pipe.read_end(), false);
+                char desc[128];
+
+                lnav_data.ld_pipers.push_back(pp);
+                snprintf(desc,
+                        sizeof(desc), "[%d] Output of %s",
+                        exec_count++,
+                        cmdline.c_str());
+                lnav_data.ld_file_names.insert(make_pair(
+                        desc,
+                        pp->get_fd()));
+                lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+                if (lnav_data.ld_rl_view != NULL) {
+                    lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                            X, "to close the file"));
+                }
+            }
+
+            if (args[0] == "pipe-line-to") {
+                if (tc == &lnav_data.ld_views[LNV_LOG]) {
+                    logfile_sub_source &lss = lnav_data.ld_log_source;
+                    content_line_t cl = lss.at(tc->get_top());
+                    logfile *lf = lss.find(cl);
+                    shared_buffer_ref sbr;
+                    lf->read_full_message(lf->message_start(lf->begin() + cl), sbr);
+                    if (write(in_pipe.write_end(), sbr.get_data(), sbr.length()) == -1) {
+                        return "error: Unable to write to pipe -- " + string(strerror(errno));
+                    }
+                    write(in_pipe.write_end(), "\n", 1);
+                }
+                else {
+                    tc->grep_value_for_line(tc->get_top(), line);
+                    if (write(in_pipe.write_end(), line.c_str(), line.size()) == -1) {
+                        return "error: Unable to write to pipe -- " + string(strerror(errno));
+                    }
+                    write(in_pipe.write_end(), "\n", 1);
+                }
+            }
+            else {
+                for (iter = bv.begin(); iter != bv.end(); iter++) {
+                    tc->grep_value_for_line(*iter, line);
+                    if (write(in_pipe.write_end(), line.c_str(), line.size()) == -1) {
+                        return "error: Unable to write to pipe -- " + string(strerror(errno));
+                    }
+                    write(in_pipe.write_end(), "\n", 1);
+                }
+            }
+            in_pipe.close();
+
+            retval = "";
+            break;
+    }
+
+    return retval;
+}
+
 static string com_highlight(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting regular expression to highlight";
@@ -1494,6 +1608,8 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["write-to"]             = com_save_to;
     cmd_map["write-csv-to"]         = com_save_to;
     cmd_map["write-json-to"]        = com_save_to;
+    cmd_map["pipe-to"]              = com_pipe_to;
+    cmd_map["pipe-line-to"]         = com_pipe_to;
     cmd_map["enable-filter"]        = com_enable_filter;
     cmd_map["disable-filter"]       = com_disable_filter;
     cmd_map["enable-word-wrap"]     = com_enable_word_wrap;

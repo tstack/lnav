@@ -88,9 +88,7 @@ throw (error)
             throw error(filename, errno);
         }
 
-        if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1) {
-            throw error(filename, errno);
-        }
+        fd.close_on_exec();
 
         this->lf_valid_filename = true;
     }
@@ -388,7 +386,9 @@ void logfile::read_full_message(logfile::iterator ll,
             /* ... */
         }
         ++ll;
-        max_lines -= 1;
+        if (max_lines != -1) {
+            max_lines -= 1;
+        }
     } while (ll != this->end() && ll->is_continued() &&
              (max_lines == -1 || max_lines > 0));
 

@@ -440,6 +440,14 @@ COMMANDS
                     to write to standard out.  Use '-' to write the data to
                     the terminal.
 
+  pipe-to <shell-cmd>
+                    Send the currently marked lines to the given shell command
+                    for processing and open the resulting file for viewing.
+
+  pipe-line-to <shell-cmd>
+                    Send the top log message to the given shell command
+                    for processing and open the resulting file for viewing.
+
   session <cmd>     Add the given command to the session file
                     (~/.lnav/session).  Any commands listed in the session file
                     are executed on startup.  Only the highlight, word-wrap, and
