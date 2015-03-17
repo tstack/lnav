@@ -31,7 +31,7 @@
 #define __pretty_printer_hh
 
 #include <deque>
-#include <strstream>
+#include <sstream>
 
 #include "data_scanner.hh"
 
@@ -101,9 +101,7 @@ public:
         this->flush_values();
         this->pp_stream << std::endl << std::ends;
 
-        std::string retval = this->pp_stream.str();
-        this->pp_stream.freeze(false);
-        return retval;
+        return this->pp_stream.str();
     };
 
 private:
@@ -162,7 +160,7 @@ private:
     int pp_depth;
     int pp_line_length;
     data_scanner *pp_scanner;
-    std::strstream pp_stream;
+    std::ostringstream pp_stream;
     std::deque<element> pp_values;
 
 };
