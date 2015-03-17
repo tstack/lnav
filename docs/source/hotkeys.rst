@@ -174,6 +174,8 @@ Display
      - View/leave builtin help
    * - |ks| q |ke|
      - Return to the previous view/quit
+   * - |ks| Shift |ke| + |ks| p |ke|
+     - Switch to/from the pretty-printed view of the top log message
    * - |ks| Shift |ke| + |ks| t |ke|
      - Display elapsed time between lines
    * - |ks| t |ke|

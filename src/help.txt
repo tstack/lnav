@@ -161,6 +161,10 @@ through the file.
 
   >/<               Move horizontally to the next/previous search hit.
 
+  P                 Switch to/from the pretty-printed view of the top log
+                    message.  In this view, structured data, such as XML,
+                    will be reformatted to make it easier to read.
+
   t                 Switch to/from the text file view.  The text file view is
                     for any files that are not recognized as log files.
 

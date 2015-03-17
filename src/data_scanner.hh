@@ -46,6 +46,9 @@ enum data_token_t {
     DT_TIME,
     DT_IPV6_ADDRESS,
     DT_HEX_DUMP,
+    DT_XML_EMPTY_TAG,
+    DT_XML_OPEN_TAG,
+    DT_XML_CLOSE_TAG,
     /* DT_QUALIFIED_NAME, */
 
     DT_COLON,
@@ -116,8 +119,9 @@ public:
     };
 
     data_scanner(shared_buffer_ref &line, size_t off = 0, size_t len = (size_t) -1)
-        : ds_sbr(line), ds_pcre_input(line.get_data(), off, len)
+        : ds_sbr(line), ds_pcre_input(line.get_data(), off, len == -1 ? line.length() : len)
     {
+        require(len == -1 || len <= line.length());
         if (line.length() > 0 && line.get_data()[line.length() - 1] == '.') {
             this->ds_pcre_input.pi_length -= 1;
         }
@@ -130,6 +134,7 @@ public:
 private:
     std::string ds_line;
     shared_buffer_ref ds_sbr;
-    pcre_input  ds_pcre_input;
+    pcre_input ds_pcre_input;
 };
+
 #endif

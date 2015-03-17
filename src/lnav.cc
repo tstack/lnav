@@ -115,6 +115,7 @@
 #include "log_data_helper.hh"
 #include "readline_highlighters.hh"
 #include "environ_vtab.hh"
+#include "pretty_printer.hh"
 
 #include "yajlpp.hh"
 
@@ -152,6 +153,7 @@ const char *lnav_view_strings[LNV__MAX + 1] = {
     "db",
     "example",
     "schema",
+    "pretty",
 
     NULL
 };
@@ -165,6 +167,7 @@ static const char *view_titles[LNV__MAX] = {
     "DB",
     "EXAMPLE",
     "SCHEMA",
+    "PRETTY",
 };
 
 static bool rescan_files(bool required = false);
@@ -948,8 +951,8 @@ public:
         }
     };
 
-    plain_text_source(const vector<string> &lines) {
-        this->tds_lines = lines;
+    plain_text_source(const vector<string> &text_lines) {
+        this->tds_lines = text_lines;
     };
 
     size_t text_line_count()
@@ -1108,6 +1111,52 @@ static void update_view_name(void)
             A_REVERSE | view_colors::ansi_color_pair(COLOR_BLUE, COLOR_WHITE)));
 }
 
+static void open_schema_view(void)
+{
+    textview_curses *schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
+    string schema;
+
+    dump_sqlite_schema(lnav_data.ld_db, schema);
+
+    schema += "\n\n-- Virtual Table Definitions --\n\n";
+    schema += ENVIRON_CREATE_STMT;
+    for (log_vtab_manager::iterator vtab_iter =
+            lnav_data.ld_vtab_manager->begin();
+         vtab_iter != lnav_data.ld_vtab_manager->end();
+         ++vtab_iter) {
+        schema += vtab_iter->second->get_table_statement();
+    }
+
+    if (schema_tc->get_sub_source() != NULL) {
+        delete schema_tc->get_sub_source();
+    }
+
+    schema_tc->set_sub_source(new plain_text_source(schema));
+}
+
+static void open_pretty_view(void)
+{
+    textview_curses *log_tc = &lnav_data.ld_views[LNV_LOG];
+    textview_curses *pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    if (lss.text_line_count() > 0) {
+        content_line_t cl = lss.at(log_tc->get_top());
+        logfile *lf = lss.find(cl);
+        logfile::iterator ll = lf->message_start(lf->begin() + cl);
+        shared_buffer_ref sbr;
+
+        lf->read_full_message(ll, sbr);
+        data_scanner ds(sbr);
+        pretty_printer pp(&ds);
+
+        if (pretty_tc->get_sub_source() != NULL) {
+            delete pretty_tc->get_sub_source();
+        }
+        string pretty_text = pp.print();
+        pretty_tc->set_sub_source(new plain_text_source(pretty_text));
+    }
+}
+
 bool toggle_view(textview_curses *toggle_tc)
 {
     textview_curses *tc     = lnav_data.ld_view_stack.top();
@@ -1117,6 +1166,12 @@ bool toggle_view(textview_curses *toggle_tc)
         lnav_data.ld_view_stack.pop();
     }
     else {
+        if (toggle_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
+            open_schema_view();
+        }
+        else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
+            open_pretty_view();
+        }
         lnav_data.ld_view_stack.push(toggle_tc);
         retval = true;
     }
@@ -1145,29 +1200,6 @@ void redo_search(lnav_view_t view_index)
     lnav_data.ld_scroll_broadcaster.invoke(tc);
 }
 
-static void open_schema_view(void)
-{
-    textview_curses *schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
-    string schema;
-
-    dump_sqlite_schema(lnav_data.ld_db, schema);
-
-    schema += "\n\n-- Virtual Table Definitions --\n\n";
-    schema += ENVIRON_CREATE_STMT;
-    for (log_vtab_manager::iterator vtab_iter =
-       lnav_data.ld_vtab_manager->begin();
-       vtab_iter != lnav_data.ld_vtab_manager->end();
-       ++vtab_iter) {
-        schema += vtab_iter->second->get_table_statement();
-    }
-
-    if (schema_tc->get_sub_source() != NULL) {
-        delete schema_tc->get_sub_source();
-    }
-
-    schema_tc->set_sub_source(new plain_text_source(schema));
-}
-
 /**
  * Ensure that the view is on the top of the view stack.
  *
@@ -1178,9 +1210,6 @@ void ensure_view(textview_curses *expected_tc)
     textview_curses *tc = lnav_data.ld_view_stack.top();
 
     if (tc != expected_tc) {
-        if (expected_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
-            open_schema_view();
-        }
 
         toggle_view(expected_tc);
     }
@@ -1966,6 +1995,16 @@ static void handle_paging_key(int ch)
             get_overlay_source();
         fos->fos_active = !fos->fos_active;
         tc->reload_data();
+        break;
+
+    case 'P':
+        if (tc == &lnav_data.ld_views[LNV_PRETTY] ||
+                (lss && lss->text_line_count() > 0)) {
+            toggle_view(&lnav_data.ld_views[LNV_PRETTY]);
+        }
+        else {
+            lnav_data.ld_rl_view->set_value("Pretty-printed only works with log messages");
+        }
         break;
 
     case 't':
@@ -4264,6 +4303,7 @@ int main(int argc, char *argv[])
         setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
         setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
         setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
+        setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
     }
 
     {

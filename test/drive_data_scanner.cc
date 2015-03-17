@@ -41,7 +41,8 @@
 #include "data_parser.hh"
 #include "log_format.hh"
 #include "log_format_loader.hh"
-#include "../src/shared_buffer.hh"
+#include "pretty_printer.hh"
+#include "shared_buffer.hh"
 
 using namespace std;
 
@@ -50,7 +51,7 @@ const char *TMP_NAME = "scanned.tmp";
 int main(int argc, char *argv[])
 {
     int  c, retval = EXIT_SUCCESS;
-    bool prompt = false, is_log = false;
+    bool prompt = false, is_log = false, pretty_print = false;
 
     {
         std::vector<std::string> paths, errors;
@@ -58,10 +59,14 @@ int main(int argc, char *argv[])
         load_formats(paths, errors);
     }
 
-    while ((c = getopt(argc, argv, "pl")) != -1) {
+    while ((c = getopt(argc, argv, "pPl")) != -1) {
         switch (c) {
         case 'p':
             prompt = true;
+            break;
+
+        case 'P':
+            pretty_print = true;
             break;
 
         case 'l':
@@ -159,6 +164,14 @@ int main(int argc, char *argv[])
 
                 dp.parse();
                 dp.print(out, dp.dp_pairs);
+
+                if (pretty_print) {
+                    data_scanner ds2(sub_line, body.lr_start, sub_line.length());
+                    pretty_printer pp(&ds2);
+
+                    string pretty_out = pp.print();
+                    fprintf(out, "\n--\n%s", pretty_out.c_str());
+                }
                 fclose(out);
 
                 sprintf(cmd, "diff -u %s %s", argv[lpc], TMP_NAME);

@@ -680,6 +680,9 @@ private:
                 case DT_IPV6_ADDRESS:
                 case DT_MAC_ADDRESS:
                 case DT_HEX_DUMP:
+                case DT_XML_OPEN_TAG:
+                case DT_XML_CLOSE_TAG:
+                case DT_XML_EMPTY_TAG:
                 case DT_UUID:
                 case DT_URL:
                 case DT_PATH:

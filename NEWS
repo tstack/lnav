@@ -3,6 +3,8 @@ lnav v0.7.3:
      * Add 'pipe-to' and 'pipe-line-to' commands that pipe the currently
        marked lines or the current log message to a shell command,
        respectively.
+     * Added a "pretty-print" view (P hotkey) that tries to reformat log
+       messages so that they are easier to read.
 
 lnav v0.7.2:
      * Added log formats for vdsm, openstack, and the vmkernel.

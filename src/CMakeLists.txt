@@ -84,6 +84,7 @@ set(diag_STAT_SRCS
     log_data_table.hh
     log_format_impls.cc
     logfile_stats.hh
+    pretty_printer.hh
     ptimec.hh
     sequence_sink.hh
     status_controllers.hh

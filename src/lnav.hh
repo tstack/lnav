@@ -108,6 +108,7 @@ typedef enum {
     LNV_DB,
     LNV_EXAMPLE,
     LNV_SCHEMA,
+    LNV_PRETTY,
 
     LNV__MAX
 } lnav_view_t;
