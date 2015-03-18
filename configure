@@ -627,6 +627,8 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+USE_INCLUDED_YAJL_FALSE
+USE_INCLUDED_YAJL_TRUE
 STATIC_LDFLAGS
 SQLITE3_VERSION
 SQLITE3_LIBS
@@ -637,6 +639,7 @@ READLINE_LIBS
 PCRE_CFLAGS
 PCRE_LIBS
 CURSES_LIB
+HAVE_LOCAL_YAJL
 jemalloch
 EGREP
 GREP
@@ -759,6 +762,7 @@ enable_silent_rules
 enable_dependency_tracking
 enable_profiling
 with_jemalloc
+with_yajl
 with_ncurses
 with_ncursesw
 with_pcre
@@ -1411,6 +1415,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-jemalloc=DIR     use a specific jemalloc library
+  --with-yajl=DIR         use a local installed version of yajl
   --with-ncurses          force the use of Ncurses or NcursesW
   --without-ncursesw      do not use NcursesW (wide character support)
   --with-pcre[=prefix]
@@ -6477,6 +6482,226 @@ fi
 
 
 
+ENABLE_LOCAL_YAJL="no"
+
+# Check whether --with-yajl was given.
+if test "${with_yajl+set}" = set; then :
+  withval=$with_yajl;
+    if test "$withval" != "no"; then
+        ENABLE_LOCAL_YAJL="yes"
+        modify_env_variables="no"
+        case "$withval" in
+            yes)
+                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl libs" >&5
+$as_echo "$as_me: Checking for yajl libs" >&6;}
+                ;;
+            *)
+                yajl_include="$withval/include"
+                yajl_ldflags="$withval/lib"
+                modify_env_variables="yes"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl libs in $withval" >&5
+$as_echo "$as_me: Checking for yajl libs in $withval" >&6;}
+                ;;
+        esac
+    fi
+
+
+fi
+
+
+HAVE_LOCAL_YAJL=0
+YAJL_HAVE_LOCAL_HEADERS=0
+YAJL_HAVE_LOCAL_LIBS=0
+if test "$ENABLE_LOCAL_YAJL" != "no"; then
+    saved_ldflags=$LDFLAGS
+    saved_cppflags=$CPPFLAGS
+    saved_libtool_link_flags=$LIBTOOL_LIBK_FLAGS
+
+    if test "$modify_env_variables" != "no"; then
+
+  if test "x$CPPFLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \"-I${yajl_include}\""
+    CPPFLAGS="-I${yajl_include}"
+  else
+    ats_addto_bugger="-I${yajl_include}"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $CPPFLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$LDFLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting LDFLAGS to \"-L${yajl_ldflags}\""
+    LDFLAGS="-L${yajl_ldflags}"
+  else
+    ats_addto_bugger="-L${yajl_ldflags}"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $LDFLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to LDFLAGS"
+        LDFLAGS="$LDFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$LIBTOOL_LINK_FLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting LIBTOOL_LINK_FLAGS to \"-R${yajl_ldflags}\""
+    LIBTOOL_LINK_FLAGS="-R${yajl_ldflags}"
+  else
+    ats_addto_bugger="-R${yajl_ldflags}"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $LIBTOOL_LINK_FLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to LIBTOOL_LINK_FLAGS"
+        LIBTOOL_LINK_FLAGS="$LIBTOOL_LINK_FLAGS $i"
+      fi
+    done
+  fi
+
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yajl_gen_alloc" >&5
+$as_echo_n "checking for library containing yajl_gen_alloc... " >&6; }
+if ${ac_cv_search_yajl_gen_alloc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char yajl_gen_alloc ();
+int
+main ()
+{
+return yajl_gen_alloc ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' yajl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_yajl_gen_alloc=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_yajl_gen_alloc+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_yajl_gen_alloc+:} false; then :
+
+else
+  ac_cv_search_yajl_gen_alloc=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_yajl_gen_alloc" >&5
+$as_echo "$ac_cv_search_yajl_gen_alloc" >&6; }
+ac_res=$ac_cv_search_yajl_gen_alloc
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  YAJL_HAVE_LOCAL_LIBS=1
+fi
+
+
+    if test "$YAJL_HAVE_LOCAL_LIBS" != "0"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl headers" >&5
+$as_echo "$as_me: Checking for yajl headers" >&6;}
+        for ac_header in yajl/yajl_parse.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "yajl/yajl_parse.h" "ac_cv_header_yajl_yajl_parse_h" "$ac_includes_default"
+if test "x$ac_cv_header_yajl_yajl_parse_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_YAJL_YAJL_PARSE_H 1
+_ACEOF
+ YAJL_HAVE_LOCAL_HEADERS=1
+fi
+
+done
+
+
+        if test "$YAJL_HAVE_LOCAL_HEADERS" != "0"; then
+            HAVE_LOCAL_YAJL=1
+
+  if test "x$LIBS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting LIBS to \"-lyajl\""
+    LIBS="-lyajl"
+  else
+    ats_addto_bugger="-lyajl"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $LIBS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to LIBS"
+        LIBS="$LIBS $i"
+      fi
+    done
+  fi
+
+        else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: yajl not found on the local system" >&5
+$as_echo "$as_me: WARNING: yajl not found on the local system" >&2;}
+        fi
+
+        if test "$HAVE_LOCAL_YAJL" = "0"; then
+            CPPFLAGS=$saved_cppflags
+            LDFLAGS=$saved_ldflags
+            LIBTOOL_LIBK_FLAGS=$saved_libtool_link_flags
+        fi
+    fi
+fi
+
+if test "$HAVE_LOCAL_YAJL" = "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: compiling with the included version of yajl" >&5
+$as_echo "$as_me: compiling with the included version of yajl" >&6;}
+fi
+
+
+
+
+
+
 
 
 # Check whether --with-ncurses was given.
@@ -7762,6 +7987,15 @@ if test x"${enable_static}" != x"no"; then
 fi
 
 
+ if test $HAVE_LOCAL_YAJL -eq 0; then
+  USE_INCLUDED_YAJL_TRUE=
+  USE_INCLUDED_YAJL_FALSE='#'
+else
+  USE_INCLUDED_YAJL_TRUE='#'
+  USE_INCLUDED_YAJL_FALSE=
+fi
+
+
 ac_config_headers="$ac_config_headers src/config.h"
 
 ac_config_files="$ac_config_files Makefile"
@@ -7908,6 +8142,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_INCLUDED_YAJL_TRUE}" && test -z "${USE_INCLUDED_YAJL_FALSE}"; then
+  as_fn_error $? "conditional \"USE_INCLUDED_YAJL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

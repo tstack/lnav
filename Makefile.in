@@ -92,8 +92,9 @@ subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_sqlite3.m4 \
 	$(top_srcdir)/m4/ax_with_curses.m4 $(top_srcdir)/m4/lnav.m4 \
+	$(top_srcdir)/m4/lnav_common.m4 \
 	$(top_srcdir)/m4/lnav_with_jemalloc.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lnav_with_yajl.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -265,6 +266,7 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 GREP = @GREP@
+HAVE_LOCAL_YAJL = @HAVE_LOCAL_YAJL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@

@@ -30,6 +30,7 @@
 #ifndef __pretty_printer_hh
 #define __pretty_printer_hh
 
+#include <stack>
 #include <deque>
 #include <sstream>
 
@@ -51,7 +52,7 @@ public:
 
     pretty_printer(data_scanner *ds)
             : pp_depth(0), pp_line_length(0), pp_scanner(ds) {
-
+        this->pp_body_lines.push(0);
     };
 
     std::string print() {
@@ -70,11 +71,11 @@ public:
                 case DT_XML_OPEN_TAG:
                     this->start_new_line();
                     this->write_element(el);
-                    this->pp_depth += 1;
+                    this->descend();
                     continue;
                 case DT_XML_CLOSE_TAG:
                     this->flush_values();
-                    this->pp_depth -= 1;
+                    this->ascend();
                     this->write_element(el);
                     this->start_new_line();
                     continue;
@@ -82,12 +83,15 @@ public:
                 case DT_LSQUARE:
                     this->flush_values(true);
                     this->pp_values.push_back(el);
-                    this->pp_depth += 1;
+                    this->descend();
                     continue;
                 case DT_RCURLY:
                 case DT_RSQUARE:
                     this->flush_values();
-                    this->pp_depth -= 1;
+                    if (this->pp_body_lines.top()) {
+                        this->start_new_line();
+                    }
+                    this->ascend();
                     this->write_element(el);
                     continue;
                 case DT_COMMA:
@@ -106,6 +110,18 @@ public:
 
 private:
 
+    void descend() {
+        this->pp_depth += 1;
+        this->pp_body_lines.push(0);
+    }
+
+    void ascend() {
+        int lines = this->pp_body_lines.top();
+        this->pp_depth -= 1;
+        this->pp_body_lines.pop();
+        this->pp_body_lines.top() += lines;
+    }
+
     void start_new_line() {
         bool has_output;
 
@@ -117,6 +133,7 @@ private:
             this->pp_stream << std::endl;
         }
         this->pp_line_length = 0;
+        this->pp_body_lines.top() += 1;
     }
 
     bool flush_values(bool start_on_depth = false) {
@@ -159,6 +176,7 @@ private:
 
     int pp_depth;
     int pp_line_length;
+    std::stack<int> pp_body_lines;
     data_scanner *pp_scanner;
     std::ostringstream pp_stream;
     std::deque<element> pp_values;
