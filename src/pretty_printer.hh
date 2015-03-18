@@ -30,10 +30,15 @@
 #ifndef __pretty_printer_hh
 #define __pretty_printer_hh
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 #include <stack>
 #include <deque>
 #include <sstream>
 
+#include "ansi_scrubber.hh"
 #include "data_scanner.hh"
 
 class pretty_printer {
@@ -99,6 +104,8 @@ public:
                     this->write_element(el);
                     this->start_new_line();
                     continue;
+                default:
+                    break;
             }
             this->pp_values.push_back(el);
         }
@@ -109,6 +116,47 @@ public:
     };
 
 private:
+
+    void convert_ip_address(const element &el) {
+        union {
+            struct sockaddr_in  sin;
+            struct sockaddr_in6 sin6;
+        } sa;
+        pcre_input &pi = this->pp_scanner->get_input();
+        std::string ipstr = pi.get_substr(&el.e_capture);
+        std::string result = "unknown";
+        char buffer[NI_MAXHOST];
+        int socklen, rc;
+
+        switch (el.e_token) {
+            case DT_IPV4_ADDRESS:
+                sa.sin.sin_family = AF_INET;
+                rc = inet_pton(AF_INET, ipstr.c_str(), &sa.sin.sin_addr);
+                socklen = sizeof(struct sockaddr_in);
+                break;
+            case DT_IPV6_ADDRESS:
+                sa.sin6.sin6_family = AF_INET6;
+                rc = inet_pton(AF_INET6, ipstr.c_str(), &sa.sin6.sin6_addr);
+                socklen = sizeof(struct sockaddr_in6);
+                break;
+            default:
+                require(0);
+                break;
+        }
+        if (rc == 1) {
+            while ((rc = getnameinfo((struct sockaddr *)&sa, socklen,
+                    buffer, sizeof(buffer), NULL, 0,
+                    NI_NAMEREQD)) == EAI_AGAIN) {
+                usleep(1000);
+            }
+            if (rc == 0) {
+                result = buffer;
+            }
+        }
+        this->pp_stream << " " << ANSI_UNDERLINE_START <<
+                "(" << result << ")" <<
+                ANSI_NORM;
+    }
 
     void descend() {
         this->pp_depth += 1;
@@ -172,6 +220,14 @@ private:
             this->append_indent();
         }
         this->pp_stream << pi.get_substr(&el.e_capture);
+        switch (el.e_token) {
+            case DT_IPV4_ADDRESS:
+            case DT_IPV6_ADDRESS:
+                this->convert_ip_address(el);
+                break;
+            default:
+                break;
+        }
         this->pp_line_length += el.e_capture.length();
         if (el.e_token == DT_LINE) {
             this->pp_line_length = 0;
