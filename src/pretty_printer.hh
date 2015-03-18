@@ -163,7 +163,8 @@ private:
     }
 
     void write_element(const element &el) {
-        if (this->pp_line_length == 0 && el.e_token == DT_WHITE) {
+        if (this->pp_line_length == 0 &&
+                (el.e_token == DT_WHITE || el.e_token == DT_LINE)) {
             return;
         }
         pcre_input &pi = this->pp_scanner->get_input();
@@ -172,6 +173,10 @@ private:
         }
         this->pp_stream << pi.get_substr(&el.e_capture);
         this->pp_line_length += el.e_capture.length();
+        if (el.e_token == DT_LINE) {
+            this->pp_line_length = 0;
+            this->pp_body_lines.top() += 1;
+        }
     }
 
     int pp_depth;
