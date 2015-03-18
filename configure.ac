@@ -95,6 +95,8 @@ AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefault
 
 LNAV_WITH_JEMALLOC
 
+LNAV_WITH_LOCAL_YAJL
+
 AX_WITH_CURSES
 
 if test "x$ax_cv_curses" != xyes; then
@@ -163,6 +165,8 @@ if test x"${enable_static}" != x"no"; then
     done
 fi
 AC_SUBST(STATIC_LDFLAGS)
+
+AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
 
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])

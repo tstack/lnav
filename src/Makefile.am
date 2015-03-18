@@ -137,7 +137,10 @@ noinst_HEADERS = \
 	log_format_impls.cc \
 	xterm_mouse.hh \
 	yajlpp.hh \
-	yajl/api/yajl_common.h \
+	spookyhash/SpookyV2.h
+
+if USE_INCLUDED_YAJL
+noinst_HEADERS += yajl/api/yajl_common.h \
 	yajl/api/yajl_gen.h \
 	yajl/api/yajl_parse.h \
 	yajl/api/yajl_tree.h \
@@ -148,8 +151,9 @@ noinst_HEADERS = \
 	yajl/yajl_encode.h \
 	yajl/yajl_lex.h \
 	yajl/yajl_parser.h \
-	yajl/yajl_version.h \
-	spookyhash/SpookyV2.h
+	yajl/yajl_version.h
+endif
+
 
 libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
@@ -201,7 +205,10 @@ libdiag_a_SOURCES = \
 	log_vtab_impl.cc \
 	xterm_mouse.cc \
 	yajlpp.cc \
-	yajl/yajl.c \
+	spookyhash/SpookyV2.cpp
+
+if USE_INCLUDED_YAJL
+libdiag_a_SOURCES += yajl/yajl.c \
 	yajl/yajl_alloc.c \
 	yajl/yajl_alloc.h \
 	yajl/yajl_buf.c \
@@ -215,8 +222,9 @@ libdiag_a_SOURCES = \
 	yajl/yajl_parser.c \
 	yajl/yajl_parser.h \
 	yajl/yajl_tree.c \
-	yajl/yajl_version.c \
-	spookyhash/SpookyV2.cpp
+	yajl/yajl_version.c
+endif
+
 
 dist_noinst_SCRIPTS = \
 	init_sql.py
