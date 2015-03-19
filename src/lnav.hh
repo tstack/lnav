@@ -185,6 +185,7 @@ struct _lnav_data {
     textfile_sub_source                     ld_text_source;
 
     std::map<textview_curses *, int>        ld_last_user_mark;
+    std::map<textview_curses *, int>        ld_select_start;
 
     grapher                                 ld_graph_source;
 

@@ -1373,6 +1373,8 @@ static void handle_paging_key(int ch)
             lss->text_clear_marks(&textview_curses::BM_USER);
         }
 
+        lnav_data.ld_select_start.erase(tc);
+        lnav_data.ld_last_user_mark.erase(tc);
         tc->get_bookmarks()[&textview_curses::BM_USER].clear();
         tc->reload_data();
 
@@ -1611,6 +1613,7 @@ static void handle_paging_key(int ch)
         if (lnav_data.ld_last_user_mark.find(tc) ==
             lnav_data.ld_last_user_mark.end() ||
             !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
+            lnav_data.ld_select_start[tc] = tc->get_top();
             lnav_data.ld_last_user_mark[tc] = tc->get_top();
         }
         else {
@@ -1644,7 +1647,6 @@ static void handle_paging_key(int ch)
             if (lnav_data.ld_last_user_mark.find(tc) ==
                 lnav_data.ld_last_user_mark.end() ||
                 !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
-                lnav_data.ld_last_user_mark[tc] = -1;
                 new_mark = tc->get_top();
             }
             else {
@@ -1663,6 +1665,7 @@ static void handle_paging_key(int ch)
                 lnav_data.ld_last_user_mark[tc] = new_mark;
                 flash();
             }
+            lnav_data.ld_select_start[tc] = tc->get_top();
             tc->reload_data();
 
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
@@ -3007,6 +3010,16 @@ static void update_times(void *, listview_curses *lv)
     }
 }
 
+static void clear_last_user_mark(void *, listview_curses *lv)
+{
+    textview_curses *tc = (textview_curses *) lv;
+    if (lnav_data.ld_select_start.find(tc) != lnav_data.ld_select_start.end() &&
+            lnav_data.ld_select_start[tc] != tc->get_top()) {
+        lnav_data.ld_select_start.erase(tc);
+        lnav_data.ld_last_user_mark.erase(tc);
+    }
+}
+
 /**
  * Functor used to compare files based on their device and inode number.
  */
@@ -3597,6 +3610,7 @@ static void looper(void)
         lnav_data.ld_match_view.set_show_bottom_border(true);
 
         sb.push_back(view_action<listview_curses>(update_times));
+        sb.push_back(view_action<listview_curses>(clear_last_user_mark));
         sb.push_back(&lnav_data.ld_top_source.filename_wire);
         sb.push_back(&lnav_data.ld_bottom_source.line_number_wire);
         sb.push_back(&lnav_data.ld_bottom_source.percent_wire);
