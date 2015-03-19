@@ -848,7 +848,7 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
     return 1;
 }
 
-void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
+void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr, bool full_message)
 {
     if (!this->jlf_json) {
         return;
@@ -1023,9 +1023,16 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr)
         next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
     }
 
-    sbr.share(this->jlf_share_manager,
-              &this->jlf_cached_line[0] + this_off,
-              next_off - this_off);
+    if (full_message) {
+        sbr.share(this->jlf_share_manager,
+                &this->jlf_cached_line[0],
+                this->jlf_cached_line.size());
+    }
+    else {
+        sbr.share(this->jlf_share_manager,
+                &this->jlf_cached_line[0] + this_off,
+                next_off - this_off);
+    }
 }
 
 void external_log_format::build(std::vector<std::string> &errors)

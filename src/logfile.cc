@@ -408,7 +408,7 @@ void logfile::read_full_message(logfile::iterator ll,
 
         if (this->lf_line_buffer.read_range(off, line_len, msg_out)) {
             if (this->lf_format.get() != NULL) {
-                this->lf_format->get_subline(*ll, msg_out);
+                this->lf_format->get_subline(*ll, msg_out, true);
             }
         }
         else {

@@ -559,7 +559,7 @@ public:
         return NULL;
     };
 
-    virtual void get_subline(const logline &ll, shared_buffer_ref &sbr) {
+    virtual void get_subline(const logline &ll, shared_buffer_ref &sbr, bool full_message = false) {
     };
 
     virtual const std::vector<std::string> *get_actions(const logline_value &lv) const {
@@ -724,7 +724,7 @@ public:
         return retval;
     };
 
-    void get_subline(const logline &ll, shared_buffer_ref &sbr);
+    void get_subline(const logline &ll, shared_buffer_ref &sbr, bool full_message);
 
     log_vtab_impl *get_vtab_impl(void) const;
 

@@ -545,7 +545,10 @@ static string com_pipe_to(string cmdline, vector<string> &args)
             }
 
             if (args[0] == "pipe-line-to") {
-                if (tc == &lnav_data.ld_views[LNV_LOG]) {
+                if (tc->get_inner_height() == 0) {
+                    // Nothing to do
+                }
+                else if (tc == &lnav_data.ld_views[LNV_LOG]) {
                     logfile_sub_source &lss = lnav_data.ld_log_source;
                     content_line_t cl = lss.at(tc->get_top());
                     logfile *lf = lss.find(cl);
