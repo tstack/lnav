@@ -283,6 +283,14 @@ check_output "pipe-line-to is not working" <<EOF
 2009-07-20 22:59:30,221:ERROR:Goodbye, World!
 EOF
 
+run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":pipe-line-to echo \$cs_uri_stem \$sc_status" \
+    ${test_dir}/logfile_access_log.0
+check_output "pipe-line-to env vars are not working" <<EOF
+/vmw/cgi/tramp 200
+EOF
+
 
 run_test ${lnav_test} -n \
     -c ":set-min-log-level error" \

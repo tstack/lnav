@@ -43,6 +43,7 @@
 #include "lnav_util.hh"
 #include "auto_mem.hh"
 #include "log_data_table.hh"
+#include "log_data_helper.hh"
 #include "lnav_commands.hh"
 #include "session_data.hh"
 
@@ -484,6 +485,7 @@ static string com_pipe_to(string cmdline, vector<string> &args)
     textview_curses *            tc = lnav_data.ld_view_stack.top();
     bookmark_vector<vis_line_t> &bv =
             tc->get_bookmarks()[&textview_curses::BM_USER];
+    bool pipe_line_to = (args[0] == "pipe-line-to");
 
     string cmd = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
     auto_pipe in_pipe(STDIN_FILENO);
@@ -511,6 +513,29 @@ static string com_pipe_to(string cmdline, vector<string> &args)
             dup2(STDOUT_FILENO, STDERR_FILENO);
             path_v.push_back(dotlnav_path("formats/default"));
             setenv("PATH", build_path(path_v).c_str(), 1);
+
+            if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
+                logfile_sub_source &lss = lnav_data.ld_log_source;
+                log_data_helper ldh(lss);
+
+                ldh.parse_line(tc->get_top(), true);
+                for (vector<logline_value>::iterator iter = ldh.ldh_line_values.begin();
+                     iter != ldh.ldh_line_values.end();
+                     ++iter) {
+                    setenv(iter->lv_name.get(), iter->to_string().c_str(), 1);
+                }
+                data_parser::element_list_t::iterator iter =
+                        ldh.ldh_parser->dp_pairs.begin();
+                for (size_t lpc = 0; lpc < ldh.ldh_parser->dp_pairs.size(); lpc++, ++iter) {
+                    std::string colname = ldh.ldh_parser->get_element_string(
+                            iter->e_sub_elements->front());
+                    colname = ldh.ldh_namer->add_column(colname);
+                    string val = ldh.ldh_parser->get_element_string(
+                            iter->e_sub_elements->back());
+                    setenv(colname.c_str(), val.c_str(), 1);
+                }
+            }
+
             execvp(args[0], (char *const *) args);
             _exit(1);
             break;
@@ -544,7 +569,7 @@ static string com_pipe_to(string cmdline, vector<string> &args)
                 }
             }
 
-            if (args[0] == "pipe-line-to") {
+            if (pipe_line_to) {
                 if (tc->get_inner_height() == 0) {
                     // Nothing to do
                 }
@@ -1250,8 +1275,6 @@ static string com_clear_partition(string cmdline, vector<string> &args)
 
 static string com_summarize(string cmdline, vector<string> &args)
 {
-    static pcrecpp::RE db_column_converter("\"");
-
     string retval = "";
 
     if (args.size() == 0) {
@@ -1602,6 +1625,10 @@ static string com_redraw(string cmdline, vector<string> &args)
     }
     else if (lnav_data.ld_window) {
         redrawwin(lnav_data.ld_window);
+        if (lnav_data.ld_rl_view != NULL) {
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                    CTRL-L, "to redraw the window"));
+        }
     }
 
     return "";

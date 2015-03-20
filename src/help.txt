@@ -453,6 +453,9 @@ COMMANDS
   pipe-line-to <shell-cmd>
                     Send the top log message to the given shell command
                     for processing and open the resulting file for viewing.
+                    The known and discovered message fields are available as
+                    environment variables.  For example, log_procname in a
+                    syslog message.
 
   session <cmd>     Add the given command to the session file
                     (~/.lnav/session).  Any commands listed in the session file
