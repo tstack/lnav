@@ -6482,48 +6482,29 @@ fi
 
 
 
-ENABLE_LOCAL_YAJL="no"
 
 # Check whether --with-yajl was given.
 if test "${with_yajl+set}" = set; then :
   withval=$with_yajl;
-    if test "$withval" != "no"; then
-        ENABLE_LOCAL_YAJL="yes"
-        modify_env_variables="no"
-        case "$withval" in
-            yes)
-                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl libs" >&5
-$as_echo "$as_me: Checking for yajl libs" >&6;}
-                ;;
-            *)
-                yajl_include="$withval/include"
-                yajl_ldflags="$withval/lib"
-                modify_env_variables="yes"
-                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl libs in $withval" >&5
-$as_echo "$as_me: Checking for yajl libs in $withval" >&6;}
-                ;;
-        esac
-    fi
+        if test "$withval" != "no"; then :
+
+            case "$withval" in #(
+  yes) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl libs" >&5
+$as_echo "$as_me: Checking for yajl libs" >&6;} ;; #(
+  *) :
+
+                yajl_saved_ldflags="$LDFLAGS"
+                yajl_saved_cppflags="$CPPFLAGS"
+                yajl_saved_libtool_link_flags="$LIBTOOL_LIBK_FLAGS"
 
 
-fi
-
-
-HAVE_LOCAL_YAJL=0
-YAJL_HAVE_LOCAL_HEADERS=0
-YAJL_HAVE_LOCAL_LIBS=0
-if test "$ENABLE_LOCAL_YAJL" != "no"; then
-    saved_ldflags=$LDFLAGS
-    saved_cppflags=$CPPFLAGS
-    saved_libtool_link_flags=$LIBTOOL_LIBK_FLAGS
-
-    if test "$modify_env_variables" != "no"; then
 
   if test "x$CPPFLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \"-I${yajl_include}\""
-    CPPFLAGS="-I${yajl_include}"
+    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \""-I$withval/include"\""
+    CPPFLAGS=""-I$withval/include""
   else
-    ats_addto_bugger="-I${yajl_include}"
+    ats_addto_bugger=""-I$withval/include""
     for i in $ats_addto_bugger; do
       ats_addto_duplicate="0"
       for j in $CPPFLAGS; do
@@ -6541,10 +6522,10 @@ if test "$ENABLE_LOCAL_YAJL" != "no"; then
 
 
   if test "x$LDFLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting LDFLAGS to \"-L${yajl_ldflags}\""
-    LDFLAGS="-L${yajl_ldflags}"
+    test "x$verbose" = "xyes" && echo "  setting LDFLAGS to \""-I$withval/lib"\""
+    LDFLAGS=""-I$withval/lib""
   else
-    ats_addto_bugger="-L${yajl_ldflags}"
+    ats_addto_bugger=""-I$withval/lib""
     for i in $ats_addto_bugger; do
       ats_addto_duplicate="0"
       for j in $LDFLAGS; do
@@ -6562,10 +6543,10 @@ if test "$ENABLE_LOCAL_YAJL" != "no"; then
 
 
   if test "x$LIBTOOL_LINK_FLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting LIBTOOL_LINK_FLAGS to \"-R${yajl_ldflags}\""
-    LIBTOOL_LINK_FLAGS="-R${yajl_ldflags}"
+    test "x$verbose" = "xyes" && echo "  setting LIBTOOL_LINK_FLAGS to \""-R$withval/lib"\""
+    LIBTOOL_LINK_FLAGS=""-R$withval/lib""
   else
-    ats_addto_bugger="-R${yajl_ldflags}"
+    ats_addto_bugger=""-R$withval/lib""
     for i in $ats_addto_bugger; do
       ats_addto_duplicate="0"
       for j in $LIBTOOL_LINK_FLAGS; do
@@ -6581,9 +6562,14 @@ if test "$ENABLE_LOCAL_YAJL" != "no"; then
     done
   fi
 
-    fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yajl_gen_alloc" >&5
+                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl libs in $withval" >&5
+$as_echo "$as_me: Checking for yajl libs in $withval" >&6;}
+
+             ;;
+esac
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing yajl_gen_alloc" >&5
 $as_echo_n "checking for library containing yajl_gen_alloc... " >&6; }
 if ${ac_cv_search_yajl_gen_alloc+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6636,28 +6622,18 @@ $as_echo "$ac_cv_search_yajl_gen_alloc" >&6; }
 ac_res=$ac_cv_search_yajl_gen_alloc
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  YAJL_HAVE_LOCAL_LIBS=1
-fi
 
-
-    if test "$YAJL_HAVE_LOCAL_LIBS" != "0"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl headers" >&5
+                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for yajl headers" >&5
 $as_echo "$as_me: Checking for yajl headers" >&6;}
-        for ac_header in yajl/yajl_parse.h
+                for ac_header in yajl/yajl_parse.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "yajl/yajl_parse.h" "ac_cv_header_yajl_yajl_parse_h" "$ac_includes_default"
 if test "x$ac_cv_header_yajl_yajl_parse_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_YAJL_YAJL_PARSE_H 1
 _ACEOF
- YAJL_HAVE_LOCAL_HEADERS=1
-fi
 
-done
-
-
-        if test "$YAJL_HAVE_LOCAL_HEADERS" != "0"; then
-            HAVE_LOCAL_YAJL=1
+                    HAVE_LOCAL_YAJL=1
 
   if test "x$LIBS" = "x"; then
     test "x$verbose" = "xyes" && echo "  setting LIBS to \"-lyajl\""
@@ -6679,22 +6655,44 @@ done
     done
   fi
 
-        else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: yajl not found on the local system" >&5
-$as_echo "$as_me: WARNING: yajl not found on the local system" >&2;}
-        fi
 
-        if test "$HAVE_LOCAL_YAJL" = "0"; then
-            CPPFLAGS=$saved_cppflags
-            LDFLAGS=$saved_ldflags
-            LIBTOOL_LIBK_FLAGS=$saved_libtool_link_flags
-        fi
-    fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: yajl not found on the local system" >&5
+$as_echo "$as_me: WARNING: yajl not found on the local system" >&2;}
+
 fi
 
-if test "$HAVE_LOCAL_YAJL" = "0"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: compiling with the included version of yajl" >&5
+done
+
+
+
+fi
+
+
+
+fi
+
+
+fi
+
+
+    if ${HAVE_LOCAL_YAJL+:} false; then :
+
+else
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: compiling with the included version of yajl" >&5
 $as_echo "$as_me: compiling with the included version of yajl" >&6;}
+        HAVE_LOCAL_YAJL=0
+        if ${yajl_saved_ldflags+:} false; then :
+
+            CPPFLAGS="$yajl_saved_cppflags"
+            LDFLAGS="$yajl_saved_ldflags"
+            LIBTOOL_LIBK_FLAGS="$yajl_saved_libtool_link_flags"
+
+
+fi
+
+
 fi
 
 
