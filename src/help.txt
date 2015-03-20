@@ -326,6 +326,8 @@ through the file.
 
   CTRL-W            Toggle word-wrapping.
 
+  CTRL-L            Force redraw the window.
+
   r/R               Restore the next/previous session.  The current session is
                     saved and then the new state is restored.
 
@@ -469,6 +471,8 @@ COMMANDS
   switch-to-view <view-name>
                     Switch the display to the given view, which can be one of:
                     help, log, text, histogram, db, and schema.
+
+  redraw            Force redraw the window (CTRL-L hotkey).
 
   partition-name <name>
                     Mark the top line in the log view as the start of a new

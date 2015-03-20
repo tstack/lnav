@@ -63,6 +63,7 @@
 #include "lnav_log.hh"
 
 #define KEY_CTRL_G    7
+#define KEY_CTRL_L    12
 #define KEY_CTRL_R    18
 #define KEY_CTRL_W    23
 #define KEY_CTRL_RBRACKET 0x1d

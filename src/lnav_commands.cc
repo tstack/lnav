@@ -1595,6 +1595,18 @@ static string com_shexec(string cmdline, vector<string> &args)
     return "";
 }
 
+static string com_redraw(string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+
+    }
+    else if (lnav_data.ld_window) {
+        redrawwin(lnav_data.ld_window);
+    }
+
+    return "";
+}
+
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
     cmd_map["adjust-log-time"]      = com_adjust_log_time;
@@ -1629,6 +1641,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["load-session"]         = com_load_session;
     cmd_map["save-session"]         = com_save_session;
     cmd_map["set-min-log-level"]    = com_set_min_log_level;
+    cmd_map["redraw"]               = com_redraw;
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;

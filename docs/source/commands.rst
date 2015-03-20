@@ -53,6 +53,8 @@ Display
 
 * switch-to-view <name> - Switch to the given view name (e.g. log, text, ...)
 
+* redraw - Redraw the window to correct any corruption.
+
 Output
 ------
 
