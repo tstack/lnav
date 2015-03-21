@@ -212,7 +212,7 @@ static int vt_update(sqlite3_vtab *tab,
     const char *name = (
         argc > 2 ? (const char *)sqlite3_value_text(argv[2]) : NULL);
     vtab *p_vt = (vtab *)tab;
-    int retval;
+    int retval = SQLITE_ERROR;
 
     if (argc != 1 &&
         (argc < 3 ||
