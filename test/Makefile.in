@@ -671,8 +671,7 @@ AM_CPPFLAGS = \
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
-	$(SQLITE3_LDFLAGS) \
-	-pthread
+	$(SQLITE3_LDFLAGS)
 
 LDADD = -lz
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc

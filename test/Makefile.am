@@ -47,8 +47,7 @@ check_PROGRAMS = \
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
-	$(SQLITE3_LDFLAGS) \
-	-pthread
+	$(SQLITE3_LDFLAGS)
 
 LDADD = -lz
 
