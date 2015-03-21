@@ -589,7 +589,7 @@ void readline_curses::start(void)
 void readline_curses::line_ready(const char *line)
 {
     auto_mem<char> expanded;
-    char           msg[1024];
+    char           msg[1024] = {0};
     int            rc;
 
     if (rl_line_buffer[0] == '^') {
