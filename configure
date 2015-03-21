@@ -1419,7 +1419,8 @@ Optional Packages:
   --with-ncurses          force the use of Ncurses or NcursesW
   --without-ncursesw      do not use NcursesW (wide character support)
   --with-pcre[=prefix]
-  --with-readline[=prefix]    compile xmlreadline part (via libreadline check)
+  --with-readline[=prefix]
+                          compile xmlreadline part (via libreadline check)
   --with-sqlite3=[ARG]    use SQLite 3 library [default=yes], optionally
                           specify the prefix for sqlite3 library
 
@@ -7661,7 +7662,8 @@ fi
 
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking lib readline" >&5
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib readline" >&5
 $as_echo_n "checking lib readline... " >&6; }
 
 # Check whether --with-readline was given.
@@ -7669,22 +7671,19 @@ if test "${with_readline+set}" = set; then :
   withval=$with_readline;
 else
   with_readline="yes"
+
 fi
 
-if test ".$with_readline" = ".no" ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
-$as_echo "disabled" >&6; }
-  as_fn_error $? "readline required to build" "$LINENO" 5
-else
-  if test ".$with_readline" = ".yes"; then
-    OLD_LIBS="$LIBS"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline in -lreadline" >&5
-$as_echo_n "checking for readline in -lreadline... " >&6; }
-if ${ac_cv_lib_readline_readline+:} false; then :
+    case "$with_readline" in #(
+  no) :
+    as_fn_error $? "readline required to build" "$LINENO" 5 ;; #(
+  yes) :
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing readline" >&5
+$as_echo_n "checking for library containing readline... " >&6; }
+if ${ac_cv_search_readline+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lreadline $CURSES_LIB $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7703,44 +7702,91 @@ return readline ();
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_readline_readline=yes
-else
-  ac_cv_lib_readline_readline=no
+for ac_lib in '' readline; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib $CURSES_LIB
+         $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_readline=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+    conftest$ac_exeext
+  if ${ac_cv_search_readline+:} false; then :
+  break
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_readline_readline" >&5
-$as_echo "$ac_cv_lib_readline_readline" >&6; }
-if test "x$ac_cv_lib_readline_readline" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBREADLINE 1
-_ACEOF
+done
+if ${ac_cv_search_readline+:} false; then :
 
-  LIBS="-lreadline $LIBS"
+else
+  ac_cv_search_readline=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_readline" >&5
+$as_echo "$ac_cv_search_readline" >&6; }
+ac_res=$ac_cv_search_readline
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  READLINE_LIBS="-lreadline"
+else
+  as_fn_error $? "libreadline library not found" "$LINENO" 5
+fi
+         ;; #(
+  *) :
+            READLINE_LIBS="$with_readline/lib/libreadline.a"
+        as_ac_File=`$as_echo "ac_cv_file_"$READLINE_LIBS"" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for \"$READLINE_LIBS\"" >&5
+$as_echo_n "checking for \"$READLINE_LIBS\"... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r ""$READLINE_LIBS""; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+else
+  as_fn_error $? "readline library not found" "$LINENO" 5
 
 fi
+        READLINE_CFLAGS="-I$with_readline/include"
 
-    LIBS="$OLD_LIBS"
-    if test "$ac_cv_lib_readline_readline" = "yes"; then
-      READLINE_LIBS="-lreadline"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib readline" >&5
-$as_echo_n "checking lib readline... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READLINE_LIBS" >&5
-$as_echo "$READLINE_LIBS" >&6; }
-
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib readline" >&5
-$as_echo_n "checking lib readline... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, (WARNING)" >&5
-$as_echo "no, (WARNING)" >&6; }
-      as_fn_error $? "readline required to build" "$LINENO" 5
-    fi
+  if test "x$CPPFLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \""-I$with_readline/include"\""
+    CPPFLAGS=""-I$with_readline/include""
   else
-    LIBS="$LIBS $with_readline/lib/libreadline.a"
-    OLDCPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS -I$with_readline/include"
+    ats_addto_bugger=""-I$with_readline/include""
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $CPPFLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $i"
+      fi
+    done
+  fi
+
+             ;;
+esac
+
     for ac_header in readline.h readline/readline.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -7749,21 +7795,22 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
+         HAVE_READLINE_HEADERS=1
+        break
 
 fi
 
 done
 
-    CPPFLAGS="$OLDCPPFLAGS"
-    READLINE_LIBS="$with_readline/lib/libreadline.a"
-    test -d "$with_readline/include" && READLINE_CFLAGS="-I$with_readline/include"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking lib readline" >&5
-$as_echo_n "checking lib readline... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $READLINE_LIBS" >&5
-$as_echo "$READLINE_LIBS" >&6; }
 
-  fi
+
+    if ${HAVE_READLINE_HEADERS+:} false; then :
+
+else
+  as_fn_error $? "readline headers not found" "$LINENO" 5
+
 fi
+
 
 
 

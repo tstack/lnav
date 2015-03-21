@@ -37,9 +37,6 @@
 /* Define to 1 if you have the `pcrecpp' library (-lpcrecpp). */
 #undef HAVE_LIBPCRECPP
 
-/* Define to 1 if you have the `readline' library (-lreadline). */
-#undef HAVE_LIBREADLINE
-
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
 
