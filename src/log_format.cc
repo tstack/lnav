@@ -79,11 +79,6 @@ const char *logline::level_names[LEVEL__MAX + 1] = {
 static pcrepp LEVEL_RE(
         "(?i)(TRACE|VERBOSE|DEBUG|INFO|WARN(?:ING)?|ERROR|CRITICAL|SEVERE|FATAL)");
 
-static int strncasestr_i(const char *s1, const char *s2, size_t len)
-{
-    return strcasestr(s1, s2) == NULL;
-}
-
 logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool exact)
 {
     logline::level_t retval = logline::LEVEL_UNKNOWN;
