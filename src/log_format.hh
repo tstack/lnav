@@ -597,7 +597,7 @@ protected:
                           pcre_format *fmt,
                           const char *time_fmt[],
                           struct exttm *tm_out,
-                          struct timeval &tv_out,
+                          struct timeval *tv_out,
                           ...);
 };
 
