@@ -104,7 +104,7 @@ if test "x$ax_cv_curses" != xyes; then
 fi
 
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
-AX_PATH_LIB_READLINE([], [AC_MSG_ERROR([readline required to build])])
+AX_PATH_LIB_READLINE
 
 AX_LIB_SQLITE3("3.0.0")
 
