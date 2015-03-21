@@ -227,7 +227,7 @@ const char *log_format::log_scanf(const char *line,
                                   pcre_format *fmt,
                                   const char *time_fmt[],
                                   struct exttm *tm_out,
-                                  struct timeval &tv_out,
+                                  struct timeval *tv_out,
                                   ...)
 {
     int     curr_fmt = -1;
@@ -257,7 +257,7 @@ const char *log_format::log_scanf(const char *line,
             }
 
             retval = this->lf_date_time.scan(
-                    pi.get_substr_start(ts), ts->length(), NULL, tm_out, tv_out);
+                    pi.get_substr_start(ts), ts->length(), NULL, tm_out, *tv_out);
 
             if (retval) {
                 this->lf_fmt_lock = curr_fmt;

@@ -140,7 +140,7 @@ class generic_log_format : public log_format {
                 get_pcre_log_formats(),
                 NULL,
                 &log_time,
-                log_tv,
+                &log_tv,
 
                 &ts,
                 &level)) != NULL) {

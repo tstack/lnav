@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     static const char *CANNED_INPUT[] = {
       "abc",
       "\r",
-      tgetstr("ce", NULL),
+      tgetstr((char *)"ce", NULL),
       "de",
       "\n",
       "1\n",
