@@ -73,7 +73,9 @@ void hist_source::text_value_for_line(textview_curses &tc,
 
         bucket_index          = brow - 1;
         group_iter = this->hs_groups.begin();
-        advance(group_iter, grow);
+        size_t groups_size = (size_t)this->hs_groups.size();
+        advance(group_iter,
+                (groups_size >= (size_t)grow) ? grow : groups_size);
         this->hs_token_bucket = &(group_iter->second[bucket_index]);
         if (this->hs_label_source != NULL) {
             this->hs_label_source->
@@ -102,7 +104,9 @@ void hist_source::text_attrs_for_line(textview_curses &tc,
         struct line_range  lr;
 
         group_iter = this->hs_groups.begin();
-        advance(group_iter, grow);
+        size_t groups_size = (size_t)this->hs_groups.size();
+        advance(group_iter,
+                (groups_size >= (size_t)grow) ? grow : groups_size);
 
         tc.get_dimensions(height, width);
         avail_width = width - this->hs_token_bucket->size();
