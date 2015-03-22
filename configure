@@ -7678,7 +7678,35 @@ fi
   no) :
     as_fn_error $? "readline required to build" "$LINENO" 5 ;; #(
   yes) :
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing readline" >&5
+     ;; #(
+  *) :
+            READLINE_CFLAGS="-I$with_readline/include"
+
+  if test "x$CPPFLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \""-I$with_readline/include"\""
+    CPPFLAGS=""-I$with_readline/include""
+  else
+    ats_addto_bugger=""-I$with_readline/include""
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $CPPFLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $i"
+      fi
+    done
+  fi
+
+                LDFLAGS="-L$with_readline/lib $LDFLAGS"
+             ;;
+esac
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing readline" >&5
 $as_echo_n "checking for library containing readline... " >&6; }
 if ${ac_cv_search_readline+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -7708,7 +7736,7 @@ for ac_lib in '' readline; do
   else
     ac_res=-l$ac_lib
     LIBS="-l$ac_lib $CURSES_LIB
-         $ac_func_search_save_LIBS"
+     $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_search_readline=$ac_res
@@ -7736,56 +7764,6 @@ if test "$ac_res" != no; then :
 else
   as_fn_error $? "libreadline library not found" "$LINENO" 5
 fi
-         ;; #(
-  *) :
-            READLINE_LIBS="$with_readline/lib/libreadline.a"
-        as_ac_File=`$as_echo "ac_cv_file_"$READLINE_LIBS"" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for \"$READLINE_LIBS\"" >&5
-$as_echo_n "checking for \"$READLINE_LIBS\"... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r ""$READLINE_LIBS""; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-else
-  as_fn_error $? "readline library not found" "$LINENO" 5
-
-fi
-        READLINE_CFLAGS="-I$with_readline/include"
-
-  if test "x$CPPFLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \""-I$with_readline/include"\""
-    CPPFLAGS=""-I$with_readline/include""
-  else
-    ats_addto_bugger=""-I$with_readline/include""
-    for i in $ats_addto_bugger; do
-      ats_addto_duplicate="0"
-      for j in $CPPFLAGS; do
-        if test "x$i" = "x$j"; then
-          ats_addto_duplicate="1"
-          break
-        fi
-      done
-      if test $ats_addto_duplicate = "0"; then
-        test "x$verbose" = "xyes" && echo "  adding \"$i\" to CPPFLAGS"
-        CPPFLAGS="$CPPFLAGS $i"
-      fi
-    done
-  fi
-
-             ;;
-esac
 
     for ac_header in readline.h readline/readline.h
 do :
@@ -7810,6 +7788,67 @@ else
   as_fn_error $? "readline headers not found" "$LINENO" 5
 
 fi
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing history_set_history_state" >&5
+$as_echo_n "checking for library containing history_set_history_state... " >&6; }
+if ${ac_cv_search_history_set_history_state+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char history_set_history_state ();
+int
+main ()
+{
+return history_set_history_state ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' readline; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_history_set_history_state=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_history_set_history_state+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_history_set_history_state+:} false; then :
+
+else
+  ac_cv_search_history_set_history_state=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_history_set_history_state" >&5
+$as_echo "$ac_cv_search_history_set_history_state" >&6; }
+ac_res=$ac_cv_search_history_set_history_state
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  as_fn_error $? "libreadline does not have the required symbols. editline possibly masquerading as readline." "$LINENO" 5
+        $CURSES
+
+fi
+
 
 
 
