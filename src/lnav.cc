@@ -736,6 +736,7 @@ static void rebuild_hist(size_t old_count, bool force)
     hs.set_group_size(HIST_ZOOM_VALUES[zoom_level].hl_group_size);
     if (force) {
         hs.clear();
+        old_count = 0;
     }
     for (lpc = old_count; lpc < (int)new_count; lpc++) {
         logline *ll = lss.find_line(lss.at(vis_line_t(lpc)));
@@ -875,6 +876,7 @@ void rebuild_indexes(bool force)
             lnav_data.ld_text_source.tss_files.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
             file_iter = lnav_data.ld_files.erase(file_iter);
+            force = true;
 
             delete lf;
         }
