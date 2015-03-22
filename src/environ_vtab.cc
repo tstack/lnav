@@ -244,12 +244,11 @@ static int vt_update(sqlite3_vtab *tab,
         unsetenv(name);
 
         retval = SQLITE_OK;
-    } else if (getenv(name) != NULL) {
+    } else if (name != NULL && getenv(name) != NULL) {
 #ifdef SQLITE_FAIL
         int rc;
 
         rc = sqlite3_vtab_on_conflict(p_vt->db);
-        // fprintf(stderr, "got rc %d\n", rc);
         switch (rc) {
         case SQLITE_FAIL:
         case SQLITE_ABORT:
@@ -267,12 +266,12 @@ static int vt_update(sqlite3_vtab *tab,
 #endif
     }
 
-    if (argc == 4) {
+    if (name != NULL && argc == 4) {
         const unsigned char *value = sqlite3_value_text(argv[3]);
 
         setenv((const char *)name, (const char *)value, 1);
 
-        retval = SQLITE_OK;
+        return SQLITE_OK;
     }
 
     return retval;
