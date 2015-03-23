@@ -90,12 +90,12 @@ build_triplet = @build@
 host_triplet = @host@
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_sqlite3.m4 \
-	$(top_srcdir)/m4/ax_with_curses.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_with_curses.m4 \
 	$(top_srcdir)/m4/lnav_common.m4 \
 	$(top_srcdir)/m4/lnav_with_jemalloc.m4 \
 	$(top_srcdir)/m4/lnav_with_pcre.m4 \
 	$(top_srcdir)/m4/lnav_with_readline.m4 \
+	$(top_srcdir)/m4/lnav_with_sqlite3.m4 \
 	$(top_srcdir)/m4/lnav_with_yajl.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -306,7 +306,6 @@ SQLITE3_CFLAGS = @SQLITE3_CFLAGS@
 SQLITE3_CMD = @SQLITE3_CMD@
 SQLITE3_LDFLAGS = @SQLITE3_LDFLAGS@
 SQLITE3_LIBS = @SQLITE3_LIBS@
-SQLITE3_VERSION = @SQLITE3_VERSION@
 STATIC_LDFLAGS = @STATIC_LDFLAGS@
 STRIP = @STRIP@
 VERSION = @VERSION@
