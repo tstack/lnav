@@ -88,7 +88,23 @@ AC_SEARCH_LIBS(dlopen, dl)
 AC_SEARCH_LIBS(backtrace, execinfo)
 
 # Sometimes, curses depends on these libraries being linked in...
-AC_SEARCH_LIBS(cur_term, tinfo)
+AC_ARG_ENABLE([tinfo],
+    AS_HELP_STRING([--disable-tinfo],
+        [Disable linking with tinfo, enabled by default]),
+    [], [enable_tinfo="yes"]
+)
+
+AS_IF([test "x${enable_tinfo}" != "xno"],
+    [dnl
+    AC_MSG_NOTICE([Trying to link with tinfo])
+    AC_SEARCH_LIBS(cur_term, tinfo,
+        AC_MSG_NOTICE([Linking with tinfo]),
+        AC_MSG_WARN([libtinfo not found])
+    )
+    ],
+    AC_MSG_NOTICE([Building with tinfo linking disabled])
+)
+
 AC_SEARCH_LIBS(Gpm_Open, gpm)
 
 AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h)

@@ -60,11 +60,8 @@ AC_DEFUN([LNAV_WITH_LOCAL_YAJL],
                 [
                 AC_MSG_NOTICE([Checking for yajl headers])
                 AC_CHECK_HEADERS([yajl/yajl_parse.h],
-                    [
-                    AS_VAR_SET([HAVE_LOCAL_YAJL], [1])
-                    LNAV_ADDTO(LIBS, [-lyajl])
-                    ],
-                    [AC_MSG_WARN([yajl not found on the local system])]
+                    AS_VAR_SET([HAVE_LOCAL_YAJL], [1]),
+                    AC_MSG_WARN([yajl not found on the local system])
                 )
                 ]
             )
