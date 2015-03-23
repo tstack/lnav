@@ -106,17 +106,7 @@ fi
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE
 
-AX_LIB_SQLITE3("3.0.0")
-
-if test x"$SQLITE3_LIBS" = x""; then
-    AC_MSG_ERROR([The sqlite3 developement package must be installed.])
-fi
-
-OLD_LIBS="$LIBS"
-LIBS="$LIBS ${SQLITE3_LIBS}"
-AC_CHECK_FUNC(sqlite3_stmt_readonly,
-    AC_DEFINE([HAVE_SQLITE3_STMT_READONLY], [], [Have the sqlite3_stmt_readonly function]))
-LIBS="$OLD_LIBS"
+LNAV_WITH_SQLITE3("3.0.0")
 
 case "$host_os" in
     *)

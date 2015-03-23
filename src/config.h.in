@@ -76,8 +76,8 @@
 /* Define to 1 if you have the <readline/readline.h> header file. */
 #undef HAVE_READLINE_READLINE_H
 
-/* sqlite3 */
-#undef HAVE_SQLITE3
+/* Define to 1 if you have the <sqlite3.h> header file. */
+#undef HAVE_SQLITE3_H
 
 /* Have the sqlite3_stmt_readonly function */
 #undef HAVE_SQLITE3_STMT_READONLY
