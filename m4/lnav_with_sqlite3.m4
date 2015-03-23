@@ -1,3 +1,13 @@
+dnl
+dnl @Modified from: ax_sqlite3.m4
+dnl @author Mateusz Loskot <mateusz@loskot.net>
+dnl @version $Date: 2006/08/30 14:28:55 $
+dnl @license AllPermissive
+dnl
+dnl Copyright (c) 2015, Suresh Sundriyal
+dnl
+dnl @file lnav_with_sqlite3.m4
+dnl
 AC_DEFUN([LNAV_WITH_SQLITE3],
 [dnl
     AC_ARG_WITH([sqlite3],
