@@ -2047,9 +2047,6 @@ static void handle_paging_key(int ch)
     {
         time_t log_top = lnav_data.ld_top_time;
 
-        time_t hist_top =
-            lnav_data.ld_hist_source.value_for_row(tc->get_top());
-
         if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
             hist_source &hs = lnav_data.ld_hist_source;
 
@@ -2057,10 +2054,13 @@ static void handle_paging_key(int ch)
             tc->set_top(hs.row_for_value(log_top));
         }
         else {
-            tc  = &lnav_data.ld_views[LNV_LOG];
+            textview_curses &hist_tc = lnav_data.ld_views[LNV_HISTOGRAM];
+            textview_curses &log_tc = lnav_data.ld_views[LNV_LOG];
+            time_t hist_top =
+                    lnav_data.ld_hist_source.value_for_row(hist_tc.get_top());
             lss = &lnav_data.ld_log_source;
-            tc->set_top(lss->find_from_time(hist_top));
-            tc->set_needs_update();
+            log_tc.set_top(lss->find_from_time(hist_top));
+            log_tc.set_needs_update();
         }
     }
     break;
