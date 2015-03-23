@@ -760,6 +760,7 @@ enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
 enable_profiling
+enable_tinfo
 with_jemalloc
 with_yajl
 with_ncurses
@@ -1408,6 +1409,7 @@ Optional Features:
   --disable-dependency-tracking
                           speeds up one-time build
   --enable-profiling      Compile with gprof(1) profiling support
+  --disable-tinfo         Disable linking with tinfo, enabled by default
   --disable-static        Disable static linking
 
 Optional Packages:
@@ -6080,7 +6082,19 @@ fi
 
 
 # Sometimes, curses depends on these libraries being linked in...
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing cur_term" >&5
+# Check whether --enable-tinfo was given.
+if test "${enable_tinfo+set}" = set; then :
+  enableval=$enable_tinfo;
+else
+  enable_tinfo="yes"
+
+fi
+
+
+if test "x${enable_tinfo}" != "xno"; then :
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Trying to link with tinfo" >&5
+$as_echo "$as_me: Trying to link with tinfo" >&6;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing cur_term" >&5
 $as_echo_n "checking for library containing cur_term... " >&6; }
 if ${ac_cv_search_cur_term+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6133,6 +6147,18 @@ $as_echo "$ac_cv_search_cur_term" >&6; }
 ac_res=$ac_cv_search_cur_term
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Linking with tinfo" >&5
+$as_echo "$as_me: Linking with tinfo" >&6;}
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libtinfo not found" >&5
+$as_echo "$as_me: WARNING: libtinfo not found" >&2;}
+
+fi
+
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Linking with tinfo disabled" >&5
+$as_echo "$as_me: Linking with tinfo disabled" >&6;}
 
 fi
 
@@ -6631,30 +6657,7 @@ if test "x$ac_cv_header_yajl_yajl_parse_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_YAJL_YAJL_PARSE_H 1
 _ACEOF
-
-                    HAVE_LOCAL_YAJL=1
-
-  if test "x$LIBS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting LIBS to \"-lyajl\""
-    LIBS="-lyajl"
-  else
-    ats_addto_bugger="-lyajl"
-    for i in $ats_addto_bugger; do
-      ats_addto_duplicate="0"
-      for j in $LIBS; do
-        if test "x$i" = "x$j"; then
-          ats_addto_duplicate="1"
-          break
-        fi
-      done
-      if test $ats_addto_duplicate = "0"; then
-        test "x$verbose" = "xyes" && echo "  adding \"$i\" to LIBS"
-        LIBS="$LIBS $i"
-      fi
-    done
-  fi
-
-
+ HAVE_LOCAL_YAJL=1
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: yajl not found on the local system" >&5
 $as_echo "$as_me: WARNING: yajl not found on the local system" >&2;}
