@@ -6157,8 +6157,8 @@ fi
 
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Linking with tinfo disabled" >&5
-$as_echo "$as_me: Linking with tinfo disabled" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Building with tinfo linking disabled" >&5
+$as_echo "$as_me: Building with tinfo linking disabled" >&6;}
 
 fi
 

@@ -102,7 +102,7 @@ AS_IF([test "x${enable_tinfo}" != "xno"],
         AC_MSG_WARN([libtinfo not found])
     )
     ],
-    AC_MSG_NOTICE([Linking with tinfo disabled])
+    AC_MSG_NOTICE([Building with tinfo linking disabled])
 )
 
 AC_SEARCH_LIBS(Gpm_Open, gpm)
