@@ -34,6 +34,7 @@
 #ifndef __lnav_util_hh
 #define __lnav_util_hh
 
+#include <math.h>
 #include <time.h>
 #include <sys/types.h>
 

@@ -67,7 +67,7 @@ public:
           bss_last_filtered_count(0),
           bss_filter_counter(0)
     {
-        this->bss_fields[BSF_LINE_NUMBER].set_width(10);
+        this->bss_fields[BSF_LINE_NUMBER].set_width(11);
         this->bss_fields[BSF_PERCENT].set_width(4);
         this->bss_fields[BSF_HITS].set_width(36);
         this->bss_fields[BSF_FILTERED].set_width(20);

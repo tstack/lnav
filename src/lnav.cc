@@ -3636,11 +3636,13 @@ static void looper(void)
         lnav_data.ld_scroll_broadcaster.invoke(lnav_data.ld_view_stack.top());
 
         bool session_loaded = false;
-        struct timeval curr_to = { 0, 330000 };
+        ui_periodic_timer &timer = ui_periodic_timer::singleton();
+        static sig_atomic_t index_counter;
 
+        timer.start_fade(index_counter, 1);
         while (lnav_data.ld_looping) {
             fd_set         ready_rfds = lnav_data.ld_read_fds;
-            struct timeval to = curr_to;
+            struct timeval to = { 0, 333000 };
             int            rc;
 
             lnav_data.ld_top_source.update_time();
@@ -3660,10 +3662,6 @@ static void looper(void)
                         &ready_rfds, NULL, NULL,
                         &to);
 
-            if (rc == -1 && errno == EINTR) {
-                rc = 0;
-            }
-
             if (rc < 0) {
                 switch (errno) {
                 case EBADF:
@@ -3680,69 +3678,14 @@ static void looper(void)
                     lnav_data.ld_looping = false;
                 }
                 break;
+                case 0:
+                case EINTR:
+                    break;
 
                 default:
                     log_error("select %s", strerror(errno));
                     lnav_data.ld_looping = false;
                     break;
-                }
-            }
-            else if (rc == 0) {
-                static bool initial_build = false;
-
-                rebuild_indexes(false);
-                if (!initial_build &&
-                    lnav_data.ld_log_source.text_line_count() == 0 &&
-                    lnav_data.ld_text_source.text_line_count() > 0) {
-                    toggle_view(&lnav_data.ld_views[LNV_TEXT]);
-                    lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
-                    lnav_data.ld_rl_view->set_alt_value(
-                        HELP_MSG_2(f, F,
-                                   "to switch to the next/previous file"));
-                }
-                if (!initial_build &&
-                    lnav_data.ld_log_source.text_line_count() == 0 &&
-                    !lnav_data.ld_other_files.empty()) {
-                    ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
-                }
-
-                if (!initial_build && lnav_data.ld_flags & LNF_HELP) {
-                    toggle_view(&lnav_data.ld_views[LNV_HELP]);
-                    initial_build = true;
-                }
-                if (lnav_data.ld_log_source.text_line_count() > 0 ||
-                    lnav_data.ld_text_source.text_line_count() > 0 ||
-                    !lnav_data.ld_other_files.empty()) {
-                    initial_build = true;
-                }
-
-                if (!session_loaded) {
-                    load_session();
-                    if (!lnav_data.ld_session_file_names.empty()) {
-                        std::string ago;
-
-                        ago = time_ago(lnav_data.ld_session_save_time);
-                        lnav_data.ld_rl_view->set_value(
-                            ("restored session from " ANSI_BOLD_START) +
-                            ago +
-                            (ANSI_NORM "; press Ctrl-R to reset session"));
-                    }
-                    rebuild_indexes(true);
-                    session_loaded = true;
-                }
-                curr_to.tv_usec = 330000;
-
-                {
-                    vector<pair<string, string> > msgs;
-
-                    execute_init_commands(msgs);
-
-                    if (!msgs.empty()) {
-                        pair<string, string> last_msg = msgs.back();
-
-                        lnav_data.ld_rl_view->set_value(last_msg.first);
-                        lnav_data.ld_rl_view->set_alt_value(last_msg.second);
-                    }
                 }
             }
             else {
@@ -3792,6 +3735,13 @@ static void looper(void)
                             handle_key(ch);
                             break;
                         }
+
+                        if (!lnav_data.ld_looping) {
+                            // No reason to keep processing input after the
+                            // user has quit.  The view stack will also be
+                            // empty, which will cause issues.
+                            break;
+                        }
                     }
                 }
                 for (lpc = 0; lpc < LG__MAX; lpc++) {
@@ -3820,6 +3770,70 @@ static void looper(void)
                     }
                 }
                 rlc.check_fd_set(ready_rfds);
+            }
+
+            if (timer.fade_diff(index_counter) == 0) {
+                static bool initial_build = false;
+
+                if (lnav_data.ld_mode == LNM_PAGING) {
+                    timer.start_fade(index_counter, 1);
+                }
+                else {
+                    timer.start_fade(index_counter, 3);
+                }
+                rebuild_indexes(false);
+                if (!initial_build &&
+                        lnav_data.ld_log_source.text_line_count() == 0 &&
+                        lnav_data.ld_text_source.text_line_count() > 0) {
+                    toggle_view(&lnav_data.ld_views[LNV_TEXT]);
+                    lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
+                    lnav_data.ld_rl_view->set_alt_value(
+                            HELP_MSG_2(f, F,
+                                    "to switch to the next/previous file"));
+                }
+                if (!initial_build &&
+                        lnav_data.ld_log_source.text_line_count() == 0 &&
+                        !lnav_data.ld_other_files.empty()) {
+                    ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
+                }
+
+                if (!initial_build && lnav_data.ld_flags & LNF_HELP) {
+                    toggle_view(&lnav_data.ld_views[LNV_HELP]);
+                    initial_build = true;
+                }
+                if (lnav_data.ld_log_source.text_line_count() > 0 ||
+                        lnav_data.ld_text_source.text_line_count() > 0 ||
+                        !lnav_data.ld_other_files.empty()) {
+                    initial_build = true;
+                }
+
+                if (!session_loaded) {
+                    load_session();
+                    if (!lnav_data.ld_session_file_names.empty()) {
+                        std::string ago;
+
+                        ago = time_ago(lnav_data.ld_session_save_time);
+                        lnav_data.ld_rl_view->set_value(
+                                ("restored session from " ANSI_BOLD_START) +
+                                        ago +
+                                        (ANSI_NORM "; press Ctrl-R to reset session"));
+                    }
+                    rebuild_indexes(true);
+                    session_loaded = true;
+                }
+
+                {
+                    vector<pair<string, string> > msgs;
+
+                    execute_init_commands(msgs);
+
+                    if (!msgs.empty()) {
+                        pair<string, string> last_msg = msgs.back();
+
+                        lnav_data.ld_rl_view->set_value(last_msg.first);
+                        lnav_data.ld_rl_view->set_alt_value(last_msg.second);
+                    }
+                }
             }
 
             if (lnav_data.ld_winched) {

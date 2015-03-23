@@ -49,7 +49,12 @@ const struct itimerval ui_periodic_timer::INTERVAL = {
 
 ui_periodic_timer::ui_periodic_timer()
 {
-    signal(SIGALRM, ui_periodic_timer::sigalrm);
+    struct sigaction sa;
+
+    sa.sa_handler = ui_periodic_timer::sigalrm;
+    sa.sa_flags = SA_RESTART;
+    sa.sa_mask = 0;
+    sigaction(SIGALRM, &sa, NULL);
     if (setitimer(ITIMER_REAL, &INTERVAL, NULL) == -1) {
         perror("setitimer");
     }
