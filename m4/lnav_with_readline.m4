@@ -30,7 +30,8 @@ dnl
 dnl @file lnav_with_readline.m4
 dnl
 AC_DEFUN([AX_PATH_LIB_READLINE],
-    [
+    [dnl
+    AC_REQUIRE([AX_WITH_CURSES])
     AC_MSG_CHECKING([lib readline])
     AC_ARG_WITH([readline],
         AC_HELP_STRING(
