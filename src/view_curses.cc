@@ -53,7 +53,7 @@ ui_periodic_timer::ui_periodic_timer()
 
     sa.sa_handler = ui_periodic_timer::sigalrm;
     sa.sa_flags = SA_RESTART;
-    sa.sa_mask = 0;
+    sigemptyset(&sa.sa_mask);
     sigaction(SIGALRM, &sa, NULL);
     if (setitimer(ITIMER_REAL, &INTERVAL, NULL) == -1) {
         perror("setitimer");
