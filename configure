@@ -3288,11 +3288,11 @@ done
 
 case x$srcdir in
 x/*)
-	abssrcdir=$srcdir
-	;;
+    abssrcdir=$srcdir
+    ;;
 *)
-	abssrcdir=`pwd`/$srcdir
-	;;
+    abssrcdir=`pwd`/$srcdir
+    ;;
 esac
 
 
@@ -4009,11 +4009,11 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking gprof(4) profiling support" >&5
 $as_echo_n "checking gprof(4) profiling support... " >&6; }
 if test x"${enable_profiling}" = x"yes" ; then
-	CFLAGS="$CFLAGS -pg -gstabs"
-	CXXFLAGS="$CXXFLAGS -pg -gstabs"
-	LDFLAGS="$LDFLAGS -pg"
+    CFLAGS="$CFLAGS -pg -gstabs"
+    CXXFLAGS="$CXXFLAGS -pg -gstabs"
+    LDFLAGS="$LDFLAGS -pg"
 else
-	enable_profiling=no
+    enable_profiling=no
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_profiling" >&5
 $as_echo "$enable_profiling" >&6; }
@@ -6162,7 +6162,11 @@ $as_echo "$as_me: Building with tinfo linking disabled" >&6;}
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing Gpm_Open" >&5
+case "$host_os" in #(
+  darwin*) :
+     ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing Gpm_Open" >&5
 $as_echo_n "checking for library containing Gpm_Open... " >&6; }
 if ${ac_cv_search_Gpm_Open+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6216,8 +6220,15 @@ ac_res=$ac_cv_search_Gpm_Open
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
+else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libgpm not found. If build fails later consider installing gpm dev package        " >&5
+$as_echo "$as_me: WARNING: libgpm not found. If build fails later consider installing gpm dev package        " >&2;}
+
+
 fi
 
+ ;;
+esac
 
 for ac_header in execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h
 do :
@@ -8053,15 +8064,6 @@ fi
 
 
 
-case "$host_os" in
-    *)
-	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
-
-$as_echo "#define _BSD_SOURCE 1" >>confdefs.h
-
-	;;
-esac
-
 ALL_LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS"
 
 static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"
@@ -8090,16 +8092,16 @@ if test x"${enable_static}" != x"no"; then
     rm -f src/static-libs/*.a
     for libflag in $ALL_LDFLAGS; do
         case $libflag in
-	    -Lstatic-libs)
-		;;
-	    -L*)
+        -Lstatic-libs)
+        ;;
+        -L*)
                 libdir=`echo $libflag | sed -e 's/-L//'`
                 for slib in $static_lib_list; do
                     if test -e "$libdir/$slib"; then
                         ln -sf "$libdir/$slib" src/static-libs/.
                     fi
                 done
-		;;
+        ;;
         esac
     done
 fi
