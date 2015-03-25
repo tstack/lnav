@@ -30,11 +30,11 @@ dnl abssrcdir is the absolute path to the source base (regardless of where
 dnl you are building it)
 case x$srcdir in
 x/*)
-	abssrcdir=$srcdir
-	;;
+    abssrcdir=$srcdir
+    ;;
 *)
-	abssrcdir=`pwd`/$srcdir
-	;;
+    abssrcdir=`pwd`/$srcdir
+    ;;
 esac
 AC_SUBST(abssrcdir)
 
@@ -51,11 +51,11 @@ AC_ARG_ENABLE([profiling],
 
 AC_MSG_CHECKING(gprof(4) profiling support)
 if test x"${enable_profiling}" = x"yes" ; then
-	CFLAGS="$CFLAGS -pg -gstabs"
-	CXXFLAGS="$CXXFLAGS -pg -gstabs"
-	LDFLAGS="$LDFLAGS -pg"
+    CFLAGS="$CFLAGS -pg -gstabs"
+    CXXFLAGS="$CXXFLAGS -pg -gstabs"
+    LDFLAGS="$LDFLAGS -pg"
 else
-	enable_profiling=no
+    enable_profiling=no
 fi
 AC_MSG_RESULT($enable_profiling)
 
@@ -105,7 +105,21 @@ AS_IF([test "x${enable_tinfo}" != "xno"],
     AC_MSG_NOTICE([Building with tinfo linking disabled])
 )
 
-AC_SEARCH_LIBS(Gpm_Open, gpm)
+dnl libgpm is required on some systems where there is a misconfigured ncurses
+dnl and gpm libraries with interdependencies. This check is not required on OS X.
+AS_CASE(["$host_os"],
+    [darwin*],
+    [],
+    AC_SEARCH_LIBS(Gpm_Open, gpm,
+       [],
+       [dnl
+        AC_MSG_WARN(m4_join([ ],
+                    [libgpm not found. If build fails later],
+                    [consider installing gpm dev package])dnl
+        )
+       ]
+    )
+)
 
 AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h)
 
@@ -123,13 +137,6 @@ AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE
 
 LNAV_WITH_SQLITE3("3.0.0")
-
-case "$host_os" in
-    *)
-	# AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
-	AC_DEFINE([_BSD_SOURCE], [1], [Need pread])
-	;;
-esac
 
 ALL_LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS"
 
@@ -157,16 +164,16 @@ if test x"${enable_static}" != x"no"; then
     rm -f src/static-libs/*.a
     for libflag in $ALL_LDFLAGS; do
         case $libflag in
-	    -Lstatic-libs)
-		;;
-	    -L*)
+        -Lstatic-libs)
+        ;;
+        -L*)
                 libdir=`echo $libflag | sed -e 's/-L//'`
                 for slib in $static_lib_list; do
                     if test -e "$libdir/$slib"; then
                         ln -sf "$libdir/$slib" src/static-libs/.
                     fi
                 done
-		;;
+        ;;
         esac
     done
 fi
