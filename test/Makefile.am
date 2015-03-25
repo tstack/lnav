@@ -2,9 +2,17 @@
 TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
+DBGEN_V = $(DBGEN_V_@AM_V@)
+DBGEN_V_ = $(DBGEN_V_@AM_DEFAULT_V@)
+DBGEN_V_0 = @echo "  DBGEN   " $@;
+
+RM_V = $(RM_V_@AM_V@)
+RM_V_ = $(RM_V_@AM_DEFAULT_V@)
+RM_V_0 = @echo "  RM      " $@;
+
 simple-db.db: simple-db.sql
-	rm -f $@
-	$(SQLITE3_CMD) $@ < $(srcdir)/simple-db.sql
+	$(RM_V)rm -f $@
+	$(DBGEN_V)$(SQLITE3_CMD) $@ < $(srcdir)/simple-db.sql
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
@@ -291,5 +299,5 @@ DISTCLEANFILES = \
 	test.log
 
 distclean-local:
-	rm -rf sessions
-	rm -rf .lnav
+	$(RM_V)rm -rf sessions
+	$(RM_V)rm -rf .lnav

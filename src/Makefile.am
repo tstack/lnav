@@ -5,20 +5,28 @@ noinst_PROGRAMS = bin2c ptimec lnav-test
 
 noinst_LIBRARIES = libdiag.a
 
+PTIME_V = $(PTIME_V_@AM_V@)
+PTIME_V_ = $(PTIME_V_@AM_DEFAULT_V@)
+PTIME_V_0 = @echo "  TIMEFMT " $@;
+
+BIN2C_V = $(BIN2C_V_@AM_V@)
+BIN2C_V_ = $(BIN2C_V_@AM_DEFAULT_V@)
+BIN2C_V_0 = @echo "  BIN2C   " $@;
+
 help.c: $(srcdir)/help.txt bin2c
-	./bin2c -z -c $(srcdir)/help.txt $@
+	$(BIN2C_V)./bin2c -z -c $(srcdir)/help.txt $@
 
 dump-pid-sh.c: $(srcdir)/dump-pid.sh bin2c
-	./bin2c -z -c $(srcdir)/dump-pid.sh $@
+	$(BIN2C_V)./bin2c -z -c $(srcdir)/dump-pid.sh $@
 
 default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
-	./bin2c -z -c $(srcdir)/default-log-formats.json $@
+	$(BIN2C_V)./bin2c -z -c $(srcdir)/default-log-formats.json $@
 
 init.sql: $(srcdir)/init_sql.py
 	$(PYTHON) $(srcdir)/init_sql.py > $@
 
 init-sql.c: $(srcdir)/init.sql bin2c
-	./bin2c -z -c $(srcdir)/init.sql $@
+	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
 
 TIME_FORMATS = \
     "%Y-%m-%d %H:%M:%S" \
@@ -42,7 +50,7 @@ TIME_FORMATS = \
     "%M:%S"
 
 time_fmts.cc: ptimec
-	./ptimec $(TIME_FORMATS) > $@
+	$(PTIME_V)./ptimec $(TIME_FORMATS) > $@
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
