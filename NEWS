@@ -1,5 +1,6 @@
 
 lnav v0.7.3:
+     Features:
      * Add 'pipe-to' and 'pipe-line-to' commands that pipe the currently
        marked lines or the current log message to a shell command,
        respectively.
@@ -9,6 +10,22 @@ lnav v0.7.3:
        case it has been corrupted.
      * Added a 'relative-goto' command to move the current view relative
        to its current position.
+     * Experimental support for linking with jemalloc.
+
+     Fixes:
+     * Autotools scripts overhaul.
+     * Added a configure option to disable linking with libtinfo. The newer
+       versions of ncurses don't require it, however the build silently pulls
+       it in as a dependency, if it is available on the system. This can be
+       explicitly disabled using the '--disable-tinfo' option during configure.
+     * Fixed the configure script behavior to ignore the values specified using
+       the CFLAGS and LDFLAGS environment variables while searching for sqlite3
+       when '--with-sqlite3' switch was specified without the prefix.
+     * The configure script now recognizes libeditline symlink'ed to masquerade
+       as libreadline. This previously used to cause problems at compile time,
+       specially on OS X. If you come across this error, use the
+       '--with-readline=prefix' switch to specify the path to the correct
+       location of libreadline.
 
 lnav v0.7.2:
      * Added log formats for vdsm, openstack, and the vmkernel.
