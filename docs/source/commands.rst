@@ -30,6 +30,8 @@ Navigation
 
 * goto <line#|N%|time> - Go to the given line number, N percent into the
   file, or the given timestamp in the log view.
+* relative-goto <line#|N%> - Move the current view up or down by the given
+  amount.
 
 Time
 ----

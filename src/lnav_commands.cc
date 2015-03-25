@@ -248,6 +248,35 @@ static string com_goto(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_relative_goto(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting line number/percentage";
+
+    if (args.size() == 0) {
+    }
+    else if (args.size() > 1) {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        int   line_offset, consumed;
+        float value;
+
+        if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
+            if (args[1][consumed] == '%') {
+                line_offset = (int)
+                        ((double)tc->get_inner_height() *
+                                (value / 100.0));
+            }
+            else {
+                line_offset = (int)value;
+            }
+            tc->shift_top(vis_line_t(line_offset), true);
+
+            retval = "";
+        }
+    }
+
+    return retval;
+}
+
 static bool csv_needs_quoting(const string &str)
 {
     return (str.find_first_of(",\"") != string::npos);
@@ -1640,6 +1669,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["unix-time"]            = com_unix_time;
     cmd_map["current-time"]         = com_current_time;
     cmd_map["goto"]                 = com_goto;
+    cmd_map["relative-goto"]        = com_relative_goto;
     cmd_map["graph"]                = com_graph;
     cmd_map["help"]                 = com_help;
     cmd_map["highlight"]            = com_highlight;

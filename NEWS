@@ -7,6 +7,8 @@ lnav v0.7.3:
        messages so that they are easier to read.
      * Added a 'redraw' command (CTRL+L hotkey) to redraw the window in
        case it has been corrupted.
+     * Added a 'relative-goto' command to move the current view relative
+       to its current position.
 
 lnav v0.7.2:
      * Added log formats for vdsm, openstack, and the vmkernel.

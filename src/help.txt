@@ -372,6 +372,9 @@ COMMANDS
                     line number is negative, it is considered an offset
                     from the last line.
 
+  relative-goto <line#|N%>
+                    Move the current view up or down by the given amount.
+
   highlight <regex> Highlight strings that match the given regular
                     expression.
 
