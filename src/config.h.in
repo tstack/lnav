@@ -161,3 +161,6 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Need pread */
+#undef _BSD_SOURCE

@@ -138,6 +138,13 @@ AX_PATH_LIB_READLINE
 
 LNAV_WITH_SQLITE3("3.0.0")
 
+case "$host_os" in
+    *)
+        # AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
+        AC_DEFINE([_BSD_SOURCE], [1], [Need pread])
+        ;;
+esac
+
 ALL_LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS"
 
 static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"
