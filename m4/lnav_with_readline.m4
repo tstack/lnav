@@ -49,7 +49,7 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
         [],
         [dnl
         AS_VAR_SET([READLINE_CFLAGS], ["-I$with_readline/include"])
-        LNAV_ADDTO(CPPFLAGS, ["-I$with_readline/include"])
+        LNAV_ADDTO(CPPFLAGS, [-I$with_readline/include])
         dnl We want the provided path to be the first in the search order.
         LDFLAGS="-L$with_readline/lib $LDFLAGS"
         ]dnl

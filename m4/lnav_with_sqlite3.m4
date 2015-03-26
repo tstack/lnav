@@ -25,7 +25,7 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
         [yes],
         [],
         [dnl
-        LNAV_ADDTO(CPPFLAGS, ["-I$with_sqlite3/include"])
+        LNAV_ADDTO(CPPFLAGS, [-I$with_sqlite3/include])
         AS_VAR_SET([SQLITE3_LDFLAGS], ["-L$with_sqlite3/lib"])
         AS_VAR_SET([SQLITE3_CFLAGS], ["-I$with_sqlite3/include"])
         LDFLAGS="-L$with_sqlite3/lib $LDFLAGS"

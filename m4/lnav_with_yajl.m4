@@ -47,9 +47,9 @@ AC_DEFUN([LNAV_WITH_LOCAL_YAJL],
                     ["$LIBTOOL_LIBK_FLAGS"]
                 )
 
-                LNAV_ADDTO(CPPFLAGS, ["-I$withval/include"])
-                LNAV_ADDTO(LDFLAGS, ["-I$withval/lib"])
-                LNAV_ADDTO(LIBTOOL_LINK_FLAGS, ["-R$withval/lib"])
+                LNAV_ADDTO(CPPFLAGS, [-I$withval/include])
+                LNAV_ADDTO(LDFLAGS, [-I$withval/lib])
+                LNAV_ADDTO(LIBTOOL_LINK_FLAGS, [-R$withval/lib])
 
                 AC_MSG_NOTICE([Checking for yajl libs in $withval])
                 ]
