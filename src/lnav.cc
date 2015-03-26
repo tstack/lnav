@@ -1142,20 +1142,36 @@ static void open_pretty_view(void)
     textview_curses *pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
     logfile_sub_source &lss = lnav_data.ld_log_source;
     if (lss.text_line_count() > 0) {
-        content_line_t cl = lss.at(log_tc->get_top());
-        logfile *lf = lss.find(cl);
-        logfile::iterator ll = lf->message_start(lf->begin() + cl);
-        shared_buffer_ref sbr;
-
-        lf->read_full_message(ll, sbr);
-        data_scanner ds(sbr);
-        pretty_printer pp(&ds);
+        ostringstream stream;
+        bool first_line = true;
 
         if (pretty_tc->get_sub_source() != NULL) {
             delete pretty_tc->get_sub_source();
         }
-        string pretty_text = pp.print();
-        pretty_tc->set_sub_source(new plain_text_source(pretty_text));
+        for (vis_line_t vl = log_tc->get_top(); vl < log_tc->get_bottom(); ++vl) {
+            content_line_t cl = lss.at(vl);
+            logfile *lf = lss.find(cl);
+            logfile::iterator ll = lf->begin() + cl;
+            shared_buffer_ref sbr;
+
+            if (!first_line && ll->is_continued()) {
+                continue;
+            }
+            ll = lf->message_start(ll);
+
+            lf->read_full_message(ll, sbr);
+            data_scanner ds(sbr);
+            pretty_printer pp(&ds);
+
+            // TODO: dump more details of the line in the output.
+            stream << pp.print() << endl;
+            first_line = false;
+        }
+        pretty_tc->set_sub_source(new plain_text_source(stream.str()));
+        if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
+            pretty_tc->set_top(vis_line_t(0));
+        }
+        lnav_data.ld_last_pretty_print_top = log_tc->get_top();
     }
 }
 

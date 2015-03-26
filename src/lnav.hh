@@ -201,6 +201,8 @@ struct _lnav_data {
     std::string                             ld_previous_search;
     std::string                             ld_last_search[LNV__MAX];
 
+    vis_line_t                              ld_last_pretty_print_top;
+
     log_vtab_manager *                      ld_vtab_manager;
     auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
 
