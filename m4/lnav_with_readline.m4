@@ -77,8 +77,8 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
     dnl i.e. We haven't picked up editline.
     AC_SEARCH_LIBS([history_set_history_state], [readline],
         [],
-        AC_MSG_ERROR([libreadline does not have the required symbols. editline possibly masquerading as readline.])
-        [$CURSES]
+        AC_MSG_ERROR([libreadline does not have the required symbols. editline possibly masquerading as readline.]),
+        [$CURSES_LIB]
     )
 
     AC_SUBST([READLINE_LIBS])
