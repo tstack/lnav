@@ -6537,10 +6537,10 @@ $as_echo "$as_me: Checking for yajl libs" >&6;} ;; #(
 
 
   if test "x$CPPFLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \""-I$withval/include"\""
-    CPPFLAGS=""-I$withval/include""
+    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \"-I$withval/include\""
+    CPPFLAGS="-I$withval/include"
   else
-    ats_addto_bugger=""-I$withval/include""
+    ats_addto_bugger="-I$withval/include"
     for i in $ats_addto_bugger; do
       ats_addto_duplicate="0"
       for j in $CPPFLAGS; do
@@ -6558,10 +6558,10 @@ $as_echo "$as_me: Checking for yajl libs" >&6;} ;; #(
 
 
   if test "x$LDFLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting LDFLAGS to \""-I$withval/lib"\""
-    LDFLAGS=""-I$withval/lib""
+    test "x$verbose" = "xyes" && echo "  setting LDFLAGS to \"-I$withval/lib\""
+    LDFLAGS="-I$withval/lib"
   else
-    ats_addto_bugger=""-I$withval/lib""
+    ats_addto_bugger="-I$withval/lib"
     for i in $ats_addto_bugger; do
       ats_addto_duplicate="0"
       for j in $LDFLAGS; do
@@ -6579,10 +6579,10 @@ $as_echo "$as_me: Checking for yajl libs" >&6;} ;; #(
 
 
   if test "x$LIBTOOL_LINK_FLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting LIBTOOL_LINK_FLAGS to \""-R$withval/lib"\""
-    LIBTOOL_LINK_FLAGS=""-R$withval/lib""
+    test "x$verbose" = "xyes" && echo "  setting LIBTOOL_LINK_FLAGS to \"-R$withval/lib\""
+    LIBTOOL_LINK_FLAGS="-R$withval/lib"
   else
-    ats_addto_bugger=""-R$withval/lib""
+    ats_addto_bugger="-R$withval/lib"
     for i in $ats_addto_bugger; do
       ats_addto_duplicate="0"
       for j in $LIBTOOL_LINK_FLAGS; do
@@ -7695,10 +7695,10 @@ fi
             READLINE_CFLAGS="-I$with_readline/include"
 
   if test "x$CPPFLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \""-I$with_readline/include"\""
-    CPPFLAGS=""-I$with_readline/include""
+    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \"-I$with_readline/include\""
+    CPPFLAGS="-I$with_readline/include"
   else
-    ats_addto_bugger=""-I$with_readline/include""
+    ats_addto_bugger="-I$with_readline/include"
     for i in $ats_addto_bugger; do
       ats_addto_duplicate="0"
       for j in $CPPFLAGS; do
@@ -7885,10 +7885,10 @@ fi
   *) :
 
   if test "x$CPPFLAGS" = "x"; then
-    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \""-I$with_sqlite3/include"\""
-    CPPFLAGS=""-I$with_sqlite3/include""
+    test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \"-I$with_sqlite3/include\""
+    CPPFLAGS="-I$with_sqlite3/include"
   else
-    ats_addto_bugger=""-I$with_sqlite3/include""
+    ats_addto_bugger="-I$with_sqlite3/include"
     for i in $ats_addto_bugger; do
       ats_addto_duplicate="0"
       for j in $CPPFLAGS; do
