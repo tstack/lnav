@@ -248,7 +248,7 @@ lnav_LDADD = \
 	$(TEXT2C_FILES) \
 	$(LDADD)
 
-lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.cc
+lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.c
 lnav_test_LDADD = \
 	$(TEXT2C_FILES) \
 	$(LDADD)
