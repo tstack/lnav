@@ -32,10 +32,13 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
         ]
     )
 
+    AS_VAR_SET([saved_LDFLAGS], [$LDFLAGS])
+    LNAV_ADDTO([LDFLAGS], [-pthread])
     AC_SEARCH_LIBS([sqlite3_open], [sqlite3],
         AS_VAR_SET([SQLITE3_LIBS], ["-lsqlite3"]),
         AC_MSG_ERROR([sqlite3 library not found])
     )
+    AS_VAR_SET([LDFLAGS], [$saved_LDFLAGS])
 
     AC_CHECK_HEADERS([sqlite3.h], [],
         AC_MSG_ERROR([sqlite3 headers not found])
