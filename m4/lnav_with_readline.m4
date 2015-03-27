@@ -58,7 +58,7 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
     AC_SEARCH_LIBS([readline], [readline],
         [AS_VAR_SET([READLINE_LIBS], ["-lreadline"])],
         [AC_MSG_ERROR([libreadline library not found])],
-        [$CURSES_LIB]
+        [$CURSES_LIB]dnl
     )dnl
 
     AC_CHECK_HEADERS([readline.h readline/readline.h],
@@ -78,7 +78,7 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
     AC_SEARCH_LIBS([history_set_history_state], [readline],
         [],
         AC_MSG_ERROR([libreadline does not have the required symbols. editline possibly masquerading as readline.]),
-        [$CURSES_LIB]
+        [$CURSES_LIB]dnl
     )
 
     AC_SUBST([READLINE_LIBS])

@@ -7747,8 +7747,7 @@ for ac_lib in '' readline; do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib $CURSES_LIB
-     $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib $CURSES_LIB     $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_search_readline=$ac_res
@@ -7830,7 +7829,7 @@ for ac_lib in '' readline; do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib $CURSES_LIB     $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_search_history_set_history_state=$ac_res
@@ -7857,8 +7856,6 @@ if test "$ac_res" != no; then :
 
 else
   as_fn_error $? "libreadline does not have the required symbols. editline possibly masquerading as readline." "$LINENO" 5
-        $CURSES
-
 fi
 
 
@@ -7940,7 +7937,7 @@ for ac_lib in '' sqlite3; do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib -pthread     $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_search_sqlite3_open=$ac_res
@@ -7967,7 +7964,6 @@ if test "$ac_res" != no; then :
   SQLITE3_LIBS="-lsqlite3"
 else
   as_fn_error $? "sqlite3 library not found" "$LINENO" 5
-
 fi
 
 
