@@ -13,6 +13,10 @@ export top_builddir
 test_dir="@abssrcdir@/test"
 export test_dir
 
+# Let the tests know whether bzip is supported or not.
+BZIP2_SUPPORT="@BZIP2_SUPPORT@"
+export BZIP2_SUPPORT
+
 BZIP2_CMD="@BZIP2_CMD@"
 export BZIP2_CMD
 

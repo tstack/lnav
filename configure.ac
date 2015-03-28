@@ -83,7 +83,10 @@ AC_STRUCT_TIMEZONE
 
 AC_SEARCH_LIBS(openpty, util)
 AC_SEARCH_LIBS(gzseek, z, [], [AC_MSG_ERROR([libz required to build])])
-AC_SEARCH_LIBS(BZ2_bzopen, bz2)
+AC_SEARCH_LIBS(BZ2_bzopen, bz2,
+     AS_VAR_SET(BZIP2_SUPPORT, 1),
+     AS_VAR_SET(BZIP2_SUPPORT, 0))
+AC_SUBST(BZIP2_SUPPORT)
 AC_SEARCH_LIBS(dlopen, dl)
 AC_SEARCH_LIBS(backtrace, execinfo)
 
