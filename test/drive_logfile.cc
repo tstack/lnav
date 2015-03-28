@@ -101,18 +101,19 @@ int main(int argc, char *argv[])
   else {
     logfile lf(argv[0]);
     struct stat st;
-    
+
     stat(argv[0], &st);
     assert(strcmp(argv[0], lf.get_filename().c_str()) == 0);
 
     lf.rebuild_index();
     lf.rebuild_index();
     if (expected_format == "") {
-	assert(lf.get_format() == NULL);
+    assert(lf.get_format() == NULL);
     }
     else {
-	 //printf("%s %s\n", lf.get_format()->get_name().c_str(), expected_format.c_str());
-	assert(lf.get_format()->get_name() == expected_format);
+     //printf("%s %s\n", lf.get_format()->get_name().c_str(), expected_format.c_str());
+    assert(lf.get_format() != NULL);
+    assert(lf.get_format()->get_name() == expected_format);
     }
     if (!lf.is_compressed()) {
         assert(lf.get_modified_time() == st.st_mtime);
@@ -123,7 +124,7 @@ int main(int argc, char *argv[])
       break;
     case MODE_ECHO:
       for (logfile::iterator iter = lf.begin(); iter != lf.end(); ++iter) {
-	printf("%s\n", lf.read_line(iter).c_str());
+    printf("%s\n", lf.read_line(iter).c_str());
       }
       break;
     case MODE_LINE_COUNT:
@@ -131,19 +132,19 @@ int main(int argc, char *argv[])
       break;
     case MODE_TIMES:
       for (logfile::iterator iter = lf.begin(); iter != lf.end(); ++iter) {
-	char buffer[1024];
-	time_t lt;
+    char buffer[1024];
+    time_t lt;
 
-	lt = iter->get_time();
-	strftime(buffer, sizeof(buffer),
-		 "%b %d %H:%M:%S %Y",
-		 gmtime(&lt));
-	printf("%s -- %03d\n", buffer, iter->get_millis());
+    lt = iter->get_time();
+    strftime(buffer, sizeof(buffer),
+         "%b %d %H:%M:%S %Y",
+         gmtime(&lt));
+    printf("%s -- %03d\n", buffer, iter->get_millis());
       }
       break;
     case MODE_LEVELS:
       for (logfile::iterator iter = lf.begin(); iter != lf.end(); ++iter) {
-	printf("0x%02x\n", iter->get_level());
+    printf("0x%02x\n", iter->get_level());
       }
       break;
     }

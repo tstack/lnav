@@ -640,6 +640,7 @@ PCRE_LIBS
 CURSES_LIB
 HAVE_LOCAL_YAJL
 jemalloch
+BZIP2_SUPPORT
 EGREP
 GREP
 CPP
@@ -5965,8 +5966,11 @@ $as_echo "$ac_cv_search_BZ2_bzopen" >&6; }
 ac_res=$ac_cv_search_BZ2_bzopen
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
+  BZIP2_SUPPORT=1
+else
+  BZIP2_SUPPORT=0
 fi
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing dlopen" >&5
 $as_echo_n "checking for library containing dlopen... " >&6; }
