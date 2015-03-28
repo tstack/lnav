@@ -308,7 +308,9 @@ void log_format::check_for_new_year(std::vector<logline> &dst,
  */
 struct json_log_userdata {
     json_log_userdata(shared_buffer_ref &sbr)
-            : jlu_sub_line_count(1), jlu_shared_buffer(sbr) {
+            : jlu_format(NULL), jlu_line(NULL), jlu_base_line(NULL),
+              jlu_sub_line_count(1), jlu_handle(NULL), jlu_line_value(NULL),
+              jlu_line_size(0), jlu_sub_start(0), jlu_shared_buffer(sbr) {
 
     };
 
