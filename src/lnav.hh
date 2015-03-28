@@ -222,7 +222,7 @@ extern struct _lnav_data lnav_data;
 
 void rebuild_indexes(bool force);
 
-void ensure_view(textview_curses *expected_tc);
+bool ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);
 
 std::string execute_command(std::string cmdline);

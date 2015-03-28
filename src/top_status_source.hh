@@ -145,7 +145,9 @@ public:
         }
         else {
             sf_format.clear();
-            sf_filename.set_value(lc->get_data_source()->listview_source_name(*lc));
+            if (lc->get_data_source() != NULL) {
+                sf_filename.set_value(lc->get_data_source()->listview_source_name(*lc));
+            }
         }
         sf_format.get_value().get_attrs().push_back(
             string_attr(lr, &view_curses::VC_STYLE,

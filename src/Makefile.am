@@ -90,6 +90,7 @@ noinst_HEADERS = \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
 	environ_vtab.hh \
+	filter_observer.hh \
 	format-text-files.hh \
 	grapher.hh \
 	grep_highlighter.hh \
@@ -119,6 +120,7 @@ noinst_HEADERS = \
 	logfile_sub_source.hh \
 	pcrepp.hh \
 	piper_proc.hh \
+	pretty_printer.hh \
 	ptimec.hh \
 	readline_curses.hh \
 	readline_highlighters.hh \

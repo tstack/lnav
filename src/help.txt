@@ -386,7 +386,8 @@ COMMANDS
                     expression.  This command can be used multiple
                     times to add more lines to the display.  The number
                     of lines that are filtered out will be shown in the
-                    bottom status bar as 'Not Shown'.
+                    bottom status bar as 'Not Shown'.  Note that filtering
+                    only works in the log and plain text views.
 
   filter-out <regex>
                     Do not display lines that match the given regular
@@ -396,7 +397,8 @@ COMMANDS
                     priority and the filter-out will remove lines that
                     were matched by the 'filter-in'.  The number
                     of lines that are filtered out will be shown in the
-                    bottom status bar as 'Not Shown'.
+                    bottom status bar as 'Not Shown'.  Note that filtering
+                    only works in the log and plain text views.
 
   disable-filter <regex>
                     Disable an active 'filter-in' or 'filter-out'

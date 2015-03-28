@@ -423,7 +423,9 @@ void logfile::read_full_message(logfile::iterator ll,
 void logfile::set_logline_observer(logline_observer *llo)
 {
     this->lf_logline_observer = llo;
-    this->reobserve_from(this->begin());
+    if (llo != NULL) {
+        this->reobserve_from(this->begin());
+    }
 }
 
 void logfile::reobserve_from(iterator iter)

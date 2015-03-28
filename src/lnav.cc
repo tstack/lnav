@@ -576,6 +576,28 @@ static void add_env_possibilities(int context)
     }
 }
 
+static void add_filter_possibilities(textview_curses *tc)
+{
+    readline_curses *rc = lnav_data.ld_rl_view;
+    text_sub_source *tss = tc->get_sub_source();
+    filter_stack &fs = tss->get_filters();
+
+    rc->clear_possibilities(LNM_COMMAND, "disabled-filter");
+    rc->clear_possibilities(LNM_COMMAND, "enabled-filter");
+    for (filter_stack::iterator iter = fs.begin();
+            iter != fs.end();
+            ++iter) {
+        text_filter *tf = *iter;
+
+        if (tf->is_enabled()) {
+            rc->add_possibility(LNM_COMMAND, "enabled-filter", tf->get_id());
+        }
+        else {
+            rc->add_possibility(LNM_COMMAND, "disabled-filter", tf->get_id());
+        }
+    }
+}
+
 bool setup_logline_table()
 {
     // Hidden columns don't show up in the table_info pragma.
@@ -751,6 +773,41 @@ static void rebuild_hist(size_t old_count, bool force)
     hist_view.set_top(hs.row_for_value(old_time));
 }
 
+class textfile_callback {
+public:
+    textfile_callback() : force(false), front_file(NULL), front_top(-1) { };
+
+    void closed_file(logfile *lf) {
+        lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
+        lnav_data.ld_files.remove(lf);
+        delete lf;
+    };
+
+    void promote_file(logfile *lf) {
+        if (lnav_data.ld_log_source.insert_file(lf)) {
+            force = true;
+        }
+        else {
+            this->closed_file(lf);
+        }
+    };
+
+    void scanned_file(logfile *lf) {
+        if (!lnav_data.ld_files_to_front.empty() &&
+                lnav_data.ld_files_to_front.front().first ==
+                        lf->get_filename()) {
+            front_file = lf;
+            front_top = lnav_data.ld_files_to_front.front().second;
+
+            lnav_data.ld_files_to_front.pop_front();
+        }
+    };
+
+    bool force;
+    logfile *front_file;
+    int front_top;
+};
+
 void rebuild_indexes(bool force)
 {
     logfile_sub_source &lss       = lnav_data.ld_log_source;
@@ -772,63 +829,22 @@ void rebuild_indexes(bool force)
     {
         textfile_sub_source *          tss = &lnav_data.ld_text_source;
         std::list<logfile *>::iterator iter;
-        logfile *front_file = NULL;
-        int front_top = -1;
-        bool new_data = false;
+        bool new_data;
 
         old_bottom  = text_view.get_top_for_last_row();
         scroll_down = (text_view.get_top() >= old_bottom &&
             !(lnav_data.ld_flags & LNF_HEADLESS));
 
-        for (iter = tss->tss_files.begin();
-             iter != tss->tss_files.end(); ) {
-            logfile *lf = (*iter);
+        textfile_callback cb;
 
-            if (!lf->exists() || lf->is_closed()) {
-                lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
-                iter = tss->tss_files.erase(iter);
-                lnav_data.ld_files.remove(lf);
-                delete lf;
-                continue;
-            }
+        new_data = tss->rescan_files(cb);
+        force = force || cb.force;
 
-            try {
-                bool new_text_data = (*iter)->rebuild_index();
-
-                if ((*iter)->get_format() != NULL) {
-                    if (lnav_data.ld_log_source.insert_file(lf)) {
-                        iter  = tss->tss_files.erase(iter);
-                        force = true;
-                    }
-                    else {
-                        ++iter;
-                    }
-                }
-                else {
-                    new_data = new_data || new_text_data;
-                    if (!lnav_data.ld_files_to_front.empty() &&
-                        lnav_data.ld_files_to_front.front().first ==
-                        (*iter)->get_filename()) {
-                        front_file = *iter;
-                        front_top = lnav_data.ld_files_to_front.front().second;
-
-                        lnav_data.ld_files_to_front.pop_front();
-                    }
-                    ++iter;
-                }
-            }
-            catch (const line_buffer::error &e) {
-                // TODO: log that we dropped this file.
-                iter = tss->tss_files.erase(iter);
-            }
-        }
-
-        if (front_file != NULL) {
+        if (cb.front_file != NULL) {
             ensure_view(&text_view);
 
-            if (tss->current_file() != front_file) {
-                tss->tss_files.remove(front_file);
-                tss->tss_files.push_front(front_file);
+            if (tss->current_file() != cb.front_file) {
+                tss->to_front(cb.front_file);
                 redo_search(LNV_TEXT);
                 text_view.reload_data();
                 old_bottom = vis_line_t(-1);
@@ -836,11 +852,11 @@ void rebuild_indexes(bool force)
                 new_data = false;
             }
 
-            if (front_top < 0) {
-                front_top += text_view.get_inner_height();
+            if (cb.front_top < 0) {
+                cb.front_top += text_view.get_inner_height();
             }
-            if (front_top < text_view.get_inner_height()) {
-                text_view.set_top(vis_line_t(front_top));
+            if (cb.front_top < text_view.get_inner_height()) {
+                text_view.set_top(vis_line_t(cb.front_top));
                 scroll_down = false;
             }
         }
@@ -873,7 +889,7 @@ void rebuild_indexes(bool force)
 
         if (!lf->exists() || lf->is_closed()) {
             lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
-            lnav_data.ld_text_source.tss_files.remove(lf);
+            lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
             file_iter = lnav_data.ld_files.erase(file_iter);
             force = true;
@@ -933,8 +949,9 @@ void rebuild_indexes(bool force)
         }
     }
 
-    lnav_data.ld_bottom_source.update_filtered(lss);
-    lnav_data.ld_scroll_broadcaster.invoke(lnav_data.ld_view_stack.top());
+    textview_curses *tc = lnav_data.ld_view_stack.top();
+    lnav_data.ld_bottom_source.update_filtered(tc->get_sub_source());
+    lnav_data.ld_scroll_broadcaster.invoke(tc);
 }
 
 class plain_text_source
@@ -1177,8 +1194,12 @@ static void open_pretty_view(void)
 
 bool toggle_view(textview_curses *toggle_tc)
 {
-    textview_curses *tc     = lnav_data.ld_view_stack.top();
+    textview_curses *tc     = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.top();
     bool             retval = false;
+
+    require(toggle_tc != NULL);
+    require(toggle_tc >= &lnav_data.ld_views[0]);
+    require(toggle_tc < &lnav_data.ld_views[LNV__MAX]);
 
     if (tc == toggle_tc) {
         lnav_data.ld_view_stack.pop();
@@ -1222,15 +1243,18 @@ void redo_search(lnav_view_t view_index)
  * Ensure that the view is on the top of the view stack.
  *
  * @param expected_tc The text view that should be on top.
+ * @return True if the view was already on the top of the stack.
  */
-void ensure_view(textview_curses *expected_tc)
+bool ensure_view(textview_curses *expected_tc)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.top();
+    textview_curses *tc = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.top();
+    bool retval = true;
 
     if (tc != expected_tc) {
-
         toggle_view(expected_tc);
+        retval = false;
     }
+    return retval;
 }
 
 static vis_line_t next_cluster(
@@ -1509,9 +1533,8 @@ static void handle_paging_key(int ch)
         else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
             textfile_sub_source &tss = lnav_data.ld_text_source;
 
-            if (!tss.tss_files.empty()) {
-                tss.tss_files.push_front(tss.tss_files.back());
-                tss.tss_files.pop_back();
+            if (!tss.empty()) {
+                tss.rotate_right();
                 redo_search(LNV_TEXT);
             }
         }
@@ -1524,9 +1547,8 @@ static void handle_paging_key(int ch)
         else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
             textfile_sub_source &tss = lnav_data.ld_text_source;
 
-            if (!tss.tss_files.empty()) {
-                tss.tss_files.push_back(tss.tss_files.front());
-                tss.tss_files.pop_front();
+            if (!tss.empty()) {
+                tss.rotate_left();
                 redo_search(LNV_TEXT);
             }
         }
@@ -1956,15 +1978,13 @@ static void handle_paging_key(int ch)
                                                       "line-time",
                                                       buffer);
             }
-
         }
 
-            add_view_text_possibilities(LNM_COMMAND, "filter", tc);
-            lnav_data.ld_rl_view->
-                    add_possibility(LNM_COMMAND, "filter",
-                    lnav_data.ld_last_search[tc - lnav_data.ld_views]);
-            lnav_data.ld_rl_view->add_possibility(
-                    LNM_COMMAND, "levelname", logline::level_names);
+        add_view_text_possibilities(LNM_COMMAND, "filter", tc);
+        lnav_data.ld_rl_view->
+                add_possibility(LNM_COMMAND, "filter",
+                lnav_data.ld_last_search[tc - lnav_data.ld_views]);
+            add_filter_possibilities(tc);
         lnav_data.ld_mode = LNM_COMMAND;
         lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
         lnav_data.ld_bottom_source.set_prompt("Enter an lnav command: "
@@ -3133,7 +3153,7 @@ static void watch_logfile(string filename, int fd, bool required)
                 log_info("loading new file: %s", filename.c_str());
                     lf->set_logfile_observer(&obs);
                 lnav_data.ld_files.push_back(lf);
-                lnav_data.ld_text_source.tss_files.push_back(lf);
+                lnav_data.ld_text_source.push_back(lf);
                 break;
             }
         }
@@ -3564,6 +3584,9 @@ static void looper(void)
 
         lnav_data.ld_rl_view->add_possibility(
             LNM_COMMAND, "viewname", lnav_view_strings);
+
+        lnav_data.ld_rl_view->add_possibility(
+            LNM_COMMAND, "levelname", logline::level_names);
 
         (void)signal(SIGINT, sigint);
         (void)signal(SIGTERM, sigint);

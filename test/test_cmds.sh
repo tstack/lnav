@@ -143,6 +143,24 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ":switch-to-view text" \
+    -c ":filter-in World" \
+    ${test_dir}/logfile_plain.0
+check_output "plain text filter-in is not working" <<EOF
+Hello, World!
+Goodbye, World!
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":switch-to-view text" \
+    -c ":filter-out World" \
+    ${test_dir}/logfile_plain.0
+check_output "plain text filter-out is not working" <<EOF
+How are you?
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ":switch-to-view help" \
     ${test_dir}/logfile_access_log.0
 

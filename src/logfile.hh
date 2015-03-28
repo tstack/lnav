@@ -304,6 +304,10 @@ public:
 
     void set_logline_observer(logline_observer *llo);
 
+    logline_observer *get_logline_observer() const {
+        return this->lf_logline_observer;
+    };
+
     bool operator<(const logfile &rhs) const
     {
         bool retval;

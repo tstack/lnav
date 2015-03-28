@@ -74,6 +74,7 @@ public:
     logfile *tfs_logfile;
     size_t tfs_filter_count[MAX_FILTERS];
     std::vector<uint32_t> tfs_mask;
+    std::vector<uint32_t> tfs_index;
 };
 
 class text_filter {
@@ -345,6 +346,10 @@ public:
 
     };
 
+    virtual int get_filtered_count() const {
+        return 0;
+    };
+
 private:
     filter_stack tss_filters;
 };
@@ -356,7 +361,7 @@ public:
     virtual void text_overlay(textview_curses &tc) { };
 
     virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me) {
-        return false;        
+        return false;
     };
 };
 

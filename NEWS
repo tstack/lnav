@@ -11,6 +11,7 @@ lnav v0.7.3:
      * Added a 'relative-goto' command to move the current view relative
        to its current position.
      * Experimental support for linking with jemalloc.
+     * The plain text view now supports filtering.
 
      Fixes:
      * Autotools scripts overhaul.

@@ -871,12 +871,6 @@ static string com_enable_filter(string cmdline, vector<string> &args)
             fs.set_filter_enabled(lf, true);
             tss->text_filters_changed();
             tc->reload_data();
-            if (lnav_data.ld_rl_view != NULL) {
-                lnav_data.ld_rl_view->rem_possibility(
-                    LNM_COMMAND, "disabled-filter", args[1]);
-                lnav_data.ld_rl_view->add_possibility(
-                    LNM_COMMAND, "enabled-filter", args[1]);
-            }
             retval = "info: filter enabled";
         }
     }
@@ -909,12 +903,6 @@ static string com_disable_filter(string cmdline, vector<string> &args)
             fs.set_filter_enabled(lf, false);
             tss->text_filters_changed();
             tc->reload_data();
-            if (lnav_data.ld_rl_view != NULL) {
-                lnav_data.ld_rl_view->rem_possibility(
-                    LNM_COMMAND, "enabled-filter", args[1]);
-                lnav_data.ld_rl_view->add_possibility(
-                    LNM_COMMAND, "disabled-filter", args[1]);
-            }
             retval = "info: filter disabled";
         }
     }
@@ -1205,14 +1193,14 @@ static string com_close(string cmdline, vector<string> &args)
         if (tc == &lnav_data.ld_views[LNV_TEXT]) {
             textfile_sub_source &tss = lnav_data.ld_text_source;
 
-            if (tss.tss_files.empty()) {
+            if (tss.empty()) {
                 retval = "error: no text files are opened";
             }
             else {
                 fn = tss.current_file()->get_filename();
                 tss.current_file()->close();
 
-                if (tss.tss_files.size() == 1) {
+                if (tss.size() == 1) {
                     lnav_data.ld_view_stack.pop();
                 }
             }

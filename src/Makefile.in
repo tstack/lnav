@@ -281,22 +281,24 @@ am__noinst_HEADERS_DIST = ansi_scrubber.hh auto_fd.hh auto_mem.hh \
 	auto_pid.hh bookmarks.hh bottom_status_source.hh byte_array.hh \
 	chunky_index.hh column_namer.hh concise_index.hh \
 	data_scanner.hh data_parser.hh default-log-formats-json.hh \
-	db_sub_source.hh environ_vtab.hh format-text-files.hh \
-	grapher.hh grep_highlighter.hh grep_proc.hh help.hh help.txt \
-	hist_source.hh init.sql init-sql.hh intern_string.hh \
-	json_op.hh json_ptr.hh k_merge_tree.h line_buffer.hh \
-	listview_curses.hh lnav.hh lnav_commands.hh lnav_config.hh \
-	lnav_log.hh lnav_util.hh log_accel.hh log_data_helper.hh \
-	log_data_table.hh log_format.hh log_format_loader.hh \
-	logfile.hh logfile_sub_source.hh pcrepp.hh piper_proc.hh \
-	ptimec.hh readline_curses.hh readline_highlighters.hh \
-	sequence_matcher.hh sequence_sink.hh session_data.hh \
-	shared_buffer.hh sql_util.hh sqlite-extension-func.h \
-	status_controllers.hh statusview_curses.hh strnatcmp.h \
-	strong_int.hh sysclip.hh termios_guard.hh term_extra.hh \
-	textfile_sub_source.hh textview_curses.hh time_T.hh \
-	top_status_source.hh view_curses.hh vt52_curses.hh \
-	log_vtab_impl.hh log_format_impls.cc xterm_mouse.hh yajlpp.hh \
+	db_sub_source.hh environ_vtab.hh filter_observer.hh \
+	format-text-files.hh grapher.hh grep_highlighter.hh \
+	grep_proc.hh help.hh help.txt hist_source.hh init.sql \
+	init-sql.hh intern_string.hh json_op.hh json_ptr.hh \
+	k_merge_tree.h line_buffer.hh listview_curses.hh lnav.hh \
+	lnav_commands.hh lnav_config.hh lnav_log.hh lnav_util.hh \
+	log_accel.hh log_data_helper.hh log_data_table.hh \
+	log_format.hh log_format_loader.hh logfile.hh \
+	logfile_sub_source.hh pcrepp.hh piper_proc.hh \
+	pretty_printer.hh ptimec.hh readline_curses.hh \
+	readline_highlighters.hh sequence_matcher.hh sequence_sink.hh \
+	session_data.hh shared_buffer.hh sql_util.hh \
+	sqlite-extension-func.h status_controllers.hh \
+	statusview_curses.hh strnatcmp.h strong_int.hh sysclip.hh \
+	termios_guard.hh term_extra.hh textfile_sub_source.hh \
+	textview_curses.hh time_T.hh top_status_source.hh \
+	view_curses.hh vt52_curses.hh log_vtab_impl.hh \
+	log_format_impls.cc xterm_mouse.hh yajlpp.hh \
 	spookyhash/SpookyV2.h yajl/api/yajl_common.h \
 	yajl/api/yajl_gen.h yajl/api/yajl_parse.h yajl/api/yajl_tree.h \
 	yajl/yajl_alloc.h yajl/yajl_buf.h yajl/yajl_bytestack.h \
@@ -505,22 +507,24 @@ noinst_HEADERS = ansi_scrubber.hh auto_fd.hh auto_mem.hh auto_pid.hh \
 	bookmarks.hh bottom_status_source.hh byte_array.hh \
 	chunky_index.hh column_namer.hh concise_index.hh \
 	data_scanner.hh data_parser.hh default-log-formats-json.hh \
-	db_sub_source.hh environ_vtab.hh format-text-files.hh \
-	grapher.hh grep_highlighter.hh grep_proc.hh help.hh help.txt \
-	hist_source.hh init.sql init-sql.hh intern_string.hh \
-	json_op.hh json_ptr.hh k_merge_tree.h line_buffer.hh \
-	listview_curses.hh lnav.hh lnav_commands.hh lnav_config.hh \
-	lnav_log.hh lnav_util.hh log_accel.hh log_data_helper.hh \
-	log_data_table.hh log_format.hh log_format_loader.hh \
-	logfile.hh logfile_sub_source.hh pcrepp.hh piper_proc.hh \
-	ptimec.hh readline_curses.hh readline_highlighters.hh \
-	sequence_matcher.hh sequence_sink.hh session_data.hh \
-	shared_buffer.hh sql_util.hh sqlite-extension-func.h \
-	status_controllers.hh statusview_curses.hh strnatcmp.h \
-	strong_int.hh sysclip.hh termios_guard.hh term_extra.hh \
-	textfile_sub_source.hh textview_curses.hh time_T.hh \
-	top_status_source.hh view_curses.hh vt52_curses.hh \
-	log_vtab_impl.hh log_format_impls.cc xterm_mouse.hh yajlpp.hh \
+	db_sub_source.hh environ_vtab.hh filter_observer.hh \
+	format-text-files.hh grapher.hh grep_highlighter.hh \
+	grep_proc.hh help.hh help.txt hist_source.hh init.sql \
+	init-sql.hh intern_string.hh json_op.hh json_ptr.hh \
+	k_merge_tree.h line_buffer.hh listview_curses.hh lnav.hh \
+	lnav_commands.hh lnav_config.hh lnav_log.hh lnav_util.hh \
+	log_accel.hh log_data_helper.hh log_data_table.hh \
+	log_format.hh log_format_loader.hh logfile.hh \
+	logfile_sub_source.hh pcrepp.hh piper_proc.hh \
+	pretty_printer.hh ptimec.hh readline_curses.hh \
+	readline_highlighters.hh sequence_matcher.hh sequence_sink.hh \
+	session_data.hh shared_buffer.hh sql_util.hh \
+	sqlite-extension-func.h status_controllers.hh \
+	statusview_curses.hh strnatcmp.h strong_int.hh sysclip.hh \
+	termios_guard.hh term_extra.hh textfile_sub_source.hh \
+	textview_curses.hh time_T.hh top_status_source.hh \
+	view_curses.hh vt52_curses.hh log_vtab_impl.hh \
+	log_format_impls.cc xterm_mouse.hh yajlpp.hh \
 	spookyhash/SpookyV2.h $(am__append_1)
 libdiag_a_SOURCES = ansi_scrubber.cc bookmarks.cc \
 	collation-functions.cc db_sub_source.cc environ_vtab.cc \

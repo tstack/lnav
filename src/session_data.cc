@@ -753,20 +753,30 @@ static int read_word_wrap(yajlpp_parse_context *ypc, int value)
 static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     std::string cmdline = std::string((const char *)str, len);
+    const char **         view_name;
+    int view_index;
 
+    view_name = find(lnav_view_strings,
+            lnav_view_strings + LNV__MAX,
+            ypc->get_path_fragment(-3));
+    view_index = view_name - lnav_view_strings;
+    bool active = ensure_view(&lnav_data.ld_views[view_index]);
     execute_command(cmdline);
+    if (!active) {
+        lnav_data.ld_view_stack.pop();
+    }
 
     return 1;
 }
 
 static struct json_path_handler view_info_handlers[] = {
-    json_path_handler("/save-time",               read_save_time),
-    json_path_handler("/time-offset",             read_time_offset),
-    json_path_handler("/files#",                  read_files),
-    json_path_handler("/views/([^/]+)/top_line",  read_top_line),
-    json_path_handler("/views/([^/]+)/search",    read_last_search),
-    json_path_handler("/views/([^/]+)/word_wrap", read_word_wrap),
-    json_path_handler("/commands#",               read_commands),
+    json_path_handler("^/save-time",               read_save_time),
+    json_path_handler("^/time-offset",             read_time_offset),
+    json_path_handler("^/files#",                  read_files),
+    json_path_handler("^/views/([^/]+)/top_line",  read_top_line),
+    json_path_handler("^/views/([^/]+)/search",    read_last_search),
+    json_path_handler("^/views/([^/]+)/word_wrap", read_word_wrap),
+    json_path_handler("^/views/([^/]+)/commands#", read_commands),
 
     json_path_handler()
 };
@@ -1257,22 +1267,22 @@ void save_session(void)
                         cmd_array.gen((*filter_iter)->to_command());
                     }
 
-                    textview_curses::highlight_map_t &hmap =
-                            lnav_data.ld_views[LNV_LOG].get_highlights();
-                    textview_curses::highlight_map_t::iterator hl_iter;
+                    if (lpc == LNV_LOG) {
+                        textview_curses::highlight_map_t &hmap =
+                                lnav_data.ld_views[LNV_LOG].get_highlights();
+                        textview_curses::highlight_map_t::iterator hl_iter;
 
-                    for (hl_iter = hmap.begin();
-                         hl_iter != hmap.end();
-                         ++hl_iter) {
-                        if (hl_iter->first[0] == '$') {
-                            continue;
+                        for (hl_iter = hmap.begin();
+                             hl_iter != hmap.end();
+                             ++hl_iter) {
+                            if (hl_iter->first[0] == '$') {
+                                continue;
+                            }
+                            cmd_array.gen("highlight " + hl_iter->first);
                         }
-                        cmd_array.gen("highlight " + hl_iter->first);
                     }
                 }
             }
-
-            root_map.gen("commands");
         }
 
         yajl_gen_clear(handle);
@@ -1281,6 +1291,8 @@ void save_session(void)
         fclose(file.release());
 
         rename(view_file_tmp_name.c_str(), view_file_name.c_str());
+
+        log_debug("Saved session: %s", view_file_name.c_str());
     }
 }
 

@@ -34,6 +34,7 @@
 
 #include "logfile.hh"
 #include "textview_curses.hh"
+#include "filter_observer.hh"
 
 class textfile_sub_source : public text_sub_source {
 public:
@@ -41,12 +42,22 @@ public:
 
     textfile_sub_source() { };
 
+    bool empty() const {
+        return this->tss_files.empty();
+    }
+
+    size_t size() const {
+        return this->tss_files.size();
+    }
+
     size_t text_line_count()
     {
         size_t retval = 0;
 
         if (!this->tss_files.empty()) {
-            retval = this->current_file()->size();
+            logfile *lf = this->current_file();
+            line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+            retval = lfo->lfo_filter_state.tfs_index.size();
         }
 
         return retval;
@@ -58,8 +69,9 @@ public:
                              bool raw = false)
     {
         if (!this->tss_files.empty()) {
-            this->current_file()->
-            read_line(this->current_file()->begin() + line, value_out);
+            logfile *lf = this->current_file();
+            line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+            lf->read_line(lf->begin() + lfo->lfo_filter_state.tfs_index[line], value_out);
         }
         else {
             value_out.clear();
@@ -85,7 +97,9 @@ public:
         size_t retval = 0;
 
         if (!this->tss_files.empty()) {
-            retval = this->current_file()->line_length(this->current_file()->begin() + line);
+            logfile *lf = this->current_file();
+            line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+            retval = lf->line_length(lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
         }
 
         return retval;
@@ -106,8 +120,135 @@ public:
         }
 
         return this->tss_files.front()->get_filename();
+    };
+
+    void to_front(logfile *lf) {
+        this->tss_files.remove(lf);
+        this->tss_files.push_front(lf);
+    };
+
+    void rotate_left() {
+        this->tss_files.push_back(this->tss_files.front());
+        this->tss_files.pop_front();
+    };
+
+    void rotate_right() {
+        this->tss_files.push_front(this->tss_files.back());
+        this->tss_files.pop_back();
+    };
+
+    void remove(logfile *lf) {
+        file_iterator iter = std::find(this->tss_files.begin(),
+                this->tss_files.end(), lf);
+        if (iter != this->tss_files.end()) {
+            detach_observer(lf);
+            this->tss_files.erase(iter);
+        }
+    };
+
+    void push_back(logfile *lf) {
+        line_filter_observer *lfo = new line_filter_observer(
+                this->get_filters(), lf);
+        lf->set_logline_observer(lfo);
+        this->tss_files.push_back(lf);
+    };
+
+    template<class T> bool rescan_files(T &callback) {
+        file_iterator iter;
+        bool retval = false;
+
+        for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
+            logfile *lf = (*iter);
+
+            if (!lf->exists() || lf->is_closed()) {
+                iter = this->tss_files.erase(iter);
+                this->detach_observer(lf);
+                callback.closed_file(lf);
+                continue;
+            }
+
+            try {
+                uint32_t old_size = lf->size();
+                bool new_text_data = lf->rebuild_index();
+
+                if (lf->get_format() != NULL) {
+                    iter = this->tss_files.erase(iter);
+                    this->detach_observer(lf);
+                    callback.promote_file(lf);
+                    continue;
+                }
+
+                retval = retval || new_text_data;
+                callback.scanned_file(lf);
+
+                uint32_t filter_in_mask, filter_out_mask;
+
+                this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
+                line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+                for (uint32_t lpc = old_size; lpc < lf->size(); lpc++) {
+                    if (lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
+                        continue;
+                    }
+                    lfo->lfo_filter_state.tfs_index.push_back(lpc);
+                }
+            }
+            catch (const line_buffer::error &e) {
+                iter = this->tss_files.erase(iter);
+                lf->close();
+                this->detach_observer(lf);
+                callback.closed_file(lf);
+                continue;
+            }
+
+            ++iter;
+        }
+
+        return retval;
+    };
+
+    virtual void text_filters_changed() {
+        logfile *lf = this->current_file();
+
+        if (lf == NULL) {
+            return;
+        }
+
+        line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+        uint32_t filter_in_mask, filter_out_mask;
+
+        lf->reobserve_from(lf->begin() + lfo->get_min_count(lf->size()));
+
+        this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
+        lfo->lfo_filter_state.tfs_index.clear();
+        for (uint32_t lpc = 0; lpc < lf->size(); lpc++) {
+            if (lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
+                continue;
+            }
+            lfo->lfo_filter_state.tfs_index.push_back(lpc);
+        }
+    };
+
+    int get_filtered_count() const {
+        logfile *lf = this->current_file();
+        int retval = 0;
+
+        if (lf != NULL) {
+            line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+            retval = lf->size() - lfo->lfo_filter_state.tfs_index.size();
+        }
+        return retval;
     }
+
+private:
+    void detach_observer(logfile *lf) {
+        line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+        lf->set_logline_observer(NULL);
+        if (lfo != NULL) {
+            delete lfo;
+        }
+    };
 
     std::list<logfile *> tss_files;
 };
+
 #endif

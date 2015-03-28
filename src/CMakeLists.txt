@@ -73,6 +73,7 @@ set(diag_STAT_SRCS
     chunky_index.hh
     concise_index.hh
     column_namer.hh
+    filter_observer.hh
     format-text-files.hh
     grapher.hh
     grep_highlighter.hh

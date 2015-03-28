@@ -227,17 +227,17 @@ public:
         }
     };
 
-    void update_filtered(logfile_sub_source &lss)
+    void update_filtered(text_sub_source *tss)
     {
         status_field &sf = this->bss_fields[BSF_FILTERED];
 
-        if (lss.get_filtered_count() == 0) {
+        if (tss == NULL || tss->get_filtered_count() == 0) {
             sf.clear();
         }
         else {
             ui_periodic_timer &timer = ui_periodic_timer::singleton();
 
-            if (lss.get_filtered_count() == this->bss_last_filtered_count) {
+            if (tss->get_filtered_count() == this->bss_last_filtered_count) {
 
                 if (timer.fade_diff(this->bss_filter_counter) == 0) {
                     this->bss_fields[BSF_FILTERED].set_role(
@@ -247,10 +247,10 @@ public:
             else {
                 this->bss_fields[BSF_FILTERED].set_role(
                     view_colors::VCR_ALERT_STATUS);
-                this->bss_last_filtered_count = lss.get_filtered_count();
+                this->bss_last_filtered_count = tss->get_filtered_count();
                 timer.start_fade(this->bss_filter_counter, 3);
             }
-            sf.set_value("%'9d Not Shown", lss.get_filtered_count());
+            sf.set_value("%'9d Not Shown", tss->get_filtered_count());
         }
     };
 
