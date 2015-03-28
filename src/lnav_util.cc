@@ -264,11 +264,6 @@ struct tm *secs2tm(time_t *tim_p, struct tm *res)
         rem += SECSPERDAY;
         --days;
     }
-    while (rem >= SECSPERDAY)
-    {
-        rem -= SECSPERDAY;
-        ++days;
-    }
 
     /* compute hour, min, and sec */
     res->tm_hour = (int) (rem / SECSPERHOUR);
