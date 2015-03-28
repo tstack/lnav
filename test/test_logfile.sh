@@ -52,7 +52,7 @@ Dec 03 09:23:38 2006 -- 000
 Jan 03 09:47:02 2007 -- 000
 EOF
 
-if test x"$BZIP2_SUPPORT" -eq 1 -a test x"$BZIP2_CMD" != x""; then
+if test "$BZIP2_SUPPORT" -eq 1 -a test x"$BZIP2_CMD" != x""; then
     $BZIP2_CMD -z -c "${srcdir}/logfile_syslog.1" > logfile_syslog.1.bz2
 
     touch -t 200711030923 logfile_syslog.1.bz2
