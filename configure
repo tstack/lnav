@@ -7695,6 +7695,7 @@ fi
     saved_CFLAGS=$CFLAGS
     saved_CPPFLAGS=$CPPFLAGS
     saved_LDFLAGS=$LDFLAGS
+    saved_LIBS=$LIBS
     case "$with_readline" in #(
   no) :
     as_fn_error $? "readline required to build" "$LINENO" 5 ;; #(
@@ -7891,6 +7892,7 @@ fi
     CFLAGS=$saved_CFLAGS
     CPPFLAGS=$saved_CPPFLAGS
     LDFLAGS=$saved_LDFLAGS
+    LIBS=$saved_LIBS
 
 
 
