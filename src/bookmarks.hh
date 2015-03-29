@@ -108,7 +108,51 @@ public:
  * Dummy type whose instances are used to distinguish between
  * bookmarks maintained by different source modules.
  */
-class bookmark_type_t { };
+class bookmark_type_t {
+public:
+    typedef std::vector<bookmark_type_t *>::iterator type_iterator;
+
+    static type_iterator type_begin() {
+        return ALL_TYPES.begin();
+    };
+
+    static type_iterator type_end() {
+        return ALL_TYPES.end();
+    };
+
+    static bookmark_type_t *find_type(const std::string &name) {
+        type_iterator iter = find_if(type_begin(), type_end(), mark_eq(name));
+        bookmark_type_t *retval = NULL;
+
+        if (iter != type_end()) {
+            retval = (*iter);
+        }
+        return retval;
+    };
+
+    bookmark_type_t(const std::string &name) : bt_name(name) {
+        ALL_TYPES.push_back(this);
+    };
+
+    const std::string &get_name() const {
+        return this->bt_name;
+    };
+
+private:
+    struct mark_eq {
+        mark_eq(const std::string &name) : me_name(name) { };
+
+        bool operator()(bookmark_type_t *bt) {
+            return bt->bt_name == this->me_name;
+        };
+
+        const std::string &me_name;
+    };
+
+    static std::vector<bookmark_type_t *> ALL_TYPES;
+
+    const std::string bt_name;
+};
 
 /**
  * Map of bookmark types to bookmark vectors.

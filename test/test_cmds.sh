@@ -55,6 +55,39 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":next-mark error" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "next-mark error is not working" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":goto -1" \
+    -c ":prev-mark error" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "prev-mark error is not working" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":next-mark foobar" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "goto invalid is not working" <<EOF
+error: unknown bookmark type
+EOF
+
+check_output "invalid mark-type is working" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ":filter-in vmk" \
     ${test_dir}/logfile_access_log.0
 

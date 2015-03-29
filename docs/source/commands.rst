@@ -32,6 +32,10 @@ Navigation
   file, or the given timestamp in the log view.
 * relative-goto <line#|N%> - Move the current view up or down by the given
   amount.
+* next-mark error|warning|search|user|file|partition - Move to the next
+  bookmark of the given type in the current view.
+* prev-mark error|warning|search|user|file|partition - Move to the previous
+  bookmark of the given type in the current view.
 
 Time
 ----

@@ -16,7 +16,7 @@
         },
         "level-field": "sc_status",
         "level" : {
-            "error" : "^[^123]"
+            "error" : "^[^123].*"
             },
         "value" : {
             "c_ip" : {

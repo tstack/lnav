@@ -234,4 +234,8 @@ void execute_search(lnav_view_t view, const std::string &regex);
 
 void redo_search(lnav_view_t view_index);
 
+bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
+        bookmark_type_t *bt,
+        vis_line_t top);
+
 #endif

@@ -33,6 +33,10 @@
 
 #include "bookmarks.hh"
 
+using namespace std;
+
+std::vector<bookmark_type_t *> bookmark_type_t::ALL_TYPES;
+
 template<typename LineType>
 LineType bookmark_vector<LineType>::next(LineType start)
 {

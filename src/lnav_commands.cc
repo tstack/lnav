@@ -277,6 +277,37 @@ static string com_relative_goto(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_goto_mark(string cmdline, vector<string> &args)
+{
+    string retval = "";
+
+    if (args.empty()) {
+        args.push_back("mark-type");
+    }
+    else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        string type_name = "user";
+
+        if (args.size() > 1) {
+            type_name = args[1];
+        }
+
+        bookmark_type_t *bt = bookmark_type_t::find_type(type_name);
+        if (bt == NULL) {
+            retval = "error: unknown bookmark type";
+        }
+        else {
+            moveto_cluster(args[0] == "next-mark" ?
+                    &bookmark_vector<vis_line_t>::next :
+                    &bookmark_vector<vis_line_t>::prev,
+                    bt,
+                    tc->get_top());
+        }
+    }
+
+    return retval;
+}
+
 static bool csv_needs_quoting(const string &str)
 {
     return (str.find_first_of(",\"") != string::npos);
@@ -1658,6 +1689,8 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["current-time"]         = com_current_time;
     cmd_map["goto"]                 = com_goto;
     cmd_map["relative-goto"]        = com_relative_goto;
+    cmd_map["next-mark"]            = com_goto_mark;
+    cmd_map["prev-mark"]            = com_goto_mark;
     cmd_map["graph"]                = com_graph;
     cmd_map["help"]                 = com_help;
     cmd_map["highlight"]            = com_highlight;

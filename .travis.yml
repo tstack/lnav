@@ -6,7 +6,7 @@ before_install:
     - wget http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz -O /tmp/automake.tar.gz
     - tar -xvf /tmp/automake.tar.gz
     - (cd automake-1.15 && ./configure && make && sudo make install)
-script: ./autogen.sh && ./configure && make && make check
+script: ./autogen.sh && ./configure && make && make check && cat test/test-suite.log
 
 env:
   global:

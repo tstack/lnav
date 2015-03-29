@@ -141,8 +141,8 @@ static struct hist_level HIST_ZOOM_VALUES[] = {
 static const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) /
                                     sizeof(struct hist_level);
 
-static bookmark_type_t BM_EXAMPLE;
-static bookmark_type_t BM_QUERY;
+static bookmark_type_t BM_EXAMPLE("");
+static bookmark_type_t BM_QUERY("query");
 
 const char *lnav_view_strings[LNV__MAX + 1] = {
     "log",
@@ -595,6 +595,23 @@ static void add_filter_possibilities(textview_curses *tc)
         else {
             rc->add_possibility(LNM_COMMAND, "disabled-filter", tf->get_id());
         }
+    }
+}
+
+static void add_mark_possibilities()
+{
+    readline_curses *rc = lnav_data.ld_rl_view;
+
+    rc->clear_possibilities(LNM_COMMAND, "mark-type");
+    for (bookmark_type_t::type_iterator iter = bookmark_type_t::type_begin();
+         iter != bookmark_type_t::type_end();
+         ++iter) {
+        bookmark_type_t *bt = (*iter);
+
+        if (bt->get_name().empty()) {
+            continue;
+        }
+        rc->add_possibility(LNM_COMMAND, "mark-type", bt->get_name());
     }
 }
 
@@ -1264,17 +1281,19 @@ static vis_line_t next_cluster(
 {
     textview_curses *tc = lnav_data.ld_view_stack.top();
     vis_bookmarks &bm = tc->get_bookmarks();
+    bookmark_vector<vis_line_t> &bv = bm[bt];
+    bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
     vis_line_t last_top(top);
 
-    while ((top = (bm[bt].*f)(top)) != -1) {
+    while ((top = (bv.*f)(top)) != -1) {
         int diff = top - last_top;
 
-        if (diff > 1) {
+        if (!top_is_marked || diff > 1) {
             return top;
         }
         else if (diff < -1) {
             last_top = top;
-            while ((top = (bm[bt].*f)(top)) != -1) {
+            while ((top = (bv.*f)(top)) != -1) {
                 if (std::abs(last_top - top) > 1)
                     break;
                 last_top = top;
@@ -1287,10 +1306,9 @@ static vis_line_t next_cluster(
     return vis_line_t(-1);
 }
 
-static bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (
-                               vis_line_t),
-                           bookmark_type_t *bt,
-                           vis_line_t top)
+bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
+        bookmark_type_t *bt,
+        vis_line_t top)
 {
     textview_curses *tc = lnav_data.ld_view_stack.top();
     vis_line_t new_top;
@@ -1985,6 +2003,7 @@ static void handle_paging_key(int ch)
                 add_possibility(LNM_COMMAND, "filter",
                 lnav_data.ld_last_search[tc - lnav_data.ld_views]);
             add_filter_possibilities(tc);
+            add_mark_possibilities();
         lnav_data.ld_mode = LNM_COMMAND;
         lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
         lnav_data.ld_bottom_source.set_prompt("Enter an lnav command: "

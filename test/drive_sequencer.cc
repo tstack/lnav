@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 	frb[0] = "up";
 	frb[1] = "down";
 
-	static bookmark_type_t SEQUENCE;
+	static bookmark_type_t SEQUENCE("sequence");
 	
 	sequence_matcher sm(fc);
 	vis_bookmarks bm;

@@ -12,6 +12,8 @@ lnav v0.7.3:
        to its current position.
      * Experimental support for linking with jemalloc.
      * The plain text view now supports filtering.
+     * Added 'next-mark' and 'prev-mark' commands to jump to the next or
+       previous bookmarked line (e.g. error, warning, ...)
 
      Fixes:
      * Autotools scripts overhaul.

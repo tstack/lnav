@@ -38,9 +38,9 @@
 
 using namespace std;
 
-bookmark_type_t logfile_sub_source::BM_ERRORS;
-bookmark_type_t logfile_sub_source::BM_WARNINGS;
-bookmark_type_t logfile_sub_source::BM_FILES;
+bookmark_type_t logfile_sub_source::BM_ERRORS("error");
+bookmark_type_t logfile_sub_source::BM_WARNINGS("warning");
+bookmark_type_t logfile_sub_source::BM_FILES("");
 
 logfile_sub_source::logfile_sub_source()
     : lss_flags(0),

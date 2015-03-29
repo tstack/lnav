@@ -53,9 +53,9 @@ void text_filter::add_line(
     this->lf_lines_for_message += 1;
 }
 
-bookmark_type_t textview_curses::BM_USER;
-bookmark_type_t textview_curses::BM_PARTITION;
-bookmark_type_t textview_curses::BM_SEARCH;
+bookmark_type_t textview_curses::BM_USER("user");
+bookmark_type_t textview_curses::BM_PARTITION("partition");
+bookmark_type_t textview_curses::BM_SEARCH("search");
 
 string_attr_type textview_curses::SA_BODY;
 
