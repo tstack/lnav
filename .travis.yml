@@ -7,7 +7,7 @@ before_install:
     - tar -xvf /tmp/automake.tar.gz
     - (cd automake-1.15 && ./configure && make && sudo make install)
 script: ./autogen.sh && ./configure && make && make check
-after_script: [ -e test/test-suite.log ] && cat test/test-suite.log
+after_script: test -e test/test-suite.log && cat test/test-suite.log
 
 env:
   global:
