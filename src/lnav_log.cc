@@ -207,7 +207,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         localtm.tm_hour,
         localtm.tm_min,
         localtm.tm_sec,
-        curr_time.tv_usec / 1000,
+        (int)(curr_time.tv_usec / 1000),
         LEVEL_NAMES[level],
         basename((char *)src_file),
         line_number);
