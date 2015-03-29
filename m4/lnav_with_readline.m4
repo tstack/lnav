@@ -45,6 +45,7 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
     AS_VAR_SET(saved_CFLAGS, $CFLAGS)
     AS_VAR_SET(saved_CPPFLAGS, $CPPFLAGS)
     AS_VAR_SET(saved_LDFLAGS, $LDFLAGS)
+    AS_VAR_SET(saved_LIBS, $LIBS)
     AS_CASE(["$with_readline"],
         [no],
         AC_MSG_ERROR([readline required to build]),
@@ -87,6 +88,7 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
     AS_VAR_SET(CFLAGS, $saved_CFLAGS)
     AS_VAR_SET(CPPFLAGS, $saved_CPPFLAGS)
     AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
+    AS_VAR_SET(LIBS, $saved_LIBS)
 
     AC_SUBST([READLINE_LIBS])
     AC_SUBST([READLINE_CFLAGS])
