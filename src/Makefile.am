@@ -54,6 +54,7 @@ time_fmts.cc: ptimec
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
+	$(READLINE_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
 	$(PCRE_LDFLAGS) \
 	-pthread
@@ -61,6 +62,7 @@ AM_LDFLAGS = \
 AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \
 	-Wall \
+	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
 
 LDADD = \
