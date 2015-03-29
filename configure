@@ -583,7 +583,7 @@ PACKAGE_TARNAME='lnav'
 PACKAGE_VERSION='0.7.2'
 PACKAGE_STRING='lnav 0.7.2'
 PACKAGE_BUGREPORT='lnav@googlegroups.com'
-PACKAGE_URL=''
+PACKAGE_URL='http://lnav.org'
 
 ac_unique_file="src/lnav.cc"
 ac_default_prefix=/usr
@@ -1443,6 +1443,7 @@ Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
 
 Report bugs to <lnav@googlegroups.com>.
+lnav home page: <http://lnav.org>.
 _ACEOF
 ac_status=$?
 fi
@@ -8734,7 +8735,8 @@ $config_headers
 Configuration commands:
 $config_commands
 
-Report bugs to <lnav@googlegroups.com>."
+Report bugs to <lnav@googlegroups.com>.
+lnav home page: <http://lnav.org>."
 
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
