@@ -42,6 +42,9 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
         [with_readline="yes"]
     )dnl
 
+    AS_VAR_SET(saved_CFLAGS, $CFLAGS)
+    AS_VAR_SET(saved_CPPFLAGS, $CPPFLAGS)
+    AS_VAR_SET(saved_LDFLAGS, $LDFLAGS)
     AS_CASE(["$with_readline"],
         [no],
         AC_MSG_ERROR([readline required to build]),
@@ -49,6 +52,8 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
         [],
         [dnl
         AS_VAR_SET([READLINE_CFLAGS], ["-I$with_readline/include"])
+        AS_VAR_SET([READLINE_LDFLAGS], ["-L$with_readline/lib"])
+        LNAV_ADDTO(CFLAGS, [-I$with_readline/include])
         LNAV_ADDTO(CPPFLAGS, [-I$with_readline/include])
         dnl We want the provided path to be the first in the search order.
         LDFLAGS="-L$with_readline/lib $LDFLAGS"
@@ -61,18 +66,6 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
         [$CURSES_LIB]dnl
     )dnl
 
-    AC_CHECK_HEADERS([readline.h readline/readline.h],
-        [dnl
-        AS_VAR_SET([HAVE_READLINE_HEADERS], [1])
-        break
-        ]dnl
-    )
-
-
-    AS_VAR_SET_IF([HAVE_READLINE_HEADERS], [],
-        [AC_MSG_ERROR([readline headers not found])]
-    )
-
     dnl Ensure that the readline library has the required symbols.
     dnl i.e. We haven't picked up editline.
     AC_SEARCH_LIBS([history_set_history_state], [readline],
@@ -81,7 +74,22 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
         [$CURSES_LIB]dnl
     )
 
+    AC_CHECK_HEADERS([readline.h readline/readline.h],
+        [dnl
+        AS_VAR_SET([HAVE_READLINE_HEADERS], [1])
+        break
+        ]dnl
+    )
+
+    AS_VAR_SET_IF([HAVE_READLINE_HEADERS], [],
+        [AC_MSG_ERROR([readline headers not found])]
+    )
+    AS_VAR_SET(CFLAGS, $saved_CFLAGS)
+    AS_VAR_SET(CPPFLAGS, $saved_CPPFLAGS)
+    AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
+
     AC_SUBST([READLINE_LIBS])
     AC_SUBST([READLINE_CFLAGS])
+    AC_SUBST([READLINE_LDFLAGS])
     ]dnl
 )dnl

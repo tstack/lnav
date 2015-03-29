@@ -633,6 +633,7 @@ STATIC_LDFLAGS
 SQLITE3_LIBS
 SQLITE3_LDFLAGS
 SQLITE3_CFLAGS
+READLINE_LDFLAGS
 READLINE_CFLAGS
 READLINE_LIBS
 PCRE_CFLAGS
@@ -7691,6 +7692,9 @@ else
 
 fi
 
+    saved_CFLAGS=$CFLAGS
+    saved_CPPFLAGS=$CPPFLAGS
+    saved_LDFLAGS=$LDFLAGS
     case "$with_readline" in #(
   no) :
     as_fn_error $? "readline required to build" "$LINENO" 5 ;; #(
@@ -7698,6 +7702,28 @@ fi
      ;; #(
   *) :
             READLINE_CFLAGS="-I$with_readline/include"
+        READLINE_LDFLAGS="-L$with_readline/lib"
+
+  if test "x$CFLAGS" = "x"; then
+    test "x$verbose" = "xyes" && echo "  setting CFLAGS to \"-I$with_readline/include\""
+    CFLAGS="-I$with_readline/include"
+  else
+    ats_addto_bugger="-I$with_readline/include"
+    for i in $ats_addto_bugger; do
+      ats_addto_duplicate="0"
+      for j in $CFLAGS; do
+        if test "x$i" = "x$j"; then
+          ats_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $ats_addto_duplicate = "0"; then
+        test "x$verbose" = "xyes" && echo "  adding \"$i\" to CFLAGS"
+        CFLAGS="$CFLAGS $i"
+      fi
+    done
+  fi
+
 
   if test "x$CPPFLAGS" = "x"; then
     test "x$verbose" = "xyes" && echo "  setting CPPFLAGS to \"-I$with_readline/include\""
@@ -7781,30 +7807,6 @@ else
   as_fn_error $? "libreadline library not found" "$LINENO" 5
 fi
 
-    for ac_header in readline.h readline/readline.h
-do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
-_ACEOF
-         HAVE_READLINE_HEADERS=1
-        break
-
-fi
-
-done
-
-
-
-    if ${HAVE_READLINE_HEADERS+:} false; then :
-
-else
-  as_fn_error $? "readline headers not found" "$LINENO" 5
-
-fi
-
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing history_set_history_state" >&5
 $as_echo_n "checking for library containing history_set_history_state... " >&6; }
 if ${ac_cv_search_history_set_history_state+:} false; then :
@@ -7862,6 +7864,33 @@ if test "$ac_res" != no; then :
 else
   as_fn_error $? "libreadline does not have the required symbols. editline possibly masquerading as readline." "$LINENO" 5
 fi
+
+
+    for ac_header in readline.h readline/readline.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+         HAVE_READLINE_HEADERS=1
+        break
+
+fi
+
+done
+
+
+    if ${HAVE_READLINE_HEADERS+:} false; then :
+
+else
+  as_fn_error $? "readline headers not found" "$LINENO" 5
+
+fi
+    CFLAGS=$saved_CFLAGS
+    CPPFLAGS=$saved_CPPFLAGS
+    LDFLAGS=$saved_LDFLAGS
 
 
 

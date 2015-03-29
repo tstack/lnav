@@ -16,6 +16,7 @@ simple-db.db: simple-db.sql
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
+	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
 
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage
@@ -56,6 +57,7 @@ check_PROGRAMS = \
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
+	$(READLINE_LDFLAGS) \
 	-pthread
 
 LDADD = -lz
