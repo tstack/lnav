@@ -40,7 +40,7 @@ done
 
 (cd autoconf-2.69 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
-(cd automake-1.14.1 && ./configure --prefix=${FAKE_ROOT} && make && make install)
+(cd automake-1.15 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
 (cd ncurses-5.9 && \
  ./configure --prefix=${FAKE_ROOT} \
