@@ -126,14 +126,18 @@ static int vt_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
 
     vtab_cursor *p_cur = (vtab_cursor *)new vtab_cursor();
 
-    *pp_cursor = (sqlite3_vtab_cursor *)p_cur;
+    if (p_cur == NULL) {
+        return SQLITE_NOMEM;
+    } else {
+        *pp_cursor = (sqlite3_vtab_cursor *)p_cur;
 
-    p_cur->base.pVtab = p_svt;
-    p_cur->env_cursor = environ;
+        p_cur->base.pVtab = p_svt;
+        p_cur->env_cursor = environ;
 
-    vt_next((sqlite3_vtab_cursor *)p_cur);
+        vt_next((sqlite3_vtab_cursor *)p_cur);
+    }
 
-    return p_cur ? SQLITE_OK : SQLITE_NOMEM;
+    return SQLITE_OK;
 }
 
 static int vt_close(sqlite3_vtab_cursor *cur)

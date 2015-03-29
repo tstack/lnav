@@ -284,7 +284,7 @@ public:
            " Current Time: %s  Original Time: %s  Offset: %+d.%03d",
            curr_timestamp,
            old_timestamp,
-           (int)offset_tv.tv_sec, offset_tv.tv_usec / 1000);
+           (int)offset_tv.tv_sec, (int)(offset_tv.tv_usec / 1000));
         this->fos_lines.push_back(log_time);
 
         if (this->fos_log_helper.ldh_line_values.empty()) {
