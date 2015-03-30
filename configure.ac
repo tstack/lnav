@@ -148,7 +148,7 @@ case "$host_os" in
         ;;
 esac
 
-ALL_LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS"
+AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
 
 static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"
 static_lib_list="$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"
