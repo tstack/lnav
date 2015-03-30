@@ -966,9 +966,11 @@ void rebuild_indexes(bool force)
         }
     }
 
-    textview_curses *tc = lnav_data.ld_view_stack.top();
-    lnav_data.ld_bottom_source.update_filtered(tc->get_sub_source());
-    lnav_data.ld_scroll_broadcaster.invoke(tc);
+    if (!lnav_data.ld_view_stack.empty()) {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        lnav_data.ld_bottom_source.update_filtered(tc->get_sub_source());
+        lnav_data.ld_scroll_broadcaster.invoke(tc);
+    }
 }
 
 class plain_text_source
