@@ -114,13 +114,11 @@ AS_CASE(["$host_os"],
     [darwin*],
     [],
     AC_SEARCH_LIBS(Gpm_Open, gpm,
-       [],
-       [dnl
-        AC_MSG_WARN(m4_join([ ],
-                    [libgpm not found. If build fails later],
-                    [consider installing gpm dev package])dnl
-        )
-       ]
+       AS_VAR_SET(HAVE_GPM, "1"),
+       AC_MSG_WARN(m4_join([ ],
+                   [libgpm not found. If build fails later],
+                   [consider installing gpm dev package])dnl
+       )
     )
 )
 
@@ -188,6 +186,37 @@ if test x"${enable_static}" != x"no"; then
     done
 fi
 AC_SUBST(STATIC_LDFLAGS)
+
+AS_CASE(["$host_os"],
+    [darwin*],
+    [],
+    [
+    curses_lib=$(echo $CURSES_LIB | sed -e 's/-l//')
+    AS_IF([test $? -eq 0],
+        [
+        AS_CASE(["$curses_lib"],
+            [ncurses*],
+            [AS_VAR_SET_IF(HAVE_GPM, [],
+                [
+                AC_MSG_NOTICE([Checking for libgpm dependency])
+                AS_VAR_SET(saved_LDFLAGS, $LDFLAGS)
+                AS_VAR_SET(LDFLAGS, "$STATIC_LDFLAGS $LDFLAGS")
+                AS_VAR_SET(saved_LIBS, $LIBS)
+                AC_CHECK_LIB($curses_lib, mousemask,
+                    [
+                    AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
+                    AS_VAR_SET(LIBS, $saved_LIBS)
+                    ],
+                    AC_MSG_ERROR([libgpm development libraries are required to build]))dnl
+                ])dnl
+            ])
+        ],
+        [
+        AC_MSG_WARN([Unable to test for dependepncy on gpm.])
+        AC_MSG_WARN([If build fails during make consider installing libgpm development libraries.])
+        ])dnl
+    ]dnl
+)
 
 AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
 
