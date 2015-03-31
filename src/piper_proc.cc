@@ -111,7 +111,9 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         int nullfd;
 
         nullfd = open("/dev/null", O_RDWR);
-        dup2(nullfd, STDIN_FILENO);
+        if (pipefd != STDIN_FILENO) {
+            dup2(nullfd, STDIN_FILENO);
+        }
         dup2(nullfd, STDOUT_FILENO);
         for (int fd_to_close = 0; fd_to_close < 1024; fd_to_close++) {
             int flags;
