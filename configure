@@ -6225,11 +6225,10 @@ $as_echo "$ac_cv_search_Gpm_Open" >&6; }
 ac_res=$ac_cv_search_Gpm_Open
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
+  HAVE_GPM="1"
 else
-          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libgpm not found. If build fails later consider installing gpm dev package        " >&5
-$as_echo "$as_me: WARNING: libgpm not found. If build fails later consider installing gpm dev package        " >&2;}
-
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libgpm not found. If build fails later consider installing gpm dev package       " >&5
+$as_echo "$as_me: WARNING: libgpm not found. If build fails later consider installing gpm dev package       " >&2;}
 
 fi
 
@@ -8147,6 +8146,87 @@ if test x"${enable_static}" != x"no"; then
     done
 fi
 
+
+case "$host_os" in #(
+  darwin*) :
+     ;; #(
+  *) :
+
+    curses_lib=$(echo $CURSES_LIB | sed -e 's/-l//')
+    if test $? -eq 0; then :
+
+        case "$curses_lib" in #(
+  ncurses*) :
+    if ${HAVE_GPM+:} false; then :
+
+else
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: Checking for libgpm dependency" >&5
+$as_echo "$as_me: Checking for libgpm dependency" >&6;}
+                saved_LDFLAGS=$LDFLAGS
+                LDFLAGS="$STATIC_LDFLAGS $LDFLAGS"
+                saved_LIBS=$LIBS
+                as_ac_Lib=`$as_echo "ac_cv_lib_$curses_lib''_mousemask" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mousemask in -l$curses_lib" >&5
+$as_echo_n "checking for mousemask in -l$curses_lib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$curses_lib  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mousemask ();
+int
+main ()
+{
+return mousemask ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+
+                    LDFLAGS=$saved_LDFLAGS
+                    LIBS=$saved_LIBS
+
+else
+  as_fn_error $? "libgpm development libraries are required to build" "$LINENO" 5
+fi
+
+fi             ;; #(
+  *) :
+     ;;
+esac
+
+else
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unable to test for dependepncy on gpm." >&5
+$as_echo "$as_me: WARNING: Unable to test for dependepncy on gpm." >&2;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: If build fails during make consider installing libgpm development libraries." >&5
+$as_echo "$as_me: WARNING: If build fails during make consider installing libgpm development libraries." >&2;}
+
+fi     ;;
+esac
 
  if test $HAVE_LOCAL_YAJL -eq 0; then
   USE_INCLUDED_YAJL_TRUE=
