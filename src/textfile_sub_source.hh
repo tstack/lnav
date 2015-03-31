@@ -243,9 +243,7 @@ private:
     void detach_observer(logfile *lf) {
         line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
         lf->set_logline_observer(NULL);
-        if (lfo != NULL) {
-            delete lfo;
-        }
+        delete lfo;
     };
 
     std::list<logfile *> tss_files;

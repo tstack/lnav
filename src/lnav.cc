@@ -1165,9 +1165,7 @@ static void open_schema_view(void)
         schema += vtab_iter->second->get_table_statement();
     }
 
-    if (schema_tc->get_sub_source() != NULL) {
-        delete schema_tc->get_sub_source();
-    }
+    delete schema_tc->get_sub_source();
 
     schema_tc->set_sub_source(new plain_text_source(schema));
 }
@@ -1181,9 +1179,7 @@ static void open_pretty_view(void)
         ostringstream stream;
         bool first_line = true;
 
-        if (pretty_tc->get_sub_source() != NULL) {
-            delete pretty_tc->get_sub_source();
-        }
+        delete pretty_tc->get_sub_source();
         for (vis_line_t vl = log_tc->get_top(); vl < log_tc->get_bottom(); ++vl) {
             content_line_t cl = lss.at(vl);
             logfile *lf = lss.find(cl);
@@ -2925,9 +2921,7 @@ static void rl_display_matches(void *dummy, readline_curses *rc)
     }
     lnav_data.ld_status[LNS_BOTTOM].set_top(-bottom_height);
 
-    if (tc.get_sub_source() != NULL) {
-        delete tc.get_sub_source();
-    }
+    delete tc.get_sub_source();
 
     if (cols == 1) {
         tc.set_sub_source(new plain_text_source(rc->get_matches()));

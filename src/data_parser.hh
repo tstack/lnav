@@ -273,10 +273,8 @@ public:
 
         ~element()
         {
-            if (this->e_sub_elements != NULL) {
-                delete this->e_sub_elements;
-                this->e_sub_elements = NULL;
-            }
+            delete this->e_sub_elements;
+            this->e_sub_elements = NULL;
         };
 
         element & operator=(const element &other)
