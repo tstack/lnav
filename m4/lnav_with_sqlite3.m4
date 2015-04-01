@@ -11,10 +11,7 @@ dnl
 AC_DEFUN([LNAV_WITH_SQLITE3],
 [dnl
     AC_ARG_WITH([sqlite3],
-        AC_HELP_STRING(
-            [--with-sqlite3=@<:@prefix@:>@],
-            [compile with sqlite3]
-        ),
+        AS_HELP_STRING([--with-sqlite3=@<:@prefix@:>@],[compile with sqlite3]),
         [],
         [with_sqlite3="yes"]
     )

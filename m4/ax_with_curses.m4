@@ -184,7 +184,6 @@
 
 #serial 13
 
-AU_ALIAS([MP_WITH_CURSES], [AX_WITH_CURSES])
 AC_DEFUN([AX_WITH_CURSES], [
     AC_ARG_VAR([CURSES_LIB], [linker library for Curses, e.g. -lcurses])
     AC_ARG_WITH([ncurses], [AS_HELP_STRING([--with-ncurses],

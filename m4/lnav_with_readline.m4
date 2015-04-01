@@ -34,10 +34,8 @@ AC_DEFUN([AX_PATH_LIB_READLINE],
     AC_REQUIRE([AX_WITH_CURSES])
     AC_MSG_CHECKING([lib readline])
     AC_ARG_WITH([readline],
-        AC_HELP_STRING(
-            [--with-readline@<:@=prefix@:>@],
-            [compile xmlreadline part (via libreadline check)]
-        ),
+        AS_HELP_STRING([--with-readline@<:@=prefix@:>@],dnl
+            [compile xmlreadline part (via libreadline check)]),
         [],
         [with_readline="yes"]
     )dnl
