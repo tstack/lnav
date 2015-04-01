@@ -3,9 +3,6 @@ language: cpp
 compiler: gcc
 before_install:
     - sudo apt-get install -y -qq libgpm-dev
-    - wget http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz -O /tmp/automake.tar.gz
-    - tar -xvf /tmp/automake.tar.gz
-    - (cd automake-1.15 && ./configure && make && sudo make install)
 script: ./autogen.sh && ./configure && make && make check
 after_script: test -e test/test-suite.log && cat test/test-suite.log
 
