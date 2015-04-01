@@ -143,8 +143,8 @@ public:
         this->dls_headers.clear();
         this->dls_headers_to_graph.clear();
         this->dls_column_types.clear();
-        for (int row = 0; row < this->dls_rows.size(); row++) {
-            for (int col = 0; col < this->dls_rows[row].size(); col++) {
+        for (size_t row = 0; row < this->dls_rows.size(); row++) {
+            for (size_t col = 0; col < this->dls_rows[row].size(); col++) {
                 if (this->dls_rows[row][col] != NULL_STR) {
                     free((void *)this->dls_rows[row][col]);
                 }
