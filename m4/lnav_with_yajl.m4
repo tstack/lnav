@@ -30,10 +30,7 @@ dnl @file lnav_with_yajl.m4
 AC_DEFUN([LNAV_WITH_LOCAL_YAJL],
     [
     AC_ARG_WITH([yajl],
-        AC_HELP_STRING(
-            [--with-yajl=DIR],
-            [use a local installed version of yajl]
-        ),
+        AS_HELP_STRING([--with-yajl=DIR],[use a local installed version of yajl]),
         [
         AS_IF([test "$withval" != "no"],
             [
