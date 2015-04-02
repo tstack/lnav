@@ -234,6 +234,8 @@ public:
         unsigned long width, height;
 
         getmaxyx(this->sc_window, height, width);
+        // Silence the compiler. Remove this if height is used at a later stage.
+        (void)height;
         remaining = width - 4;
         for (int field = 0; field < field_count; field++) {
             status_field &sf = this->sc_source->statusview_value_for_field(
