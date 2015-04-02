@@ -95,7 +95,7 @@ public:
     std::string current_ptr() {
         std::string retval;
 
-        for (int lpc = 0; lpc < this->jpw_array_indexes.size(); lpc++) {
+        for (size_t lpc = 0; lpc < this->jpw_array_indexes.size(); lpc++) {
             retval.append("/");
             if (this->jpw_array_indexes[lpc] == -1) {
                 retval.append(this->jpw_keys[lpc]);
@@ -135,7 +135,7 @@ public:
     static size_t encode(char *dst, size_t dst_len, const char *src, size_t src_len = -1) {
         size_t retval = 0;
 
-        if (src_len == -1) {
+        if (src_len == (size_t)-1) {
             src_len = strlen(src);
         }
 
