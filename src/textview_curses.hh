@@ -196,7 +196,7 @@ public:
 
             used[index] = true;
         }
-        for (size_t lpc = 0; lpc < logfile_filter_state::MAX_FILTERS; lpc++) {
+        for (int lpc = 0; lpc < logfile_filter_state::MAX_FILTERS; lpc++) {
             if (!used[lpc]) {
                 return lpc;
             }
