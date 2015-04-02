@@ -2079,7 +2079,7 @@ static void handle_paging_key(int ch)
 
     case 'T':
         lnav_data.ld_log_source.toggle_time_offset();
-        if (lss->is_time_offset_enabled()) {
+        if (lss && lss->is_time_offset_enabled()) {
             lnav_data.ld_rl_view->set_alt_value(
                 HELP_MSG_2(s, S, "to move forward/backward through slow downs"));
         }
