@@ -4,7 +4,7 @@ compiler: gcc
 before_install:
     - sudo apt-get install -y -qq libgpm-dev
 script: ./autogen.sh && ./configure && make && make check
-after_script: ls && ls test && cat test/test-suite.log
+after_script: test -e test/test-suite.log  && cat test/test-suite.log
 
 env:
   global:
