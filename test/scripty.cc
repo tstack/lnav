@@ -621,7 +621,7 @@ int main(int argc, char *argv[])
 			    write(ct.get_fd(), buffer, rc);
 			    if (scripty_data.sd_to_child != NULL) {
 				fprintf(scripty_data.sd_to_child,
-					"sleep %ld.%06d\n"
+					"sleep %ld.%06ld\n"
 					"write ",
 					diff.tv_sec, diff.tv_usec);
 				dump_memory(scripty_data.sd_to_child,
