@@ -111,7 +111,7 @@ static char *log_alloc(void)
 {
     off_t data_end = log_ring.lr_length + MAX_LOG_LINE_SIZE;
 
-    if (data_end >= BUFFER_SIZE) {
+    if (data_end >= (off_t)BUFFER_SIZE) {
         const char *new_start = &log_ring.lr_data[MAX_LOG_LINE_SIZE];
 
         new_start = (const char *)memchr(
@@ -121,7 +121,7 @@ static char *log_alloc(void)
         log_ring.lr_length = 0;
 
         assert(log_ring.lr_frag_start >= 0);
-        assert(log_ring.lr_frag_start <= BUFFER_SIZE);
+        assert(log_ring.lr_frag_start <= (off_t)BUFFER_SIZE);
     } else if (data_end >= log_ring.lr_frag_start) {
         const char *new_start = &log_ring.lr_data[log_ring.lr_frag_start];
 
@@ -130,7 +130,7 @@ static char *log_alloc(void)
         assert(new_start != NULL);
         log_ring.lr_frag_start = new_start - log_ring.lr_data;
         assert(log_ring.lr_frag_start >= 0);
-        assert(log_ring.lr_frag_start <= BUFFER_SIZE);
+        assert(log_ring.lr_frag_start <= (off_t)BUFFER_SIZE);
     }
 
     return &log_ring.lr_data[log_ring.lr_length];
@@ -257,7 +257,7 @@ static void sigabrt(int sig)
     snprintf(latest_crash_path, sizeof(latest_crash_path),
         "%s/latest-crash.log", lnav_log_crash_dir);
     if ((fd = open(crash_path, O_CREAT|O_TRUNC|O_WRONLY, 0600)) != -1) {
-        if (log_ring.lr_frag_start < BUFFER_SIZE) {
+        if (log_ring.lr_frag_start < (off_t)BUFFER_SIZE) {
             write(fd, &log_ring.lr_data[log_ring.lr_frag_start],
                 log_ring.lr_frag_end - log_ring.lr_frag_start);
         }
