@@ -604,7 +604,7 @@ static int vt_update(sqlite3_vtab *tab,
 
         vt->tc->set_user_mark(&textview_curses::BM_USER, vis_line_t(rowid), val);
         rowid += 1;
-        while (rowid < vt->lss->text_line_count()) {
+        while ((size_t)rowid < vt->lss->text_line_count()) {
             vis_line_t vl(rowid);
             content_line_t cl = vt->lss->at(vl);
             logline *ll = vt->lss->find_line(cl);

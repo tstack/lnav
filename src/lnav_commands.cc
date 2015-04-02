@@ -350,7 +350,7 @@ static void json_write_row(yajl_gen handle, int row)
     db_label_source &dls = lnav_data.ld_db_rows;
     yajlpp_map obj_map(handle);
 
-    for (int col = 0; col < dls.dls_column_types.size(); col++) {
+    for (size_t col = 0; col < dls.dls_column_types.size(); col++) {
         obj_map.gen(dls.dls_headers[col]);
 
         if (dls.dls_rows[row][col] == db_label_source::NULL_STR) {
@@ -499,7 +499,7 @@ static string com_save_to(string cmdline, vector<string> &args)
             {
                 yajlpp_array root_array(handle);
 
-                for (int row = 0; row < dls.dls_rows.size(); row++) {
+                for (size_t row = 0; row < dls.dls_rows.size(); row++) {
                     json_write_row(handle, row);
                 }
             }
@@ -1134,7 +1134,7 @@ static string com_open(string cmdline, vector<string> &args)
         return retval;
     }
 
-    for (int lpc = 0; lpc < wordmem->we_wordc; lpc++) {
+    for (size_t lpc = 0; lpc < wordmem->we_wordc; lpc++) {
         string fn = wordmem->we_wordv[lpc];
 
         if (access(fn.c_str(), R_OK) != 0 &&

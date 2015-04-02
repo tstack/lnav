@@ -655,7 +655,7 @@ bool setup_logline_table()
             for (pair_iter = ldh.ldh_json_pairs.begin();
                pair_iter != ldh.ldh_json_pairs.end();
                ++pair_iter) {
-                for (int lpc = 0; lpc < pair_iter->second.size(); lpc++) {
+                for (size_t lpc = 0; lpc < pair_iter->second.size(); lpc++) {
                     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*",
                         ldh.format_json_getter(pair_iter->first, lpc));
                 }
@@ -2079,7 +2079,7 @@ static void handle_paging_key(int ch)
 
     case 'T':
         lnav_data.ld_log_source.toggle_time_offset();
-        if (lss->is_time_offset_enabled()) {
+        if (lss && lss->is_time_offset_enabled()) {
             lnav_data.ld_rl_view->set_alt_value(
                 HELP_MSG_2(s, S, "to move forward/backward through slow downs"));
         }
@@ -2930,7 +2930,7 @@ static void rl_display_matches(void *dummy, readline_curses *rc)
         std::vector<std::string> horiz_matches;
 
         horiz_matches.resize(rows);
-        for (int lpc = 0; lpc < matches.size(); lpc++) {
+        for (size_t lpc = 0; lpc < matches.size(); lpc++) {
             int curr_row = lpc % rows;
 
             horiz_matches[curr_row].append(matches[lpc]);

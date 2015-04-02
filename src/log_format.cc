@@ -83,7 +83,7 @@ logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool e
 {
     logline::level_t retval = logline::LEVEL_UNKNOWN;
 
-    if (len == (size_t)-1) {
+    if (len == (ssize_t)-1) {
         len = strlen(levelstr);
     }
 
@@ -1258,7 +1258,7 @@ public:
              iter != elf.elf_value_defs.end();
              ++iter) {
             const external_log_format::value_def &vd = iter->second;
-            int type;
+            int type = 0;
 
             switch (vd.vd_kind) {
             case logline_value::VALUE_NULL:
