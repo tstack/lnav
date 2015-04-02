@@ -1733,7 +1733,7 @@ static void handle_paging_key(int ch)
     case 'L': {
         vis_line_t top = tc->get_top();
         vis_line_t bottom = tc->get_bottom();
-        char line_break[80];
+        char line_break[120];
 
         nodelay(lnav_data.ld_window, 0);
         endwin();
@@ -1743,7 +1743,9 @@ static void handle_paging_key(int ch)
             new_termios.c_oflag |= ONLCR | OPOST;
             tcsetattr(STDOUT_FILENO, TCSANOW, &new_termios);
             snprintf(line_break, sizeof(line_break),
-                    "\n---------------- Lines %'d-%'d ----------------\n\n",
+                    "\n---------------- Lines %'d-%'d, "
+                            "press any key to exit lo-fi mode "
+                            "----------------\n\n",
                     (int) top, (int) bottom);
             write(STDOUT_FILENO, line_break, strlen(line_break));
             for (; top <= bottom; ++top) {
@@ -2087,6 +2089,10 @@ static void handle_paging_key(int ch)
         break;
 
     case 'i':
+    {
+        int *foo = 0;
+        *foo = 1;
+    }
         if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
             lnav_data.ld_rl_view->set_alt_value(
                 HELP_MSG_2(z, Z, "to zoom in/out"));
@@ -3519,6 +3525,8 @@ private:
 
 static void handle_key(int ch)
 {
+    lnav_data.ld_input_state.push_back(ch);
+
     switch (ch) {
     case CEOF:
     case KEY_RESIZE:
@@ -4504,6 +4512,7 @@ int main(int argc, char *argv[])
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
             perror("cannot dup stdout to stdin");
         }
+        lnav_data.ld_pipers.push_back(stdin_reader.release());
     }
 
     if (lnav_data.ld_file_names.empty() && !(lnav_data.ld_flags & LNF_HELP)) {

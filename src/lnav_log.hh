@@ -38,6 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
+#include <sys/types.h>
+#include <sys/queue.h>
 
 #ifndef __dead2
 #define __dead2 __attribute__((noreturn))
@@ -54,8 +56,37 @@ void log_argv(int argc, char *argv[]);
 void log_host_info(void);
 void log_msg(enum lnav_log_level_t level, const char *src_file, int line_number,
     const char *fmt, ...);
+void log_msg_extra(const char *fmt, ...);
+void log_msg_extra_complete();
 void log_install_handlers(void);
 void log_abort(void) __dead2;
+
+class log_state_dumper {
+public:
+    log_state_dumper() {
+        LIST_INSERT_HEAD(&DUMPER_LIST.lsl_list, this, lsd_link);
+    }
+
+    virtual ~log_state_dumper() {
+        LIST_REMOVE(this, lsd_link);
+    };
+
+    virtual void log_state() {
+
+    };
+
+    struct log_state_list {
+        log_state_list() {
+            LIST_INIT(&this->lsl_list);
+        }
+
+        LIST_HEAD(dumper_head, log_state_dumper) lsl_list;
+    };
+
+    static log_state_list DUMPER_LIST;
+
+    LIST_ENTRY(log_state_dumper) lsd_link;
+};
 
 extern FILE *lnav_log_file;
 extern const char *lnav_log_crash_dir;

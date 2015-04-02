@@ -32,7 +32,6 @@
 #ifndef __chunky_index_hh
 #define __chunky_index_hh
 
-#include <assert.h>
 #include <stdlib.h>
 
 #include <list>
@@ -115,7 +114,9 @@ public:
 
     T& operator[](size_t index) {
         size_t chunk_index = index / CHUNK_SIZE;
-        assert(chunk_index < this->chunk_count());
+
+        require(chunk_index < this->chunk_count());
+
         struct chunk *target_chunk = this->ci_completed_chunks[chunk_index];
         return target_chunk->c_body[index % CHUNK_SIZE];
     };

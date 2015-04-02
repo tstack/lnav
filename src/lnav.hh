@@ -135,6 +135,33 @@ void sqlite_close_wrapper(void *mem);
 typedef std::pair<int, int>                      ppid_time_pair_t;
 typedef std::pair<ppid_time_pair_t, std::string> session_pair_t;
 
+class input_state_tracker : public log_state_dumper {
+public:
+    input_state_tracker() : ist_index(0) {
+        memset(this->ist_recent_key_presses, 0, sizeof(this->ist_recent_key_presses));
+    };
+
+    void log_state() {
+        log_info("recent_key_presses: index=%d", this->ist_index);
+        for (int lpc = 0; lpc < COUNT; lpc++) {
+            log_msg_extra(" 0x%x (%c)", this->ist_recent_key_presses[lpc],
+                    this->ist_recent_key_presses[lpc]);
+        }
+        log_msg_extra_complete();
+    };
+
+    void push_back(int ch) {
+        this->ist_recent_key_presses[this->ist_index % COUNT] = ch;
+        this->ist_index = (this->ist_index + 1) % COUNT;
+    };
+
+private:
+    static const int COUNT = 10;
+
+    int ist_recent_key_presses[COUNT];
+    size_t ist_index;
+};
+
 struct _lnav_data {
     std::string                             ld_session_id;
     time_t                                  ld_session_time;
@@ -210,6 +237,8 @@ struct _lnav_data {
     std::list<piper_proc *>                 ld_pipers;
     xterm_mouse ld_mouse;
     term_extra ld_term_extra;
+
+    input_state_tracker ld_input_state;
 };
 
 extern struct _lnav_data lnav_data;

@@ -119,7 +119,7 @@ public:
  * View that displays a list of lines that can optionally contain highlighting.
  */
 class listview_curses
-    : public view_curses {
+    : public view_curses, private log_state_dumper {
 public:
     typedef view_action<listview_curses> action;
 
@@ -443,6 +443,13 @@ public:
     virtual void do_update(void);
 
     bool handle_mouse(mouse_event &me);
+
+    void log_state() {
+        log_debug("listview_curses=%p", this);
+        log_debug("  lv_title=%s", this->lv_title.c_str());
+        log_debug("  lv_y=%u", this->lv_y);
+        log_debug("  lv_top=%d", (int) this->lv_top);
+    };
 
 protected:
     enum lv_mode_t {

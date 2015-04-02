@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <time.h>
+#include <sys/_types/_timeval.h>
 
 time_t time(time_t *loc)
 {
@@ -11,4 +12,12 @@ time_t time(time_t *loc)
     }
 
     return retval;
+}
+
+int gettimeofday(struct timeval *tv, void *tz)
+{
+    tv->tv_sec = 1370546000;
+    tv->tv_usec = 123456;
+
+    return 0;
 }

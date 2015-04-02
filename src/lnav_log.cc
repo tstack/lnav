@@ -69,8 +69,6 @@
 
 #include "lnav_log.hh"
 
-#include "pcrepp.hh"
-
 static const size_t BUFFER_SIZE = 256 * 1024;
 static const size_t MAX_LOG_LINE_SIZE = 2048;
 
@@ -88,6 +86,8 @@ FILE *lnav_log_file;
 lnav_log_level_t lnav_log_level;
 const char *lnav_log_crash_dir;
 const struct termios *lnav_log_orig_termios;
+
+log_state_dumper::log_state_list log_state_dumper::DUMPER_LIST;
 
 static struct {
     size_t lr_length;
@@ -156,7 +156,7 @@ void log_host_info(void)
     struct utsname un;
 
     uname(&un);
-    log_info("uname:")
+    log_info("uname:");
     log_info("  sysname=%s", un.sysname);
     log_info("  nodename=%s", un.nodename);
     log_info("  machine=%s", un.machine);
@@ -168,7 +168,7 @@ void log_host_info(void)
     log_info("  PATH=%s", getenv("PATH"));
     log_info("  TERM=%s", getenv("TERM"));
     log_info("  TZ=%s", getenv("TZ"));
-    log_info("Process:")
+    log_info("Process:");
     log_info("  pid=%d", getpid());
     log_info("  ppid=%d", getppid());
     log_info("  pgrp=%d", getpgrp());
@@ -178,6 +178,8 @@ void log_host_info(void)
     log_info("  egid=%d", getegid());
     getcwd(cwd, sizeof(cwd));
     log_info("  cwd=%s", cwd);
+    log_info("Executable:");
+    log_info("  version=%s", PACKAGE_STRING);
 }
 
 void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
@@ -225,6 +227,36 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     va_end(args);
 }
 
+void log_msg_extra(const char *fmt, ...)
+{
+    va_list args;
+    ssize_t rc;
+    char *line;
+
+    va_start(args, fmt);
+    line = log_alloc();
+    rc = vsnprintf(line, MAX_LOG_LINE_SIZE - 1, fmt, args);
+    log_ring.lr_length += rc;
+    if (lnav_log_file != NULL) {
+        fwrite(line, 1, rc, lnav_log_file);
+        fflush(lnav_log_file);
+    }
+    va_end(args);
+}
+
+void log_msg_extra_complete()
+{
+    char *line;
+
+    line = log_alloc();
+    line[0] = '\n';
+    log_ring.lr_length += 1;
+    if (lnav_log_file != NULL) {
+        fwrite(line, 1, 1, lnav_log_file);
+        fflush(lnav_log_file);
+    }
+}
+
 static void sigabrt(int sig)
 {
     char crash_path[1024], latest_crash_path[1024];
@@ -265,6 +297,27 @@ static void sigabrt(int sig)
 #ifdef HAVE_EXECINFO_H
         backtrace_symbols_fd(frames, frame_count, fd);
 #endif
+        log_ring.lr_length = 0;
+        log_ring.lr_frag_start = BUFFER_SIZE;
+        log_ring.lr_frag_end = 0;
+
+        log_host_info();
+
+        {
+            log_state_dumper *lsd;
+
+            for (lsd = LIST_FIRST(&log_state_dumper::DUMPER_LIST.lsl_list);
+                    lsd != NULL;
+                    lsd = LIST_NEXT(lsd, lsd_link)) {
+                lsd->log_state();
+            }
+        }
+
+        if (log_ring.lr_frag_start < BUFFER_SIZE) {
+            write(fd, &log_ring.lr_data[log_ring.lr_frag_start],
+                    log_ring.lr_frag_end - log_ring.lr_frag_start);
+        }
+        write(fd, log_ring.lr_data, log_ring.lr_length);
         close(fd);
 
         remove(latest_crash_path);
