@@ -436,7 +436,7 @@ bool logfile_sub_source::rebuild_index(bool force)
 
             off_t insert_point = this->lss_index.merge_value(
                     con_line, logline_cmp(*this));
-            if (insert_point < start_size) {
+            if (insert_point < (off_t)start_size) {
                 start_size = 0;
                 this->lss_filtered_index.clear();
             }
