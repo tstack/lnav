@@ -97,7 +97,7 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
     }
 
     if (line[x] == left && is_bracket(line, x, is_lit)) {
-        for (int lpc = x + 1; lpc < line.length(); lpc++) {
+        for (size_t lpc = x + 1; lpc < line.length(); lpc++) {
             if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 depth += 1;
             }
@@ -120,7 +120,7 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
 
     depth = 0;
 
-    for (int lpc = 1; lpc < line.length(); lpc++) {
+    for (size_t lpc = 1; lpc < line.length(); lpc++) {
         if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
             depth += 1;
             if (first_left == -1) {
@@ -182,7 +182,7 @@ static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
     string &line = al.get_string();
     bool backslash_is_quoted = false;
 
-    for (int lpc = skip; lpc < line.length(); lpc++) {
+    for (size_t lpc = skip; lpc < line.length(); lpc++) {
         if (line[lpc - 1] != '\\') {
             switch (line[lpc]) {
             case '^':
@@ -440,7 +440,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
             keyword_attrs));
     }
 
-    for (int lpc = 0; lpc < line.length(); lpc++) {
+    for (size_t lpc = 0; lpc < line.length(); lpc++) {
         switch (line[lpc]) {
         case '*':
         case '<':

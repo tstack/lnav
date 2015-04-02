@@ -247,6 +247,7 @@ void vt52_curses::map_output(const char *output, int len)
                 char *        buffer;
 
                 getmaxyx(this->vc_window, height, width);
+                (void)height; //suppress unused warnings.
 
                 buffer     = (char *)alloca(width);
                 this->vc_x = 0;

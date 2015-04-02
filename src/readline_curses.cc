@@ -180,7 +180,7 @@ static ssize_t recvstring(int sock, char *buf, size_t len)
     if (recvall(sock, (char *)&retval, sizeof(retval)) == -1) {
         return -1;
     }
-    else if (retval > len) {
+    else if (retval > (ssize_t)len) {
         return -1;
     }
     else if (recvall(sock, buf, retval) == -1) {

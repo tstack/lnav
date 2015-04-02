@@ -119,9 +119,9 @@ public:
     };
 
     data_scanner(shared_buffer_ref &line, size_t off = 0, size_t len = (size_t) -1)
-        : ds_sbr(line), ds_pcre_input(line.get_data(), off, len == -1 ? line.length() : len)
+        : ds_sbr(line), ds_pcre_input(line.get_data(), off, len == (size_t) -1 ? line.length() : len)
     {
-        require(len == -1 || len <= line.length());
+        require(len == (size_t) -1 || len <= line.length());
         if (line.length() > 0 && line.get_data()[line.length() - 1] == '.') {
             this->ds_pcre_input.pi_length -= 1;
         }

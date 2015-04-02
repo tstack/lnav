@@ -51,7 +51,7 @@ public:
     };
 
     void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr) {
-        long offset = std::distance(lf.begin(), ll);
+        size_t offset = std::distance(lf.begin(), ll);
 
         require(&lf == this->lfo_filter_state.tfs_logfile);
 
