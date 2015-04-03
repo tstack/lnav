@@ -25,7 +25,7 @@ before_install:
     - if [[ "$BUILD_TYPE" == "normal" ]]; then export LOCAL_CXXFLAGS= LOCAL_CFLAGS= LOCAL_LDFLAGS=; fi
     - if [[ "$BUILD_TYPE" == "asan" ]]; then export LOCAL_CFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer -fPIE" LOCAL_CXXFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer -fPIE" LOCAL_LDFLAGS="-fsanitize=address -pie"; fi
     - if [[ "$BUILD_TYPE" == "ubsan" ]]; then export LOCAL_CFLAGS="-fsanitize=undefined -O1 -fno-omit-frame-pointer -fPIE" LOCAL_CXXFLAGS="-fsanitize=undefined -O1 -fno-omit-frame-pointer -fPIE" LOCAL_LDFLAGS="-fsanitize=undefined -pie"; fi 
-script: ./autogen.sh && ./configure && make && make check
+script: ./autogen.sh && CFLAGS=${LOCAL_CFLAGS} CXXFLAGS=${LOCAL_CXXFLAGS} LDFLAGS=${LOCAL_LDFLAGS} ./configure && make && make check
 after_script: test -e test/test-suite.log  && cat test/test-suite.log
 
 
