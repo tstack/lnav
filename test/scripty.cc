@@ -623,7 +623,7 @@ int main(int argc, char *argv[])
 				fprintf(scripty_data.sd_to_child,
 					"sleep %ld.%06ld\n"
 					"write ",
-					diff.tv_sec, diff.tv_usec);
+					(long)diff.tv_sec, (long)diff.tv_usec);
 				dump_memory(scripty_data.sd_to_child,
 					    buffer,
 					    rc);
