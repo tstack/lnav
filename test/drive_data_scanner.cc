@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 
                         printf("Would you like to update the original file? (y/N) ");
                         fflush(stdout);
-                        scanf("%3s", resp);
+                        log_perror(scanf("%3s", resp));
                         if (strcasecmp(resp, "y") == 0) {
                             rename(TMP_NAME, argv[lpc]);
                         }

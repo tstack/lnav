@@ -37,7 +37,7 @@
 
 static void printer(void *ctx, const char *numberVal, size_t numberLen)
 {
-    write(STDOUT_FILENO, numberVal, numberLen);
+    log_perror(write(STDOUT_FILENO, numberVal, numberLen));
 }
 
 static int handle_start_map(void *ctx)

@@ -46,7 +46,7 @@ static void single_line(const char *data, int lendiff)
     bool ret;
     
     assert(auto_fd::pipe(pi) == 0);
-    write(pi[1], data, strlen(data));
+    log_perror(write(pi[1], data, strlen(data)));
     pi[1].reset();
     
     lb.set_fd(pi[0]);
