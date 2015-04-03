@@ -7,12 +7,13 @@ script: ./autogen.sh && ./configure && make && make check
 after_script: test -e test/test-suite.log  && cat test/test-suite.log
 
 env:
-    - CFLAGS="-fsanitize=address" LDFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address"
-    - CFLAGS="-fsanitize=undefined" LDFLAGS="-fsanitize=undefined" CXXFLAGS="-fsanitize=undefined"
-  global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   #   via the "travis encrypt" command using the project repo's public key
-   - secure: "P3wQLswiGYWrZwO4bxFmsA4XG5s/pS+renL0RMeotMTQwQQXmy1ZCvwMnAgaYWQmF82fN8WjuhO3OX0gpDbydxRktqI5ZqblsryV6poB0g+OkCqThbDUp3TL6TjPqySTI1CZ8qoOBYFMubAZYVJAEfxl0UxoQE+uTsRarRqr8rI="
+    matrix:
+        - CFLAGS="-fsanitize=address" LDFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address"
+        - CFLAGS="-fsanitize=undefined" LDFLAGS="-fsanitize=undefined" CXXFLAGS="-fsanitize=undefined"
+    global:
+    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+    #   via the "travis encrypt" command using the project repo's public key
+        - secure: "P3wQLswiGYWrZwO4bxFmsA4XG5s/pS+renL0RMeotMTQwQQXmy1ZCvwMnAgaYWQmF82fN8WjuhO3OX0gpDbydxRktqI5ZqblsryV6poB0g+OkCqThbDUp3TL6TjPqySTI1CZ8qoOBYFMubAZYVJAEfxl0UxoQE+uTsRarRqr8rI="
 
 addons:
   coverity_scan:
