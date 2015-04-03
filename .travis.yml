@@ -1,10 +1,6 @@
 language: cpp
 compiler: gcc
 sudo: false
-addons:
-    apt:
-        packages:
-        - libgpm-dev
 #before_install:
 #    - sudo apt-get install -y -qq libgpm-dev
 script: ./autogen.sh && ./configure && make && make check
@@ -25,3 +21,6 @@ addons:
     build_command_prepend: ./autogen.sh && ./configure
     build_command: make
     branch_pattern: coverity_scan
+  apt:
+    packages:
+    - libgpm-dev
