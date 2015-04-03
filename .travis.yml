@@ -35,6 +35,6 @@ addons:
       name: "tstack/lnav"
       description: "Your project description here"
     notification_email: timothyshanestack@gmail.com
-    build_command_prepend: ./autogen.sh && ./configure
+    build_command_prepend: ./autogen.sh && CFLAGS=${LOCAL_CFLAGS} CXXFLAGS=${LOCAL_CXXFLAGS} LDFLAGS=${LOCAL_LDFLAGS} ./configure
     build_command: make
     branch_pattern: coverity_scan
