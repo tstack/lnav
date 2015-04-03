@@ -1,19 +1,33 @@
 
 language: cpp
-compiler: gcc
-before_install:
-    - sudo apt-get install -y -qq libgpm-dev
-script: ./autogen.sh && ./configure && make && make check
-after_script: test -e test/test-suite.log  && cat test/test-suite.log
-
+compiler:
+    - gcc
+    - clang
 env:
     matrix:
-        - CFLAGS="-fsanitize=address" LDFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address"
-        - CFLAGS="-fsanitize=undefined" LDFLAGS="-fsanitize=undefined" CXXFLAGS="-fsanitize=undefined"
+          - BUILD_TYPE=normal
+          - BUILD_TYPE=asan
+          - BUILD_TYPE=ubsan          
     global:
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
     #   via the "travis encrypt" command using the project repo's public key
         - secure: "P3wQLswiGYWrZwO4bxFmsA4XG5s/pS+renL0RMeotMTQwQQXmy1ZCvwMnAgaYWQmF82fN8WjuhO3OX0gpDbydxRktqI5ZqblsryV6poB0g+OkCqThbDUp3TL6TjPqySTI1CZ8qoOBYFMubAZYVJAEfxl0UxoQE+uTsRarRqr8rI="
+
+matrix:
+    exclude:
+        - compiler: gcc
+          env: BUILD_TYPE=asan
+        - compiler: gcc
+          env: BUILD_TYPE=ubsan
+
+before_install:
+    - sudo apt-get install -y -qq libgpm-dev
+    - if [[ "$BUILD_TYPE" == "normal" ]]; then export LOCAL_CXXFLAGS= LOCAL_CFLAGS= LOCAL_LDFLAGS=; fi
+    - if [[ "$BUILD_TYPE" == "asan" ]]; then export LOCAL_CFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer -fPIE" LOCAL_CXXFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer -fPIE" LOCAL_LDFLAGS="-fsanitize=address -pie"; fi
+    - if [[ "$BUILD_TYPE" == "ubsan" ]]; then export LOCAL_CFLAGS="-fsanitize=undefined -O1 -fno-omit-frame-pointer -fPIE" LOCAL_CXXFLAGS="-fsanitize=undefined -O1 -fno-omit-frame-pointer -fPIE" LOCAL_LDFLAGS="-fsanitize=undefined -pie"; fi 
+script: ./autogen.sh && ./configure && make && make check
+after_script: test -e test/test-suite.log  && cat test/test-suite.log
+
 
 addons:
   coverity_scan:
