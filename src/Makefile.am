@@ -47,7 +47,9 @@ TIME_FORMATS = \
     "%N/%e/%Y %l:%M:%S %p" \
     "%m%d %H:%M:%S" \
     "%H:%M:%S" \
-    "%M:%S"
+    "%M:%S" \
+    "%m/%d %H:%M:%S" \
+    $()
 
 time_fmts.cc: ptimec
 	$(PTIME_V)./ptimec $(TIME_FORMATS) > $@
