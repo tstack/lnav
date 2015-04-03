@@ -26,7 +26,7 @@ before_install:
     - if [[ "$BUILD_TYPE" == "asan" ]]; then export LOCAL_CFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer " LOCAL_CXXFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer" LOCAL_LDFLAGS="-fsanitize=address -lstdc++"; fi
     - if [[ "$BUILD_TYPE" == "ubsan" ]]; then export LOCAL_CFLAGS="-fsanitize=undefined -O1 -fno-omit-frame-pointer" LOCAL_CXXFLAGS="-fsanitize=undefined -O1 -fno-omit-frame-pointer" LOCAL_LDFLAGS="-fsanitize=undefined -lstdc++"; fi 
 script: ./autogen.sh && CFLAGS=${LOCAL_CFLAGS} CXXFLAGS=${LOCAL_CXXFLAGS} LDFLAGS=${LOCAL_LDFLAGS} ./configure && make && make check
-after_script: test -e test/test-suite.log  && cat test/test-suite.log
+after_script: grep Sanit test/* ; test -e test/test-suite.log  && cat test/test-suite.log 
 
 
 addons:
