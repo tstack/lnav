@@ -7,8 +7,8 @@ script: ./autogen.sh && ./configure && make && make check
 after_script: test -e test/test-suite.log  && cat test/test-suite.log
 
 env:
-  - CFLAGS="-fsanitize=address" LDFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address"
-  - CFLAGS="-fsanitize=undefined" LDFLAGS="-fsanitize=undefined" CXXFLAGS="-fsanitize=undefined"
+    - CFLAGS="-fsanitize=address" LDFLAGS="-fsanitize=address" CXXFLAGS="-fsanitize=address"
+    - CFLAGS="-fsanitize=undefined" LDFLAGS="-fsanitize=undefined" CXXFLAGS="-fsanitize=undefined"
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
