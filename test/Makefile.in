@@ -862,7 +862,8 @@ DISTCLEANFILES = \
 	*.bz2 \
 	truncfile.0 \
 	logfile_append.0 \
-	test.log
+	test.log \
+	logfile_stdin.log
 
 all: all-am
 
