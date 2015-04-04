@@ -1,16 +1,33 @@
 
 language: cpp
-compiler: gcc
+compiler:
+    - gcc
+    - clang
+env:
+    matrix:
+          - BUILD_TYPE=normal
+          - BUILD_TYPE=asan
+          - BUILD_TYPE=ubsan          
+    global:
+    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+    #   via the "travis encrypt" command using the project repo's public key
+        - secure: "P3wQLswiGYWrZwO4bxFmsA4XG5s/pS+renL0RMeotMTQwQQXmy1ZCvwMnAgaYWQmF82fN8WjuhO3OX0gpDbydxRktqI5ZqblsryV6poB0g+OkCqThbDUp3TL6TjPqySTI1CZ8qoOBYFMubAZYVJAEfxl0UxoQE+uTsRarRqr8rI="
+
+matrix:
+    exclude:
+        - compiler: gcc
+          env: BUILD_TYPE=asan
+        - compiler: gcc
+          env: BUILD_TYPE=ubsan
+
 before_install:
     - sudo apt-get install -y -qq libgpm-dev
-script: ./autogen.sh && ./configure && make && make check
-after_script: test -e test/test-suite.log  && cat test/test-suite.log
+    - if [[ "$BUILD_TYPE" == "normal" ]]; then export LOCAL_CXXFLAGS= LOCAL_CFLAGS= LOCAL_LDFLAGS=; fi
+    - if [[ "$BUILD_TYPE" == "asan" ]]; then export LOCAL_CFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer " LOCAL_CXXFLAGS="-fsanitize=address -O1 -fno-omit-frame-pointer" LOCAL_LDFLAGS="-fsanitize=address -lstdc++"; fi
+    - if [[ "$BUILD_TYPE" == "ubsan" ]]; then export LOCAL_CFLAGS="-fsanitize=undefined -O1 -fno-omit-frame-pointer" LOCAL_CXXFLAGS="-fsanitize=undefined -O1 -fno-omit-frame-pointer" LOCAL_LDFLAGS="-fsanitize=undefined -lstdc++"; fi 
+script: ./autogen.sh && CFLAGS=${LOCAL_CFLAGS} CXXFLAGS=${LOCAL_CXXFLAGS} LDFLAGS=${LOCAL_LDFLAGS} ./configure && make && make check
+after_script: grep Sanit test/* ; test -e test/test-suite.log  && cat test/test-suite.log 
 
-env:
-  global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   #   via the "travis encrypt" command using the project repo's public key
-   - secure: "P3wQLswiGYWrZwO4bxFmsA4XG5s/pS+renL0RMeotMTQwQQXmy1ZCvwMnAgaYWQmF82fN8WjuhO3OX0gpDbydxRktqI5ZqblsryV6poB0g+OkCqThbDUp3TL6TjPqySTI1CZ8qoOBYFMubAZYVJAEfxl0UxoQE+uTsRarRqr8rI="
 
 addons:
   coverity_scan:
