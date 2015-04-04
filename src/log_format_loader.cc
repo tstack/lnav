@@ -78,7 +78,8 @@ static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str
     string regex_name = ypc->get_path_fragment(2);
     string value = string((const char *)str, len);
 
-    log_debug("regex: %s", value.c_str());
+    log_debug(" format regex: %s/%s = %s",
+            elf->get_name().c_str(), regex_name.c_str(), value.c_str());
     elf->elf_patterns[regex_name].p_string = value;
 
     return 1;
@@ -496,6 +497,13 @@ static void load_from_path(const string &path, std::vector<string> &errors)
             if (format_list.empty()) {
                 log_warning("Empty format file: %s", filename.c_str());
             }
+            else {
+                for (vector<string>::iterator iter = format_list.begin();
+                        iter != format_list.end();
+                        ++iter) {
+                    log_info("  found format: %s", iter->c_str());
+                }
+            }
         }
     }
 }
@@ -510,6 +518,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
 
     write_sample_file();
 
+    log_debug("Loading default formats");
     handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
     ypc_builtin.ypc_userdata = &retval;
     yajl_config(handle, yajl_allow_comments, 1);

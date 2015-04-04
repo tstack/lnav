@@ -643,7 +643,6 @@ public:
         pattern() : p_pcre(NULL) { };
 
         std::string p_string;
-        std::vector<std::string> p_before_pattern;
         pcrepp *p_pcre;
         std::vector<value_def> p_value_by_index;
     };

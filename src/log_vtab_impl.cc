@@ -144,7 +144,7 @@ static int vt_create(sqlite3 *db,
     /* Success. Set *pp_vt and return */
     *pp_vt = &p_vt->base;
 
-    log_debug("create %s -> %p", argv[3], p_vt);
+    log_debug("creating log format table: %s = %p", argv[3], p_vt);
 
     return rc;
 }

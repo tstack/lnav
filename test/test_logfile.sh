@@ -204,7 +204,7 @@ Nov  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
 EOF
 
 
-echo "Hi" | run_test ${lnav_test} -d /tmp/lnav.err -nqt -w logfile_stdin.log
+echo "Hi" | run_test ${lnav_test} -d /tmp/lnav.err -nt -w logfile_stdin.log
 
 check_output "piping to stdin is not working?" <<EOF
 2013-06-06T19:13:20.123  Hi
