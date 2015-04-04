@@ -488,6 +488,10 @@ COMMANDS
                     Switch the display to the given view, which can be one of:
                     help, log, text, histogram, db, and schema.
 
+  zoom-to <zoom-level>
+                    Change the histogram zoom level to the given value, which
+                    can be one of: day, 4-hour, hour, 10-minute, minute
+
   redraw            Force redraw the window (CTRL-L hotkey).
 
   partition-name <name>

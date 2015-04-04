@@ -59,6 +59,8 @@ Display
 
 * switch-to-view <name> - Switch to the given view name (e.g. log, text, ...)
 
+* zoom-to <zoom-level> - Set the zoom level for the histogram view.
+
 * redraw - Redraw the window to correct any corruption.
 
 Output

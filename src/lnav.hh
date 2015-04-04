@@ -115,6 +115,8 @@ typedef enum {
 
 extern const char *lnav_view_strings[LNV__MAX + 1];
 
+extern const char *lnav_zoom_strings[];
+
 /** The status bars. */
 typedef enum {
     LNS_TOP,
@@ -249,6 +251,7 @@ extern struct _lnav_data lnav_data;
 #define HELP_MSG_2(x, y, msg) \
     "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
 
+void rebuild_hist(size_t old_count, bool force);
 void rebuild_indexes(bool force);
 
 bool ensure_view(textview_curses *expected_tc);

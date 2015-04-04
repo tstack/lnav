@@ -363,7 +363,7 @@ check_output "set-min-log-level is not working" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 EOF
 
-run_test ${lnav_test} -d/tmp/lnav.err -n \
+run_test ${lnav_test} -n \
     -c ":highlight foobar" \
     -c ":clear-highlight foobar" \
     ${test_dir}/logfile_access_log.0
@@ -371,10 +371,60 @@ run_test ${lnav_test} -d/tmp/lnav.err -n \
 check_error_output "clear-highlight is not working?" <<EOF
 EOF
 
-run_test ${lnav_test} -d/tmp/lnav.err -n \
+run_test ${lnav_test} -n \
     -c ":clear-highlight foobar" \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "clear-highlight did not report an error?" <<EOF
 error: highlight does not exist
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":switch-to-view histogram" \
+    -c ":zoom-to 4-hour" \
+    ${test_dir}/logfile_syslog.0
+
+check_output "histogram is not working?" <<EOF
+ Sun Nov 03 00:00          0 total         0 errors         0 warnings
+ Sun Nov 03 04:00          0 total         0 errors         0 warnings
+ Sun Nov 03 08:00          4 total         2 errors         0 warnings
+ Sun Nov 03 12:00          0 total         0 errors         0 warnings
+ Sun Nov 03 16:00          0 total         0 errors         0 warnings
+ Sun Nov 03 20:00          0 total         0 errors         0 warnings
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":switch-to-view histogram" \
+    -c ":zoom-to day" \
+    ${test_dir}/logfile_syslog.0
+
+check_output "histogram is not working?" <<EOF
+ Sun Nov 03 00:00          4 total         2 errors         0 warnings
+ Mon Nov 04 00:00          0 total         0 errors         0 warnings
+ Tue Nov 05 00:00          0 total         0 errors         0 warnings
+ Wed Nov 06 00:00          0 total         0 errors         0 warnings
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":filter-in sudo" \
+    -c ":switch-to-view histogram" \
+    -c ":zoom-to 4-hour" \
+    ${test_dir}/logfile_syslog.0
+
+check_output "histogram is not working?" <<EOF
+ Sun Nov 03 00:00          0 total         0 errors         0 warnings
+ Sun Nov 03 04:00          0 total         0 errors         0 warnings
+ Sun Nov 03 08:00          1 total         0 errors         0 warnings
+ Sun Nov 03 12:00          0 total         0 errors         0 warnings
+ Sun Nov 03 16:00          0 total         0 errors         0 warnings
+ Sun Nov 03 20:00          0 total         0 errors         0 warnings
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":zoom-to bad" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "bad zoom level is not rejected?" <<EOF
+error: invalid zoom level -- bad
 EOF

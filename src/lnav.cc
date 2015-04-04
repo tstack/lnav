@@ -158,6 +158,16 @@ const char *lnav_view_strings[LNV__MAX + 1] = {
     NULL
 };
 
+const char *lnav_zoom_strings[] = {
+        "day",
+        "4-hour",
+        "hour",
+        "10-minute",
+        "minute",
+
+        NULL
+};
+
 static const char *view_titles[LNV__MAX] = {
     "LOG",
     "TEXT",
@@ -760,7 +770,36 @@ private:
     off_t          lo_last_offset;
 };
 
-static void rebuild_hist(size_t old_count, bool force)
+class hist_index_delegate : public index_delegate {
+public:
+    hist_index_delegate(hist_source &hs, textview_curses &tc)
+            : hid_source(hs), hid_view(tc) {
+
+    };
+
+    void index_start(logfile_sub_source &lss) {
+        this->hid_source.clear();
+    };
+
+    void index_line(logfile_sub_source &lss, logfile *lf, logfile::iterator ll) {
+        if (ll->get_level() & logline::LEVEL_CONTINUED) {
+            return;
+        }
+
+        this->hid_source.add_value(ll->get_time(),
+                bucket_type_t(ll->get_level() & ~logline::LEVEL__FLAGS));
+    };
+
+    void index_complete(logfile_sub_source &lss) {
+        this->hid_view.reload_data();
+    };
+
+private:
+    hist_source &hid_source;
+    textview_curses &hid_view;
+};
+
+void rebuild_hist(size_t old_count, bool force)
 {
     textview_curses &   hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
     logfile_sub_source &lss       = lnav_data.ld_log_source;
@@ -939,8 +978,6 @@ void rebuild_indexes(bool force)
                 log_view.set_top(lss.find_from_time(old_time));
             }
         }
-
-        rebuild_hist(old_count, force);
 
         start_line = force ? grep_line_t(0) : grep_line_t(-1);
 
@@ -3605,6 +3642,9 @@ static void looper(void)
             LNM_COMMAND, "viewname", lnav_view_strings);
 
         lnav_data.ld_rl_view->add_possibility(
+                LNM_COMMAND, "zoomlevel", lnav_zoom_strings);
+
+        lnav_data.ld_rl_view->add_possibility(
             LNM_COMMAND, "levelname", logline::level_names);
 
         (void)signal(SIGINT, sigint);
@@ -4384,7 +4424,6 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_LOG].
     set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
     lnav_data.ld_db_overlay.dos_hist_source = &lnav_data.ld_db_source;
-
     lnav_data.ld_match_view.set_left(0);
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -4411,6 +4450,16 @@ int main(int argc, char *argv[])
         hs.set_role_for_type(bucket_type_t(logline::LEVEL_WARNING),
            view_colors::VCR_WARNING);
         hs.set_label_source(new time_label_source());
+
+        lnav_data.ld_log_source.set_index_delegate(
+                new hist_index_delegate(lnav_data.ld_hist_source,
+                        lnav_data.ld_views[LNV_HISTOGRAM]));
+
+        int zoom_level = lnav_data.ld_hist_zoom;
+
+        hs.set_bucket_size(HIST_ZOOM_VALUES[zoom_level].hl_bucket_size);
+        hs.set_group_size(HIST_ZOOM_VALUES[zoom_level].hl_group_size);
+
     }
 
     {

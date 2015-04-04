@@ -51,6 +51,25 @@
 
 STRONG_INT_TYPE(uint64_t, content_line);
 
+class logfile_sub_source;
+
+class index_delegate {
+public:
+    virtual ~index_delegate() { };
+
+    virtual void index_start(logfile_sub_source &lss) {
+
+    };
+
+    virtual void index_line(logfile_sub_source &lss, logfile *lf, logfile::iterator ll) {
+
+    };
+
+    virtual void index_complete(logfile_sub_source &lss) {
+
+    };
+};
+
 /**
  * Delegate class that merges the contents of multiple log files into a single
  * source of data for a text view.
@@ -363,6 +382,14 @@ public:
         return content_line_t(index * MAX_LINES_PER_FILE);
     };
 
+    void set_index_delegate(index_delegate *id) {
+        this->lss_index_delegate = id;
+    };
+
+    index_delegate *get_index_delegate() const {
+        return this->lss_index_delegate;
+    };
+
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
     static const uint64_t MAX_FILES          = (
@@ -508,5 +535,6 @@ private:
     logfile::iterator lss_token_line;
     std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];
     logline::level_t  lss_min_log_level;
+    index_delegate    *lss_index_delegate;
 };
 #endif

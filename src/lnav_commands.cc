@@ -1593,6 +1593,32 @@ static string com_switch_to_view(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_zoom_to(string cmdline, vector<string> &args)
+{
+    string retval = "";
+
+    if (args.size() == 0) {
+        args.push_back("zoomlevel");
+    }
+    else if (args.size() > 1) {
+        bool found = false;
+
+        for (int lpc = 0; lnav_zoom_strings[lpc] && !found; lpc++) {
+            if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc]) == 0) {
+                lnav_data.ld_hist_zoom = lpc;
+                rebuild_hist(0, true);
+                found = true;
+            }
+        }
+
+        if (!found) {
+            retval = "error: invalid zoom level -- " + args[1];
+        }
+    }
+
+    return retval;
+}
+
 static string com_load_session(string cmdline, vector<string> &args)
 {
     if (args.empty()) {
@@ -1720,6 +1746,7 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     cmd_map["save-session"]         = com_save_session;
     cmd_map["set-min-log-level"]    = com_set_min_log_level;
     cmd_map["redraw"]               = com_redraw;
+    cmd_map["zoom-to"]              = com_zoom_to;
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;

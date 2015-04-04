@@ -14,6 +14,8 @@ lnav v0.7.3:
      * The plain text view now supports filtering.
      * Added 'next-mark' and 'prev-mark' commands to jump to the next or
        previous bookmarked line (e.g. error, warning, ...)
+     * Added a 'zoom-to' command to change the zoom level of the histogram
+       view.
 
      Fixes:
      * Autotools scripts overhaul.

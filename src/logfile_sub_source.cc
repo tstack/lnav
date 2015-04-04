@@ -460,6 +460,10 @@ bool logfile_sub_source::rebuild_index(bool force)
         uint32_t filter_in_mask, filter_out_mask;
         this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
 
+        if (start_size == 0 && this->lss_index_delegate != NULL) {
+            this->lss_index_delegate->index_start(*this);
+        }
+
         for (size_t index_index = start_size;
              index_index < this->lss_index.size();
              index_index++) {
@@ -472,7 +476,16 @@ bool logfile_sub_source::rebuild_index(bool force)
                     (*(ld->get_file()->begin() + line_number)).get_msg_level() >=
                     this->lss_min_log_level) {
                 this->lss_filtered_index.push_back(index_index);
+                if (this->lss_index_delegate != NULL) {
+                    logfile *lf = ld->get_file();
+                    this->lss_index_delegate->index_line(
+                            *this, lf, lf->begin() + line_number);
+                }
             }
+        }
+
+        if (this->lss_index_delegate != NULL) {
+            this->lss_index_delegate->index_complete(*this);
         }
     }
 
@@ -580,6 +593,10 @@ void logfile_sub_source::text_filters_changed()
 
     this->get_filters().get_enabled_mask(filtered_in_mask, filtered_out_mask);
 
+    if (this->lss_index_delegate != NULL) {
+        this->lss_index_delegate->index_start(*this);
+    }
+
     this->lss_filtered_index.clear();
     for (size_t index_index = 0; index_index < this->lss_index.size(); index_index++) {
         content_line_t cl = (content_line_t) this->lss_index[index_index];
@@ -591,6 +608,15 @@ void logfile_sub_source::text_filters_changed()
                 (*(ld->get_file()->begin() + line_number)).get_msg_level() >=
                         this->lss_min_log_level) {
             this->lss_filtered_index.push_back(index_index);
+            if (this->lss_index_delegate != NULL) {
+                logfile *lf = ld->get_file();
+                this->lss_index_delegate->index_line(
+                        *this, lf, lf->begin() + line_number);
+            }
         }
+    }
+
+    if (this->lss_index_delegate != NULL) {
+        this->lss_index_delegate->index_complete(*this);
     }
 }
