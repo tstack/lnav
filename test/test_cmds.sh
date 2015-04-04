@@ -379,19 +379,19 @@ check_error_output "clear-highlight did not report an error?" <<EOF
 error: highlight does not exist
 EOF
 
-
+touch -t 200711030923 ${srcdir}/logfile_syslog.0
 run_test ${lnav_test} -n \
     -c ":switch-to-view histogram" \
     -c ":zoom-to 4-hour" \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sun Nov 03 00:00          0 total         0 errors         0 warnings
- Sun Nov 03 04:00          0 total         0 errors         0 warnings
- Sun Nov 03 08:00          4 total         2 errors         0 warnings
- Sun Nov 03 12:00          0 total         0 errors         0 warnings
- Sun Nov 03 16:00          0 total         0 errors         0 warnings
- Sun Nov 03 20:00          0 total         0 errors         0 warnings
+ Sat Nov 03 00:00          0 total         0 errors         0 warnings
+ Sat Nov 03 04:00          0 total         0 errors         0 warnings
+ Sat Nov 03 08:00          4 total         2 errors         0 warnings
+ Sat Nov 03 12:00          0 total         0 errors         0 warnings
+ Sat Nov 03 16:00          0 total         0 errors         0 warnings
+ Sat Nov 03 20:00          0 total         0 errors         0 warnings
 EOF
 
 run_test ${lnav_test} -n \
@@ -400,10 +400,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sun Nov 03 00:00          4 total         2 errors         0 warnings
- Mon Nov 04 00:00          0 total         0 errors         0 warnings
- Tue Nov 05 00:00          0 total         0 errors         0 warnings
- Wed Nov 06 00:00          0 total         0 errors         0 warnings
+ Sat Nov 03 00:00          4 total         2 errors         0 warnings
+ Sun Nov 04 00:00          0 total         0 errors         0 warnings
+ Mon Nov 05 00:00          0 total         0 errors         0 warnings
+ Tue Nov 06 00:00          0 total         0 errors         0 warnings
+ Wed Nov 07 00:00          0 total         0 errors         0 warnings
 EOF
 
 run_test ${lnav_test} -n \
@@ -413,12 +414,12 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sun Nov 03 00:00          0 total         0 errors         0 warnings
- Sun Nov 03 04:00          0 total         0 errors         0 warnings
- Sun Nov 03 08:00          1 total         0 errors         0 warnings
- Sun Nov 03 12:00          0 total         0 errors         0 warnings
- Sun Nov 03 16:00          0 total         0 errors         0 warnings
- Sun Nov 03 20:00          0 total         0 errors         0 warnings
+ Sat Nov 03 00:00          0 total         0 errors         0 warnings
+ Sat Nov 03 04:00          0 total         0 errors         0 warnings
+ Sat Nov 03 08:00          1 total         0 errors         0 warnings
+ Sat Nov 03 12:00          0 total         0 errors         0 warnings
+ Sat Nov 03 16:00          0 total         0 errors         0 warnings
+ Sat Nov 03 20:00          0 total         0 errors         0 warnings
 EOF
 
 run_test ${lnav_test} -n \
