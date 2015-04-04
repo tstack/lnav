@@ -2089,10 +2089,6 @@ static void handle_paging_key(int ch)
         break;
 
     case 'i':
-    {
-        int *foo = 0;
-        *foo = 1;
-    }
         if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
             lnav_data.ld_rl_view->set_alt_value(
                 HELP_MSG_2(z, Z, "to zoom in/out"));
