@@ -72,7 +72,7 @@ run_test() {
 #     EOF
 #
 check_output() {
-    diff -u ${test_file_base}_${test_num}.tmp - > ${test_file_base}_${test_num}.diff
+    diff -w -u ${test_file_base}_${test_num}.tmp - > ${test_file_base}_${test_num}.diff
     if test $? -ne 0; then
         echo $LAST_TEST
         echo $1
@@ -83,7 +83,7 @@ check_output() {
 }
 
 check_error_output() {
-    diff -u ${test_file_base}_${test_num}.err - \
+    diff -w -u ${test_file_base}_${test_num}.err - \
         > ${test_file_base}_${test_num}.err.diff
     if test $? -ne 0; then
         echo $LAST_TEST
