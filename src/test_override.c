@@ -1,7 +1,7 @@
 #include "config.h"
 
 #include <time.h>
-#include <sys/_types/_timeval.h>
+#include <sys/time.h>
 
 time_t time(time_t *loc)
 {
