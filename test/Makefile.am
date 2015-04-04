@@ -299,7 +299,8 @@ DISTCLEANFILES = \
 	*.bz2 \
 	truncfile.0 \
 	logfile_append.0 \
-	test.log
+	test.log \
+	logfile_stdin.log
 
 distclean-local:
 	$(RM_V)rm -rf sessions
