@@ -215,7 +215,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         line_number);
     rc = vsnprintf(&line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,
         fmt, args);
-    if (rc >= (MAX_LOG_LINE_SIZE - prefix_size)) {
+    if (rc >= (ssize_t)(MAX_LOG_LINE_SIZE - prefix_size)) {
         rc = MAX_LOG_LINE_SIZE - prefix_size - 1;
     }
     line[prefix_size + rc] = '\n';
@@ -313,7 +313,7 @@ static void sigabrt(int sig)
             }
         }
 
-        if (log_ring.lr_frag_start < BUFFER_SIZE) {
+        if (log_ring.lr_frag_start < (off_t)BUFFER_SIZE) {
             write(fd, &log_ring.lr_data[log_ring.lr_frag_start],
                     log_ring.lr_frag_end - log_ring.lr_frag_start);
         }

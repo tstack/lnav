@@ -63,7 +63,7 @@ size_t unquote(char *dst, const char *str, size_t len)
 
     require(str[0] == '\'' || str[0] == '"');
 
-    for (int lpc = 1; lpc < (len - 1); lpc++, index++) {
+    for (size_t lpc = 1; lpc < (len - 1); lpc++, index++) {
         dst[index] = str[lpc];
         if (str[lpc] == quote_char) {
             lpc += 1;

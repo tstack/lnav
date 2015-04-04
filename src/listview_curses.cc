@@ -234,7 +234,7 @@ void listview_curses::do_update(void)
             lines = y + min(height, vis_line_t(
                                 (int)(coverage * (double)height)));
 
-            for (int gutter_y = this->lv_y;
+            for (unsigned int gutter_y = this->lv_y;
                  gutter_y < (this->lv_y + height);
                  gutter_y++) {
                 int range_start = 0, range_end;
@@ -248,7 +248,7 @@ void listview_curses::do_update(void)
 
                 this->lv_gutter_source->listview_gutter_value_for_range(
                     *this, range_start, range_end, ch, fg);
-                if (gutter_y >= y && gutter_y <= lines) {
+                if (gutter_y >= (unsigned int)y && gutter_y <= (unsigned int)lines) {
                     bg = COLOR_WHITE;
                     if (fg == bg) {
                         fg = COLOR_BLACK;

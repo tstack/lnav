@@ -253,7 +253,7 @@ throw (error)
          */
         prefill = 0;
         this->lb_buffer_size = 0;
-        if ((this->lb_file_size != (size_t)-1) &&
+        if ((this->lb_file_size != (ssize_t)-1) &&
             (start + this->lb_buffer_max > this->lb_file_size)) {
             /*
              * If the start is near the end of the file, move the offset back a
@@ -274,10 +274,10 @@ throw (error)
         prefill = start - this->lb_file_offset;
     }
     require(this->lb_file_offset <= start);
-    require(prefill <= this->lb_buffer_size);
+    require(prefill <= (size_t)this->lb_buffer_size);
 
     available = this->lb_buffer_max - (start - this->lb_file_offset);
-    require(available <= this->lb_buffer_max);
+    require(available <= (size_t)this->lb_buffer_max);
 
     if (max_length > available) {
         /*
@@ -319,7 +319,7 @@ throw (error)
 
         /* ... read in the new data. */
         if (this->lb_gz_file) {
-            if (this->lb_file_size != (size_t)-1 &&
+            if (this->lb_file_size != (ssize_t)-1 &&
                 this->in_range(start) &&
                 this->in_range(this->lb_file_size - 1)) {
                 rc = 0;
@@ -339,8 +339,8 @@ throw (error)
         }
 #ifdef HAVE_BZLIB_H
         else if (this->lb_bz_file) {
-            if (this->lb_file_size != (size_t)-1 &&
-                (((size_t)start >= this->lb_file_size) ||
+            if (this->lb_file_size != (ssize_t)-1 &&
+                (((ssize_t)start >= this->lb_file_size) ||
                  (this->in_range(start) &&
                   this->in_range(this->lb_file_size - 1)))) {
                 rc = 0;
@@ -487,7 +487,7 @@ throw (error)
             (request_size == MAX_LINE_BUFFER_SIZE) ||
             ((request_size > lv.lv_len) && lv.lv_len > 0)) {
             if ((lf != NULL) &&
-                ((lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1)) {
+                ((size_t) (lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1)) {
                 lf = NULL;
             }
             if (lf != NULL) {
@@ -552,7 +552,7 @@ throw (error)
         }
     }
 
-    ensure(lv.lv_len <= this->lb_buffer_size);
+    ensure(lv.lv_len <= (size_t)this->lb_buffer_size);
     ensure(!retval ||
            (lv.lv_start >= this->lb_buffer &&
             (lv.lv_start + lv.lv_len) <= (this->lb_buffer + this->lb_buffer_size)));
