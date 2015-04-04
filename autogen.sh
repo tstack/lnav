@@ -5,5 +5,5 @@ automake --version
 
 aclocal -I m4 -I .
 autoheader -I .
-automake --add-missing --copy --foreign
+automake --add-missing --copy --force-missing --foreign
 autoconf
