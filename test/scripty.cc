@@ -213,7 +213,7 @@ static char *hex2bits(const char *src)
     len = strlen(src) / 2;
     retval = new char[sizeof(uint32_t) + len];
     *((uint32_t *)retval) = len;
-    while (pos < (sizeof(uint32_t) + len)) {
+    while ((size_t)pos < (sizeof(uint32_t) + len)) {
 	int val;
 	
 	sscanf(src, "%2x", &val);
