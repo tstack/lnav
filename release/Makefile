@@ -22,6 +22,7 @@ linux-package: clean-outbox linux-build
 osx-build:
 	rm -rf osx-build-dir
 	mkdir -p osx-build-dir
+	cd ../ && ./autogen.sh
 	cd osx-build-dir && ../../configure && make -j && make distcheck -j8 && make dist-bzip2
 
 osx-package: clean-outbox osx-build
