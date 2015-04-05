@@ -11,6 +11,13 @@ fi
 
 cd ~/github/lnav
 git pull
+saved_PATH=${PATH}
+saved_LD_LIBRARAY_PATH=${LD_LIBRARY_PATH}
+export PATH=${PATH}:${FAKE_ROOT}/bin
+export LD_LIBRARAY_PATH=${LD_LIBRARAY_PATH}:${FAKE_ROOT}/lib
+./autogen.sh
+export PATH=${saved_PATH}
+export LD_LIBRARAY_PATH=${saved_LD_LIBRARY_PATH}
 
 rm -rf ~/github/lbuild
 mkdir -p ~/github/lbuild
