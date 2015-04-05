@@ -16,6 +16,10 @@ run_test ./drive_logfile -f strace_log ${srcdir}/logfile_strace_log.0
 
 on_error_fail_with "Didn't infer strace_log log format?"
 
+run_test ./drive_logfile -f zblued_log ${srcdir}/logfile_blued.0
+
+on_error_fail_with "Didn't infer blued_log that collides with syslog?"
+
 
 run_test ./drive_logfile ${srcdir}/logfile_empty.0
 

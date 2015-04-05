@@ -541,13 +541,78 @@ void load_formats(const std::vector<std::string> &extra_paths,
         load_from_path(*path_iter, errors);
     }
 
+    vector<external_log_format *> alpha_ordered_formats;
     for (map<string, external_log_format *>::iterator iter = LOG_FORMATS.begin();
          iter != LOG_FORMATS.end();
          ++iter) {
-        iter->second->build(errors);
+        external_log_format *elf = iter->second;
+        elf->build(errors);
+
+        for (map<string, external_log_format *>::iterator check_iter = LOG_FORMATS.begin();
+             check_iter != LOG_FORMATS.end();
+             ++check_iter) {
+            if (iter->first == check_iter->first) {
+                continue;
+            }
+
+            external_log_format *check_elf = check_iter->second;
+            if (elf->match_samples(check_elf->elf_samples)) {
+                log_warning("Format collision, format '%s' matches sample from '%s'",
+                        elf->get_name().c_str(),
+                        check_elf->get_name().c_str());
+                elf->elf_collision.push_back(check_elf->get_name());
+            }
+        }
 
         if (errors.empty()) {
-            log_format::get_root_formats().insert(log_format::get_root_formats().begin(), iter->second);
+            alpha_ordered_formats.push_back(elf);
         }
     }
+
+    vector<external_log_format *> graph_ordered_formats;
+
+    while (!alpha_ordered_formats.empty()) {
+        vector<string> popped_formats;
+
+        for (vector<external_log_format *>::iterator iter = alpha_ordered_formats.begin();
+             iter != alpha_ordered_formats.end();) {
+            external_log_format *elf = *iter;
+            if (elf->elf_collision.empty()) {
+                iter = alpha_ordered_formats.erase(iter);
+                popped_formats.push_back(elf->get_name());
+                graph_ordered_formats.push_back(elf);
+            }
+            else {
+                ++iter;
+            }
+        }
+
+        if (popped_formats.empty() && !alpha_ordered_formats.empty()) {
+            external_log_format *elf = alpha_ordered_formats.front();
+            log_warning("Detected a cycle, breaking by picking %s",
+                    elf->get_name().c_str());
+            elf->elf_collision.clear();
+        }
+
+        for (vector<external_log_format *>::iterator iter = alpha_ordered_formats.begin();
+             iter != alpha_ordered_formats.end();
+             ++iter) {
+            external_log_format *elf = *iter;
+            for (vector<string>::iterator pop_iter = popped_formats.begin();
+                    pop_iter != popped_formats.end();
+                    ++pop_iter) {
+                elf->elf_collision.remove(*pop_iter);
+            }
+        }
+    }
+
+    log_info("Format order:")
+    for (vector<external_log_format *>::iterator iter = graph_ordered_formats.begin();
+            iter != graph_ordered_formats.end();
+            ++iter) {
+        log_info("  %s", (*iter)->get_name().c_str());
+    }
+
+    vector<log_format *> &roots = log_format::get_root_formats();
+    roots.insert(roots.begin(), graph_ordered_formats.begin(), graph_ordered_formats.end());
 }

@@ -40,6 +40,7 @@
 #include <sys/types.h>
 
 #include <set>
+#include <list>
 #include <string>
 #include <vector>
 #include <memory>
@@ -688,6 +689,8 @@ public:
 
     void build(std::vector<std::string> &errors);
 
+    bool match_samples(const std::vector<sample> &samples) const;
+
     std::auto_ptr<log_format> specialized() {
         external_log_format *elf = new external_log_format(*this);
         std::auto_ptr<log_format> retval((log_format *)elf);
@@ -744,6 +747,7 @@ public:
     };
 
     std::set<std::string> elf_source_path;
+    std::list<std::string> elf_collision;
     std::string elf_file_pattern;
     pcrepp *elf_filename_pcre;
     std::map<std::string, pattern> elf_patterns;

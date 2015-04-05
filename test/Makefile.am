@@ -222,6 +222,7 @@ dist_noinst_DATA = \
 	listview_output.6 \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
+	logfile_blued.0 \
 	logfile_empty.0 \
 	logfile_filter.0 \
 	logfile_for_join.0 \
@@ -247,6 +248,7 @@ dist_noinst_DATA = \
 	vt52_curses_input.1 \
 	vt52_curses_output.0 \
 	vt52_curses_output.1 \
+	formats/collision/format.json \
 	formats/jsontest/format.json \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
 	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \

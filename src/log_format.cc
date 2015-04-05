@@ -1213,8 +1213,9 @@ void external_log_format::build(std::vector<std::string> &errors)
                  ++pat_iter) {
                 pattern &pat = *(*pat_iter);
 
-                if (!pat.p_pcre)
+                if (!pat.p_pcre) {
                     continue;
+                }
 
                 std::string line_partial = iter->s_line;
 
@@ -1241,6 +1242,32 @@ void external_log_format::build(std::vector<std::string> &errors)
             }
         }
     }
+}
+
+bool external_log_format::match_samples(const vector<sample> &samples) const
+{
+    for (vector<sample>::const_iterator sample_iter = samples.begin();
+         sample_iter != samples.end();
+         ++sample_iter) {
+        for (std::vector<external_log_format::pattern *>::const_iterator pat_iter = this->elf_pattern_order.begin();
+             pat_iter != this->elf_pattern_order.end();
+             ++pat_iter) {
+            pattern &pat = *(*pat_iter);
+
+            if (!pat.p_pcre) {
+                continue;
+            }
+
+            pcre_context_static<128> pc;
+            pcre_input pi(sample_iter->s_line);
+
+            if (pat.p_pcre->match(pc, pi)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 class external_log_table : public log_vtab_impl {

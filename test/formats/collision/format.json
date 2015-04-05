@@ -1,0 +1,47 @@
+{
+    "zblued_log" : {
+        "title" : "blued",
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))? blued(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*)$"
+            }
+        },
+        "level-field" : "body",
+        "level" : {
+            "error" : "(?:failed|failure|error)",
+            "warning" : "(?:warn|not responding|init: cannot execute)"
+        },
+        "value" : {
+            "log_hostname" : {
+                "kind" : "string",
+                "collate" : "ipaddress",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "Apr  4 20:02:32 Tim-Stacks-iMac.local blued[59]: Release the WiFi lock"
+            }
+        ]
+    },
+    "xerror_log" : {
+        "title" : "Common Error Log",
+        "description" : "The default web error log format for servers like Apache.",
+        "regex" : {
+            "cups" : {
+                "pattern" : "^(?<level>\\w) \\[(?<timestamp>[^\\]]+)\\] (?<body>.*)"
+            }
+        },
+        "level-field": "level",
+        "level" : {
+            "error" : "E",
+            "warning" : "W",
+            "info" : "I"
+        },
+        "sample" : [
+            {
+                "line" : "E [08/Jun/2013:11:28:58 -0700] Unknown directive BrowseOrder on line 22 of /private/etc/cups/cupsd.conf."
+            }
+        ]
+    }
+}

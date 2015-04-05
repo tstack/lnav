@@ -185,3 +185,21 @@ Executing the format file should then install it automatically::
     $ chmod ugo+rx myformat.json
     $ ./myformat.json
     info: installed: /home/example/.lnav/formats/installed/myformat_log.json
+
+Format Order When Scanning a File
+---------------------------------
+
+When **lnav** loads a file, it tries each log format against the first ~1000
+lines of the file trying to find a match.  When a match is found, that log
+format will be locked in and used for the rest of the lines in that file.
+Since there may be overlap between formats, **lnav** performs a test on
+startup to determine which formats match each others sample lines.  Using
+this information it will create an ordering of the formats so that the more
+specific formats are tried before the more generic ones.  For example, a
+format that matches certain syslog messages will match its own sample lines,
+but not the ones in the syslog samples.  On the other hand, the syslog format
+will match its own samples and those in the more specific format.  You can
+see the order of the format by enabling debugging and checking the **lnav**
+log file for the "Format order" message::
+
+    $ lnav -d /tmp/lnav.log
