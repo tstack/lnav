@@ -566,11 +566,10 @@ int main(int argc, char *argv[])
 		    }
 		}
 		    if (!scripty_data.sd_replay.empty() && got_expected &&
-		        (!scripty_data.sd_user_step || got_user_step)) {
+		        !scripty_data.sd_user_step) {
 			struct command cmd = scripty_data.sd_replay.front();
 			int len;
 
-			fprintf(stderr, " us %d got %d\n", scripty_data.sd_user_step, got_user_step);
 			scripty_data.sd_replay.pop();
 			fprintf(stderr, "replay %zd\n", scripty_data.sd_replay.size());
 			switch (cmd.c_type) {
