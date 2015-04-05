@@ -176,9 +176,10 @@ private:
 
         if (this->pp_line_length > 0) {
             this->pp_stream << std::endl;
+            this->pp_line_length = 0;
         }
         has_output = this->flush_values();
-        if (has_output) {
+        if (has_output && this->pp_line_length > 0) {
             this->pp_stream << std::endl;
         }
         this->pp_line_length = 0;
@@ -195,7 +196,9 @@ private:
                 if (start_on_depth &&
                         (el.e_token == DT_LSQUARE ||
                          el.e_token == DT_LCURLY)) {
-                    this->pp_stream << std::endl;
+                    if (this->pp_line_length > 0) {
+                        this->pp_stream << std::endl;
+                    }
                     this->pp_line_length = 0;
                 }
             }

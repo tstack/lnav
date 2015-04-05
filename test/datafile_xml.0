@@ -14,7 +14,5 @@ pair  51:61                                                     ^--------^  <clo
 
 --
 <ns1:foo>
-   
     <elem attr1=xyz attr2="123">  </elem>
-
     <closed />

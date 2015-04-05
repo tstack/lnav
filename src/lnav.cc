@@ -1217,7 +1217,7 @@ static void open_pretty_view(void)
         bool first_line = true;
 
         delete pretty_tc->get_sub_source();
-        for (vis_line_t vl = log_tc->get_top(); vl < log_tc->get_bottom(); ++vl) {
+        for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             content_line_t cl = lss.at(vl);
             logfile *lf = lss.find(cl);
             logfile::iterator ll = lf->begin() + cl;
@@ -1241,6 +1241,9 @@ static void open_pretty_view(void)
             pretty_tc->set_top(vis_line_t(0));
         }
         lnav_data.ld_last_pretty_print_top = log_tc->get_top();
+    }
+    else {
+        log_warning("no log data to pretty-print");
     }
 }
 
