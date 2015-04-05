@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 		while (lb.read_line(offset, lv)) {
             lv.terminate();
 		    printf("%s", lv.lv_start);
-		    if ((last_offset + lv.lv_len) < offset)
+		    if ((off_t)(last_offset + lv.lv_len) < offset)
 			printf("\n");
 		    last_offset = offset;
 		}
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
                 while (lb.read_line(seq_offset, lv)) { }
 		do {
             bool ret;
-		    int lpc;
+		    size_t lpc;
 
 		    random_shuffle(index.begin(), index.end());
 		    for (lpc = 0; lpc < index.size(); lpc++) {
