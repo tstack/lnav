@@ -213,7 +213,7 @@ static char *hex2bits(const char *src)
     len = strlen(src) / 2;
     retval = new char[sizeof(uint32_t) + len];
     *((uint32_t *)retval) = len;
-    while (pos < (sizeof(uint32_t) + len)) {
+    while ((size_t)pos < (sizeof(uint32_t) + len)) {
 	int val;
 	
 	sscanf(src, "%2x", &val);
@@ -566,11 +566,10 @@ int main(int argc, char *argv[])
 		    }
 		}
 		    if (!scripty_data.sd_replay.empty() && got_expected &&
-		        (!scripty_data.sd_user_step || got_user_step)) {
+		        !scripty_data.sd_user_step) {
 			struct command cmd = scripty_data.sd_replay.front();
 			int len;
 
-			fprintf(stderr, " us %d got %d\n", scripty_data.sd_user_step, got_user_step);
 			scripty_data.sd_replay.pop();
 			fprintf(stderr, "replay %zd\n", scripty_data.sd_replay.size());
 			switch (cmd.c_type) {
