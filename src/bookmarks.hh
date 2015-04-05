@@ -113,11 +113,11 @@ public:
     typedef std::vector<bookmark_type_t *>::iterator type_iterator;
 
     static type_iterator type_begin() {
-        return ALL_TYPES.begin();
+        return get_all_types().begin();
     };
 
     static type_iterator type_end() {
-        return ALL_TYPES.end();
+        return get_all_types().end();
     };
 
     static bookmark_type_t *find_type(const std::string &name) {
@@ -130,8 +130,14 @@ public:
         return retval;
     };
 
+    static std::vector<bookmark_type_t *> &get_all_types() {
+        static std::vector<bookmark_type_t *> all_types;
+
+        return all_types;
+    };
+
     bookmark_type_t(const std::string &name) : bt_name(name) {
-        ALL_TYPES.push_back(this);
+        get_all_types().push_back(this);
     };
 
     const std::string &get_name() const {
@@ -148,8 +154,6 @@ private:
 
         const std::string &me_name;
     };
-
-    static std::vector<bookmark_type_t *> ALL_TYPES;
 
     const std::string bt_name;
 };
