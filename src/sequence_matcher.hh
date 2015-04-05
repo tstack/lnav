@@ -92,7 +92,7 @@ retry:
             state.push_back(index);
         }
 
-        return this->sm_count == state.size();
+        return (size_t)this->sm_count == state.size();
     };
 
 private:
