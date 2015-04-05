@@ -64,7 +64,11 @@ AM_LDFLAGS = \
 AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \
 	-Wall \
-	-Werror=sign-compare \
+	-Werror \
+	-Wno-cpp \
+	-Wno-error=unused-result \
+	-Wno-unknown-warning-option \
+	-Wno-unknown-warning \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
 
