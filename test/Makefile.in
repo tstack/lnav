@@ -673,6 +673,8 @@ RM_V = $(RM_V_@AM_V@)
 RM_V_ = $(RM_V_@AM_DEFAULT_V@)
 RM_V_0 = @echo "  RM      " $@;
 AM_CPPFLAGS = \
+	-Wall \
+	-Werror=sign-compare \
 	-I$(top_srcdir)/src \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
