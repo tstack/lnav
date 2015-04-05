@@ -87,7 +87,7 @@ private:
 
 int main(int argc, char *argv[])
 {
-    int c, retval = EXIT_SUCCESS;
+    int retval = EXIT_SUCCESS;
     const char *errptr;
     auto_fd fd;
     pcre *code;
