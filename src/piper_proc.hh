@@ -75,6 +75,8 @@ public:
     /** @return The file descriptor for the temporary file. */
     int get_fd() { return this->pp_fd.release(); };
 
+    pid_t get_child_pid() const { return this->pp_child; };
+
 private:
     /** A file descriptor that refers to the temporary file. */
     auto_fd pp_fd;

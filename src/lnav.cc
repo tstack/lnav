@@ -3599,8 +3599,10 @@ static void gather_pipers(void)
 {
     for (std::list<piper_proc *>::iterator iter = lnav_data.ld_pipers.begin();
          iter != lnav_data.ld_pipers.end(); ) {
-        if ((*iter)->has_exited()) {
-            delete *iter;
+        piper_proc *pp = *iter;
+        if (pp->has_exited()) {
+            log_info("child piper has exited -- %d", pp->get_child_pid());
+            delete pp;
             iter = lnav_data.ld_pipers.erase(iter);
         } else {
             ++iter;
@@ -3654,7 +3656,6 @@ static void looper(void)
         (void)signal(SIGTERM, sigint);
         (void)signal(SIGWINCH, sigwinch);
         (void)signal(SIGCHLD, sigchld);
-        (void)signal(SIGPIPE, SIG_IGN);
 
         screen_curses sc;
         lnav_behavior lb;
@@ -4168,6 +4169,7 @@ int main(int argc, char *argv[])
     const char *         stdin_out = NULL;
     int                  stdin_out_fd = -1;
 
+    (void)signal(SIGPIPE, SIG_IGN);
     setlocale(LC_NUMERIC, "");
 
     lnav_data.ld_program_name = argv[0];
@@ -4622,12 +4624,15 @@ int main(int argc, char *argv[])
                 for (;;) {
                     gather_pipers();
                     if (lnav_data.ld_pipers.empty()) {
+                        log_debug("all pipers finished");
                         break;
                     }
                     else {
                         usleep(10000);
                         rebuild_indexes(false);
                     }
+                    log_debug("%d pipers still active",
+                            lnav_data.ld_pipers.size());
                 }
                 rebuild_indexes(false);
 

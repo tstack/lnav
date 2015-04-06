@@ -640,14 +640,14 @@ static string com_pipe_to(string cmdline, vector<string> &args)
                     shared_buffer_ref sbr;
                     lf->read_full_message(lf->message_start(lf->begin() + cl), sbr);
                     if (write(in_pipe.write_end(), sbr.get_data(), sbr.length()) == -1) {
-                        return "error: Unable to write to pipe -- " + string(strerror(errno));
+                        return "warning: Unable to write to pipe -- " + string(strerror(errno));
                     }
                     write(in_pipe.write_end(), "\n", 1);
                 }
                 else {
                     tc->grep_value_for_line(tc->get_top(), line);
                     if (write(in_pipe.write_end(), line.c_str(), line.size()) == -1) {
-                        return "error: Unable to write to pipe -- " + string(strerror(errno));
+                        return "warning: Unable to write to pipe -- " + string(strerror(errno));
                     }
                     write(in_pipe.write_end(), "\n", 1);
                 }
@@ -656,12 +656,11 @@ static string com_pipe_to(string cmdline, vector<string> &args)
                 for (iter = bv.begin(); iter != bv.end(); iter++) {
                     tc->grep_value_for_line(*iter, line);
                     if (write(in_pipe.write_end(), line.c_str(), line.size()) == -1) {
-                        return "error: Unable to write to pipe -- " + string(strerror(errno));
+                        return "warning: Unable to write to pipe -- " + string(strerror(errno));
                     }
                     write(in_pipe.write_end(), "\n", 1);
                 }
             }
-            in_pipe.close();
 
             retval = "";
             break;
