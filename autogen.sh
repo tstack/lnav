@@ -1,14 +1,14 @@
 #! /bin/sh
 
 
-if [ -n ${AUTORECONF} ]; then
-    autoreconf 1>/dev/null 2>/dev/null
-    if [ $? ]; then
+if test x"${AUTORECONF}" = x""; then
+    autoreconf -V 1>/dev/null 2>/dev/null
+    if test $? -eq 0; then
         AUTORECONF=autoreconf
     fi
 fi
 
-if [ -n ${AUTORECONF} ]; then
+if test x"${AUTORECONF}" != x""; then
     ${AUTORECONF} -vfi -I m4
 else
     AUTOCONF=${AUTOCONF:-autoconf}
