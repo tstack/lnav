@@ -2515,14 +2515,16 @@ string execute_sql(string sql, string &alt_msg)
             vis_bookmarks &bm =
             lnav_data.ld_views[LNV_LOG].get_bookmarks();
 
-            if (dls.dls_headers.size() == 1 && !bm[&BM_QUERY].empty()) {
+            if (!(lnav_data.ld_flags & LNF_HEADLESS) &&
+                    dls.dls_headers.size() == 1 && !bm[&BM_QUERY].empty()) {
                 retval = "";
                 alt_msg = HELP_MSG_2(
                   y, Y,
                   "to move forward/backward through query results "
                   "in the log view");
             }
-            else if (dls.dls_rows.size() == 1) {
+            else if (!(lnav_data.ld_flags & LNF_HEADLESS) &&
+                    dls.dls_rows.size() == 1) {
                 string row;
 
                 hs.text_value_for_line(lnav_data.ld_views[LNV_DB], 1, row, true);
@@ -3610,6 +3612,23 @@ static void gather_pipers(void)
     }
 }
 
+static void wait_for_pipers(void)
+{
+    for (;;) {
+        gather_pipers();
+        if (lnav_data.ld_pipers.empty()) {
+            log_debug("all pipers finished");
+            break;
+        }
+        else {
+            usleep(10000);
+            rebuild_indexes(false);
+        }
+        log_debug("%d pipers still active",
+                lnav_data.ld_pipers.size());
+    }
+}
+
 static void looper(void)
 {
     try {
@@ -4616,24 +4635,15 @@ int main(int argc, char *argv[])
                 alerter::singleton().enabled(false);
 
                 lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
+                // Read all of stdin
+                wait_for_pipers();
                 rebuild_indexes(true);
 
                 lnav_data.ld_views[LNV_LOG].set_top(vis_line_t(0));
 
+                log_info("Executing initial commands");
                 execute_init_commands(msgs);
-                for (;;) {
-                    gather_pipers();
-                    if (lnav_data.ld_pipers.empty()) {
-                        log_debug("all pipers finished");
-                        break;
-                    }
-                    else {
-                        usleep(10000);
-                        rebuild_indexes(false);
-                    }
-                    log_debug("%d pipers still active",
-                            lnav_data.ld_pipers.size());
-                }
+                wait_for_pipers();
                 rebuild_indexes(false);
 
                 for (msg_iter = msgs.begin();
@@ -4653,11 +4663,18 @@ int main(int argc, char *argv[])
                     !lnav_data.ld_stdout_used) {
                     bool suppress_empty_lines = false;
                     list_overlay_source *los;
+                    unsigned long view_index;
                     vis_line_t y;
 
                     tc = lnav_data.ld_view_stack.top();
-                    if (tc == &lnav_data.ld_views[LNV_DB]) {
-                        suppress_empty_lines = true;
+                    view_index = tc - lnav_data.ld_views;
+                    switch (view_index) {
+                        case LNV_DB:
+                        case LNV_HISTOGRAM:
+                            suppress_empty_lines = true;
+                            break;
+                        default:
+                            break;
                     }
 
                     los = tc->get_overlay_source();
