@@ -1,15 +1,20 @@
 #! /bin/sh
 
 
-AUTORECONF=${AUTORECONF:-$(which autoreconf)}
+if [ -n ${AUTORECONF} ]; then
+    autoreconf 1>/dev/null 2>/dev/null
+    if [ $? ]; then
+        AUTORECONF=autoreconf
+    fi
+fi
 
 if [ -n ${AUTORECONF} ]; then
     ${AUTORECONF} -vfi -I m4
 else
-    AUTOCONF=${AUTOCONF:-$(which autoconf)}
-    AUTOMAKE=${AUTOMAKE:-$(which automake)}
-    AUTOHEADER=${AUTOHEADER:-$(which autoheader)}
-    ACLOCAL=${ACLOCAL:-$(which aclocal)}
+    AUTOCONF=${AUTOCONF:-autoconf}
+    AUTOMAKE=${AUTOMAKE:-automake}
+    AUTOHEADER=${AUTOHEADER:-autoheader}
+    ACLOCAL=${ACLOCAL:-aclocal}
 
     ${AUTOCONF} --version
     ${AUTOMAKE} --version
