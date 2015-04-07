@@ -3055,7 +3055,7 @@ static void usage(void)
         "  To watch the output of make with timestamps prepended:\n"
         "    $ make 2>&1 | lnav -t\n"
         "\n"
-        "Version: " PACKAGE_STRING "\n";
+        "Version: " VCS_PACKAGE_STRING "\n";
 
     fprintf(stderr, usage_msg, lnav_data.ld_program_name);
 }
@@ -4295,7 +4295,7 @@ int main(int argc, char *argv[])
             break;
 
         case 'V':
-            printf("%s\n", PACKAGE_STRING);
+            printf("%s\n", VCS_PACKAGE_STRING);
             exit(0);
             break;
 
@@ -4596,7 +4596,7 @@ int main(int argc, char *argv[])
         try {
             rescan_files(true);
 
-            log_info("startup: %s", PACKAGE_STRING);
+            log_info("startup: %s", VCS_PACKAGE_STRING);
             log_host_info();
             log_info("Libraries:");
 #ifdef HAVE_BZLIB_H
