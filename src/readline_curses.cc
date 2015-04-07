@@ -293,8 +293,6 @@ readline_curses::readline_curses()
     struct winsize ws;
     int            sp[2];
 
-    log_info("readline: %s", rl_library_version);
-
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
         throw error(errno);
     }

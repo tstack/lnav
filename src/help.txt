@@ -527,11 +527,10 @@ particular table.  You can find the file format and table name for
 the top log message by looking in the upper right hand corner of the
 log file view.
 
-The log table names are as follows:
+Some commonly used format tables are:
 
   access_log       Apache common access log format
   syslog_log       Syslog format
-  glog_log         Google glog format
   strace_log       Strace log format
   generic_log      'Generic' log format.  This table contains messages
                    from files that have a very simple format with a

@@ -301,7 +301,9 @@ public:
             this->fos_lines.push_back(" No known message fields");
         }
         else{
-            this->fos_lines.push_back(" Known message fields:");
+            this->fos_lines.push_back(" Known message fields:  (SQL table -- " +
+                    this->fos_log_helper.ldh_file->get_format()->get_name() +
+                    ")");
         }
 
         for (size_t lpc = 0; lpc < this->fos_log_helper.ldh_line_values.size(); lpc++) {
@@ -347,7 +349,7 @@ public:
             this->fos_lines.push_back(" No discovered message fields");
         }
         else {
-            this->fos_lines.push_back(" Discovered message fields:");
+            this->fos_lines.push_back(" Discovered message fields:  (SQL table -- logline)");
         }
 
         data_parser::element_list_t::iterator iter;
@@ -834,6 +836,7 @@ public:
     textfile_callback() : force(false), front_file(NULL), front_top(-1) { };
 
     void closed_file(logfile *lf) {
+        log_info("closed text file: %s", lf->get_filename().c_str());
         lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
         lnav_data.ld_files.remove(lf);
         delete lf;
@@ -944,6 +947,7 @@ void rebuild_indexes(bool force)
         logfile *lf = *file_iter;
 
         if (!lf->exists() || lf->is_closed()) {
+            log_info("closed log file: %s", lf->get_filename().c_str());
             lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
@@ -1199,7 +1203,7 @@ static void open_schema_view(void)
             lnav_data.ld_vtab_manager->begin();
          vtab_iter != lnav_data.ld_vtab_manager->end();
          ++vtab_iter) {
-        schema += vtab_iter->second->get_table_statement();
+        schema += "\n" + vtab_iter->second->get_table_statement();
     }
 
     delete schema_tc->get_sub_source();
@@ -3602,8 +3606,9 @@ static void gather_pipers(void)
     for (std::list<piper_proc *>::iterator iter = lnav_data.ld_pipers.begin();
          iter != lnav_data.ld_pipers.end(); ) {
         piper_proc *pp = *iter;
+        pid_t child_pid = pp->get_child_pid();
         if (pp->has_exited()) {
-            log_info("child piper has exited -- %d", pp->get_child_pid());
+            log_info("child piper has exited -- %d", child_pid);
             delete pp;
             iter = lnav_data.ld_pipers.erase(iter);
         } else {
@@ -4309,6 +4314,7 @@ int main(int argc, char *argv[])
     argv += optind;
 
     lnav_log_file = fopen(lnav_data.ld_debug_log_name, "a");
+    log_info("lnav started");
 
     if (lnav_data.ld_flags & LNF_INSTALL) {
         string installed_path = dotlnav_path("formats/installed/");

@@ -160,19 +160,13 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 
             (*iter)->clear();
             this->set_format_base_time(*iter);
-            if (!(*iter)->scan(this->lf_index, offset, sbr)) {
-                log_debug("%s:%d:log format does not match -- %s",
-                    this->lf_filename.c_str(),
-                    this->lf_index.size(),
-                    (*iter)->get_name().c_str());
-            }
-            else {
+            if ((*iter)->scan(this->lf_index, offset, sbr)) {
 #if 0
                 require(this->lf_index.size() == 1 ||
                        (this->lf_index[this->lf_index.size() - 2] <
                         this->lf_index[this->lf_index.size() - 1]));
 #endif
-                log_debug("%s:%d:log format found -- %s",
+                log_info("%s:%d:log format found -- %s",
                     this->lf_filename.c_str(),
                     this->lf_index.size(),
                     (*iter)->get_name().c_str());
