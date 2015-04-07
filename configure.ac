@@ -1,4 +1,3 @@
-
 AC_INIT([lnav],[0.7.2],[lnav@googlegroups.com],[lnav],[http://lnav.org])
 AC_CONFIG_SRCDIR([src/lnav.cc])
 AC_CONFIG_MACRO_DIR([m4])
@@ -217,6 +216,17 @@ AS_CASE(["$host_os"],
         ])dnl
     ]dnl
 )
+
+saved_location=$(pwd)
+cd $srcdir
+version=$(expr $(git describe --abbrev=7 --dirty --always --tags 2>/dev/null) : 'v\([[0-9]]*\.[[0-9]]*\.[[0-9]]*.*\)' 2>/dev/null)
+cd $saved_location
+AS_IF([test $? -eq 0],
+    [version=$(echo $version | tr -d '\n')
+     version=${version:-${PACKAGE_VERSION}}
+     AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_NAME $version"],
+         [VCS package string])],
+    AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_STRING"], [VCS package string]))
 
 AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
 
