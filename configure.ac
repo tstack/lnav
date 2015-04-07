@@ -225,8 +225,8 @@ AS_IF([test $? -eq 0],
     [version=$(echo $version | tr -d '\n')
      version=${version:-${PACKAGE_VERSION}}
      AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_NAME $version"],
-         [svn package string])],
-    AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_STRING"], [svn package string]))
+         [VCS package string])],
+    AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_STRING"], [VCS package string]))
 
 AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
 

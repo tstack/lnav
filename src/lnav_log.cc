@@ -179,7 +179,7 @@ void log_host_info(void)
     getcwd(cwd, sizeof(cwd));
     log_info("  cwd=%s", cwd);
     log_info("Executable:");
-    log_info("  version=%s", PACKAGE_STRING);
+    log_info("  version=%s", VCS_PACKAGE_STRING);
 }
 
 void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
