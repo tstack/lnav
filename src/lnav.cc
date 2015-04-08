@@ -3792,7 +3792,8 @@ static void looper(void)
                 switch (errno) {
                 case EBADF:
                 {
-                    int lpc, fd_flags;
+                    size_t lpc;
+                    int fd_flags;
 
                     log_error("bad file descriptor");
                     for (lpc = 0; lpc < FD_SETSIZE; lpc++) {
