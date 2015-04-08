@@ -309,6 +309,7 @@ readline_curses::readline_curses()
                 NULL,
                 NULL,
                 &ws) < 0) {
+        perror("error: failed to open terminal(openpty)");
         throw error(errno);
     }
 
