@@ -101,10 +101,13 @@ public:
                     this->write_element(el);
                     continue;
                 case DT_COMMA:
-                    this->flush_values(true);
-                    this->write_element(el);
-                    this->start_new_line();
-                    continue;
+                    if (this->pp_depth > 0) {
+                        this->flush_values(true);
+                        this->write_element(el);
+                        this->start_new_line();
+                        continue;
+                    }
+                    break;
                 default:
                     break;
             }
