@@ -2575,7 +2575,9 @@ string execute_sql(string sql, string &alt_msg)
     return retval;
 }
 
-static void execute_file(string path)
+string execute_from_file(const string &path, int line_number, char mode, const string &cmdline);
+
+static void execute_file(string path, bool multiline = true)
 {
     FILE *file;
 
@@ -2586,10 +2588,12 @@ static void execute_file(string path)
         return;
     }
 
-    int    line_number = 0;
+    int    line_number = 0, starting_line_number = 0;
     char *line = NULL;
     size_t line_max_size;
     ssize_t line_size;
+    string cmdline;
+    char mode = '\0';
 
     while ((line_size = getline(&line, &line_max_size, file)) != -1) {
         line_number += 1;
@@ -2601,41 +2605,71 @@ static void execute_file(string path)
             continue;
         }
 
-        string rc, alt_msg;
-
-        if (line[line_size - 1] == '\n') {
-            line[line_size - 1] = '\0';
-        }
         switch (line[0]) {
-        case ':':
-            rc = execute_command(&line[1]);
-            break;
-        case '/':
-        case ';':
-            setup_logline_table();
-            rc = execute_sql(&line[1], alt_msg);
-            break;
-        case '|':
-            execute_file(&line[1]);
-            break;
-        default:
-            rc = execute_command(line);
-            break;
+            case ':':
+            case '/':
+            case ';':
+            case '|':
+                if (mode) {
+                    execute_from_file(path, starting_line_number, mode, trim(cmdline));
+                }
+
+                starting_line_number = line_number;
+                mode = line[0];
+                cmdline = string(&line[1]);
+                break;
+            default:
+                if (multiline) {
+                    cmdline += line;
+                }
+                else {
+                    execute_from_file(path, line_number, ':', line);
+                }
+                break;
         }
 
-        if (rescan_files()) {
-            rebuild_indexes(true);
-        }
+    }
 
-        log_info("%s:%d:execute result -- %s",
-            path.c_str(),
-            line_number,
-            rc.c_str());
+    if (mode) {
+        execute_from_file(path, starting_line_number, mode, trim(cmdline));
     }
 
     if (file != stdin) {
         fclose(file);
     }
+}
+
+string execute_from_file(const string &path, int line_number, char mode, const string &cmdline)
+{
+    string retval, alt_msg;
+
+    switch (mode) {
+        case ':':
+            retval = execute_command(cmdline);
+            break;
+        case '/':
+        case ';':
+            setup_logline_table();
+            retval = execute_sql(cmdline, alt_msg);
+            break;
+        case '|':
+            execute_file(cmdline);
+            break;
+        default:
+            retval = execute_command(cmdline);
+            break;
+    }
+
+    if (rescan_files()) {
+        rebuild_indexes(true);
+    }
+
+    log_info("%s:%d:execute result -- %s",
+            path.c_str(),
+            line_number,
+            retval.c_str());
+
+    return retval;
 }
 
 void execute_init_commands(vector<pair<string, string> > &msgs)

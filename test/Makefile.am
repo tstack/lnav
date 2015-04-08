@@ -243,6 +243,7 @@ dist_noinst_DATA = \
 	logfile_vami.0 \
 	logfile_vdsm.0 \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
+	multiline.lnav \
 	mvwattrline_output.0 \
 	simple-db.sql \
 	view_colors_output.0 \

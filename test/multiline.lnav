@@ -1,0 +1,10 @@
+#! /usr/bin/env lnav -f
+
+;CREATE TABLE foobar (
+    mykey integer primary key,
+    name text
+);
+
+;INSERT INTO foobar VALUES (1, 'Jules');
+
+;SELECT * FROM foobar;

@@ -514,3 +514,13 @@ run_test ${lnav_test} -n \
 check_error_output "bad zoom level is not rejected?" <<EOF
 error: invalid zoom level -- bad
 EOF
+
+
+run_test ${lnav_test} -n \
+    -f ${test_dir}/multiline.lnav \
+    ${test_dir}/logfile_access_log.0
+
+check_output "multiline commands do not work?" <<EOF
+mykey  name
+    1 Jules
+EOF
