@@ -16,12 +16,18 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
         [with_sqlite3="yes"]
     )
 
+    AS_VAR_SET(saved_CFLAGS, $CFLAGS)
+    AS_VAR_SET(saved_CPPFLAGS, $CPPFLAGS)
+    AS_VAR_SET(saved_LDFLAGS, $LDFLAGS)
+    AS_VAR_SET(saved_LIBS, $LIBS)
+
     AS_CASE(["$with_sqlite3"],
         [no],
         AC_MSG_ERROR([sqlite3 required to build]),
         [yes],
         [],
         [dnl
+        LNAV_ADDTO(CFLAGS, [-I$with_sqlite3/include])
         LNAV_ADDTO(CPPFLAGS, [-I$with_sqlite3/include])
         AS_VAR_SET([SQLITE3_LDFLAGS], ["-L$with_sqlite3/lib"])
         AS_VAR_SET([SQLITE3_CFLAGS], ["-I$with_sqlite3/include"])
@@ -81,6 +87,11 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
             [Have the sqlite3_stmt_readonly function]
         )
     )
+
+    AS_VAR_SET(CFLAGS, $saved_CFLAGS)
+    AS_VAR_SET(CPPFLAGS, $saved_CPPFLAGS)
+    AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
+    AS_VAR_SET(LIBS, $saved_LIBS)
 
     AC_SUBST(SQLITE3_CFLAGS)
     AC_SUBST(SQLITE3_LDFLAGS)
