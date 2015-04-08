@@ -39,7 +39,25 @@ if test ".$with_pcre" = ".no" ; then
 else
   AC_MSG_RESULT([(testing)])
   AC_CHECK_LIB(pcre, pcre_study)
-  AC_CHECK_LIB(pcrecpp, _ZN7pcrecpp2RE4InitERKSsPKNS_10RE_OptionsE)
+  AS_VAR_SET(saved_LIBS, $LIBS)
+  AS_VAR_SET(LIBS, "-lpcrecpp $LIBS")
+  AC_MSG_CHECKING([libpcrecpp])
+  AC_LANG_PUSH([C++])
+  AC_LINK_IFELSE(
+    [
+    AC_LANG_PROGRAM([[@%:@include <pcrecpp.h>]],
+        [[
+        pcrecpp::RE("hello");
+        ]]
+    )
+    ],
+    AC_MSG_RESULT([yes]),
+    [
+    AC_MSG_RESULT([[no, (WARNING)]])
+    AS_VAR_SET(LIBS, $saved_LIBS)
+    ]
+  )
+  AC_LANG_POP([C++])
   AC_CHECK_HEADERS(pcre.h pcre/pcre.h)
   if test "$ac_cv_lib_pcre_pcre_study" = "yes" ; then
      PCRE_LIBS="-lpcre -lpcrecpp"
@@ -62,7 +80,7 @@ else
         m4_ifval($1,$1)
      else
         AC_MSG_CHECKING([lib pcre])
-        AC_MSG_RESULT([no, (WARNING)])
+        AC_MSG_RESULT([[no, (WARNING)]])
         m4_ifval($2,$2)
      fi
   fi
