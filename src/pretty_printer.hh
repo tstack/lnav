@@ -218,8 +218,10 @@ private:
     }
 
     void write_element(const element &el) {
-        if (this->pp_line_length == 0 &&
-                (el.e_token == DT_WHITE || el.e_token == DT_LINE)) {
+        if (this->pp_depth > 0 && this->pp_line_length == 0 && el.e_token == DT_WHITE) {
+            return;
+        }
+        if (this->pp_line_length == 0 && el.e_token == DT_LINE) {
             return;
         }
         pcre_input &pi = this->pp_scanner->get_input();

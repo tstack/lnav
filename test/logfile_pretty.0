@@ -1,0 +1,22 @@
+Apr  7 00:49:42 Tim-Stacks-iMac kernel[0]: Ethernet [AppleBCM5701Ethernet]: Link up on en0, 1-Gigabit, Full-duplex, Symmetric flow-control, Debug [796d,2301,0de1,0300,cde1,3800]
+Apr  7 05:49:53 Tim-Stacks-iMac.local GoogleSoftwareUpdateDaemon[17212]: -[KSUpdateCheckAction performAction] KSUpdateCheckAction running KSServerUpdateRequest: <KSOmahaServerUpdateRequest:0x511f30
+		server=<KSOmahaServer:0x510d80>
+		url="https://tools.google.com/service/update2"
+		runningFetchers=0
+		tickets=1
+		activeTickets=1
+		rollCallTickets=1
+		body=
+			<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+			<o:gupdate xmlns:o="http://www.google.com/update2/request" protocol="2.0" version="KeystoneDaemon-1.2.0.7709" ismachine="1" requestid="{0DFDBCD1-5E29-4DFC-BD99-31A2397198FE}">
+			    <o:os platform="mac" version="MacOSX" sp="10.10.2_x86_64h"></o:os>
+			    <o:app appid="com.google.Keystone" version="1.2.0.7709" lang="en-us" installage="180" brand="GGLG">
+			        <o:ping r="1" a="1"></o:ping>
+			        <o:updatecheck></o:updatecheck>
+			    </o:app>
+			</o:gupdate>
+	>
+Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: WARNING: The Gestalt selector gestaltSystemVersion is returning 10.9.2 instead of 10.10.2. Use NSProcessInfo's operatingSystemVersion property to get correct system version number.
+	Call location:
+Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: 0   CarbonCore                          0x00007fff8a9b3d9b ___Gestalt_SystemVersion_block_invoke + 113
+Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: 1   libdispatch.dylib                   0x00007fff8bc84c13 _dispatch_client_callout + 8

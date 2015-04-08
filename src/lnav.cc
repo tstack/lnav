@@ -4634,14 +4634,16 @@ int main(int argc, char *argv[])
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 std::vector<pair<string, string> > msgs;
                 std::vector<pair<string, string> >::iterator msg_iter;
-                textview_curses *tc;
+                textview_curses *log_tc, *tc;
                 attr_line_t al;
                 const std::string &line = al.get_string();
                 bool found_error = false;
 
                 alerter::singleton().enabled(false);
 
-                lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
+                log_tc = &lnav_data.ld_views[LNV_LOG];
+                log_tc->set_height(vis_line_t(24));
+                lnav_data.ld_view_stack.push(log_tc);
                 // Read all of stdin
                 wait_for_pipers();
                 rebuild_indexes(true);

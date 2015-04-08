@@ -412,7 +412,7 @@ public:
         unsigned long height;
 
         if (this->lv_window == NULL) {
-            height_out = vis_line_t(1);
+            height_out = std::max(this->lv_height, vis_line_t(1));
             width_out = 0;
         }
         else {
