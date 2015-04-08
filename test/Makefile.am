@@ -232,6 +232,7 @@ dist_noinst_DATA = \
 	logfile_multiline.0 \
 	logfile_openam.0 \
 	logfile_plain.0 \
+	logfile_pretty.0 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
