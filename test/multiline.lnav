@@ -7,4 +7,8 @@
 
 ;INSERT INTO foobar VALUES (1, 'Jules');
 
-;SELECT * FROM foobar;
+;INSERT INTO environ
+   SELECT "msg", "Hello: " || group_concat(name, ", ") FROM foobar;
+
+:pipe-line-to
+  echo $msg

@@ -521,6 +521,5 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_output "multiline commands do not work?" <<EOF
-mykey  name
-    1 Jules
+Hello: Jules
 EOF
