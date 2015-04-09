@@ -258,7 +258,7 @@ struct date_time_scanner {
 template<typename T>
 size_t strtonum(T &num_out, const char *data, size_t len);
 
-inline bool pollfd_ready(const std::vector<struct pollfd> &pollfds, int fd, short events = POLLIN) {
+inline bool pollfd_ready(const std::vector<struct pollfd> &pollfds, int fd, short events = POLLIN|POLLHUP) {
     for (std::vector<struct pollfd>::const_iterator iter = pollfds.begin();
             iter != pollfds.end();
             ++iter) {
