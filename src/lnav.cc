@@ -4769,7 +4769,9 @@ int main(int argc, char *argv[])
 
         // When reading from stdin, dump out the last couple hundred lines so
         // the user can have the text in their terminal history.
-        if (stdin_out_fd != -1 && !(lnav_data.ld_flags & LNF_HEADLESS)) {
+        if (stdin_out_fd != -1 &&
+                !(lnav_data.ld_flags & LNF_QUIET) &&
+                !(lnav_data.ld_flags & LNF_HEADLESS)) {
             list<logfile *>::iterator file_iter;
             struct stat st;
 
