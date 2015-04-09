@@ -365,7 +365,7 @@ check_output "pretty-printer is not working" <<EOF
 <response>
     <locale>en-US</locale>
     <requestid>ipInfo</requestid>
-    <value id="ipv4Gateway" actions="enabled">10.133.235.253 (unknown)</value>
+    <value id="ipv4Gateway" actions="enabled">198.51.100.253 (unknown)</value>
     <value id="ipv6Gateway" actions="enabled"/>
     <value id="ipv6Enabled" actions="enabled">true</value>
     <value id="ipv4Enabled" actions="enabled">true</value>
@@ -375,7 +375,7 @@ check_output "pretty-printer is not working" <<EOF
         <value id="updateable" actions="enabled">True</value>
         <value id="prefix" actions="enabled">22</value>
         <value id="mode" actions="enabled">dhcp</value>
-        <value id="address" actions="enabled">10.133.234.110 (unknown)</value>
+        <value id="address" actions="enabled">198.51.100.110 (unknown)</value>
         <value id="interface" actions="enabled">nic1</value>
     </value>
     <value id="v6config" actions="enabled">
