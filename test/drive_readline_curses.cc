@@ -42,7 +42,9 @@
 
 #include <algorithm>
 
+#include "lnav_util.hh"
 #include "readline_curses.hh"
+#include "../src/lnav_util.hh"
 
 using namespace std;
 
@@ -71,7 +73,7 @@ static void rl_timeout(void *dummy, readline_curses *rc)
 
 int main(int argc, char *argv[])
 {
-    int c, fd, maxfd, retval = EXIT_SUCCESS;
+    int c, fd, retval = EXIT_SUCCESS;
 
     fd = open("/tmp/lnav.err", O_WRONLY|O_CREAT|O_APPEND, 0666);
     dup2(fd, STDERR_FILENO);
@@ -89,15 +91,11 @@ int main(int argc, char *argv[])
     
     readline_context context("test", &COMMANDS);
     readline_curses rlc;
-    fd_set rfds;
 
     rlc.add_context(1, context);
     rlc.start();
 
     drive_data.dd_rl_view = &rlc;
-    
-    FD_ZERO(&rfds);
-    FD_SET(STDIN_FILENO, &rfds);
 
     screen_curses sc;
     
@@ -111,18 +109,24 @@ int main(int argc, char *argv[])
     rlc.set_y(-1);
     rlc.set_perform_action(readline_curses::action(rl_callback));
     rlc.set_timeout_action(readline_curses::action(rl_timeout));
-    maxfd = max(STDIN_FILENO, rlc.update_fd_set(rfds));
 
     drive_data.dd_looping = true;
     while (drive_data.dd_looping) {
-	fd_set ready_rfds = rfds;
+        vector<struct pollfd> pollfds;
 	int rc;
+
+        pollfds.push_back((struct pollfd) {
+                STDIN_FILENO,
+                POLLIN,
+                0
+        });
+        rlc.update_poll_set(pollfds);
 
 	rlc.do_update();
 	refresh();
-	rc = select(maxfd + 1, &ready_rfds, NULL, NULL, NULL);
+	rc = poll(&pollfds[0], pollfds.size(), -1);
 	if (rc > 0) {
-	    if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
+	    if (pollfd_ready(pollfds, STDIN_FILENO)) {
 		int ch;
 		
 		while ((ch = getch()) != ERR) {
@@ -143,7 +147,7 @@ int main(int argc, char *argv[])
 		    }
 		}
 	    }
-	    rlc.check_fd_set(ready_rfds);
+	    rlc.check_poll_set(pollfds);
 	}
     }
     

@@ -43,6 +43,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <poll.h>
 
 #include "lnav_log.hh"
 #include "piper_proc.hh"
@@ -132,11 +133,13 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         lb.set_fd(infd);
         do {
             line_value lv;
-            fd_set rready;
+            struct pollfd pfd = {
+                    lb.get_fd(),
+                    POLLIN,
+                    0
+            };
 
-            FD_ZERO(&rready);
-            FD_SET(lb.get_fd(), &rready);
-            select(lb.get_fd() + 1, &rready, NULL, NULL, NULL);
+            poll(&pfd, 1, -1);
             last_off = off;
             while (lb.read_line(off, lv, true)) {
                 ssize_t wrc;

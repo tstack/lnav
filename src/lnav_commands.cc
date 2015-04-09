@@ -766,10 +766,7 @@ static string com_graph(string cmdline, vector<string> &args)
             hm["(graph"] = hl;
             lnav_data.ld_graph_source.set_highlighter(&hm["(graph"]);
 
-            auto_ptr<grep_proc> gp(new grep_proc(code,
-                                                 tc,
-                                                 lnav_data.ld_max_fd,
-                                                 lnav_data.ld_read_fds));
+            auto_ptr<grep_proc> gp(new grep_proc(code, tc));
 
             gp->queue_request();
             gp->start();

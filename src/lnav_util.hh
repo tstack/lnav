@@ -36,6 +36,7 @@
 
 #include <math.h>
 #include <time.h>
+#include <poll.h>
 #include <sys/types.h>
 
 #include "spookyhash/SpookyV2.h"
@@ -256,5 +257,17 @@ struct date_time_scanner {
 
 template<typename T>
 size_t strtonum(T &num_out, const char *data, size_t len);
+
+inline bool pollfd_ready(const std::vector<struct pollfd> &pollfds, int fd, short events = POLLIN) {
+    for (std::vector<struct pollfd>::const_iterator iter = pollfds.begin();
+            iter != pollfds.end();
+            ++iter) {
+        if (iter->fd == fd && iter->revents & events) {
+            return true;
+        }
+    }
+
+    return false;
+};
 
 #endif

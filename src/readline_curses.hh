@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
@@ -233,18 +234,23 @@ public:
     };
     std::string get_alt_value() const { return this->rc_alt_value; };
 
-    int update_fd_set(fd_set &readfds)
+    void update_poll_set(std::vector<struct pollfd> &pollfds)
     {
-        FD_SET(this->rc_pty[RCF_MASTER], &readfds);
-        FD_SET(this->rc_command_pipe[RCF_MASTER], &readfds);
-
-        return std::max(this->rc_pty[RCF_MASTER].get(),
-                        this->rc_command_pipe[RCF_MASTER].get());
+        pollfds.push_back((struct pollfd) {
+                this->rc_pty[RCF_MASTER],
+                POLLIN,
+                0
+        });
+        pollfds.push_back((struct pollfd) {
+                this->rc_command_pipe[RCF_MASTER],
+                POLLIN,
+                0
+        });
     };
 
     void handle_key(int ch);
 
-    void check_fd_set(fd_set &ready_rfds);
+    void check_poll_set(const std::vector<struct pollfd> &pollfds);
 
     void focus(int context, const char *prompt);
 

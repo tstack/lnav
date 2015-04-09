@@ -223,9 +223,6 @@ struct _lnav_data {
     db_overlay_source                       ld_db_overlay;
     std::vector<std::string>                ld_db_key_names;
 
-    int                                     ld_max_fd;
-    fd_set                                  ld_read_fds;
-
     std::auto_ptr<grep_highlighter>         ld_grep_child[LG__MAX];
     std::string                             ld_previous_search;
     std::string                             ld_last_search[LNV__MAX];

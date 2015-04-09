@@ -58,6 +58,7 @@
 #include "pcrepp.hh"
 #include "auto_mem.hh"
 #include "lnav_log.hh"
+#include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "readline_curses.hh"
 
@@ -638,11 +639,11 @@ void readline_curses::line_ready(const char *line)
     }
 }
 
-void readline_curses::check_fd_set(fd_set &ready_rfds)
+void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
 {
     int rc;
 
-    if (FD_ISSET(this->rc_pty[RCF_MASTER], &ready_rfds)) {
+    if (pollfd_ready(pollfds, this->rc_pty[RCF_MASTER])) {
         char buffer[128];
 
         rc = read(this->rc_pty[RCF_MASTER], buffer, sizeof(buffer));
@@ -650,7 +651,7 @@ void readline_curses::check_fd_set(fd_set &ready_rfds)
             this->map_output(buffer, rc);
         }
     }
-    if (FD_ISSET(this->rc_command_pipe[RCF_MASTER], &ready_rfds)) {
+    if (pollfd_ready(pollfds, this->rc_command_pipe[RCF_MASTER])) {
         char msg[1024 + 1];
 
         rc = recvstring(this->rc_command_pipe[RCF_MASTER], msg, sizeof(msg) - 1);

@@ -129,24 +129,21 @@ int main(int argc, char *argv[])
     }
     else {
 	my_source ms(fd);
-	fd_set read_fds;
 	my_sink msink;
-	int maxfd;
-	
-	FD_ZERO(&read_fds);
-	
-	grep_proc gp(code, ms, maxfd, read_fds);
+
+	grep_proc gp(code, ms);
 	
 	gp.queue_request();
 	gp.start();
 	gp.set_sink(&msink);
 
 	while (!msink.ms_finished) {
-	    fd_set rfds = read_fds;
-	    
-	    select(maxfd + 1, &rfds, NULL, NULL, NULL);
+		vector<struct pollfd> pollfds;
 
-	    gp.check_fd_set(rfds);
+		gp.update_poll_set(pollfds);
+		poll(&pollfds[0], pollfds.size(), -1);
+
+	    gp.check_poll_set(pollfds);
 	}
     }
     

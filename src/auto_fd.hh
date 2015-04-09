@@ -80,7 +80,6 @@ public:
         : af_fd(fd)
     {
         require(fd >= -1);
-        require(fd < (int)FD_SETSIZE);
     };
 
     /**
@@ -128,7 +127,6 @@ public:
     auto_fd &operator =(int fd)
     {
         require(fd >= -1);
-        require(fd < (int)FD_SETSIZE);
 
         this->reset(fd);
         return *this;
@@ -188,7 +186,6 @@ public:
     void reset(int fd = -1)
     {
         require(fd >= -1);
-        require(fd < (int)FD_SETSIZE);
 
         if (this->af_fd != fd) {
             if (this->af_fd != -1) {

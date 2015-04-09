@@ -2818,10 +2818,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
             textview_curses::highlight_map_t &hm = tc.get_highlights();
             hm["$search"] = hl;
 
-            auto_ptr<grep_proc> gp(new grep_proc(code,
-               tc,
-               lnav_data.ld_max_fd,
-               lnav_data.ld_read_fds));
+            auto_ptr<grep_proc> gp(new grep_proc(code, tc));
 
             gp->queue_request(grep_line_t(tc.get_top()));
             if (tc.get_top() > 0) {
@@ -3783,11 +3780,6 @@ static void looper(void)
         sb.push_back(&lnav_data.ld_bottom_source.marks_wire);
         sb.push_back(&lnav_data.ld_term_extra.filename_wire);
 
-        FD_ZERO(&lnav_data.ld_read_fds);
-        FD_SET(STDIN_FILENO, &lnav_data.ld_read_fds);
-        lnav_data.ld_max_fd =
-            max(STDIN_FILENO, rlc.update_fd_set(lnav_data.ld_read_fds));
-
         lnav_data.ld_status[0].window_change();
         lnav_data.ld_status[1].window_change();
 
@@ -3801,7 +3793,7 @@ static void looper(void)
 
         timer.start_fade(index_counter, 1);
         while (lnav_data.ld_looping) {
-            fd_set         ready_rfds = lnav_data.ld_read_fds;
+            vector<struct pollfd> pollfds;
             struct timeval to = { 0, 333000 };
             int            rc;
 
@@ -3818,26 +3810,33 @@ static void looper(void)
             rlc.do_update();
             refresh();
 
-            rc = select(lnav_data.ld_max_fd + 1,
-                        &ready_rfds, NULL, NULL,
-                        &to);
+            pollfds.push_back((struct pollfd) {
+                    STDIN_FILENO,
+                    POLLIN,
+                    0
+            });
+            rlc.update_poll_set(pollfds);
+            for (lpc = 0; lpc < LG__MAX; lpc++) {
+                auto_ptr<grep_highlighter> &gc =
+                        lnav_data.ld_grep_child[lpc];
+
+                if (gc.get() != NULL) {
+                    gc->get_grep_proc()->update_poll_set(pollfds);
+                }
+            }
+            for (lpc = 0; lpc < LNV__MAX; lpc++) {
+                auto_ptr<grep_highlighter> &gc =
+                        lnav_data.ld_search_child[lpc];
+
+                if (gc.get() != NULL) {
+                    gc->get_grep_proc()->update_poll_set(pollfds);
+                }
+            }
+
+            rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
 
             if (rc < 0) {
                 switch (errno) {
-                case EBADF:
-                {
-                    size_t lpc;
-                    int fd_flags;
-
-                    log_error("bad file descriptor");
-                    for (lpc = 0; lpc < FD_SETSIZE; lpc++) {
-                        if (fcntl(lpc, F_GETFD, &fd_flags) == -1 &&
-                            FD_ISSET(lpc, &lnav_data.ld_read_fds)) {
-                            log_error("bad fd %d", lpc);
-                        }
-                    }
-                    lnav_data.ld_looping = false;
-                }
                 break;
                 case 0:
                 case EINTR:
@@ -3850,7 +3849,7 @@ static void looper(void)
                 }
             }
             else {
-                if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
+                if (pollfd_ready(pollfds, STDIN_FILENO)) {
                     static size_t escape_index = 0;
                     static char escape_buffer[32];
 
@@ -3910,7 +3909,7 @@ static void looper(void)
                         lnav_data.ld_grep_child[lpc];
 
                     if (gc.get() != NULL) {
-                        gc->get_grep_proc()->check_fd_set(ready_rfds);
+                        gc->get_grep_proc()->check_poll_set(pollfds);
                         if (lpc == LG_GRAPH) {
                             lnav_data.ld_views[LNV_GRAPH].reload_data();
                             /* XXX */
@@ -3922,7 +3921,7 @@ static void looper(void)
                         lnav_data.ld_search_child[lpc];
 
                     if (gc.get() != NULL) {
-                        gc->get_grep_proc()->check_fd_set(ready_rfds);
+                        gc->get_grep_proc()->check_poll_set(pollfds);
 
                         if (!lnav_data.ld_view_stack.empty()) {
                             lnav_data.ld_bottom_source.
@@ -3930,7 +3929,7 @@ static void looper(void)
                         }
                     }
                 }
-                rlc.check_fd_set(ready_rfds);
+                rlc.check_poll_set(pollfds);
             }
 
             if (timer.fade_diff(index_counter) == 0) {

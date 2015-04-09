@@ -97,9 +97,6 @@ public:
     bool ms_finished;
 };
 
-static fd_set READFDS;
-static int MAXFD;
-
 static void looper(grep_proc &gp)
 {
     my_sink msink;
@@ -107,11 +104,12 @@ static void looper(grep_proc &gp)
     gp.set_sink(&msink);
     
     while (!msink.ms_finished) {
-       fd_set rfds = READFDS;
-	
-       select(MAXFD + 1, &rfds, NULL, NULL, NULL);
-	
-       gp.check_fd_set(rfds);
+        vector<struct pollfd> pollfds;
+
+        gp.update_poll_set(pollfds);
+        poll(&pollfds[0], pollfds.size(), -1);
+
+        gp.check_poll_set(pollfds);
     }
 }
 
@@ -120,8 +118,6 @@ int main(int argc, char *argv[])
     int eoff, retval = EXIT_SUCCESS;
     const char *errptr;
     pcre *code;
-    
-    FD_ZERO(&READFDS);
 
     code = pcre_compile("foobar",
 			PCRE_CASELESS,
@@ -133,7 +129,7 @@ int main(int argc, char *argv[])
 
     {
        my_source ms;
-       grep_proc gp(code, ms, MAXFD, READFDS);
+       grep_proc gp(code, ms);
 	
        gp.queue_request(grep_line_t(10), grep_line_t(14));
        gp.queue_request(grep_line_t(0), grep_line_t(3));
@@ -143,7 +139,7 @@ int main(int argc, char *argv[])
 
     {
        my_sleeper_source mss;
-       grep_proc *gp = new grep_proc(code, mss, MAXFD, READFDS);
+       grep_proc *gp = new grep_proc(code, mss);
        int status;
 
        gp->queue_request();

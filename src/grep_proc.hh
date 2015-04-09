@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <poll.h>
 
 #ifdef HAVE_PCRE_H
 #include <pcre.h>
@@ -163,12 +164,8 @@ public:
      *
      * @param code The pcre code to run over the lines of input.
      * @param gps The source of the data to match.
-     * @param readfds The file descriptor set for readable fds.
      */
-    grep_proc(pcre *code,
-              grep_proc_source &gps,
-              int &maxfd,
-              fd_set &readfds);
+    grep_proc(pcre *code, grep_proc_source &gps);
 
     virtual ~grep_proc();
 
@@ -223,12 +220,30 @@ public:
      */
     void start(void);
 
+    void update_poll_set(std::vector<struct pollfd> &pollfds)
+    {
+        if (this->gp_line_buffer.get_fd() != -1) {
+            pollfds.push_back((struct pollfd) {
+                    this->gp_line_buffer.get_fd(),
+                    POLLIN,
+                    0
+            });
+        }
+        if (this->gp_err_pipe != -1) {
+            pollfds.push_back((struct pollfd) {
+                    this->gp_err_pipe,
+                    POLLIN,
+                    0
+            });
+        }
+    };
+
     /**
      * Check the fd_set to see if there is any new data to be processed.
      *
      * @param ready_rfds The set of ready-to-read file descriptors.
      */
-    void check_fd_set(fd_set &ready_rfds);
+    void check_poll_set(const std::vector<struct pollfd> &pollfds);
 
     /** Check the invariants for this object. */
     bool invariant(void)
@@ -237,7 +252,6 @@ public:
         if (this->gp_child_started) {
             require(this->gp_child > 0);
             require(this->gp_line_buffer.get_fd() != -1);
-            require(FD_ISSET(this->gp_line_buffer.get_fd(), &this->gp_readfds));
         }
         else {
             require(this->gp_pipe_offset == 0);
@@ -288,11 +302,6 @@ protected:
                                          * child.
                                          */
     bool     gp_child_started;          /*< True if the child was start()'d. */
-    int &    gp_maxfd;
-    fd_set & gp_readfds;                /*<
-                                         * Pointer to the read fd_set so we can
-                                         * clear our file descriptors later.
-                                         */
 
     /** The queue of search requests. */
     std::deque<std::pair<grep_line_t, grep_line_t> > gp_queue;

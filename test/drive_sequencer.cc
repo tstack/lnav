@@ -110,8 +110,6 @@ int main(int argc, char *argv[])
     }
     else {
 	my_source ms(fd);
-	fd_set read_fds;
-	int maxfd;
 
 	sequence_matcher::field_col_t fc;
 	
@@ -132,21 +130,19 @@ int main(int argc, char *argv[])
 	sequence_matcher sm(fc);
 	vis_bookmarks bm;
 	sequence_sink ss(sm, bm[&SEQUENCE]);
-	
-	FD_ZERO(&read_fds);
-	
-	grep_proc gp(code, ms, maxfd, read_fds);
+
+	grep_proc gp(code, ms);
 	
 	gp.queue_request();
 	gp.start();
 	gp.set_sink(&ss);
 
 	while (bm[&SEQUENCE].size() == 0) {
-	    fd_set rfds = read_fds;
-	    
-	    select(maxfd + 1, &rfds, NULL, NULL, NULL);
+		vector<struct pollfd> pollfds;
 
-	    gp.check_fd_set(rfds);
+		poll(&pollfds[0], pollfds.size(), -1);
+
+	    gp.check_poll_set(pollfds);
 	}
 
 	for (bookmark_vector<vis_line_t>::iterator iter = bm[&SEQUENCE].begin();

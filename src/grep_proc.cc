@@ -41,24 +41,20 @@
 #include <sys/wait.h>
 
 #include "lnav_log.hh"
+#include "lnav_util.hh"
 #include "grep_proc.hh"
 
 #include "time_T.hh"
 
 using namespace std;
 
-grep_proc::grep_proc(pcre *code,
-                     grep_proc_source &gps,
-                     int &maxfd,
-                     fd_set &readfds)
+grep_proc::grep_proc(pcre *code, grep_proc_source &gps)
     : gp_pcre(code),
       gp_code(code),
       gp_source(gps),
       gp_pipe_offset(0),
       gp_child(-1),
       gp_child_started(false),
-      gp_maxfd(maxfd),
-      gp_readfds(readfds),
       gp_last_line(0),
       gp_sink(NULL),
       gp_control(NULL)
@@ -138,11 +134,6 @@ void grep_proc::start(void)
         this->gp_err_pipe      = err_pipe.read_end();
         this->gp_child_started = true;
 
-        FD_SET(this->gp_line_buffer.get_fd(), &this->gp_readfds);
-        FD_SET(this->gp_err_pipe, &this->gp_readfds);
-        this->gp_maxfd = std::max(this->gp_maxfd,
-                                  std::max(this->gp_line_buffer.get_fd(),
-                                           this->gp_err_pipe.get()));
         this->gp_queue.clear();
         return;
     }
@@ -262,12 +253,7 @@ void grep_proc::cleanup(void)
     }
 
     if (this->gp_err_pipe != -1) {
-        FD_CLR(this->gp_err_pipe, &this->gp_readfds);
         this->gp_err_pipe.reset();
-    }
-
-    if (this->gp_line_buffer.get_fd() != -1) {
-        FD_CLR(this->gp_line_buffer.get_fd(), &this->gp_readfds);
     }
 
     this->gp_pipe_offset = 0;
@@ -325,11 +311,11 @@ void grep_proc::dispatch_line(char *line)
     }
 }
 
-void grep_proc::check_fd_set(fd_set &ready_fds)
+void grep_proc::check_poll_set(const std::vector<struct pollfd> &pollfds)
 {
     require(this->invariant());
 
-    if (this->gp_err_pipe != -1 && FD_ISSET(this->gp_err_pipe, &ready_fds)) {
+    if (this->gp_err_pipe != -1 && pollfd_ready(pollfds, this->gp_err_pipe)) {
         char buffer[1024 + 1];
         ssize_t rc;
 
@@ -350,13 +336,12 @@ void grep_proc::check_fd_set(fd_set &ready_fds)
             }
         }
         else if (rc == 0) {
-            FD_CLR(this->gp_err_pipe, &this->gp_readfds);
             this->gp_err_pipe.reset();
         }
     }
 
     if (this->gp_line_buffer.get_fd() != -1 &&
-        FD_ISSET(this->gp_line_buffer.get_fd(), &ready_fds)) {
+        pollfd_ready(pollfds, this->gp_line_buffer.get_fd())) {
         try {
             static const int MAX_LOOPS = 100;
 
