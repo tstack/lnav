@@ -3073,7 +3073,7 @@ static void usage(void)
         "  -f path    Execute the commands in the given file.\n"
         "  -n         Run without the curses UI. (headless mode)\n"
         "  -q         Do not print the log messages after executing all\n"
-        "             of the commands.\n"
+        "             of the commands or when lnav is reading from stdin.\n"
         "\n"
         "Optional arguments:\n"
         "  logfile1          The log files or directories to view.  If a\n"
