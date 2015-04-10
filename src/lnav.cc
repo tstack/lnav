@@ -3858,7 +3858,7 @@ static void looper(void)
                     while ((ch = getch()) != ERR) {
                         alerter::singleton().new_input(ch);
 
-                        if (escape_index > sizeof(escape_buffer) - 1) {
+                        if (escape_index >= sizeof(escape_buffer) - 1) {
                             escape_index = 0;
                         }
                         else if (escape_index > 0) {
