@@ -71,8 +71,13 @@ public:
     typedef enum {
         LEVEL_UNKNOWN,
         LEVEL_TRACE,
+        LEVEL_DEBUG5,
+        LEVEL_DEBUG4,
+        LEVEL_DEBUG3,
+        LEVEL_DEBUG2,
         LEVEL_DEBUG,
         LEVEL_INFO,
+        LEVEL_STATS,
         LEVEL_WARNING,
         LEVEL_ERROR,
         LEVEL_CRITICAL,
@@ -184,7 +189,7 @@ public:
 
     const char *get_level_name() const
     {
-        return level_names[this->ll_level & 0x0f];
+        return level_names[this->ll_level & ~LEVEL__FLAGS];
     };
 
     bool is_continued(void) const {

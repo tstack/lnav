@@ -66,8 +66,13 @@ string_attr_type logline::L_PARTITION;
 const char *logline::level_names[LEVEL__MAX + 1] = {
     "unknown",
     "trace",
+    "debug5",
+    "debug4",
+    "debug3",
+    "debug2",
     "debug",
     "info",
+    "stats",
     "warning",
     "error",
     "critical",
@@ -77,7 +82,7 @@ const char *logline::level_names[LEVEL__MAX + 1] = {
 };
 
 static pcrepp LEVEL_RE(
-        "(?i)(TRACE|VERBOSE|DEBUG|INFO|WARN(?:ING)?|ERROR|CRITICAL|SEVERE|FATAL)");
+        "^(?i)(TRACE|DEBUG\\d*|INFO|STATS|WARN(?:ING)?|ERROR|CRITICAL|SEVERE|FATAL)$");
 
 logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool exact)
 {
@@ -113,15 +118,28 @@ logline::level_t logline::abbrev2level(const char *levelstr, ssize_t len)
             return LEVEL_TRACE;
         case 'D':
         case 'V':
+            if (len > 1) {
+                switch (levelstr[len - 1]) {
+                    case '2':
+                        return LEVEL_DEBUG2;
+                    case '3':
+                        return LEVEL_DEBUG3;
+                    case '4':
+                        return LEVEL_DEBUG4;
+                    case '5':
+                        return LEVEL_DEBUG5;
+                }
+            }
             return LEVEL_DEBUG;
         case 'I':
             return LEVEL_INFO;
+        case 'S':
+            return LEVEL_STATS;
         case 'W':
             return LEVEL_WARNING;
         case 'E':
             return LEVEL_ERROR;
         case 'C':
-        case 'S':
             return LEVEL_CRITICAL;
         case 'F':
             return LEVEL_FATAL;

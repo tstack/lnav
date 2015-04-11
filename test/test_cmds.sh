@@ -437,6 +437,12 @@ Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: WARNING: The Gestalt se
 	Call location:
 Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: 0   CarbonCore                          0x00007fff8a9b3d9b ___Gestalt_SystemVersion_block_invoke + 113
 Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: 1   libdispatch.dylib                   0x00007fff8bc84c13 _dispatch_client_callout + 8
+Apr  7 07:32:56 Tim-Stacks-iMac.local logger[234]: Bad data {
+    abc,
+    123,
+    456
+)
+}]
 EOF
 
 

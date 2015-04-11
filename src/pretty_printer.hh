@@ -87,12 +87,14 @@ public:
                     continue;
                 case DT_LCURLY:
                 case DT_LSQUARE:
+                case DT_LPAREN:
                     this->flush_values(true);
                     this->pp_values.push_back(el);
                     this->descend();
                     continue;
                 case DT_RCURLY:
                 case DT_RSQUARE:
+                case DT_RPAREN:
                     this->flush_values();
                     if (this->pp_body_lines.top()) {
                         this->start_new_line();
@@ -168,10 +170,15 @@ private:
     }
 
     void ascend() {
-        int lines = this->pp_body_lines.top();
-        this->pp_depth -= 1;
-        this->pp_body_lines.pop();
-        this->pp_body_lines.top() += lines;
+        if (this->pp_depth > 0) {
+            int lines = this->pp_body_lines.top();
+            this->pp_depth -= 1;
+            this->pp_body_lines.pop();
+            this->pp_body_lines.top() += lines;
+        }
+        else {
+            this->pp_body_lines.top() = 0;
+        }
     }
 
     void start_new_line() {

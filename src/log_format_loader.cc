@@ -156,7 +156,8 @@ static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size
 {
     external_log_format *elf = ensure_format(ypc);
     string regex = string((const char *)str, len);
-    logline::level_t level = logline::string2level(ypc->get_path_fragment(2).c_str());
+    string level_name_or_number = ypc->get_path_fragment(2);
+    logline::level_t level = logline::string2level(level_name_or_number.c_str());
 
     elf->elf_level_patterns[level].lp_regex = regex;
 
@@ -376,7 +377,7 @@ static struct json_path_handler format_handlers[] = {
     json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|body-field|url|url#|title|description)$",
                       read_format_field),
     json_path_handler("^/\\w+/level/"
-                      "(trace|debug|info|warning|error|critical|fatal)$",
+                      "(trace|debug\\d*|info|stats|warning|error|critical|fatal)$",
                       read_levels),
     json_path_handler("^/\\w+/value/\\w+/(kind|collate|unit/field)$", read_value_def),
     json_path_handler("^/\\w+/value/\\w+/(identifier|foreign-key|hidden)$", read_value_bool),

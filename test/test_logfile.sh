@@ -118,41 +118,41 @@ EOF
 run_test ./drive_logfile -v -f syslog_log ${srcdir}/logfile_syslog.0
 
 check_output "Syslog level interpreted incorrectly?" <<EOF
-0x05
-0x03
-0x05
-0x03
+0x0a
+0x07
+0x0a
+0x07
 EOF
 
 run_test ./drive_logfile -v -f tcsh_history ${srcdir}/logfile_tcsh_history.0
 
 check_output "TCSH level interpreted incorrectly?" <<EOF
-0x03
-0x83
-0x03
-0x83
+0x07
+0x87
+0x07
+0x87
 EOF
 
 run_test ./drive_logfile -v -f access_log ${srcdir}/logfile_access_log.0
 
 check_output "access_log level interpreted incorrectly?" <<EOF
-0x03
-0x05
-0x03
+0x07
+0x0a
+0x07
 EOF
 
 run_test ./drive_logfile -v -f strace_log ${srcdir}/logfile_strace_log.0
 
 check_output "strace_log level interpreted incorrectly?" <<EOF
-0x03
-0x03
-0x03
-0x05
-0x03
-0x05
-0x03
-0x03
-0x03
+0x07
+0x07
+0x07
+0x0a
+0x07
+0x0a
+0x07
+0x07
+0x07
 EOF
 
 run_test ./drive_logfile -t -f generic_log ${srcdir}/logfile_generic.0
@@ -165,8 +165,8 @@ EOF
 run_test ./drive_logfile -v -f generic_log ${srcdir}/logfile_generic.0
 
 check_output "generic_log level interpreted incorrectly?" <<EOF
-0x02
-0x04
+0x06
+0x09
 EOF
 
 touch -t 200711030923 ${srcdir}/logfile_glog.0
@@ -185,13 +185,13 @@ EOF
 run_test ./drive_logfile -v -f glog_log ${srcdir}/logfile_glog.0
 
 check_output "glog_log level interpreted incorrectly?" <<EOF
-0x05
-0x03
-0x03
-0x04
-0x03
-0x03
-0x05
+0x0a
+0x07
+0x07
+0x09
+0x07
+0x07
+0x0a
 EOF
 
 cp ${srcdir}/logfile_syslog.0 truncfile.0

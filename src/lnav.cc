@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2007-2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -1237,7 +1237,7 @@ static void open_pretty_view(void)
             pretty_printer pp(&ds);
 
             // TODO: dump more details of the line in the output.
-            stream << pp.print() << endl;
+            stream << trim(pp.print()) << endl;
             first_line = false;
         }
         pretty_tc->set_sub_source(new plain_text_source(stream.str()));
@@ -1653,10 +1653,10 @@ static void handle_paging_key(int ch)
             HELP_MSG_1(c, "to copy marked lines to the clipboard; ")
             HELP_MSG_1(C, "to clear marked lines"));
 
-        user_top = next_cluster(&bookmark_vector<vis_line_t>::next, 
+        user_top = next_cluster(&bookmark_vector<vis_line_t>::next,
             &textview_curses::BM_USER,
             tc->get_top());
-        part_top = next_cluster(&bookmark_vector<vis_line_t>::next, 
+        part_top = next_cluster(&bookmark_vector<vis_line_t>::next,
             &textview_curses::BM_PARTITION,
             tc->get_top());
         if (part_top == -1 && user_top == -1) {
@@ -1677,10 +1677,10 @@ static void handle_paging_key(int ch)
     case 'U': {
         vis_line_t user_top, part_top;
 
-        user_top = next_cluster(&bookmark_vector<vis_line_t>::prev, 
+        user_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
             &textview_curses::BM_USER,
             tc->get_top());
-        part_top = next_cluster(&bookmark_vector<vis_line_t>::prev, 
+        part_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
             &textview_curses::BM_PARTITION,
             tc->get_top());
         if (part_top == -1 && user_top == -1) {

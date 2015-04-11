@@ -84,7 +84,7 @@ fields:
     checked against each of these regexes.  Once a match is found, the log
     message level will set to the corresponding level.  The available levels,
     in order of severity, are: **fatal**, **critical**, **error**,
-    **warning**, **info**, **debug**, **trace**.
+    **warning**, **stats**, **info**, **debug**, **debug2-5**, **trace**.
 
   :value: This object contains the definitions for the values captured by the
     regexes.

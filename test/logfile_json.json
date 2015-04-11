@@ -1,2 +1,13 @@
+{"ts": "2013-09-06T20:00:48.124817Z", "lvl": "TRACE", "msg": "trace test"}
 {"ts": "2013-09-06T20:00:49.124817Z", "lvl": "INFO", "msg": "Starting up service"}
 {"ts": "2013-09-06T22:00:49.124817Z", "lvl": "INFO", "msg": "Shutting down service", "user": "steve@example.com"}
+{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG5", "msg": "Details..."}
+{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG4", "msg": "Details..."}
+{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG3", "msg": "Details..."}
+{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG2", "msg": "Details..."}
+{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG", "msg": "Details..."}
+{"ts": "2013-09-06T22:01:49.124817Z", "lvl": "STATS", "msg": "1 beat per second"}
+{"ts": "2013-09-06T22:01:49.124817Z", "lvl": "WARNING", "msg": "not looking good"}
+{"ts": "2013-09-06T22:01:49.124817Z", "lvl": "ERROR", "msg": "looking bad"}
+{"ts": "2013-09-06T22:01:49.124817Z", "lvl": "CRITICAL", "msg": "sooo bad"}
+{"ts": "2013-09-06T22:01:49.124817Z", "lvl": "FATAL", "msg": "shoot"}
