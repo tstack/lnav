@@ -16,7 +16,6 @@ simple-db.db: simple-db.sql
 
 AM_CPPFLAGS = \
 	-Wall \
-	-Werror=sign-compare \
 	-I$(top_srcdir)/src \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
