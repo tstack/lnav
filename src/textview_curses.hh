@@ -387,6 +387,7 @@ public:
     struct highlighter {
         highlighter()
             : h_code(NULL),
+              h_code_extra(NULL),
               h_multiple(false) { };
         highlighter(pcre *code,
                     bool multiple = false,
