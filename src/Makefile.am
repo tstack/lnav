@@ -22,10 +22,7 @@ dump-pid-sh.c: $(srcdir)/dump-pid.sh bin2c
 default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/default-log-formats.json $@
 
-init.sql: $(srcdir)/init_sql.py
-	$(PYTHON) $(srcdir)/init_sql.py > $@
-
-init-sql.c: $(srcdir)/init.sql bin2c
+init-sql.c: bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
 
 TIME_FORMATS = \
@@ -239,9 +236,6 @@ libdiag_a_SOURCES += yajl/yajl.c \
 	yajl/yajl_version.c
 endif
 
-
-dist_noinst_SCRIPTS = \
-	init_sql.py
 
 TEXT2C_FILES = \
 	dump-pid-sh.o \
