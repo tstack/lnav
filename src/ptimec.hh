@@ -40,6 +40,8 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 
+struct tm *secs2tm(time_t *tim_p, struct tm *res);
+
 enum exttm_bits_t {
     ETB_YEAR_SET,
     ETB_MONTH_SET,
@@ -162,6 +164,21 @@ inline bool ptime_S(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return (dst->et_tm.tm_sec >= 0 && dst->et_tm.tm_sec <= 59);
 }
 
+inline bool ptime_s(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
+{
+    time_t epoch = 0;
+
+    while (off_inout < len && isdigit(str[off_inout])) {
+        epoch *= 10;
+        epoch += str[off_inout] - '0';
+        off_inout += 1;
+    }
+
+    secs2tm(&epoch, &dst->et_tm);
+
+    return (epoch > 0);
+}
+
 inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     int ms = 0;
@@ -208,6 +225,24 @@ inline bool ptime_H(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     });
 
     return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
+}
+
+inline bool ptime_i(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
+{
+    uint64_t epoch_ms = 0;
+    time_t epoch;
+
+    while (off_inout < len && isdigit(str[off_inout])) {
+        epoch_ms *= 10;
+        epoch_ms += str[off_inout] - '0';
+        off_inout += 1;
+    }
+
+    dst->et_nsec = (epoch_ms % 1000ULL) * 1000000;
+    epoch = (epoch_ms / 1000ULL);
+    secs2tm(&epoch, &dst->et_tm);
+
+    return (epoch_ms > 0);
 }
 
 inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -268,11 +303,11 @@ inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return false;
 }
 
-inline bool ptime_N(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
+inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     dst->et_tm.tm_mon = 0;
     PTIME_CONSUME(1, {
-        if (str[off_inout] < '1' || str[off_inout] > '9') {
+        if (str[off_inout] < '0' || str[off_inout] > '9') {
             return false;
         }
         dst->et_tm.tm_mon = str[off_inout] - '0';
@@ -332,22 +367,6 @@ inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     }
 
     return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
-}
-
-inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
-{
-    PTIME_CONSUME(2, {
-        if (str[off_inout + 1] > '9') {
-            return false;
-        }
-        dst->et_tm.tm_mon = ((str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0')) - 1;
-    });
-
-    if (0 <= dst->et_tm.tm_mon && dst->et_tm.tm_mon <= 11) {
-        dst->et_flags |= ETF_MONTH_SET;
-        return true;
-    }
-    return false;
 }
 
 inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -482,6 +501,8 @@ inline bool ptime_char(char val, const char *str, off_t &off_inout, ssize_t len)
 }
 
 typedef bool (*ptime_func)(struct exttm *dst, const char *str, off_t &off, ssize_t len);
+
+bool ptime_fmt(const char *fmt, struct exttm *dst, const char *str, off_t &off, ssize_t len);
 
 struct ptime_fmt {
     const char *pf_fmt;

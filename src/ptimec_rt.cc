@@ -52,3 +52,52 @@ bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, ssize_t 
 
     return false;
 }
+
+#define FMT_CASE(ch, c) \
+    case ch: \
+        if (!ptime_ ## c(dst, str, off, len)) return false; \
+        lpc += 1; \
+        break
+
+bool ptime_fmt(const char *fmt, struct exttm *dst, const char *str, off_t &off, ssize_t len)
+{
+    for (ssize_t lpc = 0; fmt[lpc]; lpc++) {
+        if (fmt[lpc] == '%') {
+            switch (fmt[lpc + 1]) {
+                case 'a':
+                case 'Z':
+                    if (fmt[lpc + 2]) {
+                        if (!ptime_upto(fmt[lpc + 2], str, off, len)) return false;
+                        lpc += 2;
+                    }
+                    else {
+                        if (!ptime_upto_end(str, off, len)) return false;
+                        lpc += 1;
+                    }
+                    break;
+                FMT_CASE('b', b);
+                FMT_CASE('S', S);
+                FMT_CASE('s', s);
+                FMT_CASE('L', L);
+                FMT_CASE('M', M);
+                FMT_CASE('H', H);
+                FMT_CASE('i', i);
+                FMT_CASE('I', I);
+                FMT_CASE('d', d);
+                FMT_CASE('e', e);
+                FMT_CASE('k', k);
+                FMT_CASE('l', l);
+                FMT_CASE('m', m);
+                FMT_CASE('p', p);
+                FMT_CASE('Y', Y);
+                FMT_CASE('y', y);
+                FMT_CASE('z', z);
+            }
+        }
+        else {
+            if (!ptime_char(fmt[lpc], str, off, len)) return false;
+        }
+    }
+
+    return true;
+}

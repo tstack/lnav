@@ -310,7 +310,7 @@ struct tm *secs2tm(time_t *tim_p, struct tm *res)
     return (res);
 }
 
-bool next_format(const char *fmt[], int &index, int &locked_index)
+bool next_format(const char * const fmt[], int &index, int &locked_index)
 {
     bool retval = true;
 
@@ -360,7 +360,7 @@ const char *std_time_fmt[] = {
 
 const char *date_time_scanner::scan(const char *time_dest,
                                     size_t time_len,
-                                    const char *time_fmt[],
+                                    const char * const time_fmt[],
                                     struct exttm *tm_out,
                                     struct timeval &tv_out)
 {
@@ -433,46 +433,33 @@ const char *date_time_scanner::scan(const char *time_dest,
                 break;
             }
         }
-        else if ((retval = strptime(time_dest,
-                                    time_fmt[curr_time_fmt],
-                                    &tm_out->et_tm)) != NULL) {
-            if (time_fmt[curr_time_fmt] == time_fmt_with_zone) {
-                int lpc;
+        else {
+            off_t off = 0;
 
-                for (lpc = 0; retval[lpc] && retval[lpc] != ' '; lpc++) {
-
+            if (ptime_fmt(time_fmt[curr_time_fmt], tm_out, time_dest, off, time_len)) {
+                retval = &time_dest[off];
+                if (tm_out->et_tm.tm_year < 70) {
+                    tm_out->et_tm.tm_year = 80;
                 }
-                if (retval[lpc] == ' ' &&
-                    sscanf(&retval[lpc], "%d", &tm_out->et_tm.tm_year) == 1) {
-                    lpc += 1;
-                    for (; retval[lpc] && isdigit(retval[lpc]); lpc++) {
+                if (this->dts_local_time) {
+                    time_t gmt = tm2sec(&tm_out->et_tm);
 
-                    }
-                    retval = &retval[lpc];
-                }
-            }
-
-            if (tm_out->et_tm.tm_year < 70) {
-                tm_out->et_tm.tm_year = 80;
-            }
-            if (this->dts_local_time) {
-                time_t gmt = tm2sec(&tm_out->et_tm);
-
-                localtime_r(&gmt, &tm_out->et_tm);
+                    this->to_localtime(gmt, *tm_out);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-                tm_out->et_tm.tm_zone = NULL;
+                    tm_out->et_tm.tm_zone = NULL;
 #endif
-                tm_out->et_tm.tm_isdst = 0;
+                    tm_out->et_tm.tm_isdst = 0;
+                }
+
+                tv_out.tv_sec = tm2sec(&tm_out->et_tm);
+                tv_out.tv_usec = tm_out->et_nsec / 1000;
+
+                this->dts_fmt_lock = curr_time_fmt;
+                this->dts_fmt_len  = retval - time_dest;
+
+                found = true;
+                break;
             }
-
-            tv_out.tv_sec = tm2sec(&tm_out->et_tm);
-            tv_out.tv_usec = tm_out->et_nsec / 1000;
-
-            this->dts_fmt_lock = curr_time_fmt;
-            this->dts_fmt_len  = retval - time_dest;
-
-            found = true;
-            break;
         }
     }
 

@@ -148,6 +148,8 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
         elf->lf_timestamp_field = intern_string::lookup(value);
     else if (field_name == "body-field")
         elf->elf_body_field = intern_string::lookup(value);
+    else if (field_name == "timestamp-format")
+        elf->lf_timestamp_format.push_back(intern_string::lookup(value)->get());
 
     return 1;
 }
@@ -371,10 +373,12 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
 
 static struct json_path_handler format_handlers[] = {
     json_path_handler("^/\\w+/regex/[^/]+/pattern$", read_format_regex),
-    json_path_handler("^/\\w+/(json|convert-to-local-time)$", read_format_bool),
+    json_path_handler("^/\\w+/(json|convert-to-local-time|epoch-timestamp)$", read_format_bool),
     json_path_handler("^/\\w+/timestamp-divisor$", read_format_double)
         .add_cb(read_format_int),
-    json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|body-field|url|url#|title|description)$",
+    json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|"
+                              "body-field|url|url#|title|description|"
+                              "timestamp-format#)$",
                       read_format_field),
     json_path_handler("^/\\w+/level/"
                       "(trace|debug\\d*|info|stats|warning|error|critical|fatal)$",

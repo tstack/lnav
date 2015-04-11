@@ -16,6 +16,8 @@ lnav v0.7.3:
        previous bookmarked line (e.g. error, warning, ...)
      * Added a 'zoom-to' command to change the zoom level of the histogram
        view.
+     * Log formats can now define their own timestamp formats with the
+       'timestamp-format' field.
 
      Fixes:
      * Autotools scripts overhaul.

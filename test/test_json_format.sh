@@ -25,7 +25,7 @@ check_output "json log format is not working" <<EOF
 EOF
 
 
-run_test ${lnav_test} -n -d /tmp/lnav.err \
+run_test ${lnav_test} -n \
     -I ${test_dir} \
     -c ';select * from test_log' \
     -c ':write-csv-to -' \

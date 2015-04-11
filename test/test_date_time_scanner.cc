@@ -73,4 +73,14 @@ int main(int argc, char *argv[])
             assert(dts.scan(es_date, strlen(es_date), NULL, &es_tm, es_tv) != NULL);
         }
     }
+
+    {
+        const char *epoch_str = "ts 1428721664 ]";
+        struct exttm tm;
+        off_t off = 0;
+
+        bool rc = ptime_fmt("ts %s ]", &tm, epoch_str, off, strlen(epoch_str));
+        assert(rc);
+        assert(tm2sec(&tm.et_tm) == 1428721664);
+    }
 }

@@ -1,0 +1,18 @@
+{
+    "epoch_log": {
+        "title": "epoch timestamp test",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d+) (?<body>.*)$"
+            }
+        },
+        "timestamp-format" : [
+            "%i"
+        ],
+        "sample": [
+            {
+                "line": "1428634687123 Hello, World!"
+            }
+        ]
+    }
+}

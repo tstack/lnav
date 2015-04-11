@@ -73,6 +73,12 @@ fields:
   :timestamp-field: The name of the field that contains the log message
     timestamp.  Defaults to "timestamp".
 
+  :timestamp-format: An array of timestamp formats using a subset of the
+    strftime conversion specification.  The following conversions are
+    supported: %a, %b, %L, %M, %H, %I, %d, %e, %k, %l, %m, %p, %y, %Y, %S, %s,
+    %Z, %z.  In addition, you can also use '%i' for milliseconds from the
+    epoch.
+
   :level-field: The name of the regex capture group that contains the log
     message level.  Defaults to "level".
 

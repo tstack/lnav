@@ -113,6 +113,14 @@ Nov 03 08:09:33 2007 -- 816
 Nov 03 08:09:33 2007 -- 816
 EOF
 
+
+run_test ./drive_logfile -t -f epoch_log ${srcdir}/logfile_epoch.0
+
+check_output "epoch_log timestamp interpreted incorrectly?" <<EOF
+Apr 10 02:58:07 2015 -- 123
+Apr 10 02:58:07 2015 -- 456
+EOF
+
 ##
 
 run_test ./drive_logfile -v -f syslog_log ${srcdir}/logfile_syslog.0

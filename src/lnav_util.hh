@@ -164,7 +164,7 @@ enum file_format_t {
 
 file_format_t detect_file_format(const std::string &filename);
 
-bool next_format(const char *fmt[], int &index, int &locked_index);
+bool next_format(const char * const fmt[], int &index, int &locked_index);
 
 inline bool is_glob(const char *fn)
 {
@@ -250,7 +250,7 @@ struct date_time_scanner {
 
     const char *scan(const char *time_src,
                      size_t time_len,
-                     const char *time_fmt[],
+                     const char * const time_fmt[],
                      struct exttm *tm_out,
                      struct timeval &tv_out);
 };

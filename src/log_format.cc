@@ -664,7 +664,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
 
         if ((last = this->lf_date_time.scan(ts_str,
                                             ts->length(),
-                                            NULL,
+                                            this->get_timestamp_formats(),
                                             &log_time_tm,
                                             log_tv)) == NULL) {
             continue;
@@ -797,7 +797,7 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
     struct timeval tv_out;
 
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
-        jlu->jlu_format->lf_date_time.scan((const char *)str, len, NULL, &tm_out, tv_out);
+        jlu->jlu_format->lf_date_time.scan((const char *)str, len, jlu->jlu_format->get_timestamp_formats(), &tm_out, tv_out);
         jlu->jlu_base_line->set_time(tv_out);
     }
     else if (jlu->jlu_format->elf_level_field == field_name) {
@@ -1200,7 +1200,7 @@ void external_log_format::build(std::vector<std::string> &errors)
                 struct exttm tm;
 
                 found = true;
-                if (ts_len == -1 || dts.scan(ts, ts_len, NULL, &tm, tv) == NULL) {
+                if (ts_len == -1 || dts.scan(ts, ts_len, this->get_timestamp_formats(), &tm, tv) == NULL) {
                     errors.push_back("error:" +
                         this->elf_name +
                         ":invalid sample -- " +

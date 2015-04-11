@@ -580,6 +580,14 @@ public:
         return retval;
     };
 
+    const char * const *get_timestamp_formats() const {
+        if (this->lf_timestamp_format.empty()) {
+            return NULL;
+        }
+
+        return &this->lf_timestamp_format[0];
+    };
+
     void check_for_new_year(std::vector<logline> &dst,
         const struct timeval &log_tv);
 
@@ -587,6 +595,7 @@ public:
     int lf_fmt_lock;
     intern_string_t lf_timestamp_field;
     int lf_timestamp_field_index;
+    std::vector<const char *> lf_timestamp_format;
     std::map<std::string, action_def> lf_action_defs;
 protected:
     static std::vector<log_format *> lf_root_formats;
