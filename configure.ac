@@ -65,6 +65,12 @@ AC_PROG_RANLIB
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
+AC_PATH_PROG(SQLITE3_CMD, [sqlite3])
+
+if test x"$SQLITE3_CMD" = x""; then
+    AC_MSG_ERROR([The sqlite3 command is required])
+fi
+
 AC_PATH_PROG(BZIP2_CMD, [bzip2])
 
 AC_CHECK_SIZEOF(off_t)
