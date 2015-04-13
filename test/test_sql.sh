@@ -420,14 +420,3 @@ id first_name last_name age
  0 Phil       Myman      30
  1 Lem        Hewitt     35
 EOF
-
-# Test to see if lnav can attach to a sqlite3 db file.
-run_test ${lnav_test} -n \
-    -c ";attach database 'simple-db.db' as 'db'" \
-    -c ";select age from person order by age asc"
-
-check_output "lnav not able to attach sqlite3 db file?" <<EOF
-age
- 30
- 35
-EOF
