@@ -410,3 +410,28 @@ check_output "single result is not working?" <<EOF
 log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_pid log_procname
        3 p.0      2015-11-03 09:47:02.000        1404000 info             0 veridian      <NULL> sudo
 EOF
+
+# Test to see if lnav can recognize a sqlite3 db file passed in as an argument.
+run_test ${lnav_test} -n -c ";select * from person order by age asc" \
+    simple-db.db
+
+check_output "lnav not able to recognize sqlite3 db file?" <<EOF
+id first_name last_name age
+ 0 Phil       Myman      30
+ 1 Lem        Hewitt     35
+EOF
+
+# Test to see if lnav can recognize a sqlite3 db file passed in as an argument.
+# XXX: Need to pass in '/dev/null', otherwise lnav keeps trying to open syslog
+# and we might not have sufficient privileges on the system the tests are being
+# run on.
+run_test ${lnav_test} -n \
+    -c ";attach 'simple-db.db' as 'db'" \
+    -c ';select * from person order by age asc' \
+    /dev/null
+
+check_output "lnav not able to recognize sqlite3 db file?" <<EOF
+id first_name last_name age
+ 0 Phil       Myman      30
+ 1 Lem        Hewitt     35
+EOF
