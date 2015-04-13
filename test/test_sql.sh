@@ -424,7 +424,7 @@ EOF
 # Test to see if lnav can attach to a sqlite3 db file.
 run_test ${lnav_test} -n \
     -c ";attach database 'simple-db.db' as 'db'" \
-    -c ';select * from person order by age asc'
+    -c ';select id,first_name,last_name,age from person order by age asc'
 
 check_output "lnav not able to attach sqlite3 db file?" <<EOF
 id first_name last_name age
