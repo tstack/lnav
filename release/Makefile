@@ -14,14 +14,14 @@ clean-outbox: outbox
 
 
 %-build: % %-vm
-	cd vagrant-static-$< && vagrant ssh -c /vagrant/build.sh && vagrant destroy -f
+	cd vagrant-static-$< && vagrant ssh -c /home/vagrant/build.sh && vagrant destroy -f
 
 %-package: % clean-outbox %-build
 	mkdir -p $<-pkg/lnav-${VERSION}
 	cp ../README ../NEWS $<-pkg/lnav-${VERSION}
 	mv vagrant-static-$</lnav $<-pkg/lnav-${VERSION}
-	rm -f vagrant-static-$</build.sh
 	cd $<-pkg && zip -r ../outbox/lnav-${VERSION}-$<-64bit.zip lnav-${VERSION}
+	rm -rf $<-pkg
 
 osx-build:
 	rm -rf osx-build-dir
@@ -36,5 +36,6 @@ osx-package: clean-outbox osx-build
 	cp osx-build-dir/lnav-${VERSION}.tar.gz outbox/
 	cp osx-build-dir/lnav-${VERSION}.tar.bz2 outbox/
 	cd osx-pkg && zip -r ../outbox/lnav-${VERSION}-os-x.zip lnav-${VERSION}
+	rm -rf osx-pkg
 
 release: linux-package freebsd-package osx-package
