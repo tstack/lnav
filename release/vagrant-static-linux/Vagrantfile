@@ -12,7 +12,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Every Vagrant virtual environment requires a box to build off of.
   config.vm.box = "hansode/centos-5.6-x86_64"
 
-  config.vm.provision "shell", path: "provision.sh"
+  config.vm.provision "shell", path: "pkg.sh"
+  config.vm.provision "shell", path: "../provision.sh"
+  config.vm.provision "file", source: "../build.sh", destination: "/vagrant/build.sh"
 
   config.vm.provider "virtualbox" do |v|
     v.memory = 2048

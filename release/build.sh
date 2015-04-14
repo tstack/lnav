@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 FAKE_ROOT=/home/vagrant/fake.root
 
@@ -24,11 +24,20 @@ mkdir -p ~/github/lbuild
 
 cd ~/github/lbuild
 
-../lnav/configure \
-    CC="gcc44" \
-    CXX="g++44" \
-    LDFLAGS="-L${FAKE_ROOT}/lib" \
-    PATH="${FAKE_ROOT}/bin:${PATH}" \
-    CPPFLAGS="-I${FAKE_ROOT}/include"
+OS=$(uname -s)
+if test x"${OS}" != x"FreeBSD"; then
+    ../lnav/configure \
+        LDFLAGS="-L${FAKE_ROOT}/lib" \
+        CC="gcc44" \
+        CXX="g++44" \
+        PATH="${FAKE_ROOT}/bin:${PATH}" \
+        CPPFLAGS="-I${FAKE_ROOT}/include"
+else
+    ../lnav/configure \
+        LDFLAGS="-L${FAKE_ROOT}/lib" \
+        PATH="${FAKE_ROOT}/bin:${PATH}" \
+        CPPFLAGS="-I${FAKE_ROOT}/include"
+fi
+
 
 make -j2 && strip -o /vagrant/lnav src/lnav
