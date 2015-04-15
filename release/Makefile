@@ -7,17 +7,21 @@ outbox:
 clean-outbox: outbox
 	rm -f outbox/*
 
-linux-vm:
-	cd vagrant-static-linux && vagrant up
+.PHONY: linux freebsd
 
-linux-build: linux-vm
-	cd vagrant-static-linux && vagrant ssh -c /vagrant/build.sh
+%-vm: %
+	cd vagrant-static-$< && vagrant up
 
-linux-package: clean-outbox linux-build
-	mkdir -p linux-pkg/lnav-${VERSION}
-	cp ../README ../NEWS linux-pkg/lnav-${VERSION}
-	cp vagrant-static-linux/lnav linux-pkg/lnav-${VERSION}
-	cd linux-pkg && zip -r ../outbox/lnav-${VERSION}-linux-64bit.zip lnav-${VERSION}
+
+%-build: % %-vm
+	cd vagrant-static-$< && vagrant ssh -c /home/vagrant/build.sh && vagrant destroy -f
+
+%-package: % clean-outbox %-build
+	mkdir -p $<-pkg/lnav-${VERSION}
+	cp ../README ../NEWS $<-pkg/lnav-${VERSION}
+	mv vagrant-static-$</lnav $<-pkg/lnav-${VERSION}
+	cd $<-pkg && zip -r ../outbox/lnav-${VERSION}-$<-64bit.zip lnav-${VERSION}
+	rm -rf $<-pkg
 
 osx-build:
 	rm -rf osx-build-dir
@@ -32,5 +36,6 @@ osx-package: clean-outbox osx-build
 	cp osx-build-dir/lnav-${VERSION}.tar.gz outbox/
 	cp osx-build-dir/lnav-${VERSION}.tar.bz2 outbox/
 	cd osx-pkg && zip -r ../outbox/lnav-${VERSION}-os-x.zip lnav-${VERSION}
+	rm -rf osx-pkg
 
-release: linux-package osx-package
+release: linux-package freebsd-package osx-package
