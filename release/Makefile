@@ -10,16 +10,16 @@ clean-outbox: outbox
 .PHONY: linux freebsd
 
 %-vm: %
-	cd vagrant-static-$< && vagrant up
+	cd vagrant-static && vagrant up $<
 
 
 %-build: % %-vm
-	cd vagrant-static-$< && vagrant ssh -c /home/vagrant/build.sh && vagrant destroy -f
+	cd vagrant-static && vagrant ssh $< -c /vagrant/build.sh && vagrant destroy -f $<
 
 %-package: % clean-outbox %-build
 	mkdir -p $<-pkg/lnav-${VERSION}
 	cp ../README ../NEWS $<-pkg/lnav-${VERSION}
-	mv vagrant-static-$</lnav $<-pkg/lnav-${VERSION}
+	mv vagrant-static/lnav $<-pkg/lnav-${VERSION}
 	cd $<-pkg && zip -r ../outbox/lnav-${VERSION}-$<-64bit.zip lnav-${VERSION}
 	rm -rf $<-pkg
 
