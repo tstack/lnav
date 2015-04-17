@@ -2,17 +2,9 @@
 TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
-DBGEN_V = $(DBGEN_V_@AM_V@)
-DBGEN_V_ = $(DBGEN_V_@AM_DEFAULT_V@)
-DBGEN_V_0 = @echo "  DBGEN   " $@;
-
 RM_V = $(RM_V_@AM_V@)
 RM_V_ = $(RM_V_@AM_DEFAULT_V@)
 RM_V_0 = @echo "  RM      " $@;
-
-simple-db.db: simple-db.sql
-	$(RM_V)rm -f $@
-	$(DBGEN_V)$(SQLITE3_CMD) $@ < $(srcdir)/simple-db.sql
 
 AM_CPPFLAGS = \
 	-Wall \
@@ -245,7 +237,6 @@ dist_noinst_DATA = \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
 	multiline.lnav \
 	mvwattrline_output.0 \
-	simple-db.sql \
 	view_colors_output.0 \
 	vt52_curses_input.0 \
 	vt52_curses_input.1 \
@@ -257,9 +248,6 @@ dist_noinst_DATA = \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
 	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
 	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
-
-nodist_noinst_DATA = \
-	simple-db.db
 
 TESTS = \
 	test_ansi_scrubber \

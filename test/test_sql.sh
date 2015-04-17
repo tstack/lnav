@@ -411,6 +411,18 @@ log_line log_part         log_time        log_idle_msecs log_level log_mark log_
        3 p.0      2015-11-03 09:47:02.000        1404000 info             0 veridian      <NULL> sudo
 EOF
 
+# Create a dummy database for the next couple of tests to consume.
+run_test ${lnav_test} -n \
+    -c ";ATTACH DATABASE 'simple-db.db' as 'db'" \
+    -c ";CREATE TABLE IF NOT EXISTS db.person ( id integer PRIMARY KEY, first_name text, last_name, age integer )" \
+    -c ";INSERT INTO db.person(id, first_name, last_name, age) VALUES (0, 'Phil', 'Myman', 30)" \
+    -c ";INSERT INTO db.person(id, first_name, last_name, age) VALUES (1, 'Lem', 'Hewitt', 35)" \
+    -c ";DETACH DATABASE 'db'" \
+    /dev/null
+
+check_output "Could not create db?" <<EOF
+EOF
+
 # Test to see if lnav can recognize a sqlite3 db file passed in as an argument.
 run_test ${lnav_test} -n -c ";select * from person order by age asc" \
     simple-db.db
@@ -426,7 +438,7 @@ EOF
 # and we might not have sufficient privileges on the system the tests are being
 # run on.
 run_test ${lnav_test} -n \
-    -c ";attach 'simple-db.db' as 'db'" \
+    -c ";attach database 'simple-db.db' as 'db'" \
     -c ';select * from person order by age asc' \
     /dev/null
 
