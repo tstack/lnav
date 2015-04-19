@@ -185,7 +185,8 @@ dist_noinst_SCRIPTS = \
 	test_sql_str_func.sh \
 	test_sql_fs_func.sh \
 	test_view_colors.sh \
-	test_vt52_curses.sh
+	test_vt52_curses.sh \
+	test_pretty_print.sh
 
 dist_noinst_DATA = \
 	ansi-colors.0.in \
@@ -281,7 +282,8 @@ TESTS = \
 	test_vt52_curses.sh \
 	test_top_status \
 	test_data_parser.sh \
-	test_yajlpp
+	test_yajlpp \
+	test_pretty_print.sh
 
 DISTCLEANFILES = \
 	*.dat \
