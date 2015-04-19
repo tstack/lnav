@@ -792,7 +792,7 @@
         "url": "",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) cpu(?<cpu>\\d+):(?<world_id>\\d+)\\)((?<level>WARNING|ALERT): )?(?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) cpu(?<cpu>\\d+):(?<world_id>\\d+)\\)((?:(?<level>WARNING|ALERT)|(?<subsystem>[^:]+)): )?(?<body>.*)"
             }
         },
         "level-field": "level",
@@ -807,6 +807,10 @@
             },
             "world_id": {
                 "kind": "integer",
+                "identifier": true
+            },
+            "subsystem": {
+                "kind": "string",
                 "identifier": true
             }
         },
