@@ -529,3 +529,11 @@ run_test ${lnav_test} -n \
 check_output "multiline commands do not work?" <<EOF
 Hello: Jules
 EOF
+
+
+printf 'Hello, World!' | run_test ${lnav_test} -n \
+  -c ":switch-to-view text"
+
+check_output "stdin with no line feed failed" <<EOF
+Hello, World!
+EOF

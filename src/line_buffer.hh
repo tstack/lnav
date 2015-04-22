@@ -94,6 +94,10 @@ public:
      */
     ssize_t get_file_size() const { return this->lb_file_size; };
 
+    bool is_pipe_closed() const {
+        return !this->lb_seekable && (this->lb_file_size != -1);
+    };
+
     bool is_compressed() const {
         return this->lb_gz_file != NULL || this->lb_bz_file;
     };

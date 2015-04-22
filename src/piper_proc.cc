@@ -164,13 +164,14 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 }
                 woff += wrc;
 
-                if (lv.lv_start[lv.lv_len - 1] != '\n') {
+                if (lv.lv_start[lv.lv_len - 1] != '\n' &&
+                        (off != lb.get_file_size())) {
                     off = last_off;
                     woff = last_woff;
                 }
                 last_off = off;
             }
-        } while (lb.get_file_size() == (ssize_t)-1);
+        } while (!lb.is_pipe_closed());
 
         if (timestamp) {
             ssize_t wrc;
