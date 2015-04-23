@@ -30,17 +30,31 @@
 #ifndef __pretty_printer_hh
 #define __pretty_printer_hh
 
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <signal.h>
 
 #include <stack>
 #include <deque>
 #include <sstream>
 
+#include "timer.hh"
 #include "ansi_scrubber.hh"
 #include "data_scanner.hh"
+
+static sig_atomic_t reverse_lookup_enabled = 1;
+
+void sigalrm_handler(int sig)
+{
+    if (sig == SIGALRM)
+    {
+        reverse_lookup_enabled = 0;
+    }
+}
+
 
 class pretty_printer {
 
@@ -149,14 +163,26 @@ private:
                 require(0);
                 break;
         }
-        if (rc == 1) {
-            while ((rc = getnameinfo((struct sockaddr *)&sa, socklen,
-                    buffer, sizeof(buffer), NULL, 0,
-                    NI_NAMEREQD)) == EAI_AGAIN) {
-                usleep(1000);
+        if (rc == 1 && reverse_lookup_enabled) {
+            const struct timeval timeout = {3, 0};
+
+            {
+                timer::interrupt_timer t(timeout, sigalrm_handler);
+                if (t.arm_timer() == 0) {
+                    rc = getnameinfo((struct sockaddr *)&sa, socklen,
+                            buffer, sizeof(buffer), NULL, 0,
+                            NI_NAMEREQD);
+                    if (rc == 0) {
+                        result = buffer;
+                    }
+                }
+                else {
+                    log_error("Unable to set timer, disabling reverse lookup");
+                    reverse_lookup_enabled = 0;
+                }
             }
-            if (rc == 0) {
-                result = buffer;
+            if (!reverse_lookup_enabled) {
+                log_info("Reverse lookup in pretty-print view disabled");
             }
         }
         this->pp_stream << " " << ANSI_UNDERLINE_START <<
