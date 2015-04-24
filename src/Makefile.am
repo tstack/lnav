@@ -141,6 +141,7 @@ noinst_HEADERS = \
 	textfile_sub_source.hh \
 	textview_curses.hh \
 	time_T.hh \
+	timer.hh \
 	top_status_source.hh \
 	view_curses.hh \
 	vt52_curses.hh \
@@ -203,6 +204,7 @@ libdiag_a_SOURCES = \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
 	string-extension-functions.cc \
+	timer.cc \
 	pcrepp.cc \
 	piper_proc.cc \
 	sql_util.cc \
