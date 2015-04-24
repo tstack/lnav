@@ -47,7 +47,7 @@ int timer::interrupt_timer::arm_timer() {
     return 0;
 }
 
-timer::interrupt_timer::~interrupt_timer() {
+void timer::interrupt_timer::disarm_timer() {
     if (this->armed) {
         // Disable the interval timer before resetting the handler and rearming
         // the previous interval timer or else we will have a race-condition
@@ -69,4 +69,8 @@ timer::interrupt_timer::~interrupt_timer() {
             throw timer::error(errno);
         }
     }
+}
+
+timer::interrupt_timer::~interrupt_timer() {
+    this->disarm_timer();
 }

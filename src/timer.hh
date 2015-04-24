@@ -23,6 +23,7 @@ class interrupt_timer {
     public:
         interrupt_timer(struct timeval, sighandler_t_);
         int arm_timer();
+        void disarm_timer();
         ~interrupt_timer();
     private:
         sighandler_t_ new_handler, old_handler;
