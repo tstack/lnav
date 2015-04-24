@@ -25,8 +25,8 @@ class interrupt_timer {
         int arm_timer();
         ~interrupt_timer();
     private:
-        struct itimerval new_val, old_val;
         sighandler_t_ new_handler, old_handler;
+        struct itimerval new_val, old_val;
         bool armed;
 };
 }
