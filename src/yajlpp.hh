@@ -187,6 +187,11 @@ public:
         return std::string(frag, len);
     };
 
+    const intern_string_t get_path() const {
+        return intern_string::lookup(&this->ypc_path[1],
+                                     this->ypc_path.size() - 2);
+    };
+
     bool is_level(size_t level) const {
         return this->ypc_path_index_stack.size() == level;
     };

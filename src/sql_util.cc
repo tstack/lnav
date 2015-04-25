@@ -544,23 +544,28 @@ void sql_install_logger(void)
 
 char *sql_quote_ident(const char *ident)
 {
-    char *quote = (char *)ident;
+    bool needs_quote = false;
     size_t quote_count = 0;
     char *retval;
 
-    while ((quote = strchr(quote, '"')) != NULL) {
-        quote_count += 1;
-        quote += 1;
+    for (int lpc = 0; ident[lpc]; lpc++) {
+        if ((lpc == 0 && isnumber(ident[lpc])) ||
+                (!isalnum(ident[lpc]) && ident[lpc] != '_')) {
+            needs_quote = true;
+        }
+        else if (ident[lpc] == '"') {
+            quote_count += 1;
+        }
     }
 
     if ((retval = (char *)sqlite3_malloc(
-        strlen(ident) + quote_count * 2 + (quote_count ? 2: 0))) == NULL) {
+        strlen(ident) + quote_count * 2 + (needs_quote ? 2: 0) + 1)) == NULL) {
         retval = NULL;
     }
     else {
         char *curr = retval;
 
-        if (quote_count) {
+        if (needs_quote) {
             curr[0] = '"';
             curr += 1;
         }
@@ -575,10 +580,12 @@ char *sql_quote_ident(const char *ident)
             }
             curr += 1;
         }
-        if (quote_count) {
+        if (needs_quote) {
             curr[0] = '"';
             curr += 1;
         }
+
+        *curr = '\0';
     }
 
     return retval;

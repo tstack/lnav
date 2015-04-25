@@ -1,4 +1,9 @@
 
+lnav v0.7.4:
+     Fixes:
+     * Nested fields in JSON logs are now supported for levels, bodies, etc...
+     * Tab-completion should work for quoted SQL identifiers.
+
 lnav v0.7.3:
      Features:
      * Add 'pipe-to' and 'pipe-line-to' commands that pipe the currently

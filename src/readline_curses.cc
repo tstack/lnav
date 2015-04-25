@@ -208,10 +208,14 @@ char *readline_context::completion_generator(const char *text, int state)
                  iter != arg_possibilities->end();
                  ++iter) {
                 int (*cmpfunc)(const char *, const char *, size_t);
+                const char *poss_str = iter->c_str();
 
                 cmpfunc = (loaded_context->is_case_sensitive() ?
                            strncmp : strncasecmp);
-                if (cmpfunc(text, iter->c_str(), len) == 0) {
+                // Check for an exact match and for the quoted version.
+                if (cmpfunc(text, poss_str, len) == 0 ||
+                        (((poss_str[0] == '"') || (poss_str[0] == '\'')) &&
+                         cmpfunc(text, &poss_str[1], len) == 0)) {
                     matches.push_back(*iter);
                 }
             }

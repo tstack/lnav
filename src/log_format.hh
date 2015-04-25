@@ -760,6 +760,10 @@ public:
         return this->elf_source_path;
     };
 
+    bool has_value_def(const intern_string_t &ist) const {
+        return this->elf_value_defs.find(ist) != this->elf_value_defs.end();
+    }
+
     std::set<std::string> elf_source_path;
     std::list<std::string> elf_collision;
     std::string elf_file_pattern;

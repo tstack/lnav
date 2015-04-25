@@ -76,11 +76,13 @@ std::string log_vtab_impl::get_table_statement(void)
     this->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {
         auto_mem<char, sqlite3_free> coldecl;
+        auto_mem<char, sqlite3_free> colname;
 
         require(iter->vc_name != NULL);
 
-        coldecl = sqlite3_mprintf("  %Q %s %s collate %Q,\n",
-                                  iter->vc_name,
+        colname = sql_quote_ident(iter->vc_name);
+        coldecl = sqlite3_mprintf("  %s %s %s collate %Q,\n",
+                                  colname.in(),
                                   type_to_string(iter->vc_type),
                                   iter->vc_hidden ? "hidden" : "",
                                   (iter->vc_collator == NULL ||

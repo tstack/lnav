@@ -362,15 +362,14 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
 
 static int read_json_null(yajlpp_parse_context *ypc)
 {
-    if (!ypc->is_level(1)) {
-        return 1;
-    }
-
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     vector<external_log_format::json_format_element> &line_format =
         jlu->jlu_format->jlf_line_format;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
+    const intern_string_t field_name = ypc->get_path();
 
+    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+        return 1;
+    }
     if (find_if(line_format.begin(), line_format.end(),
                 json_field_cmp(external_log_format::JLF_VARIABLE,
                                field_name)) == line_format.end()) {
@@ -382,15 +381,14 @@ static int read_json_null(yajlpp_parse_context *ypc)
 
 static int read_json_bool(yajlpp_parse_context *ypc, int val)
 {
-    if (!ypc->is_level(1)) {
-        return 1;
-    }
-
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     vector<external_log_format::json_format_element> &line_format =
         jlu->jlu_format->jlf_line_format;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
+    const intern_string_t field_name = ypc->get_path();
 
+    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+        return 1;
+    }
     if (find_if(line_format.begin(), line_format.end(),
             json_field_cmp(external_log_format::JLF_VARIABLE,
                     field_name)) == line_format.end()) {
@@ -402,15 +400,14 @@ static int read_json_bool(yajlpp_parse_context *ypc, int val)
 
 static int read_json_int(yajlpp_parse_context *ypc, long long val)
 {
-    if (!ypc->is_level(1)) {
-        return 1;
-    }
-
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     vector<external_log_format::json_format_element> &line_format =
         jlu->jlu_format->jlf_line_format;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
+    const intern_string_t field_name = ypc->get_path();
 
+    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+        return 1;
+    }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         long long divisor = jlu->jlu_format->elf_timestamp_divisor;
         struct timeval tv;
@@ -430,15 +427,14 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
 
 static int read_json_double(yajlpp_parse_context *ypc, double val)
 {
-    if (!ypc->is_level(1)) {
-        return 1;
-    }
-
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     vector<external_log_format::json_format_element> &line_format =
         jlu->jlu_format->jlf_line_format;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
+    const intern_string_t field_name = ypc->get_path();
 
+    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+        return 1;
+    }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         double divisor = jlu->jlu_format->elf_timestamp_divisor;
         struct timeval tv;
@@ -513,13 +509,12 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
 
 static int rewrite_json_null(yajlpp_parse_context *ypc)
 {
-    if (!ypc->is_level(1)) {
+    json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
+    const intern_string_t field_name = ypc->get_path();
+
+    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-
-    json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
-
     jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name));
 
     return 1;
@@ -527,13 +522,12 @@ static int rewrite_json_null(yajlpp_parse_context *ypc)
 
 static int rewrite_json_bool(yajlpp_parse_context *ypc, int val)
 {
-    if (!ypc->is_level(1)) {
+    json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
+    const intern_string_t field_name = ypc->get_path();
+
+    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-
-    json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
-
     jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, (bool)val));
 
     return 1;
@@ -541,13 +535,12 @@ static int rewrite_json_bool(yajlpp_parse_context *ypc, int val)
 
 static int rewrite_json_int(yajlpp_parse_context *ypc, long long val)
 {
-    if (!ypc->is_level(1)) {
+    json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
+    const intern_string_t field_name = ypc->get_path();
+
+    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-
-    json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
-
     jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, (int64_t)val));
 
     return 1;
@@ -555,13 +548,12 @@ static int rewrite_json_int(yajlpp_parse_context *ypc, long long val)
 
 static int rewrite_json_double(yajlpp_parse_context *ypc, double val)
 {
-    if (!ypc->is_level(1)) {
+    json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
+    const intern_string_t field_name = ypc->get_path();
+
+    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-
-    json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
-
     jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, val));
 
     return 1;
@@ -785,14 +777,10 @@ void external_log_format::annotate(shared_buffer_ref &line,
 
 static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    if (!ypc->is_level(1)) {
-        return 1;
-    }
-
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     vector<external_log_format::json_format_element> &line_format =
         jlu->jlu_format->jlf_line_format;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
+    const intern_string_t field_name = ypc->get_path();
     struct exttm tm_out;
     struct timeval tv_out;
 
@@ -803,7 +791,8 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
     else if (jlu->jlu_format->elf_level_field == field_name) {
         jlu->jlu_base_line->set_level(logline::abbrev2level((const char *)str, len));
     }
-    else {
+    else if (ypc->is_level(1) || jlu->jlu_format->elf_value_defs.find(field_name) !=
+             jlu->jlu_format->elf_value_defs.end()) {
         if (find_if(line_format.begin(), line_format.end(),
                     json_field_cmp(external_log_format::JLF_VARIABLE,
                                    field_name)) == line_format.end()) {
@@ -821,13 +810,9 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
 
 static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    if (!ypc->is_level(1)) {
-        return 1;
-    }
-
     static const intern_string_t body_name = intern_string::lookup("body", -1);
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path_fragment_i(0);
+    const intern_string_t field_name = ypc->get_path();
 
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         char time_buf[64];
@@ -848,6 +833,10 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
             jlu->jlu_format->jlf_line_values.push_back(logline_value(body_name,
                     sbr));
         }
+        if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+            return 1;
+        }
+
         jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name,
                 sbr));
     }
@@ -857,6 +846,10 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
         if (field_name == jlu->jlu_format->elf_body_field) {
             jlu->jlu_format->jlf_line_values.push_back(logline_value(body_name, tsb.tsb_ref));
         }
+        if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+            return 1;
+        }
+
         jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, tsb.tsb_ref));
     }
 
@@ -1031,6 +1024,8 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
     off_t this_off = 0, next_off = 0;
 
     if (!this->jlf_line_offsets.empty()) {
+        require(ll.get_sub_offset() < this->jlf_line_offsets.size());
+
         this_off = this->jlf_line_offsets[ll.get_sub_offset()];
         if (this->jlf_cached_line[this_off] == '\n') {
             this_off += 1;

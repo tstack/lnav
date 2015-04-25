@@ -56,6 +56,17 @@ public:
         return std::string(this->is_str, this->is_len);
     }
 
+    bool startswith(const char *prefix) const {
+        const char *curr = this->is_str;
+
+        while (*prefix != '\0' && *prefix == *curr) {
+            prefix += 1;
+            curr += 1;
+        }
+
+        return *prefix == '\0';
+    }
+
 private:
     intern_string(const char *str, ssize_t len)
             : is_next(NULL), is_str(str), is_len(len) {
@@ -73,6 +84,10 @@ public:
 
     }
 
+    const intern_string *unwrap() const {
+        return this->ist_interned_string;
+    }
+
     bool empty(void) const {
         return this->ist_interned_string == NULL;
     }
@@ -82,10 +97,16 @@ public:
     }
 
     size_t size(void) const {
+        if (this->ist_interned_string == NULL) {
+            return 0;
+        }
         return this->ist_interned_string->size();
     }
 
     std::string to_string(void) const {
+        if (this->ist_interned_string == NULL) {
+            return "";
+        }
         return this->ist_interned_string->to_string();
     }
 
