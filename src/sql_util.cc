@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <pcrecpp.h>
@@ -549,7 +550,7 @@ char *sql_quote_ident(const char *ident)
     char *retval;
 
     for (int lpc = 0; ident[lpc]; lpc++) {
-        if ((lpc == 0 && isnumber(ident[lpc])) ||
+        if ((lpc == 0 && isdigit(ident[lpc])) ||
                 (!isalnum(ident[lpc]) && ident[lpc] != '_')) {
             needs_quote = true;
         }
