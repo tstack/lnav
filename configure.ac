@@ -128,7 +128,7 @@ fi
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE
 
-LNAV_WITH_SQLITE3("3.3.9")
+LNAV_WITH_SQLITE3("3.6.0")
 
 case "$host_os" in
     *)
