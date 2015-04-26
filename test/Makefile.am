@@ -223,6 +223,7 @@ dist_noinst_DATA = \
 	logfile_glog.0 \
 	logfile_json.json \
 	logfile_multiline.0 \
+	logfile_nested_json.json \
 	logfile_openam.0 \
 	logfile_plain.0 \
 	logfile_pretty.0 \
@@ -245,6 +246,7 @@ dist_noinst_DATA = \
 	vt52_curses_output.1 \
 	formats/collision/format.json \
 	formats/jsontest/format.json \
+	formats/nestedjson/format.json \
 	formats/timestamp/format.json \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
 	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
