@@ -1,0 +1,13 @@
+{"ts": "2013-09-06T20:00:48.124817Z", "@fields": { "lvl": "TRACE", "msg": "trace test"}}
+{"ts": "2013-09-06T20:00:49.124817Z", "@fields": { "lvl": "INFO", "msg": "Starting up service"}}
+{"ts": "2013-09-06T22:00:49.124817Z", "@fields": { "lvl": "INFO", "msg": "Shutting down service", "user": "steve@example.com"}}
+{"ts": "2013-09-06T22:00:59.124817Z", "@fields": { "lvl": "DEBUG5", "msg": "Details..."}}
+{"ts": "2013-09-06T22:00:59.124817Z", "@fields": { "lvl": "DEBUG4", "msg": "Details..."}}
+{"ts": "2013-09-06T22:00:59.124817Z", "@fields": { "lvl": "DEBUG3", "msg": "Details..."}}
+{"ts": "2013-09-06T22:00:59.124817Z", "@fields": { "lvl": "DEBUG2", "msg": "Details..."}}
+{"ts": "2013-09-06T22:00:59.124817Z", "@fields": { "lvl": "DEBUG", "msg": "Details..."}}
+{"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "STATS", "msg": "1 beat per second"}}
+{"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "WARNING", "msg": "not looking good"}}
+{"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "ERROR", "msg": "looking bad"}}
+{"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "CRITICAL", "msg": "sooo bad"}}
+{"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "FATAL", "msg": "shoot"}}

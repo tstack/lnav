@@ -761,7 +761,10 @@ public:
     };
 
     bool has_value_def(const intern_string_t &ist) const {
-        return this->elf_value_defs.find(ist) != this->elf_value_defs.end();
+        return (ist == this->lf_timestamp_field ||
+                ist == this->elf_level_field ||
+                ist == this->elf_body_field ||
+                this->elf_value_defs.find(ist) != this->elf_value_defs.end());
     }
 
     std::set<std::string> elf_source_path;
