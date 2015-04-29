@@ -68,6 +68,37 @@
             }
         ]
     },
+    "rbd_log" : {
+        "title" : "VMware vSphere Auto Deploy log format",
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) \\[(?<pid>\\d+)\\](?<level>\\w+):(?<module>\\w+):(?<body>.*$)"
+            }
+        },
+        "level-field" : "level",
+        "timestamp-field" : "timestamp",
+        "level" : {
+            "error" : "ERROR",
+            "debug" : "DEBUG",
+            "info" : "INFO",
+            "warning" : "WARNING"
+        },
+        "value" : {
+            "pid" : {
+                "kind" : "integer",
+                "identifier" : true
+            },
+            "module" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "2015-04-24T21:09:29.296 [25376]INFO:somemodule:Something very INFOrmative."
+            }
+        ]
+    },
     "block_log" : {
         "title" : "Generic Block",
         "description" : "A generic format for logs, like cron, that have a date at the start of a block.",
