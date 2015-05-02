@@ -70,6 +70,8 @@
     },
     "rbd_log" : {
         "title" : "VMware vSphere Auto Deploy log format",
+        "description" : "The log format for the VMware Auto Deploy service",
+        "url" : "http://kb.vmware.com/kb/2000988",
         "regex" : {
             "std" : {
                 "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) \\[(?<pid>\\d+)\\](?<level>\\w+):(?<module>\\w+):(?<body>.*$)"
@@ -86,7 +88,8 @@
         "value" : {
             "pid" : {
                 "kind" : "integer",
-                "identifier" : true
+                "identifier" : true,
+                "foreign-key" : true
             },
             "module" : {
                 "kind" : "string",
@@ -438,7 +441,8 @@
             },
             "job_id" : {
                 "kind" : "integer",
-                "identifier" : true
+                "identifier" : true,
+                "foreign-key" : true
             },
             "page_number" : {
                 "kind" : "string"
@@ -551,7 +555,8 @@
                 "kind" : "string"
             },
             "rc" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key" : true
             },
             "duration" : {
                 "kind" : "float"
@@ -834,11 +839,13 @@
         "value": {
             "cpu": {
                 "kind": "integer",
-                "identifier": true
+                "identifier": true,
+                "foreign-key" : true
             },
             "world_id": {
                 "kind": "integer",
-                "identifier": true
+                "identifier": true,
+                "foreign-key" : true
             },
             "subsystem": {
                 "kind": "string",
