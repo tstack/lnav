@@ -74,16 +74,19 @@
         "url" : "http://kb.vmware.com/kb/2000988",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) \\[(?<pid>\\d+)\\](?<level>\\w+):(?<module>\\w+):(?<body>.*$)"
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) \\[(?<pid>\\d+)\\](?<level>\\w+):(?<module>[\\w-]+):(?<body>.*$)"
+            },
+            "ssl_error_log" : {
+                "pattern" : "^(?<timestamp>\\[.*?\\]) (?<level>\\[.*?\\]) (?:\\[client (?<cl_ip>.*?)\\])?(?<body>.*$)"
             }
         },
         "level-field" : "level",
         "timestamp-field" : "timestamp",
         "level" : {
-            "error" : "ERROR",
-            "debug" : "DEBUG",
-            "info" : "INFO",
-            "warning" : "WARNING"
+            "error" : "(ERROR|error)",
+            "debug" : "(DEBUG|debug)",
+            "info" : "(INFO|info)",
+            "warning" : "(WARNING|warn)"
         },
         "value" : {
             "pid" : {
@@ -94,11 +97,19 @@
             "module" : {
                 "kind" : "string",
                 "identifier" : true
+            },
+            "cl_ip" : {
+                "identifier" : true,
+                "collate" : "ipaddress",
+                "kind" : "string"
             }
         },
         "sample" : [
             {
                 "line" : "2015-04-24T21:09:29.296 [25376]INFO:somemodule:Something very INFOrmative."
+            },
+            {
+                "line" : "[Sat Apr 25 02:35:34 2015] [error] [client 10.148.20.15] File does not exist: /var/lib/rbd/www/5ac8125c.cfm"
             }
         ]
     },
