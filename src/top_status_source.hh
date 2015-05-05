@@ -65,7 +65,7 @@ public:
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_stitch_value(
             view_colors::ansi_color_pair_index(COLOR_CYAN, COLOR_BLUE));
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].right_justify(true);
-        this->tss_fields[TSF_FORMAT].set_width(13);
+        this->tss_fields[TSF_FORMAT].set_width(20);
         this->tss_fields[TSF_FORMAT].right_justify(true);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_width(2);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_stitch_value(
