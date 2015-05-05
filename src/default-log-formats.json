@@ -68,13 +68,13 @@
             }
         ]
     },
-    "rbd_log" : {
+    "autodeploy_log" : {
         "title" : "VMware vSphere Auto Deploy log format",
         "description" : "The log format for the VMware Auto Deploy service",
         "url" : "http://kb.vmware.com/kb/2000988",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) \\[(?<pid>\\d+)\\](?<level>\\w+):(?<module>\\w+):(?<body>.*$)"
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) \\[(?<pid>\\d+)\\](?<level>\\w+):(?<module>[\\w-]+):(?<body>.*$)"
             }
         },
         "level-field" : "level",
