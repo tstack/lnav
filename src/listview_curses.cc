@@ -102,7 +102,7 @@ bool listview_curses::handle_key(int ch)
     case 'H':
     case KEY_SLEFT:
         this->shift_left(-10);
-        break
+        break;
 
     case '\r':
     case 'j':
