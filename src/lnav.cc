@@ -1778,7 +1778,7 @@ static void handle_paging_key(int ch)
         }
         break;
 
-    case 'L': {
+    case KEY_CTRL_L: {
         vis_line_t top = tc->get_top();
         vis_line_t bottom = tc->get_bottom();
         char line_break[120];
@@ -2359,10 +2359,6 @@ static void handle_paging_key(int ch)
     case KEY_CTRL_W:
         execute_command(lnav_data.ld_views[LNV_LOG].get_word_wrap() ?
             "disable-word-wrap" : "enable-word-wrap");
-        break;
-
-    case KEY_CTRL_L:
-        execute_command("redraw");
         break;
 
     default:

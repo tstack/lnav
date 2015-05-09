@@ -1,8 +1,13 @@
 
 lnav v0.7.4:
+     Features:
+     * Added support for 'VMware vSphere Auto Deploy' log format.
+
      Fixes:
      * Nested fields in JSON logs are now supported for levels, bodies, etc...
      * Tab-completion should work for quoted SQL identifiers.
+     * 'lo-fi' mode key shortcut changed to CTRL+L.
+     * 'redraw' shortcut removed. Relegated to just a command.
 
 lnav v0.7.3:
      Features:
