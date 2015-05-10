@@ -168,7 +168,7 @@ through the file.
   t                 Switch to/from the text file view.  The text file view is
                     for any files that are not recognized as log files.
 
-  L                 (Lo-fi mode) Exit screen-mode and write the
+  Ctrl-L            (Lo-fi mode) Exit screen-mode and write the
                     displayed log lines in plain text to the terminal
                     until a key is pressed.  Useful for copying long lines
                     from the terminal without picking up any of the extra
@@ -325,8 +325,6 @@ through the file.
                     state to the factory default.
 
   CTRL-W            Toggle word-wrapping.
-
-  CTRL-L            Force redraw the window.
 
   r/R               Restore the next/previous session.  The current session is
                     saved and then the new state is restored.
@@ -492,7 +490,7 @@ COMMANDS
                     Change the histogram zoom level to the given value, which
                     can be one of: day, 4-hour, hour, 10-minute, minute
 
-  redraw            Force redraw the window (CTRL-L hotkey).
+  redraw            Force redraw the window.
 
   partition-name <name>
                     Mark the top line in the log view as the start of a new
