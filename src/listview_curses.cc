@@ -95,6 +95,14 @@ bool listview_curses::handle_key(int ch)
     case KEY_LEFT:
         this->shift_left(-(width / 2));
         break;
+    case 'L':
+    case KEY_SRIGHT:
+        this->shift_left(10);
+        break;
+    case 'H':
+    case KEY_SLEFT:
+        this->shift_left(-10);
+        break;
 
     case '\r':
     case 'j':
