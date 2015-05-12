@@ -151,6 +151,8 @@ through the file.
   k/up-arrow        Move up a line.
   h/left-arrow      Move to the left.
   l/right-arrow     Move to the right.
+  H/Shift+left      Move to the left by a smaller increment.
+  L/Shift+right     Move to the right by a smaller increment.
 
   e/E               Move to the next/previous error.
   w/W               Move to the next/previous warning.

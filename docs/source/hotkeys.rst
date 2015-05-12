@@ -71,10 +71,18 @@ Spatial Navigation
      - |ks| ← |ke|
      -
      - Left half a page
+   * - |ks| Shift |ke| + |ks| h |ke|
+     - |ks| Shift |ke| + |ks| ← |ke|
+     -
+     - Left ten columns
    * - |ks| l |ke|
      - |ks| → |ke|
      -
      - Right half a page
+   * - |ks| Shift |ke| + |ks| l |ke|
+     - |ks| Shift |ke| + |ks| → |ke|
+     -
+     - Right ten columns
    * - |ks| Home |ke|
      - |ks| g |ke|
      -
