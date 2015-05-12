@@ -8,6 +8,7 @@ lnav v0.7.4:
      * Tab-completion should work for quoted SQL identifiers.
      * 'lo-fi' mode key shortcut changed to CTRL+L.
      * 'redraw' shortcut removed. Relegated to just a command.
+     * Fixed lnav hang in pretty-print mode while doing a dns lookup.
 
 lnav v0.7.3:
      Features:
