@@ -97,12 +97,15 @@ On color displays, the lines will be highlighted as follows:
   * various color highlights will be applied to: IP addresses, SQL keywords,
     XML tags, file and line numbers in Java backtraces, and quoted strings.
 
-To give you an idea of where you are in the file spatially, the right
-side of the display has a proportionally sized 'scroll bar' that
-indicates your current position in the file.  The scroll bar will also
-show areas of the file where warnings or errors are detected by coloring
-the bar yellow or red, respectively.  Tick marks will also be added to the
+To give you an idea of where you are spatially, the right side of the
+display has a proportionally sized 'scroll bar' that indicates your
+current position in the files.  The scroll bar will also show areas of
+the file where warnings or errors are detected by coloring the bar
+yellow or red, respectively.  Tick marks will also be added to the
 left and right hand side of the bar, for search hits and bookmarks.
+
+When multiple files are open, a bar on the left side is color coded and
+broken up to indicate which messages are from the same file.
 
 Above and below the main body are status lines that display:
 

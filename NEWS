@@ -4,6 +4,8 @@ lnav v0.7.4:
      * Added support for 'VMware vSphere Auto Deploy' log format.
      * Added hotkeys to move left/right by a smaller increment (H/L or
        Shift+Left/Shift+Right).
+     * A color-coded bar has been added to the left side to show where
+       messages from one file stop and messages from another file start.
 
      Fixes:
      * Nested fields in JSON logs are now supported for levels, bodies, etc...
