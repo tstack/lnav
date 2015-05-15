@@ -246,6 +246,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     int time_offset_end = 0;
     int attrs           = 0;
 
+    value_out.clear();
     switch (this->lss_token_line->get_level() & ~logline::LEVEL__FLAGS) {
     case logline::LEVEL_FATAL:
     case logline::LEVEL_CRITICAL:
@@ -283,6 +284,10 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         format->annotate(sbr, value_out, line_values);
     }
 
+    lr.lr_start = 0;
+    lr.lr_end = this->lss_token_value.length();
+    value_out.push_back(string_attr(lr, &textview_curses::SA_ORIGINAL_LINE));
+
     lr.lr_start = time_offset_end + this->lss_token_date_end;
     lr.lr_end   = -1;
 
@@ -292,7 +297,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         for (string_attrs_t::iterator iter = value_out.begin();
              iter != value_out.end();
              ++iter) {
-            struct line_range *existing_lr = (line_range *) &iter->sa_range;
+            struct line_range *existing_lr = &iter->sa_range;
 
             existing_lr->lr_start += 1;
             if (existing_lr->lr_end != -1) {

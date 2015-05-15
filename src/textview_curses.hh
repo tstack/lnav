@@ -382,6 +382,7 @@ public:
     static bookmark_type_t BM_PARTITION;
     static bookmark_type_t BM_SEARCH;
 
+    static string_attr_type SA_ORIGINAL_LINE;
     static string_attr_type SA_BODY;
 
     struct highlighter {

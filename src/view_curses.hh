@@ -196,6 +196,23 @@ struct line_range {
     bool operator==(const struct line_range &rhs) const {
         return (this->lr_start == rhs.lr_start && this->lr_end == rhs.lr_end);
     };
+
+    const char *substr(const std::string &str) const {
+        if (this->lr_start == -1) {
+            return str.c_str();
+        }
+        return &(str.c_str()[this->lr_start]);
+    }
+
+    size_t sublen(const std::string &str) const {
+        if (this->lr_start == -1) {
+            return str.length();
+        }
+        if (this->lr_end == -1) {
+            return str.length() - this->lr_start;
+        }
+        return this->length();
+    }
 };
 
 /**
@@ -239,7 +256,6 @@ inline string_attrs_t::const_iterator
 find_string_attr(const string_attrs_t &sa, string_attr_type_t type)
 {
     string_attrs_t::const_iterator iter;
-    struct line_range retval;
 
     for (iter = sa.begin(); iter != sa.end(); ++iter) {
         if (iter->sa_type == type) {

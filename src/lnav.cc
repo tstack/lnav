@@ -1799,7 +1799,10 @@ static void handle_paging_key(int ch)
             for (; top <= bottom; ++top) {
                 attr_line_t al;
                 tc->listview_value_for_row(*tc, top, al);
-                write(STDOUT_FILENO, al.get_string().c_str(), al.length());
+                struct line_range lr = find_string_attr_range(
+                        al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
+                write(STDOUT_FILENO, lr.substr(al.get_string()),
+                      lr.sublen(al.get_string()));
                 write(STDOUT_FILENO, "\n", 1);
             }
         }
@@ -4726,7 +4729,8 @@ int main(int argc, char *argv[])
                          ++vl, ++y) {
                         while (los != NULL &&
                                los->list_value_for_overlay(*tc, y, al)) {
-                            printf("%s\n", line.c_str());
+                            write(STDOUT_FILENO, line.c_str(), line.length());
+                            write(STDOUT_FILENO, "\n", 1);
                             ++y;
                         }
 
@@ -4735,7 +4739,11 @@ int main(int argc, char *argv[])
                             continue;
                         }
 
-                        printf("%s\n", line.c_str());
+                        struct line_range lr = find_string_attr_range(
+                                al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
+                        write(STDOUT_FILENO, lr.substr(al.get_string()),
+                              lr.sublen(al.get_string()));
+                        write(STDOUT_FILENO, "\n", 1);
                     }
                 }
             }
