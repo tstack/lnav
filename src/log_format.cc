@@ -82,7 +82,7 @@ const char *logline::level_names[LEVEL__MAX + 1] = {
 };
 
 static pcrepp LEVEL_RE(
-        "(?i)(TRACE|DEBUG\\d*|INFO|STATS|WARN(?:ING)?|ERROR|CRITICAL|SEVERE|FATAL)");
+        "(?i)(TRACE|DEBUG\\d*|INFO|STATS|WARN(?:ING)?|ERR(OR)?|CRITICAL|SEVERE|FATAL)");
 
 logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool exact)
 {

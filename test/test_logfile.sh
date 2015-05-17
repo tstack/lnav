@@ -179,8 +179,15 @@ EOF
 
 run_test ./drive_logfile -v -f generic_log ${srcdir}/logfile_generic.1
 
-check_output "generic_log level interpreted incorrectly?" <<EOF
+check_output "generic_log (1) level interpreted incorrectly?" <<EOF
 0x07
+0x0a
+EOF
+
+run_test ./drive_logfile -v -f generic_log ${srcdir}/logfile_generic.2
+
+check_output "generic_log (2) level interpreted incorrectly?" <<EOF
+0x0a
 0x0a
 EOF
 

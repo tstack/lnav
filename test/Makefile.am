@@ -221,6 +221,7 @@ dist_noinst_DATA = \
 	logfile_for_join.0 \
 	logfile_generic.0 \
 	logfile_generic.1 \
+	logfile_generic.2 \
 	logfile_glog.0 \
 	logfile_json.json \
 	logfile_multiline.0 \

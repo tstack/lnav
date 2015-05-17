@@ -471,14 +471,13 @@ const char *date_time_scanner::scan(const char *time_dest,
         /* Try to pull out the milli/micro-second value. */
         if (retval[0] == '.' || retval[0] == ',') {
             off_t off = (retval - time_dest) + 1;
-            int sub_seconds = 0;
 
-            if (ptime_f(sub_seconds, time_dest, off, time_len)) {
-                tv_out.tv_usec = sub_seconds;
+            if (ptime_f(tm_out, time_dest, off, time_len)) {
+                tv_out.tv_usec = tm_out->et_nsec / 1000;
                 this->dts_fmt_len += 7;
             }
-            else if (ptime_F(sub_seconds, time_dest, off, time_len)) {
-                tv_out.tv_usec = sub_seconds * 1000;
+            else if (ptime_F(tm_out, time_dest, off, time_len)) {
+                tv_out.tv_usec = tm_out->et_nsec / 1000;
                 this->dts_fmt_len += 4;
             }
         }

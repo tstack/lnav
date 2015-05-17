@@ -426,9 +426,9 @@ inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return true;
 }
 
+#include "lnav_log.hh"
 inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
-#ifdef HAVE_STRUCT_TM_TM_ZONE
     PTIME_CONSUME(5, {
         long sign;
         long hours;
@@ -450,14 +450,15 @@ inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         mins = (
             (str[off_inout + 2] - '0') *   10 +
             (str[off_inout + 3] - '0') *    1) * 60;
+#ifdef HAVE_STRUCT_TM_TM_ZONE
         dst->et_tm.tm_gmtoff = sign * (hours + mins);
-    });
 #endif
+    });
 
     return true;
 }
 
-inline bool ptime_f(int &sub_seconds, const char *str, off_t &off_inout, ssize_t len)
+inline bool ptime_f(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(6, {
         for (int lpc = 0; lpc < 6; lpc++) {
@@ -465,25 +466,25 @@ inline bool ptime_f(int &sub_seconds, const char *str, off_t &off_inout, ssize_t
                 return false;
             }
         }
-        sub_seconds = (
+        dst->et_nsec = (
                 (str[off_inout + 0] - '0') * 100000 +
                 (str[off_inout + 1] - '0') *  10000 +
                 (str[off_inout + 2] - '0') *   1000 +
                 (str[off_inout + 3] - '0') *    100 +
                 (str[off_inout + 4] - '0') *     10 +
-                (str[off_inout + 5] - '0') *      1);
+                (str[off_inout + 5] - '0') *      1) * 1000;
     });
 
     return true;
 }
 
-inline bool ptime_F(int &sub_seconds, const char *str, off_t &off_inout, ssize_t len)
+inline bool ptime_F(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(3, {
-        sub_seconds = (
+        dst->et_nsec = (
                         (str[off_inout + 0] - '0') * 100 +
                         (str[off_inout + 1] - '0') *  10 +
-                        (str[off_inout + 2] - '0') *   1);
+                        (str[off_inout + 2] - '0') *   1) * 1000 * 1000;
     });
 
     return true;
