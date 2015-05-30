@@ -411,22 +411,19 @@ inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         dst->et_tm.tm_year = (
             (str[off_inout + 0] - '0') * 10 +
             (str[off_inout + 1] - '0') *  1);
-
-        if (dst->et_tm.tm_year >= 0 && dst->et_tm.tm_year < 100) {
-            if (dst->et_tm.tm_year < 69) {
-                dst->et_tm.tm_year += 100;
-            }
-
-            dst->et_flags |= ETF_YEAR_SET;
-            return true;
-        }
-        return false;
     });
 
-    return true;
+    if (dst->et_tm.tm_year >= 0 && dst->et_tm.tm_year < 100) {
+        if (dst->et_tm.tm_year < 69) {
+            dst->et_tm.tm_year += 100;
+        }
+
+        dst->et_flags |= ETF_YEAR_SET;
+        return true;
+    }
+    return false;
 }
 
-#include "lnav_log.hh"
 inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(5, {
