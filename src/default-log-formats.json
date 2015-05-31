@@ -586,8 +586,8 @@
         },
         "level-field" : "body",
         "level" : {
-            "error" : "(?:failed|failure|error)",
-            "warning" : "(?:warn|not responding|init: cannot execute)"
+            "error" : "(?:(?:(?<![a-zA-Z]))(?:(?i)error(?:s)?)(?:(?![a-zA-Z]))|failed|failure)",
+            "warning" : "(?:(?:(?i)warn)|not responding|init: cannot execute)"
         },
         "value" : {
             "log_hostname" : {
