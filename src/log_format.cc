@@ -1052,7 +1052,7 @@ void external_log_format::build(std::vector<std::string> &errors)
     }
     catch (const pcrepp::error &e) {
         errors.push_back("error:" +
-                         this->elf_name + ".file-pattern:" +
+                         this->elf_name.to_string() + ".file-pattern:" +
                          e.what());
     }
     for (std::map<string, pattern>::iterator iter = this->elf_patterns.begin();
@@ -1063,7 +1063,7 @@ void external_log_format::build(std::vector<std::string> &errors)
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
-                             this->elf_name + ".regex[" + iter->first + "]" +
+                             this->elf_name.to_string() + ".regex[" + iter->first + "]" +
                              ":" +
                              e.what());
             continue;
@@ -1101,11 +1101,11 @@ void external_log_format::build(std::vector<std::string> &errors)
     if (this->jlf_json) {
         if (!this->elf_patterns.empty()) {
             errors.push_back("error:" +
-                             this->elf_name +
+                             this->elf_name.to_string() +
                              ": JSON logs cannot have regexes");
         }
         if (this->jlf_json) {
-            this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name));
+            this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name.to_string()));
             this->jlf_yajl_handle.reset(yajl_alloc(
                     &this->jlf_parse_context->ypc_callbacks,
                     NULL,
@@ -1117,7 +1117,7 @@ void external_log_format::build(std::vector<std::string> &errors)
     else {
         if (this->elf_patterns.empty()) {
             errors.push_back("error:" +
-                             this->elf_name +
+                             this->elf_name.to_string() +
                              ": no regexes specified for format");
         }
     }
@@ -1130,7 +1130,7 @@ void external_log_format::build(std::vector<std::string> &errors)
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
-                             this->elf_name + ".level:" + e.what());
+                             this->elf_name.to_string() + ".level:" + e.what());
         }
     }
 
@@ -1149,7 +1149,7 @@ void external_log_format::build(std::vector<std::string> &errors)
             if (this->lf_action_defs.find(*act_iter) ==
                 this->lf_action_defs.end()) {
                 errors.push_back("error:" +
-                    this->elf_name + ":" + iter->first.get() +
+                    this->elf_name.to_string() + ":" + iter->first.get() +
                     ": cannot find action -- " + (*act_iter));
             }
         }
@@ -1157,7 +1157,7 @@ void external_log_format::build(std::vector<std::string> &errors)
 
     if (!this->jlf_json && this->elf_samples.empty()) {
         errors.push_back("error:" +
-            this->elf_name +
+            this->elf_name.to_string() +
             ":no sample logs provided, all formats must have samples");
     }
 
@@ -1178,7 +1178,7 @@ void external_log_format::build(std::vector<std::string> &errors)
 
             if (pat.p_pcre->name_index(this->lf_timestamp_field.to_string()) < 0) {
                 errors.push_back("error:" +
-                    this->elf_name +
+                    this->elf_name.to_string() +
                     ":timestamp field '" +
                     this->lf_timestamp_field.get() +
                     "' not found in pattern -- " +
@@ -1197,11 +1197,11 @@ void external_log_format::build(std::vector<std::string> &errors)
                 found = true;
                 if (ts_len == -1 || dts.scan(ts, ts_len, this->get_timestamp_formats(), &tm, tv) == NULL) {
                     errors.push_back("error:" +
-                        this->elf_name +
+                        this->elf_name.to_string() +
                         ":invalid sample -- " +
                         iter->s_line);
                     errors.push_back("error:" +
-                        this->elf_name +
+                        this->elf_name.to_string() +
                         ":unrecognized timestamp format -- " + ts);
 
                     for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != NULL; lpc++) {
@@ -1217,7 +1217,7 @@ void external_log_format::build(std::vector<std::string> &errors)
 
         if (!found) {
             errors.push_back("error:" +
-                             this->elf_name +
+                             this->elf_name.to_string() +
                              ":invalid sample -- " +
                              iter->s_line);
 
@@ -1237,7 +1237,7 @@ void external_log_format::build(std::vector<std::string> &errors)
 
                     if (pat.p_pcre->match(pc, pi_partial, PCRE_PARTIAL)) {
                         errors.push_back("error:" +
-                                         this->elf_name +
+                                         this->elf_name.to_string() +
                                          ":partial sample matched -- " +
                                          line_partial);
                         errors.push_back("error:  against pattern -- " +
@@ -1249,7 +1249,7 @@ void external_log_format::build(std::vector<std::string> &errors)
                 }
                 if (line_partial.empty()) {
                     errors.push_back("error:" +
-                                     this->elf_name +
+                                     this->elf_name.to_string() +
                                      ":no partial match found");
                 }
             }

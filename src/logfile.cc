@@ -169,7 +169,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 log_info("%s:%d:log format found -- %s",
                     this->lf_filename.c_str(),
                     this->lf_index.size(),
-                    (*iter)->get_name().c_str());
+                    (*iter)->get_name().get());
 
                 this->lf_format =
                     auto_ptr<log_format>((*iter)->specialized());

@@ -70,6 +70,8 @@ public:
         return *this;
     };
 
+    bool empty() const { return this->sb_data == NULL; };
+
     const char *get_data() const { return this->sb_data; };
 
     size_t length() const { return this->sb_length; };

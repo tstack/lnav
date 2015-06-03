@@ -117,7 +117,7 @@ public:
 
                 if (lf->get_format()) {
                     sf_format.set_value("% 13s",
-                                        lf->get_format()->get_name().c_str());
+                                        lf->get_format()->get_name().get());
                 }
                 else if (!lf->get_filename().empty()) {
                     sf_format.set_value("% 13s", "plain text");

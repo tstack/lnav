@@ -985,7 +985,7 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
         else {
             vis_line_t      vl  = log_view.get_top();
             content_line_t  cl  = lnav_data.ld_log_source.at_base(vl);
-            log_data_table *ldt = new log_data_table(cl, args[1]);
+            log_data_table *ldt = new log_data_table(cl, intern_string::lookup(args[1]));
             string          errmsg;
 
             errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
@@ -1014,7 +1014,8 @@ static string com_delete_logline_table(string cmdline, vector<string> &args)
         args.push_back("custom-table");
     }
     else if (args.size() == 2) {
-        string rc = lnav_data.ld_vtab_manager->unregister_vtab(args[1]);
+        string rc = lnav_data.ld_vtab_manager->unregister_vtab(
+                intern_string::lookup(args[1]));
 
         if (rc.empty()) {
             if (lnav_data.ld_rl_view != NULL) {

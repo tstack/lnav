@@ -78,6 +78,7 @@ dist_noinst_DATA = \
 	dump-pid.sh
 
 noinst_HEADERS = \
+	all_logs_vtab.hh \
 	ansi_scrubber.hh \
 	auto_fd.hh \
 	auto_mem.hh \

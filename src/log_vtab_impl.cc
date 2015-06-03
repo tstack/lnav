@@ -65,7 +65,7 @@ std::string log_vtab_impl::get_table_statement(void)
     std::vector<log_vtab_impl::vtab_column>::const_iterator iter;
     std::ostringstream oss;
 
-    oss << "CREATE TABLE " << this->get_name() << " (\n"
+    oss << "CREATE TABLE " << this->get_name().to_string() << " (\n"
         << "  log_line integer PRIMARY KEY,\n"
         << "  log_part text collate naturalnocase,\n"
         << "  log_time datetime,\n"
@@ -135,7 +135,7 @@ static int vt_create(sqlite3 *db,
     p_vt->db = db;
 
     /* Declare the vtable's structure */
-    p_vt->vi = vm->lookup_impl(argv[3]);
+    p_vt->vi = vm->lookup_impl(intern_string::lookup(argv[3]));
     if (p_vt->vi == NULL) {
         return SQLITE_ERROR;
     }
@@ -387,11 +387,10 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                     break;
                 case logline_value::VALUE_JSON:
                 case logline_value::VALUE_TEXT: {
-                    const char *text_value = lv_iter->lv_sbr.get_data();
 
                     sqlite3_result_text(ctx,
-                                        text_value,
-                                        lv_iter->lv_sbr.length(),
+                                        lv_iter->text_value(),
+                                        lv_iter->text_length(),
                                         SQLITE_TRANSIENT);
                     break;
                 }
@@ -428,11 +427,11 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 
                 case logline_value::VALUE_BOOLEAN:
                 case logline_value::VALUE_INTEGER:
-                    sqlite3_result_int64(ctx, lv_iter->lv_number.i);
+                    sqlite3_result_int64(ctx, lv_iter->lv_value.i);
                     break;
 
                 case logline_value::VALUE_FLOAT:
-                    sqlite3_result_double(ctx, lv_iter->lv_number.d);
+                    sqlite3_result_double(ctx, lv_iter->lv_value.d);
                     break;
 
                 case logline_value::VALUE_UNKNOWN:
@@ -680,8 +679,8 @@ string log_vtab_manager::register_vtab(log_vtab_impl *vi)
 
         sql = sqlite3_mprintf("CREATE VIRTUAL TABLE %s "
                               "USING log_vtab_impl(%s)",
-                              vi->get_name().c_str(),
-                              vi->get_name().c_str());
+                              vi->get_name().get(),
+                              vi->get_name().get());
         rc = sqlite3_exec(this->vm_db,
                           sql,
                           NULL,
@@ -700,18 +699,18 @@ string log_vtab_manager::register_vtab(log_vtab_impl *vi)
     return retval;
 }
 
-string log_vtab_manager::unregister_vtab(std::string name)
+string log_vtab_manager::unregister_vtab(intern_string_t name)
 {
     string retval = "";
 
     if (this->vm_impls.find(name) == this->vm_impls.end()) {
-        retval = "unknown log line table -- " + name;
+        retval = "unknown log line table -- " + name.to_string();
     }
     else {
         char *sql;
         int   rc;
 
-        sql = sqlite3_mprintf("DROP TABLE %s ", name.c_str());
+        sql = sqlite3_mprintf("DROP TABLE %s ", name.get());
         rc  = sqlite3_exec(this->vm_db,
                            sql,
                            NULL,

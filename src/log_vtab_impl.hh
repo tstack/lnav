@@ -82,13 +82,13 @@ public:
         bool vc_hidden;
     };
 
-    log_vtab_impl(const std::string name)
+    log_vtab_impl(const intern_string_t name)
         : vi_name(name) {
         this->vi_attrs.resize(128);
     };
     virtual ~log_vtab_impl() { };
 
-    const std::string &get_name(void) const
+    const intern_string_t get_name(void) const
     {
         return this->vi_name;
     };
@@ -141,14 +141,14 @@ public:
     int vi_column_count;
 private:
     string_attrs_t vi_attrs;
-    const std::string vi_name;
+    const intern_string_t vi_name;
 };
 
 typedef int (*sql_progress_callback_t)(const log_cursor &lc);
 
 class log_vtab_manager {
 public:
-    typedef std::map<std::string, log_vtab_impl *>::const_iterator iterator;
+    typedef std::map<intern_string_t, log_vtab_impl *>::const_iterator iterator;
 
     log_vtab_manager(sqlite3 *db,
                      textview_curses &tc,
@@ -160,9 +160,9 @@ public:
     logfile_sub_source *get_source() { return &this->vm_source; };
 
     std::string register_vtab(log_vtab_impl *vi);
-    std::string unregister_vtab(std::string name);
+    std::string unregister_vtab(intern_string_t name);
 
-    log_vtab_impl *lookup_impl(std::string name)
+    log_vtab_impl *lookup_impl(intern_string_t name)
     {
         return this->vm_impls[name];
     };
@@ -181,6 +181,6 @@ private:
     sqlite3 *           vm_db;
     textview_curses &vm_textview;
     logfile_sub_source &vm_source;
-    std::map<std::string, log_vtab_impl *> vm_impls;
+    std::map<intern_string_t, log_vtab_impl *> vm_impls;
 };
 #endif

@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     else {
      //printf("%s %s\n", lf.get_format()->get_name().c_str(), expected_format.c_str());
     assert(lf.get_format() != NULL);
-    assert(lf.get_format()->get_name() == expected_format);
+    assert(lf.get_format()->get_name().to_string() == expected_format);
     }
     if (!lf.is_compressed()) {
         assert(lf.get_modified_time() == st.st_mtime);

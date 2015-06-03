@@ -51,12 +51,12 @@
 
 using namespace std;
 
-static map<string, external_log_format *> LOG_FORMATS;
+static map<intern_string_t, external_log_format *> LOG_FORMATS;
 
 static external_log_format *ensure_format(yajlpp_parse_context *ypc)
 {
-    const string &name = ypc->get_path_fragment(0);
-    vector<string> *formats = (vector<string> *)ypc->ypc_userdata;
+    const intern_string_t name = ypc->get_path_fragment_i(0);
+    vector<intern_string_t> *formats = (vector<intern_string_t> *)ypc->ypc_userdata;
     external_log_format *retval;
 
     retval = LOG_FORMATS[name];
@@ -79,7 +79,7 @@ static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str
     string value = string((const char *)str, len);
 
     log_debug(" format regex: %s/%s = %s",
-            elf->get_name().c_str(), regex_name.c_str(), value.c_str());
+            elf->get_name().get(), regex_name.c_str(), value.c_str());
     elf->elf_patterns[regex_name].p_string = value;
 
     return 1;
@@ -426,9 +426,9 @@ static void write_sample_file(void)
     }
 }
 
-std::vector<string> load_format_file(const string &filename, std::vector<string> &errors)
+std::vector<intern_string_t> load_format_file(const string &filename, std::vector<string> &errors)
 {
-    std::vector<string> retval;
+    std::vector<intern_string_t> retval;
     auto_fd fd;
 
     log_info("loading formats from file: %s", filename.c_str());
@@ -496,17 +496,17 @@ static void load_from_path(const string &path, std::vector<string> &errors)
     if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             string filename(gl->gl_pathv[lpc]);
-            vector<string> format_list;
+            vector<intern_string_t> format_list;
 
             format_list = load_format_file(filename, errors);
             if (format_list.empty()) {
                 log_warning("Empty format file: %s", filename.c_str());
             }
             else {
-                for (vector<string>::iterator iter = format_list.begin();
+                for (vector<intern_string_t>::iterator iter = format_list.begin();
                         iter != format_list.end();
                         ++iter) {
-                    log_info("  found format: %s", iter->c_str());
+                    log_info("  found format: %s", iter->get());
                 }
             }
         }
@@ -518,7 +518,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
 {
     string default_source = string(dotlnav_path("formats") + "/default/");
     yajlpp_parse_context ypc_builtin(default_source, format_handlers);
-    std::vector<std::string> retval;
+    std::vector<intern_string_t> retval;
     yajl_handle handle;
 
     write_sample_file();
@@ -547,13 +547,13 @@ void load_formats(const std::vector<std::string> &extra_paths,
     }
 
     vector<external_log_format *> alpha_ordered_formats;
-    for (map<string, external_log_format *>::iterator iter = LOG_FORMATS.begin();
+    for (map<intern_string_t, external_log_format *>::iterator iter = LOG_FORMATS.begin();
          iter != LOG_FORMATS.end();
          ++iter) {
         external_log_format *elf = iter->second;
         elf->build(errors);
 
-        for (map<string, external_log_format *>::iterator check_iter = LOG_FORMATS.begin();
+        for (map<intern_string_t, external_log_format *>::iterator check_iter = LOG_FORMATS.begin();
              check_iter != LOG_FORMATS.end();
              ++check_iter) {
             if (iter->first == check_iter->first) {
@@ -563,8 +563,8 @@ void load_formats(const std::vector<std::string> &extra_paths,
             external_log_format *check_elf = check_iter->second;
             if (elf->match_samples(check_elf->elf_samples)) {
                 log_warning("Format collision, format '%s' matches sample from '%s'",
-                        elf->get_name().c_str(),
-                        check_elf->get_name().c_str());
+                        elf->get_name().get(),
+                        check_elf->get_name().get());
                 elf->elf_collision.push_back(check_elf->get_name());
             }
         }
@@ -577,7 +577,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
     vector<external_log_format *> graph_ordered_formats;
 
     while (!alpha_ordered_formats.empty()) {
-        vector<string> popped_formats;
+        vector<intern_string_t> popped_formats;
 
         for (vector<external_log_format *>::iterator iter = alpha_ordered_formats.begin();
              iter != alpha_ordered_formats.end();) {
@@ -595,7 +595,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
         if (popped_formats.empty() && !alpha_ordered_formats.empty()) {
             external_log_format *elf = alpha_ordered_formats.front();
             log_warning("Detected a cycle, breaking by picking %s",
-                    elf->get_name().c_str());
+                    elf->get_name().get());
             elf->elf_collision.clear();
         }
 
@@ -603,7 +603,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
              iter != alpha_ordered_formats.end();
              ++iter) {
             external_log_format *elf = *iter;
-            for (vector<string>::iterator pop_iter = popped_formats.begin();
+            for (vector<intern_string_t>::iterator pop_iter = popped_formats.begin();
                     pop_iter != popped_formats.end();
                     ++pop_iter) {
                 elf->elf_collision.remove(*pop_iter);
@@ -615,7 +615,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
     for (vector<external_log_format *>::iterator iter = graph_ordered_formats.begin();
             iter != graph_ordered_formats.end();
             ++iter) {
-        log_info("  %s", (*iter)->get_name().c_str());
+        log_info("  %s", (*iter)->get_name().get());
     }
 
     vector<log_format *> &roots = log_format::get_root_formats();

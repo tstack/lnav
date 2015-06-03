@@ -116,6 +116,7 @@
 #include "readline_highlighters.hh"
 #include "environ_vtab.hh"
 #include "pretty_printer.hh"
+#include "all_logs_vtab.hh"
 
 #include "yajlpp.hh"
 
@@ -302,7 +303,7 @@ public:
         }
         else{
             this->fos_lines.push_back(" Known message fields:  (SQL table -- " +
-                    this->fos_log_helper.ldh_file->get_format()->get_name() +
+                    this->fos_log_helper.ldh_file->get_format()->get_name().to_string() +
                     ")");
         }
 
@@ -656,11 +657,12 @@ bool setup_logline_table()
     }
 
     if (log_view.get_inner_height()) {
+        static intern_string_t logline = intern_string::lookup("logline");
         vis_line_t     vl = log_view.get_top();
         content_line_t cl = lnav_data.ld_log_source.at_base(vl);
 
-        lnav_data.ld_vtab_manager->unregister_vtab("logline");
-        lnav_data.ld_vtab_manager->register_vtab(new log_data_table(cl));
+        lnav_data.ld_vtab_manager->unregister_vtab(logline);
+        lnav_data.ld_vtab_manager->register_vtab(new log_data_table(cl, logline));
 
         if (lnav_data.ld_rl_view != NULL) {
             log_data_helper ldh(lnav_data.ld_log_source);
@@ -4451,7 +4453,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl("generic_log"));
+    lnav_data.ld_vtab_manager->register_vtab(new all_logs_vtab());
+    lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl(
+            intern_string::lookup("generic_log")));
 
     for (std::vector<log_format *>::iterator iter = log_format::get_root_formats().begin();
          iter != log_format::get_root_formats().end();

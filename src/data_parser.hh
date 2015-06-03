@@ -407,6 +407,7 @@ private:
           dp_format(NULL),
           dp_qualifier(DT_INVALID),
           dp_separator(DT_INVALID),
+          dp_msg_format(NULL),
           dp_scanner(ds)
     {
         if (TRACE_FILE != NULL) {
@@ -634,6 +635,10 @@ private:
             }
 
             pairs_out.PUSH_BACK(element(pair_subs, DNT_PAIR));
+
+            if (this->dp_msg_format != NULL) {
+                *(this->dp_msg_format) += get_pair_key_string(pairs_out.back()) + "#";
+            }
         }
 
         if (pairs_out.size() == 1) {
@@ -703,10 +708,10 @@ private:
                     // use the token ID since some columns values might vary
                     // between rows.
                     context.Update(" ", 1);
+                    if (schema != NULL && this->dp_msg_format != NULL) {
+                        *(this->dp_msg_format) += "#";
+                    }
                 }
-                break;
-
-                case DT_WHITE:
                 break;
 
                 default: {
@@ -715,6 +720,9 @@ private:
                         free_row.front(), key_len);
 
                     context.Update(key_val, key_len);
+                    if (schema != NULL && this->dp_msg_format != NULL) {
+                        *(this->dp_msg_format) += std::string(key_val, key_len);
+                    }
                 }
                 break;
                 }
@@ -736,7 +744,7 @@ private:
         }
 
         if (schema != NULL) {
-            context.Final(this->dp_schema_id.out(0), this->dp_schema_id.out(1));
+            context.Final(schema->out(0), schema->out(1));
         }
     };
 
@@ -862,6 +870,16 @@ private:
         return pi.get_substr(&elem.e_capture);
     };
 
+    std::string get_pair_key_string(const element &elem) const {
+        require(elem.e_token == DNT_PAIR);
+
+        pcre_input &pi = this->dp_scanner->get_input();
+
+        pcre_context::capture_t key_and_trailing = pcre_context::capture_t(
+                elem.e_capture.c_begin, elem.e_sub_elements->back().e_capture.c_begin);
+        return pi.get_substr(&key_and_trailing);
+    };
+
     const char *get_element_string(const element &elem, size_t &len_out) {
         pcre_input &pi = this->dp_scanner->get_input();
 
@@ -890,6 +908,7 @@ private:
     data_format *  dp_format;
     data_token_t   dp_qualifier;
     data_token_t   dp_separator;
+    std::string    *dp_msg_format;
 
 private:
     data_scanner *dp_scanner;

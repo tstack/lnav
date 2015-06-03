@@ -105,7 +105,9 @@ class generic_log_format : public log_format {
         return log_fmt;
     };
 
-    string get_name() const { return "generic_log"; };
+    intern_string_t get_name() const {
+        return intern_string::lookup("generic_log");
+    };
 
     void scrub(string &line)
     {

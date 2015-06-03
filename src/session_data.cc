@@ -118,10 +118,10 @@ static bool bind_line(sqlite3 *db,
         return false;
     }
 
-    const std::string &format_name = lf->get_format()->get_name();
+    intern_string_t format_name = lf->get_format()->get_name();
 
     if (sqlite3_bind_text(stmt, 2,
-                          format_name.c_str(), format_name.length(),
+                          format_name.get(), format_name.size(),
                           SQLITE_TRANSIENT) != SQLITE_OK) {
         log_error("could not bind log format -- %s\n",
                     sqlite3_errmsg(db));
@@ -415,10 +415,10 @@ static void load_time_bookmarks(void)
             return;
         }
 
-        const std::string &format_name = lf->get_format()->get_name();
+        intern_string_t format_name = lf->get_format()->get_name();
 
         if (sqlite3_bind_text(stmt.in(), 4,
-                              format_name.c_str(), format_name.length(),
+                              format_name.get(), format_name.size(),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
             log_error("could not bind log format -- %s\n",
                     sqlite3_errmsg(db.in()));
@@ -574,10 +574,10 @@ static void load_time_bookmarks(void)
             return;
         }
 
-        const std::string &format_name = lf->get_format()->get_name();
+        intern_string_t format_name = lf->get_format()->get_name();
 
         if (sqlite3_bind_text(stmt.in(), 4,
-                              format_name.c_str(), format_name.length(),
+                              format_name.get(), format_name.size(),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
             log_error("could not bind log format -- %s\n",
                     sqlite3_errmsg(db.in()));
@@ -1104,10 +1104,10 @@ static void save_time_bookmarks(void)
             return;
         }
 
-        const std::string &format_name = lf->get_format()->get_name();
+        intern_string_t format_name = lf->get_format()->get_name();
 
         if (sqlite3_bind_text(stmt.in(), 2,
-                              format_name.c_str(), format_name.length(),
+                              format_name.get(), format_name.size(),
                               SQLITE_TRANSIENT) != SQLITE_OK) {
             log_error("could not bind log format -- %s\n",
                     sqlite3_errmsg(db.in()));

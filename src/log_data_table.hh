@@ -47,8 +47,7 @@
 class log_data_table : public log_vtab_impl {
 public:
 
-    log_data_table(content_line_t template_line,
-                   std::string table_name = "logline")
+    log_data_table(content_line_t template_line, intern_string_t table_name)
         : log_vtab_impl(table_name),
           ldt_template_line(template_line),
           ldt_parent_column_count(0) {

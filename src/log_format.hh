@@ -308,16 +308,21 @@ public:
     logline_value(const intern_string_t name, bool b)
         : lv_name(name),
           lv_kind(VALUE_BOOLEAN),
-          lv_number((int64_t)(b ? 1 : 0)),
+          lv_value((int64_t)(b ? 1 : 0)),
           lv_identifier(),
           lv_column(-1) { };
     logline_value(const intern_string_t name, int64_t i)
-        : lv_name(name), lv_kind(VALUE_INTEGER), lv_number(i), lv_identifier(), lv_column(-1) { };
+        : lv_name(name), lv_kind(VALUE_INTEGER), lv_value(i), lv_identifier(), lv_column(-1) { };
     logline_value(const intern_string_t name, double i)
-        : lv_name(name), lv_kind(VALUE_FLOAT), lv_number(i), lv_identifier(), lv_column(-1) { };
-    logline_value(const intern_string_t name, shared_buffer_ref &sbr)
+        : lv_name(name), lv_kind(VALUE_FLOAT), lv_value(i), lv_identifier(), lv_column(-1) { };
+    logline_value(const intern_string_t name, shared_buffer_ref &sbr, int column = -1)
         : lv_name(name), lv_kind(VALUE_TEXT), lv_sbr(sbr),
-          lv_identifier(), lv_column(-1) {
+          lv_identifier(), lv_column(column) {
+    };
+    logline_value(const intern_string_t name, const intern_string_t val, int column = -1)
+            : lv_name(name), lv_kind(VALUE_TEXT), lv_intern_string(val), lv_identifier(),
+              lv_column(column) {
+
     };
     logline_value(const intern_string_t name, kind_t kind, shared_buffer_ref &sbr,
                   bool ident=false, const scaling_factor *scaling=NULL,
@@ -341,9 +346,9 @@ public:
             break;
 
         case VALUE_INTEGER:
-            strtonum(this->lv_number.i, sbr.get_data(), sbr.length());
+            strtonum(this->lv_value.i, sbr.get_data(), sbr.length());
             if (scaling != NULL) {
-                scaling->scale(this->lv_number.i);
+                scaling->scale(this->lv_value.i);
             }
             break;
 
@@ -352,9 +357,9 @@ public:
 
             memcpy(scan_value, sbr.get_data(), sbr.length());
             scan_value[sbr.length()] = '\0';
-            this->lv_number.d = strtod(scan_value, NULL);
+            this->lv_value.d = strtod(scan_value, NULL);
             if (scaling != NULL) {
-                scaling->scale(this->lv_number.d);
+                scaling->scale(this->lv_value.d);
             }
             break;
         }
@@ -362,10 +367,10 @@ public:
         case VALUE_BOOLEAN:
             if (strncmp(sbr.get_data(), "true", sbr.length()) == 0 ||
                 strncmp(sbr.get_data(), "yes", sbr.length()) == 0) {
-                this->lv_number.i = 1;
+                this->lv_value.i = 1;
             }
             else {
-                this->lv_number.i = 0;
+                this->lv_value.i = 0;
             }
             break;
 
@@ -386,6 +391,9 @@ public:
 
         case VALUE_JSON:
         case VALUE_TEXT:
+            if (this->lv_sbr.empty()) {
+                return this->lv_intern_string.to_string();
+            }
             return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
 
         case VALUE_QUOTED:
@@ -408,15 +416,15 @@ public:
             }
 
         case VALUE_INTEGER:
-            snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_number.i);
+            snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_value.i);
             break;
 
         case VALUE_FLOAT:
-            snprintf(buffer, sizeof(buffer), "%lf", this->lv_number.d);
+            snprintf(buffer, sizeof(buffer), "%lf", this->lv_value.d);
             break;
 
         case VALUE_BOOLEAN:
-            if (this->lv_number.i) {
+            if (this->lv_value.i) {
                 return "true";
             }
             else {
@@ -432,6 +440,20 @@ public:
         return std::string(buffer);
     };
 
+    const char *text_value() const {
+        if (this->lv_sbr.empty()) {
+            return this->lv_intern_string.get();
+        }
+        return this->lv_sbr.get_data();
+    };
+
+    const size_t text_length() const {
+        if (this->lv_sbr.empty()) {
+            return this->lv_intern_string.size();
+        }
+        return this->lv_sbr.length();
+    }
+
     intern_string_t lv_name;
     kind_t      lv_kind;
     union value_u {
@@ -441,8 +463,9 @@ public:
         value_u() : i(0) { };
         value_u(int64_t i) : i(i) { };
         value_u(double d) : d(d) { };
-    }           lv_number;
+    } lv_value;
     shared_buffer_ref lv_sbr;
+    intern_string_t lv_intern_string;
     bool lv_identifier;
     int lv_column;
     struct line_range lv_origin;
@@ -527,7 +550,7 @@ public:
      *
      * @return The log format name.
      */
-    virtual std::string get_name(void) const = 0;
+    virtual intern_string_t get_name(void) const = 0;
 
     virtual bool match_name(const std::string &filename) { return true; };
 
@@ -669,7 +692,7 @@ public:
         pcrepp *lp_pcre;
     };
 
-    external_log_format(const std::string &name)
+    external_log_format(const intern_string_t name)
         : elf_file_pattern(".*"),
           elf_filename_pcre(NULL),
           elf_column_count(0),
@@ -682,7 +705,7 @@ public:
             this->jlf_line_offsets.reserve(128);
         };
 
-    std::string get_name(void) const {
+    intern_string_t get_name(void) const {
         return this->elf_name;
     };
 
@@ -710,7 +733,7 @@ public:
         std::auto_ptr<log_format> retval((log_format *)elf);
 
         if (this->jlf_json) {
-            this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name));
+            this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name.to_string()));
             this->jlf_yajl_handle.reset(yajl_alloc(
                     &this->jlf_parse_context->ypc_callbacks,
                     NULL,
@@ -768,7 +791,7 @@ public:
     }
 
     std::set<std::string> elf_source_path;
-    std::list<std::string> elf_collision;
+    std::list<intern_string_t> elf_collision;
     std::string elf_file_pattern;
     pcrepp *elf_filename_pcre;
     std::map<std::string, pattern> elf_patterns;
@@ -817,7 +840,7 @@ public:
     std::auto_ptr<yajlpp_parse_context> jlf_parse_context;
     auto_mem<yajl_handle_t> jlf_yajl_handle;
 private:
-    const std::string elf_name;
+    const intern_string_t elf_name;
 
 };
 
