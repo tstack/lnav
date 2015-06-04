@@ -408,6 +408,7 @@ private:
           dp_qualifier(DT_INVALID),
           dp_separator(DT_INVALID),
           dp_msg_format(NULL),
+          dp_msg_format_begin(ds->get_input().pi_offset),
           dp_scanner(ds)
     {
         if (TRACE_FILE != NULL) {
@@ -637,7 +638,7 @@ private:
             pairs_out.PUSH_BACK(element(pair_subs, DNT_PAIR));
 
             if (this->dp_msg_format != NULL) {
-                *(this->dp_msg_format) += get_pair_key_string(pairs_out.back()) + "#";
+                *(this->dp_msg_format) += get_string_up_to_value(pairs_out.back()) + "#";
             }
         }
 
@@ -709,7 +710,7 @@ private:
                     // between rows.
                     context.Update(" ", 1);
                     if (schema != NULL && this->dp_msg_format != NULL) {
-                        *(this->dp_msg_format) += "#";
+                        *(this->dp_msg_format) += this->get_string_up_to_value(free_row.front()) + "#";
                     }
                 }
                 break;
@@ -720,9 +721,6 @@ private:
                         free_row.front(), key_len);
 
                     context.Update(key_val, key_len);
-                    if (schema != NULL && this->dp_msg_format != NULL) {
-                        *(this->dp_msg_format) += std::string(key_val, key_len);
-                    }
                 }
                 break;
                 }
@@ -745,6 +743,13 @@ private:
 
         if (schema != NULL) {
             context.Final(schema->out(0), schema->out(1));
+        }
+
+        if (schema != NULL && this->dp_msg_format != NULL) {
+            pcre_input &pi = this->dp_scanner->get_input();
+            pcre_context::capture_t last(this->dp_msg_format_begin, pi.pi_length);
+
+            *(this->dp_msg_format) += pi.get_substr(&last);
         }
     };
 
@@ -870,14 +875,21 @@ private:
         return pi.get_substr(&elem.e_capture);
     };
 
-    std::string get_pair_key_string(const element &elem) const {
-        require(elem.e_token == DNT_PAIR);
-
+    std::string get_string_up_to_value(const element &elem) {
         pcre_input &pi = this->dp_scanner->get_input();
+        const element &val_elem = elem.e_token == DNT_PAIR ?
+                elem.e_sub_elements->back() : elem;
 
-        pcre_context::capture_t key_and_trailing = pcre_context::capture_t(
-                elem.e_capture.c_begin, elem.e_sub_elements->back().e_capture.c_begin);
-        return pi.get_substr(&key_and_trailing);
+        if (this->dp_msg_format_begin <= val_elem.e_capture.c_begin) {
+            pcre_context::capture_t leading_and_key = pcre_context::capture_t(
+                    this->dp_msg_format_begin, val_elem.e_capture.c_begin);
+            this->dp_msg_format_begin = val_elem.e_capture.c_end;
+            return pi.get_substr(&leading_and_key);
+        }
+        else {
+            this->dp_msg_format_begin = val_elem.e_capture.c_end;
+        }
+        return "";
     };
 
     const char *get_element_string(const element &elem, size_t &len_out) {
@@ -909,6 +921,7 @@ private:
     data_token_t   dp_qualifier;
     data_token_t   dp_separator;
     std::string    *dp_msg_format;
+    int dp_msg_format_begin;
 
 private:
     data_scanner *dp_scanner;
