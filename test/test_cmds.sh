@@ -398,6 +398,8 @@ check_output "pretty-printer is not working" <<EOF
     </value>
 </response>
 
+
+
 EOF
 
 
@@ -424,6 +426,7 @@ Apr  7 05:49:53 Tim-Stacks-iMac.local GoogleSoftwareUpdateDaemon[17212]: -[KSUpd
     activeTickets=1
     rollCallTickets=1
     body=
+
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <o:gupdate xmlns:o="http://www.google.com/update2/request" protocol="2.0" version="KeystoneDaemon-1.2.0.7709" ismachine="1" requestid="{0DFDBCD1-5E29-4DFC-BD99-31A2397198FE}">
         <o:os platform="mac" version="MacOSX" sp="10.10.2_x86_64h"></o:os>

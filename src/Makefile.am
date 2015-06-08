@@ -13,6 +13,10 @@ BIN2C_V = $(BIN2C_V_@AM_V@)
 BIN2C_V_ = $(BIN2C_V_@AM_DEFAULT_V@)
 BIN2C_V_0 = @echo "  BIN2C   " $@;
 
+RE2C_V = $(RE2C_V_@AM_V@)
+RE2C_V_ = $(RE2C_V_@AM_DEFAULT_V@)
+RE2C_V_0 = @echo "  RE2C   " $@;
+
 help.c: $(srcdir)/help.txt bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/help.txt $@
 
@@ -53,6 +57,12 @@ TIME_FORMATS = \
 time_fmts.cc: ptimec
 	$(PTIME_V)./ptimec $(TIME_FORMATS) > $@
 
+if HAVE_RE2C
+%.cc: %.re
+	$(RE2C_V)$(RE2C_CMD) -o $@ $<
+	$(REC2_V)test $@ -ef $(srcdir)/$*.cc || cp $@ $(srcdir)/$*.cc
+endif
+
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(READLINE_LDFLAGS) \
@@ -90,6 +100,7 @@ noinst_HEADERS = \
 	column_namer.hh \
 	concise_index.hh \
 	data_scanner.hh \
+	data_scanner_re.re \
 	data_parser.hh \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
@@ -197,6 +208,7 @@ libdiag_a_SOURCES = \
 	logfile_sub_source.cc \
 	network-extension-functions.cc \
 	data_scanner.cc \
+	data_scanner_re.cc \
 	data_parser.cc \
 	ptimec_rt.cc \
 	readline_curses.cc \
@@ -265,6 +277,7 @@ ptimec_SOURCES = ptimec.cc
 ptimec_LDADD =
 
 DISTCLEANFILES = \
+	data_scanner_re.cc \
 	dump-pid-sh.c \
 	help.c \
 	init-sql.c \

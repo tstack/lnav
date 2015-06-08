@@ -769,7 +769,7 @@ private:
         data_format_state_t comma_state  = DFS_INIT;
 
         memset(hist, 0, sizeof(hist));
-        while (this->dp_scanner->tokenize(pc, elem.e_token)) {
+        while (this->dp_scanner->tokenize2(pc, elem.e_token)) {
             pcre_context::iterator pc_iter;
 
             pc_iter = std::find_if(pc.begin(), pc.end(), capture_if_not(-1));

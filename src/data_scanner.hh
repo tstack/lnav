@@ -128,6 +128,7 @@ public:
     };
 
     bool tokenize(pcre_context &pc, data_token_t &token_out);
+    bool tokenize2(pcre_context &pc, data_token_t &token_out);
 
     pcre_input &get_input() { return this->ds_pcre_input; };
 

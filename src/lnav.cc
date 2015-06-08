@@ -496,7 +496,7 @@ static void add_text_possibilities(
     data_scanner ds(str);
     data_token_t dt;
 
-    while (ds.tokenize(pc, dt)) {
+    while (ds.tokenize2(pc, dt)) {
         if (pc[0]->length() < 4) {
             continue;
         }

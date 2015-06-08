@@ -2,7 +2,7 @@
 language: cpp
 compiler: gcc
 before_install:
-    - sudo apt-get install -y -qq libgpm-dev
+    - sudo apt-get install -y -qq libgpm-dev re2c
 script: ./autogen.sh && ./configure && make && make check && make distcheck
 after_script: test -e test/test-suite.log  && cat test/test-suite.log
 

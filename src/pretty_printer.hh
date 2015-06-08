@@ -79,7 +79,7 @@ public:
         pcre_context_static<30> pc;
         data_token_t dt;
 
-        while (this->pp_scanner->tokenize(pc, dt)) {
+        while (this->pp_scanner->tokenize2(pc, dt)) {
             element el(dt, pc);
 
             switch (dt) {

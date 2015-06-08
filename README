@@ -23,6 +23,7 @@ Lnav requires the following software packages:
   readline  - The readline line editing library.
   zlib      - The zlib compression library.
   bz2       - The bzip2 compression library.
+  re2c      - The re2c scanner generator.
 
 
 INSTALLATION
