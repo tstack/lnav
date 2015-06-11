@@ -747,9 +747,12 @@ private:
 
         if (schema != NULL && this->dp_msg_format != NULL) {
             pcre_input &pi = this->dp_scanner->get_input();
-            pcre_context::capture_t last(this->dp_msg_format_begin, pi.pi_length);
+            if (this->dp_msg_format_begin < pi.pi_length) {
+                pcre_context::capture_t last(this->dp_msg_format_begin,
+                                             pi.pi_length);
 
-            *(this->dp_msg_format) += pi.get_substr(&last);
+                *(this->dp_msg_format) += pi.get_substr(&last);
+            }
         }
     };
 
