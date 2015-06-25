@@ -116,6 +116,39 @@
             }
         ]
     },
+    "candlepin_log" : {
+        "title"	: "Candlepin log format",
+        "description" : "Log format used by Candlepin registration system",
+        "regex" : {
+            "reqorg" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(req=(?<req>[0-9a-f-]+)|=), org=(?<org>\\w*)\\] (?<alert_level>\\w+)  (?<module>[\\w.]+) - (?<body>.*)$"
+            },
+            "other" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[+-]\\d{4}) (?<body>.*)$"
+            }
+        },
+        "value" : {
+            "req" : { "kind" : "string", "identifier" : true },
+            "org" : { "kind" : "string", "identifier" : true },
+            "alert_level" : { "kind" : "string" },
+            "module" : { "kind" : "string", "identifier" : true },
+            "body" : { "kind" : "string" }
+        },
+        "sample" : [
+            {
+                "line" : "2015-04-17 09:41:50,544 [=, org=] INFO  org.candlepin.guice.CustomizableModules - Found custom module module.config.katello"
+            },
+            {
+                "line" : "2015-04-17 09:41:56,320 [req=f91d4a84-020d-4874-9741-3979d0baf58d, org=] INFO  org.candlepin.common.filter.LoggingFilter - Request: verb=GET, uri=/candlepin/status"
+            },
+            {
+                "line" : "2015-04-17 09:42:39+0200 principalType=trusteduser principal=admin target=OWNER entityId=8ab219c64cc653a7014cc6545a6c0001 type=CREATED owner=8ab219c64cc653a7014cc6545a6c0001"
+            },
+            {
+                "line" : "2015-04-17 10:49:21,912 [req=ec7867ea-2501-4036-bb08-e2d830720cb5, org=npr_goep_hm_com] INFO  org.candlepin.common.filter.LoggingFilter - Response: status=200, content-type=\"application/json\", time=235ms"
+            }
+        ]
+    },
     "choose_repo_log" : {
         "title" : "Yum choose_repo Log",
         "description" : "The log format for the yum choose_repo tool.",
@@ -134,6 +167,38 @@
         "sample" : [
             {
                 "line": "[INFO:choose_repo] choose_repo:47 2013-06-20 17:26:10,691: Setting region in redhat-rhui.repo"
+            }
+        ]
+    },
+    "cups_log" : {
+        "title" : "CUPS log format",
+        "description" : "Log format used by the Common Unix Printing System",
+        "regex" : {
+            "system" : {
+                "pattern" : "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<section>\\w+): (?<body>.*)$"
+            },
+            "default" : {
+                "pattern" : "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<body>.*)$"
+            }
+        },
+        "level" : {
+            "error" : "E",
+            "warning" : "W"
+        },
+        "value" : {
+            "level" : { "kind" : "string", "identifier" : true },
+            "section" : { "kind" : "string", "identifier" : true },
+            "body" : { "kind" : "string" }
+        },
+        "sample" : [
+            {
+                "line" : "I [04/Nov/2010:17:37:40 -0400] Allowing up to 100 client connections per host."
+            },
+            {
+                "line" : "I [04/Nov/2010:17:37:40 -0400] LoadPPDs: Wrote \"/etc/cups/ppds.dat\", 14 PPDs..."
+            },
+            {
+                "line" : "E [04/Nov/2010:17:37:40 -0400] StartListening: Unable to find IP address for server name \"localhost.localdomain\" - Host name lookup failure"
             }
         ]
     },
@@ -287,6 +352,86 @@
         "sample" : [
             {
                 "line" : "E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19"
+            }
+        ]
+    },
+    "java_log" : {
+        "title" : "Java log format",
+        "description" : "Log format used by log4j and output by most java programs",
+        "url" : "",
+        "regex" : {
+            "jvm" : {
+                "pattern" : "^(?<alert_level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| (?<timestamp_f>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<debug_level>\\w+)\\s+(?<class>[\\w.]+)\\s+-\\s+(?<body>\\S.*)"
+            },
+            "dump" : {
+                "pattern" : "^(?<alert_level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| JVMDUMP\\w+\\s(?<body>\\S.*)$"
+            },
+            "tasko" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<alert_level>\\w+)\\s+(?<class>[\\w.]+)\\s+-\\s+(?<body>\\S.*)$"
+            }
+        },
+        "level-field" : "alert_level",
+        "level" : {
+            "error" : "ERROR",
+            "warning" : "WARN",
+            "debug" : "DEBUG",
+            "info" : "INFO"
+        },
+        "value" : {
+            "function" : { "kind" : "string", "identifier" : true },
+            "alert_level" : { "kind" : "string" },
+            "jvm_no" : { "kind" : "integer" },
+            "debug_level" : { "kind" : "string" },
+            "class" : { "kind" : "string" },
+            "body" : { "kind" : "string" }
+        },
+        "sample" : [
+            {
+                "line" : "INFO   | jvm 1    | 2015/04/28 18:40:00 | 2015-04-28 18:40:00,077 [DefaultQuartzScheduler_Worker-8] INFO  com.redhat.rhn.taskomatic.TaskoJob - errata-queue-default: bunch errata-queue-bunch STARTED"
+            },
+            {
+                "line" : "INFO   | jvm 1    | 2015/04/28 18:34:18 | 2015-04-28 18:34:18,872 [Thread-46] DEBUG com.redhat.rhn.common.hibernate.ConnectionManager - Adding resource com/redhat/rhn/domain/action/ActionArchType.hbm.xml"
+            },
+            {
+                "line" : "2015-05-22 16:10:00,123 [DefaultQuartzScheduler_Worker-5] INFO  com.redhat.rhn.taskomatic.task.ErrataCacheTask  - In the queue: 24"
+            },
+            {
+                "line" : "INFO   | jvm 1    | 2015/05/24 07:35:50 | JVMDUMP013I Processed dump event \"user\", detail \"\"."
+            }
+        ]
+    },
+    "katello_log" : {
+        "title" : "Katello log format",
+        "description" : "Log format used by katello and foreman as used in Satellite 6.",
+        "url" : "http://theforeman.org/",
+        "regex" : {
+            "log" : {
+                "pattern" : "^\\[\\s?(?<alert_level>\\w+)\\s(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\s(?<module>\\w+)\\]\\s+(?<message>\\S.*)$"
+            }
+        },
+        "level-field" : "alert_level",
+        "level" : {
+            "error" : "ERROR",
+            "warning" : "WARN",
+            "debug" : "DEBUG"
+        },
+        "value" : {
+            "alert_level" : { "kind" : "string" },
+            "module" : { "kind" : "string" },
+            "message" : { "kind" : "string" }
+        },
+        "sample" : [
+            {
+                "line" : "[DEBUG 2015-05-20 12:22:19 main]  /Stage[main]/Certs::Candlepin/Exec[create candlepin qpid exchange]/unless: Failed: ConnectError: [Errno 1] _ssl.c:504: error:14094418:SSL routines:SSL3_READ_BYTES:tlsv1 alert unknown ca"
+            },
+            {
+                "line" : "[DEBUG 2015-05-20 12:22:19 main]  Exec[create candlepin qpid exchange](provider=posix): Executing 'qpid-config --ssl-certificate /etc/pki/katello/certs/java-client.crt --ssl-key /etc/pki/katello/private/java-client.key -b 'amqps://avl248.bcc.qld.gov.au:5671' add exchange topic event --durable'"
+            },
+            {
+                "line" : "[ERROR 2015-05-20 12:22:19 main]  qpid-config --ssl-certificate /etc/pki/katello/certs/java-client.crt --ssl-key /etc/pki/katello/private/java-client.key -b 'amqps://avl248.bcc.qld.gov.au:5671' add exchange topic event --durable returned 1 instead of one of [0]"
+            },
+            {
+                "line" : "[ INFO 2015-05-20 12:22:19 main] /usr/share/ruby/vendor_ruby/puppet/util/errors.rb:104:in `fail'"
             }
         ]
     },
@@ -530,6 +675,33 @@
         "sample" : [
             {
                 "line" : "2013-07-30T09:40:25 DEBUG main_process.main PM - 1768839331504132353247612213662950165988626018 - - Pipeline manager '' sending to Leads. Invoker 'admin': PREPARE {'parent_rid': '1768839331504132353247612213662950165988626018', 'resource_name': u'Leads', 'input_views': {}, 'parameters': {u'DELIMITER': u',', u'INPUTFILE': u'file://tutorial/data/leads.csv'}, 'output_views': {u'Output1': {'method': 'GET'}}, 'context_name': u'', 'snap_control_version': '1.2'}"
+            }
+        ]
+    },
+    "sssd_log" : {
+        "title" : "SSSD log format",
+        "description" : "Log format used by the System Security Services Daemon",
+        "url" : "http://fedorahosted.org/sssd",
+        "regex" : {
+            "core" : {
+                "pattern" : "^\\((?<timestamp>\\w{3} \\w{3} ( \\d|\\d{2}) \\d{2}:\\d{2}:\\d{2} \\d{4})\\) \\[sssd\\] \\[(?<function>\\w+)\\] \\((?<debug_level>0x[0-9a-fA-F]{4})\\): (?<body>.*)$"
+            },
+            "module" : {
+                "pattern" : "^\\((?<timestamp>\\w{3} \\w{3} ( \\d|\\d{2}) \\d{2}:\\d{2}:\\d{2} \\d{4})\\) \\[sssd(?<module>\\[.*?\\])\\] \\[(?<function>\\w+)\\] \\((?<debug_level>0x[0-9a-fA-F]{4})\\): (?<body>.*)$"
+            }
+        },
+        "value" : {
+            "module" : { "kind" : "string" },
+            "function" : { "kind" : "string" },
+            "debug_level" : { "kind" : "string" },
+            "body" : { "kind" : "string" }
+        },
+        "sample" : [
+            {
+                "line" : "(Tue Mar 31 06:03:46 2015) [sssd[be[default]]] [sysdb_search_by_name] (0x0400): No such entry"
+            },
+            {
+                "line" : "(Tue Mar 31 05:58:38 2015) [sssd] [start_service] (0x0100): Queueing service LDAP for startup"
             }
         ]
     },
@@ -924,6 +1096,36 @@
             },
             {
                 "line" : "2014-11-04T12:46:42.990+05:30 Section for VMware VirtualCenter, pid=6432, version=6.0.0, build=2255588, option=BETA"
+            }
+        ]
+    },
+    "xmlrpc_log" : {
+        "title" : "RHN server XMLRPC log format",
+        "description" : "Generated by Satellite's XMLRPC component",
+        "url" : "https://access.redhat.com/products/red-hat-satellite",
+        "regex" : {
+            "main" : {
+                "pattern" : "^(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2} [+-]?\\d{2}:\\d{2}) (?<pid>\\d+) (?<client_ip>\\S+): (?<module>\\w+)/(?<function>.*)(?<arguments>\\(.*?\\))?$"
+            }
+        },
+        "value" : {
+            "pid" : { "kind" : "integer", "identifier" : true },
+            "client_ip" : { "kind" : "string", "identifier" : true },
+            "module" : { "kind" : "string" },
+            "function" : { "kind" : "string" }
+        },
+        "sample" : [
+            {
+                "line" : "2015/05/24 07:48:21 -05:00 767 10.206.22.17: xmlrpc/up2date.listChannels(1000011979,)"
+            },
+            {
+                "line" : "2015/05/24 07:48:22 -05:00 1377 10.184.37.105: xmlrpc/registration.welcome_message('lang: None',)"
+            },
+            {
+                "line" : "2015/05/24 07:48:22 -05:00 759 10.49.10.30: xmlrpc/registration.register_osad"
+            },
+            {
+                "line" : "2015/05/24 07:48:22 -05:00 759 10.49.10.30: rhnServer/server_certificate.valid('Server id ID-1000019942 not found in database',)"
             }
         ]
     }
