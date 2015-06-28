@@ -3863,7 +3863,10 @@ static void looper(void)
                     while ((ch = getch()) != ERR) {
                         alerter::singleton().new_input(ch);
 
-                        if (escape_index >= sizeof(escape_buffer) - 1) {
+                        /* Check to make sure there is enough space for a
+                         * character and a string terminator.
+                         */
+                        if (escape_index >= sizeof(escape_buffer) - 2) {
                             escape_index = 0;
                         }
                         else if (escape_index > 0) {
