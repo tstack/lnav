@@ -1047,6 +1047,9 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
 void external_log_format::build(std::vector<std::string> &errors)
 {
+    if (!this->lf_timestamp_format.empty()) {
+        this->lf_timestamp_format.push_back(NULL);
+    }
     try {
         this->elf_filename_pcre = new pcrepp(this->elf_file_pattern.c_str());
     }
@@ -1190,12 +1193,13 @@ void external_log_format::build(std::vector<std::string> &errors)
                 const char *ts = pi.get_substr_start(
                     pc[this->lf_timestamp_field.get()]);
                 ssize_t ts_len = pc[this->lf_timestamp_field.get()]->length();
+                const char *const *custom_formats = this->get_timestamp_formats();
                 date_time_scanner dts;
                 struct timeval tv;
                 struct exttm tm;
 
                 found = true;
-                if (ts_len == -1 || dts.scan(ts, ts_len, this->get_timestamp_formats(), &tm, tv) == NULL) {
+                if (ts_len == -1 || dts.scan(ts, ts_len, custom_formats, &tm, tv) == NULL) {
                     errors.push_back("error:" +
                         this->elf_name.to_string() +
                         ":invalid sample -- " +
@@ -1204,12 +1208,25 @@ void external_log_format::build(std::vector<std::string> &errors)
                         this->elf_name.to_string() +
                         ":unrecognized timestamp format -- " + ts);
 
-                    for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != NULL; lpc++) {
-                        off_t off = 0;
+                    if (custom_formats == NULL) {
+                        for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != NULL; lpc++) {
+                            off_t off = 0;
 
-                        PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
-                        errors.push_back("  format: " + string(PTIMEC_FORMATS[lpc].pf_fmt) +
-                            "; matched: " + string(ts, off));
+                            PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
+                            errors.push_back("  format: " +
+                                             string(PTIMEC_FORMATS[lpc].pf_fmt) +
+                                             "; matched: " + string(ts, off));
+                        }
+                    }
+                    else {
+                        for (int lpc = 0; custom_formats[lpc] != NULL; lpc++) {
+                            off_t off = 0;
+
+                            ptime_fmt(custom_formats[lpc], &tm, ts, off, ts_len);
+                            errors.push_back("  format: " +
+                                             string(custom_formats[lpc]) +
+                                             "; matched: " + string(ts, off));
+                        }
                     }
                 }
             }

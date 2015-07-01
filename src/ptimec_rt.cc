@@ -68,7 +68,7 @@ bool ptime_fmt(const char *fmt, struct exttm *dst, const char *str, off_t &off, 
                 case 'Z':
                     if (fmt[lpc + 2]) {
                         if (!ptime_upto(fmt[lpc + 2], str, off, len)) return false;
-                        lpc += 2;
+                        lpc += 1;
                     }
                     else {
                         if (!ptime_upto_end(str, off, len)) return false;
