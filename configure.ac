@@ -82,6 +82,7 @@ AC_SEARCH_LIBS(BZ2_bzopen, bz2,
 AC_SUBST(BZIP2_SUPPORT)
 AC_SEARCH_LIBS(dlopen, dl)
 AC_SEARCH_LIBS(backtrace, execinfo)
+LIBCURL_CHECK_CONFIG()
 
 # Sometimes, curses depends on these libraries being linked in...
 AC_ARG_ENABLE([tinfo],
@@ -223,6 +224,7 @@ AS_IF([test $? -eq 0],
     AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_STRING"], [VCS package string]))
 
 AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
+AM_CONDITIONAL(HAVE_LIBCURL, test x"$LIBCURL" != x"")
 
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])

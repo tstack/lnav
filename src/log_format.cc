@@ -370,7 +370,8 @@ static int read_json_null(yajlpp_parse_context *ypc)
     if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-    if (find_if(line_format.begin(), line_format.end(),
+    if (!jlu->jlu_format->jlf_hide_extra &&
+            find_if(line_format.begin(), line_format.end(),
                 json_field_cmp(external_log_format::JLF_VARIABLE,
                                field_name)) == line_format.end()) {
         jlu->jlu_sub_line_count += 1;
@@ -389,7 +390,8 @@ static int read_json_bool(yajlpp_parse_context *ypc, int val)
     if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
         return 1;
     }
-    if (find_if(line_format.begin(), line_format.end(),
+    if (!jlu->jlu_format->jlf_hide_extra &&
+        find_if(line_format.begin(), line_format.end(),
             json_field_cmp(external_log_format::JLF_VARIABLE,
                     field_name)) == line_format.end()) {
         jlu->jlu_sub_line_count += 1;
@@ -416,7 +418,8 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
         tv.tv_usec = (val % divisor) * (1000000.0 / divisor);
         jlu->jlu_base_line->set_time(tv);
     }
-    else if (find_if(line_format.begin(), line_format.end(),
+    else if (!jlu->jlu_format->jlf_hide_extra &&
+             find_if(line_format.begin(), line_format.end(),
                      json_field_cmp(external_log_format::JLF_VARIABLE,
                          field_name)) == line_format.end()) {
         jlu->jlu_sub_line_count += 1;
@@ -443,7 +446,8 @@ static int read_json_double(yajlpp_parse_context *ypc, double val)
         tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
         jlu->jlu_base_line->set_time(tv);
     }
-    else if (find_if(line_format.begin(), line_format.end(),
+    else if (!jlu->jlu_format->jlf_hide_extra &&
+             find_if(line_format.begin(), line_format.end(),
                      json_field_cmp(external_log_format::JLF_VARIABLE,
                          field_name)) == line_format.end()) {
         jlu->jlu_sub_line_count += 1;
@@ -462,7 +466,8 @@ static int json_array_start(void *ctx)
     if (ypc->ypc_path_index_stack.size() == 2) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);
 
-        if (find_if(line_format.begin(), line_format.end(),
+        if (!jlu->jlu_format->jlf_hide_extra &&
+            find_if(line_format.begin(), line_format.end(),
                     json_field_cmp(external_log_format::JLF_VARIABLE,
                                    field_name)) == line_format.end()) {
             jlu->jlu_sub_line_count += 1;
@@ -793,7 +798,8 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
     }
     else if (ypc->is_level(1) || jlu->jlu_format->elf_value_defs.find(field_name) !=
              jlu->jlu_format->elf_value_defs.end()) {
-        if (find_if(line_format.begin(), line_format.end(),
+        if (!jlu->jlu_format->jlf_hide_extra &&
+            find_if(line_format.begin(), line_format.end(),
                     json_field_cmp(external_log_format::JLF_VARIABLE,
                                    field_name)) == line_format.end()) {
             jlu->jlu_sub_line_count += 1;
@@ -973,40 +979,44 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                 }
             }
             this->json_append_to_cache("\n", 1);
-            for (size_t lpc = 0; lpc < this->jlf_line_values.size(); lpc++) {
-                static const intern_string_t body_name = intern_string::lookup("body", -1);
-                logline_value &lv = this->jlf_line_values[lpc];
+            if (!this->jlf_hide_extra) {
+                for (size_t lpc = 0;
+                     lpc < this->jlf_line_values.size(); lpc++) {
+                    static const intern_string_t body_name = intern_string::lookup(
+                            "body", -1);
+                    logline_value &lv = this->jlf_line_values[lpc];
 
-                if (used_values[lpc] ||
-                    lv.lv_name == this->lf_timestamp_field ||
-                    lv.lv_name == body_name ||
-                    lv.lv_name == this->elf_level_field) {
-                    continue;
+                    if (used_values[lpc] ||
+                        lv.lv_name == this->lf_timestamp_field ||
+                        lv.lv_name == body_name ||
+                        lv.lv_name == this->elf_level_field) {
+                        continue;
+                    }
+
+                    const std::string str = lv.to_string();
+                    size_t curr_pos = 0, nl_pos, line_len = -1;
+
+                    lv.lv_origin.lr_start = this->jlf_cached_line.size();
+                    do {
+                        nl_pos = str.find('\n', curr_pos);
+                        if (nl_pos != std::string::npos) {
+                            line_len = nl_pos - curr_pos;
+                        }
+                        else {
+                            line_len = str.size() - curr_pos;
+                        }
+                        this->json_append_to_cache("  ", 2);
+                        this->json_append_to_cache(lv.lv_name.get(),
+                                                   lv.lv_name.size());
+                        this->json_append_to_cache(": ", 2);
+                        this->json_append_to_cache(
+                                &str.c_str()[curr_pos], line_len);
+                        this->json_append_to_cache("\n", 1);
+                        curr_pos = nl_pos + 1;
+                    } while (nl_pos != std::string::npos &&
+                             nl_pos < str.size());
+                    lv.lv_origin.lr_end = this->jlf_cached_line.size();
                 }
-
-                const std::string str = lv.to_string();
-                size_t curr_pos = 0, nl_pos, line_len = -1;
-
-                lv.lv_origin.lr_start = this->jlf_cached_line.size();
-                do {
-                    nl_pos = str.find('\n', curr_pos);
-                    if (nl_pos != std::string::npos) {
-                        line_len = nl_pos - curr_pos;
-                    }
-                    else {
-                        line_len = str.size() - curr_pos;
-                    }
-                    this->json_append_to_cache("  ", 2);
-                    this->json_append_to_cache(lv.lv_name.get(),
-                            lv.lv_name.size());
-                    this->json_append_to_cache(": ", 2);
-                    this->json_append_to_cache(
-                            &str.c_str()[curr_pos], line_len);
-                    this->json_append_to_cache("\n", 1);
-                    curr_pos = nl_pos + 1;
-                } while (nl_pos != std::string::npos &&
-                         nl_pos < str.size());
-                lv.lv_origin.lr_end = this->jlf_cached_line.size();
             }
 
             this->jlf_line_offsets.push_back(0);

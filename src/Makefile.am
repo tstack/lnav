@@ -74,13 +74,15 @@ AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \
 	-Wall \
 	$(READLINE_CFLAGS) \
-	$(SQLITE3_CFLAGS)
+	$(SQLITE3_CFLAGS) \
+	$(LIBCURL_CPPFLAGS)
 
 LDADD = \
 	libdiag.a \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
+	$(LIBCURL) \
 	-lpcrecpp
 
 dist_noinst_DATA = \
@@ -133,6 +135,7 @@ noinst_HEADERS = \
 	log_format_loader.hh \
 	logfile.hh \
 	logfile_sub_source.hh \
+	papertrail_proc.hh \
 	pcrepp.hh \
 	piper_proc.hh \
 	pretty_printer.hh \
@@ -253,6 +256,10 @@ libdiag_a_SOURCES += yajl/yajl.c \
 	yajl/yajl_version.c
 endif
 
+if HAVE_LIBCURL
+libdiag_a_SOURCES += \
+	papertrail_proc.cc
+endif
 
 TEXT2C_FILES = \
 	dump-pid-sh.o \

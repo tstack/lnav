@@ -699,6 +699,7 @@ public:
           elf_timestamp_divisor(1.0),
           elf_body_field(intern_string::lookup("body", -1)),
           jlf_json(false),
+          jlf_hide_extra(false),
           jlf_cached_offset(-1),
           jlf_yajl_handle(yajl_free),
           elf_name(name) {
@@ -829,6 +830,7 @@ public:
     };
 
     bool jlf_json;
+    bool jlf_hide_extra;
     std::vector<json_format_element> jlf_line_format;
     std::vector<logline_value> jlf_line_values;
 

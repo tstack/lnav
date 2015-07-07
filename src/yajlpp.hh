@@ -261,6 +261,11 @@ public:
         yajl_gen_string(this->yg_handle, (const unsigned char *)str, strlen(str));
     };
 
+    void operator()(const char *str, size_t len)
+    {
+        yajl_gen_string(this->yg_handle, (const unsigned char *)str, len);
+    };
+
     void operator()(long long value)
     {
         yajl_gen_integer(this->yg_handle, value);
@@ -275,7 +280,6 @@ public:
     {
         yajl_gen_null(this->yg_handle);
     };
-
 private:
     yajl_gen yg_handle;
 };
