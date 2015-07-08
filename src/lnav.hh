@@ -242,6 +242,9 @@ struct _lnav_data {
 
 extern struct _lnav_data lnav_data;
 
+extern readline_context::command_map_t lnav_commands;
+extern bookmark_type_t BM_QUERY;
+
 #define HELP_MSG_1(x, msg) \
     "Press '" ANSI_BOLD(#x) "' " msg
 
@@ -254,14 +257,13 @@ void rebuild_indexes(bool force);
 bool ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);
 
-std::string execute_command(std::string cmdline);
-
 bool setup_logline_table();
-int sql_callback(sqlite3_stmt *stmt);
 
 void execute_search(lnav_view_t view, const std::string &regex);
 
 void redo_search(lnav_view_t view_index);
+
+bool rescan_files(bool required = false);
 
 bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
         bookmark_type_t *bt,

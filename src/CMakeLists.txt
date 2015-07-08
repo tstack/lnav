@@ -3,6 +3,7 @@ set(diag_STAT_SRCS
     ansi_scrubber.cc
     bookmarks.cc
     collation-functions.cc
+    command_executor.cc
     db_sub_source.cc
     environ_vtab.cc
     extension-functions.c
@@ -28,6 +29,7 @@ set(diag_STAT_SRCS
     data_scanner.cc
     data_parser.cc
     ptimec_rt.cc
+    readline_callbacks.cc
     readline_curses.cc
     readline_highlighters.cc
     session_data.cc
@@ -71,6 +73,7 @@ set(diag_STAT_SRCS
     bottom_status_source.hh
     byte_array.hh
     chunky_index.hh
+    command_executor.hh
     concise_index.hh
     column_namer.hh
     filter_observer.hh
@@ -85,8 +88,10 @@ set(diag_STAT_SRCS
     log_data_table.hh
     log_format_impls.cc
     logfile_stats.hh
+    plain_text_source.hh
     pretty_printer.hh
     ptimec.hh
+    readline_callbacks.hh
     sequence_sink.hh
     status_controllers.hh
     strong_int.hh

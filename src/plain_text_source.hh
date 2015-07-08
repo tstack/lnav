@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,18 +25,53 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file lnav_commands.hh
  */
 
-#ifndef __lnav_commands_hh
-#define __lnav_commands_hh
+#ifndef LNAV_PLAIN_TEXT_SOURCE_HH
+#define LNAV_PLAIN_TEXT_SOURCE_HH
 
-#include "readline_curses.hh"
+#include <string>
+#include <vector>
 
-/**
- * Initialize the given map with the builtin lnav commands.
- */
-void init_lnav_commands(readline_context::command_map_t &cmd_map);
+class plain_text_source
+        : public text_sub_source {
+public:
+    plain_text_source(std::string text)
+    {
+        size_t start = 0, end;
 
-#endif
+        while ((end = text.find('\n', start)) != std::string::npos) {
+            this->tds_lines.push_back(text.substr(start, end - start));
+            start = end + 1;
+        }
+        if (start < text.length()) {
+            this->tds_lines.push_back(text.substr(start));
+        }
+    };
+
+    plain_text_source(const std::vector<std::string> &text_lines) {
+        this->tds_lines = text_lines;
+    };
+
+    size_t text_line_count()
+    {
+        return this->tds_lines.size();
+    };
+
+    void text_value_for_line(textview_curses &tc,
+                             int row,
+                             std::string &value_out,
+                             bool no_scrub)
+    {
+        value_out = this->tds_lines[row];
+    };
+
+    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+        return this->tds_lines[row].length();
+    };
+
+private:
+    std::vector<std::string> tds_lines;
+};
+
+#endif //LNAV_PLAIN_TEXT_SOURCE_HH

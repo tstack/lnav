@@ -46,6 +46,7 @@
 #include "log_data_helper.hh"
 #include "lnav_commands.hh"
 #include "session_data.hh"
+#include "command_executor.hh"
 
 using namespace std;
 

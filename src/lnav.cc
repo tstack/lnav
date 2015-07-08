@@ -124,6 +124,9 @@
 #endif
 
 #include "yajlpp.hh"
+#include "readline_callbacks.hh"
+#include "command_executor.hh"
+#include "plain_text_source.hh"
 
 using namespace std;
 
@@ -148,7 +151,7 @@ static const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) /
                                     sizeof(struct hist_level);
 
 static bookmark_type_t BM_EXAMPLE("");
-static bookmark_type_t BM_QUERY("query");
+bookmark_type_t BM_QUERY("query");
 
 const char *lnav_view_strings[LNV__MAX + 1] = {
     "log",
@@ -185,8 +188,6 @@ static const char *view_titles[LNV__MAX] = {
     "SCHEMA",
     "PRETTY",
 };
-
-static bool rescan_files(bool required = false);
 
 class log_gutter_source : public list_gutter_source {
 public:
@@ -1024,47 +1025,6 @@ void rebuild_indexes(bool force)
         lnav_data.ld_scroll_broadcaster.invoke(tc);
     }
 }
-
-class plain_text_source
-    : public text_sub_source {
-public:
-    plain_text_source(string text)
-    {
-        size_t start = 0, end;
-
-        while ((end = text.find('\n', start)) != string::npos) {
-            this->tds_lines.push_back(text.substr(start, end - start));
-            start = end + 1;
-        }
-        if (start < text.length()) {
-            this->tds_lines.push_back(text.substr(start));
-        }
-    };
-
-    plain_text_source(const vector<string> &text_lines) {
-        this->tds_lines = text_lines;
-    };
-
-    size_t text_line_count()
-    {
-        return this->tds_lines.size();
-    };
-
-    void text_value_for_line(textview_curses &tc,
-                             int row,
-                             string &value_out,
-                             bool no_scrub)
-    {
-        value_out = this->tds_lines[row];
-    };
-
-    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
-        return this->tds_lines[row].length();
-    };
-
-private:
-    vector<string> tds_lines;
-};
 
 class time_label_source
     : public hist_source::label_source {
@@ -2399,376 +2359,15 @@ static void handle_rl_key(int ch)
     }
 }
 
+void rl_blur(void *dummy, readline_curses *rc)
+{
+    field_overlay_source *fos;
+
+    fos = (field_overlay_source *)lnav_data.ld_views[LNV_LOG].get_overlay_source();
+    fos->fos_active = fos->fos_active_prev;
+}
+
 readline_context::command_map_t lnav_commands;
-
-string execute_command(string cmdline)
-{
-    stringstream ss(cmdline);
-
-    vector<string> args;
-    string         buf, msg;
-
-    log_info("Executing: %s", cmdline.c_str());
-
-    while (ss >> buf) {
-        args.push_back(buf);
-    }
-
-    if (args.size() > 0) {
-        readline_context::command_map_t::iterator iter;
-
-        if ((iter = lnav_commands.find(args[0])) ==
-            lnav_commands.end()) {
-            msg = "error: unknown command - " + args[0];
-        }
-        else {
-            msg = iter->second(cmdline, args);
-        }
-    }
-
-    return msg;
-}
-
-string execute_sql(string sql, string &alt_msg)
-{
-    db_label_source &      dls = lnav_data.ld_db_rows;
-    hist_source &          hs  = lnav_data.ld_db_source;
-    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-    string stmt_str = trim(sql);
-    string retval;
-    int retcode;
-
-    log_info("Executing SQL: %s", sql.c_str());
-
-    lnav_data.ld_bottom_source.grep_error("");
-
-    if (stmt_str == ".schema") {
-        alt_msg = "";
-
-        ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
-
-        lnav_data.ld_mode = LNM_PAGING;
-        return "";
-    }
-
-    hs.clear();
-    hs.get_displayed_buckets().clear();
-    dls.clear();
-    dls.dls_stmt_str = stmt_str;
-    retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
-       stmt_str.c_str(),
-       -1,
-       stmt.out(),
-       NULL);
-    if (retcode != SQLITE_OK) {
-        const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
-
-        retval = "error: " + string(errmsg);
-        alt_msg = "";
-    }
-    else if (stmt == NULL) {
-        retval = "";
-        alt_msg = "";
-    }
-    else {
-        bool done = false;
-        int param_count;
-
-        param_count = sqlite3_bind_parameter_count(stmt.in());
-        for (int lpc = 0; lpc < param_count; lpc++) {
-            const char *name;
-
-            name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
-            if (name[0] == '$') {
-                const char *env_value;
-
-                if ((env_value = getenv(&name[1])) != NULL) {
-                    sqlite3_bind_text(stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
-                }
-            }
-        }
-
-        if (lnav_data.ld_rl_view != NULL) {
-            lnav_data.ld_rl_view->set_value("Executing query: " + sql + " ...");
-            lnav_data.ld_rl_view->do_update();
-        }
-
-        lnav_data.ld_log_source.text_clear_marks(&BM_QUERY);
-        while (!done) {
-            retcode = sqlite3_step(stmt.in());
-
-            switch (retcode) {
-            case SQLITE_OK:
-            case SQLITE_DONE:
-                done = true;
-                break;
-
-            case SQLITE_ROW:
-                sql_callback(stmt.in());
-                break;
-
-            default: {
-                const char *errmsg;
-
-                log_error("sqlite3_step error code: %d", retcode);
-                errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                retval = "error: " + string(errmsg);
-                done = true;
-            }
-                break;
-            }
-        }
-    }
-
-    if (retcode == SQLITE_DONE) {
-        lnav_data.ld_views[LNV_LOG].reload_data();
-        lnav_data.ld_views[LNV_DB].reload_data();
-        lnav_data.ld_views[LNV_DB].set_left(0);
-
-        if (dls.dls_rows.size() > 0) {
-            vis_bookmarks &bm =
-            lnav_data.ld_views[LNV_LOG].get_bookmarks();
-
-            if (!(lnav_data.ld_flags & LNF_HEADLESS) &&
-                    dls.dls_headers.size() == 1 && !bm[&BM_QUERY].empty()) {
-                retval = "";
-                alt_msg = HELP_MSG_2(
-                  y, Y,
-                  "to move forward/backward through query results "
-                  "in the log view");
-            }
-            else if (!(lnav_data.ld_flags & LNF_HEADLESS) &&
-                    dls.dls_rows.size() == 1) {
-                string row;
-
-                hs.text_value_for_line(lnav_data.ld_views[LNV_DB], 1, row, true);
-                retval = "SQL Result: " + row;
-            }
-            else {
-                char row_count[32];
-
-                ensure_view(&lnav_data.ld_views[LNV_DB]);
-                snprintf(row_count, sizeof(row_count),
-                   ANSI_BOLD("%'d") " row(s) matched",
-                   (int)dls.dls_rows.size());
-                retval = row_count;
-                alt_msg = HELP_MSG_2(
-                  y, Y,
-                  "to move forward/backward through query results "
-                  "in the log view");
-            }
-        }
-#ifdef HAVE_SQLITE3_STMT_READONLY
-        else if (sqlite3_stmt_readonly(stmt.in())) {
-            retval = "No rows matched";
-            alt_msg = "";
-        }
-#endif
-    }
-
-    if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
-        lnav_data.ld_bottom_source.update_loading(0, 0);
-        lnav_data.ld_status[LNS_BOTTOM].do_update();
-
-        {
-            field_overlay_source *fos;
-
-            fos = (field_overlay_source *)lnav_data.ld_views[LNV_LOG].
-                get_overlay_source();
-            fos->fos_active = fos->fos_active_prev;
-
-            redo_search(LNV_DB);
-        }
-    }
-    lnav_data.ld_views[LNV_LOG].reload_data();
-
-    return retval;
-}
-
-string execute_from_file(const string &path, int line_number, char mode, const string &cmdline);
-
-static void execute_file(string path, bool multiline = true)
-{
-    FILE *file;
-
-    if (path == "-") {
-        file = stdin;
-    }
-    else if ((file = fopen(path.c_str(), "r")) == NULL) {
-        return;
-    }
-
-    int    line_number = 0, starting_line_number = 0;
-    char *line = NULL;
-    size_t line_max_size;
-    ssize_t line_size;
-    string cmdline;
-    char mode = '\0';
-
-    while ((line_size = getline(&line, &line_max_size, file)) != -1) {
-        line_number += 1;
-
-        if (trim(line).empty()) {
-            continue;
-        }
-        if (line[0] == '#') {
-            continue;
-        }
-
-        switch (line[0]) {
-            case ':':
-            case '/':
-            case ';':
-            case '|':
-                if (mode) {
-                    execute_from_file(path, starting_line_number, mode, trim(cmdline));
-                }
-
-                starting_line_number = line_number;
-                mode = line[0];
-                cmdline = string(&line[1]);
-                break;
-            default:
-                if (multiline) {
-                    cmdline += line;
-                }
-                else {
-                    execute_from_file(path, line_number, ':', line);
-                }
-                break;
-        }
-
-    }
-
-    if (mode) {
-        execute_from_file(path, starting_line_number, mode, trim(cmdline));
-    }
-
-    if (file != stdin) {
-        fclose(file);
-    }
-}
-
-string execute_from_file(const string &path, int line_number, char mode, const string &cmdline)
-{
-    string retval, alt_msg;
-
-    switch (mode) {
-        case ':':
-            retval = execute_command(cmdline);
-            break;
-        case '/':
-        case ';':
-            setup_logline_table();
-            retval = execute_sql(cmdline, alt_msg);
-            break;
-        case '|':
-            execute_file(cmdline);
-            break;
-        default:
-            retval = execute_command(cmdline);
-            break;
-    }
-
-    if (rescan_files()) {
-        rebuild_indexes(true);
-    }
-
-    log_info("%s:%d:execute result -- %s",
-            path.c_str(),
-            line_number,
-            retval.c_str());
-
-    return retval;
-}
-
-void execute_init_commands(vector<pair<string, string> > &msgs)
-{
-    if (lnav_data.ld_commands.empty()) {
-        return;
-    }
-
-    for (std::list<string>::iterator iter = lnav_data.ld_commands.begin();
-         iter != lnav_data.ld_commands.end();
-         ++iter) {
-        string msg, alt_msg;
-
-        switch (iter->at(0)) {
-        case ':':
-            msg = execute_command(iter->substr(1));
-            break;
-        case '/':
-        case ';':
-            setup_logline_table();
-            msg = execute_sql(iter->substr(1), alt_msg);
-            break;
-        case '|':
-            execute_file(iter->substr(1));
-            break;
-        }
-
-        msgs.push_back(make_pair(msg, alt_msg));
-
-        if (rescan_files()) {
-            rebuild_indexes(true);
-        }
-    }
-    lnav_data.ld_commands.clear();
-}
-
-int sql_callback(sqlite3_stmt *stmt)
-{
-    logfile_sub_source &lss = lnav_data.ld_log_source;
-    db_label_source &   dls = lnav_data.ld_db_rows;
-    hist_source &       hs  = lnav_data.ld_db_source;
-    int ncols = sqlite3_column_count(stmt);
-    int row_number;
-    int lpc, retval = 0;
-
-    row_number = dls.dls_rows.size();
-    dls.dls_rows.resize(row_number + 1);
-    if (dls.dls_headers.empty()) {
-        for (lpc = 0; lpc < ncols; lpc++) {
-            int    type    = sqlite3_column_type(stmt, lpc);
-            string colname = sqlite3_column_name(stmt, lpc);
-            bool   graphable;
-
-            graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT) &&
-                         !binary_search(lnav_data.ld_db_key_names.begin(),
-                                        lnav_data.ld_db_key_names.end(),
-                                        colname));
-
-            dls.push_header(colname, type, graphable);
-            if (graphable) {
-                hs.set_role_for_type(bucket_type_t(lpc),
-                                     view_colors::singleton().
-                                     next_plain_highlight());
-            }
-        }
-    }
-    for (lpc = 0; lpc < ncols; lpc++) {
-        const char *value     = (const char *)sqlite3_column_text(stmt, lpc);
-        double      num_value = 0.0;
-
-        dls.push_column(value);
-        if (dls.dls_headers[lpc] == "log_line") {
-            int line_number = -1;
-
-            if (sscanf(value, "%d", &line_number) == 1) {
-                lss.text_mark(&BM_QUERY, line_number, true);
-            }
-        }
-        if (dls.dls_headers_to_graph[lpc]) {
-            sscanf(value, "%lf", &num_value);
-            hs.add_value(row_number, bucket_type_t(lpc), num_value);
-        }
-        else {
-            hs.add_empty_value(row_number);
-        }
-    }
-
-    return retval;
-}
 
 void execute_search(lnav_view_t view, const std::string &regex_orig)
 {
@@ -2846,210 +2445,6 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
     }
 
     lnav_data.ld_last_search[view] = regex;
-}
-
-static void rl_search_internal(void *dummy, readline_curses *rc, bool complete = false)
-{
-    string term_val;
-    string name;
-
-    switch (lnav_data.ld_mode) {
-    case LNM_SEARCH:
-        name = "$search";
-        break;
-
-    case LNM_CAPTURE:
-        require(0);
-        name = "$capture";
-        break;
-
-    case LNM_COMMAND:
-        return;
-
-    case LNM_SQL:
-        term_val = trim(rc->get_value() + ";");
-
-        if (term_val.size() > 0 && term_val[0] == '.') {
-            lnav_data.ld_bottom_source.grep_error("");
-        }
-        else if (!sqlite3_complete(term_val.c_str())) {
-            lnav_data.ld_bottom_source.
-            grep_error("sql error: incomplete statement");
-        }
-        else {
-            auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-            int retcode;
-
-            retcode = sqlite3_prepare_v2(lnav_data.ld_db,
-                                         rc->get_value().c_str(),
-                                         -1,
-                                         stmt.out(),
-                                         NULL);
-            if (retcode != SQLITE_OK) {
-                const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
-
-                lnav_data.ld_bottom_source.
-                grep_error(string("sql error: ") + string(errmsg));
-            }
-            else {
-                lnav_data.ld_bottom_source.grep_error("");
-            }
-        }
-        return;
-
-    default:
-        require(0);
-        break;
-    }
-
-    textview_curses *tc    = lnav_data.ld_view_stack.top();
-    lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
-
-    if (!complete) {
-        tc->set_top(lnav_data.ld_search_start_line);
-    }
-    execute_search(index, rc->get_value());
-}
-
-static void rl_search(void *dummy, readline_curses *rc)
-{
-    rl_search_internal(dummy, rc);
-}
-
-static void rl_abort(void *dummy, readline_curses *rc)
-{
-    textview_curses *tc    = lnav_data.ld_view_stack.top();
-    lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
-
-    lnav_data.ld_bottom_source.set_prompt("");
-
-    lnav_data.ld_bottom_source.grep_error("");
-    switch (lnav_data.ld_mode) {
-    case LNM_SEARCH:
-        tc->set_top(lnav_data.ld_search_start_line);
-        execute_search(index, lnav_data.ld_previous_search);
-        break;
-    case LNM_SQL:
-    {
-        field_overlay_source *fos;
-
-        fos =
-            (field_overlay_source *)lnav_data.ld_views[LNV_LOG].
-            get_overlay_source();
-        fos->fos_active = fos->fos_active_prev;
-        tc->reload_data();
-        break;
-    }
-    default:
-        break;
-    }
-    lnav_data.ld_mode = LNM_PAGING;
-}
-
-static void rl_callback(void *dummy, readline_curses *rc)
-{
-    string alt_msg;
-
-    lnav_data.ld_bottom_source.set_prompt("");
-    switch (lnav_data.ld_mode) {
-    case LNM_PAGING:
-        require(0);
-        break;
-
-    case LNM_COMMAND:
-        lnav_data.ld_mode = LNM_PAGING;
-        rc->set_alt_value("");
-        rc->set_value(execute_command(rc->get_value()));
-        break;
-
-    case LNM_SEARCH:
-    case LNM_CAPTURE:
-        rl_search_internal(dummy, rc, true);
-        if (rc->get_value().size() > 0) {
-            auto_mem<FILE> pfile(pclose);
-
-            pfile = open_clipboard(CT_FIND);
-            if (pfile.in() != NULL) {
-                fprintf(pfile, "%s", rc->get_value().c_str());
-            }
-            lnav_data.ld_view_stack.top()->set_follow_search(false);
-            rc->set_value("search: " + rc->get_value());
-            rc->set_alt_value(HELP_MSG_2(
-                                  n, N,
-                                  "to move forward/backward through search results"));
-        }
-        lnav_data.ld_mode = LNM_PAGING;
-        break;
-
-    case LNM_SQL:
-        rc->set_value(execute_sql(rc->get_value(), alt_msg));
-        rc->set_alt_value(alt_msg);
-        lnav_data.ld_mode = LNM_PAGING;
-        break;
-    }
-}
-
-static void rl_display_matches(void *dummy, readline_curses *rc)
-{
-    const std::vector<std::string> &matches = rc->get_matches();
-    textview_curses &tc = lnav_data.ld_match_view;
-    unsigned long width, height;
-    int max_len, cols, rows, match_height, bottom_height;
-
-    getmaxyx(lnav_data.ld_window, height, width);
-
-    max_len = rc->get_max_match_length() + 2;
-    cols = max(1UL, width / max_len);
-    rows = (matches.size() + cols - 1) / cols;
-
-    match_height = min((unsigned long)rows, (height - 4) / 2);
-    bottom_height = match_height + 1 + rc->get_height();
-
-    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
-        lnav_data.ld_views[lpc].set_height(vis_line_t(-bottom_height));
-    }
-    lnav_data.ld_status[LNS_BOTTOM].set_top(-bottom_height);
-
-    delete tc.get_sub_source();
-
-    if (cols == 1) {
-        tc.set_sub_source(new plain_text_source(rc->get_matches()));
-    }
-    else {
-        std::vector<std::string> horiz_matches;
-
-        horiz_matches.resize(rows);
-        for (size_t lpc = 0; lpc < matches.size(); lpc++) {
-            int curr_row = lpc % rows;
-
-            horiz_matches[curr_row].append(matches[lpc]);
-            horiz_matches[curr_row].append(
-                max_len - matches[lpc].length(), ' ');
-        }
-        tc.set_sub_source(new plain_text_source(horiz_matches));
-    }
-
-    if (match_height > 0) {
-        tc.set_window(lnav_data.ld_window);
-        tc.set_y(height - bottom_height + 1);
-        tc.set_height(vis_line_t(match_height));
-        tc.reload_data();
-    }
-    else {
-        tc.set_window(NULL);
-    }
-}
-
-static void rl_display_next(void *dummy, readline_curses *rc)
-{
-    textview_curses &tc = lnav_data.ld_match_view;
-
-    if (tc.get_top() >= (tc.get_top_for_last_row() - 1)) {
-        tc.set_top(vis_line_t(0));
-    }
-    else {
-        tc.shift_top(tc.get_height());
-    }
 }
 
 static void usage(void)
@@ -3310,7 +2705,7 @@ static void expand_filename(string path, bool required)
     }
 }
 
-static bool rescan_files(bool required)
+bool rescan_files(bool required)
 {
     set<pair<string, int> >::iterator iter;
     list<logfile *>::iterator         file_iter;
@@ -3751,6 +3146,7 @@ static void looper(void)
             readline_curses::action(rl_display_matches));
         rlc.set_display_next_action(
             readline_curses::action(rl_display_next));
+        rlc.set_blur_action(readline_curses::action(rl_blur));
         rlc.set_alt_value(HELP_MSG_2(
             e, E, "to move forward/backward through error messages"));
 

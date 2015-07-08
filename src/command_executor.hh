@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,18 +25,21 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file lnav_commands.hh
  */
 
-#ifndef __lnav_commands_hh
-#define __lnav_commands_hh
+#ifndef LNAV_COMMAND_EXECUTOR_H
+#define LNAV_COMMAND_EXECUTOR_H
 
-#include "readline_curses.hh"
+#include <sqlite3.h>
 
-/**
- * Initialize the given map with the builtin lnav commands.
- */
-void init_lnav_commands(readline_context::command_map_t &cmd_map);
+#include <string>
 
-#endif
+std::string execute_command(std::string cmdline);
+
+std::string execute_sql(std::string sql, std::string &alt_msg);
+void execute_file(std::string path, bool multiline = true);
+void execute_init_commands(std::vector<std::pair<std::string, std::string> > &msgs);
+
+int sql_callback(sqlite3_stmt *stmt);
+
+#endif //LNAV_COMMAND_EXECUTOR_H

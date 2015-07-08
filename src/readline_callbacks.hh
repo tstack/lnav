@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,18 +25,15 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file lnav_commands.hh
  */
 
-#ifndef __lnav_commands_hh
-#define __lnav_commands_hh
+#ifndef LNAV_READLINE_CALLBACKS_HH
+#define LNAV_READLINE_CALLBACKS_HH
 
-#include "readline_curses.hh"
+void rl_search(void *dummy, readline_curses *rc);
+void rl_abort(void *dummy, readline_curses *rc);
+void rl_callback(void *dummy, readline_curses *rc);
+void rl_display_matches(void *dummy, readline_curses *rc);
+void rl_display_next(void *dummy, readline_curses *rc);
 
-/**
- * Initialize the given map with the builtin lnav commands.
- */
-void init_lnav_commands(readline_context::command_map_t &cmd_map);
-
-#endif
+#endif //LNAV_READLINE_CALLBACKS_HH

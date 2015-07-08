@@ -100,6 +100,7 @@ noinst_HEADERS = \
 	byte_array.hh \
 	chunky_index.hh \
 	column_namer.hh \
+	command_executor.hh \
 	concise_index.hh \
 	data_scanner.hh \
 	data_scanner_re.re \
@@ -138,8 +139,10 @@ noinst_HEADERS = \
 	papertrail_proc.hh \
 	pcrepp.hh \
 	piper_proc.hh \
+	plain_text_source.hh \
 	pretty_printer.hh \
 	ptimec.hh \
+	readline_callbacks.hh \
 	readline_curses.hh \
 	readline_highlighters.hh \
 	sequence_matcher.hh \
@@ -188,6 +191,7 @@ libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
 	bookmarks.cc \
 	collation-functions.cc \
+	command_executor.cc \
 	db_sub_source.cc \
 	environ_vtab.cc \
 	extension-functions.c \
@@ -214,6 +218,7 @@ libdiag_a_SOURCES = \
 	data_scanner_re.cc \
 	data_parser.cc \
 	ptimec_rt.cc \
+	readline_callbacks.cc \
 	readline_curses.cc \
 	readline_highlighters.cc \
 	session_data.cc \

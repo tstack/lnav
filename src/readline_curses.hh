@@ -220,6 +220,7 @@ public:
     void set_abort_action(action va) { this->rc_abort = va; };
     void set_display_match_action(action va) { this->rc_display_match = va; };
     void set_display_next_action(action va) { this->rc_display_next = va; };
+    void set_blur_action(action va) { this->rc_blur = va; };
 
     void set_value(const std::string &value)
     {
@@ -329,5 +330,6 @@ private:
     action rc_abort;
     action rc_display_match;
     action rc_display_next;
+    action rc_blur;
 };
 #endif

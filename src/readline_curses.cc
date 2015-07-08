@@ -696,6 +696,7 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_matches.clear();
                     this->rc_abort.invoke(this);
                     this->rc_display_match.invoke(this);
+                    this->rc_blur.invoke(this);
                     curs_set(0);
                     break;
 
@@ -711,6 +712,7 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_matches.clear();
                     this->rc_perform.invoke(this);
                     this->rc_display_match.invoke(this);
+                    this->rc_blur.invoke(this);
                     curs_set(0);
                     break;
 
