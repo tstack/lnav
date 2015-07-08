@@ -38,8 +38,8 @@ using namespace std;
 
 static void rl_search_internal(void *dummy, readline_curses *rc, bool complete = false)
 {
-    std::__1::string term_val;
-    std::__1::string name;
+    string term_val;
+    string name;
 
     switch (lnav_data.ld_mode) {
     case LNM_SEARCH:
@@ -77,7 +77,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
                 const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
                 lnav_data.ld_bottom_source.
-                grep_error(std::__1::string("sql error: ") + std::__1::string(errmsg));
+                grep_error(string("sql error: ") + string(errmsg));
             }
             else {
                 lnav_data.ld_bottom_source.grep_error("");
