@@ -7,9 +7,11 @@ set(diag_STAT_SRCS
     db_sub_source.cc
     environ_vtab.cc
     extension-functions.c
+    field_overlay_source.cc
     fs-extension-functions.cc
     grep_proc.cc
     hist_source.cc
+    hotkeys.cc
     intern_string.cc
     json-extension-functions.cc
     json_op.cc
@@ -29,9 +31,11 @@ set(diag_STAT_SRCS
     data_scanner.cc
     data_parser.cc
     ptimec_rt.cc
+    pretty_printer.cc
     readline_callbacks.cc
     readline_curses.cc
     readline_highlighters.cc
+    readline_possibilities.cc
     session_data.cc
     sequence_matcher.cc
     shared_buffer.cc
@@ -76,11 +80,13 @@ set(diag_STAT_SRCS
     command_executor.hh
     concise_index.hh
     column_namer.hh
+    field_overlay_source.hh
     filter_observer.hh
     format-text-files.hh
     grapher.hh
     grep_highlighter.hh
     help.hh
+    hotkeys.hh
     init-sql.hh
     intern_string.hh
     k_merge_tree.h
@@ -92,6 +98,7 @@ set(diag_STAT_SRCS
     pretty_printer.hh
     ptimec.hh
     readline_callbacks.hh
+    readline_possibilities.hh
     sequence_sink.hh
     status_controllers.hh
     strong_int.hh

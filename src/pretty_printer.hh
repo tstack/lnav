@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <signal.h>
 
@@ -45,16 +46,9 @@
 #include "ansi_scrubber.hh"
 #include "data_scanner.hh"
 
-static sig_atomic_t reverse_lookup_enabled = 1;
+extern sig_atomic_t reverse_lookup_enabled;
 
-void sigalrm_handler(int sig)
-{
-    if (sig == SIGALRM)
-    {
-        reverse_lookup_enabled = 0;
-    }
-}
-
+void sigalrm_handler(int sig);
 
 class pretty_printer {
 

@@ -244,6 +244,7 @@ extern struct _lnav_data lnav_data;
 
 extern readline_context::command_map_t lnav_commands;
 extern bookmark_type_t BM_QUERY;
+extern const int HIST_ZOOM_LEVELS;
 
 #define HELP_MSG_1(x, msg) \
     "Press '" ANSI_BOLD(#x) "' " msg
@@ -265,6 +266,10 @@ void redo_search(lnav_view_t view_index);
 
 bool rescan_files(bool required = false);
 
+vis_line_t next_cluster(
+        vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
+        bookmark_type_t *bt,
+        vis_line_t top);
 bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
         bookmark_type_t *bt,
         vis_line_t top);

@@ -108,6 +108,7 @@ noinst_HEADERS = \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
 	environ_vtab.hh \
+	field_overlay_source.hh \
 	filter_observer.hh \
 	format-text-files.hh \
 	grapher.hh \
@@ -116,6 +117,7 @@ noinst_HEADERS = \
 	help.hh \
 	help.txt \
 	hist_source.hh \
+	hotkeys.hh \
 	init.sql \
 	init-sql.hh \
 	intern_string.hh \
@@ -145,6 +147,7 @@ noinst_HEADERS = \
 	readline_callbacks.hh \
 	readline_curses.hh \
 	readline_highlighters.hh \
+	readline_possibilities.hh \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	session_data.hh \
@@ -195,9 +198,11 @@ libdiag_a_SOURCES = \
 	db_sub_source.cc \
 	environ_vtab.cc \
 	extension-functions.c \
+	field_overlay_source.cc \
     fs-extension-functions.cc \
 	grep_proc.cc \
 	hist_source.cc \
+	hotkeys.cc \
 	intern_string.cc \
 	json-extension-functions.cc \
 	json_op.cc \
@@ -217,10 +222,12 @@ libdiag_a_SOURCES = \
 	data_scanner.cc \
 	data_scanner_re.cc \
 	data_parser.cc \
+	pretty_printer.cc \
 	ptimec_rt.cc \
 	readline_callbacks.cc \
 	readline_curses.cc \
 	readline_highlighters.cc \
+	readline_possibilities.cc \
 	session_data.cc \
 	sequence_matcher.cc \
 	shared_buffer.cc \
