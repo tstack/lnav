@@ -87,23 +87,27 @@ class generic_log_format : public log_format {
 
     static pcre_format *get_pcre_log_formats() {
         static pcre_format log_fmt[] = {
-            { "", pcrepp("^(?<timestamp>[\\dTZ: +/\\-,\\.-]+)([^:]+)") },
-            { "", pcrepp("^(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)") },
-            { "", pcrepp("^(?<timestamp>[\\w:,/\\.-]+) (.*)") },
-            { "", pcrepp("^(?<timestamp>[\\w: \\.,/-]+)\\[[^\\]]+\\](.*)") },
-            { "", pcrepp("^(?<timestamp>[\\w: \\.,/-]+) (.*)") },
+            pcre_format("^(?<timestamp>[\\dTZ: +/\\-,\\.-]+)([^:]+)"),
+            pcre_format("^(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)"),
+            pcre_format("^(?<timestamp>[\\w:,/\\.-]+) (.*)"),
+            pcre_format("^(?<timestamp>[\\w: \\.,/-]+)\\[[^\\]]+\\](.*)"),
+            pcre_format("^(?<timestamp>[\\w: \\.,/-]+) (.*)"),
 
-            { "", pcrepp("^\\[(?<timestamp>[\\d: \\.-]+) \\w+ (.*)") },
-            { "", pcrepp("^\\[(?<timestamp>[\\w: +/-]+)\\] (.*)") },
-            { "", pcrepp("^\\[(?<timestamp>[\\w: +/-]+)\\] \\[(\\w+)\\]") },
-            { "", pcrepp("^\\[(?<timestamp>[\\w: \\.+/-]+)\\] \\w+ (.*)") },
-            { "", pcrepp("^\\[(?<timestamp>[\\w: +/-]+)\\] \\(\\d+\\) (.*)") },
+            pcre_format("^\\[(?<timestamp>[\\d: \\.-]+) \\w+ (.*)"),
+            pcre_format("^\\[(?<timestamp>[\\w: +/-]+)\\] (.*)"),
+            pcre_format("^\\[(?<timestamp>[\\w: +/-]+)\\] \\[(\\w+)\\]"),
+            pcre_format("^\\[(?<timestamp>[\\w: \\.+/-]+)\\] \\w+ (.*)"),
+            pcre_format("^\\[(?<timestamp>[\\w: +/-]+)\\] \\(\\d+\\) (.*)"),
 
-            { NULL, pcrepp("") }
+            pcre_format()
         };
 
         return log_fmt;
     };
+
+    std::string get_pattern_regex() const {
+        return get_pcre_log_formats()[this->lf_fmt_lock].name;
+    }
 
     intern_string_t get_name() const {
         return intern_string::lookup("generic_log");

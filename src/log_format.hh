@@ -614,6 +614,16 @@ public:
     void check_for_new_year(std::vector<logline> &dst,
         const struct timeval &log_tv);
 
+    virtual std::string get_pattern_name() const {
+        char name[32];
+        snprintf(name, sizeof(name), "builtin (%d)", this->lf_fmt_lock);
+        return name;
+    };
+
+    virtual std::string get_pattern_regex() const {
+        return "";
+    };
+
     date_time_scanner lf_date_time;
     int lf_fmt_lock;
     intern_string_t lf_timestamp_field;
@@ -624,6 +634,12 @@ protected:
     static std::vector<log_format *> lf_root_formats;
 
     struct pcre_format {
+        pcre_format(const char *regex) : name(regex), pcre(regex) {
+
+        };
+
+        pcre_format() : name(NULL), pcre("") { };
+
         const char *name;
         pcrepp pcre;
     };
@@ -680,6 +696,7 @@ public:
     struct pattern {
         pattern() : p_pcre(NULL) { };
 
+        std::string p_config_path;
         std::string p_string;
         pcrepp *p_pcre;
         std::vector<value_def> p_value_by_index;
@@ -789,6 +806,20 @@ public:
                 ist == this->elf_level_field ||
                 ist == this->elf_body_field ||
                 this->elf_value_defs.find(ist) != this->elf_value_defs.end());
+    }
+
+    std::string get_pattern_name() const {
+        if (this->jlf_json) {
+            return "json";
+        }
+        return this->elf_pattern_order[this->lf_fmt_lock]->p_config_path;
+    }
+
+    std::string get_pattern_regex() const {
+        if (this->jlf_json) {
+            return "";
+        }
+        return this->elf_pattern_order[this->lf_fmt_lock]->p_string;
     }
 
     std::set<std::string> elf_source_path;

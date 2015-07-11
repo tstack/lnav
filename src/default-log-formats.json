@@ -11,7 +11,7 @@
                 "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+"
             },
             "std" : {
-                "pattern" : "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?(?<body>.*)"
+                "pattern" : "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
             }
         },
         "level-field": "sc_status",
@@ -791,7 +791,7 @@
         "url" : "http://en.wikipedia.org/wiki/Syslog",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             }
         },
         "level-field" : "body",

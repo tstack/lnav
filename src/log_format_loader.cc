@@ -80,7 +80,10 @@ static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str
 
     log_debug(" format regex: %s/%s = %s",
             elf->get_name().get(), regex_name.c_str(), value.c_str());
-    elf->elf_patterns[regex_name].p_string = value;
+    struct external_log_format::pattern &pat = elf->elf_patterns[regex_name];
+
+    pat.p_config_path = ypc->get_path().to_string();
+    pat.p_string = value;
 
     return 1;
 }

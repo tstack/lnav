@@ -32,6 +32,7 @@
 #include "lnav.hh"
 
 #include "field_overlay_source.hh"
+#include "readline_highlighters.hh"
 
 using namespace std;
 
@@ -79,6 +80,17 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
     }
 
     this->fos_lines.clear();
+
+    log_format *lf = this->fos_log_helper.ldh_file->get_format();
+    if (!lf->get_pattern_regex().empty()) {
+        attr_line_t pattern_al;
+        std::string &pattern_str = pattern_al.get_string();
+        pattern_str = " Pattern: " + lf->get_pattern_name() + " = ";
+        int skip = pattern_str.length();
+        pattern_str += lf->get_pattern_regex();
+        readline_regex_highlighter(pattern_al, skip);
+        this->fos_lines.push_back(pattern_al);
+    }
 
     char old_timestamp[64], curr_timestamp[64];
     struct timeval curr_tv, offset_tv, orig_tv;
