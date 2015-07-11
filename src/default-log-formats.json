@@ -3,6 +3,7 @@
         "title" : "Common Access Log",
         "description" : "The default web access log format for servers like Apache.",
         "url" : "http://en.wikipedia.org/wiki/Common_Log_Format",
+        "multiline" : false,
         "regex" : {
             "ts-first-noquotes" : {
                 "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+"
@@ -567,6 +568,7 @@
         "title" : "CUPS Page Log",
         "description" : "The CUPS server log of printed pages.",
         "url" : "http://www.cups.org/documentation.php/doc-1.7/ref-page_log.html",
+        "multiline" : false,
         "regex" : {
             "pre-1.7" : {
                 "pattern" : "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)$"
@@ -747,6 +749,7 @@
         "title" : "Strace",
         "description" : "The strace output format.",
         "url" : "http://en.wikipedia.org/wiki/Strace",
+        "multiline" : false,
         "regex" : {
             "std" : {
                 "pattern" : "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?<rc>[-\\w]+)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
@@ -897,6 +900,7 @@
     "uwsgi_log" : {
         "title" : "Uwsgi Log",
         "description" : "The uwsgi log format.",
+        "multiline" : false,
         "regex" : {
             "std" : {
                 "pattern" : "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+) (?<rt_unit>\\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)"

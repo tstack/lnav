@@ -214,6 +214,8 @@ dist_noinst_DATA = \
 	listview_output.6 \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
+	logfile_bad_access_log.0 \
+	logfile_bad_syslog.0 \
 	logfile_blued.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \

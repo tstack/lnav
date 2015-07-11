@@ -324,7 +324,6 @@ void logfile::read_line(logfile::iterator ll, string &line_out)
         if (this->lf_line_buffer.read_line(off, sbr)) {
             if (this->lf_format.get() != NULL) {
                 this->lf_format->get_subline(*ll, sbr);
-
             }
             line_out.append(sbr.get_data(), sbr.length());
         }

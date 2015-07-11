@@ -575,6 +575,28 @@ static struct json_path_handler json_log_rewrite_handlers[] = {
     json_path_handler()
 };
 
+bool external_log_format::scan_for_partial(shared_buffer_ref &sbr)
+{
+    if (this->jlf_json) {
+        return false;
+    }
+
+    if (!this->elf_multiline) {
+        return true;
+    }
+
+    pattern *pat = this->elf_pattern_order[this->lf_fmt_lock];
+
+    if (pat->p_timestamp_end == -1 || pat->p_timestamp_end > sbr.length()) {
+        return false;
+    }
+
+    pcre_input pi(sbr.get_data(), 0, pat->p_timestamp_end);
+    pcre_context_static<128> pc;
+
+    return pat->p_pcre->match(pc, pi, PCRE_PARTIAL);
+}
+
 bool external_log_format::scan(std::vector<logline> &dst,
                                off_t offset,
                                shared_buffer_ref &sbr)
@@ -1200,14 +1222,18 @@ void external_log_format::build(std::vector<std::string> &errors)
             }
 
             if (pat.p_pcre->match(pc, pi)) {
-                const char *ts = pi.get_substr_start(
-                    pc[this->lf_timestamp_field.get()]);
+                pcre_context::capture_t *ts_cap =
+                        pc[this->lf_timestamp_field.get()];
+                const char *ts = pi.get_substr_start(ts_cap);
                 ssize_t ts_len = pc[this->lf_timestamp_field.get()]->length();
                 const char *const *custom_formats = this->get_timestamp_formats();
                 date_time_scanner dts;
                 struct timeval tv;
                 struct exttm tm;
 
+                if (ts_cap->c_begin == 0) {
+                    pat.p_timestamp_end = ts_cap->c_end;
+                }
                 found = true;
                 if (ts_len == -1 || dts.scan(ts, ts_len, custom_formats, &tm, tv) == NULL) {
                     errors.push_back("error:" +

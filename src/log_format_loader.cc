@@ -99,6 +99,8 @@ static int read_format_bool(yajlpp_parse_context *ypc, int val)
         elf->jlf_json = val;
     else if (field_name == "hide-extra")
         elf->jlf_hide_extra = val;
+    else if (field_name == "multiline")
+        elf->elf_multiline = val;
 
     return 1;
 }
@@ -378,7 +380,7 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
 
 static struct json_path_handler format_handlers[] = {
     json_path_handler("^/\\w+/regex/[^/]+/pattern$", read_format_regex),
-    json_path_handler("^/\\w+/(json|convert-to-local-time|epoch-timestamp|hide-extra)$", read_format_bool),
+    json_path_handler("^/\\w+/(json|convert-to-local-time|epoch-timestamp|hide-extra|multiline)$", read_format_bool),
     json_path_handler("^/\\w+/timestamp-divisor$", read_format_double)
         .add_cb(read_format_int),
     json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|"

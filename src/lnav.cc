@@ -343,7 +343,7 @@ public:
     {
         static sig_atomic_t index_counter = 0;
 
-        if (lnav_data.ld_flags & LNF_HEADLESS) {
+        if (lnav_data.ld_flags & (LNF_HEADLESS|LNF_CHECK_CONFIG)) {
             return;
         }
 
@@ -2371,10 +2371,6 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    if (lnav_data.ld_flags & LNF_CHECK_CONFIG) {
-        return EXIT_SUCCESS;
-    }
-
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
      * so that it will try the default path.
@@ -2431,10 +2427,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
-    DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/system.log")));
-    DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
-    DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog.log")));
+    if (!(lnav_data.ld_flags & LNF_CHECK_CONFIG)) {
+        DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/messages")));
+        DEFAULT_FILES.insert(
+                make_pair(LNF_SYSLOG, string("var/log/system.log")));
+        DEFAULT_FILES.insert(make_pair(LNF_SYSLOG, string("var/log/syslog")));
+        DEFAULT_FILES.insert(
+                make_pair(LNF_SYSLOG, string("var/log/syslog.log")));
+    }
 
     init_lnav_commands(lnav_commands);
 
@@ -2577,7 +2577,47 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!(lnav_data.ld_flags & LNF_HEADLESS) && !isatty(STDOUT_FILENO)) {
+    if (lnav_data.ld_flags & LNF_CHECK_CONFIG) {
+        rescan_files(true);
+        for (list<logfile *>::iterator file_iter = lnav_data.ld_files.begin();
+                file_iter != lnav_data.ld_files.end();
+                ++file_iter) {
+            logfile *lf = (*file_iter);
+
+            lf->rebuild_index();
+
+            lf->rebuild_index();
+            log_format *fmt = lf->get_format();
+            if (fmt == NULL) {
+                fprintf(stderr, "error:%s:no format found for file\n",
+                        lf->get_filename().c_str());
+                retval = EXIT_FAILURE;
+                continue;
+            }
+            for (logfile::iterator line_iter = lf->begin();
+                    line_iter != lf->end();
+                    ++line_iter) {
+                if (!line_iter->is_continued()) {
+                    continue;
+                }
+
+                shared_buffer_ref sbr;
+
+                lf->read_line(line_iter, sbr);
+                if (fmt->scan_for_partial(sbr)) {
+                    long line_number = distance(lf->begin(), line_iter);
+                    fprintf(stderr,
+                            "error:%s:%ld:line did not match format %s\n",
+                            lf->get_filename().c_str(), line_number,
+                            fmt->get_pattern_name().c_str());
+                    retval = EXIT_FAILURE;
+                }
+            }
+        }
+        return retval;
+    }
+
+    if (!(lnav_data.ld_flags & (LNF_HEADLESS|LNF_CHECK_CONFIG)) && !isatty(STDOUT_FILENO)) {
         fprintf(stderr, "error: stdout is not a tty.\n");
         retval = EXIT_FAILURE;
     }

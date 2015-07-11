@@ -537,6 +537,7 @@ public:
     log_format() : lf_fmt_lock(-1),
                    lf_timestamp_field(intern_string::lookup("timestamp", -1)) {
     };
+
     virtual ~log_format() { };
 
     virtual void clear(void)
@@ -566,6 +567,10 @@ public:
     virtual bool scan(std::vector<logline> &dst,
                       off_t offset,
                       shared_buffer_ref &sbr) = 0;
+
+    virtual bool scan_for_partial(shared_buffer_ref &sbr) {
+        return false;
+    };
 
     /**
      * Remove redundant data from the log line string.
@@ -694,12 +699,13 @@ public:
     };
 
     struct pattern {
-        pattern() : p_pcre(NULL) { };
+        pattern() : p_pcre(NULL), p_timestamp_end(-1) { };
 
         std::string p_config_path;
         std::string p_string;
         pcrepp *p_pcre;
         std::vector<value_def> p_value_by_index;
+        int p_timestamp_end;
     };
 
     struct level_pattern {
@@ -715,6 +721,7 @@ public:
           elf_column_count(0),
           elf_timestamp_divisor(1.0),
           elf_body_field(intern_string::lookup("body", -1)),
+          elf_multiline(true),
           jlf_json(false),
           jlf_hide_extra(false),
           jlf_cached_offset(-1),
@@ -737,7 +744,9 @@ public:
     bool scan(std::vector<logline> &dst,
               off_t offset,
               shared_buffer_ref &sbr);
-    
+
+    bool scan_for_partial(shared_buffer_ref &sbr);
+
     void annotate(shared_buffer_ref &line,
                   string_attrs_t &sa,
                   std::vector<logline_value> &values) const;
@@ -837,6 +846,7 @@ public:
     intern_string_t elf_body_field;
     int elf_body_field_index;
     std::map<logline::level_t, level_pattern> elf_level_patterns;
+    bool elf_multiline;
 
     enum json_log_field {
         JLF_CONSTANT,

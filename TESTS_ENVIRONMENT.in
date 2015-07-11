@@ -82,6 +82,10 @@ check_output() {
     test_num=`expr ${test_num} \+ 1`
 }
 
+test_err_filename() {
+    echo ${test_file_base}_${test_num}.err
+}
+
 check_error_output() {
     diff -w -u - ${test_file_base}_${test_num}.err \
         > ${test_file_base}_${test_num}.err.diff

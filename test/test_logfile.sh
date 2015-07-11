@@ -236,3 +236,19 @@ check_output "piping to stdin is not working?" <<EOF
 2013-06-06T19:13:20.123  Hi
 2013-06-06T19:13:20.123  ---- END-OF-STDIN ----
 EOF
+
+run_test ${lnav_test} -C ${srcdir}/logfile_bad_syslog.0
+
+sed -i "" -e "s|/.*/logfile_bad_syslog.0|logfile_bad_syslog.0|g" `test_err_filename`
+
+check_error_output "bad syslog line not found?" <<EOF
+error:logfile_bad_syslog.0:2:line did not match format syslog_log/regex/std/pattern
+EOF
+
+run_test ${lnav_test} -C ${srcdir}/logfile_bad_access_log.0
+
+sed -i "" -e "s|/.*/logfile_bad_access_log.0|logfile_bad_access_log.0|g" `test_err_filename`
+
+check_error_output "bad access_log line not found?" <<EOF
+error:logfile_bad_access_log.0:1:line did not match format access_log/regex/std/pattern
+EOF
