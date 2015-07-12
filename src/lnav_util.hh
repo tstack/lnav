@@ -173,6 +173,16 @@ inline bool is_glob(const char *fn)
             strchr(fn, '[') != NULL);
 };
 
+inline bool startswith(const char *str, const char *prefix)
+{
+    return strncmp(str, prefix, strlen(prefix)) == 0;
+}
+
+inline bool startswith(std::string str, const char *prefix)
+{
+    return startswith(str.c_str(), prefix);
+}
+
 std::string build_path(const std::vector<std::string> &paths);
 
 /**

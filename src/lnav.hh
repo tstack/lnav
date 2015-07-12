@@ -59,6 +59,7 @@
 #include "piper_proc.hh"
 #include "term_extra.hh"
 #include "ansi_scrubber.hh"
+#include "papertrail_proc.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -181,6 +182,7 @@ struct _lnav_data {
     std::list<std::string>                  ld_other_files;
     std::set<std::string>                   ld_closed_files;
     std::list<std::pair<std::string, int> > ld_files_to_front;
+    std::string                             ld_pt_search;
     bool                                    ld_stdout_used;
     sig_atomic_t                            ld_looping;
     sig_atomic_t                            ld_winched;
@@ -234,6 +236,7 @@ struct _lnav_data {
 
     std::list<pid_t>                        ld_children;
     std::list<piper_proc *>                 ld_pipers;
+    std::auto_ptr<papertrail_proc>          ld_pt_proc;
     xterm_mouse ld_mouse;
     term_extra ld_term_extra;
 

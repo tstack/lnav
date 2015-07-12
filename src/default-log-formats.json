@@ -634,7 +634,7 @@
         "description" : "Log format for the papertrail log management service",
         "json" : true,
         "hide-extra" : true,
-        "file-pattern" : "papertrailapp.com",
+        "file-pattern" : "pt:.*",
         "line-format" : [
             { "field" : "display_received_at" },
             " ",

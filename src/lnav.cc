@@ -120,9 +120,9 @@
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
-#include "papertrail_proc.hh"
 #endif
 
+#include "papertrail_proc.hh"
 #include "yajlpp.hh"
 #include "readline_callbacks.hh"
 #include "command_executor.hh"
@@ -2550,7 +2550,10 @@ int main(int argc, char *argv[])
         auto_mem<char> abspath;
         struct stat    st;
 
-        if (is_glob(argv[lpc])) {
+        if (startswith(argv[lpc], "pt:")) {
+            lnav_data.ld_pt_search = argv[lpc];
+        }
+        else if (is_glob(argv[lpc])) {
             lnav_data.ld_file_names.insert(make_pair(argv[lpc], -1));
         }
         else if (stat(argv[lpc], &st) == -1) {
@@ -2635,16 +2638,15 @@ int main(int argc, char *argv[])
         lnav_data.ld_pipers.push_back(stdin_reader.release());
     }
 
-#ifdef HAVE_LIBCURL
-    char *api_key = getenv("PAPERTRAIL_API_TOKEN");
-    auto_ptr<papertrail_proc> ptp;
-
-    if (api_key != NULL) {
-        ptp.reset(new papertrail_proc(api_key));
-        ptp->start();
-        lnav_data.ld_file_names.insert(make_pair("papertrailapp.com", ptp->ptp_fd.release()));
+    if (!lnav_data.ld_pt_search.empty()) {
+        lnav_data.ld_pt_proc.reset(new papertrail_proc(lnav_data.ld_pt_search.substr(3)));
+        if (!lnav_data.ld_pt_proc->start()) {
+            fprintf(stderr, "error:%s\n", lnav_data.ld_pt_proc->ptp_error.c_str());
+            return EXIT_FAILURE;
+        }
+        lnav_data.ld_file_names.insert(
+                make_pair(lnav_data.ld_pt_search, lnav_data.ld_pt_proc->ptp_fd.release()));
     }
-#endif
 
     if (lnav_data.ld_file_names.empty() && !(lnav_data.ld_flags & LNF_HELP)) {
         fprintf(stderr, "error: no log files given/found.\n");

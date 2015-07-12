@@ -1133,6 +1133,32 @@ static string com_open(string cmdline, vector<string> &args)
     for (size_t lpc = 0; lpc < wordmem->we_wordc; lpc++) {
         string fn = wordmem->we_wordv[lpc];
 
+        if (startswith(fn, "pt:")) {
+            for (list<logfile *>::iterator iter = lnav_data.ld_files.begin();
+                    iter != lnav_data.ld_files.end();
+                    ++iter) {
+                logfile *lf = *iter;
+
+                if (startswith(lf->get_filename(), "pt:")) {
+                    lf->close();
+                }
+            }
+
+            lnav_data.ld_pt_search = fn;
+            lnav_data.ld_pt_proc.reset(new papertrail_proc(lnav_data.ld_pt_search.substr(3)));
+            if (!lnav_data.ld_pt_proc->start()) {
+                retval = "error:" + lnav_data.ld_pt_proc->ptp_error;
+                break;
+            }
+            lnav_data.ld_file_names.insert(
+                    make_pair(lnav_data.ld_pt_search, lnav_data.ld_pt_proc->ptp_fd.release()));
+
+            ensure_view(&lnav_data.ld_views[LNV_LOG]);
+
+            retval = "info: opened papertrail query";
+            continue;
+        }
+
         if (access(fn.c_str(), R_OK) != 0 &&
             (colon_index = fn.rfind(':')) != string::npos) {
             if (sscanf(&fn.c_str()[colon_index + 1], "%d", &top) == 1) {

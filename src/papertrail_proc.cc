@@ -30,11 +30,16 @@
  */
 
 #include "config.h"
+
+#ifdef HAVE_LIBCURL
+#include <curl/curl.h>
+#endif
+
 #include "papertrail_proc.hh"
 #include "yajl/api/yajl_parse.h"
 
 static const int POLL_DELAY = 2;
-static const char *PT_SEARCH_URL = "https://papertrailapp.com/api/v1/events/search.json?min_id=%s";
+static const char *PT_SEARCH_URL = "https://papertrailapp.com/api/v1/events/search.json?min_id=%s&q=%s";
 
 static int read_max_id(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
@@ -131,8 +136,18 @@ void papertrail_proc::yajl_writer(void *context, const char *str, size_t len)
     write(ptp->ptp_fd, str, len);
 }
 
-void papertrail_proc::start(void)
+bool papertrail_proc::start(void)
 {
+#ifndef HAVE_LIBCURL
+    return false;
+#else
+    this->ptp_api_key = getenv("PAPERTRAIL_API_TOKEN");
+
+    if (this->ptp_api_key == NULL) {
+        this->ptp_error = "papertrail search requested, but PAPERTRAIL_API_TOKEN is not set";
+        return false;
+    }
+
     char piper_tmpname[PATH_MAX];
     const char *tmpdir;
 
@@ -143,8 +158,8 @@ void papertrail_proc::start(void)
              "%s/lnav.papertrail.XXXXXX",
              tmpdir);
     if ((this->ptp_fd = mkstemp(piper_tmpname)) == -1) {
-        perror("Unable to make temporary file for papertrail");
-        return;
+        this->ptp_error = "Unable to make temporary file for papertrail";
+        return false;
     }
 
     unlink(piper_tmpname);
@@ -152,12 +167,15 @@ void papertrail_proc::start(void)
     fcntl(this->ptp_fd.get(), F_SETFD, FD_CLOEXEC);
 
     if ((this->ptp_child = fork()) < 0) {
-        perror("Unable to fork papertrail child");
-        return;
+        this->ptp_error = "Unable to fork papertrail child";
+        return false;
     }
 
+    signal(SIGTERM, SIG_DFL);
+    signal(SIGINT, SIG_DFL);
+
     if (this->ptp_child != 0) {
-        return;
+        return true;
     }
 
     try {
@@ -167,10 +185,12 @@ void papertrail_proc::start(void)
     }
 
     _exit(0);
+#endif
 };
 
 void papertrail_proc::child_body()
 {
+#ifdef HAVE_LIBCURL
     int nullfd;
 
     nullfd = open("/dev/null", O_RDWR);
@@ -188,13 +208,17 @@ void papertrail_proc::child_body()
     ypc.ypc_userdata = this;
     yajl_gen_config(gen, yajl_gen_print_callback, yajl_writer, this);
 
+    const char *quoted_search = curl_easy_escape(
+            handle, this->ptp_search.c_str(), this->ptp_search.size());
+
     bool looping = true;
 
     while (looping) {
         auto_mem<char> url;
         handle = curl_easy_init();
 
-        asprintf(url.out(), PT_SEARCH_URL, this->ptp_last_max_id.c_str());
+        asprintf(url.out(), PT_SEARCH_URL, this->ptp_last_max_id.c_str(),
+                 quoted_search);
         if (!url.in()) {
             break;
         }
@@ -219,4 +243,5 @@ void papertrail_proc::child_body()
 
         sleep(POLL_DELAY);
     }
+#endif
 }

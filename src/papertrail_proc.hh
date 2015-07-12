@@ -37,7 +37,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <curl/curl.h>
 
 #include <memory>
 #include <string>
@@ -50,8 +49,8 @@
 class papertrail_proc {
 
 public:
-    papertrail_proc(const char *api_key)
-            : ptp_api_key(api_key), ptp_child(-1) {
+    papertrail_proc(const std::string &search)
+            : ptp_search(search), ptp_child(-1) {
     };
 
     ~papertrail_proc() {
@@ -68,7 +67,7 @@ public:
         }
     }
 
-    void start(void);
+    bool start(void);
     void child_body(void);
 
     static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp);
@@ -77,11 +76,13 @@ public:
     static struct json_path_handler FORMAT_HANDLERS[];
 
     const char *ptp_api_key;
+    const std::string ptp_search;
     auto_fd ptp_fd;
     pid_t ptp_child;
     line_buffer ptp_line_buffer;
     yajl_gen ptp_gen;
     std::string ptp_last_max_id;
+    std::string ptp_error;
 };
 
 #endif //LNAV_PAPERTRAIL_PROC_HH
