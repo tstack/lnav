@@ -1,8 +1,7 @@
 
 language: cpp
 compiler: gcc
-before_install:
-    - sudo apt-get install -y -qq libgpm-dev re2c
+sudo: false
 script: ./autogen.sh && ./configure && make && make check && make distcheck
 after_script: test -e test/test-suite.log  && cat test/test-suite.log
 
@@ -13,6 +12,10 @@ env:
    - secure: "P3wQLswiGYWrZwO4bxFmsA4XG5s/pS+renL0RMeotMTQwQQXmy1ZCvwMnAgaYWQmF82fN8WjuhO3OX0gpDbydxRktqI5ZqblsryV6poB0g+OkCqThbDUp3TL6TjPqySTI1CZ8qoOBYFMubAZYVJAEfxl0UxoQE+uTsRarRqr8rI="
 
 addons:
+  apt:
+    packages:
+    - libgpm-dev
+    - re2c
   coverity_scan:
     project:
       name: "tstack/lnav"
