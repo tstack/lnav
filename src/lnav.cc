@@ -2666,6 +2666,9 @@ int main(int argc, char *argv[])
 #ifdef HAVE_BZLIB_H
             log_info("  bzip=%s", BZ2_bzlibVersion());
 #endif
+#ifdef HAVE_LIBCURL
+            log_info("  curl=%s (%s)", LIBCURL_VERSION, LIBCURL_TIMESTAMP);
+#endif
             log_info("  ncurses=%s", NCURSES_VERSION);
             log_info("  pcre=%s", pcre_version());
             log_info("  readline=%s", rl_library_version);
