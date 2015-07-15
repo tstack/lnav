@@ -222,6 +222,7 @@ libdiag_a_SOURCES = \
 	data_scanner.cc \
 	data_scanner_re.cc \
 	data_parser.cc \
+	papertrail_proc.cc \
 	pretty_printer.cc \
 	ptimec_rt.cc \
 	readline_callbacks.cc \
@@ -266,11 +267,6 @@ libdiag_a_SOURCES += yajl/yajl.c \
 	yajl/yajl_parser.h \
 	yajl/yajl_tree.c \
 	yajl/yajl_version.c
-endif
-
-if HAVE_LIBCURL
-libdiag_a_SOURCES += \
-	papertrail_proc.cc
 endif
 
 TEXT2C_FILES = \
