@@ -1639,9 +1639,11 @@ static void looper(void)
 
         command_context.set_highlighter(readline_command_highlighter);
         search_context
-            .set_append_character(0)
-            .set_highlighter(readline_regex_highlighter);
-        sql_context.set_highlighter(readline_sqlite_highlighter);
+                .set_append_character(0)
+                .set_highlighter(readline_regex_highlighter);
+        sql_context
+                .set_highlighter(readline_sqlite_highlighter)
+                .set_quote_chars("\"");
 
         listview_curses::action::broadcaster &sb =
             lnav_data.ld_scroll_broadcaster;

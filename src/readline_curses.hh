@@ -71,6 +71,7 @@ public:
                      bool case_sensitive = true)
         : rc_name(name),
           rc_case_sensitive(case_sensitive),
+          rc_quote_chars("\"'"),
           rc_highlighter(NULL)
     {
         char *home;
@@ -162,6 +163,12 @@ public:
         return *this;
     };
 
+    readline_context &set_quote_chars(const char *qc) {
+        this->rc_quote_chars = qc;
+
+        return *this;
+    };
+
     readline_highlighter_t get_highlighter() const {
         return this->rc_highlighter;
     };
@@ -179,6 +186,7 @@ private:
     std::map<std::string, std::vector<std::string> > rc_prototypes;
     bool rc_case_sensitive;
     int rc_append_character;
+    const char *rc_quote_chars;
     readline_highlighter_t rc_highlighter;
 };
 
