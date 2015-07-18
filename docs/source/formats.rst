@@ -4,7 +4,8 @@
 Log Formats
 ===========
 
-Log files are parsed based on formats defined in configuration files.  Many
+Log files loaded into **lnav** are parsed based on formats defined in
+configuration files.  Many
 formats are already built in to the **lnav** binary and you can define your own
 using a JSON file.  When loading files, each format is checked to see if it can
 parse the first few lines in the file.  Once a match is found, that format will

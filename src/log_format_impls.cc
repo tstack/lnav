@@ -199,7 +199,7 @@ class generic_log_format : public log_format {
         sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
     };
 
-    auto_ptr<log_format> specialized()
+    auto_ptr<log_format> specialized(int fmt_lock)
     {
         auto_ptr<log_format> retval((log_format *)
                                     new generic_log_format(*this));

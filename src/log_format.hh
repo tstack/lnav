@@ -64,6 +64,7 @@ public:
     static string_attr_type L_TIMESTAMP;
     static string_attr_type L_FILE;
     static string_attr_type L_PARTITION;
+    static string_attr_type L_MODULE;
 
     /**
      * The logging level identifiers for a line(s).
@@ -112,12 +113,14 @@ public:
     logline(off_t off,
             time_t t,
             uint16_t millis,
-            level_t l)
+            level_t l,
+            uint8_t mod = 0)
         : ll_offset(off),
           ll_time(t),
           ll_millis(millis),
           ll_sub_offset(0),
-          ll_level(l)
+          ll_level(l),
+          ll_module_id(mod)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     };
@@ -125,10 +128,11 @@ public:
     logline(off_t off,
             const struct timeval &tv,
             level_t l,
-            uint8_t m = 0)
+            uint8_t mod = 0)
         : ll_offset(off),
           ll_sub_offset(0),
-          ll_level(l)
+          ll_level(l),
+          ll_module_id(mod)
     {
         this->set_time(tv);
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
@@ -196,14 +200,17 @@ public:
         return this->get_level() & LEVEL_CONTINUED;
     };
 
+    uint8_t get_module_id(void) const {
+        return this->ll_module_id;
+    };
+
     /**
      * @return  True if there is a schema value set for this log line.
      */
     bool has_schema(void) const
     {
         return (this->ll_schema[0] != 0 ||
-                this->ll_schema[1] != 0 ||
-                this->ll_schema[2] != 0);
+                this->ll_schema[1] != 0);
     };
 
     /**
@@ -255,7 +262,8 @@ private:
     uint16_t ll_millis;
     uint16_t ll_sub_offset;
     uint8_t  ll_level;
-    char     ll_schema[3];
+    uint8_t  ll_module_id;
+    char     ll_schema[2];
 };
 
 enum scale_op_t {
@@ -521,6 +529,19 @@ public:
         };
     };
 
+    static log_format *find_root_format(const char *name) {
+        std::vector<log_format *> &fmts = get_root_formats();
+        for (std::vector<log_format *>::iterator iter = fmts.begin();
+             iter != fmts.end();
+             ++iter) {
+            log_format *lf = *iter;
+            if (lf->get_name() == name) {
+                return lf;
+            }
+        }
+        return NULL;
+    }
+
     struct action_def {
         std::string ad_name;
         std::string ad_label;
@@ -534,7 +555,8 @@ public:
         };
     };
 
-    log_format() : lf_fmt_lock(-1),
+    log_format() : lf_mod_index(0),
+                   lf_fmt_lock(-1),
                    lf_timestamp_field(intern_string::lookup("timestamp", -1)) {
     };
 
@@ -587,7 +609,7 @@ public:
                           std::vector<logline_value> &values) const
     { };
 
-    virtual std::auto_ptr<log_format> specialized(void) = 0;
+    virtual std::auto_ptr<log_format> specialized(int fmt_lock = -1) = 0;
 
     virtual log_vtab_impl *get_vtab_impl(void) const {
         return NULL;
@@ -629,10 +651,10 @@ public:
         return "";
     };
 
+    uint8_t lf_mod_index;
     date_time_scanner lf_date_time;
     int lf_fmt_lock;
     intern_string_t lf_timestamp_field;
-    int lf_timestamp_field_index;
     std::vector<const char *> lf_timestamp_format;
     std::map<std::string, action_def> lf_action_defs;
 protected:
@@ -659,6 +681,8 @@ protected:
                           struct timeval *tv_out,
                           ...);
 };
+
+class module_format;
 
 class external_log_format : public log_format {
 
@@ -699,13 +723,26 @@ public:
     };
 
     struct pattern {
-        pattern() : p_pcre(NULL), p_timestamp_end(-1) { };
+        pattern() : p_pcre(NULL),
+                    p_timestamp_field_index(-1),
+                    p_level_field_index(-1),
+                    p_module_field_index(-1),
+                    p_body_field_index(-1),
+                    p_timestamp_end(-1),
+                    p_module_format(false) {
+
+        };
 
         std::string p_config_path;
         std::string p_string;
         pcrepp *p_pcre;
         std::vector<value_def> p_value_by_index;
+        int p_timestamp_field_index;
+        int p_level_field_index;
+        int p_module_field_index;
+        int p_body_field_index;
         int p_timestamp_end;
+        bool p_module_format;
     };
 
     struct level_pattern {
@@ -722,6 +759,8 @@ public:
           elf_timestamp_divisor(1.0),
           elf_body_field(intern_string::lookup("body", -1)),
           elf_multiline(true),
+          elf_container(false),
+          elf_has_module_format(false),
           jlf_json(false),
           jlf_hide_extra(false),
           jlf_cached_offset(-1),
@@ -755,9 +794,13 @@ public:
 
     bool match_samples(const std::vector<sample> &samples) const;
 
-    std::auto_ptr<log_format> specialized() {
+    std::auto_ptr<log_format> specialized(int fmt_lock) {
         external_log_format *elf = new external_log_format(*this);
         std::auto_ptr<log_format> retval((log_format *)elf);
+
+        if (fmt_lock != -1) {
+            elf->lf_fmt_lock = fmt_lock;
+        }
 
         if (this->jlf_json) {
             this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name.to_string()));
@@ -767,24 +810,6 @@ public:
                     this->jlf_parse_context.get()));
             yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings, 1);
             this->jlf_cached_line.reserve(16 * 1024);
-        }
-        else if (this->lf_fmt_lock != -1) {
-            pcrepp *pat = this->elf_pattern_order[this->lf_fmt_lock]->p_pcre;
-
-            retval->lf_timestamp_field_index = pat->name_index(
-                    this->lf_timestamp_field.to_string());
-            if (this->elf_level_field.empty()) {
-                this->elf_level_field_index = -1;
-            }
-            else {
-                elf->elf_level_field_index = pat->name_index(elf->elf_level_field.to_string());
-            }
-            if (this->elf_body_field.empty()) {
-                this->elf_body_field_index = -1;
-            }
-            else {
-                elf->elf_body_field_index = pat->name_index(elf->elf_body_field.to_string());
-            }
         }
 
         return retval;
@@ -831,6 +856,10 @@ public:
         return this->elf_pattern_order[this->lf_fmt_lock]->p_string;
     }
 
+    typedef std::map<intern_string_t, module_format> mod_map_t;
+    static mod_map_t MODULE_FORMATS;
+    static std::vector<external_log_format *> GRAPH_ORDERED_FORMATS;
+
     std::set<std::string> elf_source_path;
     std::list<intern_string_t> elf_collision;
     std::string elf_file_pattern;
@@ -842,11 +871,12 @@ public:
     int elf_column_count;
     double elf_timestamp_divisor;
     intern_string_t elf_level_field;
-    int elf_level_field_index;
     intern_string_t elf_body_field;
-    int elf_body_field_index;
+    intern_string_t elf_module_id_field;
     std::map<logline::level_t, level_pattern> elf_level_patterns;
     bool elf_multiline;
+    bool elf_container;
+    bool elf_has_module_format;
 
     enum json_log_field {
         JLF_CONSTANT,
@@ -885,6 +915,19 @@ public:
 private:
     const intern_string_t elf_name;
 
+    static uint8_t module_scan(const pcre_input &pi,
+                               pcre_context::capture_t *body_cap,
+                               const intern_string_t &mod_name);
+};
+
+class module_format {
+
+public:
+    module_format() : mf_mod_format(NULL) {
+
+    };
+
+    external_log_format *mf_mod_format;
 };
 
 #endif

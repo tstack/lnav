@@ -82,8 +82,7 @@ public:
         bool vc_hidden;
     };
 
-    log_vtab_impl(const intern_string_t name)
-        : vi_name(name) {
+    log_vtab_impl(const intern_string_t name) : vi_name(name) {
         this->vi_attrs.resize(128);
     };
     virtual ~log_vtab_impl() { };
@@ -95,30 +94,7 @@ public:
 
     std::string get_table_statement(void);
 
-    virtual bool next(log_cursor &lc, logfile_sub_source &lss)
-    {
-        lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
-        lc.lc_sub_index = 0;
-
-        if (lc.is_eof()) {
-            return true;
-        }
-
-        content_line_t    cl(lss.at(lc.lc_curr_line));
-        logfile *         lf      = lss.find(cl);
-        logfile::iterator lf_iter = lf->begin() + cl;
-
-        if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
-            return false;
-        }
-
-        log_format *format = lf->get_format();
-        if (format != NULL && format->get_name() == this->vi_name) {
-            return true;
-        }
-
-        return false;
-    };
+    virtual bool next(log_cursor &lc, logfile_sub_source &lss) = 0;
 
     virtual void get_columns(std::vector<vtab_column> &cols) { };
 
@@ -139,9 +115,51 @@ public:
     };
 
     int vi_column_count;
-private:
-    string_attrs_t vi_attrs;
+protected:
     const intern_string_t vi_name;
+    string_attrs_t vi_attrs;
+};
+
+class log_format_vtab_impl : public log_vtab_impl {
+
+public:
+    log_format_vtab_impl(const log_format &format) :
+            log_vtab_impl(format.get_name()), lfvi_format(format) {
+
+    }
+
+    virtual bool next(log_cursor &lc, logfile_sub_source &lss)
+    {
+        lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
+        lc.lc_sub_index = 0;
+
+        if (lc.is_eof()) {
+            return true;
+        }
+
+        content_line_t    cl(lss.at(lc.lc_curr_line));
+        logfile *         lf      = lss.find(cl);
+        logfile::iterator lf_iter = lf->begin() + cl;
+        uint8_t mod_id = lf_iter->get_module_id();
+
+        if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
+            return false;
+        }
+
+        log_format *format = lf->get_format();
+        if (format->get_name() == this->lfvi_format.get_name()) {
+            return true;
+        } else if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
+            // XXX
+            return true;
+        }
+
+        return false;
+    };
+
+protected:
+    const log_format &lfvi_format;
+
 };
 
 typedef int (*sql_progress_callback_t)(const log_cursor &lc);

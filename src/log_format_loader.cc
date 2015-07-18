@@ -88,6 +88,21 @@ static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str
     return 1;
 }
 
+static int read_format_regex_bool(yajlpp_parse_context *ypc, int val)
+{
+    external_log_format *elf = ensure_format(ypc);
+    string regex_name = ypc->get_path_fragment(2);
+    string field_name = ypc->get_path_fragment(3);
+    struct external_log_format::pattern &pat = elf->elf_patterns[regex_name];
+
+    if (field_name == "module-format") {
+        elf->elf_has_module_format = true;
+        pat.p_module_format = val;
+    }
+
+    return 1;
+}
+
 static int read_format_bool(yajlpp_parse_context *ypc, int val)
 {
     external_log_format *elf = ensure_format(ypc);
@@ -157,6 +172,10 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
         elf->elf_body_field = intern_string::lookup(value);
     else if (field_name == "timestamp-format")
         elf->lf_timestamp_format.push_back(intern_string::lookup(value)->get());
+    else if (field_name == "module-identifier") {
+        elf->elf_module_id_field = intern_string::lookup(value);
+        elf->elf_container = true;
+    }
 
     return 1;
 }
@@ -380,12 +399,14 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
 
 static struct json_path_handler format_handlers[] = {
     json_path_handler("^/\\w+/regex/[^/]+/pattern$", read_format_regex),
-    json_path_handler("^/\\w+/(json|convert-to-local-time|epoch-timestamp|hide-extra|multiline)$", read_format_bool),
+    json_path_handler("^/\\w+/regex/[^/]+/module-format$", read_format_regex_bool),
+    json_path_handler("^/\\w+/(json|convert-to-local-time|epoch-timestamp|"
+        "hide-extra|multiline)$", read_format_bool),
     json_path_handler("^/\\w+/timestamp-divisor$", read_format_double)
         .add_cb(read_format_int),
     json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|"
                               "body-field|url|url#|title|description|"
-                              "timestamp-format#)$",
+                              "timestamp-format#|module-identifier)$",
                       read_format_field),
     json_path_handler("^/\\w+/level/"
                       "(trace|debug\\d*|info|stats|warning|error|critical|fatal)$",
@@ -553,12 +574,19 @@ void load_formats(const std::vector<std::string> &extra_paths,
         load_from_path(*path_iter, errors);
     }
 
+    uint8_t mod_counter = 0;
+
     vector<external_log_format *> alpha_ordered_formats;
     for (map<intern_string_t, external_log_format *>::iterator iter = LOG_FORMATS.begin();
          iter != LOG_FORMATS.end();
          ++iter) {
         external_log_format *elf = iter->second;
         elf->build(errors);
+
+        if (elf->elf_has_module_format) {
+            mod_counter += 1;
+            elf->lf_mod_index = mod_counter;
+        }
 
         for (map<intern_string_t, external_log_format *>::iterator check_iter = LOG_FORMATS.begin();
              check_iter != LOG_FORMATS.end();
@@ -581,7 +609,8 @@ void load_formats(const std::vector<std::string> &extra_paths,
         }
     }
 
-    vector<external_log_format *> graph_ordered_formats;
+    vector<external_log_format *> &graph_ordered_formats =
+            external_log_format::GRAPH_ORDERED_FORMATS;
 
     while (!alpha_ordered_formats.empty()) {
         vector<intern_string_t> popped_formats;

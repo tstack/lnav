@@ -62,6 +62,7 @@ string_attr_type logline::L_PREFIX;
 string_attr_type logline::L_TIMESTAMP;
 string_attr_type logline::L_FILE;
 string_attr_type logline::L_PARTITION;
+string_attr_type logline::L_MODULE;
 
 const char *logline::level_names[LEVEL__MAX + 1] = {
     "unknown",
@@ -83,6 +84,9 @@ const char *logline::level_names[LEVEL__MAX + 1] = {
 
 static pcrepp LEVEL_RE(
         "(?i)(TRACE|DEBUG\\d*|INFO|STATS|WARN(?:ING)?|ERR(?:OR)?|CRITICAL|SEVERE|FATAL)");
+
+external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
+std::vector<external_log_format *> external_log_format::GRAPH_ORDERED_FORMATS;
 
 logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool exact)
 {
@@ -648,38 +652,27 @@ bool external_log_format::scan(std::vector<logline> &dst,
     int curr_fmt = -1;
 
     while (::next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
-        pcrepp *pat = this->elf_pattern_order[curr_fmt]->p_pcre;
+        pattern *fpat = this->elf_pattern_order[curr_fmt];
+        pcrepp *pat = fpat->p_pcre;
+
+        if (fpat->p_module_format) {
+            continue;
+        }
 
         if (!pat->match(pc, pi)) {
             continue;
         }
 
-        if (this->lf_fmt_lock == -1) {
-            this->lf_timestamp_field_index = pat->name_index(
-                this->lf_timestamp_field.to_string());
-            if (!this->elf_level_field.empty()) {
-                this->elf_level_field_index = pat->name_index(
-                        this->elf_level_field.to_string());
-            }
-            else {
-                this->elf_level_field_index = -1;
-            }
-            if (!this->elf_body_field.empty()) {
-                this->elf_body_field_index = pat->name_index(
-                        this->elf_body_field.to_string());
-            }
-            else {
-                this->elf_body_field_index = -1;
-            }
-        }
-
-        pcre_context::capture_t *ts = pc[this->lf_timestamp_field_index];
-        pcre_context::capture_t *level_cap = pc[this->elf_level_field_index];
+        pcre_context::capture_t *ts = pc[fpat->p_timestamp_field_index];
+        pcre_context::capture_t *level_cap = pc[fpat->p_level_field_index];
+        pcre_context::capture_t *mod_cap = pc[fpat->p_module_field_index];
+        pcre_context::capture_t *body_cap = pc[fpat->p_body_field_index];
         const char *ts_str = pi.get_substr_start(ts);
         const char *last;
         struct exttm log_time_tm;
         struct timeval log_tv;
         logline::level_t level = logline::LEVEL_INFO;
+        uint8_t mod_index = 0;
 
         if ((last = this->lf_date_time.scan(ts_str,
                                             ts->length(),
@@ -711,7 +704,20 @@ bool external_log_format::scan(std::vector<logline> &dst,
             this->check_for_new_year(dst, log_tv);
         }
 
-        dst.push_back(logline(offset, log_tv, level));
+        if (mod_cap != NULL) {
+            intern_string_t mod_name = intern_string::lookup(
+                    pi.get_substr_start(mod_cap), mod_cap->length());
+            mod_map_t::iterator mod_iter = MODULE_FORMATS.find(mod_name);
+
+            if (mod_iter == MODULE_FORMATS.end()) {
+                mod_index = module_scan(pi, body_cap, mod_name);
+            }
+            else if (mod_iter->second.mf_mod_format) {
+                mod_index = mod_iter->second.mf_mod_format->lf_mod_index;
+            }
+        }
+
+        dst.push_back(logline(offset, log_tv, level, mod_index));
 
         this->lf_fmt_lock = curr_fmt;
         retval = true;
@@ -719,6 +725,53 @@ bool external_log_format::scan(std::vector<logline> &dst,
     }
 
     return retval;
+}
+
+uint8_t external_log_format::module_scan(const pcre_input &pi,
+                                         pcre_context::capture_t *body_cap,
+                                         const intern_string_t &mod_name)
+{
+    uint8_t mod_index;
+    body_cap->ltrim(pi.get_string());
+    pcre_input body_pi(pi.get_substr_start(body_cap), 0, body_cap->length());
+    vector<external_log_format *> &ext_fmts = GRAPH_ORDERED_FORMATS;
+    pcre_context_static<128> pc;
+    module_format mf;
+
+    for (vector<external_log_format *>::iterator fmt_iter = ext_fmts.begin();
+         fmt_iter != ext_fmts.end();
+         ++fmt_iter) {
+        external_log_format *elf = *fmt_iter;
+        int curr_fmt = -1, fmt_lock = -1;
+
+        while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
+            pattern *fpat = elf->elf_pattern_order[curr_fmt];
+            pcrepp *pat = fpat->p_pcre;
+
+            if (!fpat->p_module_format) {
+                continue;
+            }
+
+            if (!pat->match(pc, body_pi)) {
+                continue;
+            }
+
+            log_debug("%s:module format found -- %s (%d)",
+                      mod_name.get(),
+                      elf->get_name().get(),
+                      elf->lf_mod_index);
+
+            mod_index = elf->lf_mod_index;
+            mf.mf_mod_format = (external_log_format *) elf->specialized(curr_fmt).release();
+            MODULE_FORMATS[mod_name] = mf;
+
+            return mod_index;
+        }
+    }
+
+    MODULE_FORMATS[mod_name] = mf;
+
+    return 0;
 }
 
 void external_log_format::annotate(shared_buffer_ref &line,
@@ -742,12 +795,23 @@ void external_log_format::annotate(shared_buffer_ref &line,
         return;
     }
 
-    cap = pc[this->lf_timestamp_field_index];
-    lr.lr_start = cap->c_begin;
-    lr.lr_end = cap->c_end;
-    sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
+    if (!pat.p_module_format) {
+        cap = pc[pat.p_timestamp_field_index];
+        lr.lr_start = cap->c_begin;
+        lr.lr_end = cap->c_end;
+        sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
 
-    cap = pc[this->elf_body_field_index];
+        if (pat.p_module_field_index != -1) {
+            cap = pc[pat.p_module_field_index];
+            if (cap != NULL && cap->is_valid()) {
+                lr.lr_start = cap->c_begin;
+                lr.lr_end = cap->c_end;
+                sa.push_back(string_attr(lr, &logline::L_MODULE));
+            }
+        }
+    }
+
+    cap = pc[pat.p_body_field_index];
     if (cap != NULL && cap->c_begin != -1) {
         lr.lr_start = cap->c_begin;
         lr.lr_end = cap->c_end;
@@ -1093,8 +1157,10 @@ void external_log_format::build(std::vector<std::string> &errors)
     for (std::map<string, pattern>::iterator iter = this->elf_patterns.begin();
          iter != this->elf_patterns.end();
          ++iter) {
+        pattern &pat = iter->second;
+
         try {
-            iter->second.p_pcre = new pcrepp(iter->second.p_string.c_str());
+            pat.p_pcre = new pcrepp(pat.p_string.c_str());
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
@@ -1103,11 +1169,24 @@ void external_log_format::build(std::vector<std::string> &errors)
                              e.what());
             continue;
         }
-        for (pcre_named_capture::iterator name_iter = iter->second.p_pcre->named_begin();
-             name_iter != iter->second.p_pcre->named_end();
+        for (pcre_named_capture::iterator name_iter = pat.p_pcre->named_begin();
+             name_iter != pat.p_pcre->named_end();
              ++name_iter) {
             std::map<const intern_string_t, value_def>::iterator value_iter;
             const intern_string_t name = intern_string::lookup(name_iter->pnc_name, -1);
+
+            if (name == this->lf_timestamp_field) {
+                pat.p_timestamp_field_index = name_iter->index();
+            }
+            if (name == this->elf_level_field) {
+                pat.p_level_field_index = name_iter->index();
+            }
+            if (name == this->elf_module_id_field) {
+                pat.p_module_field_index = name_iter->index();
+            }
+            if (name == this->elf_body_field) {
+                pat.p_body_field_index = name_iter->index();
+            }
 
             value_iter = this->elf_value_defs.find(name);
             if (value_iter != this->elf_value_defs.end()) {
@@ -1115,7 +1194,7 @@ void external_log_format::build(std::vector<std::string> &errors)
 
                 vd.vd_index = name_iter->index();
                 if (!vd.vd_unit_field.empty()) {
-                    vd.vd_unit_field_index = iter->second.p_pcre->name_index(vd.vd_unit_field.get());
+                    vd.vd_unit_field_index = pat.p_pcre->name_index(vd.vd_unit_field.get());
                 }
                 else {
                     vd.vd_unit_field_index = -1;
@@ -1123,12 +1202,11 @@ void external_log_format::build(std::vector<std::string> &errors)
                 if (vd.vd_column == -1) {
                     vd.vd_column = this->elf_column_count++;
                 }
-                iter->second.p_value_by_index.push_back(vd);
+                pat.p_value_by_index.push_back(vd);
             }
         }
 
-        stable_sort(iter->second.p_value_by_index.begin(),
-                    iter->second.p_value_by_index.end());
+        stable_sort(pat.p_value_by_index.begin(), pat.p_value_by_index.end());
 
         this->elf_pattern_order.push_back(&iter->second);
     }
@@ -1208,10 +1286,12 @@ void external_log_format::build(std::vector<std::string> &errors)
              ++pat_iter) {
             pattern &pat = *(*pat_iter);
 
-            if (!pat.p_pcre)
+            if (!pat.p_pcre) {
                 continue;
+            }
 
-            if (pat.p_pcre->name_index(this->lf_timestamp_field.to_string()) < 0) {
+            if (!pat.p_module_format &&
+                    pat.p_pcre->name_index(this->lf_timestamp_field.to_string()) < 0) {
                 errors.push_back("error:" +
                     this->elf_name.to_string() +
                     ":timestamp field '" +
@@ -1336,10 +1416,10 @@ bool external_log_format::match_samples(const vector<sample> &samples) const
     return false;
 }
 
-class external_log_table : public log_vtab_impl {
+class external_log_table : public log_format_vtab_impl {
 public:
     external_log_table(const external_log_format &elf) :
-        log_vtab_impl(elf.get_name()), elt_format(elf) {
+        log_format_vtab_impl(elf), elt_format(elf) {
     };
 
     void get_columns(vector<vtab_column> &cols) {
@@ -1393,7 +1473,91 @@ public:
         }
     };
 
+    virtual bool next(log_cursor &lc, logfile_sub_source &lss)
+    {
+        lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
+        lc.lc_sub_index = 0;
+
+        if (lc.is_eof()) {
+            return true;
+        }
+
+        content_line_t    cl(lss.at(lc.lc_curr_line));
+        logfile *         lf      = lss.find(cl);
+        logfile::iterator lf_iter = lf->begin() + cl;
+        uint8_t mod_id = lf_iter->get_module_id();
+
+        if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
+            return false;
+        }
+
+        log_format *format = lf->get_format();
+
+        this->elt_module_format.mf_mod_format = NULL;
+        if (format->get_name() == this->lfvi_format.get_name()) {
+            return true;
+        } else if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
+            std::vector<logline_value> values;
+            shared_buffer_ref body_ref;
+            struct line_range mod_name_range;
+            intern_string_t mod_name;
+            shared_buffer_ref line;
+
+            lf->read_line(lf_iter, line);
+            this->vi_attrs.clear();
+            format->annotate(line, this->vi_attrs, values);
+            this->elt_container_body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
+            if (!this->elt_container_body.is_valid()) {
+                return false;
+            }
+            this->elt_container_body.ltrim(line.get_data());
+            body_ref.subset(line,
+                            this->elt_container_body.lr_start,
+                            this->elt_container_body.length());
+            mod_name_range = find_string_attr_range(this->vi_attrs,
+                                                    &logline::L_MODULE);
+            if (!mod_name_range.is_valid()) {
+                return false;
+            }
+            mod_name = intern_string::lookup(
+                    &line.get_data()[mod_name_range.lr_start],
+                    mod_name_range.length());
+            this->vi_attrs.clear();
+            this->elt_module_format = external_log_format::MODULE_FORMATS[mod_name];
+            if (!this->elt_module_format.mf_mod_format) {
+                return false;
+            }
+            return this->elt_module_format.mf_mod_format->get_name() ==
+                    this->lfvi_format.get_name();
+        }
+
+        return false;
+    };
+
+    virtual void extract(logfile *lf,
+                         shared_buffer_ref &line,
+                         std::vector<logline_value> &values)
+    {
+        log_format *format = lf->get_format();
+
+        if (this->elt_module_format.mf_mod_format != NULL) {
+            shared_buffer_ref body_ref;
+
+            body_ref.subset(line, this->elt_container_body.lr_start,
+                            this->elt_container_body.length());
+            this->vi_attrs.clear();
+            values.clear();
+            this->elt_module_format.mf_mod_format->annotate(body_ref, this->vi_attrs, values);
+        }
+        else {
+            this->vi_attrs.clear();
+            format->annotate(line, this->vi_attrs, values);
+        }
+    };
+
     const external_log_format &elt_format;
+    module_format elt_module_format;
+    struct line_range elt_container_body;
 };
 
 log_vtab_impl *external_log_format::get_vtab_impl(void) const

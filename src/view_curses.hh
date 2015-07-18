@@ -165,6 +165,10 @@ struct line_range {
 
     line_range(int start = -1, int end = -1) : lr_start(start), lr_end(end) { };
 
+    bool is_valid() const {
+        return this->lr_start != -1;
+    }
+
     int length() const
     {
         return this->lr_end == -1 ? INT_MAX : this->lr_end - this->lr_start;
@@ -180,6 +184,12 @@ struct line_range {
 
     bool intersects(const struct line_range &other) const {
         return this->contains(other.lr_start) || this->contains(other.lr_end);
+    };
+
+    void ltrim(const char *str) {
+        while (this->lr_start < this->lr_end && isspace(str[this->lr_start])) {
+            this->lr_start += 1;
+        }
     };
 
     bool operator<(const struct line_range &rhs) const

@@ -2414,8 +2414,8 @@ int main(int argc, char *argv[])
     }
 
     lnav_data.ld_vtab_manager->register_vtab(new all_logs_vtab());
-    lnav_data.ld_vtab_manager->register_vtab(new log_vtab_impl(
-            intern_string::lookup("generic_log")));
+    lnav_data.ld_vtab_manager->register_vtab(new log_format_vtab_impl(
+            *log_format::find_root_format("generic_log")));
 
     for (std::vector<log_format *>::iterator iter = log_format::get_root_formats().begin();
          iter != log_format::get_root_formats().end();

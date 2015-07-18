@@ -118,6 +118,14 @@ public:
         return this->ist_interned_string == rhs.ist_interned_string;
     }
 
+    bool operator!=(const intern_string_t &rhs) const {
+        return !(*this == rhs);
+    }
+
+    bool operator==(const char *rhs) const {
+        return strcmp(this->get(), rhs) == 0;
+    }
+
     void operator=(const intern_string_t &rhs) {
         this->ist_interned_string = rhs.ist_interned_string;
     }
