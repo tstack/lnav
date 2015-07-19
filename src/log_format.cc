@@ -776,12 +776,13 @@ uint8_t external_log_format::module_scan(const pcre_input &pi,
 
 void external_log_format::annotate(shared_buffer_ref &line,
                                    string_attrs_t &sa,
-                                   std::vector<logline_value> &values) const
+                                   std::vector<logline_value> &values,
+                                   bool annotate_module) const
 {
     pcre_context_static<128> pc;
     pcre_input pi(line.get_data(), 0, line.length());
     struct line_range lr;
-    pcre_context::capture_t *cap;
+    pcre_context::capture_t *cap, *body_cap, *module_cap = NULL;
 
     if (this->jlf_json) {
         values = this->jlf_line_values;
@@ -802,27 +803,25 @@ void external_log_format::annotate(shared_buffer_ref &line,
         sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
 
         if (pat.p_module_field_index != -1) {
-            cap = pc[pat.p_module_field_index];
-            if (cap != NULL && cap->is_valid()) {
-                lr.lr_start = cap->c_begin;
-                lr.lr_end = cap->c_end;
+            module_cap = pc[pat.p_module_field_index];
+            if (module_cap != NULL && module_cap->is_valid()) {
+                lr.lr_start = module_cap->c_begin;
+                lr.lr_end = module_cap->c_end;
                 sa.push_back(string_attr(lr, &logline::L_MODULE));
             }
         }
     }
 
-    cap = pc[pat.p_body_field_index];
-    if (cap != NULL && cap->c_begin != -1) {
-        lr.lr_start = cap->c_begin;
-        lr.lr_end = cap->c_end;
+    body_cap = pc[pat.p_body_field_index];
+    if (body_cap != NULL && body_cap->c_begin != -1) {
+        lr.lr_start = body_cap->c_begin;
+        lr.lr_end = body_cap->c_end;
     }
     else {
         lr.lr_start = line.length();
         lr.lr_end = line.length();
     }
     sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
-
-    view_colors &vc = view_colors::singleton();
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const value_def &vd = pat.p_value_by_index[lpc];
@@ -849,19 +848,40 @@ void external_log_format::annotate(shared_buffer_ref &line,
         field.subset(line, cap->c_begin, cap->length());
 
         values.push_back(logline_value(vd.vd_name,
-                         vd.vd_kind,
-                         field,
-                         vd.vd_identifier,
-                         scaling,
-                         vd.vd_column,
-                         cap->c_begin,
-                         cap->c_end));
+                                       vd.vd_kind,
+                                       field,
+                                       vd.vd_identifier,
+                                       scaling,
+                                       vd.vd_column,
+                                       cap->c_begin,
+                                       cap->c_end,
+                                       pat.p_module_format,
+                                       this));
+    }
 
-        if (pc[vd.vd_index]->c_begin != -1 && vd.vd_identifier) {
-            lr.lr_start = pc[vd.vd_index]->c_begin;
-            lr.lr_end = pc[vd.vd_index]->c_end;
-            sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
-                vc.attrs_for_ident(pi.get_substr_start(pc[vd.vd_index]), lr.length())));
+    if (annotate_module && module_cap != NULL && body_cap != NULL &&
+            body_cap->is_valid()) {
+        intern_string_t mod_name = intern_string::lookup(
+                pi.get_substr_start(module_cap), module_cap->length());
+        mod_map_t::iterator mod_iter = MODULE_FORMATS.find(mod_name);
+
+        if (mod_iter != MODULE_FORMATS.end() &&
+                mod_iter->second.mf_mod_format != NULL) {
+            module_format &mf = mod_iter->second;
+            shared_buffer_ref body_ref;
+
+            body_cap->ltrim(line.get_data());
+            body_ref.subset(line, body_cap->c_begin, body_cap->length());
+            mf.mf_mod_format->annotate(body_ref, sa, values, false);
+            for (vector<logline_value>::iterator lv_iter = values.begin();
+                 lv_iter != values.end();
+                 ++lv_iter) {
+                if (!lv_iter->lv_from_module) {
+                    continue;
+                }
+                lv_iter->lv_origin.lr_start += body_cap->c_begin;
+                lv_iter->lv_origin.lr_end += body_cap->c_begin;
+            }
         }
     }
 }
@@ -1505,7 +1525,7 @@ public:
 
             lf->read_line(lf_iter, line);
             this->vi_attrs.clear();
-            format->annotate(line, this->vi_attrs, values);
+            format->annotate(line, this->vi_attrs, values, false);
             this->elt_container_body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
             if (!this->elt_container_body.is_valid()) {
                 return false;

@@ -235,6 +235,7 @@ dist_noinst_DATA = \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
 	logfile_syslog.2 \
+	logfile_syslog_with_access_log.0 \
 	logfile_tcf.0 \
 	logfile_tcf.1 \
 	logfile_tcsh_history.0 \

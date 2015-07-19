@@ -165,7 +165,8 @@ class generic_log_format : public log_format {
 
     void annotate(shared_buffer_ref &line,
                   string_attrs_t &sa,
-                  std::vector<logline_value> &values) const
+                  std::vector<logline_value> &values,
+                  bool annotate_module) const
     {
         pcre_format &fmt = get_pcre_log_formats()[this->lf_fmt_lock];
         struct line_range lr;

@@ -293,6 +293,20 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
 
+    for (vector<logline_value>::iterator lv_iter = line_values.begin();
+         lv_iter != line_values.end();
+         ++lv_iter) {
+        if (!lv_iter->lv_identifier || !lv_iter->lv_origin.is_valid()) {
+            continue;
+        }
+
+        int id_attrs = vc.attrs_for_ident(lv_iter->text_value(),
+                                          lv_iter->text_length());
+
+        value_out.push_back(string_attr(
+                lv_iter->lv_origin, &view_curses::VC_STYLE, id_attrs));
+    }
+
     if (this->lss_files.size() > 1) {
         for (string_attrs_t::iterator iter = value_out.begin();
              iter != value_out.end();

@@ -55,6 +55,8 @@
 #include "intern_string.hh"
 #include "shared_buffer.hh"
 
+class log_format;
+
 /**
  * Metadata for a single line in a log file.
  */
@@ -312,32 +314,40 @@ public:
     static kind_t string2kind(const char *kindstr);
 
     logline_value(const intern_string_t name)
-        : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1) { };
+        : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1),
+          lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, bool b)
         : lv_name(name),
           lv_kind(VALUE_BOOLEAN),
           lv_value((int64_t)(b ? 1 : 0)),
           lv_identifier(),
-          lv_column(-1) { };
+          lv_column(-1),
+          lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, int64_t i)
-        : lv_name(name), lv_kind(VALUE_INTEGER), lv_value(i), lv_identifier(), lv_column(-1) { };
+        : lv_name(name), lv_kind(VALUE_INTEGER), lv_value(i), lv_identifier(), lv_column(-1),
+    lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, double i)
-        : lv_name(name), lv_kind(VALUE_FLOAT), lv_value(i), lv_identifier(), lv_column(-1) { };
+        : lv_name(name), lv_kind(VALUE_FLOAT), lv_value(i), lv_identifier(), lv_column(-1),
+          lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, shared_buffer_ref &sbr, int column = -1)
         : lv_name(name), lv_kind(VALUE_TEXT), lv_sbr(sbr),
-          lv_identifier(), lv_column(column) {
+          lv_identifier(), lv_column(column),
+          lv_from_module(false), lv_format(NULL) {
     };
     logline_value(const intern_string_t name, const intern_string_t val, int column = -1)
             : lv_name(name), lv_kind(VALUE_TEXT), lv_intern_string(val), lv_identifier(),
-              lv_column(column) {
+              lv_column(column), lv_from_module(false), lv_format(NULL) {
 
     };
     logline_value(const intern_string_t name, kind_t kind, shared_buffer_ref &sbr,
                   bool ident=false, const scaling_factor *scaling=NULL,
-                  int col=-1, int start=-1, int end=-1)
+                  int col=-1, int start=-1, int end=-1, bool from_module=false,
+                  const log_format *format=NULL)
         : lv_name(name), lv_kind(kind),
           lv_identifier(ident), lv_column(col),
-          lv_origin(start, end)
+          lv_origin(start, end),
+          lv_from_module(from_module),
+          lv_format(format)
     {
         if (sbr.get_data() == NULL) {
             this->lv_kind = kind = VALUE_NULL;
@@ -450,6 +460,9 @@ public:
 
     const char *text_value() const {
         if (this->lv_sbr.empty()) {
+            if (this->lv_intern_string.empty()) {
+                return "";
+            }
             return this->lv_intern_string.get();
         }
         return this->lv_sbr.get_data();
@@ -477,6 +490,8 @@ public:
     bool lv_identifier;
     int lv_column;
     struct line_range lv_origin;
+    bool lv_from_module;
+    const log_format *lv_format;
 };
 
 struct logline_value_cmp {
@@ -606,7 +621,8 @@ public:
 
     virtual void annotate(shared_buffer_ref &sbr,
                           string_attrs_t &sa,
-                          std::vector<logline_value> &values) const
+                          std::vector<logline_value> &values,
+                          bool annotate_module = true) const
     { };
 
     virtual std::auto_ptr<log_format> specialized(int fmt_lock = -1) = 0;
@@ -788,7 +804,8 @@ public:
 
     void annotate(shared_buffer_ref &line,
                   string_attrs_t &sa,
-                  std::vector<logline_value> &values) const;
+                  std::vector<logline_value> &values,
+                  bool annotate_module = true) const;
 
     void build(std::vector<std::string> &errors);
 

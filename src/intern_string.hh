@@ -93,6 +93,9 @@ public:
     }
 
     const char *get(void) const {
+        if (this->empty()) {
+            return "";
+        }
         return this->ist_interned_string->get();
     }
 

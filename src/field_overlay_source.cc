@@ -116,16 +116,20 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
     if (this->fos_log_helper.ldh_line_values.empty()) {
         this->fos_lines.push_back(" No known message fields");
     }
-    else{
-        this->fos_lines.push_back(" Known message fields:  (SQL table -- " +
-                                  this->fos_log_helper.ldh_file->get_format()->get_name().to_string() +
-                                  ")");
-    }
+
+    const log_format *last_format = NULL;
 
     for (size_t lpc = 0; lpc < this->fos_log_helper.ldh_line_values.size(); lpc++) {
         logline_value &lv = this->fos_log_helper.ldh_line_values[lpc];
         attr_line_t al;
         string str;
+
+        if (lv.lv_format != last_format) {
+            this->fos_lines.push_back(" Known message fields:  (SQL table -- " +
+                                      lv.lv_format->get_name().to_string() +
+                                      ")");
+            last_format = lv.lv_format;
+        }
 
         str = "   " + lv.lv_name.to_string();
         str.append(this->fos_known_key_size - lv.lv_name.size() + 3, ' ');

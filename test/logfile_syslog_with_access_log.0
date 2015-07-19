@@ -1,0 +1,4 @@
+Jan  3 09:47:02 veridian sudo: timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
+Mar 24 14:02:50 bigproduct-web1 tomcat.log: 127.0.0.1 - - "GET /includes/js/combined-javascript.js HTTP/1.1" 200 65508 4.386
+Mar 24 14:02:51 bigproduct-web1 automount[7999]: lookup(file): lookup for opt failed
+Mar 24 14:26:01 --- last message repeated 2 times ---
