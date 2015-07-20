@@ -453,6 +453,30 @@ public:
         return rc > 0;
     };
 
+    size_t match_partial(pcre_input &pi) const {
+        size_t length = pi.pi_length;
+        int rc;
+
+        do {
+            rc = pcre_exec(this->p_code,
+                           this->p_code_extra.in(),
+                           pi.get_string(),
+                           length,
+                           pi.pi_offset,
+                           PCRE_PARTIAL,
+                           NULL,
+                           0);
+            switch (rc) {
+                case 0:
+                case PCRE_ERROR_PARTIAL:
+                    return length;
+            }
+            length -= 1;
+        } while (length > 0);
+
+        return length;
+    }
+
 #ifdef PCRE_STUDY_JIT_COMPILE
     static pcre_jit_stack *jit_stack(void);
 

@@ -579,26 +579,27 @@ static struct json_path_handler json_log_rewrite_handlers[] = {
     json_path_handler()
 };
 
-bool external_log_format::scan_for_partial(shared_buffer_ref &sbr)
+bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_out)
 {
     if (this->jlf_json) {
         return false;
     }
 
+    pattern *pat = this->elf_pattern_order[this->lf_fmt_lock];
+    pcre_input pi(sbr.get_data(), 0, sbr.length());
+
     if (!this->elf_multiline) {
+        len_out = pat->p_pcre->match_partial(pi);
         return true;
     }
 
-    pattern *pat = this->elf_pattern_order[this->lf_fmt_lock];
-
     if (pat->p_timestamp_end == -1 || pat->p_timestamp_end > sbr.length()) {
+        len_out = 0;
         return false;
     }
 
-    pcre_input pi(sbr.get_data(), 0, pat->p_timestamp_end);
-    pcre_context_static<128> pc;
-
-    return pat->p_pcre->match(pc, pi, PCRE_PARTIAL);
+    len_out = pat->p_pcre->match_partial(pi);
+    return len_out > pat->p_timestamp_end;
 }
 
 bool external_log_format::scan(std::vector<logline> &dst,
@@ -1399,24 +1400,17 @@ void external_log_format::build(std::vector<std::string> &errors)
                     continue;
                 }
 
-                std::string line_partial = iter->s_line;
+                size_t partial_len = pat.p_pcre->match_partial(pi);
 
-                while (!line_partial.empty()) {
-                    pcre_input pi_partial(line_partial);
-
-                    if (pat.p_pcre->match(pc, pi_partial, PCRE_PARTIAL)) {
-                        errors.push_back("error:" +
-                                         this->elf_name.to_string() +
-                                         ":partial sample matched -- " +
-                                         line_partial);
-                        errors.push_back("error:  against pattern -- " +
-                                (*pat_iter)->p_string);
-                        break;
-                    }
-
-                    line_partial = line_partial.substr(0, line_partial.size() - 1);
+                if (partial_len > 0) {
+                    errors.push_back("error:" +
+                                     this->elf_name.to_string() +
+                                     ":partial sample matched -- " +
+                                     iter->s_line.substr(0, partial_len));
+                    errors.push_back("error:  against pattern -- " +
+                                     (*pat_iter)->p_string);
                 }
-                if (line_partial.empty()) {
+                else {
                     errors.push_back("error:" +
                                      this->elf_name.to_string() +
                                      ":no partial match found");

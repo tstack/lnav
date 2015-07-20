@@ -1,0 +1,18 @@
+{
+    "bad_regex_log": {
+        "title": "invalid regex test",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"
+            }
+        },
+        "timestamp-format" : [
+            "%i"
+        ],
+        "sample": [
+            {
+                "line": "1428634687123; foo"
+            }
+        ]
+    }
+}

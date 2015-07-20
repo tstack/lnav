@@ -2607,14 +2607,33 @@ int main(int argc, char *argv[])
                 }
 
                 shared_buffer_ref sbr;
+                size_t partial_len;
 
                 lf->read_line(line_iter, sbr);
-                if (fmt->scan_for_partial(sbr)) {
+                if (fmt->scan_for_partial(sbr, partial_len)) {
                     long line_number = distance(lf->begin(), line_iter);
+                    string full_line(sbr.get_data(), sbr.length());
+                    string partial_line(sbr.get_data(), partial_len);
+
                     fprintf(stderr,
                             "error:%s:%ld:line did not match format %s\n",
                             lf->get_filename().c_str(), line_number,
                             fmt->get_pattern_name().c_str());
+                    fprintf(stderr,
+                            "error:%s:%ld:         line -- %s\n",
+                            lf->get_filename().c_str(), line_number,
+                            full_line.c_str());
+                    if (partial_len > 0) {
+                        fprintf(stderr,
+                                "error:%s:%ld:partial match -- %s\n",
+                                lf->get_filename().c_str(), line_number,
+                                partial_line.c_str());
+                    }
+                    else {
+                        fprintf(stderr,
+                                "error:%s:%ld:no partial match found\n",
+                                lf->get_filename().c_str(), line_number);
+                    }
                     retval = EXIT_FAILURE;
                 }
             }

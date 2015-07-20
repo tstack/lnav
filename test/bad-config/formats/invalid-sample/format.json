@@ -1,0 +1,21 @@
+{
+    "bad_sample_log": {
+        "title": "invalid sample test",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d+): (?<body>.*)$"
+            },
+            "semi": {
+                "pattern": "^(?<timestamp>\\d+); (?<body>\\w+)$"
+            }
+        },
+        "timestamp-format" : [
+            "%i"
+        ],
+        "sample": [
+            {
+                "line": "1428634687123; foo bar"
+            }
+        ]
+    }
+}

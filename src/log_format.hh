@@ -605,7 +605,7 @@ public:
                       off_t offset,
                       shared_buffer_ref &sbr) = 0;
 
-    virtual bool scan_for_partial(shared_buffer_ref &sbr) {
+    virtual bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out) {
         return false;
     };
 
@@ -800,7 +800,7 @@ public:
               off_t offset,
               shared_buffer_ref &sbr);
 
-    bool scan_for_partial(shared_buffer_ref &sbr);
+    bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out);
 
     void annotate(shared_buffer_ref &line,
                   string_attrs_t &sa,

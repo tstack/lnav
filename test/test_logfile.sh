@@ -243,6 +243,8 @@ sed -i "" -e "s|/.*/logfile_bad_syslog.0|logfile_bad_syslog.0|g" `test_err_filen
 
 check_error_output "bad syslog line not found?" <<EOF
 error:logfile_bad_syslog.0:2:line did not match format syslog_log/regex/std/pattern
+error:logfile_bad_syslog.0:2:         line -- Nov  3 09:23:38 veridian lookup for opt failed
+error:logfile_bad_syslog.0:2:partial match -- Nov  3 09:23:38 veridian lookup for opt failed
 EOF
 
 run_test ${lnav_test} -C ${srcdir}/logfile_bad_access_log.0
@@ -251,4 +253,6 @@ sed -i "" -e "s|/.*/logfile_bad_access_log.0|logfile_bad_access_log.0|g" `test_e
 
 check_error_output "bad access_log line not found?" <<EOF
 error:logfile_bad_access_log.0:1:line did not match format access_log/regex/std/pattern
+error:logfile_bad_access_log.0:1:         line -- 192.168.202.254 [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+error:logfile_bad_access_log.0:1:partial match -- 192.168.202.254
 EOF

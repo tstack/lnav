@@ -170,6 +170,7 @@ dist_noinst_SCRIPTS = \
 	parser_debugger.py \
 	test_cmds.sh \
 	test_data_parser.sh \
+	test_format_loader.sh \
 	test_grep_proc.sh \
 	test_json_format.sh \
 	test_json_op.sh \
@@ -190,6 +191,8 @@ dist_noinst_SCRIPTS = \
 
 dist_noinst_DATA = \
 	ansi-colors.0.in \
+	bad-config/formats/invalid-regex/format.json \
+	bad-config/formats/invalid-sample/format.json \
 	datafile_simple.0 \
 	datafile_simple.1 \
 	datafile_simple.2 \
@@ -264,6 +267,7 @@ TESTS = \
 	test_bookmarks \
 	test_chunky_index \
 	test_date_time_scanner \
+	test_format_loader.sh \
 	test_cmds.sh \
 	test_concise \
 	test_line_buffer2 \
