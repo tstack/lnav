@@ -1228,6 +1228,22 @@ void external_log_format::build(std::vector<std::string> &errors)
 
         stable_sort(pat.p_value_by_index.begin(), pat.p_value_by_index.end());
 
+        if (!this->elf_level_field.empty() && pat.p_level_field_index == -1) {
+            log_warning("%s:level field '%s' not found in pattern",
+                        pat.p_config_path.c_str(),
+                        this->elf_level_field.get());
+        }
+        if (!this->elf_module_id_field.empty() && pat.p_module_field_index == -1) {
+            log_warning("%s:module field '%s' not found in pattern",
+                        pat.p_config_path.c_str(),
+                        this->elf_module_id_field.get());
+        }
+        if (!this->elf_body_field.empty() && pat.p_body_field_index == -1) {
+            log_warning("%s:body field '%s' not found in pattern",
+                        pat.p_config_path.c_str(),
+                        this->elf_body_field.get());
+        }
+
         this->elf_pattern_order.push_back(&iter->second);
     }
 

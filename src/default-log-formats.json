@@ -6,10 +6,10 @@
         "multiline" : false,
         "regex" : {
             "ts-first-noquotes" : {
-                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+"
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+\\s*(?<body>.*)"
             },
             "ts-first" : {
-                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+"
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+\\s*(?<body>.*)"
             },
             "std" : {
                 "pattern" : "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
@@ -112,7 +112,7 @@
         "description" : "A generic format for logs, like cron, that have a date at the start of a block.",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})$"
+                "pattern" : "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})(?<body>(?:.|\\n)*)$"
             }
         },
         "sample" : [
@@ -307,7 +307,7 @@
         "description" : "Log for the fsck_hfs tool on Mac OS X.",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<device>[^:]+): fsck_hfs run at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})"
+                "pattern" : "^(?<device>[^:]+): fsck_hfs (?:run|started) at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})(?<body>(?:.|\\n)*)"
             }
         },
         "value" : {
@@ -452,9 +452,10 @@
             "critical" : "SEVERE",
             "trace" : "FINE|FINEST"
         },
+        "multiline" : false,
         "regex" : {
             "std" : {
-                "pattern" : "^\"(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\"\\s+(?<data>[^ \"]+|\"(?:[^\"]*|\"\")*\")\\s+(?<loginid>[^ \"]+|\"(?:[^\"]*|\"\")*\")\\s+(?<contextid>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<ipaddr>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<level>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<domain>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<loggedby>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<messageid>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<modulename>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<nameid>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<hostname>[^ \"]+|\"(?:[^\"]|\"\")*\")$"
+                "pattern" : "^\"(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\"\\s+(?<data>[^ \"]+|\"(?:[^\"]*|\"\")*\")\\s+(?<loginid>[^ \"]+|\"(?:[^\"]*|\"\")*\")\\s+(?<contextid>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<ipaddr>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<level>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<domain>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<loggedby>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<messageid>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<modulename>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<nameid>[^ \"]+|\"(?:[^\"]|\"\")*\")\\s+(?<hostname>[^ \"]+|\"(?:[^\"]|\"\")*\")(?<body>.*)$"
             }
         },
         "value" : {
@@ -575,10 +576,10 @@
         "multiline" : false,
         "regex" : {
             "pre-1.7" : {
-                "pattern" : "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)$"
+                "pattern" : "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)(?<body>.*)$"
             },
             "1.7" : {
-                "pattern" : "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+) (?<job_name>.+) (?<media>[^ ]+) (?<sides>.+)$"
+                "pattern" : "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+) (?<job_name>.+) (?<media>[^ ]+) (?<sides>.+)(?<body>.*)$"
             }
         },
         "value" : {
@@ -848,7 +849,7 @@
         ],
         "regex" : {
             "std" : {
-                "pattern" : "^TCF (?<timestamp>\\d{2}:\\d{2}.\\d{3}): (?:Server-Properties: (?:.*)|channel server|\\w+: (?<dir>--->|<---) (?<type>\\w)(?: (?<token>\\w+))?(?: (?<service>\\w+))?(?: (?<name>\\w+))?(?: (?<msg>.*))?(?: <eom>))$"
+                "pattern" : "^TCF (?<timestamp>\\d{2}:\\d{2}.\\d{3}): (?:Server-Properties: (?:.*)|channel server|\\w+: (?<dir>--->|<---) (?<type>\\w)(?: (?<token>\\w+))?(?: (?<service>\\w+))?(?: (?<name>\\w+))?(?: (?<msg>.*))?(?: <eom>))(?<body>.*)$"
             }
         },
         "value" : {
@@ -908,7 +909,7 @@
         "multiline" : false,
         "regex" : {
             "std" : {
-                "pattern" : "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+) (?<rt_unit>\\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)"
+                "pattern" : "^\\[pid: (?<s_pid>\\d+)\\|app: (?<s_app>[\\-\\d]+)\\|req: (?<s_req>[\\-\\d]+)/(?<s_worker_reqs>\\d+)\\] (?<c_ip>[^ ]+) \\((?<cs_username>[^\\)]*)\\) \\{(?<cs_vars>\\d+) vars in (?<cs_bytes>\\d+) bytes\\} \\[(?<timestamp>[^\\]]+)\\] (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? => generated (?<sc_bytes>\\d+) bytes in (?<s_runtime>\\d+) (?<rt_unit>\\w+) \\((?<cs_version>[^ ]+) (?<sc_status>\\d+)\\) (?<sc_headers>\\d+) headers in (?<sc_header_bytes>\\d+) bytes \\((?<s_switches>\\d+) switches on core (?<s_core>\\d+)\\)(?<body>.*)"
             }
         },
         "level-field": "sc_status",
@@ -1152,7 +1153,7 @@
         "url" : "https://access.redhat.com/products/red-hat-satellite",
         "regex" : {
             "main" : {
-                "pattern" : "^(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2} [+-]?\\d{2}:\\d{2}) (?<pid>\\d+) (?<client_ip>\\S+): (?<module>\\w+)/(?<function>.*)(?<arguments>\\(.*?\\))?$"
+                "pattern" : "^(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2} [+-]?\\d{2}:\\d{2}) (?<pid>\\d+) (?<client_ip>\\S+): (?<module>\\w+)/(?<function>.*)(?<arguments>\\(.*?\\))?(?<body>.*)$"
             }
         },
         "value" : {
