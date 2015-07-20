@@ -806,7 +806,7 @@
             "error" : "(?:(?:(?<![a-zA-Z]))(?:(?i)error(?:s)?)(?:(?![a-zA-Z]))|failed|failure)",
             "warning" : "(?:(?:(?i)warn)|not responding|init: cannot execute)"
         },
-        "module-identifier" : "log_procname",
+        "module-field" : "log_procname",
         "value" : {
             "log_hostname" : {
                 "kind" : "string",

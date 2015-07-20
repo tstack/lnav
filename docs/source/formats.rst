@@ -53,6 +53,10 @@ fields:
       The `PCRE <http://www.pcre.org>`_ library is used by **lnav** to do all
       regular expression matching.
 
+    :module-format: If true, this regex will only be used to parse message
+      bodies for formats that can act as containers, such as syslog.  Default:
+      false.
+
   :json: True if each log line is JSON-encoded.
 
   :line-format: An array that specifies the text format for JSON-encoded
@@ -86,12 +90,26 @@ fields:
   :body-field: The name of the field that contains the main body of the
     message.  Defaults to "body".
 
+  :module-field: The name of the field that contains the module identifier
+    that distinguishes messages from one log source from another.  This field
+    should be used if this message format can act as a container for other
+    types of log messages.  For example, an Apache access log can be sent to
+    syslog instead of written to a file.  In this case, **lnav** will parse
+    the syslog message and then separately parse the body of the message to
+    determine the "sub" format.  This module identifier is used to help
+    **lnav** quickly identify the format to use when parsing message bodies.
+
   :level: A mapping of error levels to regular expressions.  During scanning
     the contents of the capture group specified by *level-field* will be
     checked against each of these regexes.  Once a match is found, the log
     message level will set to the corresponding level.  The available levels,
     in order of severity, are: **fatal**, **critical**, **error**,
     **warning**, **stats**, **info**, **debug**, **debug2-5**, **trace**.
+
+  :multiline: If false, **lnav** will consider any log lines that do not
+    match one of the message patterns to be in error when checking files with
+    the '-C' option.  This flag will not affect normal viewing operation.
+    Default: true.
 
   :value: This object contains the definitions for the values captured by the
     regexes.
