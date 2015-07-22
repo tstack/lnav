@@ -115,6 +115,7 @@
 #include "log_data_helper.hh"
 #include "readline_highlighters.hh"
 #include "environ_vtab.hh"
+#include "views_vtab.hh"
 #include "pretty_printer.hh"
 #include "all_logs_vtab.hh"
 
@@ -730,6 +731,7 @@ static void open_schema_view(void)
 
     schema += "\n\n-- Virtual Table Definitions --\n\n";
     schema += ENVIRON_CREATE_STMT;
+    schema += LNAV_VIEWS_CREATE_STMT;
     for (log_vtab_manager::iterator vtab_iter =
             lnav_data.ld_vtab_manager->begin();
          vtab_iter != lnav_data.ld_vtab_manager->end();
@@ -826,7 +828,9 @@ void redo_search(lnav_view_t view_index)
         gp->queue_request(grep_line_t(0));
         gp->start();
     }
-    lnav_data.ld_scroll_broadcaster.invoke(tc);
+    if (tc == lnav_data.ld_view_stack.top()) {
+        lnav_data.ld_scroll_broadcaster.invoke(tc);
+    }
 }
 
 /**
@@ -2394,6 +2398,7 @@ int main(int argc, char *argv[])
     }
 
     register_environ_vtab(lnav_data.ld_db.in());
+    register_views_vtab(lnav_data.ld_db.in());
 
     lnav_data.ld_vtab_manager =
         new log_vtab_manager(lnav_data.ld_db,

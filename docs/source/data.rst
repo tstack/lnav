@@ -1,4 +1,6 @@
 
+.. _data-ext:
+
 Extracting Data
 ===============
 

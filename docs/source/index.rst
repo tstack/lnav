@@ -22,6 +22,8 @@ Contents:
    hotkeys
    commands
    sqlext
+   sqltab
+
 
 Indices and tables
 ==================

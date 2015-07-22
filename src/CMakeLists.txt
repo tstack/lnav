@@ -50,6 +50,7 @@ set(diag_STAT_SRCS
     strnatcmp.c
     textview_curses.cc
     view_curses.cc
+    views_vtab.cc
     vt52_curses.cc
     log_vtab_impl.cc
     xterm_mouse.cc
@@ -108,6 +109,7 @@ set(diag_STAT_SRCS
     textfile_sub_source.hh
     time_T.hh
     top_status_source.hh
+    views_vtab.hh
 
     yajl/api/yajl_common.h
     yajl/api/yajl_gen.h

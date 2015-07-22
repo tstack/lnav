@@ -167,6 +167,7 @@ noinst_HEADERS = \
 	timer.hh \
 	top_status_source.hh \
 	view_curses.hh \
+	views_vtab.hh \
 	vt52_curses.hh \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
@@ -245,6 +246,7 @@ libdiag_a_SOURCES = \
 	textview_curses.cc \
 	time_fmts.cc \
 	view_curses.cc \
+	views_vtab.cc \
 	vt52_curses.cc \
 	log_vtab_impl.cc \
 	xterm_mouse.cc \

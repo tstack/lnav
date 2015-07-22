@@ -16,6 +16,8 @@ lnav v0.8.0:
        make sure the format(s) match all of the lines.
      * Added an "all_logs" SQLite table that contains the message format
        extracted from each log line.
+     * Added an "lnav_views" SQLite table that can be used to query and
+       change the lnav view state.
 
      Fixes:
      * Nested fields in JSON logs are now supported for levels, bodies, etc...

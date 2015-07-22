@@ -112,7 +112,7 @@ public:
             listview_value_for_row(*lc, lc->get_top(), al);
             string_attrs_t &sa = al.get_attrs();
             line_attr = find_string_attr(sa, &logline::L_FILE);
-            if (line_attr != sa.end()) {
+            if (line_attr != sa.cend()) {
                 logfile *lf = (logfile *)line_attr->sa_value.sav_ptr;
 
                 if (lf->get_format()) {

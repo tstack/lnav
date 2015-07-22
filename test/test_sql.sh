@@ -240,8 +240,51 @@ check_output "delete environ table does not work" <<EOF
 EOF
 
 
+run_test ${lnav_test} -n \
+    -c ';DELETE FROM lnav_views' \
+    -c ';SELECT count(*) FROM lnav_views' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "delete from lnav_views table works?" <<EOF
+count(*)
+9
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_views (name) VALUES ('foo')" \
+    -c ';SELECT count(*) FROM lnav_views' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "insert into lnav_views table works?" <<EOF
+count(*)
+9
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET top = 1 WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "updating lnav_views.top does not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET top = inner_height - 1 WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "updating lnav_views.top using inner_height does not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n8
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n9
 }
 
 run_test schema_dump
@@ -249,6 +292,7 @@ run_test schema_dump
 check_output "schema view is not working" <<EOF
 ATTACH DATABASE '' AS 'main';
 CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
+CREATE VIRTUAL TABLE lnav_views USING views_vtab_impl();
 CREATE TABLE http_status_codes (
     status integer PRIMARY KEY,
     message text,
