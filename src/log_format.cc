@@ -1152,13 +1152,13 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
     if (full_message) {
         sbr.share(this->jlf_share_manager,
-                &this->jlf_cached_line[0],
-                this->jlf_cached_line.size());
+                  &this->jlf_cached_line[0],
+                  this->jlf_cached_line.size());
     }
     else {
         sbr.share(this->jlf_share_manager,
-                &this->jlf_cached_line[0] + this_off,
-                next_off - this_off);
+                  &this->jlf_cached_line[0] + this_off,
+                  next_off - this_off);
     }
 }
 

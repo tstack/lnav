@@ -88,8 +88,8 @@ public:
             struct line_range body;
             string_attrs_t    sa;
 
-            this->ldh_file->read_full_message(ll, this->ldh_msg);
             this->ldh_line_values.clear();
+            this->ldh_file->read_full_message(ll, this->ldh_msg);
             format->annotate(this->ldh_msg, sa, this->ldh_line_values);
 
             body = find_string_attr_range(sa, &textview_curses::SA_BODY);
