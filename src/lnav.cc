@@ -782,6 +782,7 @@ static void open_pretty_view(void)
     else {
         log_warning("no log data to pretty-print");
     }
+    redo_search(LNV_PRETTY);
 }
 
 bool toggle_view(textview_curses *toggle_tc)
