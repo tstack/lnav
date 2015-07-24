@@ -124,7 +124,6 @@ public:
             this->pp_values.push_back(el);
         }
         this->flush_values();
-        this->pp_stream << std::ends;
 
         return this->pp_stream.str();
     };

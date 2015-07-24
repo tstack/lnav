@@ -397,9 +397,6 @@ check_output "pretty-printer is not working" <<EOF
         <value id="name" actions="enabled">nic1</value>
     </value>
 </response>
-
-
-
 EOF
 
 
