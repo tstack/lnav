@@ -74,6 +74,10 @@ AC_CHECK_SIZEOF(size_t)
 
 AC_STRUCT_TIMEZONE
 
+AC_ARG_ENABLE([static],
+              AS_HELP_STRING([--disable-static],
+                             [Disable static linking]))
+
 AC_SEARCH_LIBS(openpty, util)
 AC_SEARCH_LIBS(gzseek, z, [], [AC_MSG_ERROR([libz required to build])])
 AC_SEARCH_LIBS(BZ2_bzopen, bz2,
@@ -144,11 +148,8 @@ AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
 
 static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"
 static_lib_list="$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"
-static_lib_list="$static_lib_list libgpm.a"
+static_lib_list="$static_lib_list libgpm.a libcurl.a libcrypto.a libssl.a libssh2.a"
 
-AC_ARG_ENABLE([static],
-              AS_HELP_STRING([--disable-static],
-                             [Disable static linking]))
 if test x"${enable_static}" != x"no"; then
     case "$host_os" in
     darwin*)
