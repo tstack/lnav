@@ -127,7 +127,11 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
               LIBCURL_CPPFLAGS=`$_libcurl_config --cflags`
            fi
            if test x"$LIBCURL" = "x" ; then
-              LIBCURL=`$_libcurl_config --libs`
+              if $2; then
+                 LIBCURL=`$_libcurl_config --static-libs`
+              else
+                 LIBCURL=`$_libcurl_config --libs`
+              fi
 
               # This is so silly, but Apple actually has a bug in their
               # curl-config script.  Fixed in Tiger, but there are still
