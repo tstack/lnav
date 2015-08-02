@@ -47,6 +47,7 @@
 #include "lnav_commands.hh"
 #include "session_data.hh"
 #include "command_executor.hh"
+#include "url_loader.hh"
 
 using namespace std;
 
@@ -1187,7 +1188,20 @@ static string com_open(string cmdline, vector<string> &args)
             auto_mem<char> abspath;
             struct stat    st;
 
-            if (is_glob(fn.c_str())) {
+            if (is_url(fn.c_str())) {
+#ifndef HAVE_LIBCURL
+                retval = "error: lnav was not compiled with libcurl";
+#else
+                auto_ptr<url_loader> ul(new url_loader(fn));
+
+                lnav_data.ld_file_names.insert(make_pair(fn, ul->copy_fd().release()));
+                lnav_data.ld_curl_looper.add_request(ul.release());
+                lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
+
+                retval = "info: opened URL";
+#endif
+            }
+            else if (is_glob(fn.c_str())) {
                 lnav_data.ld_file_names.insert(make_pair(fn, -1));
                 retval = "info: watching -- " + fn;
             }
@@ -1273,6 +1287,9 @@ static string com_close(string cmdline, vector<string> &args)
             }
         }
         if (!fn.empty()) {
+            if (is_url(fn.c_str())) {
+                lnav_data.ld_curl_looper.close_request(fn);
+            }
             lnav_data.ld_file_names.erase(make_pair(fn, -1));
             lnav_data.ld_closed_files.insert(fn);
             retval = "info: closed -- " + fn;
@@ -1714,6 +1731,18 @@ static string com_shexec(string cmdline, vector<string> &args)
     return "";
 }
 
+static string com_poll_now(string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+
+    }
+    else {
+        lnav_data.ld_curl_looper.process_all();
+    }
+
+    return "";
+}
+
 static string com_redraw(string cmdline, vector<string> &args)
 {
     if (args.empty()) {
@@ -1776,5 +1805,6 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     if (getenv("lnav_test") != NULL) {
         cmd_map["rebuild"] = com_rebuild;
         cmd_map["shexec"] = com_shexec;
+        cmd_map["poll-now"] = com_poll_now;
     }
 }

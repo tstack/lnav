@@ -131,6 +131,7 @@
 #include "hotkeys.hh"
 #include "readline_possibilities.hh"
 #include "field_overlay_source.hh"
+#include "url_loader.hh"
 
 using namespace std;
 
@@ -1236,7 +1237,10 @@ static void expand_filename(string path, bool required)
 {
     static_root_mem<glob_t, globfree> gl;
 
-    if (glob(path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+    if (is_url(path.c_str())) {
+        return;
+    }
+    else if (glob(path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
         int lpc;
 
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
@@ -2272,6 +2276,7 @@ int main(int argc, char *argv[])
 
         case 'd':
             lnav_data.ld_debug_log_name = optarg;
+            lnav_log_level = LOG_LEVEL_TRACE;
             break;
 
         case 'a':
@@ -2561,6 +2566,14 @@ int main(int argc, char *argv[])
         if (startswith(argv[lpc], "pt:")) {
             lnav_data.ld_pt_search = argv[lpc];
         }
+#ifdef HAVE_LIBCURL
+        else if (is_url(argv[lpc])) {
+            auto_ptr<url_loader> ul(new url_loader(argv[lpc]));
+
+            lnav_data.ld_file_names.insert(make_pair(argv[lpc], ul->copy_fd().release()));
+            lnav_data.ld_curl_looper.add_request(ul.release());
+        }
+#endif
         else if (is_glob(argv[lpc])) {
             lnav_data.ld_file_names.insert(make_pair(argv[lpc], -1));
         }
@@ -2740,6 +2753,7 @@ int main(int argc, char *argv[])
                 log_info("Executing initial commands");
                 execute_init_commands(msgs);
                 wait_for_pipers();
+                lnav_data.ld_curl_looper.process_all();
                 rebuild_indexes(false);
 
                 for (msg_iter = msgs.begin();
@@ -2799,6 +2813,8 @@ int main(int argc, char *argv[])
                 }
             }
             else {
+                lnav_data.ld_curl_looper.start();
+
                 init_session();
 
                 log_info("  session_id=%s", lnav_data.ld_session_id.c_str());

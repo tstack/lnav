@@ -59,6 +59,7 @@
 #include "piper_proc.hh"
 #include "term_extra.hh"
 #include "ansi_scrubber.hh"
+#include "curl_looper.hh"
 #include "papertrail_proc.hh"
 
 /** The command modes that are available while viewing a file. */
@@ -241,6 +242,8 @@ struct _lnav_data {
     term_extra ld_term_extra;
 
     input_state_tracker ld_input_state;
+
+    curl_looper ld_curl_looper;
 };
 
 extern struct _lnav_data lnav_data;

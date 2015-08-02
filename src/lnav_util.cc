@@ -41,8 +41,19 @@
 
 #include "auto_fd.hh"
 #include "lnav_util.hh"
+#include "pcrepp.hh"
 
 using namespace std;
+
+bool is_url(const char *fn)
+{
+    static pcrepp url_re("^(file|https?|ftps?||scp|sftp):");
+
+    pcre_context_static<30> pc;
+    pcre_input pi(fn);
+
+    return url_re.match(pc, pi);
+}
 
 std::string hash_string(const std::string &str)
 {

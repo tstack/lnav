@@ -42,6 +42,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <libgen.h>
+#include <pthread.h>
 
 #ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
@@ -68,6 +69,7 @@
 #endif
 
 #include "lnav_log.hh"
+#include "pthreadpp.hh"
 
 static const size_t BUFFER_SIZE = 256 * 1024;
 static const size_t MAX_LOG_LINE_SIZE = 2048;
@@ -83,9 +85,10 @@ static const char *CRASH_MSG =
     "=========================\n";
 
 FILE *lnav_log_file;
-lnav_log_level_t lnav_log_level;
+lnav_log_level_t lnav_log_level = LOG_LEVEL_DEBUG;
 const char *lnav_log_crash_dir;
 const struct termios *lnav_log_orig_termios;
+static pthread_mutex_t lnav_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 log_state_dumper::log_state_list log_state_dumper::DUMPER_LIST;
 
@@ -101,6 +104,7 @@ static struct {
 };
 
 static const char *LEVEL_NAMES[] = {
+    "T",
     "D",
     "I",
     "W",
@@ -196,6 +200,8 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         return;
     }
 
+    mutex_guard mg(lnav_log_mutex);
+
     va_start(args, fmt);
     gettimeofday(&curr_time, NULL);
     localtime_r(&curr_time.tv_sec, &localtm);
@@ -233,6 +239,8 @@ void log_msg_extra(const char *fmt, ...)
     ssize_t rc;
     char *line;
 
+    mutex_guard mg(lnav_log_mutex);
+
     va_start(args, fmt);
     line = log_alloc();
     rc = vsnprintf(line, MAX_LOG_LINE_SIZE - 1, fmt, args);
@@ -247,6 +255,8 @@ void log_msg_extra(const char *fmt, ...)
 void log_msg_extra_complete()
 {
     char *line;
+
+    mutex_guard mg(lnav_log_mutex);
 
     line = log_alloc();
     line[0] = '\n';

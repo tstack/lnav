@@ -102,6 +102,7 @@ noinst_HEADERS = \
 	column_namer.hh \
 	command_executor.hh \
 	concise_index.hh \
+	curl_looper.hh \
 	data_scanner.hh \
 	data_scanner_re.re \
 	data_parser.hh \
@@ -143,6 +144,7 @@ noinst_HEADERS = \
 	piper_proc.hh \
 	plain_text_source.hh \
 	pretty_printer.hh \
+	pthreadpp.hh \
 	ptimec.hh \
 	readline_callbacks.hh \
 	readline_curses.hh \
@@ -166,6 +168,7 @@ noinst_HEADERS = \
 	time_T.hh \
 	timer.hh \
 	top_status_source.hh \
+	url_loader.hh \
 	view_curses.hh \
 	views_vtab.hh \
 	vt52_curses.hh \
@@ -196,6 +199,7 @@ libdiag_a_SOURCES = \
 	bookmarks.cc \
 	collation-functions.cc \
 	command_executor.cc \
+	curl_looper.cc \
 	db_sub_source.cc \
 	environ_vtab.cc \
 	extension-functions.c \

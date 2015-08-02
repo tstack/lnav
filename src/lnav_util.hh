@@ -36,6 +36,7 @@
 
 #include <math.h>
 #include <time.h>
+#include <sys/time.h>
 #include <poll.h>
 #include <sys/types.h>
 
@@ -107,6 +108,16 @@ inline time_t hour_num(time_t ti)
 
 std::string time_ago(time_t last_time);
 
+typedef int64_t mstime_t;
+
+inline mstime_t getmstime() {
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+
+    return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
+}
+
 #if SIZEOF_OFF_T == 8
 #define FORMAT_OFF_T    "%qd"
 #elif SIZEOF_OFF_T == 4
@@ -172,6 +183,8 @@ inline bool is_glob(const char *fn)
             strchr(fn, '?') != NULL ||
             strchr(fn, '[') != NULL);
 };
+
+bool is_url(const char *fn);
 
 inline bool startswith(const char *str, const char *prefix)
 {

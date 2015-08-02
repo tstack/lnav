@@ -46,6 +46,7 @@
 #endif
 
 enum lnav_log_level_t {
+    LOG_LEVEL_TRACE,
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_INFO,
     LOG_LEVEL_WARNING,
@@ -112,6 +113,9 @@ extern enum lnav_log_level_t lnav_log_level;
 
 #define log_debug(fmt...) \
     log_msg_wrapper(LOG_LEVEL_DEBUG, fmt);
+
+#define log_trace(fmt...) \
+    log_msg_wrapper(LOG_LEVEL_TRACE, fmt);
 
 #define require(e)  \
     ((void) ((e) ? 0 : __require (#e, __FILE__, __LINE__)))

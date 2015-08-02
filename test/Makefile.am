@@ -158,6 +158,7 @@ drive_sql_LDADD = \
 	$(PCRE_LIBS) \
 	$(CURSES_LIB) \
 	$(READLINE_LIBS) \
+	$(LIBCURL) \
 	-lpcrecpp
 
 slicer_SOURCES = slicer.cc
@@ -169,6 +170,7 @@ scripty_LDADD = ../src/libdiag.a
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
 	test_cmds.sh \
+	test_curl.sh \
 	test_data_parser.sh \
 	test_format_loader.sh \
 	test_grep_proc.sh \
@@ -295,6 +297,11 @@ TESTS = \
 	test_data_parser.sh \
 	test_yajlpp \
 	test_pretty_print.sh
+
+if HAVE_LIBCURL
+TESTS += \
+    test_curl.sh
+endif
 
 DISTCLEANFILES = \
 	*.dat \

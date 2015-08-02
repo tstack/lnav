@@ -4,6 +4,7 @@ set(diag_STAT_SRCS
     bookmarks.cc
     collation-functions.cc
     command_executor.cc
+    curl_looper.cc
     db_sub_source.cc
     environ_vtab.cc
     extension-functions.c
@@ -81,6 +82,7 @@ set(diag_STAT_SRCS
     command_executor.hh
     concise_index.hh
     column_namer.hh
+    curl_looper.hh
     field_overlay_source.hh
     filter_observer.hh
     format-text-files.hh
@@ -98,6 +100,7 @@ set(diag_STAT_SRCS
     plain_text_source.hh
     pretty_printer.hh
     ptimec.hh
+    pthreadpp.hh
     readline_callbacks.hh
     readline_possibilities.hh
     sequence_sink.hh
@@ -109,6 +112,7 @@ set(diag_STAT_SRCS
     textfile_sub_source.hh
     time_T.hh
     top_status_source.hh
+    url_loader.hh
     views_vtab.hh
 
     yajl/api/yajl_common.h

@@ -33,8 +33,14 @@ test_num=0
 lnav_test="${top_builddir}/src/lnav-test"
 export lnav_test
 
+lnav="${top_builddir}/src/lnav"
+export lnav
+
 LNAV_LOG_PATH="${top_builddir}/test/test.log"
 export LNAV_LOG_PATH
+
+SFTP_TEST_URL="@SFTP_TEST_URL@"
+export SFTP_TEST_URL
 
 ## BEGIN Functions
 

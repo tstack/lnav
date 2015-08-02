@@ -4,6 +4,7 @@ lnav v0.8.0:
      * Integration with "papertrailapp.com" for querying and tailing
        server log and syslog messages.  See the Papertrail section in
        the online help for more details.
+     * Remote files can be opened when linked with libcurl.
      * Log formats that are "containers" for other log formats, like
        syslog, are now supported.  See the online help for more
        information.
