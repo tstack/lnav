@@ -31,6 +31,8 @@
 
 #include "config.h"
 
+#include <algorithm>
+
 #ifdef HAVE_LIBCURL
 #include <curl/multi.h>
 
