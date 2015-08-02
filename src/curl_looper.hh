@@ -212,7 +212,8 @@ private:
 
         if (!this->cl_poll_queue.empty()) {
             retval = std::max(
-                    1LL, this->cl_poll_queue.front().first - current_time);
+                    (mstime_t) 1,
+                    this->cl_poll_queue.front().first - current_time);
         }
 
         ensure(retval > 0);
