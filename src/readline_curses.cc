@@ -145,6 +145,22 @@ static int sendstring(int sock, const char *buf, size_t len)
     return 0;
 }
 
+static int sendcmd(int sock, char cmd, const char *buf, size_t len)
+{
+    size_t total_len = len + 2;
+    char prefix[2] = { cmd, ':' };
+
+    if (sendall(sock, (char *)&total_len, sizeof(total_len)) == -1) {
+        return -1;
+    }
+    else if (sendall(sock, prefix, sizeof(prefix)) == -1 ||
+             sendall(sock, buf, len) == -1) {
+        return -1;
+    }
+
+    return 0;
+}
+
 static int recvall(int sock, char *buf, size_t len)
 {
     off_t offset = 0;
@@ -461,6 +477,15 @@ void readline_curses::start(void)
                     this->line_ready("");
                     rl_callback_handler_remove();
                 }
+                else {
+                    if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                                'l',
+                                rl_line_buffer,
+                                rl_end) != 0) {
+                        perror("line: write failed");
+                        _exit(1);
+                    }
+                }
             }
             if (FD_ISSET(this->rc_command_pipe[RCF_SLAVE], &ready_rfds)) {
                 char msg[1024 + 1];
@@ -482,6 +507,13 @@ void readline_curses::start(void)
                         rl_callback_handler_install(&msg[prompt_start],
                                                     line_ready_tramp);
                         last_match_str_valid = false;
+                        if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                                    'l',
+                                    rl_line_buffer,
+                                    rl_end) != 0) {
+                            perror("line: write failed");
+                            _exit(1);
+                        }
                     }
                     else if (strcmp(msg, "a") == 0) {
                         char reply[4];
@@ -533,13 +565,11 @@ void readline_curses::start(void)
         }
 
         if (got_timeout) {
-            char msg[1024];
-
             got_timeout = 0;
-            snprintf(msg, sizeof(msg), "t:%s", rl_line_buffer);
-            if (sendstring(this->rc_command_pipe[RCF_SLAVE],
-                           msg,
-                           strlen(msg)) == -1) {
+            if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                        't',
+                        rl_line_buffer,
+                        rl_end) == -1) {
                 _exit(1);
             }
         }
@@ -714,6 +744,11 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_display_match.invoke(this);
                     this->rc_blur.invoke(this);
                     curs_set(0);
+                    break;
+
+                case 'l':
+                    this->rc_line_buffer = &msg[2];
+                    this->rc_change.invoke(this);
                     break;
 
                 case 'n':

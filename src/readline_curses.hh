@@ -62,8 +62,21 @@ typedef void (*readline_highlighter_t)(attr_line_t &line, int x);
  */
 class readline_context {
 public:
-    typedef std::string (*command_t)(std::string cmdline,
-                                     std::vector<std::string> &args);
+    typedef std::string (*command_func_t)(
+            std::string cmdline, std::vector<std::string> &args);
+    typedef struct {
+        const char *c_name;
+        const char *c_args;
+        const char *c_description;
+        command_func_t c_func;
+
+        void operator=(command_func_t func) {
+            this->c_name = "anon";
+            this->c_args = NULL;
+            this->c_description = NULL;
+            this->c_func = func;
+        }
+    } command_t;
     typedef std::map<std::string, command_t> command_map_t;
 
     readline_context(const std::string &name,
@@ -83,7 +96,7 @@ public:
                 std::string cmd = iter->first;
 
                 this->rc_possibilities["__command"].insert(cmd);
-                iter->second(cmd, this->rc_prototypes[cmd]);
+                iter->second.c_func(cmd, this->rc_prototypes[cmd]);
             }
         }
 
@@ -223,6 +236,7 @@ public:
         this->rc_contexts[id] = &rc;
     };
 
+    void set_change_action(action va) { this->rc_change = va; };
     void set_perform_action(action va) { this->rc_perform = va; };
     void set_timeout_action(action va) { this->rc_timeout = va; };
     void set_abort_action(action va) { this->rc_abort = va; };
@@ -236,6 +250,10 @@ public:
         this->rc_value_expiration = time(NULL) + VALUE_EXPIRATION;
     };
     std::string get_value() const { return this->rc_value; };
+
+    std::string get_line_buffer() const {
+        return this->rc_line_buffer;
+    };
 
     void set_alt_value(const std::string &value)
     {
@@ -262,6 +280,14 @@ public:
     void check_poll_set(const std::vector<struct pollfd> &pollfds);
 
     void focus(int context, const char *prompt);
+
+    readline_context *get_active_context() const {
+        require(this->rc_active_context != -1);
+
+        std::map<int, readline_context *>::const_iterator iter;
+        iter = this->rc_contexts.find(this->rc_active_context);
+        return iter->second;
+    };
 
     void abort();
 
@@ -327,12 +353,14 @@ private:
     auto_fd rc_command_pipe[2];
     std::map<int, readline_context *> rc_contexts;
     std::string rc_value;
+    std::string rc_line_buffer;
     time_t      rc_value_expiration;
     std::string rc_alt_value;
     int rc_matches_remaining;
     int rc_max_match_length;
     std::vector<std::string> rc_matches;
 
+    action rc_change;
     action rc_perform;
     action rc_timeout;
     action rc_abort;

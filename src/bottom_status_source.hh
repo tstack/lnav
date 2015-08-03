@@ -60,8 +60,8 @@ public:
         : line_number_wire(*this, &bottom_status_source::update_line_number),
           percent_wire(*this, &bottom_status_source::update_percent),
           marks_wire(*this, &bottom_status_source::update_marks),
-          bss_prompt(80, view_colors::VCR_STATUS),
-          bss_error(80, view_colors::VCR_ALERT_STATUS),
+          bss_prompt(1024, view_colors::VCR_STATUS),
+          bss_error(1024, view_colors::VCR_ALERT_STATUS),
           bss_hit_spinner(0),
           bss_load_percent(0),
           bss_last_filtered_count(0),
@@ -78,6 +78,10 @@ public:
         this->bss_fields[BSF_HELP].set_width(14);
         this->bss_fields[BSF_HELP].set_value("?:View Help");
         this->bss_fields[BSF_HELP].right_justify(true);
+        this->bss_prompt.set_min_width(35);
+        this->bss_prompt.set_share(1);
+        this->bss_error.set_min_width(35);
+        this->bss_error.set_share(1);
     };
 
     virtual ~bottom_status_source() { };

@@ -48,6 +48,7 @@
 #include "session_data.hh"
 #include "command_executor.hh"
 #include "url_loader.hh"
+#include "readline_curses.hh"
 
 using namespace std;
 
@@ -1761,45 +1762,244 @@ static string com_redraw(string cmdline, vector<string> &args)
     return "";
 }
 
+readline_context::command_t STD_COMMANDS[] = {
+    {
+        "adjust-log-time",
+        "<date>",
+        "Change the timestamps of the top file to be relative to the given date",
+        com_adjust_log_time
+    },
+
+    {
+        "unix-time",
+        "<seconds>",
+        "Convert epoch time to a human-readable form",
+        com_unix_time,
+    },
+    {
+        "current-time",
+        NULL,
+        "Print the current time in human-readable form and seconds since the epoch",
+        com_current_time,
+    },
+    {
+        "goto",
+        "<line#|N%|date>",
+        "Go to the given line number, N percent into the file, or the given timestamp in the log view",
+        com_goto,
+    },
+    {
+        "relative-goto",
+        "<line#|N%>",
+        "Move the current view up or down by the given amount",
+        com_relative_goto,
+    },
+    {
+        "next-mark",
+        "error|warning|search|user|file|partition",
+        "Move to the next bookmark of the given type in the current view",
+        com_goto_mark,
+    },
+    {
+        "prev-mark",
+        "error|warning|search|user|file|partition",
+        "Move to the previous bookmark of the given type in the current view",
+        com_goto_mark,
+    },
+    {
+        "graph",
+        "<regex>",
+        "Graph the number values captured by the given regex that are found in the log view",
+        com_graph,
+    },
+    {
+        "help",
+        NULL,
+        "Open the help text view",
+        com_help,
+    },
+    {
+        "highlight",
+        "<regex>",
+        "Add coloring to log messages fragments that match the given regular expression",
+        com_highlight,
+    },
+    {
+        "clear-highlight",
+        "<regex>",
+        "Remove a previously set highlight regular expression",
+        com_clear_highlight,
+    },
+    {
+        "filter-in",
+        "<regex>",
+        "Only show lines that match the given regular expression in the current view",
+        com_filter,
+    },
+    {
+        "filter-out",
+        "<regex>",
+        "Remove lines that match the given regular expression in the current view",
+        com_filter,
+    },
+    {
+        "append-to",
+        "<filename>",
+        "Append marked lines in the current view to the given file",
+        com_save_to,
+    },
+    {
+        "write-to",
+        "<filename>",
+        "Overwrite the given file with any marked lines in the current view",
+        com_save_to,
+    },
+    {
+        "write-csv-to",
+        "<filename>",
+        "Write SQL results to the given file in CSV format",
+        com_save_to,
+    },
+    {
+        "write-json-to",
+        "<filename>",
+        "Write SQL results to the given file in JSON format",
+        com_save_to,
+    },
+    {
+        "pipe-to",
+        "<shell-cmd>",
+        "Pipe the marked lines to the given shell command",
+        com_pipe_to,
+    },
+    {
+        "pipe-line-to",
+        "<shell-cmd>",
+        "Pipe the top line to the given shell command",
+        com_pipe_to,
+    },
+    {
+        "enable-filter",
+        "<regex>",
+        "Enable a previously created and disabled filter",
+        com_enable_filter,
+    },
+    {
+        "disable-filter",
+        "<regex>",
+        "Disable a filter created with filter-in/filter-out",
+        com_disable_filter,
+    },
+    {
+        "enable-word-wrap",
+        NULL,
+        "Enable word-wrapping for the current view",
+        com_enable_word_wrap,
+    },
+    {
+        "disable-word-wrap",
+        NULL,
+        "Disable word-wrapping for the current view",
+        com_disable_word_wrap,
+    },
+    {
+        "create-logline-table",
+        "<table-name>",
+        "Create an SQL table using the top line of the log view as a template",
+        com_create_logline_table,
+    },
+    {
+        "delete-logline-table",
+        "<table-name>",
+        "Delete a table created with create-logline-table",
+        com_delete_logline_table,
+    },
+    {
+        "open",
+        "<filename>",
+#ifdef HAVE_LIBCURL
+        "Open the given file(s) or URLs in lnav",
+#else
+        "Open the given file(s) in lnav"
+#endif
+        com_open,
+    },
+    {
+        "close",
+        NULL,
+        "Close the top file",
+        com_close,
+    },
+    {
+        "partition-name",
+        "<name>",
+        "Mark the top line in the log view as the start of a new partition with the given name",
+        com_partition_name,
+    },
+    {
+        "clear-partition",
+        NULL,
+        "Clear the partition the top line is a part of",
+        com_clear_partition,
+    },
+    {
+        "session",
+        "<lnav-command>",
+        "Add the given command to the session file (~/.lnav/session)",
+        com_session,
+    },
+    {
+        "summarize",
+        "<column-name>",
+        "Execute a SQL query that computes the characteristics of the values in the given column",
+        com_summarize,
+    },
+    {
+        "switch-to-view",
+        "<view-name>",
+        "Switch to the given view",
+        com_switch_to_view,
+    },
+    {
+        "load-session",
+        NULL,
+        "Load the latest session state",
+        com_load_session,
+    },
+    {
+        "save-session",
+        NULL,
+        "Save the current state as a session",
+        com_save_session,
+    },
+    {
+        "set-min-log-level",
+        "<log-level>",
+        "Set the minimum log level to display in the log view",
+        com_set_min_log_level,
+    },
+    {
+        "redraw",
+        NULL,
+        "Do a full redraw of the screen",
+        com_redraw,
+    },
+    {
+        "zoom-to",
+        "<zoom-level>",
+        "Zoom the histogram view to the given level",
+        com_zoom_to,
+    },
+    { NULL },
+};
+
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
-    cmd_map["adjust-log-time"]      = com_adjust_log_time;
-    cmd_map["unix-time"]            = com_unix_time;
-    cmd_map["current-time"]         = com_current_time;
-    cmd_map["goto"]                 = com_goto;
-    cmd_map["relative-goto"]        = com_relative_goto;
-    cmd_map["next-mark"]            = com_goto_mark;
-    cmd_map["prev-mark"]            = com_goto_mark;
-    cmd_map["graph"]                = com_graph;
-    cmd_map["help"]                 = com_help;
-    cmd_map["highlight"]            = com_highlight;
-    cmd_map["clear-highlight"]      = com_clear_highlight;
-    cmd_map["filter-in"]            = com_filter;
-    cmd_map["filter-out"]           = com_filter;
-    cmd_map["append-to"]            = com_save_to;
-    cmd_map["write-to"]             = com_save_to;
-    cmd_map["write-csv-to"]         = com_save_to;
-    cmd_map["write-json-to"]        = com_save_to;
-    cmd_map["pipe-to"]              = com_pipe_to;
-    cmd_map["pipe-line-to"]         = com_pipe_to;
-    cmd_map["enable-filter"]        = com_enable_filter;
-    cmd_map["disable-filter"]       = com_disable_filter;
-    cmd_map["enable-word-wrap"]     = com_enable_word_wrap;
-    cmd_map["disable-word-wrap"]    = com_disable_word_wrap;
-    cmd_map["create-logline-table"] = com_create_logline_table;
-    cmd_map["delete-logline-table"] = com_delete_logline_table;
-    cmd_map["open"]                 = com_open;
-    cmd_map["close"]                = com_close;
-    cmd_map["partition-name"]       = com_partition_name;
-    cmd_map["clear-partition"]      = com_clear_partition;
-    cmd_map["session"]              = com_session;
-    cmd_map["summarize"]            = com_summarize;
-    cmd_map["switch-to-view"]       = com_switch_to_view;
-    cmd_map["load-session"]         = com_load_session;
-    cmd_map["save-session"]         = com_save_session;
-    cmd_map["set-min-log-level"]    = com_set_min_log_level;
-    cmd_map["redraw"]               = com_redraw;
-    cmd_map["zoom-to"]              = com_zoom_to;
+    for (int lpc = 0; STD_COMMANDS[lpc].c_name != NULL; lpc++) {
+        readline_context::command_t &cmd = STD_COMMANDS[lpc];
+
+        cmd_map[cmd.c_name] = cmd;
+    }
 
     if (getenv("LNAV_SRC") != NULL) {
         cmd_map["add-test"] = com_add_test;

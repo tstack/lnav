@@ -97,7 +97,7 @@ public:
             }
         }
 
-        this->sf_value = value;
+        this->sf_value.with_string(value);
 
         if (this->sf_cylon) {
             struct line_range lr(this->sf_cylon_pos, this->sf_width);

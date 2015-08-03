@@ -61,7 +61,7 @@ string execute_command(string cmdline)
             msg = "error: unknown command - " + args[0];
         }
         else {
-            msg = iter->second(cmdline, args);
+            msg = iter->second.c_func(cmdline, args);
         }
     }
 

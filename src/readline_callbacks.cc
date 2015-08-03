@@ -33,8 +33,51 @@
 #include "sysclip.hh"
 #include "plain_text_source.hh"
 #include "command_executor.hh"
+#include "readline_curses.hh"
 
 using namespace std;
+
+#define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
+
+void rl_change(void *dummy, readline_curses *rc)
+{
+    switch (lnav_data.ld_mode) {
+        case LNM_COMMAND: {
+            string line = rc->get_line_buffer();
+            size_t name_end = line.find(' ');
+            string cmd_name = line.substr(0, name_end);
+            readline_context::command_map_t::iterator iter;
+
+            iter = lnav_commands.find(cmd_name);
+            if (iter == lnav_commands.end() ||
+                iter->second.c_description == NULL) {
+                lnav_data.ld_bottom_source.set_prompt(
+                        "Enter an lnav command: " ABORT_MSG);
+            }
+            else {
+                readline_context::command_t &cmd = iter->second;
+                char args_text[128] = {0};
+                char help_text[1024];
+
+                if (cmd.c_args != NULL && strlen(cmd.c_args) > 0) {
+                    snprintf(args_text, sizeof(args_text),
+                             " %s",
+                             cmd.c_args);
+                }
+                snprintf(help_text, sizeof(help_text),
+                         ANSI_BOLD("%s%s") " -- %s    " ABORT_MSG,
+                         cmd.c_name,
+                         args_text,
+                         cmd.c_description);
+
+                lnav_data.ld_bottom_source.set_prompt(help_text);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
 
 static void rl_search_internal(void *dummy, readline_curses *rc, bool complete = false)
 {

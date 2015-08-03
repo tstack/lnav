@@ -767,8 +767,6 @@ void handle_paging_key(int ch)
             add_mark_possibilities();
             lnav_data.ld_mode = LNM_COMMAND;
             lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
-            lnav_data.ld_bottom_source.set_prompt("Enter an lnav command: "
-                                                          "(Press " ANSI_BOLD("CTRL+]") " to abort)");
             break;
 
         case '/':

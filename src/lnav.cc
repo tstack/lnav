@@ -1706,6 +1706,7 @@ static void looper(void)
 
         rlc.set_window(lnav_data.ld_window);
         rlc.set_y(-1);
+        rlc.set_change_action(readline_curses::action(rl_change));
         rlc.set_perform_action(readline_curses::action(rl_callback));
         rlc.set_timeout_action(readline_curses::action(rl_search));
         rlc.set_abort_action(readline_curses::action(rl_abort));
