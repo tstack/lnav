@@ -57,7 +57,7 @@ public:
 
     template<typename F>
     auto_mem(F free_func)
-        : am_ptr(NULL), am_free_func((void(*) (void *))free_func) { };
+        : am_ptr(NULL), am_free_func((free_func_t)free_func) { };
 
     ~auto_mem()
     {
@@ -102,7 +102,7 @@ public:
     {
         if (this->am_ptr != ptr) {
             if (this->am_ptr != NULL) {
-                this->am_free_func(this->am_ptr);
+                this->am_free_func((void *)this->am_ptr);
             }
             this->am_ptr = ptr;
         }

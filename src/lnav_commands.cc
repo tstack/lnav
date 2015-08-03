@@ -1135,6 +1135,7 @@ static string com_open(string cmdline, vector<string> &args)
         string fn = wordmem->we_wordv[lpc];
 
         if (startswith(fn, "pt:")) {
+#ifdef HAVE_LIBCURL
             for (list<logfile *>::iterator iter = lnav_data.ld_files.begin();
                     iter != lnav_data.ld_files.end();
                     ++iter) {
@@ -1145,18 +1146,19 @@ static string com_open(string cmdline, vector<string> &args)
                 }
             }
 
+            lnav_data.ld_curl_looper.close_request("papertrailapp.com");
+            auto_ptr<papertrail_proc> pt(new papertrail_proc(fn.substr(3)));
             lnav_data.ld_pt_search = fn;
-            lnav_data.ld_pt_proc.reset(new papertrail_proc(lnav_data.ld_pt_search.substr(3)));
-            if (!lnav_data.ld_pt_proc->start()) {
-                retval = "error:" + lnav_data.ld_pt_proc->ptp_error;
-                break;
-            }
             lnav_data.ld_file_names.insert(
-                    make_pair(lnav_data.ld_pt_search, lnav_data.ld_pt_proc->ptp_fd.release()));
+                    make_pair(lnav_data.ld_pt_search, pt->copy_fd().release()));
+            lnav_data.ld_curl_looper.add_request(pt.release());
 
             ensure_view(&lnav_data.ld_views[LNV_LOG]);
 
             retval = "info: opened papertrail query";
+#else
+            retval = "error: lnav not compiled with libcurl";
+#endif
             continue;
         }
 

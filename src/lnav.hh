@@ -237,7 +237,6 @@ struct _lnav_data {
 
     std::list<pid_t>                        ld_children;
     std::list<piper_proc *>                 ld_pipers;
-    std::auto_ptr<papertrail_proc>          ld_pt_proc;
     xterm_mouse ld_mouse;
     term_extra ld_term_extra;
 

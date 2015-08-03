@@ -2679,13 +2679,15 @@ int main(int argc, char *argv[])
     }
 
     if (!lnav_data.ld_pt_search.empty()) {
-        lnav_data.ld_pt_proc.reset(new papertrail_proc(lnav_data.ld_pt_search.substr(3)));
-        if (!lnav_data.ld_pt_proc->start()) {
-            fprintf(stderr, "error:%s\n", lnav_data.ld_pt_proc->ptp_error.c_str());
-            return EXIT_FAILURE;
-        }
+#ifdef HAVE_LIBCURL
+        auto_ptr<papertrail_proc> pt(new papertrail_proc(lnav_data.ld_pt_search.substr(3)));
         lnav_data.ld_file_names.insert(
-                make_pair(lnav_data.ld_pt_search, lnav_data.ld_pt_proc->ptp_fd.release()));
+                make_pair(lnav_data.ld_pt_search, pt->copy_fd().release()));
+        lnav_data.ld_curl_looper.add_request(pt.release());
+#else
+        fprintf(stderr, "error: lnav not compiled with libcurl\n");
+        retval = EXIT_FAILURE;
+#endif
     }
 
     if (lnav_data.ld_file_names.empty() && !(lnav_data.ld_flags & LNF_HELP)) {
