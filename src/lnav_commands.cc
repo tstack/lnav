@@ -1920,7 +1920,7 @@ readline_context::command_t STD_COMMANDS[] = {
 #ifdef HAVE_LIBCURL
         "Open the given file(s) or URLs in lnav",
 #else
-        "Open the given file(s) in lnav"
+        "Open the given file(s) in lnav",
 #endif
         com_open,
     },
