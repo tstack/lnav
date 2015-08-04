@@ -49,6 +49,7 @@ public:
 class curl_looper {
 public:
     void start() { };
+    void stop() { };
     void add_request(curl_request *cr) { };
     void close_request(const std::string &name) { };
     void process_all() { };
