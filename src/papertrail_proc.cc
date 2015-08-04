@@ -38,13 +38,35 @@
 #include "yajl/api/yajl_parse.h"
 
 const char *papertrail_proc::PT_SEARCH_URL =
-        "https://papertrailapp.com/api/v1/events/search.json?min_id=%s&q=%s";
+        "https://papertrailapp.com/api/v1/events/search.json?min_id=%s&";
 
 static int read_max_id(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     papertrail_proc *ptp = (papertrail_proc *) ypc->ypc_userdata;
 
     ptp->ptp_last_max_id = std::string((const char *) str, len);
+
+    return 1;
+}
+
+static int read_partial(yajlpp_parse_context *ypc, int val)
+{
+    papertrail_proc *ptp = (papertrail_proc *) ypc->ypc_userdata;
+
+    if (val) {
+        ptp->ptp_partial_read = true;
+    }
+
+    return 1;
+}
+
+static int read_limit(yajlpp_parse_context *ypc, int val)
+{
+    papertrail_proc *ptp = (papertrail_proc *) ypc->ypc_userdata;
+
+    if (val) {
+        ptp->ptp_partial_read = true;
+    }
 
     return 1;
 }
@@ -106,10 +128,13 @@ int papertrail_proc::json_map_end(void *ctx)
 
 struct json_path_handler papertrail_proc::FORMAT_HANDLERS[] = {
         json_path_handler("^/max_id", read_max_id),
-        json_path_handler("/(min_id|min_time_at|reached_beginning|reached_record_limit|tail|partial_results)")
+        json_path_handler("^/(partial_results)", read_partial),
+        json_path_handler("^/(reached_record_limit|reached_time_limit)", read_limit),
+        json_path_handler("^/(min_id|min_time_at|max_time_at|"
+                                  "reached_beginning|reached_end|tail)")
                 .add_cb(ignore_bool)
                 .add_cb(ignore_str),
-        json_path_handler("/events#/\\w+")
+        json_path_handler("^/events#/\\w+")
                 .add_cb(read_event_field)
                 .add_cb(read_event_int),
 
@@ -144,6 +169,13 @@ long papertrail_proc::complete(CURLcode result)
     }
 
     this->set_url();
+
+    log_debug("pt url %s", this->ptp_url.in());
+
+    if (this->ptp_partial_read) {
+        this->ptp_partial_read = false;
+        return 1;
+    }
 
     return 3000;
 }

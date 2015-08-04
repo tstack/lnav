@@ -211,7 +211,8 @@ struct tm *secs2tm(time_t *tim_p, struct tm *res);
 extern const char *std_time_fmt[];
 
 struct date_time_scanner {
-    date_time_scanner() : dts_local_time(false),
+    date_time_scanner() : dts_keep_base_tz(false),
+                          dts_local_time(false),
                           dts_local_offset_valid(0),
                           dts_local_offset_expiry(0) {
         this->clear();
@@ -260,6 +261,7 @@ struct date_time_scanner {
         }
     };
 
+    bool dts_keep_base_tz;
     bool dts_local_time;
     time_t dts_base_time;
     struct exttm dts_base_tm;

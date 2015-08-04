@@ -177,6 +177,7 @@ struct _lnav_data {
     const char *                            ld_debug_log_name;
 
     std::list<std::string>                  ld_commands;
+    bool                                    ld_cmd_init_done;
     std::vector<std::string>                ld_config_paths;
     std::set<std::pair<std::string, int> >  ld_file_names;
     std::list<logfile *>                    ld_files;
@@ -184,6 +185,8 @@ struct _lnav_data {
     std::set<std::string>                   ld_closed_files;
     std::list<std::pair<std::string, int> > ld_files_to_front;
     std::string                             ld_pt_search;
+    time_t                                  ld_pt_min_time;
+    time_t                                  ld_pt_max_time;
     bool                                    ld_stdout_used;
     sig_atomic_t                            ld_looping;
     sig_atomic_t                            ld_winched;

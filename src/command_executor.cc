@@ -312,7 +312,7 @@ string execute_from_file(const string &path, int line_number, char mode, const s
 
 void execute_init_commands(vector<pair<string, string> > &msgs)
 {
-    if (lnav_data.ld_commands.empty()) {
+    if (lnav_data.ld_cmd_init_done) {
         return;
     }
 
@@ -342,6 +342,23 @@ void execute_init_commands(vector<pair<string, string> > &msgs)
         }
     }
     lnav_data.ld_commands.clear();
+
+    if (!lnav_data.ld_pt_search.empty()) {
+#ifdef HAVE_LIBCURL
+        auto_ptr<papertrail_proc> pt(new papertrail_proc(
+                lnav_data.ld_pt_search.substr(3),
+                lnav_data.ld_pt_min_time,
+                lnav_data.ld_pt_max_time));
+        lnav_data.ld_file_names.insert(
+                make_pair(lnav_data.ld_pt_search, pt->copy_fd().release()));
+        lnav_data.ld_curl_looper.add_request(pt.release());
+#else
+        fprintf(stderr, "error: lnav not compiled with libcurl\n");
+        retval = EXIT_FAILURE;
+#endif
+    }
+
+    lnav_data.ld_cmd_init_done = true;
 }
 
 int sql_callback(sqlite3_stmt *stmt)

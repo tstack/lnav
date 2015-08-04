@@ -1955,11 +1955,7 @@ static void looper(void)
                                         ago +
                                         (ANSI_NORM "; press Ctrl-R to reset session"));
                     }
-                    rebuild_indexes(true);
-                    session_loaded = true;
-                }
 
-                {
                     vector<pair<string, string> > msgs;
 
                     execute_init_commands(msgs);
@@ -1970,6 +1966,9 @@ static void looper(void)
                         lnav_data.ld_rl_view->set_value(last_msg.first);
                         lnav_data.ld_rl_view->set_alt_value(last_msg.second);
                     }
+
+                    rebuild_indexes(true);
+                    session_loaded = true;
                 }
             }
 
@@ -2508,7 +2507,6 @@ int main(int argc, char *argv[])
 
         hs.set_bucket_size(HIST_ZOOM_VALUES[zoom_level].hl_bucket_size);
         hs.set_group_size(HIST_ZOOM_VALUES[zoom_level].hl_group_size);
-
     }
 
     {
@@ -2565,7 +2563,12 @@ int main(int argc, char *argv[])
         struct stat    st;
 
         if (startswith(argv[lpc], "pt:")) {
+#ifdef HAVE_LIBCURL
             lnav_data.ld_pt_search = argv[lpc];
+#else
+            fprintf(stderr, "error: lnav is not compiled with libcurl\n");
+            retval = EXIT_FAILURE;
+#endif
         }
 #ifdef HAVE_LIBCURL
         else if (is_url(argv[lpc])) {
@@ -2679,19 +2682,9 @@ int main(int argc, char *argv[])
         lnav_data.ld_pipers.push_back(stdin_reader.release());
     }
 
-    if (!lnav_data.ld_pt_search.empty()) {
-#ifdef HAVE_LIBCURL
-        auto_ptr<papertrail_proc> pt(new papertrail_proc(lnav_data.ld_pt_search.substr(3)));
-        lnav_data.ld_file_names.insert(
-                make_pair(lnav_data.ld_pt_search, pt->copy_fd().release()));
-        lnav_data.ld_curl_looper.add_request(pt.release());
-#else
-        fprintf(stderr, "error: lnav not compiled with libcurl\n");
-        retval = EXIT_FAILURE;
-#endif
-    }
-
-    if (lnav_data.ld_file_names.empty() && !(lnav_data.ld_flags & LNF_HELP)) {
+    if (lnav_data.ld_file_names.empty() &&
+        lnav_data.ld_pt_search.empty() &&
+        !(lnav_data.ld_flags & LNF_HELP)) {
         fprintf(stderr, "error: no log files given/found.\n");
         retval = EXIT_FAILURE;
     }
@@ -2873,6 +2866,8 @@ int main(int argc, char *argv[])
             }
         }
     }
+
+    lnav_data.ld_curl_looper.stop();
 
     return retval;
 }

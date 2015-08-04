@@ -82,6 +82,48 @@ static bool wordexperr(int rc, string &msg)
     return true;
 }
 
+static string refresh_pt_search()
+{
+    string retval;
+
+    if (!lnav_data.ld_cmd_init_done) {
+        return "";
+    }
+
+#ifdef HAVE_LIBCURL
+    for (list<logfile *>::iterator iter = lnav_data.ld_files.begin();
+         iter != lnav_data.ld_files.end();
+         ++iter) {
+        logfile *lf = *iter;
+
+        if (startswith(lf->get_filename(), "pt:")) {
+            lf->close();
+        }
+    }
+
+    lnav_data.ld_curl_looper.close_request("papertrailapp.com");
+
+    if (lnav_data.ld_pt_search.empty()) {
+        return "info: no papertrail query is active";
+    }
+    auto_ptr<papertrail_proc> pt(new papertrail_proc(
+            lnav_data.ld_pt_search.substr(3),
+            lnav_data.ld_pt_min_time,
+            lnav_data.ld_pt_max_time));
+    lnav_data.ld_file_names.insert(
+            make_pair(lnav_data.ld_pt_search, pt->copy_fd().release()));
+    lnav_data.ld_curl_looper.add_request(pt.release());
+
+    ensure_view(&lnav_data.ld_views[LNV_LOG]);
+
+    retval = "info: opened papertrail query";
+#else
+    retval = "error: lnav not compiled with libcurl";
+#endif
+
+    return retval;
+}
+
 static string com_adjust_log_time(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting new time value";
@@ -1136,30 +1178,9 @@ static string com_open(string cmdline, vector<string> &args)
         string fn = wordmem->we_wordv[lpc];
 
         if (startswith(fn, "pt:")) {
-#ifdef HAVE_LIBCURL
-            for (list<logfile *>::iterator iter = lnav_data.ld_files.begin();
-                    iter != lnav_data.ld_files.end();
-                    ++iter) {
-                logfile *lf = *iter;
-
-                if (startswith(lf->get_filename(), "pt:")) {
-                    lf->close();
-                }
-            }
-
-            lnav_data.ld_curl_looper.close_request("papertrailapp.com");
-            auto_ptr<papertrail_proc> pt(new papertrail_proc(fn.substr(3)));
             lnav_data.ld_pt_search = fn;
-            lnav_data.ld_file_names.insert(
-                    make_pair(lnav_data.ld_pt_search, pt->copy_fd().release()));
-            lnav_data.ld_curl_looper.add_request(pt.release());
 
-            ensure_view(&lnav_data.ld_views[LNV_LOG]);
-
-            retval = "info: opened papertrail query";
-#else
-            retval = "error: lnav not compiled with libcurl";
-#endif
+            refresh_pt_search();
             continue;
         }
 
@@ -1357,6 +1378,60 @@ static string com_clear_partition(string cmdline, vector<string> &args)
 
             bm.erase(lss.at(part_start));
             retval = "info: cleared partition name";
+        }
+    }
+
+    return retval;
+}
+
+static string com_pt_time(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a time value";
+
+    if (args.size() == 0) {
+        args.push_back("line-time");
+        retval = "";
+    }
+    else if (args.size() == 1) {
+        char ftime[64];
+
+        if (args[0] == "pt-min-time") {
+            if (lnav_data.ld_pt_min_time == 0) {
+                retval = "info: minimum time is not set, pass a time value to this command to set it";
+            }
+            else {
+                ctime_r(&lnav_data.ld_pt_min_time, ftime);
+                retval = "info: papertrail minimum time is " + string(ftime);
+            }
+        }
+        if (args[0] == "pt-max-time") {
+            if (lnav_data.ld_pt_max_time == 0) {
+                retval = "info: maximum time is not set, pass a time value to this command to set it";
+            }
+            else {
+                ctime_r(&lnav_data.ld_pt_min_time, ftime);
+                retval = "info: papertrail maximum time is " + string(ftime);
+            }
+        }
+    }
+    else if (args.size() >= 2) {
+        struct timeval new_time = { 0, 0 };
+        date_time_scanner dts;
+        struct exttm tm;
+        time_t now;
+
+        time(&now);
+        dts.dts_keep_base_tz = true;
+        dts.set_base_time(now);
+        if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
+            if (args[0] == "pt-min-time") {
+                lnav_data.ld_pt_min_time = new_time.tv_sec;
+                retval = refresh_pt_search();
+            }
+            if (args[0] == "pt-max-time") {
+                lnav_data.ld_pt_max_time = new_time.tv_sec;
+                retval = refresh_pt_search();
+            }
         }
     }
 
@@ -1941,6 +2016,18 @@ readline_context::command_t STD_COMMANDS[] = {
         NULL,
         "Clear the partition the top line is a part of",
         com_clear_partition,
+    },
+    {
+        "pt-min-time",
+        "[<time>]",
+        "Set/get the minimum time for papertrail searches",
+        com_pt_time,
+    },
+    {
+        "pt-max-time",
+        "[<time>]",
+        "Set/get the maximum time for papertrail searches",
+        com_pt_time,
     },
     {
         "session",

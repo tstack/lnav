@@ -52,14 +52,19 @@
 class papertrail_proc : public curl_request {
 
 public:
-    papertrail_proc(const std::string &search)
+    papertrail_proc(const std::string &search,
+                    time_t min_time,
+                    time_t max_time)
             : curl_request("papertrailapp.com"),
               ptp_jcontext(this->cr_name, FORMAT_HANDLERS),
               ptp_jhandle(yajl_free),
               ptp_gen(yajl_gen_free),
               ptp_search(search),
               ptp_quoted_search(curl_free),
-              ptp_header_list(curl_slist_free_all) {
+              ptp_header_list(curl_slist_free_all),
+              ptp_partial_read(false),
+              ptp_min_time(min_time),
+              ptp_max_time(max_time) {
         char piper_tmpname[PATH_MAX];
         const char *tmpdir;
 
@@ -118,9 +123,26 @@ public:
     long complete(CURLcode result);
 
     void set_url() {
-        asprintf(this->ptp_url.out(),
+        char base_url[1024];
+
+        snprintf(base_url, sizeof(base_url),
                  PT_SEARCH_URL,
-                 this->ptp_last_max_id.c_str(),
+                 this->ptp_last_max_id.c_str());
+        if (this->ptp_min_time) {
+            size_t base_len = strlen(base_url);
+            snprintf(&base_url[base_len], sizeof(base_url) - base_len,
+                     "min_time=%ld&",
+                     this->ptp_min_time);
+        }
+        if (this->ptp_max_time) {
+            size_t base_len = strlen(base_url);
+            snprintf(&base_url[base_len], sizeof(base_url) - base_len,
+                     "max_time=%ld&",
+                     this->ptp_max_time);
+        }
+        asprintf(this->ptp_url.out(),
+                 "%sq=%s",
+                 base_url,
                  this->ptp_quoted_search.in());
         curl_easy_setopt(this->cr_handle, CURLOPT_URL, this->ptp_url.in());
     };
@@ -145,7 +167,10 @@ public:
     auto_mem<struct curl_slist> ptp_header_list;
     auto_fd ptp_fd;
     std::string ptp_last_max_id;
+    bool ptp_partial_read;
     std::string ptp_error;
+    time_t ptp_min_time;
+    time_t ptp_max_time;
 };
 
 #endif

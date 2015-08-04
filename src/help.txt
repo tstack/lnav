@@ -508,6 +508,12 @@ COMMANDS
   clear-partition
                     Clear the partition the top line is a part of.
 
+  pt-min-time [<date>]
+                    Set/get the minimum time range for any papertrail queries.
+
+  pt-max-time [<date>]
+                    Set/get the maximum time range for any papertrail queries.
+
 
 SQL QUERIES (experimental)
 -----------

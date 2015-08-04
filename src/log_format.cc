@@ -613,6 +613,10 @@ bool external_log_format::scan(std::vector<logline> &dst,
         json_log_userdata jlu(sbr);
         bool retval = false;
 
+        if (sbr.empty() || sbr.get_data()[sbr.length() - 1] != '}') {
+            return false;
+        }
+
         yajl_reset(handle);
         ypc.set_static_handler(json_log_handlers[0]);
         ypc.ypc_userdata = &jlu;
