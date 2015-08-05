@@ -357,12 +357,11 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
             else {
                 shared_buffer_ref line;
 
-                if (lf->read_line(ll, line)) {
-                    sqlite3_result_text(ctx,
-                                        line.get_data(),
-                                        line.length(),
-                                        SQLITE_TRANSIENT);
-                }
+                lf->read_full_message(ll, line);
+                sqlite3_result_text(ctx,
+                                    line.get_data(),
+                                    line.length(),
+                                    SQLITE_TRANSIENT);
             }
         }
         else {
@@ -370,7 +369,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                 logfile::iterator line_iter;
 
                 line_iter = lf->begin() + cl;
-                lf->read_line(line_iter, vc->log_msg);
+                lf->read_full_message(line_iter, vc->log_msg);
                 vt->vi->extract(lf, vc->log_msg, vc->line_values);
             }
 
