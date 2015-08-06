@@ -2,7 +2,7 @@
 language: cpp
 compiler: gcc
 sudo: false
-script: ./autogen.sh && ./configure && make -j3 && make check -j3 && make distcheck
+script: ./autogen.sh && ./configure && make -j3 && make check -j3 && make distcheck -j3
 after_script: test -e test/test-suite.log  && cat test/test-suite.log
 
 env:
