@@ -519,3 +519,53 @@ check_output "multiline data is not right?" <<EOF
     }
 ]
 EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":create-search-table search_test1 (\w+), World!" \
+    -c ";select col_0 from search_test1" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_multiline.0
+
+check_output "create-search-table is not working?" <<EOF
+col_0
+Hello
+Goodbye
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":create-search-table search_test1 (?<word>\w+), World!" \
+    -c ";select word from search_test1" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_multiline.0
+
+check_output "create-search-table is not working?" <<EOF
+word
+Hello
+Goodbye
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":delete-search-table search_test1" \
+    ${test_dir}/logfile_multiline.0
+
+check_error_output "able to delete unknown table?" <<EOF
+error: unknown search table -- search_test1
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":create-logline-table search_test1" \
+    -c ":delete-search-table search_test1" \
+    ${test_dir}/logfile_multiline.0
+
+check_error_output "able to delete logline table?" <<EOF
+error: unknown search table -- search_test1
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":create-search-table search_test1 bad(" \
+    ${test_dir}/logfile_multiline.0
+
+check_error_output "able to create table with a bad regex?" <<EOF
+error: unable to compile regex -- bad(
+EOF

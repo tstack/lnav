@@ -49,6 +49,7 @@
 #include "command_executor.hh"
 #include "url_loader.hh"
 #include "readline_curses.hh"
+#include "log_search_table.hh"
 
 using namespace std;
 
@@ -1014,7 +1015,7 @@ static string com_disable_word_wrap(string cmdline, vector<string> &args)
     return retval;
 }
 
-static std::vector<string> custom_logline_tables;
+static std::set<string> custom_logline_tables;
 
 static string com_create_logline_table(string cmdline, vector<string> &args)
 {
@@ -1035,6 +1036,7 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
 
             errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
             if (errmsg.empty()) {
+                custom_logline_tables.insert(args[1]);
                 if (lnav_data.ld_rl_view != NULL) {
                     lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
                       "custom-table",
@@ -1043,6 +1045,7 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
                 retval = "info: created new log table -- " + args[1];
             }
             else {
+                delete ldt;
                 retval = "error: unable to create table -- " + errmsg;
             }
         }
@@ -1059,6 +1062,10 @@ static string com_delete_logline_table(string cmdline, vector<string> &args)
         args.push_back("custom-table");
     }
     else if (args.size() == 2) {
+        if (custom_logline_tables.find(args[1]) == custom_logline_tables.end()) {
+            return "error: unknown logline table -- " + args[1];
+        }
+
         string rc = lnav_data.ld_vtab_manager->unregister_vtab(
                 intern_string::lookup(args[1]));
 
@@ -1069,6 +1076,85 @@ static string com_delete_logline_table(string cmdline, vector<string> &args)
                   args[1]);
             }
             retval = "info: deleted logline table";
+        }
+        else {
+            retval = "error: " + rc;
+        }
+    }
+
+    return retval;
+}
+
+static std::set<string> custom_search_tables;
+
+static string com_create_search_table(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a table name";
+
+    if (args.size() == 0) {
+
+    }
+    else if (args.size() >= 2) {
+        log_search_table *lst;
+        string regex;
+
+        if (args.size() >= 3) {
+            regex = cmdline.substr(cmdline.find(args[2], args[0].size() + args[1].size()));
+        }
+        else {
+            regex = lnav_data.ld_last_search[LNV_LOG];
+        }
+
+        try {
+            lst = new log_search_table(regex.c_str(),
+                                       intern_string::lookup(args[1]));
+        } catch (pcrepp::error &e) {
+            return "error: unable to compile regex -- " + regex;
+        }
+
+        string          errmsg;
+
+        errmsg = lnav_data.ld_vtab_manager->register_vtab(lst);
+        if (errmsg.empty()) {
+            custom_search_tables.insert(args[1]);
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                      "search-table",
+                                                      args[1]);
+            }
+            retval = "info: created new search table -- " + args[1];
+        }
+        else {
+            delete lst;
+            retval = "error: unable to create table -- " + errmsg;
+        }
+    }
+
+    return retval;
+}
+
+static string com_delete_search_table(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a table name";
+
+    if (args.size() == 0) {
+        args.push_back("search-table");
+    }
+    else if (args.size() == 2) {
+        if (custom_search_tables.find(args[1]) == custom_search_tables.end()) {
+            return "error: unknown search table -- " + args[1];
+        }
+
+        string rc = lnav_data.ld_vtab_manager->unregister_vtab(
+                intern_string::lookup(args[1]));
+
+        if (rc.empty()) {
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->rem_possibility(LNM_COMMAND,
+                                                      "search-table",
+                                                      args[1]);
+            }
+            retval = "info: deleted search table";
         }
         else {
             retval = "error: " + rc;
@@ -1988,6 +2074,18 @@ readline_context::command_t STD_COMMANDS[] = {
         "<table-name>",
         "Delete a table created with create-logline-table",
         com_delete_logline_table,
+    },
+    {
+        "create-search-table",
+        "<table-name> [<regex>]",
+        "Create an SQL table based on a regex search",
+        com_create_search_table,
+    },
+    {
+        "delete-search-table",
+        "<table-name>",
+        "Delete a table created with create-search-table",
+        com_delete_search_table,
     },
     {
         "open",

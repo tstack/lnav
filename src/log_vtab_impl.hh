@@ -70,13 +70,13 @@ struct log_cursor {
 class log_vtab_impl {
 public:
     struct vtab_column {
-        vtab_column(const char *name = NULL,
+        vtab_column(const std::string name = "",
                     int type = SQLITE3_TEXT,
                     const char *collator = NULL,
                     bool hidden = false)
             : vc_name(name), vc_type(type), vc_collator(collator), vc_hidden(hidden) { };
 
-        const char *vc_name;
+        std::string vc_name;
         int         vc_type;
         const char *vc_collator;
         bool vc_hidden;

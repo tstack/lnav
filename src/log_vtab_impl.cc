@@ -78,9 +78,7 @@ std::string log_vtab_impl::get_table_statement(void)
         auto_mem<char, sqlite3_free> coldecl;
         auto_mem<char, sqlite3_free> colname;
 
-        require(iter->vc_name != NULL);
-
-        colname = sql_quote_ident(iter->vc_name);
+        colname = sql_quote_ident(iter->vc_name.c_str());
         coldecl = sqlite3_mprintf("  %s %s %s collate %Q,\n",
                                   colname.in(),
                                   type_to_string(iter->vc_type),
@@ -671,7 +669,7 @@ string log_vtab_manager::register_vtab(log_vtab_impl *vi)
 
     if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
         auto_mem<char> errmsg(sqlite3_free);
-        char *         sql;
+        auto_mem<char> sql(sqlite3_free);
         int            rc;
 
         this->vm_impls[vi->get_name()] = vi;
@@ -688,8 +686,6 @@ string log_vtab_manager::register_vtab(log_vtab_impl *vi)
         if (rc != SQLITE_OK) {
             retval = errmsg;
         }
-
-        sqlite3_free(sql);
     }
     else {
         retval = "a table with the given name already exists";
@@ -706,7 +702,7 @@ string log_vtab_manager::unregister_vtab(intern_string_t name)
         retval = "unknown log line table -- " + name.to_string();
     }
     else {
-        char *sql;
+        auto_mem<char> sql(sqlite3_free);
         int   rc;
 
         sql = sqlite3_mprintf("DROP TABLE %s ", name.get());
@@ -716,8 +712,6 @@ string log_vtab_manager::unregister_vtab(intern_string_t name)
                            NULL,
                            NULL);
         require(rc == SQLITE_OK);
-
-        sqlite3_free(sql);
 
         this->vm_impls.erase(name);
     }

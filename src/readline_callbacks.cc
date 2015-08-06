@@ -34,6 +34,7 @@
 #include "plain_text_source.hh"
 #include "command_executor.hh"
 #include "readline_curses.hh"
+#include "log_search_table.hh"
 
 using namespace std;
 

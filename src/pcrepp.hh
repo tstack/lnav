@@ -380,10 +380,26 @@ public:
     int name_index(const char *name) const {
         int retval = pcre_get_stringnumber(this->p_code, name);
 
-        if (retval == PCRE_ERROR_NOSUBSTRING)
+        if (retval == PCRE_ERROR_NOSUBSTRING) {
             return retval;
+        }
 
         return retval - 1;
+    };
+
+    const char *name_for_capture(int index) {
+        for (pcre_named_capture::iterator iter = this->named_begin();
+             iter != this->named_end();
+             ++iter) {
+            if (iter->index() == index) {
+                return iter->pnc_name;
+            }
+        }
+        return "";
+    };
+
+    int get_capture_count() const {
+        return this->p_capture_count;
     };
 
     bool match(pcre_context &pc, pcre_input &pi, int options = 0) const
@@ -513,6 +529,10 @@ private:
         }
         pcre_fullinfo(this->p_code,
                       this->p_code_extra,
+                      PCRE_INFO_CAPTURECOUNT,
+                      &this->p_capture_count);
+        pcre_fullinfo(this->p_code,
+                      this->p_code_extra,
                       PCRE_INFO_NAMECOUNT,
                       &this->p_named_count);
         pcre_fullinfo(this->p_code,
@@ -527,6 +547,7 @@ private:
 
     pcre *p_code;
     auto_mem<pcre_extra> p_code_extra;
+    int p_capture_count;
     int p_named_count;
     int p_name_len;
     pcre_named_capture *p_named_entries;

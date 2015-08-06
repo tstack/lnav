@@ -63,6 +63,23 @@ Display
 
 * redraw - Redraw the window to correct any corruption.
 
+
+SQL
+---
+
+* create-logline-table <table-name> - Create an SQL table using the top line
+  of the log view as a template.  See the :ref:`data-ext` section for more information.
+
+* delete-logline-table <table-name> - Delete a table created by create-logline-table.
+
+* create-search-table <table-name> [regex] - Create an SQL table that
+  extracts information from logs using the provided regular expression or the
+  last search that was done.  Any captures in the expression will be used as
+  columns in the SQL table.  If the capture is named, that name will be used as
+  the column name, otherwise the column name will be of the form 'col_N'.
+* delete-search-table <table-name> - Delete a table that was created with create-search-table.
+
+
 Output
 ------
 

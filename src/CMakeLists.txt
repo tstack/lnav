@@ -96,6 +96,7 @@ set(diag_STAT_SRCS
     log_data_helper.hh
     log_data_table.hh
     log_format_impls.cc
+    log_search_table.hh
     logfile_stats.hh
     plain_text_source.hh
     pretty_printer.hh

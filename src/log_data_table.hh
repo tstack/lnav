@@ -27,9 +27,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file log_data_table.hh
- *
- * XXX This file has become a dumping ground for code and needs to be broken up
- * a bit.
  */
 
 #ifndef _log_data_table_hh

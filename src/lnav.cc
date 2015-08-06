@@ -132,6 +132,7 @@
 #include "readline_possibilities.hh"
 #include "field_overlay_source.hh"
 #include "url_loader.hh"
+#include "log_search_table.hh"
 
 using namespace std;
 
@@ -936,10 +937,10 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
     auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
     textview_curses &           tc = lnav_data.ld_views[view];
     std::string regex = regex_orig;
+    pcre *      code = NULL;
 
     if ((gc.get() == NULL) || (regex != lnav_data.ld_last_search[view])) {
         const char *errptr;
-        pcre *      code = NULL;
         int         eoff;
         bool quoted = false;
 
@@ -1003,6 +1004,16 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
             auto_ptr<grep_highlighter> gh(
                 new grep_highlighter(gp, "$search", hm));
             gc = gh;
+        }
+
+        if (view == LNV_LOG) {
+            static intern_string_t log_search_name = intern_string::lookup("log_search");
+
+            lnav_data.ld_vtab_manager->unregister_vtab(log_search_name);
+            if (code != NULL) {
+                lnav_data.ld_vtab_manager->register_vtab(new log_search_table(
+                        regex.c_str(), log_search_name));
+            }
         }
     }
 

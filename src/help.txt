@@ -487,6 +487,17 @@ COMMANDS
                     Delete an SQL table created by the 'create-logline-table'
                     command.
 
+  create-search-table <table-name> [<regex>]
+                    Create an SQL table that extracts information from logs
+                    using the provided regular expression or the last search
+                    that was done.  Any captures in the expression will be
+                    used as columns in the SQL table.  If the capture is named,
+                    that name will be used as the column name, otherwise the
+                    column name will be of the form 'col_N'.
+
+  delete-search-table <table-name>
+                    Delete a table that was created with create-search-table.
+
   switch-to-view <view-name>
                     Switch the display to the given view, which can be one of:
                     help, log, text, histogram, db, and schema.

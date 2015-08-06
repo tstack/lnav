@@ -137,6 +137,7 @@ noinst_HEADERS = \
     log_data_table.hh \
 	log_format.hh \
 	log_format_loader.hh \
+	log_search_table.hh \
 	logfile.hh \
 	logfile_sub_source.hh \
 	papertrail_proc.hh \
