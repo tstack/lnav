@@ -109,7 +109,6 @@ int main(int argc, char *argv[])
             "foo (?:bar)",
             "foo [(]",
             "foo \\Q(bar)\\E",
-            "(*UTF)",
             "(?i)",
 
             NULL
