@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
             "foo (?:bar)",
             "foo [(]",
             "foo \\Q(bar)\\E",
-            "(*LIMIT_MATCH=3)",
+            "(*UTF)",
             "(?i)",
 
             NULL
