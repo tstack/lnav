@@ -51,6 +51,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include <exception>
 
 #include "lnav_log.hh"
@@ -343,6 +344,7 @@ public:
 
         pcre_refcount(this->p_code, 1);
         this->study();
+        this->find_captures(pattern);
     };
 
     pcrepp(const pcrepp &other)
@@ -371,6 +373,18 @@ public:
         ptr += this->p_named_count * this->p_name_len;
         return pcre_named_capture::iterator((pcre_named_capture *)ptr,
                                             this->p_name_len);
+    };
+
+    const std::vector<pcre_context::capture> captures() const {
+        return this->p_captures;
+    };
+
+    std::vector<pcre_context::capture>::const_iterator cap_begin() const {
+        return this->p_captures.begin();
+    };
+
+    std::vector<pcre_context::capture>::const_iterator cap_end() const {
+        return this->p_captures.end();
     };
 
     int name_index(const std::string &name) const {
@@ -545,12 +559,15 @@ private:
                       &this->p_named_entries);
     };
 
+    void find_captures(const char *pattern);
+
     pcre *p_code;
     auto_mem<pcre_extra> p_code_extra;
     int p_capture_count;
     int p_named_count;
     int p_name_len;
     pcre_named_capture *p_named_entries;
+    std::vector<pcre_context::capture> p_captures;
 };
 
 #endif

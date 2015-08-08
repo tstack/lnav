@@ -36,10 +36,15 @@
 #include <string.h>
 #include <pcrecpp.h>
 
+#include <vector>
+
 #include "auto_mem.hh"
 #include "sql_util.hh"
 #include "lnav_log.hh"
 #include "lnav_util.hh"
+#include "pcrepp.hh"
+
+using namespace std;
 
 /**
  * Copied from -- http://www.sqlite.org/lang_keywords.html
@@ -590,4 +595,49 @@ char *sql_quote_ident(const char *ident)
     }
 
     return retval;
+}
+
+static struct {
+    int sqlite_type;
+    const char *collator;
+    const char *sample;
+} TYPE_TEST_VALUE[] = {
+        { SQLITE3_TEXT, NULL, "foobar" },
+        { SQLITE_INTEGER, NULL, "123" },
+        { SQLITE_FLOAT, NULL, "123.0" },
+        { SQLITE_TEXT, "ipaddress", "127.0.0.1" },
+
+        { SQLITE_NULL }
+};
+
+int guess_type_from_pcre(const string &pattern, const char **collator)
+{
+    try {
+        pcrepp re(pattern.c_str());
+        vector<int> matches;
+        int retval = SQLITE3_TEXT;
+
+        log_debug("guess pattern %s", pattern.c_str());
+
+        *collator = NULL;
+        for (int lpc = 0; TYPE_TEST_VALUE[lpc].sqlite_type != SQLITE_NULL; lpc++) {
+            pcre_context_static<30> pc;
+            pcre_input pi(TYPE_TEST_VALUE[lpc].sample);
+
+            if (re.match(pc, pi, PCRE_ANCHORED) &&
+                    pc[0]->c_begin == 0 && pc[0]->length() == pi.pi_length) {
+                matches.push_back(lpc);
+            }
+        }
+
+        log_debug("match size %d", matches.size());
+        if (matches.size() == 1) {
+            retval = TYPE_TEST_VALUE[matches.front()].sqlite_type;
+            *collator = TYPE_TEST_VALUE[matches.front()].collator;
+        }
+
+        return retval;
+    } catch (pcrepp::error &e) {
+        return SQLITE3_TEXT;
+    }
 }

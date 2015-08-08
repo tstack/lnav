@@ -105,5 +105,74 @@ int main(int argc, char *argv[])
         assert("foo" == pi.get_substr(&cap));
     }
 
+    const char *empty_cap_regexes[] = {
+            "foo (?:bar)",
+            "foo [(]",
+            "foo \\Q(bar)\\E",
+            "(*LIMIT_MATCH=3)",
+            "(?i)",
+
+            NULL
+    };
+
+    for (int lpc = 0; empty_cap_regexes[lpc]; lpc++) {
+        pcrepp re(empty_cap_regexes[lpc]);
+
+        assert(re.captures().empty());
+    }
+
+    {
+        pcrepp re("foo (bar (?:baz)?)");
+
+        assert(re.captures().size() == 1);
+        assert(re.captures()[0].c_begin == 4);
+        assert(re.captures()[0].c_end == 18);
+        assert(re.captures()[0].length() == 14);
+    }
+
+    {
+        pcrepp re("(a)(b)(c)");
+
+        assert(re.captures().size() == 3);
+        assert(re.captures()[0].c_begin == 0);
+        assert(re.captures()[0].c_end == 3);
+        assert(re.captures()[1].c_begin == 3);
+        assert(re.captures()[1].c_end == 6);
+        assert(re.captures()[2].c_begin == 6);
+        assert(re.captures()[2].c_end == 9);
+    }
+
+    {
+        pcrepp re("\\(a\\)(b)");
+
+        assert(re.captures().size() == 1);
+        assert(re.captures()[0].c_begin == 5);
+        assert(re.captures()[0].c_end == 8);
+    }
+
+    {
+        pcrepp re("(?<named>b)");
+
+        assert(re.captures().size() == 1);
+        assert(re.captures()[0].c_begin == 0);
+        assert(re.captures()[0].c_end == 11);
+    }
+
+    {
+        pcrepp re("(?P<named>b)");
+
+        assert(re.captures().size() == 1);
+        assert(re.captures()[0].c_begin == 0);
+        assert(re.captures()[0].c_end == 12);
+    }
+
+    {
+        pcrepp re("(?'named'b)");
+
+        assert(re.captures().size() == 1);
+        assert(re.captures()[0].c_begin == 0);
+        assert(re.captures()[0].c_end == 11);
+    }
+
     return retval;
 }

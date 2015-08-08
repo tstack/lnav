@@ -77,4 +77,6 @@ void sql_install_logger(void);
 
 char *sql_quote_ident(const char *ident);
 
+int guess_type_from_pcre(const std::string &pattern, const char **collator);
+
 #endif

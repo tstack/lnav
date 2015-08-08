@@ -535,14 +535,27 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":create-search-table search_test1 (?<word>\w+), World!" \
-    -c ";select word from search_test1" \
+    -c ";select word, typeof(word) from search_test1" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_multiline.0
 
 check_output "create-search-table is not working?" <<EOF
-word
-Hello
-Goodbye
+word,typeof(word)
+Hello,text
+Goodbye,text
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":create-search-table search_test1 eth(?<ethnum>\d+)" \
+    -c ";select typeof(ethnum) from search_test1" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_syslog.2
+
+check_output "regex type guessing is not working?" <<EOF
+typeof(ethnum)
+integer
+integer
+integer
 EOF
 
 run_test ${lnav_test} -n \

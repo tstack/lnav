@@ -35,6 +35,8 @@
 
 #include "pcrepp.hh"
 
+using namespace std;
+
 const int JIT_STACK_MIN_SIZE = 32 * 1024;
 const int JIT_STACK_MAX_SIZE = 512 * 1024;
 
@@ -49,6 +51,79 @@ pcre_context::capture_t *pcre_context::operator[](const char *name) const
     }
 
     return retval;
+}
+
+void pcrepp::find_captures(const char *pattern)
+{
+    bool in_class = false, in_escape = false, in_literal = false;
+    vector<pcre_context::capture> cap_in_progress;
+
+    for (int lpc = 0; pattern[lpc]; lpc++) {
+        if (in_class) {
+            if (pattern[lpc] == ']') {
+                in_class = false;
+            }
+        }
+        else if (in_escape) {
+            in_escape = false;
+            if (pattern[lpc] == 'Q') {
+                in_literal = true;
+            }
+        }
+        else if (in_literal) {
+            if (pattern[lpc] == '\\' && pattern[lpc + 1] == 'E') {
+                in_literal = false;
+                lpc += 1;
+            }
+        }
+        else {
+            switch (pattern[lpc]) {
+                case '\\':
+                    in_escape = true;
+                    break;
+                case '[':
+                    in_class = true;
+                    break;
+                case '(':
+                    cap_in_progress.push_back(pcre_context::capture(lpc, lpc));
+                    break;
+                case ')': {
+                    if (!cap_in_progress.empty()) {
+                        pcre_context::capture &cap = cap_in_progress.back();
+                        char first = '\0', second = '\0', third = '\0';
+                        bool is_cap = false;
+
+                        cap.c_end = lpc + 1;
+                        if (cap.length() >= 2) {
+                            first = pattern[cap.c_begin + 1];
+                        }
+                        if (cap.length() >= 3) {
+                            second = pattern[cap.c_begin + 2];
+                        }
+                        if (cap.length() >= 4) {
+                            third = pattern[cap.c_begin + 3];
+                        }
+                        if (first == '?') {
+                            if (second == '<' || second == '\'') {
+                                is_cap = true;
+                            }
+                            if (second == 'P' && third == '<') {
+                                is_cap = true;
+                            }
+                        }
+                        else if (first != '*') {
+                            is_cap = true;
+                        }
+                        if (is_cap) {
+                            this->p_captures.push_back(cap);
+                        }
+                        cap_in_progress.pop_back();
+                    }
+                    break;
+                }
+            }
+        }
+    }
 }
 
 #ifdef PCRE_STUDY_JIT_COMPILE
