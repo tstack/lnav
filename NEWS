@@ -11,6 +11,9 @@ lnav v0.8.0:
      * Log formats that are "containers" for other log formats, like
        syslog, are now supported.  See the online help for more
        information.
+     * Formats can be installed from git repositories using the '-i' option.
+       A standard set of extra formats can be installed by doing
+       'lnav -i extra'. (You must have git installed for this to work.)
      * Added support for 'VMware vSphere Auto Deploy' log format.
      * Added hotkeys to move left/right by a smaller increment (H/L or
        Shift+Left/Shift+Right).

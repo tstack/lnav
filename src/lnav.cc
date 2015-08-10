@@ -48,6 +48,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <termios.h>
+#include <libgen.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1036,7 +1037,9 @@ static void usage(void)
         "  -h         Print this message, then exit.\n"
         "  -H         Display the internal help text.\n"
         "  -I path    An additional configuration directory.\n"
-        "  -i         Install the given format files and exit.\n"
+        "  -i         Install the given format files and exit.  Pass 'extra'\n"
+        "             to install the default set of third-party formats.\n"
+        "  -u         Update formats installed from git repositories.\n"
         "  -C         Check configuration and then exit.\n"
         "  -d file    Write debug messages to the given file.\n"
         "  -V         Print version information.\n"
@@ -2231,7 +2234,7 @@ int main(int argc, char *argv[])
 #endif
 
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarsCc:I:if:d:nqtw:VW")) != -1) {
+    while ((c = getopt(argc, argv, "hHarsCc:I:iuf:d:nqtw:VW")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -2281,9 +2284,13 @@ int main(int argc, char *argv[])
             lnav_data.ld_config_paths.push_back(optarg);
             break;
 
-            case 'i':
-                lnav_data.ld_flags |= LNF_INSTALL;
-                break;
+        case 'i':
+            lnav_data.ld_flags |= LNF_INSTALL;
+            break;
+
+        case 'u':
+            lnav_data.ld_flags |= LNF_UPDATE_FORMATS;
+            break;
 
         case 'd':
             lnav_data.ld_debug_log_name = optarg;
@@ -2342,6 +2349,35 @@ int main(int argc, char *argv[])
     lnav_log_file = fopen(lnav_data.ld_debug_log_name, "a");
     log_info("lnav started");
 
+    string formats_path = dotlnav_path("formats/");
+
+    if (lnav_data.ld_flags & LNF_UPDATE_FORMATS) {
+        static_root_mem<glob_t, globfree> gl;
+        string git_formats = formats_path + "*/.git";
+        bool found = false;
+
+        if (glob(git_formats.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+            for (lpc = 0; lpc < gl->gl_pathc; lpc++) {
+                char *git_dir = dirname(gl->gl_pathv[lpc]);
+                char pull_cmd[1024];
+
+                printf("Updating formats in %s\n", git_dir);
+                snprintf(pull_cmd, sizeof(pull_cmd),
+                         "cd %s && git pull",
+                         git_dir);
+                system(pull_cmd);
+                found = true;
+            }
+        }
+
+        if (!found) {
+            printf("No formats from git repositories found, "
+                           "use 'lnav -i extra' to install third-party foramts\n");
+        }
+
+        return EXIT_SUCCESS;
+    }
+
     if (lnav_data.ld_flags & LNF_INSTALL) {
         string installed_path = dotlnav_path("formats/installed/");
 
@@ -2351,7 +2387,17 @@ int main(int argc, char *argv[])
         }
 
         for (lpc = 0; lpc < argc; lpc++) {
-            vector<string> format_list = load_format_file(argv[lpc], loader_errors);
+            if (endswith(argv[lpc], ".git")) {
+                install_git_format(argv[lpc]);
+                continue;
+            }
+
+            if (strcmp(argv[lpc], "extra") == 0) {
+                install_extra_formats();
+                continue;
+            }
+
+            vector<intern_string_t> format_list = load_format_file(argv[lpc], loader_errors);
 
             if (!loader_errors.empty()) {
                 print_errors(loader_errors);
@@ -2362,7 +2408,7 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
 
-            string dst_name = format_list[0] + ".json";
+            string dst_name = format_list[0].to_string() + ".json";
             string dst_path = installed_path + dst_name;
             auto_fd in_fd, out_fd;
 

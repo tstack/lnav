@@ -51,6 +51,10 @@ public:
         return *this;
     };
 
+    bool in_child() const {
+        return this->ap_child == 0;
+    };
+
     pid_t release() {
         pid_t retval = this->ap_child;
 

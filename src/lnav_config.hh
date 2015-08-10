@@ -58,4 +58,9 @@ bool check_experimental(const char *feature_name);
  * Ensure that the '.lnav' directory exists.
  */
 void ensure_dotlnav(void);
+
+void install_git_format(const char *repo);
+
+void install_extra_formats();
+
 #endif

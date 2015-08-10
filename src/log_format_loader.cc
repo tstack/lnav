@@ -62,6 +62,7 @@ static external_log_format *ensure_format(yajlpp_parse_context *ypc)
     retval = LOG_FORMATS[name];
     if (retval == NULL) {
         LOG_FORMATS[name] = retval = new external_log_format(name);
+        log_debug("Loading format -- %s", name.get());
     }
     retval->elf_source_path.insert(ypc->ypc_source.substr(0, ypc->ypc_source.rfind('/')));
 
@@ -471,10 +472,10 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
         errors.push_back(errmsg);
     }
     else {
-        yajl_handle handle;
+        auto_mem<yajl_handle_t> handle(yajl_free);
         char buffer[2048];
         off_t offset = 0;
-        int rc = -1;
+        ssize_t rc = -1;
 
         handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
         yajl_config(handle, yajl_allow_comments, 1);
@@ -509,7 +510,6 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
                         string((char *)yajl_get_error(handle, 0, NULL, 0)));
             }
         }
-        yajl_free(handle);
     }
 
     return retval;

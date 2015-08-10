@@ -36,10 +36,16 @@
 #include <string.h>
 #include <glob.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include "pcrecpp.h"
 
 #include "lnav_log.hh"
 #include "auto_mem.hh"
+#include "auto_pid.hh"
 #include "lnav_config.hh"
+#include "yajlpp.hh"
 
 using namespace std;
 
@@ -117,5 +123,96 @@ void ensure_dotlnav(void)
     path = dotlnav_path("formats/default");
     if (!path.empty()) {
         mkdir(path.c_str(), 0755);
+    }
+}
+
+void install_git_format(const char *repo)
+{
+    static pcrecpp::RE repo_name_converter("[^\\w]");
+
+    auto_pid git_cmd(fork());
+
+    if (git_cmd.in_child()) {
+        string formats_path = dotlnav_path("formats/");
+        string local_name = repo;
+        string local_path;
+
+        repo_name_converter.GlobalReplace("_", &local_name);
+        local_path = formats_path + local_name;
+        if (access(local_path.c_str(), R_OK) == 0) {
+            printf("Updating format repo: %s\n", repo);
+            chdir(local_path.c_str());
+            execlp("git", "git", "pull", NULL);
+        }
+        else {
+            execlp("git", "git", "clone", repo, local_path.c_str(), NULL);
+        }
+        _exit(1);
+    }
+
+    git_cmd.wait_for_child();
+}
+
+static int read_repo_path(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    string path = string((const char *)str, len);
+
+    install_git_format(path.c_str());
+
+    return 1;
+}
+
+static struct json_path_handler format_handlers[] = {
+    json_path_handler("^/format-repos#$", read_repo_path),
+
+    json_path_handler()
+};
+
+void install_extra_formats()
+{
+    string config_root = dotlnav_path("remote-config");
+    int fd;
+
+    if (access(config_root.c_str(), R_OK) == 0) {
+        char pull_cmd[1024];
+
+        printf("Updating lnav remote config repo...\n");
+        snprintf(pull_cmd, sizeof(pull_cmd),
+                 "cd '%s' && git pull",
+                 config_root.c_str());
+        system(pull_cmd);
+    }
+    else {
+        char clone_cmd[1024];
+
+        printf("Cloning lnav remote config repo...\n");
+        snprintf(clone_cmd, sizeof(clone_cmd),
+                 "git clone https://github.com/tstack/lnav-config.git %s",
+                 config_root.c_str());
+        system(clone_cmd);
+    }
+
+    string config_json = config_root + "/remote-config.json";
+    if ((fd = open(config_json.c_str(), O_RDONLY)) == -1) {
+        perror("Unable to open remote-config.json");
+    }
+    else {
+        yajlpp_parse_context ypc_config(config_root, format_handlers);
+        auto_mem<yajl_handle_t> jhandle(yajl_free);
+        unsigned char buffer[4096];
+        ssize_t rc;
+
+        jhandle = yajl_alloc(&ypc_config.ypc_callbacks, NULL, &ypc_config);
+        yajl_config(jhandle, yajl_allow_comments, 1);
+        while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+            if (yajl_parse(jhandle,
+                           buffer,
+                           rc) != yajl_status_ok) {
+                fprintf(stderr, "Unable to parse remote-config.json -- %s",
+                        yajl_get_error(jhandle, 1, buffer, rc));
+                return;
+            }
+        }
+        yajl_complete_parse(jhandle);
     }
 }

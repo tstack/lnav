@@ -194,8 +194,17 @@ to automatically install formats from the command-line.  For example::
     $ lnav -i myformat.json
     info: installed: /home/example/.lnav/formats/installed/myformat_log.json
 
-Formats installed using this method will be placed in the :file:`installed`
+Format files installed using this method will be placed in the :file:`installed`
 subdirectory and named based on the first format name found in the file.
+
+You can also install formats from git repositories by passing the repository's
+clone URL.  A standard set of repositories is maintained at
+(https://github.com/tstack/lnav-config) and can be installed by passing 'extra'
+on the command line, like so:
+
+    $ lnav -i extra
+
+These repositories can be updated by running **lnav** with the '-u' flag.
 
 Format files can also be made executable by adding a shebang (#!) line to the
 top of the file, like so::

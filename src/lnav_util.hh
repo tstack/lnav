@@ -196,6 +196,17 @@ inline bool startswith(std::string str, const char *prefix)
     return startswith(str.c_str(), prefix);
 }
 
+inline bool endswith(const char *str, const char *suffix)
+{
+    size_t len = strlen(str), suffix_len = strlen(suffix);
+
+    if (suffix_len > len) {
+        return false;
+    }
+
+    return strcmp(&str[len - suffix_len], suffix) == 0;
+}
+
 std::string build_path(const std::vector<std::string> &paths);
 
 /**

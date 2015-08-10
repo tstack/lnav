@@ -172,6 +172,7 @@ dist_noinst_SCRIPTS = \
 	test_cmds.sh \
 	test_curl.sh \
 	test_data_parser.sh \
+	test_format_installer.sh \
 	test_format_loader.sh \
 	test_grep_proc.sh \
 	test_json_format.sh \
@@ -269,6 +270,7 @@ TESTS = \
 	test_bookmarks \
 	test_chunky_index \
 	test_date_time_scanner \
+	test_format_installer.sh \
 	test_format_loader.sh \
 	test_cmds.sh \
 	test_concise \
@@ -321,3 +323,4 @@ DISTCLEANFILES = \
 distclean-local:
 	$(RM_V)rm -rf sessions
 	$(RM_V)rm -rf .lnav
+	$(RM_V)rm -rf ../installer-test-home
