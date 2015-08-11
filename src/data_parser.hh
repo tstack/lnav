@@ -332,7 +332,7 @@ public:
         };
 
         void                    print(FILE *out, pcre_input &pi, int offset =
-                                          0)
+                                          0) const
         {
             int lpc;
 

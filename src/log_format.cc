@@ -1589,7 +1589,7 @@ public:
         }
         else {
             this->vi_attrs.clear();
-            format->annotate(line, this->vi_attrs, values);
+            format->annotate(line, this->vi_attrs, values, false);
         }
     };
 
