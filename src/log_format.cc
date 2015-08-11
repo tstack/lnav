@@ -1343,6 +1343,10 @@ void external_log_format::build(std::vector<std::string> &errors)
             }
 
             if (pat.p_pcre->match(pc, pi)) {
+                if (pat.p_module_format) {
+                    found = true;
+                    continue;
+                }
                 pcre_context::capture_t *ts_cap =
                         pc[this->lf_timestamp_field.get()];
                 const char *ts = pi.get_substr_start(ts_cap);
@@ -1392,7 +1396,7 @@ void external_log_format::build(std::vector<std::string> &errors)
         if (!found) {
             errors.push_back("error:" +
                              this->elf_name.to_string() +
-                             ":invalid sample -- " +
+                             ":invalid sample         -- " +
                              iter->s_line);
 
             for (std::vector<pattern *>::iterator pat_iter = this->elf_pattern_order.begin();
