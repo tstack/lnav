@@ -6,6 +6,9 @@
                 "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"
             }
         },
+        "level" : {
+            "error" : "(foo"
+        },
         "timestamp-format" : [
             "%i"
         ],

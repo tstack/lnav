@@ -196,6 +196,7 @@ dist_noinst_DATA = \
 	ansi-colors.0.in \
 	bad-config/formats/invalid-regex/format.json \
 	bad-config/formats/invalid-sample/format.json \
+	bad-config/formats/no-samples/format.json \
 	datafile_simple.0 \
 	datafile_simple.1 \
 	datafile_simple.2 \
