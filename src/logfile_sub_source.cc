@@ -44,7 +44,8 @@ bookmark_type_t logfile_sub_source::BM_FILES("");
 
 logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
-      lss_min_log_level(logline::LEVEL_UNKNOWN)
+      lss_min_log_level(logline::LEVEL_UNKNOWN),
+      lss_longest_line(0)
 {
     this->clear_line_size_cache();
 }
@@ -462,6 +463,7 @@ bool logfile_sub_source::rebuild_index(bool force)
 
         this->lss_index.clear();
         this->lss_filtered_index.clear();
+        this->lss_longest_line = 0;
     }
 
     if (retval || force) {
@@ -472,13 +474,16 @@ bool logfile_sub_source::rebuild_index(bool force)
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
              iter++) {
-            if ((*iter)->get_file() == NULL)
+            logfile_data *ld = *iter;
+            logfile *lf = ld->get_file();
+            if (lf == NULL)
                 continue;
 
-            merge.add((*iter),
-                    (*iter)->get_file()->begin() + (*iter)->ld_lines_indexed,
-                    (*iter)->get_file()->end());
-            index_size += (*iter)->get_file()->size();
+            merge.add(ld,
+                      lf->begin() + ld->ld_lines_indexed,
+                      lf->end());
+            index_size += lf->size();
+            this->lss_longest_line = std::max(this->lss_longest_line, lf->get_longest_line_length());
         }
 
         this->lss_index.reset();
@@ -534,10 +539,11 @@ bool logfile_sub_source::rebuild_index(bool force)
             content_line_t cl = (content_line_t) this->lss_index[index_index];
             uint64_t line_number;
             logfile_data *ld = this->find_data(cl, line_number);
+            logfile::iterator line_iter = ld->get_file()->begin() + line_number;
 
             if (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
                     line_number) &&
-                    (*(ld->get_file()->begin() + line_number)).get_msg_level() >=
+                    line_iter->get_msg_level() >=
                     this->lss_min_log_level) {
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != NULL) {

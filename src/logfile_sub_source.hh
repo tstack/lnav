@@ -124,6 +124,10 @@ public:
         return this->lss_filtered_index.size();
     };
 
+    size_t text_line_width() {
+        return this->lss_longest_line;
+    };
+
     bool empty() const { return this->lss_filtered_index.empty(); };
 
     void text_value_for_line(textview_curses &tc,
@@ -536,5 +540,6 @@ private:
     std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];
     logline::level_t  lss_min_log_level;
     index_delegate    *lss_index_delegate;
+    size_t            lss_longest_line;
 };
 #endif

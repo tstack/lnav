@@ -114,6 +114,10 @@ public:
     /** @return The inode for this log file. */
     const struct stat &get_stat() const { return this->lf_stat; };
 
+    size_t get_longest_line_length() const {
+        return this->lf_longest_line;
+    }
+
     bool is_compressed() const {
         return this->lf_line_buffer.is_compressed();
     };
@@ -255,15 +259,16 @@ public:
         return retval;
     }
 
-    size_t line_length(iterator ll) {
+    size_t line_length(iterator ll, bool include_continues = true) {
         iterator next_line = ll;
         size_t retval;
 
         do {
             ++next_line;
         } while ((next_line != this->end()) &&
-                ((ll->get_offset() == next_line->get_offset()) ||
-                        next_line->is_continued()));
+                 include_continues &&
+                 ((ll->get_offset() == next_line->get_offset()) ||
+                  next_line->is_continued()));
 
         if (next_line == this->end()) {
             retval = this->lf_index_size - ll->get_offset();
@@ -361,6 +366,7 @@ protected:
     bool lf_partial_line;
     logline_observer *lf_logline_observer;
     logfile_observer *lf_logfile_observer;
+    size_t lf_longest_line;
 };
 
 class logline_observer {

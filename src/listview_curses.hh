@@ -56,6 +56,10 @@ public:
     /** @return The number of rows in the list. */
     virtual size_t listview_rows(const listview_curses &lv) = 0;
 
+    virtual size_t listview_width(const listview_curses &lv) {
+        return INT_MAX;
+    };
+
     /**
      * Get the string value for a row in the list.
      *
@@ -343,7 +347,10 @@ public:
      */
     void set_left(unsigned int left)
     {
-        if (this->lv_left != left) {
+        if (left > this->get_inner_width()) {
+            alerter::singleton().chime();
+        }
+        else if (this->lv_left != left) {
             this->lv_left = left;
             this->lv_scroll.invoke(this);
             this->lv_needs_update = true;
@@ -397,6 +404,11 @@ public:
     {
         return vis_line_t(this->lv_source == NULL ? 0 :
                           this->lv_source->listview_rows(*this));
+    };
+
+    size_t get_inner_width() const {
+        return this->lv_source == NULL ? 0 :
+               this->lv_source->listview_width(*this);
     };
 
     void set_needs_update() { this->lv_needs_update = true; };

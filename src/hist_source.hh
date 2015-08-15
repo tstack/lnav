@@ -77,6 +77,10 @@ public:
 public:
         virtual ~label_source() { };
 
+        virtual size_t hist_label_width() {
+            return INT_MAX;
+        };
+
         virtual void hist_label_for_group(int group,
                                           std::string &label_out) { };
 
@@ -130,6 +134,11 @@ public:
     size_t text_line_count()
     {
         return (this->buckets_per_group() + 1) * this->hs_groups.size();
+    };
+
+    size_t text_line_width() {
+        return this->hs_label_source == NULL ? 0 :
+               this->hs_label_source->hist_label_width();
     };
 
     void set_role_for_type(bucket_type_t bt, view_colors::role_t role)

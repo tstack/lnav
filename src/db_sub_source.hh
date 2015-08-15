@@ -44,6 +44,17 @@ public:
 
     ~db_label_source() { };
 
+    size_t hist_label_width() {
+        size_t retval = 0;
+
+        for (std::vector<size_t>::iterator iter = this->dls_column_sizes.begin();
+             iter != this->dls_column_sizes.end();
+             ++iter) {
+            retval += *iter;
+        }
+        return retval;
+    };
+
     void hist_label_for_group(int group, std::string &label_out)
     {
         label_out.clear();

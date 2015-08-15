@@ -625,7 +625,13 @@ void rebuild_indexes(bool force)
 class time_label_source
     : public hist_source::label_source {
 public:
+    static const char *LINE_FORMAT;
+
     time_label_source() { };
+
+    size_t hist_label_width() {
+        return strlen(LINE_FORMAT) + 8 * 3;
+    };
 
     void hist_label_for_bucket(int bucket_start_value,
                                const hist_source::bucket_t &bucket,
@@ -665,12 +671,14 @@ public:
 
         len = strlen(buffer);
         snprintf(&buffer[len], sizeof(buffer) - len,
-                 " %8d total  %8d errors  %8d warnings",
+                 LINE_FORMAT,
                  total, errors, warnings);
 
         label_out = string(buffer);
     };
 };
+
+const char *time_label_source::LINE_FORMAT = " %8d total  %8d errors  %8d warnings";
 
 static bool append_default_files(lnav_flags_t flag)
 {

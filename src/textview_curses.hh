@@ -276,6 +276,10 @@ public:
      */
     virtual size_t text_line_count() = 0;
 
+    virtual size_t text_line_width() {
+        return INT_MAX;
+    };
+
     /**
      * Get the value for a line.
      *
@@ -608,6 +612,11 @@ public:
     {
         return this->tc_sub_source == NULL ? 0 :
                this->tc_sub_source->text_line_count();
+    };
+
+    size_t listview_width(const listview_curses &lv) {
+        return this->tc_sub_source == NULL ? 0 :
+               this->tc_sub_source->text_line_width();
     };
 
     void listview_value_for_row(const listview_curses &lv,

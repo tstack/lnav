@@ -63,6 +63,10 @@ public:
         return retval;
     };
 
+    size_t text_line_width() {
+        return this->tss_files.empty() ? 0 : this->current_file()->get_longest_line_length();
+    };
+
     void text_value_for_line(textview_curses &tc,
                              int line,
                              std::string &value_out,
