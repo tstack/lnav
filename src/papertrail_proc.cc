@@ -165,13 +165,14 @@ long papertrail_proc::complete(CURLcode result)
     yajl_reset(this->ptp_jhandle.in());
 
     if (result != CURLE_OK) {
+        static const char *err_msg = "Unable to execute papertrail search -- ";
+
+        write(this->ptp_fd, err_msg, strlen(err_msg));
+        write(this->ptp_fd, this->cr_error_buffer, strlen(this->cr_error_buffer));
         return -1;
     }
 
     this->set_url();
-
-    log_debug("pt url %s", this->ptp_url.in());
-
     if (this->ptp_partial_read) {
         this->ptp_partial_read = false;
         return 1;
