@@ -357,6 +357,42 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":switch-to-view pretty" \
+    ${test_dir}/textfile_json_one_line.0
+check_output "pretty-printer is not working for text files" <<EOF
+{
+    "foo bar" : null,
+    "array" : [
+        1,
+        2,
+        3
+    ],
+    "obj" : {
+        "one" : 1,
+        "two" : true
+    }
+}
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":switch-to-view pretty" \
+    ${test_dir}/textfile_json_one_line.0
+check_output "pretty-printer is not working for indented text files" <<EOF
+{
+  "foo bar": null,
+  "array": [
+    1,
+    2,
+    3
+  ],
+  "obj": {
+    "one": 1,
+    "two": true
+  }
+}
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":switch-to-view pretty" \
     ${test_dir}/logfile_vami.0
 check_output "pretty-printer is not working" <<EOF
 2015-03-12T23:16:52.071:INFO:com.root:Response :

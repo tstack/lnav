@@ -757,14 +757,25 @@ static void open_schema_view(void)
 
 static void open_pretty_view(void)
 {
-    textview_curses *log_tc = &lnav_data.ld_views[LNV_LOG];
+    static const char *NOTHING_MSG =
+            "Nothing to pretty-print";
+
+    textview_curses *top_tc = lnav_data.ld_view_stack.top();
     textview_curses *pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
-    logfile_sub_source &lss = lnav_data.ld_log_source;
-    if (lss.text_line_count() > 0) {
-        ostringstream stream;
+    textview_curses *log_tc = &lnav_data.ld_views[LNV_LOG];
+    textview_curses *text_tc = &lnav_data.ld_views[LNV_TEXT];
+    ostringstream stream;
+
+    delete pretty_tc->get_sub_source();
+    if (top_tc->get_inner_height() == 0) {
+        pretty_tc->set_sub_source(new plain_text_source(NOTHING_MSG));
+        return;
+    }
+
+    if (top_tc == log_tc) {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
         bool first_line = true;
 
-        delete pretty_tc->get_sub_source();
         for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             content_line_t cl = lss.at(vl);
             logfile *lf = lss.find(cl);
@@ -784,15 +795,26 @@ static void open_pretty_view(void)
             stream << trim(pp.print()) << endl;
             first_line = false;
         }
-        pretty_tc->set_sub_source(new plain_text_source(stream.str()));
-        if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
-            pretty_tc->set_top(vis_line_t(0));
+    }
+    else if (top_tc == text_tc) {
+        logfile *lf = lnav_data.ld_text_source.current_file();
+
+        for (vis_line_t vl = text_tc->get_top(); vl <= text_tc->get_bottom(); ++vl) {
+            logfile::iterator ll = lf->begin() + vl;
+            shared_buffer_ref sbr;
+
+            lf->read_full_message(ll, sbr);
+            data_scanner ds(sbr);
+            pretty_printer pp(&ds);
+
+            stream << pp.print() << endl;
         }
-        lnav_data.ld_last_pretty_print_top = log_tc->get_top();
     }
-    else {
-        log_warning("no log data to pretty-print");
+    pretty_tc->set_sub_source(new plain_text_source(stream.str()));
+    if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
+        pretty_tc->set_top(vis_line_t(0));
     }
+    lnav_data.ld_last_pretty_print_top = log_tc->get_top();
     redo_search(LNV_PRETTY);
 }
 
@@ -2795,7 +2817,7 @@ int main(int argc, char *argv[])
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 std::vector<pair<string, string> > msgs;
                 std::vector<pair<string, string> >::iterator msg_iter;
-                textview_curses *log_tc, *tc;
+                textview_curses *log_tc, *text_tc, *tc;
                 attr_line_t al;
                 const std::string &line = al.get_string();
                 bool found_error = false;
@@ -2809,7 +2831,14 @@ int main(int argc, char *argv[])
                 wait_for_pipers();
                 rebuild_indexes(true);
 
-                lnav_data.ld_views[LNV_LOG].set_top(vis_line_t(0));
+                log_tc->set_top(vis_line_t(0));
+                text_tc = &lnav_data.ld_views[LNV_TEXT];
+                text_tc->set_top(vis_line_t(0));
+                text_tc->set_height(vis_line_t(text_tc->get_inner_height()));
+                if (lnav_data.ld_log_source.text_line_count() == 0 &&
+                    lnav_data.ld_text_source.text_line_count() > 0) {
+                    toggle_view(&lnav_data.ld_views[LNV_TEXT]);
+                }
 
                 log_info("Executing initial commands");
                 execute_init_commands(msgs);

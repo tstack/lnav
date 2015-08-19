@@ -817,13 +817,7 @@ void handle_paging_key(int ch)
             break;
 
         case 'P':
-            if (tc == &lnav_data.ld_views[LNV_PRETTY] ||
-                (lss && lss->text_line_count() > 0)) {
-                toggle_view(&lnav_data.ld_views[LNV_PRETTY]);
-            }
-            else {
-                lnav_data.ld_rl_view->set_value("Pretty-printed only works with log messages");
-            }
+            toggle_view(&lnav_data.ld_views[LNV_PRETTY]);
             break;
 
         case 't':

@@ -56,7 +56,8 @@ class interrupt_timer {
         bool is_armed();
         ~interrupt_timer();
     private:
-        sighandler_t_ new_handler, old_handler;
+        sighandler_t_ new_handler;
+        struct sigaction old_handler;
         struct itimerval new_val, old_val;
         bool armed;
 };

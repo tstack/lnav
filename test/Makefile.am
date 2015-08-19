@@ -251,6 +251,8 @@ dist_noinst_DATA = \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
 	multiline.lnav \
 	mvwattrline_output.0 \
+	textfile_json_indented.0 \
+	textfile_json_one_line.0 \
 	view_colors_output.0 \
 	vt52_curses_input.0 \
 	vt52_curses_input.1 \

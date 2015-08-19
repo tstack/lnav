@@ -50,6 +50,7 @@ set(diag_STAT_SRCS
     state-extension-functions.cc
     strnatcmp.c
     textview_curses.cc
+    timer.cc
     view_curses.cc
     views_vtab.cc
     vt52_curses.cc
@@ -112,6 +113,7 @@ set(diag_STAT_SRCS
     termios_guard.hh
     textfile_sub_source.hh
     time_T.hh
+    timer.hh
     top_status_source.hh
     url_loader.hh
     views_vtab.hh

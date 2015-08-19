@@ -183,7 +183,7 @@ Display
    * - |ks| q |ke|
      - Return to the previous view/quit
    * - |ks| Shift |ke| + |ks| p |ke|
-     - Switch to/from the pretty-printed view of the displayed log messages
+     - Switch to/from the pretty-printed view of the displayed log or text files
    * - |ks| Shift |ke| + |ks| t |ke|
      - Display elapsed time between lines
    * - |ks| t |ke|

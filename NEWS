@@ -30,6 +30,7 @@ lnav v0.8.0:
        summary of the currently entered command.
 
      Fixes:
+     * The pretty-print view should now work for text files.
      * Nested fields in JSON logs are now supported for levels, bodies, etc...
      * Tab-completion should work for quoted SQL identifiers.
      * 'lo-fi' mode key shortcut changed to CTRL+L.

@@ -41,6 +41,7 @@
 #include <stack>
 #include <deque>
 #include <sstream>
+#include <iomanip>
 
 #include "timer.hh"
 #include "ansi_scrubber.hh"
@@ -65,7 +66,10 @@ public:
     };
 
     pretty_printer(data_scanner *ds)
-            : pp_depth(0), pp_line_length(0), pp_scanner(ds) {
+            : pp_leading_indent(0),
+              pp_depth(0),
+              pp_line_length(0),
+              pp_scanner(ds) {
         this->pp_body_lines.push(0);
     };
 
@@ -118,10 +122,19 @@ public:
                         continue;
                     }
                     break;
+                case DT_WHITE:
+                    if (this->pp_values.empty() && this->pp_depth == 0) {
+                        this->pp_leading_indent = el.e_capture.length();
+                        continue;
+                    }
+                    break;
                 default:
                     break;
             }
             this->pp_values.push_back(el);
+        }
+        while (this->pp_depth > 0) {
+            this->ascend();
         }
         this->flush_values();
 
@@ -157,7 +170,7 @@ private:
                 break;
         }
         if (rc == 1 && reverse_lookup_enabled) {
-            const struct timeval timeout = {3, 0};
+            const struct timeval timeout = {0, 500 * 1000};
 
             {
                 timer::interrupt_timer t(timeout, sigalrm_handler);
@@ -238,13 +251,17 @@ private:
     }
 
     void append_indent() {
+        this->pp_stream << std::string(this->pp_leading_indent, ' ');
+        if (this->pp_stream.tellp() == this->pp_leading_indent) {
+            return;
+        }
         for (int lpc = 0; lpc < this->pp_depth; lpc++) {
             this->pp_stream << "    ";
         }
     }
 
     void write_element(const element &el) {
-        if (this->pp_depth > 0 && this->pp_line_length == 0 && el.e_token == DT_WHITE) {
+        if (this->pp_line_length == 0 && el.e_token == DT_WHITE) {
             return;
         }
         if (this->pp_line_length == 0 && el.e_token == DT_LINE) {
@@ -270,6 +287,7 @@ private:
         }
     }
 
+    int pp_leading_indent;
     int pp_depth;
     int pp_line_length;
     std::stack<int> pp_body_lines;
