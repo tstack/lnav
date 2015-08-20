@@ -681,8 +681,6 @@ static int read_save_time(yajlpp_parse_context *ypc, long long value)
 
 static int read_time_offset(yajlpp_parse_context *ypc, int value)
 {
-    lnav_data.ld_log_source.set_time_offset(value);
-
     return 1;
 }
 
