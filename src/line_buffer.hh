@@ -94,6 +94,10 @@ public:
      */
     ssize_t get_file_size() const { return this->lb_file_size; };
 
+    bool is_pipe() const {
+        return !this->lb_seekable;
+    };
+
     bool is_pipe_closed() const {
         return !this->lb_seekable && (this->lb_file_size != -1);
     };

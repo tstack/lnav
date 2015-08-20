@@ -171,7 +171,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 }
                 last_off = off;
             }
-        } while (!lb.is_pipe_closed());
+        } while (lb.is_pipe() && !lb.is_pipe_closed());
 
         if (timestamp) {
             ssize_t wrc;

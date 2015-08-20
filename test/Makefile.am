@@ -169,6 +169,7 @@ scripty_LDADD = ../src/libdiag.a
 
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
+	test_cli.sh \
 	test_cmds.sh \
 	test_curl.sh \
 	test_data_parser.sh \
@@ -275,6 +276,7 @@ TESTS = \
 	test_date_time_scanner \
 	test_format_installer.sh \
 	test_format_loader.sh \
+	test_cli.sh \
 	test_cmds.sh \
 	test_concise \
 	test_line_buffer2 \

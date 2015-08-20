@@ -167,6 +167,7 @@ public:
             log_debug("waiting for curl_looper thread");
             pthread_join(this->cl_thread, &result);
             log_debug("curl_looper thread joined");
+            this->cl_started = false;
         }
     };
 
