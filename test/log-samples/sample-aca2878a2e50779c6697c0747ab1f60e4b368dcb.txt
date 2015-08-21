@@ -1,7 +1,9 @@
              Apr 29 08:13:43 tstack-centos5 NET[13682]: /sbin/dhclient-script : updated /etc/resolv.conf
  key  43:43                                            ^                                                  
- key  43:64                                             ^-------------------^                             /sbin/dhclient-script
+path  43:64                                             ^-------------------^                             /sbin/dhclient-script
+ val  43:64                                             ^-------------------^                             /sbin/dhclient-script
 pair  43:64                                             ^-------------------^                             /sbin/dhclient-script
- key  75:75                                                                            ^                  
+ key  67:74                                                                     ^-----^                   updated
 path  75:91                                                                             ^--------------^  /etc/resolv.conf
-pair  75:91                                                                             ^--------------^  /etc/resolv.conf
+ val  75:91                                                                             ^--------------^  /etc/resolv.conf
+pair  67:91                                                                     ^----------------------^  updated /etc/resolv.conf

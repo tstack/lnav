@@ -103,6 +103,8 @@ def handleop(fields):
         el.pop(0)
     elif method_name == 'pop_back':
         el.pop()
+    elif method_name == 'clear2':
+        el[::] = []
     elif method_name == 'splice':
         pos = int(method_args[0])
         other = element_lists[method_args[1]]
@@ -154,7 +156,10 @@ while True:
     if index == 0:
         print "init"
     else:
-        print "#%s %s" % (index -1, ops[index - 1])
+        op = ops[index - 1]
+        print "#%s %s" % (index -1, op)
+        if op[2] == 'push_back':
+            print getstr(op[4])
 
     for list_name in watch_list:
         printlist(list_name)
@@ -197,7 +202,8 @@ while True:
     elif cmd[0] == 'w':
         watch_list.add(cmd[1])
     elif cmd[0] == 'u':
-        watch_list.remove(cmd[1])
+        if watch_list:
+            watch_list.remove(cmd[1])
     else:
         print "error: unknown command --", cmd
 

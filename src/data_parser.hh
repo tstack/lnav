@@ -50,6 +50,7 @@
 #define PUSH_BACK(elem)                    push_back(elem, __FILE__, __LINE__)
 #define POP_FRONT(elem)                    pop_front(__FILE__, __LINE__)
 #define POP_BACK(elem)                     pop_back(__FILE__, __LINE__)
+#define CLEAR(elem)                        clear2(__FILE__, __LINE__)
 #define SPLICE(pos, other, first, last)    splice(pos, other, first, last, \
                                                   __FILE__, __LINE__)
 
@@ -231,6 +232,13 @@ public:
             this->std::list<element>::pop_back();
         };
 
+        void clear2(const char *fn, int line)
+        {
+            LIST_TRACE;
+
+            this->std::list<element>::clear();
+        };
+
         void splice(iterator pos,
                     element_list_t &other,
                     iterator first,
@@ -407,6 +415,7 @@ private:
           dp_format(NULL),
           dp_qualifier(DT_INVALID),
           dp_separator(DT_INVALID),
+          dp_prefix_terminator(DT_INVALID),
           dp_msg_format(NULL),
           dp_msg_format_begin(ds->get_input().pi_offset),
           dp_scanner(ds)
@@ -438,20 +447,16 @@ private:
                 }
             }
 
-            if (iter->e_token == this->dp_format->df_terminator) {
-                std::vector<element> key_copy;
-
-                value.SPLICE(value.end(),
-                             key_comps,
-                             key_comps.begin(),
-                             key_comps.end());
-                value.remove_if(element_if(this->dp_format->df_terminator));
-                strip(value, element_if(DT_WHITE));
-                value.remove_if(element_if(DT_COMMA));
-                if (!value.empty()) {
-                    el_stack.PUSH_BACK(element(value, DNT_VALUE));
+            if (this->dp_prefix_terminator != DT_INVALID) {
+                if (iter->e_token == this->dp_prefix_terminator) {
+                    this->dp_prefix_terminator = DT_INVALID;
                 }
-                value.clear();
+                else {
+                    el_stack.PUSH_BACK(*iter);
+                }
+            }
+            else if (iter->e_token == this->dp_format->df_terminator) {
+                this->end_of_value(el_stack, key_comps, value);
 
                 key_comps.PUSH_BACK(*iter);
             }
@@ -467,7 +472,7 @@ private:
             }
             else if (iter->e_token == this->dp_separator) {
                 element_list_t::iterator key_iter = key_comps.end();
-                bool found = false;
+                bool found = false, key_is_values = true;
 
                 do {
                     --key_iter;
@@ -492,6 +497,14 @@ private:
                         key_comps.POP_FRONT();
                         strip(key_comps, element_if(DT_WHITE));
                         found = true;
+                    }
+                    switch (key_iter->e_token) {
+                        case DT_WORD:
+                        case DT_SYMBOL:
+                            key_is_values = false;
+                            break;
+                        default:
+                            break;
                     }
                 } while (key_iter != key_comps.begin() && !found);
                 if (!found && !el_stack.empty() && !key_comps.empty()) {
@@ -525,10 +538,15 @@ private:
                 }
                 strip(key_comps, element_if(DT_WHITE));
                 if (!key_comps.empty()) {
-                    el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
+                    if (key_is_values) {
+                        el_stack.PUSH_BACK(element(key_comps, DNT_VALUE));
+                    }
+                    else {
+                        el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
+                    }
                 }
-                key_comps.clear();
-                value.clear();
+                key_comps.CLEAR();
+                value.CLEAR();
             }
             else {
                 key_comps.PUSH_BACK(*iter);
@@ -544,17 +562,7 @@ private:
                             key_comps, key_comps.begin(), key_comps.end());
         }
         else {
-            value.SPLICE(value.begin(),
-                         key_comps,
-                         key_comps.begin(),
-                         key_comps.end());
-
-            value.remove_if(element_if(this->dp_format->df_terminator));
-            strip(value, element_if(DT_WHITE));
-            value.remove_if(element_if(DT_COMMA));
-            if (!value.empty()) {
-                el_stack.PUSH_BACK(element(value, DNT_VALUE));
-            }
+            this->end_of_value(el_stack, key_comps, value);
         }
 
         POINT_TRACE("pairup_stack");
@@ -657,12 +665,12 @@ private:
                               *pair.e_sub_elements,
                               pair.e_sub_elements->begin(),
                               next_sub);
-                free_row.clear();
+                free_row.CLEAR();
                 free_row.SPLICE(free_row.begin(),
                                 *evalue.e_sub_elements,
                                 evalue.e_sub_elements->begin(),
                                 evalue.e_sub_elements->end());
-                pairs_out.clear();
+                pairs_out.CLEAR();
                 context.Init(0, 0);
             }
         }
@@ -766,6 +774,7 @@ private:
         this->dp_group_stack.resize(1);
         this->dp_qualifier = DT_INVALID;
         this->dp_separator = DT_COLON;
+        this->dp_prefix_terminator = DT_INVALID;
 
         data_format_state_t prefix_state = DFS_INIT;
         data_format_state_t semi_state   = DFS_INIT;
@@ -856,10 +865,81 @@ private:
         }
         else if (comma_state != DFS_ERROR) {
             this->dp_format = &FORMAT_COMMA;
+            if (this->dp_separator == DT_COLON && hist[DT_COMMA] > 0) {
+                if (!((hist[DT_COLON] == hist[DT_COMMA]) ||
+                      (hist[DT_COLON] == (hist[DT_COMMA] - 1)))) {
+                    this->dp_separator = DT_INVALID;
+                    if (hist[DT_COLON] == 1) {
+                        this->dp_prefix_terminator = DT_COLON;
+                    }
+                }
+            }
         }
         else {
             this->dp_format = &FORMAT_PLAIN;
         }
+    };
+
+    void end_of_value(element_list_t &el_stack,
+                      element_list_t &key_comps,
+                      element_list_t &value) {
+
+        key_comps.remove_if(element_if(this->dp_format->df_terminator));
+        key_comps.remove_if(element_if(DT_COMMA));
+        value.remove_if(element_if(this->dp_format->df_terminator));
+        value.remove_if(element_if(DT_COMMA));
+        strip(key_comps, element_if(DT_WHITE));
+        strip(value, element_if(DT_WHITE));
+        if (value.empty() && key_comps.size() > 1 &&
+            (key_comps.front().e_token == DT_WORD ||
+             key_comps.front().e_token == DT_SYMBOL)) {
+            element_list_t::iterator key_iter, key_end;
+            bool found_value = false;
+            int word_count = 0;
+            key_iter = key_comps.begin();
+            key_end = key_comps.begin();
+            for (; key_iter != key_comps.end(); ++key_iter) {
+                if (key_iter->e_token == DT_WORD ||
+                    key_iter->e_token == DT_SYMBOL) {
+                    word_count += 1;
+                    if (found_value) {
+                        key_end = key_comps.begin();
+                    }
+                }
+                else if (key_iter->e_token == DT_WHITE) {
+
+                }
+                else {
+                    if (!found_value) {
+                        key_end = key_iter;
+                    }
+                    found_value = true;
+                }
+            }
+            if (word_count != 1) {
+                key_end = key_comps.begin();
+            }
+            value.SPLICE(value.end(),
+                         key_comps,
+                         key_end,
+                         key_comps.end());
+            strip(key_comps, element_if(DT_WHITE));
+            if (!key_comps.empty()) {
+                el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
+            }
+            key_comps.CLEAR();
+        }
+        else {
+            value.SPLICE(value.end(),
+                         key_comps,
+                         key_comps.begin(),
+                         key_comps.end());
+        }
+        strip(value, element_if(DT_WHITE));
+        if (!value.empty()) {
+            el_stack.PUSH_BACK(element(value, DNT_VALUE));
+        }
+        value.CLEAR();
     };
 
     void parse(void)
@@ -923,6 +1003,7 @@ private:
     data_format *  dp_format;
     data_token_t   dp_qualifier;
     data_token_t   dp_separator;
+    data_token_t   dp_prefix_terminator;
     std::string    *dp_msg_format;
     int dp_msg_format_begin;
 
