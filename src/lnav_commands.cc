@@ -891,6 +891,10 @@ static string com_filter(string cmdline, vector<string> &args)
         if (fs.get_filter(args[1]) != NULL) {
             retval = com_enable_filter(cmdline, args);
         }
+        else if (fs.full()) {
+            retval = "error: filter limit reached, try combining "
+                    "filters with a pipe symbol (e.g. foo|bar)";
+        }
         else if ((code = pcre_compile(args[1].c_str(),
                                       PCRE_CASELESS,
                                       &errptr,
@@ -904,6 +908,7 @@ static string com_filter(string cmdline, vector<string> &args)
                                          text_filter::INCLUDE;
             auto_ptr<pcre_filter> pf(new pcre_filter(lt, args[1], fs.next_index(), code));
 
+            log_debug("%s [%d] %s", args[0].c_str(), pf->get_index(), args[1].c_str());
             fs.add_filter(pf.release());
             tss->text_filters_changed();
             tc->reload_data();
@@ -913,6 +918,32 @@ static string com_filter(string cmdline, vector<string> &args)
             }
 
             retval = "info: filter now active";
+        }
+    }
+
+    return retval;
+}
+
+static string com_delete_filter(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a filter to delete";
+
+    if (args.size() == 0) {
+        args.push_back("filter");
+    }
+    else if (args.size() > 1) {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        text_sub_source *tss = tc->get_sub_source();
+        filter_stack &fs = tss->get_filters();
+
+        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        if (fs.delete_filter(args[1])) {
+            retval = "info: deleted filter";
+            tss->text_filters_changed();
+            tc->reload_data();
+        }
+        else {
+            retval = "error: unknown filter -- " + args[1];
         }
     }
 
@@ -2002,6 +2033,12 @@ readline_context::command_t STD_COMMANDS[] = {
         "<regex>",
         "Remove lines that match the given regular expression in the current view",
         com_filter,
+    },
+    {
+        "delete-filter",
+        "<regex>",
+        "Delete the given filter",
+        com_delete_filter,
     },
     {
         "append-to",

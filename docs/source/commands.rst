@@ -22,6 +22,7 @@ with the following commands:
 * filter-out <regex> - Do not display log lines that match a regex.
 * disable-filter <regex> - Disable the given filter.
 * enable-filter <regex> - Enable the given filter.
+* delete-filter <regex> - Delete the filter.
 * set-min-log-level <level> - Only display log lines with the given log level
   or higher.
 

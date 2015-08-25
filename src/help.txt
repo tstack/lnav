@@ -398,7 +398,8 @@ COMMANDS
                     times to add more lines to the display.  The number
                     of lines that are filtered out will be shown in the
                     bottom status bar as 'Not Shown'.  Note that filtering
-                    only works in the log and plain text views.
+                    only works in the log and plain text views.  There is also
+                    a limit of 32 filters per-view at any one time.
 
   filter-out <regex>
                     Do not display lines that match the given regular
@@ -409,7 +410,8 @@ COMMANDS
                     were matched by the 'filter-in'.  The number
                     of lines that are filtered out will be shown in the
                     bottom status bar as 'Not Shown'.  Note that filtering
-                    only works in the log and plain text views.
+                    only works in the log and plain text views.  There is also
+                    a limit of 32 filters per-view at any one time.
 
   disable-filter <regex>
                     Disable an active 'filter-in' or 'filter-out'
@@ -418,6 +420,9 @@ COMMANDS
   enable-filter <regex>
                     Enable a inactive 'filter-in' or 'filter-out'
                     expression.
+
+  delete-filter <regex>
+                    Permanently delete a filter.
 
   set-min-log-level <level>
                     Set the minimum level to display in the log view.

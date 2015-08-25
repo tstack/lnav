@@ -28,6 +28,7 @@ lnav v0.8.0:
        change the lnav view state.
      * When typing in a command, the status bar will display a short
        summary of the currently entered command.
+     * Added a "delete-filter" command.
 
      Fixes:
      * The pretty-print view should now work for text files.

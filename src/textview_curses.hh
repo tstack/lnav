@@ -185,6 +185,10 @@ public:
         return this->fs_filters.empty();
     };
 
+    bool full() const {
+        return this->fs_filters.size() == logfile_filter_state::MAX_FILTERS;
+    }
+
     size_t next_index() {
         bool used[32];
 
@@ -209,7 +213,12 @@ public:
     };
 
     void clear_filters(void) {
-        this->fs_filters.clear();
+        while (!this->fs_filters.empty()) {
+            text_filter *tf = this->fs_filters.back();
+
+            this->fs_filters.pop_back();
+            delete tf;
+        }
     };
 
     void set_filter_enabled(text_filter *filter, bool enabled) {
@@ -234,6 +243,22 @@ public:
         }
 
         return retval;
+    };
+
+    bool delete_filter(std::string id) {
+        std::vector<text_filter *>::iterator iter;
+
+        for (iter = this->fs_filters.begin();
+             iter != this->fs_filters.end() && (*iter)->get_id() != id;
+             iter++) {
+
+        }
+        if (iter != this->fs_filters.end()) {
+            this->fs_filters.erase(iter);
+            return true;
+        }
+
+        return false;
     };
 
     void get_enabled_mask(uint32_t &filter_in_mask, uint32_t &filter_out_mask) {

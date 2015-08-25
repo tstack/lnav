@@ -156,6 +156,8 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":filter-in avahi" \
+    -c ":delete-filter avahi" \
+    -c ":filter-in avahi" \
     -c ":filter-in dnsmasq" \
     ${test_dir}/logfile_filter.0
 
@@ -190,6 +192,18 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_plain.0
 check_output "plain text filter-out is not working" <<EOF
 How are you?
+EOF
+
+
+TOO_MANY_FILTERS=""
+for i in `seq 1 33`; do
+    TOO_MANY_FILTERS="$TOO_MANY_FILTERS -c ':filter-out $i'"
+done
+run_test eval ${lnav_test} -d /tmp/lnav.err -n \
+    $TOO_MANY_FILTERS \
+    ${test_dir}/logfile_filter.0
+check_error_output "able to create too many filters?" <<EOF
+error: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
 EOF
 
 
