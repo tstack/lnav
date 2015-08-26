@@ -40,6 +40,7 @@
 #include <algorithm>
 
 #include "lnav_log.hh"
+#include "lnav_util.hh"
 #include "yajlpp.hh"
 #include "pcrepp.hh"
 #include "byte_array.hh"
@@ -635,19 +636,26 @@ private:
 
             if (!has_value) {
                 element_list_t ELEMENT_LIST_T(blank_value);
+                pcre_input &pi = this->dp_scanner->get_input();
+                const char *str = pi.get_string();
                 struct element blank;
 
                 blank.e_token = DT_QUOTED_STRING;
                 blank.e_capture.c_begin = blank.e_capture.c_end = pair_subs.front().e_capture.c_end;
+                if (blank.e_capture.c_begin < pi.pi_length) {
+                    switch (str[blank.e_capture.c_begin]) {
+                        case '=':
+                        case ':':
+                            blank.e_capture.c_begin += 1;
+                            blank.e_capture.c_end += 1;
+                            break;
+                    }
+                }
                 blank_value.PUSH_BACK(blank);
                 pair_subs.PUSH_BACK(element(blank_value, DNT_VALUE));
             }
 
             pairs_out.PUSH_BACK(element(pair_subs, DNT_PAIR));
-
-            if (this->dp_msg_format != NULL) {
-                *(this->dp_msg_format) += get_string_up_to_value(pairs_out.back()) + "#";
-            }
         }
 
         if (pairs_out.size() == 1) {
@@ -717,9 +725,6 @@ private:
                     // use the token ID since some columns values might vary
                     // between rows.
                     context.Update(" ", 1);
-                    if (schema != NULL && this->dp_msg_format != NULL) {
-                        *(this->dp_msg_format) += this->get_string_up_to_value(free_row.front()) + "#";
-                    }
                 }
                 break;
 
@@ -755,10 +760,23 @@ private:
 
         if (schema != NULL && this->dp_msg_format != NULL) {
             pcre_input &pi = this->dp_scanner->get_input();
+            for (element_list_t::iterator fiter = pairs_out.begin();
+                 fiter != pairs_out.end();
+                 ++fiter) {
+                *(this->dp_msg_format) += this->get_string_up_to_value(*fiter);
+                this->dp_msg_format->append("#");
+            }
             if (this->dp_msg_format_begin < pi.pi_length) {
+                const char *str = pi.get_string();
                 pcre_context::capture_t last(this->dp_msg_format_begin,
                                              pi.pi_length);
 
+                switch (str[last.c_begin]) {
+                    case '\'':
+                    case '"':
+                        last.c_begin += 1;
+                        break;
+                }
                 *(this->dp_msg_format) += pi.get_substr(&last);
             }
         }
@@ -867,7 +885,7 @@ private:
             this->dp_format = &FORMAT_COMMA;
             if (this->dp_separator == DT_COLON && hist[DT_COMMA] > 0) {
                 if (!((hist[DT_COLON] == hist[DT_COMMA]) ||
-                      (hist[DT_COLON] == (hist[DT_COMMA] - 1)))) {
+                      ((hist[DT_COLON] - 1) == hist[DT_COMMA]))) {
                     this->dp_separator = DT_INVALID;
                     if (hist[DT_COLON] == 1) {
                         this->dp_prefix_terminator = DT_COLON;
@@ -883,7 +901,6 @@ private:
     void end_of_value(element_list_t &el_stack,
                       element_list_t &key_comps,
                       element_list_t &value) {
-
         key_comps.remove_if(element_if(this->dp_format->df_terminator));
         key_comps.remove_if(element_if(DT_COMMA));
         value.remove_if(element_if(this->dp_format->df_terminator));
@@ -936,6 +953,8 @@ private:
                          key_comps.end());
         }
         strip(value, element_if(DT_WHITE));
+        strip(value, element_if(DT_COLON));
+        strip(value, element_if(DT_WHITE));
         if (!value.empty()) {
             el_stack.PUSH_BACK(element(value, DNT_VALUE));
         }
@@ -966,6 +985,27 @@ private:
         if (this->dp_msg_format_begin <= val_elem.e_capture.c_begin) {
             pcre_context::capture_t leading_and_key = pcre_context::capture_t(
                     this->dp_msg_format_begin, val_elem.e_capture.c_begin);
+            const char *str = pi.get_string();
+            if (leading_and_key.length() >= 2) {
+                switch (str[leading_and_key.c_end - 1]) {
+                    case '\'':
+                    case '"':
+                        leading_and_key.c_end -= 1;
+                        switch (str[leading_and_key.c_end - 1]) {
+                            case 'r':
+                            case 'u':
+                                leading_and_key.c_end -= 1;
+                                break;
+                        }
+                        break;
+                }
+                switch (str[leading_and_key.c_begin]) {
+                    case '\'':
+                    case '"':
+                        leading_and_key.c_begin += 1;
+                        break;
+                }
+            }
             this->dp_msg_format_begin = val_elem.e_capture.c_end;
             return pi.get_substr(&leading_and_key);
         }

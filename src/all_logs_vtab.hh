@@ -30,6 +30,7 @@
 #ifndef LNAV_ALL_LOGS_VTAB_HH
 #define LNAV_ALL_LOGS_VTAB_HH
 
+#include "byte_array.hh"
 #include "log_vtab_impl.hh"
 #include "data_parser.hh"
 
@@ -39,11 +40,13 @@ public:
     all_logs_vtab() : log_vtab_impl(intern_string::lookup("all_logs")) {
         this->alv_value_name = intern_string::lookup("log_format");
         this->alv_msg_name = intern_string::lookup("log_msg_format");
+        this->alv_schema_name = intern_string::lookup("log_msg_schema");
     }
 
     void get_columns(std::vector<vtab_column> &cols) {
-        cols.push_back(vtab_column(this->alv_value_name.get(), SQLITE3_TEXT, NULL));
-        cols.push_back(vtab_column(this->alv_msg_name.get(), SQLITE3_TEXT, NULL));
+        cols.push_back(vtab_column(this->alv_value_name.get()));
+        cols.push_back(vtab_column(this->alv_msg_name.get()));
+        cols.push_back(vtab_column(this->alv_schema_name.get(), SQLITE3_TEXT, NULL, true));
     };
 
     void extract(logfile *lf, shared_buffer_ref &line,
@@ -74,6 +77,14 @@ public:
         tmp_shared_buffer tsb(str.c_str());
 
         values.push_back(logline_value(this->alv_msg_name, tsb.tsb_ref, 1));
+
+        this->alv_schema_manager.invalidate_refs();
+        dp.dp_schema_id.to_string(this->alv_schema_buffer);
+        shared_buffer_ref schema_ref;
+        schema_ref.share(this->alv_schema_manager,
+                         this->alv_schema_buffer,
+                         data_parser::schema_id_t::STRING_SIZE - 1);
+        values.push_back(logline_value(this->alv_schema_name, schema_ref, 2));
     }
 
     bool next(log_cursor &lc, logfile_sub_source &lss) {
@@ -98,7 +109,9 @@ public:
 private:
     intern_string_t alv_value_name;
     intern_string_t alv_msg_name;
-
+    intern_string_t alv_schema_name;
+    shared_buffer alv_schema_manager;
+    char alv_schema_buffer[data_parser::schema_id_t::STRING_SIZE];
 };
 
 #endif //LNAV_ALL_LOGS_VTAB_HH

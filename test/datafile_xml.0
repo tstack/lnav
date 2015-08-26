@@ -11,6 +11,8 @@ pair  42:49                                            ^-----^              </el
  key  51:51                                                    ^            
 xmlt  51:61                                                     ^--------^  <closed />
 pair  51:61                                                     ^--------^  <closed />
+msg         :<ns1:foo>   <elem attr1=xyz attr2="123">  </elem>  <closed />
+format      :#   #  #  #
 
 --
 <ns1:foo>

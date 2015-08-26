@@ -2,3 +2,5 @@
  key  85:85                                                                                      ^                           
 ipv6  85:110                                                                                      ^-----------------------^  fe80::22c9:d0ff:fe15:1b7c
 pair  85:110                                                                                      ^-----------------------^  fe80::22c9:d0ff:fe15:1b7c
+msg         : Invalid response packet from host fe80::22c9:d0ff:fe15:1b7c.
+format      : Invalid response packet from host #

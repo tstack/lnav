@@ -74,6 +74,7 @@ set(diag_STAT_SRCS
     yajl/yajl_version.c
     spookyhash/SpookyV2.cpp
 
+    all_logs_vtab.hh
     auto_fd.hh
     auto_mem.hh
     auto_pid.hh

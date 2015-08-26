@@ -15,3 +15,5 @@ pair   8:11          ^-^    c=3
  num  12:13              ^  4
  val  12:13              ^  4
 pair  12:13              ^  4
+msg         :a=1 b=2 c=3,4
+format      :a=# b=# c=#,#

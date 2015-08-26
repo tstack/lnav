@@ -18,3 +18,5 @@ pair  79:81                                                                     
 pair  83:96                                                                                     ^-----------^   xid=0xd16b79d
  grp  83:96                                                                                     ^-----------^   xid=0xd16b79d
 pair  83:96                                                                                     ^-----------^   xid=0xd16b79d
+msg         : DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0xd16b79d)
+format      : # on # to # port # (#)

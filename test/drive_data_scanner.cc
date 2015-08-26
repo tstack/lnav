@@ -43,6 +43,8 @@
 #include "log_format_loader.hh"
 #include "pretty_printer.hh"
 #include "shared_buffer.hh"
+#include "../src/data_parser.hh"
+#include "../src/view_curses.hh"
 
 using namespace std;
 
@@ -161,9 +163,13 @@ int main(int argc, char *argv[])
 
                 data_scanner ds(sub_line, body.lr_start, sub_line.length());
                 data_parser  dp(&ds);
+                string msg_format;
 
+                dp.dp_msg_format = &msg_format;
                 dp.parse();
                 dp.print(out, dp.dp_pairs);
+                fprintf(out, "msg         :%s\n", sub_line.c_str() + body.lr_start);
+                fprintf(out, "format      :%s\n", msg_format.c_str());
 
                 if (pretty_print) {
                     data_scanner ds2(sub_line, body.lr_start, sub_line.length());

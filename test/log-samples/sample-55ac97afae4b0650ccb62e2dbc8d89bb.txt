@@ -1,0 +1,11 @@
+             Aug 25 00:30:32 Tim-Stacks-iMac.local iTunes[558]: Entered:__thr_AMMuxedDeviceDisconnected, mux-device:509
+ key  51:58                                                     ^-----^                                                  Entered
+ sym  59:90                                                             ^-----------------------------^                  __thr_AMMuxedDeviceDisconnected
+ val  59:90                                                             ^-----------------------------^                  __thr_AMMuxedDeviceDisconnected
+pair  51:90                                                     ^-------------------------------------^                  Entered:__thr_AMMuxedDeviceDisconnected
+ key  92:102                                                                                             ^--------^      mux-device
+ num 103:106                                                                                                        ^-^  509
+ val 103:106                                                                                                        ^-^  509
+pair  92:106                                                                                             ^------------^  mux-device:509
+msg         : Entered:__thr_AMMuxedDeviceDisconnected, mux-device:509
+format      : Entered:#, mux-device:#

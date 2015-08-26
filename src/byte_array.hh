@@ -40,6 +40,7 @@
 template<size_t COUNT, typename T = unsigned char>
 struct byte_array {
     static const size_t BYTE_COUNT = COUNT * sizeof(T);
+    static const size_t STRING_SIZE = BYTE_COUNT * 2 + 1;
 
     byte_array() { };
 
@@ -74,7 +75,7 @@ struct byte_array {
 
     std::string          to_string() const
     {
-        char buffer[BYTE_COUNT * 2 + 1];
+        char buffer[STRING_SIZE];
 
         this->to_string(buffer);
         return std::string(buffer);

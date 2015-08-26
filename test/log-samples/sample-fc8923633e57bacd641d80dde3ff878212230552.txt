@@ -5,3 +5,5 @@ pair  86:96                                                                     
  key 100:100                                                                                                    ^      
  sym 100:104                                                                                                     ^--^  eth0
 pair 100:104                                                                                                     ^--^  eth0
+msg         : Registering new address record for 10.1.10.62 on eth0.
+format      : Registering new address record for # on #

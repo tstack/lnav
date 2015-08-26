@@ -5,3 +5,5 @@ pair 144:155                                                                    
  key 169:169                                                                                                                                                                         ^                                 
 quot 169:199                                                                                                                                                                          ^----------------------------^   com.json.components.JSONReader
 pair 169:199                                                                                                                                                                          ^----------------------------^   com.json.components.JSONReader
+msg         : Doing prepare for resource name "Json_Reader", component "com.json.components.JSONReader"
+format      : Doing prepare for resource name #, component #

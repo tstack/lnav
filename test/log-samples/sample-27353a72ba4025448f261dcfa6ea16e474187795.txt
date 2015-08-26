@@ -19,3 +19,5 @@ pair  83:92                                                                     
 path 103:110                                                                                                        ^-----^  /bin/ls
  val 103:110                                                                                                        ^-----^  /bin/ls
 pair  95:110                                                                                                ^-------------^  COMMAND=/bin/ls
+msg         :    stack : TTY=ttys002 ; PWD=/ ; USER=root ; COMMAND=/bin/ls
+format      :    # : TTY=# ; PWD=# ; USER=# ; COMMAND=#

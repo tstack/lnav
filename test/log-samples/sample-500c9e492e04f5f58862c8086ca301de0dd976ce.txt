@@ -5,3 +5,5 @@ pair  74:83                                                                     
  key  88:88                                                                                         ^      
  sym  88:92                                                                                          ^--^  mDNS
 pair  88:92                                                                                          ^--^  mDNS
+msg         : New relevant interface eth0.IPv4 for mDNS.
+format      : New relevant interface # for #

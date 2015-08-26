@@ -5,3 +5,5 @@ pair  17:23                   ^----^          0.6.16
  key  25:25                          ^        
 vers  25:31                           ^----^  1.2-a1
 pair  25:31                           ^----^  1.2-a1
+msg         :version numbers  0.6.16  1.2-a1
+format      :version numbers  #  #

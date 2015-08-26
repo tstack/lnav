@@ -14,9 +14,11 @@ wspc  68:69                                                                     
  sym  69:77                                                                       ^------^                                             HARDDISK
  val  64:77                                                                  ^-----------^                                             VBOX HARDDISK
 pair  64:77                                                                  ^-----------^                                             VBOX HARDDISK
- key  79:82                                                                                 ^-^                                        S/N
+ key  79:79                                                                                ^                                           
+ sym  79:82                                                                                 ^-^                                        S/N
+coln  82:83                                                                                    ^                                       :
  sym  83:102                                                                                    ^-----------------^                    VBc8882b62-a0263a39
- val  83:102                                                                                    ^-----------------^                    VBc8882b62-a0263a39
+ val  79:102                                                                                ^---------------------^                    S/N:VBc8882b62-a0263a39
 pair  79:102                                                                                ^---------------------^                    S/N:VBc8882b62-a0263a39
  key 104:106                                                                                                         ^^                FW
  num 107:110                                                                                                            ^-^            1.0
@@ -28,3 +30,5 @@ wspc 116:117                                                                    
  sym 117:119                                                                                                                      ^^   GB
  val 112:119                                                                                                                 ^-----^   17.1 GB
 pair 112:119                                                                                                                 ^-----^   17.1 GB
+msg         : Device: /dev/sda [SAT], VBOX HARDDISK, S/N:VBc8882b62-a0263a39, FW:1.0, 17.1 GB 
+format      : Device: #], #, #, FW:#, # 

@@ -12,3 +12,5 @@ pair  54:63                                                        ^-------^    
 pair  65:79                                                                   ^------------^   xid=0x4e17f141
  grp  65:79                                                                   ^------------^   xid=0x4e17f141
 pair  65:79                                                                   ^------------^   xid=0x4e17f141
+msg         : DHCPNAK from 10.1.10.1 (xid=0x4e17f141)
+format      : # from # (#)

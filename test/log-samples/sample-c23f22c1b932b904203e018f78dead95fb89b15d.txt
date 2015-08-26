@@ -21,3 +21,5 @@ pair  98:99                                                                     
 pair 101:114                                                                                                      ^-----------^   xid=0xd16b79d
  grp 101:114                                                                                                      ^-----------^   xid=0xd16b79d
 pair 101:114                                                                                                      ^-----------^   xid=0xd16b79d
+msg         : DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0xd16b79d)
+format      : # on # to # port # interval # (#)
