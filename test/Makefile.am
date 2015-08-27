@@ -254,6 +254,7 @@ dist_noinst_DATA = \
 	mvwattrline_output.0 \
 	textfile_json_indented.0 \
 	textfile_json_one_line.0 \
+	textfile_quoted_json.0 \
 	view_colors_output.0 \
 	vt52_curses_input.0 \
 	vt52_curses_input.1 \

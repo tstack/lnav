@@ -46,6 +46,7 @@
 #include "timer.hh"
 #include "ansi_scrubber.hh"
 #include "data_scanner.hh"
+#include "lnav_util.hh"
 
 extern sig_atomic_t reverse_lookup_enabled;
 
@@ -65,8 +66,8 @@ public:
         pcre_context::capture_t e_capture;
     };
 
-    pretty_printer(data_scanner *ds)
-            : pp_leading_indent(0),
+    pretty_printer(data_scanner *ds, int leading_indent=0)
+            : pp_leading_indent(leading_indent),
               pp_depth(0),
               pp_line_length(0),
               pp_scanner(ds) {
@@ -271,14 +272,29 @@ private:
         if (this->pp_line_length == 0) {
             this->append_indent();
         }
-        this->pp_stream << pi.get_substr(&el.e_capture);
-        switch (el.e_token) {
-            case DT_IPV4_ADDRESS:
-            case DT_IPV6_ADDRESS:
-                this->convert_ip_address(el);
-                break;
-            default:
-                break;
+        if (el.e_token == DT_QUOTED_STRING) {
+            pcre_input &pi = this->pp_scanner->get_input();
+            auto_mem<char> unquoted_str((char *)malloc(pi.pi_length));
+            const char *start = pi.get_substr_start(&el.e_capture);
+            unquote(unquoted_str.in(), start, el.e_capture.length());
+            data_scanner ds(unquoted_str.in());
+            pretty_printer str_pp(&ds, this->pp_leading_indent);
+            std::string result = str_pp.print();
+            if (result.find('\n') != std::string::npos) {
+                this->pp_stream << str_pp.print();
+            } else {
+                this->pp_stream << pi.get_substr(&el.e_capture);
+            }
+        } else {
+            this->pp_stream << pi.get_substr(&el.e_capture);
+            switch (el.e_token) {
+                case DT_IPV4_ADDRESS:
+                case DT_IPV6_ADDRESS:
+                    this->convert_ip_address(el);
+                    break;
+                default:
+                    break;
+            }
         }
         this->pp_line_length += el.e_capture.length();
         if (el.e_token == DT_LINE) {

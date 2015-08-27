@@ -70,6 +70,10 @@ std::string hash_string(const std::string &str)
 
 size_t unquote(char *dst, const char *str, size_t len)
 {
+    if (str[0] == 'r' || str[0] == 'u') {
+        str += 1;
+        len -= 1;
+    }
     char quote_char = str[0];
     size_t index = 0;
 
@@ -78,6 +82,23 @@ size_t unquote(char *dst, const char *str, size_t len)
     for (size_t lpc = 1; lpc < (len - 1); lpc++, index++) {
         dst[index] = str[lpc];
         if (str[lpc] == quote_char) {
+            lpc += 1;
+        }
+        else if (str[lpc] == '\\' && (lpc + 1) < len) {
+            switch (str[lpc] + 1) {
+                case 'n':
+                    dst[index] = '\n';
+                    break;
+                case 'r':
+                    dst[index] = '\r';
+                    break;
+                case 't':
+                    dst[index] = '\t';
+                    break;
+                default:
+                    dst[index] = str[lpc + 1];
+                    break;
+            }
             lpc += 1;
         }
     }
