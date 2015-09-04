@@ -38,6 +38,32 @@
 
 using namespace std;
 
+static int sql_progress(const struct log_cursor &lc)
+{
+    static sig_atomic_t sql_counter = 0;
+
+    size_t total = lnav_data.ld_log_source.text_line_count();
+    off_t  off   = lc.lc_curr_line;
+
+    if (lnav_data.ld_window == NULL) {
+        return 0;
+    }
+
+    if (!lnav_data.ld_looping) {
+        return 1;
+    }
+
+    if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
+        lnav_data.ld_bottom_source.update_loading(off, total);
+        lnav_data.ld_top_source.update_time();
+        lnav_data.ld_status[LNS_TOP].do_update();
+        lnav_data.ld_status[LNS_BOTTOM].do_update();
+        refresh();
+    }
+
+    return 0;
+}
+
 string execute_from_file(const string &path, int line_number, char mode, const string &cmdline);
 
 string execute_command(string cmdline)
@@ -94,6 +120,7 @@ string execute_sql(string sql, string &alt_msg)
     hs.get_displayed_buckets().clear();
     dls.clear();
     dls.dls_stmt_str = stmt_str;
+    sql_progress_guard progress_guard(sql_progress);
     retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
        stmt_str.c_str(),
        -1,

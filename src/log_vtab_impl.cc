@@ -39,7 +39,7 @@ using namespace std;
 
 static struct log_cursor log_cursor_latest;
 
-static sql_progress_callback_t vtab_progress_callback;
+sql_progress_callback_t log_vtab_progress_callback;
 
 static const char *type_to_string(int type)
 {
@@ -224,7 +224,7 @@ static int vt_next(sqlite3_vtab_cursor *cur)
     do {
         log_cursor_latest = vc->log_cursor;
         if (((log_cursor_latest.lc_curr_line % 1024) == 0) &&
-            vtab_progress_callback(log_cursor_latest)) {
+            log_vtab_progress_callback(log_cursor_latest)) {
             break;
         }
         done = vt->vi->next(vc->log_cursor, *vt->lss);
@@ -645,8 +645,8 @@ static int progress_callback(void *ptr)
 {
     int retval = 0;
 
-    if (vtab_progress_callback != NULL) {
-        retval = vtab_progress_callback(log_cursor_latest);
+    if (log_vtab_progress_callback != NULL) {
+        retval = log_vtab_progress_callback(log_cursor_latest);
     }
 
     return retval;
@@ -654,12 +654,10 @@ static int progress_callback(void *ptr)
 
 log_vtab_manager::log_vtab_manager(sqlite3 *memdb,
                                    textview_curses &tc,
-                                   logfile_sub_source &lss,
-                                   sql_progress_callback_t pc)
+                                   logfile_sub_source &lss)
     : vm_db(memdb), vm_textview(tc), vm_source(lss)
 {
     sqlite3_create_module(this->vm_db, "log_vtab_impl", &vtab_module, this);
-    vtab_progress_callback = pc;
     sqlite3_progress_handler(memdb, 32, progress_callback, NULL);
 }
 

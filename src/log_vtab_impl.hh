@@ -164,14 +164,26 @@ protected:
 
 typedef int (*sql_progress_callback_t)(const log_cursor &lc);
 
+extern sql_progress_callback_t log_vtab_progress_callback;
+
+class sql_progress_guard {
+public:
+    sql_progress_guard(sql_progress_callback_t cb) {
+        log_vtab_progress_callback = cb;
+    };
+
+    ~sql_progress_guard() {
+        log_vtab_progress_callback = NULL;
+    };
+};
+
 class log_vtab_manager {
 public:
     typedef std::map<intern_string_t, log_vtab_impl *>::const_iterator iterator;
 
     log_vtab_manager(sqlite3 *db,
                      textview_curses &tc,
-                     logfile_sub_source &lss,
-                     sql_progress_callback_t);
+                     logfile_sub_source &lss);
 
     textview_curses *get_view() const { return &this->vm_textview; };
 

@@ -2202,32 +2202,6 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
         false, view_colors::VCR_VARIABLE);
 }
 
-int sql_progress(const struct log_cursor &lc)
-{
-    static sig_atomic_t sql_counter = 0;
-
-    size_t total = lnav_data.ld_log_source.text_line_count();
-    off_t  off   = lc.lc_curr_line;
-
-    if (lnav_data.ld_window == NULL) {
-        return 0;
-    }
-
-    if (!lnav_data.ld_looping) {
-        return 1;
-    }
-
-    if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
-        lnav_data.ld_bottom_source.update_loading(off, total);
-        lnav_data.ld_top_source.update_time();
-        lnav_data.ld_status[LNS_TOP].do_update();
-        lnav_data.ld_status[LNS_BOTTOM].do_update();
-        refresh();
-    }
-
-    return 0;
-}
-
 static void print_errors(vector<string> error_list)
 {
     for (std::vector<std::string>::iterator iter = error_list.begin();
@@ -2496,8 +2470,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager =
         new log_vtab_manager(lnav_data.ld_db,
                              lnav_data.ld_views[LNV_LOG],
-                             lnav_data.ld_log_source,
-                             sql_progress);
+                             lnav_data.ld_log_source);
 
     {
         auto_mem<char, sqlite3_free> errmsg;
