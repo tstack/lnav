@@ -61,8 +61,27 @@ int curl_request::debug_cb(CURL *handle,
                            size_t size,
                            void *userp) {
     curl_request *cr = (curl_request *) userp;
+    bool write_to_log;
 
-    if (type == CURLINFO_TEXT) {
+    switch (type) {
+        case CURLINFO_TEXT:
+            write_to_log = true;
+            break;
+        case CURLINFO_HEADER_IN:
+        case CURLINFO_HEADER_OUT:
+            if (lnav_log_level == LOG_LEVEL_TRACE) {
+                write_to_log = true;
+            }
+            else {
+                write_to_log = false;
+            }
+            break;
+        default:
+            write_to_log = false;
+            break;
+    }
+
+    if (write_to_log) {
         while (size > 0 && isspace(data[size - 1])) {
             size -= 1;
         }

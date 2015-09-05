@@ -76,6 +76,10 @@ public:
         curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGFUNCTION, debug_cb);
         curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGDATA, this);
         curl_easy_setopt(this->cr_handle, CURLOPT_VERBOSE, 1);
+        if (getenv("SSH_AUTH_SOCK") != NULL) {
+            curl_easy_setopt(this->cr_handle, CURLOPT_SSH_AUTH_TYPES,
+                             CURLSSH_AUTH_AGENT);
+        }
     };
 
     virtual ~curl_request() {

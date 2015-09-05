@@ -14,6 +14,20 @@ hoped that these features will allow the user to quickly and
 efficiently zero in on problems.
 
 
+OPENING PATHS/URLs
+------------------
+
+The main arguments to lnav are the files, directories, glob patterns,
+or URLs to be viewed.  If no arguments are given, the default syslog
+file for your system will be opened.  These arguments will be polled
+periodically so that any new data or files will be automatically
+loaded.  If a previously loaded file is removed or replaced, it will
+be closed and the replacement opened.
+
+Note: When opening SFTP URLs, if the password is not provided for the
+host, the SSH agent can be used to do authentication.
+
+
 OPTIONS
 -------
 
