@@ -149,7 +149,7 @@ public:
     };
 
 private:
-    alerter() : a_enabled(false), a_do_flash(true), a_last_input(-1) { };
+    alerter() : a_enabled(true), a_do_flash(true), a_last_input(-1) { };
 
     bool a_enabled;
     bool a_do_flash;

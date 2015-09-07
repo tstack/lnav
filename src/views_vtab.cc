@@ -50,7 +50,7 @@ CREATE TABLE lnav_views (\n\
     top integer,\n\
     left integer,\n\
     height integer,\n\
-    inner_height integer\
+    inner_height integer\n\
 );\n\
 ";
 

@@ -38,7 +38,7 @@ doing::
 Viewing Logs
 ------------
 
-The arguments to **lnav** are the log files or directories to be viewed.
+The arguments to **lnav** are the log files, directories, or URLs to be viewed.
 For example, to view all of the CUPS logs on your system::
 
    $ lnav /var/log/cups

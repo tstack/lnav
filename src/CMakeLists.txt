@@ -31,6 +31,7 @@ set(diag_STAT_SRCS
     network-extension-functions.cc
     data_scanner.cc
     data_parser.cc
+    papertrail_proc.cc
     ptimec_rt.cc
     pretty_printer.cc
     readline_callbacks.cc
@@ -100,6 +101,7 @@ set(diag_STAT_SRCS
     log_format_impls.cc
     log_search_table.hh
     logfile_stats.hh
+    papertrail_proc.hh
     plain_text_source.hh
     pretty_printer.hh
     ptimec.hh

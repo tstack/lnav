@@ -66,7 +66,7 @@ static void copy_to_xclip(void)
     pfile = open_clipboard(CT_GENERAL);
 
     if (!pfile.in()) {
-        flash();
+        alerter::singleton().chime();
         lnav_data.ld_rl_view->set_value(
                 "error: Unable to copy to clipboard.  "
                         "Make sure xclip or pbcopy is installed.");
@@ -272,14 +272,14 @@ void handle_paging_key(int ch)
                         HELP_MSG_1(m, "to bookmark a line"));
             }
             else{
-                flash();
+                alerter::singleton().chime();
             }
         }
             break;
 
         case '<':
             if (tc->get_left() == 0) {
-                flash();
+                alerter::singleton().chime();
             }
             else {
                 std::pair<int, int> range;
@@ -331,7 +331,7 @@ void handle_paging_key(int ch)
         case 'z':
             if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
                 if ((lnav_data.ld_hist_zoom + 1) >= HIST_ZOOM_LEVELS) {
-                    flash();
+                    alerter::singleton().chime();
                 }
                 else {
                     lnav_data.ld_hist_zoom += 1;
@@ -347,7 +347,7 @@ void handle_paging_key(int ch)
         case 'Z':
             if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
                 if (lnav_data.ld_hist_zoom == 0) {
-                    flash();
+                    alerter::singleton().chime();
                 }
                 else {
                     lnav_data.ld_hist_zoom -= 1;
@@ -477,7 +477,7 @@ void handle_paging_key(int ch)
             }
             else {
                 lnav_data.ld_last_user_mark[tc] = new_mark;
-                flash();
+                alerter::singleton().chime();
             }
             lnav_data.ld_select_start[tc] = tc->get_top();
             tc->reload_data();
@@ -526,7 +526,7 @@ void handle_paging_key(int ch)
         case 'M':
             if (lnav_data.ld_last_user_mark.find(tc) ==
                 lnav_data.ld_last_user_mark.end()) {
-                flash();
+                alerter::singleton().chime();
             }
             else {
                 int start_line = min((int)tc->get_top(),
@@ -689,7 +689,7 @@ void handle_paging_key(int ch)
         case 'D':
         case 'O':
             if (tc->get_top() == 0) {
-                flash();
+                alerter::singleton().chime();
             }
             else if (lss) {
                 int        step     = ch == 'D' ? (24 * 60 * 60) : (60 * 60);
@@ -822,7 +822,7 @@ void handle_paging_key(int ch)
 
         case 't':
             if (lnav_data.ld_text_source.current_file() == NULL) {
-                flash();
+                alerter::singleton().chime();
                 lnav_data.ld_rl_view->set_value("No text files loaded");
             }
             else if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
@@ -1071,7 +1071,7 @@ void handle_paging_key(int ch)
             lnav_data.ld_rl_view->set_value("Unrecognized keystroke, press "
             ANSI_BOLD("?")
             " to view help");
-            flash();
+            alerter::singleton().chime();
             break;
     }
 }
