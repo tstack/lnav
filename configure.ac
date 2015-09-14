@@ -27,14 +27,12 @@ done
 
 dnl abssrcdir is the absolute path to the source base (regardless of where
 dnl you are building it)
-case x$srcdir in
-x/*)
-    abssrcdir=$srcdir
-    ;;
-*)
-    abssrcdir=`pwd`/$srcdir
-    ;;
-esac
+AS_CASE([x$srcdir],
+    [x/*],
+    AS_VAR_SET(abssrcdir, $srcdir),
+    AS_VAR_SET(abssrcdir, `pwd`/$srcdir)
+)
+
 AC_SUBST(abssrcdir)
 
 AC_PROG_CXX
