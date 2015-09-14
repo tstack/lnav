@@ -49,6 +49,7 @@
 #include "command_executor.hh"
 #include "url_loader.hh"
 #include "readline_curses.hh"
+#include "relative_time.hh"
 #include "log_search_table.hh"
 
 using namespace std;
@@ -249,20 +250,52 @@ static string com_current_time(string cmdline, vector<string> &args)
 
 static string com_goto(string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting line number/percentage or timestamp";
+    string retval = "error: expecting line number/percentage, timestamp, or relative time";
 
     if (args.size() == 0) {
         args.push_back("line-time");
     }
     else if (args.size() > 1) {
+        string all_args = cmdline.substr(cmdline.find(args[1], args[0].size()));
         textview_curses *tc = lnav_data.ld_view_stack.top();
         int   line_number, consumed;
         date_time_scanner dts;
+        struct relative_time::parse_error pe;
+        relative_time rt;
         struct timeval tv;
         struct exttm tm;
         float value;
 
-        if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, tv) != NULL) {
+        if (rt.parse(all_args, pe)) {
+            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+                content_line_t cl;
+                vis_line_t vl;
+                logline *ll;
+
+                if (!rt.is_absolute()) {
+                    lnav_data.ld_last_relative_time = rt;
+                }
+
+                vl = tc->get_top();
+                cl = lnav_data.ld_log_source.at(vl);
+                ll = lnav_data.ld_log_source.find_line(cl);
+                ll->to_exttm(tm);
+                rt.add(tm);
+                tv.tv_sec = timegm(&tm.et_tm);
+                tv.tv_usec = tm.et_nsec / 1000;
+
+                vl = lnav_data.ld_log_source.find_from_time(tv);
+                tc->set_top(vl);
+                retval = "";
+                if (!rt.is_absolute() && lnav_data.ld_rl_view != NULL) {
+                    lnav_data.ld_rl_view->set_alt_value(
+                            HELP_MSG_2(r, R, "to move forward/backward the same amount of time"));
+                }
+            } else {
+                retval = "error: relative time values only work in the log view";
+            }
+        }
+        else if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, tv) != NULL) {
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
                 vis_line_t vl;
 
@@ -751,6 +784,7 @@ static string com_highlight(string cmdline, vector<string> &args)
             }
 
             retval = "info: highlight pattern now active";
+            tc->reload_data();
         }
     }
 
@@ -777,6 +811,7 @@ static string com_clear_highlight(string cmdline, vector<string> &args)
         else {
             hm.erase(hm_iter);
             retval = "info: highlight pattern cleared";
+            tc->reload_data();
         }
     }
 
@@ -1945,10 +1980,6 @@ static string com_redraw(string cmdline, vector<string> &args)
     }
     else if (lnav_data.ld_window) {
         redrawwin(lnav_data.ld_window);
-        if (lnav_data.ld_rl_view != NULL) {
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                    CTRL-L, "to redraw the window"));
-        }
     }
 
     return "";

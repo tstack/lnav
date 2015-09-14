@@ -29,6 +29,13 @@ lnav v0.8.0:
      * When typing in a command, the status bar will display a short
        summary of the currently entered command.
      * Added a "delete-filter" command.
+     * The 'goto' command now supports relative time values like
+       'a minute ago', 'an hour later', and many more.
+
+     Interface Changes:
+     * The 'r/R' hotkeys have been reassigned to navigate through the log
+       messages by the relative time value that was last used with the
+       'goto' command.
 
      Fixes:
      * The pretty-print view should now work for text files.

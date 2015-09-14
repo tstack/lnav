@@ -288,40 +288,46 @@ const char *log_format::log_scanf(const char *line,
     return retval;
 }
 
-void log_format::check_for_new_year(std::vector<logline> &dst,
-    const struct timeval &log_tv)
+void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
+                                    struct timeval log_tv)
 {
     if (dst.empty()) {
         return;
     }
 
     time_t diff = dst.back().get_time() - log_tv.tv_sec;
+    int off_year = 0, off_month = 0, off_day = 0, off_hour = 0;
+    std::vector<logline>::iterator iter;
+    bool do_change = true;
 
-    if (diff > (5 * 60)) {
-        int off_year = 0, off_month = 0, off_day = 0, off_hour = 0;
-        std::vector<logline>::iterator iter;
+    if (diff <= 0) {
+        return;
+    }
+    if (diff > (60 * 24 * 60 * 60)) {
+        off_year = 1;
+    } else if (diff > (15 * 24 * 60 * 60)) {
+        off_month = 1;
+    } else if (diff > (12 * 60 * 60)) {
+        off_day = 1;
+    } else if (!(etm.et_flags & ETF_DAY_SET)) {
+        off_hour = 1;
+    } else {
+        do_change = false;
+    }
 
-        if (diff > (60 * 24 * 60 * 60)) {
-            off_year = 1;
-        } else if (diff > (15 * 24 * 60 * 60)) {
-            off_month = 1;
-        } else if (diff > (12 * 60 * 60)) {
-            off_day = 1;
-        } else {
-            off_hour = 1;
-        }
+    if (!do_change) {
+        return;
+    }
+    for (iter = dst.begin(); iter != dst.end(); iter++) {
+        time_t     ot = iter->get_time();
+        struct tm otm;
 
-        for (iter = dst.begin(); iter != dst.end(); iter++) {
-            time_t     ot = iter->get_time();
-            struct tm otm;
-
-            gmtime_r(&ot, &otm);
-            otm.tm_year -= off_year;
-            otm.tm_mon  -= off_month;
-            otm.tm_yday -= off_day;
-            otm.tm_hour -= off_hour;
-            iter->set_time(tm2sec(&otm));
-        }
+        gmtime_r(&ot, &otm);
+        otm.tm_year -= off_year;
+        otm.tm_mon  -= off_month;
+        otm.tm_yday -= off_day;
+        otm.tm_hour -= off_hour;
+        iter->set_time(tm2sec(&otm));
     }
 }
 
@@ -706,7 +712,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
         if (!((log_time_tm.et_flags & ETF_DAY_SET) &&
                 (log_time_tm.et_flags & ETF_MONTH_SET) &&
                 (log_time_tm.et_flags & ETF_YEAR_SET))) {
-            this->check_for_new_year(dst, log_tv);
+            this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 
         if (mod_cap != NULL) {

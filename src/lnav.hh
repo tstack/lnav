@@ -61,6 +61,7 @@
 #include "ansi_scrubber.hh"
 #include "curl_looper.hh"
 #include "papertrail_proc.hh"
+#include "relative_time.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -248,6 +249,8 @@ struct _lnav_data {
     input_state_tracker ld_input_state;
 
     curl_looper ld_curl_looper;
+
+    relative_time ld_last_relative_time;
 };
 
 extern struct _lnav_data lnav_data;

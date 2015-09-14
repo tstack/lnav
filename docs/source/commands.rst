@@ -29,8 +29,9 @@ with the following commands:
 Navigation
 ----------
 
-* goto <line#|N%|time> - Go to the given line number, N percent into the
-  file, or the given timestamp in the log view.
+* goto <line#|N%|abs-time|relative-time> - Go to the given line number, N
+  percent into the file, the given timestamp in the log view, or by the
+  relative time (e.g. 'a minute ago').
 * relative-goto <line#|N%> - Move the current view up or down by the given
   amount.
 * next-mark error|warning|search|user|file|partition - Move to the next

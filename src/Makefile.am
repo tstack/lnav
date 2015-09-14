@@ -151,6 +151,7 @@ noinst_HEADERS = \
 	readline_curses.hh \
 	readline_highlighters.hh \
 	readline_possibilities.hh \
+	relative_time.hh \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	session_data.hh \
@@ -235,6 +236,7 @@ libdiag_a_SOURCES = \
 	readline_curses.cc \
 	readline_highlighters.cc \
 	readline_possibilities.cc \
+	relative_time.cc \
 	session_data.cc \
 	sequence_matcher.cc \
 	shared_buffer.cc \

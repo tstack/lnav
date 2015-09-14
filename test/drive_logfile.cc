@@ -67,7 +67,9 @@ int main(int argc, char *argv[])
   {
     std::vector<std::string> paths, errors;
 
-    paths.push_back(getenv("test_dir"));
+    if (getenv("test_dir") != NULL) {
+      paths.push_back(getenv("test_dir"));
+    }
     load_formats(paths, errors);
   }
 

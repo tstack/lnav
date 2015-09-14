@@ -146,6 +146,9 @@ Chronological Navigation
    * - |ks| 0 |ke|
      - |ks| Shift |ke| + |ks| 0 |ke|
      - Next/previous day
+   * - |ks| r |ke|
+     - |ks| Shift |ke| + |ks| r |ke|
+     - Forward/backward by the relative time that was last used with the goto command.
 
 Bookmarks
 ---------

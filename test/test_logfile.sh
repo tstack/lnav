@@ -121,6 +121,27 @@ Apr 10 02:58:07 2015 -- 123
 Apr 10 02:58:07 2015 -- 456
 EOF
 
+
+touch -t 201509130923 ${srcdir}/logfile_syslog_with_mixed_times.0
+run_test ./drive_logfile -t -f syslog_log ${srcdir}/logfile_syslog_with_mixed_times.0
+
+check_output "syslog_log with mixed times interpreted incorrectly?" <<EOF
+Sep 13 00:58:45 2015 -- 000
+Sep 13 00:59:30 2015 -- 000
+Sep 13 01:23:54 2015 -- 000
+Sep 13 03:12:04 2015 -- 000
+Sep 13 03:12:04 2015 -- 000
+Sep 13 03:12:04 2015 -- 000
+Sep 13 03:12:04 2015 -- 000
+Sep 13 03:12:58 2015 -- 000
+Sep 13 03:46:03 2015 -- 000
+Sep 13 03:46:03 2015 -- 000
+Sep 13 03:46:03 2015 -- 000
+Sep 13 03:46:03 2015 -- 000
+Sep 13 03:46:03 2015 -- 000
+EOF
+
+
 ##
 
 run_test ./drive_logfile -v -f syslog_log ${srcdir}/logfile_syslog.0

@@ -1030,35 +1030,44 @@ void handle_paging_key(int ch)
             break;
 
         case 'r':
-            if (!lnav_data.ld_session_file_names.empty()) {
-                lnav_data.ld_session_file_index =
-                        (lnav_data.ld_session_file_index + 1) %
-                        lnav_data.ld_session_file_names.size();
-                reset_session();
-                load_session();
-                rebuild_indexes(true);
-            }
-            break;
-
         case 'R':
-            if (lnav_data.ld_session_file_index == 0) {
-                lnav_data.ld_session_file_index =
-                        lnav_data.ld_session_file_names.size() - 1;
+            if (lss) {
+                if (lnav_data.ld_last_relative_time.empty()) {
+                    lnav_data.ld_rl_view->set_value(
+                            "Use the 'goto' command to set the relative time to move by");
+                }
+                else {
+                    vis_line_t vl = tc->get_top();
+                    relative_time rt = lnav_data.ld_last_relative_time;
+                    struct timeval tv;
+                    content_line_t cl;
+                    struct exttm tm;
+
+                    if (ch == 'R') {
+                        rt.negate();
+                    }
+
+                    cl = lnav_data.ld_log_source.at(vl);
+                    logline *ll = lnav_data.ld_log_source.find_line(cl);
+                    ll->to_exttm(tm);
+                    rt.add(tm);
+                    tv.tv_sec = timegm(&tm.et_tm);
+                    tv.tv_usec = tm.et_nsec / 1000;
+                    vl = lnav_data.ld_log_source.find_from_time(tv);
+                    if (rt.is_negative() && (vl > vis_line_t(0))) {
+                        --vl;
+                        if (vl == tc->get_top()) {
+                            vl = vis_line_t(0);
+                        }
+                    }
+                    tc->set_top(vl);
+                }
             }
-            else{
-                lnav_data.ld_session_file_index -= 1;
-            }
-            reset_session();
-            load_session();
-            rebuild_indexes(true);
             break;
 
         case KEY_CTRL_R:
             reset_session();
             rebuild_indexes(true);
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    r, R,
-                    "to restore the next/previous session"));
             break;
 
         case KEY_CTRL_W:

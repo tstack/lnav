@@ -31,11 +31,44 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":goto 2 hours later" \
+    ${test_dir}/logfile_syslog_with_mixed_times.0
+
+check_output "goto 3:45 is not working?" <<EOF
+Sep 13 03:12:04 Tim-Stacks-iMac kernel[0]: vm_compressor_record_warmup (9478314 - 9492476)
+Sep 13 03:12:04 Tim-Stacks-iMac kernel[0]: AppleBCM5701Ethernet [en0]:        0        0 memWrInd fBJP_Wakeup_Timer
+Sep 13 01:25:39 Tim-Stacks-iMac kernel[0]: AppleThunderboltNHIType2::waitForOk2Go2Sx - retries = 60000
+Sep 13 03:12:04 Tim-Stacks-iMac kernel[0]: hibernate_page_list_setall(preflight 0) start 0xffffff8428276000, 0xffffff8428336000
+Sep 13 03:12:58 Tim-Stacks-iMac kernel[0]: *** kernel exceeded 500 log message per second limit  -  remaining messages this second discarded ***
+Sep 13 03:46:03 Tim-Stacks-iMac kernel[0]: IOThunderboltSwitch<0xffffff803f4b3000>(0x0)::listenerCallback - Thunderbolt HPD packet for route = 0x0 port = 11 unplug = 0
+Sep 13 03:46:03 Tim-Stacks-iMac kernel[0]: vm_compressor_flush - starting
+Sep 13 03:46:03 Tim-Stacks-iMac kernel[0]: AppleBCM5701Ethernet [en0]:        0        0 memWrInd fBJP_Wakeup_Timer
+Sep 13 03:13:16 Tim-Stacks-iMac kernel[0]: AppleThunderboltNHIType2::waitForOk2Go2Sx - retries = 60000
+Sep 13 03:46:03 Tim-Stacks-iMac kernel[0]: hibernate_page_list_setall(preflight 0) start 0xffffff838f1fc000, 0xffffff838f2bc000
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":goto 3:45" \
+    ${test_dir}/logfile_syslog_with_mixed_times.0
+
+check_output "goto 3:45 is not working?" <<EOF
+Sep 13 03:46:03 Tim-Stacks-iMac kernel[0]: IOThunderboltSwitch<0xffffff803f4b3000>(0x0)::listenerCallback - Thunderbolt HPD packet for route = 0x0 port = 11 unplug = 0
+Sep 13 03:46:03 Tim-Stacks-iMac kernel[0]: vm_compressor_flush - starting
+Sep 13 03:46:03 Tim-Stacks-iMac kernel[0]: AppleBCM5701Ethernet [en0]:        0        0 memWrInd fBJP_Wakeup_Timer
+Sep 13 03:13:16 Tim-Stacks-iMac kernel[0]: AppleThunderboltNHIType2::waitForOk2Go2Sx - retries = 60000
+Sep 13 03:46:03 Tim-Stacks-iMac kernel[0]: hibernate_page_list_setall(preflight 0) start 0xffffff838f1fc000, 0xffffff838f2bc000
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ":goto invalid" \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "goto invalid is working" <<EOF
-error: expecting line number/percentage or timestamp
+error: expecting line number/percentage, timestamp, or relative time
 EOF
 
 check_output "goto invalid is not working" <<EOF

@@ -150,6 +150,11 @@ public:
     /** @return The timestamp for the line. */
     time_t get_time() const { return this->ll_time; };
 
+    void to_exttm(struct exttm &tm_out) const {
+        tm_out.et_tm = *gmtime(&this->ll_time);
+        tm_out.et_nsec = this->ll_millis * 1000 * 1000;
+    };
+
     void set_time(time_t t) { this->ll_time = t; };
 
     /** @return The millisecond timestamp for the line. */
@@ -255,7 +260,8 @@ public:
 
     bool operator<(const struct timeval &rhs) const {
         return ((this->ll_time < rhs.tv_sec) ||
-                (this->ll_millis < (rhs.tv_usec / 1000)));
+                ((this->ll_time == rhs.tv_sec) &&
+                 (this->ll_millis < (rhs.tv_usec / 1000))));
     };
 
 private:
@@ -654,8 +660,8 @@ public:
         return &this->lf_timestamp_format[0];
     };
 
-    void check_for_new_year(std::vector<logline> &dst,
-        const struct timeval &log_tv);
+    void check_for_new_year(std::vector<logline> &dst, exttm log_tv,
+                            timeval timeval1);
 
     virtual std::string get_pattern_name() const {
         char name[32];

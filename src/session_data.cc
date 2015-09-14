@@ -1300,7 +1300,6 @@ void reset_session(void)
     textview_curses::highlight_map_t &hmap =
         lnav_data.ld_views[LNV_LOG].get_highlights();
     textview_curses::highlight_map_t::iterator hl_iter = hmap.begin();
-    logfile_sub_source &lss = lnav_data.ld_log_source;
 
     log_info("reset session: time=%d", lnav_data.ld_session_time);
 
@@ -1328,8 +1327,19 @@ void reset_session(void)
         lf->clear_time_offset();
     }
 
-    lnav_data.ld_log_source.get_filters().clear_filters();
+    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+        textview_curses &tc = lnav_data.ld_views[lpc];
+        text_sub_source *tss = tc.get_sub_source();
 
-    lss.get_user_bookmarks()[&textview_curses::BM_USER].clear();
-    lss.get_user_bookmarks()[&textview_curses::BM_PARTITION].clear();
+        if (tss == NULL) {
+            continue;
+        }
+        tss->get_filters().clear_filters();
+        tss->text_filters_changed();
+        tss->text_clear_marks(&textview_curses::BM_USER);
+        tc.get_bookmarks()[&textview_curses::BM_USER].clear();
+        tss->text_clear_marks(&textview_curses::BM_PARTITION);
+        tc.get_bookmarks()[&textview_curses::BM_PARTITION].clear();
+        tc.reload_data();
+    }
 }

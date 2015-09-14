@@ -44,6 +44,7 @@ check_PROGRAMS = \
 	test_line_buffer2 \
 	test_log_accel \
 	test_pcrepp \
+	test_reltime \
 	test_top_status \
 	test_yajlpp
 
@@ -98,6 +99,9 @@ test_concise_LDADD = ../src/libdiag.a
 
 test_json_ptr_SOURCES = test_json_ptr.cc
 test_json_ptr_LDADD = ../src/libdiag.a
+
+test_reltime_SOURCES = test_reltime.cc
+test_reltime_LDADD = ../src/libdiag.a
 
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
@@ -244,6 +248,7 @@ dist_noinst_DATA = \
 	logfile_syslog.1 \
 	logfile_syslog.2 \
 	logfile_syslog_with_access_log.0 \
+	logfile_syslog_with_mixed_times.0 \
 	logfile_tcf.0 \
 	logfile_tcf.1 \
 	logfile_tcsh_history.0 \
@@ -293,6 +298,7 @@ TESTS = \
 	test_log_accel \
 	test_logfile.sh \
 	test_pcrepp \
+	test_reltime \
 	test_sessions.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \

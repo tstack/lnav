@@ -207,6 +207,13 @@ through the file.
 
   0/Shift 0         Move to the next/previous day boundary.
 
+  r/R               Move forward/backward based on the relative time that
+                    was last used with the 'goto' command.  For example,
+                    executing ':goto a minute later' will move the log view
+                    forward a minute and then pressing 'r' will move it
+                    forward a minute again.  Pressing 'R' will then move the
+                    view in the opposite direction, so backwards a minute.
+
   m                 Mark/unmark the line at the top of the display.
                     The line will be highlighted with reverse video to
                     indicate that it is a user bookmark.  You can use
@@ -345,9 +352,6 @@ through the file.
 
   CTRL-W            Toggle word-wrapping.
 
-  r/R               Restore the next/previous session.  The current session is
-                    saved and then the new state is restored.
-
   F2                Toggle mouse support.
 
 
@@ -383,11 +387,15 @@ COMMANDS
   current-time      Print the current time in human-readable form and
                     as a unix-timestamp.
 
-  goto <line#|N%|time>
+  goto <line#|N%|abs-time|relative-time>
                     Go to the given line number, N percent into the
                     file, or the given timestamp in the log view.  If the
                     line number is negative, it is considered an offset
-                    from the last line.
+                    from the last line.  Relative time values, like
+                    'a minute ago', 'an hour later', and many other formats
+                    are supported.  When using a relative time, the 'r/R'
+                    hotkeys can be used to move the same amount again or in
+                    the same amount in the opposite direction.
 
   relative-goto <line#|N%>
                     Move the current view up or down by the given amount.
