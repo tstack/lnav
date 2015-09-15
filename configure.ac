@@ -49,13 +49,14 @@ AC_ARG_ENABLE([profiling],
                              [Compile with gprof(1) profiling support]))
 
 AC_MSG_CHECKING(gprof(4) profiling support)
-if test x"${enable_profiling}" = x"yes" ; then
-    CFLAGS="$CFLAGS -pg -gstabs"
-    CXXFLAGS="$CXXFLAGS -pg -gstabs"
-    LDFLAGS="$LDFLAGS -pg"
-else
-    enable_profiling=no
-fi
+
+AS_VAR_IF([enable_profiling], [yes],
+      [CFLAGS="$CFLAGS -pg -gstabs"
+       CXXFLAGS="$CXXFLAGS -pg -gstabs"
+       LDFLAGS="$LDFLAGS -pg"],
+      [enable_profiling=no]dnl
+)
+
 AC_MSG_RESULT($enable_profiling)
 
 AC_SUBST(CFLAGS_PG)
@@ -128,9 +129,9 @@ LNAV_WITH_LOCAL_YAJL
 
 AX_WITH_CURSES
 
-if test "x$ax_cv_curses" != xyes; then
-    AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])
-fi
+AS_VAR_IF([ax_cv_curses],[yes],[],
+    AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])dnl
+)
 
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE
@@ -146,9 +147,12 @@ esac
 
 AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
 
-static_lib_list="libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"
-static_lib_list="$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"
-static_lib_list="$static_lib_list libgpm.a libcurl.a libcrypto.a libssl.a libssh2.a"
+AS_VAR_SET(static_lib_list,
+           ["libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"])
+AS_VAR_SET(static_lib_list,
+           ["$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"])
+AS_VAR_SET(static_lib_list,
+           ["$static_lib_list libgpm.a libcurl.a libcrypto.a libssl.a libssh2.a"])
 
 if test x"${enable_static}" != x"no"; then
     case "$host_os" in
@@ -163,7 +167,7 @@ if test x"${enable_static}" != x"no"; then
     # be downloaded and used right away.  This is required for OS X and
     # will, hopefully, make a static binary that is compatible with
     # many different versions of Linux.
-    mkdir -p src/static-libs
+    AS_MKDIR_P(src/static-libs)
     rm -f src/static-libs/*.a
     for libflag in $ALL_LDFLAGS; do
         case $libflag in
