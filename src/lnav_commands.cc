@@ -1561,7 +1561,7 @@ static string com_pt_time(string cmdline, vector<string> &args)
                 retval = "info: maximum time is not set, pass a time value to this command to set it";
             }
             else {
-                ctime_r(&lnav_data.ld_pt_min_time, ftime);
+                ctime_r(&lnav_data.ld_pt_max_time, ftime);
                 retval = "info: papertrail maximum time is " + string(ftime);
             }
         }
