@@ -48,6 +48,7 @@ static struct {
     { "pm", pcrepp("\\Apm|p\\.m\\.\\b") },
     { "a", pcrepp("\\Aa\\b") },
     { "an", pcrepp("\\Aan\\b") },
+    { "at", pcrepp("\\Aat\\b") },
     { "time", pcrepp("\\A(\\d{1,2}):(\\d{2})(?::(\\d{2}))?") },
     { "num", pcrepp("\\A((?:-|\\+)?\\d+)") },
     { "us", pcrepp("\\Amicros(?:econds?)?|us(?![a-zA-Z])") },
@@ -149,6 +150,8 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                     number = 1;
                     number_set = true;
                     break;
+                case RTT_AT:
+                    break;
                 case RTT_TIME: {
                     string hstr = pi.get_substr(pc[0]);
                     string mstr = pi.get_substr(pc[1]);
@@ -239,6 +242,10 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                 case RTT_NOON:
                     this->rt_field[RTF_HOURS] = 12;
                     this->rt_is_absolute[RTF_HOURS] = true;
+                    for (int lpc = RTF_MICROSECONDS; lpc < RTF_HOURS; lpc++) {
+                        this->rt_field[lpc] = 0;
+                        this->rt_is_absolute[lpc] = true;
+                    }
                     break;
 
                 case RTT__MAX:

@@ -546,11 +546,13 @@ COMMANDS
   clear-partition
                     Clear the partition the top line is a part of.
 
-  pt-min-time [<date>]
+  pt-min-time [<date>|<relative-time>]
                     Set/get the minimum time range for any papertrail queries.
+                    Absolute or relative time values can be specified.
 
-  pt-max-time [<date>]
+  pt-max-time [<date>|<relative-time>]
                     Set/get the maximum time range for any papertrail queries.
+                    Absolute or relative time values can be specified.
 
 
 SQL QUERIES (experimental)

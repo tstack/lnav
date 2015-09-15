@@ -1567,7 +1567,10 @@ static string com_pt_time(string cmdline, vector<string> &args)
         }
     }
     else if (args.size() >= 2) {
+        string all_args = cmdline.substr(cmdline.find(args[1], args[0].size()));
         struct timeval new_time = { 0, 0 };
+        relative_time rt;
+        struct relative_time::parse_error pe;
         date_time_scanner dts;
         struct exttm tm;
         time_t now;
@@ -1575,7 +1578,15 @@ static string com_pt_time(string cmdline, vector<string> &args)
         time(&now);
         dts.dts_keep_base_tz = true;
         dts.set_base_time(now);
-        if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
+        if (rt.parse(all_args, pe)) {
+            tm.et_tm = *gmtime(&now);
+            rt.add(tm);
+            new_time.tv_sec = timegm(&tm.et_tm);
+        }
+        else {
+            dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time);
+        }
+        if (new_time.tv_sec != 0) {
             if (args[0] == "pt-min-time") {
                 lnav_data.ld_pt_min_time = new_time.tv_sec;
                 retval = refresh_pt_search();

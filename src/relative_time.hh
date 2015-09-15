@@ -48,6 +48,7 @@ public:
         RTT_PM,
         RTT_A,
         RTT_AN,
+        RTT_AT,
         RTT_TIME,
         RTT_NUMBER,
         RTT_MICROS,

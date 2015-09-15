@@ -37,6 +37,8 @@ struct {
     const char *reltime;
     const char *expected;
 } TEST_DATA[] = {
+        { "today at 4am", "0y0m0d4H0M0S0U" },
+        { "yesterday at noon", "0y0m-1d12H0M0S0U" },
         { "a minute ago", "0y0m0d0h-1m0s0u" },
         { "1m ago", "0y0m0d0h-1m0s0u" },
         { "a min ago", "0y0m0d0h-1m0s0u" },
@@ -75,9 +77,12 @@ int main(int argc, char *argv[])
     relative_time rt;
 
     for (int lpc = 0; TEST_DATA[lpc].reltime; lpc++) {
+        bool rc;
+
         rt.clear();
-        rt.parse(TEST_DATA[lpc].reltime, pe);
+        rc = rt.parse(TEST_DATA[lpc].reltime, pe);
         printf("%s %s %s\n", TEST_DATA[lpc].reltime, TEST_DATA[lpc].expected, rt.to_string().c_str());
+        assert(rc);
         assert(std::string(TEST_DATA[lpc].expected) == rt.to_string());
     }
 
