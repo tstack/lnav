@@ -41,6 +41,7 @@
 
 #include "pcrecpp.h"
 
+#include "auto_fd.hh"
 #include "lnav_log.hh"
 #include "auto_mem.hh"
 #include "auto_pid.hh"
@@ -171,7 +172,7 @@ static struct json_path_handler format_handlers[] = {
 void install_extra_formats()
 {
     string config_root = dotlnav_path("remote-config");
-    int fd;
+    auto_fd fd;
 
     if (access(config_root.c_str(), R_OK) == 0) {
         char pull_cmd[1024];

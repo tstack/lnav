@@ -37,23 +37,23 @@ class plain_text_source
         : public text_sub_source {
 public:
     plain_text_source(std::string text)
-            : tds_longest_line(0)
     {
         size_t start = 0, end;
 
         while ((end = text.find('\n', start)) != std::string::npos) {
             size_t len = (end - start);
             this->tds_lines.push_back(text.substr(start, len));
-            this->tds_longest_line = std::max(this->tds_longest_line, len);
             start = end + 1;
         }
         if (start < text.length()) {
             this->tds_lines.push_back(text.substr(start));
         }
+        this->tds_longest_line = this->compute_longest_line();
     };
 
     plain_text_source(const std::vector<std::string> &text_lines) {
         this->tds_lines = text_lines;
+        this->tds_longest_line = this->compute_longest_line();
     };
 
     size_t text_line_count()
@@ -78,6 +78,16 @@ public:
     };
 
 private:
+    size_t compute_longest_line() {
+        size_t retval = 0;
+        for (std::vector<std::string>::iterator iter = this->tds_lines.begin();
+             iter != this->tds_lines.end();
+             ++iter) {
+            retval = std::max(retval, iter->length());
+        }
+        return retval;
+    };
+
     std::vector<std::string> tds_lines;
     size_t tds_longest_line;
 };
