@@ -428,7 +428,9 @@ int sql_callback(sqlite3_stmt *stmt)
             }
         }
         if (dls.dls_headers_to_graph[lpc]) {
-            sscanf(value, "%lf", &num_value);
+            if (sscanf(value, "%lf", &num_value) != 1) {
+                num_value = 0.0;
+            }
             hs.add_value(row_number, bucket_type_t(lpc), num_value);
         }
         else {

@@ -84,6 +84,25 @@ static bool wordexperr(int rc, string &msg)
     return true;
 }
 
+static string remaining_args(const string &cmdline,
+                             const vector<string> &args,
+                             size_t index = 1)
+{
+    size_t start_pos = 0;
+
+    require(index > 0);
+
+    for (int lpc = 0; lpc < index; lpc++) {
+        start_pos += args[lpc].length();
+    }
+
+    size_t index_in_cmdline = cmdline.find(args[index], start_pos);
+
+    require(index_in_cmdline != string::npos);
+
+    return cmdline.substr(index_in_cmdline);
+}
+
 static string refresh_pt_search()
 {
     string retval;
@@ -155,7 +174,7 @@ static string com_adjust_log_time(string cmdline, vector<string> &args)
         top_time = ll.get_timeval();
 
         dts.set_base_time(top_time.tv_sec);
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
             timersub(&new_time, &top_time, &time_diff);
             
@@ -188,7 +207,7 @@ static string com_unix_time(string cmdline, vector<string> &args)
 
         log_time.tm_isdst = -1;
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         if ((millis = args[1].find('.')) != string::npos ||
             (millis = args[1].find(',')) != string::npos) {
             args[1] = args[1].erase(millis, 4);
@@ -256,7 +275,7 @@ static string com_goto(string cmdline, vector<string> &args)
         args.push_back("line-time");
     }
     else if (args.size() > 1) {
-        string all_args = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        string all_args = remaining_args(cmdline, args);
         textview_curses *tc = lnav_data.ld_view_stack.top();
         int   line_number, consumed;
         date_time_scanner dts;
@@ -466,7 +485,7 @@ static string com_save_to(string cmdline, vector<string> &args)
         return "error: expecting file name or '-' to write to the terminal";
     }
 
-    fn = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
+    fn = trim(remaining_args(cmdline, args));
 
     static_root_mem<wordexp_t, wordfree> wordmem;
 
@@ -626,7 +645,7 @@ static string com_pipe_to(string cmdline, vector<string> &args)
             tc->get_bookmarks()[&textview_curses::BM_USER];
     bool pipe_line_to = (args[0] == "pipe-line-to");
 
-    string cmd = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
+    string cmd = trim(remaining_args(cmdline, args));
     auto_pipe in_pipe(STDIN_FILENO);
     auto_pipe out_pipe(STDOUT_FILENO);
 
@@ -762,7 +781,7 @@ static string com_highlight(string cmdline, vector<string> &args)
         pcre *      code;
         int         eoff;
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         if (hm.find(args[1]) != hm.end()) {
             retval = "error: highlight already exists";
         }
@@ -803,7 +822,7 @@ static string com_clear_highlight(string cmdline, vector<string> &args)
         textview_curses::highlight_map_t &hm = tc->get_highlights();
         textview_curses::highlight_map_t::iterator hm_iter;
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         hm_iter = hm.find(args[1]);
         if (hm_iter == hm.end()) {
             retval = "error: highlight does not exist";
@@ -830,7 +849,7 @@ static string com_graph(string cmdline, vector<string> &args)
         pcre *      code;
         int         eoff;
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         if ((code = pcre_compile(args[1].c_str(),
                                  PCRE_CASELESS,
                                  &errptr,
@@ -922,7 +941,7 @@ static string com_filter(string cmdline, vector<string> &args)
         pcre *      code;
         int         eoff;
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         if (fs.get_filter(args[1]) != NULL) {
             retval = com_enable_filter(cmdline, args);
         }
@@ -971,7 +990,7 @@ static string com_delete_filter(string cmdline, vector<string> &args)
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         if (fs.delete_filter(args[1])) {
             retval = "info: deleted filter";
             tss->text_filters_changed();
@@ -998,7 +1017,7 @@ static string com_enable_filter(string cmdline, vector<string> &args)
         filter_stack &fs = tss->get_filters();
         text_filter *lf;
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         lf      = fs.get_filter(args[1]);
         if (lf == NULL) {
             retval = "error: no such filter -- " + args[1];
@@ -1030,7 +1049,7 @@ static string com_disable_filter(string cmdline, vector<string> &args)
         filter_stack &fs = tss->get_filters();
         text_filter *lf;
 
-        args[1] = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        args[1] = remaining_args(cmdline, args);
         lf      = fs.get_filter(args[1]);
         if (lf == NULL) {
             retval = "error: no such filter -- " + args[1];
@@ -1165,7 +1184,7 @@ static string com_create_search_table(string cmdline, vector<string> &args)
         string regex;
 
         if (args.size() >= 3) {
-            regex = cmdline.substr(cmdline.find(args[2], args[0].size() + args[1].size()));
+            regex = remaining_args(cmdline, args, 2);
         }
         else {
             regex = lnav_data.ld_last_search[LNV_LOG];
@@ -1252,14 +1271,9 @@ static string com_session(string cmdline, vector<string> &args)
         }
         else {
             string            old_file_name, new_file_name;
-            string::size_type space;
             string            saved_cmd;
 
-            space = cmdline.find(' ');
-            while (isspace(cmdline[space])) {
-                space += 1;
-            }
-            saved_cmd = cmdline.substr(space);
+            saved_cmd = trim(remaining_args(cmdline, args));
 
             old_file_name = dotlnav_path("session");
             new_file_name = dotlnav_path("session.tmp");
@@ -1286,10 +1300,11 @@ static string com_session(string cmdline, vector<string> &args)
                 if (!added) {
                     new_session_file << saved_cmd << endl;
 
-                    rename(new_file_name.c_str(), old_file_name.c_str());
+                    log_perror(rename(new_file_name.c_str(),
+                                      old_file_name.c_str()));
                 }
                 else {
-                    remove(new_file_name.c_str());
+                    log_perror(remove(new_file_name.c_str()));
                 }
 
                 retval = "info: session file saved";
@@ -1318,7 +1333,7 @@ static string com_open(string cmdline, vector<string> &args)
     int top = 0;
     string pat;
 
-    pat = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
+    pat = trim(remaining_args(cmdline, args));
 
     int rc = wordexp(pat.c_str(), wordmem.inout(), WRDE_NOCMD | WRDE_UNDEF);
 
@@ -1487,7 +1502,7 @@ static string com_partition_name(string cmdline, vector<string> &args)
         logfile_sub_source &lss = lnav_data.ld_log_source;
         std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
 
-        args[1] = trim(cmdline.substr(cmdline.find(args[1], args[0].size())));
+        args[1] = trim(remaining_args(cmdline, args));
 
         tc.set_user_mark(&textview_curses::BM_PARTITION, tc.get_top(), true);
 
@@ -1567,7 +1582,7 @@ static string com_pt_time(string cmdline, vector<string> &args)
         }
     }
     else if (args.size() >= 2) {
-        string all_args = cmdline.substr(cmdline.find(args[1], args[0].size()));
+        string all_args = remaining_args(cmdline, args);
         struct timeval new_time = { 0, 0 };
         relative_time rt;
         struct relative_time::parse_error pe;

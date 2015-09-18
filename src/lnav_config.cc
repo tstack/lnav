@@ -89,22 +89,22 @@ void ensure_dotlnav(void)
     string path = dotlnav_path("");
 
     if (!path.empty()) {
-        mkdir(path.c_str(), 0755);
+        log_perror(mkdir(path.c_str(), 0755));
     }
 
     path = dotlnav_path("formats");
     if (!path.empty()) {
-        mkdir(path.c_str(), 0755);
+        log_perror(mkdir(path.c_str(), 0755));
     }
 
     path = dotlnav_path("formats/installed");
     if (!path.empty()) {
-        mkdir(path.c_str(), 0755);
+        log_perror(mkdir(path.c_str(), 0755));
     }
 
     path = dotlnav_path("crash");
     if (!path.empty()) {
-        mkdir(path.c_str(), 0755);
+        log_perror(mkdir(path.c_str(), 0755));
     }
     lnav_log_crash_dir = strdup(path.c_str());
 
@@ -116,14 +116,14 @@ void ensure_dotlnav(void)
             for (int lpc = 0;
                  lpc < ((int)gl->gl_pathc - MAX_CRASH_LOG_COUNT);
                  lpc++) {
-                remove(gl->gl_pathv[lpc]);
+                log_perror(remove(gl->gl_pathv[lpc]));
             }
         }
     }
     
     path = dotlnav_path("formats/default");
     if (!path.empty()) {
-        mkdir(path.c_str(), 0755);
+        log_perror(mkdir(path.c_str(), 0755));
     }
 }
 

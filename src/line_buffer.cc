@@ -102,7 +102,7 @@ private:
 
         snprintf(lockname, sizeof(lockname), "/tmp/lnav.%d.lck", getpid());
         this->lh_fd = open(lockname, O_CREAT | O_RDWR, 0600);
-        fcntl(this->lh_fd, F_SETFD, FD_CLOEXEC);
+        log_perror(fcntl(this->lh_fd, F_SETFD, FD_CLOEXEC));
         unlink(lockname);
     };
 
@@ -171,8 +171,10 @@ throw (error)
                 if (gz_id[0] == '\037' && gz_id[1] == '\213') {
                     int gzfd = dup(fd);
 
-                    fcntl(gzfd, F_SETFD, FD_CLOEXEC);
-                    lseek(fd, 0, SEEK_SET);
+                    log_perror(fcntl(gzfd, F_SETFD, FD_CLOEXEC));
+                    if (lseek(fd, 0, SEEK_SET) < 0) {
+                        throw error(errno);
+                    }
                     if ((this->lb_gz_file = gzdopen(gzfd, "r")) == NULL) {
                         if (errno == 0) {
                             throw bad_alloc();
@@ -190,7 +192,9 @@ throw (error)
                 }
 #ifdef HAVE_BZLIB_H
                 else if (gz_id[0] == 'B' && gz_id[1] == 'Z') {
-                    lseek(fd, 0, SEEK_SET);
+                    if (lseek(fd, 0, SEEK_SET) < 0) {
+                        throw error(errno);
+                    }
                     this->lb_bz_file = true;
 
                     /*

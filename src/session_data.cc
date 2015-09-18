@@ -1289,7 +1289,7 @@ void save_session(void)
 
         fclose(file.release());
 
-        rename(view_file_tmp_name.c_str(), view_file_name.c_str());
+        log_perror(rename(view_file_tmp_name.c_str(), view_file_name.c_str()));
 
         log_debug("Saved session: %s", view_file_name.c_str());
     }

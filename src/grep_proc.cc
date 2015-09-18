@@ -124,12 +124,12 @@ void grep_proc::start(void)
     err_pipe.after_fork(this->gp_child);
 
     if (this->gp_child != 0) {
-        fcntl(out_pipe.read_end(), F_SETFL, O_NONBLOCK);
-        fcntl(out_pipe.read_end(), F_SETFD, 1);
+        log_perror(fcntl(out_pipe.read_end(), F_SETFL, O_NONBLOCK));
+        log_perror(fcntl(out_pipe.read_end(), F_SETFD, 1));
         this->gp_line_buffer.set_fd(out_pipe.read_end());
 
-        fcntl(err_pipe.read_end(), F_SETFL, O_NONBLOCK);
-        fcntl(err_pipe.read_end(), F_SETFD, 1);
+        log_perror(fcntl(err_pipe.read_end(), F_SETFL, O_NONBLOCK));
+        log_perror(fcntl(err_pipe.read_end(), F_SETFD, 1));
         require(this->gp_err_pipe.get() == -1);
         this->gp_err_pipe      = err_pipe.read_end();
         this->gp_child_started = true;

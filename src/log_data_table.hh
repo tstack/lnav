@@ -183,13 +183,15 @@ public:
             switch (pvalue.value_token()) {
             case DT_NUMBER: {
                 char scan_value[line.length() + 1];
-                double d = 0;
+                double d = 0.0;
 
                 memcpy(scan_value,
                     line.get_data() + pvalue.e_capture.c_begin,
                     pvalue.e_capture.length());
                 scan_value[line.length()] = '\0';
-                sscanf(scan_value, "%lf", &d);
+                if (sscanf(scan_value, "%lf", &d) != 1) {
+                    d = 0.0;
+                }
                 values.push_back(logline_value(intern_string::lookup("", 0), d));
             }
             break;

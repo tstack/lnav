@@ -96,7 +96,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         unlink(piper_tmpname);
     }
 
-    fcntl(this->pp_fd.get(), F_SETFD, FD_CLOEXEC);
+    log_perror(fcntl(this->pp_fd.get(), F_SETFD, FD_CLOEXEC));
 
     this->pp_child = fork();
     switch (this->pp_child) {
@@ -129,7 +129,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 close(fd_to_close);
             }
         }
-        fcntl(infd.get(), F_SETFL, O_NONBLOCK);
+        log_perror(fcntl(infd.get(), F_SETFL, O_NONBLOCK));
         lb.set_fd(infd);
         do {
             line_value lv;

@@ -94,7 +94,7 @@ throw (error)
         this->lf_valid_filename = true;
     }
     else {
-        fstat(fd, &this->lf_stat);
+        log_perror(fstat(fd, &this->lf_stat));
         this->lf_valid_filename = false;
     }
 
