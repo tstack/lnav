@@ -46,7 +46,7 @@ struct shared_buffer_ref {
 public:
     shared_buffer_ref(char *data = NULL, size_t len = 0)
         : sb_owner(NULL), sb_data(data), sb_length(len) {
-
+        memset(&this->sb_link, 0, sizeof(this->sb_link));
     };
 
     ~shared_buffer_ref() {

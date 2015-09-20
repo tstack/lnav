@@ -224,6 +224,7 @@ extern const char *std_time_fmt[];
 struct date_time_scanner {
     date_time_scanner() : dts_keep_base_tz(false),
                           dts_local_time(false),
+                          dts_local_offset_cache(0),
                           dts_local_offset_valid(0),
                           dts_local_offset_expiry(0) {
         this->clear();

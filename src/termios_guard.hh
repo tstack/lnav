@@ -50,6 +50,7 @@ public:
      */
     guard_termios(const int fd) : gt_fd(fd)
     {
+        memset(&this->gt_termios, 0, sizeof(this->gt_termios));
         if (isatty(this->gt_fd) &&
             tcgetattr(this->gt_fd, &this->gt_termios) == -1) {
             perror("tcgetattr");

@@ -639,7 +639,12 @@ struct mouse_event {
     mouse_event(mouse_button_t button = BUTTON_LEFT,
                 mouse_button_state_t state = BUTTON_STATE_PRESSED,
                 int x = -1,
-                int y = -1) : me_button(button), me_state(state), me_x(x), me_y(y) {
+                int y = -1)
+            : me_button(button),
+              me_state(state),
+              me_x(x),
+              me_y(y) {
+        memset(&this->me_time, 0, sizeof(this->me_time));
     };
 
     mouse_button_t me_button;

@@ -173,9 +173,11 @@ throw (error)
 
                     log_perror(fcntl(gzfd, F_SETFD, FD_CLOEXEC));
                     if (lseek(fd, 0, SEEK_SET) < 0) {
+                        close(gzfd);
                         throw error(errno);
                     }
                     if ((this->lb_gz_file = gzdopen(gzfd, "r")) == NULL) {
+                        close(gzfd);
                         if (errno == 0) {
                             throw bad_alloc();
                         }
@@ -355,13 +357,19 @@ throw (error)
                 char             scratch[32 * 1024];
                 BZFILE *         bz_file;
                 off_t            seek_to;
+                int              bzfd;
 
                 /*
                  * Unfortunately, there is no bzseek, so we need to reopen the
                  * file every time we want to do a read.
                  */
-                lseek(this->lb_fd, 0, SEEK_SET);
-                if ((bz_file = BZ2_bzdopen(dup(this->lb_fd), "r")) == NULL) {
+                bzfd = dup(this->lb_fd);
+                if (lseek(this->lb_fd, 0, SEEK_SET) < 0) {
+                    close(bzfd);
+                    throw error(errno);
+                }
+                if ((bz_file = BZ2_bzdopen(bzfd, "r")) == NULL) {
+                    close(bzfd);
                     if (errno == 0) {
                         throw bad_alloc();
                     }

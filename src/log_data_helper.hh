@@ -48,7 +48,13 @@
 class log_data_helper
 {
 public:
-    log_data_helper(logfile_sub_source &lss) : ldh_log_source(lss) { };
+    log_data_helper(logfile_sub_source &lss)
+            : ldh_log_source(lss),
+              ldh_file(NULL),
+              ldh_y_offset(0)
+    {
+
+    };
 
     void clear() {
         this->ldh_file = NULL;

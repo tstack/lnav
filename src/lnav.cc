@@ -1470,7 +1470,13 @@ static string execute_action(log_data_helper &ldh,
 
 class action_delegate : public text_delegate {
 public:
-    action_delegate(logfile_sub_source &lss) : ad_log_helper(lss), ad_press_line(-1) { };
+    action_delegate(logfile_sub_source &lss)
+            : ad_log_helper(lss),
+              ad_press_line(-1),
+              ad_press_value(0),
+              ad_line_index(0) {
+
+    };
 
     virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me) {
         bool retval = false;
@@ -2223,6 +2229,7 @@ int main(int argc, char *argv[])
 
     (void)signal(SIGPIPE, SIG_IGN);
     setlocale(LC_NUMERIC, "");
+    umask(077);
 
     lnav_data.ld_program_name = argv[0];
 

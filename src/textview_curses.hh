@@ -717,9 +717,6 @@ protected:
 
     vis_bookmarks tc_bookmarks;
 
-    vis_line_t tc_lview_top;
-    int        tc_lview_left;
-
     bool   tc_searching;
     bool   tc_follow_search;
     action tc_search_action;

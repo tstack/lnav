@@ -53,7 +53,8 @@ public:
     };
 
     log_accel()
-        : la_last_point_set(false),
+        : la_last_point(0),
+          la_last_point_set(false),
           la_min_velocity(INT64_MAX),
           la_max_velocity(INT64_MIN),
           la_velocity_size(0) {

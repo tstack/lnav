@@ -41,7 +41,9 @@ public:
     field_overlay_source(logfile_sub_source &lss)
             : fos_active(false),
               fos_active_prev(false),
-              fos_log_helper(lss) {
+              fos_log_helper(lss),
+              fos_known_key_size(0),
+              fos_unknown_key_size(0) {
 
     };
 

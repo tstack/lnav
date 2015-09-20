@@ -48,6 +48,7 @@ const struct itimerval ui_periodic_timer::INTERVAL = {
 };
 
 ui_periodic_timer::ui_periodic_timer()
+        : upt_counter(0)
 {
     struct sigaction sa;
 

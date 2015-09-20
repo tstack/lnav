@@ -48,7 +48,7 @@ using namespace std;
 
 class sql_json_op : public json_op {
 public:
-    sql_json_op(json_ptr &ptr) : json_op(ptr), sjo_type(-1) { };
+    sql_json_op(json_ptr &ptr) : json_op(ptr), sjo_type(-1), sjo_int(0) { };
 
     int sjo_type;
     string sjo_str;

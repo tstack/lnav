@@ -47,7 +47,8 @@ class grapher
 public:
 
     grapher()
-        : gr_highlighter(NULL)
+        : gr_highlighter(NULL),
+          gr_x(0)
     {
         this->set_label_source(&this->gr_label_source);
     };

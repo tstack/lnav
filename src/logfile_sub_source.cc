@@ -44,7 +44,10 @@ bookmark_type_t logfile_sub_source::BM_FILES("");
 
 logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
+      lss_token_file(NULL),
+      lss_token_date_end(0),
       lss_min_log_level(logline::LEVEL_UNKNOWN),
+      lss_index_delegate(NULL),
       lss_longest_line(0)
 {
     this->clear_line_size_cache();
@@ -107,8 +110,6 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     line = this->at(vis_line_t(row));
     this->lss_token_file   = this->find(line);
     this->lss_token_line   = this->lss_token_file->begin() + line;
-    this->lss_token_offset = 0;
-    this->lss_scrub_len    = 0;
 
     if (raw) {
         this->lss_token_file->read_line(this->lss_token_line, value_out);

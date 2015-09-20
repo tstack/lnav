@@ -66,7 +66,8 @@ textview_curses::textview_curses()
       tc_searching(false),
       tc_follow_search(false),
       tc_selection_start(-1),
-      tc_selection_last(-1)
+      tc_selection_last(-1),
+      tc_selection_cleared(false)
 {
     this->set_data_source(this);
 }

@@ -145,7 +145,10 @@ class yajlpp_parse_context {
 public:
     yajlpp_parse_context(std::string source,
                          struct json_path_handler *handlers = NULL)
-        : ypc_source(source), ypc_handlers(handlers), ypc_ignore_unused(false)
+        : ypc_source(source),
+          ypc_handlers(handlers),
+          ypc_userdata(NULL),
+          ypc_ignore_unused(false)
     {
         this->ypc_path.reserve(4096);
         this->ypc_path.push_back('\0');

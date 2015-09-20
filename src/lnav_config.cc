@@ -58,7 +58,7 @@ string dotlnav_path(const char *sub)
     char * home;
 
     home = getenv("HOME");
-    if (home) {
+    if (home && access(home, W_OK|X_OK) == 0) {
         char hpath[2048];
 
         snprintf(hpath, sizeof(hpath), "%s/.lnav/%s", home, sub);

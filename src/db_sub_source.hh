@@ -177,7 +177,7 @@ public:
 
 class db_overlay_source : public list_overlay_source {
 public:
-    db_overlay_source() : dos_labels(NULL) { };
+    db_overlay_source() : dos_labels(NULL), dos_hist_source(NULL) { };
 
     size_t list_overlay_count(const listview_curses &lv)
     {
