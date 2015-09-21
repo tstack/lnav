@@ -38,6 +38,10 @@
 
 using namespace std;
 
+static const string MSG_FORMAT_STMT =
+        "SELECT count(*) as total, min(log_line) as log_line, log_msg_format "
+                "FROM all_logs GROUP BY log_msg_format ORDER BY total desc";
+
 static int sql_progress(const struct log_cursor &lc)
 {
     static sig_atomic_t sql_counter = 0;
@@ -114,6 +118,9 @@ string execute_sql(string sql, string &alt_msg)
 
         lnav_data.ld_mode = LNM_PAGING;
         return "";
+    }
+    else if (stmt_str == ".msgformats") {
+        stmt_str = MSG_FORMAT_STMT;
     }
 
     hs.clear();

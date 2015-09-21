@@ -23,7 +23,9 @@ lnav v0.8.0:
      * The '-C' option will now try to check any specified log files to
        make sure the format(s) match all of the lines.
      * Added an "all_logs" SQLite table that contains the message format
-       extracted from each log line.
+       extracted from each log line.  Also added a ';.msgformat' SQL command
+       that executes a query that returns the counts for each format and the
+       first line where the format was seen.
      * Added an "lnav_views" SQLite table that can be used to query and
        change the lnav view state.
      * When typing in a command, the status bar will display a short

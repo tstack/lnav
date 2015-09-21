@@ -142,8 +142,8 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
            cap[1].c_end -= 1;
            return true;
        }
-       [a-zA-Z0-9]+"://"[^\x00\r\n\t '"\[\](){}]+[/a-zA-Z0-9\-=&] { RET(DT_URL); }
-       ("/"|"./"|"../")[a-zA-Z0-9_\.\-_\~/]* { RET(DT_PATH); }
+       [a-zA-Z0-9]+"://"[^\x00\r\n\t '"\[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
+       ("/"|"./"|"../")[a-zA-Z0-9_\.\-\~/!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
        [0-9a-fA-F][0-9a-fA-F](":"[0-9a-fA-F][0-9a-fA-F])+ {
@@ -205,7 +205,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        ("true"|"True"|"TRUE"|"false"|"False"|"FALSE"|"None"|"null"|"NULL") { RET(DT_CONSTANT); }
        ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
 
-       [^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!@%\^&\*'\?<>\~`\|\\]+("::"[^\x00"; \r\n\t:=,\(\)\{\}\[\]\+#!@%\^&\*'\?<>\~`\|\\]+)* {
+       [^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+("::"[^\x00"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
            RET(DT_SYMBOL);
        }
 

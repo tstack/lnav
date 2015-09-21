@@ -246,6 +246,7 @@ bool setup_logline_table()
 
     static const char *commands[] = {
         ".schema",
+        ".msgformats",
 
         NULL
     };
