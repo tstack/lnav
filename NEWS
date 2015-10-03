@@ -31,6 +31,9 @@ lnav v0.8.0:
      * When typing in a command, the status bar will display a short
        summary of the currently entered command.
      * Added a "delete-filter" command.
+     * Added a "log_msg_instance" column to the logline and log_search
+       tables to make it easier to join tables that are matching log
+       messages that are ordered.
      * The 'goto' command now supports relative time values like
        'a minute ago', 'an hour later', and many more.
 

@@ -48,13 +48,16 @@ public:
     log_search_table(const char *regex, intern_string_t table_name)
         : log_vtab_impl(table_name),
           lst_regex_string(regex),
-          lst_regex(regex) {
+          lst_regex(regex),
+          lst_instance(-1) {
+        this->vi_supports_indexes = false;
     };
 
     void get_columns(std::vector<vtab_column> &cols)
     {
         column_namer cn;
 
+        cols.push_back(vtab_column("log_msg_instance", SQLITE_INTEGER, NULL));
         for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
             std::vector<pcre_context::capture>::const_iterator iter;
             const char *collator = NULL;
@@ -86,8 +89,18 @@ public:
         }
     };
 
+    void get_foreign_keys(std::vector<std::string> &keys_inout)
+    {
+        log_vtab_impl::get_foreign_keys(keys_inout);
+        keys_inout.push_back("log_msg_instance");
+    };
+
     bool next(log_cursor &lc, logfile_sub_source &lss)
     {
+        if (lc.lc_curr_line == vis_line_t(-1)) {
+            this->lst_instance = -1;
+        }
+
         lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
         lc.lc_sub_index = 0;
 
@@ -119,13 +132,20 @@ public:
                       0,
                       this->lst_body.length());
 
-        return this->lst_regex.match(this->lst_match_context, pi);
+        if (!this->lst_regex.match(this->lst_match_context, pi)) {
+            return false;
+        }
+
+        this->lst_instance += 1;
+
+        return true;
     };
 
     void extract(logfile *lf,
                  shared_buffer_ref &line,
                  std::vector<logline_value> &values)
     {
+        static intern_string_t instance_name = intern_string::lookup("log_msg_instance");
         static intern_string_t empty = intern_string::lookup("", 0);
 
         pcre_input pi(&this->lst_current_line.get_data()[this->lst_body.lr_start],
@@ -133,6 +153,8 @@ public:
                       this->lst_body.length());
         int next_column = 0;
 
+        values.push_back(logline_value(instance_name, this->lst_instance));
+        values.back().lv_column = next_column++;
         for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
             pcre_context::capture_t *cap = this->lst_match_context[lpc];
             shared_buffer_ref value_sbr;
@@ -154,6 +176,7 @@ private:
     struct line_range lst_body;
     pcre_context_static<128> lst_match_context;
     std::vector<logline_value::kind_t> lst_column_types;
+    int64_t lst_instance;
 };
 
 #endif

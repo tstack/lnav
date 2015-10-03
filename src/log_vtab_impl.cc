@@ -494,6 +494,7 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
     p_cur->log_cursor.lc_curr_line = vis_line_t(-1);
     p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
     vt_next(p_vtc);
+
     if (!idxNum) {
         return SQLITE_OK;
     }
@@ -532,8 +533,12 @@ static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
 {
     std::vector<sqlite3_index_info::sqlite3_index_constraint> indexes;
     int argvInUse = 0;
+    vtab *vt = (vtab *) tab;
 
     log_info("(%p) best index called: nConstraint=%d", tab, p_info->nConstraint);
+    if (!vt->vi->vi_supports_indexes) {
+        return SQLITE_OK;
+    }
     for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
         if (!p_info->aConstraint[lpc].usable ||
             p_info->aConstraint[lpc].op == SQLITE_INDEX_CONSTRAINT_MATCH) {

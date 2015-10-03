@@ -61,8 +61,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "logline table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,col_0,TTY,PWD,USER,COMMAND
-0,p.0,2013-11-03 09:47:02.000,0,info,0,veridian,<NULL>,sudo,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
+0,p.0,2013-11-03 09:47:02.000,0,info,0,veridian,<NULL>,sudo,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
 EOF
 
 
@@ -73,8 +73,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.1
 
 check_output "logline table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,col_0
-1,p.0,2006-12-03 09:23:38.000,0,info,0,veridian,16442,automount,/auto/opt
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,log_msg_instance,col_0
+1,p.0,2006-12-03 09:23:38.000,0,info,0,veridian,16442,automount,0,/auto/opt
 EOF
 
 
@@ -420,6 +420,25 @@ check_output "" <<EOF
 EOF
 
 run_test ${lnav_test} -d "/tmp/lnav.err" -n \
+    -c ";select log_line, log_msg_instance, col_0 from logline" \
+    ${test_dir}/logfile_for_join.0
+
+check_output "log msg instance is not working" <<EOF
+log_line log_msg_instance   col_0
+       0                0 eth0.IPv4
+       7                1 eth0.IPv4
+EOF
+
+run_test ${lnav_test} -d "/tmp/lnav.err" -n \
+    -c ";select log_msg_instance, col_0 from logline where log_line > 4" \
+    ${test_dir}/logfile_for_join.0
+
+check_output "log msg instance is not working" <<EOF
+log_msg_instance   col_0
+               1 eth0.IPv4
+EOF
+
+run_test ${lnav_test} -d "/tmp/lnav.err" -n \
     -c ":goto 1" \
     -c ":create-logline-table join_group" \
     -c ":goto 2" \
@@ -523,14 +542,25 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":create-search-table search_test1 (\w+), World!" \
-    -c ";select col_0 from search_test1" \
+    -c ";select log_msg_instance, col_0 from search_test1" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_multiline.0
 
 check_output "create-search-table is not working?" <<EOF
-col_0
-Hello
-Goodbye
+log_msg_instance,col_0
+0,Hello
+1,Goodbye
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":create-search-table search_test1 (\w+), World!" \
+    -c ";select log_msg_instance, col_0 from search_test1 where log_line > 0" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_multiline.0
+
+check_output "create-search-table is not working with where clause?" <<EOF
+log_msg_instance,col_0
+1,Goodbye
 EOF
 
 run_test ${lnav_test} -n \

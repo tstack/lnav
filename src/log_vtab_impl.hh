@@ -82,7 +82,7 @@ public:
         bool vc_hidden;
     };
 
-    log_vtab_impl(const intern_string_t name) : vi_name(name) {
+    log_vtab_impl(const intern_string_t name) : vi_supports_indexes(true), vi_name(name) {
         this->vi_attrs.resize(128);
     };
     virtual ~log_vtab_impl() { };
@@ -114,6 +114,7 @@ public:
         format->annotate(line, this->vi_attrs, values);
     };
 
+    bool vi_supports_indexes;
     int vi_column_count;
 protected:
     const intern_string_t vi_name;
