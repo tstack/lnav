@@ -192,6 +192,7 @@ dist_noinst_SCRIPTS = \
 	test_sql_coll_func.sh \
 	test_sql_json_func.sh \
 	test_sql_str_func.sh \
+	test_sql_time_func.sh \
 	test_sql_fs_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh \
@@ -305,6 +306,7 @@ TESTS = \
 	test_sql_json_func.sh \
 	test_sql_fs_func.sh \
 	test_sql_str_func.sh \
+	test_sql_time_func.sh \
 	test_view_colors.sh \
 	test_vt52_curses.sh \
 	test_top_status \

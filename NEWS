@@ -34,6 +34,8 @@ lnav v0.8.0:
      * Added a "log_msg_instance" column to the logline and log_search
        tables to make it easier to join tables that are matching log
        messages that are ordered.
+     * Added a "timeslice()" function to SQLite so that it is easier to
+       group log messages by time buckets.
      * The 'goto' command now supports relative time values like
        'a minute ago', 'an hour later', and many more.
 

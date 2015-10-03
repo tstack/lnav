@@ -139,6 +139,17 @@ Network information functions:
 * gethostbyaddr - Convert an IPv4/IPv6 address into a host name.  If the
   reverse lookup fails, the input value will be returned.
 
+Time
+----
+
+Time functions:
+
+* timeslice(t, s) - Given a time stamp (t) and a time slice (s), return a
+  timestamp for the bucket of time that the timestamp falls in.  For example,
+  with the timestamp "2015-03-01 11:02:00' and slice '5min' the returned value
+  will be '2015-03-01 11:00:00'.  This function can be useful when trying to
+  group together log messages into buckets.
+
 Internal State
 --------------
 

@@ -251,6 +251,7 @@ libdiag_a_SOURCES = \
 	strnatcmp.c \
 	sysclip.cc \
 	textview_curses.cc \
+	time-extension-functions.cc \
 	time_fmts.cc \
 	view_curses.cc \
 	views_vtab.cc \

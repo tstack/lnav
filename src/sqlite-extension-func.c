@@ -43,6 +43,7 @@ sqlite_registration_func_t sqlite_registration_funcs[] = {
     network_extension_functions,
     fs_extension_functions,
     json_extension_functions,
+    time_extension_functions,
 
     NULL
 };

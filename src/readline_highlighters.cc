@@ -398,7 +398,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
     static int error_attrs = (
         A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK));
 
-    static string keyword_re_str = sql_keyword_re() + "|\\.schema";
+    static string keyword_re_str = sql_keyword_re() + "|\\.schema|\\.msgformats";
     static pcrepp keyword_pcre(keyword_re_str.c_str(), PCRE_CASELESS);
     static pcrepp string_literal_pcre("'[^']*('(?:'[^']*')*|$)");
     static pcrepp ident_pcre("(\\$?\\b[a-z_]\\w*)|\"([^\"]+)\"|\\[([^\\]]+)]", PCRE_CASELESS);

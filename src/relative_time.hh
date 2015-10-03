@@ -172,6 +172,26 @@ public:
         }
     };
 
+    int64_t to_microseconds() {
+        int64_t retval;
+
+        retval = this->rt_field[RTF_YEARS] * 12;
+        retval = (retval + this->rt_field[RTF_MONTHS]) * 30;
+        retval = (retval + this->rt_field[RTF_DAYS]) * 24;
+        retval = (retval + this->rt_field[RTF_HOURS]) * 60;
+        retval = (retval + this->rt_field[RTF_MINUTES]) * 60;
+        retval = (retval + this->rt_field[RTF_SECONDS]) * 1000 * 1000;
+
+        return retval;
+    };
+
+    void to_timeval(struct timeval &tv_out) {
+        int64_t us = this->to_microseconds();
+
+        tv_out.tv_sec = us / (1000 * 1000);
+        tv_out.tv_usec = us % (1000 * 1000);
+    };
+
     std::string to_string() {
         char dst[128];
 

@@ -78,6 +78,9 @@ int fs_extension_functions(const struct FuncDef **basic_funcs,
 int json_extension_functions(const struct FuncDef **basic_funcs,
                              const struct FuncDefAgg **agg_funcs);
 
+int time_extension_functions(const struct FuncDef **basic_funcs,
+                             const struct FuncDefAgg **agg_funcs);
+
 extern sqlite_registration_func_t sqlite_registration_funcs[];
 
 int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs);
