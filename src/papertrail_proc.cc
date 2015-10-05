@@ -131,7 +131,7 @@ struct json_path_handler papertrail_proc::FORMAT_HANDLERS[] = {
         json_path_handler("^/(partial_results)", read_partial),
         json_path_handler("^/(reached_record_limit|reached_time_limit)", read_limit),
         json_path_handler("^/(min_id|min_time_at|max_time_at|"
-                                  "reached_beginning|reached_end|tail)")
+                                  "reached_beginning|reached_end|tail|no_events)")
                 .add_cb(ignore_bool)
                 .add_cb(ignore_str),
         json_path_handler("^/events#/\\w+")
@@ -162,6 +162,8 @@ void papertrail_proc::yajl_writer(void *context, const char *str, size_t len)
 
 long papertrail_proc::complete(CURLcode result)
 {
+    curl_request::complete(result);
+
     yajl_reset(this->ptp_jhandle.in());
 
     if (result != CURLE_OK) {
@@ -169,6 +171,10 @@ long papertrail_proc::complete(CURLcode result)
 
         write(this->ptp_fd, err_msg, strlen(err_msg));
         write(this->ptp_fd, this->cr_error_buffer, strlen(this->cr_error_buffer));
+        return -1;
+    }
+
+    if (this->ptp_max_time) {
         return -1;
     }
 
