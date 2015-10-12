@@ -783,6 +783,7 @@ public:
           elf_multiline(true),
           elf_container(false),
           elf_has_module_format(false),
+          elf_builtin_format(false),
           jlf_json(false),
           jlf_hide_extra(false),
           jlf_cached_offset(-1),
@@ -900,6 +901,7 @@ public:
     bool elf_multiline;
     bool elf_container;
     bool elf_has_module_format;
+    bool elf_builtin_format;
 
     enum json_log_field {
         JLF_CONSTANT,

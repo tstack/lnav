@@ -53,10 +53,16 @@ using namespace std;
 
 static map<intern_string_t, external_log_format *> LOG_FORMATS;
 
+struct userdata {
+    std::string ud_format_path;
+    vector<intern_string_t> *ud_format_names;
+};
+
 static external_log_format *ensure_format(yajlpp_parse_context *ypc)
 {
     const intern_string_t name = ypc->get_path_fragment_i(0);
-    vector<intern_string_t> *formats = (vector<intern_string_t> *)ypc->ypc_userdata;
+    struct userdata *ud = (userdata *) ypc->ypc_userdata;
+    vector<intern_string_t> *formats = ud->ud_format_names;
     external_log_format *retval;
 
     retval = LOG_FORMATS[name];
@@ -68,6 +74,10 @@ static external_log_format *ensure_format(yajlpp_parse_context *ypc)
 
     if (find(formats->begin(), formats->end(), name) == formats->end()) {
         formats->push_back(name);
+    }
+
+    if (ud->ud_format_path.empty()) {
+        retval->elf_builtin_format = true;
     }
 
     return retval;
@@ -458,11 +468,14 @@ static void write_sample_file(void)
 std::vector<intern_string_t> load_format_file(const string &filename, std::vector<string> &errors)
 {
     std::vector<intern_string_t> retval;
+    struct userdata ud;
     auto_fd fd;
 
     log_info("loading formats from file: %s", filename.c_str());
+    ud.ud_format_path = filename;
+    ud.ud_format_names = &retval;
     yajlpp_parse_context ypc(filename, format_handlers);
-    ypc.ypc_userdata = &retval;
+    ypc.ypc_userdata = &ud;
     if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
         char errmsg[1024];
 
@@ -547,13 +560,15 @@ void load_formats(const std::vector<std::string> &extra_paths,
     string default_source = string(dotlnav_path("formats") + "/default/");
     yajlpp_parse_context ypc_builtin(default_source, format_handlers);
     std::vector<intern_string_t> retval;
+    struct userdata ud;
     yajl_handle handle;
 
     write_sample_file();
 
     log_debug("Loading default formats");
     handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
-    ypc_builtin.ypc_userdata = &retval;
+    ud.ud_format_names = &retval;
+    ypc_builtin.ypc_userdata = &ud;
     yajl_config(handle, yajl_allow_comments, 1);
     if (yajl_parse(handle,
                    (const unsigned char *)default_log_formats_json,
@@ -629,10 +644,28 @@ void load_formats(const std::vector<std::string> &extra_paths,
         }
 
         if (popped_formats.empty() && !alpha_ordered_formats.empty()) {
-            external_log_format *elf = alpha_ordered_formats.front();
-            log_warning("Detected a cycle, breaking by picking %s",
-                    elf->get_name().get());
-            elf->elf_collision.clear();
+            bool broke_cycle = false;
+
+            log_warning("Detected a cycle...");
+            for (vector<external_log_format *>::iterator iter = alpha_ordered_formats.begin();
+                 iter != alpha_ordered_formats.end();
+                 ++iter) {
+                external_log_format *elf = *iter;
+
+                if (elf->elf_builtin_format) {
+                    log_warning("  Skipping builtin format -- %s",
+                                elf->get_name().get());
+                } else {
+                    log_warning("  Breaking cycle by picking -- %s",
+                                elf->get_name().get());
+                    elf->elf_collision.clear();
+                    broke_cycle = true;
+                    break;
+                }
+            }
+            if (!broke_cycle) {
+                alpha_ordered_formats.front()->elf_collision.clear();
+            }
         }
 
         for (vector<external_log_format *>::iterator iter = alpha_ordered_formats.begin();
