@@ -30,11 +30,13 @@ if test x"${OS}" != x"FreeBSD"; then
         LDFLAGS="-L${FAKE_ROOT}/lib" \
         CC="gcc44" \
         CXX="g++44" \
-        CPPFLAGS="-I${FAKE_ROOT}/include"
+        CPPFLAGS="-I${FAKE_ROOT}/include" \
+        PATH="${FAKE_ROOT}/bin:${PATH}"
 else
     ../lnav/configure \
         LDFLAGS="-L${FAKE_ROOT}/lib" \
-        CPPFLAGS="-I${FAKE_ROOT}/include"
+        CPPFLAGS="-I${FAKE_ROOT}/include" \
+        PATH="${FAKE_ROOT}/bin:${PATH}"
 fi
 
 

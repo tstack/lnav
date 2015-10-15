@@ -2542,7 +2542,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_db_overlay.dos_hist_source = &lnav_data.ld_db_source;
     lnav_data.ld_match_view.set_left(0);
 
-    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+    for (lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
     }
 

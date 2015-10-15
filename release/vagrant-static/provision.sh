@@ -13,14 +13,22 @@ PACKAGE_URLS="\
     http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz \
     http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz \
     ftp://invisible-island.net/ncurses/ncurses-5.9.tar.gz \
-    ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.36.tar.gz \
+    ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.37.tar.gz \
     ftp://ftp.cwru.edu/pub/bash/readline-6.3.tar.gz \
     http://zlib.net/zlib-1.2.8.tar.gz \
     http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz \
-    http://sqlite.org/2015/sqlite-autoconf-3080803.tar.gz \
-    https://www.openssl.org/source/openssl-1.0.1p.tar.gz \
+    http://sqlite.org/2015/sqlite-autoconf-3090000.tar.gz \
+    http://openssl.org/source/openssl-1.0.1p.tar.gz \
     http://www.libssh2.org/download/libssh2-1.6.0.tar.gz \
-    http://curl.haxx.se/download/curl-7.43.0.tar.gz \
+    http://curl.haxx.se/download/curl-7.45.0.tar.gz \
+    "
+
+SQLITE_CFLAGS="\
+    -DSQLITE_ENABLE_COLUMN_METADATA \
+    -DSQLITE_SOUNDEX \
+    -DSQLITE_ENABLE_DBSTAT_VTAB \
+    -DSQLITE_ENABLE_API_ARMOR \
+    -DSQLITE_ENABLE_JSON1 \
     "
 
 cd ~/packages
@@ -54,7 +62,7 @@ if test x"${OS}" != x"FreeBSD"; then
          && \
      make && make install)
 
-    (cd pcre-8.36 && \
+    (cd pcre-8.37 && \
      ./configure --prefix=${FAKE_ROOT} \
          --enable-jit \
          --enable-utf \
@@ -73,7 +81,7 @@ else
          && \
      make && make install)
 
-    (cd pcre-8.36 && \
+    (cd pcre-8.37 && \
      ./configure --prefix=${FAKE_ROOT} \
          --enable-jit \
          --enable-utf \
@@ -89,7 +97,7 @@ fi
 
 (cd sqlite-* &&
  ./configure --prefix=${FAKE_ROOT} \
-     CFLAGS="-DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_SOUNDEX" \
+     CFLAGS="${SQLITE_CFLAGS}" \
      && \
  make && make install)
 
@@ -99,7 +107,7 @@ fi
  make install)
 
 (cd libssh2-* &&
- ./configure --PREFIX=${FAKE_ROOT} \
+ ./configure --prefix=${FAKE_ROOT} \
      --with-libssl-prefix=/home/vagrant/fake.root \
      --with-libz-prefix=/home/vagrant/fake.root \
      "LDFLAGS=-ldl" &&
