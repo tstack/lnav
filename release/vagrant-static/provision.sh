@@ -49,6 +49,22 @@ done
 
 OS=$(uname -s)
 
+
+(cd readline-6.3 && ./configure --prefix=${FAKE_ROOT} && make && make install)
+
+(cd bzip2-1.0.6 && make install PREFIX=${FAKE_ROOT})
+
+(cd sqlite-* &&
+ ./configure --prefix=${FAKE_ROOT} \
+     CFLAGS="${SQLITE_CFLAGS}" \
+     && \
+ make && make install)
+
+(cd openssl-* &&
+ ./config --prefix=${FAKE_ROOT} -fPIC &&
+ make &&
+ make install)
+
 if test x"${OS}" != x"FreeBSD"; then
     (cd ncurses-5.9 && \
      ./configure --prefix=${FAKE_ROOT} \
@@ -70,6 +86,25 @@ if test x"${OS}" != x"FreeBSD"; then
         CXX="g++44" \
          && \
      make && make install)
+
+    (cd zlib-1.2.8 && ./configure --prefix=${FAKE_ROOT} && make && make install)
+
+    (cd libssh2-* &&
+     ./configure --prefix=${FAKE_ROOT} \
+         --with-libssl-prefix=/home/vagrant/fake.root \
+         --with-libz-prefix=/home/vagrant/fake.root \
+         "LDFLAGS=-ldl" &&
+     make &&
+     make install)
+
+    (cd curl-* &&
+     ./configure --prefix=${FAKE_ROOT} \
+         --with-libssh2=${FAKE_ROOT} \
+         --with-ssl=${FAKE_ROOT} \
+         --with-zlib=${FAKE_ROOT} \
+         "LDFLAGS=-ldl" &&
+     make &&
+     make install)
 else
     (cd ncurses-5.9 && \
      ./configure --prefix=${FAKE_ROOT} \
@@ -87,38 +122,24 @@ else
          --enable-utf \
          && \
      make && make install)
+
+    (cd zlib-1.2.8 && ./configure --prefix=${FAKE_ROOT} "CFLAGS=-fPIC" \
+        && make && make install)
+
+    (cd libssh2-* &&
+     ./configure --prefix=${FAKE_ROOT} \
+         --with-libssl-prefix=/home/vagrant/fake.root \
+         --with-libz-prefix=/home/vagrant/fake.root \
+         &&
+     make &&
+     make install)
+
+    (cd curl-* &&
+     ./configure --prefix=${FAKE_ROOT} \
+         --with-libssh2=${FAKE_ROOT} \
+         --with-ssl=${FAKE_ROOT} \
+         --with-zlib=${FAKE_ROOT} \
+         "CFLAGS=-fPIC" &&
+     make &&
+     make install)
 fi
-
-(cd readline-6.3 && ./configure --prefix=${FAKE_ROOT} && make && make install)
-
-(cd zlib-1.2.8 && ./configure --prefix=${FAKE_ROOT} && make && make install)
-
-(cd bzip2-1.0.6 && make install PREFIX=${FAKE_ROOT})
-
-(cd sqlite-* &&
- ./configure --prefix=${FAKE_ROOT} \
-     CFLAGS="${SQLITE_CFLAGS}" \
-     && \
- make && make install)
-
-(cd openssl-* &&
- ./config --prefix=${FAKE_ROOT} -fPIC &&
- make &&
- make install)
-
-(cd libssh2-* &&
- ./configure --prefix=${FAKE_ROOT} \
-     --with-libssl-prefix=/home/vagrant/fake.root \
-     --with-libz-prefix=/home/vagrant/fake.root \
-     "LDFLAGS=-ldl" &&
- make &&
- make install)
-
-(cd curl-* &&
- ./configure --prefix=${FAKE_ROOT} \
-     --with-libssh2=${FAKE_ROOT} \
-     --with-ssl=${FAKE_ROOT} \
-     --with-zlib=${FAKE_ROOT} \
-     "LDFLAGS=-ldl" &&
- make &&
- make install)
