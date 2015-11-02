@@ -779,6 +779,7 @@ public:
           elf_filename_pcre(NULL),
           elf_column_count(0),
           elf_timestamp_divisor(1.0),
+          elf_level_field(intern_string::lookup("level", -1)),
           elf_body_field(intern_string::lookup("body", -1)),
           elf_multiline(true),
           elf_container(false),
