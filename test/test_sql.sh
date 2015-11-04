@@ -541,7 +541,7 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ":create-search-table search_test1 (\w+), World!" \
+    -c ":create-search-table search_test1 (\w+), world!" \
     -c ";select log_msg_instance, col_0 from search_test1" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_multiline.0

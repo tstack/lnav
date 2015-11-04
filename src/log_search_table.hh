@@ -48,7 +48,7 @@ public:
     log_search_table(const char *regex, intern_string_t table_name)
         : log_vtab_impl(table_name),
           lst_regex_string(regex),
-          lst_regex(regex),
+          lst_regex(regex, PCRE_CASELESS),
           lst_instance(-1) {
         this->vi_supports_indexes = false;
     };
