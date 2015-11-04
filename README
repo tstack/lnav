@@ -24,7 +24,8 @@ Lnav requires the following software packages:
   zlib      - The zlib compression library.
   bz2       - The bzip2 compression library.
   re2c      - The re2c scanner generator.
-  libcurl   - The cURL library for downloading files from URLs.
+  libcurl   - The cURL library for downloading files from URLs.  Version
+              7.23.0 or higher is required.
 
 
 INSTALLATION

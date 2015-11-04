@@ -4,7 +4,7 @@ lnav v0.8.0:
      * Integration with "papertrailapp.com" for querying and tailing
        server log and syslog messages.  See the Papertrail section in
        the online help for more details.
-     * Remote files can be opened when lnav is built with libcurl.
+     * Remote files can be opened when lnav is built with libcurl v7.23.0+
      * SQL queries can now be done on lines that match a regular expression
        using the "log_search" table or by creating custom tables with the
        ":create-search-table" command.
