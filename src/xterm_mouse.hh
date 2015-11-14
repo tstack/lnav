@@ -131,6 +131,7 @@ public:
             putp(tparm((char *)XT_TERMCAP, enabled ? 1 : 0));
             putp(tparm((char *)XT_TERMCAP_TRACKING, enabled ? 1 : 0));
             putp(tparm((char *)XT_TERMCAP_SGR, enabled ? 1 : 0));
+            fflush(stdout);
             this->xm_enabled = enabled;
         }
     };

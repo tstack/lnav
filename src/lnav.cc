@@ -1474,7 +1474,7 @@ public:
     action_delegate(logfile_sub_source &lss)
             : ad_log_helper(lss),
               ad_press_line(-1),
-              ad_press_value(0),
+              ad_press_value(-1),
               ad_line_index(0) {
 
     };
