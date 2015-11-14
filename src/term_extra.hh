@@ -90,6 +90,7 @@ public:
                     std::string title = this->te_prefix + filename;
 
                     printf(xterm_title_fmt, title.c_str());
+                    fflush(stdout);
 
                     this->te_last_title = filename;
                 }
@@ -103,6 +104,7 @@ public:
             std::string title = this->te_prefix + view_title;
 
             printf(xterm_title_fmt, title.c_str());
+            fflush(stdout);
 
             this->te_last_title = view_title;
         }
