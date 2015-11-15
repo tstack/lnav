@@ -475,13 +475,14 @@ log_line log_part         log_time        log_idle_msecs log_level log_mark log_
 EOF
 
 # Create a dummy database for the next couple of tests to consume.
+touch empty
 run_test ${lnav_test} -n \
     -c ";ATTACH DATABASE 'simple-db.db' as 'db'" \
     -c ";CREATE TABLE IF NOT EXISTS db.person ( id integer PRIMARY KEY, first_name text, last_name, age integer )" \
     -c ";INSERT INTO db.person(id, first_name, last_name, age) VALUES (0, 'Phil', 'Myman', 30)" \
     -c ";INSERT INTO db.person(id, first_name, last_name, age) VALUES (1, 'Lem', 'Hewitt', 35)" \
     -c ";DETACH DATABASE 'db'" \
-    /dev/null
+    empty
 
 check_output "Could not create db?" <<EOF
 EOF
@@ -500,13 +501,12 @@ EOF
 # XXX: Need to pass in a file, otherwise lnav keeps trying to open syslog
 # and we might not have sufficient privileges on the system the tests are being
 # run on.
-touch empty
 run_test ${lnav_test} -n \
     -c ";attach database 'simple-db.db' as 'db'" \
     -c ';select * from person order by age asc' \
     empty
 
-check_output "lnav not able to recognize sqlite3 db file?" <<EOF
+check_output "lnav not able to attach sqlite3 db file?" <<EOF
 id first_name last_name age
  0 Phil       Myman      30
  1 Lem        Hewitt     35
