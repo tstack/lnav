@@ -500,10 +500,11 @@ EOF
 # XXX: Need to pass in a file, otherwise lnav keeps trying to open syslog
 # and we might not have sufficient privileges on the system the tests are being
 # run on.
+touch empty
 run_test ${lnav_test} -n \
     -c ";attach database 'simple-db.db' as 'db'" \
     -c ';select * from person order by age asc' \
-    ${test_dir}/logfile_syslog_with_access_log.0
+    empty
 
 check_output "lnav not able to recognize sqlite3 db file?" <<EOF
 id first_name last_name age
