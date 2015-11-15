@@ -497,13 +497,13 @@ id first_name last_name age
 EOF
 
 # Test to see if lnav can recognize a sqlite3 db file passed in as an argument.
-# XXX: Need to pass in '/dev/null', otherwise lnav keeps trying to open syslog
+# XXX: Need to pass in a file, otherwise lnav keeps trying to open syslog
 # and we might not have sufficient privileges on the system the tests are being
 # run on.
 run_test ${lnav_test} -n \
     -c ";attach database 'simple-db.db' as 'db'" \
     -c ';select * from person order by age asc' \
-    /dev/null
+    ${test_dir}/logfile_syslog_with_access_log.0
 
 check_output "lnav not able to recognize sqlite3 db file?" <<EOF
 id first_name last_name age

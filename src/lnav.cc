@@ -1293,7 +1293,9 @@ static void expand_filename(string path, bool required)
              * yet, allow it through since we'll load it in
              * dynamically.
              */
-            required = false;
+            if (access(path.c_str(), F_OK) == -1) {
+                required = false;
+            }
         }
         if (gl->gl_pathc > 1 ||
             strcmp(path.c_str(), gl->gl_pathv[0]) != 0) {
@@ -1308,7 +1310,7 @@ static void expand_filename(string path, bool required)
                         gl->gl_pathv[lpc], strerror(errno));
                 }
             }
-            else {
+            else if (required || access(abspath.in(), R_OK) == 0){
                 watch_logfile(abspath.in(), -1, required);
             }
         }

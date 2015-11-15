@@ -1,5 +1,21 @@
 #! /bin/bash
 
+touch unreadable.log
+chmod ugo-r unreadable.log
+
+run_test ${lnav_test} -n unreadable.log
+
+sed -i "" -e "s|/.*/unreadable.log|unreadable.log|g" `test_err_filename`
+
+check_error_output "able to read an unreadable log file?" <<EOF
+error: Permission denied -- 'unreadable.log'
+EOF
+
+run_test ${lnav_test} -n 'unreadable.*'
+
+check_output "unreadable file was not skipped" <<EOF
+EOF
+
 run_test ./drive_logfile -f syslog_log ${srcdir}/logfile_syslog.0
 
 on_error_fail_with "Didn't infer syslog log format?"
