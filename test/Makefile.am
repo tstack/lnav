@@ -332,7 +332,10 @@ DISTCLEANFILES = \
 	truncfile.0 \
 	logfile_append.0 \
 	test.log \
-	logfile_stdin.log
+	logfile_stdin.log \
+	logfile_syslog.0 \
+	unreadable.log \
+	empty
 
 distclean-local:
 	$(RM_V)rm -rf sessions

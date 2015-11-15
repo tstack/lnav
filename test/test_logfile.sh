@@ -41,8 +41,9 @@ run_test ./drive_logfile ${srcdir}/logfile_empty.0
 
 on_error_fail_with "Didn't handle empty log?"
 
-touch -t 200711030923 ${srcdir}/logfile_syslog.0
-run_test ./drive_logfile -t -f syslog_log ${srcdir}/logfile_syslog.0
+cp ${srcdir}/logfile_syslog.0 logfile_syslog.0
+touch -t 200711030923 logfile_syslog.0
+run_test ./drive_logfile -t -f syslog_log logfile_syslog.0
 
 check_output "Syslog timestamp interpreted incorrectly?" <<EOF
 Nov 03 09:23:38 2007 -- 000
