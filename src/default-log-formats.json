@@ -247,6 +247,107 @@
             }
         ]
     },
+    "elb_log" : {
+        "title" : "Amazon ELB log",
+        "description" : "Log format for Amazon Elastic Load Balancers",
+        "url" : "http://docs.aws.amazon.com/ElasticLoadBalancing/latest/DeveloperGuide/access-log-collection.html",
+        "regex" : {
+            "std" : {
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z) (?<elb>[^ ]+) (?<client_ip>[\\w\\.:]+):(?<client_port>\\d+) (?<backend_ip>[\\w\\.:]+):(?<backend_port>\\d+) (?<request_processing_time>\\d+(\\.\\d+)?) (?<backend_processing_time>\\d+(\\.\\d+)?) (?<response_processing_time>\\d+(\\.\\d+)?) (?<elb_status_code>\\d+|-) (?<backend_status_code>\\d+|-) (?<received_bytes>\\d+) (?<sent_bytes>\\d+) \"(?:\\-|(?<cs_method>\\w+|-) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+|-)\\s*)\" \"(?<user_agent>[^\"]+)\" (?<ssl_cipher>[\\w-]+) (?<ssl_protocol>[\\w\\.-]+)(?<body>.*)"
+            }
+        },
+        "value" : {
+            "elb" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "client_ip" : {
+                "kind" : "string",
+                "collate" : "ipaddress",
+                "identifier" : true
+            },
+            "client_port" : {
+                "kind" : "integer",
+                "foreign-key" : true
+            },
+            "backend_ip" : {
+                "kind" : "string",
+                "collate" : "ipaddress",
+                "identifier" : true
+            },
+            "backend_port" : {
+                "kind" : "integer",
+                "foreign-key" : true
+            },
+            "request_processing_time" : {
+                "kind" : "float"
+            },
+            "backend_processing_time" : {
+                "kind" : "float"
+            },
+            "response_processing_time" : {
+                "kind" : "float"
+            },
+            "elb_status_code" : {
+                "kind" : "integer",
+                "foreign-key" : true
+            },
+            "backend_status_code" : {
+                "kind" : "integer",
+                "foreign-key" : true
+            },
+            "received_bytes" : {
+                "kind" : "integer"
+            },
+            "sent_bytes" : {
+                "kind" : "integer"
+            },
+            "cs_method" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_uri_stem" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "cs_uri_query" : {
+                "kind" : "string"
+            },
+            "cs_version" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "user_agent" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "ssl_cipher" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "ssl_protocol" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line" : "2015-11-17T05:45:24.077255Z elastic-prod 54.161.222.121:40909 10.231.68.180:443 0.000031 0.009511 0.000029 200 200 0 415 \"GET https://example.com/foo/bar?baz=1234 HTTP/1.1\" \"test agent\" ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2"
+            },
+            {
+                "line" : "2015-05-13T23:39:43.945958Z my-loadbalancer 192.168.131.39:2817 10.0.0.1:80 0.000073 0.001048 0.000057 200 200 0 29 \"GET http://www.example.com:80/ HTTP/1.1\" \"curl/7.38.0\" - -"
+            },
+            {
+                "line" : "2015-05-13T23:39:43.945958Z my-loadbalancer 192.168.131.39:2817 10.0.0.1:80 0.000086 0.001048 0.001337 200 200 0 57 \"GET https://www.example.com:443/ HTTP/1.1\" \"curl/7.38.0\" DHE-RSA-AES128-SHA TLSv1.2"
+            },
+            {
+                "line" : "2015-05-13T23:39:43.945958Z my-loadbalancer 192.168.131.39:2817 10.0.0.1:80 0.001069 0.000028 0.000041 - - 82 305 \"- - - \" \"-\" - -"
+            },
+            {
+                "line" : "2015-05-13T23:39:43.945958Z my-loadbalancer 192.168.131.39:2817 10.0.0.1:80 0.001065 0.000015 0.000023 - - 57 502 \"- - - \" \"-\" ECDHE-ECDSA-AES128-GCM-SHA256 TLSv1.2"
+            }
+        ]
+    },
     "engine_log" : {
         "title" : "engine log",
         "description" : "The log format for the engine.log files from RHEV/oVirt",
