@@ -23,6 +23,7 @@
         "level" : {
             "error" : "^[^123].*"
             },
+        "opid-field" : "c_ip",
         "value" : {
             "c_ip" : {
                 "kind" : "string",
@@ -256,6 +257,11 @@
                 "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z) (?<elb>[^ ]+) (?<client_ip>[\\w\\.:]+):(?<client_port>\\d+) (?<backend_ip>[\\w\\.:]+):(?<backend_port>\\d+) (?<request_processing_time>\\d+(\\.\\d+)?) (?<backend_processing_time>\\d+(\\.\\d+)?) (?<response_processing_time>\\d+(\\.\\d+)?) (?<elb_status_code>\\d+|-) (?<backend_status_code>\\d+|-) (?<received_bytes>\\d+) (?<sent_bytes>\\d+) \"(?:\\-|(?<cs_method>\\w+|-) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+|-)\\s*)\" \"(?<user_agent>[^\"]+)\" (?<ssl_cipher>[\\w-]+) (?<ssl_protocol>[\\w\\.-]+)(?<body>.*)"
             }
         },
+        "level-field": "elb_status_code",
+        "level" : {
+            "error" : "^[^123].*"
+        },
+        "opid-field" : "client_ip",
         "value" : {
             "elb" : {
                 "kind" : "string",
@@ -356,6 +362,7 @@
                 "pattern" : "^(?<timestamp>.+) (?<level>.+) \\[(?<logger>.+)\\] \\((?<tid>.+)\\) (?<body>(?:-|\\n)*)"
             }
         },
+        "opid-field" : "tid",
         "value" : {
             "tid" : {
                 "kind" : "string",
@@ -440,6 +447,7 @@
             "critical" : "C",
             "fatal" : "F"
         },
+        "opid-field" : "thread",
         "value" : {
             "thread" : {
                 "kind" : "integer",
@@ -953,6 +961,7 @@
             "error" : "(?:(?:(?<![a-zA-Z]))(?:(?i)error(?:s)?)(?:(?![a-zA-Z]))|failed|failure)",
             "warning" : "(?:(?:(?i)warn)|not responding|init: cannot execute)"
         },
+        "opid-field" : "log_pid",
         "module-field" : "log_procname",
         "value" : {
             "log_hostname" : {
@@ -1062,6 +1071,7 @@
         "level" : {
             "error" : "^[^123]"
             },
+        "opid-field" : "s_pid",
         "value" : {
             "s_pid" : {
                 "kind" : "string",
@@ -1248,6 +1258,7 @@
             "warning" : "warning",
             "trace" : "verbose"
             },
+        "opid-field" : "opid",
         "value" : {
             "prc" : {
                 "kind" : "string",

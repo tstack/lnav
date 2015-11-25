@@ -210,6 +210,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
         logline::level_t last_level  = logline::LEVEL_UNKNOWN;
         time_t           last_time   = this->lf_index_time;
         short            last_millis = 0;
+        uint8_t          last_mod = 0, last_opid = 0;
 
         if (!this->lf_index.empty()) {
             logline &ll = this->lf_index.back();
@@ -224,11 +225,15 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 last_level = (logline::level_t)
                              (ll.get_level() | logline::LEVEL_CONTINUED);
             }
+            last_mod = ll.get_module_id();
+            last_opid = ll.get_opid();
         }
         this->lf_index.push_back(logline(offset,
                                          last_time,
                                          last_millis,
-                                         last_level));
+                                         last_level,
+                                         last_mod,
+                                         last_opid));
     }
 }
 

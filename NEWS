@@ -1,4 +1,12 @@
 
+lnav v0.8.1:
+     Interface Changes:
+     * The 'o/O' hotkeys have been reassigned to navigate through log
+       messages that have a matching "opid" field.  The old action of
+       moving forward and backward by 60 minutes can be simulated by
+       using the ':goto' command with a relative time and the 'r/R'
+       hotkeys.
+
 lnav v0.8.0:
      Features:
      * Integration with "papertrailapp.com" for querying and tailing

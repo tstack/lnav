@@ -540,4 +540,5 @@ private:
     index_delegate    *lss_index_delegate;
     size_t            lss_longest_line;
 };
+
 #endif

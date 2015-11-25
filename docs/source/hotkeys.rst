@@ -115,6 +115,9 @@ Spatial Navigation
      - |ks| Shift |ke| + |ks| u |ke|
      - 
      - Next/previous bookmark
+   * - |ks| o |ke|
+     - |ks| Shift |ke| + |ks| o |ke|
+     - Forward/backward through log messages with a matching "opid" field
    * - |ks| y |ke|
      - |ks| Shift |ke| + |ks| y |ke|
      -
@@ -134,9 +137,6 @@ Chronological Navigation
    * - Keypress
      -
      - Command
-   * - |ks| o |ke|
-     - |ks| Shift |ke| + |ks| o |ke|
-     - Forward/backward 60 minutes
    * - |ks| d |ke|
      - |ks| Shift |ke| + |ks| d |ke|
      - Forward/backward 24 hours

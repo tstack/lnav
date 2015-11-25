@@ -51,9 +51,17 @@ You can view all the syslog messages by running:
   $ lnav /var/log/messages*
 
 
+SUPPORT
+-------
+
+The lnav mailing list can be reached at:
+
+  lnav@googlegroups.com
+
+
 SEE ALSO
 --------
 
-Lnav website:
+The lnav website:
 
   http://lnav.org

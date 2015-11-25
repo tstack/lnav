@@ -90,6 +90,12 @@ fields:
   :body-field: The name of the field that contains the main body of the
     message.  Defaults to "body".
 
+  :opid-field: The name of the field that contains the "operation ID" of the
+    message.  An "operation ID" establishes a thread of messages that might
+    correspond to a particular operation/request/transaction.  The user can
+    press the 'o' or 'Shift+O' hotkeys to move forward/backward through the
+    list of messages that have the same operation ID.
+
   :module-field: The name of the field that contains the module identifier
     that distinguishes messages from one log source from another.  This field
     should be used if this message format can act as a container for other

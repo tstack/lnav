@@ -187,6 +187,9 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
         elf->elf_module_id_field = intern_string::lookup(value);
         elf->elf_container = true;
     }
+    else if (field_name == "opid-field") {
+        elf->elf_opid_field = intern_string::lookup(value);
+    }
 
     return 1;
 }
@@ -417,7 +420,7 @@ static struct json_path_handler format_handlers[] = {
         .add_cb(read_format_int),
     json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|"
                               "body-field|url|url#|title|description|"
-                              "timestamp-format#|module-field)$",
+                              "timestamp-format#|module-field|opid-field)$",
                       read_format_field),
     json_path_handler("^/\\w+/level/"
                       "(trace|debug\\d*|info|stats|warning|error|critical|fatal)$",

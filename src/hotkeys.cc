@@ -48,6 +48,51 @@ using namespace std;
 
 static bookmark_type_t BM_EXAMPLE("");
 
+class logline_helper {
+
+public:
+    logline_helper(logfile_sub_source &lss) : lh_sub_source(lss) {
+
+    };
+
+    logline &move_to_msg_start() {
+        content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
+        logfile *lf = this->lh_sub_source.find(cl);
+        logfile::iterator ll = lf->begin() + cl;
+        while (ll->is_continued()) {
+            --ll;
+            --this->lh_current_line;
+        }
+
+        return (*lf)[cl];
+    };
+
+    void annotate() {
+        this->lh_string_attrs.clear();
+        this->lh_line_values.clear();
+        content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
+        logfile *lf = this->lh_sub_source.find(cl);
+        logfile::iterator ll = lf->begin() + cl;
+        log_format *format = lf->get_format();
+        lf->read_full_message(ll, this->lh_msg_buffer);
+        format->annotate(this->lh_msg_buffer,
+                         this->lh_string_attrs,
+                         this->lh_line_values);
+    };
+
+    std::string to_string(const struct line_range &lr) {
+        const char *start = this->lh_msg_buffer.get_data();
+
+        return string(&start[lr.lr_start], lr.length());
+    }
+
+    logfile_sub_source &lh_sub_source;
+    vis_line_t lh_current_line;
+    shared_buffer_ref lh_msg_buffer;
+    string_attrs_t lh_string_attrs;
+    vector<logline_value> lh_line_values;
+};
+
 /* XXX For one, this code is kinda crappy.  For two, we should probably link
  * directly with X so we don't need to have xclip installed and it'll work if
  * we're ssh'd into a box.
@@ -687,7 +732,6 @@ void handle_paging_key(int ch)
             break;
 
         case 'D':
-        case 'O':
             if (tc->get_top() == 0) {
                 alerter::singleton().chime();
             }
@@ -706,7 +750,6 @@ void handle_paging_key(int ch)
             break;
 
         case 'd':
-        case 'o':
             if (lss) {
                 int        step = ch == 'd' ? (24 * 60 * 60) : (60 * 60);
                 vis_line_t line =
@@ -715,6 +758,72 @@ void handle_paging_key(int ch)
                 tc->set_top(line);
 
                 lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(/, "to search"));
+            }
+            break;
+
+        case 'o':
+        case 'O':
+            if (lss) {
+                logline_helper start_helper(*lss);
+
+                start_helper.lh_current_line = tc->get_top();
+                logline &start_line = start_helper.move_to_msg_start();
+                start_helper.annotate();
+
+                struct line_range opid_range = find_string_attr_range(
+                        start_helper.lh_string_attrs, &logline::L_OPID);
+                if (!opid_range.is_valid()) {
+                    alerter::singleton().chime();
+                    lnav_data.ld_rl_view->set_value("Log message does not contain an opid");
+                } else {
+                    unsigned int opid_hash = start_line.get_opid();
+                    logline_helper next_helper(*lss);
+                    bool found = false;
+
+                    next_helper.lh_current_line = start_helper.lh_current_line;
+
+                    while (true) {
+                        if (ch == 'o') {
+                            if (++next_helper.lh_current_line >= tc->get_inner_height()) {
+                                break;
+                            }
+                        }
+                        else {
+                            if (--next_helper.lh_current_line <= 0) {
+                                break;
+                            }
+                        }
+                        logline &next_line = next_helper.move_to_msg_start();
+                        if (next_line.is_continued()) {
+                            continue;
+                        }
+                        if (next_line.get_opid() != opid_hash) {
+                            continue;
+                        }
+                        next_helper.annotate();
+                        struct line_range opid_next_range = find_string_attr_range(
+                                next_helper.lh_string_attrs, &logline::L_OPID);
+                        if (opid_range.length() != opid_next_range.length() ||
+                            memcmp(start_helper.lh_msg_buffer.get_data(),
+                                   next_helper.lh_msg_buffer.get_data(),
+                                   opid_range.length()) != 0) {
+                            continue;
+                        }
+                        found = true;
+                        break;
+                    }
+                    if (found) {
+                        lnav_data.ld_rl_view->set_value("");
+                        tc->set_top(next_helper.lh_current_line);
+                    }
+                    else {
+                        string opid_str = start_helper.to_string(opid_range);
+
+                        lnav_data.ld_rl_view->set_value(
+                                "No more messages found with opid: " + opid_str);
+                        alerter::singleton().chime();
+                    }
+                }
             }
             break;
 

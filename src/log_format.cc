@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2007-2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -63,6 +63,7 @@ string_attr_type logline::L_TIMESTAMP;
 string_attr_type logline::L_FILE;
 string_attr_type logline::L_PARTITION;
 string_attr_type logline::L_MODULE;
+string_attr_type logline::L_OPID;
 
 const char *logline::level_names[LEVEL__MAX + 1] = {
     "unknown",
@@ -677,13 +678,14 @@ bool external_log_format::scan(std::vector<logline> &dst,
         pcre_context::capture_t *ts = pc[fpat->p_timestamp_field_index];
         pcre_context::capture_t *level_cap = pc[fpat->p_level_field_index];
         pcre_context::capture_t *mod_cap = pc[fpat->p_module_field_index];
+        pcre_context::capture_t *opid_cap = pc[fpat->p_opid_field_index];
         pcre_context::capture_t *body_cap = pc[fpat->p_body_field_index];
         const char *ts_str = pi.get_substr_start(ts);
         const char *last;
         struct exttm log_time_tm;
         struct timeval log_tv;
         logline::level_t level = logline::LEVEL_INFO;
-        uint8_t mod_index = 0;
+        uint8_t mod_index = 0, opid = 0;
 
         if ((last = this->lf_date_time.scan(ts_str,
                                             ts->length(),
@@ -715,6 +717,10 @@ bool external_log_format::scan(std::vector<logline> &dst,
             this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 
+        if (opid_cap != NULL) {
+            opid = hash_str(pi.get_substr_start(opid_cap), opid_cap->length());
+        }
+
         if (mod_cap != NULL) {
             intern_string_t mod_name = intern_string::lookup(
                     pi.get_substr_start(mod_cap), mod_cap->length());
@@ -728,7 +734,7 @@ bool external_log_format::scan(std::vector<logline> &dst,
             }
         }
 
-        dst.push_back(logline(offset, log_tv, level, mod_index));
+        dst.push_back(logline(offset, log_tv, level, mod_index, opid));
 
         this->lf_fmt_lock = curr_fmt;
         retval = true;
@@ -820,6 +826,13 @@ void external_log_format::annotate(shared_buffer_ref &line,
                 lr.lr_end = module_cap->c_end;
                 sa.push_back(string_attr(lr, &logline::L_MODULE));
             }
+        }
+
+        cap = pc[pat.p_opid_field_index];
+        if (cap != NULL && cap->is_valid()) {
+            lr.lr_start = cap->c_begin;
+            lr.lr_end = cap->c_end;
+            sa.push_back(string_attr(lr, &logline::L_OPID));
         }
     }
 
@@ -1214,6 +1227,9 @@ void external_log_format::build(std::vector<std::string> &errors)
             }
             if (name == this->elf_module_id_field) {
                 pat.p_module_field_index = name_iter->index();
+            }
+            if (name == this->elf_opid_field) {
+                pat.p_opid_field_index = name_iter->index();
             }
             if (name == this->elf_body_field) {
                 pat.p_body_field_index = name_iter->index();

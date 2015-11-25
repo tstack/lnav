@@ -193,8 +193,8 @@ through the file.
                     from the terminal without picking up any of the extra
                     decorations.
 
-  o/O               Move forward/backward 60 minutes from the current
-                    position in the log file.
+  o/O               Move forward/backward to the log message with a matching
+                    'operation ID' (opid) field.
 
   d/D               Move forward/backward 24 hours from the current
                     position in the log file.
@@ -776,3 +776,15 @@ search string (i.e. "pt:").
 
 Only one papertrail search can be active at a time.  So, if an ':open'
 is done with a new query, the previous query will be closed first.
+
+
+CONTACT
+-------
+
+For more information, visit the lnav website at:
+
+  http://lnav.org
+
+For support questions, email:
+
+  lnav@googlegroups.com

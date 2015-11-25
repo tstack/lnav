@@ -67,6 +67,7 @@ public:
     static string_attr_type L_FILE;
     static string_attr_type L_PARTITION;
     static string_attr_type L_MODULE;
+    static string_attr_type L_OPID;
 
     /**
      * The logging level identifiers for a line(s).
@@ -116,10 +117,12 @@ public:
             time_t t,
             uint16_t millis,
             level_t l,
-            uint8_t mod = 0)
+            uint8_t mod = 0,
+            uint8_t opid = 0)
         : ll_offset(off),
           ll_time(t),
           ll_millis(millis),
+          ll_opid(opid),
           ll_sub_offset(0),
           ll_level(l),
           ll_module_id(mod)
@@ -130,8 +133,10 @@ public:
     logline(off_t off,
             const struct timeval &tv,
             level_t l,
-            uint8_t mod = 0)
+            uint8_t mod = 0,
+            uint8_t opid = 0)
         : ll_offset(off),
+          ll_opid(opid),
           ll_sub_offset(0),
           ll_level(l),
           ll_module_id(mod)
@@ -211,6 +216,10 @@ public:
         return this->ll_module_id;
     };
 
+    uint8_t get_opid(void) const {
+        return this->ll_opid;
+    };
+
     /**
      * @return  True if there is a schema value set for this log line.
      */
@@ -267,7 +276,8 @@ public:
 private:
     off_t    ll_offset;
     time_t   ll_time;
-    uint16_t ll_millis;
+    unsigned int ll_millis : 10;
+    unsigned int ll_opid : 6;
     uint16_t ll_sub_offset;
     uint8_t  ll_level;
     uint8_t  ll_module_id;
@@ -749,6 +759,7 @@ public:
                     p_timestamp_field_index(-1),
                     p_level_field_index(-1),
                     p_module_field_index(-1),
+                    p_opid_field_index(-1),
                     p_body_field_index(-1),
                     p_timestamp_end(-1),
                     p_module_format(false) {
@@ -762,6 +773,7 @@ public:
         int p_timestamp_field_index;
         int p_level_field_index;
         int p_module_field_index;
+        int p_opid_field_index;
         int p_body_field_index;
         int p_timestamp_end;
         bool p_module_format;
@@ -898,6 +910,7 @@ public:
     intern_string_t elf_level_field;
     intern_string_t elf_body_field;
     intern_string_t elf_module_id_field;
+    intern_string_t elf_opid_field;
     std::map<logline::level_t, level_pattern> elf_level_patterns;
     bool elf_multiline;
     bool elf_container;

@@ -137,4 +137,6 @@ private:
     const intern_string *ist_interned_string;
 };
 
+unsigned long hash_str(const char *str, size_t len);
+
 #endif
