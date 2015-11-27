@@ -39,6 +39,8 @@
 
 #include <sqlite3.h>
 
+#include <fstream>
+
 #include "auto_fd.hh"
 #include "lnav_util.hh"
 #include "pcrepp.hh"
@@ -569,4 +571,17 @@ string build_path(const vector<string> &paths)
     }
     retval += ":" + string(getenv("PATH"));
     return retval;
+}
+
+bool read_file(const char *filename, string &out)
+{
+    std::ifstream sql_file(filename);
+
+    if (sql_file) {
+        out.assign((std::istreambuf_iterator<char>(sql_file)),
+                   std::istreambuf_iterator<char>());
+        return true;
+    }
+
+    return false;
 }

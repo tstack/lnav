@@ -4,6 +4,19 @@ lnav_test="${top_builddir}/src/lnav-test"
 
 
 run_test ${lnav_test} -n \
+    -I "${top_srcdir}/test" \
+    -c ";select * from web_status" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "access_log table is not working" <<EOF
+group_concat(cs_uri_stem),sc_status
+"/vmw/cgi/tramp,/vmw/vSphere/default/vmkernel.gz",200
+/vmw/vSphere/default/vmkboot.gz,404
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ";select * from access_log" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0

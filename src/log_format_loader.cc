@@ -37,11 +37,13 @@
 
 #include <map>
 #include <string>
+#include <fstream>
 
 #include "yajlpp.hh"
 #include "lnav_config.hh"
 #include "log_format.hh"
 #include "auto_fd.hh"
+#include "sql_util.hh"
 #include "format-text-files.hh"
 #include "default-log-formats-json.hh"
 
@@ -692,4 +694,41 @@ void load_formats(const std::vector<std::string> &extra_paths,
 
     vector<log_format *> &roots = log_format::get_root_formats();
     roots.insert(roots.begin(), graph_ordered_formats.begin(), graph_ordered_formats.end());
+}
+
+static void exec_sql_in_path(sqlite3 *db, const string &path, std::vector<string> &errors)
+{
+    string format_path = path + "/formats/*/*.sql";
+    static_root_mem<glob_t, globfree> gl;
+
+    log_info("executing SQL files in path: %s", format_path.c_str());
+    if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
+        for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
+            string filename(gl->gl_pathv[lpc]);
+            string content;
+
+            if (read_file(filename.c_str(), content)) {
+                log_info("Executing SQL file: %s", filename.c_str());
+                sql_execute_script(db, filename.c_str(), content.c_str(), errors);
+            }
+            else {
+                errors.push_back("Unable to read file: " + filename);
+            }
+        }
+    }
+}
+
+void load_format_extra(sqlite3 *db,
+                       const std::vector<std::string> &extra_paths,
+                       std::vector<std::string> &errors)
+{
+    exec_sql_in_path(db, "/etc/lnav", errors);
+    exec_sql_in_path(db, SYSCONFDIR "/lnav", errors);
+    exec_sql_in_path(db, dotlnav_path(""), errors);
+
+    for (vector<string>::const_iterator path_iter = extra_paths.begin();
+         path_iter != extra_paths.end();
+         ++path_iter) {
+        exec_sql_in_path(db, *path_iter, errors);
+    }
 }

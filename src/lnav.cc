@@ -2448,11 +2448,12 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-    load_formats(lnav_data.ld_config_paths, loader_errors);
-    if (!loader_errors.empty()) {
-        print_errors(loader_errors);
-        return EXIT_FAILURE;
+    if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to create sqlite memory database\n");
+        exit(EXIT_FAILURE);
     }
+
+    load_formats(lnav_data.ld_config_paths, loader_errors);
 
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
@@ -2461,11 +2462,6 @@ int main(int argc, char *argv[])
     setenv("TERMINFO_DIRS",
            "/usr/share/terminfo:/lib/terminfo:/usr/share/lib/terminfo",
            0);
-
-    if (sqlite3_open(":memory:", lnav_data.ld_db.out()) != SQLITE_OK) {
-        fprintf(stderr, "error: unable to create sqlite memory database\n");
-        exit(EXIT_FAILURE);
-    }
 
     {
         int register_collation_functions(sqlite3 * db);
@@ -2508,6 +2504,12 @@ int main(int argc, char *argv[])
         if (lvi != NULL) {
             lnav_data.ld_vtab_manager->register_vtab(lvi);
         }
+    }
+
+    load_format_extra(lnav_data.ld_db.in(), lnav_data.ld_config_paths, loader_errors);
+    if (!loader_errors.empty()) {
+        print_errors(loader_errors);
+        return EXIT_FAILURE;
     }
 
     if (!(lnav_data.ld_flags & LNF_CHECK_CONFIG)) {

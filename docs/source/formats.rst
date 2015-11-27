@@ -25,10 +25,12 @@ Defining a New Format
 
 New log formats can be defined by placing JSON configuration files in
 subdirectories of the :file:`~/.lnav/formats/` directory.  The directories and
-files can be named anything you like, but they must have the '.json' suffix.  A
+files can be named anything you like, but the files must have the '.json' suffix.  A
 sample file containing the builtin configuration will be written to this
 directory when **lnav** starts up.  You can consult that file when writing your
-own formats or if you need to modify existing ones.
+own formats or if you need to modify existing ones.  Any '.sql' files found in
+the directories will also be executed on startup, allowing you to create views
+or other tables that might make it easier to analyze a log format.
 
 The contents of the format configuration should be a JSON object with a field
 for each format defined by the file.  Each field name should be the symbolic
@@ -225,6 +227,7 @@ Executing the format file should then install it automatically::
     $ chmod ugo+rx myformat.json
     $ ./myformat.json
     info: installed: /home/example/.lnav/formats/installed/myformat_log.json
+
 
 Format Order When Scanning a File
 ---------------------------------

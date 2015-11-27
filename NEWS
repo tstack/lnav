@@ -1,5 +1,10 @@
 
 lnav v0.8.1:
+     Features:
+     * Log formats can now create SQL views and execute other statements
+       by adding '.sql' files to their format directories.  The SQL scripts
+       will be executed on startup.
+
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log
        messages that have a matching "opid" field.  The old action of

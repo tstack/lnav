@@ -209,6 +209,8 @@ inline bool endswith(const char *str, const char *suffix)
 
 std::string build_path(const std::vector<std::string> &paths);
 
+bool read_file(const char *filename, std::string &out);
+
 /**
  * Convert the time stored in a 'tm' struct into epoch time.
  *

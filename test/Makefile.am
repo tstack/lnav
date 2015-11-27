@@ -202,6 +202,7 @@ dist_noinst_DATA = \
 	ansi-colors.0.in \
 	bad-config/formats/invalid-regex/format.json \
 	bad-config/formats/invalid-sample/format.json \
+	bad-config/formats/invalid-sql/init.sql \
 	bad-config/formats/no-samples/format.json \
 	datafile_simple.0 \
 	datafile_simple.1 \
@@ -269,6 +270,7 @@ dist_noinst_DATA = \
 	formats/collision/format.json \
 	formats/jsontest/format.json \
 	formats/nestedjson/format.json \
+	formats/sqldir/init.sql \
 	formats/timestamp/format.json \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
 	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \

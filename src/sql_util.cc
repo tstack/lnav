@@ -597,6 +597,72 @@ char *sql_quote_ident(const char *ident)
     return retval;
 }
 
+void sql_execute_script(sqlite3 *db,
+                        const char *src_name,
+                        const char *script_orig,
+                        std::vector<std::string> &errors)
+{
+    const char *script = script_orig;
+
+    while (script != NULL && script[0]) {
+        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        int line_number = 1;
+        const char *tail;
+        int retcode;
+
+        while (isspace(*script) && script[0]) {
+            script += 1;
+        }
+        for (const char *ch = script_orig; ch < script && ch[0]; ch++) {
+            if (*ch == '\n') {
+                line_number += 1;
+            }
+        }
+
+        retcode = sqlite3_prepare_v2(db,
+                                     script,
+                                     -1,
+                                     stmt.out(),
+                                     &tail);
+        log_debug("retcode %d  %p %p", retcode, script, tail);
+        if (retcode != SQLITE_OK) {
+            const char *errmsg = sqlite3_errmsg(db);
+            auto_mem<char> full_msg;
+
+            asprintf(full_msg.out(), "error:%s:%d:%s", src_name, line_number, errmsg);
+            errors.push_back(full_msg.in());
+            break;
+        }
+        else if (script == tail) {
+            break;
+        }
+        else if (stmt == NULL) {
+
+        }
+        else {
+            retcode = sqlite3_step(stmt.in());
+            switch (retcode) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    break;
+
+                case SQLITE_ROW:
+                    break;
+
+                default: {
+                    const char *errmsg;
+
+                    errmsg = sqlite3_errmsg(db);
+                    errors.push_back(errmsg);
+                    break;
+                }
+            }
+        }
+
+        script = tail;
+    }
+}
+
 static struct {
     int sqlite_type;
     const char *collator;
