@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
                        iter != root_formats.end() && !found;
                        ++iter) {
                         (*iter)->clear();
-                        if ((*iter)->scan(index, 13, sbr)) {
+                        if ((*iter)->scan(index, 13, sbr) == log_format::SCAN_MATCH) {
                             format = (*iter)->specialized();
                             found = true;
                         }

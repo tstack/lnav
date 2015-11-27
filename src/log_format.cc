@@ -609,19 +609,18 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
     return len_out > pat->p_timestamp_end;
 }
 
-bool external_log_format::scan(std::vector<logline> &dst,
-                               off_t offset,
-                               shared_buffer_ref &sbr)
+log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
+                                                    off_t offset,
+                                                    shared_buffer_ref &sbr)
 {
     if (this->jlf_json) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         logline ll(offset, 0, 0, logline::LEVEL_INFO);
         yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
-        bool retval = false;
 
         if (sbr.empty() || sbr.get_data()[sbr.length() - 1] != '}') {
-            return false;
+            return log_format::SCAN_INCOMPLETE;
         }
 
         yajl_reset(handle);
@@ -648,19 +647,23 @@ bool external_log_format::scan(std::vector<logline> &dst,
                 }
                 dst.push_back(ll);
             }
-            retval = true;
         }
         else {
-            unsigned char *msg = yajl_get_error(handle, 1, (const unsigned char *)sbr.get_data(), sbr.length());
-            log_debug("bad line %s", msg);
+            unsigned char *msg;
+
+            msg = yajl_get_error(handle, 1, (const unsigned char *)sbr.get_data(), sbr.length());
+            if (msg != NULL) {
+                log_debug("Unable to parse line at offset %d: %s", offset, msg);
+                yajl_free_error(handle, msg);
+            }
+            return log_format::SCAN_INCOMPLETE;
         }
 
-        return retval;
+        return log_format::SCAN_MATCH;
     }
 
     pcre_input pi(sbr.get_data(), 0, sbr.length());
     pcre_context_static<128> pc;
-    bool retval = false;
     int curr_fmt = -1;
 
     while (::next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
@@ -737,11 +740,10 @@ bool external_log_format::scan(std::vector<logline> &dst,
         dst.push_back(logline(offset, log_tv, level, mod_index, opid));
 
         this->lf_fmt_lock = curr_fmt;
-        retval = true;
-        break;
+        return log_format::SCAN_MATCH;
     }
 
-    return retval;
+    return log_format::SCAN_NO_MATCH;
 }
 
 uint8_t external_log_format::module_scan(const pcre_input &pi,

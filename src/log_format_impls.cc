@@ -130,11 +130,10 @@ class generic_log_format : public log_format {
         }
     };
 
-    bool scan(vector<logline> &dst,
-              off_t offset,
-              shared_buffer_ref &sbr)
+    scan_result_t scan(vector<logline> &dst,
+                       off_t offset,
+                       shared_buffer_ref &sbr)
     {
-        bool      retval = false;
         struct exttm log_time;
         struct timeval log_tv;
         pcre_context::capture_t ts, level;
@@ -157,10 +156,10 @@ class generic_log_format : public log_format {
             this->check_for_new_year(dst, log_time, log_tv);
 
             dst.push_back(logline(offset, log_tv, level_val));
-            retval = true;
+            return SCAN_MATCH;
         }
 
-        return retval;
+        return SCAN_NO_MATCH;
     };
 
     void annotate(shared_buffer_ref &line,

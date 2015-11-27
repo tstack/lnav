@@ -608,6 +608,12 @@ public:
 
     virtual bool match_name(const std::string &filename) { return true; };
 
+    enum scan_result_t {
+        SCAN_MATCH,
+        SCAN_NO_MATCH,
+        SCAN_INCOMPLETE,
+    };
+
     /**
      * Scan a log line to see if it matches this log format.
      *
@@ -617,9 +623,9 @@ public:
      * @param prefix The contents of the line.
      * @param len The length of the prefix string.
      */
-    virtual bool scan(std::vector<logline> &dst,
-                      off_t offset,
-                      shared_buffer_ref &sbr) = 0;
+    virtual scan_result_t scan(std::vector<logline> &dst,
+                               off_t offset,
+                               shared_buffer_ref &sbr) = 0;
 
     virtual bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out) {
         return false;
@@ -816,9 +822,9 @@ public:
         return this->elf_filename_pcre->match(pc, pi);
     };
 
-    bool scan(std::vector<logline> &dst,
-              off_t offset,
-              shared_buffer_ref &sbr);
+    scan_result_t scan(std::vector<logline> &dst,
+                       off_t offset,
+                       shared_buffer_ref &sbr);
 
     bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out);
 
