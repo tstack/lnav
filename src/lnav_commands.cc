@@ -1757,8 +1757,8 @@ static string com_summarize(string cmdline, vector<string> &args)
             query += query_frag;
         }
 
-        db_label_source &      dls = lnav_data.ld_db_rows;
-        hist_source &          hs  = lnav_data.ld_db_source;
+        db_label_source &dls = lnav_data.ld_db_rows;
+        hist_source2<std::string> &hs = lnav_data.ld_db_source2;
 
         hs.clear();
         dls.clear();

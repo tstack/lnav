@@ -101,7 +101,7 @@ string execute_command(string cmdline)
 string execute_sql(string sql, string &alt_msg)
 {
     db_label_source &      dls = lnav_data.ld_db_rows;
-    hist_source &          hs  = lnav_data.ld_db_source;
+    hist_source2<string>  &hs  = lnav_data.ld_db_source2;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     string stmt_str = trim(sql);
     string retval;
@@ -124,7 +124,6 @@ string execute_sql(string sql, string &alt_msg)
     }
 
     hs.clear();
-    hs.get_displayed_buckets().clear();
     dls.clear();
     dls.dls_stmt_str = stmt_str;
     sql_progress_guard progress_guard(sql_progress);
@@ -396,7 +395,7 @@ int sql_callback(sqlite3_stmt *stmt)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     db_label_source &   dls = lnav_data.ld_db_rows;
-    hist_source &       hs  = lnav_data.ld_db_source;
+    hist_source2<string> &hs  = lnav_data.ld_db_source2;
     int ncols = sqlite3_column_count(stmt);
     int row_number;
     int lpc, retval = 0;
@@ -416,9 +415,8 @@ int sql_callback(sqlite3_stmt *stmt)
 
             dls.push_header(colname, type, graphable);
             if (graphable) {
-                hs.set_role_for_type(bucket_type_t(lpc),
-                                     view_colors::singleton().
-                                     next_plain_highlight());
+                int attrs = view_colors::singleton().attrs_for_ident(colname);
+                hs.with_attrs_for_ident(colname, attrs);
             }
         }
     }
@@ -438,7 +436,7 @@ int sql_callback(sqlite3_stmt *stmt)
             if (sscanf(value, "%lf", &num_value) != 1) {
                 num_value = 0.0;
             }
-            hs.add_value(row_number, bucket_type_t(lpc), num_value);
+            hs.add_value(row_number, dls.dls_headers[lpc], num_value);
         }
         else {
             hs.add_empty_value(row_number);

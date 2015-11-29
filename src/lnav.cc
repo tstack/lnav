@@ -2537,13 +2537,14 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_GRAPH].
     set_sub_source(&lnav_data.ld_graph_source);
     lnav_data.ld_views[LNV_DB].
-    set_sub_source(&lnav_data.ld_db_source);
+    set_sub_source(&lnav_data.ld_db_source2);
+    lnav_data.ld_db_source2
+            .with_label_source(&lnav_data.ld_db_rows);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_rows;
     lnav_data.ld_views[LNV_DB].
     set_overlay_source(&lnav_data.ld_db_overlay);
     lnav_data.ld_views[LNV_LOG].
     set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
-    lnav_data.ld_db_overlay.dos_hist_source = &lnav_data.ld_db_source;
     lnav_data.ld_match_view.set_left(0);
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -2586,14 +2587,6 @@ int main(int argc, char *argv[])
 
         hs.set_bucket_size(1);
         hs.set_group_size(100);
-    }
-
-    {
-        hist_source &hs = lnav_data.ld_db_source;
-
-        hs.set_bucket_size(1);
-        hs.set_group_size(10);
-        hs.set_label_source(&lnav_data.ld_db_rows);
     }
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {

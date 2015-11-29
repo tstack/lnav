@@ -998,7 +998,6 @@ void handle_paging_key(int ch)
         {
             textview_curses *db_tc = &lnav_data.ld_views[LNV_DB];
             db_label_source &dls   = lnav_data.ld_db_rows;
-            hist_source &    hs    = lnav_data.ld_db_source;
 
             if (toggle_view(db_tc)) {
                 unsigned int lpc;
@@ -1016,7 +1015,7 @@ void handle_paging_key(int ch)
                     for (row = 0; row < dls.dls_rows.size(); row++) {
                         if (strcmp(dls.dls_rows[row][lpc],
                                    linestr) == 0) {
-                            vis_line_t db_line(hs.row_for_value(row));
+                            vis_line_t db_line(row);
 
                             db_tc->set_top(db_line);
                             db_tc->set_needs_update();
@@ -1027,7 +1026,7 @@ void handle_paging_key(int ch)
                 }
             }
             else {
-                int          db_row = hs.value_for_row(db_tc->get_top());
+                int          db_row = db_tc->get_top();
                 unsigned int lpc;
 
                 for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
@@ -1052,63 +1051,21 @@ void handle_paging_key(int ch)
             break;
 
         case '\t':
-            if (tc == &lnav_data.ld_views[LNV_DB])
-            {
-                hist_source &hs = lnav_data.ld_db_source;
-                db_label_source &dls   = lnav_data.ld_db_rows;
-                std::vector<bucket_type_t> &displayed = hs.get_displayed_buckets();
-                std::vector<int>::iterator start_iter, iter;
-
-                start_iter = dls.dls_headers_to_graph.begin();
-                if (!displayed.empty()) {
-                    advance(start_iter, (int)displayed[0] + 1);
-                }
-                displayed.clear();
-                iter = find(start_iter,
-                            dls.dls_headers_to_graph.end(),
-                            true);
-                if (iter != dls.dls_headers_to_graph.end()) {
-                    bucket_type_t type;
-
-                    type = bucket_type_t(distance(dls.dls_headers_to_graph.begin(), iter));
-                    displayed.push_back(type);
-                }
-                if (displayed.empty()) {
-                    lnav_data.ld_rl_view->set_value("Graphing all values");
-                }
-                else {
-                    int index = displayed[0];
-
-                    lnav_data.ld_rl_view->set_value("Graphing column " ANSI_BOLD_START +
-                                                                       dls.dls_headers[index] + ANSI_NORM);
-                }
-                tc->reload_data();
-            }
-            break;
-
-            // XXX I'm sure there must be a better way to handle the difference between
-            // iterator and reverse_iterator.
         case KEY_BTAB:
             if (tc == &lnav_data.ld_views[LNV_DB])
             {
-                hist_source &hs = lnav_data.ld_db_source;
-                db_label_source &dls   = lnav_data.ld_db_rows;
-                std::vector<bucket_type_t> &displayed = hs.get_displayed_buckets();
-                std::vector<int>::reverse_iterator start_iter, iter;
+                hist_source2<std::string> &hs = lnav_data.ld_db_source2;
+                db_label_source &dls = lnav_data.ld_db_rows;
+                int index;
 
-                start_iter = dls.dls_headers_to_graph.rbegin();
-                if (!displayed.empty()) {
-                    advance(start_iter, dls.dls_headers_to_graph.size() - (int)displayed[0]);
+                if ((index = hs.show_next_ident(
+                        ch == '\t' ? 1 : -1)) == -1) {
+                    lnav_data.ld_rl_view->set_value("Graphing all values");
                 }
-                displayed.clear();
-                iter = find(start_iter,
-                            dls.dls_headers_to_graph.rend(),
-                            true);
-                if (iter != dls.dls_headers_to_graph.rend()) {
-                    bucket_type_t type;
-
-                    type = bucket_type_t(distance(dls.dls_headers_to_graph.begin(), --iter.base()));
-                    displayed.push_back(type);
+                else {
+                    lnav_data.ld_rl_view->set_value(
+                            "Graphing column " ANSI_BOLD_START +
+                            dls.dls_headers[index] + ANSI_NORM);
                 }
                 tc->reload_data();
             }

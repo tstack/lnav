@@ -227,10 +227,11 @@ struct _lnav_data {
 
     grapher                                 ld_graph_source;
 
-    hist_source                             ld_db_source;
     db_label_source                         ld_db_rows;
     db_overlay_source                       ld_db_overlay;
     std::vector<std::string>                ld_db_key_names;
+
+    hist_source2<std::string>               ld_db_source2;
 
     std::auto_ptr<grep_highlighter>         ld_grep_child[LG__MAX];
     std::string                             ld_previous_search;

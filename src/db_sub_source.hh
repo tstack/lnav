@@ -38,7 +38,7 @@
 #include "hist_source.hh"
 #include "log_vtab_impl.hh"
 
-class db_label_source : public hist_source::label_source {
+class db_label_source : public hist_source2<std::string>::label_source {
 public:
     db_label_source() { };
 
@@ -55,14 +55,7 @@ public:
         return retval;
     };
 
-    void hist_label_for_group(int group, std::string &label_out)
-    {
-        label_out.clear();
-    };
-
-    void hist_label_for_bucket(int bucket_start_value,
-                               const hist_source::bucket_t &bucket,
-                               std::string &label_out)
+    void hist_label_for_row(int row, std::string &label_out)
     {
         /*
          * start_value is the result rowid, each bucket type is a column value
@@ -70,19 +63,19 @@ public:
          */
 
         label_out.clear();
-        if (bucket_start_value >= (int)this->dls_rows.size()) {
+        if (row >= (int)this->dls_rows.size()) {
             return;
         }
-        for (int lpc = 0; lpc < (int)this->dls_rows[bucket_start_value].size();
+        for (int lpc = 0; lpc < (int)this->dls_rows[row].size();
              lpc++) {
             int padding = (this->dls_column_sizes[lpc] -
-                           strlen(this->dls_rows[bucket_start_value][lpc]) -
+                           strlen(this->dls_rows[row][lpc]) -
                            1);
 
             if (this->dls_column_types[lpc] != SQLITE3_TEXT) {
                 label_out.append(padding, ' ');
             }
-            label_out.append(this->dls_rows[bucket_start_value][lpc]);
+            label_out.append(this->dls_rows[row][lpc]);
             if (this->dls_column_types[lpc] == SQLITE3_TEXT) {
                 label_out.append(padding, ' ');
             }
@@ -90,18 +83,16 @@ public:
         }
     };
 
-    void hist_attrs_for_bucket(int bucket_start_value,
-                               const hist_source::bucket_t &bucket,
-                               string_attrs_t &sa)
+    void hist_attrs_for_row(int row, string_attrs_t &sa)
     {
         struct line_range lr(0, 0);
         struct line_range lr2(0, -1);
 
-        if (bucket_start_value >= (int)this->dls_rows.size()) {
+        if (row >= (int)this->dls_rows.size()) {
             return;
         }
         for (size_t lpc = 0; lpc < this->dls_column_sizes.size() - 1; lpc++) {
-            if (bucket_start_value % 2 == 0) {
+            if (row % 2 == 0) {
                 sa.push_back(string_attr(lr2, &view_curses::VC_STYLE, A_BOLD));
             }
             lr.lr_start += this->dls_column_sizes[lpc] - 1;
@@ -177,7 +168,7 @@ public:
 
 class db_overlay_source : public list_overlay_source {
 public:
-    db_overlay_source() : dos_labels(NULL), dos_hist_source(NULL) { };
+    db_overlay_source() : dos_labels(NULL) { };
 
     size_t list_overlay_count(const listview_curses &lv)
     {
@@ -207,11 +198,7 @@ public:
             struct line_range header_range(line.length(),
                                            line.length() + dls->dls_column_sizes[lpc]);
 
-            int attrs =
-                vc.attrs_for_role(this->dos_hist_source->get_role_for_type(
-                                      bucket_type_t(
-                                          lpc)))
-                | A_UNDERLINE;
+            int attrs = vc.attrs_for_ident(dls->dls_headers[lpc]) | A_UNDERLINE;
             if (!this->dos_labels->dls_headers_to_graph[lpc]) {
                 attrs = A_UNDERLINE;
             }
@@ -232,6 +219,5 @@ public:
     };
 
     db_label_source *dos_labels;
-    hist_source *    dos_hist_source;
 };
 #endif
