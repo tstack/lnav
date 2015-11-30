@@ -66,7 +66,7 @@ struct line_value {
 class line_buffer {
 public:
     static const size_t DEFAULT_LINE_BUFFER_SIZE   = 256 * 1024;
-    static const size_t MAX_LINE_BUFFER_SIZE       = 4 * DEFAULT_LINE_BUFFER_SIZE;
+    static const size_t MAX_LINE_BUFFER_SIZE       = 4 * 4 * DEFAULT_LINE_BUFFER_SIZE;
     class error
         : public std::exception {
 public:

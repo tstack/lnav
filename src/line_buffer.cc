@@ -518,6 +518,8 @@ throw (error)
             }
             else {
                 if (lv.lv_len >= MAX_LINE_BUFFER_SIZE) {
+                    log_warning("Line exceeded max size: offset=%d",
+                                offset);
                     lv.lv_len = MAX_LINE_BUFFER_SIZE - 1;
                     lv.lv_partial = false;
                 }
