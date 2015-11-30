@@ -212,17 +212,111 @@ static void sql_jget(sqlite3_context *context,
     sqlite3_result_text(context, result.c_str(), result.size(), SQLITE_TRANSIENT);
 }
 
+struct json_agg_context {
+    yajl_gen_t *jac_yajl_gen;
+};
+
+static void sql_json_group_object_step(sqlite3_context *context,
+                                       int argc,
+                                       sqlite3_value **argv)
+{
+    if ((argc % 2) == 1) {
+        sqlite3_result_error(
+                context,
+                "Uneven number of arguments to json_group_object(), "
+                        "expecting key and value pairs",
+                -1);
+        return;
+    }
+
+    json_agg_context *jac = (json_agg_context *) sqlite3_aggregate_context(
+            context, sizeof(json_agg_context));
+
+
+    if (jac->jac_yajl_gen == NULL) {
+        jac->jac_yajl_gen = yajl_gen_alloc(NULL);
+        yajl_gen_config(jac->jac_yajl_gen, yajl_gen_beautify, false);
+
+        yajl_gen_map_open(jac->jac_yajl_gen);
+    }
+
+    for (int lpc = 0; (lpc + 1) < argc; lpc += 2) {
+        if (sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
+            continue;
+        }
+
+        const unsigned char *key = sqlite3_value_text(argv[lpc]);
+
+        yajl_gen_string(jac->jac_yajl_gen, key, strlen((const char *) key));
+
+        switch (sqlite3_value_type(argv[lpc + 1])) {
+            case SQLITE_NULL:
+                yajl_gen_null(jac->jac_yajl_gen);
+                break;
+            case SQLITE3_TEXT: {
+                const unsigned char *value = sqlite3_value_text(argv[lpc + 1]);
+
+                yajl_gen_string(jac->jac_yajl_gen,
+                                value,
+                                strlen((const char *) value));
+                break;
+            }
+            case SQLITE_INTEGER: {
+                const unsigned char *value = sqlite3_value_text(argv[lpc + 1]);
+
+                yajl_gen_number(jac->jac_yajl_gen,
+                                (const char *) value,
+                                strlen((const char *) value));
+                break;
+            }
+            case SQLITE_FLOAT: {
+                double value = sqlite3_value_double(argv[lpc + 1]);
+
+                yajl_gen_double(jac->jac_yajl_gen, value);
+                break;
+            }
+        }
+    }
+
+}
+
+static void sql_json_group_object_final(sqlite3_context *context)
+{
+    json_agg_context *jac = (json_agg_context *) sqlite3_aggregate_context(
+            context, 0);
+
+    if (jac == NULL) {
+        sqlite3_result_text(context, "{}", -1, SQLITE_STATIC);
+    }
+    else {
+        const unsigned char *buf;
+        size_t len;
+
+        yajl_gen_map_close(jac->jac_yajl_gen);
+        yajl_gen_get_buf(jac->jac_yajl_gen, &buf, &len);
+        sqlite3_result_text(context, (const char *) buf, len, SQLITE_TRANSIENT);
+        yajl_gen_free(jac->jac_yajl_gen);
+    }
+}
+
 int json_extension_functions(const struct FuncDef **basic_funcs,
                              const struct FuncDefAgg **agg_funcs)
 {
-    static const struct FuncDef fs_funcs[] = {
+    static const struct FuncDef json_funcs[] = {
         { "jget",  -1, 0, SQLITE_UTF8, 0, sql_jget },
 
         { NULL }
     };
 
-    *basic_funcs = fs_funcs;
-    *agg_funcs   = NULL;
+    static const struct FuncDefAgg json_agg_funcs[] = {
+            { "json_group_object", -1, 0, 0,
+                    sql_json_group_object_step, sql_json_group_object_final, },
+
+            { NULL }
+    };
+
+    *basic_funcs = json_funcs;
+    *agg_funcs   = json_agg_funcs;
 
     return SQLITE_OK;
 }

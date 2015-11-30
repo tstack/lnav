@@ -139,6 +139,18 @@ Network information functions:
 * gethostbyaddr - Convert an IPv4/IPv6 address into a host name.  If the
   reverse lookup fails, the input value will be returned.
 
+JSON
+----
+
+JSON functions:
+
+* jget(json, json_ptr) - Get the value from the JSON-encoded string in
+  first argument that is referred to by the
+  `JSON-Pointer <https://tools.ietf.org/html/rfc6901>`_ in the second.
+* json_group_array(key0, value0, ... keyN, valueN) - An aggregate function
+  that creates a JSON-encoded object from the key value pairs given as
+  arguments.
+
 Time
 ----
 

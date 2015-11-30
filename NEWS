@@ -4,6 +4,8 @@ lnav v0.8.1:
      * Log formats can now create SQL views and execute other statements
        by adding '.sql' files to their format directories.  The SQL scripts
        will be executed on startup.
+     * Added a 'json_group_object' aggregate SQL function that collects values
+       from a GROUP BY query into an JSON object.
 
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log
