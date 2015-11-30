@@ -714,7 +714,6 @@ string log_vtab_manager::unregister_vtab(intern_string_t name)
                            NULL,
                            NULL,
                            NULL);
-        require(rc == SQLITE_OK);
 
         this->vm_impls.erase(name);
     }

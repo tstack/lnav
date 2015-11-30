@@ -626,3 +626,21 @@ run_test ${lnav_test} -n \
 check_error_output "able to create table with a bad regex?" <<EOF
 error: unable to compile regex -- bad(
 EOF
+
+NULL_GRAPH_SELECT_1=$(cat <<EOF
+;SELECT value FROM (
+              SELECT 10 as value
+    UNION ALL SELECT null as value)
+EOF
+)
+
+run_test ${lnav_test} -n \
+    -c "$NULL_GRAPH_SELECT_1" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_multiline.0
+
+check_output "number column with null does not work?" <<EOF
+value
+10
+<NULL>
+EOF

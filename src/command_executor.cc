@@ -425,14 +425,14 @@ int sql_callback(sqlite3_stmt *stmt)
         double      num_value = 0.0;
 
         dls.push_column(value);
-        if (dls.dls_headers[lpc] == "log_line") {
+        if (value != NULL && dls.dls_headers[lpc] == "log_line") {
             int line_number = -1;
 
             if (sscanf(value, "%d", &line_number) == 1) {
                 lss.text_mark(&BM_QUERY, line_number, true);
             }
         }
-        if (dls.dls_headers_to_graph[lpc]) {
+        if (value != NULL && dls.dls_headers_to_graph[lpc]) {
             if (sscanf(value, "%lf", &num_value) != 1) {
                 num_value = 0.0;
             }
