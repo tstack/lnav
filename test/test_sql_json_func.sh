@@ -24,6 +24,16 @@ Row 0:
   Column jget('[null, true, 20, 30, 40]', '/3'): 30
 EOF
 
+run_test ./drive_sql "select jget('[null, true, 20, 30, 40, {\"msg\": \"Hello\"}]', '/5/msg')"
+
+check_error_output "" <<EOF
+EOF
+
+check_output "jget null does not work" <<EOF
+Row 0:
+  Column jget('[null, true, 20, 30, 40, {"msg": "Hello"}]', '/5/msg'): Hello
+EOF
+
 run_test ./drive_sql "select jget('[null, true, 20, 30, 40]', '/abc')"
 
 check_error_output "" <<EOF

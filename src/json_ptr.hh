@@ -125,7 +125,6 @@ public:
     enum match_state_t {
         MS_DONE,
         MS_VALUE,
-        MS_ELEMENT,
         MS_ERR_INVALID_TYPE,
         MS_ERR_NO_SLASH,
         MS_ERR_INVALID_ESCAPE,
@@ -188,16 +187,13 @@ public:
             retval = true;
         }
         else if (this->jp_state == MS_VALUE) {
-           if (this->jp_pos[0] == '/') {
-               this->jp_pos += 1;
-               this->jp_depth += 1;
-               this->jp_state = MS_ELEMENT;
-               retval = true;
-           }
-           else {
-               this->jp_state = MS_ERR_NO_SLASH;
-               retval = false;
-           }
+            if (this->jp_pos[0] == '/') {
+                this->jp_pos += 1;
+                this->jp_depth += 1;
+                this->jp_state = MS_VALUE;
+                this->jp_array_index = -1;
+            }
+            retval = true;
         }
         else {
             retval = true;
@@ -254,7 +250,10 @@ public:
 
     void exit_container(int32_t &depth, int32_t &index) {
         depth -= 1;
-        if (this->jp_state == MS_VALUE && depth == this->jp_depth) {
+        if (this->jp_state == MS_VALUE &&
+            depth == this->jp_depth &&
+            (index == -1 || (index - 1 == this->jp_array_index)) &&
+            this->reached_end()) {
             this->jp_state = MS_DONE;
             index = -1;
         }
@@ -288,7 +287,7 @@ public:
             else {
                 index = 0;
                 this->jp_pos += offset;
-                this->jp_state = MS_ELEMENT;
+                this->jp_state = MS_VALUE;
                 retval = true;
             }
         }

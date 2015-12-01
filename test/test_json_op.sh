@@ -69,6 +69,14 @@ check_output "cannot read map" <<EOF
 }
 EOF
 
+run_test ./drive_json_op get /other/val <<EOF
+{ "other" : { "val" : 5 }, "val" : 3 }
+EOF
+
+check_output "cannot read nested map" <<EOF
+5
+EOF
+
 
 run_test ./drive_json_op get "" <<EOF
 [0, 1]
