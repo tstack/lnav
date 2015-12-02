@@ -118,10 +118,12 @@ public:
                 case logline_value::VALUE_JSON: {
                     json_ptr_walk jpw;
 
-                    jpw.parse(iter->lv_sbr.get_data(), iter->lv_sbr.length());
-                    this->ldh_json_pairs[iter->lv_name] = jpw.jpw_values;
+                    if (jpw.parse(iter->lv_sbr.get_data(), iter->lv_sbr.length()) == yajl_status_ok &&
+                        jpw.complete_parse() == yajl_status_ok) {
+                        this->ldh_json_pairs[iter->lv_name] = jpw.jpw_values;
                     }
                     break;
+                }
                 default:
                     break;
                 }

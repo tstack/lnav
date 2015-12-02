@@ -31,6 +31,7 @@
 
 #include <vector>
 
+#include "json_ptr.hh"
 #include "pcrecpp.h"
 #include "lnav.hh"
 
@@ -396,6 +397,7 @@ int sql_callback(sqlite3_stmt *stmt)
     logfile_sub_source &lss = lnav_data.ld_log_source;
     db_label_source &   dls = lnav_data.ld_db_rows;
     hist_source2<string> &hs  = lnav_data.ld_db_source2;
+    view_colors &vc = view_colors::singleton();
     int ncols = sqlite3_column_count(stmt);
     int row_number;
     int lpc, retval = 0;
@@ -415,7 +417,7 @@ int sql_callback(sqlite3_stmt *stmt)
 
             dls.push_header(colname, type, graphable);
             if (graphable) {
-                int attrs = view_colors::singleton().attrs_for_ident(colname);
+                int attrs = vc.attrs_for_ident(colname);
                 hs.with_attrs_for_ident(colname, attrs);
             }
         }
@@ -423,8 +425,15 @@ int sql_callback(sqlite3_stmt *stmt)
     for (lpc = 0; lpc < ncols; lpc++) {
         const char *value     = (const char *)sqlite3_column_text(stmt, lpc);
         double      num_value = 0.0;
+        size_t value_len;
 
         dls.push_column(value);
+        if (value == NULL) {
+            value_len = 0;
+        }
+        else {
+            value_len = strlen(value);
+        }
         if (value != NULL && dls.dls_headers[lpc] == "log_line") {
             int line_number = -1;
 
@@ -437,6 +446,23 @@ int sql_callback(sqlite3_stmt *stmt)
                 num_value = 0.0;
             }
             hs.add_value(row_number, dls.dls_headers[lpc], num_value);
+        }
+        else if (value_len > 2 &&
+                 ((value[0] == '{' && value[value_len - 1] == '}') ||
+                  (value[0] == '[' && value[value_len - 1] == ']'))) {
+            json_ptr_walk jpw;
+
+            if (jpw.parse(value, value_len) == yajl_status_ok &&
+                jpw.complete_parse() == yajl_status_ok) {
+                for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+                     iter != jpw.jpw_values.end();
+                     ++iter) {
+                    if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
+                        hs.add_value(row_number, iter->first, num_value);
+                        hs.with_attrs_for_ident(iter->first, vc.attrs_for_ident(iter->first));
+                    }
+                }
+            }
         }
         else {
             hs.add_empty_value(row_number);

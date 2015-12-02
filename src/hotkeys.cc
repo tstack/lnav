@@ -1055,17 +1055,17 @@ void handle_paging_key(int ch)
             if (tc == &lnav_data.ld_views[LNV_DB])
             {
                 hist_source2<std::string> &hs = lnav_data.ld_db_source2;
-                db_label_source &dls = lnav_data.ld_db_rows;
-                int index;
 
-                if ((index = hs.show_next_ident(
-                        ch == '\t' ? 1 : -1)) == -1) {
+                if (hs.show_next_ident(ch == '\t' ? 1 : -1) == -1) {
                     lnav_data.ld_rl_view->set_value("Graphing all values");
                 }
                 else {
+                    string colname;
+
+                    hs.get_ident_to_show(colname);
                     lnav_data.ld_rl_view->set_value(
                             "Graphing column " ANSI_BOLD_START +
-                            dls.dls_headers[index] + ANSI_NORM);
+                            colname + ANSI_NORM);
                 }
                 tc->reload_data();
             }

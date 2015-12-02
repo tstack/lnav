@@ -6,6 +6,8 @@ lnav v0.8.1:
        will be executed on startup.
      * Added a 'json_group_object' aggregate SQL function that collects values
        from a GROUP BY query into an JSON object.
+     * The SQL view will now graph values found in JSON objects/arrays in
+       addition to the regular columns in the result.
 
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log
@@ -13,6 +15,10 @@ lnav v0.8.1:
        moving forward and backward by 60 minutes can be simulated by
        using the ':goto' command with a relative time and the 'r/R'
        hotkeys.
+
+     Fixes:
+     * Issues with tailing JSON logs have been fixed.
+     * The jget() SQL function should now work for objects nested in arrays.
 
 lnav v0.8.0:
      Features:

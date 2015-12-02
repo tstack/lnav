@@ -329,6 +329,12 @@ public:
         return this->hs_ident_to_show;
     };
 
+    void get_ident_to_show(T &ident_out) {
+        if (this->hs_ident_to_show != -1) {
+            ident_out = this->hs_idents[this->hs_ident_to_show].hi_ident;
+        }
+    };
+
     void show_all_idents() {
         this->hs_ident_to_show = -1;
     };
@@ -394,18 +400,24 @@ public:
             int amount;
 
             if (hv.hv_value == 0.0) {
-                amount = 0.0;
+                amount = 0;
+            }
+            else if (hv.hv_value == overall_stats.bs_max_count) {
+                amount = avail_width;
             }
             else {
-                double percent = (hv.hv_value - hi.hi_stats.bs_min_count) /
+                double percent = (hv.hv_value - overall_stats.bs_min_count) /
                                  overall_stats.width();
                 amount = (int) rint(percent * avail_width);
                 amount = std::max(1, amount);
             }
             lr.lr_end = lr.lr_start + amount;
-            value_out.push_back(string_attr(lr,
-                                            &view_curses::VC_STYLE,
-                                            hi.hi_attrs | A_REVERSE));
+
+            if (hi.hi_attrs != 0) {
+                value_out.push_back(string_attr(lr,
+                                                &view_curses::VC_STYLE,
+                                                hi.hi_attrs | A_REVERSE));
+            }
             lr.lr_start = lr.lr_end;
         }
 
@@ -465,9 +477,9 @@ protected:
     };
 
     struct hist_ident {
-        hist_ident(T ident) : hi_ident(ident) { };
+        hist_ident(const T &ident) : hi_ident(ident) { };
 
-        T hi_ident;
+        const T hi_ident;
         int hi_attrs;
         bucket_stats_t hi_stats;
     };
