@@ -479,7 +479,7 @@ protected:
     struct hist_ident {
         hist_ident(const T &ident) : hi_ident(ident) { };
 
-        const T hi_ident;
+        T hi_ident;
         int hi_attrs;
         bucket_stats_t hi_stats;
     };
