@@ -32,8 +32,10 @@
 
 #include <string>
 #include <vector>
+#include <iterator>
 #include <algorithm>
 
+#include "json_ptr.hh"
 #include "listview_curses.hh"
 #include "hist_source.hh"
 #include "log_vtab_impl.hh"
@@ -156,6 +158,19 @@ public:
         this->dls_column_sizes.clear();
     }
 
+    long column_name_to_index(const std::string &name) const {
+        std::vector<std::string>::const_iterator iter;
+
+        iter = std::find(this->dls_headers.begin(),
+                         this->dls_headers.end(),
+                         name);
+        if (iter == this->dls_headers.end()) {
+            return -1;
+        }
+
+        return std::distance(this->dls_headers.begin(), iter);
+    }
+
     std::string dls_stmt_str;
     std::vector<std::string> dls_headers;
     std::vector<int>         dls_headers_to_graph;
@@ -168,11 +183,111 @@ public:
 
 class db_overlay_source : public list_overlay_source {
 public:
-    db_overlay_source() : dos_labels(NULL) { };
+    db_overlay_source() : dos_active(false), dos_labels(NULL) {
+
+    };
 
     size_t list_overlay_count(const listview_curses &lv)
     {
-        return 1;
+        size_t retval = 1;
+
+        if (!this->dos_active || lv.get_inner_height() == 0) {
+            return retval;
+        }
+
+        view_colors &vc = view_colors::singleton();
+        vis_line_t top = lv.get_top();
+        const std::vector<const char *> &cols = this->dos_labels->dls_rows[top];
+        unsigned long width;
+        vis_line_t height;
+
+        lv.get_dimensions(height, width);
+
+        this->dos_lines.clear();
+        for (size_t col = 0; col < cols.size(); col++) {
+            const char *col_value = cols[col];
+            size_t col_len = strlen(col_value);
+
+            if (!(col_len >= 2 &&
+                  ((col_value[0] == '{' && col_value[col_len - 1] == '}') ||
+                   (col_value[0] == '[' && col_value[col_len - 1] == ']')))) {
+                continue;
+            }
+
+            json_ptr_walk jpw;
+
+            if (jpw.parse(col_value, col_len) == yajl_status_ok &&
+                jpw.complete_parse() == yajl_status_ok) {
+                unsigned long avail_width = width - 10;
+
+                {
+                    const std::string &header = this->dos_labels->dls_headers[col];
+                    this->dos_lines.push_back(" " + header);
+                    string_attrs_t &hsa = this->dos_lines.back().get_attrs();
+                    struct line_range lr(1, header.size());
+                    hsa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_UNDERLINE));
+
+                    retval += 1;
+                }
+
+                double min_value = std::numeric_limits<double>::max(), max_value = 0.0;
+                int start_line = this->dos_lines.size();
+
+                for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+                     iter != jpw.jpw_values.end();
+                     ++iter) {
+                    this->dos_lines.push_back("   " + iter->first + " = " + iter->second);
+
+                    string_attrs_t &sa = this->dos_lines.back().get_attrs();
+                    struct line_range lr(1, 2);
+
+                    sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_LTEE));
+                    lr.lr_start = 3 + iter->first.size() + 3;
+                    lr.lr_end = -1;
+                    sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD));
+
+                    double num_value = 0.0;
+
+                    if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
+                        min_value = std::min(min_value, num_value);
+                        max_value = std::max(max_value, num_value);
+                    }
+
+                    retval += 1;
+                }
+
+                int curr_line = start_line;
+                for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+                     iter != jpw.jpw_values.end();
+                     ++iter, curr_line++) {
+                    double num_value = 0.0;
+
+                    if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
+                        int attrs = vc.attrs_for_ident(iter->first);
+                        string_attrs_t &sa = this->dos_lines[curr_line].get_attrs();
+                        struct line_range lr;
+                        int amount = 0;
+
+                        if (num_value == max_value) {
+                            amount = avail_width;
+                        }
+                        else if (num_value > 0) {
+                            double percent = (num_value - min_value) / (max_value - min_value);
+                            amount = std::max(1, (int) rint(percent * avail_width));
+                        }
+
+                        if (amount > 0) {
+                            lr.lr_start = 3;
+                            lr.lr_end = lr.lr_start + amount;
+                            sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
+                                                     attrs | A_REVERSE));
+                        }
+                    }
+                }
+            }
+        }
+
+        return retval;
     };
 
     bool list_value_for_overlay(const listview_curses &lv,
@@ -181,43 +296,53 @@ public:
     {
         view_colors &vc = view_colors::singleton();
 
-        if (y != 0) {
-            return false;
-        }
+        if (y == 0) {
+            std::string &line = value_out.get_string();
+            db_label_source *dls = this->dos_labels;
+            string_attrs_t &sa = value_out.get_attrs();
 
-        std::string &    line = value_out.get_string();
-        db_label_source *dls  = this->dos_labels;
-        string_attrs_t &sa = value_out.get_attrs();
+            for (size_t lpc = 0;
+                 lpc < this->dos_labels->dls_column_sizes.size();
+                 lpc++) {
+                int before, total_fill =
+                        dls->dls_column_sizes[lpc] -
+                        dls->dls_headers[lpc].length();
 
-        for (size_t lpc = 0;
-             lpc < this->dos_labels->dls_column_sizes.size();
-             lpc++) {
-            int before, total_fill =
-                dls->dls_column_sizes[lpc] - dls->dls_headers[lpc].length();
+                struct line_range header_range(line.length(),
+                                               line.length() +
+                                               dls->dls_column_sizes[lpc]);
 
-            struct line_range header_range(line.length(),
-                                           line.length() + dls->dls_column_sizes[lpc]);
+                int attrs =
+                        vc.attrs_for_ident(dls->dls_headers[lpc]) | A_UNDERLINE;
+                if (!this->dos_labels->dls_headers_to_graph[lpc]) {
+                    attrs = A_UNDERLINE;
+                }
+                sa.push_back(string_attr(header_range, &view_curses::VC_STYLE,
+                                         attrs));
 
-            int attrs = vc.attrs_for_ident(dls->dls_headers[lpc]) | A_UNDERLINE;
-            if (!this->dos_labels->dls_headers_to_graph[lpc]) {
-                attrs = A_UNDERLINE;
+                before = total_fill / 2;
+                total_fill -= before;
+                line.append(before, ' ');
+                line.append(dls->dls_headers[lpc]);
+                line.append(total_fill, ' ');
             }
-            sa.push_back(string_attr(header_range, &view_curses::VC_STYLE, attrs));
 
-            before      = total_fill / 2;
-            total_fill -= before;
-            line.append(before, ' ');
-            line.append(dls->dls_headers[lpc]);
-            line.append(total_fill, ' ');
+            struct line_range lr(0);
+
+            sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
+                                     A_BOLD | A_UNDERLINE));
+            return true;
+        }
+        else if (this->dos_active && y >= 2 && y < (this->dos_lines.size() + 2)) {
+            value_out = this->dos_lines[y - 2];
+            return true;
         }
 
-        struct line_range lr(0);
-
-        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD | A_UNDERLINE));
-
-        return true;
+        return false;
     };
 
+    bool dos_active;
     db_label_source *dos_labels;
+    std::vector<attr_line_t> dos_lines;
 };
 #endif

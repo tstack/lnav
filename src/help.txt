@@ -330,7 +330,10 @@ through the file.
                     "log_idle_msecs" and "log_line", you can move the
                     top of the SQL view to a line and hit 'V' to switch
                     to the log view and move to the line number that was
-                    selected in the "log_line" column.
+                    selected in the "log_line" column.  If there is no
+                    "log_line" column, lnav will find the first column with
+                    a timestamp and move to corresponding time in the log
+                    view.
 
   TAB/Shift+TAB     In the SQL result view, cycle through the columns that
                     are graphed.  Initially, all number values are displayed

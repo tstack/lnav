@@ -47,7 +47,7 @@ class json_ptr_walk {
 public:
     const static yajl_callbacks callbacks;
 
-    json_ptr_walk() : jpw_handle(yajl_free) {
+    json_ptr_walk() : jpw_handle(yajl_free), jpw_max_ptr_len(0) {
         this->jpw_handle = yajl_alloc(&callbacks, NULL, this);
     };
 
@@ -108,6 +108,8 @@ public:
             }
         }
 
+        this->jpw_max_ptr_len = std::max(this->jpw_max_ptr_len, retval.size());
+
         return retval;
     };
 
@@ -118,6 +120,7 @@ public:
     pair_list_t jpw_values;
     std::vector<std::string> jpw_keys;
     std::vector<int32_t> jpw_array_indexes;
+    size_t jpw_max_ptr_len;
 };
 
 class json_ptr {

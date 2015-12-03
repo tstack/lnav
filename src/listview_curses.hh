@@ -419,7 +419,7 @@ public:
      * @param height_out The actual height of the view in lines.
      * @param width_out The actual width of the view in columns.
      */
-    void get_dimensions(vis_line_t &height_out, unsigned long &width_out)
+    void get_dimensions(vis_line_t &height_out, unsigned long &width_out) const
     {
         unsigned long height;
 

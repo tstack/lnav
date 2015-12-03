@@ -8,6 +8,8 @@ lnav v0.8.1:
        from a GROUP BY query into an JSON object.
      * The SQL view will now graph values found in JSON objects/arrays in
        addition to the regular columns in the result.
+     * Pressing 'V' in the DB view will now check for a column with a
+       timestamp and move to the corresponding time in the log view.
 
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log

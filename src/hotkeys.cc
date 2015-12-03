@@ -916,13 +916,19 @@ void handle_paging_key(int ch)
             break;
 
         case 'p':
-            field_overlay_source *fos;
+            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+                field_overlay_source *fos;
 
-            fos =
-                    (field_overlay_source *)lnav_data.ld_views[LNV_LOG].
-                            get_overlay_source();
-            fos->fos_active = !fos->fos_active;
-            tc->reload_data();
+                fos = (field_overlay_source *) tc->get_overlay_source();
+                fos->fos_active = !fos->fos_active;
+                tc->reload_data();
+            }
+            else if (tc == &lnav_data.ld_views[LNV_DB]) {
+                db_overlay_source *dos = (db_overlay_source *) tc->get_overlay_source();
+
+                dos->dos_active = !dos->dos_active;
+                tc->reload_data();
+            }
             break;
 
         case 'P':
@@ -1000,20 +1006,20 @@ void handle_paging_key(int ch)
             db_label_source &dls   = lnav_data.ld_db_rows;
 
             if (toggle_view(db_tc)) {
-                unsigned int lpc;
+                long log_line_index = dls.column_name_to_index("log_line");
 
-                for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
-                    if (dls.dls_headers[lpc] != "log_line") {
-                        continue;
-                    }
+                if (log_line_index == -1) {
+                    log_line_index = dls.column_name_to_index("min(log_line)");
+                }
 
+                if (log_line_index != -1) {
                     char         linestr[64];
                     int          line_number = (int)tc->get_top();
                     unsigned int row;
 
                     snprintf(linestr, sizeof(linestr), "%d", line_number);
                     for (row = 0; row < dls.dls_rows.size(); row++) {
-                        if (strcmp(dls.dls_rows[row][lpc],
+                        if (strcmp(dls.dls_rows[row][log_line_index],
                                    linestr) == 0) {
                             vis_line_t db_line(row);
 
@@ -1022,29 +1028,45 @@ void handle_paging_key(int ch)
                             break;
                         }
                     }
-                    break;
                 }
             }
-            else {
-                int          db_row = db_tc->get_top();
-                unsigned int lpc;
+            else if (db_tc->get_inner_height() > 0) {
+                int db_row = db_tc->get_top();
+                tc = &lnav_data.ld_views[LNV_LOG];
+                long log_line_index = dls.column_name_to_index("log_line");
 
-                for (lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
-                    if (dls.dls_headers[lpc] != "log_line") {
-                        continue;
-                    }
+                if (log_line_index == -1) {
+                    log_line_index = dls.column_name_to_index("min(log_line)");
+                }
 
+                if (log_line_index != -1) {
                     unsigned int line_number;
 
-                    tc = &lnav_data.ld_views[LNV_LOG];
-                    if (sscanf(dls.dls_rows[db_row][lpc],
+                    if (sscanf(dls.dls_rows[db_row][log_line_index],
                                "%d",
                                &line_number) &&
                         line_number < tc->listview_rows(*tc)) {
                         tc->set_top(vis_line_t(line_number));
                         tc->set_needs_update();
                     }
-                    break;
+                }
+                else {
+                    for (size_t lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
+                        date_time_scanner dts;
+                        struct timeval tv;
+                        struct exttm tm;
+                        const char *col_value = dls.dls_rows[db_row][lpc];
+                        size_t col_len = strlen(col_value);
+
+                        if (dts.scan(col_value, col_len, NULL, &tm, tv) != NULL) {
+                            vis_line_t vl;
+
+                            vl = lnav_data.ld_log_source.find_from_time(tv);
+                            tc->set_top(vl);
+                            tc->set_needs_update();
+                            break;
+                        }
+                    }
                 }
             }
         }
