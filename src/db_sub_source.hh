@@ -40,13 +40,21 @@
 #include "hist_source.hh"
 #include "log_vtab_impl.hh"
 
-class db_label_source : public hist_source2<std::string>::label_source {
+class db_label_source : public text_sub_source {
 public:
     db_label_source() { };
 
     ~db_label_source() { };
 
-    size_t hist_label_width() {
+    size_t text_line_count() {
+        return this->dls_rows.size();
+    };
+
+    size_t text_size_for_line(textview_curses &tc, int line, bool raw) {
+        return this->text_line_width();
+    };
+
+    size_t text_line_width() {
         size_t retval = 0;
 
         for (std::vector<size_t>::iterator iter = this->dls_column_sizes.begin();
@@ -57,7 +65,10 @@ public:
         return retval;
     };
 
-    void hist_label_for_row(int row, std::string &label_out)
+    void text_value_for_line(textview_curses &tc,
+                             int row,
+                             std::string &label_out,
+                             bool raw)
     {
         /*
          * start_value is the result rowid, each bucket type is a column value
@@ -85,7 +96,7 @@ public:
         }
     };
 
-    void hist_attrs_for_row(int row, string_attrs_t &sa)
+    void text_attrs_for_line(textview_curses &tc, int row, string_attrs_t &sa)
     {
         struct line_range lr(0, 0);
         struct line_range lr2(0, -1);
@@ -98,9 +109,40 @@ public:
                 sa.push_back(string_attr(lr2, &view_curses::VC_STYLE, A_BOLD));
             }
             lr.lr_start += this->dls_column_sizes[lpc] - 1;
-            lr.lr_end    = lr.lr_start + 1;
+            lr.lr_end = lr.lr_start + 1;
             sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_VLINE));
             lr.lr_start += 1;
+        }
+
+        int left = 0;
+        for (size_t lpc = 0; lpc < this->dls_column_sizes.size(); lpc++) {
+            const char *row_value = this->dls_rows[row][lpc];
+            size_t row_len = strlen(row_value);
+
+            if (this->dls_headers_to_graph[lpc]) {
+                double num_value;
+
+                if (sscanf(row_value, "%lf", &num_value) == 1) {
+                    this->dls_chart.chart_attrs_for_value(tc, left, this->dls_headers[lpc], num_value, sa);
+                }
+            }
+            if (row_len > 2 &&
+                ((row_value[0] == '{' && row_value[row_len - 1] == '}') ||
+                 (row_value[0] == '[' && row_value[row_len - 1] == ']'))) {
+                json_ptr_walk jpw;
+
+                if (jpw.parse(row_value, row_len) == yajl_status_ok &&
+                    jpw.complete_parse() == yajl_status_ok) {
+                    for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+                         iter != jpw.jpw_values.end();
+                         ++iter) {
+                        double num_value;
+                        if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
+                            this->dls_chart.chart_attrs_for_value(tc, left, iter->first, num_value, sa);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -144,6 +186,7 @@ public:
 
     void clear(void)
     {
+        this->dls_chart.clear();
         this->dls_headers.clear();
         this->dls_headers_to_graph.clear();
         this->dls_column_types.clear();
@@ -171,7 +214,7 @@ public:
         return std::distance(this->dls_headers.begin(), iter);
     }
 
-    std::string dls_stmt_str;
+    stacked_bar_chart<std::string> dls_chart;
     std::vector<std::string> dls_headers;
     std::vector<int>         dls_headers_to_graph;
     std::vector<int>         dls_column_types;
@@ -218,20 +261,19 @@ public:
 
             if (jpw.parse(col_value, col_len) == yajl_status_ok &&
                 jpw.complete_parse() == yajl_status_ok) {
-                unsigned long avail_width = width - 10;
 
                 {
                     const std::string &header = this->dos_labels->dls_headers[col];
-                    this->dos_lines.push_back(" " + header);
-                    string_attrs_t &hsa = this->dos_lines.back().get_attrs();
-                    struct line_range lr(1, header.size());
-                    hsa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_UNDERLINE));
+                    this->dos_lines.push_back(" JSON Column: " + header);
 
                     retval += 1;
                 }
 
-                double min_value = std::numeric_limits<double>::max(), max_value = 0.0;
+                stacked_bar_chart<std::string> chart;
                 int start_line = this->dos_lines.size();
+
+                chart.with_stacking_enabled(false)
+                        .with_margins(3, 0);
 
                 for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
                      iter != jpw.jpw_values.end();
@@ -249,8 +291,10 @@ public:
                     double num_value = 0.0;
 
                     if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
-                        min_value = std::min(min_value, num_value);
-                        max_value = std::max(max_value, num_value);
+                        int attrs = vc.attrs_for_ident(iter->first);
+
+                        chart.add_value(iter->first, num_value);
+                        chart.with_attrs_for_ident(iter->first, attrs);
                     }
 
                     retval += 1;
@@ -263,28 +307,27 @@ public:
                     double num_value = 0.0;
 
                     if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
-                        int attrs = vc.attrs_for_ident(iter->first);
                         string_attrs_t &sa = this->dos_lines[curr_line].get_attrs();
-                        struct line_range lr;
-                        int amount = 0;
+                        int left = 3;
 
-                        if (num_value == max_value) {
-                            amount = avail_width;
-                        }
-                        else if (num_value > 0) {
-                            double percent = (num_value - min_value) / (max_value - min_value);
-                            amount = std::max(1, (int) rint(percent * avail_width));
-                        }
-
-                        if (amount > 0) {
-                            lr.lr_start = 3;
-                            lr.lr_end = lr.lr_start + amount;
-                            sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
-                                                     attrs | A_REVERSE));
-                        }
+                        chart.chart_attrs_for_value(lv, left, iter->first, num_value, sa);
                     }
                 }
             }
+        }
+
+        if (retval > 1) {
+            this->dos_lines.push_back("");
+
+            string_attrs_t &sa = this->dos_lines.back().get_attrs();
+            struct line_range lr(1, 2);
+
+            sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_LLCORNER));
+            lr.lr_start = 2;
+            lr.lr_end = -1;
+            sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_HLINE));
+
+            retval += 1;
         }
 
         return retval;

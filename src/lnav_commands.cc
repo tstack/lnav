@@ -445,7 +445,7 @@ static void yajl_writer(void *context, const char *str, size_t len)
 
 static void json_write_row(yajl_gen handle, int row)
 {
-    db_label_source &dls = lnav_data.ld_db_rows;
+    db_label_source &dls = lnav_data.ld_db_row_source;
     yajlpp_map obj_map(handle);
 
     for (size_t col = 0; col < dls.dls_column_types.size(); col++) {
@@ -510,7 +510,7 @@ static string com_save_to(string cmdline, vector<string> &args)
     textview_curses *            tc = lnav_data.ld_view_stack.top();
     bookmark_vector<vis_line_t> &bv =
         tc->get_bookmarks()[&textview_curses::BM_USER];
-    db_label_source &dls = lnav_data.ld_db_rows;
+    db_label_source &dls = lnav_data.ld_db_row_source;
 
     if (args[0] == "write-csv-to" || args[0] == "write-json-to") {
         if (dls.dls_headers.empty()) {
@@ -1757,10 +1757,8 @@ static string com_summarize(string cmdline, vector<string> &args)
             query += query_frag;
         }
 
-        db_label_source &dls = lnav_data.ld_db_rows;
-        hist_source2<std::string> &hs = lnav_data.ld_db_source2;
+        db_label_source &dls = lnav_data.ld_db_row_source;
 
-        hs.clear();
         dls.clear();
         retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
                                      query.c_str(),

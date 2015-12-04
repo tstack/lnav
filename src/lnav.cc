@@ -2537,10 +2537,8 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_GRAPH].
     set_sub_source(&lnav_data.ld_graph_source);
     lnav_data.ld_views[LNV_DB].
-    set_sub_source(&lnav_data.ld_db_source2);
-    lnav_data.ld_db_source2
-            .with_label_source(&lnav_data.ld_db_rows);
-    lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_rows;
+    set_sub_source(&lnav_data.ld_db_row_source);
+    lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
     lnav_data.ld_views[LNV_DB].
     set_overlay_source(&lnav_data.ld_db_overlay);
     lnav_data.ld_views[LNV_LOG].

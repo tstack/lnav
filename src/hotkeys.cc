@@ -1003,7 +1003,7 @@ void handle_paging_key(int ch)
         case 'V':
         {
             textview_curses *db_tc = &lnav_data.ld_views[LNV_DB];
-            db_label_source &dls   = lnav_data.ld_db_rows;
+            db_label_source &dls   = lnav_data.ld_db_row_source;
 
             if (toggle_view(db_tc)) {
                 long log_line_index = dls.column_name_to_index("log_line");
@@ -1076,15 +1076,15 @@ void handle_paging_key(int ch)
         case KEY_BTAB:
             if (tc == &lnav_data.ld_views[LNV_DB])
             {
-                hist_source2<std::string> &hs = lnav_data.ld_db_source2;
+                stacked_bar_chart<string> &chart = lnav_data.ld_db_row_source.dls_chart;
 
-                if (hs.show_next_ident(ch == '\t' ? 1 : -1) == -1) {
+                if (chart.show_next_ident(ch == '\t' ? 1 : -1) == -1) {
                     lnav_data.ld_rl_view->set_value("Graphing all values");
                 }
                 else {
                     string colname;
 
-                    hs.get_ident_to_show(colname);
+                    chart.get_ident_to_show(colname);
                     lnav_data.ld_rl_view->set_value(
                             "Graphing column " ANSI_BOLD_START +
                             colname + ANSI_NORM);

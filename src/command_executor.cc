@@ -101,8 +101,7 @@ string execute_command(string cmdline)
 
 string execute_sql(string sql, string &alt_msg)
 {
-    db_label_source &      dls = lnav_data.ld_db_rows;
-    hist_source2<string>  &hs  = lnav_data.ld_db_source2;
+    db_label_source &dls = lnav_data.ld_db_row_source;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     string stmt_str = trim(sql);
     string retval;
@@ -124,9 +123,7 @@ string execute_sql(string sql, string &alt_msg)
         stmt_str = MSG_FORMAT_STMT;
     }
 
-    hs.clear();
     dls.clear();
-    dls.dls_stmt_str = stmt_str;
     sql_progress_guard progress_guard(sql_progress);
     retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
        stmt_str.c_str(),
@@ -214,7 +211,7 @@ string execute_sql(string sql, string &alt_msg)
                     dls.dls_rows.size() == 1) {
                 string row;
 
-                hs.text_value_for_line(lnav_data.ld_views[LNV_DB], 1, row, true);
+                dls.text_value_for_line(lnav_data.ld_views[LNV_DB], 1, row, true);
                 retval = "SQL Result: " + row;
             }
             else {
@@ -395,8 +392,8 @@ void execute_init_commands(vector<pair<string, string> > &msgs)
 int sql_callback(sqlite3_stmt *stmt)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
-    db_label_source &   dls = lnav_data.ld_db_rows;
-    hist_source2<string> &hs  = lnav_data.ld_db_source2;
+    db_label_source &dls = lnav_data.ld_db_row_source;
+    stacked_bar_chart<std::string> &chart = dls.dls_chart;
     view_colors &vc = view_colors::singleton();
     int ncols = sqlite3_column_count(stmt);
     int row_number;
@@ -418,7 +415,7 @@ int sql_callback(sqlite3_stmt *stmt)
             dls.push_header(colname, type, graphable);
             if (graphable) {
                 int attrs = vc.attrs_for_ident(colname);
-                hs.with_attrs_for_ident(colname, attrs);
+                chart.with_attrs_for_ident(colname, attrs);
             }
         }
     }
@@ -445,7 +442,7 @@ int sql_callback(sqlite3_stmt *stmt)
             if (sscanf(value, "%lf", &num_value) != 1) {
                 num_value = 0.0;
             }
-            hs.add_value(row_number, dls.dls_headers[lpc], num_value);
+            chart.add_value(dls.dls_headers[lpc], num_value);
         }
         else if (value_len > 2 &&
                  ((value[0] == '{' && value[value_len - 1] == '}') ||
@@ -458,14 +455,11 @@ int sql_callback(sqlite3_stmt *stmt)
                      iter != jpw.jpw_values.end();
                      ++iter) {
                     if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
-                        hs.add_value(row_number, iter->first, num_value);
-                        hs.with_attrs_for_ident(iter->first, vc.attrs_for_ident(iter->first));
+                        chart.add_value(iter->first, num_value);
+                        chart.with_attrs_for_ident(iter->first, vc.attrs_for_ident(iter->first));
                     }
                 }
             }
-        }
-        else {
-            hs.add_empty_value(row_number);
         }
     }
 
