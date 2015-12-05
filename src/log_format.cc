@@ -928,6 +928,10 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
     else if (jlu->jlu_format->elf_level_field == field_name) {
         jlu->jlu_base_line->set_level(logline::abbrev2level((const char *)str, len));
     }
+    else if (jlu->jlu_format->elf_opid_field == field_name) {
+        uint8_t opid = hash_str((const char *) str, len);
+        jlu->jlu_base_line->set_opid(opid);
+    }
     else if (ypc->is_level(1) || jlu->jlu_format->elf_value_defs.find(field_name) !=
              jlu->jlu_format->elf_value_defs.end()) {
         if (!jlu->jlu_format->jlf_hide_extra &&
@@ -1081,7 +1085,11 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             this->jlf_line_attrs.push_back(
                                 string_attr(lr, &textview_curses::SA_BODY));
                         }
-                        else if (lv_iter->lv_identifier) {
+                        else if (lv_iter->lv_name == this->elf_opid_field) {
+                            this->jlf_line_attrs.push_back(
+                                    string_attr(lr, &logline::L_OPID));
+                        }
+                        if (lv_iter->lv_identifier) {
                             this->jlf_line_attrs.push_back(
                                 string_attr(lr, &view_curses::VC_STYLE,
                                     vc.attrs_for_ident(str.c_str(), lr.length())));

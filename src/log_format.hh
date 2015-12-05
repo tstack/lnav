@@ -216,6 +216,10 @@ public:
         return this->ll_module_id;
     };
 
+    void set_opid(uint8_t opid) {
+        this->ll_opid = opid;
+    };
+
     uint8_t get_opid(void) const {
         return this->ll_opid;
     };

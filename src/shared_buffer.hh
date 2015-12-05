@@ -74,6 +74,10 @@ public:
 
     const char *get_data() const { return this->sb_data; };
 
+    const char *get_data_at(off_t offset) const {
+        return &this->sb_data[offset];
+    };
+
     size_t length() const { return this->sb_length; };
 
     bool contains(const char *ptr) const {

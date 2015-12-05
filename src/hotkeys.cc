@@ -67,6 +67,13 @@ public:
         return (*lf)[cl];
     };
 
+    logline &current_line() {
+        content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
+        logfile *lf = this->lh_sub_source.find(cl);
+
+        return (*lf)[cl];
+    };
+
     void annotate() {
         this->lh_string_attrs.clear();
         this->lh_line_values.clear();
@@ -793,7 +800,7 @@ void handle_paging_key(int ch)
                                 break;
                             }
                         }
-                        logline &next_line = next_helper.move_to_msg_start();
+                        logline &next_line = next_helper.current_line();
                         if (next_line.is_continued()) {
                             continue;
                         }
@@ -803,10 +810,10 @@ void handle_paging_key(int ch)
                         next_helper.annotate();
                         struct line_range opid_next_range = find_string_attr_range(
                                 next_helper.lh_string_attrs, &logline::L_OPID);
+                        const char *start_opid = start_helper.lh_msg_buffer.get_data_at(opid_range.lr_start);
+                        const char *next_opid = next_helper.lh_msg_buffer.get_data_at(opid_next_range.lr_start);
                         if (opid_range.length() != opid_next_range.length() ||
-                            memcmp(start_helper.lh_msg_buffer.get_data(),
-                                   next_helper.lh_msg_buffer.get_data(),
-                                   opid_range.length()) != 0) {
+                            memcmp(start_opid, next_opid, opid_range.length()) != 0) {
                             continue;
                         }
                         found = true;
