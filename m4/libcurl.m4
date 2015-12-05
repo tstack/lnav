@@ -129,6 +129,9 @@ AC_DEFUN([LIBCURL_CHECK_CONFIG],
            if test x"$LIBCURL" = "x" ; then
               if $5; then
                  LIBCURL=`$_libcurl_config --static-libs`
+                 if test x"$LIBCURL" = "x"; then
+                    LIBCURL=`$_libcurl_config --libs`
+                 fi
               else
                  LIBCURL=`$_libcurl_config --libs`
               fi
