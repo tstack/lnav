@@ -96,7 +96,10 @@ fields:
     message.  An "operation ID" establishes a thread of messages that might
     correspond to a particular operation/request/transaction.  The user can
     press the 'o' or 'Shift+O' hotkeys to move forward/backward through the
-    list of messages that have the same operation ID.
+    list of messages that have the same operation ID.  Note: For JSON-encoded
+    logs, the opid field can be a path (e.g. "foo/bar/opid") if the field is
+    nested in an object and it MUST be included in the "line-format" for the
+    'o' hotkeys to work.
 
   :module-field: The name of the field that contains the module identifier
     that distinguishes messages from one log source from another.  This field
