@@ -63,15 +63,6 @@ struct {
         { NULL, NULL }
 };
 
-static void dump_memory(FILE *dst, const char *src, int len)
-{
-    int lpc;
-
-    for (lpc = 0; lpc < len; lpc++) {
-        fprintf(dst, "%02x", src[lpc]);
-    }
-}
-
 int main(int argc, char *argv[])
 {
     time_t base_time = 1317913200;
@@ -179,11 +170,12 @@ int main(int argc, char *argv[])
     tm2.et_tm.tm_gmtoff = 0;
     tm2.et_tm.tm_zone = NULL;
 #endif
-    printf("today out\n");
-    dump_memory(stdout, (const char *)&tm.et_tm, sizeof(tm.et_tm));
-    printf("\n");
-    dump_memory(stdout, (const char *)&tm2.et_tm, sizeof(tm2.et_tm));
-    assert(memcmp(&tm.et_tm, &tm2.et_tm, sizeof(tm2.et_tm)) == 0);
+    assert(tm.et_tm.tm_year == tm2.et_tm.tm_year);
+    assert(tm.et_tm.tm_mon == tm2.et_tm.tm_mon);
+    assert(tm.et_tm.tm_mday == tm2.et_tm.tm_mday);
+    assert(tm.et_tm.tm_hour == tm2.et_tm.tm_hour);
+    assert(tm.et_tm.tm_min == tm2.et_tm.tm_min);
+    assert(tm.et_tm.tm_sec == tm2.et_tm.tm_sec);
 
     rt.clear();
     rt.parse("yesterday at 4pm", pe);
@@ -202,5 +194,10 @@ int main(int argc, char *argv[])
     tm2.et_tm.tm_gmtoff = 0;
     tm2.et_tm.tm_zone = NULL;
 #endif
-    assert(memcmp(&tm.et_tm, &tm2.et_tm, sizeof(tm2.et_tm)) == 0);
+    assert(tm.et_tm.tm_year == tm2.et_tm.tm_year);
+    assert(tm.et_tm.tm_mon == tm2.et_tm.tm_mon);
+    assert(tm.et_tm.tm_mday == tm2.et_tm.tm_mday);
+    assert(tm.et_tm.tm_hour == tm2.et_tm.tm_hour);
+    assert(tm.et_tm.tm_min == tm2.et_tm.tm_min);
+    assert(tm.et_tm.tm_sec == tm2.et_tm.tm_sec);
 }
