@@ -10,6 +10,9 @@ lnav v0.8.1:
        addition to the regular columns in the result.
      * Pressing 'V' in the DB view will now check for a column with a
        timestamp and move to the corresponding time in the log view.
+     * Added ":hide-lines-before", ":hide-lines-after", and
+       ":show-lines-before-and-after" commands so that you can filter out
+       log lines based on time.
 
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log

@@ -68,6 +68,8 @@ public:
         RTT_AGO,
         RTT_LATER,
         RTT_BEFORE,
+        RTT_NOW,
+        RTT_HERE,
 
         RTT__MAX
     };

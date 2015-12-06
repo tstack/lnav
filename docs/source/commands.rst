@@ -25,6 +25,9 @@ with the following commands:
 * delete-filter <regex> - Delete the filter.
 * set-min-log-level <level> - Only display log lines with the given log level
   or higher.
+* hide-lines-before <abs-time|rel-time> - Hide lines before the given time.
+* hide-lines-after <abs-time|rel-time> - Hide lines after the given time.
+* show-lines-before-and-after - Show lines that were hidden by the "hide-lines" commands.
 
 Navigation
 ----------

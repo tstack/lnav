@@ -292,6 +292,17 @@ struct date_time_scanner {
                      const char * const time_fmt[],
                      struct exttm *tm_out,
                      struct timeval &tv_out);
+
+    bool convert_to_timeval(const std::string &time_src,
+                            struct timeval &tv_out) {
+        struct exttm tm;
+
+        if (this->scan(time_src.c_str(), time_src.size(),
+                       NULL, &tm, tv_out) != NULL) {
+            return true;
+        }
+        return false;
+    }
 };
 
 template<typename T>

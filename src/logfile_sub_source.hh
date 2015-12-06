@@ -119,6 +119,32 @@ public:
         }
     };
 
+    bool get_min_log_time(struct timeval &tv_out) const {
+        tv_out = this->lss_min_log_time;
+        return (this->lss_min_log_time.tv_sec != 0 ||
+                this->lss_min_log_time.tv_usec != 0);
+    };
+
+    void set_min_log_time(struct timeval &tv) {
+        this->lss_min_log_time = tv;
+    };
+
+    bool get_max_log_time(struct timeval &tv_out) const {
+        tv_out = this->lss_max_log_time;
+        return (this->lss_max_log_time.tv_sec != INT_MAX ||
+                this->lss_max_log_time.tv_usec != 0);
+    };
+
+    void set_max_log_time(struct timeval &tv) {
+        this->lss_max_log_time = tv;
+    };
+
+    void clear_min_max_log_times() {
+        memset(&this->lss_min_log_time, 0, sizeof(this->lss_min_log_time));
+        this->lss_max_log_time.tv_sec = INT_MAX;
+        this->lss_max_log_time.tv_usec = 0;
+    };
+
     size_t text_line_count()
     {
         return this->lss_filtered_index.size();
@@ -537,6 +563,8 @@ private:
     logfile::iterator lss_token_line;
     std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];
     logline::level_t  lss_min_log_level;
+    struct timeval    lss_min_log_time;
+    struct timeval    lss_max_log_time;
     index_delegate    *lss_index_delegate;
     size_t            lss_longest_line;
 };

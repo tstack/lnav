@@ -51,6 +51,7 @@ logfile_sub_source::logfile_sub_source()
       lss_longest_line(0)
 {
     this->clear_line_size_cache();
+    this->clear_min_max_log_times();
 }
 
 logfile_sub_source::~logfile_sub_source()
@@ -545,7 +546,9 @@ bool logfile_sub_source::rebuild_index(bool force)
             if (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
                     line_number) &&
                     line_iter->get_msg_level() >=
-                    this->lss_min_log_level) {
+                    this->lss_min_log_level &&
+                    !(*line_iter < this->lss_min_log_time) &&
+                    *line_iter <= this->lss_max_log_time) {
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != NULL) {
                     logfile *lf = ld->get_file();

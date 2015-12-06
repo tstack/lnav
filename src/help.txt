@@ -411,6 +411,20 @@ COMMANDS
                     Move to the previous bookmark of the given type in the
                     current view.
 
+  hide-lines-before <abs-time|relative-time>
+                    Hide lines that are before the given time.  The given
+                    time can be absolute (e.g. 2015-10-11)
+                    The hidden lines can be shown again with the
+                    'show-lines-before-and-after' command.
+
+  hide-lines-after <abs-time|relative-time>
+                    Hide lines that are after the given time.  The time can
+                    The hidden lines can be shown again with the
+                    'show-lines-before-and-after' command.
+
+  show-lines-before-and-after
+                    Show lines that were hidden by the 'hide-lines' commands.
+
   highlight <regex> Highlight strings that match the given regular
                     expression.
 

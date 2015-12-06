@@ -37,8 +37,6 @@ struct {
     const char *reltime;
     const char *expected;
 } TEST_DATA[] = {
-        { "today at 4am", "0y0m0d4H0M0S0U" },
-        { "yesterday at noon", "0y0m-1d12H0M0S0U" },
         { "a minute ago", "0y0m0d0h-1m0s0u" },
         { "1m ago", "0y0m0d0h-1m0s0u" },
         { "a min ago", "0y0m0d0h-1m0s0u" },
@@ -71,7 +69,8 @@ int main(int argc, char *argv[])
     struct exttm base_tm;
     base_tm.et_tm = *gmtime(&base_time);
     struct relative_time::parse_error pe;
-    struct exttm tm;
+    struct timeval tv;
+    struct exttm tm, tm2;
     time_t new_time;
 
     relative_time rt;
@@ -153,4 +152,42 @@ int main(int argc, char *argv[])
 
     assert(new_time == (base_time - (5 * 60)));
 
+    rt.clear();
+    rt.parse("today at 4pm", pe);
+    memset(&tm, 0, sizeof(tm));
+    memset(&tm2, 0, sizeof(tm2));
+    gettimeofday(&tv, NULL);
+    localtime_r(&tv.tv_sec, &tm2.et_tm);
+    tm2.et_tm.tm_hour = 16;
+    tm2.et_tm.tm_min = 0;
+    tm2.et_tm.tm_sec = 0;
+    rt.add(tm);
+    tm.et_tm.tm_yday = 0;
+    tm2.et_tm.tm_yday = 0;
+    tm.et_tm.tm_wday = 0;
+    tm2.et_tm.tm_wday = 0;
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    tm2.et_tm.tm_gmtoff = 0;
+    tm2.et_tm.tm_zone = NULL;
+#endif
+    assert(memcmp(&tm.et_tm, &tm2.et_tm, sizeof(tm2.et_tm)) == 0);
+
+    rt.clear();
+    rt.parse("yesterday at 4pm", pe);
+    gettimeofday(&tv, NULL);
+    localtime_r(&tv.tv_sec, &tm2.et_tm);
+    tm2.et_tm.tm_mday -= 1;
+    tm2.et_tm.tm_hour = 16;
+    tm2.et_tm.tm_min = 0;
+    tm2.et_tm.tm_sec = 0;
+    rt.add(tm);
+    tm.et_tm.tm_yday = 0;
+    tm2.et_tm.tm_yday = 0;
+    tm.et_tm.tm_wday = 0;
+    tm2.et_tm.tm_wday = 0;
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    tm2.et_tm.tm_gmtoff = 0;
+    tm2.et_tm.tm_zone = NULL;
+#endif
+    assert(memcmp(&tm.et_tm, &tm2.et_tm, sizeof(tm2.et_tm)) == 0);
 }

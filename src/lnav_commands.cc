@@ -321,7 +321,8 @@ static string com_goto(string cmdline, vector<string> &args)
                 vl = lnav_data.ld_log_source.find_from_time(tv);
                 tc->set_top(vl);
                 retval = "";
-            } else {
+            }
+            else {
                 retval = "error: time values only work in the log view";
             }
         }
@@ -675,8 +676,15 @@ static string com_pipe_to(string cmdline, vector<string> &args)
             if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
                 logfile_sub_source &lss = lnav_data.ld_log_source;
                 log_data_helper ldh(lss);
+                char tmp_str[64];
 
                 ldh.parse_line(tc->get_top(), true);
+
+                snprintf(tmp_str, sizeof(tmp_str), "%d", (int) tc->get_top());
+                setenv("log_line", tmp_str, 1);
+                sql_strftime(tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
+                setenv("log_time", tmp_str, 1);
+                setenv("log_path", ldh.ldh_file->get_filename().c_str(), 1);
                 for (vector<logline_value>::iterator iter = ldh.ldh_line_values.begin();
                      iter != ldh.ldh_line_values.end();
                      ++iter) {
@@ -1961,6 +1969,126 @@ static string com_set_min_log_level(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_hide_line(string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+        args.push_back("line-time");
+    }
+    else if (args.size() == 1) {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+
+        if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            struct timeval min_time, max_time;
+            bool have_min_time = lss.get_min_log_time(min_time);
+            bool have_max_time = lss.get_max_log_time(max_time);
+            char min_time_str[32], max_time_str[32];
+
+            sql_strftime(min_time_str, sizeof(min_time_str), min_time);
+            sql_strftime(max_time_str, sizeof(max_time_str), max_time);
+            if (have_min_time && have_max_time) {
+                retval = "info: hiding lines before " +
+                        string(min_time_str) +
+                        " and after " +
+                        string(max_time_str);
+            }
+            else if (have_min_time) {
+                retval = "info: hiding lines before " + string(min_time_str);
+            }
+            else if (have_max_time) {
+                retval = "info: hiding lines after " + string(max_time_str);
+            }
+            else {
+                retval = "info: no lines hidden by time, pass an absolute or relative time";
+            }
+        }
+        else {
+            retval = "error: hiding lines by time only works in the log view";
+        }
+    }
+    else if (args.size() >= 2) {
+        string all_args = remaining_args(cmdline, args);
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        date_time_scanner dts;
+        struct timeval tv;
+        relative_time rt;
+        struct relative_time::parse_error pe;
+        bool tv_set = false;
+
+        if (rt.parse(all_args, pe)) {
+            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+                content_line_t cl;
+                struct exttm tm;
+                vis_line_t vl;
+                logline *ll;
+
+                vl = tc->get_top();
+                cl = lnav_data.ld_log_source.at(vl);
+                ll = lnav_data.ld_log_source.find_line(cl);
+                ll->to_exttm(tm);
+                rt.add(tm);
+
+                tv.tv_sec = timegm(&tm.et_tm);
+                tv.tv_usec = tm.et_nsec / 1000;
+
+                tv_set = true;
+            }
+            else {
+                retval = "error: relative time values only work in the log view";
+            }
+        }
+        else if (dts.convert_to_timeval(all_args, tv)) {
+            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+                tv_set = true;
+            }
+            else {
+                retval = "error: time values only work in the log view";
+            }
+        }
+
+        if (tv_set) {
+            char time_text[256];
+            string relation;
+
+            sql_strftime(time_text, sizeof(time_text), tv);
+            if (args[0] == "hide-lines-before") {
+                lss.set_min_log_time(tv);
+                relation = "before";
+            }
+            else {
+                lss.set_max_log_time(tv);
+                relation = "after";
+            }
+            rebuild_indexes(true);
+
+            retval = "info: hiding lines " + relation + " " + time_text;
+        }
+    }
+
+    return retval;
+}
+
+static string com_show_lines(string cmdline, vector<string> &args)
+{
+    string retval = "info: showing lines";
+
+    if (!args.empty()) {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+
+        if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            lss.clear_min_max_log_times();
+        }
+
+        rebuild_indexes(true);
+    }
+
+    return retval;
+}
+
 static string com_rebuild(string cmdline, vector<string> &args)
 {
     if (args.empty()) {
@@ -2064,6 +2192,24 @@ readline_context::command_t STD_COMMANDS[] = {
         NULL,
         "Open the help text view",
         com_help,
+    },
+    {
+        "hide-lines-before",
+        "<line#|date>",
+        "Hide lines that come before the given line number or date",
+        com_hide_line,
+    },
+    {
+        "hide-lines-after",
+        "<line#|date>",
+        "Hide lines that come after the given line number or date",
+        com_hide_line,
+    },
+    {
+        "show-lines-before-and-after",
+        NULL,
+        "Show lines that were hidden by the 'hide-lines' commands",
+        com_show_lines,
     },
     {
         "highlight",

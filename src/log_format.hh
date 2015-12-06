@@ -277,6 +277,11 @@ public:
                  (this->ll_millis < (rhs.tv_usec / 1000))));
     };
 
+    bool operator<=(const struct timeval &rhs) const {
+        return ((this->ll_time <= rhs.tv_sec) ||
+                ((this->ll_time == rhs.tv_sec) &&
+                 (this->ll_millis <= (rhs.tv_usec / 1000))));
+    };
 private:
     off_t    ll_offset;
     time_t   ll_time;

@@ -52,6 +52,10 @@ TIME_FORMATS = \
     "%H:%M:%S" \
     "%M:%S" \
     "%m/%d %H:%M:%S" \
+    "%Y-%m-%d" \
+    "%Y-%m" \
+    "%Y/%m/%d" \
+    "%Y/%m" \
     $()
 
 time_fmts.cc: ptimec

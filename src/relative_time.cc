@@ -68,6 +68,8 @@ static struct {
     { "ago", pcrepp("\\Aago\\b") },
     { "lter", pcrepp("\\Alater\\b") },
     { "bfor", pcrepp("\\Abefore\\b") },
+    { "now", pcrepp("\\Anow\\b") },
+    { "here", pcrepp("\\Ahere\\b") },
 };
 
 static int64_t TIME_SCALES[] = {
@@ -115,6 +117,44 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                 number_set = false;
             }
             switch (token) {
+                case RTT_YESTERDAY:
+                case RTT_TODAY:
+                case RTT_NOW: {
+                    struct timeval tv;
+                    struct exttm tm;
+                    int abs_start = 0, abs_end = RTF__MAX;
+
+                    gettimeofday(&tv, NULL);
+                    localtime_r(&tv.tv_sec, &tm.et_tm);
+                    tm.et_nsec = tv.tv_usec * 1000;
+                    this->add(tm);
+
+                    this->rt_field[RTF_YEARS] = tm.et_tm.tm_year;
+                    this->rt_field[RTF_MONTHS] = tm.et_tm.tm_mon;
+                    this->rt_field[RTF_DAYS] = tm.et_tm.tm_mday;
+                    switch (token) {
+                        case RTT_NOW:
+                            this->rt_field[RTF_HOURS] = tm.et_tm.tm_hour;
+                            this->rt_field[RTF_MINUTES] = tm.et_tm.tm_min;
+                            this->rt_field[RTF_SECONDS] = tm.et_tm.tm_sec;
+                            this->rt_field[RTF_MICROSECONDS] = tm.et_nsec / 1000;
+                            break;
+                        case RTT_YESTERDAY:
+                            this->rt_field[RTF_DAYS] -= 1;
+                        case RTT_TODAY:
+                            this->rt_field[RTF_HOURS] = 0;
+                            this->rt_field[RTF_MINUTES] = 0;
+                            this->rt_field[RTF_SECONDS] = 0;
+                            this->rt_field[RTF_MICROSECONDS] = 0;
+                            break;
+                        default:
+                            break;
+                    }
+                    for (int lpc = abs_start; lpc <= abs_end; lpc++) {
+                        this->rt_is_absolute[lpc] = true;
+                    }
+                    break;
+                }
                 case RTT_INVALID:
                 case RTT_WHITE:
                 case RTT_AND:
@@ -231,10 +271,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         return false;
                     }
                     break;
-                case RTT_TODAY:
-                    break;
-                case RTT_YESTERDAY:
-                    this->rt_field[RTF_DAYS] = -1;
+                case RTT_HERE:
                     break;
                 case RTT_TOMORROW:
                     this->rt_field[RTF_DAYS] = 1;
