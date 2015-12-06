@@ -63,6 +63,15 @@ struct {
         { NULL, NULL }
 };
 
+static void dump_memory(FILE *dst, const char *src, int len)
+{
+    int lpc;
+
+    for (lpc = 0; lpc < len; lpc++) {
+        fprintf(dst, "%02x", src[lpc]);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     time_t base_time = 1317913200;
@@ -170,6 +179,10 @@ int main(int argc, char *argv[])
     tm2.et_tm.tm_gmtoff = 0;
     tm2.et_tm.tm_zone = NULL;
 #endif
+    printf("today out\n");
+    dump_memory(stdout, (const char *)&tm.et_tm, sizeof(tm.et_tm));
+    printf("\n");
+    dump_memory(stdout, (const char *)&tm2.et_tm, sizeof(tm2.et_tm));
     assert(memcmp(&tm.et_tm, &tm2.et_tm, sizeof(tm2.et_tm)) == 0);
 
     rt.clear();
