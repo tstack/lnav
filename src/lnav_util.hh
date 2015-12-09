@@ -68,7 +68,8 @@ size_t unquote(char *dst, const char *str, size_t len);
  * @param
  * @param step The granularity.
  */
-inline int rounddown(size_t size, int step)
+template<typename Size, typename Step>
+inline int rounddown(Size size, Step step)
 {
     return size - (size % step);
 }

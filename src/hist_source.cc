@@ -177,3 +177,5 @@ void hist_source::add_value(unsigned int value,
     stats.bs_max_count = max(stats.bs_max_count, bc);
     stats.bs_min_count = min(stats.bs_min_count, bc);
 }
+
+const char *hist_source2::LINE_FORMAT = " %8d normal  %8d errors  %8d warnings  %8d marks";

@@ -455,4 +455,214 @@ protected:
     int sbc_ident_to_show;
 };
 
+class hist_source2 : public text_sub_source {
+public:
+
+    typedef enum {
+        HT_NORMAL,
+        HT_WARNING,
+        HT_ERROR,
+        HT_MARK,
+
+        HT__MAX
+    } hist_type_t;
+
+    hist_source2() : hs_time_slice(10 * 60) {
+        this->clear();
+    };
+
+    void init() {
+        view_colors &vc = view_colors::singleton();
+
+        this->hs_chart
+                .with_attrs_for_ident(HT_NORMAL,
+                                      vc.attrs_for_role(view_colors::VCR_TEXT))
+                .with_attrs_for_ident(HT_WARNING,
+                                      vc.attrs_for_role(view_colors::VCR_WARNING))
+                .with_attrs_for_ident(HT_ERROR,
+                                      vc.attrs_for_role(view_colors::VCR_ERROR))
+                .with_attrs_for_ident(HT_MARK,
+                                      vc.attrs_for_role(view_colors::VCR_KEYWORD));
+    };
+
+    void set_time_slice(int64_t slice) {
+        require(slice >= 60);
+        require((slice % 60) == 0);
+
+        this->hs_time_slice = slice;
+    };
+
+    int64_t get_time_slice() const {
+        return this->hs_time_slice;
+    };
+
+    size_t text_line_count() {
+        return this->hs_line_count;
+    };
+
+    size_t text_line_width() {
+        return strlen(LINE_FORMAT) + 8 * 4;
+    };
+
+    void clear(void) {
+        this->hs_line_count = 0;
+        this->hs_last_bucket = -1;
+        this->hs_last_row = -1;
+        this->hs_blocks.clear();
+        this->hs_chart.clear();
+        this->init();
+    };
+
+    void add_value(time_t row, hist_type_t htype, double value = 1.0) {
+        require(row >= this->hs_last_row);
+
+        row = rounddown(row, this->hs_time_slice);
+        if (row != this->hs_last_row) {
+            this->end_of_row();
+
+            this->hs_last_bucket += 1;
+            this->hs_last_row = row;
+        }
+
+        bucket_t &bucket = this->find_bucket(this->hs_last_bucket);
+        bucket.b_time = row;
+        bucket.b_values[htype].hv_value += value;
+    };
+
+    void end_of_row() {
+        if (this->hs_last_bucket >= 0) {
+            bucket_t &last_bucket = this->find_bucket(this->hs_last_bucket);
+
+            for (int lpc = 0; lpc < HT__MAX; lpc++) {
+                this->hs_chart.add_value(
+                        (const hist_type_t) lpc,
+                        last_bucket.b_values[lpc].hv_value);
+            }
+        }
+    };
+
+    void text_value_for_line(textview_curses &tc,
+                             int row,
+                             std::string &value_out,
+                             bool no_scrub) {
+        bucket_t &bucket = this->find_bucket(row);
+        struct tm bucket_tm;
+        char tm_buffer[128];
+        char line[256];
+
+        if (gmtime_r(&bucket.b_time, &bucket_tm) != NULL) {
+            strftime(tm_buffer, sizeof(tm_buffer),
+                     " %a %b %d %H:%M  ",
+                     &bucket_tm);
+        }
+        else {
+            log_error("no time?");
+            tm_buffer[0] = '\0';
+        }
+        snprintf(line, sizeof(line),
+                 LINE_FORMAT,
+                 (int) rint(bucket.b_values[HT_NORMAL].hv_value),
+                 (int) rint(bucket.b_values[HT_ERROR].hv_value),
+                 (int) rint(bucket.b_values[HT_WARNING].hv_value),
+                 (int) rint(bucket.b_values[HT_MARK].hv_value));
+
+        value_out.clear();
+        value_out.append(tm_buffer);
+        value_out.append(line);
+    };
+
+    void text_attrs_for_line(textview_curses &tc,
+                             int row,
+                             string_attrs_t &value_out) {
+        bucket_t &bucket = this->find_bucket(row);
+        int left = 0;
+
+        for (int lpc = 0; lpc < HT__MAX; lpc++) {
+            this->hs_chart.chart_attrs_for_value(
+                    tc, left, (const hist_type_t) lpc,
+                    bucket.b_values[lpc].hv_value,
+                    value_out);
+        }
+    };
+
+    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+        return 0;
+    };
+
+    time_t time_for_row(int64_t row) {
+        require(row >= 0);
+        require(row < this->hs_line_count);
+
+        bucket_t &bucket = this->find_bucket(row);
+
+        return bucket.b_time;
+    };
+
+    int64_t row_for_time(time_t time_bucket) {
+        std::map<int64_t, struct bucket_block>::iterator iter;
+        int64_t retval = 0;
+
+        time_bucket = rounddown(time_bucket, this->hs_time_slice);
+
+        for (iter = this->hs_blocks.begin();
+             iter != this->hs_blocks.end();
+             ++iter) {
+            struct bucket_block &bb = iter->second;
+
+            if (time_bucket < bb.bb_buckets[0].b_time) {
+                break;
+            }
+            if (time_bucket > bb.bb_buckets[bb.bb_used].b_time) {
+                retval += bb.bb_used + 1;
+                continue;
+            }
+
+            for (int lpc = 0; lpc <= bb.bb_used; lpc++, retval++) {
+                if (time_bucket <= bb.bb_buckets[lpc].b_time) {
+                    return retval;
+                }
+            }
+        }
+        return retval;
+    };
+
+private:
+    static const char *LINE_FORMAT;
+
+    struct hist_value {
+        double hv_value;
+    };
+
+    struct bucket_t {
+        time_t b_time;
+        hist_value b_values[HT__MAX];
+    };
+
+    static const unsigned int BLOCK_SIZE = 100;
+
+    struct bucket_block {
+        bucket_block() : bb_used(0) {
+            memset(this->bb_buckets, 0, sizeof(this->bb_buckets));
+        };
+
+        unsigned int bb_used;
+        bucket_t bb_buckets[BLOCK_SIZE];
+    };
+
+    bucket_t &find_bucket(int64_t index) {
+        struct bucket_block &bb = this->hs_blocks[index / this->BLOCK_SIZE];
+        unsigned int intra_block_index = index % BLOCK_SIZE;
+        bb.bb_used = std::max(intra_block_index, bb.bb_used);
+        this->hs_line_count = std::max(this->hs_line_count, index + 1);
+        return bb.bb_buckets[intra_block_index];
+    };
+
+    int64_t hs_time_slice;
+    int64_t hs_line_count;
+    int64_t hs_last_bucket;
+    time_t hs_last_row;
+    std::map<int64_t, struct bucket_block> hs_blocks;
+    stacked_bar_chart<hist_type_t> hs_chart;
+};
+
 #endif

@@ -142,16 +142,15 @@ static multimap<lnav_flags_t, string> DEFAULT_FILES;
 struct _lnav_data lnav_data;
 
 struct hist_level {
-    int hl_bucket_size;
-    int hl_group_size;
+    int hl_time_slice;
 };
 
 static struct hist_level HIST_ZOOM_VALUES[] = {
-        { 24 * 60 * 60, 7 * 24 * 60 * 60 },
-        {  4 * 60 * 60,     24 * 60 * 60 },
-        {      60 * 60,     24 * 60 * 60 },
-        {      10 * 60,          60 * 60 },
-        {           60,          60 * 60 },
+        { 24 * 60 * 60, },
+        {  4 * 60 * 60, },
+        {      60 * 60, },
+        {      10 * 60, },
+        {           60, },
 };
 
 const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) / sizeof(struct hist_level);
@@ -383,7 +382,7 @@ private:
 
 class hist_index_delegate : public index_delegate {
 public:
-    hist_index_delegate(hist_source &hs, textview_curses &tc)
+    hist_index_delegate(hist_source2 &hs, textview_curses &tc)
             : hid_source(hs), hid_view(tc) {
 
     };
@@ -397,8 +396,26 @@ public:
             return;
         }
 
-        this->hid_source.add_value(ll->get_time(),
-                bucket_type_t(ll->get_level() & ~logline::LEVEL__FLAGS));
+        hist_source2::hist_type_t ht;
+
+        switch (ll->get_level()) {
+            case logline::LEVEL_FATAL:
+            case logline::LEVEL_CRITICAL:
+            case logline::LEVEL_ERROR:
+                ht = hist_source2::HT_ERROR;
+                break;
+            case logline::LEVEL_WARNING:
+                ht = hist_source2::HT_WARNING;
+                break;
+            default:
+                ht = hist_source2::HT_NORMAL;
+                break;
+        }
+
+        this->hid_source.add_value(ll->get_time(), ht);
+        if (ll->is_marked()) {
+            this->hid_source.add_value(ll->get_time(), hist_source2::HT_MARK);
+        }
     };
 
     void index_complete(logfile_sub_source &lss) {
@@ -406,38 +423,18 @@ public:
     };
 
 private:
-    hist_source &hid_source;
+    hist_source2 &hid_source;
     textview_curses &hid_view;
 };
 
 void rebuild_hist(size_t old_count, bool force)
 {
-    textview_curses &   hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
-    logfile_sub_source &lss       = lnav_data.ld_log_source;
-    size_t       new_count        = lss.text_line_count();
-    hist_source &hs         = lnav_data.ld_hist_source;
-    int          zoom_level = lnav_data.ld_hist_zoom;
-    time_t       old_time;
-    int          lpc;
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    hist_source2 &hs = lnav_data.ld_hist_source2;
+    int zoom = lnav_data.ld_hist_zoom;
 
-    old_time = hs.value_for_row(hist_view.get_top());
-    hs.set_bucket_size(HIST_ZOOM_VALUES[zoom_level].hl_bucket_size);
-    hs.set_group_size(HIST_ZOOM_VALUES[zoom_level].hl_group_size);
-    if (force) {
-        hs.clear();
-        old_count = 0;
-    }
-    for (lpc = old_count; lpc < (int)new_count; lpc++) {
-        logline *ll = lss.find_line(lss.at(vis_line_t(lpc)));
-
-        if (!(ll->get_level() & logline::LEVEL_CONTINUED)) {
-            hs.add_value(ll->get_time(),
-                         bucket_type_t(ll->get_level() &
-                                       ~logline::LEVEL__FLAGS));
-        }
-    }
-    hist_view.reload_data();
-    hist_view.set_top(hs.row_for_value(old_time));
+    hs.set_time_slice(HIST_ZOOM_VALUES[zoom].hl_time_slice);
+    lss.text_filters_changed();
 }
 
 class textfile_callback {
@@ -622,64 +619,6 @@ void rebuild_indexes(bool force)
         lnav_data.ld_scroll_broadcaster.invoke(tc);
     }
 }
-
-class time_label_source
-    : public hist_source::label_source {
-public:
-    static const char *LINE_FORMAT;
-
-    time_label_source() { };
-
-    size_t hist_label_width() {
-        return strlen(LINE_FORMAT) + 8 * 3;
-    };
-
-    void hist_label_for_bucket(int bucket_start_value,
-                               const hist_source::bucket_t &bucket,
-                               string &label_out)
-    {
-        hist_source::bucket_t::const_iterator iter;
-        int        total       = 0, errors = 0, warnings = 0;
-        time_t     bucket_time = bucket_start_value;
-        struct tm *bucket_tm;
-        char       buffer[128];
-        int        len;
-
-        bucket_tm = gmtime((time_t *)&bucket_time);
-        if (bucket_tm) {
-            strftime(buffer, sizeof(buffer),
-                     " %a %b %d %H:%M  ",
-                     bucket_tm);
-        }
-        else {
-            log_error("bad time %d", bucket_start_value);
-            buffer[0] = '\0';
-        }
-        for (iter = bucket.begin(); iter != bucket.end(); iter++) {
-            total += (int)iter->second;
-            switch (iter->first) {
-            case logline::LEVEL_FATAL:
-            case logline::LEVEL_ERROR:
-            case logline::LEVEL_CRITICAL:
-                errors += (int)iter->second;
-                break;
-
-            case logline::LEVEL_WARNING:
-                warnings += (int)iter->second;
-                break;
-            }
-        }
-
-        len = strlen(buffer);
-        snprintf(&buffer[len], sizeof(buffer) - len,
-                 LINE_FORMAT,
-                 total, errors, warnings);
-
-        label_out = string(buffer);
-    };
-};
-
-const char *time_label_source::LINE_FORMAT = " %8d total  %8d errors  %8d warnings";
 
 static bool append_default_files(lnav_flags_t flag)
 {
@@ -1149,11 +1088,11 @@ static void update_times(void *, listview_curses *lv)
     }
     if (lv == &lnav_data.ld_views[LNV_HISTOGRAM] &&
         lv->get_inner_height() > 0) {
-        hist_source &hs = lnav_data.ld_hist_source;
+        hist_source2 &hs = lnav_data.ld_hist_source2;
 
-        lnav_data.ld_top_time    = hs.value_for_row(lv->get_top());
+        lnav_data.ld_top_time    = hs.time_for_row(lv->get_top());
         lnav_data.ld_top_time_millis = 0;
-        lnav_data.ld_bottom_time = hs.value_for_row(lv->get_bottom());
+        lnav_data.ld_bottom_time = hs.time_for_row(lv->get_bottom());
         lnav_data.ld_bottom_time_millis = 0;
     }
 }
@@ -2533,7 +2472,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_TEXT].
     set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_HISTOGRAM].
-    set_sub_source(&lnav_data.ld_hist_source);
+    set_sub_source(&lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_GRAPH].
     set_sub_source(&lnav_data.ld_graph_source);
     lnav_data.ld_views[LNV_DB].
@@ -2557,27 +2496,14 @@ int main(int argc, char *argv[])
     }
 
     {
-        hist_source &hs = lnav_data.ld_hist_source;
-
-        lnav_data.ld_hist_zoom = 2;
-        hs.set_role_for_type(bucket_type_t(logline::LEVEL_FATAL),
-           view_colors::VCR_ERROR);
-        hs.set_role_for_type(bucket_type_t(logline::LEVEL_CRITICAL),
-           view_colors::VCR_ERROR);
-        hs.set_role_for_type(bucket_type_t(logline::LEVEL_ERROR),
-           view_colors::VCR_ERROR);
-        hs.set_role_for_type(bucket_type_t(logline::LEVEL_WARNING),
-           view_colors::VCR_WARNING);
-        hs.set_label_source(new time_label_source());
+        hist_source2 &hs = lnav_data.ld_hist_source2;
 
         lnav_data.ld_log_source.set_index_delegate(
-                new hist_index_delegate(lnav_data.ld_hist_source,
+                new hist_index_delegate(lnav_data.ld_hist_source2,
                         lnav_data.ld_views[LNV_HISTOGRAM]));
-
-        int zoom_level = lnav_data.ld_hist_zoom;
-
-        hs.set_bucket_size(HIST_ZOOM_VALUES[zoom_level].hl_bucket_size);
-        hs.set_group_size(HIST_ZOOM_VALUES[zoom_level].hl_group_size);
+        hs.init();
+        lnav_data.ld_hist_zoom = 2;
+        hs.set_time_slice(HIST_ZOOM_VALUES[lnav_data.ld_hist_zoom].hl_time_slice);
     }
 
     {

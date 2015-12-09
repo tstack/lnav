@@ -578,12 +578,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sat Nov 03 00:00          0 total         0 errors         0 warnings
- Sat Nov 03 04:00          0 total         0 errors         0 warnings
- Sat Nov 03 08:00          4 total         2 errors         0 warnings
- Sat Nov 03 12:00          0 total         0 errors         0 warnings
- Sat Nov 03 16:00          0 total         0 errors         0 warnings
- Sat Nov 03 20:00          0 total         0 errors         0 warnings
+ Sat Nov 03 08:00          2 normal         2 errors         0 warnings         0 marks
 EOF
 
 run_test ${lnav_test} -n \
@@ -592,11 +587,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sat Nov 03 00:00          4 total         2 errors         0 warnings
- Sun Nov 04 00:00          0 total         0 errors         0 warnings
- Mon Nov 05 00:00          0 total         0 errors         0 warnings
- Tue Nov 06 00:00          0 total         0 errors         0 warnings
- Wed Nov 07 00:00          0 total         0 errors         0 warnings
+ Sat Nov 03 00:00          2 normal         2 errors         0 warnings         0 marks
 EOF
 
 run_test ${lnav_test} -n \
@@ -606,12 +597,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sat Nov 03 00:00          0 total         0 errors         0 warnings
- Sat Nov 03 04:00          0 total         0 errors         0 warnings
- Sat Nov 03 08:00          1 total         0 errors         0 warnings
- Sat Nov 03 12:00          0 total         0 errors         0 warnings
- Sat Nov 03 16:00          0 total         0 errors         0 warnings
- Sat Nov 03 20:00          0 total         0 errors         0 warnings
+ Sat Nov 03 08:00          1 normal         0 errors         0 warnings         0 marks
 EOF
 
 run_test ${lnav_test} -n \

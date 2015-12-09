@@ -218,6 +218,7 @@ struct _lnav_data {
 
     logfile_sub_source                      ld_log_source;
     hist_source                             ld_hist_source;
+    hist_source2                            ld_hist_source2;
     int                                     ld_hist_zoom;
 
     textfile_sub_source                     ld_text_source;
