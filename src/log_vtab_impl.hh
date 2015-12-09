@@ -101,6 +101,7 @@ public:
     virtual void get_foreign_keys(std::vector<std::string> &keys_inout)
     {
         keys_inout.push_back("log_line");
+        keys_inout.push_back("min(log_line)");
         keys_inout.push_back("log_mark");
     };
 

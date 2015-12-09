@@ -342,10 +342,16 @@ through the file.
                     will cycle through the columns until they are all graphed
                     again.
 
-  p                 Enable or disable the display of the fields that the
-                    log message parser knows about or has discovered.
-                    This overlay is temporarily enabled when the semicolon
-                    key (;) is pressed so that it is easier to write queries.
+  p                 In the log view: enable or disable the display of the
+                    fields that the log message parser knows about or has
+                    discovered.  This overlay is temporarily enabled when the
+                    semicolon key (;) is pressed so that it is easier to write
+                    queries.
+
+                    In the DB view: enable or disable the display of values
+                    in columns containing JSON-encoded values in the top row.
+                    The overlay will display the JSON-Pointer reference and
+                    value for all fields in the JSON data.
 
   X                 Close the current text file or log file.
 

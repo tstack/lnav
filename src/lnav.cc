@@ -271,10 +271,10 @@ bool setup_logline_table()
 
             ldh.parse_line(cl);
 
-            std::map<const intern_string_t, json_ptr_walk::pair_list_t>::const_iterator pair_iter;
+            std::map<const intern_string_t, json_ptr_walk::walk_list_t>::const_iterator pair_iter;
             for (pair_iter = ldh.ldh_json_pairs.begin();
-               pair_iter != ldh.ldh_json_pairs.end();
-               ++pair_iter) {
+                 pair_iter != ldh.ldh_json_pairs.end();
+                 ++pair_iter) {
                 for (size_t lpc = 0; lpc < pair_iter->second.size(); lpc++) {
                     lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*",
                         ldh.format_json_getter(pair_iter->first, lpc));

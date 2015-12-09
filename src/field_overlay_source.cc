@@ -146,7 +146,7 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
         this->add_key_line_attrs(this->fos_known_key_size);
     }
 
-    std::map<const intern_string_t, json_ptr_walk::pair_list_t>::iterator json_iter;
+    std::map<const intern_string_t, json_ptr_walk::walk_list_t>::iterator json_iter;
 
     if (!this->fos_log_helper.ldh_json_pairs.empty()) {
         this->fos_lines.push_back(" JSON fields:");
@@ -155,12 +155,12 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
     for (json_iter = this->fos_log_helper.ldh_json_pairs.begin();
          json_iter != this->fos_log_helper.ldh_json_pairs.end();
          ++json_iter) {
-        json_ptr_walk::pair_list_t &jpairs = json_iter->second;
+        json_ptr_walk::walk_list_t &jpairs = json_iter->second;
 
         for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
             this->fos_lines.push_back("   " +
                                       this->fos_log_helper.format_json_getter(json_iter->first, lpc) + " = " +
-                                      jpairs[lpc].second);
+                                      jpairs[lpc].wt_value);
             this->add_key_line_attrs(0);
         }
     }

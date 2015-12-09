@@ -175,7 +175,7 @@ public:
 
         qname = sql_quote_ident(field.get());
         jget = sqlite3_mprintf("jget(%s,%Q)", qname.in(),
-            this->ldh_json_pairs[field][index].first.c_str());
+            this->ldh_json_pairs[field][index].wt_ptr.c_str());
         retval = std::string(jget);
 
         return retval;
@@ -192,7 +192,7 @@ public:
     std::auto_ptr<data_parser> ldh_parser;
     std::auto_ptr<column_namer> ldh_namer;
     std::vector<logline_value> ldh_line_values;
-    std::map<const intern_string_t, json_ptr_walk::pair_list_t> ldh_json_pairs;
+    std::map<const intern_string_t, json_ptr_walk::walk_list_t> ldh_json_pairs;
 };
 
 #endif

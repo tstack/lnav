@@ -133,12 +133,14 @@ public:
 
                 if (jpw.parse(row_value, row_len) == yajl_status_ok &&
                     jpw.complete_parse() == yajl_status_ok) {
-                    for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+                    for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
                          iter != jpw.jpw_values.end();
                          ++iter) {
                         double num_value;
-                        if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
-                            this->dls_chart.chart_attrs_for_value(tc, left, iter->first, num_value, sa);
+
+                        if (iter->wt_type == yajl_t_number &&
+                            sscanf(iter->wt_value.c_str(), "%lf", &num_value) == 1) {
+                            this->dls_chart.chart_attrs_for_value(tc, left, iter->wt_ptr, num_value, sa);
                         }
                     }
                 }
@@ -275,42 +277,44 @@ public:
                 chart.with_stacking_enabled(false)
                         .with_margins(3, 0);
 
-                for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+                for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
                      iter != jpw.jpw_values.end();
                      ++iter) {
-                    this->dos_lines.push_back("   " + iter->first + " = " + iter->second);
+                    this->dos_lines.push_back("   " + iter->wt_ptr + " = " + iter->wt_value);
 
                     string_attrs_t &sa = this->dos_lines.back().get_attrs();
                     struct line_range lr(1, 2);
 
                     sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_LTEE));
-                    lr.lr_start = 3 + iter->first.size() + 3;
+                    lr.lr_start = 3 + iter->wt_ptr.size() + 3;
                     lr.lr_end = -1;
                     sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD));
 
                     double num_value = 0.0;
 
-                    if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
-                        int attrs = vc.attrs_for_ident(iter->first);
+                    if (iter->wt_type == yajl_t_number &&
+                        sscanf(iter->wt_value.c_str(), "%lf", &num_value) == 1) {
+                        int attrs = vc.attrs_for_ident(iter->wt_ptr);
 
-                        chart.add_value(iter->first, num_value);
-                        chart.with_attrs_for_ident(iter->first, attrs);
+                        chart.add_value(iter->wt_ptr, num_value);
+                        chart.with_attrs_for_ident(iter->wt_ptr, attrs);
                     }
 
                     retval += 1;
                 }
 
                 int curr_line = start_line;
-                for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+                for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
                      iter != jpw.jpw_values.end();
                      ++iter, curr_line++) {
                     double num_value = 0.0;
 
-                    if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
+                    if (iter->wt_type == yajl_t_number &&
+                        sscanf(iter->wt_value.c_str(), "%lf", &num_value) == 1) {
                         string_attrs_t &sa = this->dos_lines[curr_line].get_attrs();
                         int left = 3;
 
-                        chart.chart_attrs_for_value(lv, left, iter->first, num_value, sa);
+                        chart.chart_attrs_for_value(lv, left, iter->wt_ptr, num_value, sa);
                     }
                 }
             }

@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "yajlpp.hh"
+#include "yajl/api/yajl_tree.h"
 #include "lnav_log.hh"
 
 class json_ptr_walk {
@@ -113,11 +114,22 @@ public:
         return retval;
     };
 
-    typedef std::vector<std::pair<std::string, std::string> > pair_list_t;
+    struct walk_triple {
+        walk_triple(std::string ptr, yajl_type type, std::string value)
+                : wt_ptr(ptr), wt_type(type), wt_value(value) {
+
+        };
+
+        std::string wt_ptr;
+        yajl_type wt_type;
+        std::string wt_value;
+    };
+
+    typedef std::vector<walk_triple> walk_list_t;
 
     auto_mem<yajl_handle_t> jpw_handle;
     std::string jpw_error_msg;
-    pair_list_t jpw_values;
+    walk_list_t jpw_values;
     std::vector<std::string> jpw_keys;
     std::vector<int32_t> jpw_array_indexes;
     size_t jpw_max_ptr_len;

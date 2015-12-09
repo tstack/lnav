@@ -431,7 +431,9 @@ int sql_callback(sqlite3_stmt *stmt)
         else {
             value_len = strlen(value);
         }
-        if (value != NULL && dls.dls_headers[lpc] == "log_line") {
+        if (value != NULL &&
+            (dls.dls_headers[lpc] == "log_line" ||
+             dls.dls_headers[lpc] == "min(log_line)")) {
             int line_number = -1;
 
             if (sscanf(value, "%d", &line_number) == 1) {
@@ -451,12 +453,13 @@ int sql_callback(sqlite3_stmt *stmt)
 
             if (jpw.parse(value, value_len) == yajl_status_ok &&
                 jpw.complete_parse() == yajl_status_ok) {
-                for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+                for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
                      iter != jpw.jpw_values.end();
                      ++iter) {
-                    if (sscanf(iter->second.c_str(), "%lf", &num_value) == 1) {
-                        chart.add_value(iter->first, num_value);
-                        chart.with_attrs_for_ident(iter->first, vc.attrs_for_ident(iter->first));
+                    if (iter->wt_type == yajl_t_number &&
+                        sscanf(iter->wt_value.c_str(), "%lf", &num_value) == 1) {
+                        chart.add_value(iter->wt_ptr, num_value);
+                        chart.with_attrs_for_ident(iter->wt_ptr, vc.attrs_for_ident(iter->wt_ptr));
                     }
                 }
             }

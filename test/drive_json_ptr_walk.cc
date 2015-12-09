@@ -69,10 +69,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "client cancel\n");
     }
 
-    for (json_ptr_walk::pair_list_t::iterator iter = jpw.jpw_values.begin();
+    for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
          iter != jpw.jpw_values.end();
          ++iter) {
-        printf("%s = %s\n", iter->first.c_str(), iter->second.c_str());
+        printf("%s = %s\n", iter->wt_ptr.c_str(), iter->wt_value.c_str());
     }
 
     return retval;
