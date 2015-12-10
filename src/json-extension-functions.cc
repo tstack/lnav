@@ -42,9 +42,12 @@
 
 #include "json_op.hh"
 
+#include "yajl/api/yajl_gen.h"
 #include "sqlite-extension-func.h"
 
 using namespace std;
+
+#define JSON_SUBTYPE  74    /* Ascii for "J" */
 
 class sql_json_op : public json_op {
 public:
@@ -54,13 +57,6 @@ public:
     string sjo_str;
     int sjo_int;
 };
-
-static void printer(void *ctx, const char *numberVal, size_t numberLen)
-{
-    string &str = *(string *)ctx;
-
-    str.append(numberVal, numberLen);
-}
 
 static void null_or_default(sqlite3_context *context, int argc, sqlite3_value **argv)
 {
@@ -145,10 +141,8 @@ static void sql_jget(sqlite3_context *context,
     auto_mem<yajl_gen_t> gen(yajl_gen_free);
     auto_mem<yajl_handle_t> handle(yajl_free);
     const unsigned char *err;
-    string result;
 
     gen = yajl_gen_alloc(NULL);
-    yajl_gen_config(gen.in(), yajl_gen_print_callback, printer, &result);
     yajl_gen_config(gen.in(), yajl_gen_beautify, false);
 
     jo.jo_ptr_callbacks = json_op::gen_callbacks;
@@ -204,12 +198,17 @@ static void sql_jget(sqlite3_context *context,
         return;
     }
 
-    if (result.empty()) {
+    const unsigned char *buf;
+    size_t len;
+
+    yajl_gen_get_buf(gen, &buf, &len);
+
+    if (len == 0) {
         null_or_default(context, argc, argv);
         return;
     }
 
-    sqlite3_result_text(context, result.c_str(), result.size(), SQLITE_TRANSIENT);
+    sqlite3_result_text(context, (const char *) buf, len, SQLITE_TRANSIENT);
 }
 
 struct json_agg_context {
@@ -255,10 +254,22 @@ static void sql_json_group_object_step(sqlite3_context *context,
                 break;
             case SQLITE3_TEXT: {
                 const unsigned char *value = sqlite3_value_text(argv[lpc + 1]);
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
+                int subtype = sqlite3_value_subtype(argv[lpc + 1]);
 
-                yajl_gen_string(jac->jac_yajl_gen,
-                                value,
-                                strlen((const char *) value));
+                if (subtype == JSON_SUBTYPE) {
+                    yajl_gen_number(jac->jac_yajl_gen,
+                                    (const char *) value,
+                                    strlen((const char *)value));
+                }
+                else {
+#endif
+                    yajl_gen_string(jac->jac_yajl_gen,
+                                    value,
+                                    strlen((const char *) value));
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
+                }
+#endif
                 break;
             }
             case SQLITE_INTEGER: {
@@ -295,6 +306,89 @@ static void sql_json_group_object_final(sqlite3_context *context)
         yajl_gen_map_close(jac->jac_yajl_gen);
         yajl_gen_get_buf(jac->jac_yajl_gen, &buf, &len);
         sqlite3_result_text(context, (const char *) buf, len, SQLITE_TRANSIENT);
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
+        sqlite3_result_subtype(context, JSON_SUBTYPE);
+#endif
+        yajl_gen_free(jac->jac_yajl_gen);
+    }
+}
+
+static void sql_json_group_array_step(sqlite3_context *context,
+                                      int argc,
+                                      sqlite3_value **argv)
+{
+    json_agg_context *jac = (json_agg_context *) sqlite3_aggregate_context(
+            context, sizeof(json_agg_context));
+
+    if (jac->jac_yajl_gen == NULL) {
+        jac->jac_yajl_gen = yajl_gen_alloc(NULL);
+        yajl_gen_config(jac->jac_yajl_gen, yajl_gen_beautify, false);
+
+        yajl_gen_array_open(jac->jac_yajl_gen);
+    }
+
+    for (int lpc = 0; lpc < argc; lpc++) {
+        switch (sqlite3_value_type(argv[lpc])) {
+            case SQLITE_NULL:
+                yajl_gen_null(jac->jac_yajl_gen);
+                break;
+            case SQLITE3_TEXT: {
+                const unsigned char *value = sqlite3_value_text(argv[lpc]);
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
+                int subtype = sqlite3_value_subtype(argv[lpc]);
+
+                if (subtype == JSON_SUBTYPE) {
+                    yajl_gen_number(jac->jac_yajl_gen,
+                                    (const char *) value,
+                                    strlen((const char *)value));
+                }
+                else {
+#endif
+                    yajl_gen_string(jac->jac_yajl_gen,
+                                    value,
+                                    strlen((const char *) value));
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
+                }
+#endif
+                break;
+            }
+            case SQLITE_INTEGER: {
+                const unsigned char *value = sqlite3_value_text(argv[lpc]);
+
+                yajl_gen_number(jac->jac_yajl_gen,
+                                (const char *) value,
+                                strlen((const char *) value));
+                break;
+            }
+            case SQLITE_FLOAT: {
+                double value = sqlite3_value_double(argv[lpc]);
+
+                yajl_gen_double(jac->jac_yajl_gen, value);
+                break;
+            }
+        }
+    }
+
+}
+
+static void sql_json_group_array_final(sqlite3_context *context)
+{
+    json_agg_context *jac = (json_agg_context *) sqlite3_aggregate_context(
+            context, 0);
+
+    if (jac == NULL) {
+        sqlite3_result_text(context, "{}", -1, SQLITE_STATIC);
+    }
+    else {
+        const unsigned char *buf;
+        size_t len;
+
+        yajl_gen_array_close(jac->jac_yajl_gen);
+        yajl_gen_get_buf(jac->jac_yajl_gen, &buf, &len);
+        sqlite3_result_text(context, (const char *) buf, len, SQLITE_TRANSIENT);
+#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
+        sqlite3_result_subtype(context, JSON_SUBTYPE);
+#endif
         yajl_gen_free(jac->jac_yajl_gen);
     }
 }
@@ -311,6 +405,8 @@ int json_extension_functions(const struct FuncDef **basic_funcs,
     static const struct FuncDefAgg json_agg_funcs[] = {
             { "json_group_object", -1, 0, 0,
                     sql_json_group_object_step, sql_json_group_object_final, },
+            { "json_group_array", -1, 0, 0,
+                    sql_json_group_array_step, sql_json_group_array_final, },
 
             { NULL }
     };

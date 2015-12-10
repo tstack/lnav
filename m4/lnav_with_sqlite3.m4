@@ -88,6 +88,15 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
         )
     )
 
+    AC_CHECK_FUNC(sqlite3_value_subtype,
+        HAVE_SQLITE3_VALUE_SUBTYPE=1
+        AC_DEFINE([HAVE_SQLITE3_VALUE_SUBTYPE], [],
+            [Have the sqlite3_value_subtype function]
+        )
+    )
+
+    AC_SUBST(HAVE_SQLITE3_VALUE_SUBTYPE)
+
     AS_VAR_SET(CFLAGS, $saved_CFLAGS)
     AS_VAR_SET(CPPFLAGS, $saved_CPPFLAGS)
     AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
