@@ -4,8 +4,9 @@ lnav v0.8.1:
      * Log formats can now create SQL views and execute other statements
        by adding '.sql' files to their format directories.  The SQL scripts
        will be executed on startup.
-     * Added a 'json_group_object' aggregate SQL function that collects values
-       from a GROUP BY query into an JSON object.
+     * Added 'json_group_object' and 'json_group_array' aggregate SQL
+       functions that collects values from a GROUP BY query into a JSON
+       object or array, respectively.
      * The SQL view will now graph values found in JSON objects/arrays in
        addition to the regular columns in the result.
      * Pressing 'V' in the DB view will now check for a column with a
