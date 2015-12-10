@@ -272,7 +272,7 @@ static string com_goto(string cmdline, vector<string> &args)
     string retval = "error: expecting line number/percentage, timestamp, or relative time";
 
     if (args.size() == 0) {
-        args.push_back("line-time");
+        args.push_back("move-time");
     }
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);
@@ -1564,7 +1564,7 @@ static string com_pt_time(string cmdline, vector<string> &args)
     string retval = "error: expecting a time value";
 
     if (args.size() == 0) {
-        args.push_back("line-time");
+        args.push_back("move-time");
         retval = "";
     }
     else if (args.size() == 1) {
@@ -1974,7 +1974,7 @@ static string com_hide_line(string cmdline, vector<string> &args)
     string retval;
 
     if (args.empty()) {
-        args.push_back("line-time");
+        args.push_back("move-time");
     }
     else if (args.size() == 1) {
         textview_curses *tc = lnav_data.ld_view_stack.top();

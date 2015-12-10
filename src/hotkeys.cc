@@ -836,6 +836,14 @@ void handle_paging_key(int ch)
 
         case ':':
             if (lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
+                static const char *MOVE_TIMES[] = {
+                        "here",
+                        "now",
+                        "today",
+                        "yesterday",
+                        NULL
+                };
+
                 logfile_sub_source &lss      = lnav_data.ld_log_source;
                 textview_curses &   log_view = lnav_data.ld_views[LNV_LOG];
                 content_line_t      cl       = lss.at(log_view.get_top());
@@ -855,23 +863,33 @@ void handle_paging_key(int ch)
 
                 ldh.clear();
 
-                lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "line-time");
+                readline_curses *rlc = lnav_data.ld_rl_view;
+
+                rlc->clear_possibilities(LNM_COMMAND, "move-time");
+                rlc->add_possibility(LNM_COMMAND, "move-time", MOVE_TIMES);
+                rlc->clear_possibilities(LNM_COMMAND, "line-time");
                 {
                     struct timeval tv = lf->get_time_offset();
                     char buffer[64];
 
                     sql_strftime(buffer, sizeof(buffer),
                                  ll->get_time(), ll->get_millis(), 'T');
-                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
-                                                          "line-time",
-                                                          buffer);
+                    rlc->add_possibility(LNM_COMMAND,
+                                         "line-time",
+                                         buffer);
+                    rlc->add_possibility(LNM_COMMAND,
+                                         "move-time",
+                                         buffer);
                     sql_strftime(buffer, sizeof(buffer),
                                  ll->get_time() - tv.tv_sec,
                                  ll->get_millis() - (tv.tv_usec / 1000),
                                  'T');
-                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
-                                                          "line-time",
-                                                          buffer);
+                    rlc->add_possibility(LNM_COMMAND,
+                                         "line-time",
+                                         buffer);
+                    rlc->add_possibility(LNM_COMMAND,
+                                         "move-time",
+                                         buffer);
                 }
             }
 
