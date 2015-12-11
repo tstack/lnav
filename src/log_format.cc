@@ -266,8 +266,8 @@ const char *log_format::log_scanf(const char *line,
             pcre_context::capture_t *ts = pc["timestamp"];
 
             for (pcre_context::iterator iter = pc.begin();
-                    iter != pc.end();
-                    ++iter) {
+                 iter != pc.end();
+                 ++iter) {
                 pcre_context::capture_t *cap = va_arg(
                         args, pcre_context::capture_t *);
 

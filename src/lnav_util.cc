@@ -513,10 +513,12 @@ const char *date_time_scanner::scan(const char *time_dest,
             if (ptime_f(tm_out, time_dest, off, time_len)) {
                 tv_out.tv_usec = tm_out->et_nsec / 1000;
                 this->dts_fmt_len += 7;
+                retval += 7;
             }
             else if (ptime_F(tm_out, time_dest, off, time_len)) {
                 tv_out.tv_usec = tm_out->et_nsec / 1000;
                 this->dts_fmt_len += 4;
+                retval += 4;
             }
         }
     }

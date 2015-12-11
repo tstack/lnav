@@ -1250,12 +1250,15 @@
             },
             "pre-5.0" : {
                 "pattern" : "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)(?:\\n(?:.|\\n)*)?$"
+            },
+            "ls-log" : {
+                "pattern" : "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) (?<tid>[\\w\\-]+)\\s+(?<level>\\w+)\\s+(?<comp>[^\\]]+)\\]\\s+(?<body>(?:.|\\n)*)"
             }
         },
         "level-field": "level",
         "level" : {
-            "error" : "(error|panic)",
-            "warning" : "warning",
+            "error" : "(error|ERROR|panic|PANIC)",
+            "warning" : "(warning|WARNING|warn|WARN)",
             "trace" : "verbose"
             },
         "opid-field" : "opid",
@@ -1301,6 +1304,9 @@
             },
             {
                 "line" : "2014-11-04T12:46:42.990+05:30 Section for VMware VirtualCenter, pid=6432, version=6.0.0, build=2255588, option=BETA"
+            },
+            {
+                "line" : "[2013-01-16 02:26:25,500 pool-3-thread-1  INFO  com.vmware.vim.license.service.impl.ServiceImpl] License Accounting Service initialized"
             }
         ]
     },
