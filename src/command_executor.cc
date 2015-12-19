@@ -349,12 +349,12 @@ string execute_file(const string &path_and_args, bool multiline)
         string script_name = wordmem->we_wordv[0];
         map<string, string> &vars = lnav_data.ld_local_vars.top();
         char env_arg_name[32];
-        string result;
+        string result, open_error = "file not found";
 
         snprintf(env_arg_name, sizeof(env_arg_name), "%d", (int) wordmem->we_wordc - 1);
 
         vars["#"] = env_arg_name;
-        for (int lpc = 0; lpc < wordmem->we_wordc; lpc++) {
+        for (unsigned int lpc = 0; lpc < wordmem->we_wordc; lpc++) {
             snprintf(env_arg_name, sizeof(env_arg_name), "%d", lpc);
             vars[env_arg_name] = wordmem->we_wordv[lpc];
         }
@@ -368,11 +368,17 @@ string execute_file(const string &path_and_args, bool multiline)
         if (access(script_name.c_str(), R_OK) == 0) {
             paths_to_exec.push_back(script_name);
         }
+        else if (errno != ENOENT) {
+            open_error = strerror(errno);
+        }
         else {
             string local_path = lnav_data.ld_path_stack.top() + "/" + script_name;
 
             if (access(local_path.c_str(), R_OK) == 0) {
                 paths_to_exec.push_back(local_path);
+            }
+            else if (errno != ENOENT) {
+                open_error = strerror(errno);
             }
         }
 
@@ -385,7 +391,7 @@ string execute_file(const string &path_and_args, bool multiline)
             retval = "Executed: " + script_name + " -- " + result;
         }
         else {
-            retval = "error: unknown script -- " + script_name;
+            retval = "error: unknown script -- " + script_name + " -- " + open_error;
         }
         lnav_data.ld_local_vars.pop();
     }

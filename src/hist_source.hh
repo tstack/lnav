@@ -617,7 +617,7 @@ public:
                 continue;
             }
 
-            for (int lpc = 0; lpc <= bb.bb_used; lpc++, retval++) {
+            for (unsigned int lpc = 0; lpc <= bb.bb_used; lpc++, retval++) {
                 if (time_bucket <= bb.bb_buckets[lpc].b_time) {
                     return retval;
                 }

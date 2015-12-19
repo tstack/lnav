@@ -58,6 +58,7 @@ struct exttm {
     struct tm et_tm;
     int32_t et_nsec;
     int et_flags;
+    long et_gmtoff;
 };
 
 #define PTIME_CONSUME(amount, block) \
@@ -449,6 +450,7 @@ inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         mins = (
             (str[off_inout + 2] - '0') *   10 +
             (str[off_inout + 3] - '0') *    1) * 60;
+        dst->et_gmtoff = sign * (hours + mins);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
         dst->et_tm.tm_gmtoff = sign * (hours + mins);
 #endif

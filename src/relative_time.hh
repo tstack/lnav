@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+#include <inttypes.h>
 
 #include <string>
 
@@ -198,7 +199,7 @@ public:
         char dst[128];
 
         snprintf(dst, sizeof(dst),
-                 "%qd%c%qd%c%qd%c%qd%c%qd%c%qd%c%qd%c",
+                 "%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c",
                  this->rt_field[RTF_YEARS],
                  this->rt_is_absolute[RTF_YEARS] ? 'Y' : 'y',
                  this->rt_field[RTF_MONTHS],
