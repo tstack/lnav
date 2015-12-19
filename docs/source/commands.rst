@@ -100,3 +100,15 @@ Output
   shell command and open the output in lnav.
 * pipe-line-to <shell-cmd> - Pipe the top line in the current view to a shell
   command and open the output in lnav.
+
+
+Miscellaneous
+-------------
+
+* echo [-n] <msg> - Display the given message in the command prompt.  Useful
+  for scripts to display messages to the user.  The '-n' option leaves out the
+  new line at the end of the message.
+* eval <cmd> - Evaluate the given command or SQL query after performing
+  environment variable substitution.  The argument to *eval* must start with a
+  colon, semi-colon, or pipe character to signify whether the argument is a
+  command, SQL query, or a script to be executed, respectively.

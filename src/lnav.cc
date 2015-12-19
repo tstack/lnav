@@ -1576,6 +1576,7 @@ static void handle_key(int ch)
         case LNM_SEARCH:
         case LNM_CAPTURE:
         case LNM_SQL:
+        case LNM_EXEC:
             handle_rl_key(ch);
             break;
 
@@ -1635,6 +1636,7 @@ static void looper(void)
         readline_context search_context("search");
         readline_context index_context("capture");
         readline_context sql_context("sql", NULL, false);
+        readline_context exec_context("exec");
         readline_curses  rlc;
         int lpc;
 
@@ -1653,6 +1655,7 @@ static void looper(void)
         rlc.add_context(LNM_SEARCH, search_context);
         rlc.add_context(LNM_CAPTURE, index_context);
         rlc.add_context(LNM_SQL, sql_context);
+        rlc.add_context(LNM_EXEC, exec_context);
         rlc.start();
 
         lnav_data.ld_rl_view = &rlc;
@@ -2174,6 +2177,8 @@ int main(int argc, char *argv[])
     umask(077);
 
     lnav_data.ld_program_name = argv[0];
+    lnav_data.ld_local_vars.push(map<string, string>());
+    lnav_data.ld_path_stack.push(".");
 
     rl_readline_name = "lnav";
 

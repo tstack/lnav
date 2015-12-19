@@ -51,38 +51,9 @@
 #include "readline_curses.hh"
 #include "relative_time.hh"
 #include "log_search_table.hh"
+#include "shlex.hh"
 
 using namespace std;
-
-static bool wordexperr(int rc, string &msg)
-{
-    switch (rc) {
-    case WRDE_BADCHAR:
-        msg = "error: invalid filename character";
-        return false;
-
-    case WRDE_CMDSUB:
-        msg = "error: command substitution is not allowed";
-        return false;
-
-    case WRDE_BADVAL:
-        msg = "error: unknown environment variable in file name";
-        return false;
-
-    case WRDE_NOSPACE:
-        msg = "error: out of memory";
-        return false;
-
-    case WRDE_SYNTAX:
-        msg = "error: invalid syntax";
-        return false;
-
-    default:
-        break;
-    }
-    
-    return true;
-}
 
 static string remaining_args(const string &cmdline,
                              const vector<string> &args,
@@ -2137,6 +2108,76 @@ static string com_redraw(string cmdline, vector<string> &args)
     return "";
 }
 
+static string com_echo(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a message";
+
+    if (args.empty()) {
+
+    }
+    else if (args.size() > 1) {
+        bool lf = true;
+
+        if (args.size() > 2 && args[1] == "-n") {
+            lf = false;
+        }
+        retval = remaining_args(cmdline, args, lf ? 1 : 2);
+        if (lnav_data.ld_flags & LNF_HEADLESS) {
+            printf("%s", retval.c_str());
+            if (lf) {
+                putc('\n', stdout);
+            }
+            fflush(stdout);
+        }
+    }
+
+    return retval;
+}
+
+static string com_eval(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a command or query to evaluate";
+
+    if (args.empty()) {
+
+    }
+    else if (args.size() > 1) {
+        string all_args = remaining_args(cmdline, args);
+        string expanded_cmd;
+        shlex lexer(all_args.c_str(), all_args.size());
+
+        log_debug("Evaluating: %s", all_args.c_str());
+        if (!lexer.eval(expanded_cmd, lnav_data.ld_local_vars.top())) {
+            return "error: invalid arguments";
+        }
+        log_debug("Expanded command to evaluate: %s", expanded_cmd.c_str());
+
+        if (expanded_cmd.empty()) {
+            return "error: empty result after evaluation";
+        }
+
+        string alt_msg;
+        switch (expanded_cmd[0]) {
+            case ':':
+                retval = execute_command(expanded_cmd.substr(1));
+                break;
+            case ';':
+                retval = execute_sql(expanded_cmd.substr(1), alt_msg);
+                break;
+            case '|':
+                retval = "info: executed file -- " + expanded_cmd.substr(1) +
+                        " -- " + execute_file(expanded_cmd.substr(1));
+                break;
+            default:
+                retval = "error: expecting argument to start with ':', ';', "
+                         "or '|' to signify a command, SQL query, or script to execute";
+                break;
+        }
+    }
+
+    return retval;
+}
+
 readline_context::command_t STD_COMMANDS[] = {
     {
         "adjust-log-time",
@@ -2413,6 +2454,19 @@ readline_context::command_t STD_COMMANDS[] = {
         "Zoom the histogram view to the given level",
         com_zoom_to,
     },
+    {
+        "echo",
+        "[-n] <msg>",
+        "Echo the given message",
+        com_echo,
+    },
+    {
+        "eval",
+        "<msg>",
+        "Evaluate the given command/query after doing environment variable substitution",
+        com_eval,
+    },
+
     { NULL },
 };
 

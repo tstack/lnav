@@ -115,12 +115,9 @@ static void sql_dirname(sqlite3_context *context,
         text_end -= 1;
     }
 
-    if (text_end == -1) {
-        sqlite3_result_text(context,
-                            path_in[0] == '/' ? "/" : ".", 1,
-                            SQLITE_STATIC);
-        return;
-    }
+    sqlite3_result_text(context,
+                        path_in[0] == '/' ? "/" : ".", 1,
+                        SQLITE_STATIC);
 }
 
 static void sql_joinpath(sqlite3_context *context,

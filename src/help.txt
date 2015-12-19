@@ -316,7 +316,16 @@ through the file.
                     that can be used in queries.  See the SQL section
                     below for more information.
 
-  CTRL+]            Abort command-line entry started with '/', ':', or ';'.
+  |<script> [arg1 .. argN]
+                    Execute an lnav script contained in a format directory
+                    (e.g. ~/.lnav/formats/default).  The script can contain
+                    lines starting with ':', ';', or '|' to execute commands,
+                    SQL queries or execute other files in lnav.  Any values
+                    after the script name are treated as arguments can be
+                    referenced in the script using '$1', '$2', and so on, like
+                    in a shell script.
+
+  CTRL+]            Abort command-line entry started with '/', ':', ';', or '|'.
 
   y/Y               Move forward/backward through the log view based on the
                     "log_line" column in the SQL result view.
@@ -568,6 +577,17 @@ COMMANDS
 
   clear-partition
                     Clear the partition the top line is a part of.
+
+  echo [-n] <msg>   Display the given message.  Useful for scripts to message
+                    the user.  The '-n' option leaves out the new line at the
+                    end of the message.
+
+  eval <cmd|query|file>
+                    Execute the given command, query, or file after doing
+                    environment variable substitution.  The argument to this
+                    command should start with a ':', ';', or '|' signify the
+                    type of action to perform (command, SQL query, execute
+                    script).
 
   pt-min-time [<date>|<relative-time>]
                     Set/get the minimum time range for any papertrail queries.

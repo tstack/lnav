@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,29 +25,64 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file log_format_loader.hh
  */
 
-#ifndef __log_format_loader_hh
-#define __log_format_loader_hh
+#include "config.h"
 
-#include <sqlite3.h>
+#include <stdlib.h>
 
-#include <vector>
-#include <string>
+#include "shlex.hh"
 
-std::vector<intern_string_t> load_format_file(
-        const std::string &filename, std::vector<std::string> &errors);
+using namespace std;
 
-void load_formats(const std::vector<std::string> &extra_paths,
-                  std::vector<std::string> &errors);
+const char *ST_TOKEN_NAMES[] = {
+        "err",
+        "esc",
+        "dst",
+        "den",
+        "sst",
+        "sen",
+        "ref",
+};
 
-void load_format_extra(sqlite3 *db,
-                       const std::vector<std::string> &extra_paths,
-                       std::vector<std::string> &errors);
+int main(int argc, char *argv[])
+{
+    if (argc < 2) {
+        fprintf(stderr, "error: expecting an argument to parse\n");
+        exit(EXIT_FAILURE);
+    }
 
-void find_format_scripts(const std::vector<std::string> &extra_paths,
-                         std::map<std::string, std::vector<std::string> > &scripts);
+    shlex lexer(argv[1], strlen(argv[1]));
+    pcre_context::capture_t cap;
+    shlex_token_t token;
 
-#endif
+    printf("    %s\n", argv[1]);
+    while (lexer.tokenize(cap, token)) {
+        int lpc;
+
+        printf("%s ", ST_TOKEN_NAMES[token]);
+        for (lpc = 0; lpc < cap.c_end; lpc++) {
+            if (lpc == cap.c_begin) {
+                fputc('^', stdout);
+            }
+            else if (lpc == (cap.c_end - 1)) {
+                fputc('^', stdout);
+            }
+            else if (lpc > cap.c_begin) {
+                fputc('-', stdout);
+            }
+            else{
+                fputc(' ', stdout);
+            }
+        }
+        printf("\n");
+    }
+
+    lexer.reset();
+    std::string result;
+    if (lexer.eval(result, map<string, string>())) {
+        printf("eval -- %s\n", result.c_str());
+    }
+
+    return EXIT_SUCCESS;
+}

@@ -322,6 +322,17 @@ public:
         }
     };
 
+    void add_possibility(int context,
+                         const std::string &type,
+                         const std::vector<std::string> &values)
+    {
+        for (std::vector<std::string>::const_iterator iter = values.begin();
+             iter != values.end();
+             ++iter) {
+            this->add_possibility(context, type, *iter);
+        }
+    };
+
     void rem_possibility(int context,
                          const std::string &type,
                          const std::string &value);

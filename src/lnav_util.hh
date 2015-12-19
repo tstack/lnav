@@ -169,6 +169,13 @@ std::string get_current_dir(void);
 
 bool change_to_parent_dir(void);
 
+std::pair<std::string, std::string> split_path(const char *path, ssize_t len);
+
+inline
+std::pair<std::string, std::string> split_path(const std::string &path) {
+    return split_path(path.c_str(), path.size());
+};
+
 enum file_format_t {
     FF_UNKNOWN,
     FF_SQLITE_DB,
@@ -320,5 +327,7 @@ inline bool pollfd_ready(const std::vector<struct pollfd> &pollfds, int fd, shor
 
     return false;
 };
+
+bool wordexperr(int rc, std::string &msg);
 
 #endif

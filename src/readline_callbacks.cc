@@ -29,12 +29,16 @@
 
 #include "config.h"
 
+#include <wordexp.h>
+
 #include "lnav.hh"
+#include "lnav_util.hh"
 #include "sysclip.hh"
 #include "plain_text_source.hh"
 #include "command_executor.hh"
 #include "readline_curses.hh"
 #include "log_search_table.hh"
+#include "log_format_loader.hh"
 
 using namespace std;
 
@@ -129,6 +133,9 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         }
         return;
 
+    case LNM_EXEC:
+        return;
+
     default:
         require(0);
         break;
@@ -181,7 +188,6 @@ void rl_callback(void *dummy, readline_curses *rc)
         break;
 
     case LNM_COMMAND:
-        lnav_data.ld_mode = LNM_PAGING;
         rc->set_alt_value("");
         rc->set_value(execute_command(rc->get_value()));
         break;
@@ -202,15 +208,19 @@ void rl_callback(void *dummy, readline_curses *rc)
                                   n, N,
                                   "to move forward/backward through search results"));
         }
-        lnav_data.ld_mode = LNM_PAGING;
         break;
 
     case LNM_SQL:
         rc->set_value(execute_sql(rc->get_value(), alt_msg));
         rc->set_alt_value(alt_msg);
-        lnav_data.ld_mode = LNM_PAGING;
+        break;
+
+    case LNM_EXEC:
+        rc->set_value(execute_file(rc->get_value()));
         break;
     }
+
+    lnav_data.ld_mode = LNM_PAGING;
 }
 
 void rl_display_matches(void *dummy, readline_curses *rc)

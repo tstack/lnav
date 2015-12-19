@@ -14,6 +14,12 @@ lnav v0.8.1:
      * Added ":hide-lines-before", ":hide-lines-after", and
        ":show-lines-before-and-after" commands so that you can filter out
        log lines based on time.
+     * Scripts containing lnav commands/queries can now be executed using
+       the pipe ('|') hotkey.  See the documentation for more information.
+     * Added an ":eval" command that can be used to execute a command or
+       query after performing environment variable substitution.
+     * Added an ":echo" command that can be useful for scripts to message
+       the user.
 
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log

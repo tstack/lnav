@@ -34,10 +34,10 @@
 
 #include <string>
 
-std::string execute_command(std::string cmdline);
+std::string execute_command(const std::string &cmdline);
 
-std::string execute_sql(std::string sql, std::string &alt_msg);
-void execute_file(std::string path, bool multiline = true);
+std::string execute_sql(const std::string &sql, std::string &alt_msg);
+std::string execute_file(const std::string &path_and_args, bool multiline = true);
 void execute_init_commands(std::vector<std::pair<std::string, std::string> > &msgs);
 
 int sql_callback(sqlite3_stmt *stmt);

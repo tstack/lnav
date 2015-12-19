@@ -29,11 +29,14 @@
 
 #include "config.h"
 
+#include <wordexp.h>
+
 #include <vector>
 
 #include "json_ptr.hh"
 #include "pcrecpp.h"
 #include "lnav.hh"
+#include "log_format_loader.hh"
 
 #include "command_executor.hh"
 
@@ -71,7 +74,7 @@ static int sql_progress(const struct log_cursor &lc)
 
 string execute_from_file(const string &path, int line_number, char mode, const string &cmdline);
 
-string execute_command(string cmdline)
+string execute_command(const string &cmdline)
 {
     stringstream ss(cmdline);
 
@@ -99,7 +102,7 @@ string execute_command(string cmdline)
     return msg;
 }
 
-string execute_sql(string sql, string &alt_msg)
+string execute_sql(const string &sql, string &alt_msg)
 {
     db_label_source &dls = lnav_data.ld_db_row_source;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -150,9 +153,16 @@ string execute_sql(string sql, string &alt_msg)
 
             name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
             if (name[0] == '$') {
+                map<string, string> &vars = lnav_data.ld_local_vars.top();
+                map<string, string>::iterator local_var;
                 const char *env_value;
 
-                if ((env_value = getenv(&name[1])) != NULL) {
+                if ((local_var = vars.find(&name[1])) != vars.end()) {
+                    sqlite3_bind_text(stmt.in(), lpc + 1,
+                                      local_var->second.c_str(), -1,
+                                      SQLITE_TRANSIENT);
+                }
+                else if ((env_value = getenv(&name[1])) != NULL) {
                     sqlite3_bind_text(stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
                 }
             }
@@ -246,15 +256,16 @@ string execute_sql(string sql, string &alt_msg)
     return retval;
 }
 
-void execute_file(string path, bool multiline)
+static string execute_file_contents(const string &path, bool multiline)
 {
+    string retval;
     FILE *file;
 
     if (path == "-") {
         file = stdin;
     }
     else if ((file = fopen(path.c_str(), "r")) == NULL) {
-        return;
+        return "error: unable to open file";
     }
 
     int    line_number = 0, starting_line_number = 0;
@@ -263,7 +274,9 @@ void execute_file(string path, bool multiline)
     ssize_t line_size;
     string cmdline;
     char mode = '\0';
+    pair<string, string> dir_and_base = split_path(path);
 
+    lnav_data.ld_path_stack.push(dir_and_base.first);
     while ((line_size = getline(&line, &line_max_size, file)) != -1) {
         line_number += 1;
 
@@ -280,7 +293,7 @@ void execute_file(string path, bool multiline)
             case ';':
             case '|':
                 if (mode) {
-                    execute_from_file(path, starting_line_number, mode, trim(cmdline));
+                    retval = execute_from_file(path, starting_line_number, mode, trim(cmdline));
                 }
 
                 starting_line_number = line_number;
@@ -292,7 +305,7 @@ void execute_file(string path, bool multiline)
                     cmdline += line;
                 }
                 else {
-                    execute_from_file(path, line_number, ':', line);
+                    retval = execute_from_file(path, line_number, ':', line);
                 }
                 break;
         }
@@ -300,12 +313,84 @@ void execute_file(string path, bool multiline)
     }
 
     if (mode) {
-        execute_from_file(path, starting_line_number, mode, trim(cmdline));
+        retval = execute_from_file(path, starting_line_number, mode, trim(cmdline));
     }
 
     if (file != stdin) {
         fclose(file);
     }
+    lnav_data.ld_path_stack.pop();
+
+    return retval;
+}
+
+string execute_file(const string &path_and_args, bool multiline)
+{
+    map<string, vector<string> > scripts;
+    map<string, vector<string> >::iterator iter;
+    static_root_mem<wordexp_t, wordfree> wordmem;
+    string msg, retval;
+
+    log_info("Executing file: %s", path_and_args.c_str());
+
+    int exp_rc = wordexp(path_and_args.c_str(),
+                         wordmem.inout(),
+                         WRDE_NOCMD | WRDE_UNDEF);
+
+    if (!wordexperr(exp_rc, msg)) {
+        retval = msg;
+    }
+    else if (wordmem->we_wordc == 0) {
+        retval = "error: no script specified";
+    }
+    else {
+        lnav_data.ld_local_vars.push(map<string, string>());
+
+        string script_name = wordmem->we_wordv[0];
+        map<string, string> &vars = lnav_data.ld_local_vars.top();
+        char env_arg_name[32];
+        string result;
+
+        snprintf(env_arg_name, sizeof(env_arg_name), "%d", (int) wordmem->we_wordc - 1);
+
+        vars["#"] = env_arg_name;
+        for (int lpc = 0; lpc < wordmem->we_wordc; lpc++) {
+            snprintf(env_arg_name, sizeof(env_arg_name), "%d", lpc);
+            vars[env_arg_name] = wordmem->we_wordv[lpc];
+        }
+
+        vector<string> paths_to_exec;
+
+        find_format_scripts(lnav_data.ld_config_paths, scripts);
+        if ((iter = scripts.find(script_name)) != scripts.end()) {
+            paths_to_exec = iter->second;
+        }
+        if (access(script_name.c_str(), R_OK) == 0) {
+            paths_to_exec.push_back(script_name);
+        }
+        else {
+            string local_path = lnav_data.ld_path_stack.top() + "/" + script_name;
+
+            if (access(local_path.c_str(), R_OK) == 0) {
+                paths_to_exec.push_back(local_path);
+            }
+        }
+
+        if (!paths_to_exec.empty()) {
+            for (vector<string>::iterator path_iter = paths_to_exec.begin();
+                 path_iter != paths_to_exec.end();
+                 ++path_iter) {
+                result = execute_file_contents(*path_iter, multiline);
+            }
+            retval = "Executed: " + script_name + " -- " + result;
+        }
+        else {
+            retval = "error: unknown script -- " + script_name;
+        }
+        lnav_data.ld_local_vars.pop();
+    }
+
+    return retval;
 }
 
 string execute_from_file(const string &path, int line_number, char mode, const string &cmdline)
@@ -322,7 +407,7 @@ string execute_from_file(const string &path, int line_number, char mode, const s
             retval = execute_sql(cmdline, alt_msg);
             break;
         case '|':
-            execute_file(cmdline);
+            retval = execute_file(cmdline);
             break;
         default:
             retval = execute_command(cmdline);
@@ -362,7 +447,7 @@ void execute_init_commands(vector<pair<string, string> > &msgs)
             msg = execute_sql(iter->substr(1), alt_msg);
             break;
         case '|':
-            execute_file(iter->substr(1));
+            msg = execute_file(iter->substr(1));
             break;
         }
 

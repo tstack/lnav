@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <wordexp.h>
 
 #include <sqlite3.h>
 
@@ -196,6 +197,27 @@ bool change_to_parent_dir(void)
     }
 
     return retval;
+}
+
+std::pair<std::string, std::string> split_path(const char *path, ssize_t len)
+{
+    ssize_t dir_len = len;
+
+    while (dir_len >= 0 && (path[dir_len] == '/' || path[dir_len] == '\\')) {
+        dir_len -= 1;
+    }
+
+    while (dir_len >= 0) {
+        if (path[dir_len] == '/' || path[dir_len] == '\\') {
+            return make_pair(string(path, dir_len),
+                             string(&path[dir_len + 1], len - dir_len));
+        }
+
+        dir_len -= 1;
+    }
+
+    return make_pair(path[0] == '/' ? "/" : ".",
+                     path[0] == '/' ? string(&path[1], len - 1) : string(path, len));
 }
 
 file_format_t detect_file_format(const std::string &filename)
@@ -586,4 +608,34 @@ bool read_file(const char *filename, string &out)
     }
 
     return false;
+}
+
+bool wordexperr(int rc, string &msg)
+{
+    switch (rc) {
+        case WRDE_BADCHAR:
+            msg = "error: invalid filename character";
+            return false;
+
+        case WRDE_CMDSUB:
+            msg = "error: command substitution is not allowed";
+            return false;
+
+        case WRDE_BADVAL:
+            msg = "error: unknown environment variable in file name";
+            return false;
+
+        case WRDE_NOSPACE:
+            msg = "error: out of memory";
+            return false;
+
+        case WRDE_SYNTAX:
+            msg = "error: invalid syntax";
+            return false;
+
+        default:
+            break;
+    }
+
+    return true;
 }

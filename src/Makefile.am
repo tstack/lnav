@@ -160,6 +160,7 @@ noinst_HEADERS = \
 	sequence_sink.hh \
 	session_data.hh \
 	shared_buffer.hh \
+	shlex.hh \
 	sql_util.hh \
 	sqlite-extension-func.h \
     status_controllers.hh \
@@ -244,6 +245,7 @@ libdiag_a_SOURCES = \
 	session_data.cc \
 	sequence_matcher.cc \
 	shared_buffer.cc \
+	shlex.cc \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
 	string-extension-functions.cc \

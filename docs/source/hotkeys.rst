@@ -117,6 +117,7 @@ Spatial Navigation
      - Next/previous bookmark
    * - |ks| o |ke|
      - |ks| Shift |ke| + |ks| o |ke|
+     -
      - Forward/backward through log messages with a matching "opid" field
    * - |ks| y |ke|
      - |ks| Shift |ke| + |ks| y |ke|
@@ -223,5 +224,7 @@ Query
      - Execute an SQL query
    * - |ks| : |ke|
      - Execute an internal command, see :ref:`commands` for more information
+   * - |ks| \| |ke|
+     - Execute an lnav script located in a format directory.
    * - |ks| Ctrl |ke| + |ks| ] |ke|
      - Abort a 

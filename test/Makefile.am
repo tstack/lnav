@@ -25,6 +25,7 @@ check_PROGRAMS = \
 	drive_logfile \
 	drive_mvwattrline \
 	drive_sequencer \
+	drive_shlexer \
 	drive_sql \
 	drive_view_colors \
 	drive_vt52_curses \
@@ -131,6 +132,9 @@ drive_logfile_LDADD = \
 drive_sequencer_SOURCES = drive_sequencer.cc
 drive_sequencer_LDADD = ../src/libdiag.a $(CURSES_LIB) $(SQLITE3_LIBS)
 
+drive_shlexer_SOURCES = drive_shlexer.cc
+drive_shlexer_LDADD = ../src/libdiag.a
+
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
 drive_data_scanner_LDADD = \
@@ -188,6 +192,7 @@ dist_noinst_SCRIPTS = \
 	test_logfile.sh \
 	test_mvwattrline.sh \
 	test_sessions.sh \
+	test_shlexer.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
 	test_sql_json_func.sh \
@@ -303,6 +308,7 @@ TESTS = \
 	test_pcrepp \
 	test_reltime \
 	test_sessions.sh \
+	test_shlexer.sh \
 	test_sql.sh \
 	test_sql_coll_func.sh \
 	test_sql_json_func.sh \

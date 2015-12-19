@@ -43,6 +43,7 @@
 #include "readline_possibilities.hh"
 #include "field_overlay_source.hh"
 #include "hotkeys.hh"
+#include "log_format_loader.hh"
 
 using namespace std;
 
@@ -939,6 +940,25 @@ void handle_paging_key(int ch)
                 ANSI_BOLD("CTRL+]") " to abort)");
             }
             break;
+
+        case '|': {
+            map<string, vector<string> > scripts;
+
+            lnav_data.ld_mode = LNM_EXEC;
+
+            lnav_data.ld_rl_view->clear_possibilities(LNM_EXEC, "__command");
+            find_format_scripts(lnav_data.ld_config_paths, scripts);
+            for (map<string, vector<string> >::iterator iter = scripts.begin();
+                 iter != scripts.end();
+                 ++iter) {
+                lnav_data.ld_rl_view->add_possibility(LNM_EXEC, "__command", iter->first);
+            }
+            lnav_data.ld_rl_view->focus(LNM_EXEC, "|");
+            lnav_data.ld_bottom_source.set_prompt(
+                    "Enter a script to execute: (Press "
+                            ANSI_BOLD("CTRL+]") " to abort)");
+            break;
+        }
 
         case 'p':
             if (tc == &lnav_data.ld_views[LNV_LOG]) {

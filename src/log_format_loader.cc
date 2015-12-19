@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <glob.h>
+#include <libgen.h>
 
 #include <map>
 #include <string>
@@ -730,5 +731,35 @@ void load_format_extra(sqlite3 *db,
          path_iter != extra_paths.end();
          ++path_iter) {
         exec_sql_in_path(db, *path_iter, errors);
+    }
+}
+
+static void find_format_in_path(const string &path,
+                                std::map<std::string, std::vector<std::string> > &scripts)
+{
+    string format_path = path + "/formats/*/*.lnav";
+    static_root_mem<glob_t, globfree> gl;
+
+    if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
+        for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
+            const char *filename = basename(gl->gl_pathv[lpc]);
+            string script_name = string(filename, strlen(filename) - 5);
+
+            scripts[script_name].push_back(gl->gl_pathv[lpc]);
+        }
+    }
+}
+
+void find_format_scripts(const std::vector<std::string> &extra_paths,
+                         std::map<std::string, std::vector<std::string> > &scripts)
+{
+    find_format_in_path("/etc/lnav", scripts);
+    find_format_in_path(SYSCONFDIR "/lnav", scripts);
+    find_format_in_path(dotlnav_path(""), scripts);
+
+    for (vector<string>::const_iterator path_iter = extra_paths.begin();
+         path_iter != extra_paths.end();
+         ++path_iter) {
+        find_format_in_path(*path_iter, scripts);
     }
 }

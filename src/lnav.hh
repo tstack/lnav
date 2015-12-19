@@ -70,6 +70,7 @@ typedef enum {
     LNM_SEARCH,
     LNM_CAPTURE,
     LNM_SQL,
+    LNM_EXEC,
 } ln_mode_t;
 
 enum {
@@ -251,6 +252,9 @@ struct _lnav_data {
     curl_looper ld_curl_looper;
 
     relative_time ld_last_relative_time;
+
+    std::stack<std::map<std::string, std::string> > ld_local_vars;
+    std::stack<std::string> ld_path_stack;
 };
 
 extern struct _lnav_data lnav_data;

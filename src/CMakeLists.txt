@@ -42,6 +42,7 @@ set(diag_STAT_SRCS
     session_data.cc
     sequence_matcher.cc
     shared_buffer.cc
+    shlex.cc
     sqlite-extension-func.c
     statusview_curses.cc
     string-extension-functions.cc
@@ -111,6 +112,7 @@ set(diag_STAT_SRCS
     readline_possibilities.hh
     relative_time.hh
     sequence_sink.hh
+    shlex.hh
     status_controllers.hh
     strong_int.hh
     sysclip.hh

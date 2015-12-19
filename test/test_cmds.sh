@@ -1,6 +1,31 @@
 #! /bin/bash
 
 run_test ${lnav_test} -n \
+    -c "|${test_dir}/toplevel.lnav 123 456" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "include toplevel.lnav" <<EOF
+EOF
+
+check_output "include toplevel.lnav" <<EOF
+toplevel here 123 456
+nested here nested.lnav abc
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+
+run_test ${lnav_test} -n \
+    -f "nonexistent.lnav" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "include nonexistent" <<EOF
+invalid command file: No such file or directory
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ":adjust-log-time 2010-01-01T00:00:00" \
     ${test_dir}/logfile_access_log.0
 
@@ -649,6 +674,45 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_output "hide-lines-after does not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+export XYZ="World"
+
+run_test ${lnav_test} -n \
+    -c ':echo Hello, $XYZ!' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "echo hello" <<EOF
+Hello, \$XYZ!
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+export XYZ="World"
+
+run_test ${lnav_test} -n \
+    -c ':echo -n Hello, ' \
+    -c ':echo World!' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "echo hello" <<EOF
+Hello, World!
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ':eval :echo Hello, $XYZ!' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "eval echo hello" <<EOF
+Hello, World!
 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"

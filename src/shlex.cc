@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,28 +26,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file log_format_loader.hh
+ * @file shlex.cc
  */
 
-#ifndef __log_format_loader_hh
-#define __log_format_loader_hh
+#include "config.h"
 
-#include <sqlite3.h>
-
-#include <vector>
-#include <string>
-
-std::vector<intern_string_t> load_format_file(
-        const std::string &filename, std::vector<std::string> &errors);
-
-void load_formats(const std::vector<std::string> &extra_paths,
-                  std::vector<std::string> &errors);
-
-void load_format_extra(sqlite3 *db,
-                       const std::vector<std::string> &extra_paths,
-                       std::vector<std::string> &errors);
-
-void find_format_scripts(const std::vector<std::string> &extra_paths,
-                         std::map<std::string, std::vector<std::string> > &scripts);
-
-#endif
+#include "shlex.hh"
