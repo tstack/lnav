@@ -33,7 +33,7 @@
 
 #include "relative_time.hh"
 
-struct {
+static struct {
     const char *reltime;
     const char *expected;
 } TEST_DATA[] = {
@@ -52,7 +52,7 @@ struct {
         { NULL, NULL }
 };
 
-struct {
+static struct {
     const char *reltime;
     const char *expected_error;
 } BAD_TEST_DATA[] = {
