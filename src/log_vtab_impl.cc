@@ -257,22 +257,18 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         vis_bookmarks &vb = vt->tc->get_bookmarks();
         bookmark_vector<vis_line_t> &bv = vb[&textview_curses::BM_PARTITION];
         bookmark_vector<vis_line_t>::iterator iter;
-        vis_line_t prev_line;
-        char part_name[64];
-        int index;
+        vis_line_t curr_line;
 
-        prev_line = vis_line_t(vc->log_cursor.lc_curr_line);
-        ++prev_line;
-        iter = lower_bound(bv.begin(), bv.end(), prev_line);
-        index = distance(bv.begin(), iter);
-        snprintf(part_name, sizeof(part_name), "p.%d", index);
+        curr_line = vis_line_t(vc->log_cursor.lc_curr_line);
+        iter = lower_bound(bv.begin(), bv.end(), curr_line);
 
-        if (iter == bv.begin()) {
-            sqlite3_result_text(ctx, part_name, strlen(part_name), SQLITE_TRANSIENT);
+        if (bv.empty() || (iter != bv.end() && curr_line < *iter)) {
+            sqlite3_result_null(ctx);
         }
         else {
-            --iter;
-
+            if (iter == bv.end() || *iter != curr_line) {
+                --iter;
+            }
             content_line_t part_line = vt->lss->at(*iter);
             std::map<content_line_t, bookmark_metadata> &bm_meta = vt->lss->get_user_bookmark_metadata();
             std::map<content_line_t, bookmark_metadata>::iterator meta_iter;
@@ -285,7 +281,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                     SQLITE_TRANSIENT);
             }
             else {
-                sqlite3_result_text(ctx, part_name, strlen(part_name), SQLITE_TRANSIENT);
+                sqlite3_result_null(ctx);
             }
         }
     }
@@ -595,7 +591,7 @@ static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
 static int vt_update(sqlite3_vtab *tab,
                      int argc,
                      sqlite3_value **argv,
-                     sqlite_int64 *rowid)
+                     sqlite_int64 *rowid_out)
 {
     vtab *vt = (vtab *)tab;
     int retval = SQLITE_READONLY;
@@ -604,6 +600,35 @@ static int vt_update(sqlite3_vtab *tab,
         sqlite3_value_int64(argv[0]) == sqlite3_value_int64(argv[1])) {
         int64_t rowid = sqlite3_value_int64(argv[0]) >> 8;
         int val = sqlite3_value_int(argv[2 + VT_COL_MARK]);
+        vis_line_t vrowid(rowid);
+
+        std::map<content_line_t, bookmark_metadata> &bm = vt->lss->get_user_bookmark_metadata();
+        const unsigned char *part_name = sqlite3_value_text(argv[2 + VT_COL_PARTITION]);
+
+        bookmark_vector<vis_line_t> &bv = vt->tc->get_bookmarks()[
+                &textview_curses::BM_PARTITION];
+        bookmark_vector<vis_line_t>::iterator part_iter;
+        bool set_name = false;
+
+        if ((part_iter = find(bv.begin(), bv.end(), vrowid)) != bv.end()) {
+            if (part_name == NULL) {
+                vt->tc->set_user_mark(&textview_curses::BM_PARTITION, vrowid, false);
+                bm.erase(vt->lss->at(vrowid));
+            }
+            else {
+                set_name = true;
+            }
+        }
+        else if (part_name != NULL) {
+            vt->tc->set_user_mark(&textview_curses::BM_PARTITION, vrowid, true);
+            set_name = true;
+        }
+
+        if (set_name) {
+            bookmark_metadata &line_meta = bm[vt->lss->at(vrowid)];
+
+            line_meta.bm_name = string((const char *) part_name);
+        }
 
         vt->tc->set_user_mark(&textview_curses::BM_USER, vis_line_t(rowid), val);
         rowid += 1;

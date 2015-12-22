@@ -338,7 +338,7 @@ check_output "write-json-to is not working" <<EOF
 [
     {
         "log_line": 0,
-        "log_part": "p.0",
+        "log_part": null,
         "log_time": "2009-07-20 22:59:26.000",
         "log_idle_msecs": 0,
         "log_level": "info",
@@ -356,7 +356,7 @@ check_output "write-json-to is not working" <<EOF
     },
     {
         "log_line": 1,
-        "log_part": "p.0",
+        "log_part": null,
         "log_time": "2009-07-20 22:59:29.000",
         "log_idle_msecs": 3000,
         "log_level": "error",
@@ -374,7 +374,7 @@ check_output "write-json-to is not working" <<EOF
     },
     {
         "log_line": 2,
-        "log_part": "p.0",
+        "log_part": null,
         "log_time": "2009-07-20 22:59:29.000",
         "log_idle_msecs": 0,
         "log_level": "info",

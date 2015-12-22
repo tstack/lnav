@@ -42,7 +42,7 @@ run_test ${lnav_test} -n \
 
 check_output "partition name was not saved in session" <<EOF
 log_line,log_part
-0,p.0
+0,<NULL>
 1,middle
 2,middle
 EOF

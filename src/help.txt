@@ -636,9 +636,11 @@ automatically be displayed after pressing the semicolon (;) key.
 All log tables contain at least the following columns:
 
     log_line        The line number in the file, starting at zero.
-    log_part        The name of the partition.  Use the 'partition-name'
-                    command to mark the start of a new partition in
-                    the log view.
+    log_part        The name of the partition.  You can change this
+                    column using an UPDATE SQL statement or with the
+                    'partition-name' command.  After a value is set,
+                    the following log messages will have the same
+                    partition name up until another name is set.
     log_time        The time of the log entry.
     log_idle_msecs  The amount of time, in milliseconds, between the
                     current log message and the previous one.

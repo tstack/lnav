@@ -140,6 +140,8 @@ struct hash_updater {
 
 std::string hash_string(const std::string &str);
 
+std::string hash_bytes(const char *str1, size_t s1len, ...);
+
 template<typename UnaryFunction, typename Member>
 struct object_field_t {
     object_field_t(UnaryFunction &func, Member &mem)

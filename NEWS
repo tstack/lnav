@@ -20,6 +20,7 @@ lnav v0.8.1:
        query after performing environment variable substitution.
      * Added an ":echo" command that can be useful for scripts to message
        the user.
+     * The "log_part" column can now be set with an SQL UPDATE statement.
 
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log

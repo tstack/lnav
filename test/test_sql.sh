@@ -4,6 +4,48 @@ lnav_test="${top_builddir}/src/lnav-test"
 
 
 run_test ${lnav_test} -n \
+    -c ";update access_log set log_part = 'middle' where log_line = 1" \
+    -c ';select * from access_log' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "setting log_part is not working" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,middle,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,middle,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";update access_log set log_part = 'middle' where log_line = 1" \
+    -c ";update access_log set log_part = NULL where log_line = 1" \
+    -c ';select * from access_log' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "setting log_part is not working" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,<NULL>,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";update access_log set log_part = 'middle' where log_line = 1" \
+    -c ";update access_log set log_part = NULL where log_line = 2" \
+    -c ';select * from access_log' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "setting log_part is not working" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,middle,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,middle,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+EOF
+
+
+run_test ${lnav_test} -n \
     -I "${top_srcdir}/test" \
     -c ";select * from web_status" \
     -c ':write-csv-to -' \
@@ -23,9 +65,9 @@ run_test ${lnav_test} -n \
 
 check_output "access_log table is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-0,p.0,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
-1,p.0,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
-2,p.0,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,<NULL>,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
 EOF
 
 
@@ -36,7 +78,7 @@ run_test ${lnav_test} -n \
 
 check_output "loglevel collator is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-1,p.0,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
 EOF
 
 
@@ -49,10 +91,10 @@ run_test ${lnav_test} -n \
 
 check_output "syslog_log table is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname
-0,p.0,2013-11-03 09:23:38.000,0,error,0,veridian,7998,automount
-1,p.0,2013-11-03 09:23:38.000,0,info,0,veridian,16442,automount
-2,p.0,2013-11-03 09:23:38.000,0,error,0,veridian,7999,automount
-3,p.0,2013-11-03 09:47:02.000,1404000,info,0,veridian,<NULL>,sudo
+0,<NULL>,2013-11-03 09:23:38.000,0,error,0,veridian,7998,automount
+1,<NULL>,2013-11-03 09:23:38.000,0,info,0,veridian,16442,automount
+2,<NULL>,2013-11-03 09:23:38.000,0,error,0,veridian,7999,automount
+3,<NULL>,2013-11-03 09:47:02.000,1404000,info,0,veridian,<NULL>,sudo
 EOF
 
 
@@ -63,7 +105,7 @@ run_test ${lnav_test} -n \
 
 check_output "log_time collation is wrong" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname
-3,p.0,2013-11-03 09:47:02.000,1404000,info,0,veridian,<NULL>,sudo
+3,<NULL>,2013-11-03 09:47:02.000,1404000,info,0,veridian,<NULL>,sudo
 EOF
 
 
@@ -75,7 +117,7 @@ run_test ${lnav_test} -n \
 
 check_output "logline table is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
-0,p.0,2013-11-03 09:47:02.000,0,info,0,veridian,<NULL>,sudo,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
+0,<NULL>,2013-11-03 09:47:02.000,0,info,0,veridian,<NULL>,sudo,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
 EOF
 
 
@@ -87,7 +129,7 @@ run_test ${lnav_test} -n \
 
 check_output "logline table is not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,log_msg_instance,col_0
-1,p.0,2006-12-03 09:23:38.000,0,info,0,veridian,16442,automount,0,/auto/opt
+1,<NULL>,2006-12-03 09:23:38.000,0,info,0,veridian,16442,automount,0,/auto/opt
 EOF
 
 
@@ -348,7 +390,7 @@ run_test ${lnav_test} -n \
 
 check_output "partition-name does not work" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-0,p.0,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
 1,middle,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
 2,middle,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
 EOF
@@ -364,9 +406,9 @@ run_test ${lnav_test} -n \
 
 check_output "clear-partition does not work" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-0,p.0,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
-1,p.0,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
-2,p.0,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,<NULL>,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
 EOF
 
 run_test ${lnav_test} -n \
@@ -380,9 +422,9 @@ run_test ${lnav_test} -n \
 
 check_output "clear-partition does not work when in the middle of a part" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-0,p.0,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
-1,p.0,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
-2,p.0,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
+2,<NULL>,2009-07-20 22:59:29.000,0,info,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
 EOF
 
 
@@ -395,7 +437,7 @@ check_output "" <<EOF
 [
     {
         "log_line": 0,
-        "log_part": "p.0",
+        "log_part": null,
         "log_time": "2014-06-15 01:04:52.000",
         "log_idle_msecs": 0,
         "log_level": "info",
@@ -413,7 +455,7 @@ check_output "" <<EOF
     },
     {
         "log_line": 1,
-        "log_part": "p.0",
+        "log_part": null,
         "log_time": "2014-06-15 01:04:52.000",
         "log_idle_msecs": 0,
         "log_level": "trace",
@@ -473,9 +515,9 @@ cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
 
 check_output "querying against stdin is not working?" <<EOF
 log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_pid log_procname
-       0 p.0      2015-11-03 09:23:38.000              0 error            0 veridian     7998    automount
-       1 p.0      2015-11-03 09:23:38.000              0 info             0 veridian     16442   automount
-       2 p.0      2015-11-03 09:23:38.000              0 error            0 veridian     7999    automount
+       0 <NULL>      2015-11-03 09:23:38.000              0 error            0 veridian     7998    automount
+       1 <NULL>      2015-11-03 09:23:38.000              0 info             0 veridian     16442   automount
+       2 <NULL>      2015-11-03 09:23:38.000              0 error            0 veridian     7999    automount
 EOF
 
 
@@ -484,7 +526,7 @@ cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
 
 check_output "single result is not working?" <<EOF
 log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_pid log_procname
-       3 p.0      2015-11-03 09:47:02.000        1404000 info             0 veridian      <NULL> sudo
+       3 <NULL>      2015-11-03 09:47:02.000        1404000 info             0 veridian      <NULL> sudo
 EOF
 
 # Create a dummy database for the next couple of tests to consume.
@@ -533,7 +575,7 @@ run_test ${lnav_test} -n \
 
 check_output "access_log not found within syslog file" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-1,p.0,2015-03-24 14:02:50.000,6927348000,info,0,127.0.0.1,GET,<NULL>,<NULL>,/includes/js/combined-javascript.js,<NULL>,-,HTTP/1.1,65508,200
+1,<NULL>,2015-03-24 14:02:50.000,6927348000,info,0,127.0.0.1,GET,<NULL>,<NULL>,/includes/js/combined-javascript.js,<NULL>,-,HTTP/1.1,65508,200
 EOF
 
 

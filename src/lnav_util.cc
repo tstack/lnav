@@ -71,6 +71,31 @@ std::string hash_string(const std::string &str)
     return hash.to_string();
 }
 
+std::string hash_bytes(const char *str1, size_t s1len, ...)
+{
+    byte_array<2, uint64> hash;
+    SpookyHash context;
+    va_list args;
+
+    va_start(args, s1len);
+
+    context.Init(0, 0);
+    while (str1 != NULL) {
+        context.Update(str1, s1len);
+
+        str1 = va_arg(args, const char *);
+        if (str1 == NULL) {
+            break;
+        }
+        s1len = va_arg(args, size_t);
+    }
+    context.Final(hash.out(0), hash.out(1));
+
+    va_end(args);
+
+    return hash.to_string();
+}
+
 size_t unquote(char *dst, const char *str, size_t len)
 {
     if (str[0] == 'r' || str[0] == 'u') {

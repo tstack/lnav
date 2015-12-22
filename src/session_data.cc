@@ -129,7 +129,11 @@ static bool bind_line(sqlite3 *db,
         return false;
     }
 
-    std::string line_hash = hash_string(lf->read_line(line_iter));
+    shared_buffer_ref sbr;
+    lf->read_line(line_iter, sbr);
+    std::string line_hash = hash_bytes(sbr.get_data(), sbr.length(),
+                                       &cl, sizeof(cl),
+                                       NULL);
 
     if (sqlite3_bind_text(stmt, 3,
                           line_hash.c_str(), line_hash.length(),
@@ -475,9 +479,14 @@ static void load_time_bookmarks(void)
                         break;
                     }
 
-                    lf->read_line(line_iter, line);
+                    shared_buffer_ref sbr;
+                    content_line_t cl = content_line_t(std::distance(lf->begin(), line_iter));
+                    lf->read_line(line_iter, sbr);
 
-                    string line_hash = hash_string(line);
+                    string line_hash = hash_bytes(sbr.get_data(), sbr.length(),
+                                                  &cl, sizeof(cl),
+                                                  NULL);
+
                     if (line_hash == log_hash) {
                         content_line_t line_cl = content_line_t(
                             base_content_line + std::distance(lf->begin(), line_iter));
@@ -1326,6 +1335,10 @@ void reset_session(void)
 
         lf->clear_time_offset();
     }
+
+    lnav_data.ld_log_source.clear_min_max_log_times();
+
+    lnav_data.ld_log_source.get_user_bookmark_metadata().clear();
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         textview_curses &tc = lnav_data.ld_views[lpc];
