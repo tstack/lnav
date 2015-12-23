@@ -142,17 +142,9 @@ public:
     bool read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
         throw (error);
 
-    /**
-     * Signal that the contents of the internal buffer have been modified and
-     * any attempts to re-read the currently cached line(s) should trigger
-     * another read from the file.
-     */
-    void invalidate()
+    void clear()
     {
-        this->lb_file_offset += this->lb_buffer_size;
         this->lb_buffer_size  = 0;
-        this->lb_file_size    = -1;
-        log_info("invalidate %p", this);
     };
 
     /** Release any resources held by this object. */

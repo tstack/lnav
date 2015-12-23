@@ -268,6 +268,19 @@ throw (line_buffer::error, logfile::error)
                 this->lf_index.pop_back();
             }
             this->lf_index.pop_back();
+
+            this->lf_line_buffer.clear();
+            if (!this->lf_index.empty()) {
+                off_t check_line_off = this->lf_index.back().get_offset();
+
+                if (!this->lf_line_buffer.read_line(check_line_off, sbr, &lv) ||
+                        off != check_line_off) {
+                    log_info("overwritten file detected, closing -- %s",
+                             this->lf_filename.c_str());
+                    this->close();
+                    return false;
+                }
+            }
         }
         else {
             off = 0;

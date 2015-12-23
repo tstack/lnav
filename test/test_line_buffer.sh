@@ -1,5 +1,20 @@
 #! /bin/bash
 
+cp ${test_dir}/logfile_access_log.1 logfile_changed.0
+chmod u+w logfile_changed.0
+run_test ${lnav_test} -n \
+    -c ":rebuild" \
+    -c ":shexec head -1 ${test_dir}/logfile_access_log.0 > logfile_changed.0" \
+    -c ":rebuild" \
+    logfile_changed.0
+
+check_error_output "line buffer cache flush" <<EOF
+EOF
+
+check_output "line buffer cache flush is not working" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+EOF
+
 run_test ./drive_line_buffer "${top_srcdir}/src/line_buffer.hh"
 
 check_output "Line buffer output doesn't match input?" < \

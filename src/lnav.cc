@@ -1923,6 +1923,13 @@ static void looper(void)
                             HELP_MSG_2(f, F,
                                     "to switch to the next/previous file"));
                 }
+                if (lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_TEXT] &&
+                    lnav_data.ld_text_source.text_line_count() == 0 &&
+                    lnav_data.ld_log_source.text_line_count() > 0) {
+                    textview_curses *tc_log = &lnav_data.ld_views[LNV_LOG];
+                    lnav_data.ld_view_stack.pop();
+                    lnav_data.ld_views[LNV_LOG].set_top(tc_log->get_top_for_last_row());
+                }
                 if (!initial_build &&
                         lnav_data.ld_log_source.text_line_count() == 0 &&
                         !lnav_data.ld_other_files.empty()) {

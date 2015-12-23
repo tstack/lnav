@@ -341,6 +341,7 @@ DISTCLEANFILES = \
 	*.bz2 \
 	truncfile.0 \
 	logfile_append.0 \
+	logfile_changed.0 \
 	test.log \
 	logfile_stdin.log \
 	logfile_syslog.0 \
