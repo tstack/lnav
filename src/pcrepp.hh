@@ -87,6 +87,10 @@ public:
             }
         };
 
+        bool contains(int pos) const {
+            return this->c_begin <= pos && pos < this->c_end;
+        };
+
         bool is_valid() const { return this->c_begin != -1; };
 
         int length() const { return this->c_end - this->c_begin; };

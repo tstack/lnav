@@ -1647,6 +1647,7 @@ static void looper(void)
         sql_context
                 .set_highlighter(readline_sqlite_highlighter)
                 .set_quote_chars("\"");
+        exec_context.set_highlighter(readline_shlex_highlighter);
 
         listview_curses::action::broadcaster &sb =
             lnav_data.ld_scroll_broadcaster;

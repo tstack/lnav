@@ -11,12 +11,27 @@ ref ^--^
 eval -- bar
 EOF
 
+run_test ./drive_shlexer '${FOO}'
+
+check_output "var ref" <<EOF
+    \${FOO}
+qrf ^----^
+eval -- bar
+EOF
+
 run_test ./drive_shlexer '\a'
 
 check_output "escape" <<EOF
     \a
 esc ^^
 eval -- a
+EOF
+
+run_test ./drive_shlexer '\'
+
+check_output "error" <<EOF
+    \\
+err ^
 EOF
 
 run_test ./drive_shlexer "'abc'"
@@ -37,12 +52,40 @@ den     ^
 eval -- def
 EOF
 
+run_test ./drive_shlexer '"'"'"'"'
+
+check_output "double with single" <<EOF
+    "'"
+dst ^
+den   ^
+eval -- '
+EOF
+
+run_test ./drive_shlexer "'"'"'"'"
+
+check_output "single with double" <<EOF
+    '"'
+sst ^
+sen   ^
+eval -- "
+EOF
+
 run_test ./drive_shlexer '"abc $DEF 123"'
 
 check_output "double w/ref" <<EOF
     "abc \$DEF 123"
 dst ^
 ref      ^--^
+den              ^
+eval -- abc xyz 123
+EOF
+
+run_test ./drive_shlexer '"abc ${DEF} 123"'
+
+check_output "double w/ref" <<EOF
+    "abc \${DEF} 123"
+dst ^
+qrf      ^----^
 den              ^
 eval -- abc xyz 123
 EOF

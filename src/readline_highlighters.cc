@@ -33,6 +33,9 @@
 
 #include "pcrepp.hh"
 #include "sql_util.hh"
+#include "shlex.hh"
+#include "lnav_util.hh"
+
 #include "readline_highlighters.hh"
 
 using namespace std;
@@ -349,7 +352,8 @@ void readline_regex_highlighter(attr_line_t &al, int x)
 
 void readline_command_highlighter(attr_line_t &al, int x)
 {
-    static const pcrepp PREFIXES("^:(filter-in|filter-out|highlight|graph)");
+    static const pcrepp RE_PREFIXES("^:(filter-in|filter-out|highlight|graph)");
+    static const pcrepp SH_PREFIXES("^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
     static int keyword_attrs = (
             A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));
 
@@ -365,8 +369,12 @@ void readline_command_highlighter(attr_line_t &al, int x)
                 &view_curses::VC_STYLE,
                 keyword_attrs));
     }
-    if (PREFIXES.match(pc, pi)) {
+    if (RE_PREFIXES.match(pc, pi)) {
         readline_regex_highlighter_int(al, x, 1 + pc[0]->length());
+    }
+    pi.reset(line);
+    if (SH_PREFIXES.match(pc, pi)) {
+        readline_shlex_highlighter(al, x);
     }
 }
 
@@ -481,5 +489,80 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
 
     for (int lpc = 0; brackets[lpc]; lpc++) {
         find_matching_bracket(al, x, brackets[lpc][0], brackets[lpc][1]);
+    }
+}
+
+void readline_shlex_highlighter(attr_line_t &al, int x)
+{
+    static int special_char = (
+            A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));
+    static int error_attrs = (
+            A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK));
+    static int string_attrs = (
+            view_colors::ansi_color_pair(COLOR_GREEN, COLOR_BLACK));
+
+    view_colors &vc = view_colors::singleton();
+    const string &str = al.get_string();
+    pcre_context::capture_t cap;
+    shlex_token_t token;
+    int quote_start = -1;
+    shlex lexer(trim(str));
+
+    while (lexer.tokenize(cap, token)) {
+        switch (token) {
+            case ST_ERROR:
+                al.with_attr(string_attr(
+                        line_range(cap.c_begin, cap.c_end),
+                        &view_curses::VC_STYLE,
+                        error_attrs));
+                break;
+            case ST_ESCAPE:
+                al.with_attr(string_attr(
+                        line_range(cap.c_begin, cap.c_end),
+                        &view_curses::VC_STYLE,
+                        special_char));
+                break;
+            case ST_DOUBLE_QUOTE_START:
+            case ST_SINGLE_QUOTE_START:
+                quote_start = cap.c_begin;
+                break;
+            case ST_DOUBLE_QUOTE_END:
+            case ST_SINGLE_QUOTE_END:
+                al.with_attr(string_attr(
+                        line_range(quote_start, cap.c_end),
+                        &view_curses::VC_STYLE,
+                        string_attrs));
+                quote_start = -1;
+                break;
+            case ST_VARIABLE_REF:
+            case ST_QUOTED_VARIABLE_REF: {
+                int extra = token == ST_VARIABLE_REF ? 0 : 1;
+                string ident = str.substr(cap.c_begin + 1 + extra, cap.length() - 1 - extra * 2);
+                int attrs = vc.attrs_for_ident(ident.c_str(), ident.size());
+
+                al.with_attr(string_attr(
+                        line_range(cap.c_begin, cap.c_begin + 1 + extra),
+                        &view_curses::VC_STYLE,
+                        special_char));
+                al.with_attr(string_attr(
+                        line_range(cap.c_begin + 1 + extra, cap.c_end - extra),
+                        &view_curses::VC_STYLE,
+                        x == cap.c_end || cap.contains(x) ? special_char : attrs));
+                if (extra) {
+                    al.with_attr(string_attr(
+                            line_range(cap.c_end - 1, cap.c_end),
+                            &view_curses::VC_STYLE,
+                            special_char));
+                }
+                break;
+            }
+        }
+    }
+
+    if (quote_start != -1) {
+        al.with_attr(string_attr(
+                line_range(quote_start, quote_start + 1),
+                &view_curses::VC_STYLE,
+                error_attrs));
     }
 }

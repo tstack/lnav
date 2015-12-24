@@ -43,6 +43,7 @@ const char *ST_TOKEN_NAMES[] = {
         "sst",
         "sen",
         "ref",
+        "qrf",
 };
 
 int main(int argc, char *argv[])
