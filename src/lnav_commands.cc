@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-#include <wordexp.h>
 #include <sys/stat.h>
 
 #include <string>
@@ -459,15 +458,13 @@ static string com_save_to(string cmdline, vector<string> &args)
 
     fn = trim(remaining_args(cmdline, args));
 
-    static_root_mem<wordexp_t, wordfree> wordmem;
+    vector<string> split_args;
+    shlex lexer(fn);
 
-    int rc = wordexp(fn.c_str(), wordmem.inout(), WRDE_NOCMD | WRDE_UNDEF);
-
-    if (!wordexperr(rc, retval)) {
-        return retval;
+    if (!lexer.split(split_args, lnav_data.ld_local_vars.top())) {
+        return "error: unable to parse arguments";
     }
-
-    if (wordmem->we_wordc > 1) {
+    if (split_args.size() > 1) {
         return "error: more than one file name was matched";
     }
 
@@ -495,7 +492,7 @@ static string com_save_to(string cmdline, vector<string> &args)
         }
     }
 
-    if (strcmp(wordmem->we_wordv[0], "-") == 0) {
+    if (split_args[0] == "-") {
         outfile = stdout;
         if (lnav_data.ld_flags & LNF_HEADLESS) {
             lnav_data.ld_stdout_used = true;
@@ -515,8 +512,8 @@ static string com_save_to(string cmdline, vector<string> &args)
                     args[0].c_str());
         }
     }
-    else if ((outfile = fopen(wordmem->we_wordv[0], mode)) == NULL) {
-        return "error: unable to open file -- " + string(wordmem->we_wordv[0]);
+    else if ((outfile = fopen(split_args[0].c_str(), mode)) == NULL) {
+        return "error: unable to open file -- " + split_args[0];
     }
 
     if (args[0] == "write-csv-to") {
@@ -1306,7 +1303,7 @@ static string com_open(string cmdline, vector<string> &args)
         return retval;
     }
 
-    static_root_mem<wordexp_t, wordfree> wordmem;
+    vector<string> word_exp;
     list<logfile *>::iterator file_iter;
     size_t colon_index;
     int top = 0;
@@ -1314,14 +1311,15 @@ static string com_open(string cmdline, vector<string> &args)
 
     pat = trim(remaining_args(cmdline, args));
 
-    int rc = wordexp(pat.c_str(), wordmem.inout(), WRDE_NOCMD | WRDE_UNDEF);
+    vector<string> split_args;
+    shlex lexer(pat);
 
-    if (!wordexperr(rc, retval)) {
-        return retval;
+    if (!lexer.split(split_args, lnav_data.ld_local_vars.top())) {
+        return "error: unable to parse arguments";
     }
 
-    for (size_t lpc = 0; lpc < wordmem->we_wordc; lpc++) {
-        string fn = wordmem->we_wordv[lpc];
+    for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
+        string fn = split_args[lpc];
 
         if (startswith(fn, "pt:")) {
             lnav_data.ld_pt_search = fn;

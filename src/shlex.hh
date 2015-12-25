@@ -38,6 +38,7 @@
 
 enum shlex_token_t {
     ST_ERROR,
+    ST_WHITESPACE,
     ST_ESCAPE,
     ST_DOUBLE_QUOTE_START,
     ST_DOUBLE_QUOTE_END,
@@ -45,6 +46,7 @@ enum shlex_token_t {
     ST_SINGLE_QUOTE_END,
     ST_VARIABLE_REF,
     ST_QUOTED_VARIABLE_REF,
+    ST_TILDE,
 };
 
 class shlex {
@@ -126,6 +128,33 @@ public:
                             break;
                     }
                     break;
+                case '~':
+                    switch (this->s_state) {
+                        case STATE_NORMAL:
+                            cap_out.c_begin = this->s_index;
+                            this->s_index += 1;
+                            cap_out.c_end = this->s_index;
+                            token_out = ST_TILDE;
+                            return true;
+                        default:
+                            break;
+                    }
+                    break;
+                case ' ':
+                case '\t':
+                    switch (this->s_state) {
+                        case STATE_NORMAL:
+                            cap_out.c_begin = this->s_index;
+                            while (isspace(this->s_str[this->s_index])) {
+                                this->s_index += 1;
+                            }
+                            cap_out.c_end = this->s_index;
+                            token_out = ST_WHITESPACE;
+                            return true;
+                        default:
+                            break;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -151,6 +180,9 @@ public:
                 case ST_ESCAPE:
                     result.append(1, this->s_str[cap.c_begin + 1]);
                     break;
+                case ST_WHITESPACE:
+                    result.append(&this->s_str[cap.c_begin], cap.length());
+                    break;
                 case ST_VARIABLE_REF:
                 case ST_QUOTED_VARIABLE_REF: {
                     int extra = token == ST_VARIABLE_REF ? 0 : 1;
@@ -166,6 +198,17 @@ public:
                     }
                     break;
                 }
+                case ST_TILDE: {
+                    const char *home_dir = getenv("HOME");
+
+                    if (home_dir != NULL) {
+                        result.append(home_dir);
+                    }
+                    else {
+                        result.append("~");
+                    }
+                    break;
+                }
                 default:
                     break;
             }
@@ -176,6 +219,74 @@ public:
 
         return true;
     };
+
+    bool split(std::vector<std::string> &result, const std::map<std::string, std::string> &vars) {
+        result.clear();
+
+        pcre_context::capture_t cap;
+        shlex_token_t token;
+        int last_index = 0;
+        bool start_new = true;
+
+        while (isspace(this->s_str[this->s_index])) {
+            this->s_index += 1;
+        }
+        while (this->tokenize(cap, token)) {
+            if (start_new) {
+                result.push_back("");
+                start_new = false;
+            }
+            result.back().append(&this->s_str[last_index], cap.c_begin - last_index);
+            switch (token) {
+                case ST_ERROR:
+                    return false;
+                case ST_ESCAPE:
+                    result.back().append(1, this->s_str[cap.c_begin + 1]);
+                    break;
+                case ST_WHITESPACE:
+                    start_new = true;
+                    break;
+                case ST_VARIABLE_REF:
+                case ST_QUOTED_VARIABLE_REF: {
+                    int extra = token == ST_VARIABLE_REF ? 0 : 1;
+                    std::string var_name(&this->s_str[cap.c_begin + 1 + extra], cap.length() - 1 - extra * 2);
+                    std::map<std::string, std::string>::const_iterator local_var;
+                    const char *var_value = getenv(var_name.c_str());
+
+                    if ((local_var = vars.find(var_name)) != vars.end()) {
+                        result.back().append(local_var->second);
+                    }
+                    else if (var_value != NULL) {
+                        result.back().append(var_value);
+                    }
+                    break;
+                }
+                case ST_TILDE: {
+                    const char *home_dir = getenv("HOME");
+
+                    if (home_dir != NULL) {
+                        result.back().append(home_dir);
+                    }
+                    else {
+                        result.back().append("~");
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+            last_index = cap.c_end;
+        }
+
+        if (last_index < this->s_len) {
+            if (start_new || result.empty()) {
+                result.push_back("");
+            }
+            result.back().append(&this->s_str[last_index], this->s_len - last_index);
+        }
+
+        return true;
+    }
 
     void reset() {
         this->s_index = 0;

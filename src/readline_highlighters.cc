@@ -516,6 +516,7 @@ void readline_shlex_highlighter(attr_line_t &al, int x)
                         &view_curses::VC_STYLE,
                         error_attrs));
                 break;
+            case ST_TILDE:
             case ST_ESCAPE:
                 al.with_attr(string_attr(
                         line_range(cap.c_begin, cap.c_end),
@@ -556,6 +557,8 @@ void readline_shlex_highlighter(attr_line_t &al, int x)
                 }
                 break;
             }
+            case ST_WHITESPACE:
+                break;
         }
     }
 

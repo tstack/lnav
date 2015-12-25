@@ -37,6 +37,7 @@ using namespace std;
 
 const char *ST_TOKEN_NAMES[] = {
         "err",
+        "wsp",
         "esc",
         "dst",
         "den",
@@ -44,6 +45,7 @@ const char *ST_TOKEN_NAMES[] = {
         "sen",
         "ref",
         "qrf",
+        "til",
 };
 
 int main(int argc, char *argv[])
@@ -83,6 +85,14 @@ int main(int argc, char *argv[])
     std::string result;
     if (lexer.eval(result, map<string, string>())) {
         printf("eval -- %s\n", result.c_str());
+    }
+    lexer.reset();
+    std::vector<std::string> sresult;
+    if (lexer.split(sresult, map<string, string>())) {
+        printf("split:\n");
+        for (int lpc = 0; lpc < sresult.size(); lpc++) {
+            printf("  %d -- %s\n", lpc, sresult[lpc].c_str());
+        }
     }
 
     return EXIT_SUCCESS;

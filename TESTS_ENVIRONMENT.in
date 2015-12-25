@@ -91,6 +91,17 @@ check_output() {
     test_num=`expr ${test_num} \+ 1`
 }
 
+check_output_ws() {
+    diff -u - ${test_file_base}_${test_num}.tmp > ${test_file_base}_${test_num}.diff
+    if test $? -ne 0; then
+        echo $LAST_TEST
+        echo $1
+        cat ${test_file_base}_${test_num}.diff
+	    exit 1
+    fi
+    test_num=`expr ${test_num} \+ 1`
+}
+
 test_err_filename() {
     echo ${test_file_base}_${test_num}.err
 }

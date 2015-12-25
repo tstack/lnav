@@ -37,6 +37,7 @@
 #include "pcrecpp.h"
 #include "lnav.hh"
 #include "log_format_loader.hh"
+#include "shlex.hh"
 
 #include "command_executor.hh"
 
@@ -328,35 +329,32 @@ string execute_file(const string &path_and_args, bool multiline)
 {
     map<string, vector<string> > scripts;
     map<string, vector<string> >::iterator iter;
-    static_root_mem<wordexp_t, wordfree> wordmem;
+    vector<string> split_args;
     string msg, retval;
+    shlex lexer(path_and_args);
 
     log_info("Executing file: %s", path_and_args.c_str());
 
-    int exp_rc = wordexp(path_and_args.c_str(),
-                         wordmem.inout(),
-                         WRDE_NOCMD | WRDE_UNDEF);
-
-    if (!wordexperr(exp_rc, msg)) {
-        retval = msg;
+    if (!lexer.split(split_args, lnav_data.ld_local_vars.top())) {
+        retval = "error: unable to parse path";
     }
-    else if (wordmem->we_wordc == 0) {
+    else if (split_args.empty()) {
         retval = "error: no script specified";
     }
     else {
         lnav_data.ld_local_vars.push(map<string, string>());
 
-        string script_name = wordmem->we_wordv[0];
+        string script_name = split_args[0];
         map<string, string> &vars = lnav_data.ld_local_vars.top();
         char env_arg_name[32];
         string result, open_error = "file not found";
 
-        snprintf(env_arg_name, sizeof(env_arg_name), "%d", (int) wordmem->we_wordc - 1);
+        snprintf(env_arg_name, sizeof(env_arg_name), "%d", (int) split_args.size() - 1);
 
         vars["#"] = env_arg_name;
-        for (unsigned int lpc = 0; lpc < wordmem->we_wordc; lpc++) {
+        for (unsigned int lpc = 0; lpc < split_args.size(); lpc++) {
             snprintf(env_arg_name, sizeof(env_arg_name), "%d", lpc);
-            vars[env_arg_name] = wordmem->we_wordv[lpc];
+            vars[env_arg_name] = split_args[lpc];
         }
 
         vector<string> paths_to_exec;

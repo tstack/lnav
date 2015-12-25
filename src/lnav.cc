@@ -1925,7 +1925,7 @@ static void looper(void)
                                     "to switch to the next/previous file"));
                 }
                 if (lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_TEXT] &&
-                    lnav_data.ld_text_source.text_line_count() == 0 &&
+                    lnav_data.ld_text_source.empty() &&
                     lnav_data.ld_log_source.text_line_count() > 0) {
                     textview_curses *tc_log = &lnav_data.ld_views[LNV_LOG];
                     lnav_data.ld_view_stack.pop();
