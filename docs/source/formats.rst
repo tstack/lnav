@@ -28,9 +28,9 @@ subdirectories of the :file:`~/.lnav/formats/` directory.  The directories and
 files can be named anything you like, but the files must have the '.json' suffix.  A
 sample file containing the builtin configuration will be written to this
 directory when **lnav** starts up.  You can consult that file when writing your
-own formats or if you need to modify existing ones.  Any '.sql' files found in
-the directories will also be executed on startup, allowing you to create views
-or other tables that might make it easier to analyze a log format.
+own formats or if you need to modify existing ones.  Format directories can
+also contain '.sql' and '.lnav' script files that can be used automate log file
+analysis.
 
 The contents of the format configuration should be a JSON object with a field
 for each format defined by the file.  Each field name should be the symbolic
@@ -193,6 +193,36 @@ with the following contents::
             ]
         }
     }
+
+
+Scripts
+-------
+
+Format directories may also contain '.sql' and '.lnav' files to help automate
+log file analysis.  The SQL files are executed on startup to create any helper
+tables or views and the '.lnav' script files can be executed using the pipe
+hotkey (|).  For example, **lnav** includes a "partition-by-boot" script that
+partitions the log view based on boot messages from the Linux kernel.  A script
+can have a mix of SQL and **lnav** commands, as well as include other scripts.
+The type of statement to execute is determined by the leading character on a
+line: a semi-colon begins a SQL statement; a colon starts an **lnav** command;
+and a pipe (|) denotes another script to be executed.  Lines beginning with a
+hash are treated as comments.  Any arguments passed to a script can be
+referenced using '$N' where 'N' is the index of the argument.  Remember that
+you need to use the ':eval' command (see :ref:`misc-cmd`) when referencing
+variables in most **lnav** commands.  Scripts can provide help text to be
+displayed during interactive usage by adding the following tags in a comment
+header:
+
+  :@synopsis: The synopsis should contain the name of the script and any
+    parameters to be passed.  For example::
+
+    # @synopsis: hello-world <name1> [<name2> ... <nameN>]
+
+  :@description: A one-line description of what the script does.  For example::
+
+    # @description: Say hello to the given names.
+
 
 Installing Formats
 ------------------

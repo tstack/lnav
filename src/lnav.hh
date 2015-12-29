@@ -62,6 +62,7 @@
 #include "curl_looper.hh"
 #include "papertrail_proc.hh"
 #include "relative_time.hh"
+#include "log_format_loader.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -255,6 +256,8 @@ struct _lnav_data {
 
     std::stack<std::map<std::string, std::string> > ld_local_vars;
     std::stack<std::string> ld_path_stack;
+
+    std::map<std::string, std::vector<script_metadata> > ld_scripts;
 };
 
 extern struct _lnav_data lnav_data;

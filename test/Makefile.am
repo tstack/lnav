@@ -124,6 +124,7 @@ drive_logfile_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	../src/dump-pid-sh.o \
+	../src/partition-by-boot.o \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
@@ -141,6 +142,7 @@ drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	../src/dump-pid-sh.o \
+	../src/partition-by-boot.o \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \
 	-lpcrecpp \

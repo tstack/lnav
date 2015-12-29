@@ -29,6 +29,9 @@ default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
 init-sql.c: bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
 
+%.c: %.lnav bin2c
+	$(BIN2C_V)./bin2c -z -c $< $@
+
 TIME_FORMATS = \
     "%Y-%m-%d %H:%M:%S" \
     "%Y-%m-%d %H:%M" \
@@ -91,7 +94,8 @@ LDADD = \
 
 dist_noinst_DATA = \
 	default-log-formats.json \
-	dump-pid.sh
+	dump-pid.sh \
+	partition-by-boot.lnav
 
 noinst_HEADERS = \
 	all_logs_vtab.hh \
@@ -289,7 +293,8 @@ TEXT2C_FILES = \
 	dump-pid-sh.o \
 	help.o \
 	init-sql.o \
-	default-log-formats-json.o
+	default-log-formats-json.o \
+	partition-by-boot.o
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = \

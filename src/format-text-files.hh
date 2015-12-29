@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2013-2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -34,5 +34,7 @@
 
 extern "C" {
 extern const char dump_pid_sh[];
+extern const char partition_by_boot_lnav[];
 }
+
 #endif

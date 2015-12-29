@@ -942,17 +942,19 @@ void handle_paging_key(int ch)
             break;
 
         case '|': {
-            map<string, vector<string> > scripts;
+            map<string, vector<script_metadata> > &scripts = lnav_data.ld_scripts;
 
             lnav_data.ld_mode = LNM_EXEC;
 
             lnav_data.ld_rl_view->clear_possibilities(LNM_EXEC, "__command");
             find_format_scripts(lnav_data.ld_config_paths, scripts);
-            for (map<string, vector<string> >::iterator iter = scripts.begin();
+            for (map<string, vector<script_metadata> >::iterator iter = scripts.begin();
                  iter != scripts.end();
                  ++iter) {
                 lnav_data.ld_rl_view->add_possibility(LNM_EXEC, "__command", iter->first);
             }
+            add_view_text_possibilities(LNM_EXEC, "*", tc);
+            add_env_possibilities(LNM_EXEC);
             lnav_data.ld_rl_view->focus(LNM_EXEC, "|");
             lnav_data.ld_bottom_source.set_prompt(
                     "Enter a script to execute: (Press "

@@ -35,6 +35,7 @@
 #include <fcntl.h>
 #include <glob.h>
 #include <libgen.h>
+#include <sys/stat.h>
 
 #include <map>
 #include <string>
@@ -48,11 +49,15 @@
 #include "format-text-files.hh"
 #include "default-log-formats-json.hh"
 
+#include "log_format_loader.hh"
+
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/usr/etc"
 #endif
 
 using namespace std;
+
+static void extract_metadata(const char *contents, size_t len, struct script_metadata &meta_out);
 
 static map<intern_string_t, external_log_format *> LOG_FORMATS;
 
@@ -469,6 +474,37 @@ static void write_sample_file(void)
     else {
         write(sh_fd.get(), dump_pid_sh, strlen(dump_pid_sh));
     }
+
+    static const char *SCRIPTS[] = {
+            partition_by_boot_lnav,
+            NULL
+    };
+
+
+    for (int lpc = 0; SCRIPTS[lpc]; lpc++) {
+        struct script_metadata meta;
+        const char *script_content = SCRIPTS[lpc];
+        string script_path;
+        auto_fd script_fd;
+        char path[2048];
+        size_t script_len;
+        struct stat st;
+
+        script_len = strlen(script_content);
+        extract_metadata(script_content, script_len, meta);
+        snprintf(path, sizeof(path), "formats/default/%s.lnav", meta.sm_name.c_str());
+        script_path = dotlnav_path(path);
+        if (stat(script_path.c_str(), &st) == 0 && st.st_size == script_len) {
+            // Assume it's the right contents and move on...
+            continue;
+        }
+        if ((script_fd = open(script_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1) {
+            perror("error: unable to write default text file");
+        }
+        else {
+            write(script_fd.get(), script_content, script_len);
+        }
+    }
 }
 
 std::vector<intern_string_t> load_format_file(const string &filename, std::vector<string> &errors)
@@ -734,8 +770,48 @@ void load_format_extra(sqlite3 *db,
     }
 }
 
+static void extract_metadata(const char *contents, size_t len, struct script_metadata &meta_out)
+{
+    static const pcrepp SYNO_RE("^#\\s+@synopsis:(.*)$", PCRE_MULTILINE);
+    static const pcrepp DESC_RE("^#\\s+@description:(.*)$", PCRE_MULTILINE);
+
+    pcre_input pi(contents, 0, len);
+    pcre_context_static<16> pc;
+
+    pi.reset(contents, 0, len);
+    if (SYNO_RE.match(pc, pi)) {
+        meta_out.sm_synopsis = trim(pi.get_substr(pc[0]));
+    }
+    pi.reset(contents, 0, len);
+    if (DESC_RE.match(pc, pi)) {
+        meta_out.sm_description = trim(pi.get_substr(pc[0]));
+    }
+
+    if (!meta_out.sm_synopsis.empty()) {
+        ssize_t space = meta_out.sm_synopsis.find(' ');
+
+        if (space == string::npos) {
+            space = meta_out.sm_synopsis.size();
+        }
+        meta_out.sm_name = meta_out.sm_synopsis.substr(0, space);
+    }
+}
+
+void extract_metadata_from_file(struct script_metadata &meta_inout)
+{
+    char buffer[8 * 1024];
+    auto_mem<FILE> fp(fclose);
+
+    if ((fp = fopen(meta_inout.sm_path.c_str(), "r")) != NULL) {
+        size_t len;
+
+        len = fread(buffer, 1, sizeof(buffer), fp.in());
+        extract_metadata(buffer, len, meta_inout);
+    }
+}
+
 static void find_format_in_path(const string &path,
-                                std::map<std::string, std::vector<std::string> > &scripts)
+                                map<string, vector<script_metadata> > &scripts)
 {
     string format_path = path + "/formats/*/*.lnav";
     static_root_mem<glob_t, globfree> gl;
@@ -744,14 +820,18 @@ static void find_format_in_path(const string &path,
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             const char *filename = basename(gl->gl_pathv[lpc]);
             string script_name = string(filename, strlen(filename) - 5);
+            struct script_metadata meta;
 
-            scripts[script_name].push_back(gl->gl_pathv[lpc]);
+            meta.sm_path = gl->gl_pathv[lpc];
+            meta.sm_name = script_name;
+            extract_metadata_from_file(meta);
+            scripts[script_name].push_back(meta);
         }
     }
 }
 
-void find_format_scripts(const std::vector<std::string> &extra_paths,
-                         std::map<std::string, std::vector<std::string> > &scripts)
+void find_format_scripts(const vector<string> &extra_paths,
+                         map<string, vector<script_metadata> > &scripts)
 {
     find_format_in_path("/etc/lnav", scripts);
     find_format_in_path(SYSCONFDIR "/lnav", scripts);

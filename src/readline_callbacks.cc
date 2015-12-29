@@ -79,6 +79,29 @@ void rl_change(void *dummy, readline_curses *rc)
             }
             break;
         }
+        case LNM_EXEC: {
+            string line = rc->get_line_buffer();
+            size_t name_end = line.find(' ');
+            string script_name = line.substr(0, name_end);
+            map<string, vector<script_metadata> > &scripts = lnav_data.ld_scripts;
+            map<string, vector<script_metadata> >::iterator iter;
+
+            if ((iter = scripts.find(script_name)) == scripts.end() ||
+                    iter->second[0].sm_description.empty()) {
+                lnav_data.ld_bottom_source.set_prompt(
+                        "Enter a script to execute: " ABORT_MSG);
+            }
+            else {
+                struct script_metadata &meta = iter->second[0];
+                char help_text[1024];
+
+                snprintf(help_text, sizeof(help_text),
+                         ANSI_BOLD("%s") " -- %s   " ABORT_MSG,
+                         meta.sm_synopsis.c_str(),
+                         meta.sm_description.c_str());
+                lnav_data.ld_bottom_source.set_prompt(help_text);
+            }
+        }
         default:
             break;
     }
@@ -174,6 +197,7 @@ void rl_abort(void *dummy, readline_curses *rc)
     default:
         break;
     }
+    lnav_data.ld_rl_view->set_value("");
     lnav_data.ld_mode = LNM_PAGING;
 }
 

@@ -47,7 +47,16 @@ void load_format_extra(sqlite3 *db,
                        const std::vector<std::string> &extra_paths,
                        std::vector<std::string> &errors);
 
+struct script_metadata {
+    std::string sm_path;
+    std::string sm_name;
+    std::string sm_synopsis;
+    std::string sm_description;
+};
+
+void extract_metadata_from_file(struct script_metadata &meta_inout);
+
 void find_format_scripts(const std::vector<std::string> &extra_paths,
-                         std::map<std::string, std::vector<std::string> > &scripts);
+                         std::map<std::string, std::vector<script_metadata> > &scripts);
 
 #endif

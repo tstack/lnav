@@ -222,7 +222,7 @@ string execute_sql(const string &sql, string &alt_msg)
                     dls.dls_rows.size() == 1) {
                 string row;
 
-                dls.text_value_for_line(lnav_data.ld_views[LNV_DB], 1, row, true);
+                dls.text_value_for_line(lnav_data.ld_views[LNV_DB], 0, row, true);
                 retval = "SQL Result: " + row;
             }
             else {
@@ -327,8 +327,8 @@ static string execute_file_contents(const string &path, bool multiline)
 
 string execute_file(const string &path_and_args, bool multiline)
 {
-    map<string, vector<string> > scripts;
-    map<string, vector<string> >::iterator iter;
+    map<string, vector<script_metadata> > scripts;
+    map<string, vector<script_metadata> >::iterator iter;
     vector<string> split_args;
     string msg, retval;
     shlex lexer(path_and_args);
@@ -357,14 +357,18 @@ string execute_file(const string &path_and_args, bool multiline)
             vars[env_arg_name] = split_args[lpc];
         }
 
-        vector<string> paths_to_exec;
+        vector<script_metadata> paths_to_exec;
 
         find_format_scripts(lnav_data.ld_config_paths, scripts);
         if ((iter = scripts.find(script_name)) != scripts.end()) {
             paths_to_exec = iter->second;
         }
         if (access(script_name.c_str(), R_OK) == 0) {
-            paths_to_exec.push_back(script_name);
+            struct script_metadata meta;
+
+            meta.sm_path = script_name;
+            extract_metadata_from_file(meta);
+            paths_to_exec.push_back(meta);
         }
         else if (errno != ENOENT) {
             open_error = strerror(errno);
@@ -373,7 +377,11 @@ string execute_file(const string &path_and_args, bool multiline)
             string local_path = lnav_data.ld_path_stack.top() + "/" + script_name;
 
             if (access(local_path.c_str(), R_OK) == 0) {
-                paths_to_exec.push_back(local_path);
+                struct script_metadata meta;
+
+                meta.sm_path = local_path;
+                extract_metadata_from_file(meta);
+                paths_to_exec.push_back(meta);
             }
             else if (errno != ENOENT) {
                 open_error = strerror(errno);
@@ -381,10 +389,10 @@ string execute_file(const string &path_and_args, bool multiline)
         }
 
         if (!paths_to_exec.empty()) {
-            for (vector<string>::iterator path_iter = paths_to_exec.begin();
+            for (vector<script_metadata>::iterator path_iter = paths_to_exec.begin();
                  path_iter != paths_to_exec.end();
                  ++path_iter) {
-                result = execute_file_contents(*path_iter, multiline);
+                result = execute_file_contents(path_iter->sm_path, multiline);
             }
             retval = "Executed: " + script_name + " -- " + result;
         }

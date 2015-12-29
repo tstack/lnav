@@ -101,6 +101,7 @@ Output
 * pipe-line-to <shell-cmd> - Pipe the top line in the current view to a shell
   command and open the output in lnav.
 
+.. _misc-cmd:
 
 Miscellaneous
 -------------

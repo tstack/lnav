@@ -265,13 +265,14 @@ char **readline_context::attempted_completion(const char *text,
 {
     char **retval = NULL;
 
-    if (loaded_context->rc_possibilities.find("*") !=
-        loaded_context->rc_possibilities.end()) {
-        arg_possibilities = &loaded_context->rc_possibilities["*"];
+    if (start == 0 && loaded_context->rc_possibilities.find("__command") !=
+            loaded_context->rc_possibilities.end()) {
+        arg_possibilities = &loaded_context->rc_possibilities["__command"];
         rl_completion_append_character = loaded_context->rc_append_character;
     }
-    else if (start == 0) {
-        arg_possibilities = &loaded_context->rc_possibilities["__command"];
+    else if (loaded_context->rc_possibilities.find("*") !=
+        loaded_context->rc_possibilities.end()) {
+        arg_possibilities = &loaded_context->rc_possibilities["*"];
         rl_completion_append_character = loaded_context->rc_append_character;
     }
     else {

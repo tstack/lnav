@@ -140,7 +140,8 @@ void add_text_possibilities(int context, const string &type, const std::string &
 
         switch (context) {
             case LNM_SEARCH:
-            case LNM_COMMAND: {
+            case LNM_COMMAND:
+            case LNM_EXEC: {
                 string token_value, token_value_no_dot;
 
                 token_value_no_dot = token_value =
