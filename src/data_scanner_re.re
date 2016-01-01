@@ -145,7 +145,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        [a-zA-Z0-9]+"://"[^\x00\r\n\t '"\[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
        ("/"|"./"|"../")[a-zA-Z0-9_\.\-\~/!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
-       (SPACE|NUM)NUM":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
+       (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
        [0-9a-fA-F][0-9a-fA-F](":"[0-9a-fA-F][0-9a-fA-F])+ {
            if ((YYCURSOR - pi.get_string()) == 17) {
                RET(DT_MAC_ADDRESS);
