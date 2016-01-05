@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2015, Timothy Stack
  *
  * All rights reserved.
  *
@@ -32,6 +32,81 @@
 #include "config.h"
 
 #include "yajlpp.hh"
+
+using namespace std;
+
+int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    const json_path_handler_base *jph = ypc->ypc_current_handler;
+
+    ptrdiff_t offset = (char *) jph->jph_simple_offset - (char *) NULL;
+    char *root_ptr = (char *) ypc->ypc_simple_data;
+    string *field_ptr = (string *) (root_ptr + offset);
+
+    (*field_ptr) = string((const char *) str, len);
+
+    return 1;
+}
+
+yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
+                                         const json_path_handler_base &jph,
+                                         yajl_gen handle)
+{
+    ptrdiff_t offset = (char *) jph.jph_simple_offset - (char *) NULL;
+    char *default_ptr = (char *) ygc.ygc_default_data;
+    char *root_ptr = (char *) ygc.ygc_simple_data;
+    string *default_field_ptr = (string *) (default_ptr + offset);
+    string *field_ptr = (string *) (root_ptr + offset);
+
+    if (default_ptr != NULL && (*default_field_ptr == *field_ptr)) {
+        return yajl_gen_status_ok;
+    }
+
+    if (ygc.ygc_depth) {
+        yajl_gen_string(handle, jph.jph_path);
+    }
+    return yajl_gen_string(handle, *field_ptr);
+}
+
+yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen handle) const
+{
+    if (this->jph_children) {
+        int start = this->jph_path[0] == '^' ? 1 : 0;
+        int start_depth = ygc.ygc_depth;
+
+        for (int lpc = start; this->jph_path[lpc]; lpc++) {
+            if (this->jph_path[lpc] == '/') {
+                if (lpc > start) {
+                    yajl_gen_pstring(handle,
+                                     &this->jph_path[start],
+                                     lpc - start);
+                    yajl_gen_map_open(handle);
+                    ygc.ygc_depth += 1;
+                }
+                start = lpc + 1;
+            }
+        }
+
+        for (int lpc = 0; this->jph_children[lpc].jph_path[0]; lpc++) {
+            json_path_handler_base &jph = this->jph_children[lpc];
+            yajl_gen_status status = jph.gen(ygc, handle);
+
+            if (status != yajl_gen_status_ok) {
+                return status;
+            }
+        }
+
+        while (ygc.ygc_depth > start_depth) {
+            yajl_gen_map_close(handle);
+            ygc.ygc_depth -= 1;
+        }
+    }
+    else if (this->jph_gen_callback != NULL) {
+        return this->jph_gen_callback(ygc, *this, handle);
+    }
+
+    return yajl_gen_status_ok;
+};
 
 int yajlpp_parse_context::map_start(void *ctx)
 {
@@ -76,8 +151,10 @@ int yajlpp_parse_context::map_key(void *ctx,
     return retval;
 }
 
-void yajlpp_parse_context::update_callbacks(void)
+void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_handlers)
 {
+    const json_path_handler_base *handlers = orig_handlers;
+
     if (this->ypc_handlers == NULL) {
         return;
     }
@@ -86,12 +163,49 @@ void yajlpp_parse_context::update_callbacks(void)
 
     this->ypc_callbacks = DEFAULT_CALLBACKS;
 
-    for (int lpc = 0; this->ypc_handlers[lpc].jph_path[0]; lpc++) {
-        const json_path_handler &jph = this->ypc_handlers[lpc];
+    if (handlers == NULL) {
+        handlers = this->ypc_handlers;
+    }
 
-        pi.reset(&this->ypc_path[0], 0, this->ypc_path.size() - 1);
+    if (!this->ypc_active_paths.empty()) {
+        string curr_path(&this->ypc_path[0], this->ypc_path.size() - 1);
+
+        if (this->ypc_active_paths.find(curr_path) ==
+            this->ypc_active_paths.end()) {
+            return;
+        }
+    }
+
+    for (int lpc = 0; handlers[lpc].jph_path[0]; lpc++) {
+        const json_path_handler_base &jph = handlers[lpc];
+        int child_start = 0;
+
+        if (orig_handlers != NULL) {
+            child_start = this->ypc_pcre_context.all()->c_end;
+        }
+
+        pi.reset(&this->ypc_path[child_start],
+                 0,
+                 this->ypc_path.size() - 1 - child_start);
 
         if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
+            pcre_context::capture_t *cap = this->ypc_pcre_context.all();
+
+            if (jph.jph_children) {
+                if (this->ypc_path[cap->c_end - 1] != '/') {
+                    continue;
+                }
+
+                this->update_callbacks(jph.jph_children);
+            }
+            else {
+                if (child_start + cap->c_end != this->ypc_path.size() - 1) {
+                    continue;
+                }
+
+                this->ypc_current_handler = &jph;
+            }
+
             if (jph.jph_callbacks.yajl_null != NULL)
                 this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
             if (jph.jph_callbacks.yajl_boolean != NULL)

@@ -515,9 +515,9 @@ cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
 
 check_output "querying against stdin is not working?" <<EOF
 log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_pid log_procname
-       0 <NULL>      2015-11-03 09:23:38.000              0 error            0 veridian     7998    automount
-       1 <NULL>      2015-11-03 09:23:38.000              0 info             0 veridian     16442   automount
-       2 <NULL>      2015-11-03 09:23:38.000              0 error            0 veridian     7999    automount
+       0 <NULL>      2016-11-03 09:23:38.000              0 error            0 veridian     7998    automount
+       1 <NULL>      2016-11-03 09:23:38.000              0 info             0 veridian     16442   automount
+       2 <NULL>      2016-11-03 09:23:38.000              0 error            0 veridian     7999    automount
 EOF
 
 
@@ -526,7 +526,7 @@ cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
 
 check_output "single result is not working?" <<EOF
 log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_pid log_procname
-       3 <NULL>      2015-11-03 09:47:02.000        1404000 info             0 veridian      <NULL> sudo
+       3 <NULL>      2016-11-03 09:47:02.000        1404000 info             0 veridian      <NULL> sudo
 EOF
 
 # Create a dummy database for the next couple of tests to consume.

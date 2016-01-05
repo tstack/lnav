@@ -51,6 +51,7 @@
 #include "relative_time.hh"
 #include "log_search_table.hh"
 #include "shlex.hh"
+#include "yajl/api/yajl_parse.h"
 
 using namespace std;
 
@@ -2176,6 +2177,102 @@ static string com_eval(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_config(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a configuration option to read or write";
+
+    if (args.empty()) {
+        args.push_back("config-option");
+    }
+    else if (args.size() > 1) {
+        yajlpp_parse_context ypc("input", lnav_config_handlers);
+        string option = args[1];
+
+        ypc.set_path(option)
+                .with_obj(lnav_config);
+        ypc.update_callbacks();
+
+        if (ypc.ypc_current_handler != NULL) {
+            if (args.size() == 2) {
+                auto_mem<yajl_gen_t> handle(yajl_gen_free);
+
+                handle = yajl_gen_alloc(NULL);
+
+                const json_path_handler_base *jph = ypc.ypc_current_handler;
+                yajlpp_gen_context ygc(handle, lnav_config_handlers);
+                ygc.with_obj(lnav_config);
+
+                jph->gen(ygc, handle);
+
+                const unsigned char *buffer;
+                size_t len;
+
+                yajl_gen_get_buf(handle, &buffer, &len);
+
+                retval = "info: " + option + " = " + string((char *) buffer, len);
+            }
+            else {
+                string value = remaining_args(cmdline, args, 2);
+
+                ypc.ypc_callbacks.yajl_string(
+                        &ypc, (const unsigned char *) value.c_str(), value.size());
+                retval = "info: changed config option -- " + option;
+            }
+        }
+        else {
+            retval = "error: unknown configuration option -- " + option;
+        }
+    }
+
+    return retval;
+}
+
+static string com_save_config(string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+    }
+    else {
+        retval = save_config();
+    }
+
+    return retval;
+}
+
+static string com_reset_config(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a configuration option to reset";
+
+    if (args.empty()) {
+        args.push_back("config-option");
+    }
+    else {
+        yajlpp_parse_context ypc("input", lnav_config_handlers);
+        string option = args[1];
+
+        ypc.set_path(option)
+                .with_obj(lnav_config);
+        ypc.ypc_active_paths.insert(option);
+        ypc.update_callbacks();
+
+        if (option == "*" || ypc.ypc_current_handler != NULL) {
+            reset_config(option);
+            if (option == "*") {
+                retval = "info: reset all options";
+            }
+            else {
+                retval = "info: reset option";
+            }
+        }
+        else {
+            retval = "error: unknown configuration option -- " + option;
+        }
+    }
+
+    return retval;
+}
+
 readline_context::command_t STD_COMMANDS[] = {
     {
         "adjust-log-time",
@@ -2463,6 +2560,24 @@ readline_context::command_t STD_COMMANDS[] = {
         "<msg>",
         "Evaluate the given command/query after doing environment variable substitution",
         com_eval,
+    },
+    {
+        "config",
+        "<option> [<value>]",
+        "Read or write a configuration option",
+        com_config,
+    },
+    {
+        "save-config",
+        NULL,
+        "Save the current configuration state",
+        com_save_config,
+    },
+    {
+        "reset-config",
+        "<option>",
+        "Reset the configuration option to its default value",
+        com_reset_config,
     },
 
     { NULL },

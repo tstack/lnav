@@ -26,6 +26,9 @@ dump-pid-sh.c: $(srcdir)/dump-pid.sh bin2c
 default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/default-log-formats.json $@
 
+default-config-json.c: $(srcdir)/default-config.json bin2c
+	$(BIN2C_V)./bin2c -z -c $(srcdir)/default-config.json $@
+
 init-sql.c: bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
 
@@ -94,6 +97,7 @@ LDADD = \
 
 dist_noinst_DATA = \
 	default-log-formats.json \
+	default-config.json \
 	dump-pid.sh \
 	partition-by-boot.lnav
 
@@ -294,6 +298,7 @@ TEXT2C_FILES = \
 	help.o \
 	init-sql.o \
 	default-log-formats-json.o \
+	default-config-json.o \
 	partition-by-boot.o
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
@@ -318,6 +323,7 @@ DISTCLEANFILES = \
 	help.c \
 	init-sql.c \
 	default-log-formats-json.c \
+	default-config-json.c \
     time_fmts.cc
 
 uncrusty:

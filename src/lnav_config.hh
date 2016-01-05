@@ -33,6 +33,9 @@
 #define _lnav_config_hh
 
 #include <string>
+#include <vector>
+
+#include "yajlpp.hh"
 
 /**
  * Compute the path to a file in the user's '.lnav' directory.
@@ -62,5 +65,21 @@ void ensure_dotlnav(void);
 void install_git_format(const char *repo);
 
 void install_extra_formats();
+
+struct _lnav_config {
+    std::string lc_ui_clock_format;
+};
+
+extern struct _lnav_config lnav_config;
+
+extern struct json_path_handler lnav_config_handlers[];
+extern json_schema lnav_config_schema;
+
+void load_config(const std::vector<std::string> &extra_paths,
+                 std::vector<std::string> &errors);
+
+void reset_config(const std::string &path);
+
+std::string save_config();
 
 #endif

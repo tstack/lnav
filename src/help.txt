@@ -597,6 +597,16 @@ COMMANDS
                     Set/get the maximum time range for any papertrail queries.
                     Absolute or relative time values can be specified.
 
+  config <option> [value]
+                    Set/get the value of a configuration option.
+
+  reset-config <option>
+                    Reset a configuration option to the default value.  Use
+                    '*' to reset all options.
+
+  save-config       Save the current configuration state to:
+                        ~/.lnav/config.json
+
 
 SQL QUERIES (experimental)
 -----------

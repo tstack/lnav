@@ -113,3 +113,17 @@ Miscellaneous
   environment variable substitution.  The argument to *eval* must start with a
   colon, semi-colon, or pipe character to signify whether the argument is a
   command, SQL query, or a script to be executed, respectively.
+
+Configuration
+-------------
+
+* conifg <option> - Get the current value of a configuration option.
+* config <option> <value> - Set the value of a configuration option.
+* reset-config <option> - Reset a configuration option to the default.
+* save-config - Save the current configuration to ~/.lnav/config.json.
+
+The following options are available:
+
+* /ui/clock-format - Specifies the date-time format of the clock in the
+  top-left corner of the UI.  The format conversion specifiers are the same as
+  in strftime(3).

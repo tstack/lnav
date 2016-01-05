@@ -32,6 +32,7 @@
 
 #include <string>
 
+#include "lnav_config.hh"
 #include "logfile_sub_source.hh"
 #include "statusview_curses.hh"
 
@@ -92,7 +93,7 @@ public:
         char          buffer[32];
 
         strftime(buffer, sizeof(buffer),
-                 "%a %b %d %H:%M:%S %Z",
+                 lnav_config.lc_ui_clock_format.c_str(),
                  localtime(&current_time));
         sf.set_value(buffer);
     };

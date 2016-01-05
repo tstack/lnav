@@ -77,16 +77,12 @@ string execute_from_file(const string &path, int line_number, char mode, const s
 
 string execute_command(const string &cmdline)
 {
-    stringstream ss(cmdline);
-
     vector<string> args;
-    string         buf, msg;
+    string         msg;
 
     log_info("Executing: %s", cmdline.c_str());
 
-    while (ss >> buf) {
-        args.push_back(buf);
-    }
+    split_ws(cmdline, args);
 
     if (args.size() > 0) {
         readline_context::command_map_t::iterator iter;

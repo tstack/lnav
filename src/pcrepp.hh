@@ -332,8 +332,8 @@ public:
         this->study();
     };
 
-    pcrepp(const char *pattern, int options =
-               0) : p_code_extra(pcre_free_study)
+    pcrepp(const char *pattern, int options = 0)
+            : p_code_extra(pcre_free_study)
     {
         const char *errptr;
         int         eoff;
@@ -349,6 +349,25 @@ public:
         pcre_refcount(this->p_code, 1);
         this->study();
         this->find_captures(pattern);
+    };
+
+    pcrepp(const std::string &pattern, int options = 0)
+            : p_code_extra(pcre_free_study)
+    {
+        const char *errptr;
+        int         eoff;
+
+        if ((this->p_code = pcre_compile(pattern.c_str(),
+                                         options,
+                                         &errptr,
+                                         &eoff,
+                                         NULL)) == NULL) {
+            throw error(errptr, eoff);
+        }
+
+        pcre_refcount(this->p_code, 1);
+        this->study();
+        this->find_captures(pattern.c_str());
     };
 
     pcrepp(const pcrepp &other)

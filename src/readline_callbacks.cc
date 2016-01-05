@@ -49,15 +49,40 @@ void rl_change(void *dummy, readline_curses *rc)
     switch (lnav_data.ld_mode) {
         case LNM_COMMAND: {
             string line = rc->get_line_buffer();
-            size_t name_end = line.find(' ');
-            string cmd_name = line.substr(0, name_end);
-            readline_context::command_map_t::iterator iter;
+            vector<string> args;
+            readline_context::command_map_t::iterator iter = lnav_commands.end();
 
-            iter = lnav_commands.find(cmd_name);
+            split_ws(line, args);
+
+            if (!args.empty()) {
+                iter = lnav_commands.find(args[0]);
+            }
             if (iter == lnav_commands.end() ||
                 iter->second.c_description == NULL) {
                 lnav_data.ld_bottom_source.set_prompt(
                         "Enter an lnav command: " ABORT_MSG);
+                lnav_data.ld_bottom_source.grep_error("");
+            }
+            else if (args[0] == "config" && args.size() > 1) {
+                json_schema::path_to_handler_t::iterator path_iter;
+
+                path_iter = lnav_config_schema.js_path_to_handler.find(args[1]);
+                if (path_iter != lnav_config_schema.js_path_to_handler.end()) {
+                    const json_path_handler_base *jph = path_iter->second;
+                    char help_text[1024];
+
+                    snprintf(help_text, sizeof(help_text),
+                             ANSI_BOLD("%s %s") " -- %s    " ABORT_MSG,
+                             jph->jph_path,
+                             jph->jph_synopsis,
+                             jph->jph_description);
+                    lnav_data.ld_bottom_source.set_prompt(help_text);
+                    lnav_data.ld_bottom_source.grep_error("");
+                }
+                else {
+                    lnav_data.ld_bottom_source.grep_error(
+                            "Unknown configuration option: " + args[1]);
+                }
             }
             else {
                 readline_context::command_t &cmd = iter->second;
@@ -76,6 +101,7 @@ void rl_change(void *dummy, readline_curses *rc)
                          cmd.c_description);
 
                 lnav_data.ld_bottom_source.set_prompt(help_text);
+                lnav_data.ld_bottom_source.grep_error("");
             }
             break;
         }

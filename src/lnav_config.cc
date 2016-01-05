@@ -52,6 +52,13 @@ using namespace std;
 
 static const int MAX_CRASH_LOG_COUNT = 16;
 
+extern "C" {
+extern const char default_config_json[];
+}
+
+struct _lnav_config lnav_config;
+static struct _lnav_config lnav_default_config;
+
 string dotlnav_path(const char *sub)
 {
     string retval;
@@ -164,7 +171,7 @@ static int read_repo_path(yajlpp_parse_context *ypc, const unsigned char *str, s
 }
 
 static struct json_path_handler format_handlers[] = {
-    json_path_handler("^/format-repos#$", read_repo_path),
+    json_path_handler("/format-repos#", read_repo_path),
 
     json_path_handler()
 };
@@ -214,6 +221,180 @@ void install_extra_formats()
                 return;
             }
         }
-        yajl_complete_parse(jhandle);
+        if (yajl_complete_parse(jhandle) != yajl_status_ok) {
+            fprintf(stderr, "Unable to parse remote-config.json -- %s",
+                    yajl_get_error(jhandle, 1, buffer, rc));
+        }
     }
+}
+
+struct userdata {
+    userdata(vector<string> &errors) : ud_errors(errors) {};
+
+    vector<string> &ud_errors;
+};
+
+static struct json_path_handler ui_handlers[] = {
+        json_path_handler("clock-format")
+                .with_synopsis("<format>")
+                .with_description(
+                        "Set the format for the clock displayed in "
+                        "the top-left corner using strftime(3) conversions")
+                .for_field(&nullobj<_lnav_config>()->lc_ui_clock_format),
+
+        json_path_handler()
+};
+
+struct json_path_handler lnav_config_handlers[] = {
+        json_path_handler("/ui/")
+                .with_children(ui_handlers),
+
+        json_path_handler()
+};
+
+json_schema lnav_config_schema(lnav_config_handlers);
+
+static void load_config_from(const string &path, vector<string> &errors)
+{
+    yajlpp_parse_context ypc(path, lnav_config_handlers);
+    struct userdata ud(errors);
+    auto_fd fd;
+
+    ypc.with_obj(lnav_config);
+    ypc.ypc_userdata = &ud;
+    if ((fd = open(path.c_str(), O_RDONLY)) == -1) {
+        if (errno != ENOENT) {
+            char errmsg[1024];
+
+            snprintf(errmsg, sizeof(errmsg),
+                     "error: unable to open format file -- %s",
+                     path.c_str());
+            errors.push_back(errmsg);
+        }
+    }
+    else {
+        auto_mem<yajl_handle_t> handle(yajl_free);
+        char buffer[2048];
+        off_t offset = 0;
+        ssize_t rc = -1;
+
+        handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+        yajl_config(handle, yajl_allow_comments, 1);
+        while (true) {
+            rc = read(fd, buffer, sizeof(buffer));
+            if (rc == 0) {
+                break;
+            }
+            else if (rc == -1) {
+                errors.push_back(path +
+                                 ":unable to read file -- " +
+                                 string(strerror(errno)));
+                break;
+            }
+            if (yajl_parse(handle, (const unsigned char *)buffer, rc) != yajl_status_ok) {
+                errors.push_back(path +
+                                 ": invalid json -- " +
+                                 string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
+                break;
+            }
+            offset += rc;
+        }
+        if (rc == 0) {
+            if (yajl_complete_parse(handle) != yajl_status_ok) {
+                errors.push_back(path +
+                                 ": invalid json -- " +
+                                 string((char *)yajl_get_error(handle, 0, NULL, 0)));
+            }
+        }
+    }
+}
+
+static void load_default_config(yajlpp_parse_context &ypc_builtin,
+                                struct _lnav_config &config_obj,
+                                vector<string> &errors)
+{
+    auto_mem<yajl_handle_t> handle(yajl_free);
+    struct userdata ud(errors);
+
+    handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
+    ypc_builtin.with_obj(config_obj);
+    ypc_builtin.ypc_userdata = &ud;
+    yajl_config(handle, yajl_allow_comments, 1);
+    if (yajl_parse(handle,
+                   (const unsigned char *)default_config_json,
+                   strlen(default_config_json)) != yajl_status_ok) {
+        errors.push_back("builtin: invalid json -- " +
+                         string((char *)yajl_get_error(handle, 1, (unsigned char *)default_config_json, strlen(default_config_json))));
+    }
+    yajl_complete_parse(handle);
+}
+
+void load_config(const vector<string> &extra_paths, vector<string> &errors)
+{
+    yajlpp_parse_context ypc_builtin("builtin", lnav_config_handlers);
+    string user_config = dotlnav_path("config.json");
+
+    load_default_config(ypc_builtin, lnav_config, errors);
+    load_default_config(ypc_builtin, lnav_default_config, errors);
+    load_config_from(user_config, errors);
+}
+
+void reset_config(const std::string &path)
+{
+    yajlpp_parse_context ypc_builtin("builtin", lnav_config_handlers);
+    vector<string> errors;
+
+    if (path != "*") {
+        ypc_builtin.ypc_active_paths.insert(path);
+    }
+
+    load_default_config(ypc_builtin, lnav_config, errors);
+}
+
+string save_config()
+{
+    auto_mem<yajl_gen_t> handle(yajl_gen_free);
+
+    if ((handle = yajl_gen_alloc(NULL)) == NULL) {
+        return "error: Unable to create yajl_gen_object";
+    }
+    else {
+        char filename[128];
+
+        snprintf(filename, sizeof(filename), "config.json.%d.tmp", getpid());
+
+        string user_config_tmp = dotlnav_path(filename);
+        string user_config = dotlnav_path("config.json");
+
+        yajl_gen_config(handle, yajl_gen_beautify, true);
+
+        yajlpp_gen_context ygc(handle, lnav_config_handlers);
+        vector<string> errors;
+
+        ygc.with_default_obj(lnav_default_config)
+                .with_obj(lnav_config);
+        ygc.gen();
+
+        const unsigned char *buffer;
+        size_t len;
+
+        yajl_gen_get_buf(handle, &buffer, &len);
+
+        {
+            auto_fd fd;
+
+            if ((fd = open(user_config_tmp.c_str(),
+                           O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
+                return "error: unable to save configuration -- " +
+                       string(strerror(errno));
+            }
+            else {
+                write(fd, buffer, len);
+            }
+        }
+
+        rename(user_config_tmp.c_str(), user_config.c_str());
+    }
+
+    return "info: configuration saved";
 }

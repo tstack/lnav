@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "lnav_config.hh"
 #include "top_status_source.hh"
 
 using namespace std;
@@ -52,18 +53,29 @@ int main(int argc, char *argv[])
 
     top_status_source tss;
 
-    {
-	status_field &sf = tss.
-	    statusview_value_for_field(top_status_source::TSF_TIME);
-	attr_line_t val;
+    setenv("HOME", "/", 1);
 
-	tss.update_time();
-	val = sf.get_value();
-	assert(val.get_string() == sf.get_value().get_string());
-	current_time += 2;
-	tss.update_time();
-	assert(val.get_string() != sf.get_value().get_string());
+    vector<string> paths, errors;
+
+    load_config(paths, errors);
+
+    {
+        status_field &sf = tss.
+                statusview_value_for_field(top_status_source::TSF_TIME);
+        attr_line_t val;
+
+        tss.update_time();
+        val = sf.get_value();
+        assert(val.get_string() == sf.get_value().get_string());
+        current_time += 2;
+        tss.update_time();
+        assert(val.get_string() != sf.get_value().get_string());
+
+        lnav_config.lc_ui_clock_format = "abc";
+        tss.update_time();
+        val = sf.get_value();
+        assert(val.get_string() == "abc");
     }
-    
-    return retval;
+
+	return retval;
 }

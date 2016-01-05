@@ -90,7 +90,14 @@ test_pcrepp_SOURCES = test_pcrepp.cc
 test_pcrepp_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_top_status_SOURCES = test_top_status.cc
-test_top_status_LDADD = ../src/libdiag.a $(CURSES_LIB) $(PCRE_LIBS) $(SQLITE3_LIBS) -lz
+test_top_status_LDADD = \
+	../src/libdiag.a \
+	../src/default-config-json.o \
+	$(CURSES_LIB) \
+	$(PCRE_LIBS) \
+	$(SQLITE3_LIBS) \
+	$(LIBCURL) \
+	-lz
 
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
@@ -123,6 +130,7 @@ drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
+	../src/default-config-json.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
 	$(CURSES_LIB) \
@@ -141,6 +149,7 @@ drive_data_scanner_SOURCES = \
 drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
+	../src/default-config-json.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
 	$(PCRE_LIBS) \

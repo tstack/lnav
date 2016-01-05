@@ -39,6 +39,7 @@ void add_view_text_possibilities(int context, const std::string &type, textview_
 void add_env_possibilities(int context);
 void add_filter_possibilities(textview_curses *tc);
 void add_mark_possibilities();
+void add_config_possibilities();
 
 extern struct sqlite_metadata_callbacks lnav_sql_meta_callbacks;
 

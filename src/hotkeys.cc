@@ -900,6 +900,7 @@ void handle_paging_key(int ch)
                                     lnav_data.ld_last_search[tc - lnav_data.ld_views]);
             add_filter_possibilities(tc);
             add_mark_possibilities();
+            add_config_possibilities();
             lnav_data.ld_mode = LNM_COMMAND;
             lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
             break;

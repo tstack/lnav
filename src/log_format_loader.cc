@@ -420,31 +420,31 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
 }
 
 static struct json_path_handler format_handlers[] = {
-    json_path_handler("^/\\w+/regex/[^/]+/pattern$", read_format_regex),
-    json_path_handler("^/\\w+/regex/[^/]+/module-format$", read_format_regex_bool),
-    json_path_handler("^/\\w+/(json|convert-to-local-time|epoch-timestamp|"
-        "hide-extra|multiline)$", read_format_bool),
-    json_path_handler("^/\\w+/timestamp-divisor$", read_format_double)
+    json_path_handler("/\\w+/regex/[^/]+/pattern", read_format_regex),
+    json_path_handler("/\\w+/regex/[^/]+/module-format", read_format_regex_bool),
+    json_path_handler("/\\w+/(json|convert-to-local-time|epoch-timestamp|"
+        "hide-extra|multiline)", read_format_bool),
+    json_path_handler("/\\w+/timestamp-divisor", read_format_double)
         .add_cb(read_format_int),
-    json_path_handler("^/\\w+/(file-pattern|level-field|timestamp-field|"
+    json_path_handler("/\\w+/(file-pattern|level-field|timestamp-field|"
                               "body-field|url|url#|title|description|"
                               "timestamp-format#|module-field|opid-field)$",
                       read_format_field),
-    json_path_handler("^/\\w+/level/"
-                      "(trace|debug\\d*|info|stats|warning|error|critical|fatal)$",
+    json_path_handler("/\\w+/level/"
+                      "(trace|debug\\d*|info|stats|warning|error|critical|fatal)",
                       read_levels),
-    json_path_handler("^/\\w+/value/.+/(kind|collate|unit/field)$", read_value_def),
-    json_path_handler("^/\\w+/value/.+/(identifier|foreign-key|hidden)$", read_value_bool),
-    json_path_handler("^/\\w+/value/.+/unit/scaling-factor/.*$",
+    json_path_handler("/\\w+/value/.+/(kind|collate|unit/field)", read_value_def),
+    json_path_handler("/\\w+/value/.+/(identifier|foreign-key|hidden)", read_value_bool),
+    json_path_handler("/\\w+/value/.+/unit/scaling-factor/.*",
         read_scaling),
-    json_path_handler("^/\\w+/value/.+/action-list#", read_value_action),
-    json_path_handler("^/\\w+/action/\\w+/label", read_action_def),
-    json_path_handler("^/\\w+/action/\\w+/capture-output", read_action_bool),
-    json_path_handler("^/\\w+/action/\\w+/cmd#", read_action_cmd),
-    json_path_handler("^/\\w+/sample#/line$", read_sample_line),
-    json_path_handler("^/\\w+/line-format#/(field|default-value)$", read_json_variable),
-    json_path_handler("^/\\w+/line-format#/min-width$", read_json_variable_num),
-    json_path_handler("^/\\w+/line-format#$", read_json_constant),
+    json_path_handler("/\\w+/value/.+/action-list#", read_value_action),
+    json_path_handler("/\\w+/action/[^/]+/label", read_action_def),
+    json_path_handler("/\\w+/action/[^/]+/capture-output", read_action_bool),
+    json_path_handler("/\\w+/action/[^/]+/cmd#", read_action_cmd),
+    json_path_handler("/\\w+/sample#/line", read_sample_line),
+    json_path_handler("/\\w+/line-format#/(field|default-value)", read_json_variable),
+    json_path_handler("/\\w+/line-format#/min-width", read_json_variable_num),
+    json_path_handler("/\\w+/line-format#", read_json_constant),
 
     json_path_handler()
 };

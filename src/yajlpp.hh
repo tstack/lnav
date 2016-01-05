@@ -35,6 +35,8 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include <map>
+#include <set>
 #include <vector>
 #include <string>
 
@@ -61,18 +63,47 @@ yajl_gen_status yajl_gen_string(yajl_gen hand, const std::string &str)
                            str.length());
 }
 
+template<typename T>
+inline
+T *nullobj()
+{
+    return (T *) NULL;
+}
+
+struct json_path_handler;
+class yajlpp_gen_context;
+
 struct json_path_handler_base {
-    json_path_handler_base(const char *path) : jph_path(path), jph_regex(path)
+    json_path_handler_base(const char *path)
+            : jph_path(path),
+              jph_regex(path, PCRE_ANCHORED),
+              jph_gen_callback(NULL),
+              jph_synopsis(""),
+              jph_description(""),
+              jph_simple_offset(NULL),
+              jph_children(NULL)
     {
         memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
     };
 
+    virtual yajl_gen_status gen(yajlpp_gen_context &ygc, yajl_gen handle) const;
+
     const char *   jph_path;
     pcrepp         jph_regex;
     yajl_callbacks jph_callbacks;
+    yajl_gen_status (*jph_gen_callback)(yajlpp_gen_context &, const json_path_handler_base &, yajl_gen);
+    const char *   jph_synopsis;
+    const char *   jph_description;
+    void *         jph_simple_offset;
+    json_path_handler_base *jph_children;
 };
 
 class yajlpp_parse_context;
+
+int yajlpp_static_string(yajlpp_parse_context *, const unsigned char *, size_t);
+yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
+                                         const json_path_handler_base &,
+                                         yajl_gen);
 
 struct json_path_handler : public json_path_handler_base {
     json_path_handler(const char *path, int(*null_func)(yajlpp_parse_context *))
@@ -139,6 +170,27 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
+    json_path_handler &with_synopsis(const char *synopsis) {
+        this->jph_synopsis = synopsis;
+        return *this;
+    }
+
+    json_path_handler &with_description(const char *description) {
+        this->jph_description = description;
+        return *this;
+    }
+
+    json_path_handler &for_field(std::string *field) {
+        this->add_cb(yajlpp_static_string);
+        this->jph_simple_offset = field;
+        this->jph_gen_callback = yajlpp_static_gen_string;
+        return *this;
+    };
+
+    json_path_handler &with_children(json_path_handler *children) {
+        this->jph_children = children;
+        return *this;
+    };
 };
 
 class yajlpp_parse_context {
@@ -148,7 +200,9 @@ public:
         : ypc_source(source),
           ypc_handlers(handlers),
           ypc_userdata(NULL),
-          ypc_ignore_unused(false)
+          ypc_simple_data(NULL),
+          ypc_ignore_unused(false),
+          ypc_current_handler(NULL)
     {
         this->ypc_path.reserve(4096);
         this->ypc_path.push_back('\0');
@@ -199,6 +253,13 @@ public:
         return this->ypc_path_index_stack.size() == level;
     };
 
+    yajlpp_parse_context &set_path(const std::string &path) {
+        this->ypc_path.resize(path.size() + 1);
+        std::copy(path.begin(), path.end(), this->ypc_path.begin());
+        this->ypc_path[path.size()] = '\0';
+        return *this;
+    }
+
     void reset(struct json_path_handler *handlers) {
         this->ypc_handlers = handlers;
         this->ypc_path.clear();
@@ -226,9 +287,16 @@ public:
             this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
     }
 
+    template<typename T>
+    yajlpp_parse_context &with_obj(T &obj) {
+        this->ypc_simple_data = &obj;
+        return *this;
+    };
+
     const std::string ypc_source;
     struct json_path_handler *ypc_handlers;
     void *                  ypc_userdata;
+    void *                  ypc_simple_data;
     yajl_callbacks          ypc_callbacks;
     yajl_callbacks          ypc_alt_callbacks;
     std::vector<char>       ypc_path;
@@ -236,11 +304,13 @@ public:
     std::vector<int>        ypc_array_index;
     pcre_context_static<30> ypc_pcre_context;
     bool                    ypc_ignore_unused;
+    const struct json_path_handler_base *ypc_current_handler;
+    std::set<std::string>   ypc_active_paths;
 
+    void update_callbacks(const json_path_handler_base *handlers = NULL);
 private:
     static const yajl_callbacks DEFAULT_CALLBACKS;
 
-    void update_callbacks(void);
 
     static int map_start(void *ctx);
     static int map_key(void *ctx, const unsigned char *key, size_t len);
@@ -317,4 +387,75 @@ public:
 
     ~yajlpp_array() { yajl_gen_array_close(this->ycb_handle); };
 };
+
+class yajlpp_gen_context {
+public:
+    yajlpp_gen_context(yajl_gen handle, json_path_handler *handlers)
+            : ygc_handle(handle),
+              ygc_depth(0),
+              ygc_default_data(NULL),
+              ygc_simple_data(NULL),
+              ygc_handlers(handlers)
+    {
+    };
+
+    template<typename T>
+    yajlpp_gen_context &with_default_obj(T &obj) {
+        this->ygc_default_data = &obj;
+        return *this;
+    };
+
+    template<typename T>
+    yajlpp_gen_context &with_obj(T &obj) {
+        this->ygc_simple_data = &obj;
+        return *this;
+    };
+
+    void gen() {
+        yajlpp_map root(this->ygc_handle);
+
+        for (int lpc = 0; this->ygc_handlers[lpc].jph_path[0]; lpc++) {
+            json_path_handler &jph = this->ygc_handlers[lpc];
+
+            jph.gen(*this, this->ygc_handle);
+        }
+    };
+
+    yajl_gen ygc_handle;
+    int ygc_depth;
+    void *ygc_default_data;
+    void *ygc_simple_data;
+    json_path_handler *ygc_handlers;
+    std::vector<std::string> ygc_path;
+};
+
+class json_schema {
+public:
+    json_schema(const json_path_handler_base *handlers)
+            : js_handlers(handlers) {
+        this->populate("", handlers);
+    };
+
+    void populate(const std::string &parent_path,
+                  const json_path_handler_base *handlers) {
+        for (int lpc = 0; handlers[lpc].jph_path[0]; lpc++) {
+            const json_path_handler_base &jph = handlers[lpc];
+
+            if (jph.jph_children) {
+                this->populate(parent_path + jph.jph_path, jph.jph_children);
+            }
+            else {
+                std::string option = parent_path + jph.jph_path;
+
+                this->js_path_to_handler[option] = &jph;
+            }
+        }
+    }
+
+    typedef std::map<std::string, const json_path_handler_base *> path_to_handler_t;
+
+    const json_path_handler_base *js_handlers;
+    path_to_handler_t js_path_to_handler;
+};
+
 #endif

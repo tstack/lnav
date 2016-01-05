@@ -224,6 +224,16 @@ bool change_to_parent_dir(void)
     return retval;
 }
 
+void split_ws(const std::string &str, std::vector<std::string> &toks_out)
+{
+    std::stringstream ss(str);
+    std::string buf;
+
+    while (ss >> buf) {
+        toks_out.push_back(buf);
+    }
+}
+
 std::pair<std::string, std::string> split_path(const char *path, ssize_t len)
 {
     ssize_t dir_len = len;

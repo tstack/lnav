@@ -2173,7 +2173,7 @@ static void print_errors(vector<string> error_list)
 
 int main(int argc, char *argv[])
 {
-    std::vector<std::string> loader_errors;
+    std::vector<std::string> config_errors, loader_errors;
     int lpc, c, retval = EXIT_SUCCESS;
 
     auto_ptr<piper_proc> stdin_reader;
@@ -2200,7 +2200,7 @@ int main(int argc, char *argv[])
 #endif
 
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarsCc:I:iuf:d:nqtw:VW")) != -1) {
+    while ((c = getopt(argc, argv, "hHarsCc:I:iuf:d:nqtw:vVW")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -2298,6 +2298,10 @@ int main(int argc, char *argv[])
         }
             break;
 
+        case 'v':
+            lnav_data.ld_flags |= LNF_VERBOSE;
+            break;
+
         case 'V':
             printf("%s\n", VCS_PACKAGE_STRING);
             exit(0);
@@ -2314,6 +2318,12 @@ int main(int argc, char *argv[])
 
     lnav_log_file = fopen(lnav_data.ld_debug_log_name, "a");
     log_info("lnav started");
+
+    load_config(lnav_data.ld_config_paths, config_errors);
+    if (!config_errors.empty()) {
+        print_errors(config_errors);
+        return EXIT_FAILURE;
+    }
 
     string formats_path = dotlnav_path("formats/");
 
@@ -2764,12 +2774,14 @@ int main(int argc, char *argv[])
                 for (msg_iter = msgs.begin();
                      msg_iter != msgs.end();
                      ++msg_iter) {
-                    if (strncmp("error:", msg_iter->first.c_str(), 6) != 0) {
-                        continue;
+                    if (strncmp("error:", msg_iter->first.c_str(), 6) == 0) {
+                        fprintf(stderr, "%s\n", msg_iter->first.c_str());
+                        found_error = true;
                     }
-
-                    fprintf(stderr, "%s\n", msg_iter->first.c_str());
-                    found_error = true;
+                    else if (startswith(msg_iter->first, "info:") &&
+                             lnav_data.ld_flags & LNF_VERBOSE) {
+                        printf("%s\n", msg_iter->first.c_str());
+                    }
                 }
 
                 if (!found_error &&

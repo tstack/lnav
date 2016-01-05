@@ -44,6 +44,7 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "ptimec.hh"
 #include "byte_array.hh"
@@ -170,6 +171,8 @@ void sqlite_close_wrapper(void *mem);
 std::string get_current_dir(void);
 
 bool change_to_parent_dir(void);
+
+void split_ws(const std::string &str, std::vector<std::string> &toks_out);
 
 std::pair<std::string, std::string> split_path(const char *path, ssize_t len);
 

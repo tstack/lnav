@@ -1,6 +1,59 @@
 #! /bin/bash
 
 run_test ${lnav_test} -n \
+    -c ":config /bad/option" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "config bad option" <<EOF
+error: unknown configuration option -- /bad/option
+EOF
+
+check_output "config bad option" <<EOF
+EOF
+
+run_test ${lnav_test} -nvq \
+    -c ":config /ui/clock-format" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "config clock-format" <<EOF
+EOF
+
+check_output "config clock-format" <<EOF
+info: /ui/clock-format = "%a %b %d %H:%M:%S %Z"
+EOF
+
+run_test ${lnav_test} -nvq \
+    -c ":config /ui/clock-format" \
+    -c ":config /ui/clock-format abc" \
+    -c ":config /ui/clock-format" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "config clock-format" <<EOF
+EOF
+
+check_output "config clock-format" <<EOF
+info: /ui/clock-format = "%a %b %d %H:%M:%S %Z"
+info: changed config option -- /ui/clock-format
+info: /ui/clock-format = "abc"
+EOF
+
+run_test ${lnav_test} -nvq \
+    -c ":config /ui/clock-format abc" \
+    -c ":reset-config /ui/clock-format" \
+    -c ":config /ui/clock-format" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "config clock-format" <<EOF
+EOF
+
+check_output "config clock-format" <<EOF
+info: changed config option -- /ui/clock-format
+info: reset option
+info: /ui/clock-format = "%a %b %d %H:%M:%S %Z"
+EOF
+
+
+run_test ${lnav_test} -n \
     -c "|${test_dir}/toplevel.lnav 123 456 789" \
     ${test_dir}/logfile_access_log.0
 

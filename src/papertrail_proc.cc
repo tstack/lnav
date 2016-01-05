@@ -127,14 +127,14 @@ int papertrail_proc::json_map_end(void *ctx)
 }
 
 struct json_path_handler papertrail_proc::FORMAT_HANDLERS[] = {
-        json_path_handler("^/max_id", read_max_id),
-        json_path_handler("^/(partial_results)", read_partial),
-        json_path_handler("^/(reached_record_limit|reached_time_limit)", read_limit),
-        json_path_handler("^/(min_id|min_time_at|max_time_at|"
+        json_path_handler("/max_id", read_max_id),
+        json_path_handler("/(partial_results)", read_partial),
+        json_path_handler("/(reached_record_limit|reached_time_limit)", read_limit),
+        json_path_handler("/(min_id|min_time_at|max_time_at|"
                                   "reached_beginning|reached_end|tail|no_events)")
                 .add_cb(ignore_bool)
                 .add_cb(ignore_str),
-        json_path_handler("^/events#/\\w+")
+        json_path_handler("/events#/\\w+")
                 .add_cb(read_event_field)
                 .add_cb(read_event_int),
 

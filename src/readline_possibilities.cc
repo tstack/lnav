@@ -37,6 +37,7 @@
 #include "sql_util.hh"
 #include "data_parser.hh"
 #include "sysclip.hh"
+#include "lnav_config.hh"
 
 #include "readline_possibilities.hh"
 
@@ -257,5 +258,19 @@ void add_mark_possibilities()
             continue;
         }
         rc->add_possibility(LNM_COMMAND, "mark-type", bt->get_name());
+    }
+}
+
+void add_config_possibilities()
+{
+    readline_curses *rc = lnav_data.ld_rl_view;
+    json_schema::path_to_handler_t::iterator iter;
+
+    rc->clear_possibilities(LNM_COMMAND, "config-option");
+
+    for (iter = lnav_config_schema.js_path_to_handler.begin();
+         iter != lnav_config_schema.js_path_to_handler.end();
+         ++iter) {
+        rc->add_possibility(LNM_COMMAND, "config-option", iter->first);
     }
 }
