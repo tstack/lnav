@@ -568,6 +568,7 @@ id first_name last_name age
 EOF
 
 
+touch -t 201503240923 ${test_dir}/logfile_syslog_with_access_log.0
 run_test ${lnav_test} -n \
     -c ";select * from access_log" \
     -c ':write-csv-to -' \
