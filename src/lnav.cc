@@ -2392,7 +2392,7 @@ int main(int argc, char *argv[])
                 perror("unable to open file to install");
             }
             else if ((out_fd = open(dst_path.c_str(),
-                    O_WRONLY | O_CREAT, 0644)) == -1) {
+                    O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
                 fprintf(stderr, "error: unable to open destination: %s -- %s\n",
                         dst_path.c_str(), strerror(errno));
             }
