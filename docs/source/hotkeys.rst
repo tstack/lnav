@@ -209,6 +209,18 @@ Display
      - Switch to lo-fi mode.  The displayed log lines will be dumped to the
        terminal without any decorations so they can be copied easily.
 
+Session
+-------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 20
+
+   * - Keypress
+     - Command
+   * - |ks| Ctrl |ky| + |ks| R |ke|
+     - Reset current session.
+
 Query
 -----
 
