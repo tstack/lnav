@@ -51,6 +51,7 @@ TIME_FORMATS = \
     "%d/%b/%Y:%H:%M:%S +0000" \
     "%d/%b/%Y:%H:%M:%S %z" \
     "%b %d %H:%M:%S" \
+    "%b %e, %Y %l:%M:%S %p" \
     "%m/%d/%y %H:%M:%S" \
     "%m/%d/%Y %I:%M:%S:%L %p %Z" \
     "%m/%e/%Y %l:%M:%S %p" \
