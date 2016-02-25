@@ -659,6 +659,7 @@ void logfile_sub_source::text_filters_changed()
         logfile *lf = ld->get_file();
 
         if (lf != NULL) {
+            ld->ld_filter_state.clear_deleted_filter_state();
             lf->reobserve_from(lf->begin() + ld->ld_filter_state.get_min_count(lf->size()));
         }
     }

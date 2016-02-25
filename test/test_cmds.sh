@@ -209,6 +209,17 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ":filter-in vmk" \
+    -c ":reset-session" \
+    -c ":filter-in cgi" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "filter-in vmk is not working" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ":filter-in today" \
     ${test_dir}/logfile_multiline.0
 

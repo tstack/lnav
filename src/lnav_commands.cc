@@ -1890,6 +1890,19 @@ static string com_zoom_to(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_reset_session(string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+
+    }
+    else {
+        reset_session();
+        lnav_data.ld_views[LNV_LOG].reload_data();
+    }
+
+    return "";
+}
+
 static string com_load_session(string cmdline, vector<string> &args)
 {
     if (args.empty()) {
@@ -2518,6 +2531,12 @@ readline_context::command_t STD_COMMANDS[] = {
         "<view-name>",
         "Switch to the given view",
         com_switch_to_view,
+    },
+    {
+        "reset-session",
+        NULL,
+        "Reset the session state, clearing all filters, highlights, and bookmarks",
+        com_reset_session,
     },
     {
         "load-session",

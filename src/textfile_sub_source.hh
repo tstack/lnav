@@ -220,6 +220,7 @@ public:
         line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
         uint32_t filter_in_mask, filter_out_mask;
 
+        lfo->clear_deleted_filter_state();
         lf->reobserve_from(lf->begin() + lfo->get_min_count(lf->size()));
 
         this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);

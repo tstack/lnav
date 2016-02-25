@@ -377,10 +377,6 @@ public:
         size_t ld_file_index;
         line_filter_observer ld_filter_state;
         size_t   ld_lines_indexed;
-        struct {
-            content_line_t ld_start;
-            content_line_t ld_last;
-        } ld_indexing;
         bool ld_enabled;
     };
 

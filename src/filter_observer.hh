@@ -99,6 +99,17 @@ public:
         return retval;
     };
 
+    void clear_deleted_filter_state() {
+        uint32_t used_mask = 0;
+
+        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
+             iter != this->lfo_filter_stack.end();
+             ++iter) {
+            used_mask |= (1L << (*iter)->get_index());
+        }
+        this->lfo_filter_state.clear_deleted_filter_state(used_mask);
+    };
+
     filter_stack &lfo_filter_stack;
     logfile_filter_state lfo_filter_state;
 };

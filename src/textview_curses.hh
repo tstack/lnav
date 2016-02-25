@@ -56,7 +56,19 @@ public:
         this->tfs_logfile = NULL;
         memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
         this->tfs_mask.clear();
+        this->tfs_index.clear();
     };
+
+    void clear_deleted_filter_state(uint32_t used_mask) {
+        for (int lpc = 0; lpc < MAX_FILTERS; lpc++) {
+            if (!(used_mask & (1L << lpc))) {
+                this->tfs_filter_count[lpc] = 0;
+            }
+        }
+        for (size_t lpc = 0; lpc < this->tfs_mask.size(); lpc++) {
+            this->tfs_mask[lpc] &= used_mask;
+        }
+    }
 
     void resize(size_t newsize) {
         size_t old_mask_size = this->tfs_mask.size();
