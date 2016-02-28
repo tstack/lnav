@@ -2,6 +2,8 @@
 
 FAKE_ROOT=/home/vagrant/fake.root
 
+SRC_VERSION=$1
+
 mkdir -p ~/github
 
 cd ~/github
@@ -11,6 +13,11 @@ fi
 
 cd ~/github/lnav
 git pull
+
+if test -n "$SRC_VERSION"; then
+    git checkout $SRC_VERSION
+fi
+
 saved_PATH=${PATH}
 export PATH=${FAKE_ROOT}/bin:${PATH}
 saved_LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
@@ -39,5 +46,8 @@ else
         PATH="${FAKE_ROOT}/bin:${PATH}"
 fi
 
-
 make -j2 && strip -o /vagrant/lnav src/lnav
+
+mkdir instdir
+make install-strip DESTDIR=$PWD/instdir
+(cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
