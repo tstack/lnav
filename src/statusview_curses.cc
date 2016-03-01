@@ -42,6 +42,11 @@ void statusview_curses::do_update(void)
     unsigned long width, height;
 
     getmaxyx(this->sc_window, height, width);
+    if (width != this->sc_last_width) {
+        this->sc_last_width = width;
+    }
+    this->window_change();
+
     top   = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
     right = width;
     attrs = vc.attrs_for_role(view_colors::VCR_STATUS);

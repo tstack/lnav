@@ -215,7 +215,9 @@ public:
     statusview_curses()
         : sc_source(NULL),
           sc_window(NULL),
-          sc_top(0) { };
+          sc_top(0),
+          sc_last_width(0) {
+    };
     virtual ~statusview_curses() { };
 
     void set_data_source(status_data_source *src) { this->sc_source = src; };
@@ -258,12 +260,14 @@ public:
             if (sf.get_share()) {
                 int actual_width;
 
-                actual_width  = sf.get_min_width();
+                actual_width = sf.get_min_width();
                 actual_width += remaining / (sf.get_share() / total_shares);
 
                 sf.set_width(actual_width);
             }
         }
+
+        this->sc_last_width = width;
     };
 
     void do_update(void);
@@ -272,5 +276,6 @@ private:
     status_data_source *sc_source;
     WINDOW *            sc_window;
     int sc_top;
+    unsigned long sc_last_width;
 };
 #endif
