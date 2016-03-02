@@ -130,6 +130,10 @@ set(diag_STAT_SRCS
     yajl/api/yajl_parse.h
     yajl/api/yajl_tree.h
 
+    filesystem/fwd.h
+    filesystem/path.h
+    filesystem/resolver.h
+
     ../../lbuild/src/config.h
     )
 

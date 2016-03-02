@@ -1213,6 +1213,10 @@ void external_log_format::build(std::vector<std::string> &errors)
          ++iter) {
         pattern &pat = iter->second;
 
+        if (pat.p_module_format) {
+            this->elf_has_module_format = true;
+        }
+
         try {
             pat.p_pcre = new pcrepp(pat.p_string.c_str());
         }

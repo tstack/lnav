@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2013-2016, Timothy Stack
  *
  * All rights reserved.
  *
@@ -91,35 +91,19 @@ static external_log_format *ensure_format(yajlpp_parse_context *ypc)
     return retval;
 }
 
-static int read_format_regex(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+static external_log_format::pattern *pattern_provider(yajlpp_parse_context &ypc, void *root)
 {
-    external_log_format *elf = ensure_format(ypc);
-    string regex_name = ypc->get_path_fragment(2);
-    string value = string((const char *)str, len);
+    external_log_format *elf = ensure_format(&ypc);
+    string regex_name = ypc.get_path_fragment(2);
 
-    log_debug(" format regex: %s/%s = %s",
-            elf->get_name().get(), regex_name.c_str(), value.c_str());
     struct external_log_format::pattern &pat = elf->elf_patterns[regex_name];
 
-    pat.p_config_path = ypc->get_path().to_string();
-    pat.p_string = value;
-
-    return 1;
-}
-
-static int read_format_regex_bool(yajlpp_parse_context *ypc, int val)
-{
-    external_log_format *elf = ensure_format(ypc);
-    string regex_name = ypc->get_path_fragment(2);
-    string field_name = ypc->get_path_fragment(3);
-    struct external_log_format::pattern &pat = elf->elf_patterns[regex_name];
-
-    if (field_name == "module-format") {
-        elf->elf_has_module_format = true;
-        pat.p_module_format = val;
+    if (pat.p_config_path.empty()) {
+        string full_path = ypc.get_path().to_string();
+        pat.p_config_path = full_path.substr(0, full_path.rfind('/'));
     }
 
-    return 1;
+    return &pat;
 }
 
 static int read_format_bool(yajlpp_parse_context *ypc, int val)
@@ -419,10 +403,30 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
     return 1;
 }
 
+static struct json_path_handler pattern_handlers[] = {
+    json_path_handler("pattern")
+        .with_synopsis("<message-regex>")
+        .with_description(
+            "The regular expression to match a log message and capture fields.")
+        .with_min_length(1)
+        .for_field(&nullobj<external_log_format::pattern>()->p_string),
+    json_path_handler("module-format")
+        .with_synopsis("<bool>")
+        .with_description(
+            "If true, this pattern will only be used to parse message bodies "
+                "of container formats, like syslog")
+        .for_field(&nullobj<external_log_format::pattern>()->p_module_format),
+
+    json_path_handler()
+};
+
 static struct json_path_handler format_handlers[] = {
-    json_path_handler("/\\w+/regex/[^/]+/pattern", read_format_regex),
-    json_path_handler("/\\w+/regex/[^/]+/module-format", read_format_regex_bool),
-    json_path_handler("/\\w+/(json|convert-to-local-time|epoch-timestamp|"
+    json_path_handler("/\\w+/regex/[^/]+/")
+        .with_obj_provider(pattern_provider)
+        .with_children(pattern_handlers),
+
+    // TODO convert the rest of these
+    json_path_handler("/\\w+/(json|convert-to-local-time|"
         "hide-extra|multiline)", read_format_bool),
     json_path_handler("/\\w+/timestamp-divisor", read_format_double)
         .add_cb(read_format_int),
@@ -433,9 +437,9 @@ static struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/level/"
                       "(trace|debug\\d*|info|stats|warning|error|critical|fatal)",
                       read_levels),
-    json_path_handler("/\\w+/value/.+/(kind|collate|unit/field)", read_value_def),
-    json_path_handler("/\\w+/value/.+/(identifier|foreign-key|hidden)", read_value_bool),
-    json_path_handler("/\\w+/value/.+/unit/scaling-factor/.*",
+    json_path_handler("/\\w+/value/.+/(kind|collate|unit/field)$", read_value_def),
+    json_path_handler("/\\w+/value/.+/(identifier|foreign-key|hidden)$", read_value_bool),
+    json_path_handler("/\\w+/value/.+/unit/scaling-factor/.*$",
         read_scaling),
     json_path_handler("/\\w+/value/.+/action-list#", read_value_action),
     json_path_handler("/\\w+/action/[^/]+/label", read_action_def),
@@ -610,15 +614,16 @@ void load_formats(const std::vector<std::string> &extra_paths,
     log_debug("Loading default formats");
     handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
     ud.ud_format_names = &retval;
-    ypc_builtin.ypc_userdata = &ud;
+    ypc_builtin
+        .with_handle(handle)
+        .ypc_userdata = &ud;
     yajl_config(handle, yajl_allow_comments, 1);
-    if (yajl_parse(handle,
-                   (const unsigned char *)default_log_formats_json,
-                   strlen(default_log_formats_json)) != yajl_status_ok) {
+    if (ypc_builtin.parse((const unsigned char *)default_log_formats_json,
+                          strlen(default_log_formats_json)) != yajl_status_ok) {
         errors.push_back("builtin: invalid json -- " +
             string((char *)yajl_get_error(handle, 1, (unsigned char *)default_log_formats_json, strlen(default_log_formats_json))));
     }
-    yajl_complete_parse(handle);
+    ypc_builtin.complete_parse();
     yajl_free(handle);
 
     load_from_path("/etc/lnav", errors);

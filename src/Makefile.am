@@ -192,7 +192,10 @@ noinst_HEADERS = \
 	log_format_impls.cc \
 	xterm_mouse.hh \
 	yajlpp.hh \
-	spookyhash/SpookyV2.h
+	spookyhash/SpookyV2.h \
+	filesystem/fwd.h \
+	filesystem/path.h \
+	filesystem/resolver.h
 
 if USE_INCLUDED_YAJL
 noinst_HEADERS += yajl/api/yajl_common.h \

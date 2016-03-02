@@ -35,13 +35,24 @@
 
 using namespace std;
 
-int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+static char *resolve_root(yajlpp_parse_context *ypc)
 {
     const json_path_handler_base *jph = ypc->ypc_current_handler;
 
     ptrdiff_t offset = (char *) jph->jph_simple_offset - (char *) NULL;
-    char *root_ptr = (char *) ypc->ypc_simple_data;
-    string *field_ptr = (string *) (root_ptr + offset);
+    char *retval = (char *) ypc->ypc_simple_data;
+
+    if (jph->jph_obj_provider != NULL) {
+        retval = (char *) jph->jph_obj_provider(*ypc, (void *) retval);
+    }
+
+    return retval + offset;
+}
+
+int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    char *root_ptr = resolve_root(ypc);
+    string *field_ptr = (string *) root_ptr;
 
     (*field_ptr) = string((const char *) str, len);
 
@@ -52,13 +63,10 @@ yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
                                          const json_path_handler_base &jph,
                                          yajl_gen handle)
 {
-    ptrdiff_t offset = (char *) jph.jph_simple_offset - (char *) NULL;
-    char *default_ptr = (char *) ygc.ygc_default_data;
-    char *root_ptr = (char *) ygc.ygc_simple_data;
-    string *default_field_ptr = (string *) (default_ptr + offset);
-    string *field_ptr = (string *) (root_ptr + offset);
+    string *default_field_ptr = resolve_simple_object<string>(ygc.ygc_default_data, jph.jph_simple_offset);
+    string *field_ptr = resolve_simple_object<string>(ygc.ygc_simple_data, jph.jph_simple_offset);
 
-    if (default_ptr != NULL && (*default_field_ptr == *field_ptr)) {
+    if (ygc.ygc_default_data != NULL && (*default_field_ptr == *field_ptr)) {
         return yajl_gen_status_ok;
     }
 
@@ -66,6 +74,47 @@ yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
         yajl_gen_string(handle, jph.jph_path);
     }
     return yajl_gen_string(handle, *field_ptr);
+}
+
+void yajlpp_validator_for_string(json_schema_validator &validator,
+                                 const std::string &path,
+                                 const json_path_handler_base &jph)
+{
+    string *field_ptr = resolve_simple_object<string>(validator.jsv_simple_data, jph.jph_simple_offset);
+    char buffer[1024];
+
+    if (field_ptr->empty() && jph.jph_min_length > 0) {
+        validator.jsv_errors[path].push_back("value must not be empty");
+    }
+    else if (field_ptr->size() < jph.jph_min_length) {
+        snprintf(buffer, sizeof(buffer),
+                 "value must be at least %lu characters long",
+                 jph.jph_min_length);
+        validator.jsv_errors[path].push_back(buffer);
+    }
+}
+
+int yajlpp_static_number(yajlpp_parse_context *ypc, long long num)
+{
+    const json_path_handler_base *jph = ypc->ypc_current_handler;
+
+    ptrdiff_t offset = (char *) jph->jph_simple_offset - (char *) NULL;
+    char *root_ptr = (char *) ypc->ypc_simple_data;
+    long long *field_ptr = (long long *) (root_ptr + offset);
+
+    *field_ptr = num;
+
+    return 1;
+}
+
+int yajlpp_static_bool(yajlpp_parse_context *ypc, int val)
+{
+    char *root_ptr = resolve_root(ypc);
+    bool *field_ptr = (bool *) root_ptr;
+
+    *field_ptr = val;
+
+    return 1;
 }
 
 yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen handle) const
@@ -283,9 +332,33 @@ int yajlpp_parse_context::handle_unused(void *ctx)
         return 1;
     }
 
-    fprintf(stderr, "warning:%s:%s:unexpected data, expecting one of the following data types --\n",
-        ypc->ypc_source.c_str(),
-        &ypc->ypc_path[0]);
+    const json_path_handler_base *handler = ypc->ypc_current_handler;
+
+    if (handler != NULL && strlen(handler->jph_synopsis) > 0 &&
+        strlen(handler->jph_description) > 0) {
+
+        fprintf(stderr, "warning:%s:%s %s -- %s\n",
+                ypc->ypc_source.c_str(),
+                &ypc->ypc_path[0],
+                handler->jph_synopsis,
+                handler->jph_description
+        );
+    }
+
+    int line_number = 0;
+    if (ypc->ypc_handle != NULL && ypc->ypc_json_text != NULL) {
+        size_t consumed = yajl_get_bytes_consumed(ypc->ypc_handle);
+        int current_count = count(&ypc->ypc_json_text[0],
+                                  &ypc->ypc_json_text[consumed],
+                                  '\n');
+        line_number = ypc->ypc_line_number + current_count;
+    }
+
+    fprintf(stderr,
+            "warning:%s:%s:line %d:unexpected data, expecting one of the following data types --\n",
+            ypc->ypc_source.c_str(),
+            &ypc->ypc_path[0],
+            line_number);
     if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused) {
         fprintf(stderr, "warning:%s:%s:  boolean\n",
                 ypc->ypc_source.c_str(), &ypc->ypc_path[0]);

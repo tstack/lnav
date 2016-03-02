@@ -238,7 +238,7 @@ static struct json_path_handler ui_handlers[] = {
         json_path_handler("clock-format")
                 .with_synopsis("<format>")
                 .with_description(
-                        "Set the format for the clock displayed in "
+                        "The format for the clock displayed in "
                         "the top-left corner using strftime(3) conversions")
                 .for_field(&nullobj<_lnav_config>()->lc_ui_clock_format),
 
