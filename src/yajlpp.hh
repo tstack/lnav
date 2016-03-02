@@ -40,6 +40,7 @@
 #include <set>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 #include "pcrepp.hh"
 #include "intern_string.hh"
