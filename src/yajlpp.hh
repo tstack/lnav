@@ -34,6 +34,7 @@
 
 #include <string.h>
 #include <stdarg.h>
+#include <limits.h>
 
 #include <map>
 #include <set>
