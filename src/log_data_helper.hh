@@ -63,6 +63,7 @@ public:
         this->ldh_scanner.reset();
         this->ldh_namer.reset();
         this->ldh_json_pairs.clear();
+        this->ldh_line_attrs.clear();
     };
 
     bool parse_line(vis_line_t line, bool allow_middle = false) {
@@ -88,12 +89,14 @@ public:
             this->ldh_scanner.reset();
             this->ldh_namer.reset();
             this->ldh_json_pairs.clear();
+            this->ldh_line_attrs.clear();
         }
         else {
             log_format *format = this->ldh_file->get_format();
             struct line_range body;
-            string_attrs_t    sa;
+            string_attrs_t    &sa = this->ldh_line_attrs;
 
+            this->ldh_line_attrs.clear();
             this->ldh_line_values.clear();
             this->ldh_file->read_full_message(ll, this->ldh_msg);
             format->annotate(this->ldh_msg, sa, this->ldh_line_values);
@@ -191,6 +194,7 @@ public:
     std::auto_ptr<data_scanner> ldh_scanner;
     std::auto_ptr<data_parser> ldh_parser;
     std::auto_ptr<column_namer> ldh_namer;
+    string_attrs_t ldh_line_attrs;
     std::vector<logline_value> ldh_line_values;
     std::map<const intern_string_t, json_ptr_walk::walk_list_t> ldh_json_pairs;
 };

@@ -89,11 +89,16 @@ public:
 
         LEVEL__MAX,
 
+        LEVEL_TIME_SKEW = 0x20,  /*< Received after timestamp. */
         LEVEL_MARK      = 0x40,  /*< Bookmarked line. */
         LEVEL_CONTINUED = 0x80,  /*< Continuation of multiline entry. */
 
         /** Mask of flags for the level field. */
-        LEVEL__FLAGS    = (LEVEL_MARK | LEVEL_CONTINUED)
+        LEVEL__FLAGS    = (
+            LEVEL_TIME_SKEW |
+            LEVEL_MARK |
+            LEVEL_CONTINUED
+        )
     } level_t;
 
     static const char *level_names[LEVEL__MAX + 1];
@@ -192,6 +197,19 @@ public:
     };
 
     bool is_marked(void) const { return this->ll_level & LEVEL_MARK; };
+
+    void set_time_skew(bool val) {
+        if (val) {
+            this->ll_level |= LEVEL_TIME_SKEW;
+        }
+        else {
+            this->ll_level &= ~LEVEL_TIME_SKEW;
+        }
+    };
+
+    bool is_time_skewed() const {
+        return this->ll_level & LEVEL_TIME_SKEW;
+    };
 
     /** @param l The logging level. */
     void set_level(level_t l) { this->ll_level = l; };

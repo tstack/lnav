@@ -92,26 +92,63 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
         this->fos_lines.push_back(pattern_al);
     }
 
-    char old_timestamp[64], curr_timestamp[64];
+    char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
     struct timeval curr_tv, offset_tv, orig_tv;
-    char log_time[256];
+    attr_line_t time_line;
+    string &time_str = time_line.get_string();
+    struct line_range time_lr;
 
     sql_strftime(curr_timestamp, sizeof(curr_timestamp),
                  this->fos_log_helper.ldh_line->get_time(),
                  this->fos_log_helper.ldh_line->get_millis(),
                  'T');
+
+    time_str = " Received Time: ";
+    time_lr.lr_start = time_str.length();
+    time_str.append(curr_timestamp);
+    time_lr.lr_end = time_str.length();
+    time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
+
+    struct line_range time_range = find_string_attr_range(
+        this->fos_log_helper.ldh_line_attrs, &logline::L_TIMESTAMP);
+
+    if (this->fos_log_helper.ldh_line->is_time_skewed() && time_range.lr_end != -1) {
+        const char *time_src = this->fos_log_helper.ldh_msg.get_data() +
+                               time_range.lr_start;
+        struct timeval tv;
+        struct exttm tm;
+
+        if (lf->lf_date_time.scan(time_src, time_range.length(), NULL, &tm, tv)) {
+            time_lr.lr_start = time_str.length() + 2;
+            sql_strftime(orig_timestamp, sizeof(orig_timestamp), tv, 'T');
+            time_str.append("  Actual Time: ");
+            time_str.append(orig_timestamp);
+            time_lr.lr_end = time_str.length();
+            time_line.with_attr(string_attr(
+                time_lr,
+                &view_curses::VC_STYLE,
+                vc.attrs_for_role(view_colors::VCR_SKEWED_TIME)));
+        }
+    }
+
     curr_tv = this->fos_log_helper.ldh_line->get_timeval();
     offset_tv = this->fos_log_helper.ldh_file->get_time_offset();
     timersub(&curr_tv, &offset_tv, &orig_tv);
     sql_strftime(old_timestamp, sizeof(old_timestamp),
                  orig_tv.tv_sec, orig_tv.tv_usec / 1000,
                  'T');
-    snprintf(log_time, sizeof(log_time),
-             " Current Time: %s  Original Time: %s  Offset: %+d.%03d",
-             curr_timestamp,
-             old_timestamp,
-             (int)offset_tv.tv_sec, (int)(offset_tv.tv_usec / 1000));
-    this->fos_lines.push_back(log_time);
+    if (offset_tv.tv_sec || offset_tv.tv_usec) {
+        char offset_str[32];
+
+        time_str.append("  Pre-adjust Time: ");
+        time_str.append(old_timestamp);
+        snprintf(offset_str, sizeof(offset_str),
+                 "  Offset: %+d.%03d",
+                 (int)offset_tv.tv_sec, (int)(offset_tv.tv_usec / 1000));
+        time_str.append(offset_str);
+    }
+
+    this->fos_lines.push_back(time_line);
 
     if (this->fos_log_helper.ldh_line_values.empty()) {
         this->fos_lines.push_back(" No known message fields");

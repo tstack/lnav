@@ -430,6 +430,16 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             value_out.push_back(string_attr(time_range, &view_curses::VC_STYLE, attrs));
         }
     }
+
+    if (this->lss_token_line->is_time_skewed()) {
+        struct line_range time_range = find_string_attr_range(
+            value_out, &logline::L_TIMESTAMP);
+
+        if (time_range.lr_end != -1) {
+            attrs = vc.attrs_for_role(view_colors::VCR_SKEWED_TIME);
+            value_out.push_back(string_attr(time_range, &view_curses::VC_STYLE, attrs));
+        }
+    }
 }
 
 bool logfile_sub_source::rebuild_index(bool force)

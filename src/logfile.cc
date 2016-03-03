@@ -200,6 +200,8 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 logline &latest = this->lf_index.back();
 
                 if (latest < second_to_last) {
+                    log_debug("time skew! %d", this->lf_index.size());
+                    latest.set_time_skew(true);
                     latest.set_time(second_to_last.get_time());
                     latest.set_millis(second_to_last.get_millis());
                 }

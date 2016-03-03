@@ -69,6 +69,7 @@ std::string log_vtab_impl::get_table_statement(void)
         << "  log_line integer PRIMARY KEY,\n"
         << "  log_part text collate naturalnocase,\n"
         << "  log_time datetime,\n"
+        << "  log_actual_time datetime hidden,\n"
         << "  log_idle_msecs int,\n"
         << "  log_level text collate loglevel,\n"
         << "  log_mark boolean,\n";
@@ -295,6 +296,33 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         sqlite3_result_text(ctx, buffer, strlen(buffer), SQLITE_TRANSIENT);
     }
     break;
+
+        case VT_COL_LOG_ACTUAL_TIME: {
+            char buffer[64];
+
+            if (ll->is_time_skewed()) {
+                log_format *format = lf->get_format();
+                shared_buffer_ref line;
+                vector<logline> dst;
+
+                lf->read_line(ll, line);
+                switch (format->scan(dst, 0, line)) {
+                    case log_format::SCAN_MATCH:
+                        sql_strftime(buffer, sizeof(buffer),
+                                     dst.back().get_time(),
+                                     dst.back().get_millis());
+                        break;
+                    default:
+                        buffer[0] = '\0';
+                        break;
+                }
+            }
+            else {
+                sql_strftime(buffer, sizeof(buffer), ll->get_time(), ll->get_millis());
+            }
+            sqlite3_result_text(ctx, buffer, strlen(buffer), SQLITE_TRANSIENT);
+            break;
+        }
 
     case VT_COL_IDLE_MSECS:
         if (vc->log_cursor.lc_curr_line == 0) {

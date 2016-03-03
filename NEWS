@@ -33,6 +33,14 @@ lnav v0.8.1:
        moving forward and backward by 60 minutes can be simulated by
        using the ':goto' command with a relative time and the 'r/R'
        hotkeys.
+     * Log messages with timestamps that pre-date previous log messages will
+       have the timestamp highlighted in yellow and underlined.  These out-
+       of-time-order messages will be assigned the time of the previous
+       message for sorting purposes.  You can press the 'p' hotkey to examine
+       the 'Received Time' of the message as well as the time parsed from the
+       original message.  A "log_actual_time" hidden field has also been
+       added to the SQLite virtual table so you can operate on the original
+       message time from the file.
 
      Fixes:
      * Issues with tailing JSON logs have been fixed.

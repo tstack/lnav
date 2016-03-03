@@ -507,6 +507,7 @@ public:
         VCR_WARNING,            /*< A warning message. */
         VCR_ALT_ROW,            /*< Highlight for alternating rows in a list */
         VCR_ADJUSTED_TIME,
+        VCR_SKEWED_TIME,
         VCR_STATUS,             /*< Normal status line text. */
         VCR_WARN_STATUS,
         VCR_ALERT_STATUS,       /*< Alert status line text. */
