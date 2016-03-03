@@ -200,7 +200,7 @@ int yajlpp_parse_context::map_key(void *ctx,
     return retval;
 }
 
-void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_handlers)
+void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_handlers, int child_start)
 {
     const json_path_handler_base *handlers = orig_handlers;
 
@@ -227,16 +227,10 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
 
     for (int lpc = 0; handlers[lpc].jph_path[0]; lpc++) {
         const json_path_handler_base &jph = handlers[lpc];
-        int child_start = 0;
-
-        if (orig_handlers != NULL) {
-            child_start = this->ypc_pcre_context.all()->c_end;
-        }
 
         pi.reset(&this->ypc_path[child_start],
                  0,
                  this->ypc_path.size() - 1 - child_start);
-
         if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
             pcre_context::capture_t *cap = this->ypc_pcre_context.all();
 
@@ -245,7 +239,7 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
                     continue;
                 }
 
-                this->update_callbacks(jph.jph_children);
+                this->update_callbacks(jph.jph_children, cap->c_end);
             }
             else {
                 if (child_start + cap->c_end != this->ypc_path.size() - 1) {

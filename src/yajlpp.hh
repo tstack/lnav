@@ -401,7 +401,8 @@ public:
     const struct json_path_handler_base *ypc_current_handler;
     std::set<std::string>   ypc_active_paths;
 
-    void update_callbacks(const json_path_handler_base *handlers = NULL);
+    void update_callbacks(const json_path_handler_base *handlers = NULL,
+                          int child_start = 0);
 private:
     static const yajl_callbacks DEFAULT_CALLBACKS;
 

@@ -403,21 +403,28 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
     return 1;
 }
 
-static struct json_path_handler format_handlers[] = {
-    json_path_handler("/\\w+/regex/[^/]+/pattern")
+
+static struct json_path_handler pattern_handlers[] = {
+    json_path_handler("pattern")
         .with_synopsis("<message-regex>")
         .with_description(
             "The regular expression to match a log message and capture fields.")
         .with_min_length(1)
-        .with_obj_provider(pattern_provider)
         .for_field(&nullobj<external_log_format::pattern>()->p_string),
-    json_path_handler("/\\w+/regex/[^/]+/module-format")
+    json_path_handler("module-format")
         .with_synopsis("<bool>")
         .with_description(
             "If true, this pattern will only be used to parse message bodies "
                 "of container formats, like syslog")
-        .with_obj_provider(pattern_provider)
         .for_field(&nullobj<external_log_format::pattern>()->p_module_format),
+
+    json_path_handler()
+};
+
+static struct json_path_handler format_handlers[] = {
+    json_path_handler("/\\w+/regex/[^/]+/")
+        .with_obj_provider(pattern_provider)
+        .with_children(pattern_handlers),
 
     // TODO convert the rest of these
     json_path_handler("/\\w+/(json|convert-to-local-time|"
