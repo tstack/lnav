@@ -52,7 +52,7 @@ using namespace std;
 static const size_t MAX_UNRECOGNIZED_LINES = 1000;
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
-logfile::logfile(string filename, auto_fd fd)
+logfile::logfile(const string &filename, auto_fd fd)
 throw (error)
     : lf_filename(filename),
       lf_index_time(0),
@@ -75,9 +75,8 @@ throw (error)
         if (realpath(filename.c_str(), resolved_path) == NULL) {
             throw error(resolved_path, errno);
         }
-        filename = resolved_path;
 
-        if (stat(filename.c_str(), &this->lf_stat) == -1) {
+        if (stat(resolved_path, &this->lf_stat) == -1) {
             throw error(filename, errno);
         }
 
@@ -85,11 +84,17 @@ throw (error)
             throw error(filename, EINVAL);
         }
 
-        if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
+        if ((fd = open(resolved_path, O_RDONLY)) == -1) {
             throw error(filename, errno);
         }
 
         fd.close_on_exec();
+
+        log_info("Creating logfile: fd=%d; size=%d; mtime=%d; filename=%s",
+                 (int) fd,
+                 this->lf_stat.st_size,
+                 this->lf_stat.st_mtime,
+                 filename.c_str());
 
         this->lf_valid_filename = true;
     }
@@ -200,7 +205,13 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 logline &latest = this->lf_index.back();
 
                 if (latest < second_to_last) {
-                    log_debug("time skew! %d", this->lf_index.size());
+                    log_debug("%s:%d: out-of-time-order line detected %d.%06d < %d.%06d",
+                              this->lf_filename.c_str(),
+                              this->lf_index.size(),
+                              latest.get_time(),
+                              latest.get_millis(),
+                              second_to_last.get_time(),
+                              second_to_last.get_millis());
                     latest.set_time_skew(true);
                     latest.set_time(second_to_last.get_time());
                     latest.set_millis(second_to_last.get_millis());

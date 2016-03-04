@@ -118,7 +118,9 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
         struct timeval tv;
         struct exttm tm;
 
-        if (lf->lf_date_time.scan(time_src, time_range.length(), NULL, &tm, tv)) {
+        if (lf->lf_date_time.scan(time_src, time_range.length(),
+                                  lf->get_timestamp_formats(),
+                                  &tm, tv)) {
             time_lr.lr_start = time_str.length() + 2;
             sql_strftime(orig_timestamp, sizeof(orig_timestamp), tv, 'T');
             time_str.append("  Actual Time: ");

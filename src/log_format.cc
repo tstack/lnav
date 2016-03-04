@@ -960,8 +960,19 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
         char time_buf[64];
 
         // TODO add a timeval kind to logline_value
-        sql_strftime(time_buf, sizeof(time_buf),
-            jlu->jlu_line->get_timeval(), 'T');
+        if (jlu->jlu_line->is_time_skewed()) {
+            struct timeval tv;
+            struct exttm tm;
+
+            jlu->jlu_format->lf_date_time.scan((const char *) str, len,
+                                               jlu->jlu_format->get_timestamp_formats(),
+                                               &tm, tv);
+            sql_strftime(time_buf, sizeof(time_buf), tv, 'T');
+        }
+        else {
+            sql_strftime(time_buf, sizeof(time_buf),
+                         jlu->jlu_line->get_timeval(), 'T');
+        }
         tmp_shared_buffer tsb(time_buf);
         jlu->jlu_format->jlf_line_values.push_back(logline_value(field_name, tsb.tsb_ref));
     }

@@ -230,7 +230,7 @@ struct line_range {
  */
 typedef union {
     void *sav_ptr;
-    int   sav_int;
+    int64_t sav_int;
 } string_attr_value_t;
 
 class string_attr_type { };
@@ -242,7 +242,7 @@ struct string_attr {
         this->sa_value.sav_ptr = val;
     };
 
-    string_attr(const struct line_range &lr, string_attr_type_t type, int val = 0)
+    string_attr(const struct line_range &lr, string_attr_type_t type, int64_t val = 0)
         : sa_range(lr), sa_type(type) {
         this->sa_value.sav_int = val;
     };

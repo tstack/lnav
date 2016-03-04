@@ -75,7 +75,7 @@ public:
 
     class error {
 public:
-        error(std::string filename, int err)
+        error(const std::string &filename, int err)
             : e_filename(filename),
               e_err(err) { };
 
@@ -94,7 +94,7 @@ public:
      * constructor should open the file specified by 'filename'.  The
      * descriptor needs to be seekable.
      */
-    logfile(std::string filename, auto_fd fd = -1) throw (error);
+    logfile(const std::string &filename, auto_fd fd = -1) throw (error);
 
     virtual ~logfile();
 
