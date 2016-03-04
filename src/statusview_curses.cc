@@ -44,8 +44,8 @@ void statusview_curses::do_update(void)
     getmaxyx(this->sc_window, height, width);
     if (width != this->sc_last_width) {
         this->sc_last_width = width;
+        this->window_change();
     }
-    this->window_change();
 
     top   = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
     right = width;
@@ -57,29 +57,31 @@ void statusview_curses::do_update(void)
     whline(this->sc_window, ' ', width);
     wattroff(this->sc_window, attrs);
 
-    field_count = this->sc_source->statusview_fields();
-    for (field = 0; field < field_count; field++) {
-        status_field &sf = this->sc_source->statusview_value_for_field(
-            field);
-        struct line_range lr(0, sf.get_width());
-        attr_line_t       val;
-        int x;
+    if (this->sc_source != NULL) {
+        field_count = this->sc_source->statusview_fields();
+        for (field = 0; field < field_count; field++) {
+            status_field &sf = this->sc_source->statusview_value_for_field(
+                field);
+            struct line_range lr(0, sf.get_width());
+            attr_line_t val;
+            int x;
 
-        val = sf.get_value();
+            val = sf.get_value();
 
-        if (sf.is_right_justified()) {
-            right -= sf.get_width();
-            x      = right;
+            if (sf.is_right_justified()) {
+                right -= sf.get_width();
+                x = right;
+            }
+            else {
+                x = left;
+                left += sf.get_width() + 1;
+            }
+            this->mvwattrline(this->sc_window,
+                              top, x,
+                              val,
+                              lr,
+                              sf.get_role());
         }
-        else {
-            x     = left;
-            left += sf.get_width() + 1;
-        }
-        this->mvwattrline(this->sc_window,
-                          top, x,
-                          val,
-                          lr,
-                          sf.get_role());
     }
     wmove(this->sc_window, top + 1, 0);
 }

@@ -229,8 +229,11 @@ public:
     void set_window(WINDOW *win) { this->sc_window = win; };
     WINDOW *get_window() { return this->sc_window; };
 
-    void window_change(void)
-    {
+    void window_change(void) {
+        if (this->sc_source == NULL) {
+            return;
+        }
+
         int           field_count = this->sc_source->statusview_fields();
         int           remaining, total_shares = 0;
         unsigned long width, height;
