@@ -345,7 +345,7 @@ public:
     };
 
     const char *s_str;
-    size_t s_len;
+    ssize_t s_len;
     size_t s_index;
     state_t s_state;
 };

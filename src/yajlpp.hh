@@ -588,7 +588,7 @@ public:
                     "error: Invalid configuration option -- %s (%s)\n",
                     path.c_str(),
                     jph->jph_description);
-            for (int lpc = 0; lpc < error_list.size(); lpc++) {
+            for (size_t lpc = 0; lpc < error_list.size(); lpc++) {
                 fprintf(out, "error:   %s\n", error_list[lpc].c_str());
             }
             fprintf(out, "error: Use the following lnav command to fix the configuration:\n");
