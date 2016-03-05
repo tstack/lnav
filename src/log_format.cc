@@ -1212,7 +1212,7 @@ void external_log_format::build(std::vector<std::string> &errors)
         this->lf_timestamp_format.push_back(NULL);
     }
     try {
-        this->elf_filename_pcre = new pcrepp(this->elf_file_pattern.c_str());
+        this->elf_filename_pcre = new pcrepp(this->elf_file_pattern);
     }
     catch (const pcrepp::error &e) {
         errors.push_back("error:" +
@@ -1229,7 +1229,7 @@ void external_log_format::build(std::vector<std::string> &errors)
         }
 
         try {
-            pat.p_pcre = new pcrepp(pat.p_string.c_str());
+            pat.p_pcre = new pcrepp(pat.p_string);
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
