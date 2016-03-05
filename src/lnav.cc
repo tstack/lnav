@@ -1774,7 +1774,9 @@ static void looper(void)
             }
 
             lnav_data.ld_status[LNS_TOP].do_update();
-            lnav_data.ld_view_stack.top()->do_update();
+            if (!lnav_data.ld_view_stack.empty()) {
+                lnav_data.ld_view_stack.top()->do_update();
+            }
             lnav_data.ld_match_view.do_update();
             lnav_data.ld_status[LNS_BOTTOM].do_update();
             rlc.do_update();
@@ -1924,7 +1926,8 @@ static void looper(void)
                             HELP_MSG_2(f, F,
                                     "to switch to the next/previous file"));
                 }
-                if (lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_TEXT] &&
+                if (!lnav_data.ld_view_stack.empty() &&
+                    lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_TEXT] &&
                     lnav_data.ld_text_source.empty() &&
                     lnav_data.ld_log_source.text_line_count() > 0) {
                     textview_curses *tc_log = &lnav_data.ld_views[LNV_LOG];
@@ -1986,7 +1989,9 @@ static void looper(void)
                 rlc.window_change();
                 lnav_data.ld_status[0].window_change();
                 lnav_data.ld_status[1].window_change();
-                lnav_data.ld_view_stack.top()->set_needs_update();
+                if (!lnav_data.ld_view_stack.empty()) {
+                    lnav_data.ld_view_stack.top()->set_needs_update();
+                }
             }
 
             if (lnav_data.ld_child_terminated) {
