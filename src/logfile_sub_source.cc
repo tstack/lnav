@@ -34,6 +34,7 @@
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "log_accel.hh"
+#include "relative_time.hh"
 #include "logfile_sub_source.hh"
 
 using namespace std;
@@ -192,47 +193,10 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         curr_millis = this->lss_token_line->get_time_in_millis();
         int64_t diff = curr_millis - start_millis;
 
-        /* 24h22m33s111 */
-
-        static struct rel_interval {
-            long long   length;
-            const char *format;
-            const char *symbol;
-        } intervals[] = {
-            { 1000, "%03qd%s", ""  },
-            {   60, "%qd%s",   "s" },
-            {   60, "%qd%s",   "m" },
-            {    0, "%qd%s",   "h" },
-            {    0, NULL, NULL }
-        };
-
-        struct rel_interval *curr_interval;
-        int rel_length = 0;
-
         value_out = "|" + value_out;
-        for (curr_interval = intervals; curr_interval->symbol != NULL;
-             curr_interval++) {
-            long long amount;
-            char      segment[32];
-
-            if (curr_interval->length) {
-                amount = diff % curr_interval->length;
-                diff   = diff / curr_interval->length;
-            }
-            else {
-                amount = diff;
-                diff   = 0;
-            }
-
-            if (!amount && !diff) {
-                break;
-            }
-
-            snprintf(segment, sizeof(segment), curr_interval->format, amount,
-                     curr_interval->symbol);
-            rel_length += strlen(segment);
-            value_out   = segment + value_out;
-        }
+        string relstr;
+        size_t rel_length = str2reltime(diff, relstr);
+        value_out.insert(0, relstr);
         if (rel_length < 12) {
             value_out.insert(0, 12 - rel_length, ' ');
         }

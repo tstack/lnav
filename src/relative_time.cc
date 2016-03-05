@@ -316,3 +316,49 @@ void relative_time::rollover()
         this->rt_field[RTF_YEARS] += val / 12;
     }
 }
+
+size_t str2reltime(int64_t millis, std::string &value_out)
+{
+    /* 24h22m33s111 */
+
+    static struct rel_interval {
+        long long   length;
+        const char *format;
+        const char *symbol;
+    } intervals[] = {
+        { 1000, "%03qd%s", ""  },
+        {   60, "%qd%s",   "s" },
+        {   60, "%qd%s",   "m" },
+        {    0, "%qd%s",   "h" },
+        {    0, NULL, NULL }
+    };
+
+    struct rel_interval *curr_interval;
+    size_t in_len = value_out.length(), retval = 0;
+
+    for (curr_interval = intervals; curr_interval->symbol != NULL;
+         curr_interval++) {
+        long long amount;
+        char      segment[32];
+
+        if (curr_interval->length) {
+            amount = millis % curr_interval->length;
+            millis = millis / curr_interval->length;
+        }
+        else {
+            amount = millis;
+            millis   = 0;
+        }
+
+        if (!amount && !millis) {
+            break;
+        }
+
+        snprintf(segment, sizeof(segment), curr_interval->format, amount,
+                 curr_interval->symbol);
+        retval += strlen(segment);
+        value_out.insert(in_len, segment);
+    }
+
+    return retval;
+}

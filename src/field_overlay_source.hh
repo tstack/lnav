@@ -63,7 +63,7 @@ public:
                                 vis_line_t y,
                                 attr_line_t &value_out)
     {
-        if (!this->fos_active || this->fos_log_helper.ldh_parser.get() == NULL) {
+        if (this->fos_lines.empty()) {
             return false;
         }
 

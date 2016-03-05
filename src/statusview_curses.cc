@@ -43,7 +43,6 @@ void statusview_curses::do_update(void)
 
     getmaxyx(this->sc_window, height, width);
     if (width != this->sc_last_width) {
-        this->sc_last_width = width;
         this->window_change();
     }
 

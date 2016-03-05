@@ -281,4 +281,5 @@ private:
     int sc_top;
     unsigned long sc_last_width;
 };
+
 #endif

@@ -102,6 +102,7 @@ void rl_change(void *dummy, readline_curses *rc)
 
                 lnav_data.ld_bottom_source.set_prompt(help_text);
                 lnav_data.ld_bottom_source.grep_error("");
+                lnav_data.ld_status[LNS_BOTTOM].window_change();
             }
             break;
         }

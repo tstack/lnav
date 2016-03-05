@@ -237,4 +237,11 @@ public:
     bool rt_is_absolute[RTF__MAX];
 };
 
+size_t str2reltime(int64_t millis, std::string &value_out);
+
+inline
+size_t str2reltime(const struct timeval &tv, std::string &value_out) {
+    return str2reltime(tv.tv_sec * 1000 + tv.tv_usec / 1000, value_out);
+};
+
 #endif //LNAV_RELATIVE_TIME_HH

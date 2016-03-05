@@ -31,6 +31,7 @@
 
 #include "lnav.hh"
 
+#include "relative_time.hh"
 #include "field_overlay_source.hh"
 #include "readline_highlighters.hh"
 
@@ -41,19 +42,121 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
     logfile_sub_source &lss = lnav_data.ld_log_source;
     view_colors &vc = view_colors::singleton();
 
-    if (!this->fos_active) {
-        return 0;
-    }
+    this->fos_lines.clear();
 
     if (lss.text_line_count() == 0) {
         this->fos_log_helper.clear();
         return 0;
     }
 
-    content_line_t    cl   = lss.at(lv.get_top());
+    content_line_t cl = lss.at(lv.get_top());
+    logfile *file = lss.find(cl);
+    logfile::iterator ll = file->begin() + cl;
+    log_format *format = file->get_format();
+    bool display = false;
 
-    if (!this->fos_log_helper.parse_line(cl)) {
+    if (ll->is_time_skewed()) {
+        display = true;
+    }
+    if (this->fos_active) {
+        display = true;
+    }
+
+    if (!display) {
         return 0;
+    }
+
+    if (!this->fos_log_helper.parse_line(lv.get_top())) {
+        return 0;
+    }
+
+    char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
+    struct timeval curr_tv, offset_tv, orig_tv;
+    attr_line_t time_line;
+    string &time_str = time_line.get_string();
+    struct line_range time_lr;
+
+    sql_strftime(curr_timestamp, sizeof(curr_timestamp),
+                 ll->get_time(),
+                 ll->get_millis(),
+                 'T');
+
+    if (ll->is_time_skewed()) {
+        time_lr.lr_start = 1;
+        time_lr.lr_end = 2;
+        time_line.with_attr(string_attr(time_lr, &view_curses::VC_GRAPHIC,
+                                        ACS_LLCORNER));
+        time_str.append("   Out-Of-Time-Order Message");
+        time_lr.lr_start = 3;
+        time_lr.lr_end = time_str.length();
+        time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE,
+                                        vc.attrs_for_role(view_colors::VCR_SKEWED_TIME)));
+        time_str.append(" --");
+    }
+
+    time_str.append(" Received Time: ");
+    time_lr.lr_start = time_str.length();
+    time_str.append(curr_timestamp);
+    time_lr.lr_end = time_str.length();
+    time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
+
+    struct line_range time_range = find_string_attr_range(
+        this->fos_log_helper.ldh_line_attrs, &logline::L_TIMESTAMP);
+
+    curr_tv = this->fos_log_helper.ldh_line->get_timeval();
+    if (this->fos_log_helper.ldh_line->is_time_skewed() && time_range.lr_end != -1) {
+        const char *time_src = this->fos_log_helper.ldh_msg.get_data() +
+                               time_range.lr_start;
+        struct timeval actual_tv;
+        struct exttm tm;
+
+        if (format->lf_date_time.scan(time_src, time_range.length(),
+                                  format->get_timestamp_formats(),
+                                  &tm, actual_tv)) {
+            sql_strftime(orig_timestamp, sizeof(orig_timestamp), actual_tv, 'T');
+            time_str.append(";  Actual Time: ");
+            time_lr.lr_start = time_str.length();
+            time_str.append(orig_timestamp);
+            time_lr.lr_end = time_str.length();
+            time_line.with_attr(string_attr(
+                time_lr,
+                &view_curses::VC_STYLE,
+                vc.attrs_for_role(view_colors::VCR_SKEWED_TIME)));
+
+            struct timeval diff_tv;
+
+            timersub(&curr_tv, &actual_tv, &diff_tv);
+            time_str.append(";  Diff: ");
+            time_lr.lr_start = time_str.length();
+            str2reltime(diff_tv, time_str);
+            time_lr.lr_end = time_str.length();
+            time_line.with_attr(string_attr(
+                time_lr,
+                &view_curses::VC_STYLE,
+                A_BOLD));
+        }
+    }
+
+    offset_tv = this->fos_log_helper.ldh_file->get_time_offset();
+    timersub(&curr_tv, &offset_tv, &orig_tv);
+    sql_strftime(old_timestamp, sizeof(old_timestamp),
+                 orig_tv.tv_sec, orig_tv.tv_usec / 1000,
+                 'T');
+    if (offset_tv.tv_sec || offset_tv.tv_usec) {
+        char offset_str[32];
+
+        time_str.append("  Pre-adjust Time: ");
+        time_str.append(old_timestamp);
+        snprintf(offset_str, sizeof(offset_str),
+                 "  Offset: %+d.%03d",
+                 (int)offset_tv.tv_sec, (int)(offset_tv.tv_usec / 1000));
+        time_str.append(offset_str);
+    }
+
+    this->fos_lines.push_back(time_line);
+
+    if (!this->fos_active) {
+        return 1;
     }
 
     this->fos_known_key_size = 0;
@@ -79,8 +182,6 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
                 this->fos_unknown_key_size, (int)colname.length());
     }
 
-    this->fos_lines.clear();
-
     log_format *lf = this->fos_log_helper.ldh_file->get_format();
     if (!lf->get_pattern_regex().empty()) {
         attr_line_t pattern_al;
@@ -92,65 +193,6 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
         this->fos_lines.push_back(pattern_al);
     }
 
-    char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
-    struct timeval curr_tv, offset_tv, orig_tv;
-    attr_line_t time_line;
-    string &time_str = time_line.get_string();
-    struct line_range time_lr;
-
-    sql_strftime(curr_timestamp, sizeof(curr_timestamp),
-                 this->fos_log_helper.ldh_line->get_time(),
-                 this->fos_log_helper.ldh_line->get_millis(),
-                 'T');
-
-    time_str = " Received Time: ";
-    time_lr.lr_start = time_str.length();
-    time_str.append(curr_timestamp);
-    time_lr.lr_end = time_str.length();
-    time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
-
-    struct line_range time_range = find_string_attr_range(
-        this->fos_log_helper.ldh_line_attrs, &logline::L_TIMESTAMP);
-
-    if (this->fos_log_helper.ldh_line->is_time_skewed() && time_range.lr_end != -1) {
-        const char *time_src = this->fos_log_helper.ldh_msg.get_data() +
-                               time_range.lr_start;
-        struct timeval tv;
-        struct exttm tm;
-
-        if (lf->lf_date_time.scan(time_src, time_range.length(),
-                                  lf->get_timestamp_formats(),
-                                  &tm, tv)) {
-            time_lr.lr_start = time_str.length() + 2;
-            sql_strftime(orig_timestamp, sizeof(orig_timestamp), tv, 'T');
-            time_str.append("  Actual Time: ");
-            time_str.append(orig_timestamp);
-            time_lr.lr_end = time_str.length();
-            time_line.with_attr(string_attr(
-                time_lr,
-                &view_curses::VC_STYLE,
-                vc.attrs_for_role(view_colors::VCR_SKEWED_TIME)));
-        }
-    }
-
-    curr_tv = this->fos_log_helper.ldh_line->get_timeval();
-    offset_tv = this->fos_log_helper.ldh_file->get_time_offset();
-    timersub(&curr_tv, &offset_tv, &orig_tv);
-    sql_strftime(old_timestamp, sizeof(old_timestamp),
-                 orig_tv.tv_sec, orig_tv.tv_usec / 1000,
-                 'T');
-    if (offset_tv.tv_sec || offset_tv.tv_usec) {
-        char offset_str[32];
-
-        time_str.append("  Pre-adjust Time: ");
-        time_str.append(old_timestamp);
-        snprintf(offset_str, sizeof(offset_str),
-                 "  Offset: %+d.%03d",
-                 (int)offset_tv.tv_sec, (int)(offset_tv.tv_usec / 1000));
-        time_str.append(offset_str);
-    }
-
-    this->fos_lines.push_back(time_line);
 
     if (this->fos_log_helper.ldh_line_values.empty()) {
         this->fos_lines.push_back(" No known message fields");
