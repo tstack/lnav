@@ -443,7 +443,7 @@ static void json_write_row(yajl_gen handle, int row)
 
 static string com_save_to(string cmdline, vector<string> &args)
 {
-    FILE *      outfile = NULL;
+    FILE *outfile = NULL, *toclose = NULL;
     const char *mode    = "";
     string fn, retval;
     bool to_term = false;
@@ -481,8 +481,12 @@ static string com_save_to(string cmdline, vector<string> &args)
     bookmark_vector<vis_line_t> &bv =
         tc->get_bookmarks()[&textview_curses::BM_USER];
     db_label_source &dls = lnav_data.ld_db_row_source;
+    db_overlay_source &dos = lnav_data.ld_db_overlay;
 
-    if (args[0] == "write-csv-to" || args[0] == "write-json-to") {
+    if (args[0] == "write-csv-to" ||
+        args[0] == "write-json-to" ||
+        args[0] == "write-cols-to" ||
+        args[0] == "write-raw-to") {
         if (dls.dls_headers.empty()) {
             return "error: no query result to write, use ';' to execute a query";
         }
@@ -494,11 +498,8 @@ static string com_save_to(string cmdline, vector<string> &args)
     }
 
     if (split_args[0] == "-") {
-        outfile = stdout;
-        if (lnav_data.ld_flags & LNF_HEADLESS) {
-            lnav_data.ld_stdout_used = true;
-        }
-        else {
+        if (lnav_data.ld_output_stack.empty()) {
+            outfile = stdout;
             nodelay(lnav_data.ld_window, 0);
             endwin();
             struct termios curr_termios;
@@ -512,9 +513,18 @@ static string com_save_to(string cmdline, vector<string> &args)
                             "----------------\n\n",
                     args[0].c_str());
         }
+        else {
+            outfile = lnav_data.ld_output_stack.top();
+        }
+        if (outfile == stdout) {
+            lnav_data.ld_stdout_used = true;
+        }
     }
     else if ((outfile = fopen(split_args[0].c_str(), mode)) == NULL) {
         return "error: unable to open file -- " + split_args[0];
+    }
+    else {
+        toclose = outfile;
     }
 
     if (args[0] == "write-csv-to") {
@@ -550,6 +560,20 @@ static string com_save_to(string cmdline, vector<string> &args)
             fprintf(outfile, "\n");
         }
     }
+    else if (args[0] == "write-cols-to") {
+        attr_line_t header_line;
+
+        dos.list_value_for_overlay(lnav_data.ld_views[LNV_DB], vis_line_t(0), header_line);
+        fputs(header_line.get_string().c_str(), outfile);
+        fputc('\n', outfile);
+        for (int lpc = 0; lpc < dls.text_line_count(); lpc++) {
+            string line;
+
+            dls.text_value_for_line(lnav_data.ld_views[LNV_DB], lpc, line, true);
+            fputs(line.c_str(), outfile);
+            fputc('\n', outfile);
+        }
+    }
     else if (args[0] == "write-json-to") {
         yajl_gen handle = NULL;
 
@@ -573,6 +597,21 @@ static string com_save_to(string cmdline, vector<string> &args)
             }
         }
     }
+    else if (args[0] == "write-raw-to") {
+        std::vector<std::vector<const char *> >::iterator row_iter;
+        std::vector<const char *>::iterator iter;
+
+        for (row_iter = dls.dls_rows.begin();
+             row_iter != dls.dls_rows.end();
+             ++row_iter) {
+            for (iter = row_iter->begin();
+                 iter != row_iter->end();
+                 ++iter) {
+                csv_write_string(outfile, *iter);
+            }
+            fprintf(outfile, "\n");
+        }
+    }
     else {
         bookmark_vector<vis_line_t>::iterator iter;
         string line;
@@ -583,14 +622,16 @@ static string com_save_to(string cmdline, vector<string> &args)
         }
     }
 
+    fflush(outfile);
+
     if (to_term) {
         cbreak();
         getch();
         refresh();
         nodelay(lnav_data.ld_window, 1);
     }
-    if (outfile != stdout) {
-        fclose(outfile);
+    if (toclose != NULL) {
+        fclose(toclose);
     }
     outfile = NULL;
 
@@ -2127,19 +2168,33 @@ static string com_echo(string cmdline, vector<string> &args)
     if (args.empty()) {
 
     }
-    else if (args.size() > 1) {
+    else if (args.size() >= 1) {
         bool lf = true;
 
         if (args.size() > 2 && args[1] == "-n") {
+            string::size_type index_in_cmdline = cmdline.find(args[1]);
+
             lf = false;
+            retval = cmdline.substr(index_in_cmdline + args[1].length() + 1);
         }
-        retval = remaining_args(cmdline, args, lf ? 1 : 2);
-        if (lnav_data.ld_flags & LNF_HEADLESS) {
-            printf("%s", retval.c_str());
-            if (lf) {
-                putc('\n', stdout);
+        else if (args.size() >= 2) {
+            retval = cmdline.substr(args[0].length() + 1);
+        }
+        else {
+            retval = "";
+        }
+        if (!lnav_data.ld_output_stack.empty()) {
+            FILE *outfile = lnav_data.ld_output_stack.top();
+
+            if (outfile == stdout) {
+                lnav_data.ld_stdout_used = true;
             }
-            fflush(stdout);
+
+            fprintf(outfile, "%s", retval.c_str());
+            if (lf) {
+                putc('\n', outfile);
+            }
+            fflush(outfile);
         }
     }
 
@@ -2412,6 +2467,18 @@ readline_context::command_t STD_COMMANDS[] = {
         "write-json-to",
         "<filename>",
         "Write SQL results to the given file in JSON format",
+        com_save_to,
+    },
+    {
+        "write-cols-to",
+        "<filename>",
+        "Write SQL results to the given file in a columnar format",
+        com_save_to,
+    },
+    {
+        "write-raw-to",
+        "<filename>",
+        "Write SQL results to the given file without any formatting",
         com_save_to,
     },
     {

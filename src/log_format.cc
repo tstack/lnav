@@ -40,6 +40,7 @@
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
 #include "ptimec.hh"
+#include "log_search_table.hh"
 
 using namespace std;
 
@@ -1206,8 +1207,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
     }
 }
 
-void external_log_format::build(std::vector<std::string> &errors)
-{
+void external_log_format::build(std::vector<std::string> &errors) {
     if (!this->lf_timestamp_format.empty()) {
         this->lf_timestamp_format.push_back(NULL);
     }
@@ -1233,7 +1233,8 @@ void external_log_format::build(std::vector<std::string> &errors)
         }
         catch (const pcrepp::error &e) {
             errors.push_back("error:" +
-                             this->elf_name.to_string() + ".regex[" + iter->first + "]" +
+                             this->elf_name.to_string() + ".regex[" +
+                             iter->first + "]" +
                              ":" +
                              e.what());
             continue;
@@ -1242,7 +1243,8 @@ void external_log_format::build(std::vector<std::string> &errors)
              name_iter != pat.p_pcre->named_end();
              ++name_iter) {
             std::map<const intern_string_t, value_def>::iterator value_iter;
-            const intern_string_t name = intern_string::lookup(name_iter->pnc_name, -1);
+            const intern_string_t name = intern_string::lookup(
+                name_iter->pnc_name, -1);
 
             if (name == this->lf_timestamp_field) {
                 pat.p_timestamp_field_index = name_iter->index();
@@ -1266,7 +1268,8 @@ void external_log_format::build(std::vector<std::string> &errors)
 
                 vd.vd_index = name_iter->index();
                 if (!vd.vd_unit_field.empty()) {
-                    vd.vd_unit_field_index = pat.p_pcre->name_index(vd.vd_unit_field.get());
+                    vd.vd_unit_field_index = pat.p_pcre->name_index(
+                        vd.vd_unit_field.get());
                 }
                 else {
                     vd.vd_unit_field_index = -1;
@@ -1285,7 +1288,8 @@ void external_log_format::build(std::vector<std::string> &errors)
                         pat.p_config_path.c_str(),
                         this->elf_level_field.get());
         }
-        if (!this->elf_module_id_field.empty() && pat.p_module_field_index == -1) {
+        if (!this->elf_module_id_field.empty() &&
+            pat.p_module_field_index == -1) {
             log_warning("%s:module field '%s' not found in pattern",
                         pat.p_config_path.c_str(),
                         this->elf_module_id_field.get());
@@ -1306,12 +1310,14 @@ void external_log_format::build(std::vector<std::string> &errors)
                              ": JSON logs cannot have regexes");
         }
         if (this->jlf_json) {
-            this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name.to_string()));
+            this->jlf_parse_context.reset(
+                new yajlpp_parse_context(this->elf_name.to_string()));
             this->jlf_yajl_handle.reset(yajl_alloc(
-                    &this->jlf_parse_context->ypc_callbacks,
-                    NULL,
-                    this->jlf_parse_context.get()));
-            yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings, 1);
+                &this->jlf_parse_context->ypc_callbacks,
+                NULL,
+                this->jlf_parse_context.get()));
+            yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings,
+                        1);
         }
 
     }
@@ -1345,21 +1351,22 @@ void external_log_format::build(std::vector<std::string> &errors)
         }
 
         for (act_iter = iter->second.vd_action_list.begin();
-            act_iter != iter->second.vd_action_list.end();
-            ++act_iter) {
+             act_iter != iter->second.vd_action_list.end();
+             ++act_iter) {
             if (this->lf_action_defs.find(*act_iter) ==
                 this->lf_action_defs.end()) {
                 errors.push_back("error:" +
-                    this->elf_name.to_string() + ":" + iter->first.get() +
-                    ": cannot find action -- " + (*act_iter));
+                                 this->elf_name.to_string() + ":" +
+                                 iter->first.get() +
+                                 ": cannot find action -- " + (*act_iter));
             }
         }
     }
 
     if (!this->jlf_json && this->elf_samples.empty()) {
         errors.push_back("error:" +
-            this->elf_name.to_string() +
-            ":no sample logs provided, all formats must have samples");
+                         this->elf_name.to_string() +
+                         ":no sample logs provided, all formats must have samples");
     }
 
     for (std::vector<sample>::iterator iter = this->elf_samples.begin();
@@ -1379,13 +1386,14 @@ void external_log_format::build(std::vector<std::string> &errors)
             }
 
             if (!pat.p_module_format &&
-                    pat.p_pcre->name_index(this->lf_timestamp_field.to_string()) < 0) {
+                pat.p_pcre->name_index(this->lf_timestamp_field.to_string()) <
+                0) {
                 errors.push_back("error:" +
-                    this->elf_name.to_string() +
-                    ":timestamp field '" +
-                    this->lf_timestamp_field.get() +
-                    "' not found in pattern -- " +
-                    pat.p_string);
+                                 this->elf_name.to_string() +
+                                 ":timestamp field '" +
+                                 this->lf_timestamp_field.get() +
+                                 "' not found in pattern -- " +
+                                 pat.p_string);
                 continue;
             }
 
@@ -1395,7 +1403,7 @@ void external_log_format::build(std::vector<std::string> &errors)
                     continue;
                 }
                 pcre_context::capture_t *ts_cap =
-                        pc[this->lf_timestamp_field.get()];
+                    pc[this->lf_timestamp_field.get()];
                 const char *ts = pi.get_substr_start(ts_cap);
                 ssize_t ts_len = pc[this->lf_timestamp_field.get()]->length();
                 const char *const *custom_formats = this->get_timestamp_formats();
@@ -1407,22 +1415,25 @@ void external_log_format::build(std::vector<std::string> &errors)
                     pat.p_timestamp_end = ts_cap->c_end;
                 }
                 found = true;
-                if (ts_len == -1 || dts.scan(ts, ts_len, custom_formats, &tm, tv) == NULL) {
+                if (ts_len == -1 ||
+                    dts.scan(ts, ts_len, custom_formats, &tm, tv) == NULL) {
                     errors.push_back("error:" +
-                        this->elf_name.to_string() +
-                        ":invalid sample -- " +
-                        iter->s_line);
+                                     this->elf_name.to_string() +
+                                     ":invalid sample -- " +
+                                     iter->s_line);
                     errors.push_back("error:" +
-                        this->elf_name.to_string() +
-                        ":unrecognized timestamp format -- " + ts);
+                                     this->elf_name.to_string() +
+                                     ":unrecognized timestamp format -- " + ts);
 
                     if (custom_formats == NULL) {
-                        for (int lpc = 0; PTIMEC_FORMATS[lpc].pf_fmt != NULL; lpc++) {
+                        for (int lpc = 0;
+                             PTIMEC_FORMATS[lpc].pf_fmt != NULL; lpc++) {
                             off_t off = 0;
 
                             PTIMEC_FORMATS[lpc].pf_func(&tm, ts, off, ts_len);
                             errors.push_back("  format: " +
-                                             string(PTIMEC_FORMATS[lpc].pf_fmt) +
+                                             string(
+                                                 PTIMEC_FORMATS[lpc].pf_fmt) +
                                              "; matched: " + string(ts, off));
                         }
                     }
@@ -1430,7 +1441,8 @@ void external_log_format::build(std::vector<std::string> &errors)
                         for (int lpc = 0; custom_formats[lpc] != NULL; lpc++) {
                             off_t off = 0;
 
-                            ptime_fmt(custom_formats[lpc], &tm, ts, off, ts_len);
+                            ptime_fmt(custom_formats[lpc], &tm, ts, off,
+                                      ts_len);
                             errors.push_back("  format: " +
                                              string(custom_formats[lpc]) +
                                              "; matched: " + string(ts, off));
@@ -1471,6 +1483,42 @@ void external_log_format::build(std::vector<std::string> &errors)
                                      ":no partial match found");
                 }
             }
+        }
+    }
+}
+
+void external_log_format::register_vtabs(log_vtab_manager *vtab_manager,
+                                         std::vector<std::string> &errors)
+{
+    vector<pair<intern_string_t, string> >::iterator search_iter;
+    for (search_iter = this->elf_search_tables.begin();
+         search_iter != this->elf_search_tables.end();
+         ++search_iter) {
+        log_search_table *lst;
+
+        try {
+            lst = new log_search_table(search_iter->second.c_str(), search_iter->first);
+        } catch (pcrepp::error &e) {
+            errors.push_back(
+                    "error:" +
+                    this->elf_name.to_string() +
+                    ":" +
+                    search_iter->first.to_string() +
+                    ":unable to compile regex -- " +
+                    search_iter->second);
+        }
+
+        string errmsg;
+
+        errmsg = vtab_manager->register_vtab(lst);
+        if (!errmsg.empty()) {
+            errors.push_back(
+                "error:" +
+                this->elf_name.to_string() +
+                ":" +
+                search_iter->first.to_string() +
+                ":unable to register table -- " +
+                errmsg);
         }
     }
 }

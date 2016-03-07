@@ -131,6 +131,7 @@ drive_logfile_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	../src/default-config-json.o \
+	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
 	$(CURSES_LIB) \
@@ -150,6 +151,7 @@ drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	../src/default-config-json.o \
+	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
 	$(PCRE_LIBS) \
@@ -202,6 +204,7 @@ dist_noinst_SCRIPTS = \
 	test_listview.sh \
 	test_logfile.sh \
 	test_mvwattrline.sh \
+	test_scripts.sh \
 	test_sessions.sh \
 	test_shlexer.sh \
 	test_sql.sh \
@@ -288,6 +291,7 @@ dist_noinst_DATA = \
 	formats/collision/format.json \
 	formats/jsontest/format.json \
 	formats/nestedjson/format.json \
+	formats/scripts/multiline-echo.lnav \
 	formats/sqldir/init.sql \
 	formats/timestamp/format.json \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
@@ -320,6 +324,7 @@ TESTS = \
 	test_logfile.sh \
 	test_pcrepp \
 	test_reltime \
+	test_scripts.sh \
 	test_sessions.sh \
 	test_shlexer.sh \
 	test_sql.sh \
@@ -357,7 +362,8 @@ DISTCLEANFILES = \
 	logfile_stdin.log \
 	logfile_syslog.0 \
 	unreadable.log \
-	empty
+	empty \
+	scripts-empty
 
 distclean-local:
 	$(RM_V)rm -rf sessions

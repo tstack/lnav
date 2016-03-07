@@ -56,6 +56,7 @@
 #include "shared_buffer.hh"
 
 class log_format;
+class log_vtab_manager;
 
 /**
  * Metadata for a single line in a log file.
@@ -862,6 +863,9 @@ public:
 
     void build(std::vector<std::string> &errors);
 
+    void register_vtabs(log_vtab_manager *vtab_manager,
+                        std::vector<std::string> &errors);
+
     bool match_samples(const std::vector<sample> &samples) const;
 
     std::auto_ptr<log_format> specialized(int fmt_lock) {
@@ -949,6 +953,7 @@ public:
     bool elf_container;
     bool elf_has_module_format;
     bool elf_builtin_format;
+    std::vector<std::pair<intern_string_t, std::string> > elf_search_tables;
 
     enum json_log_field {
         JLF_CONSTANT,

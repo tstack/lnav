@@ -56,9 +56,9 @@ public:
     path(const path &path)
         : m_type(path.m_type), m_path(path.m_path), m_absolute(path.m_absolute) {}
 
-    path(path &&path)
+/*    path(path &&path)
         : m_type(path.m_type), m_path(std::move(path.m_path)),
-          m_absolute(path.m_absolute) {}
+          m_absolute(path.m_absolute) {} */
 
     path(const char *string) { set(string); }
 
@@ -219,14 +219,14 @@ public:
         return *this;
     }
 
-    path &operator=(path &&path) {
+/*    path &operator=(path &&path) {
         if (this != &path) {
             m_type = path.m_type;
             m_path = std::move(path.m_path);
             m_absolute = path.m_absolute;
         }
         return *this;
-    }
+    } */
 
     friend std::ostream &operator<<(std::ostream &os, const path &path) {
         os << path.str();

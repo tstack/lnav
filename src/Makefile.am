@@ -99,6 +99,7 @@ LDADD = \
 dist_noinst_DATA = \
 	default-log-formats.json \
 	default-config.json \
+	dhclient-summary.lnav \
 	dump-pid.sh \
 	partition-by-boot.lnav
 
@@ -303,6 +304,7 @@ TEXT2C_FILES = \
 	init-sql.o \
 	default-log-formats-json.o \
 	default-config-json.o \
+	dhclient-summary.o \
 	partition-by-boot.o
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)

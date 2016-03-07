@@ -33,6 +33,7 @@
 #define __format_text_files_hh
 
 extern "C" {
+extern const char dhclient_summary_lnav[];
 extern const char dump_pid_sh[];
 extern const char partition_by_boot_lnav[];
 }

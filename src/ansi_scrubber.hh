@@ -51,4 +51,10 @@
  */
 void scrub_ansi_string(std::string &str, string_attrs_t &sa);
 
+/**
+ * Populate a variable map with strings that contain escape sequences that
+ * might be useful to script writers.
+ */
+void add_ansi_vars(std::map<std::string, std::string> &vars);
+
 #endif

@@ -1,0 +1,21 @@
+#
+# @synopsis: dhclient-summary
+# @description: Generate a summary of DHCP addresses bound in this log
+#
+
+:echo DHCP leases over time:
+:echo
+;SELECT ip AS IP, start_time AS "Start Time",
+        printf("% 24s", CASE
+          WHEN end_time IS NULL THEN printf("%s%s%s", $ansi_green, 'Active', $ansi_norm)
+          ELSE
+          printf("%s%.02f%s hours", $ansi_bold, (julianday(end_time) - julianday(start_time)) * 24, $ansi_norm)
+        END) AS Duration
+  FROM
+  (WITH lease_times AS
+    (SELECT min(log_time) AS start_time, ip FROM dhclient_bound GROUP BY ip ORDER BY start_time ASC)
+    SELECT start_time,
+           (SELECT lt2.start_time AS end_time FROM lease_times AS lt2 WHERE lt1.start_time < lt2.start_time LIMIT 1) AS end_time,
+           ip
+      FROM lease_times AS lt1)
+:write-cols-to -

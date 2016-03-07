@@ -135,3 +135,19 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
         pi.reset(str);
     }
 }
+
+void add_ansi_vars(std::map<std::string, std::string> &vars)
+{
+    vars["ansi_csi"] = "\x1b[";
+    vars["ansi_norm"] = "\x1b[0m";
+    vars["ansi_bold"] = "\x1b[1m";
+    vars["ansi_underline"] = "\x1b[4m";
+    vars["ansi_black"] = "\x1b[30m";
+    vars["ansi_red"] = "\x1b[31m";
+    vars["ansi_green"] = "\x1b[32m";
+    vars["ansi_yellow"] = "\x1b[33m";
+    vars["ansi_blue"] = "\x1b[34m";
+    vars["ansi_magenta"] = "\x1b[35m";
+    vars["ansi_cyan"] = "\x1b[36m";
+    vars["ansi_white"] = "\x1b[37m";
+}

@@ -63,9 +63,6 @@ EOF
 check_output "include toplevel.lnav" <<EOF
 toplevel here 123 456
 nested here nested.lnav abc 789
-192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
 
@@ -74,7 +71,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "include nonexistent" <<EOF
-invalid command file: No such file or directory
+error: unknown script -- nonexistent.lnav -- file not found
 EOF
 
 
@@ -460,26 +457,20 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ";update generic_log set log_mark=1" \
-    -c ":pipe-to sed -e 's/World!/Bork!/g'" \
+    -c ":pipe-to sed -e 's/World!/Bork!/g' -e 's/2009//g'" \
     ${test_dir}/logfile_multiline.0
 check_output "pipe-to is not working" <<EOF
-2009-07-20 22:59:27,672:DEBUG:Hello, Bork!
+-07-20 22:59:27,672:DEBUG:Hello, Bork!
   How are you today?
-2009-07-20 22:59:27,672:DEBUG:Hello, World!
-  How are you today?
-2009-07-20 22:59:30,221:ERROR:Goodbye, Bork!
-2009-07-20 22:59:30,221:ERROR:Goodbye, World!
+-07-20 22:59:30,221:ERROR:Goodbye, Bork!
 EOF
 
 run_test ${lnav_test} -n \
     -c ":goto 2" \
-    -c ":pipe-line-to sed -e 's/World!/Bork!/g'" \
+    -c ":pipe-line-to sed -e 's/World!/Bork!/g' -e 's/2009//g'" \
     ${test_dir}/logfile_multiline.0
 check_output "pipe-line-to is not working" <<EOF
-2009-07-20 22:59:27,672:DEBUG:Hello, World!
-  How are you today?
-2009-07-20 22:59:30,221:ERROR:Goodbye, Bork!
-2009-07-20 22:59:30,221:ERROR:Goodbye, World!
+-07-20 22:59:30,221:ERROR:Goodbye, Bork!
 EOF
 
 run_test ${lnav_test} -n \
@@ -751,9 +742,6 @@ run_test ${lnav_test} -n \
 
 check_output "echo hello" <<EOF
 Hello, \$XYZ!
-192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
 export XYZ="World"
@@ -765,9 +753,6 @@ run_test ${lnav_test} -n \
 
 check_output "echo hello" <<EOF
 Hello, World!
-192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
 
@@ -777,7 +762,4 @@ run_test ${lnav_test} -n \
 
 check_output "eval echo hello" <<EOF
 Hello, World!
-192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
-192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF

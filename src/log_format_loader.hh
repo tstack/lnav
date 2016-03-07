@@ -37,11 +37,16 @@
 #include <vector>
 #include <string>
 
+class log_vtab_manager;
+
 std::vector<intern_string_t> load_format_file(
         const std::string &filename, std::vector<std::string> &errors);
 
 void load_formats(const std::vector<std::string> &extra_paths,
                   std::vector<std::string> &errors);
+
+void load_format_vtabs(log_vtab_manager *vtab_manager,
+                       std::vector<std::string> &errors);
 
 void load_format_extra(sqlite3 *db,
                        const std::vector<std::string> &extra_paths,

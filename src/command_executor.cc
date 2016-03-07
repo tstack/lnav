@@ -224,7 +224,9 @@ string execute_sql(const string &sql, string &alt_msg)
             else {
                 char row_count[32];
 
-                ensure_view(&lnav_data.ld_views[LNV_DB]);
+                if (lnav_data.ld_local_vars.size() == 1) {
+                    ensure_view(&lnav_data.ld_views[LNV_DB]);
+                }
                 snprintf(row_count, sizeof(row_count),
                    ANSI_BOLD("%'d") " row(s) matched",
                    (int)dls.dls_rows.size());
@@ -344,6 +346,8 @@ string execute_file(const string &path_and_args, bool multiline)
         map<string, string> &vars = lnav_data.ld_local_vars.top();
         char env_arg_name[32];
         string result, open_error = "file not found";
+
+        add_ansi_vars(vars);
 
         snprintf(env_arg_name, sizeof(env_arg_name), "%d", (int) split_args.size() - 1);
 

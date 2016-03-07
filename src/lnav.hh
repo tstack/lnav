@@ -258,6 +258,7 @@ struct _lnav_data {
 
     std::stack<std::map<std::string, std::string> > ld_local_vars;
     std::stack<std::string> ld_path_stack;
+    std::stack<FILE *> ld_output_stack;
 
     std::map<std::string, std::vector<script_metadata> > ld_scripts;
 };

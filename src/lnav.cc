@@ -461,8 +461,8 @@ public:
         if (!lnav_data.ld_files_to_front.empty() &&
                 lnav_data.ld_files_to_front.front().first ==
                         lf->get_filename()) {
-            front_file = lf;
-            front_top = lnav_data.ld_files_to_front.front().second;
+            this->front_file = lf;
+            this->front_top = lnav_data.ld_files_to_front.front().second;
 
             lnav_data.ld_files_to_front.pop_front();
         }
@@ -1137,15 +1137,16 @@ struct same_file {
  * @param fd       An already-opened descriptor for 'filename'.
  * @param required Specifies whether or not the file must exist and be valid.
  */
-static void watch_logfile(string filename, int fd, bool required)
+static bool watch_logfile(string filename, int fd, bool required)
 {
     static loading_observer obs;
     list<logfile *>::iterator file_iter;
     struct stat st;
     int         rc;
+    bool retval = false;
 
     if (lnav_data.ld_closed_files.count(filename)) {
-        return;
+        return retval;
     }
 
     if (fd != -1) {
@@ -1162,7 +1163,7 @@ static void watch_logfile(string filename, int fd, bool required)
                 errno = EINVAL;
             }
             else {
-                return;
+                return retval;
             }
         }
     }
@@ -1171,7 +1172,7 @@ static void watch_logfile(string filename, int fd, bool required)
             throw logfile::error(filename, errno);
         }
         else{
-            return;
+            return retval;
         }
     }
 
@@ -1189,16 +1190,19 @@ static void watch_logfile(string filename, int fd, bool required)
             case FF_SQLITE_DB:
                 lnav_data.ld_other_files.push_back(filename);
                 attach_sqlite_db(lnav_data.ld_db.in(), filename);
+                retval = true;
                 break;
 
             default:
                 /* It's a new file, load it in. */
                 logfile *lf = new logfile(filename, fd);
 
-                log_info("loading new file: %s", filename.c_str());
-                    lf->set_logfile_observer(&obs);
+                log_info("loading new file: fd=%d; filename=%s",
+                         fd, filename.c_str());
+                lf->set_logfile_observer(&obs);
                 lnav_data.ld_files.push_back(lf);
                 lnav_data.ld_text_source.push_back(lf);
+                retval = true;
                 break;
             }
         }
@@ -1209,6 +1213,8 @@ static void watch_logfile(string filename, int fd, bool required)
          */
         (*file_iter)->set_filename(filename);
     }
+
+    return retval;
 }
 
 /**
@@ -1274,7 +1280,7 @@ bool rescan_files(bool required)
             }
         }
         else {
-            watch_logfile(iter->first, iter->second, required);
+            retval = retval || watch_logfile(iter->first, iter->second, required);
         }
     }
 
@@ -2191,6 +2197,7 @@ int main(int argc, char *argv[])
 
     lnav_data.ld_program_name = argv[0];
     lnav_data.ld_local_vars.push(map<string, string>());
+    add_ansi_vars(lnav_data.ld_local_vars.top());
     lnav_data.ld_path_stack.push(".");
 
     rl_readline_name = "lnav";
@@ -2240,10 +2247,6 @@ int main(int argc, char *argv[])
             break;
 
         case 'f':
-            if (access(optarg, R_OK) != 0) {
-                perror("invalid command file");
-                exit(EXIT_FAILURE);
-            }
             lnav_data.ld_commands.push_back("|" + string(optarg));
             break;
 
@@ -2420,8 +2423,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    load_formats(lnav_data.ld_config_paths, loader_errors);
-
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable
      * so that it will try the default path.
@@ -2444,6 +2445,8 @@ int main(int argc, char *argv[])
         new log_vtab_manager(lnav_data.ld_db,
                              lnav_data.ld_views[LNV_LOG],
                              lnav_data.ld_log_source);
+
+    load_formats(lnav_data.ld_config_paths, loader_errors);
 
     {
         auto_mem<char, sqlite3_free> errmsg;
@@ -2474,6 +2477,7 @@ int main(int argc, char *argv[])
     }
 
     load_format_extra(lnav_data.ld_db.in(), lnav_data.ld_config_paths, loader_errors);
+    load_format_vtabs(lnav_data.ld_vtab_manager, loader_errors);
     if (!loader_errors.empty()) {
         print_errors(loader_errors);
         return EXIT_FAILURE;
@@ -2752,6 +2756,7 @@ int main(int argc, char *argv[])
                 const std::string &line = al.get_string();
                 bool found_error = false;
 
+                lnav_data.ld_output_stack.push(stdout);
                 alerter::singleton().enabled(false);
 
                 log_tc = &lnav_data.ld_views[LNV_LOG];

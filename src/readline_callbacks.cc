@@ -266,9 +266,60 @@ void rl_callback(void *dummy, readline_curses *rc)
         rc->set_alt_value(alt_msg);
         break;
 
-    case LNM_EXEC:
-        rc->set_value(execute_file(rc->get_value()));
+    case LNM_EXEC: {
+        char fn_template[PATH_MAX];
+        auto_mem<char> abspath;
+        auto_fd fd;
+
+        snprintf(fn_template, sizeof(fn_template),
+                 "/%s/lnav-script-out.XXXXXX",
+                 getenv("TMPDIR"));
+        if ((fd = mkstemp(fn_template)) == -1) {
+            rc->set_value("Unable to open temporary output file: " + string(strerror(errno)));
+        }
+        else if ((abspath = realpath(fn_template, NULL)) == NULL) {
+            rc->set_value("Unable to get real path to temporary file");
+        }
+        else {
+            auto_fd fd_copy((const auto_fd &) fd);
+            char desc[256], timestamp[32];
+            time_t current_time = time(NULL);
+            string path_and_args = rc->get_value();
+
+            {
+                auto_mem<FILE> tmpout(fclose);
+
+                if ((tmpout = fdopen(fd, "w+")) != NULL) {
+                    lnav_data.ld_output_stack.push(tmpout);
+                    string result = execute_file(path_and_args);
+                    string::size_type lf_index = result.find('\n');
+                    if (lf_index != string::npos) {
+                        result = result.substr(0, lf_index);
+                    }
+                    rc->set_value(result);
+                    lnav_data.ld_output_stack.pop();
+                }
+            }
+
+            strftime(timestamp, sizeof(timestamp),
+                     "%a %b %d %H:%M:%S %Z",
+                     localtime(&current_time));
+            snprintf(desc, sizeof(desc),
+                     "Output of %s (%s)",
+                     path_and_args.c_str(),
+                     timestamp);
+            lnav_data.ld_file_names.insert(make_pair(desc, fd_copy.release()));
+            lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+
+            remove(abspath.in());
+
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                                                        X, "to close the file"));
+            }
+        }
         break;
+    }
     }
 
     lnav_data.ld_mode = LNM_PAGING;

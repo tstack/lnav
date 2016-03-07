@@ -403,6 +403,17 @@ static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
     return 1;
 }
 
+static int create_search_table(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    external_log_format *elf = ensure_format(ypc);
+    const intern_string_t table_name = ypc->get_path_fragment_i(2);
+    string regex = string((const char *) str, len);
+
+    elf->elf_search_tables.push_back(make_pair(table_name, regex));
+
+    return 1;
+}
+
 
 static struct json_path_handler pattern_handlers[] = {
     json_path_handler("pattern")
@@ -451,6 +462,10 @@ static struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/line-format#/min-width", read_json_variable_num),
     json_path_handler("/\\w+/line-format#", read_json_constant),
 
+    json_path_handler("/\\w+/search-table/.+/pattern", create_search_table)
+        .with_synopsis("<regex>")
+        .with_description("The regular expression for this search table."),
+
     json_path_handler()
 };
 
@@ -482,6 +497,7 @@ static void write_sample_file(void)
 
     static const char *SCRIPTS[] = {
             partition_by_boot_lnav,
+            dhclient_summary_lnav,
             NULL
     };
 
@@ -822,6 +838,7 @@ static void find_format_in_path(const string &path,
     string format_path = path + "/formats/*/*.lnav";
     static_root_mem<glob_t, globfree> gl;
 
+    log_debug("Searching for script in path: %s", format_path.c_str());
     if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             const char *filename = basename(gl->gl_pathv[lpc]);
@@ -847,5 +864,17 @@ void find_format_scripts(const vector<string> &extra_paths,
          path_iter != extra_paths.end();
          ++path_iter) {
         find_format_in_path(*path_iter, scripts);
+    }
+}
+
+void load_format_vtabs(log_vtab_manager *vtab_manager,
+                       std::vector<std::string> &errors)
+{
+    map<intern_string_t, external_log_format *> &root_formats = LOG_FORMATS;
+
+    for (map<intern_string_t, external_log_format *>::iterator iter = root_formats.begin();
+         iter != root_formats.end();
+         ++iter) {
+        iter->second->register_vtabs(vtab_manager, errors);
     }
 }
