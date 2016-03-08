@@ -143,6 +143,7 @@ void logfile::set_format_base_time(log_format *lf)
 void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 {
     log_format::scan_result_t found = log_format::SCAN_NO_MATCH;
+    size_t prescan_size = this->lf_index.size();
 
     if (this->lf_format.get() != NULL) {
         /* We've locked onto a format, just use that scanner. */
@@ -200,21 +201,25 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 
     switch (found) {
         case log_format::SCAN_MATCH:
-            if (this->lf_index.size() >= 2) {
-                logline &second_to_last = this->lf_index[this->lf_index.size() - 2];
+            if (prescan_size > 0) {
+                logline &second_to_last = this->lf_index[prescan_size - 1];
                 logline &latest = this->lf_index.back();
 
                 if (latest < second_to_last) {
                     log_debug("%s:%d: out-of-time-order line detected %d.%03d < %d.%03d",
                               this->lf_filename.c_str(),
-                              this->lf_index.size(),
+                              prescan_size,
                               latest.get_time(),
                               latest.get_millis(),
                               second_to_last.get_time(),
                               second_to_last.get_millis());
-                    latest.set_time_skew(true);
-                    latest.set_time(second_to_last.get_time());
-                    latest.set_millis(second_to_last.get_millis());
+                    for (size_t lpc = prescan_size; lpc < this->lf_index.size(); lpc++) {
+                        logline &line_to_update = this->lf_index[lpc];
+
+                        line_to_update.set_time_skew(true);
+                        line_to_update.set_time(second_to_last.get_time());
+                        line_to_update.set_millis(second_to_last.get_millis());
+                    }
                 }
             }
             break;
