@@ -205,7 +205,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 logline &latest = this->lf_index.back();
 
                 if (latest < second_to_last) {
-                    log_debug("%s:%d: out-of-time-order line detected %d.%06d < %d.%06d",
+                    log_debug("%s:%d: out-of-time-order line detected %d.%03d < %d.%03d",
                               this->lf_filename.c_str(),
                               this->lf_index.size(),
                               latest.get_time(),

@@ -392,7 +392,8 @@ public:
     };
 
     void index_line(logfile_sub_source &lss, logfile *lf, logfile::iterator ll) {
-        if (ll->get_level() & logline::LEVEL_CONTINUED) {
+        if (ll->get_level() & logline::LEVEL_CONTINUED ||
+            ll->get_time() == 0) {
             return;
         }
 

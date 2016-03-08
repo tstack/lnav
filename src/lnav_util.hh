@@ -304,7 +304,8 @@ struct date_time_scanner {
                      size_t time_len,
                      const char * const time_fmt[],
                      struct exttm *tm_out,
-                     struct timeval &tv_out);
+                     struct timeval &tv_out,
+                     bool convert_local = true);
 
     bool convert_to_timeval(const std::string &time_src,
                             struct timeval &tv_out) {

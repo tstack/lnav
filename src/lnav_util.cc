@@ -454,7 +454,8 @@ const char *date_time_scanner::scan(const char *time_dest,
                                     size_t time_len,
                                     const char * const time_fmt[],
                                     struct exttm *tm_out,
-                                    struct timeval &tv_out)
+                                    struct timeval &tv_out,
+                                    bool convert_local)
 {
     int  curr_time_fmt = -1;
     bool found         = false;
@@ -479,7 +480,7 @@ const char *date_time_scanner::scan(const char *time_dest,
             if (sscanf(time_cp, "+%d%n", &gmt_int, &off) == 1) {
                 time_t gmt = gmt_int;
 
-                if (this->dts_local_time) {
+                if (convert_local && this->dts_local_time) {
                     localtime_r(&gmt, &tm_out->et_tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
                     tm_out->et_tm.tm_zone = NULL;
@@ -513,7 +514,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
                 }
-                if (this->dts_local_time) {
+                if (convert_local && this->dts_local_time) {
                     time_t gmt = tm2sec(&tm_out->et_tm);
 
                     this->to_localtime(gmt, *tm_out);
@@ -536,7 +537,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
                 }
-                if (this->dts_local_time) {
+                if (convert_local && this->dts_local_time) {
                     time_t gmt = tm2sec(&tm_out->et_tm);
 
                     this->to_localtime(gmt, *tm_out);
