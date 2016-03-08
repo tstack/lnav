@@ -119,6 +119,13 @@ Additional string comparison and manipulation functions:
   starts with the given prefix.
 * endswith(s1,suffix) - Given a string and suffix, return 1 if the string ends
   with the given suffix.
+* extract(re,str) - Extract values from a string using a regular expression.
+  The "re" argument should be a PCRE with captures.  If there is a single
+  capture, that captured value will be directly returned.  If there is more
+  than one capture, a JSON object will be returned with field names matching
+  the named capture groups or 'col_N' where 'N' is the index of the capture.
+  If the expression does not match the string, NULL is returned.
+
 
 File Paths
 ----------

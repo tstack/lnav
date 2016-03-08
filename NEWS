@@ -9,6 +9,8 @@ lnav v0.8.1:
        object or array, respectively.
      * The SQL view will now graph values found in JSON objects/arrays in
        addition to the regular columns in the result.
+     * Added an 'extract(<re>, <str>)' SQL function that can be used to
+       extract values from a string using a regular expression.
      * Pressing 'V' in the DB view will now check for a column with a
        timestamp and move to the corresponding time in the log view.
      * Added ":hide-lines-before", ":hide-lines-after", and

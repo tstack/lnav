@@ -398,7 +398,7 @@ public:
                                             this->p_name_len);
     };
 
-    const std::vector<pcre_context::capture> captures() const {
+    const std::vector<pcre_context::capture> &captures() const {
         return this->p_captures;
     };
 

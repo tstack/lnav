@@ -993,12 +993,7 @@
             {
                 "line" : "Jun 20 17:26:13 ip-10-188-149-5 [CLOUDINIT] util.py[DEBUG]: Restoring selinux mode for /var/lib/cloud (recursive=False)"
             }
-        ],
-        "search-table" : {
-            "dhclient_bound" : {
-                "pattern": "bound to (?<ip>\\S+) -- renewal in (?<lease_time>\\d+) seconds"
-            }
-        }
+        ]
     },
     "tcf_log" : {
         "title" : "TCF Log",
