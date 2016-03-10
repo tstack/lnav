@@ -9,10 +9,8 @@ lnav v0.8.1:
        object or array, respectively.
      * The SQL view will now graph values found in JSON objects/arrays in
        addition to the regular columns in the result.
-     * Added an 'regexp_match(<re>, <str>)' SQL function that can be used to
+     * Added an 'extract(<re>, <str>)' SQL function that can be used to
        extract values from a string using a regular expression.
-     * Added an 'extract(<str>)' SQL function that extracts values using the
-       same data discover/extraction parser used in the 'logline' table.
      * Pressing 'V' in the DB view will now check for a column with a
        timestamp and move to the corresponding time in the log view.
      * Added ":hide-lines-before", ":hide-lines-after", and
@@ -25,8 +23,6 @@ lnav v0.8.1:
      * Added an ":echo" command that can be useful for scripts to message
        the user.
      * The "log_part" column can now be set with an SQL UPDATE statement.
-     * Added a "log_body" hidden column that returns the body of the log
-       message.
      * Added ":config", ":reset-config", and ":save-config" commands to change
        configuration options, reset to default, and save them for future
        executions.

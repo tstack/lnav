@@ -202,8 +202,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
        [a-zA-Z0-9\._%+-]+"@"[a-zA-Z0-9\.-]+"."[a-zA-Z]+ { RET(DT_EMAIL); }
 
-       "true"|"True"|"TRUE"|"false"|"False"|"FALSE"|"None"|"null"|"NULL"/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_CONSTANT); }
-
+       ("true"|"True"|"TRUE"|"false"|"False"|"FALSE"|"None"|"null"|"NULL") { RET(DT_CONSTANT); }
        ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
 
        [^\x00"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+("::"[^\x00"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {

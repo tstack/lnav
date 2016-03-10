@@ -607,7 +607,7 @@ static string com_save_to(string cmdline, vector<string> &args)
             for (iter = row_iter->begin();
                  iter != row_iter->end();
                  ++iter) {
-                fputs(*iter, outfile);
+                csv_write_string(outfile, *iter);
             }
             fprintf(outfile, "\n");
         }

@@ -78,26 +78,25 @@ Row 0:
 EOF
 
 
-run_test ./drive_sql "select regexp_match('abc', 'abc')"
+run_test ./drive_sql "select extract('abc', 'abc')"
 
 check_error_output "" <<EOF
 error: sqlite3_exec failed -- regular expression does not have any captures
 EOF
 
-run_test ./drive_sql "select regexp_match(null, 'abc')"
+run_test ./drive_sql "select extract(null, 'abc')"
 
 check_error_output "" <<EOF
 error: sqlite3_exec failed -- no regexp
 EOF
 
-run_test ./drive_sql "select regexp_match('abc', null) as result"
+run_test ./drive_sql "select extract('abc', null)"
 
-check_output "" <<EOF
-Row 0:
-  Column     result: (null)
+check_error_output "" <<EOF
+error: sqlite3_exec failed -- no string
 EOF
 
-run_test ./drive_sql "select typeof(result), result from (select regexp_match('(\d*)abc', 'abc') as result)"
+run_test ./drive_sql "select typeof(result), result from (select extract('(\d*)abc', 'abc') as result)"
 
 check_output "" <<EOF
 Row 0:
@@ -105,7 +104,7 @@ Row 0:
   Column     result:
 EOF
 
-run_test ./drive_sql "select typeof(result), result from (select regexp_match('(\d*)abc(\d*)', 'abc') as result)"
+run_test ./drive_sql "select typeof(result), result from (select extract('(\d*)abc(\d*)', 'abc') as result)"
 
 check_output "" <<EOF
 Row 0:
@@ -113,7 +112,7 @@ Row 0:
   Column     result: {"col_0":"","col_1":""}
 EOF
 
-run_test ./drive_sql "select typeof(result), result from (select regexp_match('(\d+)', '123') as result)"
+run_test ./drive_sql "select typeof(result), result from (select extract('(\d+)', '123') as result)"
 
 check_output "" <<EOF
 Row 0:
@@ -121,7 +120,7 @@ Row 0:
   Column     result: 123
 EOF
 
-run_test ./drive_sql "select typeof(result), result from (select regexp_match('a(\d+\.\d+)a', 'a123.456a') as result)"
+run_test ./drive_sql "select typeof(result), result from (select extract('a(\d+\.\d+)a', 'a123.456a') as result)"
 
 check_output "" <<EOF
 Row 0:
@@ -129,14 +128,14 @@ Row 0:
   Column     result: 123.456
 EOF
 
-run_test ./drive_sql "select regexp_match('foo=(?<foo>\w+); (\w+)', 'foo=abc; 123') as result"
+run_test ./drive_sql "select extract('foo=(?<foo>\w+); (\w+)', 'foo=abc; 123') as result"
 
 check_output "" <<EOF
 Row 0:
   Column     result: {"foo":"abc","col_0":123}
 EOF
 
-run_test ./drive_sql "select regexp_match('foo=(?<foo>\w+); (\w+\.\w+)', 'foo=abc; 123.456') as result"
+run_test ./drive_sql "select extract('foo=(?<foo>\w+); (\w+\.\w+)', 'foo=abc; 123.456') as result"
 
 check_output "" <<EOF
 Row 0:

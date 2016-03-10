@@ -175,21 +175,8 @@ while True:
 
     if not cmd or cmd[0] == '':
         pass
-    elif cmd[0] == 'h':
-        print 'Help:'
-        print '  q - quit'
-        print '  s - Start over'
-        print '  n - Next step'
-        print '  r - Previous step'
-        print '  b - Previous breakpoint'
-        print '  c - Next breakpoint'
-        print '  p - Print state'
-        print '  w <var> - Add a variable to the watch list'
-        print '  u <var> - Remove a variable from the watch list'
     elif cmd[0] == 'q':
         break
-    elif cmd[0] == 's':
-        index = 0
     elif cmd[0] == 'n':
         if index < len(ops):
             index += 1
