@@ -110,7 +110,7 @@ public:
                          shared_buffer_ref &line,
                          std::vector<logline_value> &values)
     {
-        log_format *   format = lf->get_format();
+        log_format *format = lf->get_format();
 
         this->vi_attrs.clear();
         format->annotate(line, this->vi_attrs, values);
@@ -118,9 +118,9 @@ public:
 
     bool vi_supports_indexes;
     int vi_column_count;
+    string_attrs_t vi_attrs;
 protected:
     const intern_string_t vi_name;
-    string_attrs_t vi_attrs;
 };
 
 class log_format_vtab_impl : public log_vtab_impl {
