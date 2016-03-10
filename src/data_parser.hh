@@ -35,6 +35,7 @@
 #include "spookyhash/SpookyV2.h"
 
 #include <list>
+#include <stack>
 #include <vector>
 #include <iterator>
 #include <algorithm>
@@ -75,17 +76,23 @@ enum data_format_state_t {
 };
 
 struct data_format {
-    data_format(const char *name,
+    data_format(const char *name = NULL,
                 data_token_t appender = DT_INVALID,
                 data_token_t terminator = DT_INVALID)
         : df_name(name),
           df_appender(appender),
-          df_terminator(terminator)
+          df_terminator(terminator),
+          df_qualifier(DT_INVALID),
+          df_separator(DT_COLON),
+          df_prefix_terminator(DT_INVALID)
     {};
 
     const char *       df_name;
-    const data_token_t df_appender;
-    const data_token_t df_terminator;
+    data_token_t df_appender;
+    data_token_t df_terminator;
+    data_token_t df_qualifier;
+    data_token_t df_separator;
+    data_token_t df_prefix_terminator;
 };
 
 data_format_state_t dfs_prefix_next(data_format_state_t state,
@@ -197,6 +204,10 @@ public:
             LIST_INIT_TRACE;
         };
 
+        element_list_t(const element_list_t &other) : std::list<element>(other) {
+            this->el_format = other.el_format;
+        }
+
         ~element_list_t()
         {
             const char *fn   = __FILE__;
@@ -251,6 +262,8 @@ public:
 
             this->std::list<element>::splice(pos, other, first, last);
         }
+
+        data_format el_format;
     };
 
     struct element {
@@ -302,6 +315,7 @@ public:
             if (this->e_sub_elements == NULL) {
                 this->e_sub_elements = new element_list_t("_sub_", __FILE__,
                                                           __LINE__);
+                this->e_sub_elements->el_format = subs.el_format;
             }
             this->e_sub_elements->swap(subs);
             this->update_capture();
@@ -332,6 +346,9 @@ public:
                 if (this->e_sub_elements != NULL &&
                     this->e_sub_elements->size() == 1) {
                     retval = this->e_sub_elements->front().e_token;
+                }
+                else {
+                    retval = DT_SYMBOL;
                 }
             }
             else {
@@ -410,13 +427,72 @@ private:
         data_token_t ei_token;
     };
 
+    struct discover_format_state {
+        discover_format_state() {
+            memset(this->dfs_hist, 0, sizeof(this->dfs_hist));
+            this->dfs_prefix_state = DFS_INIT;
+            this->dfs_semi_state = DFS_INIT;
+            this->dfs_comma_state = DFS_INIT;
+        }
+
+        void update_for_element(const element &elem) {
+            this->dfs_prefix_state = dfs_prefix_next(this->dfs_prefix_state, elem.e_token);
+            this->dfs_semi_state = dfs_semi_next(this->dfs_semi_state, elem.e_token);
+            this->dfs_comma_state = dfs_comma_next(this->dfs_comma_state, elem.e_token);
+            if (this->dfs_prefix_state != DFS_ERROR) {
+                if (this->dfs_semi_state == DFS_ERROR) {
+                    this->dfs_semi_state = DFS_INIT;
+                }
+                if (this->dfs_comma_state == DFS_ERROR) {
+                    this->dfs_comma_state = DFS_INIT;
+                }
+            }
+            this->dfs_hist[elem.e_token] += 1;
+        }
+
+        void finalize() {
+            data_token_t qualifier = this->dfs_format.df_qualifier;
+            data_token_t separator = this->dfs_format.df_separator;
+            data_token_t prefix_term = this->dfs_format.df_prefix_terminator;
+
+            this->dfs_format = FORMAT_PLAIN;
+            if (this->dfs_hist[DT_EQUALS]) {
+                qualifier = DT_COLON;
+                separator = DT_EQUALS;
+            }
+
+            if (this->dfs_semi_state != DFS_ERROR && this->dfs_hist[DT_SEMI]) {
+                this->dfs_format = FORMAT_SEMI;
+            }
+            else if (this->dfs_comma_state != DFS_ERROR) {
+                this->dfs_format = FORMAT_COMMA;
+                if (separator == DT_COLON && this->dfs_hist[DT_COMMA] > 0) {
+                    if (!((this->dfs_hist[DT_COLON] == this->dfs_hist[DT_COMMA]) ||
+                          ((this->dfs_hist[DT_COLON] - 1) == this->dfs_hist[DT_COMMA]))) {
+                        separator = DT_INVALID;
+                        if (this->dfs_hist[DT_COLON] == 1) {
+                            prefix_term = DT_COLON;
+                        }
+                    }
+                }
+            }
+
+            this->dfs_format.df_qualifier = qualifier;
+            this->dfs_format.df_separator = separator;
+            this->dfs_format.df_prefix_terminator = prefix_term;
+        };
+
+        data_format_state_t dfs_prefix_state;
+        data_format_state_t dfs_semi_state;
+        data_format_state_t dfs_comma_state;
+        int dfs_hist[DT_TERMINAL_MAX];
+
+        data_format dfs_format;
+    };
+
     data_parser(data_scanner *ds)
         : dp_errors("dp_errors", __FILE__, __LINE__),
           dp_pairs("dp_pairs", __FILE__, __LINE__),
-          dp_format(NULL),
-          dp_qualifier(DT_INVALID),
-          dp_separator(DT_INVALID),
-          dp_prefix_terminator(DT_INVALID),
           dp_msg_format(NULL),
           dp_msg_format_begin(ds->get_input().pi_offset),
           dp_scanner(ds)
@@ -434,6 +510,8 @@ private:
         ELEMENT_LIST_T(prefix);
         SpookyHash context;
 
+        require(in_list.el_format.df_name != NULL);
+
         POINT_TRACE("pairup_start");
 
         for (element_list_t::iterator iter = in_list.begin();
@@ -448,20 +526,20 @@ private:
                 }
             }
 
-            if (this->dp_prefix_terminator != DT_INVALID) {
-                if (iter->e_token == this->dp_prefix_terminator) {
-                    this->dp_prefix_terminator = DT_INVALID;
+            if (in_list.el_format.df_prefix_terminator != DT_INVALID) {
+                if (iter->e_token == in_list.el_format.df_prefix_terminator) {
+                    in_list.el_format.df_prefix_terminator = DT_INVALID;
                 }
                 else {
                     el_stack.PUSH_BACK(*iter);
                 }
             }
-            else if (iter->e_token == this->dp_format->df_terminator) {
-                this->end_of_value(el_stack, key_comps, value);
+            else if (iter->e_token == in_list.el_format.df_terminator) {
+                this->end_of_value(el_stack, key_comps, value, in_list);
 
                 key_comps.PUSH_BACK(*iter);
             }
-            else if (iter->e_token == this->dp_qualifier) {
+            else if (iter->e_token == in_list.el_format.df_qualifier) {
                 value.SPLICE(value.end(),
                              key_comps,
                              key_comps.begin(),
@@ -471,49 +549,52 @@ private:
                     el_stack.PUSH_BACK(element(value, DNT_VALUE));
                 }
             }
-            else if (iter->e_token == this->dp_separator) {
+            else if (iter->e_token == in_list.el_format.df_separator) {
                 element_list_t::iterator key_iter = key_comps.end();
                 bool found = false, key_is_values = true;
 
-                do {
-                    --key_iter;
-                    if (key_iter->e_token == this->dp_format->df_appender) {
-                        ++key_iter;
-                        value.SPLICE(value.end(),
-                                     key_comps,
-                                     key_comps.begin(),
-                                     key_iter);
-                        key_comps.POP_FRONT();
-                        found = true;
-                    }
-                    else if (key_iter->e_token ==
-                             this->dp_format->df_terminator) {
-                        std::vector<element> key_copy;
+                if (!key_comps.empty()) {
+                    do {
+                        --key_iter;
+                        if (key_iter->e_token ==
+                            in_list.el_format.df_appender) {
+                            ++key_iter;
+                            value.SPLICE(value.end(),
+                                         key_comps,
+                                         key_comps.begin(),
+                                         key_iter);
+                            key_comps.POP_FRONT();
+                            found = true;
+                        }
+                        else if (key_iter->e_token ==
+                                 in_list.el_format.df_terminator) {
+                            std::vector<element> key_copy;
 
-                        value.SPLICE(value.end(),
-                                     key_comps,
-                                     key_comps.begin(),
-                                     key_iter);
-                        ++key_iter;
-                        key_comps.POP_FRONT();
-                        strip(key_comps, element_if(DT_WHITE));
-                        found = true;
-                    }
-                    switch (key_iter->e_token) {
-                        case DT_WORD:
-                        case DT_SYMBOL:
-                            key_is_values = false;
-                            break;
-                        default:
-                            break;
-                    }
-                } while (key_iter != key_comps.begin() && !found);
+                            value.SPLICE(value.end(),
+                                         key_comps,
+                                         key_comps.begin(),
+                                         key_iter);
+                            ++key_iter;
+                            key_comps.POP_FRONT();
+                            strip(key_comps, element_if(DT_WHITE));
+                            found = true;
+                        }
+                        switch (key_iter->e_token) {
+                            case DT_WORD:
+                            case DT_SYMBOL:
+                                key_is_values = false;
+                                break;
+                            default:
+                                break;
+                        }
+                    } while (key_iter != key_comps.begin() && !found);
+                }
                 if (!found && !el_stack.empty() && !key_comps.empty()) {
                     element_list_t::iterator value_iter;
 
                     if (el_stack.size() > 1 &&
-                        this->dp_format->df_appender != DT_INVALID &&
-                        this->dp_format->df_terminator != DT_INVALID) {
+                        in_list.el_format.df_appender != DT_INVALID &&
+                        in_list.el_format.df_terminator != DT_INVALID) {
                         /* If we're expecting a terminator and haven't found it */
                         /* then this is part of the value. */
                         continue;
@@ -563,7 +644,7 @@ private:
                             key_comps, key_comps.begin(), key_comps.end());
         }
         else {
-            this->end_of_value(el_stack, key_comps, value);
+            this->end_of_value(el_stack, key_comps, value, in_list);
         }
 
         POINT_TRACE("pairup_stack");
@@ -785,20 +866,13 @@ private:
     void discover_format(void)
     {
         pcre_context_static<30> pc;
-        int            hist[DT_TERMINAL_MAX];
+        std::stack<discover_format_state> state_stack;
         struct element elem;
 
         this->dp_group_token.push_back(DT_INVALID);
         this->dp_group_stack.resize(1);
-        this->dp_qualifier = DT_INVALID;
-        this->dp_separator = DT_COLON;
-        this->dp_prefix_terminator = DT_INVALID;
 
-        data_format_state_t prefix_state = DFS_INIT;
-        data_format_state_t semi_state   = DFS_INIT;
-        data_format_state_t comma_state  = DFS_INIT;
-
-        memset(hist, 0, sizeof(hist));
+        state_stack.push(discover_format_state());
         while (this->dp_scanner->tokenize2(pc, elem.e_token)) {
             pcre_context::iterator pc_iter;
 
@@ -810,18 +884,7 @@ private:
             require(elem.e_capture.c_begin != -1);
             require(elem.e_capture.c_end != -1);
 
-            prefix_state = dfs_prefix_next(prefix_state, elem.e_token);
-            semi_state   = dfs_semi_next(semi_state, elem.e_token);
-            comma_state  = dfs_comma_next(comma_state, elem.e_token);
-            if (prefix_state != DFS_ERROR) {
-                if (semi_state == DFS_ERROR) {
-                    semi_state = DFS_INIT;
-                }
-                if (comma_state == DFS_ERROR) {
-                    comma_state = DFS_INIT;
-                }
-            }
-            hist[elem.e_token] += 1;
+            state_stack.top().update_for_element(elem);
             switch (elem.e_token) {
             case DT_LPAREN:
             case DT_LANGLE:
@@ -831,6 +894,7 @@ private:
                 this->dp_group_stack.push_back(element_list_t("_anon_",
                                                               __FILE__,
                                                               __LINE__));
+                state_stack.push(discover_format_state());
                 break;
 
             case DT_RPAREN:
@@ -844,6 +908,9 @@ private:
                         this->dp_group_stack.rbegin();
                     ++riter;
                     if (!this->dp_group_stack.back().empty()) {
+                        state_stack.top().finalize();
+                        this->dp_group_stack.back().el_format = state_stack.top().dfs_format;
+                        state_stack.pop();
                         (*riter).PUSH_BACK(element(this->dp_group_stack.back(),
                                                    DNT_GROUP));
                     }
@@ -867,43 +934,28 @@ private:
                 this->dp_group_stack.rbegin();
             ++riter;
             if (!this->dp_group_stack.back().empty()) {
+                state_stack.top().finalize();
+                this->dp_group_stack.back().el_format = state_stack.top().dfs_format;
+                state_stack.pop();
                 (*riter).PUSH_BACK(element(this->dp_group_stack.back(),
                                            DNT_GROUP));
             }
             this->dp_group_stack.pop_back();
         }
 
-        if (hist[DT_EQUALS]) {
-            this->dp_qualifier = DT_COLON;
-            this->dp_separator = DT_EQUALS;
-        }
-
-        if (semi_state != DFS_ERROR && hist[DT_SEMI]) {
-            this->dp_format = &FORMAT_SEMI;
-        }
-        else if (comma_state != DFS_ERROR) {
-            this->dp_format = &FORMAT_COMMA;
-            if (this->dp_separator == DT_COLON && hist[DT_COMMA] > 0) {
-                if (!((hist[DT_COLON] == hist[DT_COMMA]) ||
-                      ((hist[DT_COLON] - 1) == hist[DT_COMMA]))) {
-                    this->dp_separator = DT_INVALID;
-                    if (hist[DT_COLON] == 1) {
-                        this->dp_prefix_terminator = DT_COLON;
-                    }
-                }
-            }
-        }
-        else {
-            this->dp_format = &FORMAT_PLAIN;
-        }
+        state_stack.top().finalize();
+        this->dp_group_stack.back().el_format = state_stack.top().dfs_format;
     };
 
     void end_of_value(element_list_t &el_stack,
                       element_list_t &key_comps,
-                      element_list_t &value) {
-        key_comps.remove_if(element_if(this->dp_format->df_terminator));
+                      element_list_t &value,
+                      const element_list_t &in_list) {
+        bool key_added = false;
+
+        key_comps.remove_if(element_if(in_list.el_format.df_terminator));
         key_comps.remove_if(element_if(DT_COMMA));
-        value.remove_if(element_if(this->dp_format->df_terminator));
+        value.remove_if(element_if(in_list.el_format.df_terminator));
         value.remove_if(element_if(DT_COMMA));
         strip(key_comps, element_if(DT_WHITE));
         strip(value, element_if(DT_WHITE));
@@ -943,6 +995,7 @@ private:
             strip(key_comps, element_if(DT_WHITE));
             if (!key_comps.empty()) {
                 el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
+                key_added = true;
             }
             key_comps.CLEAR();
         }
@@ -956,7 +1009,23 @@ private:
         strip(value, element_if(DT_COLON));
         strip(value, element_if(DT_WHITE));
         if (!value.empty()) {
-            el_stack.PUSH_BACK(element(value, DNT_VALUE));
+            if (key_added && value.front().e_token == DNT_GROUP) {
+                element_list_t::iterator end_iter = el_stack.end();
+
+                --end_iter;
+                value.SPLICE(value.begin(),
+                             el_stack,
+                             end_iter,
+                             el_stack.end());
+
+                element_list_t ELEMENT_LIST_T(group_pair);
+
+                group_pair.PUSH_BACK(element(value, DNT_PAIR));
+                el_stack.PUSH_BACK(element(group_pair, DNT_VALUE));
+            }
+            else {
+                el_stack.PUSH_BACK(element(value, DNT_VALUE));
+            }
         }
         value.CLEAR();
     };
@@ -1040,10 +1109,6 @@ private:
 
     element_list_t dp_pairs;
     schema_id_t    dp_schema_id;
-    data_format *  dp_format;
-    data_token_t   dp_qualifier;
-    data_token_t   dp_separator;
-    data_token_t   dp_prefix_terminator;
     std::string    *dp_msg_format;
     int dp_msg_format_begin;
 

@@ -239,6 +239,7 @@ bool setup_logline_table()
     static const char *hidden_table_columns[] = {
         "log_path",
         "log_text",
+        "log_body",
 
         NULL
     };

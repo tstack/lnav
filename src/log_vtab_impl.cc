@@ -90,7 +90,8 @@ std::string log_vtab_impl::get_table_statement(void)
         oss << coldecl;
     }
     oss << "  log_path text hidden collate naturalnocase,\n"
-        << "  log_text text hidden\n"
+        << "  log_text text hidden,\n"
+        << "  log_body text hidden\n"
         << ");\n";
 
     return oss.str();
@@ -368,22 +369,52 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                   (VT_COL_MAX + vt->vi->vi_column_count -
                                    1) - 1;
 
-            if (post_col_number == 0) {
-                const string &fn = lf->get_filename();
+            switch (post_col_number) {
+                case 0: {
+                    const string &fn = lf->get_filename();
 
-                sqlite3_result_text(ctx,
-                                    fn.c_str(),
-                                    fn.length(),
-                                    SQLITE_STATIC);
-            }
-            else {
-                shared_buffer_ref line;
+                    sqlite3_result_text(ctx,
+                                        fn.c_str(),
+                                        fn.length(),
+                                        SQLITE_STATIC);
+                    break;
+                }
+                case 1: {
+                    shared_buffer_ref line;
 
-                lf->read_full_message(ll, line);
-                sqlite3_result_text(ctx,
-                                    line.get_data(),
-                                    line.length(),
-                                    SQLITE_TRANSIENT);
+                    lf->read_full_message(ll, line);
+                    sqlite3_result_text(ctx,
+                                        line.get_data(),
+                                        line.length(),
+                                        SQLITE_TRANSIENT);
+                    break;
+                }
+                case 2: {
+                    if (vc->line_values.empty()) {
+                        logfile::iterator line_iter;
+
+                        line_iter = lf->begin() + cl;
+                        lf->read_full_message(line_iter, vc->log_msg);
+                        vt->vi->extract(lf, vc->log_msg, vc->line_values);
+                    }
+
+                    struct line_range body_range;
+
+                    body_range = find_string_attr_range(
+                        vt->vi->vi_attrs, &textview_curses::SA_BODY);
+                    if (!body_range.is_valid()) {
+                        sqlite3_result_null(ctx);
+                    }
+                    else {
+                        const char *msg_start = vc->log_msg.get_data();
+
+                        sqlite3_result_text(ctx,
+                                            &msg_start[body_range.lr_start],
+                                            body_range.length(),
+                                            SQLITE_TRANSIENT);
+                    }
+                    break;
+                }
             }
         }
         else {
