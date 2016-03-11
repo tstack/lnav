@@ -271,9 +271,7 @@ int json_op::handle_start_array(void *ctx)
         }
     }
 
-    if (!jo->jo_ptr.expect_array(jo->jo_depth, jo->jo_array_index)) {
-        retval = 0;
-    }
+    jo->jo_ptr.expect_array(jo->jo_depth, jo->jo_array_index);
 
     return retval;
 }

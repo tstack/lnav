@@ -293,11 +293,11 @@ public:
 
             if (sscanf(this->jp_pos, "/%d%n", &this->jp_array_index, &offset) != 1) {
                 this->jp_state = MS_ERR_INVALID_INDEX;
-                retval = false;
+                retval = true;
             }
             else if (this->jp_pos[offset] != '\0' && this->jp_pos[offset] != '/') {
                 this->jp_state = MS_ERR_INVALID_INDEX;
-                retval = false;
+                retval = true;
             }
             else {
                 index = 0;
@@ -308,7 +308,7 @@ public:
         }
         else {
             this->jp_state = MS_ERR_NO_SLASH;
-            retval = false;
+            retval = true;
         }
 
         depth += 1;

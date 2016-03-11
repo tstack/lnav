@@ -951,15 +951,14 @@ private:
                       element_list_t &key_comps,
                       element_list_t &value,
                       const element_list_t &in_list) {
-        bool key_added = false;
-
         key_comps.remove_if(element_if(in_list.el_format.df_terminator));
         key_comps.remove_if(element_if(DT_COMMA));
         value.remove_if(element_if(in_list.el_format.df_terminator));
         value.remove_if(element_if(DT_COMMA));
         strip(key_comps, element_if(DT_WHITE));
         strip(value, element_if(DT_WHITE));
-        if (value.empty() && key_comps.size() > 1 &&
+        if ((el_stack.empty() || el_stack.back().e_token != DNT_KEY) &&
+            value.empty() && key_comps.size() > 1 &&
             (key_comps.front().e_token == DT_WORD ||
              key_comps.front().e_token == DT_SYMBOL)) {
             element_list_t::iterator key_iter, key_end;
@@ -995,7 +994,6 @@ private:
             strip(key_comps, element_if(DT_WHITE));
             if (!key_comps.empty()) {
                 el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
-                key_added = true;
             }
             key_comps.CLEAR();
         }
@@ -1009,15 +1007,7 @@ private:
         strip(value, element_if(DT_COLON));
         strip(value, element_if(DT_WHITE));
         if (!value.empty()) {
-            if (key_added && value.front().e_token == DNT_GROUP) {
-                element_list_t::iterator end_iter = el_stack.end();
-
-                --end_iter;
-                value.SPLICE(value.begin(),
-                             el_stack,
-                             end_iter,
-                             el_stack.end());
-
+            if (value.size() == 2 && value.back().e_token == DNT_GROUP) {
                 element_list_t ELEMENT_LIST_T(group_pair);
 
                 group_pair.PUSH_BACK(element(value, DNT_PAIR));
