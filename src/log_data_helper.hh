@@ -109,6 +109,8 @@ public:
             this->ldh_scanner.reset(new data_scanner(
                 this->ldh_msg, body.lr_start, body.lr_end));
             this->ldh_parser.reset(new data_parser(this->ldh_scanner.get()));
+            this->ldh_msg_format.clear();
+            this->ldh_parser->dp_msg_format = &this->ldh_msg_format;
             this->ldh_parser->parse();
             this->ldh_namer.reset(new column_namer());
             this->ldh_json_pairs.clear();
@@ -197,6 +199,7 @@ public:
     string_attrs_t ldh_line_attrs;
     std::vector<logline_value> ldh_line_values;
     std::map<const intern_string_t, json_ptr_walk::walk_list_t> ldh_json_pairs;
+    std::string ldh_msg_format;
 };
 
 #endif

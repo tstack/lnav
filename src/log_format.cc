@@ -1057,6 +1057,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                  ++lv_iter) {
                 map<const intern_string_t, external_log_format::value_def>::iterator vd_iter;
 
+                lv_iter->lv_format = this;
                 vd_iter = this->elf_value_defs.find(lv_iter->lv_name);
                 if (vd_iter != this->elf_value_defs.end()) {
                     lv_iter->lv_identifier = vd_iter->second.vd_identifier;

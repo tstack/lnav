@@ -203,20 +203,24 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
 
     for (size_t lpc = 0; lpc < this->fos_log_helper.ldh_line_values.size(); lpc++) {
         logline_value &lv = this->fos_log_helper.ldh_line_values[lpc];
+        string format_name = lv.lv_format->get_name().to_string();
         attr_line_t al;
         string str;
 
         if (lv.lv_format != last_format) {
-            this->fos_lines.push_back(" Known message fields:  (SQL table -- " +
-                                      lv.lv_format->get_name().to_string() +
-                                      ")");
+            this->fos_lines.push_back(" Known message fields for table " +
+                                      format_name +
+                                      ":");
+            this->fos_lines.back().with_attr(string_attr(
+                line_range(32, 32 + format_name.length()),
+                &view_curses::VC_STYLE,
+                vc.attrs_for_ident(format_name) | A_BOLD));
             last_format = lv.lv_format;
         }
 
         str = "   " + lv.lv_name.to_string();
         str.append(this->fos_known_key_size - lv.lv_name.size() + 3, ' ');
         str += " = " + lv.to_string();
-
 
         al.with_string(str)
                 .with_attr(string_attr(
@@ -251,7 +255,20 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
         this->fos_lines.push_back(" No discovered message fields");
     }
     else {
-        this->fos_lines.push_back(" Discovered message fields:  (SQL table -- logline)");
+        this->fos_lines.push_back(" Discovered fields for logline table from message format: ");
+        this->fos_lines.back().with_attr(string_attr(
+            line_range(23, 23 + 7),
+            &view_curses::VC_STYLE,
+            vc.attrs_for_ident("logline")
+        ));
+        attr_line_t &al = this->fos_lines.back();
+        string &disc_str = al.get_string();
+
+        al.with_attr(string_attr(
+            line_range(disc_str.length(), -1),
+            &view_curses::VC_STYLE,
+            A_BOLD));
+        disc_str.append(this->fos_log_helper.ldh_msg_format);
     }
 
     data_parser::element_list_t::iterator iter;
