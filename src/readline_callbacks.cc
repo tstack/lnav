@@ -301,22 +301,27 @@ void rl_callback(void *dummy, readline_curses *rc)
                 }
             }
 
-            strftime(timestamp, sizeof(timestamp),
-                     "%a %b %d %H:%M:%S %Z",
-                     localtime(&current_time));
-            snprintf(desc, sizeof(desc),
-                     "Output of %s (%s)",
-                     path_and_args.c_str(),
-                     timestamp);
-            lnav_data.ld_file_names.insert(make_pair(desc, fd_copy.release()));
-            lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+            struct stat st;
+
+            if (fstat(fd_copy, &st) != -1 && st.st_size > 0) {
+                strftime(timestamp, sizeof(timestamp),
+                         "%a %b %d %H:%M:%S %Z",
+                         localtime(&current_time));
+                snprintf(desc, sizeof(desc),
+                         "Output of %s (%s)",
+                         path_and_args.c_str(),
+                         timestamp);
+                lnav_data.ld_file_names.insert(
+                    make_pair(desc, fd_copy.release()));
+                lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+
+                if (lnav_data.ld_rl_view != NULL) {
+                    lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                                                            X, "to close the file"));
+                }
+            }
 
             remove(abspath.in());
-
-            if (lnav_data.ld_rl_view != NULL) {
-                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                                                        X, "to close the file"));
-            }
         }
         break;
     }

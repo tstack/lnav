@@ -303,14 +303,20 @@ bool setup_logline_table()
 
             sqlite_registration_funcs[lpc](&basic_funcs, &agg_funcs);
             for (int lpc2 = 0; basic_funcs && basic_funcs[lpc2].zName; lpc2++) {
-                lnav_data.ld_rl_view->add_possibility(LNM_SQL,
-                  "*",
-                  basic_funcs[lpc2].zName);
+                const FuncDef &func_def = basic_funcs[lpc2];
+
+                lnav_data.ld_rl_view->add_possibility(
+                    LNM_SQL,
+                    "*",
+                    string(func_def.zName) + (func_def.nArg ? "(" : "()"));
             }
             for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
-                lnav_data.ld_rl_view->add_possibility(LNM_SQL,
-                  "*",
-                  agg_funcs[lpc2].zName);
+                const FuncDefAgg &func_def = agg_funcs[lpc2];
+
+                lnav_data.ld_rl_view->add_possibility(
+                    LNM_SQL,
+                    "*",
+                    string(func_def.zName) + (func_def.nArg ? "(" : "()"));
             }
         }
     }
