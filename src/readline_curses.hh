@@ -122,6 +122,7 @@ public:
     {
         char buffer[128];
 
+        rl_completer_word_break_characters = (char *)" \t\n"; /* XXX */
         /*
          * XXX Need to keep the input on a single line since the display screws
          * up if it wraps around.
@@ -134,6 +135,11 @@ public:
         loaded_context = this;
         rl_attempted_completion_function = attempted_completion;
         history_set_history_state(&this->rc_history);
+        for (std::vector<readline_var>::iterator iter = this->rc_vars.begin();
+             iter != this->rc_vars.end();
+             ++iter) {
+            *(iter->rv_dst.ch) = (char *) iter->rv_val.ch;
+        }
     };
 
     void save(void)
@@ -182,6 +188,12 @@ public:
         return *this;
     };
 
+    readline_context &with_readline_var(char **var, const char *val) {
+        this->rc_vars.push_back(readline_var(var, val));
+
+        return *this;
+    };
+
     readline_highlighter_t get_highlighter() const {
         return this->rc_highlighter;
     };
@@ -193,6 +205,20 @@ private:
     static readline_context *     loaded_context;
     static std::set<std::string> *arg_possibilities;
 
+    struct readline_var {
+        readline_var(char **dst, const char *val) {
+            this->rv_dst.ch = dst;
+            this->rv_val.ch = val;
+        }
+
+        union {
+            char **ch;
+        } rv_dst;
+        union {
+            const char *ch;
+        } rv_val;
+    };
+
     std::string   rc_name;
     HISTORY_STATE rc_history;
     std::map<std::string, std::set<std::string> >    rc_possibilities;
@@ -201,6 +227,7 @@ private:
     int rc_append_character;
     const char *rc_quote_chars;
     readline_highlighter_t rc_highlighter;
+    std::vector<readline_var> rc_vars;
 };
 
 /**

@@ -435,7 +435,6 @@ void readline_curses::start(void)
 
     require(!this->rc_contexts.empty());
 
-    rl_completer_word_break_characters = (char *)" \t\n"; /* XXX */
     rl_completion_display_matches_hook = store_matches;
 
     current_context = this->rc_contexts.end();

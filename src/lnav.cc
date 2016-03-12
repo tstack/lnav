@@ -1660,7 +1660,9 @@ static void looper(void)
                 .set_highlighter(readline_regex_highlighter);
         sql_context
                 .set_highlighter(readline_sqlite_highlighter)
-                .set_quote_chars("\"");
+                .set_quote_chars("\"")
+                .with_readline_var(&rl_completer_word_break_characters,
+                                   " \t\n(),");
         exec_context.set_highlighter(readline_shlex_highlighter);
 
         listview_curses::action::broadcaster &sb =
