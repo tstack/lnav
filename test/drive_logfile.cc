@@ -102,7 +102,8 @@ int main(int argc, char *argv[])
     fprintf(stderr, "error: expecting log file name\n");
   }
   else {
-    logfile lf(argv[0]);
+    logfile_open_options default_loo;
+    logfile lf(argv[0], default_loo);
     struct stat st;
 
     stat(argv[0], &st);

@@ -262,9 +262,11 @@ void init_session(void)
 
     context.Init(0, 0);
     hash_updater updater(&context);
-    for_each(lnav_data.ld_file_names.begin(),
-             lnav_data.ld_file_names.end(),
-             object_field(updater, &pair<string, int>::first));
+    for (map<string, logfile_open_options>::iterator iter = lnav_data.ld_file_names.begin();
+         iter != lnav_data.ld_file_names.end();
+         ++iter) {
+        updater(iter->first);
+    }
     context.Final(hash.out(0), hash.out(1));
 
     lnav_data.ld_session_id = hash.to_string();
@@ -1224,10 +1226,11 @@ void save_session(void)
             {
                 yajlpp_array file_list(handle);
 
-                for_each(lnav_data.ld_file_names.begin(),
-                         lnav_data.ld_file_names.end(),
-                         object_field(file_list.gen,
-                                      &pair<string, int>::first));
+                for (map<string, logfile_open_options>::iterator iter = lnav_data.ld_file_names.begin();
+                     iter != lnav_data.ld_file_names.end();
+                     ++iter) {
+                    file_list.gen(iter->first);
+                }
             }
 
             root_map.gen("views");

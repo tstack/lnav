@@ -477,8 +477,8 @@ void execute_init_commands(vector<pair<string, string> > &msgs)
                 lnav_data.ld_pt_search.substr(3),
                 lnav_data.ld_pt_min_time,
                 lnav_data.ld_pt_max_time));
-        lnav_data.ld_file_names.insert(
-                make_pair(lnav_data.ld_pt_search, pt->copy_fd().release()));
+        lnav_data.ld_file_names[lnav_data.ld_pt_search]
+            .with_fd(pt->copy_fd());
         lnav_data.ld_curl_looper.add_request(pt.release());
 #endif
     }

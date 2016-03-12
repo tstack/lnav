@@ -52,7 +52,7 @@ using namespace std;
 static const size_t MAX_UNRECOGNIZED_LINES = 1000;
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
-logfile::logfile(const string &filename, auto_fd fd)
+logfile::logfile(const string &filename, logfile_open_options &loo)
 throw (error)
     : lf_filename(filename),
       lf_index_time(0),
@@ -68,7 +68,7 @@ throw (error)
     this->lf_time_offset.tv_usec = 0;
     
     memset(&this->lf_stat, 0, sizeof(this->lf_stat));
-    if (fd == -1) {
+    if (loo.loo_fd == -1) {
         char resolved_path[PATH_MAX];
 
         errno = 0;
@@ -84,14 +84,14 @@ throw (error)
             throw error(filename, EINVAL);
         }
 
-        if ((fd = open(resolved_path, O_RDONLY)) == -1) {
+        if ((loo.loo_fd = open(resolved_path, O_RDONLY)) == -1) {
             throw error(filename, errno);
         }
 
-        fd.close_on_exec();
+        loo.loo_fd.close_on_exec();
 
         log_info("Creating logfile: fd=%d; size=%d; mtime=%d; filename=%s",
-                 (int) fd,
+                 (int) loo.loo_fd,
                  this->lf_stat.st_size,
                  this->lf_stat.st_mtime,
                  filename.c_str());
@@ -99,13 +99,15 @@ throw (error)
         this->lf_valid_filename = true;
     }
     else {
-        log_perror(fstat(fd, &this->lf_stat));
+        log_perror(fstat(loo.loo_fd, &this->lf_stat));
         this->lf_valid_filename = false;
     }
 
     this->lf_content_id = hash_string(this->lf_filename);
-    this->lf_line_buffer.set_fd(fd);
+    this->lf_line_buffer.set_fd(loo.loo_fd);
     this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
+
+    this->lf_options = loo;
 
     ensure(this->invariant());
 }
@@ -149,7 +151,8 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
         /* We've locked onto a format, just use that scanner. */
         found = this->lf_format->scan(this->lf_index, offset, sbr);
     }
-    else if (this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
+    else if (this->lf_options.loo_detect_format &&
+             this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
         vector<log_format *> &root_formats =
             log_format::get_root_formats();
         vector<log_format *>::iterator iter;

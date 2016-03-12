@@ -67,6 +67,26 @@ public:
     virtual void logfile_indexing(logfile &lf, off_t off, size_t total) = 0;
 };
 
+struct logfile_open_options {
+    logfile_open_options() : loo_detect_format(true) {
+    };
+
+    logfile_open_options &with_fd(auto_fd fd) {
+        this->loo_fd = fd;
+
+        return *this;
+    };
+
+    logfile_open_options &with_detect_format(bool val) {
+        this->loo_detect_format = val;
+
+        return *this;
+    };
+
+    auto_fd loo_fd;
+    bool loo_detect_format;
+};
+
 /**
  * Container for the lines in a log file and some metadata.
  */
@@ -94,7 +114,7 @@ public:
      * constructor should open the file specified by 'filename'.  The
      * descriptor needs to be seekable.
      */
-    logfile(const std::string &filename, auto_fd fd = -1) throw (error);
+    logfile(const std::string &filename, logfile_open_options &loo) throw (error);
 
     virtual ~logfile();
 
@@ -120,6 +140,10 @@ public:
 
     bool is_compressed() const {
         return this->lf_line_buffer.is_compressed();
+    };
+
+    bool is_valid_filename() const {
+        return this->lf_valid_filename;
     };
 
     /**
@@ -351,6 +375,7 @@ protected:
 
     void set_format_base_time(log_format *lf);
 
+    logfile_open_options lf_options;
     bool        lf_valid_filename;
     std::string lf_filename;
     std::string lf_content_id;

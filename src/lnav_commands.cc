@@ -102,8 +102,8 @@ static string refresh_pt_search()
             lnav_data.ld_pt_search.substr(3),
             lnav_data.ld_pt_min_time,
             lnav_data.ld_pt_max_time));
-    lnav_data.ld_file_names.insert(
-            make_pair(lnav_data.ld_pt_search, pt->copy_fd().release()));
+    lnav_data.ld_file_names[lnav_data.ld_pt_search]
+        .with_fd(pt->copy_fd());
     lnav_data.ld_curl_looper.add_request(pt.release());
 
     ensure_view(&lnav_data.ld_views[LNV_LOG]);
@@ -735,9 +735,9 @@ static string com_pipe_to(string cmdline, vector<string> &args)
                         sizeof(desc), "[%d] Output of %s",
                         exec_count++,
                         cmdline.c_str());
-                lnav_data.ld_file_names.insert(make_pair(
-                        desc,
-                        pp->get_fd()));
+                lnav_data.ld_file_names[desc]
+                    .with_fd(pp->get_fd())
+                    .with_detect_format(false);
                 lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
                 if (lnav_data.ld_rl_view != NULL) {
                     lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
@@ -1395,6 +1395,7 @@ static string com_open(string cmdline, vector<string> &args)
             }
         }
         if (file_iter == lnav_data.ld_files.end()) {
+            logfile_open_options default_loo;
             auto_mem<char> abspath;
             struct stat    st;
 
@@ -1404,7 +1405,8 @@ static string com_open(string cmdline, vector<string> &args)
 #else
                 auto_ptr<url_loader> ul(new url_loader(fn));
 
-                lnav_data.ld_file_names.insert(make_pair(fn, ul->copy_fd().release()));
+                lnav_data.ld_file_names[fn]
+                    .with_fd(ul->copy_fd());
                 lnav_data.ld_curl_looper.add_request(ul.release());
                 lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
 
@@ -1412,7 +1414,7 @@ static string com_open(string cmdline, vector<string> &args)
 #endif
             }
             else if (is_glob(fn.c_str())) {
-                lnav_data.ld_file_names.insert(make_pair(fn, -1));
+                lnav_data.ld_file_names[fn] = default_loo;
                 retval = "info: watching -- " + fn;
             }
             else if (stat(fn.c_str(), &st) == -1) {
@@ -1428,7 +1430,7 @@ static string com_open(string cmdline, vector<string> &args)
                 if (dir_wild[dir_wild.size() - 1] == '/') {
                     dir_wild.resize(dir_wild.size() - 1);
                 }
-                lnav_data.ld_file_names.insert(make_pair(dir_wild + "/*", -1));
+                lnav_data.ld_file_names[dir_wild + "/*"] = default_loo;
                 retval = "info: watching -- " + dir_wild;
             }
             else if (!S_ISREG(st.st_mode)) {
@@ -1440,7 +1442,7 @@ static string com_open(string cmdline, vector<string> &args)
             }
             else {
                 fn = abspath.in();
-                lnav_data.ld_file_names.insert(make_pair(fn, -1));
+                lnav_data.ld_file_names[fn] = default_loo;
                 retval = "info: opened -- " + fn;
                 lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
 
@@ -1500,7 +1502,7 @@ static string com_close(string cmdline, vector<string> &args)
             if (is_url(fn.c_str())) {
                 lnav_data.ld_curl_looper.close_request(fn);
             }
-            lnav_data.ld_file_names.erase(make_pair(fn, -1));
+            lnav_data.ld_file_names.erase(fn);
             lnav_data.ld_closed_files.insert(fn);
             retval = "info: closed -- " + fn;
         }

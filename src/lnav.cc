@@ -451,7 +451,9 @@ public:
 
     void closed_file(logfile *lf) {
         log_info("closed text file: %s", lf->get_filename().c_str());
-        lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
+        if (!lf->is_valid_filename()) {
+            lnav_data.ld_file_names.erase(lf->get_filename());
+        }
         lnav_data.ld_files.remove(lf);
         delete lf;
     };
@@ -562,7 +564,9 @@ void rebuild_indexes(bool force)
 
         if (!lf->exists() || lf->is_closed()) {
             log_info("closed log file: %s", lf->get_filename().c_str());
-            lnav_data.ld_file_names.erase(make_pair(lf->get_filename(), lf->get_fd()));
+            if (!lf->is_valid_filename()) {
+                lnav_data.ld_file_names.erase(lf->get_filename());
+            }
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
             file_iter = lnav_data.ld_files.erase(file_iter);
@@ -649,8 +653,9 @@ static bool append_default_files(lnav_flags_t flag)
                     perror("Unable to resolve path");
                 }
                 else {
-                    lnav_data.ld_file_names.insert(make_pair(abspath.in(),
-                                                             -1));
+                    logfile_open_options default_loo;
+
+                    lnav_data.ld_file_names[abspath.in()] = default_loo;
                 }
             }
             else if (stat(path.c_str(), &st) == 0) {
@@ -1145,7 +1150,7 @@ struct same_file {
  * @param fd       An already-opened descriptor for 'filename'.
  * @param required Specifies whether or not the file must exist and be valid.
  */
-static bool watch_logfile(string filename, int fd, bool required)
+static bool watch_logfile(string filename, logfile_open_options &loo, bool required)
 {
     static loading_observer obs;
     list<logfile *>::iterator file_iter;
@@ -1157,8 +1162,8 @@ static bool watch_logfile(string filename, int fd, bool required)
         return retval;
     }
 
-    if (fd != -1) {
-        rc = fstat(fd, &st);
+    if (loo.loo_fd != -1) {
+        rc = fstat(loo.loo_fd, &st);
     }
     else {
         rc = stat(filename.c_str(), &st);
@@ -1203,10 +1208,10 @@ static bool watch_logfile(string filename, int fd, bool required)
 
             default:
                 /* It's a new file, load it in. */
-                logfile *lf = new logfile(filename, fd);
+                logfile *lf = new logfile(filename, loo);
 
-                log_info("loading new file: fd=%d; filename=%s",
-                         fd, filename.c_str());
+                log_info("loading new file: filename=%s",
+                         filename.c_str());
                 lf->set_logfile_observer(&obs);
                 lnav_data.ld_files.push_back(lf);
                 lnav_data.ld_text_source.push_back(lf);
@@ -1263,8 +1268,10 @@ static void expand_filename(string path, bool required)
                         gl->gl_pathv[lpc], strerror(errno));
                 }
             }
-            else if (required || access(abspath.in(), R_OK) == 0){
-                watch_logfile(abspath.in(), -1, required);
+            else if (required || access(abspath.in(), R_OK) == 0) {
+                logfile_open_options loo;
+
+                watch_logfile(abspath.in(), loo, required);
             }
         }
     }
@@ -1272,14 +1279,14 @@ static void expand_filename(string path, bool required)
 
 bool rescan_files(bool required)
 {
-    set<pair<string, int> >::iterator iter;
+    map<string, logfile_open_options>::iterator iter;
     list<logfile *>::iterator         file_iter;
     bool retval = false;
 
     for (iter = lnav_data.ld_file_names.begin();
          iter != lnav_data.ld_file_names.end();
          iter++) {
-        if (iter->second == -1) {
+        if (iter->second.loo_fd == -1) {
             expand_filename(iter->first, required);
             if (lnav_data.ld_flags & LNF_ROTATED) {
                 string path = iter->first + ".*";
@@ -1297,6 +1304,8 @@ bool rescan_files(bool required)
         logfile *lf = *file_iter;
 
         if (!lf->exists() || lf->is_closed()) {
+            log_info("Log file no longer exists or is closed: %s",
+                     lf->get_filename().c_str());
             return true;
         }
         else {
@@ -1410,9 +1419,8 @@ static string execute_action(log_data_helper &ldh,
                     sizeof(desc), "[%d] Output of %s",
                     exec_count++,
                     action.ad_cmdline[0].c_str());
-                lnav_data.ld_file_names.insert(make_pair(
-                    desc,
-                    pp->get_fd()));
+                lnav_data.ld_file_names[desc]
+                    .with_fd(pp->get_fd());
                 lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
             }
 
@@ -2590,6 +2598,7 @@ int main(int argc, char *argv[])
     }
 
     for (lpc = 0; lpc < argc; lpc++) {
+        logfile_open_options default_loo;
         auto_mem<char> abspath;
         struct stat    st;
 
@@ -2605,12 +2614,13 @@ int main(int argc, char *argv[])
         else if (is_url(argv[lpc])) {
             auto_ptr<url_loader> ul(new url_loader(argv[lpc]));
 
-            lnav_data.ld_file_names.insert(make_pair(argv[lpc], ul->copy_fd().release()));
+            lnav_data.ld_file_names[argv[lpc]]
+                .with_fd(ul->copy_fd());
             lnav_data.ld_curl_looper.add_request(ul.release());
         }
 #endif
         else if (is_glob(argv[lpc])) {
-            lnav_data.ld_file_names.insert(make_pair(argv[lpc], -1));
+            lnav_data.ld_file_names[argv[lpc]] = default_loo;
         }
         else if (stat(argv[lpc], &st) == -1) {
             fprintf(stderr,
@@ -2629,10 +2639,10 @@ int main(int argc, char *argv[])
             if (dir_wild[dir_wild.size() - 1] == '/') {
                 dir_wild.resize(dir_wild.size() - 1);
             }
-            lnav_data.ld_file_names.insert(make_pair(dir_wild + "/*", -1));
+            lnav_data.ld_file_names[dir_wild + "/*"] = default_loo;
         }
         else {
-            lnav_data.ld_file_names.insert(make_pair(abspath.in(), -1));
+            lnav_data.ld_file_names[abspath.in()] = default_loo;
         }
     }
 
@@ -2706,7 +2716,8 @@ int main(int argc, char *argv[])
                                                 lnav_data.ld_flags &
                                                 LNF_TIMESTAMP, stdin_out));
         stdin_out_fd = stdin_reader->get_fd();
-        lnav_data.ld_file_names.insert(make_pair("stdin", stdin_out_fd));
+        lnav_data.ld_file_names["stdin"]
+            .with_fd(stdin_out_fd);
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
             perror("cannot dup stdout to stdin");
         }
@@ -2751,7 +2762,7 @@ int main(int argc, char *argv[])
                 log_info("    %s", cmd_iter->c_str());
             }
             log_info("  files:");
-            for (std::set<pair<string, int> >::iterator file_iter =
+            for (map<string, logfile_open_options>::iterator file_iter =
                  lnav_data.ld_file_names.begin();
                  file_iter != lnav_data.ld_file_names.end();
                  ++file_iter) {
