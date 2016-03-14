@@ -546,15 +546,18 @@ public:
         }
     };
 
-    void set_sub_source(text_sub_source *src)
-    {
+    textview_curses &set_sub_source(text_sub_source *src) {
         this->tc_sub_source = src;
         this->reload_data();
+        return *this;
     };
+
     text_sub_source *get_sub_source(void) const { return this->tc_sub_source; };
 
-    void set_delegate(text_delegate *del) {
+    textview_curses &set_delegate(text_delegate *del) {
         this->tc_delegate = del;
+
+        return *this;
     };
 
     text_delegate *get_delegate(void) const { return this->tc_delegate; };

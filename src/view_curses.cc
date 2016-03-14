@@ -34,8 +34,10 @@
 #include <string>
 #include <algorithm>
 
+#include "auto_mem.hh"
 #include "lnav_log.hh"
 #include "view_curses.hh"
+#include "ansi_scrubber.hh"
 
 using namespace std;
 
@@ -77,6 +79,23 @@ alerter &alerter::singleton() {
     static alerter retval;
 
     return retval;
+}
+
+attr_line_t &attr_line_t::with_ansi_string(const char *str, ...)
+{
+    auto_mem<char> formatted_str;
+    va_list args;
+
+    va_start(args, str);
+    vasprintf(formatted_str.out(), str, args);
+    va_end(args);
+
+    if (formatted_str != NULL) {
+        this->al_string = formatted_str;
+        scrub_ansi_string(this->al_string, this->al_attrs);
+    }
+
+    return *this;
 }
 
 void view_curses::mvwattrline(WINDOW *window,

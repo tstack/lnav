@@ -155,10 +155,11 @@ public:
     };
 
     /** @param src The data source delegate. */
-    void set_overlay_source(list_overlay_source *src)
-    {
+    listview_curses &set_overlay_source(list_overlay_source *src) {
         this->lv_overlay_source = src;
         this->reload_data();
+
+        return *this;
     };
 
     /** @return The overlay source delegate. */
@@ -185,7 +186,7 @@ public:
     void set_show_bottom_border(bool val) { this->lv_show_bottom_border = val; };
     bool get_show_bottom_border() const { return this->lv_show_bottom_border; };
 
-    void set_word_wrap(bool ww) {
+    listview_curses &set_word_wrap(bool ww) {
         bool scroll_down = this->lv_top >= this->get_top_for_last_row();
 
         this->lv_word_wrap = ww;
@@ -196,7 +197,10 @@ public:
             this->lv_left = 0;
         }
         this->set_needs_update();
+
+        return *this;
     };
+
     bool get_word_wrap() const { return this->lv_word_wrap; };
 
     enum row_direction_t {
@@ -204,7 +208,7 @@ public:
         RD_DOWN = 1,
     };
 
-    vis_line_t rows_available(vis_line_t line, row_direction_t dir) {
+    vis_line_t rows_available(vis_line_t line, row_direction_t dir) const {
         unsigned long width;
         vis_line_t height;
         vis_line_t retval(0);
@@ -286,7 +290,7 @@ public:
     vis_line_t get_top() const { return this->lv_top; };
 
     /** @return The line number that is displayed at the bottom. */
-    vis_line_t get_bottom()
+    vis_line_t get_bottom() const
     {
         vis_line_t retval = this->lv_top;
 
@@ -303,7 +307,7 @@ public:
 
             retval = last_line - vis_line_t(this->rows_available(last_line, RD_UP) - 1);
             if ((retval + 1) < this->get_inner_height()) {
-                ++retval;
+                retval += this->lv_tail_space;
             }
         }
 
@@ -413,6 +417,8 @@ public:
 
     void set_needs_update() { this->lv_needs_update = true; };
 
+    void set_overlay_needs_update() { this->lv_overlay_needs_update = true; };
+
     /**
      * Get the actual dimensions of the view.
      *
@@ -456,6 +462,12 @@ public:
 
     bool handle_mouse(mouse_event &me);
 
+    listview_curses &set_tail_space(vis_line_t space) {
+        this->lv_tail_space = space;
+
+        return *this;
+    };
+
     void log_state() {
         log_debug("listview_curses=%p", this);
         log_debug("  lv_title=%s", this->lv_title.c_str());
@@ -485,6 +497,7 @@ protected:
     bool         lv_needs_update;   /*< Flag to indicate if a display update
                                      *  is needed.
                                      */
+    bool lv_overlay_needs_update;
     bool lv_show_scrollbar;         /*< Draw the scrollbar in the view. */
     bool lv_show_bottom_border;
     list_gutter_source *lv_gutter_source;
@@ -495,5 +508,6 @@ protected:
     int lv_scroll_velo;
     int lv_mouse_y;
     lv_mode_t lv_mouse_mode;
+    vis_line_t lv_tail_space;
 };
 #endif

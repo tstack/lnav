@@ -51,6 +51,7 @@ listview_curses::listview_curses()
       lv_left(0),
       lv_height(0),
       lv_needs_update(true),
+      lv_overlay_needs_update(true),
       lv_show_scrollbar(true),
       lv_show_bottom_border(false),
       lv_gutter_source(&DEFAULT_GUTTER_SOURCE),
@@ -58,7 +59,8 @@ listview_curses::listview_curses()
       lv_scroll_accel(0),
       lv_scroll_velo(0),
       lv_mouse_y(-1),
-      lv_mouse_mode(LV_MODE_NONE)
+      lv_mouse_mode(LV_MODE_NONE),
+      lv_tail_space(1)
 { }
 
 listview_curses::~listview_curses()
@@ -171,7 +173,11 @@ bool listview_curses::handle_key(int ch)
 
 void listview_curses::do_update(void)
 {
-    if (this->lv_window != NULL && this->lv_needs_update) {
+    if (this->lv_window == NULL) {
+        return;
+    }
+
+    if (this->lv_needs_update) {
         vis_line_t        y(this->lv_y), height, bottom, row;
         attr_line_t       overlay_line;
         vis_line_t        overlay_height(0);
@@ -276,6 +282,31 @@ void listview_curses::do_update(void)
         }
 
         this->lv_needs_update = false;
+    }
+    else if (this->lv_overlay_needs_update && this->lv_overlay_source != NULL) {
+        vis_line_t y(this->lv_y), height, bottom;
+        attr_line_t overlay_line;
+        unsigned long width, wrap_width;
+        struct line_range lr;
+
+        this->lv_overlay_source->list_overlay_count(*this);
+        this->get_dimensions(height, width);
+        wrap_width = width - (this->lv_word_wrap ? 1 : this->lv_show_scrollbar ? 1 : 0);
+
+        lr.lr_start = this->lv_left;
+        lr.lr_end   = this->lv_left + wrap_width;
+
+        bottom = y + height;
+        while (y < bottom) {
+            if (this->lv_overlay_source->list_value_for_overlay(
+                    *this,
+                    y - vis_line_t(this->lv_y),
+                overlay_line)) {
+                this->mvwattrline(this->lv_window, y, 0, overlay_line, lr);
+                overlay_line.clear();
+            }
+            ++y;
+        }
     }
 }
 

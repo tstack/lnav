@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2015, Timothy Stack
+ * Copyright (c) 2007-2016, Timothy Stack
  *
  * All rights reserved.
  *
@@ -1660,6 +1660,7 @@ static void looper(void)
         readline_context sql_context("sql", NULL, false);
         readline_context exec_context("exec");
         readline_curses  rlc;
+        sig_atomic_t overlay_counter;
         int lpc;
 
         command_context.set_highlighter(readline_command_highlighter);
@@ -1929,6 +1930,10 @@ static void looper(void)
                     }
                 }
                 rlc.check_poll_set(pollfds);
+            }
+
+            if (timer.time_to_update(overlay_counter)) {
+                lnav_data.ld_view_stack.top()->set_overlay_needs_update();
             }
 
             if (timer.fade_diff(index_counter) == 0) {
@@ -2512,26 +2517,26 @@ int main(int argc, char *argv[])
 
     init_lnav_commands(lnav_commands);
 
-    lnav_data.ld_views[LNV_HELP].
-    set_sub_source(new plain_text_source(help_txt));
-    lnav_data.ld_views[LNV_HELP].set_word_wrap(true);
-    lnav_data.ld_views[LNV_LOG].
-    set_sub_source(&lnav_data.ld_log_source);
-    lnav_data.ld_views[LNV_LOG].
-    set_delegate(new action_delegate(lnav_data.ld_log_source));
-    lnav_data.ld_views[LNV_TEXT].
-    set_sub_source(&lnav_data.ld_text_source);
-    lnav_data.ld_views[LNV_HISTOGRAM].
-    set_sub_source(&lnav_data.ld_hist_source2);
-    lnav_data.ld_views[LNV_GRAPH].
-    set_sub_source(&lnav_data.ld_graph_source);
-    lnav_data.ld_views[LNV_DB].
-    set_sub_source(&lnav_data.ld_db_row_source);
+    lnav_data.ld_views[LNV_HELP]
+        .set_sub_source(new plain_text_source(help_txt))
+        .set_word_wrap(true);
+    lnav_data.ld_views[LNV_LOG]
+        .set_sub_source(&lnav_data.ld_log_source)
+        .set_delegate(new action_delegate(lnav_data.ld_log_source))
+        .set_tail_space(vis_line_t(2))
+        .set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
+    lnav_data.ld_views[LNV_TEXT]
+        .set_sub_source(&lnav_data.ld_text_source);
+    lnav_data.ld_views[LNV_HISTOGRAM]
+        .set_sub_source(&lnav_data.ld_hist_source2);
+    lnav_data.ld_views[LNV_GRAPH]
+        .set_sub_source(&lnav_data.ld_graph_source);
+    lnav_data.ld_views[LNV_DB]
+        .set_sub_source(&lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
-    lnav_data.ld_views[LNV_DB].
-    set_overlay_source(&lnav_data.ld_db_overlay);
-    lnav_data.ld_views[LNV_LOG].
-    set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
+    lnav_data.ld_views[LNV_DB]
+        .set_overlay_source(&lnav_data.ld_db_overlay);
+
     lnav_data.ld_match_view.set_left(0);
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {

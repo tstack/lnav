@@ -340,6 +340,8 @@ public:
         return *this;
     }
 
+    attr_line_t &with_ansi_string(const char *str, ...);
+
     attr_line_t &with_attr(const string_attr &sa) {
         this->al_attrs.push_back(sa);
         return *this;

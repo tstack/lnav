@@ -47,7 +47,12 @@ public:
 
     };
 
-    size_t list_overlay_count(const listview_curses &lv);
+    size_t list_overlay_count(const listview_curses &lv) {
+        this->build_field_lines(lv);
+        this->build_summary_lines(lv);
+
+        return this->fos_lines.size() + this->fos_summary_lines.size();
+    };
 
     void add_key_line_attrs(int key_size, bool last_line = false) {
         string_attrs_t &sa = this->fos_lines.back().get_attrs();
@@ -63,20 +68,28 @@ public:
                                 vis_line_t y,
                                 attr_line_t &value_out)
     {
-        if (this->fos_lines.empty()) {
-            return false;
+        if (1 <= y && y <= (int)this->fos_lines.size()) {
+            value_out = this->fos_lines[y - 1];
+            return true;
         }
 
-        int  row       = (int)y - 1;
+        if (!this->fos_summary_lines.empty()) {
+            unsigned long width;
+            vis_line_t height;
 
-        if (row < 0 || row >= (int)this->fos_lines.size()) {
-            return false;
+            lv.get_dimensions(height, width);
+
+            if (y == height - 1) {
+                value_out = this->fos_summary_lines[0];
+                return true;
+            }
         }
 
-        value_out = this->fos_lines[row];
-
-        return true;
+        return false;
     };
+
+    void build_field_lines(const listview_curses &lv);
+    void build_summary_lines(const listview_curses &lv);
 
     bool          fos_active;
     bool          fos_active_prev;
@@ -84,6 +97,7 @@ public:
     int fos_known_key_size;
     int fos_unknown_key_size;
     std::vector<attr_line_t> fos_lines;
+    std::vector<attr_line_t> fos_summary_lines;
 };
 
 #endif //LNAV_FIELD_OVERLAY_SOURCE_H

@@ -108,7 +108,9 @@ inline time_t hour_num(time_t ti)
     return ti / (60 * 60);
 }
 
-std::string time_ago(time_t last_time);
+std::string time_ago(time_t last_time, bool convert_local = false);
+
+std::string precise_time_ago(const struct timeval &tv, bool convert_local = false);
 
 typedef int64_t mstime_t;
 

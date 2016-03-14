@@ -13,6 +13,9 @@ lnav v0.8.1:
        extract values from a string using a regular expression.
      * Added an 'extract(<str>)' SQL function that extracts values using the
        same data discover/extraction parser used in the 'logline' table.
+     * Added a "summary" overlay line to the bottom of the log view that
+       displays how long ago the last message was received, along with the
+       total number of files, errors, and warnings.
      * Pressing 'V' in the DB view will now check for a column with a
        timestamp and move to the corresponding time in the log view.
      * Added ":hide-lines-before", ":hide-lines-after", and

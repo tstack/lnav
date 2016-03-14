@@ -64,61 +64,73 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
         size_t lpc;
 
         switch (pi.get_substr_start(&caps[2])[0]) {
-        case 'm':
-            for (lpc = caps[1].c_begin;
-                 lpc != string::npos && lpc < (size_t)caps[1].c_end; ) {
-                int ansi_code = 0;
+            case 'm':
+                for (lpc = caps[1].c_begin;
+                     lpc != string::npos && lpc < (size_t) caps[1].c_end;) {
+                    int ansi_code = 0;
 
-                if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
-                    if (90 <= ansi_code && ansi_code <= 97) {
-                        ansi_code -= 60;
-                        attrs     |= A_STANDOUT;
+                    if (sscanf(&(str[lpc]), "%d", &ansi_code) == 1) {
+                        if (90 <= ansi_code && ansi_code <= 97) {
+                            ansi_code -= 60;
+                            attrs |= A_STANDOUT;
+                        }
+                        if (30 <= ansi_code && ansi_code <= 37) {
+                            fg = ansi_code - 30;
+                        }
+                        if (40 <= ansi_code && ansi_code <= 47) {
+                            bg = ansi_code - 40;
+                        }
+                        switch (ansi_code) {
+                            case 1:
+                                attrs |= A_BOLD;
+                                break;
+
+                            case 2:
+                                attrs |= A_DIM;
+                                break;
+
+                            case 4:
+                                attrs |= A_UNDERLINE;
+                                break;
+
+                            case 7:
+                                attrs |= A_REVERSE;
+                                break;
+                        }
                     }
-                    if (30 <= ansi_code && ansi_code <= 37) {
-                        fg = ansi_code - 30;
-                    }
-                    if (40 <= ansi_code && ansi_code <= 47) {
-                        bg = ansi_code - 40;
-                    }
-                    switch (ansi_code) {
-                    case 1:
-                        attrs |= A_BOLD;
-                        break;
-
-                    case 2:
-                        attrs |= A_DIM;
-                        break;
-
-                    case 4:
-                        attrs |= A_UNDERLINE;
-                        break;
-
-                    case 7:
-                        attrs |= A_REVERSE;
-                        break;
+                    lpc = str.find(";", lpc);
+                    if (lpc != string::npos) {
+                        lpc += 1;
                     }
                 }
-                lpc = str.find(";", lpc);
-                if (lpc != string::npos) {
-                    lpc += 1;
+                if (fg != 0 || bg != 0) {
+                    attrs |= vc.ansi_color_pair(fg, bg);
                 }
-            }
-            if (fg != 0 || bg != 0) {
-                attrs |= vc.ansi_color_pair(fg, bg);
-            }
-            has_attrs = true;
-            break;
+                has_attrs = true;
+                break;
 
-        case 'C':
-        {
-            unsigned int spaces = 0;
+            case 'C': {
+                unsigned int spaces = 0;
 
-            if (sscanf(&(str[caps[1].c_begin]), "%u", &spaces) == 1 &&
-                spaces > 0) {
-                str.insert((unsigned long) caps[0].c_end, spaces, ' ');
+                if (sscanf(&(str[caps[1].c_begin]), "%u", &spaces) == 1 &&
+                    spaces > 0) {
+                    str.insert((unsigned long) caps[0].c_end, spaces, ' ');
+                }
+                break;
             }
-        }
-        break;
+
+            case 'O': {
+                int role_int;
+
+                if (sscanf(&(str[caps[1].c_begin]), "%d", &role_int) == 1) {
+                    if (role_int >= 0 && role_int < view_colors::VCR__MAX) {
+                        attrs = vc.attrs_for_role(
+                            (view_colors::role_t) role_int);
+                        has_attrs = true;
+                    }
+                }
+                break;
+            }
         }
         str.erase(str.begin() + caps[0].c_begin,
                   str.begin() + caps[0].c_end);

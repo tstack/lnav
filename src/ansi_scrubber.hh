@@ -36,11 +36,14 @@
 
 #include "view_curses.hh"
 
-#define ANSI_BOLD_START       "\x1b[1m"
-#define ANSI_UNDERLINE_START  "\x1b[4m"
-#define ANSI_NORM             "\x1b[0m"
+#define ANSI_CSI              "\x1b["
+#define ANSI_BOLD_START       ANSI_CSI "1m"
+#define ANSI_UNDERLINE_START  ANSI_CSI "4m"
+#define ANSI_NORM             ANSI_CSI "0m"
 
 #define ANSI_BOLD(msg)    ANSI_BOLD_START msg ANSI_NORM
+
+#define ANSI_ROLE(msg)  ANSI_CSI "%dO" msg ANSI_NORM
 
 /**
  * Check a string for ANSI escape sequences, process them, remove them, and add

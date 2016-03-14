@@ -37,7 +37,79 @@
 
 using namespace std;
 
-size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
+void field_overlay_source::build_summary_lines(const listview_curses &lv)
+{
+    textview_curses &tv = (textview_curses &) lv;
+    vis_bookmarks &bookmarks = tv.get_bookmarks();
+    textfile_sub_source &tss = lnav_data.ld_text_source;
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+
+    this->fos_summary_lines.clear();
+
+    {
+        vis_line_t filled_rows = lv.rows_available(
+            lv.get_top(), listview_curses::RD_DOWN);
+        vis_line_t height, free_rows;
+        unsigned long width;
+
+        lv.get_dimensions(height, width);
+        free_rows = height - filled_rows - vis_line_t(this->fos_lines.size());
+        if (free_rows < 2) {
+            this->fos_summary_lines.clear();
+        }
+        else {
+            string last_time;
+
+            if (lv.get_inner_height() == 0) {
+                last_time = "No log messages";
+            }
+            else {
+                last_time = "Last message: " + precise_time_ago(
+                    lss.find_line(lss.at(lv.get_bottom()))->get_timeval(),
+                    true);
+            }
+
+            this->fos_summary_lines.push_back(attr_line_t());
+            attr_line_t &sum_line = this->fos_summary_lines.back();
+            string &sum_msg = sum_line.get_string();
+            sum_line
+                .with_ansi_string(
+                    "       %s; Files: " ANSI_BOLD("%d") "; "
+                        ANSI_ROLE("Errors") ": " ANSI_BOLD("%d") "; "
+                        ANSI_ROLE("Warnings") ": " ANSI_BOLD("%d"),
+                    last_time.c_str(),
+                    lss.file_count() + tss.size(),
+                    view_colors::VCR_ERROR,
+                    bookmarks[&logfile_sub_source::BM_ERRORS].size(),
+                    view_colors::VCR_WARNING,
+                    bookmarks[&logfile_sub_source::BM_WARNINGS].size())
+                .with_attr(string_attr(
+                    line_range(1, 2),
+                    &view_curses::VC_GRAPHIC,
+                    ACS_ULCORNER
+                ))
+                .with_attr(string_attr(
+                    line_range(2, 6),
+                    &view_curses::VC_GRAPHIC,
+                    ACS_HLINE
+                ))
+                .with_attr(string_attr(
+                    line_range(sum_msg.length() + 1,
+                               sum_msg.length() + 5),
+                    &view_curses::VC_GRAPHIC,
+                    ACS_HLINE
+                ))
+                .with_attr(string_attr(
+                    line_range(sum_msg.length() + 5,
+                               sum_msg.length() + 6),
+                    &view_curses::VC_GRAPHIC,
+                    ACS_URCORNER
+                ));
+        }
+    }
+}
+
+void field_overlay_source::build_field_lines(const listview_curses &lv)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     view_colors &vc = view_colors::singleton();
@@ -46,7 +118,8 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
 
     if (lss.text_line_count() == 0) {
         this->fos_log_helper.clear();
-        return 0;
+
+        return;
     }
 
     content_line_t cl = lss.at(lv.get_top());
@@ -63,11 +136,11 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
     }
 
     if (!display) {
-        return 0;
+        return;
     }
 
     if (!this->fos_log_helper.parse_line(lv.get_top())) {
-        return 0;
+        return;
     }
 
     char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
@@ -97,6 +170,11 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
     time_str.append(" Received Time: ");
     time_lr.lr_start = time_str.length();
     time_str.append(curr_timestamp);
+    time_lr.lr_end = time_str.length();
+    time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
+    time_str.append(" -- ");
+    time_lr.lr_start = time_str.length();
+    time_str.append(precise_time_ago(ll->get_timeval(), true));
     time_lr.lr_end = time_str.length();
     time_line.with_attr(string_attr(time_lr, &view_curses::VC_STYLE, A_BOLD));
 
@@ -157,7 +235,7 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
     this->fos_lines.push_back(time_line);
 
     if (!this->fos_active) {
-        return 1;
+        return;
     }
 
     this->fos_known_key_size = 0;
@@ -290,6 +368,4 @@ size_t field_overlay_source::list_overlay_count(const listview_curses &lv)
         this->add_key_line_attrs(this->fos_unknown_key_size,
                                  lpc == (this->fos_log_helper.ldh_parser->dp_pairs.size() - 1));
     }
-
-    return this->fos_lines.size();
 };

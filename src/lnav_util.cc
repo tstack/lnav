@@ -135,12 +135,22 @@ size_t unquote(char *dst, const char *str, size_t len)
     return index;
 }
 
-std::string time_ago(time_t last_time)
+std::string time_ago(time_t last_time, bool convert_local)
 {
     time_t      delta, current_time = time(NULL);
     const char *fmt;
     char        buffer[64];
     int         amount;
+    struct tm   tm;
+
+    if (convert_local) {
+        localtime_r(&current_time, &tm);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+        tm.tm_zone = NULL;
+#endif
+        tm.tm_isdst = 0;
+        current_time = tm2sec(&tm);
+    }
 
     delta = current_time - last_time;
     if (delta < 0) {
@@ -177,6 +187,58 @@ std::string time_ago(time_t last_time)
     snprintf(buffer, sizeof(buffer), fmt, amount);
 
     return std::string(buffer);
+}
+
+std::string precise_time_ago(const struct timeval &tv, bool convert_local)
+{
+    struct timeval now, diff;
+    struct tm tm;
+
+    gettimeofday(&now, NULL);
+    if (convert_local) {
+        localtime_r(&now.tv_sec, &tm);
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+        tm.tm_zone = NULL;
+#endif
+        tm.tm_isdst = 0;
+        now.tv_sec = tm2sec(&tm);
+    }
+
+    timersub(&now, &tv, &diff);
+    if (diff.tv_sec < 0) {
+        return time_ago(tv.tv_sec);
+    }
+    else if (diff.tv_sec == 0) {
+        return "less than a second ago";
+    }
+    else if (diff.tv_sec == 1) {
+        return "a second ago";
+    }
+    else if (diff.tv_sec < (10 * 60)) {
+        char buf[64];
+
+        if (diff.tv_sec < 60) {
+            snprintf(buf, sizeof(buf),
+                     "%ld seconds ago",
+                     diff.tv_sec);
+        }
+        else {
+            time_t seconds = diff.tv_sec % 60;
+            time_t minutes = diff.tv_sec / 60;
+
+            snprintf(buf, sizeof(buf),
+                     "%ld minute%s and %ld second%s ago",
+                     minutes,
+                     minutes > 1 ? "s" : "",
+                     seconds,
+                     seconds == 1 ? "" : "s");
+        }
+
+        return string(buf);
+    }
+    else {
+        return time_ago(tv.tv_sec, convert_local);
+    }
 }
 
 /* XXX figure out how to do this with the template */

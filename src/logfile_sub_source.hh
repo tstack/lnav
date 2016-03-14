@@ -154,6 +154,19 @@ public:
         return this->lss_longest_line;
     };
 
+    size_t file_count() const {
+        size_t retval = 0;
+        const_iterator iter;
+
+        for (iter = this->cbegin(); iter != this->cend(); ++iter) {
+            if (*iter != NULL && (*iter)->get_file() != NULL) {
+                retval += 1;
+            }
+        }
+
+        return retval;
+    }
+
     bool empty() const { return this->lss_filtered_index.empty(); };
 
     void text_value_for_line(textview_curses &tc,
@@ -358,7 +371,7 @@ public:
             lf->set_logline_observer(&this->ld_filter_state);
         };
 
-        void     clear(void)
+        void clear(void)
         {
             this->ld_filter_state.lfo_filter_state.clear();
         };
@@ -376,11 +389,12 @@ public:
 
         size_t ld_file_index;
         line_filter_observer ld_filter_state;
-        size_t   ld_lines_indexed;
+        size_t ld_lines_indexed;
         bool ld_enabled;
     };
 
     typedef std::vector<logfile_data *>::iterator iterator;
+    typedef std::vector<logfile_data *>::const_iterator const_iterator;
 
     iterator begin()
     {
@@ -388,6 +402,16 @@ public:
     };
 
     iterator end()
+    {
+        return this->lss_files.end();
+    };
+
+    const_iterator cbegin() const
+    {
+        return this->lss_files.begin();
+    };
+
+    const_iterator cend() const
     {
         return this->lss_files.end();
     };
