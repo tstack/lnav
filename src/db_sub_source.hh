@@ -237,6 +237,8 @@ public:
         size_t retval = 1;
 
         if (!this->dos_active || lv.get_inner_height() == 0) {
+            this->dos_lines.clear();
+
             return retval;
         }
 

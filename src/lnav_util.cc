@@ -208,10 +208,7 @@ std::string precise_time_ago(const struct timeval &tv, bool convert_local)
     if (diff.tv_sec < 0) {
         return time_ago(tv.tv_sec);
     }
-    else if (diff.tv_sec == 0) {
-        return "less than a second ago";
-    }
-    else if (diff.tv_sec == 1) {
+    else if (diff.tv_sec <= 1) {
         return "a second ago";
     }
     else if (diff.tv_sec < (10 * 60)) {

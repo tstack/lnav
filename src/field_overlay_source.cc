@@ -74,9 +74,9 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             string &sum_msg = sum_line.get_string();
             sum_line
                 .with_ansi_string(
-                    "       %s; Files: " ANSI_BOLD("%d") "; "
-                        ANSI_ROLE("Errors") ": " ANSI_BOLD("%d") "; "
-                        ANSI_ROLE("Warnings") ": " ANSI_BOLD("%d"),
+                    "       %s; Files: " ANSI_BOLD("%'d") "; "
+                        ANSI_ROLE("Errors") ": " ANSI_BOLD("%'d") "; "
+                        ANSI_ROLE("Warnings") ": " ANSI_BOLD("%'d"),
                     last_time.c_str(),
                     lss.file_count() + tss.size(),
                     view_colors::VCR_ERROR,
