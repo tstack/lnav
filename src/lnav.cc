@@ -1935,7 +1935,8 @@ static void looper(void)
                 rlc.check_poll_set(pollfds);
             }
 
-            if (timer.time_to_update(overlay_counter)) {
+            if (timer.time_to_update(overlay_counter) &&
+                !lnav_data.ld_view_stack.empty()) {
                 lnav_data.ld_view_stack.top()->set_overlay_needs_update();
             }
 
