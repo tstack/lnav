@@ -58,31 +58,39 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             this->fos_summary_lines.clear();
         }
         else {
-            string last_time;
+            string last_time, time_span;
 
             if (lv.get_inner_height() == 0) {
                 last_time = "No log messages";
+                time_span = "None";
             }
             else {
+                logline *first_line, *last_line;
+
+                first_line = lss.find_line(lss.at(vis_line_t(0)));
+                last_line = lss.find_line(lss.at(lv.get_bottom()));
                 last_time = "Last message: " + precise_time_ago(
-                    lss.find_line(lss.at(lv.get_bottom()))->get_timeval(),
-                    true);
+                    last_line->get_timeval(), true);
+                str2reltime(last_line->get_time_in_millis() -
+                            first_line->get_time_in_millis(),
+                            time_span);
             }
 
             this->fos_summary_lines.push_back(attr_line_t());
             attr_line_t &sum_line = this->fos_summary_lines.back();
             string &sum_msg = sum_line.get_string();
-            sum_line
-                .with_ansi_string(
-                    "       %s; Files: " ANSI_BOLD("%'d") "; "
-                        ANSI_ROLE("Errors") ": " ANSI_BOLD("%'d") "; "
-                        ANSI_ROLE("Warnings") ": " ANSI_BOLD("%'d"),
+            sum_line.with_ansi_string(
+                    "       %s; Files: " ANSI_BOLD("%'2d") "; "
+                        ANSI_ROLE("Errors") ": " ANSI_BOLD("%'4d") "; "
+                        ANSI_ROLE("Warnings") ": " ANSI_BOLD("%'4d") "; "
+                        "Time span: %s",
                     last_time.c_str(),
                     lss.file_count() + tss.size(),
                     view_colors::VCR_ERROR,
                     bookmarks[&logfile_sub_source::BM_ERRORS].size(),
                     view_colors::VCR_WARNING,
-                    bookmarks[&logfile_sub_source::BM_WARNINGS].size())
+                    bookmarks[&logfile_sub_source::BM_WARNINGS].size(),
+                    time_span.c_str())
                 .with_attr(string_attr(
                     line_range(1, 2),
                     &view_curses::VC_GRAPHIC,
@@ -104,7 +112,8 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                                sum_msg.length() + 6),
                     &view_curses::VC_GRAPHIC,
                     ACS_URCORNER
-                ));
+                ))
+                .right_justify(width - 2);
         }
     }
 }

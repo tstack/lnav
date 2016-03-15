@@ -216,7 +216,7 @@ std::string precise_time_ago(const struct timeval &tv, bool convert_local)
 
         if (diff.tv_sec < 60) {
             snprintf(buf, sizeof(buf),
-                     "%ld seconds ago",
+                     "%2ld seconds ago",
                      diff.tv_sec);
         }
         else {
@@ -224,7 +224,7 @@ std::string precise_time_ago(const struct timeval &tv, bool convert_local)
             time_t minutes = diff.tv_sec / 60;
 
             snprintf(buf, sizeof(buf),
-                     "%ld minute%s and %ld second%s ago",
+                     "%2ld minute%s and %2ld second%s ago",
                      minutes,
                      minutes > 1 ? "s" : "",
                      seconds,

@@ -347,7 +347,35 @@ public:
         return *this;
     };
 
-    size_t length() const { return this->al_string.length(); };
+    attr_line_t &right_justify(unsigned long width) {
+        long padding = width - this->length();
+        if (padding > 0) {
+            this->al_string.insert(0, padding, ' ');
+            for (std::vector<string_attr>::iterator iter = this->al_attrs.begin();
+                 iter != this->al_attrs.end();
+                 ++iter) {
+                iter->sa_range.lr_start += padding;
+                iter->sa_range.lr_end += padding;
+            }
+        }
+
+        return *this;
+    }
+
+    ssize_t length() const {
+        size_t retval = this->al_string.length();
+
+        for (std::vector<string_attr>::const_iterator iter = this->al_attrs.begin();
+             iter != this->al_attrs.end();
+             ++iter) {
+            retval = std::max(retval, (size_t) iter->sa_range.lr_start);
+            if (iter->sa_range.lr_end != -1) {
+                retval = std::max(retval, (size_t) iter->sa_range.lr_end);
+            }
+        }
+
+        return retval;
+    };
 
     /** Clear the string and the attributes for the string. */
     attr_line_t &clear()
