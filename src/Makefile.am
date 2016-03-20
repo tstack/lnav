@@ -171,6 +171,7 @@ noinst_HEADERS = \
 	session_data.hh \
 	shared_buffer.hh \
 	shlex.hh \
+	spectro_source.hh \
 	sql_util.hh \
 	sqlite-extension-func.h \
     status_controllers.hh \
