@@ -452,8 +452,9 @@ bool logfile_sub_source::rebuild_index(bool force)
              iter++) {
             logfile_data *ld = *iter;
             logfile *lf = ld->get_file();
-            if (lf == NULL)
+            if (lf == NULL) {
                 continue;
+            }
 
             merge.add(ld,
                       lf->begin() + ld->ld_lines_indexed,
@@ -519,8 +520,7 @@ bool logfile_sub_source::rebuild_index(bool force)
 
             if (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
                     line_number) &&
-                    line_iter->get_msg_level() >=
-                    this->lss_min_log_level &&
+                    line_iter->get_msg_level() >= this->lss_min_log_level &&
                     !(*line_iter < this->lss_min_log_time) &&
                     *line_iter <= this->lss_max_log_time) {
                 this->lss_filtered_index.push_back(index_index);
@@ -651,11 +651,13 @@ void logfile_sub_source::text_filters_changed()
         content_line_t cl = (content_line_t) this->lss_index[index_index];
         uint64_t line_number;
         logfile_data *ld = this->find_data(cl, line_number);
+        logfile::iterator line_iter = ld->get_file()->begin() + line_number;
 
         if (!ld->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
                 line_number) &&
-                (*(ld->get_file()->begin() + line_number)).get_msg_level() >=
-                        this->lss_min_log_level) {
+                line_iter->get_msg_level() >= this->lss_min_log_level &&
+                !(*line_iter < this->lss_min_log_time) &&
+                *line_iter <= this->lss_max_log_time) {
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != NULL) {
                 logfile *lf = ld->get_file();

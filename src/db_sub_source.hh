@@ -51,10 +51,10 @@ public:
     };
 
     size_t text_size_for_line(textview_curses &tc, int line, bool raw) {
-        return this->text_line_width();
+        return this->text_line_width(tc);
     };
 
-    size_t text_line_width() {
+    size_t text_line_width(textview_curses &curses) {
         size_t retval = 0;
 
         for (std::vector<size_t>::iterator iter = this->dls_column_sizes.begin();

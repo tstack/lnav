@@ -61,7 +61,7 @@ public:
         return this->tds_lines.size();
     };
 
-    size_t text_line_width() {
+    size_t text_line_width(textview_curses &curses) {
         return this->tds_longest_line;
     };
 

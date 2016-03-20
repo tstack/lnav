@@ -299,6 +299,15 @@ private:
     std::vector<text_filter *> fs_filters;
 };
 
+class text_time_translator {
+public:
+    virtual ~text_time_translator() { };
+
+    virtual int row_for_time(time_t time_bucket) = 0;
+
+    virtual time_t time_for_row(int row) = 0;
+};
+
 /**
  * Source for the text to be shown in a textview_curses view.
  */
@@ -313,7 +322,7 @@ public:
      */
     virtual size_t text_line_count() = 0;
 
-    virtual size_t text_line_width() {
+    virtual size_t text_line_width(textview_curses &curses) {
         return INT_MAX;
     };
 
@@ -656,7 +665,7 @@ public:
 
     size_t listview_width(const listview_curses &lv) {
         return this->tc_sub_source == NULL ? 0 :
-               this->tc_sub_source->text_line_width();
+               this->tc_sub_source->text_line_width(*this);
     };
 
     void listview_value_for_row(const listview_curses &lv,

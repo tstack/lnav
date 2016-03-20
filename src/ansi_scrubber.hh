@@ -41,7 +41,7 @@
 #define ANSI_UNDERLINE_START  ANSI_CSI "4m"
 #define ANSI_NORM             ANSI_CSI "0m"
 
-#define ANSI_BOLD(msg)    ANSI_BOLD_START msg ANSI_NORM
+#define ANSI_BOLD(msg)  ANSI_BOLD_START msg ANSI_NORM
 
 #define ANSI_ROLE(msg)  ANSI_CSI "%dO" msg ANSI_NORM
 

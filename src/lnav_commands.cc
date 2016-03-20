@@ -1919,8 +1919,28 @@ static string com_zoom_to(string cmdline, vector<string> &args)
 
         for (int lpc = 0; lnav_zoom_strings[lpc] && !found; lpc++) {
             if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc]) == 0) {
-                lnav_data.ld_hist_zoom = lpc;
+                spectrogram_source &ss = lnav_data.ld_spectro_source;
+                time_t old_time;
+
+                lnav_data.ld_zoom_level = lpc;
+
+                old_time = lnav_data.ld_hist_source2.time_for_row(
+                    lnav_data.ld_views[LNV_HISTOGRAM].get_top());
                 rebuild_hist(0, true);
+                lnav_data.ld_views[LNV_HISTOGRAM].set_top(
+                    vis_line_t(lnav_data.ld_hist_source2.row_for_time(old_time)));
+
+                old_time = lnav_data.ld_spectro_source.time_for_row(
+                    lnav_data.ld_views[LNV_SPECTRO].get_top());
+                ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
+                ss.invalidate();
+                lnav_data.ld_views[LNV_SPECTRO].set_top(
+                    vis_line_t(lnav_data.ld_spectro_source.row_for_time(old_time)));
+
+                if (!lnav_data.ld_view_stack.empty()) {
+                    lnav_data.ld_view_stack.top()->set_needs_update();
+                }
+
                 found = true;
             }
         }
@@ -2343,6 +2363,177 @@ static string com_reset_config(string cmdline, vector<string> &args)
     return retval;
 }
 
+class log_spectro_value_source : public spectrogram_value_source {
+public:
+    log_spectro_value_source(intern_string_t colname)
+        : lsvs_colname(colname),
+          lsvs_begin_time(0),
+          lsvs_end_time(0),
+          lsvs_found(false) {
+        this->update_stats();
+    };
+
+    void update_stats() {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        logfile_sub_source::iterator iter;
+
+        this->lsvs_begin_time = 0;
+        this->lsvs_end_time = 0;
+        this->lsvs_stats.clear();
+        for (iter = lss.begin(); iter != lss.end(); iter++) {
+            logfile *lf = (*iter)->get_file();
+
+            if (lf == NULL) {
+                continue;
+            }
+
+            log_format *format = lf->get_format();
+            const logline_value_stats *stats = format->stats_for_value(this->lsvs_colname);
+
+            if (stats == NULL) {
+                continue;
+            }
+
+            logfile::iterator ll = lf->begin();
+
+            if (this->lsvs_begin_time == 0 || ll->get_time() < this->lsvs_begin_time) {
+                this->lsvs_begin_time = ll->get_time();
+            }
+            ll = lf->end();
+            --ll;
+            if (ll->get_time() > this->lsvs_end_time) {
+                this->lsvs_end_time = ll->get_time();
+            }
+
+            this->lsvs_found = true;
+            this->lsvs_stats.merge(*stats);
+        }
+
+        if (this->lsvs_begin_time) {
+            time_t filtered_begin_time = lss.find_line(lss.at(vis_line_t(0)))->get_time();
+            time_t filtered_end_time = lss.find_line(lss.at(vis_line_t(lss.text_line_count() - 1)))->get_time();
+
+            if (filtered_begin_time > this->lsvs_begin_time) {
+                this->lsvs_begin_time = filtered_begin_time;
+            }
+            if (filtered_end_time < this->lsvs_end_time) {
+                this->lsvs_end_time = filtered_end_time;
+            }
+        }
+    };
+
+    void spectro_bounds(spectrogram_bounds &sb_out) {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+
+        if (lss.text_line_count() == 0) {
+            return;
+        }
+
+        this->update_stats();
+
+        sb_out.sb_begin_time = this->lsvs_begin_time;
+        sb_out.sb_end_time = this->lsvs_end_time;
+        sb_out.sb_min_value_out = this->lsvs_stats.lvs_min_value;
+        sb_out.sb_max_value_out = this->lsvs_stats.lvs_max_value;
+        sb_out.sb_count = this->lsvs_stats.lvs_count;
+    };
+
+    void spectro_row(spectrogram_request &sr, spectrogram_row &row_out) {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        vis_line_t begin_line = lss.find_from_time(sr.sr_begin_time);
+        vis_line_t end_line = lss.find_from_time(sr.sr_end_time);
+        vector<logline_value> values;
+        string_attrs_t sa;
+
+        if (begin_line == -1) {
+            begin_line = vis_line_t(0);
+        }
+        if (end_line == -1) {
+            end_line = vis_line_t(lss.text_line_count());
+        }
+        for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
+            content_line_t cl = lss.at(curr_line);
+            logfile *lf = lss.find(cl);
+            logfile::iterator ll = lf->begin() + cl;
+            log_format *format = lf->get_format();
+            shared_buffer_ref sbr;
+
+            if (ll->is_continued()) {
+                continue;
+            }
+
+            lf->read_full_message(ll, sbr);
+            sa.clear();
+            values.clear();
+            format->annotate(sbr, sa, values);
+
+            vector<logline_value>::iterator lv_iter;
+
+            lv_iter = find_if(values.begin(), values.end(),
+                              logline_value_cmp(&this->lsvs_colname));
+
+            if (lv_iter != values.end()) {
+                switch (lv_iter->lv_kind) {
+                    case logline_value::VALUE_FLOAT:
+                        row_out.add_value(sr, lv_iter->lv_value.d);
+                        break;
+                    case logline_value::VALUE_INTEGER:
+                        row_out.add_value(sr, lv_iter->lv_value.i);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    };
+
+    intern_string_t lsvs_colname;
+    logline_value_stats lsvs_stats;
+    time_t lsvs_begin_time;
+    time_t lsvs_end_time;
+    bool lsvs_found;
+};
+
+static string com_spectrogram(string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a message field name";
+
+    if (args.empty()) {
+        args.push_back("numeric-colname");
+    }
+    else if (lnav_data.ld_view_stack.top() != &lnav_data.ld_views[LNV_LOG] &&
+             lnav_data.ld_view_stack.top() != &lnav_data.ld_views[LNV_SPECTRO]) {
+        retval = "error: this command can only be run from the log or spectrogram views";
+    }
+    else if (args.size() == 2) {
+        intern_string_t colname = intern_string::lookup(remaining_args(cmdline, args));
+        spectrogram_source &ss = lnav_data.ld_spectro_source;
+
+        ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
+        if (ss.ss_value_source != NULL) {
+            delete ss.ss_value_source;
+            ss.ss_value_source = NULL;
+        }
+        ss.invalidate();
+
+        auto_ptr<log_spectro_value_source> lsvs(new log_spectro_value_source(colname));
+
+        if (!lsvs->lsvs_found) {
+            retval = "error: unknown message field -- " + colname.to_string();
+        }
+        else {
+            ss.ss_value_source = lsvs.release();
+            ensure_view(&lnav_data.ld_views[LNV_SPECTRO]);
+
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(z, Z, "to zoom in/out"));
+
+            retval = "info: visualizing field -- " + colname.to_string();
+        }
+    }
+
+    return retval;
+}
+
 readline_context::command_t STD_COMMANDS[] = {
     {
         "adjust-log-time",
@@ -2666,6 +2857,12 @@ readline_context::command_t STD_COMMANDS[] = {
         "<option>",
         "Reset the configuration option to its default value",
         com_reset_config,
+    },
+    {
+        "spectrogram",
+        "<field-name>",
+        "Visualize the given message field using a spectrogram",
+        com_spectrogram,
     },
 
     { NULL },

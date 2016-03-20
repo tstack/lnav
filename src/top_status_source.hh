@@ -60,7 +60,8 @@ public:
     {
         this->tss_fields[TSF_TIME].set_width(24);
         this->tss_fields[TSF_PARTITION_NAME].set_width(34);
-        this->tss_fields[TSF_VIEW_NAME].set_width(6);
+        this->tss_fields[TSF_VIEW_NAME].set_width(8);
+        this->tss_fields[TSF_VIEW_NAME].set_role(view_colors::VCR_VIEW_STATUS);
         this->tss_fields[TSF_VIEW_NAME].right_justify(true);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_width(2);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_stitch_value(

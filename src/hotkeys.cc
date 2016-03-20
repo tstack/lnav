@@ -164,12 +164,8 @@ void update_view_name(void)
     status_field &sf = lnav_data.ld_top_source.statusview_value_for_field(
             top_status_source::TSF_VIEW_NAME);
     textview_curses * tc = lnav_data.ld_view_stack.top();
-    struct line_range lr(0);
 
-    sf.set_value("% 5s ", tc->get_title().c_str());
-    sf.get_value().get_attrs().push_back(
-            string_attr(lr, &view_curses::VC_STYLE,
-                        A_REVERSE | view_colors::ansi_color_pair(COLOR_BLUE, COLOR_WHITE)));
+    sf.set_value("%s ", tc->get_title().c_str());
 }
 
 void handle_paging_key(int ch)
@@ -187,8 +183,7 @@ void handle_paging_key(int ch)
     /* process the command keystroke */
     switch (ch) {
         case 'q':
-        case 'Q':
-        {
+        case 'Q': {
             string msg = "";
 
             if (tc == &lnav_data.ld_views[LNV_DB]) {
@@ -200,12 +195,9 @@ void handle_paging_key(int ch)
             else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
                 msg = HELP_MSG_1(t, "to switch to the text file view");
             }
-            else if (tc == &lnav_data.ld_views[LNV_GRAPH]) {
-                msg = HELP_MSG_1(g, "to switch to the graph view");
-            }
 
             lnav_data.ld_rl_view->set_alt_value(msg);
-        }
+            lnav_data.ld_last_view = tc;
             lnav_data.ld_view_stack.pop();
             if (lnav_data.ld_view_stack.empty() ||
                 (lnav_data.ld_view_stack.size() == 1 &&
@@ -215,8 +207,52 @@ void handle_paging_key(int ch)
             else {
                 tc = lnav_data.ld_view_stack.top();
                 tc->set_needs_update();
+                if (ch == 'Q') {
+                    text_time_translator *ttt = dynamic_cast<text_time_translator *>(lnav_data.ld_last_view->get_sub_source());
+                    textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+                    time_t last_time = 0;
+
+                    lss = &lnav_data.ld_log_source;
+                    if (ttt != NULL) {
+                        last_time = ttt->time_for_row(lnav_data.ld_last_view->get_top());
+                        vis_line_t new_log_top = lss->find_from_time(last_time);
+
+                        log_view.set_top(new_log_top);
+                    }
+                }
                 lnav_data.ld_scroll_broadcaster.invoke(tc);
                 update_view_name();
+            }
+            break;
+        }
+
+        case 'a':
+            if (lnav_data.ld_last_view == NULL) {
+                alerter::singleton().chime();
+            }
+            else {
+                textview_curses *tc = lnav_data.ld_last_view;
+
+                lnav_data.ld_last_view = NULL;
+                ensure_view(tc);
+            }
+            break;
+
+        case 'A':
+            if (lnav_data.ld_last_view == NULL) {
+                alerter::singleton().chime();
+            }
+            else {
+                textview_curses *tc = lnav_data.ld_last_view;
+                text_time_translator *ttt = dynamic_cast<text_time_translator *>(tc->get_sub_source());
+
+                lnav_data.ld_last_view = NULL;
+                if (ttt != NULL) {
+                    time_t log_top = lnav_data.ld_top_time;
+
+                    tc->set_top(vis_line_t(ttt->row_for_time(log_top)));
+                }
+                ensure_view(tc);
             }
             break;
 
@@ -382,34 +418,20 @@ void handle_paging_key(int ch)
             break;
 
         case 'z':
-            if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
-                if ((lnav_data.ld_hist_zoom + 1) >= HIST_ZOOM_LEVELS) {
-                    alerter::singleton().chime();
-                }
-                else {
-                    lnav_data.ld_hist_zoom += 1;
-                    rebuild_hist(0, true);
-                }
-
-                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                        I,
-                        "to switch to the log view at the top displayed time"));
+            if ((lnav_data.ld_zoom_level - 1) < 0) {
+                alerter::singleton().chime();
+            }
+            else {
+                execute_command("zoom-to " + string(lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
             }
             break;
 
         case 'Z':
-            if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
-                if (lnav_data.ld_hist_zoom == 0) {
-                    alerter::singleton().chime();
-                }
-                else {
-                    lnav_data.ld_hist_zoom -= 1;
-                    rebuild_hist(0, true);
-                }
-
-                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                        I,
-                        "to switch to the log view at the top displayed time"));
+            if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
+                alerter::singleton().chime();
+            }
+            else {
+                execute_command("zoom-to " + string(lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
             }
             break;
 
@@ -852,9 +874,22 @@ void handle_paging_key(int ch)
                 logfile::iterator ll = lf->begin() + cl;
                 log_data_helper ldh(lss);
 
+                lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "numeric-colname");
                 lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "colname");
 
                 ldh.parse_line(log_view.get_top(), true);
+
+                for (vector<logline_value>::iterator iter = ldh.ldh_line_values.begin();
+                     iter != ldh.ldh_line_values.end();
+                     ++iter) {
+                    const logline_value_stats *stats = iter->lv_format->stats_for_value(iter->lv_name);
+
+                    if (stats == NULL) {
+                        continue;
+                    }
+
+                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "numeric-colname", iter->lv_name.to_string());
+                }
 
                 for (vector<string>::iterator iter = ldh.ldh_namer->cn_names.begin();
                      iter != ldh.ldh_namer->cn_names.end();

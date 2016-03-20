@@ -304,9 +304,9 @@ static int read_scaling(yajlpp_parse_context *ypc, double val)
 {
     external_log_format *elf = ensure_format(ypc);
     const intern_string_t value_name = ypc->get_path_fragment_i(2);
-    string scale_name = ypc->get_path_fragment(5);
+    string scale_spec = ypc->get_path_fragment(5);
 
-    if (scale_name.empty()) {
+    if (scale_spec.empty()) {
         fprintf(stderr,
                 "error:%s:%s: scaling factor field cannot be empty\n",
                 ypc->get_path_fragment(0).c_str(),
@@ -314,12 +314,13 @@ static int read_scaling(yajlpp_parse_context *ypc, double val)
         return 0;
     }
 
-    struct scaling_factor &sf = elf->elf_value_defs[value_name].vd_unit_scaling[scale_name.substr(1)];
+    const intern_string_t scale_name = intern_string::lookup(scale_spec.substr(1));
+    struct scaling_factor &sf = elf->elf_value_defs[value_name].vd_unit_scaling[scale_name];
 
-    if (scale_name[0] == '/') {
+    if (scale_spec[0] == '/') {
         sf.sf_op = SO_DIVIDE;
     }
-    else if (scale_name[0] == '*') {
+    else if (scale_spec[0] == '*') {
         sf.sf_op = SO_MULTIPLY;
     }
     else {

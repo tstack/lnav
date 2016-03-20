@@ -658,16 +658,16 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sat Nov 03 08:00          2 normal         2 errors         0 warnings         0 marks
+ Sat Nov 03 08:00:00          2 normal         2 errors         0 warnings         0 marks
 EOF
 
 run_test ${lnav_test} -n \
     -c ":switch-to-view histogram" \
-    -c ":zoom-to day" \
+    -c ":zoom-to 1-day" \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sat Nov 03 00:00          2 normal         2 errors         0 warnings         0 marks
+ Sat Nov 03 00:00:00          2 normal         2 errors         0 warnings         0 marks
 EOF
 
 run_test ${lnav_test} -n \
@@ -677,7 +677,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "histogram is not working?" <<EOF
- Sat Nov 03 08:00          1 normal         0 errors         0 warnings         0 marks
+ Sat Nov 03 08:00:00          1 normal         0 errors         0 warnings         0 marks
 EOF
 
 run_test ${lnav_test} -n \

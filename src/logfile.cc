@@ -113,7 +113,8 @@ throw (error)
 }
 
 logfile::~logfile()
-{ }
+{
+}
 
 bool logfile::exists(void) const
 {
@@ -272,7 +273,13 @@ throw (line_buffer::error, logfile::error)
     }
 
     /* Check for new data based on the file size. */
-    if (this->lf_index_size < st.st_size) {
+    if (this->lf_index_size > st.st_size) {
+        log_info("truncated file detected, closing -- %s",
+                 this->lf_filename.c_str());
+        this->close();
+        return false;
+    }
+    else if (this->lf_index_size < st.st_size) {
         bool has_format = this->lf_format.get() != NULL;
         shared_buffer_ref sbr;
         off_t  last_off, off;

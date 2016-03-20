@@ -63,7 +63,7 @@ public:
         return retval;
     };
 
-    size_t text_line_width() {
+    size_t text_line_width(textview_curses &curses) {
         return this->tss_files.empty() ? 0 : this->current_file()->get_longest_line_length();
     };
 

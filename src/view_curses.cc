@@ -342,6 +342,8 @@ void view_colors::init_roles(void)
         ansi_color_pair(COLOR_GREEN, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_BOLD_STATUS] =
         ansi_color_pair(COLOR_BLACK, COLOR_WHITE) | A_BOLD;
+    this->vc_role_colors[VCR_VIEW_STATUS] =
+        ansi_color_pair(COLOR_WHITE, COLOR_BLUE);
 
     this->vc_role_colors[VCR_KEYWORD] = ansi_color_pair(COLOR_BLUE, COLOR_BLACK);
     this->vc_role_colors[VCR_STRING] = ansi_color_pair(COLOR_GREEN, COLOR_BLACK) | A_BOLD;
@@ -351,6 +353,10 @@ void view_colors::init_roles(void)
     this->vc_role_colors[VCR_DIFF_DELETE]  = ansi_color_pair(COLOR_RED, COLOR_BLACK);
     this->vc_role_colors[VCR_DIFF_ADD]     = ansi_color_pair(COLOR_GREEN, COLOR_BLACK);
     this->vc_role_colors[VCR_DIFF_SECTION] = ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK);
+
+    this->vc_role_colors[VCR_LOW_THRESHOLD] = ansi_color_pair(COLOR_BLACK, COLOR_GREEN);
+    this->vc_role_colors[VCR_MED_THRESHOLD] = ansi_color_pair(COLOR_BLACK, COLOR_YELLOW);
+    this->vc_role_colors[VCR_HIGH_THRESHOLD] = ansi_color_pair(COLOR_BLACK, COLOR_RED);
 
     for (lpc = 0; lpc < VCR_HIGHLIGHT_START; lpc++) {
         this->vc_role_reverse_colors[lpc] =

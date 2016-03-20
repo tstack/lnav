@@ -136,7 +136,7 @@ public:
         return (this->buckets_per_group() + 1) * this->hs_groups.size();
     };
 
-    size_t text_line_width() {
+    size_t text_line_width(textview_curses &curses) {
         return this->hs_label_source == NULL ? 0 :
                this->hs_label_source->hist_label_width();
     };
@@ -455,7 +455,9 @@ protected:
     int sbc_ident_to_show;
 };
 
-class hist_source2 : public text_sub_source {
+class hist_source2
+    : public text_sub_source,
+      public text_time_translator {
 public:
 
     typedef enum {
@@ -486,9 +488,6 @@ public:
     };
 
     void set_time_slice(int64_t slice) {
-        require(slice >= 60);
-        require((slice % 60) == 0);
-
         this->hs_time_slice = slice;
     };
 
@@ -500,7 +499,7 @@ public:
         return this->hs_line_count;
     };
 
-    size_t text_line_width() {
+    size_t text_line_width(textview_curses &curses) {
         return strlen(LINE_FORMAT) + 8 * 4;
     };
 
@@ -552,7 +551,7 @@ public:
 
         if (gmtime_r(&bucket.b_time, &bucket_tm) != NULL) {
             strftime(tm_buffer, sizeof(tm_buffer),
-                     " %a %b %d %H:%M  ",
+                     " %a %b %d %H:%M:%S  ",
                      &bucket_tm);
         }
         else {
@@ -589,7 +588,7 @@ public:
         return 0;
     };
 
-    time_t time_for_row(int64_t row) {
+    time_t time_for_row(int row) {
         require(row >= 0);
         require(row < this->hs_line_count);
 
@@ -598,9 +597,9 @@ public:
         return bucket.b_time;
     };
 
-    int64_t row_for_time(time_t time_bucket) {
+    int row_for_time(time_t time_bucket) {
         std::map<int64_t, struct bucket_block>::iterator iter;
-        int64_t retval = 0;
+        int retval = 0;
 
         time_bucket = rounddown(time_bucket, this->hs_time_slice);
 

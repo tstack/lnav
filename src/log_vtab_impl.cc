@@ -302,20 +302,26 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
             char buffer[64];
 
             if (ll->is_time_skewed()) {
-                log_format *format = lf->get_format();
-                shared_buffer_ref line;
-                vector<logline> dst;
+                if (vc->line_values.empty()) {
+                    lf->read_full_message(ll, vc->log_msg);
+                    vt->vi->extract(lf, vc->log_msg, vc->line_values);
+                }
 
-                lf->read_line(ll, line);
-                switch (format->scan(dst, 0, line)) {
-                    case log_format::SCAN_MATCH:
-                        sql_strftime(buffer, sizeof(buffer),
-                                     dst.back().get_time(),
-                                     dst.back().get_millis());
-                        break;
-                    default:
-                        buffer[0] = '\0';
-                        break;
+                struct line_range time_range;
+
+                time_range = find_string_attr_range(
+                    vt->vi->vi_attrs, &logline::L_TIMESTAMP);
+
+                const char *time_src = vc->log_msg.get_data() + time_range.lr_start;
+                struct timeval actual_tv;
+                struct exttm tm;
+
+                if (lf->get_format()->lf_date_time.scan(
+                    time_src, time_range.length(),
+                    lf->get_format()->get_timestamp_formats(),
+                    &tm, actual_tv,
+                    false)) {
+                    sql_strftime(buffer, sizeof(buffer), actual_tv);
                 }
             }
             else {

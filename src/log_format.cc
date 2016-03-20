@@ -738,6 +738,47 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
             }
         }
 
+        size_t numeric_def_count = this->elf_numeric_value_defs.size();
+
+        for (size_t num_def_index = 0;
+             num_def_index < numeric_def_count;
+             num_def_index += 1) {
+            value_def &vd = *this->elf_numeric_value_defs[num_def_index];
+            pcre_context::capture_t *num_cap = pc[vd.vd_index];
+
+            if (num_cap != NULL && num_cap->is_valid()) {
+                const struct scaling_factor *scaling = NULL;
+
+                if (vd.vd_unit_field_index >= 0) {
+                    pcre_context::iterator unit_cap = pc[vd.vd_unit_field_index];
+
+                    if (unit_cap != NULL && unit_cap->is_valid()) {
+                        intern_string_t unit_val = intern_string::lookup(
+                            pi.get_substr_start(unit_cap), unit_cap->length());
+                        std::map<const intern_string_t, scaling_factor>::const_iterator unit_iter;
+
+                        unit_iter = vd.vd_unit_scaling.find(unit_val);
+                        if (unit_iter != vd.vd_unit_scaling.end()) {
+                            const struct scaling_factor &sf = unit_iter->second;
+
+                            scaling = &sf;
+                        }
+                    }
+                }
+
+                char cap_copy[num_cap->length() + 1];
+                double dvalue;
+
+                pi.get_substr(num_cap, cap_copy);
+                if (sscanf(cap_copy, "%lf", &dvalue) == 1) {
+                    if (scaling != NULL) {
+                        scaling->scale(dvalue);
+                    }
+                    this->lf_value_stats[num_def_index].add_value(dvalue);
+                }
+            }
+        }
+
         dst.push_back(logline(offset, log_tv, level, mod_index, opid));
 
         this->lf_fmt_lock = curr_fmt;
@@ -860,8 +901,9 @@ void external_log_format::annotate(shared_buffer_ref &line,
             pcre_context::iterator unit_cap = pc[vd.vd_unit_field_index];
 
             if (unit_cap != NULL && unit_cap->c_begin != -1) {
-                std::string unit_val = pi.get_substr(unit_cap);
-                std::map<string, scaling_factor>::const_iterator unit_iter;
+                intern_string_t unit_val = intern_string::lookup(
+                    pi.get_substr_start(unit_cap), unit_cap->length());
+                map<const intern_string_t, scaling_factor>::const_iterator unit_iter;
 
                 unit_iter = vd.vd_unit_scaling.find(unit_val);
                 if (unit_iter != vd.vd_unit_scaling.end()) {
@@ -1486,6 +1528,25 @@ void external_log_format::build(std::vector<std::string> &errors) {
             }
         }
     }
+
+    for (std::map<const intern_string_t, value_def>::iterator iter = this->elf_value_defs.begin();
+         iter != this->elf_value_defs.end();
+         ++iter) {
+        if (iter->second.vd_foreign_key || iter->second.vd_identifier) {
+            continue;
+        }
+
+        switch (iter->second.vd_kind) {
+            case logline_value::VALUE_INTEGER:
+            case logline_value::VALUE_FLOAT:
+                this->elf_numeric_value_defs.push_back(&iter->second);
+                break;
+            default:
+                break;
+        }
+    }
+
+    this->lf_value_stats.resize(this->elf_numeric_value_defs.size());
 }
 
 void external_log_format::register_vtabs(log_vtab_manager *vtab_manager,

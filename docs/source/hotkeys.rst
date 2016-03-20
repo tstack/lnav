@@ -186,6 +186,12 @@ Display
      - View/leave builtin help
    * - |ks| q |ke|
      - Return to the previous view/quit
+   * - |ks| Shift |ke| + |ks| q |ke|
+     - Return to the previous view/quit while matching the top times of the two views
+   * - |ks| a |ke|
+     - Restore the view that was previously popped with 'q/Q'
+   * - |ks| Shift |ke| + |ks| a |ke|
+     - Restore the view that was previously popped with 'q/Q' and match the top times of the views
    * - |ks| Shift |ke| + |ks| p |ke|
      - Switch to/from the pretty-printed view of the displayed log or text files
    * - |ks| Shift |ke| + |ks| t |ke|

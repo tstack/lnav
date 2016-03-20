@@ -151,9 +151,7 @@ public:
 
         this->merge_up_to(&val, comparator);
         retval = (this->ci_completed_chunks.size() * CHUNK_SIZE);
-        if (this->ci_merge_chunk != NULL) {
-            retval += this->ci_merge_chunk->c_used;
-        }
+        retval += this->ci_merge_chunk->c_used;
         this->ci_merge_chunk->push_back(val);
 
         this->ci_size += 1;
@@ -219,7 +217,9 @@ private:
 
             if (!this->ci_pending_chunks.empty()) {
                 struct chunk *next_chunk = this->ci_pending_chunks.front();
-                while (((val == NULL) || comparator(next_chunk->front(), *val)) &&
+                while (((val == NULL) ||
+                        comparator(next_chunk->front(), *val) ||
+                        !comparator(*val, next_chunk->front())) &&
                         !this->ci_merge_chunk->full()) {
                     this->ci_merge_chunk->push_back(next_chunk->consume());
                     if (next_chunk->empty()) {
@@ -249,8 +249,10 @@ private:
 
         template<typename Comparator>
         bool skippable(const T *val, Comparator comparator) const {
-            return this->c_consumed == 0 && this->full() && (
-                    val == NULL || (comparator(this->back(), *val) || !comparator(*val, this->back())));
+            return this->c_consumed == 0 && this->full() &&
+                   (val == NULL ||
+                    comparator(this->back(), *val) ||
+                    !comparator(*val, this->back()));
         };
 
         const T &front() const {

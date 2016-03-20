@@ -1,6 +1,8 @@
 
 lnav v0.8.1:
      Features:
+     * Added a spectrogram command and view that displays the values of a
+       numeric message field over time.
      * Log formats can now create SQL views and execute other statements
        by adding '.sql' files to their format directories.  The SQL scripts
        will be executed on startup.
@@ -18,6 +20,7 @@ lnav v0.8.1:
        total number of files, errors, and warnings.
      * Pressing 'V' in the DB view will now check for a column with a
        timestamp and move to the corresponding time in the log view.
+     * Added 'a/A' hotkeys to restore a view previously popped with 'q/Q'.
      * Added ":hide-lines-before", ":hide-lines-after", and
        ":show-lines-before-and-after" commands so that you can filter out
        log lines based on time.
@@ -50,6 +53,14 @@ lnav v0.8.1:
        original message.  A "log_actual_time" hidden field has also been
        added to the SQLite virtual table so you can operate on the original
        message time from the file.
+     * The 'A/B' hotkeys for moving forward/backward by 10% line increments
+       have been reassigned to '[' and ']'.  The 'a' and 'A' hotkeys are now
+       used to return to the previously popped view while trying to preserve
+       the time range.  For example, after leaving the spectrogram view with
+       'q', you can press 'A' return to the view with the top time in the
+       spectrogram matching the top time in the log view.
+     * The 'Q' hotkey now pops the current view off of the stack while
+       maintaining the top time between views.
 
      Fixes:
      * Issues with tailing JSON logs have been fixed.

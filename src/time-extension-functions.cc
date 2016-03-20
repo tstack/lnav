@@ -110,10 +110,6 @@ int time_extension_functions(const struct FuncDef **basic_funcs,
     static const struct FuncDef time_funcs[] = {
         { "timeslice",  2, 0, SQLITE_UTF8, 0, timeslice },
 
-        /*
-         * TODO: add other functions like readlink, normpath, ... 
-         */
-
         { NULL }
     };
 

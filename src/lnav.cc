@@ -141,19 +141,20 @@ static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
 struct _lnav_data lnav_data;
 
-struct hist_level {
-    int hl_time_slice;
+const int ZOOM_LEVELS[] = {
+    1,
+    30,
+    60,
+    5 * 60,
+    15 * 60,
+    60 * 60,
+    4 * 60 * 60,
+    8 * 60 * 60,
+    24 * 60 * 60,
+    7 * 24 * 60 * 60,
 };
 
-static struct hist_level HIST_ZOOM_VALUES[] = {
-        { 24 * 60 * 60, },
-        {  4 * 60 * 60, },
-        {      60 * 60, },
-        {      10 * 60, },
-        {           60, },
-};
-
-const int HIST_ZOOM_LEVELS = sizeof(HIST_ZOOM_VALUES) / sizeof(struct hist_level);
+const size_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
 
 bookmark_type_t BM_QUERY("query");
 
@@ -167,18 +168,24 @@ const char *lnav_view_strings[LNV__MAX + 1] = {
     "example",
     "schema",
     "pretty",
+    "spectro",
 
     NULL
 };
 
 const char *lnav_zoom_strings[] = {
-        "day",
-        "4-hour",
-        "hour",
-        "10-minute",
-        "minute",
+    "1-second",
+    "30-second",
+    "1-minute",
+    "5-minute",
+    "15-minute",
+    "1-hour",
+    "4-hour",
+    "8-hour",
+    "1-day",
+    "1-week",
 
-        NULL
+    NULL
 };
 
 static const char *view_titles[LNV__MAX] = {
@@ -191,6 +198,7 @@ static const char *view_titles[LNV__MAX] = {
     "EXAMPLE",
     "SCHEMA",
     "PRETTY",
+    "SPECTRO",
 };
 
 class log_gutter_source : public list_gutter_source {
@@ -439,9 +447,9 @@ void rebuild_hist(size_t old_count, bool force)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     hist_source2 &hs = lnav_data.ld_hist_source2;
-    int zoom = lnav_data.ld_hist_zoom;
+    int zoom = lnav_data.ld_zoom_level;
 
-    hs.set_time_slice(HIST_ZOOM_VALUES[zoom].hl_time_slice);
+    hs.set_time_slice(ZOOM_LEVELS[zoom]);
     lss.text_filters_changed();
 }
 
@@ -626,6 +634,8 @@ void rebuild_indexes(bool force)
             queue_request(start_line);
             lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->start();
         }
+
+        lnav_data.ld_view_stack.top()->reload_data();
     }
 
     if (!lnav_data.ld_view_stack.empty()) {
@@ -784,6 +794,7 @@ bool toggle_view(textview_curses *toggle_tc)
     require(toggle_tc < &lnav_data.ld_views[LNV__MAX]);
 
     if (tc == toggle_tc) {
+        lnav_data.ld_last_view = tc;
         lnav_data.ld_view_stack.pop();
     }
     else {
@@ -793,6 +804,7 @@ bool toggle_view(textview_curses *toggle_tc)
         else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
             open_pretty_view();
         }
+        lnav_data.ld_last_view = NULL;
         lnav_data.ld_view_stack.push(toggle_tc);
         retval = true;
     }
@@ -2540,6 +2552,9 @@ int main(int argc, char *argv[])
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
     lnav_data.ld_views[LNV_DB]
         .set_overlay_source(&lnav_data.ld_db_overlay);
+    lnav_data.ld_views[LNV_SPECTRO]
+        .set_sub_source(&lnav_data.ld_spectro_source)
+        .set_overlay_source(&lnav_data.ld_spectro_source);
 
     lnav_data.ld_match_view.set_left(0);
 
@@ -2561,8 +2576,8 @@ int main(int argc, char *argv[])
                 new hist_index_delegate(lnav_data.ld_hist_source2,
                         lnav_data.ld_views[LNV_HISTOGRAM]));
         hs.init();
-        lnav_data.ld_hist_zoom = 2;
-        hs.set_time_slice(HIST_ZOOM_VALUES[lnav_data.ld_hist_zoom].hl_time_slice);
+        lnav_data.ld_zoom_level = 3;
+        hs.set_time_slice(ZOOM_LEVELS[lnav_data.ld_zoom_level]);
     }
 
     {

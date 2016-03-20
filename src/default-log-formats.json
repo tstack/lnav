@@ -1082,10 +1082,12 @@
                 "identifier" : true
             },
             "s_req" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key" : true
             },
             "s_worker_reqs" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key" : true
             },
             "c_ip" : {
                 "kind" : "string",

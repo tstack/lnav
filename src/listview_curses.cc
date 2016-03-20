@@ -147,7 +147,7 @@ bool listview_curses::handle_key(int ch)
         }
         break;
 
-    case 'A':
+    case ']':
         {
             double tenth = ((double)this->get_inner_height()) / 10.0;
 
@@ -155,6 +155,7 @@ bool listview_curses::handle_key(int ch)
         }
         break;
 
+    case '[':
     case 'B':
         {
             double tenth = ((double)this->get_inner_height()) / 10.0;

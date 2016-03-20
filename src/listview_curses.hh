@@ -351,14 +351,24 @@ public:
      */
     void set_left(unsigned int left)
     {
-        if (left > this->get_inner_width()) {
-            alerter::singleton().chime();
+        if (this->lv_left == left) {
+            return;
         }
-        else if (this->lv_left != left) {
-            this->lv_left = left;
-            this->lv_scroll.invoke(this);
-            this->lv_needs_update = true;
+
+        if (left > this->lv_left) {
+            unsigned long width;
+            vis_line_t height;
+
+            this->get_dimensions(height, width);
+            if ((this->get_inner_width() - this->lv_left) <= width) {
+                alerter::singleton().chime();
+                return;
+            }
         }
+
+        this->lv_left = left;
+        this->lv_scroll.invoke(this);
+        this->lv_needs_update = true;
     };
 
     /** @return The column number that is displayed at the left. */

@@ -150,7 +150,7 @@ public:
         return this->lss_filtered_index.size();
     };
 
-    size_t text_line_width() {
+    size_t text_line_width(textview_curses &curses) {
         return this->lss_longest_line;
     };
 

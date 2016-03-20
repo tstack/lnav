@@ -63,6 +63,7 @@
 #include "papertrail_proc.hh"
 #include "relative_time.hh"
 #include "log_format_loader.hh"
+#include "spectro_source.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -118,6 +119,7 @@ typedef enum {
     LNV_EXAMPLE,
     LNV_SCHEMA,
     LNV_PRETTY,
+    LNV_SPECTRO,
 
     LNV__MAX
 } lnav_view_t;
@@ -215,6 +217,7 @@ struct _lnav_data {
     textview_curses                         ld_match_view;
 
     std::stack<textview_curses *>           ld_view_stack;
+    textview_curses *ld_last_view;
     textview_curses                         ld_views[LNV__MAX];
     std::auto_ptr<grep_highlighter>         ld_search_child[LNV__MAX];
     vis_line_t                              ld_search_start_line;
@@ -223,7 +226,8 @@ struct _lnav_data {
     logfile_sub_source                      ld_log_source;
     hist_source                             ld_hist_source;
     hist_source2                            ld_hist_source2;
-    int                                     ld_hist_zoom;
+    int                                     ld_zoom_level;
+    spectrogram_source ld_spectro_source;
 
     textfile_sub_source                     ld_text_source;
 
@@ -267,7 +271,8 @@ extern struct _lnav_data lnav_data;
 
 extern readline_context::command_map_t lnav_commands;
 extern bookmark_type_t BM_QUERY;
-extern const int HIST_ZOOM_LEVELS;
+extern const int ZOOM_LEVELS[];
+extern const size_t ZOOM_COUNT;
 
 #define HELP_MSG_1(x, msg) \
     "Press '" ANSI_BOLD(#x) "' " msg

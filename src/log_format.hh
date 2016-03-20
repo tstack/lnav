@@ -538,6 +538,56 @@ public:
     const log_format *lv_format;
 };
 
+struct logline_value_stats {
+
+    logline_value_stats() {
+        this->clear();
+    };
+
+    void clear() {
+        this->lvs_count = 0;
+        this->lvs_total = 0;
+        this->lvs_min_value = std::numeric_limits<double>::max();
+        this->lvs_max_value = -std::numeric_limits<double>::max();
+    };
+
+    void merge(const logline_value_stats &other) {
+        if (other.lvs_count == 0) {
+            return;
+        }
+
+        require(other.lvs_min_value <= other.lvs_max_value);
+
+        if (other.lvs_min_value < this->lvs_min_value) {
+            this->lvs_min_value = other.lvs_min_value;
+        }
+        if (other.lvs_max_value > this->lvs_max_value) {
+            this->lvs_max_value = other.lvs_max_value;
+        }
+        this->lvs_count += other.lvs_count;
+        this->lvs_total += other.lvs_total;
+
+        ensure(this->lvs_count >= 0);
+        ensure(this->lvs_min_value <= this->lvs_max_value);
+    };
+
+    void add_value(double value) {
+        if (value < this->lvs_min_value) {
+            this->lvs_min_value = value;
+        }
+        if (value > this->lvs_max_value) {
+            this->lvs_max_value = value;
+        }
+        this->lvs_count += 1;
+        this->lvs_total += value;
+    };
+
+    int64_t lvs_count;
+    double lvs_total;
+    double lvs_min_value;
+    double lvs_max_value;
+};
+
 struct logline_value_cmp {
     logline_value_cmp(const intern_string_t *name = NULL, int col = -1)
         : lvc_name(name), lvc_column(col) {
@@ -675,6 +725,10 @@ public:
                           bool annotate_module = true) const
     { };
 
+    virtual const logline_value_stats *stats_for_value(const intern_string_t &name) const {
+        return NULL;
+    };
+
     virtual std::auto_ptr<log_format> specialized(int fmt_lock = -1) = 0;
 
     virtual log_vtab_impl *get_vtab_impl(void) const {
@@ -723,6 +777,7 @@ public:
     intern_string_t lf_timestamp_field;
     std::vector<const char *> lf_timestamp_format;
     std::map<std::string, action_def> lf_action_defs;
+    std::vector<logline_value_stats> lf_value_stats;
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -778,7 +833,7 @@ public:
         bool vd_foreign_key;
         intern_string_t vd_unit_field;
         int vd_unit_field_index;
-        std::map<std::string, scaling_factor> vd_unit_scaling;
+        std::map<const intern_string_t, scaling_factor> vd_unit_scaling;
         int vd_column;
         bool vd_hidden;
         std::vector<std::string> vd_action_list;
@@ -886,6 +941,24 @@ public:
             this->jlf_cached_line.reserve(16 * 1024);
         }
 
+        this->lf_value_stats.clear();
+        this->lf_value_stats.resize(this->elf_numeric_value_defs.size());
+
+        return retval;
+    };
+
+    const logline_value_stats *stats_for_value(const intern_string_t &name) const {
+        const logline_value_stats *retval = NULL;
+
+        for (size_t lpc = 0; lpc < this->elf_numeric_value_defs.size(); lpc++) {
+            value_def &vd = *this->elf_numeric_value_defs[lpc];
+
+            if (vd.vd_name == name) {
+                retval = &this->lf_value_stats[lpc];
+                break;
+            }
+        }
+
         return retval;
     };
 
@@ -942,6 +1015,7 @@ public:
     std::vector<pattern *> elf_pattern_order;
     std::vector<sample> elf_samples;
     std::map<const intern_string_t, value_def> elf_value_defs;
+    std::vector<value_def *> elf_numeric_value_defs;
     int elf_column_count;
     double elf_timestamp_divisor;
     intern_string_t elf_level_field;
