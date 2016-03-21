@@ -559,9 +559,6 @@ void rebuild_indexes(bool force)
 
     old_time = lnav_data.ld_top_time;
     old_bottom  = log_view.get_top_for_last_row();
-    // The log view has an extra at the bottom for the summary, but we still
-    // want to scroll if there's only one blank.
-    --old_bottom;
     scroll_down = (log_view.get_top() >= old_bottom &&
         !(lnav_data.ld_flags & LNF_HEADLESS));
     if (force) {
