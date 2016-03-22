@@ -344,6 +344,11 @@ throw (error)
                             &this->lb_buffer[this->lb_buffer_size],
                             this->lb_buffer_max - this->lb_buffer_size);
                 this->lb_compressed_offset = lseek(this->lb_fd, 0, SEEK_CUR);
+                if (rc != -1 && (
+                        rc < (this->lb_buffer_max - this->lb_buffer_size))) {
+                    this->lb_file_size = (
+                            this->lb_file_offset + this->lb_buffer_size + rc);
+                }
             }
         }
 #ifdef HAVE_BZLIB_H
