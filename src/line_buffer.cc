@@ -113,7 +113,7 @@ private:
 line_buffer::line_buffer()
     : lb_gz_file(NULL),
       lb_bz_file(false),
-      lb_gz_offset(0),
+      lb_compressed_offset(0),
       lb_file_size((size_t)-1),
       lb_file_offset(0),
       lb_file_time(0),
@@ -190,7 +190,7 @@ throw (error)
                     if (this->lb_file_time < 0) {
                         this->lb_file_time = 0;
                     }
-                    this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
+                    this->lb_compressed_offset = lseek(this->lb_fd, 0, SEEK_CUR);
                 }
 #ifdef HAVE_BZLIB_H
                 else if (gz_id[0] == 'B' && gz_id[1] == 'Z') {
@@ -204,6 +204,8 @@ throw (error)
                      * to keep as much in memory as possible.
                      */
                     this->resize_buffer(MAX_COMPRESSED_BUFFER_SIZE);
+
+                    this->lb_compressed_offset = 0;
                 }
 #endif
             }
@@ -334,14 +336,14 @@ throw (error)
             else {
                 lock_hack::guard guard;
 
-                lseek(this->lb_fd, this->lb_gz_offset, SEEK_SET);
+                lseek(this->lb_fd, this->lb_compressed_offset, SEEK_SET);
                 gzseek(this->lb_gz_file,
                        this->lb_file_offset + this->lb_buffer_size,
                        SEEK_SET);
                 rc = gzread(this->lb_gz_file,
                             &this->lb_buffer[this->lb_buffer_size],
                             this->lb_buffer_max - this->lb_buffer_size);
-                this->lb_gz_offset = lseek(this->lb_fd, 0, SEEK_CUR);
+                this->lb_compressed_offset = lseek(this->lb_fd, 0, SEEK_CUR);
             }
         }
 #ifdef HAVE_BZLIB_H
@@ -391,6 +393,7 @@ throw (error)
                 rc = BZ2_bzread(bz_file,
                                 &this->lb_buffer[this->lb_buffer_size],
                                 this->lb_buffer_max - this->lb_buffer_size);
+                this->lb_compressed_offset = lseek(bzfd, 0, SEEK_SET);
                 BZ2_bzclose(bz_file);
 
                 if (rc != -1 && (

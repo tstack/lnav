@@ -272,14 +272,16 @@ throw (line_buffer::error, logfile::error)
         throw error(this->lf_filename, errno);
     }
 
-    /* Check for new data based on the file size. */
-    if (this->lf_index_size > st.st_size) {
+    // Check the previous stat against the last to see if things are wonky.
+    if (this->lf_stat.st_size > st.st_size) {
         log_info("truncated file detected, closing -- %s",
                  this->lf_filename.c_str());
         this->close();
         return false;
     }
-    else if (this->lf_index_size < st.st_size) {
+    else if (this->lf_line_buffer.is_data_available(this->lf_index_size)) {
+        // We haven't reached the end of the file.  Note that we use the
+        // line buffer's notion of the file size since it may be compressed.
         bool has_format = this->lf_format.get() != NULL;
         shared_buffer_ref sbr;
         off_t  last_off, off;
@@ -353,6 +355,7 @@ throw (line_buffer::error, logfile::error)
          * size.
          */
         this->lf_index_size = off;
+        this->lf_stat = st;
 
         retval = true;
     }

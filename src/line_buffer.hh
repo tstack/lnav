@@ -108,12 +108,16 @@ public:
 
     off_t get_read_offset(off_t off) const
     {
-        if (this->lb_gz_file) {
-            return this->lb_gz_offset;
+        if (this->is_compressed()) {
+            return this->lb_compressed_offset;
         }
         else{
             return off;
         }
+    };
+
+    bool is_data_available(off_t off) {
+        return (this->lb_file_size == -1 || off < this->lb_file_size);
     };
 
     /**
@@ -233,7 +237,7 @@ private:
     auto_fd lb_fd;              /*< The file to read data from. */
     gzFile  lb_gz_file;         /*< File handle for gzipped files. */
     bool    lb_bz_file;         /*< Flag set for bzip2 compressed files. */
-    off_t   lb_gz_offset;       /*< The offset into the compressed file. */
+    off_t   lb_compressed_offset; /*< The offset into the compressed file. */
 
     auto_mem<char> lb_buffer;   /*< The internal buffer where data is cached */
 

@@ -110,7 +110,11 @@ int main(int argc, char *argv[])
     assert(strcmp(argv[0], lf.get_filename().c_str()) == 0);
 
     lf.rebuild_index();
+    assert(!lf.is_closed());
     lf.rebuild_index();
+    assert(!lf.is_closed());
+    lf.rebuild_index();
+    assert(!lf.is_closed());
     if (expected_format == "") {
     assert(lf.get_format() == NULL);
     }
