@@ -34,6 +34,7 @@
 
 #include <sys/types.h>
 
+#include <list>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -119,6 +120,13 @@ public:
                                         attr_line_t &value_out) = 0;
 };
 
+class list_input_delegate {
+public:
+    virtual ~list_input_delegate() { };
+
+    virtual bool list_input_handle_key(listview_curses &lv, int ch) = 0;
+};
+
 /**
  * View that displays a list of lines that can optionally contain highlighting.
  */
@@ -166,6 +174,12 @@ public:
     list_overlay_source *get_overlay_source()
     {
         return this->lv_overlay_source;
+    };
+
+    listview_curses &add_input_delegate(list_input_delegate &lid) {
+        this->lv_input_delegates.push_back(&lid);
+
+        return *this;
     };
 
     /**
@@ -497,6 +511,7 @@ protected:
 
     std::string lv_title;
     list_data_source *   lv_source; /*< The data source delegate. */
+    std::list<list_input_delegate *> lv_input_delegates;
     list_overlay_source *lv_overlay_source;
     action       lv_scroll;         /*< The scroll action. */
     WINDOW *     lv_window;         /*< The window that contains this view. */

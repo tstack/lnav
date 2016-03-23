@@ -81,6 +81,14 @@ void listview_curses::reload_data(void)
 
 bool listview_curses::handle_key(int ch)
 {
+    for (list<list_input_delegate *>::iterator iter = this->lv_input_delegates.begin();
+         iter != this->lv_input_delegates.end();
+         ++iter) {
+        if ((*iter)->list_input_handle_key(*this, ch)) {
+            return true;
+        }
+    }
+
     vis_line_t height(0);
 
     unsigned long width;

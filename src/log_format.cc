@@ -320,6 +320,7 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
     if (!do_change) {
         return;
     }
+    log_debug("%d:detected year change", dst.size());
     for (iter = dst.begin(); iter != dst.end(); iter++) {
         time_t     ot = iter->get_time();
         struct tm otm;

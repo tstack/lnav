@@ -153,7 +153,11 @@ class generic_log_format : public log_format {
             logline::level_t level_val = logline::string2level(
                     level_str, level.length());
 
-            this->check_for_new_year(dst, log_time, log_tv);
+            if (!((log_time.et_flags & ETF_DAY_SET) &&
+                  (log_time.et_flags & ETF_MONTH_SET) &&
+                  (log_time.et_flags & ETF_YEAR_SET))) {
+                this->check_for_new_year(dst, log_time, log_tv);
+            }
 
             dst.push_back(logline(offset, log_tv, level_val));
             return SCAN_MATCH;

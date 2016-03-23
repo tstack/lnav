@@ -2475,10 +2475,71 @@ public:
             if (lv_iter != values.end()) {
                 switch (lv_iter->lv_kind) {
                     case logline_value::VALUE_FLOAT:
-                        row_out.add_value(sr, lv_iter->lv_value.d);
+                        row_out.add_value(sr, lv_iter->lv_value.d, ll->is_marked());
                         break;
                     case logline_value::VALUE_INTEGER:
-                        row_out.add_value(sr, lv_iter->lv_value.i);
+                        row_out.add_value(sr, lv_iter->lv_value.i, ll->is_marked());
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    };
+
+    void spectro_mark(textview_curses &tc,
+                      time_t begin_time, time_t end_time,
+                      double range_min, double range_max) {
+        // XXX need to refactor this and the above method
+        textview_curses &log_tc = lnav_data.ld_views[LNV_LOG];
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        vis_line_t begin_line = lss.find_from_time(begin_time);
+        vis_line_t end_line = lss.find_from_time(end_time);
+        vector<logline_value> values;
+        string_attrs_t sa;
+
+        if (begin_line == -1) {
+            begin_line = vis_line_t(0);
+        }
+        if (end_line == -1) {
+            end_line = vis_line_t(lss.text_line_count());
+        }
+        for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
+            content_line_t cl = lss.at(curr_line);
+            logfile *lf = lss.find(cl);
+            logfile::iterator ll = lf->begin() + cl;
+            log_format *format = lf->get_format();
+            shared_buffer_ref sbr;
+
+            if (ll->is_continued()) {
+                continue;
+            }
+
+            lf->read_full_message(ll, sbr);
+            sa.clear();
+            values.clear();
+            format->annotate(sbr, sa, values);
+
+            vector<logline_value>::iterator lv_iter;
+
+            lv_iter = find_if(values.begin(), values.end(),
+                              logline_value_cmp(&this->lsvs_colname));
+
+            if (lv_iter != values.end()) {
+                switch (lv_iter->lv_kind) {
+                    case logline_value::VALUE_FLOAT:
+                        if (range_min <= lv_iter->lv_value.d &&
+                            lv_iter->lv_value.d <= range_max) {
+                            log_tc.toggle_user_mark(&textview_curses::BM_USER,
+                                                    curr_line);
+                        }
+                        break;
+                    case logline_value::VALUE_INTEGER:
+                        if (range_min <= lv_iter->lv_value.i &&
+                            lv_iter->lv_value.i <= range_max) {
+                            log_tc.toggle_user_mark(&textview_curses::BM_USER,
+                                                    curr_line);
+                        }
                         break;
                     default:
                         break;
@@ -2519,7 +2580,7 @@ static string com_spectrogram(string cmdline, vector<string> &args)
         auto_ptr<log_spectro_value_source> lsvs(new log_spectro_value_source(colname));
 
         if (!lsvs->lsvs_found) {
-            retval = "error: unknown message field -- " + colname.to_string();
+            retval = "error: unknown numeric message field -- " + colname.to_string();
         }
         else {
             ss.ss_value_source = lsvs.release();

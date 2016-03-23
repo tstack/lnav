@@ -2551,7 +2551,8 @@ int main(int argc, char *argv[])
         .set_overlay_source(&lnav_data.ld_db_overlay);
     lnav_data.ld_views[LNV_SPECTRO]
         .set_sub_source(&lnav_data.ld_spectro_source)
-        .set_overlay_source(&lnav_data.ld_spectro_source);
+        .set_overlay_source(&lnav_data.ld_spectro_source)
+        .add_input_delegate(lnav_data.ld_spectro_source);
 
     lnav_data.ld_match_view.set_left(0);
 

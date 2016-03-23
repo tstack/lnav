@@ -205,9 +205,9 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 
     switch (found) {
         case log_format::SCAN_MATCH:
-            if (prescan_size > 0) {
+            if (prescan_size > 0 && prescan_size < this->lf_index.size()) {
                 logline &second_to_last = this->lf_index[prescan_size - 1];
-                logline &latest = this->lf_index.back();
+                logline &latest = this->lf_index[prescan_size];
 
                 if (latest < second_to_last) {
                     log_debug("%s:%d: out-of-time-order line detected %d.%03d < %d.%03d",
@@ -279,7 +279,7 @@ throw (line_buffer::error, logfile::error)
         this->close();
         return false;
     }
-    else if (this->lf_line_buffer.is_data_available(this->lf_index_size)) {
+    else if (this->lf_line_buffer.is_data_available(this->lf_index_size, st.st_size)) {
         // We haven't reached the end of the file.  Note that we use the
         // line buffer's notion of the file size since it may be compressed.
         bool has_format = this->lf_format.get() != NULL;

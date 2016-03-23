@@ -116,8 +116,11 @@ public:
         }
     };
 
-    bool is_data_available(off_t off) {
-        return (this->lb_file_size == -1 || off < this->lb_file_size);
+    bool is_data_available(off_t off, off_t stat_size) {
+        if (this->is_compressed()) {
+            return (this->lb_file_size == -1 || off < this->lb_file_size);
+        }
+        return off < stat_size;
     };
 
     /**
