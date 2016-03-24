@@ -41,6 +41,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
+#include <sys/resource.h>
 
 #include <time.h>
 
@@ -268,6 +269,8 @@ throw (line_buffer::error, logfile::error)
     bool        retval = false;
     struct stat st;
 
+    this->lf_activity.la_polls += 1;
+
     if (fstat(this->lf_line_buffer.get_fd(), &st) == -1) {
         throw error(this->lf_filename, errno);
     }
@@ -280,12 +283,21 @@ throw (line_buffer::error, logfile::error)
         return false;
     }
     else if (this->lf_line_buffer.is_data_available(this->lf_index_size, st.st_size)) {
+        this->lf_activity.la_reads += 1;
+
         // We haven't reached the end of the file.  Note that we use the
         // line buffer's notion of the file size since it may be compressed.
         bool has_format = this->lf_format.get() != NULL;
+        struct rusage begin_rusage;
         shared_buffer_ref sbr;
         off_t  last_off, off;
         line_value lv;
+        size_t begin_size = this->lf_index.size();
+        bool record_rusage = this->lf_index.size() == 1;
+
+        if (record_rusage) {
+            getrusage(RUSAGE_SELF, &begin_rusage);
+        }
 
         if (!this->lf_index.empty()) {
             off = this->lf_index.back().get_offset();
@@ -347,6 +359,18 @@ throw (line_buffer::error, logfile::error)
         }
         if (this->lf_logline_observer != NULL) {
             this->lf_logline_observer->logline_eof(*this);
+        }
+
+        if (record_rusage && (off - this->lf_index_size) > (500 * 1024)) {
+            struct rusage end_rusage;
+
+            getrusage(RUSAGE_SELF, &end_rusage);
+            rusagesub(end_rusage, begin_rusage, this->lf_activity.la_initial_index_rusage);
+            log_info("Resource usage for initial indexing of file: %s:%d-%d",
+                     this->lf_filename.c_str(),
+                     begin_size,
+                     this->lf_index.size());
+            log_rusage(LOG_LEVEL_INFO, this->lf_activity.la_initial_index_rusage);
         }
 
         /*

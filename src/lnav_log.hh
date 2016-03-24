@@ -55,6 +55,7 @@ enum lnav_log_level_t {
 
 void log_argv(int argc, char *argv[]);
 void log_host_info(void);
+void log_rusage_raw(enum lnav_log_level_t level, const char *src_file, int line_number, const struct rusage &ru);
 void log_msg(enum lnav_log_level_t level, const char *src_file, int line_number,
     const char *fmt, ...);
 void log_msg_extra(const char *fmt, ...);
@@ -101,6 +102,9 @@ extern enum lnav_log_level_t lnav_log_level;
         } \
     } \
     while (false)
+
+#define log_rusage(level, ru) \
+    log_rusage_raw(level, __FILE__, __LINE__, ru);
 
 #define log_error(fmt...) \
     log_msg_wrapper(LOG_LEVEL_ERROR, fmt);

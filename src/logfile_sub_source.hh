@@ -567,6 +567,13 @@ private:
         this->lss_line_size_cache[0].first = -1;
     };
 
+    bool check_extra_filters(const logline &ll) {
+        return (
+            ll.get_msg_level() >= this->lss_min_log_level &&
+            !(ll < this->lss_min_log_time) &&
+            ll <= this->lss_max_log_time);
+    };
+
     unsigned long             lss_flags;
     std::vector<logfile_data *> lss_files;
 

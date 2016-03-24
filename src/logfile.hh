@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/resource.h>
 
 #include <string>
 #include <vector>
@@ -87,6 +88,16 @@ struct logfile_open_options {
     bool loo_detect_format;
 };
 
+struct logfile_activity {
+    logfile_activity() {
+        memset(this, 0, sizeof(*this));
+    };
+
+    int64_t la_polls;
+    int64_t la_reads;
+    struct rusage la_initial_index_rusage;
+};
+
 /**
  * Container for the lines in a log file and some metadata.
  */
@@ -117,6 +128,10 @@ public:
     logfile(const std::string &filename, logfile_open_options &loo) throw (error);
 
     virtual ~logfile();
+
+    const logfile_activity &get_activity() const {
+        return this->lf_activity;
+    };
 
     /** @return The filename as given in the constructor. */
     const std::string &get_filename() const { return this->lf_filename; };
@@ -376,6 +391,7 @@ protected:
     void set_format_base_time(log_format *lf);
 
     logfile_open_options lf_options;
+    logfile_activity lf_activity;
     bool        lf_valid_filename;
     std::string lf_filename;
     std::string lf_content_id;

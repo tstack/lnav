@@ -158,6 +158,7 @@ void log_host_info(void)
 {
     char cwd[MAXPATHLEN];
     struct utsname un;
+    struct rusage ru;
 
     uname(&un);
     log_info("uname:");
@@ -184,6 +185,32 @@ void log_host_info(void)
     log_info("  cwd=%s", cwd);
     log_info("Executable:");
     log_info("  version=%s", VCS_PACKAGE_STRING);
+
+    getrusage(RUSAGE_SELF, &ru);
+    log_rusage(LOG_LEVEL_INFO, ru);
+}
+
+void log_rusage_raw(enum lnav_log_level_t level, const char *src_file, int line_number, const struct rusage &ru)
+{
+    log_msg(level, src_file, line_number, "rusage:");
+    log_msg(level, src_file, line_number, "  utime=%d.%06d",
+            ru.ru_utime.tv_sec, ru.ru_utime.tv_usec);
+    log_msg(level, src_file, line_number, "  stime=%d.%06d",
+            ru.ru_stime.tv_sec, ru.ru_stime.tv_usec);
+    log_msg(level, src_file, line_number, "  maxrss=%ld", ru.ru_maxrss);
+    log_msg(level, src_file, line_number, "  ixrss=%ld", ru.ru_ixrss);
+    log_msg(level, src_file, line_number, "  idrss=%ld", ru.ru_idrss);
+    log_msg(level, src_file, line_number, "  isrss=%ld", ru.ru_isrss);
+    log_msg(level, src_file, line_number, "  minflt=%ld", ru.ru_minflt);
+    log_msg(level, src_file, line_number, "  majflt=%ld", ru.ru_majflt);
+    log_msg(level, src_file, line_number, "  nswap=%ld", ru.ru_nswap);
+    log_msg(level, src_file, line_number, "  inblock=%ld", ru.ru_inblock);
+    log_msg(level, src_file, line_number, "  oublock=%ld", ru.ru_oublock);
+    log_msg(level, src_file, line_number, "  msgsnd=%ld", ru.ru_msgsnd);
+    log_msg(level, src_file, line_number, "  msgrcv=%ld", ru.ru_msgrcv);
+    log_msg(level, src_file, line_number, "  nsignals=%ld", ru.ru_nsignals);
+    log_msg(level, src_file, line_number, "  nvcsw=%ld", ru.ru_nvcsw);
+    log_msg(level, src_file, line_number, "  nivcsw=%ld", ru.ru_nivcsw);
 }
 
 void log_msg(lnav_log_level_t level, const char *src_file, int line_number,

@@ -519,10 +519,7 @@ bool logfile_sub_source::rebuild_index(bool force)
             logfile::iterator line_iter = ld->get_file()->begin() + line_number;
 
             if (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
-                    line_number) &&
-                    line_iter->get_msg_level() >= this->lss_min_log_level &&
-                    !(*line_iter < this->lss_min_log_time) &&
-                    *line_iter <= this->lss_max_log_time) {
+                    line_number) && this->check_extra_filters(*line_iter)) {
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != NULL) {
                     logfile *lf = ld->get_file();
@@ -654,10 +651,7 @@ void logfile_sub_source::text_filters_changed()
         logfile::iterator line_iter = ld->get_file()->begin() + line_number;
 
         if (!ld->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
-                line_number) &&
-                line_iter->get_msg_level() >= this->lss_min_log_level &&
-                !(*line_iter < this->lss_min_log_time) &&
-                *line_iter <= this->lss_max_log_time) {
+                line_number) && this->check_extra_filters(*line_iter)) {
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != NULL) {
                 logfile *lf = ld->get_file();

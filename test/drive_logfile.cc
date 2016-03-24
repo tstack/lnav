@@ -115,6 +115,10 @@ int main(int argc, char *argv[])
     assert(!lf.is_closed());
     lf.rebuild_index();
     assert(!lf.is_closed());
+    assert(lf.get_activity().la_polls == 3);
+    if (lf.size() > 1) {
+      assert(lf.get_activity().la_reads == 2);
+    }
     if (expected_format == "") {
     assert(lf.get_format() == NULL);
     }

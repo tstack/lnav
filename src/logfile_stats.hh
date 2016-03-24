@@ -30,10 +30,10 @@
 #ifndef __logfile_stats_hh
 #define __logfile_stats_hh
 
-class logfile_stats {
+class logfile_activity {
 public:
-    logfile_stats();
-    virtual ~logfile_stats();
+    logfile_activity();
+    virtual ~logfile_activity();
 
 private:
 };
