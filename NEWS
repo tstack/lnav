@@ -17,7 +17,7 @@ lnav v0.8.1:
        same data discover/extraction parser used in the 'logline' table.
      * Added a "summary" overlay line to the bottom of the log view that
        displays how long ago the last message was received, along with the
-       total number of files, errors, and warnings.
+       total number of files and the error rate over the past five minutes.
      * Pressing 'V' in the DB view will now check for a column with a
        timestamp and move to the corresponding time in the log view.
      * Added 'a/A' hotkeys to restore a view previously popped with 'q/Q'.

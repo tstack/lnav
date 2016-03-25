@@ -121,6 +121,17 @@ left and right hand side of the bar, for search hits and bookmarks.
 When multiple files are open, a bar on the left side is color coded and
 broken up to indicate which messages are from the same file.
 
+When at the bottom of the log view, a summary line will be displayed on the
+right-hand-side to give you some more information about your logs, including:
+how long ago the last message was generated, the number of log files, the
+error rate, and how much time the logs cover.  The error rate display shows
+the errors-per-minute over the last five minutes.  A bar chart is also
+overlaid on the "Error rate" label to show the error rate over the past ten
+seconds.  For example, if there have not been many errors in the past five
+minutes and there is a sudden spike, the bar chart will fill up completely.
+But, if there has been a steady stream of errors, then the chart will only
+partially fill based on the recent error frequency.
+
 Above and below the main body are status lines that display:
 
   * the current time;

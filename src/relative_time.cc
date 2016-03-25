@@ -333,11 +333,15 @@ size_t str2reltime(int64_t millis, std::string &value_out)
         {    0, NULL, NULL }
     };
 
-    struct rel_interval *curr_interval;
+    struct rel_interval *curr_interval = intervals;
     size_t in_len = value_out.length(), retval = 0;
 
-    for (curr_interval = intervals; curr_interval->symbol != NULL;
-         curr_interval++) {
+    if (millis >= (10 * 60 * 1000)) {
+        millis /= 1000;
+        curr_interval += 1;
+    }
+
+    for (; curr_interval->symbol != NULL; curr_interval++) {
         long long amount;
         char      segment[32];
 
@@ -347,7 +351,7 @@ size_t str2reltime(int64_t millis, std::string &value_out)
         }
         else {
             amount = millis;
-            millis   = 0;
+            millis = 0;
         }
 
         if (!amount && !millis) {
