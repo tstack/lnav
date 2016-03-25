@@ -134,7 +134,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             string &sum_msg = sum_line.get_string();
             sum_line.with_ansi_string(
                     "       %s; Files: " ANSI_BOLD("%'2d") "; "
-                        ANSI_ROLE("Error rate") ": " ANSI_BOLD("%'.2lf") "; "
+                        ANSI_ROLE("Error rate") ": " ANSI_BOLD("%'.2lf") "/min; "
                         "Time span: " ANSI_BOLD("%s"),
                     last_time.c_str(),
                     lss.file_count() + tss.size(),
