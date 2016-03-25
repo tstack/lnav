@@ -644,7 +644,7 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
                 if (lpc > 0) {
-                    ll.set_level((logline::level_t) (ll.get_level() |
+                    ll.set_level((logline::level_t) (ll.get_level_and_flags() |
                         logline::LEVEL_CONTINUED));
                 }
                 dst.push_back(ll);
@@ -1683,7 +1683,7 @@ public:
         logfile::iterator lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 
-        if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
+        if (lf_iter->is_continued()) {
             return false;
         }
 

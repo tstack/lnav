@@ -141,15 +141,9 @@ std::string time_ago(time_t last_time, bool convert_local)
     const char *fmt;
     char        buffer[64];
     int         amount;
-    struct tm   tm;
 
     if (convert_local) {
-        localtime_r(&current_time, &tm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-        tm.tm_zone = NULL;
-#endif
-        tm.tm_isdst = 0;
-        current_time = tm2sec(&tm);
+        current_time = convert_log_time_to_local(current_time);
     }
 
     delta = current_time - last_time;
@@ -192,16 +186,10 @@ std::string time_ago(time_t last_time, bool convert_local)
 std::string precise_time_ago(const struct timeval &tv, bool convert_local)
 {
     struct timeval now, diff;
-    struct tm tm;
 
     gettimeofday(&now, NULL);
     if (convert_local) {
-        localtime_r(&now.tv_sec, &tm);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-        tm.tm_zone = NULL;
-#endif
-        tm.tm_isdst = 0;
-        now.tv_sec = tm2sec(&tm);
+        now.tv_sec = convert_log_time_to_local(now.tv_sec);
     }
 
     timersub(&now, &tv, &diff);

@@ -131,7 +131,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     }
 
     if (this->lss_token_file->is_time_adjusted() &&
-        !(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
+        !this->lss_token_line->is_continued()) {
         log_format *format = this->lss_token_file->get_format();
 
         if (format->lf_date_time.dts_fmt_lock != -1) {
@@ -214,7 +214,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     int attrs           = 0;
 
     value_out.clear();
-    switch (this->lss_token_line->get_level() & ~logline::LEVEL__FLAGS) {
+    switch (this->lss_token_line->get_msg_level()) {
     case logline::LEVEL_FATAL:
     case logline::LEVEL_CRITICAL:
     case logline::LEVEL_ERROR:
@@ -243,7 +243,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     log_format *format = this->lss_token_file->get_format();
     std::vector<logline_value> line_values;
     
-    if (!(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
+    if (!this->lss_token_line->is_continued()) {
         shared_buffer_ref sbr;
 
         sbr.share(this->lss_share_manager,
@@ -385,7 +385,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         }
     }
     else if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
-             !(this->lss_token_line->get_level() & logline::LEVEL_CONTINUED)) {
+             !this->lss_token_line->is_continued()) {
         struct line_range time_range = find_string_attr_range(
             value_out, &logline::L_TIMESTAMP);
 
@@ -581,19 +581,22 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
             bm[&BM_FILES].insert_once(vl);
         }
 
-        switch ((*lf)[cl].get_level() & ~logline::LEVEL_MARK) {
-        case logline::LEVEL_WARNING:
-            bm[&BM_WARNINGS].insert_once(vl);
-            break;
+        logfile::iterator line_iter = lf->begin() + cl;
+        if (!line_iter->is_continued()) {
+            switch (line_iter->get_msg_level()) {
+                case logline::LEVEL_WARNING:
+                    bm[&BM_WARNINGS].insert_once(vl);
+                    break;
 
-        case logline::LEVEL_FATAL:
-        case logline::LEVEL_ERROR:
-        case logline::LEVEL_CRITICAL:
-            bm[&BM_ERRORS].insert_once(vl);
-            break;
+                case logline::LEVEL_FATAL:
+                case logline::LEVEL_ERROR:
+                case logline::LEVEL_CRITICAL:
+                    bm[&BM_ERRORS].insert_once(vl);
+                    break;
 
-        default:
-            break;
+                default:
+                    break;
+            }
         }
 
         last_file = lf;

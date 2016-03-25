@@ -99,7 +99,7 @@ public:
         logfile *         lf      = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
 
-        if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
+        if (lf_iter->is_continued()) {
             return false;
         }
 

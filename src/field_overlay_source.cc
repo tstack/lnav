@@ -39,8 +39,6 @@ using namespace std;
 
 void field_overlay_source::build_summary_lines(const listview_curses &lv)
 {
-    textview_curses &tv = (textview_curses &) lv;
-    vis_bookmarks &bookmarks = tv.get_bookmarks();
     textfile_sub_source &tss = lnav_data.ld_text_source;
     logfile_sub_source &lss = lnav_data.ld_log_source;
 
@@ -51,6 +49,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             lv.get_top(), listview_curses::RD_DOWN);
         vis_line_t height, free_rows;
         unsigned long width;
+        long rate_len = 0;
 
         lv.get_dimensions(height, width);
         free_rows = height - filled_rows - vis_line_t(this->fos_lines.size());
@@ -59,6 +58,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
         }
         else {
             string last_time, time_span;
+            double error_rate = 0.0;
 
             if (lv.get_inner_height() == 0) {
                 last_time = "No log messages";
@@ -66,14 +66,67 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             }
             else {
                 logline *first_line, *last_line;
+                time_t now = time(NULL);
 
                 first_line = lss.find_line(lss.at(vis_line_t(0)));
                 last_line = lss.find_line(lss.at(lv.get_bottom()));
-                last_time = "Last message: " + precise_time_ago(
-                    last_line->get_timeval(), true);
+                last_time = "Last message: " ANSI_BOLD_START + precise_time_ago(
+                    last_line->get_timeval(), true) + ANSI_NORM;
                 str2reltime(last_line->get_time_in_millis() -
                             first_line->get_time_in_millis(),
                             time_span);
+
+                time_t local_now = convert_log_time_to_local(now);
+                time_t five_minutes_ago = local_now - (5 * 60 * 60);
+                time_t ten_secs_ago = local_now - 10;
+
+                vis_line_t from_five_min_ago = lnav_data.ld_log_source.
+                    find_from_time(five_minutes_ago);
+                vis_line_t from_ten_secs_ago = lnav_data.ld_log_source.
+                    find_from_time(ten_secs_ago);
+                vis_bookmarks &bm = lnav_data.ld_views[LNV_LOG].get_bookmarks();
+                bookmark_vector<vis_line_t> &error_bookmarks =
+                    bm[&logfile_sub_source::BM_ERRORS];
+
+                if (from_five_min_ago != -1) {
+                    bookmark_vector<vis_line_t>::iterator five_min_lower =
+                        lower_bound(error_bookmarks.begin(),
+                                    error_bookmarks.end(),
+                                    from_five_min_ago);
+                    if (five_min_lower != error_bookmarks.end()) {
+                        double error_count = distance(
+                            five_min_lower, error_bookmarks.end());
+                        double time_diff = 5.0;
+
+                        if (first_line->get_time() > five_minutes_ago) {
+                            time_diff = (double) (local_now - first_line->get_time()) /
+                                60.0;
+                        }
+                        error_rate = error_count / time_diff;
+
+                        if (from_ten_secs_ago != -1) {
+                            bookmark_vector<vis_line_t>::iterator ten_sec_lower =
+                                lower_bound(error_bookmarks.begin(),
+                                            error_bookmarks.end(),
+                                            from_ten_secs_ago);
+                            if (ten_sec_lower != error_bookmarks.end()) {
+                                double recent_error_count = distance(
+                                    ten_sec_lower, error_bookmarks.end());
+                                double recent_error_rate =
+                                    recent_error_count / 10.0;
+                                double long_error_rate =
+                                    error_count / (time_diff * 60.0 / 10.0);
+
+                                if (long_error_rate == 0.0) {
+                                    long_error_rate = 1.0;
+                                }
+                                long computed_rate_len = lrint(ceil(
+                                    (recent_error_rate * 40.0) / long_error_rate));
+                                rate_len = min(10L, computed_rate_len);
+                            }
+                        }
+                    }
+                }
             }
 
             this->fos_summary_lines.push_back(attr_line_t());
@@ -81,16 +134,19 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             string &sum_msg = sum_line.get_string();
             sum_line.with_ansi_string(
                     "       %s; Files: " ANSI_BOLD("%'2d") "; "
-                        ANSI_ROLE("Errors") ": " ANSI_BOLD("%'4d") "; "
-                        ANSI_ROLE("Warnings") ": " ANSI_BOLD("%'4d") "; "
-                        "Time span: %s",
+                        ANSI_ROLE("Error rate") ": " ANSI_BOLD("%'.2lf") "; "
+                        "Time span: " ANSI_BOLD("%s"),
                     last_time.c_str(),
                     lss.file_count() + tss.size(),
                     view_colors::VCR_ERROR,
-                    bookmarks[&logfile_sub_source::BM_ERRORS].size(),
-                    view_colors::VCR_WARNING,
-                    bookmarks[&logfile_sub_source::BM_WARNINGS].size(),
+                    error_rate,
                     time_span.c_str())
+                .with_attr(string_attr(
+                    line_range(sum_msg.find("Error rate"),
+                               sum_msg.find("Error rate") + rate_len),
+                    &view_curses::VC_STYLE,
+                    A_REVERSE
+                ))
                 .with_attr(string_attr(
                     line_range(1, 2),
                     &view_curses::VC_GRAPHIC,

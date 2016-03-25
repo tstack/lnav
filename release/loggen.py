@@ -98,7 +98,7 @@ def access_log_msgs():
         yield '%s - %s [%s +0000] "%s %s %s" %s %s "%s" "%s"\n' % (
             random.choice(TEST_ADDRESSES),
             random.choice(TEST_USERNAMES),
-            datetime.datetime.utcnow().strftime(ACCESS_LOG_DATE_FMT),
+            datetime.datetime.now().strftime(ACCESS_LOG_DATE_FMT),
             random.choice(TEST_METHODS),
             random.choice(TEST_URLS),
             random.choice(TEST_VERSIONS),
@@ -134,7 +134,7 @@ TEST_MSGS = [
 def syslog_msgs():
     while True:
         yield '%s frontend3 %s: %s\n' % (
-            datetime.datetime.utcnow().strftime(SYSLOG_DATE_FMT),
+            datetime.datetime.now().strftime(SYSLOG_DATE_FMT),
             random.choice(TEST_PROCS),
             random.choice(TEST_MSGS),
             )

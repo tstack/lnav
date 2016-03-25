@@ -244,8 +244,8 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 last_time = ll.get_time();
                 last_millis = ll.get_millis();
                 if (this->lf_format.get() != NULL) {
-                    last_level = (logline::level_t)
-                            (ll.get_level() | logline::LEVEL_CONTINUED);
+                    last_level = (logline::level_t)(ll.get_level_and_flags() |
+                        logline::LEVEL_CONTINUED);
                 }
                 last_mod = ll.get_module_id();
                 last_opid = ll.get_opid();

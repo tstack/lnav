@@ -217,7 +217,9 @@ public:
     void set_level(level_t l) { this->ll_level = l; };
 
     /** @return The logging level. */
-    level_t get_level() const { return (level_t)(this->ll_level & 0xff); };
+    level_t get_level_and_flags() const {
+        return (level_t)this->ll_level;
+    };
 
     level_t get_msg_level() const {
         return (level_t)(this->ll_level & ~LEVEL__FLAGS);
@@ -229,7 +231,7 @@ public:
     };
 
     bool is_continued(void) const {
-        return this->get_level() & LEVEL_CONTINUED;
+        return this->ll_level & LEVEL_CONTINUED;
     };
 
     uint8_t get_module_id(void) const {

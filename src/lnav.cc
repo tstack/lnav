@@ -407,14 +407,13 @@ public:
     };
 
     void index_line(logfile_sub_source &lss, logfile *lf, logfile::iterator ll) {
-        if (ll->get_level() & logline::LEVEL_CONTINUED ||
-            ll->get_time() == 0) {
+        if (ll->is_continued() || ll->get_time() == 0) {
             return;
         }
 
         hist_source2::hist_type_t ht;
 
-        switch (ll->get_level()) {
+        switch (ll->get_msg_level()) {
             case logline::LEVEL_FATAL:
             case logline::LEVEL_CRITICAL:
             case logline::LEVEL_ERROR:

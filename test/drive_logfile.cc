@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
       break;
     case MODE_LEVELS:
       for (logfile::iterator iter = lf.begin(); iter != lf.end(); ++iter) {
-    printf("0x%02x\n", iter->get_level());
+    printf("0x%02x\n", iter->get_level_and_flags());
       }
       break;
     }

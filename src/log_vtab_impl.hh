@@ -145,7 +145,7 @@ public:
         logfile::iterator lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 
-        if (lf_iter->get_level() & logline::LEVEL_CONTINUED) {
+        if (lf_iter->is_continued()) {
             return false;
         }
 
