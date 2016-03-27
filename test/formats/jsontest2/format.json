@@ -1,0 +1,28 @@
+{
+    "json_log2" : {
+        "title" : "Test JSON Log with integer levels",
+        "json" : true,
+        "file-pattern" : "logfile_json2\\.json",
+        "description" : "Test config",
+        "line-format" : [
+            { "field" : "ts" },
+            " ",
+            { "field" : "lvl" },
+            " ",
+            { "field" : "msg" }
+        ],
+        "level-field" : "lvl",
+        "level" : {
+            "info" : 0,
+            "error" : 10
+        },
+        "timestamp-field": "ts",
+        "body-field" : "msg",
+        "value" : {
+            "user" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        }
+    }
+}

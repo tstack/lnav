@@ -48,6 +48,19 @@ log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,user
 13,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>
 EOF
 
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -I ${test_dir} \
+    -c ';select * from json_log2' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json2.json
+
+check_output "log levels not working" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,user
+0,<NULL>,2013-09-06 20:00:49.124,0,info,0,<NULL>
+1,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,steve@example.com
+3,<NULL>,2013-09-06 22:01:49.124,60000,error,0,<NULL>
+EOF
+
 
 run_test ${lnav_test} -n \
     -I ${test_dir} \

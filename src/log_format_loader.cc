@@ -198,6 +198,17 @@ static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size
     return 1;
 }
 
+static int read_level_int(yajlpp_parse_context *ypc, long long val)
+{
+    external_log_format *elf = ensure_format(ypc);
+    string level_name_or_number = ypc->get_path_fragment(2);
+    logline::level_t level = logline::string2level(level_name_or_number.c_str());
+
+    elf->elf_level_pairs.push_back(make_pair(val, level));
+
+    return 1;
+}
+
 static int read_value_def(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     external_log_format *elf = ensure_format(ypc);
@@ -448,8 +459,9 @@ static struct json_path_handler format_handlers[] = {
                               "timestamp-format#|module-field|opid-field)$",
                       read_format_field),
     json_path_handler("/\\w+/level/"
-                      "(trace|debug\\d*|info|stats|warning|error|critical|fatal)",
-                      read_levels),
+                      "(trace|debug\\d*|info|stats|warning|error|critical|fatal)")
+        .add_cb(read_levels)
+        .add_cb(read_level_int),
     json_path_handler("/\\w+/value/.+/(kind|collate|unit/field)$", read_value_def),
     json_path_handler("/\\w+/value/.+/(identifier|foreign-key|hidden)$", read_value_bool),
     json_path_handler("/\\w+/value/.+/unit/scaling-factor/.*$",

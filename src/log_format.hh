@@ -1026,6 +1026,7 @@ public:
     intern_string_t elf_module_id_field;
     intern_string_t elf_opid_field;
     std::map<logline::level_t, level_pattern> elf_level_patterns;
+    std::vector<std::pair<int64_t, logline::level_t> > elf_level_pairs;
     bool elf_multiline;
     bool elf_container;
     bool elf_has_module_format;

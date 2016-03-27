@@ -431,6 +431,18 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
         tv.tv_usec = (val % divisor) * (1000000.0 / divisor);
         jlu->jlu_base_line->set_time(tv);
     }
+    else if (jlu->jlu_format->elf_level_field == field_name) {
+        vector<pair<int64_t, logline::level_t> >::iterator iter;
+
+        for (iter = jlu->jlu_format->elf_level_pairs.begin();
+             iter != jlu->jlu_format->elf_level_pairs.end();
+             ++iter) {
+            if (iter->first == val) {
+                jlu->jlu_base_line->set_level(iter->second);
+                break;
+            }
+        }
+    }
     else if (!jlu->jlu_format->jlf_hide_extra &&
              find_if(line_format.begin(), line_format.end(),
                      json_field_cmp(external_log_format::JLF_VARIABLE,
@@ -578,12 +590,12 @@ static int rewrite_json_double(yajlpp_parse_context *ypc, double val)
 }
 
 static struct json_path_handler json_log_rewrite_handlers[] = {
-    json_path_handler("^/\\w+$").
-    add_cb(rewrite_json_null).
-    add_cb(rewrite_json_bool).
-    add_cb(rewrite_json_int).
-    add_cb(rewrite_json_double).
-    add_cb(rewrite_json_field),
+    json_path_handler("^/\\w+$")
+        .add_cb(rewrite_json_null)
+        .add_cb(rewrite_json_bool)
+        .add_cb(rewrite_json_int)
+        .add_cb(rewrite_json_double)
+        .add_cb(rewrite_json_field),
 
     json_path_handler()
 };
@@ -1384,6 +1396,8 @@ void external_log_format::build(std::vector<std::string> &errors) {
                              this->elf_name.to_string() + ".level:" + e.what());
         }
     }
+
+    stable_sort(this->elf_level_pairs.begin(), this->elf_level_pairs.end());
 
     for (std::map<const intern_string_t, value_def>::iterator iter = this->elf_value_defs.begin();
          iter != this->elf_value_defs.end();
