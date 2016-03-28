@@ -495,14 +495,21 @@ void rebuild_indexes(bool force)
     logfile_sub_source &lss       = lnav_data.ld_log_source;
     textview_curses &   log_view  = lnav_data.ld_views[LNV_LOG];
     textview_curses &   text_view = lnav_data.ld_views[LNV_TEXT];
-    vis_line_t          old_bottom(0);
+    vis_line_t          old_bottoms[LNV__MAX];
     content_line_t      top_content = content_line_t(-1);
 
-    bool          scroll_down;
+    bool          scroll_downs[LNV__MAX];
     size_t        old_count;
     time_t        old_time;
 
     old_count = lss.text_line_count();
+
+    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+        old_bottoms[lpc] = lnav_data.ld_views[lpc].get_top_for_last_row();
+        scroll_downs[lpc] =
+            (lnav_data.ld_views[lpc].get_top() >= old_bottoms[lpc]) &&
+            !(lnav_data.ld_flags & LNF_HEADLESS);
+    }
 
     if (old_count) {
         top_content = lss.at(log_view.get_top());
@@ -511,13 +518,8 @@ void rebuild_indexes(bool force)
     {
         textfile_sub_source *          tss = &lnav_data.ld_text_source;
         std::list<logfile *>::iterator iter;
-        bool new_data;
-
-        old_bottom  = text_view.get_top_for_last_row();
-        scroll_down = (text_view.get_top() >= old_bottom &&
-            !(lnav_data.ld_flags & LNF_HEADLESS));
-
         textfile_callback cb;
+        bool new_data;
 
         new_data = tss->rescan_files(cb);
         force = force || cb.force;
@@ -529,7 +531,7 @@ void rebuild_indexes(bool force)
                 tss->to_front(cb.front_file);
                 redo_search(LNV_TEXT);
                 text_view.reload_data();
-                old_bottom = vis_line_t(-1);
+                old_bottoms[LNV_TEXT] = vis_line_t(-1);
 
                 new_data = false;
             }
@@ -539,7 +541,7 @@ void rebuild_indexes(bool force)
             }
             if (cb.front_top < text_view.get_inner_height()) {
                 text_view.set_top(vis_line_t(cb.front_top));
-                scroll_down = false;
+                scroll_downs[LNV_TEXT] = false;
             }
         }
 
@@ -550,16 +552,9 @@ void rebuild_indexes(bool force)
             lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc()->start();
         }
         text_view.reload_data();
-
-        if (scroll_down && text_view.get_top_for_last_row() > text_view.get_top()) {
-            text_view.set_top(text_view.get_top_for_last_row());
-        }
     }
 
     old_time = lnav_data.ld_top_time;
-    old_bottom  = log_view.get_top_for_last_row();
-    scroll_down = (log_view.get_top() >= old_bottom &&
-        !(lnav_data.ld_flags & LNF_HEADLESS));
     if (force) {
         old_count = 0;
     }
@@ -593,10 +588,7 @@ void rebuild_indexes(bool force)
 
         log_view.reload_data();
 
-        if (scroll_down && log_view.get_top_for_last_row() > log_view.get_top()) {
-            log_view.set_top(log_view.get_top_for_last_row());
-        }
-        else if (!scroll_down && force) {
+        if (!scroll_downs[LNV_LOG] && force) {
             content_line_t new_top_content = content_line_t(-1);
 
             if (new_count) {
@@ -632,6 +624,14 @@ void rebuild_indexes(bool force)
         }
 
         lnav_data.ld_view_stack.top()->reload_data();
+    }
+
+    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+        textview_curses &scroll_view = lnav_data.ld_views[lpc];
+
+        if (scroll_downs[lpc] && scroll_view.get_top_for_last_row() > scroll_view.get_top()) {
+            scroll_view.set_top(scroll_view.get_top_for_last_row());
+        }
     }
 
     if (!lnav_data.ld_view_stack.empty()) {
@@ -2551,7 +2551,8 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_SPECTRO]
         .set_sub_source(&lnav_data.ld_spectro_source)
         .set_overlay_source(&lnav_data.ld_spectro_source)
-        .add_input_delegate(lnav_data.ld_spectro_source);
+        .add_input_delegate(lnav_data.ld_spectro_source)
+        .set_tail_space(vis_line_t(2));
 
     lnav_data.ld_match_view.set_left(0);
 

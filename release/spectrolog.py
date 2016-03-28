@@ -107,7 +107,8 @@ while True:
            "[%s] POST /update_metrics => generated 47 bytes "
            "in %s msecs (HTTP/1.1 200) 9 headers in 378 bytes (1 switches on core 60)" %
            (datetime.datetime.utcnow().strftime(DATE_FMT),
-            diter.next()))
+            random.choice(DURATIONS) + random.choice(DURATION_FUZZ)))
+            # diter.next()))
     sys.stdout.flush()
 
-    time.sleep(0.25)
+    time.sleep(0.01)
