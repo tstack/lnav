@@ -431,7 +431,10 @@ public:
             return;
         }
 
-        time_t diff = std::max((time_t) 1, sb.sb_end_time - sb.sb_begin_time + 1);
+        time_t grain_begin_time = rounddown(sb.sb_begin_time, this->ss_granularity);
+        time_t grain_end_time = roundup_size(sb.sb_end_time, this->ss_granularity);
+
+        time_t diff = std::max((time_t) 1, grain_end_time - grain_begin_time);
         this->ss_cached_line_count =
             (diff + this->ss_granularity - 1) / this->ss_granularity;
 

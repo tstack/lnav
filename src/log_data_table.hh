@@ -191,7 +191,8 @@ public:
 
         this->ldt_format_impl->extract(lf, line, values);
         values.push_back(logline_value(instance_name, this->ldt_instance));
-        values.back().lv_column = next_column++;
+        logline_value &lv = values.back();
+        lv.lv_column = next_column++;
         for (data_parser::element_list_t::iterator pair_iter =
                  this->ldt_pairs.begin();
              pair_iter != this->ldt_pairs.end();

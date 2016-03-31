@@ -445,7 +445,6 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                     break;
                 case logline_value::VALUE_JSON:
                 case logline_value::VALUE_TEXT: {
-
                     sqlite3_result_text(ctx,
                                         lv_iter->text_value(),
                                         lv_iter->text_length(),

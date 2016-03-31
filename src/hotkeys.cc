@@ -208,16 +208,17 @@ void handle_paging_key(int ch)
                 tc = lnav_data.ld_view_stack.top();
                 tc->set_needs_update();
                 if (ch == 'Q') {
-                    text_time_translator *ttt = dynamic_cast<text_time_translator *>(lnav_data.ld_last_view->get_sub_source());
-                    textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+                    text_time_translator *src_view = dynamic_cast<text_time_translator *>(lnav_data.ld_last_view->get_sub_source());
+                    text_time_translator *dst_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
                     time_t last_time = 0;
 
-                    lss = &lnav_data.ld_log_source;
-                    if (ttt != NULL) {
-                        last_time = ttt->time_for_row(lnav_data.ld_last_view->get_top());
-                        vis_line_t new_log_top = lss->find_from_time(last_time);
+                    if (src_view != NULL && dst_view != NULL) {
+                        last_time = src_view->time_for_row(lnav_data.ld_last_view->get_top());
+                        if (last_time != -1) {
+                            int new_top = dst_view->row_for_time(last_time);
 
-                        log_view.set_top(new_log_top);
+                            tc->set_top(vis_line_t(new_top));
+                        }
                     }
                 }
                 lnav_data.ld_scroll_broadcaster.invoke(tc);
@@ -244,13 +245,15 @@ void handle_paging_key(int ch)
             }
             else {
                 textview_curses *tc = lnav_data.ld_last_view;
-                text_time_translator *ttt = dynamic_cast<text_time_translator *>(tc->get_sub_source());
+                textview_curses *top_tc = lnav_data.ld_view_stack.top();
+                text_time_translator *dst_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
+                text_time_translator *src_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
 
                 lnav_data.ld_last_view = NULL;
-                if (ttt != NULL) {
-                    time_t log_top = lnav_data.ld_top_time;
+                if (src_view != NULL && dst_view != NULL) {
+                    time_t top_time = src_view->time_for_row(top_tc->get_top());
 
-                    tc->set_top(vis_line_t(ttt->row_for_time(log_top)));
+                    tc->set_top(vis_line_t(dst_view->row_for_time(top_time)));
                 }
                 ensure_view(tc);
             }

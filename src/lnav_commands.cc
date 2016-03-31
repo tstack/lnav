@@ -52,6 +52,7 @@
 #include "log_search_table.hh"
 #include "shlex.hh"
 #include "yajl/api/yajl_parse.h"
+#include "db_sub_source.hh"
 
 using namespace std;
 
@@ -420,15 +421,15 @@ static void json_write_row(yajl_gen handle, int row)
     db_label_source &dls = lnav_data.ld_db_row_source;
     yajlpp_map obj_map(handle);
 
-    for (size_t col = 0; col < dls.dls_column_types.size(); col++) {
-        obj_map.gen(dls.dls_headers[col]);
+    for (size_t col = 0; col < dls.dls_headers.size(); col++) {
+        obj_map.gen(dls.dls_headers[col].hm_name);
 
         if (dls.dls_rows[row][col] == db_label_source::NULL_STR) {
             obj_map.gen();
             continue;
         }
 
-        switch (dls.dls_column_types[col]) {
+        switch (dls.dls_headers[col].hm_column_type) {
         case SQLITE_FLOAT:
         case SQLITE_INTEGER:
             yajl_gen_number(handle, dls.dls_rows[row][col],
@@ -530,7 +531,7 @@ static string com_save_to(string cmdline, vector<string> &args)
     if (args[0] == "write-csv-to") {
         std::vector<std::vector<const char *> >::iterator row_iter;
         std::vector<const char *>::iterator iter;
-        std::vector<string>::iterator hdr_iter;
+        std::vector<db_label_source::header_meta>::iterator hdr_iter;
         bool first = true;
 
         for (hdr_iter = dls.dls_headers.begin();
@@ -539,7 +540,7 @@ static string com_save_to(string cmdline, vector<string> &args)
             if (!first) {
                 fprintf(outfile, ",");
             }
-            csv_write_string(outfile, *hdr_iter);
+            csv_write_string(outfile, hdr_iter->hm_name);
             first = false;
         }
         fprintf(outfile, "\n");
@@ -2555,6 +2556,95 @@ public:
     bool lsvs_found;
 };
 
+class db_spectro_value_source : public spectrogram_value_source {
+public:
+    db_spectro_value_source(string colname)
+        : dsvs_colname(colname),
+          dsvs_begin_time(0),
+          dsvs_end_time(0),
+          dsvs_found(false) {
+        this->update_stats();
+    };
+
+    void update_stats() {
+        this->dsvs_begin_time = 0;
+        this->dsvs_end_time = 0;
+        this->dsvs_stats.clear();
+
+        db_label_source &dls = lnav_data.ld_db_row_source;
+        stacked_bar_chart<string> &chart = dls.dls_chart;
+        date_time_scanner dts;
+
+        this->dsvs_column_index = dls.column_name_to_index(this->dsvs_colname);
+
+        if (dls.dls_time_column_index == -1 ||
+            this->dsvs_column_index == -1 ||
+            !dls.dls_headers[this->dsvs_column_index].hm_graphable ||
+            dls.dls_rows.empty()) {
+            this->dsvs_found = false;
+            return;
+        }
+
+        stacked_bar_chart<string>::bucket_stats_t bs = chart.get_stats_for(this->dsvs_colname);
+
+        this->dsvs_begin_time = dls.dls_time_column.front().tv_sec;
+        this->dsvs_end_time = dls.dls_time_column.back().tv_sec;
+        this->dsvs_stats.lvs_min_value = bs.bs_min_value;
+        this->dsvs_stats.lvs_max_value = bs.bs_max_value;
+        this->dsvs_stats.lvs_count = dls.dls_rows.size();
+        this->dsvs_found = true;
+    };
+
+    void spectro_bounds(spectrogram_bounds &sb_out) {
+        db_label_source &dls = lnav_data.ld_db_row_source;
+
+        if (dls.text_line_count() == 0) {
+            return;
+        }
+
+        this->update_stats();
+
+        sb_out.sb_begin_time = this->dsvs_begin_time;
+        sb_out.sb_end_time = this->dsvs_end_time;
+        sb_out.sb_min_value_out = this->dsvs_stats.lvs_min_value;
+        sb_out.sb_max_value_out = this->dsvs_stats.lvs_max_value;
+        sb_out.sb_count = this->dsvs_stats.lvs_count;
+    };
+
+    void spectro_row(spectrogram_request &sr, spectrogram_row &row_out) {
+        db_label_source &dls = lnav_data.ld_db_row_source;
+        int begin_row = dls.row_for_time(sr.sr_begin_time);
+        int end_row = dls.row_for_time(sr.sr_end_time);
+
+        if (begin_row == -1) {
+            begin_row = 0;
+        }
+        if (end_row == -1) {
+            end_row = dls.dls_rows.size();
+        }
+
+        for (int lpc = begin_row; lpc < end_row; lpc++) {
+            double value = 0.0;
+
+            sscanf(dls.dls_rows[lpc][this->dsvs_column_index], "%lf", &value);
+
+            row_out.add_value(sr, value, false);
+        }
+    };
+
+    void spectro_mark(textview_curses &tc,
+                      time_t begin_time, time_t end_time,
+                      double range_min, double range_max) {
+    };
+
+    string dsvs_colname;
+    logline_value_stats dsvs_stats;
+    time_t dsvs_begin_time;
+    time_t dsvs_end_time;
+    int dsvs_column_index;
+    bool dsvs_found;
+};
+
 static string com_spectrogram(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a message field name";
@@ -2562,13 +2652,10 @@ static string com_spectrogram(string cmdline, vector<string> &args)
     if (args.empty()) {
         args.push_back("numeric-colname");
     }
-    else if (lnav_data.ld_view_stack.top() != &lnav_data.ld_views[LNV_LOG] &&
-             lnav_data.ld_view_stack.top() != &lnav_data.ld_views[LNV_SPECTRO]) {
-        retval = "error: this command can only be run from the log or spectrogram views";
-    }
     else if (args.size() == 2) {
-        intern_string_t colname = intern_string::lookup(remaining_args(cmdline, args));
+        string colname = remaining_args(cmdline, args);
         spectrogram_source &ss = lnav_data.ld_spectro_source;
+        bool found = false;
 
         ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
         if (ss.ss_value_source != NULL) {
@@ -2577,18 +2664,39 @@ static string com_spectrogram(string cmdline, vector<string> &args)
         }
         ss.invalidate();
 
-        auto_ptr<log_spectro_value_source> lsvs(new log_spectro_value_source(colname));
+        if (lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_DB]) {
+            auto_ptr<db_spectro_value_source> dsvs(
+                new db_spectro_value_source(colname));
 
-        if (!lsvs->lsvs_found) {
-            retval = "error: unknown numeric message field -- " + colname.to_string();
+            if (!dsvs->dsvs_found) {
+                retval = "error: unknown numeric message field -- " + colname;
+            }
+            else {
+                ss.ss_value_source = dsvs.release();
+                found = true;
+
+            }
         }
         else {
-            ss.ss_value_source = lsvs.release();
+            auto_ptr<log_spectro_value_source> lsvs(
+                new log_spectro_value_source(intern_string::lookup(colname)));
+
+            if (!lsvs->lsvs_found) {
+                retval = "error: unknown numeric message field -- " + colname;
+            }
+            else {
+                ss.ss_value_source = lsvs.release();
+                found = true;
+            }
+        }
+
+        if (found) {
             ensure_view(&lnav_data.ld_views[LNV_SPECTRO]);
 
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(z, Z, "to zoom in/out"));
+            lnav_data.ld_rl_view->set_alt_value(
+                HELP_MSG_2(z, Z, "to zoom in/out"));
 
-            retval = "info: visualizing field -- " + colname.to_string();
+            retval = "info: visualizing field -- " + colname;
         }
     }
 

@@ -40,9 +40,11 @@
 #include "hist_source.hh"
 #include "log_vtab_impl.hh"
 
-class db_label_source : public text_sub_source {
+class db_label_source : public text_sub_source, public text_time_translator {
 public:
-    db_label_source() { };
+    db_label_source() : dls_time_column_index(-1) {
+
+    };
 
     ~db_label_source() { };
 
@@ -57,10 +59,10 @@ public:
     size_t text_line_width(textview_curses &curses) {
         size_t retval = 0;
 
-        for (std::vector<size_t>::iterator iter = this->dls_column_sizes.begin();
-             iter != this->dls_column_sizes.end();
+        for (std::vector<header_meta>::iterator iter = this->dls_headers.begin();
+             iter != this->dls_headers.end();
              ++iter) {
-            retval += *iter;
+            retval += iter->hm_column_size;
         }
         return retval;
     };
@@ -81,15 +83,15 @@ public:
         }
         for (int lpc = 0; lpc < (int)this->dls_rows[row].size();
              lpc++) {
-            int padding = (this->dls_column_sizes[lpc] -
+            int padding = (this->dls_headers[lpc].hm_column_size -
                            strlen(this->dls_rows[row][lpc]) -
                            1);
 
-            if (this->dls_column_types[lpc] != SQLITE3_TEXT) {
+            if (this->dls_headers[lpc].hm_column_type != SQLITE3_TEXT) {
                 label_out.append(padding, ' ');
             }
             label_out.append(this->dls_rows[row][lpc]);
-            if (this->dls_column_types[lpc] == SQLITE3_TEXT) {
+            if (this->dls_headers[lpc].hm_column_type == SQLITE3_TEXT) {
                 label_out.append(padding, ' ');
             }
             label_out.append(1, ' ');
@@ -104,26 +106,26 @@ public:
         if (row >= (int)this->dls_rows.size()) {
             return;
         }
-        for (size_t lpc = 0; lpc < this->dls_column_sizes.size() - 1; lpc++) {
+        for (size_t lpc = 0; lpc < this->dls_headers.size() - 1; lpc++) {
             if (row % 2 == 0) {
                 sa.push_back(string_attr(lr2, &view_curses::VC_STYLE, A_BOLD));
             }
-            lr.lr_start += this->dls_column_sizes[lpc] - 1;
+            lr.lr_start += this->dls_headers[lpc].hm_column_size - 1;
             lr.lr_end = lr.lr_start + 1;
             sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_VLINE));
             lr.lr_start += 1;
         }
 
         int left = 0;
-        for (size_t lpc = 0; lpc < this->dls_column_sizes.size(); lpc++) {
+        for (size_t lpc = 0; lpc < this->dls_headers.size(); lpc++) {
             const char *row_value = this->dls_rows[row][lpc];
             size_t row_len = strlen(row_value);
 
-            if (this->dls_headers_to_graph[lpc]) {
+            if (this->dls_headers[lpc].hm_graphable) {
                 double num_value;
 
                 if (sscanf(row_value, "%lf", &num_value) == 1) {
-                    this->dls_chart.chart_attrs_for_value(tc, left, this->dls_headers[lpc], num_value, sa);
+                    this->dls_chart.chart_attrs_for_value(tc, left, this->dls_headers[lpc].hm_name, num_value, sa);
                 }
             }
             if (row_len > 2 &&
@@ -148,12 +150,35 @@ public:
         }
     }
 
+    void push_header(const std::string &colstr, int type, bool graphable)
+    {
+        this->dls_headers.push_back(header_meta(colstr));
+
+        header_meta &hm = this->dls_headers.back();
+
+        hm.hm_column_size = colstr.length() + 1;
+        hm.hm_column_type = type;
+        hm.hm_graphable = graphable;
+        if (colstr == "log_time") {
+            this->dls_time_column_index = this->dls_headers.size() - 1;
+        }
+    }
+
     /* TODO: add support for left and right justification... numbers should */
     /* be right justified and strings should be left. */
     void push_column(const char *colstr)
     {
+        view_colors &vc = view_colors::singleton();
         int index = this->dls_rows.back().size();
+        double num_value = 0.0;
+        size_t value_len;
 
+        if (colstr == NULL) {
+            value_len = 0;
+        }
+        else {
+            value_len = strlen(colstr);
+        }
         if (colstr == NULL) {
             colstr = NULL_STR;
         }
@@ -164,34 +189,51 @@ public:
             }
         }
 
-        this->dls_rows.back().push_back(colstr);
-        if (this->dls_rows.back().size() > this->dls_column_sizes.size()) {
-            this->dls_column_sizes.push_back(1);
+        if (index == this->dls_time_column_index) {
+            date_time_scanner dts;
+            struct timeval tv;
+
+            if (!dts.convert_to_timeval(colstr, -1, tv)) {
+                tv.tv_sec = -1;
+                tv.tv_usec = -1;
+            }
+            this->dls_time_column.push_back(tv);
         }
-        this->dls_column_sizes[index] =
-            std::max(this->dls_column_sizes[index], strlen(colstr) + 1);
+
+        this->dls_rows.back().push_back(colstr);
+        this->dls_headers[index].hm_column_size =
+            std::max(this->dls_headers[index].hm_column_size, strlen(colstr) + 1);
+
+        if (colstr != NULL && this->dls_headers[index].hm_graphable) {
+            if (sscanf(colstr, "%lf", &num_value) != 1) {
+                num_value = 0.0;
+            }
+            this->dls_chart.add_value(this->dls_headers[index].hm_name, num_value);
+        }
+        else if (value_len > 2 &&
+                 ((colstr[0] == '{' && colstr[value_len - 1] == '}') ||
+                  (colstr[0] == '[' && colstr[value_len - 1] == ']'))) {
+            json_ptr_walk jpw;
+
+            if (jpw.parse(colstr, value_len) == yajl_status_ok &&
+                jpw.complete_parse() == yajl_status_ok) {
+                for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
+                     iter != jpw.jpw_values.end();
+                     ++iter) {
+                    if (iter->wt_type == yajl_t_number &&
+                        sscanf(iter->wt_value.c_str(), "%lf", &num_value) == 1) {
+                        this->dls_chart.add_value(iter->wt_ptr, num_value);
+                        this->dls_chart.with_attrs_for_ident(
+                            iter->wt_ptr, vc.attrs_for_ident(iter->wt_ptr));
+                    }
+                }
+            }
+        }
     };
 
-    void push_header(const std::string &colstr, int type, bool graphable)
-    {
-        int index = this->dls_headers.size();
-
-        this->dls_headers.push_back(colstr);
-        if (this->dls_headers.size() > this->dls_column_sizes.size()) {
-            this->dls_column_sizes.push_back(1);
-        }
-        this->dls_column_sizes[index] =
-            std::max(this->dls_column_sizes[index], colstr.length() + 1);
-        this->dls_column_types.push_back(type);
-        this->dls_headers_to_graph.push_back(graphable);
-    }
-
-    void clear(void)
-    {
+    void clear(void) {
         this->dls_chart.clear();
         this->dls_headers.clear();
-        this->dls_headers_to_graph.clear();
-        this->dls_column_types.clear();
         for (size_t row = 0; row < this->dls_rows.size(); row++) {
             for (size_t col = 0; col < this->dls_rows[row].size(); col++) {
                 if (this->dls_rows[row][col] != NULL_STR) {
@@ -200,11 +242,11 @@ public:
             }
         }
         this->dls_rows.clear();
-        this->dls_column_sizes.clear();
-    }
+        this->dls_time_column.clear();
+    };
 
     long column_name_to_index(const std::string &name) const {
-        std::vector<std::string>::const_iterator iter;
+        std::vector<header_meta>::const_iterator iter;
 
         iter = std::find(this->dls_headers.begin(),
                          this->dls_headers.end(),
@@ -214,14 +256,54 @@ public:
         }
 
         return std::distance(this->dls_headers.begin(), iter);
-    }
+    };
+
+    int row_for_time(time_t time_bucket) {
+        std::vector<struct timeval>::iterator iter;
+
+        iter = std::lower_bound(this->dls_time_column.begin(),
+                                this->dls_time_column.end(),
+                                time_bucket);
+        if (iter != this->dls_time_column.end()) {
+            return std::distance(this->dls_time_column.begin(), iter);
+        }
+        return -1;
+    };
+
+    time_t time_for_row(int row) {
+        if (row < 0 || row >= this->dls_time_column.size()) {
+            return -1;
+        }
+
+        return this->dls_time_column[row].tv_sec;
+    };
+
+    struct header_meta {
+        header_meta(const std::string &name = "")
+            : hm_name(name),
+              hm_column_type(SQLITE3_TEXT),
+              hm_graphable(false),
+              hm_log_time(false),
+              hm_column_size(0) {
+
+        };
+
+        bool operator==(const std::string &name) const {
+            return this->hm_name == name;
+        };
+
+        const std::string hm_name;
+        int hm_column_type;
+        bool hm_graphable;
+        bool hm_log_time;
+        size_t hm_column_size;
+    };
 
     stacked_bar_chart<std::string> dls_chart;
-    std::vector<std::string> dls_headers;
-    std::vector<int>         dls_headers_to_graph;
-    std::vector<int>         dls_column_types;
+    std::vector<header_meta> dls_headers;
     std::vector<std::vector<const char *> > dls_rows;
-    std::vector<size_t> dls_column_sizes;
+    std::vector<struct timeval> dls_time_column;
+    int dls_time_column_index;
 
     static const char *NULL_STR;
 };
@@ -267,7 +349,7 @@ public:
                 jpw.complete_parse() == yajl_status_ok) {
 
                 {
-                    const std::string &header = this->dos_labels->dls_headers[col];
+                    const std::string &header = this->dos_labels->dls_headers[col].hm_name;
                     this->dos_lines.push_back(" JSON Column: " + header);
 
                     retval += 1;
@@ -351,19 +433,19 @@ public:
             string_attrs_t &sa = value_out.get_attrs();
 
             for (size_t lpc = 0;
-                 lpc < this->dos_labels->dls_column_sizes.size();
+                 lpc < this->dos_labels->dls_headers.size();
                  lpc++) {
                 int before, total_fill =
-                        dls->dls_column_sizes[lpc] -
-                        dls->dls_headers[lpc].length();
+                        dls->dls_headers[lpc].hm_column_size -
+                        dls->dls_headers[lpc].hm_name.length();
 
                 struct line_range header_range(line.length(),
                                                line.length() +
-                                               dls->dls_column_sizes[lpc]);
+                                               dls->dls_headers[lpc].hm_column_size);
 
                 int attrs =
-                        vc.attrs_for_ident(dls->dls_headers[lpc]) | A_UNDERLINE;
-                if (!this->dos_labels->dls_headers_to_graph[lpc]) {
+                        vc.attrs_for_ident(dls->dls_headers[lpc].hm_name) | A_UNDERLINE;
+                if (!this->dos_labels->dls_headers[lpc].hm_graphable) {
                     attrs = A_UNDERLINE;
                 }
                 sa.push_back(string_attr(header_range, &view_curses::VC_STYLE,
@@ -372,7 +454,7 @@ public:
                 before = total_fill / 2;
                 total_fill -= before;
                 line.append(before, ' ');
-                line.append(dls->dls_headers[lpc]);
+                line.append(dls->dls_headers[lpc].hm_name);
                 line.append(total_fill, ' ');
             }
 

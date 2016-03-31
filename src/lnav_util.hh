@@ -251,6 +251,16 @@ struct tm *secs2tm(time_t *tim_p, struct tm *res);
 
 extern const char *std_time_fmt[];
 
+inline
+bool operator<(const struct timeval &left, time_t right) {
+    return left.tv_sec < right;
+};
+
+inline
+bool operator<(time_t left, const struct timeval &right) {
+    return left < right.tv_sec;
+};
+
 struct date_time_scanner {
     date_time_scanner() : dts_keep_base_tz(false),
                           dts_local_time(false),
@@ -321,6 +331,20 @@ struct date_time_scanner {
                      struct exttm *tm_out,
                      struct timeval &tv_out,
                      bool convert_local = true);
+
+    bool convert_to_timeval(const char *time_src,
+                            size_t time_len,
+                            struct timeval &tv_out) {
+        struct exttm tm;
+
+        if (time_len == -1) {
+            time_len = strlen(time_src);
+        }
+        if (this->scan(time_src, time_len, NULL, &tm, tv_out) != NULL) {
+            return true;
+        }
+        return false;
+    };
 
     bool convert_to_timeval(const std::string &time_src,
                             struct timeval &tv_out) {

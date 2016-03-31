@@ -75,7 +75,7 @@ public:
  * source of data for a text view.
  */
 class logfile_sub_source
-    : public text_sub_source {
+    : public text_sub_source, public text_time_translator {
 public:
 
     static bookmark_type_t BM_ERRORS;
@@ -342,6 +342,14 @@ public:
         struct timeval tv = { start, 0 };
 
         return this->find_from_time(tv);
+    };
+
+    time_t time_for_row(int row) {
+        return this->find_line(this->at(vis_line_t(row)))->get_time();
+    };
+
+    int row_for_time(time_t time_bucket) {
+        return this->find_from_time(time_bucket);
     };
 
     content_line_t at(vis_line_t vl) {

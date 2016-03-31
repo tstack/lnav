@@ -40,6 +40,7 @@
 #include "shlex.hh"
 
 #include "command_executor.hh"
+#include "db_sub_source.hh"
 
 using namespace std;
 
@@ -518,47 +519,15 @@ int sql_callback(sqlite3_stmt *stmt)
     }
     for (lpc = 0; lpc < ncols; lpc++) {
         const char *value     = (const char *)sqlite3_column_text(stmt, lpc);
-        double      num_value = 0.0;
-        size_t value_len;
 
         dls.push_column(value);
-        if (value == NULL) {
-            value_len = 0;
-        }
-        else {
-            value_len = strlen(value);
-        }
         if (value != NULL &&
-            (dls.dls_headers[lpc] == "log_line" ||
-             dls.dls_headers[lpc] == "min(log_line)")) {
+            (dls.dls_headers[lpc].hm_name == "log_line" ||
+             dls.dls_headers[lpc].hm_name == "min(log_line)")) {
             int line_number = -1;
 
             if (sscanf(value, "%d", &line_number) == 1) {
                 lss.text_mark(&BM_QUERY, line_number, true);
-            }
-        }
-        if (value != NULL && dls.dls_headers_to_graph[lpc]) {
-            if (sscanf(value, "%lf", &num_value) != 1) {
-                num_value = 0.0;
-            }
-            chart.add_value(dls.dls_headers[lpc], num_value);
-        }
-        else if (value_len > 2 &&
-                 ((value[0] == '{' && value[value_len - 1] == '}') ||
-                  (value[0] == '[' && value[value_len - 1] == ']'))) {
-            json_ptr_walk jpw;
-
-            if (jpw.parse(value, value_len) == yajl_status_ok &&
-                jpw.complete_parse() == yajl_status_ok) {
-                for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
-                     iter != jpw.jpw_values.end();
-                     ++iter) {
-                    if (iter->wt_type == yajl_t_number &&
-                        sscanf(iter->wt_value.c_str(), "%lf", &num_value) == 1) {
-                        chart.add_value(iter->wt_ptr, num_value);
-                        chart.with_attrs_for_ident(iter->wt_ptr, vc.attrs_for_ident(iter->wt_ptr));
-                    }
-                }
             }
         }
     }

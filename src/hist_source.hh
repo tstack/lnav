@@ -397,11 +397,10 @@ public:
         ci.ci_stats.update(amount);
     };
 
-protected:
     struct bucket_stats_t {
         bucket_stats_t() :
-                bs_min_value(std::numeric_limits<double>::max()),
-                bs_max_value(0)
+            bs_min_value(std::numeric_limits<double>::max()),
+            bs_max_value(0)
         {
         };
 
@@ -427,6 +426,14 @@ protected:
         double bs_min_value;
         double bs_max_value;
     };
+
+    const bucket_stats_t &get_stats_for(const T &ident) {
+        const chart_ident &ci = this->find_ident(ident);
+
+        return ci.ci_stats;
+    };
+
+protected:
 
     struct chart_ident {
         chart_ident(const T &ident) : ci_ident(ident) { };
