@@ -279,7 +279,7 @@ public:
     };
 
     struct header_meta {
-        header_meta(const std::string &name = "")
+        header_meta(const std::string &name)
             : hm_name(name),
               hm_column_type(SQLITE3_TEXT),
               hm_graphable(false),
