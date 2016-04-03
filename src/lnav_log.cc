@@ -43,6 +43,7 @@
 #include <signal.h>
 #include <libgen.h>
 #include <pthread.h>
+#include <sys/resource.h>
 
 #ifdef HAVE_EXECINFO_H
 #include <execinfo.h>
