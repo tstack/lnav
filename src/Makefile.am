@@ -36,6 +36,7 @@ init-sql.c: bin2c
 	$(BIN2C_V)./bin2c -z -c $< $@
 
 TIME_FORMATS = \
+    "@%@" \
     "%Y-%m-%d %H:%M:%S" \
     "%Y-%m-%d %H:%M" \
     "%Y-%m-%dT%H:%M:%S.%f%z" \

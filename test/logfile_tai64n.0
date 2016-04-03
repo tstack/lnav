@@ -1,0 +1,10 @@
+@40000000433225833b6e1a8c tcpserver: status: 5/30
+@40000000433225833b6e2644 tcpserver: pid 26162 from 194.206.24.40
+@40000000433225840c85ba04 tcpserver: ok 26162 a.mx.jms1.net:209.114.200.128:25 :194.206.24.40::1521
+@40000000433225840c8f0cbc rblsmtpd: 194.206.24.40 pid 26162: 451 We do not accept mail from IP addresses without reverse DNS.
+@40000000433225852a9ada4c tcpserver: status: 6/30
+@40000000433225852a9ae604 tcpserver: pid 26163 from 193.123.2.227
+@40000000433225852aa997bc tcpserver: ok 26163 a.mx.jms1.net:209.114.200.128:25 pixelwww.pixelpower.com:193.123.2.227::4232
+@40000000433225852aa9a374 rblsmtpd: 193.123.2.227 pid 26163: 553 Sent mail to honeypot qmmycemglyiuq@delete.net on 2005-01-04
+@400000004332258538eae27c tcpserver: end 26163 status 0
+@400000004332258538eaea4c tcpserver: status: 5/30

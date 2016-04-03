@@ -78,6 +78,10 @@ int main(int argc, char *argv[])
                     }
                     arg += 1;
                     break;
+                case '@':
+                    printf("    if (!ptime_at(dst, str, off, len)) return false;\n");
+                    arg += 1;
+                    break;
                 default:
                     printf("    if (!ptime_%c(dst, str, off, len)) return false;\n",
                         arg[index + 1]);

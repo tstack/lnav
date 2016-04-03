@@ -115,6 +115,21 @@ Jul 20 22:59:29 2009 -- 000
 Jul 20 22:59:29 2009 -- 000
 EOF
 
+run_test ./drive_logfile -t -f generic_log ${srcdir}/logfile_tai64n.0
+
+check_output "tai64n timestamps interpreted incorrectly?" <<EOF
+Sep 22 03:31:05 2005 -- 997
+Sep 22 03:31:05 2005 -- 997
+Sep 22 03:31:06 2005 -- 210
+Sep 22 03:31:06 2005 -- 210
+Sep 22 03:31:07 2005 -- 714
+Sep 22 03:31:07 2005 -- 714
+Sep 22 03:31:07 2005 -- 715
+Sep 22 03:31:07 2005 -- 715
+Sep 22 03:31:07 2005 -- 954
+Sep 22 03:31:07 2005 -- 954
+EOF
+
 touch -t 200711030923 ${srcdir}/logfile_strace_log.0
 run_test ./drive_logfile -t -f strace_log ${srcdir}/logfile_strace_log.0
 

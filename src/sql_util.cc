@@ -707,3 +707,9 @@ int guess_type_from_pcre(const string &pattern, const char **collator)
         return SQLITE3_TEXT;
     }
 }
+
+/* XXX figure out how to do this with the template */
+void sqlite_close_wrapper(void *mem)
+{
+    sqlite3_close((sqlite3 *)mem);
+}

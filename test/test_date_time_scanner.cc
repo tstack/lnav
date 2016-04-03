@@ -41,11 +41,27 @@ static const char *BAD_TIMES[] = {
     "2013-22-01 12:01:22",
     "2013-00-01 12:01:22",
 
+    "@4000000043",
+
     NULL
 };
 
 int main(int argc, char *argv[])
 {
+    {
+        date_time_scanner dts;
+        struct timeval tv;
+
+        dts.convert_to_timeval("@40000000433225833b6e1a8c", -1, tv);
+        assert(tv.tv_sec == 1127334665);
+        assert(tv.tv_usec == 997071);
+
+        memset(&tv, 0, sizeof(tv));
+        dts.convert_to_timeval("@4000000043322583", -1, tv);
+        assert(tv.tv_sec == 1127334665);
+        assert(tv.tv_usec == 0);
+    }
+
     for (int lpc = 0; BAD_TIMES[lpc]; lpc++) {
         date_time_scanner dts;
         struct timeval tv;

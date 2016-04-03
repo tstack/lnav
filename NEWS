@@ -38,6 +38,7 @@ lnav v0.8.1:
        executions.
      * Added a "/ui/clock-format" configuration option that controls the time
        format in the top-left corner.
+     * Added support for TAI64 timestamps (http://cr.yp.to/libtai/tai64.html).
 
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log

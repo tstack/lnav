@@ -46,12 +46,16 @@ enum exttm_bits_t {
     ETB_YEAR_SET,
     ETB_MONTH_SET,
     ETB_DAY_SET,
+    ETB_MACHINE_ORIENTED,
+    ETB_EPOCH_TIME,
 };
 
 enum exttm_flags_t {
     ETF_YEAR_SET = (1L << ETB_YEAR_SET),
     ETF_MONTH_SET = (1L << ETB_MONTH_SET),
     ETF_DAY_SET = (1L << ETB_DAY_SET),
+    ETF_MACHINE_ORIENTED = (1L << ETB_MACHINE_ORIENTED),
+    ETF_EPOCH_TIME = (1L << ETB_EPOCH_TIME),
 };
 
 struct exttm {
@@ -498,6 +502,61 @@ inline bool ptime_char(char val, const char *str, off_t &off_inout, ssize_t len)
             return false;
         }
     });
+
+    return true;
+}
+
+template<typename T>
+inline bool ptime_hex_to_quad(T &value_inout, const char quad)
+{
+    value_inout <<= 4;
+    if ('0' <= quad && quad <= '9') {
+        value_inout |= ((quad - '0') & 0x0f);
+    }
+    else if ('a' <= quad && quad <= 'f') {
+        value_inout |= 10 + ((quad - 'a') & 0x0f);
+    }
+    else if ('A' <= quad && quad <= 'F') {
+        value_inout |= 10 + ((quad - 'A') & 0x0f);
+    }
+    else {
+        return false;
+    }
+
+    return true;
+}
+
+inline bool ptime_at(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
+{
+    PTIME_CONSUME(16, {
+        int64_t secs = 0;
+
+        for (int lpc = 0; lpc < 16; lpc++) {
+            char quad = str[off_inout + lpc];
+
+            if (!ptime_hex_to_quad(secs, quad)) {
+                return false;
+            }
+        }
+        dst->et_nsec = 0;
+
+        time_t small_secs = secs - 4611686018427387914ULL;
+        secs2tm(&small_secs, &dst->et_tm);
+    });
+
+    if ((len - off_inout) == 8) {
+        PTIME_CONSUME(8, {
+            for (int lpc = 0; lpc < 8; lpc++) {
+                char quad = str[off_inout + lpc];
+
+                if (!ptime_hex_to_quad(dst->et_nsec, quad)) {
+                    return false;
+                }
+            }
+        });
+    }
+
+    dst->et_flags |= ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return true;
 }

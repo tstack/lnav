@@ -280,6 +280,7 @@ const char *log_format::log_scanf(const char *line,
 
             if (retval) {
                 this->lf_fmt_lock = curr_fmt;
+                this->lf_timestamp_flags = tm_out->et_flags;
                 done = true;
             }
         }
@@ -712,6 +713,7 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
             continue;
         }
 
+        this->lf_timestamp_flags = log_time_tm.et_flags;
         if (level_cap != NULL && level_cap->c_begin != -1) {
             pcre_context_static<128> pc_level;
             pcre_input pi_level(pi.get_substr_start(level_cap),
@@ -979,6 +981,7 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
 
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         jlu->jlu_format->lf_date_time.scan((const char *)str, len, jlu->jlu_format->get_timestamp_formats(), &tm_out, tv_out);
+        jlu->jlu_format->lf_timestamp_flags = tm_out.et_flags;
         jlu->jlu_base_line->set_time(tv_out);
     }
     else if (jlu->jlu_format->elf_level_field == field_name) {

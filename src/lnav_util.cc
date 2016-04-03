@@ -38,8 +38,6 @@
 #include <ctype.h>
 #include <wordexp.h>
 
-#include <sqlite3.h>
-
 #include <fstream>
 
 #include "auto_fd.hh"
@@ -224,12 +222,6 @@ std::string precise_time_ago(const struct timeval &tv, bool convert_local)
     else {
         return time_ago(tv.tv_sec, convert_local);
     }
-}
-
-/* XXX figure out how to do this with the template */
-void sqlite_close_wrapper(void *mem)
-{
-    sqlite3_close((sqlite3 *)mem);
 }
 
 std::string get_current_dir(void)
@@ -561,7 +553,8 @@ const char *date_time_scanner::scan(const char *time_dest,
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
                 }
-                if (convert_local && this->dts_local_time) {
+                if (convert_local &&
+                    (this->dts_local_time || tm_out->et_flags & ETF_EPOCH_TIME)) {
                     time_t gmt = tm2sec(&tm_out->et_tm);
 
                     this->to_localtime(gmt, *tm_out);
@@ -584,7 +577,8 @@ const char *date_time_scanner::scan(const char *time_dest,
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
                 }
-                if (convert_local && this->dts_local_time) {
+                if (convert_local &&
+                    (this->dts_local_time || tm_out->et_flags & ETF_EPOCH_TIME)) {
                     time_t gmt = tm2sec(&tm_out->et_tm);
 
                     this->to_localtime(gmt, *tm_out);

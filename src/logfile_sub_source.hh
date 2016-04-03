@@ -593,8 +593,9 @@ private:
 
     logfile *         lss_token_file;
     std::string       lss_token_value;
+    string_attrs_t    lss_token_attrs;
+    std::vector<logline_value> lss_token_values;
     shared_buffer     lss_share_manager;
-    int               lss_token_date_end;
     logfile::iterator lss_token_line;
     std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];
     logline::level_t  lss_min_log_level;

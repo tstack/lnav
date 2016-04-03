@@ -669,7 +669,8 @@ public:
 
     log_format() : lf_mod_index(0),
                    lf_fmt_lock(-1),
-                   lf_timestamp_field(intern_string::lookup("timestamp", -1)) {
+                   lf_timestamp_field(intern_string::lookup("timestamp", -1)),
+                   lf_timestamp_flags(0) {
     };
 
     virtual ~log_format() { };
@@ -779,6 +780,7 @@ public:
     int lf_fmt_lock;
     intern_string_t lf_timestamp_field;
     std::vector<const char *> lf_timestamp_format;
+    int lf_timestamp_flags;
     std::map<std::string, action_def> lf_action_defs;
     std::vector<logline_value_stats> lf_value_stats;
 protected:

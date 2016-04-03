@@ -168,9 +168,6 @@ object_field_t<UnaryFunction, Member> object_field(UnaryFunction &func,
     return object_field_t<UnaryFunction, Member>(func, mem);
 }
 
-/* XXX figure out how to do this with the template */
-void sqlite_close_wrapper(void *mem);
-
 std::string get_current_dir(void);
 
 bool change_to_parent_dir(void);

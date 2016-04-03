@@ -84,4 +84,7 @@ void sql_execute_script(sqlite3 *db,
 
 int guess_type_from_pcre(const std::string &pattern, const char **collator);
 
+/* XXX figure out how to do this with the template */
+void sqlite_close_wrapper(void *mem);
+
 #endif

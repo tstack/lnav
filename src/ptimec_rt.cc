@@ -92,6 +92,7 @@ bool ptime_fmt(const char *fmt, struct exttm *dst, const char *str, off_t &off, 
                 FMT_CASE('Y', Y);
                 FMT_CASE('y', y);
                 FMT_CASE('z', z);
+                FMT_CASE('@', at);
             }
         }
         else {
