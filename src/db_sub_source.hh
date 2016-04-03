@@ -292,7 +292,7 @@ public:
             return this->hm_name == name;
         };
 
-        const std::string hm_name;
+        std::string hm_name;
         int hm_column_type;
         bool hm_graphable;
         bool hm_log_time;
