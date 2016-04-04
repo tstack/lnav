@@ -882,16 +882,36 @@ void handle_paging_key(int ch)
 
                 ldh.parse_line(log_view.get_top(), true);
 
-                for (vector<logline_value>::iterator iter = ldh.ldh_line_values.begin();
-                     iter != ldh.ldh_line_values.end();
-                     ++iter) {
-                    const logline_value_stats *stats = iter->lv_format->stats_for_value(iter->lv_name);
+                if (tc == &lnav_data.ld_views[LNV_DB]) {
+                    db_label_source &dls = lnav_data.ld_db_row_source;
 
-                    if (stats == NULL) {
-                        continue;
+                    for (vector<db_label_source::header_meta>::iterator iter = dls.dls_headers.begin();
+                         iter != dls.dls_headers.end();
+                         ++iter) {
+                        if (!iter->hm_graphable) {
+                            continue;
+                        }
+
+                        lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                              "numeric-colname",
+                                                              iter->hm_name);
                     }
+                }
+                else {
+                    for (vector<logline_value>::iterator iter = ldh.ldh_line_values.begin();
+                         iter != ldh.ldh_line_values.end();
+                         ++iter) {
+                        const logline_value_stats *stats = iter->lv_format->stats_for_value(
+                            iter->lv_name);
 
-                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "numeric-colname", iter->lv_name.to_string());
+                        if (stats == NULL) {
+                            continue;
+                        }
+
+                        lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                              "numeric-colname",
+                                                              iter->lv_name.to_string());
+                    }
                 }
 
                 for (vector<string>::iterator iter = ldh.ldh_namer->cn_names.begin();
