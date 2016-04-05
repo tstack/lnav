@@ -180,7 +180,7 @@ inline bool ptime_s(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     }
 
     secs2tm(&epoch, &dst->et_tm);
-    dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET;
+    dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return (epoch > 0);
 }
@@ -247,7 +247,7 @@ inline bool ptime_i(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     dst->et_nsec = (epoch_ms % 1000ULL) * 1000000;
     epoch = (epoch_ms / 1000ULL);
     secs2tm(&epoch, &dst->et_tm);
-    dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET;
+    dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return (epoch_ms > 0);
 }
@@ -556,7 +556,7 @@ inline bool ptime_at(struct exttm *dst, const char *str, off_t &off_inout, ssize
         });
     }
 
-    dst->et_flags |= ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
+    dst->et_flags |= ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return true;
 }

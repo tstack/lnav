@@ -2,7 +2,8 @@
 lnav v0.8.1:
      Features:
      * Added a spectrogram command and view that displays the values of a
-       numeric message field over time.
+       numeric field over time.  The view works for log message fields or
+       for database result columns.
      * Log formats can now create SQL views and execute other statements
        by adding '.sql' files to their format directories.  The SQL scripts
        will be executed on startup.

@@ -13,14 +13,14 @@ PACKAGE_URLS="\
     http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz \
     http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz \
     ftp://invisible-island.net/ncurses/ncurses-5.9.tar.gz \
-    ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.37.tar.gz \
+    ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.38.tar.gz \
     ftp://ftp.cwru.edu/pub/bash/readline-6.3.tar.gz \
     http://zlib.net/zlib-1.2.8.tar.gz \
     http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz \
-    http://sqlite.org/2015/sqlite-autoconf-3090000.tar.gz \
+    http://sqlite.org/2016/sqlite-autoconf-3120000.tar.gz \
     http://openssl.org/source/openssl-1.0.1p.tar.gz \
-    http://www.libssh2.org/download/libssh2-1.6.0.tar.gz \
-    http://curl.haxx.se/download/curl-7.45.0.tar.gz \
+    http://www.libssh2.org/download/libssh2-1.7.0.tar.gz \
+    http://curl.haxx.se/download/curl-7.48.0.tar.gz \
     "
 
 SQLITE_CFLAGS="\
@@ -78,7 +78,7 @@ if test x"${OS}" != x"FreeBSD"; then
          && \
      make && make install)
 
-    (cd pcre-8.37 && \
+    (cd pcre-8.38 && \
      ./configure --prefix=${FAKE_ROOT} \
          --enable-jit \
          --enable-utf \
@@ -116,7 +116,7 @@ else
          && \
      make && make install)
 
-    (cd pcre-8.37 && \
+    (cd pcre-8.38 && \
      ./configure --prefix=${FAKE_ROOT} \
          --enable-jit \
          --enable-utf \

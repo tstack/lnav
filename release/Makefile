@@ -1,5 +1,5 @@
 
-VERSION=0.8.0
+VERSION=0.8.1
 
 SRC_VERSION=master
 
@@ -48,7 +48,7 @@ release: linux-ospkg freebsd-package osx-package
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
-	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.8.0-1.x86_64.rpm
+	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.8.1-1.x86_64.rpm
 
 clean:
 	cd vagrant-static && vagrant destroy -f

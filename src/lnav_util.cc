@@ -529,7 +529,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                 }
                 tv_out.tv_sec = gmt;
                 tv_out.tv_usec = 0;
-                tm_out->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET;
+                tm_out->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len = off;
