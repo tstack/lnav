@@ -191,7 +191,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                                      padding,
                                      ' ');
                     shift_string_attrs(this->lss_token_attrs,
-                                       time_range.lr_start,
+                                       time_range.lr_start + 1,
                                        padding);
                 }
                 value_out.replace(time_range.lr_start,

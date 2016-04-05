@@ -62,16 +62,16 @@ Display
 * highlight <regex> - Colorize text that matches the given regex.
 * clear-highlight <regex> - Clear a previous highlight.
 
-* spectrogram <numeric-field> - Generate a spectrogram for the given log
-  message field. The spectrogram view displays the range of possible values of
-  the field on the horizontal axis and time on the vertical axis.  The
-  horizontal axis is split into buckets where each bucket counts how many log
-  messages contained the field with a value in that range.  The buckets are
-  colored based on the count in the bucket: green means low, yellow means
-  medium, and red means high.  The exact ranges for the colors is computed
-  automatically and displayed in the middle of the top line of the view.  The
-  minimum and maximum values for the field are displayed in the top left and
-  right sides of the view, respectively.
+* spectrogram <numeric-field> - Generate a spectrogram for a numeric log
+  message field or SQL result column. The spectrogram view displays the range
+  of possible values of the field on the horizontal axis and time on the
+  vertical axis.  The horizontal axis is split into buckets where each bucket
+  counts how many log messages contained the field with a value in that range.
+  The buckets are colored based on the count in the bucket: green means low,
+  yellow means medium, and red means high.  The exact ranges for the colors is
+  computed automatically and displayed in the middle of the top line of the
+  view.  The minimum and maximum values for the field are displayed in the
+  top left and right sides of the view, respectively.
 
 * switch-to-view <name> - Switch to the given view name (e.g. log, text, ...)
 
