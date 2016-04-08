@@ -64,7 +64,7 @@ struct log_cursor {
     };
 
     bool is_eof() const {
-        return this->lc_curr_line == this->lc_end_line;
+        return this->lc_curr_line >= this->lc_end_line;
     };
 };
 

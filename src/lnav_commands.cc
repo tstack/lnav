@@ -2561,8 +2561,7 @@ public:
     db_spectro_value_source(string colname)
         : dsvs_colname(colname),
           dsvs_begin_time(0),
-          dsvs_end_time(0),
-          dsvs_found(false) {
+          dsvs_end_time(0) {
         this->update_stats();
     };
 
@@ -2577,11 +2576,23 @@ public:
 
         this->dsvs_column_index = dls.column_name_to_index(this->dsvs_colname);
 
-        if (dls.dls_time_column_index == -1 ||
-            this->dsvs_column_index == -1 ||
-            !dls.dls_headers[this->dsvs_column_index].hm_graphable ||
-            dls.dls_rows.empty()) {
-            this->dsvs_found = false;
+        if (!dls.has_log_time_column()) {
+            this->dsvs_error_msg = "no 'log_time' column found, unable to create spectrogram";
+            return;
+        }
+
+        if (this->dsvs_column_index == -1) {
+            this->dsvs_error_msg = "unknown column -- " + this->dsvs_colname;
+            return;
+        }
+
+        if (!dls.dls_headers[this->dsvs_column_index].hm_graphable) {
+            this->dsvs_error_msg = "column is not numeric -- " + this->dsvs_colname;
+            return;
+        }
+
+        if (dls.dls_rows.empty()) {
+            this->dsvs_error_msg = "empty result set";
             return;
         }
 
@@ -2592,7 +2603,6 @@ public:
         this->dsvs_stats.lvs_min_value = bs.bs_min_value;
         this->dsvs_stats.lvs_max_value = bs.bs_max_value;
         this->dsvs_stats.lvs_count = dls.dls_rows.size();
-        this->dsvs_found = true;
     };
 
     void spectro_bounds(spectrogram_bounds &sb_out) {
@@ -2642,7 +2652,7 @@ public:
     time_t dsvs_begin_time;
     time_t dsvs_end_time;
     int dsvs_column_index;
-    bool dsvs_found;
+    string dsvs_error_msg;
 };
 
 static string com_spectrogram(string cmdline, vector<string> &args)
@@ -2668,8 +2678,8 @@ static string com_spectrogram(string cmdline, vector<string> &args)
             auto_ptr<db_spectro_value_source> dsvs(
                 new db_spectro_value_source(colname));
 
-            if (!dsvs->dsvs_found) {
-                retval = "error: unknown numeric message field -- " + colname;
+            if (!dsvs->dsvs_error_msg.empty()) {
+                retval = "error: " + dsvs->dsvs_error_msg;
             }
             else {
                 ss.ss_value_source = dsvs.release();
@@ -2693,8 +2703,10 @@ static string com_spectrogram(string cmdline, vector<string> &args)
         if (found) {
             ensure_view(&lnav_data.ld_views[LNV_SPECTRO]);
 
-            lnav_data.ld_rl_view->set_alt_value(
-                HELP_MSG_2(z, Z, "to zoom in/out"));
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->set_alt_value(
+                    HELP_MSG_2(z, Z, "to zoom in/out"));
+            }
 
             retval = "info: visualizing field -- " + colname;
         }

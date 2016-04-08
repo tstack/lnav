@@ -455,7 +455,7 @@ public:
 
         if (this->lv_window == NULL) {
             height_out = std::max(this->lv_height, vis_line_t(1));
-            width_out = 0;
+            width_out = 80;
         }
         else {
             getmaxyx(this->lv_window, height, width_out);

@@ -519,6 +519,9 @@ static int vt_rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *p_rowid)
 
 void log_cursor::update(unsigned char op, vis_line_t vl, bool exact)
 {
+    if (vl < 0) {
+        vl = vis_line_t(-1);
+    }
     switch (op) {
     case SQLITE_INDEX_CONSTRAINT_EQ:
         if (vl < this->lc_end_line) {

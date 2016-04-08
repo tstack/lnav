@@ -48,6 +48,10 @@ public:
 
     ~db_label_source() { };
 
+    bool has_log_time_column() const {
+        return !this->dls_time_column.empty();
+    };
+
     size_t text_line_count() {
         return this->dls_rows.size();
     };

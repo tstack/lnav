@@ -2,6 +2,102 @@
 
 lnav_test="${top_builddir}/src/lnav-test"
 
+run_test ${lnav_test} -n \
+    -c ';select log_time from access_log where log_line > 100000' \
+    -c ':switch-to-view db' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "out-of-range query failed?" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time from access_log where log_line > -100000' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "out-of-range query failed?" <<EOF
+        log_time
+2009-07-20 22:59:26.000
+2009-07-20 22:59:29.000
+2009-07-20 22:59:29.000
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time from access_log where log_line < -10000' \
+    -c ':switch-to-view db' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "out-of-range query failed?" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time from access_log where log_line > -10000' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "out-of-range query failed?" <<EOF
+        log_time
+2009-07-20 22:59:26.000
+2009-07-20 22:59:29.000
+2009-07-20 22:59:29.000
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time from access_log where log_line < 0' \
+    -c ':switch-to-view db' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "out-of-range query failed?" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time from access_log where log_line <= 0' \
+    -c ':switch-to-view db' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "range query failed?" <<EOF
+        log_time
+2009-07-20 22:59:26.000
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time from access_log where log_line >= 0' \
+    -c ':switch-to-view db' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "range query failed?" <<EOF
+        log_time
+2009-07-20 22:59:26.000
+2009-07-20 22:59:29.000
+2009-07-20 22:59:29.000
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ';select sc_bytes from access_log' \
+    -c ':spectrogram sc_bytes' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "spectrogram worked without log_time?" <<EOF
+error: no 'log_time' column found, unable to create spectrogram
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time,sc_bytes from access_log' \
+    -c ':spectrogram sc_byes' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "spectrogram worked with bad column?" <<EOF
+error: unknown column -- sc_byes
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time,c_ip from access_log' \
+    -c ':spectrogram c_ip' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "spectrogram worked with non-numeric column?" <<EOF
+error: column is not numeric -- c_ip
+EOF
+
 
 run_test ${lnav_test} -n \
     -c ";select log_time,log_actual_time from syslog_log" \
