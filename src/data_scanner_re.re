@@ -130,7 +130,10 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
            cap[1].c_end -= 1;
            return true;
        }
-       ("u"|"r")?"'"('\\'.|"''"|[^\x00\'])*"'" {
+       [a-qstv-zA-QSTV-Z]"'" {
+           CAPTURE(DT_WORD);
+       }
+       ("u"|"r")?"'"('\\'.|"''"|[^\x00\'])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            switch (pi.get_string()[cap[1].c_begin]) {
            case 'u':
