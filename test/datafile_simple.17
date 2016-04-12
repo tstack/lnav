@@ -1,0 +1,19 @@
+             foo=[]; bar=['a', 'b']
+ key   0:3   ^-^                     foo
+ grp   5:5       ^                   
+ val   5:5       ^                   
+pair   0:5   ^---^                   foo=[
+ key   8:11          ^-^             bar
+ key  14:14               ^          
+quot  14:15                ^         a
+ val  14:15                ^         a
+pair  14:15                ^         a
+ key  19:19                    ^     
+quot  19:20                     ^    b
+ val  19:20                     ^    b
+pair  19:20                     ^    b
+ grp  14:20                ^----^    a', 'b
+ val  14:20                ^----^    a', 'b
+pair   8:20          ^----------^    bar=['a', 'b
+msg         :foo=[]; bar=['a', 'b']
+format      :foo=[#]; bar=[#]

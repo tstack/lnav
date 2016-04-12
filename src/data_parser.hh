@@ -323,7 +323,7 @@ public:
 
         void                    update_capture(void)
         {
-            if (this->e_sub_elements != NULL) {
+            if (this->e_sub_elements != NULL && !this->e_sub_elements->empty()) {
                 this->e_capture.c_begin =
                     this->e_sub_elements->front().e_capture.c_begin;
                 this->e_capture.c_end =
@@ -907,12 +907,19 @@ private:
                     std::list<element_list_t>::reverse_iterator riter =
                         this->dp_group_stack.rbegin();
                     ++riter;
+                    state_stack.top().finalize();
+                    this->dp_group_stack.back().el_format = state_stack.top().dfs_format;
+                    state_stack.pop();
                     if (!this->dp_group_stack.back().empty()) {
-                        state_stack.top().finalize();
-                        this->dp_group_stack.back().el_format = state_stack.top().dfs_format;
-                        state_stack.pop();
                         (*riter).PUSH_BACK(element(this->dp_group_stack.back(),
                                                    DNT_GROUP));
+                    }
+                    else {
+                        (*riter).PUSH_BACK(element());
+                        riter->back().e_capture.c_begin = elem.e_capture.c_begin;
+                        riter->back().e_capture.c_end = elem.e_capture.c_begin;
+                        riter->back().e_token = DNT_GROUP;
+                        riter->back().assign_elements(this->dp_group_stack.back());
                     }
                     this->dp_group_stack.pop_back();
                 }
