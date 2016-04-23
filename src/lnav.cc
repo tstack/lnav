@@ -2230,6 +2230,15 @@ int main(int argc, char *argv[])
     setlocale(LC_NUMERIC, "");
     umask(077);
 
+    /* Disable Lnav from being able to execute external commands if
+     * "LNAVSECURE" environment variable is set by the user.
+     */
+    if (getenv("LNAVSECURE") != NULL) {
+        lnav_data.ld_secure_mode = true;
+    } else {
+        lnav_data.ld_secure_mode = false;
+    }
+
     lnav_data.ld_program_name = argv[0];
     lnav_data.ld_local_vars.push(map<string, string>());
     add_ansi_vars(lnav_data.ld_local_vars.top());
