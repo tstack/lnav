@@ -454,6 +454,10 @@ static string com_save_to(string cmdline, vector<string> &args)
         return "";
     }
 
+    if (getenv("LNAVSECURE") != NULL) {
+        return args[0] + ": unavailable in secure mode";
+    }
+
     if (args.size() < 2) {
         return "error: expecting file name or '-' to write to the terminal";
     }
@@ -641,15 +645,15 @@ static string com_save_to(string cmdline, vector<string> &args)
 
 static string com_pipe_to(string cmdline, vector<string> &args)
 {
-    if (getenv("LNAVSECURE") != NULL) {
-        return "pipe-to: unavailable in secure mode";
-    }
-
     string retval = "error: expecting command to execute";
 
     if (args.size() == 0) {
         args.push_back("filename");
         return "";
+    }
+
+    if (getenv("LNAVSECURE") != NULL) {
+        return args[0] + ": unavailable in secure mode";
     }
 
     if (args.size() < 2) {
@@ -1340,10 +1344,6 @@ static string com_session(string cmdline, vector<string> &args)
 
 static string com_open(string cmdline, vector<string> &args)
 {
-    if (getenv("LNAVSECURE") != NULL) {
-        return "open: unavailable in secure mode";
-    }
-
     string retval = "error: expecting file name to open";
 
     if (args.size() == 0) {
@@ -1352,6 +1352,9 @@ static string com_open(string cmdline, vector<string> &args)
     }
     else if (args.size() < 2) {
         return retval;
+    }
+    else if (getenv("LNAVSECURE") != NULL) {
+        return args[0] + ": unavailable in secure mode";
     }
 
     vector<string> word_exp;
