@@ -40,6 +40,16 @@ lnav v0.8.1:
      * Added a "/ui/clock-format" configuration option that controls the time
        format in the top-left corner.
      * Added support for TAI64 timestamps (http://cr.yp.to/libtai/tai64.html).
+     * Added a safe execution mode. If 'LNAVSECURE' environment variable is set
+       before executing lnav, the following commands are disabled:
+       - open
+       - pipe-to
+       - pipe-line-to
+       - write-*-to
+       - eval
+       This makes it easier to run lnav with escalated privileges in restricted
+       environments, without the risk of users being able to use the above
+       mentioned commands to gain privileged access.
 
      Interface Changes:
      * The 'o/O' hotkeys have been reassigned to navigate through log

@@ -454,6 +454,10 @@ static string com_save_to(string cmdline, vector<string> &args)
         return "";
     }
 
+    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return "error: " + args[0] + " -- unavailable in secure mode";
+    }
+
     if (args.size() < 2) {
         return "error: expecting file name or '-' to write to the terminal";
     }
@@ -646,6 +650,10 @@ static string com_pipe_to(string cmdline, vector<string> &args)
     if (args.size() == 0) {
         args.push_back("filename");
         return "";
+    }
+
+    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return "error: " + args[0] + " -- unavailable in secure mode";
     }
 
     if (args.size() < 2) {
@@ -1341,6 +1349,9 @@ static string com_open(string cmdline, vector<string> &args)
     if (args.size() == 0) {
         args.push_back("filename");
         return "";
+    }
+    else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return "error: " + args[0] + " -- unavailable in secure mode";
     }
     else if (args.size() < 2) {
         return retval;
@@ -2230,6 +2241,9 @@ static string com_eval(string cmdline, vector<string> &args)
 
     if (args.empty()) {
 
+    }
+    else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return "error: " + args[0] + " -- unavailable in secure mode";
     }
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);

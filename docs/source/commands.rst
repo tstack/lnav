@@ -138,3 +138,15 @@ The following options are available:
 * /ui/clock-format - Specifies the date-time format of the clock in the
   top-left corner of the UI.  The format conversion specifiers are the same as
   in strftime(3).
+
+.. note:: The following commands can be disabled by setting the ``LNAVSECURE``
+   environment variable before executing the **lnav** binary:
+
+   - open
+   - eval
+   - pipe-to
+   - pipe-line-to
+   - write-*-to
+
+   This makes it easier to run lnav in restricted environments without the risk
+   of privilege escalation.

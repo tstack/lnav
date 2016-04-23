@@ -395,6 +395,8 @@ run_test ${lnav_test} -n \
     -c ':write-json-to -' \
     ${test_dir}/logfile_access_log.0
 
+
+
 check_output "write-json-to is not working" <<EOF
 [
     {
@@ -454,6 +456,20 @@ check_output "write-json-to is not working" <<EOF
 ]
 EOF
 
+
+# By setting the LNAVSECURE mode before executing the command, we will disable
+# the access to the write-json-to command and the output would just be the
+# actual display of select query rather than json output.
+export LNAVSECURE=1
+run_test ${lnav_test} -n \
+    -c ";select * from access_log" \
+    -c ':write-json-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "We managed to bypass LNAVSECURE mode" <<EOF
+error: write-json-to -- unavailable in secure mode
+EOF
+unset LNAVSECURE
 
 run_test ${lnav_test} -n \
     -c ";update generic_log set log_mark=1" \

@@ -88,6 +88,7 @@ enum {
     LNB_INSTALL,
     LNB_UPDATE_FORMATS,
     LNB_VERBOSE,
+    LNB_SECURE_MODE,
 };
 
 /** Flags set on the lnav command-line. */
@@ -104,8 +105,9 @@ typedef enum {
     LNF_INSTALL   = (1L << LNB_INSTALL),
     LNF_UPDATE_FORMATS = (1L << LNB_UPDATE_FORMATS),
     LNF_VERBOSE = (1L << LNB_VERBOSE),
+    LNF_SECURE_MODE = (1L << LNB_SECURE_MODE),
 
-    LNF__ALL      = (LNF_SYSLOG|LNF_HELP)
+    LNF__ALL      = (LNF_SYSLOG|LNF_HELP),
 } lnav_flags_t;
 
 /** The different views available. */
