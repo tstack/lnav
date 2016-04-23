@@ -641,6 +641,10 @@ static string com_save_to(string cmdline, vector<string> &args)
 
 static string com_pipe_to(string cmdline, vector<string> &args)
 {
+    if (getenv("LNAVSECURE") != NULL) {
+        return "pipe-to: unavailable in secure mode";
+    }
+
     string retval = "error: expecting command to execute";
 
     if (args.size() == 0) {
@@ -1336,6 +1340,10 @@ static string com_session(string cmdline, vector<string> &args)
 
 static string com_open(string cmdline, vector<string> &args)
 {
+    if (getenv("LNAVSECURE") != NULL) {
+        return "open: unavailable in secure mode";
+    }
+
     string retval = "error: expecting file name to open";
 
     if (args.size() == 0) {
