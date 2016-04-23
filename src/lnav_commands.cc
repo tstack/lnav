@@ -2242,9 +2242,6 @@ static string com_eval(string cmdline, vector<string> &args)
     if (args.empty()) {
 
     }
-    else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
-        return "error: " + args[0] + " -- unavailable in secure mode";
-    }
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);
         string expanded_cmd;

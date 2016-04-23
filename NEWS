@@ -46,7 +46,6 @@ lnav v0.8.1:
        - pipe-to
        - pipe-line-to
        - write-*-to
-       - eval
        This makes it easier to run lnav with escalated privileges in restricted
        environments, without the risk of users being able to use the above
        mentioned commands to gain privileged access.

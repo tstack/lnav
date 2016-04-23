@@ -143,7 +143,6 @@ The following options are available:
    environment variable before executing the **lnav** binary:
 
    - open
-   - eval
    - pipe-to
    - pipe-line-to
    - write-*-to
