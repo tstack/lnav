@@ -251,6 +251,7 @@ struct _lnav_data {
 
     std::list<pid_t>                        ld_children;
     std::list<piper_proc *>                 ld_pipers;
+    bool                                    ld_secure_mode;
     xterm_mouse ld_mouse;
     term_extra ld_term_extra;
 

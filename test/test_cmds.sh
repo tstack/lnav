@@ -395,6 +395,8 @@ run_test ${lnav_test} -n \
     -c ':write-json-to -' \
     ${test_dir}/logfile_access_log.0
 
+
+
 check_output "write-json-to is not working" <<EOF
 [
     {
@@ -454,6 +456,23 @@ check_output "write-json-to is not working" <<EOF
 ]
 EOF
 
+
+# By setting the LNAVSECURE mode before executing the command, we will disable
+# the access to the write-json-to command and the output would just be the
+# actual display of select query rather than json output.
+export LNAVSECURE=1
+run_test ${lnav_test} -n \
+    -c ";select * from access_log" \
+    -c ':write-json-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "We managed to bypass LNAVSECURE mode" <<EOF
+log_line log_part         log_time        log_idle_msecs log_level log_mark       c_ip      cs_method cs_referer cs_uri_query            cs_uri_stem           cs_user_agent cs_username cs_version sc_bytes sc_status
+       0   <NULL> 2009-07-20 22:59:26.000              0 info             0 192.168.202.254 GET       -                <NULL> /vmw/cgi/tramp                   gPXE/0.9.7    -           HTTP/1.0        134       200
+       1   <NULL> 2009-07-20 22:59:29.000           3000 error            0 192.168.202.254 GET       -                <NULL> /vmw/vSphere/default/vmkboot.gz  gPXE/0.9.7    -           HTTP/1.0      46210       404
+       2   <NULL> 2009-07-20 22:59:29.000              0 info             0 192.168.202.254 GET       -                <NULL> /vmw/vSphere/default/vmkernel.gz gPXE/0.9.7    -           HTTP/1.0      78929       200
+EOF
+unset LNAVSECURE
 
 run_test ${lnav_test} -n \
     -c ";update generic_log set log_mark=1" \
