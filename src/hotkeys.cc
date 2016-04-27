@@ -400,7 +400,7 @@ void handle_paging_key(int ch)
                 textfile_sub_source &tss = lnav_data.ld_text_source;
 
                 if (!tss.empty()) {
-                    tss.rotate_right();
+                    tss.rotate_left();
                     redo_search(LNV_TEXT);
                 }
             }
@@ -414,7 +414,7 @@ void handle_paging_key(int ch)
                 textfile_sub_source &tss = lnav_data.ld_text_source;
 
                 if (!tss.empty()) {
-                    tss.rotate_left();
+                    tss.rotate_right();
                     redo_search(LNV_TEXT);
                 }
             }
