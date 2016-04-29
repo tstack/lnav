@@ -3,13 +3,21 @@
  key  29:40                               ^---------^                                                                   com.twisted
 pair  29:40                               ^---------^                                                                   com.twisted
  key  59:59                                                            ^                                                
- key  59:59                                                            ^                                                
  sym  59:82                                                             ^---------------------^                         twisted.web.server.Site
-pair  59:82                                                             ^---------------------^                         twisted.web.server.Site
- key  95:95                                                                                                ^            
+wspc  82:83                                                                                    ^                         
+word  83:91                                                                                     ^------^                instance
+wspc  91:92                                                                                             ^                
+word  92:94                                                                                              ^^             at
+wspc  94:95                                                                                                ^             
  hex  95:104                                                                                                ^-------^   0x1de9290
-pair  95:104                                                                                                ^-------^   0x1de9290
+ val  59:104                                                            ^-------------------------------------------^   twisted.web.server.Site instance at 0x1de9290
  grp  59:104                                                            ^-------------------------------------------^   twisted.web.server.Site instance at 0x1de9290
 pair  59:104                                                            ^-------------------------------------------^   twisted.web.server.Site instance at 0x1de9290
 msg         ::com.twisted:Starting factory <twisted.web.server.Site instance at 0x1de9290>
 format      ::#:Starting factory <#>
+{
+    "col_0": "com.twisted",
+    "col_1": [
+        "twisted.web.server.Site instance at 0x1de9290"
+    ]
+}

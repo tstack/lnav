@@ -123,6 +123,7 @@ noinst_HEADERS = \
 	data_parser.hh \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
+	elem_to_json.hh \
 	environ_vtab.hh \
 	field_overlay_source.hh \
 	filter_observer.hh \
@@ -223,6 +224,7 @@ libdiag_a_SOURCES = \
 	command_executor.cc \
 	curl_looper.cc \
 	db_sub_source.cc \
+	elem_to_json.cc \
 	environ_vtab.cc \
 	extension-functions.c \
 	field_overlay_source.cc \

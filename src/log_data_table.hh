@@ -175,7 +175,7 @@ public:
         }
 
         this->ldt_pairs.clear();
-        this->ldt_pairs.swap(dp.dp_pairs);
+        this->ldt_pairs.swap(dp.dp_pairs, __FILE__, __LINE__);
         this->ldt_instance += 1;
 
         return true;

@@ -4,3 +4,6 @@
 pair   0:4   ^--^                          test
 msg         :test: c'est la vie charlie's
 format      :#: c'est la vie charlie's
+{
+    "col_0": "test"
+}

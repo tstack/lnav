@@ -1,0 +1,53 @@
+             list [foo(bar=1), foo(bar=2), foo(bar=3)]
+ key   6:6        ^                                     
+ key   6:9         ^-^                                  foo
+ key  10:13            ^-^                              bar
+ num  14:15                ^                            1
+ val  14:15                ^                            1
+pair  10:15            ^---^                            bar=1
+ grp  10:15            ^---^                            bar=1
+ val  10:15            ^---^                            bar=1
+pair   6:15        ^-------^                            foo(bar=1
+ key  18:21                    ^-^                      foo
+ key  22:25                        ^-^                  bar
+ num  26:27                            ^                2
+ val  26:27                            ^                2
+pair  22:27                        ^---^                bar=2
+ grp  22:27                        ^---^                bar=2
+ val  22:27                        ^---^                bar=2
+pair  18:27                    ^-------^                foo(bar=2
+ key  30:33                                ^-^          foo
+ key  34:37                                    ^-^      bar
+ num  38:39                                        ^    3
+ val  38:39                                        ^    3
+pair  34:39                                    ^---^    bar=3
+ grp  34:39                                    ^---^    bar=3
+ val  34:39                                    ^---^    bar=3
+pair  30:39                                ^-------^    foo(bar=3
+ grp   6:39        ^-------------------------------^    foo(bar=1), foo(bar=2), foo(bar=3
+pair   6:39        ^-------------------------------^    foo(bar=1), foo(bar=2), foo(bar=3
+msg         :list [foo(bar=1), foo(bar=2), foo(bar=3)]
+format      :list [#)]
+[
+    {
+        "foo": [
+            {
+                "bar": 1
+            }
+        ]
+    },
+    {
+        "foo": [
+            {
+                "bar": 2
+            }
+        ]
+    },
+    {
+        "foo": [
+            {
+                "bar": 3
+            }
+        ]
+    }
+]

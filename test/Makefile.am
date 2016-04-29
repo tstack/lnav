@@ -237,6 +237,13 @@ dist_noinst_DATA = \
 	datafile_simple.11 \
 	datafile_simple.12 \
 	datafile_simple.13 \
+	datafile_simple.14 \
+	datafile_simple.15 \
+	datafile_simple.16 \
+	datafile_simple.17 \
+	datafile_simple.18 \
+	datafile_simple.19 \
+	datafile_simple.20 \
 	datafile_xml.0 \
 	listview_output.0 \
 	listview_output.1 \

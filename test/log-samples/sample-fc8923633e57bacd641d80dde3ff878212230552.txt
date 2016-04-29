@@ -7,3 +7,7 @@ pair  86:96                                                                     
 pair 100:104                                                                                                     ^--^  eth0
 msg         : Registering new address record for 10.1.10.62 on eth0.
 format      : Registering new address record for # on #
+{
+    "col_0": "10.1.10.62",
+    "col_1": "eth0"
+}

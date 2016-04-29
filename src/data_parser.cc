@@ -175,6 +175,10 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
         switch (next_token) {
         case DT_COLON:
         case DT_EQUALS:
+        case DT_LPAREN:
+        case DT_LCURLY:
+        case DT_LSQUARE:
+        case DT_LANGLE:
             retval = DFS_VALUE;
             break;
 

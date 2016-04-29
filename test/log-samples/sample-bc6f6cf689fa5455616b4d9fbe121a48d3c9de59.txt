@@ -14,3 +14,12 @@ pair  65:79                                                                   ^-
 pair  65:79                                                                   ^------------^   xid=0x4e17f141
 msg         : DHCPNAK from 10.1.10.1 (xid=0x4e17f141)
 format      : # from # (#)
+{
+    "col_0": "DHCPNAK",
+    "col_1": "10.1.10.1",
+    "col_2": [
+        {
+            "xid": "0x4e17f141"
+        }
+    ]
+}

@@ -6,6 +6,7 @@ set(diag_STAT_SRCS
     command_executor.cc
     curl_looper.cc
     db_sub_source.cc
+    elem_to_json.cc
     environ_vtab.cc
     extension-functions.c
     field_overlay_source.cc
@@ -88,6 +89,7 @@ set(diag_STAT_SRCS
     concise_index.hh
     column_namer.hh
     curl_looper.hh
+    elem_to_json.hh
     field_overlay_source.hh
     filter_observer.hh
     format-text-files.hh

@@ -14,3 +14,12 @@ pair  65:78                                                                   ^-
 pair  65:78                                                                   ^-----------^   xid=0xd16b79d
 msg         : DHCPACK from 10.1.10.1 (xid=0xd16b79d)
 format      : # from # (#)
+{
+    "col_0": "DHCPACK",
+    "col_1": "10.1.10.1",
+    "col_2": [
+        {
+            "xid": "0xd16b79d"
+        }
+    ]
+}

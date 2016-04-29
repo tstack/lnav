@@ -20,3 +20,14 @@ pair  83:96                                                                     
 pair  83:96                                                                                     ^-----------^   xid=0xd16b79d
 msg         : DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0xd16b79d)
 format      : # on # to # port # (#)
+{
+    "col_0": "DHCPREQUEST",
+    "col_1": "eth0",
+    "col_2": "10.1.10.1",
+    "col_3": 67,
+    "col_4": [
+        {
+            "xid": "0xd16b79d"
+        }
+    ]
+}

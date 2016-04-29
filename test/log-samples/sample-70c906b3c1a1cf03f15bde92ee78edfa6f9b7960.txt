@@ -26,3 +26,10 @@ word 125:127                                                                    
 pair  95:127                                                                                                ^------------------------------^  COMMAND=/usr/bin/env VAR1=foo ls
 msg         :    stack : TTY=ttys002 ; PWD=/ ; USER=root ; COMMAND=/usr/bin/env VAR1=foo ls
 format      :    # : TTY=# ; PWD=# ; USER=# ; COMMAND=#
+{
+    "col_0": "stack",
+    "TTY": "ttys002",
+    "PWD": "/",
+    "USER": "root",
+    "COMMAND": "/usr/bin/env VAR1=foo ls"
+}

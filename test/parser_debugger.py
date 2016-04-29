@@ -41,6 +41,8 @@ SRC_DIR = os.path.join(ROOT_DIR, "src")
 addr_to_name = {}
 name_to_addr = {}
 element_lists = collections.defaultdict(list)
+list_depth = {}
+list_format = {}
 breakpoints = set()
 
 def completer(text, state):
@@ -74,12 +76,19 @@ def getstr(capture):
 
 def printlist(name_or_addr):
     if name_or_addr in name_to_addr:
-        print "(%s) %s" % (name_or_addr, element_lists[name_to_addr[name_or_addr]])
+        addr = name_to_addr[name_or_addr]
+        print "% 3d (%s:%s) %s" % (list_depth.get(addr, -1), name_or_addr, addr, element_lists[addr])
     elif name_or_addr in element_lists:
-        print "(%s) %s" % (addr_to_name.get(name_or_addr, name_or_addr),
-                           element_lists[name_or_addr])
+        addr = name_or_addr
+        print "% 3d (%s:%s) %s" % (list_depth.get(name_or_addr, -1),
+                                addr_to_name.get(name_or_addr, name_or_addr),
+                                name_or_addr,
+                                element_lists[name_or_addr])
     else:
         print "error: unknown list --", name_or_addr
+
+    if addr in list_format:
+        print "    format -- appender(%s) term(%s) qual(%s) sep(%s) prefix_term(%s)" % tuple(list_format[addr])
 
 def handleop(fields):
     addr = fields[0]
@@ -95,8 +104,14 @@ def handleop(fields):
     if method_name == 'element_list_t':
         addr_to_name[addr] = method_args[0]
         name_to_addr[method_args[0]] = addr
+        list_depth[addr] = int(method_args[1])
     elif method_name == '~element_list_t':
-        pass
+        del element_lists[addr]
+    elif method_name == 'format':
+        list_depth[addr] = int(method_args[0])
+        list_format[addr] = method_args[1:]
+    elif method_name == 'consumed':
+        list_depth[addr] = -1
     elif method_name == 'push_back':
         el.append((method_args[0], getstr(method_args[1])))
     elif method_name == 'pop_front':
@@ -113,6 +128,10 @@ def handleop(fields):
         sub_list = other[start:end]
         del other[start:end]
         el[pos:pos] = sub_list
+    elif method_name == 'swap':
+        other = element_lists[method_args[0]]
+        element_lists[method_args[0]] = el
+        element_lists[addr] = other
     elif method_name == 'point':
         breakpoints.add(method_args[0])
     else:
@@ -122,6 +141,7 @@ def playupto(length):
     addr_to_name.clear()
     name_to_addr.clear()
     element_lists.clear()
+    list_depth.clear()
     for index in range(length):
         handleop(ops[index])
 
@@ -146,6 +166,13 @@ def find_next_point(start, name):
         if not name or fields[3] == name:
             return start + 1
     return orig_start + 1
+
+def printall():
+    print input_line
+    sorted_lists = [(list_depth.get(addr, -1), addr) for addr in element_lists]
+    sorted_lists.sort()
+    for _depth, addr in sorted_lists:
+        printlist(addr)
 
 index = len(ops)
 last_cmd = ['']
@@ -209,9 +236,7 @@ while True:
         if len(cmd) > 1:
             printlist(cmd[1])
         else:
-            print input_line
-            for addr in element_lists:
-                printlist(addr)
+            printall()
     elif cmd[0] == 'w':
         watch_list.add(cmd[1])
     elif cmd[0] == 'u':
@@ -219,5 +244,7 @@ while True:
             watch_list.remove(cmd[1])
     else:
         print "error: unknown command --", cmd
+
+    printall()
 
     last_cmd = cmd

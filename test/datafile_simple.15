@@ -1,9 +1,6 @@
              Worker successfully completed [ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False)]
  key  31:31                                ^                                                                                                                                                                                                  
- key  31:31                                ^                                                                                                                                                                                                  
- sym  31:46                                 ^-------------^                                                                                                                                                                                   ImmutableChange
-pair  31:46                                 ^-------------^                                                                                                                                                                                   ImmutableChange
- key  47:47                                                ^                                                                                                                                                                                  
+ key  31:46                                 ^-------------^                                                                                                                                                                                   ImmutableChange
  key  47:47                                                ^                                                                                                                                                                                  
  sym  47:63                                                 ^--------------^                                                                                                                                                                  Direction.UPLOAD
  val  47:63                                                 ^--------------^                                                                                                                                                                  Direction.UPLOAD
@@ -45,8 +42,34 @@ cnst 216:221                                                                    
  val 216:221                                                                                                                                                                                                                         ^---^    False
 pair 206:221                                                                                                                                                                                                               ^-------------^    is_folder=False
  grp  47:221                                                ^----------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
-pair  47:221                                                ^----------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
+ val  47:221                                                ^----------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
+pair  31:221                                ^--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
  grp  31:221                                ^--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
 pair  31:221                                ^--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
 msg         :Worker successfully completed [ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False)]
 format      :Worker successfully completed [#)]
+[
+    {
+        "ImmutableChange": {
+            "col_0": "Direction.UPLOAD",
+            "col_1": "Action.CREATE",
+            "ino": {
+                "LocalID": [
+                    {
+                        "inode": 5567236
+                    }
+                ]
+            },
+            "path": "/Users/stack/Google Drive",
+            "name": "pyjsonpath1.patch",
+            "parent_ino": {
+                "LocalID": [
+                    {
+                        "inode": 46166734
+                    }
+                ]
+            },
+            "is_folder": false
+        }
+    }
+]

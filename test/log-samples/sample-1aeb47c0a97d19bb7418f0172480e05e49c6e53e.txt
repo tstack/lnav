@@ -10,3 +10,8 @@ pair  61:63                                                               ^^    
 pair  75:80                                                                             ^---^          55327
 msg         : bound to 10.1.10.62 -- renewal in 55327 seconds.
 format      : bound to # # renewal in # seconds
+{
+    "col_0": "10.1.10.62",
+    "col_1": "--",
+    "col_2": 55327
+}

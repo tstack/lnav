@@ -47,12 +47,13 @@
 #include "byte_array.hh"
 #include "data_scanner.hh"
 
-#define ELEMENT_LIST_T(var)                var("" #var, __FILE__, __LINE__)
+#define ELEMENT_LIST_T(var)                var("" #var, __FILE__, __LINE__, group_depth)
 #define PUSH_FRONT(elem)                   push_front(elem, __FILE__, __LINE__)
 #define PUSH_BACK(elem)                    push_back(elem, __FILE__, __LINE__)
 #define POP_FRONT(elem)                    pop_front(__FILE__, __LINE__)
 #define POP_BACK(elem)                     pop_back(__FILE__, __LINE__)
 #define CLEAR(elem)                        clear2(__FILE__, __LINE__)
+#define SWAP(other)                        swap(other, __FILE__, __LINE__)
 #define SPLICE(pos, other, first, last)    splice(pos, other, first, last, \
                                                   __FILE__, __LINE__)
 
@@ -102,16 +103,17 @@ data_format_state_t dfs_semi_next(data_format_state_t state,
 data_format_state_t dfs_comma_next(data_format_state_t state,
                                    data_token_t next_token);
 
-#define LIST_INIT_TRACE                 \
-    do {                                \
-        if (TRACE_FILE != NULL) {       \
-            fprintf(TRACE_FILE,         \
-                    "%p %s:%d %s %s\n", \
-                    this,               \
-                    fn, line,           \
-                    __func__,           \
-                    varname);           \
-        }                               \
+#define LIST_INIT_TRACE                    \
+    do {                                   \
+        if (TRACE_FILE != NULL) {          \
+            fprintf(TRACE_FILE,            \
+                    "%p %s:%d %s %s %d\n", \
+                    this,                  \
+                    fn, line,              \
+                    __func__,              \
+                    varname,               \
+                    group_depth);          \
+        }                                  \
     } while (false)
 
 #define LIST_DEINIT_TRACE            \
@@ -165,6 +167,18 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
         }                                                     \
     } while (false);
 
+#define SWAP_TRACE(other)                                     \
+    do {                                                      \
+        if (TRACE_FILE != NULL) {                             \
+            fprintf(TRACE_FILE,                               \
+                    "%p %s:%d %s %p\n",                       \
+                    this,                                     \
+                    fn, line,                                 \
+                    __func__,                                 \
+                    &other);                                  \
+        }                                                     \
+    } while (false);
+
 #define POINT_TRACE(name)                   \
     do {                                    \
         if (TRACE_FILE) {                   \
@@ -173,6 +187,33 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
                     __FILE__, __LINE__,     \
                     name);                  \
         }                                   \
+    } while (false);
+
+#define FORMAT_TRACE(elist)                   \
+    do {                                     \
+        if (TRACE_FILE) {                    \
+            const data_format &df = elist.el_format; \
+            fprintf(TRACE_FILE,              \
+                    "%p %s:%d format %d %s %s %s %s %s\n", \
+                    &elist, \
+                    __FILE__, __LINE__,      \
+                    group_depth, \
+                    data_scanner::token2name(df.df_appender),  \
+                    data_scanner::token2name(df.df_terminator),  \
+                    data_scanner::token2name(df.df_qualifier),  \
+                    data_scanner::token2name(df.df_separator),          \
+                    data_scanner::token2name(df.df_prefix_terminator)); \
+        }                                    \
+    } while (false);
+
+#define CONSUMED_TRACE(elist)                   \
+    do {                                     \
+        if (TRACE_FILE) {                    \
+            fprintf(TRACE_FILE,              \
+                    "%p %s:%d consumed\n", \
+                    &elist, \
+                    __FILE__, __LINE__); \
+        }                                    \
     } while (false);
 
 class data_parser {
@@ -190,7 +231,7 @@ public:
 
     class element_list_t : public std::list<element> {
 public:
-        element_list_t(const char *varname, const char *fn, int line)
+        element_list_t(const char *varname, const char *fn, int line, int group_depth = -1)
         {
             LIST_INIT_TRACE;
         }
@@ -200,6 +241,7 @@ public:
             const char *varname = "_anon2_";
             const char *fn      = __FILE__;
             int         line    = __LINE__;
+            int         group_depth = -1;
 
             LIST_INIT_TRACE;
         };
@@ -250,6 +292,12 @@ public:
 
             this->std::list<element>::clear();
         };
+
+        void swap(element_list_t &other, const char *fn, int line) {
+            SWAP_TRACE(other);
+
+            this->std::list<element>::swap(other);
+        }
 
         void splice(iterator pos,
                     element_list_t &other,
@@ -310,14 +358,14 @@ public:
             return *this;
         };
 
-        void                    assign_elements(element_list_t &subs)
+        void assign_elements(element_list_t &subs)
         {
             if (this->e_sub_elements == NULL) {
                 this->e_sub_elements = new element_list_t("_sub_", __FILE__,
                                                           __LINE__);
                 this->e_sub_elements->el_format = subs.el_format;
             }
-            this->e_sub_elements->swap(subs);
+            this->e_sub_elements->SWAP(subs);
             this->update_capture();
         };
 
@@ -331,14 +379,14 @@ public:
             }
         };
 
-        const element &         get_pair_value(void) const
+        const element &get_pair_value(void) const
         {
             require(this->e_token == DNT_PAIR);
 
             return this->e_sub_elements->back();
         };
 
-        data_token_t            value_token(void) const
+        data_token_t value_token(void) const
         {
             data_token_t retval = DT_INVALID;
 
@@ -356,6 +404,23 @@ public:
             }
             return retval;
         };
+
+        const element &get_value_elem() const {
+            if (this->e_token == DNT_VALUE) {
+                if (this->e_sub_elements != NULL &&
+                    this->e_sub_elements->size() == 1) {
+                    return this->e_sub_elements->front();
+                }
+            }
+            return *this;
+        };
+
+        const element &get_pair_elem() const {
+            if (this->e_token == DNT_VALUE) {
+                return this->e_sub_elements->front();
+            }
+            return *this;
+        }
 
         void                    print(FILE *out, pcre_input &pi, int offset =
                                           0) const
@@ -503,7 +568,7 @@ private:
     };
 
     void pairup(schema_id_t *schema, element_list_t &pairs_out,
-                element_list_t &in_list)
+                element_list_t &in_list, int group_depth = 0)
     {
         element_list_t ELEMENT_LIST_T(el_stack), ELEMENT_LIST_T(free_row),
         ELEMENT_LIST_T(key_comps), ELEMENT_LIST_T(value),
@@ -514,13 +579,15 @@ private:
 
         POINT_TRACE("pairup_start");
 
+        FORMAT_TRACE(in_list);
+
         for (element_list_t::iterator iter = in_list.begin();
              iter != in_list.end();
              ++iter) {
             if (iter->e_token == DNT_GROUP) {
                 element_list_t ELEMENT_LIST_T(group_pairs);
 
-                this->pairup(NULL, group_pairs, *iter->e_sub_elements);
+                this->pairup(NULL, group_pairs, *iter->e_sub_elements, group_depth + 1);
                 if (!group_pairs.empty()) {
                     iter->assign_elements(group_pairs);
                 }
@@ -535,7 +602,7 @@ private:
                 }
             }
             else if (iter->e_token == in_list.el_format.df_terminator) {
-                this->end_of_value(el_stack, key_comps, value, in_list);
+                this->end_of_value(el_stack, key_comps, value, in_list, group_depth);
 
                 key_comps.PUSH_BACK(*iter);
             }
@@ -639,12 +706,16 @@ private:
 
         POINT_TRACE("pairup_eol");
 
-        if (el_stack.empty()) {
+        CONSUMED_TRACE(in_list);
+
+        // Only perform the free-row logic at the top level, if we're in a group
+        // assume it is a list.
+        if (group_depth < 1 && el_stack.empty()) {
             free_row.SPLICE(free_row.begin(),
                             key_comps, key_comps.begin(), key_comps.end());
         }
         else {
-            this->end_of_value(el_stack, key_comps, value, in_list);
+            this->end_of_value(el_stack, key_comps, value, in_list, group_depth);
         }
 
         POINT_TRACE("pairup_stack");
@@ -762,6 +833,10 @@ private:
                 pairs_out.CLEAR();
                 context.Init(0, 0);
             }
+        }
+
+        if (group_depth >= 1 && pairs_out.empty() && !free_row.empty()) {
+            pairs_out.SWAP(free_row);
         }
 
         if (pairs_out.empty() && !free_row.empty()) {
@@ -957,7 +1032,8 @@ private:
     void end_of_value(element_list_t &el_stack,
                       element_list_t &key_comps,
                       element_list_t &value,
-                      const element_list_t &in_list) {
+                      const element_list_t &in_list,
+                      int group_depth) {
         key_comps.remove_if(element_if(in_list.el_format.df_terminator));
         key_comps.remove_if(element_if(DT_COMMA));
         value.remove_if(element_if(in_list.el_format.df_terminator));

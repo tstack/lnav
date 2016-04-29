@@ -7,3 +7,7 @@ ipv4  56:65                                                          ^-------^  
 pair  56:65                                                          ^-------^  10.1.10.1
 msg         : DHCPOFFER from 10.1.10.1
 format      : # from #
+{
+    "col_0": "DHCPOFFER",
+    "col_1": "10.1.10.1"
+}

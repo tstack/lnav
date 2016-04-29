@@ -23,6 +23,7 @@
 #include "sqlite-extension-func.h"
 #include "data_scanner.hh"
 #include "data_parser.hh"
+#include "elem_to_json.hh"
 
 typedef struct {
     char *      s;
@@ -35,6 +36,8 @@ typedef struct {
 #endif
 
 #define JSON_SUBTYPE  74    /* Ascii for "J" */
+
+using namespace std;
 
 static
 cache_entry *find_re(sqlite3_context *ctx, const char *re)
@@ -242,105 +245,6 @@ void regexp_match(sqlite3_context *ctx, int argc, sqlite3_value **argv)
 #ifdef HAVE_SQLITE3_VALUE_SUBTYPE
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 #endif
-}
-
-static
-void elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el);
-
-static
-void element_to_json(yajl_gen gen, data_parser &dp, const data_parser::element &elem)
-{
-    size_t value_len;
-    const char *value_str = dp.get_element_string(elem, value_len);
-
-    switch (elem.value_token()) {
-        case DT_NUMBER: {
-            yajl_gen_number(gen, value_str, value_len);
-            break;
-        }
-        case DNT_GROUP: {
-            elements_to_json(gen, dp, elem.e_sub_elements);
-            break;
-        }
-        case DNT_PAIR: {
-            const data_parser::element &pair_elem = elem.e_sub_elements->front();
-            yajlpp_map singleton_map(gen);
-
-            singleton_map.gen(dp.get_element_string(pair_elem.e_sub_elements->front()));
-            element_to_json(gen, dp, pair_elem.get_pair_value());
-            break;
-        }
-        case DT_CONSTANT: {
-            if (strncasecmp("true", value_str, value_len) == 0) {
-                yajl_gen_bool(gen, true);
-            }
-            else if (strncasecmp("false", value_str, value_len) == 0) {
-                yajl_gen_bool(gen, false);
-            }
-            else {
-                yajl_gen_null(gen);
-            }
-            break;
-        }
-        default:
-            yajl_gen_pstring(gen, value_str, value_len);
-            break;
-    }
-}
-
-static
-void map_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el)
-{
-    yajlpp_map root_map(gen);
-    column_namer cn;
-
-    for (data_parser::element_list_t::iterator iter = el->begin();
-         iter != el->end();
-         ++iter) {
-        const data_parser::element &pvalue = iter->get_pair_value();
-
-        if (pvalue.value_token() == DT_INVALID) {
-            log_debug("invalid!!");
-            // continue;
-        }
-
-        std::string key_str = dp.get_element_string(
-            iter->e_sub_elements->front());
-        string colname = cn.add_column(key_str);
-
-        root_map.gen(colname);
-        element_to_json(gen, dp, pvalue);
-    }
-}
-
-static
-void list_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el)
-{
-    yajlpp_array root_array(gen);
-
-    for (data_parser::element_list_t::iterator iter = el->begin();
-         iter != el->end();
-         ++iter) {
-        element_to_json(gen, dp, *iter);
-    }
-}
-
-static
-void elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el)
-{
-    if (el->empty()) {
-        yajl_gen_null(gen);
-    }
-    else {
-        switch (el->front().e_token) {
-            case DNT_PAIR:
-                map_elements_to_json(gen, dp, el);
-                break;
-            default:
-                list_elements_to_json(gen, dp, el);
-                break;
-        }
-    }
 }
 
 static

@@ -43,6 +43,7 @@
 #include "log_format_loader.hh"
 #include "pretty_printer.hh"
 #include "shared_buffer.hh"
+#include "elem_to_json.hh"
 #include "../src/data_parser.hh"
 #include "../src/view_curses.hh"
 
@@ -178,6 +179,20 @@ int main(int argc, char *argv[])
                     string pretty_out = pp.print();
                     fprintf(out, "\n--\n%s", pretty_out.c_str());
                 }
+
+                auto_mem<yajl_gen_t> gen(yajl_gen_free);
+
+                gen = yajl_gen_alloc(NULL);
+                yajl_gen_config(gen.in(), yajl_gen_beautify, true);
+
+                elements_to_json(gen, dp, &dp.dp_pairs);
+
+                const unsigned char *buf;
+                size_t len;
+
+                yajl_gen_get_buf(gen, &buf, &len);
+                fwrite(buf, 1, len, out);
+
                 fclose(out);
 
                 sprintf(cmd, "diff -u %s %s", argv[lpc], TMP_NAME);
@@ -186,6 +201,7 @@ int main(int argc, char *argv[])
                     if (prompt) {
                         char resp[4];
 
+                        printf("\nOriginal line:\n%s\n", sub_line.c_str() + body.lr_start);
                         printf("Would you like to update the original file? (y/N) ");
                         fflush(stdout);
                         log_perror(scanf("%3s", resp));

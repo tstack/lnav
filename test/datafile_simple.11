@@ -7,3 +7,7 @@ vers  25:31                           ^----^  1.2-a1
 pair  25:31                           ^----^  1.2-a1
 msg         :version numbers  0.6.16  1.2-a1
 format      :version numbers  #  #
+{
+    "col_0": "0.6.16",
+    "col_1": "1.2-a1"
+}

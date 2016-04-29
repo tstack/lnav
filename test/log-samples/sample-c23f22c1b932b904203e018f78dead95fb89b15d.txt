@@ -23,3 +23,15 @@ pair 101:114                                                                    
 pair 101:114                                                                                                      ^-----------^   xid=0xd16b79d
 msg         : DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0xd16b79d)
 format      : # on # to # port # interval # (#)
+{
+    "col_0": "DHCPDISCOVER",
+    "col_1": "eth0",
+    "col_2": "255.255.255.255",
+    "col_3": 67,
+    "col_4": 5,
+    "col_5": [
+        {
+            "xid": "0xd16b79d"
+        }
+    ]
+}

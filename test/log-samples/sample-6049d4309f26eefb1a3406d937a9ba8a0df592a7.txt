@@ -7,3 +7,7 @@ pair  82:92                                                                     
 pair  96:100                                                                                                 ^--^  eth0
 msg         : Withdrawing address record for 10.1.10.62 on eth0.
 format      : Withdrawing address record for # on #
+{
+    "col_0": "10.1.10.62",
+    "col_1": "eth0"
+}

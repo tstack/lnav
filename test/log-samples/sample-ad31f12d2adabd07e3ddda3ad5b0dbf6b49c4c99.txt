@@ -15,3 +15,7 @@ wspc  86:87                                                                     
 pair  50:105                                                   ^-----------------------------------------------------^  VNetUserIf_Create: created userIf at 0xffffff802644f400
 msg         : vmnet: VNetUserIf_Create: created userIf at 0xffffff802644f400.
 format      : vmnet:# VNetUserIf_Create: #
+{
+    "vmnet": "",
+    "VNetUserIf_Create": "created userIf at 0xffffff802644f400"
+}

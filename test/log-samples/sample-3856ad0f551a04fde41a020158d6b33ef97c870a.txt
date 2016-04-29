@@ -10,3 +10,8 @@ ipv4 116:126                                                                    
 pair 116:126                                                                                                                     ^--------^  10.1.10.62
 msg         : Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.62.
 format      : Leaving # multicast group on interface # with address #
+{
+    "col_0": "mDNS",
+    "col_1": "eth0.IPv4",
+    "col_2": "10.1.10.62"
+}

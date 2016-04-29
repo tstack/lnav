@@ -2,9 +2,8 @@
  key  40:46                                          ^----^                                                                            Device
 path  48:56                                                  ^------^                                                                  /dev/sda
 wspc  56:57                                                          ^                                                                  
- key  58:58                                                           ^                                                                
  sym  58:61                                                            ^-^                                                             SAT
-pair  58:61                                                            ^-^                                                             SAT
+ val  58:61                                                            ^-^                                                             SAT
  grp  58:61                                                            ^-^                                                             SAT
  val  48:61                                                  ^-----------^                                                             /dev/sda [SAT
 pair  40:61                                          ^-------------------^                                                             Device: /dev/sda [SAT
@@ -32,3 +31,10 @@ wspc 116:117                                                                    
 pair 112:119                                                                                                                 ^-----^   17.1 GB
 msg         : Device: /dev/sda [SAT], VBOX HARDDISK, S/N:VBc8882b62-a0263a39, FW:1.0, 17.1 GB 
 format      : Device: #], #, #, FW:#, # 
+{
+    "Device": "/dev/sda [SAT",
+    "col_0": "VBOX HARDDISK",
+    "col_1": "S/N:VBc8882b62-a0263a39",
+    "FW": 1.0,
+    "col_2": "17.1 GB"
+}

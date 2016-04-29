@@ -5,3 +5,6 @@
 pair   0:34  ^--------------------------------^  kickoff_duration=4.41074371338e-05
 msg         :kickoff_duration=4.41074371338e-05
 format      :kickoff_duration=#
+{
+    "kickoff_duration": 4.41074371338e-05
+}

@@ -9,3 +9,7 @@ path  75:91                                                                     
 pair  67:91                                                                     ^----------------------^  updated /etc/resolv.conf
 msg         : /sbin/dhclient-script : updated /etc/resolv.conf
 format      : # : updated #
+{
+    "col_0": "/sbin/dhclient-script",
+    "updated": "/etc/resolv.conf"
+}

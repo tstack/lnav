@@ -7,3 +7,7 @@ quot 169:199                                                                    
 pair 169:199                                                                                                                                                                          ^----------------------------^   com.json.components.JSONReader
 msg         : Doing prepare for resource name "Json_Reader", component "com.json.components.JSONReader"
 format      : Doing prepare for resource name #, component #
+{
+    "col_0": "Json_Reader",
+    "col_1": "com.json.components.JSONReader"
+}

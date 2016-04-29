@@ -18,3 +18,9 @@ format      :#   #  #  #
 <ns1:foo>
     <elem attr1=xyz attr2="123">  </elem>
     <closed />
+{
+    "col_0": "<ns1:foo>",
+    "col_1": "<elem attr1=xyz attr2=\"123\">",
+    "col_2": "</elem>",
+    "col_3": "<closed />"
+}

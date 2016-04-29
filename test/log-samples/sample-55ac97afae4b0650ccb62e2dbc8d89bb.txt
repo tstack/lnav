@@ -9,3 +9,7 @@ pair  51:90                                                     ^---------------
 pair  92:106                                                                                             ^------------^  mux-device:509
 msg         : Entered:__thr_AMMuxedDeviceDisconnected, mux-device:509
 format      : Entered:#, mux-device:#
+{
+    "Entered": "__thr_AMMuxedDeviceDisconnected",
+    "mux-device": 509
+}
