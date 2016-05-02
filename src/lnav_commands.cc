@@ -2316,9 +2316,27 @@ static string com_config(string cmdline, vector<string> &args)
             else {
                 string value = remaining_args(cmdline, args, 2);
 
-                ypc.ypc_callbacks.yajl_string(
-                        &ypc, (const unsigned char *) value.c_str(), value.size());
-                retval = "info: changed config option -- " + option;
+                if (ypc.ypc_current_handler->jph_callbacks.yajl_string) {
+
+                    ypc.ypc_callbacks.yajl_string(
+                        &ypc, (const unsigned char *) value.c_str(),
+                        value.size());
+                    retval = "info: changed config option -- " + option;
+                }
+                else if (ypc.ypc_current_handler->jph_callbacks.yajl_boolean) {
+                    bool bvalue = false;
+
+                    if (strcasecmp(value.c_str(), "true") == 0) {
+                        bvalue = true;
+                    }
+                    ypc.ypc_callbacks.yajl_boolean(&ypc, bvalue);
+                    retval = "info: changed config option -- " + option;
+                }
+                else {
+                    retval = "error: unhandled type";
+                }
+
+                reload_config();
             }
         }
         else {

@@ -132,6 +132,9 @@ void yajlpp_validator_for_string(json_schema_validator &validator,
 int yajlpp_static_number(yajlpp_parse_context *, long long);
 
 int yajlpp_static_bool(yajlpp_parse_context *, int);
+yajl_gen_status yajlpp_static_gen_bool(yajlpp_gen_context &ygc,
+                                       const json_path_handler_base &,
+                                       yajl_gen);
 
 struct json_path_handler : public json_path_handler_base {
     json_path_handler(const char *path, int(*null_func)(yajlpp_parse_context *))
@@ -241,6 +244,7 @@ struct json_path_handler : public json_path_handler_base {
     json_path_handler &for_field(bool *field) {
         this->add_cb(yajlpp_static_bool);
         this->jph_simple_offset = field;
+        this->jph_gen_callback = yajlpp_static_gen_bool;
         return *this;
     };
 

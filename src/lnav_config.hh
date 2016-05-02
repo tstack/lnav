@@ -32,10 +32,31 @@
 #ifndef _lnav_config_hh
 #define _lnav_config_hh
 
+#include <sys/queue.h>
+
 #include <string>
 #include <vector>
 
 #include "yajlpp.hh"
+
+class lnav_config_listener {
+public:
+    lnav_config_listener() {
+        this->lcl_next = LISTENER_LIST;
+        LISTENER_LIST = this;
+    }
+
+    virtual ~lnav_config_listener() {
+    };
+
+    virtual void reload_config() {
+
+    };
+
+    static lnav_config_listener *LISTENER_LIST;
+
+    lnav_config_listener *lcl_next;
+};
 
 /**
  * Compute the path to a file in the user's '.lnav' directory.
@@ -68,6 +89,7 @@ void install_extra_formats();
 
 struct _lnav_config {
     std::string lc_ui_clock_format;
+    bool lc_ui_dim_text;
 };
 
 extern struct _lnav_config lnav_config;
@@ -79,6 +101,8 @@ void load_config(const std::vector<std::string> &extra_paths,
                  std::vector<std::string> &errors);
 
 void reset_config(const std::string &path);
+
+void reload_config();
 
 std::string save_config();
 

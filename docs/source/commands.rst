@@ -138,6 +138,8 @@ The following options are available:
 * /ui/clock-format - Specifies the date-time format of the clock in the
   top-left corner of the UI.  The format conversion specifiers are the same as
   in strftime(3).
+* /ui/dim-text - Reduce the brightness of text.  This setting can be useful
+  when running in an xterm where the white color is very bright.
 
 .. note:: The following commands can be disabled by setting the ``LNAVSECURE``
    environment variable before executing the **lnav** binary:

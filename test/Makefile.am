@@ -58,7 +58,8 @@ AM_LDFLAGS = \
 LDADD = -lz
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
-test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB)
+test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB) \
+	../src/default-config-json.o
 
 test_auto_fd_SOURCES = test_auto_fd.cc
 test_auto_fd_LDADD = ../src/libdiag.a
@@ -78,7 +79,8 @@ test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_hist_source_SOURCES = test_hist_source.cc
-test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
+test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
+	../src/default-config-json.o
 
 test_line_buffer2_SOURCES = test_line_buffer2.cc
 test_line_buffer2_LDADD = ../src/libdiag.a
@@ -124,7 +126,8 @@ drive_json_ptr_walk_SOURCES = drive_json_ptr_walk.cc
 drive_json_ptr_walk_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 drive_listview_SOURCES = drive_listview.cc
-drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
+drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
+	../src/default-config-json.o
 
 drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = \
@@ -160,21 +163,25 @@ drive_data_scanner_LDADD = \
 	$(CURSES_LIB)
 
 drive_mvwattrline_SOURCES = drive_mvwattrline.cc
-drive_mvwattrline_LDADD = ../src/libdiag.a $(CURSES_LIB)
+drive_mvwattrline_LDADD = ../src/libdiag.a $(CURSES_LIB) \
+	../src/default-config-json.o
 
 drive_view_colors_SOURCES = drive_view_colors.cc
-drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB)
+drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB) \
+	../src/default-config-json.o
 
 drive_vt52_curses_SOURCES = drive_vt52_curses.cc
 drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 drive_readline_curses_SOURCES = drive_readline_curses.cc
-drive_readline_curses_LDADD = ../src/libdiag.a $(READLINE_LIBS) $(CURSES_LIB)
+drive_readline_curses_LDADD = ../src/libdiag.a $(READLINE_LIBS) $(CURSES_LIB) \
+	../src/default-config-json.o
 
 drive_sql_SOURCES = \
 	drive_sql.cc
 drive_sql_LDADD = \
 	../src/libdiag.a \
+	../src/default-config-json.o \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
 	$(CURSES_LIB) \

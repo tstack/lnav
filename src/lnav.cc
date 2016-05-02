@@ -2217,6 +2217,18 @@ static void print_errors(vector<string> error_list)
     }
 }
 
+class redraw_listener : public lnav_config_listener {
+    void reload_config() {
+        if (!lnav_data.ld_view_stack.empty()) {
+            textview_curses *tc = lnav_data.ld_view_stack.top();
+
+            tc->set_needs_update();
+        }
+    }
+};
+
+redraw_listener REDRAW_LISTENER;
+
 int main(int argc, char *argv[])
 {
     std::vector<std::string> config_errors, loader_errors;

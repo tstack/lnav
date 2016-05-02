@@ -59,6 +59,8 @@ extern const char default_config_json[];
 struct _lnav_config lnav_config;
 static struct _lnav_config lnav_default_config;
 
+lnav_config_listener *lnav_config_listener::LISTENER_LIST;
+
 string dotlnav_path(const char *sub)
 {
     string retval;
@@ -241,6 +243,10 @@ static struct json_path_handler ui_handlers[] = {
                         "The format for the clock displayed in "
                         "the top-left corner using strftime(3) conversions")
                 .for_field(&nullobj<_lnav_config>()->lc_ui_clock_format),
+        json_path_handler("dim-text")
+            .with_synopsis("<bool>")
+            .with_description("Reduce the brightness of text (useful for xterms)")
+            .for_field(&nullobj<_lnav_config>()->lc_ui_dim_text),
 
         json_path_handler()
 };
@@ -337,6 +343,8 @@ void load_config(const vector<string> &extra_paths, vector<string> &errors)
     load_default_config(ypc_builtin, lnav_config, errors);
     load_default_config(ypc_builtin, lnav_default_config, errors);
     load_config_from(user_config, errors);
+
+    reload_config();
 }
 
 void reset_config(const std::string &path)
@@ -397,4 +405,14 @@ string save_config()
     }
 
     return "info: configuration saved";
+}
+
+void reload_config()
+{
+    lnav_config_listener *curr = lnav_config_listener::LISTENER_LIST;
+
+    while (curr != NULL) {
+        curr->reload_config();
+        curr = curr->lcl_next;
+    }
 }

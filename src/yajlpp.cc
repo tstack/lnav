@@ -117,6 +117,23 @@ int yajlpp_static_bool(yajlpp_parse_context *ypc, int val)
     return 1;
 }
 
+yajl_gen_status yajlpp_static_gen_bool(yajlpp_gen_context &ygc,
+                                       const json_path_handler_base &jph,
+                                       yajl_gen handle)
+{
+    bool *default_field_ptr = resolve_simple_object<bool>(ygc.ygc_default_data, jph.jph_simple_offset);
+    bool *field_ptr = resolve_simple_object<bool>(ygc.ygc_simple_data, jph.jph_simple_offset);
+
+    if (ygc.ygc_default_data != NULL && (*default_field_ptr == *field_ptr)) {
+        return yajl_gen_status_ok;
+    }
+
+    if (ygc.ygc_depth) {
+        yajl_gen_string(handle, jph.jph_path);
+    }
+    return yajl_gen_bool(handle, *field_ptr);
+}
+
 yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen handle) const
 {
     if (this->jph_children) {

@@ -38,6 +38,7 @@
 #include "lnav_log.hh"
 #include "view_curses.hh"
 #include "ansi_scrubber.hh"
+#include "lnav_config.hh"
 
 using namespace std;
 
@@ -251,6 +252,14 @@ void view_curses::mvwattrline(WINDOW *window,
     }
 }
 
+class color_listener : public lnav_config_listener {
+    void reload_config() {
+        view_colors::singleton().init_roles();
+    }
+};
+
+static color_listener _COLOR_LISTENER;
+
 view_colors &view_colors::singleton(void)
 {
     static view_colors s_vc;
@@ -320,7 +329,11 @@ void view_colors::init_roles(void)
 
     /* Setup the mappings from roles to actual colors. */
     this->vc_role_colors[VCR_TEXT]   =
-        ansi_color_pair(COLOR_WHITE, COLOR_BLACK) | A_DIM;
+        ansi_color_pair(COLOR_WHITE, COLOR_BLACK);
+    if (lnav_config.lc_ui_dim_text) {
+        log_debug("setting dim");
+        this->vc_role_colors[VCR_TEXT] |= A_BOLD;
+    }
     this->vc_role_colors[VCR_SEARCH] =
         this->vc_role_colors[VCR_TEXT] | A_REVERSE;
     this->vc_role_colors[VCR_OK]      = ansi_color_pair(COLOR_GREEN, COLOR_BLACK) | A_BOLD;
