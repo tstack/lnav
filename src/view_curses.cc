@@ -331,8 +331,7 @@ void view_colors::init_roles(void)
     this->vc_role_colors[VCR_TEXT]   =
         ansi_color_pair(COLOR_WHITE, COLOR_BLACK);
     if (lnav_config.lc_ui_dim_text) {
-        log_debug("setting dim");
-        this->vc_role_colors[VCR_TEXT] |= A_BOLD;
+        this->vc_role_colors[VCR_TEXT] |= A_DIM;
     }
     this->vc_role_colors[VCR_SEARCH] =
         this->vc_role_colors[VCR_TEXT] | A_REVERSE;
