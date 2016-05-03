@@ -725,13 +725,14 @@ int sqlite_authorizer(void *pUserData, int action_code, const char *detail1,
             string fileName(detail1);
 
             /* A temporary database is fine. */
-            if (fileName.length()) {
+            if (!fileName.empty()) {
                  /* In-memory databases are fine.
                  */
-                if (fileName.compare(":memory:") == 0 ||
-                    fileName.find("file::memory:") == 0 ||
+                if (fileName.compare(":memory:") == 0 || (
+                    sqlite3_libversion_number() >= 3008000 &&
+                    (fileName.find("file::memory:") == 0 ||
                     fileName.find("?mode=memory") != string::npos ||
-                    fileName.find("&mode=memory") != string::npos) {
+                    fileName.find("&mode=memory") != string::npos))) {
                     return SQLITE_OK;
                 }
                 return SQLITE_DENY;
