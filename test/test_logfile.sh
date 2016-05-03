@@ -62,6 +62,18 @@ Dec 03 09:23:38 2006 -- 000
 Jan 03 09:47:02 2007 -- 000
 EOF
 
+touch -t 200711030000 ${srcdir}/logfile_rollover.0
+run_test ./drive_logfile -t -f generic_log ${srcdir}/logfile_rollover.0
+
+check_output "Generic timestamp interpreted incorrectly for day rollover?" <<EOF
+Nov 02 00:00:00 2007 -- 000
+Nov 02 01:00:00 2007 -- 000
+Nov 02 02:00:00 2007 -- 000
+Nov 02 03:00:00 2007 -- 000
+Nov 03 00:00:00 2007 -- 000
+Nov 03 00:01:00 2007 -- 000
+EOF
+
 gzip -c ${srcdir}/logfile_syslog.1 > logfile_syslog.1.gz
 
 run_test ./drive_logfile -t -f syslog_log logfile_syslog.1.gz

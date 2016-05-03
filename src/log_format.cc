@@ -308,9 +308,9 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
     }
     if (diff > (60 * 24 * 60 * 60)) {
         off_year = 1;
-    } else if (diff > (15 * 24 * 60 * 60)) {
+    } else if (diff >= (24 * 60 * 60)) {
         off_month = 1;
-    } else if (diff > (12 * 60 * 60)) {
+    } else if (!(etm.et_flags & ETF_DAY_SET) && (diff >= (60 * 60))) {
         off_day = 1;
     } else if (!(etm.et_flags & ETF_DAY_SET)) {
         off_hour = 1;
@@ -321,7 +321,8 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
     if (!do_change) {
         return;
     }
-    log_debug("%d:detected year change", dst.size());
+    log_debug("%d:detected time rollover; offsets=%d %d %d %d", dst.size(),
+              off_year, off_month, off_day, off_hour);
     for (iter = dst.begin(); iter != dst.end(); iter++) {
         time_t     ot = iter->get_time();
         struct tm otm;
@@ -329,7 +330,7 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
         gmtime_r(&ot, &otm);
         otm.tm_year -= off_year;
         otm.tm_mon  -= off_month;
-        otm.tm_yday -= off_day;
+        otm.tm_mday -= off_day;
         otm.tm_hour -= off_hour;
         iter->set_time(tm2sec(&otm));
     }
@@ -731,8 +732,8 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
         }
 
         if (!((log_time_tm.et_flags & ETF_DAY_SET) &&
-                (log_time_tm.et_flags & ETF_MONTH_SET) &&
-                (log_time_tm.et_flags & ETF_YEAR_SET))) {
+              (log_time_tm.et_flags & ETF_MONTH_SET) &&
+              (log_time_tm.et_flags & ETF_YEAR_SET))) {
             this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 

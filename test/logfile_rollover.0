@@ -1,0 +1,6 @@
+00:00:00.000 foo DEBUG  some super duper message
+01:00:00.000 foo DEBUG  some super duper message
+02:00:00.000 foo DEBUG  some super duper message
+03:00:00.000 foo DEBUG  some super duper message
+00:00:00.000 bar DEBUG  some super duper message next day (only one hour)
+00:01:00.000 bar DEBUG  some super duper message next day (only one hour)
