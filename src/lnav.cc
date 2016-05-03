@@ -2476,6 +2476,13 @@ int main(int argc, char *argv[])
         fprintf(stderr, "error: unable to create sqlite memory database\n");
         exit(EXIT_FAILURE);
     }
+    else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        if ((sqlite3_set_authorizer(lnav_data.ld_db.in(),
+                                    sqlite_authorizer, NULL)) != SQLITE_OK) {
+            fprintf(stderr, "error: unable to attach sqlite authorizer\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 
     /* If we statically linked against an ncurses library that had a non-
      * standard path to the terminfo database, we need to set this variable

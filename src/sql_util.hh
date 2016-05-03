@@ -87,4 +87,7 @@ int guess_type_from_pcre(const std::string &pattern, const char **collator);
 /* XXX figure out how to do this with the template */
 void sqlite_close_wrapper(void *mem);
 
+int sqlite_authorizer(void* pUserData, int action_code, const char *detail1,
+                      const char *detail2, const char *detail3,
+                      const char *detail4);
 #endif

@@ -686,6 +686,71 @@ id first_name last_name age
  1 Lem        Hewitt     35
 EOF
 
+# Test to see if we can attach a database in LNAVSECURE mode.
+export LNAVSECURE=1
+
+run_test ${lnav_test} -n \
+    -c ";attach database 'simple-db.db' as 'db'" \
+    empty
+
+check_error_output "LNAVSECURE mode bypassed" <<EOF
+error: not authorized
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";attach database ':memdb:' as 'db'" \
+    empty
+
+check_error_output "LNAVSECURE mode bypassed (':' adorned)" <<EOF
+error: not authorized
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";attach database '/tmp/memdb' as 'db'" \
+    empty
+
+check_error_output "LNAVSECURE mode bypassed (filepath)" <<EOF
+error: not authorized
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";attach database 'file:memdb?cache=shared' as 'db'" \
+    empty
+
+check_error_output "LNAVSECURE mode bypassed (URI)" <<EOF
+error: not authorized
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";attach database '' as 'db'" \
+    empty
+
+check_error_output "Failed to create a temporary db in LNAVSECURE mode" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";attach database ':memory:' as 'db'" \
+    empty
+
+check_error_output "Failed to create an in-memory db in LNAVSECURE mode" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";attach database 'file:memdb?mode=memory' as 'db'" \
+    empty
+
+check_error_output "Failed to create a in-memory db (URI) in LNAVSECURE mode" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";attach database 'file:memdb?cache=shared&mode=memory' as 'db'" \
+    empty
+
+check_error_output "Failed to create a in-memory db (URI2) in LNAVSECURE mode" <<EOF
+EOF
+
+unset LNAVSECURE
+
 
 touch -t 201503240923 ${test_dir}/logfile_syslog_with_access_log.0
 run_test ${lnav_test} -n \
