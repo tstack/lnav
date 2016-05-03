@@ -728,13 +728,18 @@ int sqlite_authorizer(void *pUserData, int action_code, const char *detail1,
             if (!fileName.empty()) {
                  /* In-memory databases are fine.
                  */
-                if (fileName.compare(":memory:") == 0 || (
-                    sqlite3_libversion_number() >= 3008000 &&
-                    (fileName.find("file::memory:") == 0 ||
-                    fileName.find("?mode=memory") != string::npos ||
-                    fileName.find("&mode=memory") != string::npos))) {
+                if (fileName.compare(":memory:") == 0) {
                     return SQLITE_OK;
                 }
+#ifdef HAVE_SQLITE3_COMPILEOPTION_USED
+                if (sqlite3_compileoption_used("SQLITE_USE_URI") && (
+                    fileName.find("file::memory:") == 0 || (
+                    (sqlite3_libversion_number() >= 3008000) && (
+                    fileName.find("?mode=memory") != string::npos ||
+                    fileName.find("&mode=memory") != string::npos)))) {
+                    return SQLITE_OK;
+                }
+#endif
                 return SQLITE_DENY;
             }
         }
