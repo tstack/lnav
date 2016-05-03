@@ -2606,7 +2606,7 @@ public:
         this->dsvs_column_index = dls.column_name_to_index(this->dsvs_colname);
 
         if (!dls.has_log_time_column()) {
-            this->dsvs_error_msg = "no 'log_time' column found, unable to create spectrogram";
+            this->dsvs_error_msg = "no 'log_time' column found or not in ascending order, unable to create spectrogram";
             return;
         }
 

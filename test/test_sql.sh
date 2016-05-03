@@ -77,7 +77,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked without log_time?" <<EOF
-error: no 'log_time' column found, unable to create spectrogram
+error: no 'log_time' column found or not in ascending order, unable to create spectrogram
 EOF
 
 run_test ${lnav_test} -n \
@@ -96,6 +96,15 @@ run_test ${lnav_test} -n \
 
 check_error_output "spectrogram worked with non-numeric column?" <<EOF
 error: column is not numeric -- c_ip
+EOF
+
+run_test ${lnav_test} -n \
+    -c ';select log_time,sc_bytes from access_log order by log_time desc' \
+    -c ':spectrogram sc_bytes' \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "spectrogram worked with unordered log_time?" <<EOF
+error: no 'log_time' column found or not in ascending order, unable to create spectrogram
 EOF
 
 

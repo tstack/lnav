@@ -201,7 +201,13 @@ public:
                 tv.tv_sec = -1;
                 tv.tv_usec = -1;
             }
-            this->dls_time_column.push_back(tv);
+            if (!this->dls_time_column.empty() && tv < this->dls_time_column.back()) {
+                this->dls_time_column_index = -1;
+                this->dls_time_column.clear();
+            }
+            else {
+                this->dls_time_column.push_back(tv);
+            }
         }
 
         this->dls_rows.back().push_back(colstr);

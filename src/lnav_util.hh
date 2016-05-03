@@ -258,6 +258,12 @@ bool operator<(time_t left, const struct timeval &right) {
     return left < right.tv_sec;
 };
 
+inline
+bool operator<(const struct timeval &left, const struct timeval &right) {
+    return left.tv_sec < right.tv_sec ||
+        ((left.tv_sec == right.tv_usec) && (left.tv_usec < right.tv_usec));
+};
+
 struct date_time_scanner {
     date_time_scanner() : dts_keep_base_tz(false),
                           dts_local_time(false),
