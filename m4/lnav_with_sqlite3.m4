@@ -95,6 +95,12 @@ AC_DEFUN([LNAV_WITH_SQLITE3],
         )
     )
 
+    AC_CHECK_FUNC(sqlite3_compileoption_used,
+        AC_DEFINE([HAVE_SQLITE3_COMPILEOPTION_USED], [],
+            [Have sqlite3_compileoption_used function]
+        )
+    )
+
     AC_SUBST(HAVE_SQLITE3_VALUE_SUBTYPE)
 
     AS_VAR_SET(CFLAGS, $saved_CFLAGS)
