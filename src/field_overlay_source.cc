@@ -131,7 +131,6 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
 
             this->fos_summary_lines.push_back(attr_line_t());
             attr_line_t &sum_line = this->fos_summary_lines.back();
-            string &sum_msg = sum_line.get_string();
             sum_line.with_ansi_string(
                     "       %s; Files: " ANSI_BOLD("%'2d") "; "
                         ANSI_ROLE("Error rate") ": " ANSI_BOLD("%'.2lf") "/min; "
@@ -140,8 +139,9 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                     lss.file_count() + tss.size(),
                     view_colors::VCR_ERROR,
                     error_rate,
-                    time_span.c_str())
-                .with_attr(string_attr(
+                    time_span.c_str());
+            string &sum_msg = sum_line.get_string();
+            sum_line.with_attr(string_attr(
                     line_range(sum_msg.find("Error rate"),
                                sum_msg.find("Error rate") + rate_len),
                     &view_curses::VC_STYLE,
