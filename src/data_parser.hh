@@ -794,7 +794,8 @@ private:
 
                 blank.e_token = DT_QUOTED_STRING;
                 blank.e_capture.c_begin = blank.e_capture.c_end = pair_subs.front().e_capture.c_end;
-                if (blank.e_capture.c_begin < pi.pi_length) {
+                if ((blank.e_capture.c_begin >= 0) &&
+                    ((size_t) blank.e_capture.c_begin < pi.pi_length)) {
                     switch (str[blank.e_capture.c_begin]) {
                         case '=':
                         case ':':
@@ -922,7 +923,7 @@ private:
                 *(this->dp_msg_format) += this->get_string_up_to_value(*fiter);
                 this->dp_msg_format->append("#");
             }
-            if (this->dp_msg_format_begin < pi.pi_length) {
+            if ((size_t) this->dp_msg_format_begin < pi.pi_length) {
                 const char *str = pi.get_string();
                 pcre_context::capture_t last(this->dp_msg_format_begin,
                                              pi.pi_length);

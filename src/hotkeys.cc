@@ -262,6 +262,10 @@ void handle_paging_key(int ch)
         case KEY_F(2):
             if (xterm_mouse::is_available()) {
                 lnav_data.ld_mouse.set_enabled(!lnav_data.ld_mouse.is_enabled());
+                lnav_data.ld_rl_view->set_value(
+                    string("info: mouse mode -- ") +
+                    (lnav_data.ld_mouse.is_enabled() ?
+                     ANSI_BOLD("enabled") : ANSI_BOLD("disabled")));
             }
             else {
                 lnav_data.ld_rl_view->set_value(

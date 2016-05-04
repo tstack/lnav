@@ -1671,7 +1671,7 @@ static void looper(void)
         readline_context sql_context("sql", NULL, false);
         readline_context exec_context("exec");
         readline_curses  rlc;
-        sig_atomic_t overlay_counter;
+        sig_atomic_t overlay_counter = 0;
         int lpc;
 
         command_context.set_highlighter(readline_command_highlighter);

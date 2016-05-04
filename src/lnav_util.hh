@@ -336,7 +336,7 @@ struct date_time_scanner {
                      bool convert_local = true);
 
     bool convert_to_timeval(const char *time_src,
-                            size_t time_len,
+                            ssize_t time_len,
                             struct timeval &tv_out) {
         struct exttm tm;
 
