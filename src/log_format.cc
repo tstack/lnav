@@ -1587,6 +1587,7 @@ void external_log_format::register_vtabs(log_vtab_manager *vtab_manager,
                     search_iter->first.to_string() +
                     ":unable to compile regex -- " +
                     search_iter->second);
+            continue;
         }
 
         string errmsg;

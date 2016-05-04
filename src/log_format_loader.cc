@@ -489,23 +489,19 @@ static void write_sample_file(void)
 
     if ((sample_fd = open(sample_path.c_str(),
                           O_WRONLY|O_TRUNC|O_CREAT,
-                          0644)) == -1) {
+                          0644)) == -1 ||
+        (write(sample_fd.get(),
+               default_log_formats_json,
+               strlen(default_log_formats_json)) == -1)) {
         perror("error: unable to write default format file");
-    }
-    else {
-        write(sample_fd.get(),
-              default_log_formats_json,
-              strlen(default_log_formats_json));
     }
 
     string sh_path = dotlnav_path("formats/default/dump-pid.sh");
     auto_fd sh_fd;
 
-    if ((sh_fd = open(sh_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1) {
+    if ((sh_fd = open(sh_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
+        write(sh_fd.get(), dump_pid_sh, strlen(dump_pid_sh)) == -1) {
         perror("error: unable to write default text file");
-    }
-    else {
-        write(sh_fd.get(), dump_pid_sh, strlen(dump_pid_sh));
     }
 
     static const char *SCRIPTS[] = {
@@ -528,15 +524,13 @@ static void write_sample_file(void)
         extract_metadata(script_content, script_len, meta);
         snprintf(path, sizeof(path), "formats/default/%s.lnav", meta.sm_name.c_str());
         script_path = dotlnav_path(path);
-        if (stat(script_path.c_str(), &st) == 0 && st.st_size == script_len) {
+        if (stat(script_path.c_str(), &st) == 0 && (size_t) st.st_size == script_len) {
             // Assume it's the right contents and move on...
             continue;
         }
-        if ((script_fd = open(script_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1) {
+        if ((script_fd = open(script_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
+            write(script_fd.get(), script_content, script_len) == -1) {
             perror("error: unable to write default text file");
-        }
-        else {
-            write(script_fd.get(), script_content, script_len);
         }
     }
 }
@@ -823,7 +817,7 @@ static void extract_metadata(const char *contents, size_t len, struct script_met
     }
 
     if (!meta_out.sm_synopsis.empty()) {
-        ssize_t space = meta_out.sm_synopsis.find(' ');
+        size_t space = meta_out.sm_synopsis.find(' ');
 
         if (space == string::npos) {
             space = meta_out.sm_synopsis.size();

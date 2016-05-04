@@ -2463,7 +2463,19 @@ int main(int argc, char *argv[])
                 ssize_t rc;
 
                 while ((rc = read(in_fd, buffer, sizeof(buffer))) > 0) {
-                    write(out_fd, buffer, rc);
+                    ssize_t remaining = rc, written;
+
+                    while (remaining > 0) {
+                        written = write(out_fd, buffer, rc);
+                        if (written == -1) {
+                            fprintf(stderr,
+                                    "error: unable to install format file -- %s\n",
+                                    strerror(errno));
+                            exit(EXIT_FAILURE);
+                        }
+
+                        remaining -= written;
+                    }
                 }
 
                 fprintf(stderr, "info: installed: %s\n", dst_path.c_str());

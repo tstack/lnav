@@ -629,7 +629,10 @@ void sql_execute_script(sqlite3 *db,
             const char *errmsg = sqlite3_errmsg(db);
             auto_mem<char> full_msg;
 
-            asprintf(full_msg.out(), "error:%s:%d:%s", src_name, line_number, errmsg);
+            if (asprintf(full_msg.out(), "error:%s:%d:%s", src_name, line_number, errmsg) == -1) {
+                log_error("unable to allocate error message");
+                break;
+            }
             errors.push_back(full_msg.in());
             break;
         }
@@ -691,7 +694,7 @@ int guess_type_from_pcre(const string &pattern, const char **collator)
             pcre_input pi(TYPE_TEST_VALUE[lpc].sample);
 
             if (re.match(pc, pi, PCRE_ANCHORED) &&
-                    pc[0]->c_begin == 0 && pc[0]->length() == pi.pi_length) {
+                pc[0]->c_begin == 0 && pc[0]->length() == (int) pi.pi_length) {
                 matches.push_back(lpc);
             }
         }
