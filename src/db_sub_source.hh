@@ -281,7 +281,7 @@ public:
     };
 
     time_t time_for_row(int row) {
-        if (row < 0 || row >= this->dls_time_column.size()) {
+        if ((row < 0) || (((size_t) row) >= this->dls_time_column.size())) {
             return -1;
         }
 
@@ -474,7 +474,7 @@ public:
                                      A_BOLD | A_UNDERLINE));
             return true;
         }
-        else if (this->dos_active && y >= 2 && y < (this->dos_lines.size() + 2)) {
+        else if (this->dos_active && y >= 2 && ((size_t) y) < (this->dos_lines.size() + 2)) {
             value_out = this->dos_lines[y - 2];
             return true;
         }

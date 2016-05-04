@@ -274,7 +274,7 @@ extern struct _lnav_data lnav_data;
 extern readline_context::command_map_t lnav_commands;
 extern bookmark_type_t BM_QUERY;
 extern const int ZOOM_LEVELS[];
-extern const size_t ZOOM_COUNT;
+extern const ssize_t ZOOM_COUNT;
 
 #define HELP_MSG_1(x, msg) \
     "Press '" ANSI_BOLD(#x) "' " msg

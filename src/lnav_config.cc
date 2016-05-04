@@ -151,7 +151,7 @@ void install_git_format(const char *repo)
         local_path = formats_path + local_name;
         if (access(local_path.c_str(), R_OK) == 0) {
             printf("Updating format repo: %s\n", repo);
-            chdir(local_path.c_str());
+            log_perror(chdir(local_path.c_str()));
             execlp("git", "git", "pull", NULL);
         }
         else {
@@ -190,7 +190,7 @@ void install_extra_formats()
         snprintf(pull_cmd, sizeof(pull_cmd),
                  "cd '%s' && git pull",
                  config_root.c_str());
-        system(pull_cmd);
+        log_perror(system(pull_cmd));
     }
     else {
         char clone_cmd[1024];
@@ -199,7 +199,7 @@ void install_extra_formats()
         snprintf(clone_cmd, sizeof(clone_cmd),
                  "git clone https://github.com/tstack/lnav-config.git %s",
                  config_root.c_str());
-        system(clone_cmd);
+        log_perror(system(clone_cmd));
     }
 
     string config_json = config_root + "/remote-config.json";
@@ -397,7 +397,7 @@ string save_config()
                        string(strerror(errno));
             }
             else {
-                write(fd, buffer, len);
+                log_perror(write(fd, buffer, len));
             }
         }
 

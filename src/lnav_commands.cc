@@ -767,14 +767,14 @@ static string com_pipe_to(string cmdline, vector<string> &args)
                     if (write(in_pipe.write_end(), sbr.get_data(), sbr.length()) == -1) {
                         return "warning: Unable to write to pipe -- " + string(strerror(errno));
                     }
-                    write(in_pipe.write_end(), "\n", 1);
+                    log_perror(write(in_pipe.write_end(), "\n", 1));
                 }
                 else {
                     tc->grep_value_for_line(tc->get_top(), line);
                     if (write(in_pipe.write_end(), line.c_str(), line.size()) == -1) {
                         return "warning: Unable to write to pipe -- " + string(strerror(errno));
                     }
-                    write(in_pipe.write_end(), "\n", 1);
+                    log_perror(write(in_pipe.write_end(), "\n", 1));
                 }
             }
             else {
@@ -783,7 +783,7 @@ static string com_pipe_to(string cmdline, vector<string> &args)
                     if (write(in_pipe.write_end(), line.c_str(), line.size()) == -1) {
                         return "warning: Unable to write to pipe -- " + string(strerror(errno));
                     }
-                    write(in_pipe.write_end(), "\n", 1);
+                    log_perror(write(in_pipe.write_end(), "\n", 1));
                 }
             }
 
@@ -2165,7 +2165,7 @@ static string com_shexec(string cmdline, vector<string> &args)
 
     }
     else {
-        system(cmdline.substr(args[0].size()).c_str());
+        log_perror(system(cmdline.substr(args[0].size()).c_str()));
     }
 
     return "";

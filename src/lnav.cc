@@ -154,7 +154,7 @@ const int ZOOM_LEVELS[] = {
     7 * 24 * 60 * 60,
 };
 
-const size_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
+const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
 
 bookmark_type_t BM_QUERY("query");
 
@@ -2395,7 +2395,7 @@ int main(int argc, char *argv[])
         bool found = false;
 
         if (glob(git_formats.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
-            for (lpc = 0; lpc < gl->gl_pathc; lpc++) {
+            for (lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
                 char *git_dir = dirname(gl->gl_pathv[lpc]);
                 char pull_cmd[1024];
 
@@ -2612,7 +2612,7 @@ int main(int argc, char *argv[])
         hs.set_group_size(100);
     }
 
-    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+    for (lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_title(view_titles[lpc]);
     }
 

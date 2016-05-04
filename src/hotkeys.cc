@@ -587,15 +587,15 @@ void handle_paging_key(int ch)
                                  "press any key to exit lo-fi mode "
                                  "----------------\n\n",
                          (int) top, (int) bottom);
-                write(STDOUT_FILENO, line_break, strlen(line_break));
+                log_perror(write(STDOUT_FILENO, line_break, strlen(line_break)));
                 for (; top <= bottom; ++top) {
                     attr_line_t al;
                     tc->listview_value_for_row(*tc, top, al);
                     struct line_range lr = find_string_attr_range(
                             al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
-                    write(STDOUT_FILENO, lr.substr(al.get_string()),
-                          lr.sublen(al.get_string()));
-                    write(STDOUT_FILENO, "\n", 1);
+                    log_perror(write(STDOUT_FILENO, lr.substr(al.get_string()),
+                          lr.sublen(al.get_string())));
+                    log_perror(write(STDOUT_FILENO, "\n", 1));
                 }
             }
             cbreak();

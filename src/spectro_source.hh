@@ -143,7 +143,7 @@ public:
         switch (ch) {
             case 'm': {
                 if (this->ss_cursor_top < 0 ||
-                    this->ss_cursor_top >= this->text_line_count() ||
+                    (size_t) this->ss_cursor_top >= this->text_line_count() ||
                     this->ss_cursor_column == -1 ||
                     this->ss_value_source == NULL) {
                     alerter::singleton().chime();
@@ -356,7 +356,7 @@ public:
         value_out = tm_buffer;
         value_out.resize(s_row.sr_width, ' ');
 
-        for (int lpc = 0; lpc <= s_row.sr_width; lpc++) {
+        for (size_t lpc = 0; lpc <= s_row.sr_width; lpc++) {
             if (s_row.sr_values[lpc].rb_marks) {
                 value_out[lpc] = 'x';
             }
@@ -383,7 +383,7 @@ public:
         spectrogram_thresholds &st = this->ss_cached_thresholds;
         spectrogram_row &s_row = this->load_row(tc, row);
 
-        for (int lpc = 0; lpc <= s_row.sr_width; lpc++) {
+        for (int lpc = 0; lpc <= (int) s_row.sr_width; lpc++) {
             int col_value = s_row.sr_values[lpc].rb_counter;
 
             if (col_value == 0) {

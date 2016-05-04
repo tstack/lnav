@@ -64,7 +64,7 @@ public:
             std::string cap_re, colname;
             int sqlite_type = SQLITE3_TEXT;
 
-            if (this->lst_regex.captures().size() == this->lst_regex.get_capture_count()) {
+            if (this->lst_regex.captures().size() == (size_t) this->lst_regex.get_capture_count()) {
                 iter = this->lst_regex.cap_begin() + lpc;
                 cap_re = this->lst_regex_string.substr(iter->c_begin,
                                                        iter->length());

@@ -346,7 +346,7 @@ public:
         lc.get_dimensions(height, width);
 
         for (size_t lpc = 0; lpc < this->sbc_idents.size(); lpc++) {
-            if (this->sbc_ident_to_show == -1 || lpc == this->sbc_ident_to_show) {
+            if (this->sbc_ident_to_show == -1 || lpc == (size_t) this->sbc_ident_to_show) {
                 overall_stats.merge(this->sbc_idents[lpc].ci_stats, this->sbc_do_stacking);
             }
         }
