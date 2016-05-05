@@ -730,38 +730,6 @@ check_error_output "LNAVSECURE mode bypassed (URI)" <<EOF
 error: not authorized
 EOF
 
-run_test ${lnav_test} -n \
-    -c ";attach database '' as 'db'" \
-    empty
-
-check_error_output "Failed to create a temporary db in LNAVSECURE mode" <<EOF
-EOF
-
-run_test ${lnav_test} -n \
-    -c ";attach database ':memory:' as 'db'" \
-    empty
-
-check_error_output "Failed to create an in-memory db in LNAVSECURE mode" <<EOF
-EOF
-
-# XXX: The following tests are only applicable when sqlite version is >= 3.8.0.
-# Turned off at the moment since Travis CI seems to use version 3.6.0 and the
-# checks fail.
-#
-#run_test ${lnav_test} -n \
-#    -c ";attach database 'file:memdb?mode=memory' as 'db'" \
-#    empty
-#
-#check_error_output "Failed to create a in-memory db (URI) in LNAVSECURE mode" <<EOF
-#EOF
-#
-#run_test ${lnav_test} -n \
-#    -c ";attach database 'file:memdb?cache=shared&mode=memory' as 'db'" \
-#    empty
-#
-#check_error_output "Failed to create a in-memory db (URI2) in LNAVSECURE mode" <<EOF
-#EOF
-
 unset LNAVSECURE
 
 

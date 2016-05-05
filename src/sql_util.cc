@@ -723,29 +723,7 @@ int sqlite_authorizer(void *pUserData, int action_code, const char *detail1,
 {
     if (action_code == SQLITE_ATTACH)
     {
-        /* Check to see that the filename is not NULL */
-        if (detail1 != NULL) {
-            string fileName(detail1);
-
-            /* A temporary database is fine. */
-            if (!fileName.empty()) {
-                 /* In-memory databases are fine.
-                 */
-                if (fileName.compare(":memory:") == 0) {
-                    return SQLITE_OK;
-                }
-#ifdef HAVE_SQLITE3_COMPILEOPTION_USED
-                if (sqlite3_compileoption_used("SQLITE_USE_URI") && (
-                    fileName.find("file::memory:") == 0 || (
-                    (sqlite3_libversion_number() >= 3008000) && (
-                    fileName.find("?mode=memory") != string::npos ||
-                    fileName.find("&mode=memory") != string::npos)))) {
-                    return SQLITE_OK;
-                }
-#endif
-                return SQLITE_DENY;
-            }
-        }
+        return SQLITE_DENY;
     }
     return SQLITE_OK;
 }
