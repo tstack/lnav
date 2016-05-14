@@ -999,10 +999,10 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
                     json_field_cmp(external_log_format::JLF_VARIABLE,
                                    field_name)) == line_format.end()) {
             jlu->jlu_sub_line_count += 1;
-        }
-        for (size_t lpc = 0; lpc < len; lpc++) {
-            if (str[lpc] == '\n') {
-                jlu->jlu_sub_line_count += 1;
+            for (size_t lpc = 0; lpc < len; lpc++) {
+                if (str[lpc] == '\n') {
+                    jlu->jlu_sub_line_count += 1;
+                }
             }
         }
     }
