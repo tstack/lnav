@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/tstack/lnav.png)](https://travis-ci.org/tstack/lnav)
+[![Build status](https://ci.appveyor.com/api/projects/status/244vvhr6a5hh7dbw?svg=true)](https://ci.appveyor.com/project/saaguero/lnav)
 [![Bounties](https://img.shields.io/bountysource/team/lnav/activity.svg)](https://www.bountysource.com/teams/lnav)
 
 _This is the source repository for **lnav**, visit [http://lnav.org](http://lnav.org) for a high level overview._
@@ -40,6 +41,21 @@ Lnav follows the usual GNU style for configuring and installing software:
 
 __Run ```./autogen.sh``` before running any of the above commands when
 compiling from a cloned repository.__
+
+
+Cygwin users
+------------
+
+It should compile fine in Cygwin.
+
+Alternatively, you can get the generated binary from [AppVeyor](https://ci.appveyor.com/project/saaguero/lnav) artifacts.
+
+Remember that you still need the lnav dependencies under Cygwin, here is a quick way to do it:
+
+`setup-x86_64.exe -q -P libpcre1 -P libpcrecpp0 -P libsqlite3_0 -P libstdc++6`
+
+Currently, the x64 version seems to be working better than the x86 one.
+
 
 Using
 -----
