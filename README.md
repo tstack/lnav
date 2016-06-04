@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/tstack/lnav.png)](https://travis-ci.org/tstack/lnav)
-[![Build status](https://ci.appveyor.com/api/projects/status/244vvhr6a5hh7dbw?svg=true)](https://ci.appveyor.com/project/saaguero/lnav)
+[![Build status](https://ci.appveyor.com/api/projects/status/24wskehb7j7a65ro?svg=true)](https://ci.appveyor.com/project/tstack/lnav)
 [![Bounties](https://img.shields.io/bountysource/team/lnav/activity.svg)](https://www.bountysource.com/teams/lnav)
 
 _This is the source repository for **lnav**, visit [http://lnav.org](http://lnav.org) for a high level overview._
@@ -48,7 +48,7 @@ Cygwin users
 
 It should compile fine in Cygwin.
 
-Alternatively, you can get the generated binary from [AppVeyor](https://ci.appveyor.com/project/saaguero/lnav) artifacts.
+Alternatively, you can get the generated binary from [AppVeyor](https://ci.appveyor.com/project/tstack/lnav) artifacts.
 
 Remember that you still need the lnav dependencies under Cygwin, here is a quick way to do it:
 
