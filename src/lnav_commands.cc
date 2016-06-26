@@ -1063,6 +1063,64 @@ static string com_enable_filter(string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_enable_filters(string cmdline, vector<string> &args)
+{
+    if (args.size() == 0) {
+        args.push_back("disabled-filters");
+    } else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        text_sub_source *tss = tc->get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        filter_stack::iterator filter_iter;
+
+        for (filter_iter = fs.begin();
+             filter_iter != fs.end();
+             ++filter_iter) {
+            text_filter *lf = *filter_iter;
+
+            if (!lf->is_enabled()) {
+                fs.set_filter_enabled(lf, true);
+            }
+        }
+
+        lnav_data.disabled_filters = false;
+
+        tss->text_filters_changed();
+        tc->reload_data();
+    }
+
+    return "info: filters disabled";
+}
+
+static string com_disable_filters(string cmdline, vector<string> &args)
+{
+    if (args.size() == 0) {
+        args.push_back("enabled-filters");
+    } else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        text_sub_source *tss = tc->get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        filter_stack::iterator filter_iter;
+
+        for (filter_iter = fs.begin();
+             filter_iter != fs.end();
+             ++filter_iter) {
+            text_filter *lf = *filter_iter;
+
+            if (lf->is_enabled()) {
+                fs.set_filter_enabled(lf, false);
+            }
+        }
+
+        lnav_data.disabled_filters = true;
+        
+        tss->text_filters_changed();
+        tc->reload_data();
+    }
+
+    return "info: filters disabled";
+}
+
 static string com_disable_filter(string cmdline, vector<string> &args)
 {
     string retval = "error: expecting enabled filter to disable";
@@ -2907,6 +2965,18 @@ readline_context::command_t STD_COMMANDS[] = {
         "<regex>",
         "Disable a filter created with filter-in/filter-out",
         com_disable_filter,
+    },
+    {
+        "disable-filters",
+        NULL,
+        "Disable all filters created with filter-in/filter-out",
+        com_disable_filters,
+    },
+    {
+        "enable-filters",
+        NULL,
+        "Enable all filters created with filter-in/filter-out",
+        com_enable_filters,
     },
     {
         "enable-word-wrap",

@@ -136,6 +136,15 @@ bool listview_curses::handle_key(int ch)
         this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - vis_line_t(1));
         break;
 
+
+    case 'u':
+        this->shift_top(-(this->rows_available(this->lv_top, RD_UP) - vis_line_t(1)) / vis_line_t(2));
+        break;
+
+    case 'd':
+        this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - vis_line_t(1) / vis_line_t(2));
+        break;
+
     case 'g':
     case KEY_HOME:
         this->set_top(vis_line_t(0));

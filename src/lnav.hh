@@ -267,6 +267,7 @@ struct _lnav_data {
     std::stack<FILE *> ld_output_stack;
 
     std::map<std::string, std::vector<script_metadata> > ld_scripts;
+    bool disabled_filters;
 };
 
 extern struct _lnav_data lnav_data;

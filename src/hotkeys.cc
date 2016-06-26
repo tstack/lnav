@@ -1265,10 +1265,18 @@ void handle_paging_key(int ch)
             }
             break;
 
+        case KEY_CTRL_B:
+            lnav_data.ld_rl_view->set_value((lnav_data.disabled_filters 
+                    ? "Enabled all filters" : "Disabled all filters"));
+            execute_command(lnav_data.disabled_filters ?
+                            "enable-filters" : "disable-filters");
+            break;
+
         case KEY_CTRL_R:
             reset_session();
             rebuild_indexes(true);
             break;
+
 
         case KEY_CTRL_W:
             execute_command(lnav_data.ld_views[LNV_LOG].get_word_wrap() ?
