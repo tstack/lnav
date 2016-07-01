@@ -1,7 +1,7 @@
 E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19
-I0517 15:04:22.619642 1952452992 logging_unittest.cc:259] Log if every 1, iteration 19
-I0517 15:04:22.619740 1952452992 logging_unittest.cc:259] Log if every 1, iteration 20
-W0517 15:04:22.619751 1952452992 logging_unittest.cc:263] log_if this
-I0517 15:04:22.619760 1952452992 logging_unittest.cc:267] array
-I0517 15:04:22.619768 1952452992 logging_unittest.cc:269] const array
-E0517 15:04:22.619776 1952452992 logging_unittest.cc:271] foo 1000 0000001000 3e8
+I0517 15:04:22.619642  952452992 logging_unittest.cc:259] Log if every 1, iteration 19
+I0517 15:04:22.619740   52452992 logging_unittest.cc:259] Log if every 1, iteration 20
+W0517 15:04:22.619751    2452992 logging_unittest.cc:263] log_if this
+I0517 15:04:22.619760     452992 logging_unittest.cc:267] array
+I0517 15:04:22.619768      52992 logging_unittest.cc:269] const array
+E0517 15:04:22.619776       2992 logging_unittest.cc:271] foo 1000 0000001000 3e8
