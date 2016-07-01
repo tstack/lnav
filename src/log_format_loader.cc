@@ -192,7 +192,6 @@ static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size
     string regex = string((const char *)str, len);
     string level_name_or_number = ypc->get_path_fragment(2);
     logline::level_t level = logline::string2level(level_name_or_number.c_str());
-
     elf->elf_level_patterns[level].lp_regex = regex;
 
     return 1;

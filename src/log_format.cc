@@ -99,7 +99,7 @@ logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool e
     }
 
     if (((len == 1) || ((len > 1) && (levelstr[1] == ' '))) &&
-        (retval = abbrev2level(levelstr, len)) != LEVEL_UNKNOWN) {
+        (retval = abbrev2level(levelstr, 1)) != LEVEL_UNKNOWN) {
         return retval;
     }
 
@@ -107,7 +107,7 @@ logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool e
     pcre_context_static<10> pc;
 
     if (LEVEL_RE.match(pc, pi)) {
-        retval = abbrev2level(pi.get_substr_start(pc.begin()), 1);
+        retval = abbrev2level(pi.get_substr_start(pc.begin()), len);
     }
 
     return retval;

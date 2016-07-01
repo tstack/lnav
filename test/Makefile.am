@@ -274,6 +274,7 @@ dist_noinst_DATA = \
 	logfile_glog.0 \
 	logfile_json.json \
 	logfile_json2.json \
+	logfile_leveltest.0 \
 	logfile_multiline.0 \
 	logfile_nested_json.json \
 	logfile_openam.0 \
@@ -306,6 +307,7 @@ dist_noinst_DATA = \
 	vt52_curses_output.0 \
 	vt52_curses_output.1 \
 	formats/collision/format.json \
+	formats/customlevel/format.json \
 	formats/jsontest/format.json \
 	formats/jsontest2/format.json \
 	formats/nestedjson/format.json \
