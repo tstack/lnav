@@ -17,8 +17,8 @@ PACKAGE_URLS="\
     ftp://ftp.cwru.edu/pub/bash/readline-6.3.tar.gz \
     http://zlib.net/zlib-1.2.8.tar.gz \
     http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz \
-    http://sqlite.org/2016/sqlite-autoconf-3120000.tar.gz \
-    http://openssl.org/source/openssl-1.0.1p.tar.gz \
+    http://sqlite.org/2016/sqlite-autoconf-3130000.tar.gz \
+    http://openssl.skazkaforyou.com/source/openssl-1.0.1t.tar.gz \
     http://www.libssh2.org/download/libssh2-1.7.0.tar.gz \
     http://curl.haxx.se/download/curl-7.48.0.tar.gz \
     "
