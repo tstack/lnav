@@ -55,7 +55,7 @@ OS=$(uname -s)
 (cd bzip2-1.0.6 && make install PREFIX=${FAKE_ROOT})
 
 (cd sqlite-* &&
- ./configure --prefix=${FAKE_ROOT} \
+ ./configure --disable-editline --prefix=${FAKE_ROOT} \
      CFLAGS="${SQLITE_CFLAGS}" \
      && \
  make && make install)
