@@ -48,6 +48,8 @@ fi
 
 make -j2 && strip -o /vagrant/lnav src/lnav
 
-mkdir instdir
-make install-strip DESTDIR=$PWD/instdir
-(cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
+if test x"${OS}" != x"FreeBSD"; then
+    mkdir instdir
+    make install-strip DESTDIR=$PWD/instdir
+    (cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
+fi
