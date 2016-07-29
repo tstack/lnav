@@ -35,8 +35,8 @@ OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
     ../lnav/configure \
         LDFLAGS="-L${FAKE_ROOT}/lib" \
-        CC="gcc44" \
-        CXX="g++44" \
+        CC="gcc48" \
+        CXX="g++48" \
         CPPFLAGS="-I${FAKE_ROOT}/include" \
         PATH="${FAKE_ROOT}/bin:${PATH}"
 else
@@ -48,6 +48,8 @@ fi
 
 make -j2 && strip -o /vagrant/lnav src/lnav
 
-mkdir instdir
-make install-strip DESTDIR=$PWD/instdir
-(cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
+if test x"${OS}" != x"FreeBSD"; then
+    mkdir instdir
+    make install-strip DESTDIR=$PWD/instdir
+    (cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
+fi
