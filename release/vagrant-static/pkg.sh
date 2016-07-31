@@ -9,5 +9,5 @@ if test x"${OS}" != x"FreeBSD"; then
 
     sudo yum install -y m4 git gcc44-c++
 else
-    pkg install -y wget git gcc m4 automake
+    pkg install -y wget git gcc m4
 fi
