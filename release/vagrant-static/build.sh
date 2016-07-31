@@ -33,8 +33,8 @@ OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
     ../lnav/configure \
         LDFLAGS="-L${FAKE_ROOT}/lib" \
-        CC="gcc48" \
-        CXX="g++48" \
+        CC="gcc44" \
+        CXX="g++44" \
         CPPFLAGS="-I${FAKE_ROOT}/include" \
         PATH="${FAKE_ROOT}/bin:${PATH}"
 else
