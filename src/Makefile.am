@@ -32,8 +32,8 @@ default-config-json.c: $(srcdir)/default-config.json bin2c
 init-sql.c: bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
 
-%.c: %.lnav bin2c
-	$(BIN2C_V)./bin2c -z -c $< $@
+%.c: $(srcdir)/%.lnav bin2c
+	$(BIN2C_V)./bin2c -z -c $(srcdir)/$< $@
 
 TIME_FORMATS = \
     "@%@" \

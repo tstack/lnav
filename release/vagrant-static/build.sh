@@ -23,8 +23,6 @@ export PATH=${FAKE_ROOT}/bin:${PATH}
 saved_LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${FAKE_ROOT}/lib
 ./autogen.sh
-export PATH=${saved_PATH}
-export LD_LIBRARY_PATH=${saved_LD_LIBRARY_PATH}
 
 rm -rf ~/github/lbuild
 mkdir -p ~/github/lbuild
@@ -35,8 +33,8 @@ OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
     ../lnav/configure \
         LDFLAGS="-L${FAKE_ROOT}/lib" \
-        CC="gcc48" \
-        CXX="g++48" \
+        CC="gcc44" \
+        CXX="g++44" \
         CPPFLAGS="-I${FAKE_ROOT}/include" \
         PATH="${FAKE_ROOT}/bin:${PATH}"
 else
@@ -53,3 +51,6 @@ if test x"${OS}" != x"FreeBSD"; then
     make install-strip DESTDIR=$PWD/instdir
     (cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
 fi
+
+export PATH=${saved_PATH}
+export LD_LIBRARY_PATH=${saved_LD_LIBRARY_PATH}
