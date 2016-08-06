@@ -148,7 +148,7 @@ esac
 AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
 
 AS_VAR_SET(static_lib_list,
-           ["libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"])
+           ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a"])
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"])
 AS_VAR_SET(static_lib_list,
@@ -176,12 +176,22 @@ if test x"${enable_static}" != x"no"; then
         -L*)
                 libdir=`echo $libflag | sed -e 's/-L//'`
                 for slib in $static_lib_list; do
-                    if test -e "$libdir/$slib"; then
+                    if test -e "$libdir/$slib" -a ! -e "src/static-libs/$slib"; then
                         ln -sf "$libdir/$slib" src/static-libs/.
                     fi
                 done
         ;;
         esac
+    done
+
+    for slib in $static_lib_list; do
+        AC_MSG_CHECKING(for static library $slib)
+        if test -e "src/static-libs/$slib"; then
+            found_slib=`readlink src/static-libs/$slib`
+            AC_MSG_RESULT($found_slib)
+        else
+            AC_MSG_RESULT(not found)
+        fi
     done
 fi
 AC_SUBST(STATIC_LDFLAGS)
