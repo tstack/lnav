@@ -1170,12 +1170,23 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         used_values[distance(this->jlf_line_values.begin(),
                                              lv_iter)] = true;
                     }
-                    else if (iter->jfe_value == ts_field) {
+                    else if (iter->jfe_value == ts_field ||
+                             !iter->jfe_ts_format.empty()) {
                         struct line_range lr;
                         ssize_t ts_len;
                         char ts[64];
 
-                        ts_len = sql_strftime(ts, sizeof(ts), ll.get_timeval(), 'T');
+                        if (iter->jfe_ts_format.empty()) {
+                            ts_len = sql_strftime(ts, sizeof(ts),
+                                                  ll.get_timeval(), 'T');
+                        } else {
+                            struct exttm et;
+
+                            ll.to_exttm(et);
+                            ts_len = ftime_fmt(ts, sizeof(ts),
+                                               iter->jfe_ts_format.c_str(),
+                                               et);
+                        }
                         lr.lr_start = this->jlf_cached_line.size();
                         this->json_append_to_cache(ts, ts_len);
                         lr.lr_end = this->jlf_cached_line.size();

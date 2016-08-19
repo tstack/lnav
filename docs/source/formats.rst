@@ -74,6 +74,8 @@ fields:
 
     :field: The name of the message field that should be inserted at this
       point in the message.
+    :timestamp-format: The timestamp format to use when displaying the time
+      for this log message. (v0.8.2+)
     :default-value: The default value to use if the field could not be found
       in the current log message.  The built-in default is "-".
 

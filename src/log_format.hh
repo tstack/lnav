@@ -1049,6 +1049,7 @@ public:
         intern_string_t jfe_value;
         std::string jfe_default_value;
         int jfe_min_width;
+        std::string jfe_ts_format;
     };
 
     void json_append_to_cache(const char *value, size_t len) {

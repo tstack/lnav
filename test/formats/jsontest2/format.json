@@ -7,6 +7,8 @@
         "line-format" : [
             { "field" : "ts" },
             " ",
+            { "timestamp-format" : "abc %S def" },
+            " ",
             { "field" : "lvl" },
             " ",
             { "field" : "msg" }

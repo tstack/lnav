@@ -122,6 +122,7 @@ struct json_path_handler_base {
 };
 
 int yajlpp_static_string(yajlpp_parse_context *, const unsigned char *, size_t);
+int yajlpp_static_intern_string(yajlpp_parse_context *, const unsigned char *, size_t);
 yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
                                          const json_path_handler_base &,
                                          yajl_gen);
@@ -229,6 +230,14 @@ struct json_path_handler : public json_path_handler_base {
 
     json_path_handler &for_field(std::string *field) {
         this->add_cb(yajlpp_static_string);
+        this->jph_simple_offset = field;
+        this->jph_gen_callback = yajlpp_static_gen_string;
+        this->jph_validator = yajlpp_validator_for_string;
+        return *this;
+    };
+
+    json_path_handler &for_field(intern_string_t *field) {
+        this->add_cb(yajlpp_static_intern_string);
         this->jph_simple_offset = field;
         this->jph_gen_callback = yajlpp_static_gen_string;
         this->jph_validator = yajlpp_validator_for_string;

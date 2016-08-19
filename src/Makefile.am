@@ -33,7 +33,7 @@ init-sql.c: bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
 
 %.c: $(srcdir)/%.lnav bin2c
-	$(BIN2C_V)./bin2c -z -c $(srcdir)/$< $@
+	$(BIN2C_V)./bin2c -z -c $< $@
 
 TIME_FORMATS = \
     "@%@" \
@@ -52,6 +52,8 @@ TIME_FORMATS = \
     "%d/%b/%Y:%H:%M:%S +0000" \
     "%d/%b/%Y:%H:%M:%S %z" \
     "%b %d %H:%M:%S" \
+    "%b %d %k:%M:%S" \
+    "%b %d %l:%M:%S" \
     "%b %e, %Y %l:%M:%S %p" \
     "%m/%d/%y %H:%M:%S" \
     "%m/%d/%Y %I:%M:%S:%L %p %Z" \

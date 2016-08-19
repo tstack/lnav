@@ -106,6 +106,26 @@ static external_log_format::pattern *pattern_provider(yajlpp_parse_context &ypc,
     return &pat;
 }
 
+static external_log_format::json_format_element &
+ensure_json_format_element(external_log_format *elf, int index)
+{
+    elf->jlf_line_format.resize(index + 1);
+
+    return elf->jlf_line_format[index];
+}
+
+static external_log_format::json_format_element *line_format_provider(
+    yajlpp_parse_context &ypc, void *root)
+{
+    external_log_format *elf = ensure_format(&ypc);
+    int index = ypc.ypc_array_index.back();
+    external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
+
+    jfe.jfe_type = external_log_format::JLF_VARIABLE;
+
+    return &jfe;
+}
+
 static int read_format_bool(yajlpp_parse_context *ypc, int val)
 {
     external_log_format *elf = ensure_format(ypc);
@@ -358,14 +378,6 @@ static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str,
     return 1;
 }
 
-static external_log_format::json_format_element &
-    ensure_json_format_element(external_log_format *elf, int index)
-{
-    elf->jlf_line_format.resize(index + 1);
-
-    return elf->jlf_line_format[index];
-}
-
 static int read_json_constant(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     external_log_format *elf = ensure_format(ypc);
@@ -378,38 +390,6 @@ static int read_json_constant(yajlpp_parse_context *ypc, const unsigned char *st
 
     jfe.jfe_type = external_log_format::JLF_CONSTANT;
     jfe.jfe_default_value = val;
-
-    return 1;
-}
-
-static int read_json_variable(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
-{
-    external_log_format *elf = ensure_format(ypc);
-    string val = string((const char *)str, len);
-    int index = ypc->ypc_array_index.back();
-    external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
-    string field_name = ypc->get_path_fragment(3);
-
-    jfe.jfe_type = external_log_format::JLF_VARIABLE;
-    if (field_name == "field") {
-        jfe.jfe_value = intern_string::lookup(val);
-    }
-    else if (field_name == "default-value") {
-        jfe.jfe_default_value = val;
-    }
-
-    return 1;
-}
-
-static int read_json_variable_num(yajlpp_parse_context *ypc, long long val)
-{
-    external_log_format *elf = ensure_format(ypc);
-    int index = ypc->ypc_array_index.back();
-    external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
-    string field_name = ypc->get_path_fragment(2);
-
-    jfe.jfe_type = external_log_format::JLF_VARIABLE;
-    jfe.jfe_min_width = val;
 
     return 1;
 }
@@ -443,6 +423,27 @@ static struct json_path_handler pattern_handlers[] = {
     json_path_handler()
 };
 
+static struct json_path_handler line_format_handlers[] = {
+    json_path_handler("field")
+        .with_synopsis("<field-name>")
+        .with_description("The name of the field to substitute at this position")
+        .with_min_length(1)
+        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_value),
+
+    json_path_handler("default-value")
+        .with_synopsis("<string>")
+        .with_description("The default value for this position if the field is null")
+        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_default_value),
+
+    json_path_handler("timestamp-format")
+        .with_synopsis("<string>")
+        .with_min_length(1)
+        .with_description("The strftime(3) format for this field")
+        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_ts_format),
+
+    json_path_handler()
+};
+
 static struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/regex/[^/]+/")
         .with_obj_provider(pattern_provider)
@@ -470,8 +471,10 @@ static struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/action/[^/]+/capture-output", read_action_bool),
     json_path_handler("/\\w+/action/[^/]+/cmd#", read_action_cmd),
     json_path_handler("/\\w+/sample#/line", read_sample_line),
-    json_path_handler("/\\w+/line-format#/(field|default-value)", read_json_variable),
-    json_path_handler("/\\w+/line-format#/min-width", read_json_variable_num),
+
+    json_path_handler("/\\w+/line-format#/")
+        .with_obj_provider(line_format_provider)
+        .with_children(line_format_handlers),
     json_path_handler("/\\w+/line-format#", read_json_constant),
 
     json_path_handler("/\\w+/search-table/.+/pattern", create_search_table)

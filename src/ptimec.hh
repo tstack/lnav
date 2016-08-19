@@ -35,12 +35,16 @@
 // XXX
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include <time.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 
+#include <cstdlib>
+
 struct tm *secs2tm(time_t *tim_p, struct tm *res);
+time_t tm2sec(const struct tm *t);
 
 enum exttm_bits_t {
     ETB_YEAR_SET,
@@ -73,6 +77,13 @@ struct exttm {
     block \
     \
     off_inout += amount;
+
+#define PTIME_APPEND(ch) \
+    if ((off_inout + 2) >= len) { \
+        return; \
+    } \
+    dst[off_inout] = ch; \
+    off_inout += 1;
 
 #define ABR_TO_INT(a, b, c) \
     ((a << 24) | (b << 16) | (c << 8))
@@ -157,6 +168,87 @@ inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return ptime_b_slow(dst, str, off_inout, len);
 }
 
+inline void ftime_a(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+
+}
+
+inline void ftime_Z(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+
+}
+
+inline void ftime_b(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    switch (tm.et_tm.tm_mon) {
+        case 0:
+            PTIME_APPEND('J');
+            PTIME_APPEND('a');
+            PTIME_APPEND('n');
+            break;
+        case 1:
+            PTIME_APPEND('F');
+            PTIME_APPEND('e');
+            PTIME_APPEND('b');
+            break;
+        case 2:
+            PTIME_APPEND('M');
+            PTIME_APPEND('a');
+            PTIME_APPEND('r');
+            break;
+        case 3:
+            PTIME_APPEND('A');
+            PTIME_APPEND('p');
+            PTIME_APPEND('r');
+            break;
+        case 4:
+            PTIME_APPEND('M');
+            PTIME_APPEND('a');
+            PTIME_APPEND('y');
+            break;
+        case 5:
+            PTIME_APPEND('J');
+            PTIME_APPEND('u');
+            PTIME_APPEND('n');
+            break;
+        case 6:
+            PTIME_APPEND('J');
+            PTIME_APPEND('u');
+            PTIME_APPEND('l');
+            break;
+        case 7:
+            PTIME_APPEND('A');
+            PTIME_APPEND('u');
+            PTIME_APPEND('g');
+            break;
+        case 8:
+            PTIME_APPEND('S');
+            PTIME_APPEND('e');
+            PTIME_APPEND('p');
+            break;
+        case 9:
+            PTIME_APPEND('O');
+            PTIME_APPEND('c');
+            PTIME_APPEND('t');
+            break;
+        case 10:
+            PTIME_APPEND('N');
+            PTIME_APPEND('o');
+            PTIME_APPEND('v');
+            break;
+        case 11:
+            PTIME_APPEND('D');
+            PTIME_APPEND('e');
+            PTIME_APPEND('c');
+            break;
+        default:
+            PTIME_APPEND('X');
+            PTIME_APPEND('X');
+            PTIME_APPEND('X');
+            break;
+    }
+}
+
 inline bool ptime_S(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
@@ -167,6 +259,12 @@ inline bool ptime_S(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     });
 
     return (dst->et_tm.tm_sec >= 0 && dst->et_tm.tm_sec <= 59);
+}
+
+inline void ftime_S(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    PTIME_APPEND('0' + ((tm.et_tm.tm_sec / 10) % 10));
+    PTIME_APPEND('0' + ((tm.et_tm.tm_sec /  1) % 10));
 }
 
 inline bool ptime_s(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -183,6 +281,14 @@ inline bool ptime_s(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
     return (epoch > 0);
+}
+
+inline void ftime_s(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    time_t t = tm2sec(&tm.et_tm);
+
+    snprintf(&dst[off_inout], len - off_inout, "%ld", t);
+    off_inout = strlen(dst);
 }
 
 inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -209,6 +315,15 @@ inline bool ptime_L(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return false;
 }
 
+inline void ftime_L(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    int millis = tm.et_nsec / 1000000;
+
+    PTIME_APPEND('0' + ((millis / 100) % 10));
+    PTIME_APPEND('0' + ((millis /  10) % 10));
+    PTIME_APPEND('0' + ((millis /   1) % 10));
+}
+
 inline bool ptime_M(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
@@ -221,6 +336,12 @@ inline bool ptime_M(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return (dst->et_tm.tm_min >= 0 && dst->et_tm.tm_min <= 59);
 }
 
+inline void ftime_M(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    PTIME_APPEND('0' + ((tm.et_tm.tm_min / 10) % 10));
+    PTIME_APPEND('0' + ((tm.et_tm.tm_min /  1) % 10));
+}
+
 inline bool ptime_H(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
@@ -231,6 +352,12 @@ inline bool ptime_H(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     });
 
     return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
+}
+
+inline void ftime_H(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    PTIME_APPEND('0' + ((tm.et_tm.tm_hour / 10) % 10));
+    PTIME_APPEND('0' + ((tm.et_tm.tm_hour /  1) % 10));
 }
 
 inline bool ptime_i(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -252,6 +379,15 @@ inline bool ptime_i(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return (epoch_ms > 0);
 }
 
+inline void ftime_i(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    uint64_t t = tm2sec(&tm.et_tm);
+
+    t += tm.et_nsec / 1000000;
+    snprintf(&dst[off_inout], len - off_inout, "%lld", t);
+    off_inout = strlen(dst);
+}
+
 inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
@@ -262,6 +398,21 @@ inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     });
 
     return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
+}
+
+inline void ftime_I(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    int hour = tm.et_tm.tm_hour;
+
+    if (hour > 12) {
+        hour -= 12;
+        if (hour == 0) {
+            hour = 12;
+        }
+    }
+
+    PTIME_APPEND('0' + ((hour / 10) % 10));
+    PTIME_APPEND('0' + ((hour /  1) % 10));
 }
 
 inline bool ptime_d(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -286,6 +437,12 @@ inline bool ptime_d(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return false;
 }
 
+inline void ftime_d(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    PTIME_APPEND('0' + ((tm.et_tm.tm_mday / 10) % 10));
+    PTIME_APPEND('0' + ((tm.et_tm.tm_mday /  1) % 10));
+}
+
 inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     dst->et_tm.tm_mday = 0;
@@ -308,6 +465,17 @@ inline bool ptime_e(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         return true;
     }
     return false;
+}
+
+inline void ftime_e(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    if (tm.et_tm.tm_mday < 10) {
+        PTIME_APPEND(' ');
+    }
+    else {
+        PTIME_APPEND('0' + ((tm.et_tm.tm_mday / 10) % 10));
+    }
+    PTIME_APPEND('0' + ((tm.et_tm.tm_mday /  1) % 10));
 }
 
 inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -336,6 +504,12 @@ inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return false;
 }
 
+inline void ftime_m(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    PTIME_APPEND('0' + (((tm.et_tm.tm_mon + 1) / 10) % 10));
+    PTIME_APPEND('0' + (((tm.et_tm.tm_mon + 1) /  1) % 10));
+}
+
 inline bool ptime_k(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     dst->et_tm.tm_hour = 0;
@@ -356,6 +530,17 @@ inline bool ptime_k(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
 }
 
+inline void ftime_k(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    if (tm.et_tm.tm_hour < 10) {
+        PTIME_APPEND(' ');
+    }
+    else {
+        PTIME_APPEND('0' + ((tm.et_tm.tm_hour / 10) % 10));
+    }
+    PTIME_APPEND('0' + ((tm.et_tm.tm_hour /  1) % 10));
+}
+
 inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     dst->et_tm.tm_hour = 0;
@@ -374,6 +559,26 @@ inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     }
 
     return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
+}
+
+inline void ftime_l(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    int hour = tm.et_tm.tm_hour;
+
+    if (hour > 12) {
+        hour -= 12;
+        if (hour == 0) {
+            hour = 12;
+        }
+    }
+
+    if (hour < 10) {
+        PTIME_APPEND(' ');
+    }
+    else {
+        PTIME_APPEND('0' + ((hour / 10) % 10));
+    }
+    PTIME_APPEND('0' + ((hour /  1) % 10));
 }
 
 inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -397,6 +602,17 @@ inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return true;
 }
 
+inline void ftime_p(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    if (tm.et_tm.tm_hour < 12) {
+        PTIME_APPEND('A');
+    }
+    else {
+        PTIME_APPEND('P');
+    }
+    PTIME_APPEND('M');
+}
+
 inline bool ptime_Y(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(4, {
@@ -410,6 +626,16 @@ inline bool ptime_Y(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     });
 
     return true;
+}
+
+inline void ftime_Y(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    int year = tm.et_tm.tm_year + 1900;
+
+    PTIME_APPEND('0' + ((year / 1000) % 10));
+    PTIME_APPEND('0' + ((year /  100) % 10));
+    PTIME_APPEND('0' + ((year /   10) % 10));
+    PTIME_APPEND('0' + ((year /    1) % 10));
 }
 
 inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -429,6 +655,14 @@ inline bool ptime_y(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         return true;
     }
     return false;
+}
+
+inline void ftime_y(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    int year = tm.et_tm.tm_year + 1900;
+
+    PTIME_APPEND('0' + ((year /   10) % 10));
+    PTIME_APPEND('0' + ((year /    1) % 10));
 }
 
 inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
@@ -463,6 +697,26 @@ inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return true;
 }
 
+inline void ftime_z(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    long gmtoff = std::abs(tm.et_gmtoff) / 60;
+
+    if (tm.et_gmtoff < 0) {
+        PTIME_APPEND('-');
+    }
+    else {
+        PTIME_APPEND('+');
+    }
+
+    long mins = gmtoff % 60;
+    long hours = gmtoff / 60;
+
+    PTIME_APPEND('0' + ((hours / 10) % 10));
+    PTIME_APPEND('0' + ((hours /  1) % 10));
+    PTIME_APPEND('0' + ((mins  / 10) % 10));
+    PTIME_APPEND('0' + ((mins  /  1) % 10));
+}
+
 inline bool ptime_f(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(6, {
@@ -483,16 +737,16 @@ inline bool ptime_f(struct exttm *dst, const char *str, off_t &off_inout, ssize_
     return true;
 }
 
-inline bool ptime_F(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
+inline void ftime_f(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
 {
-    PTIME_CONSUME(3, {
-        dst->et_nsec = (
-                        (str[off_inout + 0] - '0') * 100 +
-                        (str[off_inout + 1] - '0') *  10 +
-                        (str[off_inout + 2] - '0') *   1) * 1000 * 1000;
-    });
+    uint32_t micros = tm.et_nsec / 1000;
 
-    return true;
+    PTIME_APPEND('0' + ((micros / 100000) % 10));
+    PTIME_APPEND('0' + ((micros /  10000) % 10));
+    PTIME_APPEND('0' + ((micros /   1000) % 10));
+    PTIME_APPEND('0' + ((micros /    100) % 10));
+    PTIME_APPEND('0' + ((micros /     10) % 10));
+    PTIME_APPEND('0' + ((micros /      1) % 10));
 }
 
 inline bool ptime_char(char val, const char *str, off_t &off_inout, ssize_t len)
@@ -504,6 +758,11 @@ inline bool ptime_char(char val, const char *str, off_t &off_inout, ssize_t len)
     });
 
     return true;
+}
+
+inline void ftime_char(char *dst, off_t &off_inout, ssize_t len, char ch)
+{
+    PTIME_APPEND(ch);
 }
 
 template<typename T>
@@ -561,13 +820,21 @@ inline bool ptime_at(struct exttm *dst, const char *str, off_t &off_inout, ssize
     return true;
 }
 
+inline void ftime_at(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+
+}
+
 typedef bool (*ptime_func)(struct exttm *dst, const char *str, off_t &off, ssize_t len);
+typedef void (*ftime_func)(char *dst, off_t &off_inout, size_t len, const struct exttm &tm);
 
 bool ptime_fmt(const char *fmt, struct exttm *dst, const char *str, off_t &off, ssize_t len);
+size_t ftime_fmt(char *dst, size_t len, const char *fmt, const struct exttm &tm);
 
 struct ptime_fmt {
     const char *pf_fmt;
     ptime_func pf_func;
+    ftime_func pf_ffunc;
 };
 
 extern struct ptime_fmt PTIMEC_FORMATS[];

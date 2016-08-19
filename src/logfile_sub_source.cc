@@ -146,7 +146,7 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                 this->lss_token_attrs, &logline::L_TIMESTAMP);
             if (time_range.is_valid()) {
                 struct timeval adjusted_time;
-                struct tm adjusted_tm;
+                struct exttm adjusted_tm;
                 char buffer[128];
                 const char *fmt;
 
@@ -155,34 +155,19 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                         &this->lss_token_value.c_str()[time_range.lr_start],
                         time_range.length(),
                         adjusted_time);
-                    fmt = "%Y-%m-%d %H:%M:%S.";
+                    fmt = "%Y-%m-%d %H:%M:%S.%f";
+                    gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
+                    adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
+                    ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm);
                 }
                 else {
-                    fmt = PTIMEC_FORMAT_STR[format->lf_date_time.dts_fmt_lock];
                     adjusted_time = this->lss_token_line->get_timeval();
-                }
-                strftime(buffer, sizeof(buffer),
-                         fmt,
-                         gmtime_r(&adjusted_time.tv_sec, &adjusted_tm));
-
-                if (format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) {
-                    size_t buffer_len = strlen(buffer);
-
-                    snprintf(&buffer[buffer_len], sizeof(buffer) - buffer_len,
-                             "%06d",
-                             adjusted_time.tv_usec);
+                    gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
+                    adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
+                    format->lf_date_time.ftime(buffer, sizeof(buffer), adjusted_tm);
                 }
 
-                const char *last = value_out.c_str();
                 ssize_t len = strlen(buffer);
-
-                if ((last[time_range.lr_start + len] == '.' ||
-                     last[time_range.lr_start + len] == ',') &&
-                    len + 4 <= time_range.length()) {
-                    len = snprintf(&buffer[len], sizeof(buffer) - len,
-                                   ".%03d",
-                                   this->lss_token_line->get_millis());
-                }
 
                 if (len > time_range.length()) {
                     ssize_t padding = len - time_range.length();

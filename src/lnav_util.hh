@@ -335,6 +335,14 @@ struct date_time_scanner {
                      struct timeval &tv_out,
                      bool convert_local = true);
 
+    size_t ftime(char *dst, size_t len, const struct exttm &tm) {
+        off_t off = 0;
+
+        PTIMEC_FORMATS[this->dts_fmt_lock].pf_ffunc(dst, off, len, tm);
+
+        return (size_t) off;
+    };
+
     bool convert_to_timeval(const char *time_src,
                             ssize_t time_len,
                             struct timeval &tv_out) {

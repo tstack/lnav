@@ -1,4 +1,9 @@
 
+lnav v0.8.2:
+     Features:
+     * The timestamp format for JSON log files can be specified with the
+       "timestamp-format" option in the "line-format" array.
+
 lnav v0.8.1:
      Features:
      * Added a spectrogram command and view that displays the values of a

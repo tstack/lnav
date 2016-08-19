@@ -96,10 +96,36 @@ int main(int argc, char *argv[])
         printf("    return true;\n");
         printf("}\n\n");
     }
+    for (int lpc = 1; lpc < argc; lpc++) {
+        const char *arg = argv[lpc];
+
+        printf("void ftime_f%d(char *dst, off_t &off_inout, size_t len, const struct exttm &tm) {\n",
+               lpc);
+        for (int index = 0; arg[index]; arg++) {
+            if (arg[index] == '%') {
+                switch (arg[index + 1]) {
+                    case '@':
+                        printf("    ftime_at(dst, off_inout, len, tm);\n");
+                        arg += 1;
+                        break;
+                    default:
+                        printf("    ftime_%c(dst, off_inout, len, tm);\n",
+                               arg[index + 1]);
+                        arg += 1;
+                        break;
+                }
+            } else {
+                printf("    ftime_char(dst, off_inout, len, '%s');\n",
+                       escape_char(arg[index]));
+            }
+        }
+        printf("    dst[off_inout] = '\\0';\n");
+        printf("}\n\n");
+    }
 
     printf("struct ptime_fmt PTIMEC_FORMATS[] = {\n");
     for (int lpc = 1; lpc < argc; lpc++) {
-        printf("    { \"%s\", ptime_f%d },\n", argv[lpc], lpc);
+        printf("    { \"%s\", ptime_f%d, ftime_f%d },\n", argv[lpc], lpc, lpc);
     }
     printf("\n");
     printf("    { NULL, NULL }\n");

@@ -59,6 +59,16 @@ int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, si
     return 1;
 }
 
+int yajlpp_static_intern_string(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    char *root_ptr = resolve_root(ypc);
+    intern_string_t *field_ptr = (intern_string_t *) root_ptr;
+
+    (*field_ptr) = intern_string::lookup((const char *) str, len);
+
+    return 1;
+}
+
 yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
                                          const json_path_handler_base &jph,
                                          yajl_gen handle)

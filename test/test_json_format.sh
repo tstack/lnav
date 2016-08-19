@@ -48,6 +48,18 @@ log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,user
 13,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>
 EOF
 
+
+run_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json2.json
+
+check_output "timestamp-format not working" <<EOF
+2013-09-06T20:00:49.124 abc 49 def 0 Starting up service
+2013-09-06T22:00:49.124 abc 49 def 0 Shutting down service
+  user: steve@example.com
+2013-09-06T22:01:49.124 abc 49 def 10 looking bad
+EOF
+
 run_test ${lnav_test} -n -d /tmp/lnav.err \
     -I ${test_dir} \
     -c ';select * from json_log2' \
