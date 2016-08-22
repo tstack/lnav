@@ -1,3 +1,3 @@
-{"ts": "2013-09-06T20:00:49.124817Z", "lvl": 0, "msg": "Starting up service"}
-{"ts": "2013-09-06T22:00:49.124817Z", "lvl": 0, "msg": "Shutting down service", "user": "steve@example.com"}
-{"ts": "2013-09-06T22:01:49.124817Z", "lvl": 10, "msg": "looking bad"}
+{"ts": "2013-09-06T20:00:49.124817Z", "lvl": 0, "msg": "Starting up service", "cl": "com.exmaple.foo"}
+{"ts": "2013-09-06T22:00:49.124817Z", "lvl": 0, "msg": "Shutting down service", "user": "steve@example.com", "cl": "com.exmaple.foo"}
+{"ts": "2013-09-06T22:01:49.124817Z", "lvl": 10, "msg": "looking bad", "cl": "com.exmaple.foo"}

@@ -716,3 +716,27 @@ bool wordexperr(int rc, string &msg)
 
     return true;
 }
+
+size_t abbreviate_str(char *str, size_t len, size_t max_len)
+{
+    size_t last_start = 1;
+
+    if (len < max_len) {
+        return len;
+    }
+
+    for (size_t index = 0; index < len; index++) {
+        if (str[index] == '.' || str[index] == '-') {
+            memmove(&str[last_start], &str[index], len - index);
+            len -= (index - last_start);
+            index = last_start + 1;
+            last_start = index + 1;
+
+            if (len < max_len) {
+                return len;
+            }
+        }
+    }
+
+    return len;
+}

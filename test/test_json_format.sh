@@ -54,10 +54,10 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_json2.json
 
 check_output "timestamp-format not working" <<EOF
-2013-09-06T20:00:49.124 abc 49 def     0 Starting up service
-2013-09-06T22:00:49.124 abc 49 def     0 Shutting down service
+2013-09-06T20:00:49.124 abc 49 def     0 c.e.foo Starting up service
+2013-09-06T22:00:49.124 abc 49 def     0 c.e.foo Shutting down service
   user: steve@example.com
-2013-09-06T22:01:49.124 abc 49 def    10 looking bad
+2013-09-06T22:01:49.124 abc 49 def    10 c.e.foo looking bad
 EOF
 
 run_test ${lnav_test} -n -d /tmp/lnav.err \

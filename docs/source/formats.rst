@@ -77,9 +77,16 @@ fields:
     :min-width: The minimum width for the field.  If the value for the field
       in a given log message is shorter, padding will be added as needed to
       meet the minimum-width requirement. (v0.8.2+)
+    :max-width: The maximum width for the field.  If the value for the field
+      in a given log message is longer, the overflow algorithm will be applied
+      to try and shorten the field. (v0.8.2+)
     :align: Specifies the alignment for the field, either "left" or "right".
       If "left", padding to meet the minimum-width will be added on the right.
       If "right", padding will be added on the left. (v0.8.2+)
+    :overflow: The algorithm used to shorten a field that is longer than
+      "max-width".  The only option at the moment is "abbrev", which removes
+      all but the first letter in dotted text.  For example, "com.example.foo"
+      would be shortened to "c.e.foo". (v0.8.2+)
     :timestamp-format: The timestamp format to use when displaying the time
       for this log message. (v0.8.2+)
     :default-value: The default value to use if the field could not be found

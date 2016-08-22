@@ -1044,16 +1044,21 @@ public:
         static const intern_string_t ALIGN_LEFT;
         static const intern_string_t ALIGN_RIGHT;
 
+        static const intern_string_t OVERFLOW_ABBREV;
+
         json_format_element()
             : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0),
-              jfe_align(ALIGN_LEFT)
+              jfe_max_width(LLONG_MAX), jfe_align(ALIGN_LEFT),
+              jfe_overflow(OVERFLOW_ABBREV)
         { };
 
         json_log_field jfe_type;
         intern_string_t jfe_value;
         std::string jfe_default_value;
         long long jfe_min_width;
+        long long jfe_max_width;
         intern_string_t jfe_align;
+        intern_string_t jfe_overflow;
         std::string jfe_ts_format;
     };
 

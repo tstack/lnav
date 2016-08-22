@@ -11,6 +11,8 @@
             " ",
             { "field" : "lvl", "min-width": 5 },
             " ",
+            { "field" : "cl", "max-width": 5},
+            " ",
             { "field" : "msg" }
         ],
         "level-field" : "lvl",

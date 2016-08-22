@@ -32,6 +32,7 @@ check_PROGRAMS = \
 	drive_readline_curses \
 	slicer \
 	scripty \
+	test_abbrev \
 	test_ansi_scrubber \
 	test_auto_fd \
 	test_auto_mem \
@@ -103,6 +104,9 @@ test_top_status_LDADD = \
 
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
+
+test_abbrev_SOURCES = test_abbrev.cc
+test_abbrev_LDADD = ../src/libdiag.a
 
 test_concise_SOURCES = test_concise.cc
 test_concise_LDADD = ../src/libdiag.a
@@ -319,6 +323,7 @@ dist_noinst_DATA = \
 	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
 
 TESTS = \
+    test_abbrev \
 	test_ansi_scrubber \
 	test_auto_fd \
 	test_auto_mem \

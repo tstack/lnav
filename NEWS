@@ -3,9 +3,9 @@ lnav v0.8.2:
      Features:
      * The timestamp format for JSON log files can be specified with the
        "timestamp-format" option in the "line-format" array.
-     * Added "min-width" and "align" options to the "line-format" in format
-       definitions for JSON log files.  These options give you more control
-       over how the displayed line looks.
+     * Added "min-width", "max-width", ""align", and "overflow" options to the
+       "line-format" in format definitions for JSON log files.  These options
+       give you more control over how the displayed line looks.
 
 lnav v0.8.1:
      Features:

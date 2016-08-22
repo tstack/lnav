@@ -424,4 +424,6 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
     diff_out.ru_nivcsw = left.ru_nivcsw + right.ru_nivcsw;
 }
 
+size_t abbreviate_str(char *str, size_t len, size_t max_len);
+
 #endif

@@ -71,6 +71,9 @@ const intern_string_t external_log_format::json_format_element::ALIGN_LEFT =
 const intern_string_t external_log_format::json_format_element::ALIGN_RIGHT =
     intern_string::lookup("right");
 
+const intern_string_t external_log_format::json_format_element::OVERFLOW_ABBREV =
+    intern_string::lookup("abbrev");
+
 const char *logline::level_names[LEVEL__MAX + 1] = {
     "unknown",
     "trace",
@@ -1160,6 +1163,20 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             if (str.size() < jfe.jfe_min_width) {
                                 this->json_append_to_cache(jfe.jfe_min_width -
                                                            str.size());
+                            }
+                        }
+
+                        size_t actual_size = this->jlf_cached_line.size() -
+                                             lr.lr_start;
+
+                        if (actual_size > jfe.jfe_max_width) {
+                            if (jfe.jfe_overflow == json_format_element::OVERFLOW_ABBREV) {
+                                size_t new_size = abbreviate_str(
+                                    &this->jlf_cached_line[lr.lr_start],
+                                    actual_size,
+                                    jfe.jfe_max_width);
+
+                                this->jlf_cached_line.resize(lr.lr_start + new_size);
                             }
                         }
 

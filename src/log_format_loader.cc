@@ -431,6 +431,12 @@ static const intern_string_t ALIGN_ENUM[] = {
     intern_string_t()
 };
 
+static const intern_string_t OVERFLOW_ENUM[] = {
+    external_log_format::json_format_element::OVERFLOW_ABBREV,
+
+    intern_string_t()
+};
+
 static struct json_path_handler line_format_handlers[] = {
     json_path_handler("field")
         .with_synopsis("<field-name>")
@@ -455,11 +461,23 @@ static struct json_path_handler line_format_handlers[] = {
         .with_description("The minimum width of the field")
         .for_field(&nullobj<external_log_format::json_format_element>()->jfe_min_width),
 
+    json_path_handler("max-width")
+        .with_min_value(0)
+        .with_synopsis("<size>")
+        .with_description("The maximum width of the field")
+        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_max_width),
+
     json_path_handler("align")
         .with_synopsis("left|right")
         .with_description("Align the text in the column to the left or right side")
         .with_enum_values(ALIGN_ENUM)
         .for_field(&nullobj<external_log_format::json_format_element>()->jfe_align),
+
+    json_path_handler("overflow")
+        .with_synopsis("abbrev")
+        .with_description("Overflow style")
+        .with_enum_values(OVERFLOW_ENUM)
+        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_overflow),
 
     json_path_handler()
 };
