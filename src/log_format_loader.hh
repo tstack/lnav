@@ -64,4 +64,6 @@ void extract_metadata_from_file(struct script_metadata &meta_inout);
 void find_format_scripts(const std::vector<std::string> &extra_paths,
                          std::map<std::string, std::vector<script_metadata> > &scripts);
 
+extern struct json_path_handler format_handlers[];
+
 #endif

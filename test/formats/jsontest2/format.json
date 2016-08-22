@@ -9,7 +9,7 @@
             " ",
             { "timestamp-format" : "abc %S def" },
             " ",
-            { "field" : "lvl" },
+            { "field" : "lvl", "min-width": 5 },
             " ",
             { "field" : "msg" }
         ],

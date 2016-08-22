@@ -74,6 +74,12 @@ fields:
 
     :field: The name of the message field that should be inserted at this
       point in the message.
+    :min-width: The minimum width for the field.  If the value for the field
+      in a given log message is shorter, padding will be added as needed to
+      meet the minimum-width requirement. (v0.8.2+)
+    :align: Specifies the alignment for the field, either "left" or "right".
+      If "left", padding to meet the minimum-width will be added on the right.
+      If "right", padding will be added on the left. (v0.8.2+)
     :timestamp-format: The timestamp format to use when displaying the time
       for this log message. (v0.8.2+)
     :default-value: The default value to use if the field could not be found

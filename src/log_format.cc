@@ -66,6 +66,11 @@ string_attr_type logline::L_PARTITION;
 string_attr_type logline::L_MODULE;
 string_attr_type logline::L_OPID;
 
+const intern_string_t external_log_format::json_format_element::ALIGN_LEFT =
+    intern_string::lookup("left");
+const intern_string_t external_log_format::json_format_element::ALIGN_RIGHT =
+    intern_string::lookup("right");
+
 const char *logline::level_names[LEVEL__MAX + 1] = {
     "unknown",
     "trace",
@@ -1128,27 +1133,43 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                  iter != this->jlf_line_format.end();
                  ++iter) {
                 static const intern_string_t ts_field = intern_string::lookup("__timestamp__", -1);
+                json_format_element &jfe = *iter;
 
-                switch (iter->jfe_type) {
+                switch (jfe.jfe_type) {
                 case JLF_CONSTANT:
-                    this->json_append_to_cache(iter->jfe_default_value.c_str(),
-                            iter->jfe_default_value.size());
+                    this->json_append_to_cache(jfe.jfe_default_value.c_str(),
+                            jfe.jfe_default_value.size());
                     break;
                 case JLF_VARIABLE:
                     lv_iter = find_if(this->jlf_line_values.begin(),
                                       this->jlf_line_values.end(),
-                                      logline_value_cmp(&iter->jfe_value));
+                                      logline_value_cmp(&jfe.jfe_value));
                     if (lv_iter != this->jlf_line_values.end()) {
                         string str = lv_iter->to_string();
                         size_t nl_pos = str.find('\n');
 
                         lr.lr_start = this->jlf_cached_line.size();
-                        this->json_append_to_cache(
-                                str.c_str(), str.size());
-                        if (nl_pos == string::npos)
+                        if (jfe.jfe_align == json_format_element::ALIGN_RIGHT) {
+                            if (str.size() < jfe.jfe_min_width) {
+                                this->json_append_to_cache(jfe.jfe_min_width -
+                                                           str.size());
+                            }
+                        }
+                        this->json_append_to_cache(str.c_str(), str.size());
+                        if (jfe.jfe_align == json_format_element::ALIGN_LEFT) {
+                            if (str.size() < jfe.jfe_min_width) {
+                                this->json_append_to_cache(jfe.jfe_min_width -
+                                                           str.size());
+                            }
+                        }
+
+                        if (nl_pos == string::npos) {
                             lr.lr_end = this->jlf_cached_line.size();
-                        else
+                        }
+                        else {
                             lr.lr_end = lr.lr_start + nl_pos;
+                        }
+
                         if (lv_iter->lv_name == this->lf_timestamp_field) {
                             this->jlf_line_attrs.push_back(
                                 string_attr(lr, &logline::L_TIMESTAMP));
@@ -1170,13 +1191,12 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         used_values[distance(this->jlf_line_values.begin(),
                                              lv_iter)] = true;
                     }
-                    else if (iter->jfe_value == ts_field ||
-                             !iter->jfe_ts_format.empty()) {
+                    else if (jfe.jfe_value == ts_field) {
                         struct line_range lr;
                         ssize_t ts_len;
                         char ts[64];
 
-                        if (iter->jfe_ts_format.empty()) {
+                        if (jfe.jfe_ts_format.empty()) {
                             ts_len = sql_strftime(ts, sizeof(ts),
                                                   ll.get_timeval(), 'T');
                         } else {
@@ -1184,7 +1204,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
                             ll.to_exttm(et);
                             ts_len = ftime_fmt(ts, sizeof(ts),
-                                               iter->jfe_ts_format.c_str(),
+                                               jfe.jfe_ts_format.c_str(),
                                                et);
                         }
                         lr.lr_start = this->jlf_cached_line.size();
@@ -1195,8 +1215,8 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                     }
                     else {
                         this->json_append_to_cache(
-                                iter->jfe_default_value.c_str(),
-                                iter->jfe_default_value.size());
+                                jfe.jfe_default_value.c_str(),
+                                jfe.jfe_default_value.size());
                     }
                     break;
                 }
@@ -1577,6 +1597,16 @@ void external_log_format::build(std::vector<std::string> &errors) {
     }
 
     this->lf_value_stats.resize(this->elf_numeric_value_defs.size());
+
+    for (vector<json_format_element>::iterator iter = this->jlf_line_format.begin();
+         iter != this->jlf_line_format.end();
+         ++iter) {
+        json_format_element &jfe = *iter;
+
+        if (jfe.jfe_value.empty() && !jfe.jfe_ts_format.empty()) {
+            jfe.jfe_value = intern_string::lookup("__timestamp__");
+        }
+    }
 }
 
 void external_log_format::register_vtabs(log_vtab_manager *vtab_manager,

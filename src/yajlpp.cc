@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include "yajlpp.hh"
+#include "yajl/api/yajl_parse.h"
 
 using namespace std;
 
@@ -56,6 +57,8 @@ int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, si
 
     (*field_ptr) = string((const char *) str, len);
 
+    yajlpp_validator_for_string(*ypc, *ypc->ypc_current_handler);
+
     return 1;
 }
 
@@ -65,6 +68,8 @@ int yajlpp_static_intern_string(yajlpp_parse_context *ypc, const unsigned char *
     intern_string_t *field_ptr = (intern_string_t *) root_ptr;
 
     (*field_ptr) = intern_string::lookup((const char *) str, len);
+
+    yajlpp_validator_for_intern_string(*ypc, *ypc->ypc_current_handler);
 
     return 1;
 }
@@ -86,31 +91,85 @@ yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
     return yajl_gen_string(handle, *field_ptr);
 }
 
-void yajlpp_validator_for_string(json_schema_validator &validator,
-                                 const std::string &path,
+void yajlpp_validator_for_string(yajlpp_parse_context &ypc,
                                  const json_path_handler_base &jph)
 {
-    string *field_ptr = resolve_simple_object<string>(validator.jsv_simple_data, jph.jph_simple_offset);
+    string *field_ptr = (string *) resolve_root(&ypc);
     char buffer[1024];
 
     if (field_ptr->empty() && jph.jph_min_length > 0) {
-        validator.jsv_errors[path].push_back("value must not be empty");
+        ypc.report_error("value must not be empty");
     }
     else if (field_ptr->size() < jph.jph_min_length) {
         snprintf(buffer, sizeof(buffer),
                  "value must be at least %lu characters long",
                  jph.jph_min_length);
-        validator.jsv_errors[path].push_back(buffer);
+        ypc.report_error(buffer);
+    }
+}
+
+void yajlpp_validator_for_intern_string(yajlpp_parse_context &ypc,
+                                        const json_path_handler_base &jph)
+{
+    intern_string_t *field_ptr = (intern_string_t *) resolve_root(&ypc);
+    char buffer[1024];
+
+    if (field_ptr->empty() && jph.jph_min_length > 0) {
+        ypc.report_error("value must not be empty");
+    }
+    else if (field_ptr->size() < jph.jph_min_length) {
+        snprintf(buffer, sizeof(buffer),
+                 "value must be at least %lu characters long",
+                 jph.jph_min_length);
+        ypc.report_error(buffer);
+    }
+
+    if (jph.jph_enum_values != NULL) {
+        bool matched = false;
+
+        for (int lpc = 0; !jph.jph_enum_values[lpc].empty(); lpc++) {
+            intern_string_t enum_value = jph.jph_enum_values[lpc];
+
+            if (enum_value == *field_ptr) {
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            ypc.report_error("error:%s:line %d\n  "
+                                 "Unexpected value for path %s -- %s",
+                             ypc.ypc_source.c_str(),
+                             ypc.get_line_number(),
+                             ypc.get_path().get(),
+                             (*field_ptr).get());
+            ypc.report_error("  Allowed values:\n");
+            for (int lpc = 0; !jph.jph_enum_values[lpc].empty(); lpc++) {
+                intern_string_t enum_value = jph.jph_enum_values[lpc];
+
+                ypc.report_error("    %s\n", enum_value.get());
+            }
+        }
+    }
+}
+
+void yajlpp_validator_for_int(yajlpp_parse_context &ypc,
+                              const json_path_handler_base &jph)
+{
+    long long *field_ptr = (long long int *) resolve_root(&ypc);
+    char buffer[1024];
+
+    if (*field_ptr < jph.jph_min_value) {
+        snprintf(buffer, sizeof(buffer),
+                 "value must be greater than %lld",
+                 jph.jph_min_value);
+        ypc.report_error(buffer);
     }
 }
 
 int yajlpp_static_number(yajlpp_parse_context *ypc, long long num)
 {
-    const json_path_handler_base *jph = ypc->ypc_current_handler;
-
-    ptrdiff_t offset = (char *) jph->jph_simple_offset - (char *) NULL;
-    char *root_ptr = (char *) ypc->ypc_simple_data;
-    long long *field_ptr = (long long *) (root_ptr + offset);
+    char *root_ptr = resolve_root(ypc);
+    long long *field_ptr = (long long *) root_ptr;
 
     *field_ptr = num;
 
@@ -230,6 +289,8 @@ int yajlpp_parse_context::map_key(void *ctx,
 void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_handlers, int child_start)
 {
     const json_path_handler_base *handlers = orig_handlers;
+
+    this->ypc_current_handler = NULL;
 
     if (this->ypc_handlers == NULL) {
         return;
@@ -355,55 +416,57 @@ int yajlpp_parse_context::handle_unused(void *ctx)
 
     const json_path_handler_base *handler = ypc->ypc_current_handler;
 
+    int line_number = ypc->get_line_number();
+
     if (handler != NULL && strlen(handler->jph_synopsis) > 0 &&
         strlen(handler->jph_description) > 0) {
 
-        fprintf(stderr, "warning:%s:%s %s -- %s\n",
+        fprintf(stderr,
+                "warning:%s:line %d\n  unexpected data for path -- \n",
                 ypc->ypc_source.c_str(),
+                line_number);
+
+        fprintf(stderr, "    %s %s -- %s\n",
                 &ypc->ypc_path[0],
                 handler->jph_synopsis,
                 handler->jph_description
         );
     }
+    else {
+        fprintf(stderr,
+                "warning:%s:line %d\n  unexpected path -- \n",
+                ypc->ypc_source.c_str(),
+                line_number);
 
-    int line_number = 0;
-    if (ypc->ypc_handle != NULL && ypc->ypc_json_text != NULL) {
-        size_t consumed = yajl_get_bytes_consumed(ypc->ypc_handle);
-        int current_count = count(&ypc->ypc_json_text[0],
-                                  &ypc->ypc_json_text[consumed],
-                                  '\n');
-        line_number = ypc->ypc_line_number + current_count;
+        fprintf(stderr, "    %s\n", &ypc->ypc_path[0]);
     }
 
-    fprintf(stderr,
-            "warning:%s:%s:line %d:unexpected data, expecting one of the following data types --\n",
-            ypc->ypc_source.c_str(),
-            &ypc->ypc_path[0],
-            line_number);
+    if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused ||
+        ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused ||
+        ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused ||
+        ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
+        fprintf(stderr, "  expecting one of the following data types --\n");
+    }
+
     if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "warning:%s:%s:  boolean\n",
-                ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
+        fprintf(stderr, "    boolean\n");
     }
     if (ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "warning:%s:%s:  integer\n",
-                ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
+        fprintf(stderr, "    integer\n");
     }
     if (ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "warning:%s:%s:  float\n",
-                ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
+        fprintf(stderr, "    float\n");
     }
     if (ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "warning:%s:%s:  string\n",
-                ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
+        fprintf(stderr, "    string\n");
     }
 
-    fprintf(stderr, "warning:%s:%s:accepted paths --\n",
-            ypc->ypc_source.c_str(), &ypc->ypc_path[0]);
-    for (int lpc = 0; ypc->ypc_handlers[lpc].jph_path[0]; lpc++) {
-        fprintf(stderr, "warning:%s:%s:  %s\n",
-            ypc->ypc_source.c_str(),
-            &ypc->ypc_path[0],
-            ypc->ypc_handlers[lpc].jph_path);
+    if (handler == NULL) {
+        fprintf(stderr, "  accepted paths --\n");
+        for (int lpc = 0; ypc->ypc_handlers[lpc].jph_path[0]; lpc++) {
+            fprintf(stderr, "    %s\n",
+                    ypc->ypc_handlers[lpc].jph_path);
+        }
     }
 
     return 1;

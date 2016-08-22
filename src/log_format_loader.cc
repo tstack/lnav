@@ -64,6 +64,7 @@ static map<intern_string_t, external_log_format *> LOG_FORMATS;
 struct userdata {
     std::string ud_format_path;
     vector<intern_string_t> *ud_format_names;
+    std::vector<std::string> *ud_errors;
 };
 
 static external_log_format *ensure_format(yajlpp_parse_context *ypc)
@@ -423,6 +424,13 @@ static struct json_path_handler pattern_handlers[] = {
     json_path_handler()
 };
 
+static const intern_string_t ALIGN_ENUM[] = {
+    external_log_format::json_format_element::ALIGN_LEFT,
+    external_log_format::json_format_element::ALIGN_RIGHT,
+
+    intern_string_t()
+};
+
 static struct json_path_handler line_format_handlers[] = {
     json_path_handler("field")
         .with_synopsis("<field-name>")
@@ -441,10 +449,22 @@ static struct json_path_handler line_format_handlers[] = {
         .with_description("The strftime(3) format for this field")
         .for_field(&nullobj<external_log_format::json_format_element>()->jfe_ts_format),
 
+    json_path_handler("min-width")
+        .with_min_value(0)
+        .with_synopsis("<size>")
+        .with_description("The minimum width of the field")
+        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_min_width),
+
+    json_path_handler("align")
+        .with_synopsis("left|right")
+        .with_description("Align the text in the column to the left or right side")
+        .with_enum_values(ALIGN_ENUM)
+        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_align),
+
     json_path_handler()
 };
 
-static struct json_path_handler format_handlers[] = {
+struct json_path_handler format_handlers[] = {
     json_path_handler("/\\w+/regex/[^/]+/")
         .with_obj_provider(pattern_provider)
         .with_children(pattern_handlers),
@@ -537,6 +557,13 @@ static void write_sample_file(void)
     }
 }
 
+static void format_error_reporter(const yajlpp_parse_context &ypc, const char *msg)
+{
+    struct userdata *ud = (userdata *) ypc.ypc_userdata;
+
+    ud->ud_errors->push_back(msg);
+}
+
 std::vector<intern_string_t> load_format_file(const string &filename, std::vector<string> &errors)
 {
     std::vector<intern_string_t> retval;
@@ -546,6 +573,7 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
     log_info("loading formats from file: %s", filename.c_str());
     ud.ud_format_path = filename;
     ud.ud_format_names = &retval;
+    ud.ud_errors = &errors;
     yajlpp_parse_context ypc(filename, format_handlers);
     ypc.ypc_userdata = &ud;
     if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
@@ -563,6 +591,8 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
         ssize_t rc = -1;
 
         handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+        ypc.with_handle(handle)
+            .with_error_reporter(format_error_reporter);
         yajl_config(handle, yajl_allow_comments, 1);
         while (true) {
             rc = read(fd, buffer, sizeof(buffer));
@@ -580,7 +610,7 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
                 // Turn it into a JavaScript comment.
                 buffer[0] = buffer[1] = '/';
             }
-            if (yajl_parse(handle, (const unsigned char *)buffer, rc) != yajl_status_ok) {
+            if (ypc.parse((const unsigned char *)buffer, rc) != yajl_status_ok) {
                 errors.push_back(filename +
                         ": invalid json -- " +
                         string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
@@ -589,7 +619,7 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
             offset += rc;
         }
         if (rc == 0) {
-            if (yajl_complete_parse(handle) != yajl_status_ok) {
+            if (ypc.complete_parse() != yajl_status_ok) {
                 errors.push_back(filename +
                         ": invalid json -- " +
                         string((char *)yajl_get_error(handle, 0, NULL, 0)));
@@ -640,6 +670,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
     log_debug("Loading default formats");
     handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
     ud.ud_format_names = &retval;
+    ud.ud_errors = &errors;
     ypc_builtin
         .with_handle(handle)
         .ypc_userdata = &ud;

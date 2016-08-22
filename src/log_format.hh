@@ -1041,14 +1041,19 @@ public:
     };
 
     struct json_format_element {
+        static const intern_string_t ALIGN_LEFT;
+        static const intern_string_t ALIGN_RIGHT;
+
         json_format_element()
-            : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0)
+            : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0),
+              jfe_align(ALIGN_LEFT)
         { };
 
         json_log_field jfe_type;
         intern_string_t jfe_value;
         std::string jfe_default_value;
-        int jfe_min_width;
+        long long jfe_min_width;
+        intern_string_t jfe_align;
         std::string jfe_ts_format;
     };
 
@@ -1056,6 +1061,12 @@ public:
         size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
         memcpy(&this->jlf_cached_line[old_size], value, len);
+    };
+
+    void json_append_to_cache(size_t len) {
+        size_t old_size = this->jlf_cached_line.size();
+        this->jlf_cached_line.resize(old_size + len);
+        memset(&this->jlf_cached_line[old_size], ' ', len);
     };
 
     bool jlf_json;
