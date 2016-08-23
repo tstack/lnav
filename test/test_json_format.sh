@@ -27,6 +27,64 @@ EOF
 
 run_test ${lnav_test} -n \
     -I ${test_dir} \
+    ${test_dir}/log.clog
+
+check_output "multi-line-format json log format is not working" <<EOF
+2016-08-03T12:06:31.009 - ;Exception initializing page context; java.lang.NoClassDefFoundError: javax/el/StaticFieldELResolver
+       at org.apache.jasper.runtime.JspFactoryImpl.internalGetPageContext(JspFactoryImpl.java:172)
+       at org.apache.jasper.runtime.JspFactoryImpl.getPageContext(JspFactoryImpl.java:123)
+       at org.apache.jsp.errors._404_002dnot_002dfound_jsp._jspService(_404_002dnot_002dfound_jsp.java:38)
+       at org.apache.jasper.runtime.HttpJspBase.service(HttpJspBase.java:111)
+       at javax.servlet.http.HttpServlet.service(HttpServlet.java:731)
+       at org.apache.jasper.servlet.JspServletWrapper.service(JspServletWrapper.java:411)
+       at org.apache.jasper.servlet.JspServlet.serviceJspFile(JspServlet.java:473)
+       at org.apache.jasper.servlet.JspServlet.service(JspServlet.java:377)
+       at javax.servlet.http.HttpServlet.service(HttpServlet.java:731)
+       at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:303)
+       at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)
+       at collective.config.startup.DamFilter.doFilter(DamFilter.java:270)
+       at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:241)
+       at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:208)
+       at org.apache.catalina.core.ApplicationDispatcher.invoke(ApplicationDispatcher.java:748)
+       at org.apache.catalina.core.ApplicationDispatcher.processRequest(ApplicationDispatcher.java:488)
+       at org.apache.catalina.core.ApplicationDispatcher.doForward(ApplicationDispatcher.java:411)
+       at org.apache.catalina.core.ApplicationDispatcher.forward(ApplicationDispatcher.java:338)
+       at org.apache.catalina.core.StandardHostValve.custom(StandardHostValve.java:476)
+       at org.apache.catalina.core.StandardHostValve.status(StandardHostValve.java:345)
+       at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:210)
+       at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:103)
+       at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:116)
+       at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:957)
+       at org.apache.catalina.valves.RemoteIpValve.invoke(RemoteIpValve.java:683)
+       at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:423)
+       at org.apache.coyote.http11.AbstractHttp11Processor.process(AbstractHttp11Processor.java:1079)
+       at org.apache.coyote.AbstractProtocol\$AbstractConnectionHandler.process(AbstractProtocol.java:620)
+       at org.apache.tomcat.util.net.JIoEndpoint\$SocketProcessor.run(JIoEndpoint.java:316)
+       at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+       at java.util.concurrent.ThreadPoolExecutor\$Worker.run(ThreadPoolExecutor.java:617)
+       at org.apache.tomcat.util.threads.TaskThread\$WrappingRunnable.run(TaskThread.java:61)
+       at java.lang.Thread.run(Thread.java:744)
+Caused by: java.lang.ClassNotFoundException: javax.el.StaticFieldELResolver
+       at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1720)
+       at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1571)
+       ... 33 common frames omitted
+
+  @version: 1
+  logger_name: org.apache.jasper.runtime.JspFactoryImpl
+  thread_name: http-bio-0.0.0.0-8081-exec-198
+  level_value: 40000
+  customer: foobaz
+2016-08-03T12:06:31.009 - ;Exception initializing page context;
+  @version: 1
+  logger_name: org.apache.jasper.runtime.JspFactoryImpl
+  thread_name: http-bio-0.0.0.0-8081-exec-198
+  level_value: 40000
+  customer: foobaz
+EOF
+
+
+run_test ${lnav_test} -n \
+    -I ${test_dir} \
     -c ';select * from test_log' \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_json.json

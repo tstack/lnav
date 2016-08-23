@@ -1,0 +1,41 @@
+{
+    "logstash_dam": {
+        "title" : "Logstash Java JSON",
+        "url" : "https://github.com/logstash/logstash-logback-encoder",
+        "description" : "Log format for DAM Logstash JSON",
+        "json" : true,
+        "hide-extra" : false,
+        "file-pattern" : "\\.clog.*",
+        "multiline": false,
+        "line-format" : 
+         [ 
+            { "field" : "@timestamp" },
+            " ",
+            { "field" : "ipaddress" },
+            " ",
+            { "field" : "message" },
+            " ",
+            { "field" : "stack_trace", "default-value" : "" }
+        ],
+        "timestamp-field" : "@timestamp",
+        "body-field" : "message",        
+        "level-field" : "level",
+        "level" : {
+        	"trace" : "TRACE",
+            "debug" : "DEBUG",
+            "info" : "INFO",
+            "error" : "ERROR",
+            "warning" : "WARN"
+        },
+		"value" : {
+			"logger_name" : {
+				"kind" : "string",
+				"identifier" : true
+			},
+			"ipaddress" : {
+				"kind" : "string",
+				"identifier" : true
+			}			
+		}     
+    }
+}

@@ -994,16 +994,13 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
     }
     else if (ypc->is_level(1) || jlu->jlu_format->elf_value_defs.find(field_name) !=
              jlu->jlu_format->elf_value_defs.end()) {
-        if (!jlu->jlu_format->jlf_hide_extra &&
-            find_if(line_format.begin(), line_format.end(),
-                    json_field_cmp(external_log_format::JLF_VARIABLE,
-                                   field_name)) == line_format.end()) {
-            jlu->jlu_sub_line_count += 1;
-            for (size_t lpc = 0; lpc < len; lpc++) {
-                if (str[lpc] == '\n') {
-                    jlu->jlu_sub_line_count += 1;
-                }
+        if (!jlu->jlu_format->jlf_hide_extra) {
+            if (find_if(line_format.begin(), line_format.end(),
+                        json_field_cmp(external_log_format::JLF_VARIABLE,
+                                       field_name)) == line_format.end()) {
+                jlu->jlu_sub_line_count += 1;
             }
+            jlu->jlu_sub_line_count += std::count(&str[0], &str[len], '\n');
         }
     }
 
