@@ -88,6 +88,10 @@ class json_schema_validator;
 class yajlpp_parse_context;
 
 struct json_path_handler_base {
+    typedef std::pair<const char *, int> enum_value_t;
+
+    static const enum_value_t ENUM_TERMINATOR;
+
     json_path_handler_base(const char *path)
             : jph_path(path),
               jph_regex(path, PCRE_ANCHORED),
@@ -120,12 +124,13 @@ struct json_path_handler_base {
     json_path_handler_base *jph_children;
     size_t         jph_min_length;
     size_t         jph_max_length;
-    const intern_string_t *jph_enum_values;
+    const enum_value_t  *jph_enum_values;
     long long      jph_min_value;
 };
 
 int yajlpp_static_string(yajlpp_parse_context *, const unsigned char *, size_t);
 int yajlpp_static_intern_string(yajlpp_parse_context *, const unsigned char *, size_t);
+int yajlpp_static_enum(yajlpp_parse_context *, const unsigned char *, size_t);
 yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
                                          const json_path_handler_base &,
                                          yajl_gen);
@@ -228,7 +233,7 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    json_path_handler &with_enum_values(const intern_string_t values[]) {
+    json_path_handler &with_enum_values(const enum_value_t values[]) {
         this->jph_enum_values = values;
         return *this;
     }
@@ -257,6 +262,14 @@ struct json_path_handler : public json_path_handler_base {
         this->jph_simple_offset = field;
         this->jph_gen_callback = yajlpp_static_gen_string;
         this->jph_validator = yajlpp_validator_for_intern_string;
+        return *this;
+    };
+
+    template<typename T>
+    json_path_handler &for_enum(T *field) {
+        this->add_cb(yajlpp_static_enum);
+        this->jph_simple_offset = field;
+        this->jph_gen_callback = yajlpp_static_gen_string;
         return *this;
     };
 

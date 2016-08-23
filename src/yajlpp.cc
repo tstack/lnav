@@ -36,6 +36,9 @@
 
 using namespace std;
 
+const json_path_handler_base::enum_value_t json_path_handler_base::ENUM_TERMINATOR =
+    make_pair((const char *) NULL, 0);
+
 static char *resolve_root(yajlpp_parse_context *ypc)
 {
     const json_path_handler_base *jph = ypc->ypc_current_handler;
@@ -70,6 +73,46 @@ int yajlpp_static_intern_string(yajlpp_parse_context *ypc, const unsigned char *
     (*field_ptr) = intern_string::lookup((const char *) str, len);
 
     yajlpp_validator_for_intern_string(*ypc, *ypc->ypc_current_handler);
+
+    return 1;
+}
+
+int yajlpp_static_enum(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    char *root_ptr = resolve_root(ypc);
+    int *field_ptr = (int *) root_ptr;
+    const json_path_handler_base &jph = *ypc->ypc_current_handler;
+    bool found = false;
+
+    for (int lpc = 0; jph.jph_enum_values[lpc].first; lpc++) {
+        const json_path_handler::enum_value_t &ev = jph.jph_enum_values[lpc];
+
+        if (len == strlen(ev.first) && strncmp((const char *) str, ev.first, len) == 0) {
+            *field_ptr = ev.second;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        ypc->report_error("error:%s:line %d\n  "
+                              "Invalid value, '%.*s', for option:",
+                          ypc->ypc_source.c_str(),
+                          ypc->get_line_number(),
+                          len,
+                          str);
+
+        ypc->report_error("    %s %s -- %s\n",
+                          &ypc->ypc_path[0],
+                          jph.jph_synopsis,
+                          jph.jph_description);
+        ypc->report_error("  Allowed values: ");
+        for (int lpc = 0; jph.jph_enum_values[lpc].first; lpc++) {
+            const json_path_handler::enum_value_t &ev = jph.jph_enum_values[lpc];
+
+            ypc->report_error("    %s\n", ev.first);
+        }
+    }
 
     return 1;
 }
@@ -122,33 +165,6 @@ void yajlpp_validator_for_intern_string(yajlpp_parse_context &ypc,
                  "value must be at least %lu characters long",
                  jph.jph_min_length);
         ypc.report_error(buffer);
-    }
-
-    if (jph.jph_enum_values != NULL) {
-        bool matched = false;
-
-        for (int lpc = 0; !jph.jph_enum_values[lpc].empty(); lpc++) {
-            intern_string_t enum_value = jph.jph_enum_values[lpc];
-
-            if (enum_value == *field_ptr) {
-                matched = true;
-                break;
-            }
-        }
-        if (!matched) {
-            ypc.report_error("error:%s:line %d\n  "
-                                 "Unexpected value for path %s -- %s",
-                             ypc.ypc_source.c_str(),
-                             ypc.get_line_number(),
-                             ypc.get_path().get(),
-                             (*field_ptr).get());
-            ypc.report_error("  Allowed values:\n");
-            for (int lpc = 0; !jph.jph_enum_values[lpc].empty(); lpc++) {
-                intern_string_t enum_value = jph.jph_enum_values[lpc];
-
-                ypc.report_error("    %s\n", enum_value.get());
-            }
-        }
     }
 }
 

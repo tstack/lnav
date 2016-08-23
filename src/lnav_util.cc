@@ -726,15 +726,20 @@ size_t abbreviate_str(char *str, size_t len, size_t max_len)
     }
 
     for (size_t index = 0; index < len; index++) {
-        if (str[index] == '.' || str[index] == '-') {
-            memmove(&str[last_start], &str[index], len - index);
-            len -= (index - last_start);
-            index = last_start + 1;
-            last_start = index + 1;
+        switch (str[index]) {
+            case '.':
+            case '-':
+            case '/':
+            case ':':
+                memmove(&str[last_start], &str[index], len - index);
+                len -= (index - last_start);
+                index = last_start + 1;
+                last_start = index + 1;
 
-            if (len < max_len) {
-                return len;
-            }
+                if (len < max_len) {
+                    return len;
+                }
+                break;
         }
     }
 

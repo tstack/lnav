@@ -66,14 +66,6 @@ string_attr_type logline::L_PARTITION;
 string_attr_type logline::L_MODULE;
 string_attr_type logline::L_OPID;
 
-const intern_string_t external_log_format::json_format_element::ALIGN_LEFT =
-    intern_string::lookup("left");
-const intern_string_t external_log_format::json_format_element::ALIGN_RIGHT =
-    intern_string::lookup("right");
-
-const intern_string_t external_log_format::json_format_element::OVERFLOW_ABBREV =
-    intern_string::lookup("abbrev");
-
 const char *logline::level_names[LEVEL__MAX + 1] = {
     "unknown",
     "trace",
@@ -1152,32 +1144,40 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         size_t nl_pos = str.find('\n');
 
                         lr.lr_start = this->jlf_cached_line.size();
-                        if (jfe.jfe_align == json_format_element::ALIGN_RIGHT) {
-                            if (str.size() < jfe.jfe_min_width) {
-                                this->json_append_to_cache(jfe.jfe_min_width -
-                                                           str.size());
+
+                        if (str.size() > jfe.jfe_max_width) {
+                            switch (jfe.jfe_overflow) {
+                                case json_format_element::ABBREV: {
+                                    this->json_append_to_cache(
+                                        str.c_str(), str.size());
+                                    size_t new_size = abbreviate_str(
+                                        &this->jlf_cached_line[lr.lr_start],
+                                        str.size(),
+                                        jfe.jfe_max_width);
+
+                                    this->jlf_cached_line.resize(
+                                        lr.lr_start + new_size);
+                                    break;
+                                }
+                                case json_format_element::TRUNCATE: {
+                                    this->json_append_to_cache(
+                                        str.c_str(), jfe.jfe_max_width);
+                                    break;
+                                }
+                                case json_format_element::DOTDOT: {
+                                    size_t middle = (jfe.jfe_max_width / 2) - 1;
+                                    this->json_append_to_cache(
+                                        str.c_str(), middle);
+                                    this->json_append_to_cache("..", 2);
+                                    size_t rest = (jfe.jfe_max_width - middle - 2);
+                                    this->json_append_to_cache(
+                                        str.c_str() + str.size() - rest, rest);
+                                    break;
+                                }
                             }
                         }
-                        this->json_append_to_cache(str.c_str(), str.size());
-                        if (jfe.jfe_align == json_format_element::ALIGN_LEFT) {
-                            if (str.size() < jfe.jfe_min_width) {
-                                this->json_append_to_cache(jfe.jfe_min_width -
-                                                           str.size());
-                            }
-                        }
-
-                        size_t actual_size = this->jlf_cached_line.size() -
-                                             lr.lr_start;
-
-                        if (actual_size > jfe.jfe_max_width) {
-                            if (jfe.jfe_overflow == json_format_element::OVERFLOW_ABBREV) {
-                                size_t new_size = abbreviate_str(
-                                    &this->jlf_cached_line[lr.lr_start],
-                                    actual_size,
-                                    jfe.jfe_max_width);
-
-                                this->jlf_cached_line.resize(lr.lr_start + new_size);
-                            }
+                        else {
+                            this->json_append(jfe, str.c_str(), str.size());
                         }
 
                         if (nl_pos == string::npos) {
@@ -1231,9 +1231,9 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             string_attr(lr, &logline::L_TIMESTAMP));
                     }
                     else {
-                        this->json_append_to_cache(
-                                jfe.jfe_default_value.c_str(),
-                                jfe.jfe_default_value.size());
+                        this->json_append(jfe,
+                                          jfe.jfe_default_value.c_str(),
+                                          jfe.jfe_default_value.size());
                     }
                     break;
                 }

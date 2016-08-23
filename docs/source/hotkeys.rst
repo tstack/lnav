@@ -224,7 +224,7 @@ Session
 
    * - Keypress
      - Command
-   * - |ks| Ctrl |ky| + |ks| R |ke|
+   * - |ks| Ctrl |ke| + |ks| R |ke|
      - Reset current session.
 
 Query

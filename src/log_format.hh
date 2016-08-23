@@ -1041,15 +1041,21 @@ public:
     };
 
     struct json_format_element {
-        static const intern_string_t ALIGN_LEFT;
-        static const intern_string_t ALIGN_RIGHT;
+        enum align_t {
+            LEFT,
+            RIGHT,
+        };
 
-        static const intern_string_t OVERFLOW_ABBREV;
+        enum overflow_t {
+            ABBREV,
+            TRUNCATE,
+            DOTDOT,
+        };
 
         json_format_element()
             : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0),
-              jfe_max_width(LLONG_MAX), jfe_align(ALIGN_LEFT),
-              jfe_overflow(OVERFLOW_ABBREV)
+              jfe_max_width(LLONG_MAX), jfe_align(LEFT),
+              jfe_overflow(ABBREV)
         { };
 
         json_log_field jfe_type;
@@ -1057,8 +1063,8 @@ public:
         std::string jfe_default_value;
         long long jfe_min_width;
         long long jfe_max_width;
-        intern_string_t jfe_align;
-        intern_string_t jfe_overflow;
+        align_t jfe_align;
+        overflow_t jfe_overflow;
         std::string jfe_ts_format;
     };
 
@@ -1072,6 +1078,21 @@ public:
         size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
         memset(&this->jlf_cached_line[old_size], ' ', len);
+    };
+
+    void json_append(const json_format_element &jfe, const char *value, size_t len) {
+
+        if (jfe.jfe_align == json_format_element::RIGHT) {
+            if (len < jfe.jfe_min_width) {
+                this->json_append_to_cache(jfe.jfe_min_width - len);
+            }
+        }
+        this->json_append_to_cache(value, len);
+        if (jfe.jfe_align == json_format_element::LEFT) {
+            if (len < jfe.jfe_min_width) {
+                this->json_append_to_cache(jfe.jfe_min_width - len);
+            }
+        }
     };
 
     bool jlf_json;

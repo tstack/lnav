@@ -424,17 +424,19 @@ static struct json_path_handler pattern_handlers[] = {
     json_path_handler()
 };
 
-static const intern_string_t ALIGN_ENUM[] = {
-    external_log_format::json_format_element::ALIGN_LEFT,
-    external_log_format::json_format_element::ALIGN_RIGHT,
+static const json_path_handler_base::enum_value_t ALIGN_ENUM[] = {
+    make_pair("left", external_log_format::json_format_element::LEFT),
+    make_pair("right", external_log_format::json_format_element::RIGHT),
 
-    intern_string_t()
+    json_path_handler_base::ENUM_TERMINATOR
 };
 
-static const intern_string_t OVERFLOW_ENUM[] = {
-    external_log_format::json_format_element::OVERFLOW_ABBREV,
+static const json_path_handler_base::enum_value_t OVERFLOW_ENUM[] = {
+    make_pair("abbrev", external_log_format::json_format_element::ABBREV),
+    make_pair("truncate", external_log_format::json_format_element::TRUNCATE),
+    make_pair("dot-dot", external_log_format::json_format_element::DOTDOT),
 
-    intern_string_t()
+    json_path_handler_base::ENUM_TERMINATOR
 };
 
 static struct json_path_handler line_format_handlers[] = {
@@ -471,13 +473,13 @@ static struct json_path_handler line_format_handlers[] = {
         .with_synopsis("left|right")
         .with_description("Align the text in the column to the left or right side")
         .with_enum_values(ALIGN_ENUM)
-        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_align),
+        .for_enum(&nullobj<external_log_format::json_format_element>()->jfe_align),
 
     json_path_handler("overflow")
         .with_synopsis("abbrev")
         .with_description("Overflow style")
         .with_enum_values(OVERFLOW_ENUM)
-        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_overflow),
+        .for_enum(&nullobj<external_log_format::json_format_element>()->jfe_overflow),
 
     json_path_handler()
 };

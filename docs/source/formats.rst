@@ -84,9 +84,15 @@ fields:
       If "left", padding to meet the minimum-width will be added on the right.
       If "right", padding will be added on the left. (v0.8.2+)
     :overflow: The algorithm used to shorten a field that is longer than
-      "max-width".  The only option at the moment is "abbrev", which removes
-      all but the first letter in dotted text.  For example, "com.example.foo"
-      would be shortened to "c.e.foo". (v0.8.2+)
+      "max-width".  The following algorithms are supported:
+
+        :abbrev: Removes all but the first letter in dotted text.  For example,
+          "com.example.foo" would be shortened to "c.e.foo".
+        :truncate: Truncates any text past the maximum width.
+        :dot-dot: Cuts out the middle of the text and replaces it with two
+          dots (i.e. '..').
+
+      (v0.8.2+)
     :timestamp-format: The timestamp format to use when displaying the time
       for this log message. (v0.8.2+)
     :default-value: The default value to use if the field could not be found
