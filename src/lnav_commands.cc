@@ -1936,18 +1936,28 @@ static string com_zoom_to(string cmdline, vector<string> &args)
 
                 lnav_data.ld_zoom_level = lpc;
 
-                old_time = lnav_data.ld_hist_source2.time_for_row(
-                    lnav_data.ld_views[LNV_HISTOGRAM].get_top());
-                rebuild_hist(0, true);
-                lnav_data.ld_views[LNV_HISTOGRAM].set_top(
-                    vis_line_t(lnav_data.ld_hist_source2.row_for_time(old_time)));
+                textview_curses &hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
 
-                old_time = lnav_data.ld_spectro_source.time_for_row(
-                    lnav_data.ld_views[LNV_SPECTRO].get_top());
-                ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
-                ss.invalidate();
-                lnav_data.ld_views[LNV_SPECTRO].set_top(
-                    vis_line_t(lnav_data.ld_spectro_source.row_for_time(old_time)));
+                if (hist_view.get_inner_height() > 0) {
+                    old_time = lnav_data.ld_hist_source2.time_for_row(
+                        lnav_data.ld_views[LNV_HISTOGRAM].get_top());
+                    rebuild_hist(0, true);
+                    lnav_data.ld_views[LNV_HISTOGRAM].set_top(
+                        vis_line_t(
+                            lnav_data.ld_hist_source2.row_for_time(old_time)));
+                }
+
+                textview_curses &spectro_view = lnav_data.ld_views[LNV_SPECTRO];
+
+                if (spectro_view.get_inner_height() > 0) {
+                    old_time = lnav_data.ld_spectro_source.time_for_row(
+                        lnav_data.ld_views[LNV_SPECTRO].get_top());
+                    ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
+                    ss.invalidate();
+                    lnav_data.ld_views[LNV_SPECTRO].set_top(
+                        vis_line_t(lnav_data.ld_spectro_source.row_for_time(
+                            old_time)));
+                }
 
                 if (!lnav_data.ld_view_stack.empty()) {
                     lnav_data.ld_view_stack.top()->set_needs_update();

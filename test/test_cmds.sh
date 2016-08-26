@@ -667,6 +667,25 @@ check_error_output "clear-highlight did not report an error?" <<EOF
 error: highlight does not exist
 EOF
 
+run_test ${lnav_test} -n \
+    -c ":zoom-to 4-hour" \
+    ${test_dir}/textfile_json_indented.0
+
+check_output "histogram is not working?" <<EOF
+{
+  "foo bar": null,
+  "array": [
+    1,
+    2,
+    3
+  ],
+  "obj": {
+    "one": 1,
+    "two": true
+  }
+}
+EOF
+
 touch -t 200711030923 ${srcdir}/logfile_syslog.0
 run_test ${lnav_test} -n \
     -c ":switch-to-view histogram" \
