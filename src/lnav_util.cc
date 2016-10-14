@@ -111,7 +111,7 @@ size_t unquote(char *dst, const char *str, size_t len)
             lpc += 1;
         }
         else if (str[lpc] == '\\' && (lpc + 1) < len) {
-            switch (str[lpc] + 1) {
+            switch (str[lpc + 1]) {
                 case 'n':
                     dst[index] = '\n';
                     break;

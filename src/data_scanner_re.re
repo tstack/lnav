@@ -93,7 +93,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
     /*!re2c
        re2c:yyfill:enable = 0;
 
-       SPACE = [ \t\r\n];
+       SPACE = [ \t\r];
        ALPHA = [a-zA-Z];
        NUM = [0-9];
        ALPHANUM = [a-zA-Z0-9_];

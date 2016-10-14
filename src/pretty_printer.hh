@@ -125,7 +125,7 @@ public:
                     break;
                 case DT_WHITE:
                     if (this->pp_values.empty() && this->pp_depth == 0) {
-                        this->pp_leading_indent = el.e_capture.length();
+                        // this->pp_leading_indent = el.e_capture.length();
                         continue;
                     }
                     break;
@@ -262,7 +262,9 @@ private:
     }
 
     void write_element(const element &el) {
-        if (this->pp_line_length == 0 && el.e_token == DT_WHITE) {
+        if (this->pp_leading_indent == 0 &&
+            this->pp_line_length == 0 &&
+            el.e_token == DT_WHITE) {
             return;
         }
         if (this->pp_line_length == 0 && el.e_token == DT_LINE) {
@@ -274,14 +276,33 @@ private:
         }
         if (el.e_token == DT_QUOTED_STRING) {
             pcre_input &pi = this->pp_scanner->get_input();
-            auto_mem<char> unquoted_str((char *)malloc(pi.pi_length));
+            auto_mem<char> unquoted_str((char *)malloc(el.e_capture.length() + 1));
             const char *start = pi.get_substr_start(&el.e_capture);
             unquote(unquoted_str.in(), start, el.e_capture.length());
             data_scanner ds(unquoted_str.in());
-            pretty_printer str_pp(&ds, this->pp_leading_indent);
+            pretty_printer str_pp(&ds,
+                                  this->pp_leading_indent + this->pp_depth * 4);
             std::string result = str_pp.print();
             if (result.find('\n') != std::string::npos) {
-                this->pp_stream << str_pp.print();
+                switch (start[0]) {
+                    case 'r':
+                    case 'u':
+                        this->pp_stream << start[0];
+                        this->pp_stream << start[1] << start[1];
+                        break;
+                    default:
+                        this->pp_stream << start[0] << start[0];
+                        break;
+                }
+                this->pp_stream
+                    << std::endl
+                    << result;
+                if (!endswith(result.c_str(), "\n")) {
+                    this->pp_stream << std::endl;
+                }
+                this->pp_stream
+                    << start[el.e_capture.length() - 1]
+                    << start[el.e_capture.length() - 1];
             } else {
                 this->pp_stream << pi.get_substr(&el.e_capture);
             }
