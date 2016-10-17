@@ -2239,7 +2239,7 @@ int main(int argc, char *argv[])
     int                  stdin_out_fd = -1;
 
     (void)signal(SIGPIPE, SIG_IGN);
-    setlocale(LC_NUMERIC, "");
+    setlocale(LC_ALL, "");
     umask(077);
 
     /* Disable Lnav from being able to execute external commands if
