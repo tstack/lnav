@@ -528,7 +528,7 @@ public:
         } while (length > 0);
 
         return length;
-    }
+    };
 
 #ifdef PCRE_STUDY_JIT_COMPILE
     static pcre_jit_stack *jit_stack(void);

@@ -1342,6 +1342,15 @@ void external_log_format::build(std::vector<std::string> &errors) {
                              iter->first + "]" +
                              ":" +
                              e.what());
+            errors.push_back("error:" +
+                             this->elf_name.to_string() + ".regex[" +
+                             iter->first + "]" +
+                             ":" + pat.p_string);
+            errors.push_back("error:" +
+                             this->elf_name.to_string() + ".regex[" +
+                             iter->first + "]" +
+                             ":" + string(e.e_offset, ' ') +
+                             "^");
             continue;
         }
         for (pcre_named_capture::iterator name_iter = pat.p_pcre->named_begin();

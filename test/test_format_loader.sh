@@ -10,6 +10,8 @@ sed -i "" -e "s|/.*/init.sql|init.sql|g" `test_err_filename`
 
 check_error_output "invalid format not detected?" <<EOF
 error:bad_regex_log.regex[std]:missing )
+error:bad_regex_log.regex[std]:^(?<timestamp>\d+: (?<body>.*)$
+error:bad_regex_log.regex[std]:                               ^
 error:bad_regex_log.level:missing )
 error:bad_regex_log:invalid sample -- 1428634687123; foo
 error:bad_sample_log:invalid sample -- 1428634687123; foo bar
