@@ -93,7 +93,6 @@ set(diag_STAT_SRCS
     field_overlay_source.hh
     filter_observer.hh
     format-text-files.hh
-    grapher.hh
     grep_highlighter.hh
     help.hh
     hotkeys.hh

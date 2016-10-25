@@ -820,7 +820,9 @@ static string com_highlight(string cmdline, vector<string> &args)
             retval = "error: " + string(errptr);
         }
         else {
-            textview_curses::highlighter hl(code, false);
+            textview_curses::highlighter hl(code);
+
+            hl.with_attrs(view_colors::singleton().attrs_for_ident(args[1]));
 
             hm[args[1]] = hl;
 
@@ -858,54 +860,6 @@ static string com_clear_highlight(string cmdline, vector<string> &args)
             hm.erase(hm_iter);
             retval = "info: highlight pattern cleared";
             tc->reload_data();
-        }
-    }
-
-    return retval;
-}
-
-static string com_graph(string cmdline, vector<string> &args)
-{
-    string retval = "error: expecting regular expression to graph";
-
-    if (args.size() == 0) {
-        args.push_back("graph");
-    }
-    else if (args.size() > 1) {
-        const char *errptr;
-        pcre *      code;
-        int         eoff;
-
-        args[1] = remaining_args(cmdline, args);
-        if ((code = pcre_compile(args[1].c_str(),
-                                 PCRE_CASELESS,
-                                 &errptr,
-                                 &eoff,
-                                 NULL)) == NULL) {
-            retval = "error: " + string(errptr);
-        }
-        else {
-            textview_curses &            tc = lnav_data.ld_views[LNV_LOG];
-            textview_curses::highlighter hl(code, true);
-
-            textview_curses::highlight_map_t &hm = tc.get_highlights();
-
-            hm["(graph"] = hl;
-            lnav_data.ld_graph_source.set_highlighter(&hm["(graph"]);
-
-            auto_ptr<grep_proc> gp(new grep_proc(code, tc));
-
-            gp->queue_request();
-            gp->start();
-            gp->set_sink(&lnav_data.ld_graph_source);
-
-            auto_ptr<grep_highlighter>
-            gh(new grep_highlighter(gp, "(graph", hm));
-            lnav_data.ld_grep_child[LG_GRAPH] = gh;
-
-            toggle_view(&lnav_data.ld_views[LNV_GRAPH]);
-
-            retval = "";
         }
     }
 
@@ -2797,12 +2751,6 @@ readline_context::command_t STD_COMMANDS[] = {
         "error|warning|search|user|file|partition",
         "Move to the previous bookmark of the given type in the current view",
         com_goto_mark,
-    },
-    {
-        "graph",
-        "<regex>",
-        "Graph the number values captured by the given regex that are found in the log view",
-        com_graph,
     },
     {
         "help",

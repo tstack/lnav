@@ -439,24 +439,12 @@ public:
         highlighter()
             : h_code(NULL),
               h_code_extra(NULL),
-              h_multiple(false) { };
-        highlighter(pcre *code,
-                    bool multiple = false,
-                    view_colors::role_t role = view_colors::VCR_NONE)
-            : h_code(code),
-              h_multiple(multiple)
+              h_attrs(-1) { };
+        highlighter(pcre *code)
+            : h_code(code), h_attrs(-1)
         {
             const char *errptr;
 
-            if (!multiple) {
-                if (role == view_colors::VCR_NONE) {
-                    this->h_roles.
-                    push_back(view_colors::singleton().next_highlight());
-                }
-                else {
-                    this->h_roles.push_back(role);
-                }
-            }
             this->h_code_extra = pcre_study(this->h_code, 0, &errptr);
             if (!this->h_code_extra && errptr) {
                 log_error("pcre_study error: %s", errptr);
@@ -471,34 +459,28 @@ public:
             }
         };
 
-        view_colors::role_t              get_role(unsigned int index)
-        {
-            view_colors &       vc = view_colors::singleton();
-            view_colors::role_t retval;
+        highlighter &with_role(view_colors::role_t role) {
+            this->h_attrs = view_colors::singleton().attrs_for_role(role);
 
-            if (this->h_multiple) {
-                while (index >= this->h_roles.size()) {
-                    this->h_roles.push_back(vc.next_highlight());
-                }
-                retval = this->h_roles[index];
-            }
-            else {
-                retval = this->h_roles[0];
-            }
-
-            return retval;
+            return *this;
         };
 
-        int                              get_attrs(int index)
+        highlighter &with_attrs(int attrs) {
+            this->h_attrs = attrs;
+
+            return *this;
+        };
+
+        int get_attrs() const
         {
-            return view_colors::singleton().
-                   attrs_for_role(this->get_role(index));
+            ensure(this->h_attrs != -1);
+
+            return this->h_attrs;
         };
 
         pcre *                           h_code;
         pcre_extra *                     h_code_extra;
-        bool                             h_multiple;
-        std::vector<view_colors::role_t> h_roles;
+        int h_attrs;
     };
 
     textview_curses();

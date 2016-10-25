@@ -207,7 +207,7 @@ public:
                 memcpy(scan_value,
                     line.get_data() + pvalue.e_capture.c_begin,
                     pvalue.e_capture.length());
-                scan_value[line.length()] = '\0';
+                scan_value[pvalue.e_capture.length()] = '\0';
                 if (sscanf(scan_value, "%lf", &d) != 1) {
                     d = 0.0;
                 }

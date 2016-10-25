@@ -536,9 +536,10 @@ private:
  */
 class view_colors {
 public:
-    /** The number of colors used for highlighting. */
-    static const int HL_BASIC_COLOR_COUNT = 4;
-    static const int HL_COLOR_COUNT = 2 * HL_BASIC_COLOR_COUNT + 9 * 6;
+    static const unsigned long BASIC_COLOR_COUNT = 8;
+    static const unsigned long HI_COLOR_COUNT = 6 * 3 * 3;
+
+    static int BASIC_HL_PAIRS[BASIC_COLOR_COUNT];
 
     /** Roles that can be mapped to curses attributes using attrs_for_role() */
     typedef enum {
@@ -572,9 +573,6 @@ public:
         VCR_LOW_THRESHOLD,
         VCR_MED_THRESHOLD,
         VCR_HIGH_THRESHOLD,
-
-        VCR_HIGHLIGHT_START,
-        VCR_HIGHLIGHT_END = VCR_HIGHLIGHT_START + HL_COLOR_COUNT,
 
         VCR__MAX
     } role_t;
@@ -611,27 +609,16 @@ public:
         return this->vc_role_reverse_colors[role];
     };
 
-    /**
-     * @return The next set of attributes to use for highlighting text.  This
-     * method will iterate through eight-or-so attributes combinations so there
-     * is some variety in how text is highlighted.
-     */
-    role_t next_highlight();
-
-    role_t next_plain_highlight();
-
     int attrs_for_ident(const char *str, size_t len) const {
-        int index = crc32(1, (const Bytef*)str, len);
+        unsigned long index = crc32(1, (const Bytef*)str, len);
         int retval;
 
         if (COLORS >= 256) {
-            retval = this->vc_role_colors[
-                VCR_HIGHLIGHT_START + HL_BASIC_COLOR_COUNT * 2 +
-                (abs(index) % (HL_COLOR_COUNT - HL_BASIC_COLOR_COUNT * 2))];
+            unsigned long offset = index % HI_COLOR_COUNT;
+            retval = COLOR_PAIR(VC_ANSI_END + offset);
         }
         else {
-            retval = this->vc_role_colors[
-                VCR_HIGHLIGHT_START + (abs(index) % HL_COLOR_COUNT)];
+            retval = BASIC_HL_PAIRS[index % BASIC_COLOR_COUNT];
         }
 
         return retval;
@@ -661,13 +648,12 @@ private:
     /** Private constructor that initializes the member fields. */
     view_colors();
 
+    static bool initialized;
+
     /** Map of role IDs to attribute values. */
     int vc_role_colors[VCR__MAX];
     /** Map of role IDs to reverse-video attribute values. */
     int vc_role_reverse_colors[VCR__MAX];
-    /** The index of the next highlight color to use. */
-    int vc_next_highlight;
-    int vc_next_plain_highlight;
 };
 
 enum mouse_button_t {

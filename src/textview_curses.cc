@@ -141,7 +141,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
          iter++) {
         // XXX testing for '$search' here sucks
         bool internal_hl = iter->first[0] == '$' && iter->first != "$search";
-        int off, hcount = 0;
+        int off;
         size_t re_end;
 
         if (body.lr_end > 8192)
@@ -173,8 +173,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 
                 if (lr.lr_end > lr.lr_start) {
                     sa.push_back(string_attr(
-                        lr, &view_curses::VC_STYLE, iter->second.get_attrs(hcount)));
-                    hcount++;
+                        lr, &view_curses::VC_STYLE, iter->second.get_attrs()));
 
                     off = matches[1];
                 }

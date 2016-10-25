@@ -141,6 +141,8 @@ static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
 struct _lnav_data lnav_data;
 
+static void setup_highlights(textview_curses::highlight_map_t &hm);
+
 const int ZOOM_LEVELS[] = {
     1,
     30,
@@ -163,7 +165,6 @@ const char *lnav_view_strings[LNV__MAX + 1] = {
     "text",
     "help",
     "histogram",
-    "graph",
     "db",
     "example",
     "schema",
@@ -193,7 +194,6 @@ static const char *view_titles[LNV__MAX] = {
     "TEXT",
     "HELP",
     "HIST",
-    "GRAPH",
     "DB",
     "EXAMPLE",
     "SCHEMA",
@@ -974,8 +974,9 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
         }
 
         if (code != NULL) {
-            textview_curses::highlighter hl(
-                code, false, view_colors::VCR_SEARCH);
+            textview_curses::highlighter hl(code);
+
+            hl.with_role(view_colors::VCR_SEARCH);
 
             if (!quoted) {
                 lnav_data.ld_bottom_source.grep_error("");
@@ -1698,11 +1699,6 @@ static void looper(void)
         lnav_data.ld_rl_view = &rlc;
 
         lnav_data.ld_rl_view->add_possibility(
-            LNM_COMMAND, "graph", "\\d+(?:\\.\\d+)?");
-        lnav_data.ld_rl_view->add_possibility(
-            LNM_COMMAND, "graph", "([:= \\t]\\d+(?:\\.\\d+)?)");
-
-        lnav_data.ld_rl_view->add_possibility(
             LNM_COMMAND, "viewname", lnav_view_strings);
 
         lnav_data.ld_rl_view->add_possibility(
@@ -1735,6 +1731,13 @@ static void looper(void)
         define_key("\033Oc", KEY_END);
 
         view_colors::singleton().init();
+
+        {
+            setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
+            setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
+            setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
+            setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
+        }
 
         rlc.set_window(lnav_data.ld_window);
         rlc.set_y(-1);
@@ -1921,10 +1924,6 @@ static void looper(void)
 
                     if (gc.get() != NULL) {
                         gc->get_grep_proc()->check_poll_set(pollfds);
-                        if (lpc == LG_GRAPH) {
-                            lnav_data.ld_views[LNV_GRAPH].reload_data();
-                            /* XXX */
-                        }
                     }
                 }
                 for (lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -2059,6 +2058,11 @@ static void looper(void)
     }
 }
 
+static textview_curses::highlighter static_highlighter(const string &regex) {
+    return textview_curses::highlighter(xpcre_compile(regex.c_str()))
+        .with_attrs(view_colors::singleton().attrs_for_ident(regex));
+}
+
 static void setup_highlights(textview_curses::highlight_map_t &hm)
 {
     hm["$kw"] = textview_curses::highlighter(xpcre_compile(
@@ -2160,51 +2164,45 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
           "\\bwhere |"
           "\\bwhile\\b|"
           "\\b[a-zA-Z][\\w]+_t\\b"
-          ")", PCRE_CASELESS),
-        false, view_colors::VCR_KEYWORD);
-    hm["$srcfile"] = textview_curses::
-                     highlighter(xpcre_compile(
-                                     "[\\w\\-_]+\\."
-                                     "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
-                                     "\\d+"));
-    hm["$xml"] = textview_curses::
-                 highlighter(xpcre_compile("<(/?[^ >=]+)[^>]*>"));
-    hm["$stringd"] = textview_curses::
-                     highlighter(xpcre_compile("\"(?:\\\\.|[^\"])*\""),
-                                 false, view_colors::VCR_STRING);
-    hm["$strings"] = textview_curses::
-                     highlighter(xpcre_compile(
-                                     "(?<![A-WY-Za-qstv-z])\'(?:\\\\.|[^'])*\'"),
-                     false, view_colors::VCR_STRING);
-    hm["$stringb"] = textview_curses::
-                     highlighter(xpcre_compile("`(?:\\\\.|[^`])*`"),
-                                 false, view_colors::VCR_STRING);
-    hm["$diffp"] = textview_curses::
-                   highlighter(xpcre_compile(
-                                   "^\\+.*"), false,
-                               view_colors::VCR_DIFF_ADD);
-    hm["$diffm"] = textview_curses::
-                   highlighter(xpcre_compile(
-                                   "^(?:--- .*|-$|-[^-].*)"), false,
-                               view_colors::VCR_DIFF_DELETE);
-    hm["$diffs"] = textview_curses::
-                   highlighter(xpcre_compile(
-                                   "^\\@@ .*"), false,
-                               view_colors::VCR_DIFF_SECTION);
-    hm["$ip"] = textview_curses::
-                highlighter(xpcre_compile("\\d+\\.\\d+\\.\\d+\\.\\d+"));
+          ")", PCRE_CASELESS))
+        .with_role(view_colors::VCR_KEYWORD);
+    hm["$srcfile"] = static_highlighter(
+        "[\\w\\-_]+\\."
+            "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
+            "\\d+");
+    hm["$xml"] = static_highlighter("<(/?[^ >=]+)[^>]*>");
+    hm["$stringd"] = textview_curses::highlighter(xpcre_compile(
+        "\"(?:\\\\.|[^\"])*\""))
+        .with_role(view_colors::VCR_STRING);
+    hm["$strings"] = textview_curses::highlighter(xpcre_compile(
+        "(?<![A-WY-Za-qstv-z])\'(?:\\\\.|[^'])*\'"))
+        .with_role(view_colors::VCR_STRING);
+    hm["$stringb"] = textview_curses::highlighter(xpcre_compile(
+        "`(?:\\\\.|[^`])*`"))
+        .with_role(view_colors::VCR_STRING);
+    hm["$diffp"] = textview_curses::highlighter(xpcre_compile(
+        "^\\+.*"))
+        .with_role(view_colors::VCR_DIFF_ADD);
+    hm["$diffm"] = textview_curses::highlighter(xpcre_compile(
+        "^(?:--- .*|-$|-[^-].*)"))
+        .with_role(view_colors::VCR_DIFF_DELETE);
+    hm["$diffs"] = textview_curses::highlighter(xpcre_compile(
+        "^\\@@ .*"))
+        .with_role(view_colors::VCR_DIFF_SECTION);
+    hm["$ip"] = static_highlighter("\\d+\\.\\d+\\.\\d+\\.\\d+");
     hm["$comment"] = textview_curses::highlighter(xpcre_compile(
-        "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"), false, view_colors::VCR_COMMENT);
-    hm["$javadoc"] = textview_curses::highlighter(xpcre_compile(
-        "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)"));
+        "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"))
+        .with_role(view_colors::VCR_COMMENT);
+    hm["$javadoc"] = static_highlighter(
+        "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");
     hm["$var"] = textview_curses::highlighter(xpcre_compile(
         "(?:"
           "(?:var\\s+)?([\\-\\w]+)\\s*=|"
           "(?<!\\$)\\$(\\w+)|"
           "(?<!\\$)\\$\\((\\w+)\\)|"
           "(?<!\\$)\\$\\{(\\w+)\\}"
-          ")"),
-        false, view_colors::VCR_VARIABLE);
+          ")"))
+        .with_role(view_colors::VCR_VARIABLE);
 }
 
 static void print_errors(vector<string> error_list)
@@ -2580,8 +2578,6 @@ int main(int argc, char *argv[])
         .set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_HISTOGRAM]
         .set_sub_source(&lnav_data.ld_hist_source2);
-    lnav_data.ld_views[LNV_GRAPH]
-        .set_sub_source(&lnav_data.ld_graph_source);
     lnav_data.ld_views[LNV_DB]
         .set_sub_source(&lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
@@ -2600,13 +2596,6 @@ int main(int argc, char *argv[])
     }
 
     {
-        setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
-        setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
-        setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
-        setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
-    }
-
-    {
         hist_source2 &hs = lnav_data.ld_hist_source2;
 
         lnav_data.ld_log_source.set_index_delegate(
@@ -2615,13 +2604,6 @@ int main(int argc, char *argv[])
         hs.init();
         lnav_data.ld_zoom_level = 3;
         hs.set_time_slice(ZOOM_LEVELS[lnav_data.ld_zoom_level]);
-    }
-
-    {
-        hist_source &hs = lnav_data.ld_graph_source;
-
-        hs.set_bucket_size(1);
-        hs.set_group_size(100);
     }
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {

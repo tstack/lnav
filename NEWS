@@ -3,9 +3,16 @@ lnav v0.8.2:
      Features:
      * The timestamp format for JSON log files can be specified with the
        "timestamp-format" option in the "line-format" array.
-     * Added "min-width", "max-width", ""align", and "overflow" options to the
+     * Added "min-width", "max-width", "align", and "overflow" options to the
        "line-format" in format definitions for JSON log files.  These options
        give you more control over how the displayed line looks.
+
+     Interface Changes:
+     * The color used for text colored via ":highlight" is now based on the
+       the regex instead of randomly picked so that colors are consistent
+       across invocations.
+     * The "graph" view has been removed since it's functionality has been
+       obsoleted by other features, like ":create-search-table".
 
 lnav v0.8.1:
      Features:

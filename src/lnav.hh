@@ -43,7 +43,6 @@
 #include <memory>
 
 #include "byte_array.hh"
-#include "grapher.hh"
 #include "logfile.hh"
 #include "hist_source.hh"
 #include "statusview_curses.hh"
@@ -116,7 +115,6 @@ typedef enum {
     LNV_TEXT,
     LNV_HELP,
     LNV_HISTOGRAM,
-    LNV_GRAPH,
     LNV_DB,
     LNV_EXAMPLE,
     LNV_SCHEMA,
@@ -139,7 +137,6 @@ typedef enum {
 } lnav_status_t;
 
 typedef enum {
-    LG_GRAPH,
     LG_CAPTURE,
 
     LG__MAX
@@ -235,8 +232,6 @@ struct _lnav_data {
 
     std::map<textview_curses *, int>        ld_last_user_mark;
     std::map<textview_curses *, int>        ld_select_start;
-
-    grapher                                 ld_graph_source;
 
     db_label_source                         ld_db_row_source;
     db_overlay_source                       ld_db_overlay;

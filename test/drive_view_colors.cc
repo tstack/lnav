@@ -47,14 +47,19 @@ public:
 		int lpc;
 
 		for (lpc = 0; lpc < 16; lpc++) {
-            view_colors::role_t role;
+            int attrs;
 			char label[64];
 			attr_line_t al;
 			line_range lr;
 
-            role = view_colors::singleton().next_highlight();
 			snprintf(label, sizeof(label), "This is line: %d", lpc);
+            attrs = view_colors::singleton().attrs_for_ident(label);
 			al = label;
+			al.get_attrs().push_back(string_attr(
+				line_range(0, -1),
+				&view_curses::VC_STYLE,
+				attrs
+			));
 			lr.lr_start = 0;
 			lr.lr_end = 40;
 			this->mvwattrline(this->tc_window,
@@ -62,7 +67,7 @@ public:
                               0,
                               al,
                               lr,
-                              role);
+                              view_colors::VCR_TEXT);
 		}
 	};
 
