@@ -26,6 +26,9 @@
             "user" : {
                 "kind" : "string",
                 "identifier" : true
+            },
+            "cl" : {
+                "kind" : "string"
             }
         }
     }

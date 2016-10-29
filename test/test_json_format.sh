@@ -72,13 +72,13 @@ Caused by: java.lang.ClassNotFoundException: javax.el.StaticFieldELResolver
   @version: 1
   logger_name: org.apache.jasper.runtime.JspFactoryImpl
   thread_name: http-bio-0.0.0.0-8081-exec-198
-  level_value: 40000
+  level: ERROR
   customer: foobaz
 2016-08-03T12:06:31.009 - ;Exception initializing page context;
   @version: 1
   logger_name: org.apache.jasper.runtime.JspFactoryImpl
   thread_name: http-bio-0.0.0.0-8081-exec-198
-  level_value: 40000
+  level: ERROR
   customer: foobaz
 EOF
 
@@ -125,10 +125,10 @@ run_test ${lnav_test} -n -d /tmp/lnav.err \
     ${test_dir}/logfile_json2.json
 
 check_output "log levels not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,user
-0,<NULL>,2013-09-06 20:00:49.124,0,info,0,<NULL>
-1,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,steve@example.com
-3,<NULL>,2013-09-06 22:01:49.124,60000,error,0,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,cl,user
+0,<NULL>,2013-09-06 20:00:49.124,0,info,0,com.exmaple.foo,<NULL>
+1,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,com.exmaple.foo,steve@example.com
+3,<NULL>,2013-09-06 22:01:49.124,60000,error,0,com.exmaple.foo,<NULL>
 EOF
 
 

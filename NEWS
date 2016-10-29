@@ -6,6 +6,8 @@ lnav v0.8.2:
      * Added "min-width", "max-width", "align", and "overflow" options to the
        "line-format" in format definitions for JSON log files.  These options
        give you more control over how the displayed line looks.
+     * Added a "hidden" option to log format values so that you can hide JSON
+       log fields from being displayed if they are not in the line format.
 
      Interface Changes:
      * The color used for text colored via ":highlight" is now based on the

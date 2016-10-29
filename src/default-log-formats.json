@@ -771,6 +771,9 @@
         "timestamp-field" : "generated_at",
         "body-field" : "message",
         "value" : {
+            "display_received_at" : {
+                "kind" : "string"
+            },
             "program" : {
                 "kind" : "string",
                 "identifier" : true

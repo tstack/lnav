@@ -8,7 +8,7 @@
         "file-pattern" : "\\.clog.*",
         "multiline": false,
         "line-format" : 
-         [ 
+        [
             { "field" : "@timestamp" },
             " ",
             { "field" : "ipaddress" },
@@ -21,21 +21,27 @@
         "body-field" : "message",        
         "level-field" : "level",
         "level" : {
-        	"trace" : "TRACE",
+            "trace" : "TRACE",
             "debug" : "DEBUG",
             "info" : "INFO",
             "error" : "ERROR",
             "warning" : "WARN"
         },
-		"value" : {
-			"logger_name" : {
-				"kind" : "string",
-				"identifier" : true
-			},
-			"ipaddress" : {
-				"kind" : "string",
-				"identifier" : true
-			}			
-		}     
+        "value" : {
+            "logger_name" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "ipaddress" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "level_value" : {
+                "hidden": true
+            },
+            "stack_trace" : {
+                "kind" : "string"
+            }
+        }
     }
 }

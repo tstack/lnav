@@ -358,39 +358,14 @@ struct json_log_userdata {
     shared_buffer_ref &jlu_shared_buffer;
 };
 
-struct json_field_cmp {
-    json_field_cmp(external_log_format::json_log_field type,
-                   const intern_string_t name)
-        : jfc_type(type), jfc_field_name(name) {
-    };
-
-    bool operator()(const external_log_format::json_format_element &jfe) const {
-        return (this->jfc_type == jfe.jfe_type &&
-                this->jfc_field_name == jfe.jfe_value);
-    };
-
-    external_log_format::json_log_field jfc_type;
-    const intern_string_t jfc_field_name;
-};
-
 static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len);
 
 static int read_json_null(yajlpp_parse_context *ypc)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
-        return 1;
-    }
-    if (!jlu->jlu_format->jlf_hide_extra &&
-            find_if(line_format.begin(), line_format.end(),
-                json_field_cmp(external_log_format::JLF_VARIABLE,
-                               field_name)) == line_format.end()) {
-        jlu->jlu_sub_line_count += 1;
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
 
     return 1;
 }
@@ -398,19 +373,9 @@ static int read_json_null(yajlpp_parse_context *ypc)
 static int read_json_bool(yajlpp_parse_context *ypc, int val)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
-        return 1;
-    }
-    if (!jlu->jlu_format->jlf_hide_extra &&
-        find_if(line_format.begin(), line_format.end(),
-            json_field_cmp(external_log_format::JLF_VARIABLE,
-                    field_name)) == line_format.end()) {
-        jlu->jlu_sub_line_count += 1;
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
 
     return 1;
 }
@@ -418,13 +383,8 @@ static int read_json_bool(yajlpp_parse_context *ypc, int val)
 static int read_json_int(yajlpp_parse_context *ypc, long long val)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
-        return 1;
-    }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         long long divisor = jlu->jlu_format->elf_timestamp_divisor;
         struct timeval tv;
@@ -445,12 +405,8 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
             }
         }
     }
-    else if (!jlu->jlu_format->jlf_hide_extra &&
-             find_if(line_format.begin(), line_format.end(),
-                     json_field_cmp(external_log_format::JLF_VARIABLE,
-                         field_name)) == line_format.end()) {
-        jlu->jlu_sub_line_count += 1;
-    }
+
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
 
     return 1;
 }
@@ -458,13 +414,8 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
 static int read_json_double(yajlpp_parse_context *ypc, double val)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
-        return 1;
-    }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         double divisor = jlu->jlu_format->elf_timestamp_divisor;
         struct timeval tv;
@@ -473,12 +424,8 @@ static int read_json_double(yajlpp_parse_context *ypc, double val)
         tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
         jlu->jlu_base_line->set_time(tv);
     }
-    else if (!jlu->jlu_format->jlf_hide_extra &&
-             find_if(line_format.begin(), line_format.end(),
-                     json_field_cmp(external_log_format::JLF_VARIABLE,
-                         field_name)) == line_format.end()) {
-        jlu->jlu_sub_line_count += 1;
-    }
+
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
 
     return 1;
 }
@@ -495,8 +442,9 @@ static int json_array_start(void *ctx)
 
         if (!jlu->jlu_format->jlf_hide_extra &&
             find_if(line_format.begin(), line_format.end(),
-                    json_field_cmp(external_log_format::JLF_VARIABLE,
-                                   field_name)) == line_format.end()) {
+                    external_log_format::json_field_cmp(
+                        external_log_format::JLF_VARIABLE,
+                        field_name)) == line_format.end()) {
             jlu->jlu_sub_line_count += 1;
         }
 
@@ -974,8 +922,6 @@ void external_log_format::annotate(shared_buffer_ref &line,
 static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
     struct exttm tm_out;
     struct timeval tv_out;
@@ -992,17 +938,8 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
         uint8_t opid = hash_str((const char *) str, len);
         jlu->jlu_base_line->set_opid(opid);
     }
-    else if (ypc->is_level(1) || jlu->jlu_format->elf_value_defs.find(field_name) !=
-             jlu->jlu_format->elf_value_defs.end()) {
-        if (!jlu->jlu_format->jlf_hide_extra) {
-            if (find_if(line_format.begin(), line_format.end(),
-                        json_field_cmp(external_log_format::JLF_VARIABLE,
-                                       field_name)) == line_format.end()) {
-                jlu->jlu_sub_line_count += 1;
-            }
-            jlu->jlu_sub_line_count += std::count(&str[0], &str[len], '\n');
-        }
-    }
+
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name, str, len);
 
     return 1;
 }
@@ -1118,6 +1055,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                 if (vd_iter != this->elf_value_defs.end()) {
                     lv_iter->lv_identifier = vd_iter->second.vd_identifier;
                     lv_iter->lv_column = vd_iter->second.vd_column;
+                    lv_iter->lv_hidden = vd_iter->second.vd_hidden;
                 }
             }
 
@@ -1243,10 +1181,10 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             "body", -1);
                     logline_value &lv = this->jlf_line_values[lpc];
 
-                    if (used_values[lpc] ||
+                    if (lv.lv_hidden ||
+                        used_values[lpc] ||
                         lv.lv_name == this->lf_timestamp_field ||
-                        lv.lv_name == body_name ||
-                        lv.lv_name == this->elf_level_field) {
+                        lv.lv_name == body_name) {
                         continue;
                     }
 
@@ -1297,7 +1235,12 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         if (this->jlf_cached_line[this_off] == '\n') {
             this_off += 1;
         }
-        next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
+        if ((ll.get_sub_offset() + 1) < this->jlf_line_offsets.size()) {
+            next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
+        }
+        else {
+            next_off = this_off;
+        }
     }
 
     if (full_message) {
@@ -1313,6 +1256,26 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 }
 
 void external_log_format::build(std::vector<std::string> &errors) {
+    if (!this->lf_timestamp_field.empty()) {
+        value_def &vd = this->elf_value_defs[this->lf_timestamp_field];
+        vd.vd_name = this->lf_timestamp_field;
+        vd.vd_kind = logline_value::VALUE_TEXT;
+        vd.vd_internal = true;
+    }
+    if (!this->elf_level_field.empty() && this->elf_value_defs.
+        find(this->elf_level_field) == this->elf_value_defs.end()) {
+        value_def &vd = this->elf_value_defs[this->elf_level_field];
+        vd.vd_name = this->elf_level_field;
+        vd.vd_kind = logline_value::VALUE_TEXT;
+        vd.vd_internal = true;
+    }
+    if (!this->elf_body_field.empty()) {
+        value_def &vd = this->elf_value_defs[this->elf_body_field];
+        vd.vd_name = this->elf_body_field;
+        vd.vd_kind = logline_value::VALUE_TEXT;
+        vd.vd_internal = true;
+    }
+
     if (!this->lf_timestamp_format.empty()) {
         this->lf_timestamp_format.push_back(NULL);
     }
@@ -1388,7 +1351,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 else {
                     vd.vd_unit_field_index = -1;
                 }
-                if (vd.vd_column == -1) {
+                if (!vd.vd_internal && vd.vd_column == -1) {
                     vd.vd_column = this->elf_column_count++;
                 }
                 pat.p_value_by_index.push_back(vd);
@@ -1462,8 +1425,12 @@ void external_log_format::build(std::vector<std::string> &errors) {
          ++iter) {
         std::vector<std::string>::iterator act_iter;
 
-        if (iter->second.vd_column == -1) {
+        if (!iter->second.vd_internal && iter->second.vd_column == -1) {
             iter->second.vd_column = this->elf_column_count++;
+        }
+
+        if (iter->second.vd_kind == logline_value::VALUE_UNKNOWN) {
+            iter->second.vd_kind = logline_value::VALUE_TEXT;
         }
 
         for (act_iter = iter->second.vd_action_list.begin();
@@ -1621,13 +1588,36 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
     this->lf_value_stats.resize(this->elf_numeric_value_defs.size());
 
+    int format_index = 0;
     for (vector<json_format_element>::iterator iter = this->jlf_line_format.begin();
          iter != this->jlf_line_format.end();
-         ++iter) {
+         ++iter, format_index++) {
+        static const intern_string_t ts = intern_string::lookup("__timestamp__");
+        map<const intern_string_t, value_def>::iterator vd_iter;
         json_format_element &jfe = *iter;
 
         if (jfe.jfe_value.empty() && !jfe.jfe_ts_format.empty()) {
-            jfe.jfe_value = intern_string::lookup("__timestamp__");
+            jfe.jfe_value = ts;
+        }
+
+        switch (jfe.jfe_type) {
+            case JLF_VARIABLE:
+                vd_iter = this->elf_value_defs.find(jfe.jfe_value);
+                if (jfe.jfe_value != ts &&
+                    vd_iter == this->elf_value_defs.end()) {
+                    char index_str[32];
+
+                    snprintf(index_str, sizeof(index_str), "%d", format_index);
+                    errors.push_back("error:" +
+                                     this->elf_name.to_string() +
+                                     ":line_format[" +
+                                     index_str +
+                                     "]:line format variable is not defined -- " +
+                                     jfe.jfe_value.to_string());
+                }
+                break;
+            default:
+                break;
         }
     }
 }
@@ -1705,12 +1695,16 @@ public:
         std::map<const intern_string_t, external_log_format::value_def>::const_iterator iter;
         const external_log_format &elf = this->elt_format;
 
-        cols.resize(elf.elf_value_defs.size());
+        cols.resize(elf.elf_column_count);
         for (iter = elf.elf_value_defs.begin();
              iter != elf.elf_value_defs.end();
              ++iter) {
             const external_log_format::value_def &vd = iter->second;
             int type = 0;
+
+            if (vd.vd_column == -1) {
+                continue;
+            }
 
             switch (vd.vd_kind) {
             case logline_value::VALUE_NULL:

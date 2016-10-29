@@ -57,6 +57,8 @@ void shared_buffer_ref::share(shared_buffer &sb, char *data, size_t len)
     this->sb_owner = &sb;
     this->sb_data = data;
     this->sb_length = len;
+
+    ensure(this->sb_length < (5 * 1024 * 1024));
 }
 
 bool shared_buffer_ref::subset(shared_buffer_ref &other, off_t offset, size_t len)

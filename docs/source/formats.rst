@@ -131,6 +131,9 @@ fields:
     determine the "sub" format.  This module identifier is used to help
     **lnav** quickly identify the format to use when parsing message bodies.
 
+  :hide-extra: A boolean for JSON logs that indicates whether fields not
+    present in the line-format should be displayed on their own lines.
+
   :level: A mapping of error levels to regular expressions.  During scanning
     the contents of the capture group specified by *level-field* will be
     checked against each of these regexes.  Once a match is found, the log
@@ -153,6 +156,8 @@ fields:
       an identifier and should be syntax colored.
     :foreign-key: A boolean that indicates that this field is a key and should
       not be graphed.  This should only need to be set for integer fields.
+    :hidden: A boolean for JSON log fields that indicates whether they should
+      be displayed if they are not present in the line-format.
 
   :sample: A list of objects that contain sample log messages.  All formats
     must include at least one sample and it must be matched by one of the

@@ -362,28 +362,29 @@ public:
 
     logline_value(const intern_string_t name)
         : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1),
-          lv_from_module(false), lv_format(NULL) { };
+          lv_hidden(false), lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, bool b)
         : lv_name(name),
           lv_kind(VALUE_BOOLEAN),
           lv_value((int64_t)(b ? 1 : 0)),
           lv_identifier(),
           lv_column(-1),
+          lv_hidden(false),
           lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, int64_t i)
         : lv_name(name), lv_kind(VALUE_INTEGER), lv_value(i), lv_identifier(), lv_column(-1),
-    lv_from_module(false), lv_format(NULL) { };
+          lv_hidden(false), lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, double i)
         : lv_name(name), lv_kind(VALUE_FLOAT), lv_value(i), lv_identifier(), lv_column(-1),
-          lv_from_module(false), lv_format(NULL) { };
+          lv_hidden(false), lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, shared_buffer_ref &sbr, int column = -1)
         : lv_name(name), lv_kind(VALUE_TEXT), lv_sbr(sbr),
           lv_identifier(), lv_column(column),
-          lv_from_module(false), lv_format(NULL) {
+          lv_hidden(false), lv_from_module(false), lv_format(NULL) {
     };
     logline_value(const intern_string_t name, const intern_string_t val, int column = -1)
             : lv_name(name), lv_kind(VALUE_TEXT), lv_intern_string(val), lv_identifier(),
-              lv_column(column), lv_from_module(false), lv_format(NULL) {
+              lv_column(column), lv_hidden(false), lv_from_module(false), lv_format(NULL) {
 
     };
     logline_value(const intern_string_t name, kind_t kind, shared_buffer_ref &sbr,
@@ -391,7 +392,7 @@ public:
                   int col=-1, int start=-1, int end=-1, bool from_module=false,
                   const log_format *format=NULL)
         : lv_name(name), lv_kind(kind),
-          lv_identifier(ident), lv_column(col),
+          lv_identifier(ident), lv_column(col), lv_hidden(false),
           lv_origin(start, end),
           lv_from_module(from_module),
           lv_format(format)
@@ -536,6 +537,7 @@ public:
     intern_string_t lv_intern_string;
     bool lv_identifier;
     int lv_column;
+    bool lv_hidden;
     struct line_range lv_origin;
     bool lv_from_module;
     const log_format *lv_format;
@@ -826,7 +828,8 @@ public:
             vd_foreign_key(false),
             vd_unit_field_index(-1),
             vd_column(-1),
-            vd_hidden(false) {
+            vd_hidden(false),
+            vd_internal(false) {
 
         };
 
@@ -841,6 +844,7 @@ public:
         std::map<const intern_string_t, scaling_factor> vd_unit_scaling;
         int vd_column;
         bool vd_hidden;
+        bool vd_internal;
         std::vector<std::string> vd_action_list;
 
         bool operator<(const value_def &rhs) const {
@@ -987,12 +991,85 @@ public:
         return this->elf_source_path;
     };
 
-    bool has_value_def(const intern_string_t &ist) const {
-        return (ist == this->lf_timestamp_field ||
-                ist == this->elf_level_field ||
-                ist == this->elf_body_field ||
-                this->elf_value_defs.find(ist) != this->elf_value_defs.end());
-    }
+    enum json_log_field {
+        JLF_CONSTANT,
+        JLF_VARIABLE
+    };
+
+    struct json_format_element {
+        enum align_t {
+            LEFT,
+            RIGHT,
+        };
+
+        enum overflow_t {
+            ABBREV,
+            TRUNCATE,
+            DOTDOT,
+        };
+
+        json_format_element()
+            : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0),
+              jfe_max_width(LLONG_MAX), jfe_align(LEFT),
+              jfe_overflow(ABBREV)
+        { };
+
+        json_log_field jfe_type;
+        intern_string_t jfe_value;
+        std::string jfe_default_value;
+        long long jfe_min_width;
+        long long jfe_max_width;
+        align_t jfe_align;
+        overflow_t jfe_overflow;
+        std::string jfe_ts_format;
+    };
+
+    struct json_field_cmp {
+        json_field_cmp(json_log_field type,
+                       const intern_string_t name)
+            : jfc_type(type), jfc_field_name(name) {
+        };
+
+        bool operator()(const json_format_element &jfe) const {
+            return (this->jfc_type == jfe.jfe_type &&
+                    this->jfc_field_name == jfe.jfe_value);
+        };
+
+        json_log_field jfc_type;
+        const intern_string_t jfc_field_name;
+    };
+
+    long value_line_count(const intern_string_t ist,
+                          const unsigned char *str = NULL,
+                          ssize_t len = -1) const {
+        std::map<const intern_string_t, value_def>::const_iterator iter =
+            this->elf_value_defs.find(ist);
+        long line_count = (str != NULL) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
+
+        if (iter == this->elf_value_defs.end()) {
+            return this->jlf_hide_extra ? 0 : line_count;
+        }
+
+        if (iter->second.vd_hidden) {
+            return 0;
+        }
+
+        if (std::find_if(this->jlf_line_format.begin(),
+                         this->jlf_line_format.end(),
+                         json_field_cmp(JLF_VARIABLE, ist)) !=
+            this->jlf_line_format.end()) {
+            return line_count - 1;
+        }
+
+        return line_count;
+    };
+
+    bool has_value_def(const intern_string_t ist) const {
+        std::map<const intern_string_t, value_def>::const_iterator iter =
+            this->elf_value_defs.find(ist);
+
+        return iter != this->elf_value_defs.end();
+    };
 
     std::string get_pattern_name() const {
         if (this->jlf_json) {
@@ -1034,39 +1111,6 @@ public:
     bool elf_has_module_format;
     bool elf_builtin_format;
     std::vector<std::pair<intern_string_t, std::string> > elf_search_tables;
-
-    enum json_log_field {
-        JLF_CONSTANT,
-        JLF_VARIABLE
-    };
-
-    struct json_format_element {
-        enum align_t {
-            LEFT,
-            RIGHT,
-        };
-
-        enum overflow_t {
-            ABBREV,
-            TRUNCATE,
-            DOTDOT,
-        };
-
-        json_format_element()
-            : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0),
-              jfe_max_width(LLONG_MAX), jfe_align(LEFT),
-              jfe_overflow(ABBREV)
-        { };
-
-        json_log_field jfe_type;
-        intern_string_t jfe_value;
-        std::string jfe_default_value;
-        long long jfe_min_width;
-        long long jfe_max_width;
-        align_t jfe_align;
-        overflow_t jfe_overflow;
-        std::string jfe_ts_format;
-    };
 
     void json_append_to_cache(const char *value, size_t len) {
         size_t old_size = this->jlf_cached_line.size();
