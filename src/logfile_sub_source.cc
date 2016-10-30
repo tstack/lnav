@@ -130,12 +130,16 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         format->scrub(value_out);
     }
 
-    if (!this->lss_token_line->is_continued()) {
+    if (!this->lss_token_line->is_continued() ||
+        this->lss_token_line->get_sub_offset() != 0) {
         shared_buffer_ref sbr;
 
         sbr.share(this->lss_share_manager,
                   (char *)this->lss_token_value.c_str(), this->lss_token_value.size());
         format->annotate(sbr, this->lss_token_attrs, this->lss_token_values);
+        if (this->lss_token_line->get_sub_offset() != 0) {
+            this->lss_token_attrs.clear();
+        }
 
         if ((this->lss_token_file->is_time_adjusted() ||
              format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) &&
@@ -252,7 +256,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         attrs |= A_UNDERLINE;
     }
 
-    std::vector<logline_value> &line_values = this->lss_token_values;
+    const std::vector<logline_value> &line_values = this->lss_token_values;
 
     lr.lr_start = 0;
     lr.lr_end = this->lss_token_value.length();
@@ -263,9 +267,13 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
 
-    for (vector<logline_value>::iterator lv_iter = line_values.begin();
+    for (vector<logline_value>::const_iterator lv_iter = line_values.begin();
          lv_iter != line_values.end();
          ++lv_iter) {
+        if (lv_iter->lv_sub_offset != this->lss_token_line->get_sub_offset()) {
+            continue;
+        }
+
         if (!lv_iter->lv_identifier || !lv_iter->lv_origin.is_valid()) {
             continue;
         }

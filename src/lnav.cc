@@ -2169,7 +2169,8 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
     hm["$srcfile"] = static_highlighter(
         "[\\w\\-_]+\\."
             "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
-            "\\d+");
+            "\\d+")
+        .with_role(view_colors::VCR_FILE);
     hm["$xml"] = static_highlighter("<(/?[^ >=]+)[^>]*>");
     hm["$stringd"] = textview_curses::highlighter(xpcre_compile(
         "\"(?:\\\\.|[^\"])*\""))

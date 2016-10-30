@@ -362,29 +362,29 @@ public:
 
     logline_value(const intern_string_t name)
         : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_from_module(false), lv_format(NULL) { };
+          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, bool b)
         : lv_name(name),
           lv_kind(VALUE_BOOLEAN),
           lv_value((int64_t)(b ? 1 : 0)),
           lv_identifier(),
           lv_column(-1),
-          lv_hidden(false),
+          lv_hidden(false), lv_sub_offset(0),
           lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, int64_t i)
         : lv_name(name), lv_kind(VALUE_INTEGER), lv_value(i), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_from_module(false), lv_format(NULL) { };
+          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, double i)
         : lv_name(name), lv_kind(VALUE_FLOAT), lv_value(i), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_from_module(false), lv_format(NULL) { };
+          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) { };
     logline_value(const intern_string_t name, shared_buffer_ref &sbr, int column = -1)
         : lv_name(name), lv_kind(VALUE_TEXT), lv_sbr(sbr),
           lv_identifier(), lv_column(column),
-          lv_hidden(false), lv_from_module(false), lv_format(NULL) {
+          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) {
     };
     logline_value(const intern_string_t name, const intern_string_t val, int column = -1)
             : lv_name(name), lv_kind(VALUE_TEXT), lv_intern_string(val), lv_identifier(),
-              lv_column(column), lv_hidden(false), lv_from_module(false), lv_format(NULL) {
+              lv_column(column), lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) {
 
     };
     logline_value(const intern_string_t name, kind_t kind, shared_buffer_ref &sbr,
@@ -392,7 +392,7 @@ public:
                   int col=-1, int start=-1, int end=-1, bool from_module=false,
                   const log_format *format=NULL)
         : lv_name(name), lv_kind(kind),
-          lv_identifier(ident), lv_column(col), lv_hidden(false),
+          lv_identifier(ident), lv_column(col), lv_hidden(false), lv_sub_offset(0),
           lv_origin(start, end),
           lv_from_module(from_module),
           lv_format(format)
@@ -538,6 +538,7 @@ public:
     bool lv_identifier;
     int lv_column;
     bool lv_hidden;
+    int lv_sub_offset;
     struct line_range lv_origin;
     bool lv_from_module;
     const log_format *lv_format;

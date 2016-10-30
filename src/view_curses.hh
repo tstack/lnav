@@ -565,6 +565,7 @@ public:
         VCR_STRING,
         VCR_COMMENT,
         VCR_VARIABLE,
+        VCR_FILE,
 
         VCR_DIFF_DELETE,        /*< Deleted line in a diff. */
         VCR_DIFF_ADD,           /*< Added line in a diff. */

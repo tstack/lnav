@@ -1011,7 +1011,6 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
     if (this->jlf_cached_offset != ll.get_offset()) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
-        view_colors &vc = view_colors::singleton();
         yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
 
@@ -1134,11 +1133,6 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             this->jlf_line_attrs.push_back(
                                     string_attr(lr, &logline::L_OPID));
                         }
-                        if (lv_iter->lv_identifier) {
-                            this->jlf_line_attrs.push_back(
-                                string_attr(lr, &view_curses::VC_STYLE,
-                                    vc.attrs_for_ident(str.c_str(), lr.length())));
-                        }
                         lv_iter->lv_origin = lr;
                         used_values[distance(this->jlf_line_values.begin(),
                                              lv_iter)] = true;
@@ -1174,6 +1168,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                 }
             }
             this->json_append_to_cache("\n", 1);
+            int sub_offset = 1;
             if (!this->jlf_hide_extra) {
                 for (size_t lpc = 0;
                      lpc < this->jlf_line_values.size(); lpc++) {
@@ -1191,7 +1186,8 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                     const std::string str = lv.to_string();
                     size_t curr_pos = 0, nl_pos, line_len = -1;
 
-                    lv.lv_origin.lr_start = this->jlf_cached_line.size();
+                    lv.lv_sub_offset = sub_offset;
+                    lv.lv_origin.lr_start = 2 + lv.lv_name.size() + 2;
                     do {
                         nl_pos = str.find('\n', curr_pos);
                         if (nl_pos != std::string::npos) {
@@ -1208,9 +1204,9 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                                 &str.c_str()[curr_pos], line_len);
                         this->json_append_to_cache("\n", 1);
                         curr_pos = nl_pos + 1;
+                        sub_offset += 1;
                     } while (nl_pos != std::string::npos &&
                              nl_pos < str.size());
-                    lv.lv_origin.lr_end = this->jlf_cached_line.size();
                 }
             }
 
