@@ -572,6 +572,11 @@ const char *date_time_scanner::scan(const char *time_dest,
         else {
             off_t off = 0;
 
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+            if (!this->dts_keep_base_tz) {
+                tm_out->et_tm.tm_zone = NULL;
+            }
+#endif
             if (ptime_fmt(time_fmt[curr_time_fmt], tm_out, time_dest, off, time_len)) {
                 retval = &time_dest[off];
                 if (tm_out->et_tm.tm_year < 70) {
