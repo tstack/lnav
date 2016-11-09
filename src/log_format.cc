@@ -365,10 +365,7 @@ static int read_json_null(yajlpp_parse_context *ypc)
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
-    if (ypc->is_level(1)) {
-        jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
-            field_name);
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
 
     return 1;
 }
@@ -378,10 +375,7 @@ static int read_json_bool(yajlpp_parse_context *ypc, int val)
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
-    if (ypc->is_level(1)) {
-        jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
-            field_name);
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
 
     return 1;
 }
@@ -412,10 +406,7 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
         }
     }
 
-    if (ypc->is_level(1)) {
-        jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
-            field_name);
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
 
     return 1;
 }
@@ -434,10 +425,7 @@ static int read_json_double(yajlpp_parse_context *ypc, double val)
         jlu->jlu_base_line->set_time(tv);
     }
 
-    if (ypc->is_level(1)) {
-        jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
-            field_name);
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
 
     return 1;
 }
@@ -951,10 +939,7 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
         jlu->jlu_base_line->set_opid(opid);
     }
 
-    if (ypc->is_level(1)) {
-        jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name,
-                                                                     str, len);
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name, str, len);
 
     return 1;
 }
