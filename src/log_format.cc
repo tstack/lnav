@@ -365,7 +365,8 @@ static int read_json_null(yajlpp_parse_context *ypc)
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
-    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -375,7 +376,8 @@ static int read_json_bool(yajlpp_parse_context *ypc, int val)
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
-    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -406,7 +408,8 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
         }
     }
 
-    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -425,7 +428,8 @@ static int read_json_double(yajlpp_parse_context *ypc, double val)
         jlu->jlu_base_line->set_time(tv);
     }
 
-    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name);
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -939,7 +943,8 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
         jlu->jlu_base_line->set_opid(opid);
     }
 
-    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name, str, len);
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1), str, len);
 
     return 1;
 }

@@ -1041,6 +1041,7 @@ public:
     };
 
     long value_line_count(const intern_string_t ist,
+                          bool top_level,
                           const unsigned char *str = NULL,
                           ssize_t len = -1) const {
         std::map<const intern_string_t, value_def>::const_iterator iter =
@@ -1048,7 +1049,7 @@ public:
         long line_count = (str != NULL) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
 
         if (iter == this->elf_value_defs.end()) {
-            return this->jlf_hide_extra ? 0 : line_count;
+            return (this->jlf_hide_extra || !top_level) ? 0 : line_count;
         }
 
         if (iter->second.vd_hidden) {
