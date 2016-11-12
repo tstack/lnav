@@ -10,4 +10,4 @@
 {"ts": "2013-09-06T22:01:49.124817Z", "lvl": "WARNING", "msg": "not looking good"}
 {"ts": "2013-09-06T22:01:49.124817Z", "lvl": "ERROR", "msg": "looking bad"}
 {"ts": "2013-09-06T22:01:49.124817Z", "lvl": "CRITICAL", "msg": "sooo bad"}
-{"ts": "2013-09-06T22:01:49.124817Z", "lvl": "FATAL", "msg": "shoot"}
+{"ts": "2013-09-06T22:01:49.124817Z", "lvl": "FATAL", "msg": "shoot", "obj": { "field1" : "hi", "field2": 2 }, "arr" : ["hi", {"sub1": true}]}

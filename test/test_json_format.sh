@@ -22,6 +22,8 @@ check_output "json log format is not working" <<EOF
 2013-09-06T22:01:49.124 ERROR looking bad
 2013-09-06T22:01:49.124 CRITICAL sooo bad
 2013-09-06T22:01:49.124 FATAL shoot
+  obj: { "field1" : "hi", "field2": 2 }
+  arr: ["hi", {"sub1": true}]
 EOF
 
 
