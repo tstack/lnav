@@ -209,6 +209,8 @@ Display
        log_line column
    * - |ks| p |ke|
      - Toggle the display of the log parser results
+   * - |ks| . |ke|
+     - Toggle the display of the log file names
    * - |ks| Tab |ke|
      - Cycle through colums to graph in the SQL result view
    * - |ks| Ctrl |ke| + |ks| l |ke|

@@ -48,6 +48,7 @@
 #include "log_format.hh"
 #include "text_format.hh"
 #include "shared_buffer.hh"
+#include "filesystem/path.h"
 
 class logfile;
 class logline_observer;
@@ -137,12 +138,17 @@ public:
     /** @return The filepath as given in the constructor. */
     const std::string &get_filepath() const { return this->lf_filepath; };
 
+    /** @return The filename as given in the constructor, excluding the path prefix. */
+    const std::string &get_filename() const { return this->lf_filename; };
+
     int get_fd() const { return this->lf_line_buffer.get_fd(); };
 
     /** @param filepath The new filepath for this log file. */
     void set_filepath(const std::string &filepath)
     {
         this->lf_filepath = filepath;
+        filesystem::path p(filepath);
+        this->lf_filename = p.filename();
     };
 
     const std::string &get_content_id() const { return this->lf_content_id; };
@@ -399,6 +405,7 @@ protected:
     logfile_activity lf_activity;
     bool        lf_valid_filepath;
     std::string lf_filepath;
+    std::string lf_filename;
     std::string lf_content_id;
     struct stat lf_stat;
     std::unique_ptr<log_format> lf_format;

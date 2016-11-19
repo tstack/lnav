@@ -1029,6 +1029,11 @@ void handle_paging_key(int ch)
             tc->reload_data();
             break;
 
+        case '.':
+            lnav_data.ld_log_source.toggle_filename();
+            tc->reload_data();
+            break;
+
         case 'i':
             if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
                 lss->text_filters_changed();
