@@ -84,7 +84,7 @@ public:
             line_attr = find_string_attr(sa, &logline::L_FILE);
             if (line_attr != sa.end()) {
                 logfile *lf = (logfile *)line_attr->sa_value.sav_ptr;
-                const std::string &filename = lf->get_filename();
+                const std::string &filename = lf->get_filepath();
 
                 if (filename != this->te_last_title) {
                     std::string title = this->te_prefix + filename;

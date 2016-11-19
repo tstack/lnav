@@ -55,7 +55,7 @@ static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
 logfile::logfile(const string &filename, logfile_open_options &loo)
 throw (error)
-    : lf_filename(filename),
+    : lf_filepath(filename),
       lf_index_time(0),
       lf_index_size(0),
       lf_is_closed(false),
@@ -98,14 +98,14 @@ throw (error)
                  this->lf_stat.st_mtime,
                  filename.c_str());
 
-        this->lf_valid_filename = true;
+        this->lf_valid_filepath = true;
     }
     else {
         log_perror(fstat(loo.loo_fd, &this->lf_stat));
-        this->lf_valid_filename = false;
+        this->lf_valid_filepath = false;
     }
 
-    this->lf_content_id = hash_string(this->lf_filename);
+    this->lf_content_id = hash_string(this->lf_filepath);
     this->lf_line_buffer.set_fd(loo.loo_fd);
     this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
@@ -122,11 +122,11 @@ bool logfile::exists(void) const
 {
     struct stat st;
 
-    if (!this->lf_valid_filename) {
+    if (!this->lf_valid_filepath) {
         return true;
     }
 
-    if (::stat(this->lf_filename.c_str(), &st) == -1) {
+    if (::stat(this->lf_filepath.c_str(), &st) == -1) {
         return false;
     }
 
@@ -167,7 +167,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
         for (iter = root_formats.begin();
              iter != root_formats.end() && (found != log_format::SCAN_MATCH);
              ++iter) {
-            if (!(*iter)->match_name(this->lf_filename)) {
+            if (!(*iter)->match_name(this->lf_filepath)) {
                 continue;
             }
 
@@ -181,7 +181,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                         this->lf_index[this->lf_index.size() - 1]));
 #endif
                 log_info("%s:%d:log format found -- %s",
-                    this->lf_filename.c_str(),
+                    this->lf_filepath.c_str(),
                     this->lf_index.size(),
                     (*iter)->get_name().get());
 
@@ -212,7 +212,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 
                 if (latest < second_to_last) {
                     log_debug("%s:%d: out-of-time-order line detected %d.%03d < %d.%03d",
-                              this->lf_filename.c_str(),
+                              this->lf_filepath.c_str(),
                               prescan_size,
                               latest.get_time(),
                               latest.get_millis(),
@@ -272,13 +272,13 @@ throw (line_buffer::error, logfile::error)
     this->lf_activity.la_polls += 1;
 
     if (fstat(this->lf_line_buffer.get_fd(), &st) == -1) {
-        throw error(this->lf_filename, errno);
+        throw error(this->lf_filepath, errno);
     }
 
     // Check the previous stat against the last to see if things are wonky.
     if (this->lf_stat.st_size > st.st_size) {
         log_info("truncated file detected, closing -- %s",
-                 this->lf_filename.c_str());
+                 this->lf_filepath.c_str());
         this->close();
         return false;
     }
@@ -318,7 +318,7 @@ throw (line_buffer::error, logfile::error)
                 if (!this->lf_line_buffer.read_line(check_line_off, sbr, &lv) ||
                         off != check_line_off) {
                     log_info("overwritten file detected, closing -- %s",
-                             this->lf_filename.c_str());
+                             this->lf_filepath.c_str());
                     this->close();
                     return false;
                 }
@@ -375,7 +375,7 @@ throw (line_buffer::error, logfile::error)
             getrusage(RUSAGE_SELF, &end_rusage);
             rusagesub(end_rusage, begin_rusage, this->lf_activity.la_initial_index_rusage);
             log_info("Resource usage for initial indexing of file: %s:%d-%d",
-                     this->lf_filename.c_str(),
+                     this->lf_filepath.c_str(),
                      begin_size,
                      this->lf_index.size());
             log_rusage(LOG_LEVEL_INFO, this->lf_activity.la_initial_index_rusage);
