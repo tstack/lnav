@@ -13,11 +13,11 @@ for defdir in /opt/local /usr/local /usr /; do
         CPPFLAGS="$CPPFLAGS -I$defdir/include"
     fi
 
-    if test -d "$defdir/lib"; then
-        LDFLAGS="$LDFLAGS -L$defdir/lib"
-    fi
     if test -d "$defdir/lib64"; then
         LDFLAGS="$LDFLAGS -L$defdir/lib64"
+    fi
+    if test -d "$defdir/lib"; then
+        LDFLAGS="$LDFLAGS -L$defdir/lib"
     fi
 
     if test -d "$defdir/lib/x86_64-linux-gnu"; then
