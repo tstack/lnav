@@ -192,6 +192,11 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         }
     }
 
+    if (this->lss_flags & F_FILENAME) {
+        value_out.insert(0, 1, ' ');
+        value_out.insert(0, this->lss_token_file->get_filename());
+    }
+
     // Insert space for the file/search-hit markers.
     value_out.insert(0, 1, ' ');
 

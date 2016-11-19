@@ -97,6 +97,11 @@ public:
         this->clear_line_size_cache();
     };
 
+    void toggle_filename(void) {
+        this->lss_flags ^= F_FILENAME;
+        this->clear_line_size_cache();
+    };
+
     void set_time_offset(bool enabled) {
         if (enabled)
             this->lss_flags |= F_TIME_OFFSET;
@@ -107,6 +112,10 @@ public:
 
     bool is_time_offset_enabled(void) const {
         return (bool) (this->lss_flags & F_TIME_OFFSET);
+    };
+
+    bool is_filename_enabled(void) const {
+        return (bool) (this->lss_flags & F_FILENAME);
     };
 
     logline::level_t get_min_log_level(void) const {
@@ -491,11 +500,13 @@ private:
     enum {
         B_SCRUB,
         B_TIME_OFFSET,
+        B_FILENAME,
     };
 
     enum {
         F_SCRUB       = (1L << B_SCRUB),
         F_TIME_OFFSET = (1L << B_TIME_OFFSET),
+        F_FILENAME    = (1L << B_FILENAME),
     };
 
     struct __attribute__((__packed__)) indexed_content {
