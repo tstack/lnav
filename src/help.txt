@@ -2,7 +2,7 @@
   lnav - A fancy log file viewer
 
 DESCRIPTION
------------
+===========
 
 The log file navigator, lnav, is an enhanced log file viewer that
 takes advantage of any semantic information that can be gleaned from
@@ -15,7 +15,7 @@ efficiently zero in on problems.
 
 
 OPENING PATHS/URLs
-------------------
+==================
 
 The main arguments to lnav are the files, directories, glob patterns,
 or URLs to be viewed.  If no arguments are given, the default syslog
@@ -29,7 +29,7 @@ host, the SSH agent can be used to do authentication.
 
 
 OPTIONS
--------
+=======
 
 Lnav takes a list of files to view and/or you can use the flag
 arguments to load well-known log files, such as the syslog or apache
@@ -96,7 +96,7 @@ of IP addresses that dhclient has bound to in CSV format:
 
 
 DISPLAY
--------
+=======
 
 The main part of the display shows the log lines from the files interleaved
 based on time-of-day.  New lines are automatically loaded as they are appended
@@ -160,11 +160,14 @@ that you can always use 'q' to pop the top view off of the stack.
 
 
 KEY BINDINGS
-------------
+============
 
 To help navigate through the file there are many hotkeys that should
 make it easy to zero-in on a specific section of the file or scan
 through the file.
+
+Views
+~~~~~
 
   ?                 View/leave this help message.
   q                 Leave the current view or quit the program when in
@@ -393,7 +396,7 @@ through the file.
 
 
 MOUSE SUPPORT (experimental)
-----------------------------
+============================
 
 If you are using Xterm, or a compatible terminal, you can use the mouse to
 mark lines of text and move the view by grabbing the scrollbar.
@@ -402,7 +405,7 @@ NOTE: You need to manually enable this feature by setting the LNAV_EXP
 environment variable to "mouse".
 
 COMMANDS
---------
+========
 
   help              Switch to this help text view.
 
@@ -633,7 +636,7 @@ COMMANDS
 
 
 SQL QUERIES (experimental)
------------
+===========
 
 Lnav has support for performing SQL queries on log files using the
 Sqlite3 "virtual" table feature.  For all supported log file types,
@@ -732,7 +735,7 @@ example of a top ten query into the "/tmp/topten.db" file, you can do:
 
 
 DYNAMIC LOG LINE TABLE (experimental)
-----------------------
+======================
 
 (NOTE: This feature is still very new and not completely reliable yet,
  use with care.)
@@ -785,7 +788,7 @@ template.
 
 
 OTHER SQL FEATURES
-------------------
+==================
 
 Environment variables can be used in SQL statements by prefixing the
 variable name with a dollar-sign ($).  For example, to read the value of
@@ -826,7 +829,7 @@ commands, which is especially useful when scripting lnav.
 
 
 PAPERTRAIL INTEGRATION
-----------------------
+======================
 
 Papertrail is a log management service with free and paid plans at:
 
@@ -858,7 +861,7 @@ is done with a new query, the previous query will be closed first.
 
 
 CONTACT
--------
+=======
 
 For more information, visit the lnav website at:
 
