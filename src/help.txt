@@ -162,12 +162,8 @@ that you can always use 'q' to pop the top view off of the stack.
 KEY BINDINGS
 ============
 
-To help navigate through the file there are many hotkeys that should
-make it easy to zero-in on a specific section of the file or scan
-through the file.
-
 Views
-~~~~~
+-----
 
   ?                 View/leave this help message.
   q                 Leave the current view or quit the program when in
@@ -180,6 +176,11 @@ Views
   a/A               Restore the view that was previously popped with 'q/Q'.
                     The 'A' hotkey will try to match the top times between the
                     two views.
+
+  X                 Close the current text file or log file.
+
+Spatial Navigation
+------------------
 
   g/home            Move to the top of the file.
   G/end             Move to the end of the file.  If the view is already
@@ -202,21 +203,27 @@ Views
 
   >/<               Move horizontally to the next/previous search hit.
 
-  P                 Switch to/from the pretty-printed view of the log or text
-                    files currently displayed.  In this view, structured data,
-                    such as XML, will be reformatted to make it easier to read.
-
-  t                 Switch to/from the text file view.  The text file view is
-                    for any files that are not recognized as log files.
-
-  Ctrl-L            (Lo-fi mode) Exit screen-mode and write the
-                    displayed log lines in plain text to the terminal
-                    until a key is pressed.  Useful for copying long lines
-                    from the terminal without picking up any of the extra
-                    decorations.
-
   o/O               Move forward/backward to the log message with a matching
                     'operation ID' (opid) field.
+
+  u/U               Move forward/backward through any user bookmarks
+                    you have added using the 'm' key.  This hotkey will
+                    also jump to the start of any log partitions that have
+                    been created with the 'partition-name' command.
+
+  y/Y               Move forward/backward through the log view based on the
+                    "log_line" column in the SQL result view.
+
+  s/S               Move to the next/previous "slow down" in the log message
+                    rate.  A slow down is detected by measuring how quickly
+                    the message rate has changed over the previous several
+                    messages.  For example, if one message is logged every
+                    second for five seconds and then the last message arrives
+                    five seconds later, the last message will be highlighted
+                    as a slow down.
+
+Chronological Navigation
+------------------------
 
   d/D               Move forward/backward 24 hours from the current
                     position in the log file.
@@ -235,6 +242,9 @@ Views
                     forward a minute and then pressing 'r' will move it
                     forward a minute again.  Pressing 'R' will then move the
                     view in the opposite direction, so backwards a minute.
+
+Bookmarks
+---------
 
   m                 Mark/unmark the line at the top of the display.
                     The line will be highlighted with reverse video to
@@ -256,10 +266,21 @@ Views
 
   C                 Clear all marked lines.
 
-  u/U               Move forward/backward through any user bookmarks
-                    you have added using the 'm' key.  This hotkey will
-                    also jump to the start of any log partitions that have
-                    been created with the 'partition-name' command.
+Display options
+---------------
+
+  P                 Switch to/from the pretty-printed view of the log or text
+                    files currently displayed.  In this view, structured data,
+                    such as XML, will be reformatted to make it easier to read.
+
+  t                 Switch to/from the text file view.  The text file view is
+                    for any files that are not recognized as log files.
+
+  Ctrl-L            (Lo-fi mode) Exit screen-mode and write the
+                    displayed log lines in plain text to the terminal
+                    until a key is pressed.  Useful for copying long lines
+                    from the terminal without picking up any of the extra
+                    decorations.
 
   T                 Toggle the display of the "elapsed time" column that shows
                     the time elapsed since the beginning of the logs or the
@@ -269,14 +290,6 @@ Views
                     highlight means the message rate has slowed down and green
                     means it has sped up.  You can use the "s/S" hotkeys to
                     scan through the slow downs.
-
-  s/S               Move to the next/previous "slow down" in the log message
-                    rate.  A slow down is detected by measuring how quickly
-                    the message rate has changed over the previous several
-                    messages.  For example, if one message is logged every
-                    second for five seconds and then the last message arrives
-                    five seconds later, the last message will be highlighted
-                    as a slow down.
 
   i                 View/leave a histogram of the log messages over
                     time.  The histogram counts the number of
@@ -295,6 +308,45 @@ Views
                     the top (if the zoom level is hours).
 
   z/Shift Z         Zoom in or out one step in the histogram view.
+
+  v                 Switch to/from the SQL result view.
+
+  V                 Switch between the log and SQL result views while
+                    keeping the top line number in the log view in
+                    sync with the log_line column in the SQL view.
+                    For example, doing a query that selects for
+                    "log_idle_msecs" and "log_line", you can move the
+                    top of the SQL view to a line and hit 'V' to switch
+                    to the log view and move to the line number that was
+                    selected in the "log_line" column.  If there is no
+                    "log_line" column, lnav will find the first column with
+                    a timestamp and move to corresponding time in the log
+                    view.
+
+  TAB/Shift+TAB     In the SQL result view, cycle through the columns that
+                    are graphed.  Initially, all number values are displayed
+                    in a stacked graph.  Pressing TAB will change the display
+                    to only graph the first column.  Repeatedly pressing TAB
+                    will cycle through the columns until they are all graphed
+                    again.
+
+  p                 In the log view: enable or disable the display of the
+                    fields that the log message parser knows about or has
+                    discovered.  This overlay is temporarily enabled when the
+                    semicolon key (;) is pressed so that it is easier to write
+                    queries.
+
+                    In the DB view: enable or disable the display of values
+                    in columns containing JSON-encoded values in the top row.
+                    The overlay will display the JSON-Pointer reference and
+                    value for all fields in the JSON data.
+
+  CTRL-W            Toggle word-wrapping.
+
+  F2                Toggle mouse support.
+
+Query
+-----
 
   /<regexp>         Start a search for the given regular expression.
                     The search is live, so when there is a pause in
@@ -349,50 +401,12 @@ Views
 
   CTRL+]            Abort command-line entry started with '/', ':', ';', or '|'.
 
-  y/Y               Move forward/backward through the log view based on the
-                    "log_line" column in the SQL result view.
-
-  v                 Switch to/from the SQL result view.
-
-  V                 Switch between the log and SQL result views while
-                    keeping the top line number in the log view in
-                    sync with the log_line column in the SQL view.
-                    For example, doing a query that selects for
-                    "log_idle_msecs" and "log_line", you can move the
-                    top of the SQL view to a line and hit 'V' to switch
-                    to the log view and move to the line number that was
-                    selected in the "log_line" column.  If there is no
-                    "log_line" column, lnav will find the first column with
-                    a timestamp and move to corresponding time in the log
-                    view.
-
-  TAB/Shift+TAB     In the SQL result view, cycle through the columns that
-                    are graphed.  Initially, all number values are displayed
-                    in a stacked graph.  Pressing TAB will change the display
-                    to only graph the first column.  Repeatedly pressing TAB
-                    will cycle through the columns until they are all graphed
-                    again.
-
-  p                 In the log view: enable or disable the display of the
-                    fields that the log message parser knows about or has
-                    discovered.  This overlay is temporarily enabled when the
-                    semicolon key (;) is pressed so that it is easier to write
-                    queries.
-
-                    In the DB view: enable or disable the display of values
-                    in columns containing JSON-encoded values in the top row.
-                    The overlay will display the JSON-Pointer reference and
-                    value for all fields in the JSON data.
-
-  X                 Close the current text file or log file.
+Session
+-------
 
   CTRL-R            Reset the session state.  This will save the current
                     session state (filters, highlights) and then reset the
                     state to the factory default.
-
-  CTRL-W            Toggle word-wrapping.
-
-  F2                Toggle mouse support.
 
 
 MOUSE SUPPORT (experimental)
@@ -402,7 +416,8 @@ If you are using Xterm, or a compatible terminal, you can use the mouse to
 mark lines of text and move the view by grabbing the scrollbar.
 
 NOTE: You need to manually enable this feature by setting the LNAV_EXP
-environment variable to "mouse".
+environment variable to "mouse".  F2 toggles mouse support.
+
 
 COMMANDS
 ========
