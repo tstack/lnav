@@ -2404,7 +2404,17 @@ int main(int argc, char *argv[])
                 snprintf(pull_cmd, sizeof(pull_cmd),
                          "cd %s && git pull",
                          git_dir);
-                system(pull_cmd);
+                int ret = system(pull_cmd);
+                if (ret == -1) {
+                    std::cerr << "Failed to spawn command "
+                              << "\"" << pull_cmd << "\": "
+                              << strerror(errno) << std::endl;
+                }
+                else if (ret > 0) {
+                    std::cerr << "Command "
+                              << "\"" << pull_cmd << "\" failed: "
+                              << strerror(errno) << std::endl;
+                }
                 found = true;
             }
         }
