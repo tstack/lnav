@@ -316,8 +316,8 @@ void handle_paging_key(int ch)
                            &logfile_sub_source::BM_WARNINGS,
                            tc->get_top());
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    o, O,
-                    "to move forward/backward an hour"));
+                    6, ^,
+                    "to move to next/previous hour boundary"));
             break;
 
         case 'W':
@@ -325,8 +325,8 @@ void handle_paging_key(int ch)
                            &logfile_sub_source::BM_WARNINGS,
                            tc->get_top());
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    o, O,
-                    "to move forward/backward an hour"));
+                    6, ^,
+                    "to move to next/previous hour boundary"));
             break;
 
         case 'n':
