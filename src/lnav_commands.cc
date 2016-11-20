@@ -64,7 +64,7 @@ static string remaining_args(const string &cmdline,
 
     require(index > 0);
 
-    for (int lpc = 0; lpc < index; lpc++) {
+    for (unsigned int lpc = 0; lpc < index; lpc++) {
         start_pos += args[lpc].length();
     }
 
@@ -571,7 +571,7 @@ static string com_save_to(string cmdline, vector<string> &args)
         dos.list_value_for_overlay(lnav_data.ld_views[LNV_DB], vis_line_t(0), header_line);
         fputs(header_line.get_string().c_str(), outfile);
         fputc('\n', outfile);
-        for (int lpc = 0; lpc < dls.text_line_count(); lpc++) {
+        for (unsigned int lpc = 0; lpc < dls.text_line_count(); lpc++) {
             string line;
 
             dls.text_value_for_line(lnav_data.ld_views[LNV_DB], lpc, line, true);
