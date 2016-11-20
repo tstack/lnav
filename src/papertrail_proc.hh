@@ -102,9 +102,11 @@ public:
                                                    this->ptp_search.c_str(),
                                                    this->ptp_search.size());
 
-        asprintf(this->ptp_token_header.out(),
-                 "X-Papertrail-Token: %s",
-                 this->ptp_api_key);
+        if (asprintf(this->ptp_token_header.out(),
+                     "X-Papertrail-Token: %s",
+                     this->ptp_api_key) == -1) {
+            perror("Failed to allocate X-Papertrail-Token string");
+        }
         this->ptp_header_list = curl_slist_append(this->ptp_header_list,
                 this->ptp_token_header.in());
 
@@ -140,10 +142,12 @@ public:
                      "max_time=%ld&",
                      this->ptp_max_time);
         }
-        asprintf(this->ptp_url.out(),
-                 "%sq=%s",
-                 base_url,
-                 this->ptp_quoted_search.in());
+        if (asprintf(this->ptp_url.out(),
+                     "%sq=%s",
+                     base_url,
+                     this->ptp_quoted_search.in()) == -1) {
+            perror("Failed to allocate ptp_url");
+        }
         curl_easy_setopt(this->cr_handle, CURLOPT_URL, this->ptp_url.in());
     };
 
