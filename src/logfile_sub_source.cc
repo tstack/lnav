@@ -122,6 +122,8 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     this->lss_share_manager.invalidate_refs();
     this->lss_token_value =
         this->lss_token_file->read_line(this->lss_token_line);
+    this->lss_token_shift_start = 0;
+    this->lss_token_shift_size = 0;
 
     log_format *format = this->lss_token_file->get_format();
 
@@ -153,25 +155,25 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                 struct exttm adjusted_tm;
                 char buffer[128];
                 const char *fmt;
+                ssize_t len;
 
                 if (format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) {
                     format->lf_date_time.convert_to_timeval(
                         &this->lss_token_value.c_str()[time_range.lr_start],
                         time_range.length(),
+                        format->get_timestamp_formats(),
                         adjusted_time);
                     fmt = "%Y-%m-%d %H:%M:%S.%f";
                     gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
                     adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
-                    ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm);
+                    len = ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm);
                 }
                 else {
                     adjusted_time = this->lss_token_line->get_timeval();
                     gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
                     adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
-                    format->lf_date_time.ftime(buffer, sizeof(buffer), adjusted_tm);
+                    len = format->lf_date_time.ftime(buffer, sizeof(buffer), adjusted_tm);
                 }
-
-                ssize_t len = strlen(buffer);
 
                 if (len > time_range.length()) {
                     ssize_t padding = len - time_range.length();
@@ -184,8 +186,11 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                                        padding);
                 }
                 value_out.replace(time_range.lr_start,
-                                  strlen(buffer),
-                                  string(buffer));
+                                  len,
+                                  buffer,
+                                  len);
+                this->lss_token_shift_start = time_range.lr_start;
+                this->lss_token_shift_size = len - time_range.length();
             }
         }
     }
@@ -285,6 +290,11 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                 lv_iter->lv_origin, &view_curses::VC_STYLE, id_attrs));
     }
 
+    if (this->lss_token_shift_size) {
+        shift_string_attrs(value_out, this->lss_token_shift_start,
+                           this->lss_token_shift_size);
+    }
+
     if (this->lss_files.size() > 1) {
         shift_string_attrs(value_out, 0, 1);
 
@@ -321,16 +331,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         lr.lr_start     = 0;
         lr.lr_end       = time_offset_end;
 
-        for (string_attrs_t::iterator iter = value_out.begin();
-             iter != value_out.end();
-             ++iter) {
-            struct line_range *existing_lr = (line_range *)&iter->sa_range;
-
-            existing_lr->lr_start += time_offset_end;
-            if (existing_lr->lr_end != -1) {
-                existing_lr->lr_end += time_offset_end;
-            }
-        }
+        shift_string_attrs(value_out, 0, time_offset_end);
 
         // attrs = vc.attrs_for_role(view_colors::VCR_OK);
         attrs = view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK);

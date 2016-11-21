@@ -321,3 +321,10 @@ error:logfile_bad_access_log.0:1:line did not match format access_log/regex/std
 error:logfile_bad_access_log.0:1:         line -- 192.168.202.254 [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 error:logfile_bad_access_log.0:1:partial match -- 192.168.202.254
 EOF
+
+run_test ${lnav_test} -n -I ${test_dir} ${srcdir}/logfile_epoch.0
+
+check_output "rewriting machine-oriented timestamp didn't work?" <<EOF
+2015-04-10 02:58:07.123000 Hello, World!
+2015-04-10 02:58:07.456000 Goodbye, World!
+EOF

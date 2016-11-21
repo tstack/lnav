@@ -197,7 +197,7 @@ public:
             date_time_scanner dts;
             struct timeval tv;
 
-            if (!dts.convert_to_timeval(colstr, -1, tv)) {
+            if (!dts.convert_to_timeval(colstr, -1, NULL, tv)) {
                 tv.tv_sec = -1;
                 tv.tv_usec = -1;
             }

@@ -317,7 +317,7 @@ inline void shift_string_attrs(string_attrs_t &sa, int32_t start, int32_t amount
     for (string_attrs_t::iterator iter = sa.begin(); iter != sa.end(); ++iter) {
         struct line_range *existing_lr = &iter->sa_range;
 
-        if (existing_lr->lr_start >= start) {
+        if (existing_lr->lr_start > start) {
             existing_lr->lr_start += amount;
         }
         if (existing_lr->lr_end != -1 && start < existing_lr->lr_end) {

@@ -345,13 +345,14 @@ struct date_time_scanner {
 
     bool convert_to_timeval(const char *time_src,
                             ssize_t time_len,
+                            const char * const time_fmt[],
                             struct timeval &tv_out) {
         struct exttm tm;
 
         if (time_len == -1) {
             time_len = strlen(time_src);
         }
-        if (this->scan(time_src, time_len, NULL, &tm, tv_out) != NULL) {
+        if (this->scan(time_src, time_len, time_fmt, &tm, tv_out) != NULL) {
             return true;
         }
         return false;

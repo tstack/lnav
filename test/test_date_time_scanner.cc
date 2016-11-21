@@ -80,12 +80,12 @@ int main(int argc, char *argv[])
         date_time_scanner dts;
         struct timeval tv;
 
-        dts.convert_to_timeval("@40000000433225833b6e1a8c", -1, tv);
+        dts.convert_to_timeval("@40000000433225833b6e1a8c", -1, NULL, tv);
         assert(tv.tv_sec == 1127359865);
         assert(tv.tv_usec == 997071);
 
         memset(&tv, 0, sizeof(tv));
-        dts.convert_to_timeval("@4000000043322583", -1, tv);
+        dts.convert_to_timeval("@4000000043322583", -1, NULL, tv);
         assert(tv.tv_sec == 1127359865);
         assert(tv.tv_usec == 0);
     }
