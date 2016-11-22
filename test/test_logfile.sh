@@ -168,6 +168,9 @@ EOF
 
 run_test ./drive_logfile -t -f epoch_log ${srcdir}/logfile_epoch.1
 
+check_error_output "epoch" <<EOF
+EOF
+
 check_output "epoch_log timestamp interpreted incorrectly?" <<EOF
 Apr 09 19:58:07 2015 -- 123
 Apr 09 19:58:07 2015 -- 456
