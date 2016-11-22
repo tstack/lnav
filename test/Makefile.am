@@ -271,6 +271,7 @@ dist_noinst_DATA = \
 	logfile_blued.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \
+	logfile_epoch.1 \
 	logfile_filter.0 \
 	logfile_for_join.0 \
 	logfile_generic.0 \
