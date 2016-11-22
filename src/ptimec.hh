@@ -667,10 +667,16 @@ inline void ftime_y(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 
 inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
-    PTIME_CONSUME(5, {
+    int consume_amount = 5;
+
+    if ((off_inout + 6) <= len && str[off_inout + 3] == ':') {
+        consume_amount = 6;
+    }
+    PTIME_CONSUME(consume_amount, {
         long sign;
         long hours;
         long mins;
+        int skip_colon = (consume_amount == 6) ? 1 : 0;
 
         if (str[off_inout] == '+') {
             sign = 1;
@@ -683,11 +689,11 @@ inline bool ptime_z(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         }
 
         hours = (
-            (str[off_inout + 0] - '0') * 10 +
-            (str[off_inout + 1] - '0') *  1) * 60 * 60;
+            (str[off_inout + 1] - '0') * 10 +
+            (str[off_inout + 2] - '0') *  1) * 60 * 60;
         mins = (
-            (str[off_inout + 2] - '0') *   10 +
-            (str[off_inout + 3] - '0') *    1) * 60;
+            (str[off_inout + skip_colon + 3] - '0') *   10 +
+            (str[off_inout + skip_colon + 4] - '0') *    1) * 60;
         dst->et_gmtoff = sign * (hours + mins);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
         dst->et_tm.tm_gmtoff = sign * (hours + mins);

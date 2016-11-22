@@ -293,6 +293,11 @@ struct date_time_scanner {
      * requested time falls outside of a fifteen minute range.
      */
     void to_localtime(time_t t, struct exttm &tm_out) {
+        if (t < (24 * 60 * 60)) {
+            // Don't convert and risk going past the epoch.
+            return;
+        }
+
         if (t < this->dts_local_offset_valid ||
                 t >= this->dts_local_offset_expiry) {
             time_t new_gmt;

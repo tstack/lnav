@@ -291,7 +291,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     }
 
     if (this->lss_token_shift_size) {
-        shift_string_attrs(value_out, this->lss_token_shift_start,
+        shift_string_attrs(value_out, this->lss_token_shift_start + 1,
                            this->lss_token_shift_size);
     }
 

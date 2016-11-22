@@ -125,7 +125,7 @@ public:
                 this->lss_min_log_time.tv_usec != 0);
     };
 
-    void set_min_log_time(struct timeval &tv) {
+    void set_min_log_time(const struct timeval &tv) {
         this->lss_min_log_time = tv;
     };
 

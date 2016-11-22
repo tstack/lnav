@@ -38,12 +38,16 @@ init-sql.c: bin2c
 TIME_FORMATS = \
     "@%@" \
     "%Y-%m-%d %H:%M:%S" \
+    "%Y-%m-%d %H:%M:%S%z" \
     "%Y-%m-%d %H:%M" \
     "%Y-%m-%dT%H:%M:%S.%f%z" \
     "%y-%m-%dT%H:%M:%S.%f%z" \
     "%Y-%m-%dT%H:%M:%SZ" \
     "%Y-%m-%dT%H:%M:%S" \
+    "%Y-%m-%dT%H:%M:%S%z" \
     "%Y/%m/%d %H:%M:%S" \
+    "%Y/%m/%d %H:%M:%S %z" \
+    "%Y/%m/%d %H:%M:%S%z" \
     "%Y/%m/%d %H:%M" \
     "%a %b %d %H:%M:%S %Y" \
     "%a %b %d %H:%M:%S %Z %Y" \

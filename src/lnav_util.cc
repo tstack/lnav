@@ -547,7 +547,8 @@ const char *date_time_scanner::scan(const char *time_dest,
                 tm_out->et_tm.tm_zone = NULL;
             }
 #endif
-            if (func(tm_out, time_dest, off, time_len)) {
+            if (func(tm_out, time_dest, off, time_len) &&
+                (time_dest[off] == '.' || time_dest[off] == ',' || off == time_len)) {
                 retval = &time_dest[off];
 
                 if (tm_out->et_tm.tm_year < 70) {
@@ -577,7 +578,8 @@ const char *date_time_scanner::scan(const char *time_dest,
                 tm_out->et_tm.tm_zone = NULL;
             }
 #endif
-            if (ptime_fmt(time_fmt[curr_time_fmt], tm_out, time_dest, off, time_len)) {
+            if (ptime_fmt(time_fmt[curr_time_fmt], tm_out, time_dest, off, time_len) &&
+                (time_dest[off] == '.' || time_dest[off] == ',' || off == time_len)) {
                 retval = &time_dest[off];
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;

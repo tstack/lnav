@@ -166,6 +166,14 @@ Apr 10 02:58:07 2015 -- 456
 EOF
 
 
+run_test ./drive_logfile -t -f epoch_log ${srcdir}/logfile_epoch.1
+
+check_output "epoch_log timestamp interpreted incorrectly?" <<EOF
+Apr 09 19:58:07 2015 -- 123
+Apr 09 19:58:07 2015 -- 456
+EOF
+
+
 touch -t 201509130923 ${srcdir}/logfile_syslog_with_mixed_times.0
 run_test ./drive_logfile -t -f syslog_log ${srcdir}/logfile_syslog_with_mixed_times.0
 
