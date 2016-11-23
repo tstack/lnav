@@ -2263,7 +2263,7 @@ int main(int argc, char *argv[])
 #endif
 
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarsCc:I:iuf:d:nqtw:vVW")) != -1) {
+    while ((c = getopt(argc, argv, "hHarCc:I:iuf:d:nqtw:vVW")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -2336,10 +2336,6 @@ int main(int argc, char *argv[])
 
         case 'r':
             lnav_data.ld_flags |= LNF_ROTATED;
-            break;
-
-        case 's':
-            lnav_data.ld_flags |= LNF_SYSLOG;
             break;
 
         case 't':
