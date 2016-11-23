@@ -202,7 +202,10 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
 void rl_search(void *dummy, readline_curses *rc)
 {
+    textview_curses *tc = lnav_data.ld_view_stack.top();
+
     rl_search_internal(dummy, rc);
+    tc->set_follow_search_for(60 * 60 * 1000);
 }
 
 void rl_abort(void *dummy, readline_curses *rc)

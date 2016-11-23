@@ -694,7 +694,7 @@ public:
 
     bool is_searching(void) { return this->tc_searching; };
 
-    void set_follow_search_for(uint64_t ms_to_deadline) {
+    void set_follow_search_for(int64_t ms_to_deadline) {
         struct timeval now, tv;
 
         tv.tv_sec = ms_to_deadline / 1000;

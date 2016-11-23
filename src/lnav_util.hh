@@ -261,7 +261,7 @@ bool operator<(time_t left, const struct timeval &right) {
 inline
 bool operator<(const struct timeval &left, const struct timeval &right) {
     return left.tv_sec < right.tv_sec ||
-        ((left.tv_sec == right.tv_usec) && (left.tv_usec < right.tv_usec));
+        ((left.tv_sec == right.tv_sec) && (left.tv_usec < right.tv_usec));
 };
 
 struct date_time_scanner {
