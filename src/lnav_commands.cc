@@ -1387,6 +1387,26 @@ static string com_open(string cmdline, vector<string> &args)
                 retval = ("error: cannot stat file: " + fn + " -- "
                     + strerror(errno));
             }
+            else if (S_ISFIFO(st.st_mode)) {
+                auto_fd fifo_fd;
+
+                if ((fifo_fd = open(fn.c_str(), O_RDONLY)) == -1) {
+                    retval = "error: cannot open FIFO: " + fn + " -- "
+                        + strerror(errno);
+                } else {
+                    auto_ptr<piper_proc> fifo_piper(new piper_proc(
+                        fifo_fd.release(), false));
+                    int fifo_out_fd = fifo_piper->get_fd();
+                    char desc[128];
+
+                    snprintf(desc, sizeof(desc),
+                             "FIFO [%d]",
+                             lnav_data.ld_fifo_counter++);
+                    lnav_data.ld_file_names[desc]
+                        .with_fd(fifo_out_fd);
+                    lnav_data.ld_pipers.push_back(fifo_piper.release());
+                }
+            }
             else if ((abspath = realpath(fn.c_str(), NULL)) == NULL) {
                 retval = "error: cannot find file";
             }

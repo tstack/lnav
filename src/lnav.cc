@@ -2671,6 +2671,28 @@ int main(int argc, char *argv[])
                     strerror(errno));
             retval = EXIT_FAILURE;
         }
+        else if (S_ISFIFO(st.st_mode)) {
+            auto_fd fifo_fd;
+
+            if ((fifo_fd = open(argv[lpc], O_RDONLY)) == -1) {
+                fprintf(stderr,
+                        "Cannot open fifo: %s -- %s\n",
+                        argv[lpc],
+                        strerror(errno));
+            } else {
+                auto_ptr<piper_proc> fifo_piper(new piper_proc(
+                    fifo_fd.release(), false));
+                int fifo_out_fd = fifo_piper->get_fd();
+                char desc[128];
+
+                snprintf(desc, sizeof(desc),
+                         "FIFO [%d]",
+                         lnav_data.ld_fifo_counter++);
+                lnav_data.ld_file_names[desc]
+                    .with_fd(fifo_out_fd);
+                lnav_data.ld_pipers.push_back(fifo_piper.release());
+            }
+        }
         else if ((abspath = realpath(argv[lpc], NULL)) == NULL) {
             perror("Cannot find file");
             retval = EXIT_FAILURE;

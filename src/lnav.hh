@@ -262,6 +262,8 @@ struct _lnav_data {
     std::stack<FILE *> ld_output_stack;
 
     std::map<std::string, std::vector<script_metadata> > ld_scripts;
+
+    int ld_fifo_counter;
 };
 
 extern struct _lnav_data lnav_data;
