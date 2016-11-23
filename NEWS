@@ -15,6 +15,15 @@ lnav v0.8.2:
        across invocations.
      * The "graph" view has been removed since it's functionality has been
        obsoleted by other features, like ":create-search-table".
+     * When doing a search, if a hit is found within a second after hitting
+       <ENTER>, the view will move to the matched line.  The previous behavior
+       was to stay on the current line, which tended to be a surprise to new
+       users.
+
+     Breaking Changes:
+     * The captured timestamp text in log files must fully match a known format
+       or an error will be reported.  The previous behavior was to ignore any
+       text at the end of the line.
 
 lnav v0.8.1:
      Features:

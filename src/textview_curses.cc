@@ -64,11 +64,12 @@ textview_curses::textview_curses()
     : tc_sub_source(NULL),
       tc_delegate(NULL),
       tc_searching(false),
-      tc_follow_search(false),
       tc_selection_start(-1),
       tc_selection_last(-1),
       tc_selection_cleared(false)
 {
+    this->tc_follow_deadline.tv_sec = 0;
+    this->tc_follow_deadline.tv_usec = 0;
     this->set_data_source(this);
 }
 

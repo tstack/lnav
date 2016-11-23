@@ -622,17 +622,24 @@ public:
 
     void grep_end_batch(grep_proc &gp)
     {
-        if (this->tc_follow_search &&
-            !this->tc_bookmarks[&BM_SEARCH].empty()) {
-            vis_line_t first_hit;
+        if (this->tc_follow_deadline.tv_sec) {
+            struct timeval now;
 
-            first_hit = this->tc_bookmarks[&BM_SEARCH].
-                        next(vis_line_t(this->get_top() - 1));
-            if (first_hit != -1) {
-                if (first_hit > 0) {
-                    --first_hit;
+            gettimeofday(&now, NULL);
+            if (this->tc_follow_deadline < now) {
+                this->tc_follow_deadline.tv_sec = 0;
+                this->tc_follow_deadline.tv_usec = 0;
+            } else if (!this->tc_bookmarks[&BM_SEARCH].empty()) {
+                vis_line_t first_hit;
+
+                first_hit = this->tc_bookmarks[&BM_SEARCH].next(
+                    vis_line_t(this->get_top() - 1));
+                if (first_hit != -1) {
+                    if (first_hit > 0) {
+                        --first_hit;
+                    }
+                    this->set_top(first_hit);
                 }
-                this->set_top(first_hit);
             }
         }
         this->tc_search_action.invoke(this);
@@ -687,7 +694,14 @@ public:
 
     bool is_searching(void) { return this->tc_searching; };
 
-    void set_follow_search(bool fs) { this->tc_follow_search = fs; };
+    void set_follow_search_for(uint64_t ms_to_deadline) {
+        struct timeval now, tv;
+
+        tv.tv_sec = ms_to_deadline / 1000;
+        tv.tv_usec = (ms_to_deadline % 1000) * 1000;
+        gettimeofday(&now, NULL);
+        timeradd(&now, &tv, &this->tc_follow_deadline);
+    };
 
     size_t get_match_count(void)
     {
@@ -724,7 +738,7 @@ protected:
     vis_bookmarks tc_bookmarks;
 
     bool   tc_searching;
-    bool   tc_follow_search;
+    struct timeval tc_follow_deadline;
     action tc_search_action;
 
     highlight_map_t           tc_highlights;

@@ -995,7 +995,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
             gp->start();
             gp->set_sink(&tc);
 
-            tc.set_follow_search(true);
+            tc.set_follow_search_for(60 * 60 * 1000);
 
             auto_ptr<grep_highlighter> gh(
                 new grep_highlighter(gp, "$search", hm));

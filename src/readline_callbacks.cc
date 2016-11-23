@@ -253,7 +253,7 @@ void rl_callback(void *dummy, readline_curses *rc)
             if (pfile.in() != NULL) {
                 fprintf(pfile, "%s", rc->get_value().c_str());
             }
-            lnav_data.ld_view_stack.top()->set_follow_search(false);
+            lnav_data.ld_view_stack.top()->set_follow_search_for(750);
             rc->set_value("search: " + rc->get_value());
             rc->set_alt_value(HELP_MSG_2(
                                   n, N,
