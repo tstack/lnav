@@ -852,30 +852,40 @@ bool ensure_view(textview_curses *expected_tc)
 vis_line_t next_cluster(
     vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
     bookmark_type_t *bt,
-    vis_line_t top)
+    const vis_line_t top)
 {
     textview_curses *tc = lnav_data.ld_view_stack.top();
     vis_bookmarks &bm = tc->get_bookmarks();
     bookmark_vector<vis_line_t> &bv = bm[bt];
     bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
-    vis_line_t last_top(top);
+    vis_line_t last_top(top), new_top(top), tc_height;
+    unsigned long tc_width;
+    int hit_count = 0;
 
-    while ((top = (bv.*f)(top)) != -1) {
-        int diff = top - last_top;
+    tc->get_dimensions(tc_height, tc_width);
 
+    while ((new_top = (bv.*f)(new_top)) != -1) {
+        int diff = new_top - last_top;
+
+        hit_count += 1;
         if (!top_is_marked || diff > 1) {
-            return top;
+            return new_top;
+        }
+        else if (hit_count > 1 && std::abs(new_top - top) >= tc_height) {
+            return vis_line_t(new_top - diff);
         }
         else if (diff < -1) {
-            last_top = top;
-            while ((top = (bv.*f)(top)) != -1) {
-                if (std::abs(last_top - top) > 1)
+            last_top = new_top;
+            while ((new_top = (bv.*f)(new_top)) != -1) {
+                if ((std::abs(last_top - new_top) > 1) ||
+                    (hit_count > 1 && (std::abs(top - new_top) >= tc_height))) {
                     break;
-                last_top = top;
+                }
+                last_top = new_top;
             }
             return last_top;
         }
-        last_top = top;
+        last_top = new_top;
     }
 
     return vis_line_t(-1);

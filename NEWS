@@ -19,6 +19,9 @@ lnav v0.8.2:
        <ENTER>, the view will move to the matched line.  The previous behavior
        was to stay on the current line, which tended to be a surprise to new
        users.
+     * Pressing 'n'/'N' to move through the next/previous search hit will now
+       skip adjacent lines, up to the vertical size of the view.  This should
+       make scanning through clusters of hits much faster.
 
      Breaking Changes:
      * The captured timestamp text in log files must fully match a known format

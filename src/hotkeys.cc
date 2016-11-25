@@ -330,7 +330,9 @@ void handle_paging_key(int ch)
             break;
 
         case 'n':
-            tc->set_top(bm[&textview_curses::BM_SEARCH].next(tc->get_top()));
+            moveto_cluster(&bookmark_vector<vis_line_t>::next,
+                           &textview_curses::BM_SEARCH,
+                           tc->get_top());
             lnav_data.ld_bottom_source.grep_error("");
             lnav_data.ld_rl_view->set_alt_value(
                     "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
@@ -338,7 +340,9 @@ void handle_paging_key(int ch)
             break;
 
         case 'N':
-            tc->set_top(bm[&textview_curses::BM_SEARCH].prev(tc->get_top()));
+            moveto_cluster(&bookmark_vector<vis_line_t>::prev,
+                           &textview_curses::BM_SEARCH,
+                           tc->get_top());
             lnav_data.ld_bottom_source.grep_error("");
             lnav_data.ld_rl_view->set_alt_value(
                     "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
