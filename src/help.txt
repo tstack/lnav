@@ -196,7 +196,10 @@ Spatial Navigation
 
   e/E               Move to the next/previous error.
   w/W               Move to the next/previous warning.
-  n/N               Move to the next/previous search hit.
+  n/N               Move to the next/previous search hit.  When pressed
+                    repeatedly within a short time, the view will move at
+                    least a full page at a time instead of moving to the
+                    next hit.
   f/F               Move to the next/previous file.  In the log view, this
                     moves to the next line from a different file.  In the
                     text view, this rotates the view to the next file.

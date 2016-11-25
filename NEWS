@@ -21,7 +21,9 @@ lnav v0.8.2:
        users.
      * Pressing 'n'/'N' to move through the next/previous search hit will now
        skip adjacent lines, up to the vertical size of the view.  This should
-       make scanning through clusters of hits much faster.
+       make scanning through clusters of hits much faster.  Repeatedly
+       pressing these keys within a short time will also accelerate scanning
+       by moving the view at least a full page at a time.
 
      Breaking Changes:
      * The captured timestamp text in log files must fully match a known format

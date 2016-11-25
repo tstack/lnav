@@ -332,21 +332,19 @@ void handle_paging_key(int ch)
         case 'n':
             moveto_cluster(&bookmark_vector<vis_line_t>::next,
                            &textview_curses::BM_SEARCH,
-                           tc->get_top());
+                           search_forward_from(tc));
             lnav_data.ld_bottom_source.grep_error("");
             lnav_data.ld_rl_view->set_alt_value(
-                    "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
-            "' to scroll horizontally to a search result");
+                "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
+                    "' to scroll horizontally to a search result");
             break;
 
         case 'N':
-            moveto_cluster(&bookmark_vector<vis_line_t>::prev,
-                           &textview_curses::BM_SEARCH,
-                           tc->get_top());
+            previous_cluster(&textview_curses::BM_SEARCH, tc);
             lnav_data.ld_bottom_source.grep_error("");
             lnav_data.ld_rl_view->set_alt_value(
-                    "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
-            "' to scroll horizontally to a search result");
+                "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
+                    "' to scroll horizontally to a search result");
             break;
 
         case 'y':

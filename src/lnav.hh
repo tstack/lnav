@@ -174,6 +174,40 @@ private:
     size_t ist_index;
 };
 
+struct key_repeat_history {
+    key_repeat_history()
+        : krh_key(0),
+          krh_count(0) {
+        this->krh_last_press_time.tv_sec = 0;
+        this->krh_last_press_time.tv_usec = 0;
+    }
+
+    int krh_key;
+    int krh_count;
+    vis_line_t krh_start_line;
+    struct timeval krh_last_press_time;
+
+    void update(int ch, vis_line_t top) {
+        struct timeval now, diff;
+
+        gettimeofday(&now, NULL);
+        timersub(&now, &this->krh_last_press_time, &diff);
+        if (diff.tv_sec >= 1 || diff.tv_usec > (750 * 1000)) {
+            this->krh_key = 0;
+            this->krh_count = 0;
+        }
+        this->krh_last_press_time = now;
+
+        if (this->krh_key == ch) {
+            this->krh_count += 1;
+        } else {
+            this->krh_key = ch;
+            this->krh_count = 1;
+            this->krh_start_line = top;
+        }
+    };
+};
+
 struct _lnav_data {
     std::string                             ld_session_id;
     time_t                                  ld_session_time;
@@ -264,6 +298,8 @@ struct _lnav_data {
     std::map<std::string, std::vector<script_metadata> > ld_scripts;
 
     int ld_fifo_counter;
+
+    struct key_repeat_history ld_key_repeat_history;
 };
 
 extern struct _lnav_data lnav_data;
@@ -298,7 +334,9 @@ vis_line_t next_cluster(
         bookmark_type_t *bt,
         vis_line_t top);
 bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
-        bookmark_type_t *bt,
-        vis_line_t top);
+                    bookmark_type_t *bt,
+                    vis_line_t top);
+void previous_cluster(bookmark_type_t *bt, textview_curses *tc);
+vis_line_t search_forward_from(textview_curses *tc);
 
 #endif

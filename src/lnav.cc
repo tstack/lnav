@@ -892,8 +892,8 @@ vis_line_t next_cluster(
 }
 
 bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
-        bookmark_type_t *bt,
-        vis_line_t top)
+                    bookmark_type_t *bt,
+                    vis_line_t top)
 {
     textview_curses *tc = lnav_data.ld_view_stack.top();
     vis_line_t new_top;
@@ -907,6 +907,48 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
     alerter::singleton().chime();
 
     return false;
+}
+
+void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
+{
+    key_repeat_history &krh = lnav_data.ld_key_repeat_history;
+    vis_line_t height, new_top, initial_top = tc->get_top();
+    unsigned long width;
+
+    new_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
+                           bt,
+                           initial_top);
+
+    tc->get_dimensions(height, width);
+    if (krh.krh_count > 1 &&
+        initial_top < (krh.krh_start_line - (1.5 * height)) &&
+        (initial_top - new_top) < height) {
+        bookmark_vector<vis_line_t> &bv = tc->get_bookmarks()[bt];
+        new_top = bv.next(std::max(vis_line_t(0), initial_top - height));
+    }
+
+    if (new_top != -1) {
+        tc->set_top(new_top);
+    }
+    else {
+        alerter::singleton().chime();
+    }
+}
+
+vis_line_t search_forward_from(textview_curses *tc)
+{
+    vis_line_t height, retval = tc->get_top();
+    key_repeat_history &krh = lnav_data.ld_key_repeat_history;
+    unsigned long width;
+
+    tc->get_dimensions(height, width);
+
+    if (krh.krh_count > 1 &&
+        retval > (krh.krh_start_line + (1.5 * height))) {
+        retval += vis_line_t(0.90 * height);
+    }
+
+    return retval;
 }
 
 static void handle_rl_key(int ch)
@@ -1898,6 +1940,10 @@ static void looper(void)
                             escape_index = 0;
                             continue;
                         }
+
+                        lnav_data.ld_key_repeat_history.update(
+                            ch, lnav_data.ld_view_stack.top()->get_top());
+
                         switch (ch) {
                         case CEOF:
                         case KEY_RESIZE:

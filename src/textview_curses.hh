@@ -638,7 +638,9 @@ public:
                     if (first_hit > 0) {
                         --first_hit;
                     }
-                    this->set_top(first_hit);
+                    if (first_hit > this->get_top()) {
+                        this->set_top(first_hit);
+                    }
                 }
             }
         }
