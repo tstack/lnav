@@ -1,0 +1,2 @@
+
+;SELECT 'mailto:' || :user
