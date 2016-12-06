@@ -115,7 +115,7 @@ dnl and gpm libraries with interdependencies. This check is not required on OS X
 AS_CASE(["$host_os"],
     [darwin*],
     [],
-    AC_SEARCH_LIBS(Gpm_Open, gpm,
+    AC_SEARCH_LIBS(Gpm_Open, [gpm gpm2],
        AS_VAR_SET(HAVE_GPM, "1"),
        AC_MSG_WARN(m4_join([ ],
                    [libgpm not found. If build fails later],
@@ -219,7 +219,7 @@ AS_CASE(["$host_os"],
                     AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
                     AS_VAR_SET(LIBS, $saved_LIBS)
                     ],
-                    AC_MSG_WARN([libgpm development libraries are required to build]))dnl
+                    AC_MSG_ERROR([libgpm development libraries are required to build]))dnl
                 ])dnl
             ])
         ],
