@@ -219,7 +219,7 @@ AS_CASE(["$host_os"],
                     AS_VAR_SET(LDFLAGS, $saved_LDFLAGS)
                     AS_VAR_SET(LIBS, $saved_LIBS)
                     ],
-                    AC_MSG_ERROR([libgpm development libraries are required to build]))dnl
+                    AC_MSG_WARN([libgpm development libraries are required to build]))dnl
                 ])dnl
             ])
         ],
