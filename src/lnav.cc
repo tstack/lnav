@@ -717,6 +717,45 @@ static void open_schema_view(void)
     schema_tc->set_sub_source(new plain_text_source(schema));
 }
 
+static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
+{
+    int ncols = sqlite3_column_count(stmt);
+
+    for (int lpc = 0; lpc < ncols; lpc++) {
+        if (lpc > 0) {
+            ec.ec_accumulator += ", ";
+        }
+        ec.ec_accumulator.append((const char *)sqlite3_column_text(stmt, lpc));
+    }
+
+    return 0;
+}
+
+static future<string> pretty_pipe_callback(exec_context &ec,
+                                           const string &cmdline,
+                                           auto_fd &fd)
+{
+    auto retval = std::async(std::launch::async, [&]() {
+        char buffer[1024];
+        ostringstream ss;
+        ssize_t rc;
+
+        while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+            ss.write(buffer, rc);
+        }
+
+        string retval = ss.str();
+
+        if (endswith(retval.c_str(), "\n")) {
+            retval.resize(retval.length() - 1);
+        }
+
+        return retval;
+    });
+
+    return retval;
+}
+
 static void open_pretty_view(void)
 {
     static const char *NOTHING_MSG =
@@ -741,6 +780,7 @@ static void open_pretty_view(void)
         for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             content_line_t cl = lss.at(vl);
             logfile *lf = lss.find(cl);
+            log_format *format = lf->get_format();
             logfile::iterator ll = lf->begin() + cl;
             shared_buffer_ref sbr;
 
@@ -750,7 +790,17 @@ static void open_pretty_view(void)
             ll = lf->message_start(ll);
 
             lf->read_full_message(ll, sbr);
-            data_scanner ds(sbr);
+
+            string_attrs_t sa;
+            vector<logline_value> values;
+            string rewritten_line;
+
+            format->annotate(sbr, sa, values);
+            exec_context ec(&values, pretty_sql_callback, pretty_pipe_callback);
+            add_ansi_vars(ec.ec_local_vars.top());
+            format->rewrite(ec, sbr, sa, rewritten_line);
+
+            data_scanner ds(rewritten_line);
             pretty_printer pp(&ds);
 
             // TODO: dump more details of the line in the output.
@@ -1715,6 +1765,8 @@ static void wait_for_pipers(void)
 static void looper(void)
 {
     try {
+        exec_context &ec = lnav_data.ld_exec_context;
+
         readline_context command_context("cmd", &lnav_commands);
 
         readline_context search_context("search");
@@ -1842,7 +1894,7 @@ static void looper(void)
         lnav_data.ld_status[0].window_change();
         lnav_data.ld_status[1].window_change();
 
-        execute_file(dotlnav_path("session"));
+        execute_file(ec, dotlnav_path("session"));
 
         lnav_data.ld_scroll_broadcaster.invoke(lnav_data.ld_view_stack.top());
 
@@ -2058,7 +2110,7 @@ static void looper(void)
 
                     vector<pair<string, string> > msgs;
 
-                    execute_init_commands(msgs);
+                    execute_init_commands(ec, msgs);
 
                     if (!msgs.empty()) {
                         pair<string, string> last_msg = msgs.back();
@@ -2285,6 +2337,7 @@ redraw_listener REDRAW_LISTENER;
 int main(int argc, char *argv[])
 {
     std::vector<std::string> config_errors, loader_errors;
+    exec_context &ec = lnav_data.ld_exec_context;
     int lpc, c, retval = EXIT_SUCCESS;
 
     auto_ptr<piper_proc> stdin_reader;
@@ -2302,10 +2355,11 @@ int main(int argc, char *argv[])
         lnav_data.ld_flags |= LNF_SECURE_MODE;
     }
 
+    lnav_data.ld_exec_context.ec_sql_callback = sql_callback;
+    lnav_data.ld_exec_context.ec_pipe_callback = pipe_callback;
+
     lnav_data.ld_program_name = argv[0];
-    lnav_data.ld_local_vars.push(map<string, string>());
-    add_ansi_vars(lnav_data.ld_local_vars.top());
-    lnav_data.ld_path_stack.push(".");
+    add_ansi_vars(ec.ec_local_vars.top());
 
     rl_readline_name = "lnav";
 
@@ -2913,7 +2967,7 @@ int main(int argc, char *argv[])
                 }
 
                 log_info("Executing initial commands");
-                execute_init_commands(msgs);
+                execute_init_commands(lnav_data.ld_exec_context, msgs);
                 wait_for_pipers();
                 lnav_data.ld_curl_looper.process_all();
                 rebuild_indexes(false);

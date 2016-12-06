@@ -44,6 +44,8 @@
 
 using namespace std;
 
+exec_context INIT_EXEC_CONTEXT;
+
 static const string MSG_FORMAT_STMT =
         "SELECT count(*) as total, min(log_line) as log_line, log_msg_format "
                 "FROM all_logs GROUP BY log_msg_format ORDER BY total desc";
@@ -74,9 +76,9 @@ static int sql_progress(const struct log_cursor &lc)
     return 0;
 }
 
-string execute_from_file(const string &path, int line_number, char mode, const string &cmdline);
+string execute_from_file(exec_context &ec, const string &path, int line_number, char mode, const string &cmdline);
 
-string execute_command(const string &cmdline)
+string execute_command(exec_context &ec, const string &cmdline)
 {
     vector<string> args;
     string         msg;
@@ -93,14 +95,14 @@ string execute_command(const string &cmdline)
             msg = "error: unknown command - " + args[0];
         }
         else {
-            msg = iter->second.c_func(cmdline, args);
+            msg = iter->second.c_func(ec, cmdline, args);
         }
     }
 
     return msg;
 }
 
-string execute_sql(const string &sql, string &alt_msg)
+string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
 {
     db_label_source &dls = lnav_data.ld_db_row_source;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -147,11 +149,20 @@ string execute_sql(const string &sql, string &alt_msg)
 
         param_count = sqlite3_bind_parameter_count(stmt.in());
         for (int lpc = 0; lpc < param_count; lpc++) {
+            map<string, string>::iterator ov_iter;
             const char *name;
 
             name = sqlite3_bind_parameter_name(stmt.in(), lpc + 1);
-            if (name[0] == '$') {
-                map<string, string> &vars = lnav_data.ld_local_vars.top();
+            ov_iter = ec.ec_override.find(name);
+            if (ov_iter != ec.ec_override.end()) {
+                sqlite3_bind_text(stmt.in(),
+                                  lpc,
+                                  ov_iter->second.c_str(),
+                                  ov_iter->second.length(),
+                                  SQLITE_TRANSIENT);
+            }
+            else if (name[0] == '$') {
+                map<string, string> &vars = ec.ec_local_vars.top();
                 map<string, string>::iterator local_var;
                 const char *env_value;
 
@@ -163,6 +174,40 @@ string execute_sql(const string &sql, string &alt_msg)
                 else if ((env_value = getenv(&name[1])) != NULL) {
                     sqlite3_bind_text(stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
                 }
+            }
+            else if (name[0] == ':' && ec.ec_line_values != NULL) {
+                vector<logline_value> &lvalues = *ec.ec_line_values;
+                vector<logline_value>::iterator iter;
+
+                for (iter = lvalues.begin(); iter != lvalues.end(); ++iter) {
+                    if (strcmp(&name[1], iter->lv_name.get()) != 0) {
+                        continue;
+                    }
+                    switch (iter->lv_kind) {
+                        case logline_value::VALUE_BOOLEAN:
+                            sqlite3_bind_int64(stmt.in(), lpc + 1, iter->lv_value.i);
+                            break;
+                        case logline_value::VALUE_FLOAT:
+                            sqlite3_bind_double(stmt.in(), lpc + 1, iter->lv_value.d);
+                            break;
+                        case logline_value::VALUE_INTEGER:
+                            sqlite3_bind_int64(stmt.in(), lpc + 1, iter->lv_value.i);
+                            break;
+                        case logline_value::VALUE_NULL:
+                            sqlite3_bind_null(stmt.in(), lpc + 1);
+                            break;
+                        default:
+                            sqlite3_bind_text(stmt.in(),
+                                              lpc + 1,
+                                              iter->text_value(),
+                                              iter->text_length(),
+                                              SQLITE_TRANSIENT);
+                            break;
+                    }
+                }
+            }
+            else {
+                log_warning("Could not bind variable: %s", name);
             }
         }
 
@@ -182,7 +227,7 @@ string execute_sql(const string &sql, string &alt_msg)
                 break;
 
             case SQLITE_ROW:
-                sql_callback(stmt.in());
+                ec.ec_sql_callback(ec, stmt.in());
                 break;
 
             default: {
@@ -203,29 +248,38 @@ string execute_sql(const string &sql, string &alt_msg)
         lnav_data.ld_views[LNV_DB].reload_data();
         lnav_data.ld_views[LNV_DB].set_left(0);
 
-        if (dls.dls_rows.size() > 0) {
-            vis_bookmarks &bm =
-            lnav_data.ld_views[LNV_LOG].get_bookmarks();
+        if (!ec.ec_accumulator.empty()) {
+            retval = ec.ec_accumulator;
+            ec.ec_accumulator.clear();
+        }
+        else if (dls.dls_rows.size() > 0) {
+            vis_bookmarks &bm = lnav_data.ld_views[LNV_LOG].get_bookmarks();
 
-            if (!(lnav_data.ld_flags & LNF_HEADLESS) &&
-                    dls.dls_headers.size() == 1 && !bm[&BM_QUERY].empty()) {
+            if (lnav_data.ld_flags & LNF_HEADLESS) {
+                if (ec.ec_local_vars.size() == 1) {
+                    ensure_view(&lnav_data.ld_views[LNV_DB]);
+                }
+
+                retval = "";
+                alt_msg = "";
+            }
+            else if (dls.dls_headers.size() == 1 && !bm[&BM_QUERY].empty()) {
                 retval = "";
                 alt_msg = HELP_MSG_2(
                   y, Y,
                   "to move forward/backward through query results "
                   "in the log view");
             }
-            else if (!(lnav_data.ld_flags & LNF_HEADLESS) &&
-                    dls.dls_rows.size() == 1) {
+            else if (dls.dls_rows.size() == 1) {
                 string row;
 
                 dls.text_value_for_line(lnav_data.ld_views[LNV_DB], 0, row, true);
-                retval = "SQL Result: " + row;
+                retval = row;
             }
             else {
                 char row_count[32];
 
-                if (lnav_data.ld_local_vars.size() == 1) {
+                if (ec.ec_local_vars.size() == 1) {
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
                 }
                 snprintf(row_count, sizeof(row_count),
@@ -256,7 +310,7 @@ string execute_sql(const string &sql, string &alt_msg)
     return retval;
 }
 
-static string execute_file_contents(const string &path, bool multiline)
+static string execute_file_contents(exec_context &ec, const string &path, bool multiline)
 {
     string retval;
     FILE *file;
@@ -276,7 +330,7 @@ static string execute_file_contents(const string &path, bool multiline)
     char mode = '\0';
     pair<string, string> dir_and_base = split_path(path);
 
-    lnav_data.ld_path_stack.push(dir_and_base.first);
+    ec.ec_path_stack.push(dir_and_base.first);
     while ((line_size = getline(&line, &line_max_size, file)) != -1) {
         line_number += 1;
 
@@ -293,7 +347,7 @@ static string execute_file_contents(const string &path, bool multiline)
             case ';':
             case '|':
                 if (mode) {
-                    retval = execute_from_file(path, starting_line_number, mode, trim(cmdline));
+                    retval = execute_from_file(ec, path, starting_line_number, mode, trim(cmdline));
                 }
 
                 starting_line_number = line_number;
@@ -305,7 +359,7 @@ static string execute_file_contents(const string &path, bool multiline)
                     cmdline += line;
                 }
                 else {
-                    retval = execute_from_file(path, line_number, ':', line);
+                    retval = execute_from_file(ec, path, line_number, ':', line);
                 }
                 break;
         }
@@ -313,18 +367,18 @@ static string execute_file_contents(const string &path, bool multiline)
     }
 
     if (mode) {
-        retval = execute_from_file(path, starting_line_number, mode, trim(cmdline));
+        retval = execute_from_file(ec, path, starting_line_number, mode, trim(cmdline));
     }
 
     if (file != stdin) {
         fclose(file);
     }
-    lnav_data.ld_path_stack.pop();
+    ec.ec_path_stack.pop();
 
     return retval;
 }
 
-string execute_file(const string &path_and_args, bool multiline)
+string execute_file(exec_context &ec, const string &path_and_args, bool multiline)
 {
     map<string, vector<script_metadata> > scripts;
     map<string, vector<script_metadata> >::iterator iter;
@@ -334,17 +388,17 @@ string execute_file(const string &path_and_args, bool multiline)
 
     log_info("Executing file: %s", path_and_args.c_str());
 
-    if (!lexer.split(split_args, lnav_data.ld_local_vars.top())) {
+    if (!lexer.split(split_args, ec.ec_local_vars.top())) {
         retval = "error: unable to parse path";
     }
     else if (split_args.empty()) {
         retval = "error: no script specified";
     }
     else {
-        lnav_data.ld_local_vars.push(map<string, string>());
+        ec.ec_local_vars.push(map<string, string>());
 
         string script_name = split_args[0];
-        map<string, string> &vars = lnav_data.ld_local_vars.top();
+        map<string, string> &vars = ec.ec_local_vars.top();
         char env_arg_name[32];
         string result, open_error = "file not found";
 
@@ -375,7 +429,7 @@ string execute_file(const string &path_and_args, bool multiline)
             open_error = strerror(errno);
         }
         else {
-            string local_path = lnav_data.ld_path_stack.top() + "/" + script_name;
+            string local_path = ec.ec_path_stack.top() + "/" + script_name;
 
             if (access(local_path.c_str(), R_OK) == 0) {
                 struct script_metadata meta;
@@ -393,37 +447,37 @@ string execute_file(const string &path_and_args, bool multiline)
             for (vector<script_metadata>::iterator path_iter = paths_to_exec.begin();
                  path_iter != paths_to_exec.end();
                  ++path_iter) {
-                result = execute_file_contents(path_iter->sm_path, multiline);
+                result = execute_file_contents(ec, path_iter->sm_path, multiline);
             }
-            retval = "Executed: " + script_name + " -- " + result;
+            retval = result;
         }
         else {
             retval = "error: unknown script -- " + script_name + " -- " + open_error;
         }
-        lnav_data.ld_local_vars.pop();
+        ec.ec_local_vars.pop();
     }
 
     return retval;
 }
 
-string execute_from_file(const string &path, int line_number, char mode, const string &cmdline)
+string execute_from_file(exec_context &ec, const string &path, int line_number, char mode, const string &cmdline)
 {
     string retval, alt_msg;
 
     switch (mode) {
         case ':':
-            retval = execute_command(cmdline);
+            retval = execute_command(ec, cmdline);
             break;
         case '/':
         case ';':
             setup_logline_table();
-            retval = execute_sql(cmdline, alt_msg);
+            retval = execute_sql(ec, cmdline, alt_msg);
             break;
         case '|':
-            retval = execute_file(cmdline);
+            retval = execute_file(ec, cmdline);
             break;
         default:
-            retval = execute_command(cmdline);
+            retval = execute_command(ec, cmdline);
             break;
     }
 
@@ -439,28 +493,55 @@ string execute_from_file(const string &path, int line_number, char mode, const s
     return retval;
 }
 
-void execute_init_commands(vector<pair<string, string> > &msgs)
+string execute_any(exec_context &ec, const string &cmdline_with_mode)
+{
+    string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
+
+    switch (cmdline_with_mode[0]) {
+        case ':':
+            retval = execute_command(ec, cmdline);
+            break;
+        case '/':
+        case ';':
+            setup_logline_table();
+            retval = execute_sql(ec, cmdline, alt_msg);
+            break;
+        case '|': {
+            retval = execute_file(ec, cmdline);
+            break;
+        }
+        default:
+            retval = execute_command(ec, cmdline);
+            break;
+    }
+
+    if (rescan_files()) {
+        rebuild_indexes(true);
+    }
+
+    return retval;
+}
+
+void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs)
 {
     if (lnav_data.ld_cmd_init_done) {
         return;
     }
 
-    for (list<std::string>::iterator iter = lnav_data.ld_commands.begin();
-         iter != lnav_data.ld_commands.end();
-         ++iter) {
+    for (auto &cmd : lnav_data.ld_commands) {
         string msg, alt_msg;
 
-        switch (iter->at(0)) {
+        switch (cmd.at(0)) {
         case ':':
-            msg = execute_command(iter->substr(1));
+            msg = execute_command(ec, cmd.substr(1));
             break;
         case '/':
         case ';':
             setup_logline_table();
-            msg = execute_sql(iter->substr(1), alt_msg);
+            msg = execute_sql(ec, cmd.substr(1), alt_msg);
             break;
         case '|':
-            msg = execute_file(iter->substr(1));
+            msg = execute_file(ec, cmd.substr(1));
             break;
         }
 
@@ -487,7 +568,7 @@ void execute_init_commands(vector<pair<string, string> > &msgs)
     lnav_data.ld_cmd_init_done = true;
 }
 
-int sql_callback(sqlite3_stmt *stmt)
+int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     db_label_source &dls = lnav_data.ld_db_row_source;
@@ -533,4 +614,31 @@ int sql_callback(sqlite3_stmt *stmt)
     }
 
     return retval;
+}
+
+future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &fd)
+{
+    piper_proc *pp = new piper_proc(fd, false);
+    static int exec_count = 0;
+    char desc[128];
+
+    lnav_data.ld_pipers.push_back(pp);
+    snprintf(desc,
+             sizeof(desc), "[%d] Output of %s",
+             exec_count++,
+             cmdline.c_str());
+    lnav_data.ld_file_names[desc]
+        .with_fd(pp->get_fd())
+        .with_detect_format(false);
+    lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+    if (lnav_data.ld_rl_view != NULL) {
+        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                                                X, "to close the file"));
+    }
+
+    packaged_task<string()> task([]() { return ""; });
+
+    task();
+
+    return task.get_future();
 }

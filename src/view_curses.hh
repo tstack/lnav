@@ -186,6 +186,15 @@ struct line_range {
         return this->contains(other.lr_start) || this->contains(other.lr_end);
     };
 
+    void shift(int32_t start, int32_t amount) {
+        if (this->lr_start >= start) {
+            this->lr_start += amount;
+        }
+        if (this->lr_end != -1 && start < this->lr_end) {
+            this->lr_end += amount;
+        }
+    };
+
     void ltrim(const char *str) {
         while (this->lr_start < this->lr_end && isspace(str[this->lr_start])) {
             this->lr_start += 1;
@@ -315,14 +324,7 @@ inline void remove_string_attr(string_attrs_t &sa, const struct line_range &lr)
 inline void shift_string_attrs(string_attrs_t &sa, int32_t start, int32_t amount)
 {
     for (string_attrs_t::iterator iter = sa.begin(); iter != sa.end(); ++iter) {
-        struct line_range *existing_lr = &iter->sa_range;
-
-        if (existing_lr->lr_start >= start) {
-            existing_lr->lr_start += amount;
-        }
-        if (existing_lr->lr_end != -1 && start < existing_lr->lr_end) {
-            existing_lr->lr_end += amount;
-        }
+        iter->sa_range.shift(start, amount);
     }
 }
 

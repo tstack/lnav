@@ -56,8 +56,10 @@
 #include "intern_string.hh"
 #include "shared_buffer.hh"
 
+struct sqlite3;
 class log_format;
 class log_vtab_manager;
+struct exec_context;
 
 /**
  * Metadata for a single line in a log file.
@@ -523,6 +525,38 @@ public:
         return this->lv_sbr.length();
     }
 
+    struct line_range origin_in_full_msg(const char *msg, size_t len) {
+        if (this->lv_sub_offset == 0) {
+            return this->lv_origin;
+        }
+
+        struct line_range retval = this->lv_origin;
+        const char *last = msg;
+
+        for (int lpc = 0; lpc < this->lv_sub_offset; lpc++) {
+            const char *next = strchr(last, '\n');
+            require(next != NULL);
+
+            next += 1;
+            int amount = (next - last);
+
+            retval.lr_start += amount;
+            if (retval.lr_end != -1) {
+                retval.lr_end += amount;
+            }
+
+            last = next + 1;
+        }
+
+        if (retval.lr_end == -1) {
+            const char *eol = strchr(last, '\n');
+
+            retval.lr_end = eol - msg;
+        }
+
+        return retval;
+    };
+
     intern_string_t lv_name;
     kind_t      lv_kind;
     union value_u {
@@ -732,6 +766,13 @@ public:
                           bool annotate_module = true) const
     { };
 
+    virtual void rewrite(exec_context &ec,
+                         shared_buffer_ref &line,
+                         string_attrs_t &sa,
+                         std::string &value_out) {
+        value_out.assign(line.get_data(), line.length());
+    };
+
     virtual const logline_value_stats *stats_for_value(const intern_string_t &name) const {
         return NULL;
     };
@@ -847,6 +888,7 @@ public:
         bool vd_hidden;
         bool vd_internal;
         std::vector<std::string> vd_action_list;
+        std::string vd_rewriter;
 
         bool operator<(const value_def &rhs) const {
             return this->vd_index < rhs.vd_index;
@@ -925,6 +967,11 @@ public:
                   string_attrs_t &sa,
                   std::vector<logline_value> &values,
                   bool annotate_module = true) const;
+
+    void rewrite(exec_context &ec,
+                 shared_buffer_ref &line,
+                 string_attrs_t &sa,
+                 std::string &value_out);
 
     void build(std::vector<std::string> &errors);
 

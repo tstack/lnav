@@ -158,6 +158,16 @@ fields:
       not be graphed.  This should only need to be set for integer fields.
     :hidden: A boolean for JSON log fields that indicates whether they should
       be displayed if they are not present in the line-format.
+    :rewriter: A command to rewrite this field when pretty-printing log
+      messages containing this value.  The command must start with ':', ';',
+      or '|' to signify whether it is a regular command, SQL query, or a script
+      to be executed.  The other fields in the line are accessible in SQL by
+      using the ':' prefix.  The text value of this field will then be replaced
+      with the result of the command when pretty-printing.  For example, the
+      HTTP access log format will rewrite the status code field to include the
+      textual version (e.g. 200 (OK)) using the following SQL query::
+
+         ;SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '
 
   :sample: A list of objects that contain sample log messages.  All formats
     must include at least one sample and it must be matched by one of the

@@ -8,6 +8,10 @@ lnav v0.8.2:
        give you more control over how the displayed line looks.
      * Added a "hidden" option to log format values so that you can hide JSON
        log fields from being displayed if they are not in the line format.
+     * Added a "rewriter" field to log format value definitions that is a
+       command used to rewrite the field in the pretty-printed version of a
+       log message.  For example, the HTTP access log format will rewrite the
+       status code field to include the textual version (e.g. 200 (OK)).
 
      Interface Changes:
      * The color used for text colored via ":highlight" is now based on the

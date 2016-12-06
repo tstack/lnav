@@ -41,6 +41,7 @@
 #include "log_vtab_impl.hh"
 #include "ptimec.hh"
 #include "log_search_table.hh"
+#include "command_executor.hh"
 
 using namespace std;
 
@@ -918,6 +919,56 @@ void external_log_format::annotate(shared_buffer_ref &line,
                 }
                 lv_iter->lv_origin.lr_start += body_cap->c_begin;
                 lv_iter->lv_origin.lr_end += body_cap->c_begin;
+            }
+        }
+    }
+}
+
+void external_log_format::rewrite(exec_context &ec,
+                                  shared_buffer_ref &line,
+                                  string_attrs_t &sa,
+                                  string &value_out)
+{
+    vector<logline_value>::iterator iter, bind_iter, shift_iter;
+    vector<logline_value> &values = *ec.ec_line_values;
+
+    value_out.assign(line.get_data(), line.length());
+
+    for (iter = values.begin(); iter != values.end(); ++iter) {
+        map<const intern_string_t, value_def>::iterator vd_iter;
+
+        if (!iter->lv_origin.is_valid()) {
+            log_debug("not rewriting value with invalid origin -- %s", iter->lv_name.get());
+            continue;
+        }
+
+        vd_iter = this->elf_value_defs.find(iter->lv_name);
+        if (vd_iter == this->elf_value_defs.end()) {
+            log_debug("not rewriting undefined value -- %s", iter->lv_name.get());
+            continue;
+        }
+
+        value_def &vd = vd_iter->second;
+
+        if (!vd.vd_rewriter.empty()) {
+            string field_value = iter->to_string();
+
+            field_value = execute_any(ec, vd.vd_rewriter);
+
+            struct line_range adj_origin = iter->origin_in_full_msg(
+                value_out.c_str(), value_out.length());
+
+            value_out.erase(adj_origin.lr_start, adj_origin.length());
+
+            int32_t shift_amount = field_value.length() - adj_origin.length();
+            value_out.insert(adj_origin.lr_start, field_value);
+            for (shift_iter = values.begin();
+                 shift_iter != values.end(); ++shift_iter) {
+                if (shift_iter->lv_name == iter->lv_name) {
+                    continue;
+                }
+
+                shift_iter->lv_origin.shift(adj_origin.lr_start, shift_amount);
             }
         }
     }

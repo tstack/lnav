@@ -57,6 +57,11 @@ time_t time(time_t *_unused) {
   return 1194107018;
 }
 
+string execute_any(exec_context &ec, const string &cmdline_with_mode)
+{
+  return "";
+}
+
 int main(int argc, char *argv[]) {
   int c, retval = EXIT_SUCCESS;
   dl_mode_t mode = MODE_NONE;

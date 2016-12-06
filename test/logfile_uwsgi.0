@@ -1,6 +1,6 @@
 [pid: 88185|app: 0|req: 1/1] 127.0.0.1 () {38 vars in 696 bytes} [Sun Mar 13 22:49:12 2016] POST /update_metrics => generated 47 bytes in 129 msecs (HTTP/1.1 200) 9 headers in 378 bytes (1 switches on core 3)
 [pid: 88185|app: 0|req: 3/2] 127.0.0.1 () {38 vars in 696 bytes} [Sun Mar 13 22:49:15 2016] POST /update_metrics => generated 47 bytes in 35 msecs (HTTP/1.1 200) 9 headers in 378 bytes (1 switches on core 30)
-[pid: 88185|app: 0|req: 3/3] 127.0.0.1 () {34 vars in 617 bytes} [Sun Mar 13 22:49:15 2016] POST /endpoint2 => generated 215 bytes in 68 msecs (HTTP/1.1 200) 9 headers in 373 bytes (1 switches on core 8)
+[pid: 88185|app: 0|req: 3/3] 127.0.0.1 () {34 vars in 617 bytes} [Sun Mar 13 22:49:15 2016] POST /endpoint2 => generated 215 bytes in 68 micros (HTTP/1.1 200) 9 headers in 373 bytes (1 switches on core 8)
 [pid: 88185|app: 0|req: 4/4] 127.0.0.1 () {34 vars in 617 bytes} [Sun Mar 13 22:49:15 2016] POST /endpoint2 => generated 215 bytes in 16 msecs (HTTP/1.1 200) 9 headers in 373 bytes (1 switches on core 22)
 [pid: 88185|app: 0|req: 5/5] 127.0.0.1 () {38 vars in 696 bytes} [Sun Mar 13 22:50:12 2016] POST /update_metrics => generated 47 bytes in 10 msecs (HTTP/1.1 200) 9 headers in 378 bytes (1 switches on core 0)
 [pid: 88186|app: 0|req: 1/6] 127.0.0.1 () {38 vars in 696 bytes} [Sun Mar 13 22:50:15 2016] POST /update_metrics => generated 47 bytes in 65 msecs (HTTP/1.1 200) 9 headers in 378 bytes (1 switches on core 16)

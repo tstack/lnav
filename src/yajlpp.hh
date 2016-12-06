@@ -43,6 +43,7 @@
 #include <algorithm>
 
 #include "pcrepp.hh"
+#include "json_ptr.hh"
 #include "intern_string.hh"
 
 #include "yajl/api/yajl_parse.h"
@@ -129,6 +130,7 @@ struct json_path_handler_base {
 };
 
 int yajlpp_static_string(yajlpp_parse_context *, const unsigned char *, size_t);
+int yajlpp_static_string_vector(yajlpp_parse_context *, const unsigned char *, size_t);
 int yajlpp_static_intern_string(yajlpp_parse_context *, const unsigned char *, size_t);
 int yajlpp_static_enum(yajlpp_parse_context *, const unsigned char *, size_t);
 yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
@@ -140,8 +142,11 @@ void yajlpp_validator_for_intern_string(yajlpp_parse_context &ypc,
                                         const json_path_handler_base &jph);
 void yajlpp_validator_for_int(yajlpp_parse_context &ypc,
                               const json_path_handler_base &jph);
+void yajlpp_validator_for_double(yajlpp_parse_context &ypc,
+                                 const json_path_handler_base &jph);
 
 int yajlpp_static_number(yajlpp_parse_context *, long long);
+int yajlpp_static_decimal(yajlpp_parse_context *, double);
 
 int yajlpp_static_bool(yajlpp_parse_context *, int);
 yajl_gen_status yajlpp_static_gen_bool(yajlpp_gen_context &ygc,
@@ -257,6 +262,12 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     };
 
+    json_path_handler &for_field(std::vector<std::string> *field) {
+        this->add_cb(yajlpp_static_string_vector);
+        this->jph_simple_offset = field;
+        return *this;
+    };
+
     json_path_handler &for_field(intern_string_t *field) {
         this->add_cb(yajlpp_static_intern_string);
         this->jph_simple_offset = field;
@@ -277,6 +288,13 @@ struct json_path_handler : public json_path_handler_base {
         this->add_cb(yajlpp_static_number);
         this->jph_simple_offset = field;
         this->jph_validator = yajlpp_validator_for_int;
+        return *this;
+    };
+
+    json_path_handler &for_field(double *field) {
+        this->add_cb(yajlpp_static_decimal);
+        this->jph_simple_offset = field;
+        this->jph_validator = yajlpp_validator_for_double;
         return *this;
     };
 
@@ -323,7 +341,8 @@ public:
         memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
     };
 
-    void get_path_fragment(int offset, const char **frag, size_t &len_out) const {
+    const char *get_path_fragment(int offset, char *frag_in, size_t &len_out) const {
+        const char *retval;
         size_t start, end;
 
         if (offset < 0) {
@@ -333,27 +352,36 @@ public:
         if ((offset + 1) < (int)this->ypc_path_index_stack.size()) {
             end = this->ypc_path_index_stack[offset + 1];
         }
-        else{
+        else {
             end = this->ypc_path.size() - 1;
         }
-        *frag = &this->ypc_path[start];
-        len_out = end - start;
+        if (this->ypc_handlers != NULL) {
+            len_out = json_ptr::decode(frag_in, &this->ypc_path[start], end - start);
+            retval = frag_in;
+        }
+        else {
+            retval = &this->ypc_path[start];
+            len_out = end - start;
+        }
+
+        return retval;
     }
 
     const intern_string_t get_path_fragment_i(int offset) const {
+        char fragbuf[this->ypc_path.size()];
         const char *frag;
         size_t len;
 
-        this->get_path_fragment(offset, &frag, len);
+        frag = this->get_path_fragment(offset, fragbuf, len);
         return intern_string::lookup(frag, len);
     };
 
-    std::string get_path_fragment(int offset) const
-    {
+    std::string get_path_fragment(int offset) const {
+        char fragbuf[this->ypc_path.size()];
         const char *frag;
         size_t len;
 
-        this->get_path_fragment(offset, &frag, len);
+        frag = this->get_path_fragment(offset, fragbuf, len);
         return std::string(frag, len);
     };
 

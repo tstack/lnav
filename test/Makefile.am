@@ -161,6 +161,7 @@ drive_data_scanner_LDADD = \
 	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
+	$(LIBCURL) \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \
 	-lpcrecpp \

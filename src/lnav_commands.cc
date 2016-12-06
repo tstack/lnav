@@ -117,7 +117,7 @@ static string refresh_pt_search()
     return retval;
 }
 
-static string com_adjust_log_time(string cmdline, vector<string> &args)
+static string com_adjust_log_time(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting new time value";
 
@@ -161,7 +161,7 @@ static string com_adjust_log_time(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_unix_time(string cmdline, vector<string> &args)
+static string com_unix_time(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a unix time value";
 
@@ -217,7 +217,7 @@ static string com_unix_time(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_current_time(string cmdline, vector<string> &args)
+static string com_current_time(exec_context &ec, string cmdline, vector<string> &args)
 {
     char      ftime[128];
     struct tm localtm;
@@ -239,7 +239,7 @@ static string com_current_time(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_goto(string cmdline, vector<string> &args)
+static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting line number/percentage, timestamp, or relative time";
 
@@ -319,7 +319,7 @@ static string com_goto(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_relative_goto(string cmdline, vector<string> &args)
+static string com_relative_goto(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting line number/percentage";
 
@@ -348,7 +348,7 @@ static string com_relative_goto(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_goto_mark(string cmdline, vector<string> &args)
+static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -442,7 +442,7 @@ static void json_write_row(yajl_gen handle, int row)
     }
 }
 
-static string com_save_to(string cmdline, vector<string> &args)
+static string com_save_to(exec_context &ec, string cmdline, vector<string> &args)
 {
     FILE *outfile = NULL, *toclose = NULL;
     const char *mode    = "";
@@ -467,7 +467,7 @@ static string com_save_to(string cmdline, vector<string> &args)
     vector<string> split_args;
     shlex lexer(fn);
 
-    if (!lexer.split(split_args, lnav_data.ld_local_vars.top())) {
+    if (!lexer.split(split_args, ec.ec_local_vars.top())) {
         return "error: unable to parse arguments";
     }
     if (split_args.size() > 1) {
@@ -643,7 +643,7 @@ static string com_save_to(string cmdline, vector<string> &args)
     return "";
 }
 
-static string com_pipe_to(string cmdline, vector<string> &args)
+static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting command to execute";
 
@@ -697,9 +697,9 @@ static string com_pipe_to(string cmdline, vector<string> &args)
                 log_data_helper ldh(lss);
                 char tmp_str[64];
 
-                ldh.parse_line(tc->get_top(), true);
+                ldh.parse_line(ec.ec_top_line, true);
 
-                snprintf(tmp_str, sizeof(tmp_str), "%d", (int) tc->get_top());
+                snprintf(tmp_str, sizeof(tmp_str), "%d", (int) ec.ec_top_line);
                 setenv("log_line", tmp_str, 1);
                 sql_strftime(tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
                 setenv("log_time", tmp_str, 1);
@@ -728,30 +728,17 @@ static string com_pipe_to(string cmdline, vector<string> &args)
 
         default:
             bookmark_vector<vis_line_t>::iterator iter;
-            static int exec_count = 0;
             string line;
 
             in_pipe.read_end().close_on_exec();
             in_pipe.write_end().close_on_exec();
 
             lnav_data.ld_children.push_back(child_pid);
-            if (out_pipe.read_end() != -1) {
-                piper_proc *pp = new piper_proc(out_pipe.read_end(), false);
-                char desc[128];
 
-                lnav_data.ld_pipers.push_back(pp);
-                snprintf(desc,
-                        sizeof(desc), "[%d] Output of %s",
-                        exec_count++,
-                        cmdline.c_str());
-                lnav_data.ld_file_names[desc]
-                    .with_fd(pp->get_fd())
-                    .with_detect_format(false);
-                lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
-                if (lnav_data.ld_rl_view != NULL) {
-                    lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                            X, "to close the file"));
-                }
+            future<string> reader;
+
+            if (out_pipe.read_end() != -1) {
+                reader = ec.ec_pipe_callback(ec, cmdline, out_pipe.read_end());
             }
 
             if (pipe_line_to) {
@@ -787,14 +774,19 @@ static string com_pipe_to(string cmdline, vector<string> &args)
                 }
             }
 
-            retval = "";
+            if (reader.valid()) {
+                retval = reader.get();
+            }
+            else {
+                retval = "";
+            }
             break;
     }
 
     return retval;
 }
 
-static string com_highlight(string cmdline, vector<string> &args)
+static string com_highlight(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting regular expression to highlight";
 
@@ -839,7 +831,7 @@ static string com_highlight(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_clear_highlight(string cmdline, vector<string> &args)
+static string com_clear_highlight(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting highlight expression to clear";
 
@@ -866,7 +858,7 @@ static string com_clear_highlight(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_help(string cmdline, vector<string> &args)
+static string com_help(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -905,9 +897,9 @@ protected:
     pcrepp pf_pcre;
 };
 
-static string com_enable_filter(string cmdline, vector<string> &args);
+static string com_enable_filter(exec_context &ec, string cmdline, vector<string> &args);
 
-static string com_filter(string cmdline, vector<string> &args)
+static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting regular expression to filter out";
 
@@ -924,7 +916,7 @@ static string com_filter(string cmdline, vector<string> &args)
 
         args[1] = remaining_args(cmdline, args);
         if (fs.get_filter(args[1]) != NULL) {
-            retval = com_enable_filter(cmdline, args);
+            retval = com_enable_filter(ec, cmdline, args);
         }
         else if (fs.full()) {
             retval = "error: filter limit reached, try combining "
@@ -959,7 +951,7 @@ static string com_filter(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_delete_filter(string cmdline, vector<string> &args)
+static string com_delete_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a filter to delete";
 
@@ -985,7 +977,7 @@ static string com_delete_filter(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_enable_filter(string cmdline, vector<string> &args)
+static string com_enable_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting disabled filter to enable";
 
@@ -1017,7 +1009,7 @@ static string com_enable_filter(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_disable_filter(string cmdline, vector<string> &args)
+static string com_disable_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting enabled filter to disable";
 
@@ -1049,7 +1041,7 @@ static string com_disable_filter(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_enable_word_wrap(string cmdline, vector<string> &args)
+static string com_enable_word_wrap(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -1065,7 +1057,7 @@ static string com_enable_word_wrap(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_disable_word_wrap(string cmdline, vector<string> &args)
+static string com_disable_word_wrap(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -1083,7 +1075,7 @@ static string com_disable_word_wrap(string cmdline, vector<string> &args)
 
 static std::set<string> custom_logline_tables;
 
-static string com_create_logline_table(string cmdline, vector<string> &args)
+static string com_create_logline_table(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a table name";
 
@@ -1120,7 +1112,7 @@ static string com_create_logline_table(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_delete_logline_table(string cmdline, vector<string> &args)
+static string com_delete_logline_table(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a table name";
 
@@ -1153,7 +1145,7 @@ static string com_delete_logline_table(string cmdline, vector<string> &args)
 
 static std::set<string> custom_search_tables;
 
-static string com_create_search_table(string cmdline, vector<string> &args)
+static string com_create_search_table(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a table name";
 
@@ -1199,7 +1191,7 @@ static string com_create_search_table(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_delete_search_table(string cmdline, vector<string> &args)
+static string com_delete_search_table(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a table name";
 
@@ -1230,7 +1222,7 @@ static string com_delete_search_table(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_session(string cmdline, vector<string> &args)
+static string com_session(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a command to save to the session file";
 
@@ -1296,7 +1288,7 @@ static string com_session(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_open(string cmdline, vector<string> &args)
+static string com_open(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting file name to open";
 
@@ -1322,7 +1314,7 @@ static string com_open(string cmdline, vector<string> &args)
     vector<string> split_args;
     shlex lexer(pat);
 
-    if (!lexer.split(split_args, lnav_data.ld_local_vars.top())) {
+    if (!lexer.split(split_args, ec.ec_local_vars.top())) {
         return "error: unable to parse arguments";
     }
 
@@ -1444,7 +1436,7 @@ static string com_open(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_close(string cmdline, vector<string> &args)
+static string com_close(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: close must be run in the log or text file views";
 
@@ -1497,7 +1489,7 @@ static string com_close(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_partition_name(string cmdline, vector<string> &args)
+static string com_partition_name(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting partition name";
 
@@ -1522,7 +1514,7 @@ static string com_partition_name(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_clear_partition(string cmdline, vector<string> &args)
+static string com_clear_partition(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -1558,7 +1550,7 @@ static string com_clear_partition(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_pt_time(string cmdline, vector<string> &args)
+static string com_pt_time(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a time value";
 
@@ -1623,7 +1615,7 @@ static string com_pt_time(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_summarize(string cmdline, vector<string> &args)
+static string com_summarize(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -1794,7 +1786,7 @@ static string com_summarize(string cmdline, vector<string> &args)
                     break;
 
                 case SQLITE_ROW:
-                    sql_callback(stmt.in());
+                    ec.ec_sql_callback(ec, stmt.in());
                     break;
 
                 default:
@@ -1827,7 +1819,7 @@ static string com_summarize(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_add_test(string cmdline, vector<string> &args)
+static string com_add_test(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -1868,7 +1860,7 @@ static string com_add_test(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_switch_to_view(string cmdline, vector<string> &args)
+static string com_switch_to_view(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -1893,7 +1885,7 @@ static string com_switch_to_view(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_zoom_to(string cmdline, vector<string> &args)
+static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
@@ -1949,7 +1941,7 @@ static string com_zoom_to(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_reset_session(string cmdline, vector<string> &args)
+static string com_reset_session(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -1962,7 +1954,7 @@ static string com_reset_session(string cmdline, vector<string> &args)
     return "";
 }
 
-static string com_load_session(string cmdline, vector<string> &args)
+static string com_load_session(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -1976,7 +1968,7 @@ static string com_load_session(string cmdline, vector<string> &args)
     return "";
 }
 
-static string com_save_session(string cmdline, vector<string> &args)
+static string com_save_session(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -1988,7 +1980,7 @@ static string com_save_session(string cmdline, vector<string> &args)
     return "";
 }
 
-static string com_set_min_log_level(string cmdline, vector<string> &args)
+static string com_set_min_log_level(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting log level name";
 
@@ -2011,7 +2003,7 @@ static string com_set_min_log_level(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_hide_line(string cmdline, vector<string> &args)
+static string com_hide_line(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -2113,7 +2105,7 @@ static string com_hide_line(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_show_lines(string cmdline, vector<string> &args)
+static string com_show_lines(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "info: showing lines";
 
@@ -2131,7 +2123,7 @@ static string com_show_lines(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_rebuild(string cmdline, vector<string> &args)
+static string com_rebuild(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -2143,7 +2135,7 @@ static string com_rebuild(string cmdline, vector<string> &args)
     return "";
 }
 
-static string com_shexec(string cmdline, vector<string> &args)
+static string com_shexec(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -2155,7 +2147,7 @@ static string com_shexec(string cmdline, vector<string> &args)
     return "";
 }
 
-static string com_poll_now(string cmdline, vector<string> &args)
+static string com_poll_now(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -2167,7 +2159,7 @@ static string com_poll_now(string cmdline, vector<string> &args)
     return "";
 }
 
-static string com_redraw(string cmdline, vector<string> &args)
+static string com_redraw(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -2179,7 +2171,7 @@ static string com_redraw(string cmdline, vector<string> &args)
     return "";
 }
 
-static string com_echo(string cmdline, vector<string> &args)
+static string com_echo(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a message";
 
@@ -2219,7 +2211,7 @@ static string com_echo(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_eval(string cmdline, vector<string> &args)
+static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a command or query to evaluate";
 
@@ -2232,7 +2224,7 @@ static string com_eval(string cmdline, vector<string> &args)
         shlex lexer(all_args.c_str(), all_args.size());
 
         log_debug("Evaluating: %s", all_args.c_str());
-        if (!lexer.eval(expanded_cmd, lnav_data.ld_local_vars.top())) {
+        if (!lexer.eval(expanded_cmd, ec.ec_local_vars.top())) {
             return "error: invalid arguments";
         }
         log_debug("Expanded command to evaluate: %s", expanded_cmd.c_str());
@@ -2244,14 +2236,14 @@ static string com_eval(string cmdline, vector<string> &args)
         string alt_msg;
         switch (expanded_cmd[0]) {
             case ':':
-                retval = execute_command(expanded_cmd.substr(1));
+                retval = execute_command(ec, expanded_cmd.substr(1));
                 break;
             case ';':
-                retval = execute_sql(expanded_cmd.substr(1), alt_msg);
+                retval = execute_sql(ec, expanded_cmd.substr(1), alt_msg);
                 break;
             case '|':
                 retval = "info: executed file -- " + expanded_cmd.substr(1) +
-                        " -- " + execute_file(expanded_cmd.substr(1));
+                        " -- " + execute_file(ec, expanded_cmd.substr(1));
                 break;
             default:
                 retval = "error: expecting argument to start with ':', ';', "
@@ -2263,7 +2255,7 @@ static string com_eval(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_config(string cmdline, vector<string> &args)
+static string com_config(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a configuration option to read or write";
 
@@ -2331,7 +2323,7 @@ static string com_config(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_save_config(string cmdline, vector<string> &args)
+static string com_save_config(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -2344,7 +2336,7 @@ static string com_save_config(string cmdline, vector<string> &args)
     return retval;
 }
 
-static string com_reset_config(string cmdline, vector<string> &args)
+static string com_reset_config(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a configuration option to reset";
 
@@ -2668,7 +2660,7 @@ public:
     string dsvs_error_msg;
 };
 
-static string com_spectrogram(string cmdline, vector<string> &args)
+static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a message field name";
 

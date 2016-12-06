@@ -233,6 +233,7 @@ void rl_abort(void *dummy, readline_curses *rc)
 
 void rl_callback(void *dummy, readline_curses *rc)
 {
+    exec_context &ec = lnav_data.ld_exec_context;
     string alt_msg;
 
     lnav_data.ld_bottom_source.set_prompt("");
@@ -243,7 +244,7 @@ void rl_callback(void *dummy, readline_curses *rc)
 
     case LNM_COMMAND:
         rc->set_alt_value("");
-        rc->set_value(execute_command(rc->get_value()));
+        rc->set_value(execute_command(ec, rc->get_value()));
         break;
 
     case LNM_SEARCH:
@@ -264,10 +265,17 @@ void rl_callback(void *dummy, readline_curses *rc)
         }
         break;
 
-    case LNM_SQL:
-        rc->set_value(execute_sql(rc->get_value(), alt_msg));
+    case LNM_SQL: {
+        string result = execute_sql(ec, rc->get_value(), alt_msg);
+
+        if (!result.empty()) {
+            result = "SQL Result: " + result;
+        }
+
+        rc->set_value(result);
         rc->set_alt_value(alt_msg);
         break;
+    }
 
     case LNM_EXEC: {
         char fn_template[PATH_MAX];
@@ -294,7 +302,7 @@ void rl_callback(void *dummy, readline_curses *rc)
 
                 if ((tmpout = fdopen(fd, "w+")) != NULL) {
                     lnav_data.ld_output_stack.push(tmpout);
-                    string result = execute_file(path_and_args);
+                    string result = execute_file(ec, path_and_args);
                     string::size_type lf_index = result.find('\n');
                     if (lf_index != string::npos) {
                         result = result.substr(0, lf_index);

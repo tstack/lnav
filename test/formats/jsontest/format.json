@@ -18,6 +18,12 @@
             "user" : {
                 "kind" : "string",
                 "identifier" : true
+            },
+            "msg" : {
+                "rewriter" : ";SELECT :msg || 'bork bork bork'"
+            },
+            "user" : {
+                "rewriter" : "|rewrite-user"
             }
         }
     }

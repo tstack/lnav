@@ -32,14 +32,49 @@
 
 #include <sqlite3.h>
 
+#include <future>
 #include <string>
 
-std::string execute_command(const std::string &cmdline);
+struct exec_context;
 
-std::string execute_sql(const std::string &sql, std::string &alt_msg);
-std::string execute_file(const std::string &path_and_args, bool multiline = true);
-void execute_init_commands(std::vector<std::pair<std::string, std::string> > &msgs);
+typedef int (*sql_callback_t)(exec_context &ec, sqlite3_stmt *stmt);
 
-int sql_callback(sqlite3_stmt *stmt);
+typedef std::future<std::string> (*pipe_callback_t)(
+    exec_context &ec, const std::string &cmdline, auto_fd &fd);
+
+struct exec_context {
+    exec_context(std::vector<logline_value> *line_values = NULL,
+                 sql_callback_t sql_callback = NULL,
+                 pipe_callback_t pipe_callback = NULL)
+        : ec_line_values(line_values),
+          ec_sql_callback(sql_callback),
+          ec_pipe_callback(pipe_callback) {
+        this->ec_local_vars.push(std::map<std::string, std::string>());
+        this->ec_path_stack.push(".");
+    }
+
+    vis_line_t ec_top_line;
+
+    std::map<std::string, std::string> ec_override;
+    std::vector<logline_value> *ec_line_values;
+    std::stack<std::map<std::string, std::string> > ec_local_vars;
+    std::stack<std::string> ec_path_stack;
+
+    std::string ec_accumulator;
+
+    sql_callback_t ec_sql_callback;
+    pipe_callback_t ec_pipe_callback;
+};
+
+std::string execute_command(exec_context &ec, const std::string &cmdline);
+
+std::string execute_sql(exec_context &ec, const std::string &sql, std::string &alt_msg);
+std::string execute_file(exec_context &ec, const std::string &path_and_args, bool multiline = true);
+std::string execute_any(exec_context &ec, const std::string &cmdline);
+void execute_init_commands(exec_context &ec, std::vector<std::pair<std::string, std::string> > &msgs);
+
+int sql_callback(exec_context &ec, sqlite3_stmt *stmt);
+std::future<std::string> pipe_callback(
+    exec_context &ec, const std::string &cmdline, auto_fd &fd);
 
 #endif //LNAV_COMMAND_EXECUTOR_H

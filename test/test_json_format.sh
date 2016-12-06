@@ -28,6 +28,36 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -I ${test_dir} -c ':switch-to-view pretty' \
+    ${test_dir}/logfile_json.json
+
+check_output "json log format is not working" <<EOF
+2013-09-06T20:00:48.124 TRACE trace testbork bork bork
+2013-09-06T20:00:49.124 INFO Starting up servicebork bork bork
+2013-09-06T22:00:49.124 INFO Shutting down servicebork bork bork
+user: mailto:steve@example.com
+2013-09-06T22:00:59.124 DEBUG5 Details...bork bork bork
+2013-09-06T22:00:59.124 DEBUG4 Details...bork bork bork
+2013-09-06T22:00:59.124 DEBUG3 Details...bork bork bork
+2013-09-06T22:00:59.124 DEBUG2 Details...bork bork bork
+2013-09-06T22:00:59.124 DEBUG Details...bork bork bork
+2013-09-06T22:01:49.124 STATS 1 beat per secondbork bork bork
+2013-09-06T22:01:49.124 WARNING not looking goodbork bork bork
+2013-09-06T22:01:49.124 ERROR looking badbork bork bork
+2013-09-06T22:01:49.124 CRITICAL sooo badbork bork bork
+2013-09-06T22:01:49.124 FATAL shootbork bork bork
+obj: {
+    "field1" : "hi",
+    "field2": 2
+}
+arr: [
+    "hi",
+        {"sub1": true}
+]
+EOF
+
+
+run_test ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/log.clog
 

@@ -63,6 +63,7 @@
 #include "relative_time.hh"
 #include "log_format_loader.hh"
 #include "spectro_source.hh"
+#include "command_executor.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -291,11 +292,11 @@ struct _lnav_data {
 
     relative_time ld_last_relative_time;
 
-    std::stack<std::map<std::string, std::string> > ld_local_vars;
-    std::stack<std::string> ld_path_stack;
     std::stack<FILE *> ld_output_stack;
 
     std::map<std::string, std::vector<script_metadata> > ld_scripts;
+
+    exec_context ld_exec_context;
 
     int ld_fifo_counter;
 

@@ -94,6 +94,8 @@ std::string log_vtab_impl::get_table_statement(void)
         << "  log_body text hidden\n"
         << ");\n";
 
+    log_debug("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
+
     return oss.str();
 }
 

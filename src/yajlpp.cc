@@ -65,6 +65,17 @@ int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, si
     return 1;
 }
 
+int yajlpp_static_string_vector(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    char *root_ptr = resolve_root(ypc);
+    vector<string> *field_ptr = (vector<string> *) root_ptr;
+
+    field_ptr->push_back(string((const char *) str, len));
+    yajlpp_validator_for_string(*ypc, *ypc->ypc_current_handler);
+
+    return 1;
+}
+
 int yajlpp_static_intern_string(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     char *root_ptr = resolve_root(ypc);
@@ -182,10 +193,34 @@ void yajlpp_validator_for_int(yajlpp_parse_context &ypc,
     }
 }
 
+void yajlpp_validator_for_double(yajlpp_parse_context &ypc,
+                                 const json_path_handler_base &jph)
+{
+    double *field_ptr = (double *) resolve_root(&ypc);
+    char buffer[1024];
+
+    if (*field_ptr < jph.jph_min_value) {
+        snprintf(buffer, sizeof(buffer),
+                 "value must be greater than %lld",
+                 jph.jph_min_value);
+        ypc.report_error(buffer);
+    }
+}
+
 int yajlpp_static_number(yajlpp_parse_context *ypc, long long num)
 {
     char *root_ptr = resolve_root(ypc);
     long long *field_ptr = (long long *) root_ptr;
+
+    *field_ptr = num;
+
+    return 1;
+}
+
+int yajlpp_static_decimal(yajlpp_parse_context *ypc, double num)
+{
+    char *root_ptr = resolve_root(ypc);
+    double *field_ptr = (double *) root_ptr;
 
     *field_ptr = num;
 
@@ -283,13 +318,32 @@ int yajlpp_parse_context::map_key(void *ctx,
                                   size_t len)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
-    int start, retval = 1;
+    int retval = 1;
 
     ypc->ypc_path.resize(ypc->ypc_path_index_stack.back());
     ypc->ypc_path.push_back('/');
-    start = ypc->ypc_path.size();
-    ypc->ypc_path.resize(ypc->ypc_path.size() + len);
-    memcpy(&ypc->ypc_path[start], key, len);
+    if (ypc->ypc_handlers != NULL) {
+        for (size_t lpc = 0; lpc < len; lpc++) {
+            switch (key[lpc]) {
+                case '~':
+                    ypc->ypc_path.push_back('~');
+                    ypc->ypc_path.push_back('0');
+                    break;
+                case '/':
+                    ypc->ypc_path.push_back('~');
+                    ypc->ypc_path.push_back('1');
+                    break;
+                default:
+                    ypc->ypc_path.push_back(key[lpc]);
+                    break;
+            }
+        }
+    }
+    else {
+        size_t start = ypc->ypc_path.size();
+        ypc->ypc_path.resize(ypc->ypc_path.size() + len);
+        memcpy(&ypc->ypc_path[start], key, len);
+    }
     ypc->ypc_path.push_back('\0');
 
     if (ypc->ypc_alt_callbacks.yajl_map_key != NULL) {
@@ -339,11 +393,11 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
             pcre_context::capture_t *cap = this->ypc_pcre_context.all();
 
             if (jph.jph_children) {
-                if (this->ypc_path[cap->c_end - 1] != '/') {
+                if (this->ypc_path[child_start + cap->c_end - 1] != '/') {
                     continue;
                 }
 
-                this->update_callbacks(jph.jph_children, cap->c_end);
+                this->update_callbacks(jph.jph_children, child_start + cap->c_end);
             }
             else {
                 if (child_start + cap->c_end != this->ypc_path.size() - 1) {

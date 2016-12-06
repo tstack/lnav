@@ -47,6 +47,11 @@ time_t time(time_t *arg)
     return current_time;
 }
 
+string execute_any(exec_context &ec, const string &cmdline_with_mode)
+{
+    return "";
+}
+
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;

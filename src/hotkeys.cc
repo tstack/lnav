@@ -171,6 +171,7 @@ void update_view_name(void)
 void handle_paging_key(int ch)
 {
     textview_curses *   tc  = lnav_data.ld_view_stack.top();
+    exec_context &ec = lnav_data.ld_exec_context;
     logfile_sub_source *lss = NULL;
     bookmarks<vis_line_t>::type &     bm  = tc->get_bookmarks();
 
@@ -431,7 +432,7 @@ void handle_paging_key(int ch)
                 alerter::singleton().chime();
             }
             else {
-                execute_command("zoom-to " + string(lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
+                execute_command(ec, "zoom-to " + string(lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
             }
             break;
 
@@ -440,7 +441,7 @@ void handle_paging_key(int ch)
                 alerter::singleton().chime();
             }
             else {
-                execute_command("zoom-to " + string(lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
+                execute_command(ec, "zoom-to " + string(lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
             }
             break;
 
@@ -883,6 +884,8 @@ void handle_paging_key(int ch)
                 logfile::iterator ll = lf->begin() + cl;
                 log_data_helper ldh(lss);
 
+                lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+
                 lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "numeric-colname");
                 lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "colname");
 
@@ -985,6 +988,7 @@ void handle_paging_key(int ch)
                 tc == &lnav_data.ld_views[LNV_DB] ||
                 tc == &lnav_data.ld_views[LNV_SCHEMA]) {
                 textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+                lnav_data.ld_exec_context.ec_top_line = tc->get_top();
 
                 lnav_data.ld_mode = LNM_SQL;
                 setup_logline_table();
@@ -1011,12 +1015,11 @@ void handle_paging_key(int ch)
 
             lnav_data.ld_mode = LNM_EXEC;
 
+            lnav_data.ld_exec_context.ec_top_line = tc->get_top();
             lnav_data.ld_rl_view->clear_possibilities(LNM_EXEC, "__command");
             find_format_scripts(lnav_data.ld_config_paths, scripts);
-            for (map<string, vector<script_metadata> >::iterator iter = scripts.begin();
-                 iter != scripts.end();
-                 ++iter) {
-                lnav_data.ld_rl_view->add_possibility(LNM_EXEC, "__command", iter->first);
+            for (const auto &iter : scripts) {
+                lnav_data.ld_rl_view->add_possibility(LNM_EXEC, "__command", iter.first);
             }
             add_view_text_possibilities(LNM_EXEC, "*", tc);
             add_env_possibilities(LNM_EXEC);
@@ -1204,7 +1207,7 @@ void handle_paging_key(int ch)
             break;
 
         case 'X':
-            lnav_data.ld_rl_view->set_value(execute_command("close"));
+            lnav_data.ld_rl_view->set_value(execute_command(ec, "close"));
             break;
 
         case '\\':
@@ -1269,7 +1272,7 @@ void handle_paging_key(int ch)
             break;
 
         case KEY_CTRL_W:
-            execute_command(lnav_data.ld_views[LNV_LOG].get_word_wrap() ?
+            execute_command(ec, lnav_data.ld_views[LNV_LOG].get_word_wrap() ?
                             "disable-word-wrap" : "enable-word-wrap");
             break;
 

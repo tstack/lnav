@@ -771,7 +771,7 @@ static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, si
             ypc->get_path_fragment(-3));
     view_index = view_name - lnav_view_strings;
     bool active = ensure_view(&lnav_data.ld_views[view_index]);
-    execute_command(cmdline);
+    execute_command(lnav_data.ld_exec_context, cmdline);
     if (!active) {
         lnav_data.ld_view_stack.pop();
     }
