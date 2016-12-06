@@ -317,6 +317,7 @@ dist_noinst_DATA = \
 	formats/customlevel/format.json \
 	formats/jsontest/format.json \
 	formats/jsontest/lnav-logstash.json \
+	formats/jsontest/rewrite-user.lnav \
 	formats/jsontest2/format.json \
 	formats/nestedjson/format.json \
 	formats/scripts/multiline-echo.lnav \
