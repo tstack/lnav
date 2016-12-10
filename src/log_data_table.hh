@@ -117,7 +117,7 @@ public:
         this->ldt_schema_id = dp.dp_schema_id;
     };
 
-    void get_foreign_keys(std::vector<std::string> &keys_inout)
+    void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
         keys_inout.push_back("log_msg_instance");

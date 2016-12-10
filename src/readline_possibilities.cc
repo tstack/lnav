@@ -230,10 +230,8 @@ void add_filter_possibilities(textview_curses *tc)
 
     rc->clear_possibilities(LNM_COMMAND, "disabled-filter");
     rc->clear_possibilities(LNM_COMMAND, "enabled-filter");
-    for (filter_stack::iterator iter = fs.begin();
-         iter != fs.end();
-         ++iter) {
-        text_filter *tf = *iter;
+    for (auto iter = fs.begin(); iter != fs.end(); ++iter) {
+        shared_ptr<text_filter> tf = *iter;
 
         if (tf->is_enabled()) {
             rc->add_possibility(LNM_COMMAND, "enabled-filter", tf->get_id());

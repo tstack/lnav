@@ -184,8 +184,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                     this->lf_index.size(),
                     (*iter)->get_name().get());
 
-                this->lf_format =
-                    auto_ptr<log_format>((*iter)->specialized());
+                this->lf_format = (*iter)->specialized();
                 this->set_format_base_time(this->lf_format.get());
                 this->lf_content_id = hash_string(string(sbr.get_data(), sbr.length()));
 

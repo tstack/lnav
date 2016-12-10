@@ -1783,7 +1783,7 @@ public:
         }
     };
 
-    void get_foreign_keys(std::vector<std::string> &keys_inout)
+    void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {
         std::map<const intern_string_t, external_log_format::value_def>::const_iterator iter;
 

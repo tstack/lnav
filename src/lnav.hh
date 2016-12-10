@@ -253,7 +253,7 @@ struct _lnav_data {
     std::stack<textview_curses *>           ld_view_stack;
     textview_curses *ld_last_view;
     textview_curses                         ld_views[LNV__MAX];
-    std::auto_ptr<grep_highlighter>         ld_search_child[LNV__MAX];
+    std::unique_ptr<grep_highlighter>       ld_search_child[LNV__MAX];
     vis_line_t                              ld_search_start_line;
     readline_curses *                       ld_rl_view;
 
@@ -272,7 +272,7 @@ struct _lnav_data {
     db_overlay_source                       ld_db_overlay;
     std::vector<std::string>                ld_db_key_names;
 
-    std::auto_ptr<grep_highlighter>         ld_grep_child[LG__MAX];
+    std::unique_ptr<grep_highlighter>       ld_grep_child[LG__MAX];
     std::string                             ld_previous_search;
     std::string                             ld_last_search[LNV__MAX];
 
@@ -282,7 +282,7 @@ struct _lnav_data {
     auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
 
     std::list<pid_t>                        ld_children;
-    std::list<piper_proc *>                 ld_pipers;
+    std::list<std::shared_ptr<piper_proc>>  ld_pipers;
     xterm_mouse ld_mouse;
     term_extra ld_term_extra;
 

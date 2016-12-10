@@ -933,10 +933,10 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
             text_filter::type_t lt  = (args[0] == "filter-out") ?
                                          text_filter::EXCLUDE :
                                          text_filter::INCLUDE;
-            auto_ptr<pcre_filter> pf(new pcre_filter(lt, args[1], fs.next_index(), code));
+            auto pf = make_shared<pcre_filter>(lt, args[1], fs.next_index(), code);
 
             log_debug("%s [%d] %s", args[0].c_str(), pf->get_index(), args[1].c_str());
-            fs.add_filter(pf.release());
+            fs.add_filter(pf);
             tss->text_filters_changed();
             tc->reload_data();
             if (lnav_data.ld_rl_view != NULL) {
@@ -988,7 +988,7 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
         textview_curses *tc = lnav_data.ld_view_stack.top();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
-        text_filter *lf;
+        shared_ptr<text_filter> lf;
 
         args[1] = remaining_args(cmdline, args);
         lf      = fs.get_filter(args[1]);
@@ -1020,7 +1020,7 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
         textview_curses *tc = lnav_data.ld_view_stack.top();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
-        text_filter *lf;
+        shared_ptr<text_filter> lf;
 
         args[1] = remaining_args(cmdline, args);
         lf      = fs.get_filter(args[1]);
@@ -1386,8 +1386,8 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                     retval = "error: cannot open FIFO: " + fn + " -- "
                         + strerror(errno);
                 } else {
-                    auto_ptr<piper_proc> fifo_piper(new piper_proc(
-                        fifo_fd.release(), false));
+                    auto fifo_piper = make_shared<piper_proc>(
+                        fifo_fd.release(), false);
                     int fifo_out_fd = fifo_piper->get_fd();
                     char desc[128];
 
@@ -1396,7 +1396,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                              lnav_data.ld_fifo_counter++);
                     lnav_data.ld_file_names[desc]
                         .with_fd(fifo_out_fd);
-                    lnav_data.ld_pipers.push_back(fifo_piper.release());
+                    lnav_data.ld_pipers.push_back(fifo_piper);
                 }
             }
             else if ((abspath = realpath(fn.c_str(), NULL)) == NULL) {
@@ -2680,7 +2680,7 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
         ss.invalidate();
 
         if (lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_DB]) {
-            auto_ptr<db_spectro_value_source> dsvs(
+            unique_ptr<db_spectro_value_source> dsvs(
                 new db_spectro_value_source(colname));
 
             if (!dsvs->dsvs_error_msg.empty()) {
@@ -2693,7 +2693,7 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
             }
         }
         else {
-            auto_ptr<log_spectro_value_source> lsvs(
+            unique_ptr<log_spectro_value_source> lsvs(
                 new log_spectro_value_source(intern_string::lookup(colname)));
 
             if (!lsvs->lsvs_found) {

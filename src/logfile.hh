@@ -396,7 +396,7 @@ protected:
     std::string lf_filename;
     std::string lf_content_id;
     struct stat lf_stat;
-    std::auto_ptr<log_format> lf_format;
+    std::unique_ptr<log_format> lf_format;
     std::vector<logline>      lf_index;
     time_t      lf_index_time;
     off_t       lf_index_size;

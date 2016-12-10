@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
                 retval = EXIT_FAILURE;
             }
             else {
-                auto_ptr<log_format> format;
+                unique_ptr<log_format> format;
                 char *log_line;
                 bool found = false;
                 char   cmd[2048];

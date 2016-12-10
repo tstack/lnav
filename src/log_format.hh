@@ -777,7 +777,7 @@ public:
         return NULL;
     };
 
-    virtual std::auto_ptr<log_format> specialized(int fmt_lock = -1) = 0;
+    virtual std::unique_ptr<log_format> specialized(int fmt_lock = -1) = 0;
 
     virtual log_vtab_impl *get_vtab_impl(void) const {
         return NULL;
@@ -980,9 +980,9 @@ public:
 
     bool match_samples(const std::vector<sample> &samples) const;
 
-    std::auto_ptr<log_format> specialized(int fmt_lock) {
+    std::unique_ptr<log_format> specialized(int fmt_lock) {
         external_log_format *elf = new external_log_format(*this);
-        std::auto_ptr<log_format> retval((log_format *)elf);
+        std::unique_ptr<log_format> retval(elf);
 
         if (fmt_lock != -1) {
             elf->lf_fmt_lock = fmt_lock;
@@ -1198,7 +1198,7 @@ public:
     shared_buffer jlf_share_manager;
     std::vector<char> jlf_cached_line;
     string_attrs_t jlf_line_attrs;
-    std::auto_ptr<yajlpp_parse_context> jlf_parse_context;
+    std::shared_ptr<yajlpp_parse_context> jlf_parse_context;
     auto_mem<yajl_handle_t> jlf_yajl_handle;
 private:
     const intern_string_t elf_name;

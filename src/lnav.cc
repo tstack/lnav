@@ -331,14 +331,8 @@ bool setup_logline_table()
 
     walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
 
-    {
-        log_vtab_manager::iterator iter;
-
-        for (iter = lnav_data.ld_vtab_manager->begin();
-             iter != lnav_data.ld_vtab_manager->end();
-             ++iter) {
-            iter->second->get_foreign_keys(lnav_data.ld_db_key_names);
-        }
+    for (const auto &iter : *lnav_data.ld_vtab_manager) {
+        iter.second->get_foreign_keys(lnav_data.ld_db_key_names);
     }
 
     stable_sort(lnav_data.ld_db_key_names.begin(),
@@ -1031,7 +1025,7 @@ readline_context::command_map_t lnav_commands;
 
 void execute_search(lnav_view_t view, const std::string &regex_orig)
 {
-    auto_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
+    unique_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
     textview_curses &           tc = lnav_data.ld_views[view];
     std::string regex = regex_orig;
     pcre *      code = NULL;
@@ -1088,7 +1082,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
             textview_curses::highlight_map_t &hm = tc.get_highlights();
             hm["$search"] = hl;
 
-            auto_ptr<grep_proc> gp(new grep_proc(code, tc));
+            unique_ptr<grep_proc> gp(new grep_proc(code, tc));
 
             gp->queue_request(grep_line_t(tc.get_top()));
             if (tc.get_top() > 0) {
@@ -1097,9 +1091,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
             gp->start();
             gp->set_sink(&tc);
 
-            auto_ptr<grep_highlighter> gh(
-                new grep_highlighter(gp, "$search", hm));
-            gc = gh;
+            gc.reset(new grep_highlighter(gp, "$search", hm));
         }
 
         if (view == LNV_LOG) {
@@ -1523,7 +1515,7 @@ static string execute_action(log_data_helper &ldh,
             lb.read_line(off, lv);
 
             if (out_pipe.read_end() != -1) {
-                piper_proc *pp = new piper_proc(out_pipe.read_end(), false);
+                auto pp = make_shared<piper_proc>(out_pipe.read_end(), false);
                 char desc[128];
 
                 lnav_data.ld_pipers.push_back(pp);
@@ -1533,7 +1525,7 @@ static string execute_action(log_data_helper &ldh,
                     action.ad_cmdline[0].c_str());
                 lnav_data.ld_file_names[desc]
                     .with_fd(pp->get_fd());
-                lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+                lnav_data.ld_files_to_front.push_back({ desc, 0 });
             }
 
             retval = string(lv.lv_start, lv.lv_len);
@@ -1731,13 +1723,11 @@ void update_hits(void *dummy, textview_curses *tc)
 
 static void gather_pipers(void)
 {
-    for (std::list<piper_proc *>::iterator iter = lnav_data.ld_pipers.begin();
+    for (auto iter = lnav_data.ld_pipers.begin();
          iter != lnav_data.ld_pipers.end(); ) {
-        piper_proc *pp = *iter;
-        pid_t child_pid = pp->get_child_pid();
-        if (pp->has_exited()) {
+        pid_t child_pid = (*iter)->get_child_pid();
+        if ((*iter)->has_exited()) {
             log_info("child piper has exited -- %d", child_pid);
-            delete pp;
             iter = lnav_data.ld_pipers.erase(iter);
         } else {
             ++iter;
@@ -1930,7 +1920,7 @@ static void looper(void)
             });
             rlc.update_poll_set(pollfds);
             for (lpc = 0; lpc < LG__MAX; lpc++) {
-                auto_ptr<grep_highlighter> &gc =
+                unique_ptr<grep_highlighter> &gc =
                         lnav_data.ld_grep_child[lpc];
 
                 if (gc.get() != NULL) {
@@ -1938,7 +1928,7 @@ static void looper(void)
                 }
             }
             for (lpc = 0; lpc < LNV__MAX; lpc++) {
-                auto_ptr<grep_highlighter> &gc =
+                unique_ptr<grep_highlighter> &gc =
                         lnav_data.ld_search_child[lpc];
 
                 if (gc.get() != NULL) {
@@ -2025,7 +2015,7 @@ static void looper(void)
                     }
                 }
                 for (lpc = 0; lpc < LG__MAX; lpc++) {
-                    auto_ptr<grep_highlighter> &gc =
+                    unique_ptr<grep_highlighter> &gc =
                         lnav_data.ld_grep_child[lpc];
 
                     if (gc.get() != NULL) {
@@ -2033,7 +2023,7 @@ static void looper(void)
                     }
                 }
                 for (lpc = 0; lpc < LNV__MAX; lpc++) {
-                    auto_ptr<grep_highlighter> &gc =
+                    unique_ptr<grep_highlighter> &gc =
                         lnav_data.ld_search_child[lpc];
 
                     if (gc.get() != NULL) {
@@ -2340,7 +2330,7 @@ int main(int argc, char *argv[])
     exec_context &ec = lnav_data.ld_exec_context;
     int lpc, c, retval = EXIT_SUCCESS;
 
-    auto_ptr<piper_proc> stdin_reader;
+    shared_ptr<piper_proc> stdin_reader;
     const char *         stdin_out = NULL;
     int                  stdin_out_fd = -1;
 
@@ -2760,7 +2750,7 @@ int main(int argc, char *argv[])
         }
 #ifdef HAVE_LIBCURL
         else if (is_url(argv[lpc])) {
-            auto_ptr<url_loader> ul(new url_loader(argv[lpc]));
+            unique_ptr<url_loader> ul(new url_loader(argv[lpc]));
 
             lnav_data.ld_file_names[argv[lpc]]
                 .with_fd(ul->copy_fd());
@@ -2786,8 +2776,8 @@ int main(int argc, char *argv[])
                         argv[lpc],
                         strerror(errno));
             } else {
-                auto_ptr<piper_proc> fifo_piper(new piper_proc(
-                    fifo_fd.release(), false));
+                auto fifo_piper = make_shared<piper_proc>(
+                    fifo_fd.release(), false);
                 int fifo_out_fd = fifo_piper->get_fd();
                 char desc[128];
 
@@ -2796,7 +2786,7 @@ int main(int argc, char *argv[])
                          lnav_data.ld_fifo_counter++);
                 lnav_data.ld_file_names[desc]
                     .with_fd(fifo_out_fd);
-                lnav_data.ld_pipers.push_back(fifo_piper.release());
+                lnav_data.ld_pipers.push_back(fifo_piper);
             }
         }
         else if ((abspath = realpath(argv[lpc], NULL)) == NULL) {
@@ -2881,17 +2871,15 @@ int main(int argc, char *argv[])
     }
 
     if (!isatty(STDIN_FILENO)) {
-        stdin_reader =
-            auto_ptr<piper_proc>(new piper_proc(STDIN_FILENO,
-                                                lnav_data.ld_flags &
-                                                LNF_TIMESTAMP, stdin_out));
+        stdin_reader = make_shared<piper_proc>(
+            STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out);
         stdin_out_fd = stdin_reader->get_fd();
         lnav_data.ld_file_names["stdin"]
             .with_fd(stdin_out_fd);
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
             perror("cannot dup stdout to stdin");
         }
-        lnav_data.ld_pipers.push_back(stdin_reader.release());
+        lnav_data.ld_pipers.push_back(stdin_reader);
     }
 
     if (lnav_data.ld_file_names.empty() &&

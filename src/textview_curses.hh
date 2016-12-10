@@ -179,7 +179,7 @@ protected:
 
 class filter_stack {
 public:
-    typedef std::vector<text_filter *>::iterator iterator;
+    typedef std::vector<std::shared_ptr<text_filter>>::iterator iterator;
 
     iterator begin() {
         return this->fs_filters.begin();
@@ -220,20 +220,17 @@ public:
         throw "No more filters";
     };
 
-    void add_filter(text_filter *filter) {
+    void add_filter(std::shared_ptr<text_filter> filter) {
         this->fs_filters.push_back(filter);
     };
 
     void clear_filters(void) {
         while (!this->fs_filters.empty()) {
-            text_filter *tf = this->fs_filters.back();
-
             this->fs_filters.pop_back();
-            delete tf;
         }
     };
 
-    void set_filter_enabled(text_filter *filter, bool enabled) {
+    void set_filter_enabled(std::shared_ptr<text_filter> filter, bool enabled) {
         if (enabled) {
             filter->enable();
         }
@@ -242,12 +239,12 @@ public:
         }
     }
 
-    text_filter *get_filter(std::string id)
+    std::shared_ptr<text_filter> get_filter(std::string id)
     {
-        std::vector<text_filter *>::iterator iter;
-        text_filter *         retval = NULL;
+        auto iter = this->fs_filters.begin();
+        std::shared_ptr<text_filter> retval;
 
-        for (iter = this->fs_filters.begin();
+        for (;
              iter != this->fs_filters.end() && (*iter)->get_id() != id;
              iter++) { }
         if (iter != this->fs_filters.end()) {
@@ -258,9 +255,9 @@ public:
     };
 
     bool delete_filter(std::string id) {
-        std::vector<text_filter *>::iterator iter;
+        auto iter = this->fs_filters.begin();
 
-        for (iter = this->fs_filters.begin();
+        for (;
              iter != this->fs_filters.end() && (*iter)->get_id() != id;
              iter++) {
 
@@ -276,7 +273,7 @@ public:
     void get_enabled_mask(uint32_t &filter_in_mask, uint32_t &filter_out_mask) {
         filter_in_mask = filter_out_mask = 0;
         for (iterator iter = this->begin(); iter != this->end(); ++iter) {
-            text_filter *tf = (*iter);
+            std::shared_ptr<text_filter> tf = (*iter);
             if (tf->is_enabled()) {
                 uint32_t bit = (1UL << tf->get_index());
 
@@ -296,7 +293,7 @@ public:
     };
 
 private:
-    std::vector<text_filter *> fs_filters;
+    std::vector<std::shared_ptr<text_filter>> fs_filters;
 };
 
 class text_time_translator {

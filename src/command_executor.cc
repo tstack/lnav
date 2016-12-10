@@ -555,7 +555,7 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
 
     if (!lnav_data.ld_pt_search.empty()) {
 #ifdef HAVE_LIBCURL
-        auto_ptr<papertrail_proc> pt(new papertrail_proc(
+        unique_ptr<papertrail_proc> pt(new papertrail_proc(
                 lnav_data.ld_pt_search.substr(3),
                 lnav_data.ld_pt_min_time,
                 lnav_data.ld_pt_max_time));
@@ -618,7 +618,7 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 
 future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &fd)
 {
-    piper_proc *pp = new piper_proc(fd, false);
+    auto pp = make_shared<piper_proc>(fd, false);
     static int exec_count = 0;
     char desc[128];
 
