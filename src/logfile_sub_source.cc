@@ -195,10 +195,8 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         }
     }
 
-    if (this->lss_files.size() > 1) {
-        // Insert space for the file markers.
-        value_out.insert(0, 1, ' ');
-    }
+    // Insert space for the file/search-hit markers.
+    value_out.insert(0, 1, ' ');
 
     if (this->lss_flags & F_TIME_OFFSET) {
         int64_t start_millis, curr_millis;
@@ -295,36 +293,43 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                            this->lss_token_shift_size);
     }
 
-    if (this->lss_files.size() > 1) {
-        shift_string_attrs(value_out, 0, 1);
+    shift_string_attrs(value_out, 0, 1);
 
-        lr.lr_start = 0;
-        lr.lr_end = 1;
-        {
-            vis_bookmarks &bm = lv.get_bookmarks();
-            bookmark_vector<vis_line_t> &bv = bm[&BM_FILES];
-            bool is_first_for_file = binary_search(
-                    bv.begin(), bv.end(), vis_line_t(row));
-            bool is_last_for_file = binary_search(
-                    bv.begin(), bv.end(), vis_line_t(row + 1));
-            chtype graph = ACS_VLINE;
-            if (is_first_for_file) {
-                if (is_last_for_file) {
-                    graph = ACS_DIAMOND;
-                }
-                else {
-                    graph = ACS_ULCORNER;
-                }
+    lr.lr_start = 0;
+    lr.lr_end = 1;
+    {
+        vis_bookmarks &bm = lv.get_bookmarks();
+        bookmark_vector<vis_line_t> &bv = bm[&BM_FILES];
+        bool is_first_for_file = binary_search(
+            bv.begin(), bv.end(), vis_line_t(row));
+        bool is_last_for_file = binary_search(
+            bv.begin(), bv.end(), vis_line_t(row + 1));
+        chtype graph = ACS_VLINE;
+        if (is_first_for_file) {
+            if (is_last_for_file) {
+                graph = ACS_DIAMOND;
             }
-            else if (is_last_for_file) {
-                graph = ACS_LLCORNER;
+            else {
+                graph = ACS_ULCORNER;
             }
-            value_out.push_back(
-                    string_attr(lr, &view_curses::VC_GRAPHIC, graph));
         }
-        value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
-                this->lss_token_file->get_filename())));
+        else if (is_last_for_file) {
+            graph = ACS_LLCORNER;
+        }
+        value_out.push_back(
+            string_attr(lr, &view_curses::VC_GRAPHIC, graph));
+
+        bookmark_vector<vis_line_t> &bv_search = bm[&textview_curses::BM_SEARCH];
+
+        if (binary_search(::begin(bv_search), ::end(bv_search), vis_line_t(row))) {
+            lr.lr_start = 0;
+            lr.lr_end = 1;
+            value_out.push_back(string_attr(
+                lr, &view_curses::VC_STYLE, A_REVERSE));
+        }
     }
+    value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
+        this->lss_token_file->get_filename())));
 
     if (this->lss_flags & F_TIME_OFFSET) {
         time_offset_end = 13;
