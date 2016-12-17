@@ -182,8 +182,12 @@ void log_host_info(void)
     log_info("  gid=%d", getgid());
     log_info("  euid=%d", geteuid());
     log_info("  egid=%d", getegid());
-    getcwd(cwd, sizeof(cwd));
-    log_info("  cwd=%s", cwd);
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        log_info("  ERROR: getcwd failed");
+    }
+    else {
+        log_info("  cwd=%s", cwd);
+    }
     log_info("Executable:");
     log_info("  version=%s", VCS_PACKAGE_STRING);
 

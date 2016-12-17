@@ -1065,8 +1065,8 @@ public:
         json_log_field jfe_type;
         intern_string_t jfe_value;
         std::string jfe_default_value;
-        long long jfe_min_width;
-        long long jfe_max_width;
+        unsigned long long jfe_min_width;
+        unsigned long long jfe_max_width;
         align_t jfe_align;
         overflow_t jfe_overflow;
         std::string jfe_ts_format;
