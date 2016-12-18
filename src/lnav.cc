@@ -943,6 +943,9 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
     vis_line_t new_top;
 
     new_top = next_cluster(f, bt, top);
+    if (new_top == -1) {
+        new_top = next_cluster(f, bt, tc->get_top());
+    }
     if (new_top != -1) {
         tc->set_top(new_top);
         return true;
