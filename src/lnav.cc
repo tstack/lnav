@@ -3013,7 +3013,7 @@ int main(int argc, char *argv[])
                         while (los != NULL &&
                                los->list_value_for_overlay(*tc, y, al)) {
                             if (write(STDOUT_FILENO, line.c_str(),
-                                      line.length()) == -1 or
+                                      line.length()) == -1 ||
                                 write(STDOUT_FILENO, "\n", 1) == -1) {
                                 perror("write to STDOUT");
                             }
@@ -3028,7 +3028,7 @@ int main(int argc, char *argv[])
                         struct line_range lr = find_string_attr_range(
                                 al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
                         if (write(STDOUT_FILENO, lr.substr(al.get_string()),
-                                  lr.sublen(al.get_string())) == -1 or
+                                  lr.sublen(al.get_string())) == -1 ||
                             write(STDOUT_FILENO, "\n", 1) == -1) {
                             perror("write to STDOUT");
                         }
@@ -3087,7 +3087,7 @@ int main(int argc, char *argv[])
                      ++line_iter) {
                     lf->read_line(line_iter, str);
 
-                    if (write(STDOUT_FILENO, str.c_str(), str.size()) == -1 or
+                    if (write(STDOUT_FILENO, str.c_str(), str.size()) == -1 ||
                         write(STDOUT_FILENO, "\n", 1) == -1) {
                         perror("write to STDOUT");
                     }

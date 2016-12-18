@@ -100,7 +100,6 @@ Caused by: java.lang.ClassNotFoundException: javax.el.StaticFieldELResolver
        at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1720)
        at org.apache.catalina.loader.WebappClassLoader.loadClass(WebappClassLoader.java:1571)
        ... 33 common frames omitted
-
   @version: 1
   logger_name: org.apache.jasper.runtime.JspFactoryImpl
   thread_name: http-bio-0.0.0.0-8081-exec-198

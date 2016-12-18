@@ -284,7 +284,7 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     };
 
-    json_path_handler &for_field(unsigned long long *field) {
+    json_path_handler &for_field(long long *field) {
         this->add_cb(yajlpp_static_number);
         this->jph_simple_offset = field;
         this->jph_validator = yajlpp_validator_for_int;
