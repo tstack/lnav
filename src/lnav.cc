@@ -2449,7 +2449,9 @@ int main(int argc, char *argv[])
         case 'W':
         {
             char b;
-            read(STDIN_FILENO, &b, 1);
+            if (read(STDIN_FILENO, &b, 1) == -1) {
+                perror("Read key from STDIN");
+            }
         }
             break;
 
@@ -2496,7 +2498,17 @@ int main(int argc, char *argv[])
                 snprintf(pull_cmd, sizeof(pull_cmd),
                          "cd %s && git pull",
                          git_dir);
-                system(pull_cmd);
+                int ret = system(pull_cmd);
+                if (ret == -1) {
+                    std::cerr << "Failed to spawn command "
+                              << "\"" << pull_cmd << "\": "
+                              << strerror(errno) << std::endl;
+                }
+                else if (ret > 0) {
+                    std::cerr << "Command "
+                              << "\"" << pull_cmd << "\" failed: "
+                              << strerror(errno) << std::endl;
+                }
                 found = true;
             }
         }
@@ -3000,8 +3012,11 @@ int main(int argc, char *argv[])
                          ++vl, ++y) {
                         while (los != NULL &&
                                los->list_value_for_overlay(*tc, y, al)) {
-                            write(STDOUT_FILENO, line.c_str(), line.length());
-                            write(STDOUT_FILENO, "\n", 1);
+                            if (write(STDOUT_FILENO, line.c_str(),
+                                      line.length()) == -1 ||
+                                write(STDOUT_FILENO, "\n", 1) == -1) {
+                                perror("write to STDOUT");
+                            }
                             ++y;
                         }
 
@@ -3012,9 +3027,11 @@ int main(int argc, char *argv[])
 
                         struct line_range lr = find_string_attr_range(
                                 al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
-                        write(STDOUT_FILENO, lr.substr(al.get_string()),
-                              lr.sublen(al.get_string()));
-                        write(STDOUT_FILENO, "\n", 1);
+                        if (write(STDOUT_FILENO, lr.substr(al.get_string()),
+                                  lr.sublen(al.get_string())) == -1 ||
+                            write(STDOUT_FILENO, "\n", 1) == -1) {
+                            perror("write to STDOUT");
+                        }
                     }
                 }
             }
@@ -3070,8 +3087,10 @@ int main(int argc, char *argv[])
                      ++line_iter) {
                     lf->read_line(line_iter, str);
 
-                    write(STDOUT_FILENO, str.c_str(), str.size());
-                    write(STDOUT_FILENO, "\n", 1);
+                    if (write(STDOUT_FILENO, str.c_str(), str.size()) == -1 ||
+                        write(STDOUT_FILENO, "\n", 1) == -1) {
+                        perror("write to STDOUT");
+                    }
                 }
             }
         }

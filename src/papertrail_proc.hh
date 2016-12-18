@@ -102,9 +102,9 @@ public:
                                                    this->ptp_search.c_str(),
                                                    this->ptp_search.size());
 
-        asprintf(this->ptp_token_header.out(),
-                 "X-Papertrail-Token: %s",
-                 this->ptp_api_key);
+        log_perror(asprintf(this->ptp_token_header.out(),
+                            "X-Papertrail-Token: %s",
+                            this->ptp_api_key));
         this->ptp_header_list = curl_slist_append(this->ptp_header_list,
                 this->ptp_token_header.in());
 
@@ -140,10 +140,10 @@ public:
                      "max_time=%ld&",
                      this->ptp_max_time);
         }
-        asprintf(this->ptp_url.out(),
-                 "%sq=%s",
-                 base_url,
-                 this->ptp_quoted_search.in());
+        log_perror(asprintf(this->ptp_url.out(),
+                            "%sq=%s",
+                            base_url,
+                            this->ptp_quoted_search.in()));
         curl_easy_setopt(this->cr_handle, CURLOPT_URL, this->ptp_url.in());
     };
 

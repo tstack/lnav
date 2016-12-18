@@ -38,6 +38,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 
@@ -381,10 +382,10 @@ inline bool ptime_i(struct exttm *dst, const char *str, off_t &off_inout, ssize_
 
 inline void ftime_i(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
 {
-    uint64_t t = tm2sec(&tm.et_tm);
+    int64_t t = tm2sec(&tm.et_tm);
 
     t += tm.et_nsec / 1000000;
-    snprintf(&dst[off_inout], len - off_inout, "%lld", t);
+    snprintf(&dst[off_inout], len - off_inout, "%" PRId64, t);
     off_inout = strlen(dst);
 }
 

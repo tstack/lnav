@@ -319,7 +319,7 @@ static time_t BAD_DATE = -1;
 time_t tm2sec(const struct tm *t)
 {
     int       year;
-    time_t    days;
+    time_t    days, secs;
     const int dayoffset[12] =
     { 306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275 };
 
@@ -341,18 +341,18 @@ time_t tm2sec(const struct tm *t)
     days += dayoffset[t->tm_mon] + t->tm_mday - 1;
     days -= 25508; /* 1 jan 1970 is 25508 days since 1 mar 1900 */
 
-    days = ((days * 24 + t->tm_hour) * 60 + t->tm_min) * 60 + t->tm_sec;
+    secs = ((days * 24 + t->tm_hour) * 60 + t->tm_min) * 60 + t->tm_sec;
 
-    if (days < 0) {
+    if (secs < 0) {
         return BAD_DATE;
     }                          /* must have overflowed */
     else {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
         if (t->tm_zone) {
-            days -= t->tm_gmtoff;
+            secs -= t->tm_gmtoff;
         }
 #endif
-        return days;
+        return secs;
     }                          /* must be a valid time */
 }
 

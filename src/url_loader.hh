@@ -76,7 +76,8 @@ public:
             default:
                 log_error("%s:curl failure -- %ld %s",
                           this->cr_name.c_str(), result, curl_easy_strerror(result));
-                write(this->ul_fd, this->cr_error_buffer, strlen(this->cr_error_buffer));
+                log_perror(write(this->ul_fd, this->cr_error_buffer,
+                                 strlen(this->cr_error_buffer)));
                 return -1;
         }
 

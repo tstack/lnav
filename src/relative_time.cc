@@ -219,7 +219,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
 
                     string numstr = pi.get_substr(pc[0]);
 
-                    if (sscanf(numstr.c_str(), "%qd", &number) != 1) {
+                    if (sscanf(numstr.c_str(), "%" PRId64, &number) != 1) {
                         pe_out.pe_msg = "Invalid number: " + numstr;
                         return false;
                     }
