@@ -128,7 +128,7 @@ Miscellaneous
 Configuration
 -------------
 
-* conifg <option> - Get the current value of a configuration option.
+* config <option> - Get the current value of a configuration option.
 * config <option> <value> - Set the value of a configuration option.
 * reset-config <option> - Reset a configuration option to the default.
 * save-config - Save the current configuration to ~/.lnav/config.json.
