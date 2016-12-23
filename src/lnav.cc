@@ -1916,11 +1916,14 @@ static void looper(void)
             rlc.do_update();
             refresh();
 
-            pollfds.push_back((struct pollfd) {
+            if (session_loaded) {
+                // Only take input from the user after everything has loaded.
+                pollfds.push_back((struct pollfd) {
                     STDIN_FILENO,
                     POLLIN,
                     0
-            });
+                });
+            }
             rlc.update_poll_set(pollfds);
             for (lpc = 0; lpc < LG__MAX; lpc++) {
                 unique_ptr<grep_highlighter> &gc =
@@ -2059,7 +2062,7 @@ static void looper(void)
                 if (!initial_build &&
                         lnav_data.ld_log_source.text_line_count() == 0 &&
                         lnav_data.ld_text_source.text_line_count() > 0) {
-                    toggle_view(&lnav_data.ld_views[LNV_TEXT]);
+                    ensure_view(&lnav_data.ld_views[LNV_TEXT]);
                     lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
                     lnav_data.ld_rl_view->set_alt_value(
                             HELP_MSG_2(f, F,
@@ -2336,6 +2339,7 @@ int main(int argc, char *argv[])
     shared_ptr<piper_proc> stdin_reader;
     const char *         stdin_out = NULL;
     int                  stdin_out_fd = -1;
+    bool exec_stdin = false;
 
     (void)signal(SIGPIPE, SIG_IGN);
     setlocale(LC_ALL, "");
@@ -2386,7 +2390,12 @@ int main(int argc, char *argv[])
             case ':':
             case '/':
             case ';':
+                break;
             case '|':
+                if (strcmp("|-", optarg) == 0 ||
+                    strcmp("|/dev/stdin", optarg) == 0) {
+                    exec_stdin = true;
+                }
                 break;
             default:
                 fprintf(stderr, "error: command arguments should start with a "
@@ -2401,6 +2410,11 @@ int main(int argc, char *argv[])
             break;
 
         case 'f':
+            // XXX Not the best way to check for stdin.
+            if (strcmp("-", optarg) == 0 ||
+                strcmp("/dev/stdin", optarg) == 0) {
+                exec_stdin = true;
+            }
             lnav_data.ld_commands.push_back("|" + string(optarg));
             break;
 
@@ -2452,7 +2466,7 @@ int main(int argc, char *argv[])
         case 'W':
         {
             char b;
-            if (read(STDIN_FILENO, &b, 1) == -1) {
+            if (isatty(STDIN_FILENO) && read(STDIN_FILENO, &b, 1) == -1) {
                 perror("Read key from STDIN");
             }
         }
@@ -2885,7 +2899,7 @@ int main(int argc, char *argv[])
         retval = EXIT_FAILURE;
     }
 
-    if (!isatty(STDIN_FILENO)) {
+    if (!isatty(STDIN_FILENO) && !exec_stdin) {
         stdin_reader = make_shared<piper_proc>(
             STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out);
         stdin_out_fd = stdin_reader->get_fd();
@@ -2898,6 +2912,7 @@ int main(int argc, char *argv[])
     }
 
     if (lnav_data.ld_file_names.empty() &&
+        lnav_data.ld_commands.empty() &&
         lnav_data.ld_pt_search.empty() &&
         !(lnav_data.ld_flags & LNF_HELP)) {
         fprintf(stderr, "error: no log files given/found.\n");

@@ -1,5 +1,12 @@
 #! /bin/bash
 
+run_test ${lnav_test} -f- -n < ${test_dir}/formats/scripts/multiline-echo.lnav
+
+check_output "executing stdin failed" <<EOF
+Hello, World!
+Goodbye, World!
+EOF
+
 run_test ${lnav_test} -n \
     -c ":config /bad/option" \
     ${test_dir}/logfile_access_log.0

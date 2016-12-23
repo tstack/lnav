@@ -34,6 +34,14 @@ lnav v0.8.2:
        or an error will be reported.  The previous behavior was to ignore any
        text at the end of the line.
 
+     Fixes:
+     * You can now execute commands from the standard input by using a dash (-)
+       with the '-f' command-line argument.  Reading commands from a file
+       descriptor should also work, for example, with the following bash
+       syntax:
+
+           $ lnav -f <(echo :open the-file-to-open)
+
 lnav v0.8.1:
      Features:
      * Added a spectrogram command and view that displays the values of a

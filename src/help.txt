@@ -72,7 +72,8 @@ have been loaded, you can use the following options:
              operations in sequence.
 
   -f file    A file that contains commands, queries, or files to execute.
-             This option is a shortcut for "-c '|file'".
+             This option is a shortcut for "-c '|file'".  You can use a
+             dash (-) to execute commands from the standard input.
 
 To execute commands/queries without the opening the interactive text UI,
 you can pass the '-n' option.  This combination of options allows you to

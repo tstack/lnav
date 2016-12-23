@@ -315,7 +315,10 @@ static string execute_file_contents(exec_context &ec, const string &path, bool m
     string retval;
     FILE *file;
 
-    if (path == "-") {
+    if (path == "-" || path == "/dev/stdin") {
+        if (isatty(STDIN_FILENO)) {
+            return "error: stdin has already been consumed";
+        }
         file = stdin;
     }
     else if ((file = fopen(path.c_str(), "r")) == NULL) {
@@ -370,7 +373,11 @@ static string execute_file_contents(exec_context &ec, const string &path, bool m
         retval = execute_from_file(ec, path, starting_line_number, mode, trim(cmdline));
     }
 
-    if (file != stdin) {
+    if (file == stdin) {
+        if (isatty(STDOUT_FILENO)) {
+            log_perror(dup2(STDOUT_FILENO, STDIN_FILENO));
+        }
+    } else {
         fclose(file);
     }
     ec.ec_path_stack.pop();
@@ -418,7 +425,10 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
         if ((iter = scripts.find(script_name)) != scripts.end()) {
             paths_to_exec = iter->second;
         }
-        if (access(script_name.c_str(), R_OK) == 0) {
+        if (script_name == "-" || script_name == "/dev/stdin") {
+            paths_to_exec.push_back({script_name});
+        }
+        else if (access(script_name.c_str(), R_OK) == 0) {
             struct script_metadata meta;
 
             meta.sm_path = script_name;
@@ -528,6 +538,7 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
         return;
     }
 
+    log_info("Executing initial commands");
     for (auto &cmd : lnav_data.ld_commands) {
         string msg, alt_msg;
 

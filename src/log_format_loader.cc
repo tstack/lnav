@@ -895,8 +895,13 @@ void extract_metadata_from_file(struct script_metadata &meta_inout)
 {
     char buffer[8 * 1024];
     auto_mem<FILE> fp(fclose);
+    struct stat st;
 
-    if ((fp = fopen(meta_inout.sm_path.c_str(), "r")) != NULL) {
+    if (stat(meta_inout.sm_path.c_str(), &st) == -1) {
+        log_warning("unable to open script -- %s", meta_inout.sm_path.c_str());
+    } else if (!S_ISREG(st.st_mode)) {
+        log_warning("not a regular file -- %s", meta_inout.sm_path.c_str());
+    } else if ((fp = fopen(meta_inout.sm_path.c_str(), "r")) != NULL) {
         size_t len;
 
         len = fread(buffer, 1, sizeof(buffer), fp.in());
