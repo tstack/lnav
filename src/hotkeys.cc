@@ -216,9 +216,14 @@ void handle_paging_key(int ch)
                     if (src_view != NULL && dst_view != NULL) {
                         last_time = src_view->time_for_row(lnav_data.ld_last_view->get_top());
                         if (last_time != -1) {
-                            int new_top = dst_view->row_for_time(last_time);
+                            time_t curr_top_time = dst_view->time_for_row(tc->get_top());
 
-                            tc->set_top(vis_line_t(new_top));
+                            if (src_view->row_for_time(last_time) !=
+                                src_view->row_for_time(curr_top_time)) {
+                                int new_top = dst_view->row_for_time(last_time);
+                                tc->set_top(vis_line_t(new_top));
+                                tc->set_needs_update();
+                            }
                         }
                     }
                 }
@@ -1085,10 +1090,9 @@ void handle_paging_key(int ch)
         case 'I':
         {
             time_t log_top = lnav_data.ld_top_time;
+            hist_source2 &hs = lnav_data.ld_hist_source2;
 
             if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
-                hist_source2 &hs = lnav_data.ld_hist_source2;
-
                 lss->text_filters_changed();
                 tc = lnav_data.ld_view_stack.top();
                 tc->set_top(vis_line_t(hs.row_for_time(log_top)));
@@ -1096,11 +1100,14 @@ void handle_paging_key(int ch)
             else {
                 textview_curses &hist_tc = lnav_data.ld_views[LNV_HISTOGRAM];
                 textview_curses &log_tc = lnav_data.ld_views[LNV_LOG];
-                time_t hist_top =
-                        lnav_data.ld_hist_source2.time_for_row(hist_tc.get_top());
                 lss = &lnav_data.ld_log_source;
-                log_tc.set_top(lss->find_from_time(hist_top));
-                log_tc.set_needs_update();
+                time_t hist_top_time = hs.time_for_row(hist_tc.get_top());
+                time_t curr_top_time = lss->time_for_row(log_tc.get_top());
+                if (hs.row_for_time(hist_top_time) != hs.row_for_time(curr_top_time)) {
+                    vis_line_t new_top = lss->find_from_time(hist_top_time);
+                    log_tc.set_top(new_top);
+                    log_tc.set_needs_update();
+                }
             }
         }
             break;
