@@ -77,4 +77,6 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt);
 std::future<std::string> pipe_callback(
     exec_context &ec, const std::string &cmdline, auto_fd &fd);
 
+int sql_progress(const struct log_cursor &lc);
+
 #endif //LNAV_COMMAND_EXECUTOR_H

@@ -50,7 +50,7 @@ static const string MSG_FORMAT_STMT =
         "SELECT count(*) as total, min(log_line) as log_line, log_msg_format "
                 "FROM all_logs GROUP BY log_msg_format ORDER BY total desc";
 
-static int sql_progress(const struct log_cursor &lc)
+int sql_progress(const struct log_cursor &lc)
 {
     static sig_atomic_t sql_counter = 0;
 

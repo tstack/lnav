@@ -1633,6 +1633,7 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
         auto_mem<char, sqlite3_free> query_frag;
         std::vector<string>          other_columns;
         std::vector<string>          num_columns;
+        sql_progress_guard progress_guard(sql_progress);
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         int retcode;
         string query;
@@ -1726,7 +1727,10 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
             query += query_frag;
         }
 
-        query += " FROM logline WHERE startswith(logline.log_part, '.') = 0 ";
+        query += (
+            " FROM logline "
+                "WHERE (logline.log_part is null or "
+                "startswith(logline.log_part, '.') = 0) ");
 
         for (std::vector<string>::iterator iter = other_columns.begin();
              iter != other_columns.end();
@@ -1755,6 +1759,7 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
                                          iter->c_str());
             query += query_frag;
         }
+        log_debug("query %s", query.c_str());
 
         db_label_source &dls = lnav_data.ld_db_row_source;
 
