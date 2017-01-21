@@ -38,6 +38,7 @@
 
 #include <map>
 #include <set>
+#include <stack>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -73,20 +74,33 @@ T *nullobj()
     return (T *) NULL;
 }
 
-template<typename T>
-inline
-T *resolve_simple_object(void *base, void *offset)
-{
-    ptrdiff_t ptr_offset = (char *) offset - (char *) NULL;
-    char *root_ptr = (char *) base;
-
-    return (T *) (root_ptr + ptr_offset);
-}
-
 struct json_path_handler;
 class yajlpp_gen_context;
 class json_schema_validator;
 class yajlpp_parse_context;
+
+struct yajlpp_provider_context {
+    pcre_extractor ypc_extractor;
+    int ypc_index;
+
+    template<typename T>
+    intern_string_t get_substr_i(T name) const {
+        pcre_context::iterator cap = this->ypc_extractor.pe_context[name];
+        char path[cap->length() + 1];
+        size_t len = json_ptr::decode(path, this->ypc_extractor.pe_input.get_substr_start(cap), cap->length());
+
+        return intern_string::lookup(path, len);
+    };
+
+    template<typename T>
+    std::string get_substr(T name) const {
+        pcre_context::iterator cap = this->ypc_extractor.pe_context[name];
+        char path[cap->length() + 1];
+        size_t len = json_ptr::decode(path, this->ypc_extractor.pe_input.get_substr_start(cap), cap->length());
+
+        return std::string(path, len);
+    };
+};
 
 struct json_path_handler_base {
     typedef std::pair<const char *, int> enum_value_t;
@@ -98,10 +112,12 @@ struct json_path_handler_base {
               jph_regex(path, PCRE_ANCHORED),
               jph_gen_callback(NULL),
               jph_obj_provider(NULL),
+              jph_path_provider(NULL),
               jph_synopsis(""),
               jph_description(""),
               jph_simple_offset(NULL),
               jph_children(NULL),
+              jph_kv_pair(false),
               jph_min_length(0),
               jph_max_length(INT_MAX),
               jph_enum_values(NULL),
@@ -111,6 +127,9 @@ struct json_path_handler_base {
     };
 
     virtual yajl_gen_status gen(yajlpp_gen_context &ygc, yajl_gen handle) const;
+    virtual void possibilities(std::vector<std::string> &dst,
+                               void *root = NULL,
+                               const std::string &base = "") const;
 
     const char *   jph_path;
     pcrepp         jph_regex;
@@ -118,11 +137,14 @@ struct json_path_handler_base {
     yajl_gen_status (*jph_gen_callback)(yajlpp_gen_context &, const json_path_handler_base &, yajl_gen);
     void           (*jph_validator)(yajlpp_parse_context &ypc,
                                     const json_path_handler_base &jph);
-    void *(*jph_obj_provider)(yajlpp_parse_context &ypc, void *root);
+    void *(*jph_obj_provider)(const yajlpp_provider_context &pe, void *root);
+    void (*jph_path_provider)(void *root, std::vector<std::string> &paths_out);
     const char *   jph_synopsis;
     const char *   jph_description;
     void *         jph_simple_offset;
     json_path_handler_base *jph_children;
+    bool           jph_kv_pair;
+    std::shared_ptr<pcrepp> jph_pattern;
     size_t         jph_min_length;
     size_t         jph_max_length;
     const enum_value_t  *jph_enum_values;
@@ -243,16 +265,27 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
+    json_path_handler &with_pattern(const char *re) {
+        this->jph_pattern.reset(new pcrepp(re));
+        return *this;
+    };
+
     json_path_handler &with_min_value(long long val) {
         this->jph_min_value = val;
         return *this;
     }
 
     template<typename R, typename T>
-    json_path_handler &with_obj_provider(R *(*provider)(yajlpp_parse_context &ypc, T *root)) {
-        this->jph_obj_provider = (void *(*)(yajlpp_parse_context &, void *)) provider;
+    json_path_handler &with_obj_provider(R *(*provider)(const yajlpp_provider_context &pc, T *root)) {
+        this->jph_obj_provider = (void *(*)(const yajlpp_provider_context &, void *)) provider;
         return *this;
     };
+
+    template<typename T>
+    json_path_handler &with_path_provider(void (*provider)(T *root, std::vector<std::string> &paths_out)) {
+        this->jph_path_provider = (void (*)(void *, std::vector<std::string> &)) provider;
+        return *this;
+    }
 
     json_path_handler &for_field(std::string *field) {
         this->add_cb(yajlpp_static_string);
@@ -273,6 +306,15 @@ struct json_path_handler : public json_path_handler_base {
         this->jph_simple_offset = field;
         this->jph_gen_callback = yajlpp_static_gen_string;
         this->jph_validator = yajlpp_validator_for_intern_string;
+        return *this;
+    };
+
+    json_path_handler &for_field(std::map<std::string, std::string> *field) {
+        this->add_cb(yajlpp_static_string);
+        this->jph_kv_pair = true;
+        this->jph_simple_offset = field;
+        this->jph_gen_callback = yajlpp_static_gen_string;
+        this->jph_validator = yajlpp_validator_for_string;
         return *this;
     };
 
@@ -306,13 +348,8 @@ struct json_path_handler : public json_path_handler_base {
     };
 
     json_path_handler &with_children(json_path_handler *children) {
-        for (int lpc = 0; children[lpc].jph_path[0]; lpc++) {
-            json_path_handler &child = children[lpc];
+        require(this->jph_path[strlen(this->jph_path) - 1] == '/');
 
-            if (child.jph_obj_provider == NULL) {
-                child.jph_obj_provider = this->jph_obj_provider;
-            }
-        }
         this->jph_children = children;
         return *this;
     };
@@ -329,7 +366,6 @@ public:
           ypc_line_number(1),
           ypc_handlers(handlers),
           ypc_userdata(NULL),
-          ypc_simple_data(NULL),
           ypc_handle(NULL),
           ypc_json_text(NULL),
           ypc_ignore_unused(false),
@@ -398,6 +434,13 @@ public:
         this->ypc_path.resize(path.size() + 1);
         std::copy(path.begin(), path.end(), this->ypc_path.begin());
         this->ypc_path[path.size()] = '\0';
+        for (int lpc = 0; lpc < path.size(); lpc++) {
+            switch (path[lpc]) {
+                case '/':
+                    this->ypc_path_index_stack.push_back(lpc);
+                    break;
+            }
+        }
         return *this;
     }
 
@@ -409,6 +452,10 @@ public:
         this->ypc_array_index.clear();
         this->ypc_callbacks = DEFAULT_CALLBACKS;
         memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
+        this->ypc_current_handler = NULL;
+        while (!this->ypc_obj_stack.empty()) {
+            this->ypc_obj_stack.pop();
+        }
     }
 
     void set_static_handler(struct json_path_handler &jph) {
@@ -430,7 +477,7 @@ public:
 
     template<typename T>
     yajlpp_parse_context &with_obj(T &obj) {
-        this->ypc_simple_data = &obj;
+        this->ypc_obj_stack.push(&obj);
         return *this;
     };
 
@@ -495,7 +542,7 @@ public:
     int ypc_line_number;
     struct json_path_handler *ypc_handlers;
     void *                  ypc_userdata;
-    void *                  ypc_simple_data;
+    std::stack<void *>      ypc_obj_stack;
     yajl_handle             ypc_handle;
     const unsigned char *   ypc_json_text;
     yajl_callbacks          ypc_callbacks;
@@ -514,6 +561,9 @@ public:
 private:
     static const yajl_callbacks DEFAULT_CALLBACKS;
 
+    int index_for_provider() const {
+        return this->ypc_array_index.empty() ? -1 : this->ypc_array_index.back();
+    };
 
     static int map_start(void *ctx);
     static int map_key(void *ctx, const unsigned char *key, size_t len);
@@ -596,23 +646,27 @@ public:
     yajlpp_gen_context(yajl_gen handle, json_path_handler *handlers)
             : ygc_handle(handle),
               ygc_depth(0),
-              ygc_default_data(NULL),
-              ygc_simple_data(NULL),
               ygc_handlers(handlers)
     {
     };
 
     template<typename T>
     yajlpp_gen_context &with_default_obj(T &obj) {
-        this->ygc_default_data = &obj;
+        this->ygc_default_stack.push(&obj);
         return *this;
     };
 
     template<typename T>
     yajlpp_gen_context &with_obj(T &obj) {
-        this->ygc_simple_data = &obj;
+        this->ygc_obj_stack.push(&obj);
         return *this;
     };
+
+    yajlpp_gen_context &with_context(yajlpp_parse_context &ypc) {
+        this->ygc_obj_stack = ypc.ypc_obj_stack;
+        this->ygc_base_name = ypc.get_path_fragment(-1);
+        return *this;
+    }
 
     void gen() {
         yajlpp_map root(this->ygc_handle);
@@ -626,87 +680,10 @@ public:
 
     yajl_gen ygc_handle;
     int ygc_depth;
-    void *ygc_default_data;
-    void *ygc_simple_data;
+    std::stack<void *> ygc_default_stack;
+    std::stack<void *> ygc_obj_stack;
+    std::string ygc_base_name;
     json_path_handler *ygc_handlers;
-    std::vector<std::string> ygc_path;
-};
-
-class json_schema {
-public:
-    json_schema(const json_path_handler_base *handlers)
-            : js_handlers(handlers) {
-        this->populate("", handlers);
-    };
-
-    void populate(const std::string &parent_path,
-                  const json_path_handler_base *handlers) {
-        for (int lpc = 0; handlers[lpc].jph_path[0]; lpc++) {
-            const json_path_handler_base &jph = handlers[lpc];
-
-            if (jph.jph_children) {
-                this->populate(parent_path + jph.jph_path, jph.jph_children);
-            }
-            else {
-                std::string option = parent_path + jph.jph_path;
-
-                this->js_path_to_handler[option] = &jph;
-            }
-        }
-    }
-
-    typedef std::map<std::string, const json_path_handler_base *> path_to_handler_t;
-
-    const json_path_handler_base *js_handlers;
-    path_to_handler_t js_path_to_handler;
-};
-
-class json_schema_validator {
-public:
-
-    typedef std::map<std::string, std::vector<std::string> > error_map_t;
-
-    json_schema_validator(const json_schema &schema, void *obj = NULL)
-            : jsv_schema(schema), jsv_simple_data(obj) {
-
-    };
-
-    json_schema_validator &check_path(const std::string &path) {
-        json_schema::path_to_handler_t::const_iterator iter;
-
-        iter = this->jsv_schema.js_path_to_handler.find(path);
-        if (iter->second->jph_validator) {
-            // iter->second->jph_validator(*this, path, *iter->second);
-        }
-
-        return *this;
-    };
-
-    void print(FILE *out) const {
-        error_map_t::const_iterator iter;
-
-        for (iter = this->jsv_errors.begin();
-             iter != this->jsv_errors.end();
-             ++iter) {
-            const std::string &path = iter->first;
-            const json_path_handler_base *jph = this->jsv_schema.js_path_to_handler.find(path)->second;
-            const std::vector<std::string> &error_list = iter->second;
-
-            fprintf(out,
-                    "error: Invalid configuration option -- %s (%s)\n",
-                    path.c_str(),
-                    jph->jph_description);
-            for (size_t lpc = 0; lpc < error_list.size(); lpc++) {
-                fprintf(out, "error:   %s\n", error_list[lpc].c_str());
-            }
-            fprintf(out, "error: Use the following lnav command to fix the configuration:\n");
-            fprintf(out, "error:   :config %s %s\n", path.c_str(), jph->jph_synopsis);
-        }
-    };
-
-    const json_schema &jsv_schema;
-    void *jsv_simple_data;
-    error_map_t jsv_errors;
 };
 
 #endif

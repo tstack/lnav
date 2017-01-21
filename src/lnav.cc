@@ -1687,9 +1687,24 @@ public:
 private:
 };
 
-static void handle_key(int ch)
-{
+static void handle_key(int ch) {
     lnav_data.ld_input_state.push_back(ch);
+
+    {
+        char keyseq[16];
+
+        snprintf(keyseq, sizeof(keyseq), "x%02x", ch);
+
+        key_map &km = lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap];
+
+        const auto &iter = km.km_seq_to_cmd.find(keyseq);
+        if (iter != km.km_seq_to_cmd.end()) {
+            log_debug("executing key sequence x%02x: %s",
+                      keyseq, iter->second.c_str());
+            execute_any(lnav_data.ld_exec_context, iter->second);
+            return;
+        }
+    }
 
     switch (ch) {
     case CEOF:
@@ -1797,7 +1812,7 @@ static void looper(void)
             LNM_COMMAND, "viewname", lnav_view_strings);
 
         lnav_data.ld_rl_view->add_possibility(
-                LNM_COMMAND, "zoomlevel", lnav_zoom_strings);
+            LNM_COMMAND, "zoomlevel", lnav_zoom_strings);
 
         lnav_data.ld_rl_view->add_possibility(
             LNM_COMMAND, "levelname", logline::level_names);

@@ -39,26 +39,44 @@ using namespace std;
 const json_path_handler_base::enum_value_t json_path_handler_base::ENUM_TERMINATOR =
     make_pair((const char *) NULL, 0);
 
-static char *resolve_root(yajlpp_parse_context *ypc)
+template<typename T>
+static T &resolve_root(yajlpp_parse_context *ypc)
 {
     const json_path_handler_base *jph = ypc->ypc_current_handler;
 
     ptrdiff_t offset = (char *) jph->jph_simple_offset - (char *) NULL;
-    char *retval = (char *) ypc->ypc_simple_data;
+    char *retval = (char *) ypc->ypc_obj_stack.top();
 
-    if (jph->jph_obj_provider != NULL) {
-        retval = (char *) jph->jph_obj_provider(*ypc, (void *) retval);
+    return *((T *) (retval + offset));
+}
+
+template<typename T>
+static T *resolve_root(const stack<void *> &obj_stack, const json_path_handler_base &jph)
+{
+    if (obj_stack.empty()) {
+        return (T *) NULL;
     }
 
-    return retval + offset;
+    ptrdiff_t offset = (char *) jph.jph_simple_offset - (char *) NULL;
+    char *retval = (char *) obj_stack.top();
+
+    return (T *) (retval + offset);
 }
 
 int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    char *root_ptr = resolve_root(ypc);
-    string *field_ptr = (string *) root_ptr;
+    const json_path_handler_base *jph = ypc->ypc_current_handler;
 
-    (*field_ptr) = string((const char *) str, len);
+    if (jph->jph_kv_pair) {
+        map<string, string> &field_ptr = resolve_root<map<string, string>>(ypc);
+
+        field_ptr[ypc->get_path_fragment(-1)] = string((const char *) str, len);
+    }
+    else {
+        string &field_ptr = resolve_root<string>(ypc);
+
+        field_ptr = string((const char *) str, len);
+    }
 
     yajlpp_validator_for_string(*ypc, *ypc->ypc_current_handler);
 
@@ -67,10 +85,9 @@ int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, si
 
 int yajlpp_static_string_vector(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    char *root_ptr = resolve_root(ypc);
-    vector<string> *field_ptr = (vector<string> *) root_ptr;
+    vector<string> &field_ptr = resolve_root<vector<string>>(ypc);
 
-    field_ptr->push_back(string((const char *) str, len));
+    field_ptr.push_back(string((const char *) str, len));
     yajlpp_validator_for_string(*ypc, *ypc->ypc_current_handler);
 
     return 1;
@@ -78,10 +95,9 @@ int yajlpp_static_string_vector(yajlpp_parse_context *ypc, const unsigned char *
 
 int yajlpp_static_intern_string(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    char *root_ptr = resolve_root(ypc);
-    intern_string_t *field_ptr = (intern_string_t *) root_ptr;
+    intern_string_t &field_ptr = resolve_root<intern_string_t>(ypc);
 
-    (*field_ptr) = intern_string::lookup((const char *) str, len);
+    field_ptr = intern_string::lookup((const char *) str, len);
 
     yajlpp_validator_for_intern_string(*ypc, *ypc->ypc_current_handler);
 
@@ -90,8 +106,7 @@ int yajlpp_static_intern_string(yajlpp_parse_context *ypc, const unsigned char *
 
 int yajlpp_static_enum(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    char *root_ptr = resolve_root(ypc);
-    int *field_ptr = (int *) root_ptr;
+    int &field_ptr = resolve_root<int>(ypc);
     const json_path_handler_base &jph = *ypc->ypc_current_handler;
     bool found = false;
 
@@ -99,7 +114,7 @@ int yajlpp_static_enum(yajlpp_parse_context *ypc, const unsigned char *str, size
         const json_path_handler::enum_value_t &ev = jph.jph_enum_values[lpc];
 
         if (len == strlen(ev.first) && strncmp((const char *) str, ev.first, len) == 0) {
-            *field_ptr = ev.second;
+            field_ptr = ev.second;
             found = true;
             break;
         }
@@ -132,46 +147,66 @@ yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
                                          const json_path_handler_base &jph,
                                          yajl_gen handle)
 {
-    string *default_field_ptr = resolve_simple_object<string>(ygc.ygc_default_data, jph.jph_simple_offset);
-    string *field_ptr = resolve_simple_object<string>(ygc.ygc_simple_data, jph.jph_simple_offset);
+    if (jph.jph_kv_pair) {
+        map<string, string> *default_field_ptr = resolve_root<map<string, string>>(
+            ygc.ygc_default_stack, jph);
+        map<string, string> *field_ptr = resolve_root<map<string, string>>(
+            ygc.ygc_obj_stack, jph);
+        const string &base_name = ygc.ygc_base_name;
 
-    if (ygc.ygc_default_data != NULL && (*default_field_ptr == *field_ptr)) {
-        return yajl_gen_status_ok;
-    }
+        if (default_field_ptr != NULL &&
+            ((*default_field_ptr)[base_name] == (*field_ptr)[base_name])) {
+            return yajl_gen_status_ok;
+        }
 
-    if (ygc.ygc_depth) {
-        yajl_gen_string(handle, jph.jph_path);
+        if (ygc.ygc_depth) {
+            yajl_gen_string(handle, base_name);
+        }
+        return yajl_gen_string(handle, (*field_ptr)[base_name]);
     }
-    return yajl_gen_string(handle, *field_ptr);
+    else {
+        string *default_field_ptr = resolve_root<string>(ygc.ygc_default_stack,
+                                                         jph);
+        string *field_ptr = resolve_root<string>(ygc.ygc_obj_stack, jph);
+
+        if (default_field_ptr != NULL && (*default_field_ptr == *field_ptr)) {
+            return yajl_gen_status_ok;
+        }
+
+        if (ygc.ygc_depth) {
+            yajl_gen_string(handle, jph.jph_path);
+        }
+        return yajl_gen_string(handle, *field_ptr);
+    }
 }
 
 void yajlpp_validator_for_string(yajlpp_parse_context &ypc,
                                  const json_path_handler_base &jph)
 {
-    string *field_ptr = (string *) resolve_root(&ypc);
-    char buffer[1024];
-
-    if (field_ptr->empty() && jph.jph_min_length > 0) {
-        ypc.report_error("value must not be empty");
+    if (jph.jph_kv_pair) {
+        return; // XXX
     }
-    else if (field_ptr->size() < jph.jph_min_length) {
-        snprintf(buffer, sizeof(buffer),
-                 "value must be at least %lu characters long",
-                 jph.jph_min_length);
-        ypc.report_error(buffer);
+
+    string &field_ptr = resolve_root<string>(&ypc);
+
+    if (field_ptr.empty() && jph.jph_min_length > 0) {
+        ypc.report_error("value must not be empty");
+    } else if (field_ptr.size() < jph.jph_min_length) {
+        ypc.report_error("value must be at least %lu characters long",
+                         jph.jph_min_length);
     }
 }
 
 void yajlpp_validator_for_intern_string(yajlpp_parse_context &ypc,
                                         const json_path_handler_base &jph)
 {
-    intern_string_t *field_ptr = (intern_string_t *) resolve_root(&ypc);
+    intern_string_t &field_ptr = resolve_root<intern_string_t>(&ypc);
     char buffer[1024];
 
-    if (field_ptr->empty() && jph.jph_min_length > 0) {
+    if (field_ptr.empty() && jph.jph_min_length > 0) {
         ypc.report_error("value must not be empty");
     }
-    else if (field_ptr->size() < jph.jph_min_length) {
+    else if (field_ptr.size() < jph.jph_min_length) {
         snprintf(buffer, sizeof(buffer),
                  "value must be at least %lu characters long",
                  jph.jph_min_length);
@@ -182,10 +217,10 @@ void yajlpp_validator_for_intern_string(yajlpp_parse_context &ypc,
 void yajlpp_validator_for_int(yajlpp_parse_context &ypc,
                               const json_path_handler_base &jph)
 {
-    long long *field_ptr = (long long int *) resolve_root(&ypc);
+    long long &field_ptr = resolve_root<long long int>(&ypc);
     char buffer[1024];
 
-    if (*field_ptr < jph.jph_min_value) {
+    if (field_ptr < jph.jph_min_value) {
         snprintf(buffer, sizeof(buffer),
                  "value must be greater than %lld",
                  jph.jph_min_value);
@@ -196,10 +231,10 @@ void yajlpp_validator_for_int(yajlpp_parse_context &ypc,
 void yajlpp_validator_for_double(yajlpp_parse_context &ypc,
                                  const json_path_handler_base &jph)
 {
-    double *field_ptr = (double *) resolve_root(&ypc);
+    double &field_ptr = resolve_root<double>(&ypc);
     char buffer[1024];
 
-    if (*field_ptr < jph.jph_min_value) {
+    if (field_ptr < jph.jph_min_value) {
         snprintf(buffer, sizeof(buffer),
                  "value must be greater than %lld",
                  jph.jph_min_value);
@@ -209,30 +244,27 @@ void yajlpp_validator_for_double(yajlpp_parse_context &ypc,
 
 int yajlpp_static_number(yajlpp_parse_context *ypc, long long num)
 {
-    char *root_ptr = resolve_root(ypc);
-    long long *field_ptr = (long long *) root_ptr;
+    long long &field_ptr = resolve_root<long long>(ypc);
 
-    *field_ptr = num;
+    field_ptr = num;
 
     return 1;
 }
 
 int yajlpp_static_decimal(yajlpp_parse_context *ypc, double num)
 {
-    char *root_ptr = resolve_root(ypc);
-    double *field_ptr = (double *) root_ptr;
+    double &field_ptr = resolve_root<double>(ypc);
 
-    *field_ptr = num;
+    field_ptr = num;
 
     return 1;
 }
 
 int yajlpp_static_bool(yajlpp_parse_context *ypc, int val)
 {
-    char *root_ptr = resolve_root(ypc);
-    bool *field_ptr = (bool *) root_ptr;
+    bool &field_ptr = resolve_root<bool>(ypc);
 
-    *field_ptr = val;
+    field_ptr = val;
 
     return 1;
 }
@@ -241,10 +273,10 @@ yajl_gen_status yajlpp_static_gen_bool(yajlpp_gen_context &ygc,
                                        const json_path_handler_base &jph,
                                        yajl_gen handle)
 {
-    bool *default_field_ptr = resolve_simple_object<bool>(ygc.ygc_default_data, jph.jph_simple_offset);
-    bool *field_ptr = resolve_simple_object<bool>(ygc.ygc_simple_data, jph.jph_simple_offset);
+    bool *default_field_ptr = resolve_root<bool>(ygc.ygc_default_stack, jph);
+    bool *field_ptr = resolve_root<bool>(ygc.ygc_obj_stack, jph);
 
-    if (ygc.ygc_default_data != NULL && (*default_field_ptr == *field_ptr)) {
+    if (default_field_ptr != NULL && (*default_field_ptr == *field_ptr)) {
         return yajl_gen_status_ok;
     }
 
@@ -256,35 +288,72 @@ yajl_gen_status yajlpp_static_gen_bool(yajlpp_gen_context &ygc,
 
 yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen handle) const
 {
+    vector<string> local_paths;
+
+    if (this->jph_path_provider) {
+        this->jph_path_provider(ygc.ygc_obj_stack.top(), local_paths);
+    }
+    else {
+        local_paths.push_back(this->jph_path);
+    }
+
     if (this->jph_children) {
-        int start = this->jph_path[0] == '^' ? 1 : 0;
-        int start_depth = ygc.ygc_depth;
+        for (const auto &lpath : local_paths) {
+            string full_path = lpath;
+            if (this->jph_path_provider) {
+                full_path += "/";
+            }
+            int start = lpath[0] == '^' ? 1 : 0;
+            int start_depth = ygc.ygc_depth;
 
-        for (int lpc = start; this->jph_path[lpc]; lpc++) {
-            if (this->jph_path[lpc] == '/') {
-                if (lpc > start) {
-                    yajl_gen_pstring(handle,
-                                     &this->jph_path[start],
-                                     lpc - start);
-                    yajl_gen_map_open(handle);
-                    ygc.ygc_depth += 1;
+            for (int lpc = start; lpath[lpc]; lpc++) {
+                if (lpath[lpc] == '/') {
+                    if (lpc > start) {
+                        yajl_gen_pstring(handle,
+                                         &lpath[start],
+                                         lpc - start);
+                        yajl_gen_map_open(handle);
+                        ygc.ygc_depth += 1;
+                    }
+                    start = lpc + 1;
                 }
-                start = lpc + 1;
             }
-        }
 
-        for (int lpc = 0; this->jph_children[lpc].jph_path[0]; lpc++) {
-            json_path_handler_base &jph = this->jph_children[lpc];
-            yajl_gen_status status = jph.gen(ygc, handle);
+            if (this->jph_obj_provider) {
+                pcre_context_static<30> pc;
+                pcre_input pi(full_path);
 
-            if (status != yajl_gen_status_ok) {
-                return status;
+                this->jph_regex.match(pc, pi);
+                ygc.ygc_obj_stack.push(this->jph_obj_provider(
+                    {{pc, pi}, -1}, ygc.ygc_obj_stack.top()
+                ));
+                if (!ygc.ygc_default_stack.empty()) {
+                    ygc.ygc_default_stack.push(this->jph_obj_provider(
+                        {{pc, pi}, -1}, ygc.ygc_default_stack.top()
+                    ));
+                }
             }
-        }
 
-        while (ygc.ygc_depth > start_depth) {
-            yajl_gen_map_close(handle);
-            ygc.ygc_depth -= 1;
+            for (int lpc = 0; this->jph_children[lpc].jph_path[0]; lpc++) {
+                json_path_handler_base &jph = this->jph_children[lpc];
+                yajl_gen_status status = jph.gen(ygc, handle);
+
+                if (status != yajl_gen_status_ok) {
+                    return status;
+                }
+            }
+
+            if (this->jph_obj_provider) {
+                ygc.ygc_obj_stack.pop();
+                if (!ygc.ygc_default_stack.empty()) {
+                    ygc.ygc_default_stack.pop();
+                }
+            }
+
+            while (ygc.ygc_depth > start_depth) {
+                yajl_gen_map_close(handle);
+                ygc.ygc_depth -= 1;
+            }
         }
     }
     else if (this->jph_gen_callback != NULL) {
@@ -292,7 +361,60 @@ yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen ha
     }
 
     return yajl_gen_status_ok;
-};
+}
+
+void json_path_handler_base::possibilities(
+    std::vector<std::string> &dst, void *root, const string &base) const
+{
+    vector<string> local_paths;
+
+    if (this->jph_path_provider) {
+        this->jph_path_provider(root, local_paths);
+    }
+    else {
+        local_paths.push_back(this->jph_path);
+    }
+
+    if (this->jph_children) {
+        for (const auto &lpath : local_paths) {
+            for (int lpc = 0; this->jph_children[lpc].jph_path[0]; lpc++) {
+                string full_path = base + lpath;
+                if (this->jph_path_provider) {
+                    full_path += "/";
+                }
+                json_path_handler dummy[] = {
+                    json_path_handler(this->jph_path),
+
+                    json_path_handler()
+                };
+                dummy->jph_callbacks = this->jph_callbacks;
+
+                yajlpp_parse_context ypc("possibilities", dummy);
+                void *child_root = root;
+
+                ypc.set_path(full_path)
+                    .with_obj(root)
+                    .update_callbacks();
+                if (this->jph_obj_provider) {
+                    pcre_input pi(lpath + "/");
+
+                    if (!this->jph_regex.match(ypc.ypc_pcre_context, pi)) {
+                        ensure(false);
+                    }
+                    child_root = this->jph_obj_provider(
+                        {{ypc.ypc_pcre_context, pi}, -1}, root);
+                }
+
+                this->jph_children[lpc].possibilities(dst, child_root, full_path);
+            }
+        }
+    }
+    else {
+        for (const auto &lpath : local_paths) {
+            dst.push_back(base + lpath);
+        }
+    }
+}
 
 int yajlpp_parse_context::map_start(void *ctx)
 {
@@ -383,6 +505,12 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
         }
     }
 
+    if (child_start == 0 && !this->ypc_obj_stack.empty()) {
+        while (this->ypc_obj_stack.size() > 1) {
+            this->ypc_obj_stack.pop();
+        }
+    }
+
     for (int lpc = 0; handlers[lpc].jph_path[0]; lpc++) {
         const json_path_handler_base &jph = handlers[lpc];
 
@@ -391,6 +519,12 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
                  this->ypc_path.size() - 1 - child_start);
         if (jph.jph_regex.match(this->ypc_pcre_context, pi)) {
             pcre_context::capture_t *cap = this->ypc_pcre_context.all();
+
+            if (jph.jph_obj_provider) {
+                this->ypc_obj_stack.push(jph.jph_obj_provider(
+                    {{this->ypc_pcre_context, pi}, this->index_for_provider()},
+                    this->ypc_obj_stack.top()));
+            }
 
             if (jph.jph_children) {
                 if (this->ypc_path[child_start + cap->c_end - 1] != '/') {

@@ -84,7 +84,7 @@ public:
         schema_ref.share(this->alv_schema_manager,
                          this->alv_schema_buffer,
                          data_parser::schema_id_t::STRING_SIZE - 1);
-        values.push_back(logline_value(this->alv_schema_name, schema_ref, 2));
+        values.push_back({this->alv_schema_name, schema_ref, 2});
     }
 
     bool next(log_cursor &lc, logfile_sub_source &lss) {

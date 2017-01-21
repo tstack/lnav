@@ -56,11 +56,15 @@ AM_LDFLAGS = \
 	$(READLINE_LDFLAGS) \
 	-pthread
 
+CONFIG_OBJS = \
+	../src/default-config-json.o \
+	../src/keymap-default.o
+
 LDADD = -lz
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 test_auto_fd_SOURCES = test_auto_fd.cc
 test_auto_fd_LDADD = ../src/libdiag.a
@@ -81,7 +85,7 @@ test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_hist_source_SOURCES = test_hist_source.cc
 test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 test_line_buffer2_SOURCES = test_line_buffer2.cc
 test_line_buffer2_LDADD = ../src/libdiag.a
@@ -95,7 +99,7 @@ test_pcrepp_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 test_top_status_SOURCES = test_top_status.cc
 test_top_status_LDADD = \
 	../src/libdiag.a \
-	../src/default-config-json.o \
+	$(CONFIG_OBJS) \
 	$(CURSES_LIB) \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \
@@ -131,13 +135,13 @@ drive_json_ptr_walk_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 drive_listview_SOURCES = drive_listview.cc
 drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
-	../src/default-config-json.o \
+	$(CONFIG_OBJS) \
 	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
@@ -157,7 +161,7 @@ drive_data_scanner_SOURCES = \
 drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
-	../src/default-config-json.o \
+	$(CONFIG_OBJS) \
 	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
@@ -169,24 +173,24 @@ drive_data_scanner_LDADD = \
 
 drive_mvwattrline_SOURCES = drive_mvwattrline.cc
 drive_mvwattrline_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 drive_view_colors_SOURCES = drive_view_colors.cc
 drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 drive_vt52_curses_SOURCES = drive_vt52_curses.cc
 drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 drive_readline_curses_SOURCES = drive_readline_curses.cc
 drive_readline_curses_LDADD = ../src/libdiag.a $(READLINE_LIBS) $(CURSES_LIB) \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 drive_sql_SOURCES = \
 	drive_sql.cc
 drive_sql_LDADD = \
 	../src/libdiag.a \
-	../src/default-config-json.o \
+	$(CONFIG_OBJS) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
 	$(CURSES_LIB) \

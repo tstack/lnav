@@ -64,11 +64,14 @@ void rl_change(void *dummy, readline_curses *rc)
                 lnav_data.ld_bottom_source.grep_error("");
             }
             else if (args[0] == "config" && args.size() > 1) {
-                json_schema::path_to_handler_t::iterator path_iter;
+                yajlpp_parse_context ypc("input", lnav_config_handlers);
 
-                path_iter = lnav_config_schema.js_path_to_handler.find(args[1]);
-                if (path_iter != lnav_config_schema.js_path_to_handler.end()) {
-                    const json_path_handler_base *jph = path_iter->second;
+                ypc.set_path(args[1])
+                    .with_obj(lnav_config);
+                ypc.update_callbacks();
+
+                if (ypc.ypc_current_handler != NULL) {
+                    const json_path_handler_base *jph = ypc.ypc_current_handler;
                     char help_text[1024];
 
                     snprintf(help_text, sizeof(help_text),

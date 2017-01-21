@@ -262,13 +262,12 @@ void add_mark_possibilities()
 void add_config_possibilities()
 {
     readline_curses *rc = lnav_data.ld_rl_view;
-    json_schema::path_to_handler_t::iterator iter;
+    vector<string> config_options;
 
     rc->clear_possibilities(LNM_COMMAND, "config-option");
 
-    for (iter = lnav_config_schema.js_path_to_handler.begin();
-         iter != lnav_config_schema.js_path_to_handler.end();
-         ++iter) {
-        rc->add_possibility(LNM_COMMAND, "config-option", iter->first);
+    for (int lpc = 0; lnav_config_handlers[lpc].jph_path[0]; lpc++) {
+        lnav_config_handlers[lpc].possibilities(config_options, &lnav_config);
     }
+    rc->add_possibility(LNM_COMMAND, "config-option", config_options);
 }

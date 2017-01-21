@@ -35,6 +35,9 @@ init-sql.c: bin2c
 %.c: $(srcdir)/%.lnav bin2c
 	$(BIN2C_V)./bin2c -z -c $< $@
 
+%.c: $(srcdir)/%.json bin2c
+	$(BIN2C_V)./bin2c -z -c $< $@
+
 TIME_FORMATS = \
     "@%@" \
     "%Y-%m-%d %H:%M:%S" \
@@ -110,6 +113,7 @@ dist_noinst_DATA = \
 	default-config.json \
 	dhclient-summary.lnav \
 	dump-pid.sh \
+	keymap-default.json \
 	partition-by-boot.lnav
 
 noinst_HEADERS = \
@@ -316,6 +320,7 @@ TEXT2C_FILES = \
 	default-log-formats-json.o \
 	default-config-json.o \
 	dhclient-summary.o \
+	keymap-default.o \
 	partition-by-boot.o
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)

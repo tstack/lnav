@@ -2272,7 +2272,8 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
         string option = args[1];
 
         ypc.set_path(option)
-                .with_obj(lnav_config);
+           .with_obj(lnav_config);
+        ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
         if (ypc.ypc_current_handler != NULL) {
@@ -2283,7 +2284,7 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
 
                 const json_path_handler_base *jph = ypc.ypc_current_handler;
                 yajlpp_gen_context ygc(handle, lnav_config_handlers);
-                ygc.with_obj(lnav_config);
+                ygc.with_context(ypc);
 
                 jph->gen(ygc, handle);
 
@@ -2353,7 +2354,7 @@ static string com_reset_config(exec_context &ec, string cmdline, vector<string> 
         string option = args[1];
 
         ypc.set_path(option)
-                .with_obj(lnav_config);
+           .with_obj(lnav_config);
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 

@@ -59,7 +59,9 @@ using namespace std;
 
 static void extract_metadata(const char *contents, size_t len, struct script_metadata &meta_out);
 
-static map<intern_string_t, external_log_format *> LOG_FORMATS;
+typedef map<intern_string_t, external_log_format *> log_formats_map_t;
+
+static log_formats_map_t LOG_FORMATS;
 
 struct userdata {
     std::string ud_format_path;
@@ -67,10 +69,9 @@ struct userdata {
     std::vector<std::string> *ud_errors;
 };
 
-static external_log_format *ensure_format(yajlpp_parse_context *ypc)
+static external_log_format *ensure_format(const yajlpp_provider_context &ypc, userdata *ud)
 {
-    const intern_string_t name = ypc->get_path_fragment_i(0);
-    struct userdata *ud = (userdata *) ypc->ypc_userdata;
+    const intern_string_t name = ypc.get_substr_i(0);
     vector<intern_string_t> *formats = ud->ud_format_names;
     external_log_format *retval;
 
@@ -79,7 +80,7 @@ static external_log_format *ensure_format(yajlpp_parse_context *ypc)
         LOG_FORMATS[name] = retval = new external_log_format(name);
         log_debug("Loading format -- %s", name.get());
     }
-    retval->elf_source_path.insert(ypc->ypc_source.substr(0, ypc->ypc_source.rfind('/')));
+    retval->elf_source_path.insert(ud->ud_format_path.substr(0, ud->ud_format_path.rfind('/')));
 
     if (find(formats->begin(), formats->end(), name) == formats->end()) {
         formats->push_back(name);
@@ -92,25 +93,22 @@ static external_log_format *ensure_format(yajlpp_parse_context *ypc)
     return retval;
 }
 
-static external_log_format::pattern *pattern_provider(yajlpp_parse_context &ypc, void *root)
+static external_log_format::pattern *pattern_provider(const yajlpp_provider_context &ypc, external_log_format *elf)
 {
-    external_log_format *elf = ensure_format(&ypc);
-    string regex_name = ypc.get_path_fragment(2);
+    string regex_name = ypc.get_substr(0);
 
     struct external_log_format::pattern &pat = elf->elf_patterns[regex_name];
 
     if (pat.p_config_path.empty()) {
-        string full_path = ypc.get_path().to_string();
-        pat.p_config_path = full_path.substr(0, full_path.rfind('/'));
+        pat.p_config_path = elf->get_name().to_string() + "/regex/" + regex_name;
     }
 
     return &pat;
 }
 
-static external_log_format::value_def *value_def_provider(yajlpp_parse_context &ypc, void *root)
+static external_log_format::value_def *value_def_provider(const yajlpp_provider_context &ypc, external_log_format *elf)
 {
-    external_log_format *elf = ensure_format(&ypc);
-    const intern_string_t value_name = ypc.get_path_fragment_i(2);
+    const intern_string_t value_name = ypc.get_substr_i(0);
 
     external_log_format::value_def &retval = elf->elf_value_defs[value_name];
 
@@ -119,18 +117,12 @@ static external_log_format::value_def *value_def_provider(yajlpp_parse_context &
     return &retval;
 }
 
-static scaling_factor *scaling_factor_provider(yajlpp_parse_context &ypc, void *root)
+static scaling_factor *scaling_factor_provider(const yajlpp_provider_context &ypc, external_log_format::value_def *value_def)
 {
-    external_log_format *elf = ensure_format(&ypc);
-    const intern_string_t value_name = ypc.get_path_fragment_i(2);
-    string scale_spec = ypc.get_path_fragment(5);
+    string scale_spec = ypc.get_substr(0);
 
     const intern_string_t scale_name = intern_string::lookup(scale_spec.substr(1));
-    external_log_format::value_def &value_def = elf->elf_value_defs[value_name];
-
-    value_def.vd_name = value_name;
-
-    scaling_factor &retval = value_def.vd_unit_scaling[scale_name];
+    scaling_factor &retval = value_def->vd_unit_scaling[scale_name];
 
     if (scale_spec[0] == '/') {
         retval.sf_op = SO_DIVIDE;
@@ -151,10 +143,9 @@ ensure_json_format_element(external_log_format *elf, int index)
 }
 
 static external_log_format::json_format_element *line_format_provider(
-    yajlpp_parse_context &ypc, void *root)
+    const yajlpp_provider_context &ypc, external_log_format *elf)
 {
-    external_log_format *elf = ensure_format(&ypc);
-    int index = ypc.ypc_array_index.back();
+    int index = ypc.ypc_index;
     external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
 
     jfe.jfe_type = external_log_format::JLF_VARIABLE;
@@ -164,7 +155,7 @@ static external_log_format::json_format_element *line_format_provider(
 
 static int read_format_bool(yajlpp_parse_context *ypc, int val)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string field_name = ypc->get_path_fragment(1);
 
     if (field_name == "convert-to-local-time")
@@ -181,7 +172,7 @@ static int read_format_bool(yajlpp_parse_context *ypc, int val)
 
 static int read_format_double(yajlpp_parse_context *ypc, double val)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string field_name = ypc->get_path_fragment(1);
 
     if (field_name == "timestamp-divisor") {
@@ -199,7 +190,7 @@ static int read_format_double(yajlpp_parse_context *ypc, double val)
 
 static int read_format_int(yajlpp_parse_context *ypc, long long val)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string field_name = ypc->get_path_fragment(1);
 
     if (field_name == "timestamp-divisor") {
@@ -217,7 +208,7 @@ static int read_format_int(yajlpp_parse_context *ypc, long long val)
 
 static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string value = string((const char *)str, len);
     string field_name = ypc->get_path_fragment(1);
 
@@ -244,7 +235,7 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
 
 static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string regex = string((const char *)str, len);
     string level_name_or_number = ypc->get_path_fragment(2);
     logline::level_t level = logline::string2level(level_name_or_number.c_str());
@@ -255,7 +246,7 @@ static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size
 
 static int read_level_int(yajlpp_parse_context *ypc, long long val)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string level_name_or_number = ypc->get_path_fragment(2);
     logline::level_t level = logline::string2level(level_name_or_number.c_str());
 
@@ -266,7 +257,7 @@ static int read_level_int(yajlpp_parse_context *ypc, long long val)
 
 static int read_action_def(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string action_name = ypc->get_path_fragment(2);
     string field_name = ypc->get_path_fragment(3);
     string val = string((const char *)str, len);
@@ -280,7 +271,7 @@ static int read_action_def(yajlpp_parse_context *ypc, const unsigned char *str, 
 
 static int read_action_bool(yajlpp_parse_context *ypc, int val)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string action_name = ypc->get_path_fragment(2);
     string field_name = ypc->get_path_fragment(3);
 
@@ -291,7 +282,7 @@ static int read_action_bool(yajlpp_parse_context *ypc, int val)
 
 static int read_action_cmd(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string action_name = ypc->get_path_fragment(2);
     string field_name = ypc->get_path_fragment(3);
     string val = string((const char *)str, len);
@@ -312,7 +303,7 @@ static external_log_format::sample &ensure_sample(external_log_format *elf,
 
 static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string val = string((const char *)str, len);
     int index = ypc->ypc_array_index.back();
     external_log_format::sample &sample = ensure_sample(elf, index);
@@ -324,7 +315,7 @@ static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str,
 
 static int read_json_constant(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string val = string((const char *)str, len);
 
     ypc->ypc_array_index.back() += 1;
@@ -340,7 +331,7 @@ static int read_json_constant(yajlpp_parse_context *ypc, const unsigned char *st
 
 static int create_search_table(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = ensure_format(ypc);
+    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     const intern_string_t table_name = ypc->get_path_fragment_i(2);
     string regex = string((const char *) str, len);
 
@@ -444,7 +435,7 @@ static struct json_path_handler unit_handlers[] = {
         .with_description("The name of the field that contains the units for this field")
         .for_field(&nullobj<external_log_format::value_def>()->vd_unit_field),
 
-    json_path_handler("scaling-factor/.*$")
+    json_path_handler("scaling-factor/(?<scale>.*)$")
         .with_synopsis("[*,/]<unit>")
         .with_obj_provider(scaling_factor_provider)
         .for_field(&nullobj<scaling_factor>()->sf_value),
@@ -465,7 +456,6 @@ static struct json_path_handler value_def_handlers[] = {
         .for_field(&nullobj<external_log_format::value_def>()->vd_collate),
 
     json_path_handler("unit/")
-        .with_obj_provider(value_def_provider)
         .with_children(unit_handlers),
 
     json_path_handler("identifier")
@@ -497,41 +487,49 @@ static struct json_path_handler value_def_handlers[] = {
 };
 
 struct json_path_handler format_handlers[] = {
-    json_path_handler("/\\w+/regex/[^/]+/")
+    json_path_handler("regex/(?<pattern_name>[^/]+)/")
         .with_obj_provider(pattern_provider)
         .with_children(pattern_handlers),
 
     // TODO convert the rest of these
-    json_path_handler("/\\w+/(json|convert-to-local-time|"
+    json_path_handler("(json|convert-to-local-time|"
         "hide-extra|multiline)", read_format_bool),
-    json_path_handler("/\\w+/timestamp-divisor", read_format_double)
+    json_path_handler("timestamp-divisor", read_format_double)
         .add_cb(read_format_int),
-    json_path_handler("/\\w+/(file-pattern|level-field|timestamp-field|"
+    json_path_handler("(file-pattern|level-field|timestamp-field|"
                               "body-field|url|url#|title|description|"
                               "timestamp-format#|module-field|opid-field)$",
                       read_format_field),
-    json_path_handler("/\\w+/level/"
+    json_path_handler("level/"
                       "(trace|debug\\d*|info|stats|warning|error|critical|fatal)")
         .add_cb(read_levels)
         .add_cb(read_level_int),
 
-    json_path_handler("/\\w+/value/[^/]+/")
+    json_path_handler("value/(?<value_name>[^/]+)/")
         .with_obj_provider(value_def_provider)
         .with_children(value_def_handlers),
 
-    json_path_handler("/\\w+/action/[^/]+/label", read_action_def),
-    json_path_handler("/\\w+/action/[^/]+/capture-output", read_action_bool),
-    json_path_handler("/\\w+/action/[^/]+/cmd#", read_action_cmd),
-    json_path_handler("/\\w+/sample#/line", read_sample_line),
+    json_path_handler("action/(?<action_name>[^/]+)/label", read_action_def),
+    json_path_handler("action/(?<action_name>[^/]+)/capture-output", read_action_bool),
+    json_path_handler("action/(?<action_name>[^/]+)/cmd#", read_action_cmd),
+    json_path_handler("sample#/line", read_sample_line),
 
-    json_path_handler("/\\w+/line-format#/")
+    json_path_handler("line-format#/")
         .with_obj_provider(line_format_provider)
         .with_children(line_format_handlers),
-    json_path_handler("/\\w+/line-format#", read_json_constant),
+    json_path_handler("line-format#", read_json_constant),
 
-    json_path_handler("/\\w+/search-table/.+/pattern", create_search_table)
+    json_path_handler("search-table/.+/pattern", create_search_table)
         .with_synopsis("<regex>")
         .with_description("The regular expression for this search table."),
+
+    json_path_handler()
+};
+
+struct json_path_handler root_format_handler[] = {
+    json_path_handler("/(?<format_name>\\w+)/")
+        .with_obj_provider(ensure_format)
+        .with_children(format_handlers),
 
     json_path_handler()
 };
@@ -606,8 +604,9 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
     ud.ud_format_path = filename;
     ud.ud_format_names = &retval;
     ud.ud_errors = &errors;
-    yajlpp_parse_context ypc(filename, format_handlers);
+    yajlpp_parse_context ypc(filename, root_format_handler);
     ypc.ypc_userdata = &ud;
+    ypc.with_obj(ud);
     if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
         char errmsg[1024];
 
@@ -692,7 +691,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
                   std::vector<std::string> &errors)
 {
     string default_source = string(dotlnav_path("formats") + "/default/");
-    yajlpp_parse_context ypc_builtin(default_source, format_handlers);
+    yajlpp_parse_context ypc_builtin(default_source, root_format_handler);
     std::vector<intern_string_t> retval;
     struct userdata ud;
     yajl_handle handle;
@@ -704,6 +703,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
     ud.ud_format_names = &retval;
     ud.ud_errors = &errors;
     ypc_builtin
+        .with_obj(ud)
         .with_handle(handle)
         .ypc_userdata = &ud;
     yajl_config(handle, yajl_allow_comments, 1);

@@ -34,8 +34,10 @@
 
 #include <sys/queue.h>
 
+#include <map>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "yajlpp.hh"
 
@@ -87,15 +89,21 @@ void install_git_format(const char *repo);
 
 void install_extra_formats();
 
+struct key_map {
+    std::map<std::string, std::string> km_seq_to_cmd;
+};
+
 struct _lnav_config {
     std::string lc_ui_clock_format;
     bool lc_ui_dim_text;
+    std::string lc_ui_keymap;
+    std::unordered_map<std::string, key_map> lc_ui_keymaps;
+    std::map<std::string, std::string> lc_ui_key_overrides;
 };
 
 extern struct _lnav_config lnav_config;
 
 extern struct json_path_handler lnav_config_handlers[];
-extern json_schema lnav_config_schema;
 
 void load_config(const std::vector<std::string> &extra_paths,
                  std::vector<std::string> &errors);
