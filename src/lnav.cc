@@ -1690,7 +1690,7 @@ private:
 static void handle_key(int ch) {
     lnav_data.ld_input_state.push_back(ch);
 
-    {
+    if (lnav_data.ld_mode == LNM_PAGING) {
         char keyseq[16];
 
         snprintf(keyseq, sizeof(keyseq), "x%02x", ch);
