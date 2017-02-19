@@ -194,6 +194,7 @@ noinst_HEADERS = \
 	sysclip.hh \
 	termios_guard.hh \
 	term_extra.hh \
+	text_format.hh \
 	textfile_sub_source.hh \
 	textview_curses.hh \
 	time_T.hh \
@@ -277,6 +278,7 @@ libdiag_a_SOURCES = \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
 	string-extension-functions.cc \
+	text_format.cc \
 	timer.cc \
 	pcrepp.cc \
 	piper_proc.cc \

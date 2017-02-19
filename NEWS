@@ -41,6 +41,8 @@ lnav v0.8.2:
        syntax:
 
            $ lnav -f <(echo :open the-file-to-open)
+     * Programming language syntax highlighting should now only be applied to
+       source code files instead of everywhere.
 
 lnav v0.8.1:
      Features:

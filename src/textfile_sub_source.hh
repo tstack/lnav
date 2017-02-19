@@ -244,6 +244,14 @@ public:
         return retval;
     }
 
+    text_format_t get_text_format() const {
+        if (this->tss_files.empty()) {
+            return TF_UNKNOWN;
+        }
+
+        return this->tss_files.front()->get_text_format();
+    }
+
 private:
     void detach_observer(logfile *lf) {
         line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();

@@ -61,7 +61,8 @@ throw (error)
       lf_is_closed(false),
       lf_logline_observer(NULL),
       lf_logfile_observer(NULL),
-      lf_longest_line(0)
+      lf_longest_line(0),
+      lf_text_format(TF_UNKNOWN)
 {
     require(filename.size() > 0);
 
@@ -332,6 +333,14 @@ throw (line_buffer::error, logfile::error)
         }
         while (this->lf_line_buffer.read_line(off, sbr, &lv)) {
             size_t old_size = this->lf_index.size();
+
+            if (old_size == 0) {
+                shared_buffer_ref avail_sbr;
+
+                this->lf_line_buffer.read_available(avail_sbr);
+                this->lf_text_format = detect_text_format(
+                    avail_sbr.get_data(), avail_sbr.length());
+            }
 
             this->lf_longest_line = std::max(this->lf_longest_line, sbr.length());
             this->lf_partial_line = lv.lv_partial;

@@ -123,6 +123,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
     string &                     str        = value_out.get_string();
     highlight_map_t::iterator    iter;
     string::iterator             str_iter;
+    text_format_t source_format = this->tc_sub_source->get_text_format();
 
     this->tc_sub_source->text_value_for_line(*this, row, str);
     this->tc_sub_source->text_attrs_for_line(*this, row, sa);
@@ -149,6 +150,11 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
             re_end = 8192;
         else
             re_end = body.lr_end;
+
+        if (iter->second.h_text_format != TF_UNKNOWN &&
+            source_format != iter->second.h_text_format) {
+            continue;
+        }
 
         for (off = internal_hl ? body.lr_start : 0; off < (int)str.size(); ) {
             int rc, matches[60];

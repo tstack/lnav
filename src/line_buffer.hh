@@ -149,6 +149,8 @@ public:
     bool read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
         throw (error);
 
+    void read_available(shared_buffer_ref &sbr) throw(error);
+
     void clear()
     {
         this->lb_buffer_size  = 0;
@@ -222,7 +224,7 @@ private:
      * @return A pointer to the start of the cached data in the internal
      * buffer.
      */
-    char *get_range(off_t start, size_t &avail_out)
+    char *get_range(off_t start, size_t &avail_out) const
     {
         off_t buffer_offset = start - this->lb_file_offset;
         char *retval;

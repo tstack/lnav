@@ -53,6 +53,7 @@ set(diag_STAT_SRCS
     sql_util.cc
     state-extension-functions.cc
     strnatcmp.c
+    text_format.cc
     textview_curses.cc
     timer.cc
     view_curses.cc
@@ -114,12 +115,13 @@ set(diag_STAT_SRCS
     relative_time.hh
     sequence_sink.hh
     shlex.hh
-        spectro_source.hh
+    spectro_source.hh
     status_controllers.hh
     strong_int.hh
     sysclip.hh
     term_extra.hh
     termios_guard.hh
+    text_format.hh
     textfile_sub_source.hh
     time_T.hh
     timer.hh

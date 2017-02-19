@@ -40,6 +40,7 @@
 #include "lnav_log.hh"
 #include "concise_index.hh"
 #include "logfile.hh"
+#include "text_format.hh"
 
 class logfile;
 class logline;
@@ -397,6 +398,10 @@ public:
         return 0;
     };
 
+    virtual text_format_t get_text_format() const {
+        return TF_UNKNOWN;
+    };
+
 private:
     filter_stack tss_filters;
 };
@@ -436,9 +441,10 @@ public:
         highlighter()
             : h_code(NULL),
               h_code_extra(NULL),
-              h_attrs(-1) { };
+              h_attrs(-1),
+              h_text_format(TF_UNKNOWN) { };
         highlighter(pcre *code)
-            : h_code(code), h_attrs(-1)
+            : h_code(code), h_attrs(-1), h_text_format(TF_UNKNOWN)
         {
             const char *errptr;
 
@@ -468,6 +474,12 @@ public:
             return *this;
         };
 
+        highlighter &with_text_format(text_format_t tf) {
+            this->h_text_format = tf;
+
+            return *this;
+        }
+
         int get_attrs() const
         {
             ensure(this->h_attrs != -1);
@@ -478,6 +490,7 @@ public:
         pcre *                           h_code;
         pcre_extra *                     h_code_extra;
         int h_attrs;
+        text_format_t h_text_format;
     };
 
     textview_curses();
