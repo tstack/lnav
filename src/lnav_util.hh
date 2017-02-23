@@ -46,6 +46,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <numeric>
 
 #include "ptimec.hh"
 #include "byte_array.hh"
@@ -189,6 +190,22 @@ enum file_format_t {
 file_format_t detect_file_format(const std::string &filename);
 
 bool next_format(const char * const fmt[], int &index, int &locked_index);
+
+namespace std {
+    inline string to_string(const string &s) { return s; }
+}
+
+template<class InputIt>
+inline std::string join(InputIt first, InputIt last, const std::string &delim)
+{
+    std::string retval;
+    return std::accumulate(first, last, retval, [&] (
+        typename InputIt::value_type l, typename InputIt::value_type r) {
+        std::string lstr = std::to_string(l);
+
+        return lstr + (lstr.empty() ? "" : delim) + std::to_string(r);
+    });
+}
 
 inline bool is_glob(const char *fn)
 {

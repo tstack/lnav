@@ -2008,6 +2008,69 @@ static string com_set_min_log_level(exec_context &ec, string cmdline, vector<str
     return retval;
 }
 
+static string com_toggle_field(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+        args.push_back("colname");
+    } else if (args.size() < 2) {
+        retval = "error: Expecting a log message field name";
+    } else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+
+        if (tc != &lnav_data.ld_views[LNV_LOG]) {
+            retval = "error: hiding fields only works in the log view";
+        } else if (tc->get_inner_height() == 0) {
+            retval = "error: no log messages to hide";
+        } else {
+            logfile_sub_source &lss = lnav_data.ld_log_source;
+            content_line_t cl = lss.at(tc->get_top());
+            logfile *lf = lss.find(cl);
+            log_format *format = lf->get_format();
+            bool hide = args[0] == "hide-fields";
+            vector<string> found_fields, missing_fields;
+
+            for (int lpc = 1; lpc < args.size(); lpc++) {
+                const intern_string_t name = intern_string::lookup(args[lpc]);
+
+                if (format->hide_field(name, hide)) {
+                    found_fields.push_back(args[lpc]);
+                    if (hide) {
+                        if (lnav_data.ld_rl_view != NULL) {
+                            lnav_data.ld_rl_view->set_alt_value(
+                                HELP_MSG_1(x, "to quickly show hidden fields"));
+                        }
+                    }
+                    tc->set_needs_update();
+                } else {
+                    missing_fields.push_back(args[lpc]);
+                }
+            }
+
+            if (missing_fields.empty()) {
+                string all_fields = join(found_fields.begin(),
+                                         found_fields.end(),
+                                         ", ");
+
+                if (hide) {
+                    retval = "info: hiding field(s) -- " + all_fields;
+                } else {
+                    retval = "info: showing field(s) -- " + all_fields;
+                }
+            } else {
+                string all_fields = join(missing_fields.begin(),
+                                         missing_fields.end(),
+                                         ", ");
+
+                retval = "error: unknown field(s) -- " + all_fields;
+            }
+        }
+    }
+
+    return retval;
+}
+
 static string com_hide_line(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
@@ -2775,6 +2838,18 @@ readline_context::command_t STD_COMMANDS[] = {
         NULL,
         "Open the help text view",
         com_help,
+    },
+    {
+        "hide-fields",
+        "<field-name1> [<field-name2> ... <field-nameN>]",
+        "Hide log message fields by replacing them with an ellipsis",
+        com_toggle_field,
+    },
+    {
+        "show-fields",
+        "<field-name> [<field-name2> ... <field-nameN>]",
+        "Show log message fields that were previously hidden",
+        com_toggle_field,
     },
     {
         "hide-lines-before",

@@ -188,10 +188,13 @@ struct line_range {
 
     void shift(int32_t start, int32_t amount) {
         if (this->lr_start >= start) {
-            this->lr_start += amount;
+            this->lr_start = std::max(start, this->lr_start + amount);
         }
         if (this->lr_end != -1 && start < this->lr_end) {
             this->lr_end += amount;
+            if (this->lr_end < this->lr_start) {
+                this->lr_end = this->lr_start;
+            }
         }
     };
 

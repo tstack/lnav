@@ -347,6 +347,10 @@ Display options
 
   CTRL-W            Toggle word-wrapping.
 
+  x                 Toggle the hiding of log message fields.  The hidden fields
+                    will be replaced with three bullets and highlighted in
+                    yellow.
+
   F2                Toggle mouse support.
 
 Query
@@ -480,6 +484,15 @@ COMMANDS
 
   show-lines-before-and-after
                     Show lines that were hidden by the 'hide-lines' commands.
+
+  hide-fields <field-name> [<field-name2> ... <field-nameN>]
+                    Hide large log message fields by replacing them with an
+                    ellipsis.  You can quickly switching between showing and
+                    hiding hidden fields using the 'x' hotkey.
+
+  show-fields <field-name> [<field-name2> ... <field-nameN>]
+                    Show log messages fields that were previously hidden with
+                    the 'hide-fields' command.
 
   highlight <regex> Highlight strings that match the given regular
                     expression.

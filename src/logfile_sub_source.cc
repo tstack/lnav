@@ -273,8 +273,14 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     for (vector<logline_value>::const_iterator lv_iter = line_values.begin();
          lv_iter != line_values.end();
          ++lv_iter) {
-        if (lv_iter->lv_sub_offset != this->lss_token_line->get_sub_offset()) {
+        if (lv_iter->lv_sub_offset != this->lss_token_line->get_sub_offset() ||
+            !lv_iter->lv_origin.is_valid()) {
             continue;
+        }
+
+        if (lv_iter->lv_hidden) {
+            value_out.push_back(string_attr(
+                lv_iter->lv_origin, &textview_curses::SA_HIDDEN));
         }
 
         if (!lv_iter->lv_identifier || !lv_iter->lv_origin.is_valid()) {

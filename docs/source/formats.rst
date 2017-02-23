@@ -156,8 +156,12 @@ fields:
       an identifier and should be syntax colored.
     :foreign-key: A boolean that indicates that this field is a key and should
       not be graphed.  This should only need to be set for integer fields.
-    :hidden: A boolean for JSON log fields that indicates whether they should
-      be displayed if they are not present in the line-format.
+    :hidden: A boolean for log fields that indicates whether they should
+      be displayed.  The behavior is slightly different for JSON logs and text
+      logs.  For a JSON log, this property determines whether an extra line
+      will be added with the key/value pair.  For text logs, this property
+      controls whether the value should be displayed by default or replaced
+      with an ellipsis.
     :rewriter: A command to rewrite this field when pretty-printing log
       messages containing this value.  The command must start with ':', ';',
       or '|' to signify whether it is a regular command, SQL query, or a script

@@ -115,6 +115,10 @@ public:
             this->ldh_namer.reset(new column_namer());
             this->ldh_json_pairs.clear();
 
+            for (auto lv : this->ldh_line_values) {
+                this->ldh_namer->add_column(lv.lv_name.get());
+            }
+
             for (std::vector<logline_value>::iterator iter =
                  this->ldh_line_values.begin();
                  iter != this->ldh_line_values.end();

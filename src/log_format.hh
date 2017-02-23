@@ -572,6 +572,7 @@ public:
     bool lv_identifier;
     int lv_column;
     bool lv_hidden;
+    bool lv_user_hidden;
     int lv_sub_offset;
     struct line_range lv_origin;
     bool lv_from_module;
@@ -798,6 +799,10 @@ public:
         return retval;
     };
 
+    virtual bool hide_field(const intern_string_t field_name, bool val) {
+        return false;
+    };
+
     const char * const *get_timestamp_formats() const {
         if (this->lf_timestamp_format.empty()) {
             return NULL;
@@ -864,35 +869,47 @@ public:
 
     struct value_def {
         value_def() :
-            vd_index(-1),
             vd_kind(logline_value::VALUE_UNKNOWN),
             vd_identifier(false),
             vd_foreign_key(false),
-            vd_unit_field_index(-1),
             vd_column(-1),
+            vd_values_index(-1),
             vd_hidden(false),
+            vd_user_hidden(false),
             vd_internal(false) {
 
         };
 
         intern_string_t vd_name;
-        int vd_index;
         logline_value::kind_t vd_kind;
         std::string vd_collate;
         bool vd_identifier;
         bool vd_foreign_key;
         intern_string_t vd_unit_field;
-        int vd_unit_field_index;
         std::map<const intern_string_t, scaling_factor> vd_unit_scaling;
         int vd_column;
+        ssize_t vd_values_index;
         bool vd_hidden;
+        bool vd_user_hidden;
         bool vd_internal;
         std::vector<std::string> vd_action_list;
         std::string vd_rewriter;
+    };
 
-        bool operator<(const value_def &rhs) const {
-            return this->vd_index < rhs.vd_index;
-        };
+    struct indexed_value_def {
+        indexed_value_def(int index = -1, int unit_index = -1, value_def *vd = NULL)
+            : ivd_index(index),
+              ivd_unit_field_index(unit_index),
+              ivd_value_def(vd) {
+        }
+
+        int ivd_index;
+        int ivd_unit_field_index;
+        const struct value_def *ivd_value_def;
+
+        bool operator<(const indexed_value_def &rhs) const {
+            return this->ivd_index < rhs.ivd_index;
+        }
     };
 
     struct pattern {
@@ -910,7 +927,8 @@ public:
         std::string p_config_path;
         std::string p_string;
         pcrepp *p_pcre;
-        std::vector<value_def> p_value_by_index;
+        std::vector<indexed_value_def> p_value_by_index;
+        std::vector<int> p_numeric_value_indexes;
         int p_timestamp_field_index;
         int p_level_field_index;
         int p_module_field_index;
@@ -980,6 +998,17 @@ public:
 
     bool match_samples(const std::vector<sample> &samples) const;
 
+    bool hide_field(const intern_string_t field_name, bool val) {
+        auto vd_iter = this->elf_value_defs.find(field_name);
+
+        if (vd_iter == this->elf_value_defs.end()) {
+            return false;
+        }
+
+        vd_iter->second->vd_user_hidden = val;
+        return true;
+    };
+
     std::unique_ptr<log_format> specialized(int fmt_lock) {
         external_log_format *elf = new external_log_format(*this);
         std::unique_ptr<log_format> retval(elf);
@@ -1024,12 +1053,11 @@ public:
     log_vtab_impl *get_vtab_impl(void) const;
 
     const std::vector<std::string> *get_actions(const logline_value &lv) const {
-        std::map<const intern_string_t, value_def>::const_iterator iter;
         const std::vector<std::string> *retval = NULL;
 
-        iter = this->elf_value_defs.find(lv.lv_name);
+        const auto iter = this->elf_value_defs.find(lv.lv_name);
         if (iter != this->elf_value_defs.end()) {
-            retval = &iter->second.vd_action_list;
+            retval = &iter->second->vd_action_list;
         }
 
         return retval;
@@ -1091,15 +1119,14 @@ public:
                           bool top_level,
                           const unsigned char *str = NULL,
                           ssize_t len = -1) const {
-        std::map<const intern_string_t, value_def>::const_iterator iter =
-            this->elf_value_defs.find(ist);
+        const auto iter = this->elf_value_defs.find(ist);
         long line_count = (str != NULL) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
 
         if (iter == this->elf_value_defs.end()) {
             return (this->jlf_hide_extra || !top_level) ? 0 : line_count;
         }
 
-        if (iter->second.vd_hidden) {
+        if (iter->second->vd_hidden) {
             return 0;
         }
 
@@ -1114,8 +1141,7 @@ public:
     };
 
     bool has_value_def(const intern_string_t ist) const {
-        std::map<const intern_string_t, value_def>::const_iterator iter =
-            this->elf_value_defs.find(ist);
+        const auto iter = this->elf_value_defs.find(ist);
 
         return iter != this->elf_value_defs.end();
     };
@@ -1142,11 +1168,11 @@ public:
     std::list<intern_string_t> elf_collision;
     std::string elf_file_pattern;
     pcrepp *elf_filename_pcre;
-    std::map<std::string, pattern> elf_patterns;
-    std::vector<pattern *> elf_pattern_order;
+    std::map<std::string, std::shared_ptr<pattern>> elf_patterns;
+    std::vector<std::shared_ptr<pattern>> elf_pattern_order;
     std::vector<sample> elf_samples;
-    std::map<const intern_string_t, value_def> elf_value_defs;
-    std::vector<value_def *> elf_numeric_value_defs;
+    std::map<const intern_string_t, std::shared_ptr<value_def>> elf_value_defs;
+    std::vector<std::shared_ptr<value_def>> elf_numeric_value_defs;
     int elf_column_count;
     double elf_timestamp_divisor;
     intern_string_t elf_level_field;

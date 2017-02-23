@@ -38,6 +38,7 @@
 #include "ansi_scrubber.hh"
 #include "log_format.hh"
 #include "textview_curses.hh"
+#include "view_curses.hh"
 
 using namespace std;
 
@@ -59,6 +60,7 @@ bookmark_type_t textview_curses::BM_SEARCH("search");
 
 string_attr_type textview_curses::SA_ORIGINAL_LINE;
 string_attr_type textview_curses::SA_BODY;
+string_attr_type textview_curses::SA_HIDDEN;
 
 textview_curses::textview_curses()
     : tc_sub_source(NULL),
@@ -66,7 +68,8 @@ textview_curses::textview_curses()
       tc_searching(false),
       tc_selection_start(-1),
       tc_selection_last(-1),
-      tc_selection_cleared(false)
+      tc_selection_cleared(false),
+      tc_hide_fields(true)
 {
     this->tc_follow_deadline.tv_sec = 0;
     this->tc_follow_deadline.tv_usec = 0;
@@ -117,6 +120,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
                                              vis_line_t row,
                                              attr_line_t &value_out)
 {
+    view_colors &vc = view_colors::singleton();
     bookmark_vector<vis_line_t> &user_marks = this->tc_bookmarks[&BM_USER];
     bookmark_vector<vis_line_t> &part_marks = this->tc_bookmarks[&BM_PARTITION];
     string_attrs_t &             sa         = value_out.get_attrs();
@@ -190,6 +194,30 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
             }
             else {
                 off = str.size();
+            }
+        }
+    }
+
+    if (this->tc_hide_fields) {
+        for (auto &sattr : sa) {
+            if (sattr.sa_type == &SA_HIDDEN &&
+                sattr.sa_range.length() > 3) {
+                struct line_range &lr = sattr.sa_range;
+
+                str.replace(lr.lr_start, lr.length(), "...");
+                shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
+                sattr.sa_type = &VC_GRAPHIC;
+                sattr.sa_value.sav_int =
+                    vc.ansi_color_pair(COLOR_YELLOW, COLOR_BLACK) |
+                    ACS_BULLET | A_UNDERLINE;
+                lr.lr_end = lr.lr_start + 3;
+
+                for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {
+                    if (attr.sa_type == &VC_STYLE &&
+                        attr.sa_range.lr_start == lr.lr_start) {
+                        attr.sa_type = NULL;
+                    }
+                });
             }
         }
     }

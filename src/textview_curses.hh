@@ -436,6 +436,7 @@ public:
 
     static string_attr_type SA_ORIGINAL_LINE;
     static string_attr_type SA_BODY;
+    static string_attr_type SA_HIDDEN;
 
     struct highlighter {
         highlighter()
@@ -570,13 +571,14 @@ public:
     {
         highlighter &hl       = this->tc_highlights[highlight_name];
         int          prev_hit = -1, next_hit = INT_MAX;
-        std::string  str;
 
         for (; start < end; ++start) {
+            attr_line_t al;
             int off;
 
-            this->tc_sub_source->text_value_for_line(*this, start, str);
+            this->listview_value_for_row(*this, start, al);
 
+            const std::string &str = al.get_string();
             for (off = 0; off < (int)str.size(); ) {
                 int rc, matches[128];
 
@@ -743,6 +745,14 @@ public:
         }
     };
 
+    bool toggle_hide_fields() {
+        bool retval = this->tc_hide_fields;
+
+        this->tc_hide_fields = !this->tc_hide_fields;
+
+        return retval;
+    }
+
 protected:
     text_sub_source *tc_sub_source;
     text_delegate *tc_delegate;
@@ -759,5 +769,6 @@ protected:
     vis_line_t tc_selection_start;
     vis_line_t tc_selection_last;
     bool tc_selection_cleared;
+    bool tc_hide_fields;
 };
 #endif

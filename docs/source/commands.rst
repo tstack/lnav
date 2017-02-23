@@ -59,6 +59,13 @@ Display
 * disable-word-wrap - Disable word wrapping in the log and text file views.
 * enable-word-wrap - Enable word wrapping in the log and text file views.
 
+* hide-fields <field-name> [<field-name2> ... <field-nameN>] - Hide large log
+  message fields by replacing them with an ellipsis.  You can quickly switching
+  between showing and hiding hidden fields using the 'x' hotkey.
+
+* show-fields <field-name> [<field-name2> ... <field-nameN>] - Show previously
+  hidden log message fields.
+
 * highlight <regex> - Colorize text that matches the given regex.
 * clear-highlight <regex> - Clear a previous highlight.
 
@@ -147,7 +154,7 @@ The following options are available:
    - open
    - pipe-to
    - pipe-line-to
-   - write-*-to
+   - write-\*-to
 
    This makes it easier to run lnav in restricted environments without the risk
    of privilege escalation.

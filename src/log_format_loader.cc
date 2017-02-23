@@ -96,25 +96,32 @@ static external_log_format *ensure_format(const yajlpp_provider_context &ypc, us
 static external_log_format::pattern *pattern_provider(const yajlpp_provider_context &ypc, external_log_format *elf)
 {
     string regex_name = ypc.get_substr(0);
+    auto &pat = elf->elf_patterns[regex_name];
 
-    struct external_log_format::pattern &pat = elf->elf_patterns[regex_name];
-
-    if (pat.p_config_path.empty()) {
-        pat.p_config_path = elf->get_name().to_string() + "/regex/" + regex_name;
+    if (pat.get() == nullptr) {
+        pat = make_shared<external_log_format::pattern>();
     }
 
-    return &pat;
+    if (pat->p_config_path.empty()) {
+        pat->p_config_path = elf->get_name().to_string() + "/regex/" + regex_name;
+    }
+
+    return pat.get();
 }
 
 static external_log_format::value_def *value_def_provider(const yajlpp_provider_context &ypc, external_log_format *elf)
 {
     const intern_string_t value_name = ypc.get_substr_i(0);
 
-    external_log_format::value_def &retval = elf->elf_value_defs[value_name];
+    auto &retval = elf->elf_value_defs[value_name];
 
-    retval.vd_name = value_name;
+    if (retval.get() == nullptr) {
+        retval = make_shared<external_log_format::value_def>();
+    }
 
-    return &retval;
+    retval->vd_name = value_name;
+
+    return retval.get();
 }
 
 static scaling_factor *scaling_factor_provider(const yajlpp_provider_context &ypc, external_log_format::value_def *value_def)
@@ -470,7 +477,7 @@ static struct json_path_handler value_def_handlers[] = {
 
     json_path_handler("hidden")
         .with_synopsis("<bool>")
-        .with_description("Indicates whether or not this JSON field should be hidden")
+        .with_description("Indicates whether or not this field should be hidden")
         .for_field(&nullobj<external_log_format::value_def>()->vd_hidden),
 
     json_path_handler("action-list#")

@@ -200,7 +200,7 @@ vector<log_format *> &log_format::get_root_formats(void)
     return lf_root_formats;
 }
 
-static bool next_format(const std::vector<external_log_format::pattern *> &patterns,
+static bool next_format(const std::vector<std::shared_ptr<external_log_format::pattern>> &patterns,
                         int &index,
                         int &locked_index)
 {
@@ -561,7 +561,7 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
         return false;
     }
 
-    pattern *pat = this->elf_pattern_order[this->lf_fmt_lock];
+    auto pat = this->elf_pattern_order[this->lf_fmt_lock];
     pcre_input pi(sbr.get_data(), 0, sbr.length());
 
     if (!this->elf_multiline) {
@@ -636,7 +636,7 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
     int curr_fmt = -1;
 
     while (::next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
-        pattern *fpat = this->elf_pattern_order[curr_fmt];
+        auto fpat = this->elf_pattern_order[curr_fmt];
         pcrepp *pat = fpat->p_pcre;
 
         if (fpat->p_module_format) {
@@ -707,19 +707,16 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
             }
         }
 
-        size_t numeric_def_count = this->elf_numeric_value_defs.size();
-
-        for (size_t num_def_index = 0;
-             num_def_index < numeric_def_count;
-             num_def_index += 1) {
-            value_def &vd = *this->elf_numeric_value_defs[num_def_index];
-            pcre_context::capture_t *num_cap = pc[vd.vd_index];
+        for (auto value_index : fpat->p_numeric_value_indexes) {
+            const indexed_value_def &ivd = fpat->p_value_by_index[value_index];
+            const value_def &vd = *ivd.ivd_value_def;
+            pcre_context::capture_t *num_cap = pc[ivd.ivd_index];
 
             if (num_cap != NULL && num_cap->is_valid()) {
                 const struct scaling_factor *scaling = NULL;
 
-                if (vd.vd_unit_field_index >= 0) {
-                    pcre_context::iterator unit_cap = pc[vd.vd_unit_field_index];
+                if (ivd.ivd_unit_field_index >= 0) {
+                    pcre_context::iterator unit_cap = pc[ivd.ivd_unit_field_index];
 
                     if (unit_cap != NULL && unit_cap->is_valid()) {
                         intern_string_t unit_val = intern_string::lookup(
@@ -743,7 +740,7 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
                     if (scaling != NULL) {
                         scaling->scale(dvalue);
                     }
-                    this->lf_value_stats[num_def_index].add_value(dvalue);
+                    this->lf_value_stats[vd.vd_values_index].add_value(dvalue);
                 }
             }
         }
@@ -775,7 +772,7 @@ uint8_t external_log_format::module_scan(const pcre_input &pi,
         int curr_fmt = -1, fmt_lock = -1;
 
         while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
-            pattern *fpat = elf->elf_pattern_order[curr_fmt];
+            auto fpat = elf->elf_pattern_order[curr_fmt];
             pcrepp *pat = fpat->p_pcre;
 
             if (!fpat->p_module_format) {
@@ -861,13 +858,14 @@ void external_log_format::annotate(shared_buffer_ref &line,
     sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
-        const value_def &vd = pat.p_value_by_index[lpc];
+        const indexed_value_def &ivd = pat.p_value_by_index[lpc];
         const struct scaling_factor *scaling = NULL;
-        pcre_context::capture_t *cap = pc[vd.vd_index];
+        pcre_context::capture_t *cap = pc[ivd.ivd_index];
+        const value_def &vd = *ivd.ivd_value_def;
         shared_buffer_ref field;
 
-        if (vd.vd_unit_field_index >= 0) {
-            pcre_context::iterator unit_cap = pc[vd.vd_unit_field_index];
+        if (ivd.ivd_unit_field_index >= 0) {
+            pcre_context::iterator unit_cap = pc[ivd.ivd_unit_field_index];
 
             if (unit_cap != NULL && unit_cap->c_begin != -1) {
                 intern_string_t unit_val = intern_string::lookup(
@@ -895,6 +893,7 @@ void external_log_format::annotate(shared_buffer_ref &line,
                                        cap->c_end,
                                        pat.p_module_format,
                                        this));
+        values.back().lv_hidden = vd.vd_hidden || vd.vd_user_hidden;
     }
 
     if (annotate_module && module_cap != NULL && body_cap != NULL &&
@@ -935,20 +934,18 @@ void external_log_format::rewrite(exec_context &ec,
     value_out.assign(line.get_data(), line.length());
 
     for (iter = values.begin(); iter != values.end(); ++iter) {
-        map<const intern_string_t, value_def>::iterator vd_iter;
-
         if (!iter->lv_origin.is_valid()) {
             log_debug("not rewriting value with invalid origin -- %s", iter->lv_name.get());
             continue;
         }
 
-        vd_iter = this->elf_value_defs.find(iter->lv_name);
+        auto vd_iter = this->elf_value_defs.find(iter->lv_name);
         if (vd_iter == this->elf_value_defs.end()) {
             log_debug("not rewriting undefined value -- %s", iter->lv_name.get());
             continue;
         }
 
-        value_def &vd = vd_iter->second;
+        value_def &vd = *vd_iter->second;
 
         if (!vd.vd_rewriter.empty()) {
             string field_value = iter->to_string();
@@ -1103,14 +1100,13 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
             for (lv_iter = this->jlf_line_values.begin();
                  lv_iter != this->jlf_line_values.end();
                  ++lv_iter) {
-                map<const intern_string_t, external_log_format::value_def>::iterator vd_iter;
-
                 lv_iter->lv_format = this;
-                vd_iter = this->elf_value_defs.find(lv_iter->lv_name);
+                auto vd_iter = this->elf_value_defs.find(lv_iter->lv_name);
                 if (vd_iter != this->elf_value_defs.end()) {
-                    lv_iter->lv_identifier = vd_iter->second.vd_identifier;
-                    lv_iter->lv_column = vd_iter->second.vd_column;
-                    lv_iter->lv_hidden = vd_iter->second.vd_hidden;
+                    lv_iter->lv_identifier = vd_iter->second->vd_identifier;
+                    lv_iter->lv_column = vd_iter->second->vd_column;
+                    lv_iter->lv_hidden = vd_iter->second->vd_hidden;
+                    lv_iter->lv_user_hidden = vd_iter->second->vd_user_hidden;
                 }
             }
 
@@ -1135,6 +1131,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
                         lr.lr_start = this->jlf_cached_line.size();
 
+                        lv_iter->lv_hidden = lv_iter->lv_user_hidden;
                         if (str.size() > jfe.jfe_max_width) {
                             switch (jfe.jfe_overflow) {
                                 case json_format_element::ABBREV: {
@@ -1309,23 +1306,32 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
 void external_log_format::build(std::vector<std::string> &errors) {
     if (!this->lf_timestamp_field.empty()) {
-        value_def &vd = this->elf_value_defs[this->lf_timestamp_field];
-        vd.vd_name = this->lf_timestamp_field;
-        vd.vd_kind = logline_value::VALUE_TEXT;
-        vd.vd_internal = true;
+        auto &vd = this->elf_value_defs[this->lf_timestamp_field];
+        if (vd.get() == nullptr) {
+            vd = make_shared<external_log_format::value_def>();
+        }
+        vd->vd_name = this->lf_timestamp_field;
+        vd->vd_kind = logline_value::VALUE_TEXT;
+        vd->vd_internal = true;
     }
     if (!this->elf_level_field.empty() && this->elf_value_defs.
         find(this->elf_level_field) == this->elf_value_defs.end()) {
-        value_def &vd = this->elf_value_defs[this->elf_level_field];
-        vd.vd_name = this->elf_level_field;
-        vd.vd_kind = logline_value::VALUE_TEXT;
-        vd.vd_internal = true;
+        auto &vd = this->elf_value_defs[this->elf_level_field];
+        if (vd.get() == nullptr) {
+            vd = make_shared<external_log_format::value_def>();
+        }
+        vd->vd_name = this->elf_level_field;
+        vd->vd_kind = logline_value::VALUE_TEXT;
+        vd->vd_internal = true;
     }
     if (!this->elf_body_field.empty()) {
-        value_def &vd = this->elf_value_defs[this->elf_body_field];
-        vd.vd_name = this->elf_body_field;
-        vd.vd_kind = logline_value::VALUE_TEXT;
-        vd.vd_internal = true;
+        auto &vd = this->elf_value_defs[this->elf_body_field];
+        if (vd.get() == nullptr) {
+            vd = make_shared<external_log_format::value_def>();
+        }
+        vd->vd_name = this->elf_body_field;
+        vd->vd_kind = logline_value::VALUE_TEXT;
+        vd->vd_internal = true;
     }
 
     if (!this->lf_timestamp_format.empty()) {
@@ -1339,10 +1345,10 @@ void external_log_format::build(std::vector<std::string> &errors) {
                          this->elf_name.to_string() + ".file-pattern:" +
                          e.what());
     }
-    for (std::map<string, pattern>::iterator iter = this->elf_patterns.begin();
+    for (auto iter = this->elf_patterns.begin();
          iter != this->elf_patterns.end();
          ++iter) {
-        pattern &pat = iter->second;
+        pattern &pat = *iter->second;
 
         if (pat.p_module_format) {
             this->elf_has_module_format = true;
@@ -1371,7 +1377,6 @@ void external_log_format::build(std::vector<std::string> &errors) {
         for (pcre_named_capture::iterator name_iter = pat.p_pcre->named_begin();
              name_iter != pat.p_pcre->named_end();
              ++name_iter) {
-            std::map<const intern_string_t, value_def>::iterator value_iter;
             const intern_string_t name = intern_string::lookup(
                 name_iter->pnc_name, -1);
 
@@ -1391,22 +1396,24 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 pat.p_body_field_index = name_iter->index();
             }
 
-            value_iter = this->elf_value_defs.find(name);
+            auto value_iter = this->elf_value_defs.find(name);
             if (value_iter != this->elf_value_defs.end()) {
-                value_def &vd = value_iter->second;
+                auto &vd = *value_iter->second;
+                indexed_value_def ivd;
 
-                vd.vd_index = name_iter->index();
+                ivd.ivd_index = name_iter->index();
                 if (!vd.vd_unit_field.empty()) {
-                    vd.vd_unit_field_index = pat.p_pcre->name_index(
+                    ivd.ivd_unit_field_index = pat.p_pcre->name_index(
                         vd.vd_unit_field.get());
                 }
                 else {
-                    vd.vd_unit_field_index = -1;
+                    ivd.ivd_unit_field_index = -1;
                 }
                 if (!vd.vd_internal && vd.vd_column == -1) {
                     vd.vd_column = this->elf_column_count++;
                 }
-                pat.p_value_by_index.push_back(vd);
+                ivd.ivd_value_def = value_iter->second.get();
+                pat.p_value_by_index.push_back(ivd);
             }
         }
 
@@ -1429,7 +1436,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                         this->elf_body_field.get());
         }
 
-        this->elf_pattern_order.push_back(&iter->second);
+        this->elf_pattern_order.push_back(iter->second);
     }
 
     if (this->jlf_json) {
@@ -1472,21 +1479,21 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
     stable_sort(this->elf_level_pairs.begin(), this->elf_level_pairs.end());
 
-    for (std::map<const intern_string_t, value_def>::iterator iter = this->elf_value_defs.begin();
+    for (auto iter = this->elf_value_defs.begin();
          iter != this->elf_value_defs.end();
          ++iter) {
         std::vector<std::string>::iterator act_iter;
 
-        if (!iter->second.vd_internal && iter->second.vd_column == -1) {
-            iter->second.vd_column = this->elf_column_count++;
+        if (!iter->second->vd_internal && iter->second->vd_column == -1) {
+            iter->second->vd_column = this->elf_column_count++;
         }
 
-        if (iter->second.vd_kind == logline_value::VALUE_UNKNOWN) {
-            iter->second.vd_kind = logline_value::VALUE_TEXT;
+        if (iter->second->vd_kind == logline_value::VALUE_UNKNOWN) {
+            iter->second->vd_kind = logline_value::VALUE_TEXT;
         }
 
-        for (act_iter = iter->second.vd_action_list.begin();
-             act_iter != iter->second.vd_action_list.end();
+        for (act_iter = iter->second->vd_action_list.begin();
+             act_iter != iter->second->vd_action_list.end();
              ++act_iter) {
             if (this->lf_action_defs.find(*act_iter) ==
                 this->lf_action_defs.end()) {
@@ -1511,7 +1518,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
         pcre_input pi(iter->s_line);
         bool found = false;
 
-        for (std::vector<pattern *>::iterator pat_iter = this->elf_pattern_order.begin();
+        for (auto pat_iter = this->elf_pattern_order.begin();
              pat_iter != this->elf_pattern_order.end() && !found;
              ++pat_iter) {
             pattern &pat = *(*pat_iter);
@@ -1593,7 +1600,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                              ":invalid sample         -- " +
                              iter->s_line);
 
-            for (std::vector<pattern *>::iterator pat_iter = this->elf_pattern_order.begin();
+            for (auto pat_iter = this->elf_pattern_order.begin();
                  pat_iter != this->elf_pattern_order.end();
                  ++pat_iter) {
                 pattern &pat = *(*pat_iter);
@@ -1621,17 +1628,18 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
     }
 
-    for (std::map<const intern_string_t, value_def>::iterator iter = this->elf_value_defs.begin();
+    for (auto iter = this->elf_value_defs.begin();
          iter != this->elf_value_defs.end();
          ++iter) {
-        if (iter->second.vd_foreign_key || iter->second.vd_identifier) {
+        if (iter->second->vd_foreign_key || iter->second->vd_identifier) {
             continue;
         }
 
-        switch (iter->second.vd_kind) {
+        switch (iter->second->vd_kind) {
             case logline_value::VALUE_INTEGER:
             case logline_value::VALUE_FLOAT:
-                this->elf_numeric_value_defs.push_back(&iter->second);
+                iter->second->vd_values_index = this->elf_numeric_value_defs.size();
+                this->elf_numeric_value_defs.push_back(iter->second);
                 break;
             default:
                 break;
@@ -1645,7 +1653,6 @@ void external_log_format::build(std::vector<std::string> &errors) {
          iter != this->jlf_line_format.end();
          ++iter, format_index++) {
         static const intern_string_t ts = intern_string::lookup("__timestamp__");
-        map<const intern_string_t, value_def>::iterator vd_iter;
         json_format_element &jfe = *iter;
 
         if (jfe.jfe_value.empty() && !jfe.jfe_ts_format.empty()) {
@@ -1653,8 +1660,8 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
 
         switch (jfe.jfe_type) {
-            case JLF_VARIABLE:
-                vd_iter = this->elf_value_defs.find(jfe.jfe_value);
+            case JLF_VARIABLE: {
+                auto vd_iter = this->elf_value_defs.find(jfe.jfe_value);
                 if (jfe.jfe_value != ts &&
                     vd_iter == this->elf_value_defs.end()) {
                     char index_str[32];
@@ -1668,6 +1675,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                                      jfe.jfe_value.to_string());
                 }
                 break;
+            }
             default:
                 break;
         }
@@ -1716,7 +1724,7 @@ bool external_log_format::match_samples(const vector<sample> &samples) const
     for (vector<sample>::const_iterator sample_iter = samples.begin();
          sample_iter != samples.end();
          ++sample_iter) {
-        for (std::vector<external_log_format::pattern *>::const_iterator pat_iter = this->elf_pattern_order.begin();
+        for (auto pat_iter = this->elf_pattern_order.begin();
              pat_iter != this->elf_pattern_order.end();
              ++pat_iter) {
             pattern &pat = *(*pat_iter);
@@ -1744,14 +1752,13 @@ public:
     };
 
     void get_columns(vector<vtab_column> &cols) {
-        std::map<const intern_string_t, external_log_format::value_def>::const_iterator iter;
         const external_log_format &elf = this->elt_format;
 
         cols.resize(elf.elf_column_count);
-        for (iter = elf.elf_value_defs.begin();
+        for (auto iter = elf.elf_value_defs.begin();
              iter != elf.elf_value_defs.end();
              ++iter) {
-            const external_log_format::value_def &vd = iter->second;
+            const auto &vd = *iter->second;
             int type = 0;
 
             if (vd.vd_column == -1) {
@@ -1785,14 +1792,12 @@ public:
 
     void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {
-        std::map<const intern_string_t, external_log_format::value_def>::const_iterator iter;
-
         log_vtab_impl::get_foreign_keys(keys_inout);
 
-        for (iter = this->elt_format.elf_value_defs.begin();
+        for (auto iter = this->elt_format.elf_value_defs.begin();
              iter != this->elt_format.elf_value_defs.end();
              ++iter) {
-            if (iter->second.vd_foreign_key) {
+            if (iter->second->vd_foreign_key) {
                 keys_inout.push_back(iter->first.to_string());
             }
         }

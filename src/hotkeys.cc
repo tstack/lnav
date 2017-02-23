@@ -1213,6 +1213,15 @@ void handle_paging_key(int ch)
             }
             break;
 
+        case 'x':
+            if (tc->toggle_hide_fields()) {
+                lnav_data.ld_rl_view->set_value("Showing hidden fields");
+            } else {
+                lnav_data.ld_rl_view->set_value("Hiding hidden fields");
+            }
+            tc->set_needs_update();
+            break;
+
         case 'X':
             lnav_data.ld_rl_view->set_value(execute_command(ec, "close"));
             break;
