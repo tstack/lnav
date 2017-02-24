@@ -492,7 +492,7 @@ COMMANDS
 
   show-fields <field-name> [<field-name2> ... <field-nameN>]
                     Show log messages fields that were previously hidden with
-                    the 'hide-fields' command.
+                    the ':hide-fields' command.
 
   highlight <regex> Highlight strings that match the given regular
                     expression.

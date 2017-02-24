@@ -12,7 +12,7 @@ lnav v0.8.2:
        command used to rewrite the field in the pretty-printed version of a
        log message.  For example, the HTTP access log format will rewrite the
        status code field to include the textual version (e.g. 200 (OK)).
-     * Log message fields can now be hidden using the 'hide-fields' command or
+     * Log message fields can now be hidden using the :hide-fields" command or
        by setting the 'hidden' property in the log format.  When hidden, the
        fields will be replaced with a yellow ellipsis when displayed.  Hiding
        large fields that contain extra details can make the log easier to read.
