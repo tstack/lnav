@@ -352,7 +352,7 @@ void readline_regex_highlighter(attr_line_t &al, int x)
 
 void readline_command_highlighter(attr_line_t &al, int x)
 {
-    static const pcrepp RE_PREFIXES("^:(filter-in|filter-out|highlight|graph)");
+    static const pcrepp RE_PREFIXES("^:(filter-in|filter-out|highlight)");
     static const pcrepp SH_PREFIXES("^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
     static int keyword_attrs = (
             A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));

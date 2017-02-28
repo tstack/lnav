@@ -187,6 +187,18 @@ struct line_range {
         return this->contains(other.lr_start) || this->contains(other.lr_end);
     };
 
+    void shift(int32_t start, int32_t amount) {
+        if (this->lr_start >= start) {
+            this->lr_start = std::max(start, this->lr_start + amount);
+        }
+        if (this->lr_end != -1 && start < this->lr_end) {
+            this->lr_end += amount;
+            if (this->lr_end < this->lr_start) {
+                this->lr_end = this->lr_start;
+            }
+        }
+    };
+
     void ltrim(const char *str) {
         while (this->lr_start < this->lr_end && isspace(str[this->lr_start])) {
             this->lr_start += 1;
@@ -316,14 +328,7 @@ inline void remove_string_attr(string_attrs_t &sa, const struct line_range &lr)
 inline void shift_string_attrs(string_attrs_t &sa, int32_t start, int32_t amount)
 {
     for (string_attrs_t::iterator iter = sa.begin(); iter != sa.end(); ++iter) {
-        struct line_range *existing_lr = &iter->sa_range;
-
-        if (existing_lr->lr_start >= start) {
-            existing_lr->lr_start += amount;
-        }
-        if (existing_lr->lr_end != -1 && start < existing_lr->lr_end) {
-            existing_lr->lr_end += amount;
-        }
+        iter->sa_range.shift(start, amount);
     }
 }
 
@@ -537,9 +542,10 @@ private:
  */
 class view_colors {
 public:
-    /** The number of colors used for highlighting. */
-    static const int HL_BASIC_COLOR_COUNT = 4;
-    static const int HL_COLOR_COUNT = 2 * HL_BASIC_COLOR_COUNT + 9 * 6;
+    static const unsigned long BASIC_COLOR_COUNT = 8;
+    static const unsigned long HI_COLOR_COUNT = 6 * 3 * 3;
+
+    static int BASIC_HL_PAIRS[BASIC_COLOR_COUNT];
 
     /** Roles that can be mapped to curses attributes using attrs_for_role() */
     typedef enum {
@@ -565,6 +571,7 @@ public:
         VCR_STRING,
         VCR_COMMENT,
         VCR_VARIABLE,
+        VCR_FILE,
 
         VCR_DIFF_DELETE,        /*< Deleted line in a diff. */
         VCR_DIFF_ADD,           /*< Added line in a diff. */
@@ -573,9 +580,6 @@ public:
         VCR_LOW_THRESHOLD,
         VCR_MED_THRESHOLD,
         VCR_HIGH_THRESHOLD,
-
-        VCR_HIGHLIGHT_START,
-        VCR_HIGHLIGHT_END = VCR_HIGHLIGHT_START + HL_COLOR_COUNT,
 
         VCR__MAX
     } role_t;
@@ -612,27 +616,16 @@ public:
         return this->vc_role_reverse_colors[role];
     };
 
-    /**
-     * @return The next set of attributes to use for highlighting text.  This
-     * method will iterate through eight-or-so attributes combinations so there
-     * is some variety in how text is highlighted.
-     */
-    role_t next_highlight();
-
-    role_t next_plain_highlight();
-
     int attrs_for_ident(const char *str, size_t len) const {
-        int index = crc32(1, (const Bytef*)str, len);
+        unsigned long index = crc32(1, (const Bytef*)str, len);
         int retval;
 
         if (COLORS >= 256) {
-            retval = this->vc_role_colors[
-                VCR_HIGHLIGHT_START + HL_BASIC_COLOR_COUNT * 2 +
-                (abs(index) % (HL_COLOR_COUNT - HL_BASIC_COLOR_COUNT * 2))];
+            unsigned long offset = index % HI_COLOR_COUNT;
+            retval = COLOR_PAIR(VC_ANSI_END + offset);
         }
         else {
-            retval = this->vc_role_colors[
-                VCR_HIGHLIGHT_START + (abs(index) % HL_COLOR_COUNT)];
+            retval = BASIC_HL_PAIRS[index % BASIC_COLOR_COUNT];
         }
 
         return retval;
@@ -662,13 +655,12 @@ private:
     /** Private constructor that initializes the member fields. */
     view_colors();
 
+    static bool initialized;
+
     /** Map of role IDs to attribute values. */
     int vc_role_colors[VCR__MAX];
     /** Map of role IDs to reverse-video attribute values. */
     int vc_role_reverse_colors[VCR__MAX];
-    /** The index of the next highlight color to use. */
-    int vc_next_highlight;
-    int vc_next_plain_highlight;
 };
 
 enum mouse_button_t {

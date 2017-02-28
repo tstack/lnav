@@ -56,6 +56,7 @@
 
 #include "lnav_log.hh"
 #include "auto_mem.hh"
+#include "intern_string.hh"
 
 #include <stdio.h>
 
@@ -126,7 +127,7 @@ public:
     /** @return An iterator that refers to the end of the capture array. */
     iterator end() { return pc_captures + pc_count; };
 
-    capture_t *operator[](int offset) {
+    capture_t *operator[](int offset) const {
         if (offset < 0) {
             return NULL;
         }
@@ -235,6 +236,10 @@ public:
                            iter->length());
     };
 
+    const intern_string_t get_substr_i(pcre_context::const_iterator iter) const {
+        return intern_string::lookup(&this->pi_string[iter->c_begin], iter->length());
+    };
+
     void get_substr(pcre_context::const_iterator iter, char *dst) const {
         memcpy(dst, &this->pi_string[iter->c_begin], iter->length());
         dst[iter->length()] = '\0';
@@ -307,6 +312,21 @@ struct pcre_named_capture {
     char pnc_index_msb;
     char pnc_index_lsb;
     char pnc_name[];
+};
+
+struct pcre_extractor {
+    const pcre_context &pe_context;
+    const pcre_input &pe_input;
+
+    template<typename T>
+    intern_string_t get_substr_i(T name) const {
+        return this->pe_input.get_substr_i(this->pe_context[name]);
+    };
+
+    template<typename T>
+    std::string get_substr(T name) const {
+        return this->pe_input.get_substr(this->pe_context[name]);
+    };
 };
 
 class pcrepp {
@@ -528,7 +548,7 @@ public:
         } while (length > 0);
 
         return length;
-    }
+    };
 
 #ifdef PCRE_STUDY_JIT_COMPILE
     static pcre_jit_stack *jit_stack(void);

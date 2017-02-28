@@ -1,6 +1,41 @@
 #! /bin/bash
 
 run_test ${lnav_test} -n \
+    -c ":hide-fields foobar" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "hide-fields with unknown" <<EOF
+error: unknown field(s) -- foobar
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":hide-fields cs_uri_stem" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "hide-fields with uri" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET ... HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET ... HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET ... HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":hide-fields c_ip cs_uri_stem" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "hide-fields with IP and uri" <<EOF
+... - - [20/Jul/2009:22:59:26 +0000] "GET ... HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+... - - [20/Jul/2009:22:59:29 +0000] "GET ... HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+... - - [20/Jul/2009:22:59:29 +0000] "GET ... HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -f- -n < ${test_dir}/formats/scripts/multiline-echo.lnav
+
+check_output "executing stdin failed" <<EOF
+Hello, World!
+Goodbye, World!
+EOF
+
+run_test ${lnav_test} -n \
     -c ":config /bad/option" \
     ${test_dir}/logfile_access_log.0
 
@@ -538,6 +573,7 @@ run_test ${lnav_test} -n \
     -c ":switch-to-view pretty" \
     ${test_dir}/textfile_quoted_json.0
 check_output "pretty-printer is not working for quoted text" <<EOF
+''
 {
   "foo bar": null,
   "array": [
@@ -550,6 +586,7 @@ check_output "pretty-printer is not working for quoted text" <<EOF
     "two": true
   }
 }
+''
 EOF
 
 run_test ${lnav_test} -n \
@@ -557,7 +594,6 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_vami.0
 check_output "pretty-printer is not working" <<EOF
 2015-03-12T23:16:52.071:INFO:com.root:Response :
-
 <?xml version="1.0"?>
 <response>
     <locale>en-US</locale>
@@ -611,16 +647,15 @@ Apr  7 00:49:42 Tim-Stacks-iMac kernel[0]: Ethernet [AppleBCM5701Ethernet]: Link
     3800
 ]
 Apr  7 05:49:53 Tim-Stacks-iMac.local GoogleSoftwareUpdateDaemon[17212]: -[KSUpdateCheckAction performAction]
- KSUpdateCheckAction running KSServerUpdateRequest:
-<KSOmahaServerUpdateRequest:0x511f30
-		server=<KSOmahaServer:0x510d80>
+KSUpdateCheckAction running KSServerUpdateRequest: <KSOmahaServerUpdateRequest:0x511f30
+server=
+<KSOmahaServer:0x510d80>
     url="https://tools.google.com/service/update2"
     runningFetchers=0
     tickets=1
     activeTickets=1
     rollCallTickets=1
     body=
-
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <o:gupdate xmlns:o="http://www.google.com/update2/request" protocol="2.0" version="KeystoneDaemon-1.2.0.7709" ismachine="1" requestid="{0DFDBCD1-5E29-4DFC-BD99-31A2397198FE}">
         <o:os platform="mac" version="MacOSX" sp="10.10.2_x86_64h"></o:os>
@@ -629,9 +664,9 @@ Apr  7 05:49:53 Tim-Stacks-iMac.local GoogleSoftwareUpdateDaemon[17212]: -[KSUpd
             <o:updatecheck></o:updatecheck>
         </o:app>
     </o:gupdate>
-    >
+>
 Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: WARNING: The Gestalt selector gestaltSystemVersion is returning 10.9.2 instead of 10.10.2. Use NSProcessInfo's operatingSystemVersion property to get correct system version number.
-	Call location:
+Call location:
 Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: 0   CarbonCore                          0x00007fff8a9b3d9b ___Gestalt_SystemVersion_block_invoke + 113
 Apr  7 07:31:56 Tim-Stacks-iMac.local VirtualBox[36403]: 1   libdispatch.dylib                   0x00007fff8bc84c13 _dispatch_client_callout + 8
 Apr  7 07:32:56 Tim-Stacks-iMac.local logger[234]: Bad data {
@@ -665,6 +700,25 @@ run_test ${lnav_test} -n \
 
 check_error_output "clear-highlight did not report an error?" <<EOF
 error: highlight does not exist
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":zoom-to 4-hour" \
+    ${test_dir}/textfile_json_indented.0
+
+check_output "histogram is not working?" <<EOF
+{
+  "foo bar": null,
+  "array": [
+    1,
+    2,
+    3
+  ],
+  "obj": {
+    "one": 1,
+    "two": true
+  }
+}
 EOF
 
 touch -t 200711030923 ${srcdir}/logfile_syslog.0

@@ -35,6 +35,14 @@
 #include "lnav_util.hh"
 #include "../src/lnav_util.hh"
 
+static const char *GOOD_TIMES[] = {
+    "May 01 00:00:01",
+    "May 10 12:00:01",
+    "2014-02-11 16:12:34",
+
+    NULL
+};
+
 static const char *BAD_TIMES[] = {
     "1-2-3 1:2:3",
 
@@ -49,16 +57,35 @@ static const char *BAD_TIMES[] = {
 int main(int argc, char *argv[])
 {
     setenv("TZ", "UTC", 1);
+
+    for (int lpc = 0; GOOD_TIMES[lpc]; lpc++) {
+        date_time_scanner dts;
+        struct timeval tv;
+        struct exttm tm;
+        const char *rc;
+
+        rc = dts.scan(GOOD_TIMES[lpc], strlen(GOOD_TIMES[lpc]), NULL, &tm, tv);
+        printf("ret %s %p\n", GOOD_TIMES[lpc], rc);
+        assert(rc != NULL);
+
+        char ts[64];
+
+        dts.ftime(ts, sizeof(ts), tm);
+        printf("orig %s\n", GOOD_TIMES[lpc]);
+        printf("loop %s\n", ts);
+        assert(strcmp(ts, GOOD_TIMES[lpc]) == 0);
+    }
+
     {
         date_time_scanner dts;
         struct timeval tv;
 
-        dts.convert_to_timeval("@40000000433225833b6e1a8c", -1, tv);
+        dts.convert_to_timeval("@40000000433225833b6e1a8c", -1, NULL, tv);
         assert(tv.tv_sec == 1127359865);
         assert(tv.tv_usec == 997071);
 
         memset(&tv, 0, sizeof(tv));
-        dts.convert_to_timeval("@4000000043322583", -1, tv);
+        dts.convert_to_timeval("@4000000043322583", -1, NULL, tv);
         assert(tv.tv_sec == 1127359865);
         assert(tv.tv_usec == 0);
     }

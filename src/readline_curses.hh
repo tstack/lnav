@@ -43,6 +43,7 @@
 
 #include <map>
 #include <set>
+#include <stack>
 #include <string>
 #include <vector>
 #include <exception>
@@ -52,8 +53,13 @@
 
 #include "auto_fd.hh"
 #include "vt52_curses.hh"
+#include "log_format.hh"
+
+struct exec_context;
 
 typedef void (*readline_highlighter_t)(attr_line_t &line, int x);
+
+extern exec_context INIT_EXEC_CONTEXT;
 
 /**
  * Container for information related to different readline contexts.  Since
@@ -62,7 +68,7 @@ typedef void (*readline_highlighter_t)(attr_line_t &line, int x);
  */
 class readline_context {
 public:
-    typedef std::string (*command_func_t)(
+    typedef std::string (*command_func_t)(exec_context &ec,
             std::string cmdline, std::vector<std::string> &args);
     typedef struct {
         const char *c_name;
@@ -96,7 +102,7 @@ public:
                 std::string cmd = iter->first;
 
                 this->rc_possibilities["__command"].insert(cmd);
-                iter->second.c_func(cmd, this->rc_prototypes[cmd]);
+                iter->second.c_func(INIT_EXEC_CONTEXT, cmd, this->rc_prototypes[cmd]);
             }
         }
 

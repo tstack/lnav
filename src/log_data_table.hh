@@ -117,7 +117,7 @@ public:
         this->ldt_schema_id = dp.dp_schema_id;
     };
 
-    void get_foreign_keys(std::vector<std::string> &keys_inout)
+    void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
         keys_inout.push_back("log_msg_instance");
@@ -207,7 +207,7 @@ public:
                 memcpy(scan_value,
                     line.get_data() + pvalue.e_capture.c_begin,
                     pvalue.e_capture.length());
-                scan_value[line.length()] = '\0';
+                scan_value[pvalue.e_capture.length()] = '\0';
                 if (sscanf(scan_value, "%lf", &d) != 1) {
                     d = 0.0;
                 }

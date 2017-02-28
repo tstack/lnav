@@ -37,10 +37,10 @@
 
 class grep_highlighter {
 public:
-    grep_highlighter(std::auto_ptr<grep_proc> gp,
+    grep_highlighter(std::unique_ptr<grep_proc> &gp,
                      std::string hl_name,
                      textview_curses::highlight_map_t &hl_map)
-        : gh_grep_proc(gp),
+        : gh_grep_proc(std::move(gp)),
           gh_hl_name(hl_name),
           gh_hl_map(hl_map) { };
 
@@ -52,7 +52,7 @@ public:
     grep_proc *get_grep_proc() { return this->gh_grep_proc.get(); };
 
 private:
-    std::auto_ptr<grep_proc> gh_grep_proc;
+    std::unique_ptr<grep_proc> gh_grep_proc;
     std::string gh_hl_name;
     textview_curses::highlight_map_t &gh_hl_map;
 };

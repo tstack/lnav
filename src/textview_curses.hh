@@ -40,6 +40,7 @@
 #include "lnav_log.hh"
 #include "concise_index.hh"
 #include "logfile.hh"
+#include "text_format.hh"
 
 class logfile;
 class logline;
@@ -179,7 +180,7 @@ protected:
 
 class filter_stack {
 public:
-    typedef std::vector<text_filter *>::iterator iterator;
+    typedef std::vector<std::shared_ptr<text_filter>>::iterator iterator;
 
     iterator begin() {
         return this->fs_filters.begin();
@@ -220,20 +221,17 @@ public:
         throw "No more filters";
     };
 
-    void add_filter(text_filter *filter) {
+    void add_filter(std::shared_ptr<text_filter> filter) {
         this->fs_filters.push_back(filter);
     };
 
     void clear_filters(void) {
         while (!this->fs_filters.empty()) {
-            text_filter *tf = this->fs_filters.back();
-
             this->fs_filters.pop_back();
-            delete tf;
         }
     };
 
-    void set_filter_enabled(text_filter *filter, bool enabled) {
+    void set_filter_enabled(std::shared_ptr<text_filter> filter, bool enabled) {
         if (enabled) {
             filter->enable();
         }
@@ -242,12 +240,12 @@ public:
         }
     }
 
-    text_filter *get_filter(std::string id)
+    std::shared_ptr<text_filter> get_filter(std::string id)
     {
-        std::vector<text_filter *>::iterator iter;
-        text_filter *         retval = NULL;
+        auto iter = this->fs_filters.begin();
+        std::shared_ptr<text_filter> retval;
 
-        for (iter = this->fs_filters.begin();
+        for (;
              iter != this->fs_filters.end() && (*iter)->get_id() != id;
              iter++) { }
         if (iter != this->fs_filters.end()) {
@@ -258,9 +256,9 @@ public:
     };
 
     bool delete_filter(std::string id) {
-        std::vector<text_filter *>::iterator iter;
+        auto iter = this->fs_filters.begin();
 
-        for (iter = this->fs_filters.begin();
+        for (;
              iter != this->fs_filters.end() && (*iter)->get_id() != id;
              iter++) {
 
@@ -276,7 +274,7 @@ public:
     void get_enabled_mask(uint32_t &filter_in_mask, uint32_t &filter_out_mask) {
         filter_in_mask = filter_out_mask = 0;
         for (iterator iter = this->begin(); iter != this->end(); ++iter) {
-            text_filter *tf = (*iter);
+            std::shared_ptr<text_filter> tf = (*iter);
             if (tf->is_enabled()) {
                 uint32_t bit = (1UL << tf->get_index());
 
@@ -296,7 +294,7 @@ public:
     };
 
 private:
-    std::vector<text_filter *> fs_filters;
+    std::vector<std::shared_ptr<text_filter>> fs_filters;
 };
 
 class text_time_translator {
@@ -400,6 +398,10 @@ public:
         return 0;
     };
 
+    virtual text_format_t get_text_format() const {
+        return TF_UNKNOWN;
+    };
+
 private:
     filter_stack tss_filters;
 };
@@ -434,29 +436,19 @@ public:
 
     static string_attr_type SA_ORIGINAL_LINE;
     static string_attr_type SA_BODY;
+    static string_attr_type SA_HIDDEN;
 
     struct highlighter {
         highlighter()
             : h_code(NULL),
               h_code_extra(NULL),
-              h_multiple(false) { };
-        highlighter(pcre *code,
-                    bool multiple = false,
-                    view_colors::role_t role = view_colors::VCR_NONE)
-            : h_code(code),
-              h_multiple(multiple)
+              h_attrs(-1),
+              h_text_format(TF_UNKNOWN) { };
+        highlighter(pcre *code)
+            : h_code(code), h_attrs(-1), h_text_format(TF_UNKNOWN)
         {
             const char *errptr;
 
-            if (!multiple) {
-                if (role == view_colors::VCR_NONE) {
-                    this->h_roles.
-                    push_back(view_colors::singleton().next_highlight());
-                }
-                else {
-                    this->h_roles.push_back(role);
-                }
-            }
             this->h_code_extra = pcre_study(this->h_code, 0, &errptr);
             if (!this->h_code_extra && errptr) {
                 log_error("pcre_study error: %s", errptr);
@@ -471,34 +463,35 @@ public:
             }
         };
 
-        view_colors::role_t              get_role(unsigned int index)
-        {
-            view_colors &       vc = view_colors::singleton();
-            view_colors::role_t retval;
+        highlighter &with_role(view_colors::role_t role) {
+            this->h_attrs = view_colors::singleton().attrs_for_role(role);
 
-            if (this->h_multiple) {
-                while (index >= this->h_roles.size()) {
-                    this->h_roles.push_back(vc.next_highlight());
-                }
-                retval = this->h_roles[index];
-            }
-            else {
-                retval = this->h_roles[0];
-            }
-
-            return retval;
+            return *this;
         };
 
-        int                              get_attrs(int index)
+        highlighter &with_attrs(int attrs) {
+            this->h_attrs = attrs;
+
+            return *this;
+        };
+
+        highlighter &with_text_format(text_format_t tf) {
+            this->h_text_format = tf;
+
+            return *this;
+        }
+
+        int get_attrs() const
         {
-            return view_colors::singleton().
-                   attrs_for_role(this->get_role(index));
+            ensure(this->h_attrs != -1);
+
+            return this->h_attrs;
         };
 
         pcre *                           h_code;
         pcre_extra *                     h_code_extra;
-        bool                             h_multiple;
-        std::vector<view_colors::role_t> h_roles;
+        int h_attrs;
+        text_format_t h_text_format;
     };
 
     textview_curses();
@@ -578,13 +571,14 @@ public:
     {
         highlighter &hl       = this->tc_highlights[highlight_name];
         int          prev_hit = -1, next_hit = INT_MAX;
-        std::string  str;
 
         for (; start < end; ++start) {
+            attr_line_t al;
             int off;
 
-            this->tc_sub_source->text_value_for_line(*this, start, str);
+            this->listview_value_for_row(*this, start, al);
 
+            const std::string &str = al.get_string();
             for (off = 0; off < (int)str.size(); ) {
                 int rc, matches[128];
 
@@ -640,17 +634,26 @@ public:
 
     void grep_end_batch(grep_proc &gp)
     {
-        if (this->tc_follow_search &&
-            !this->tc_bookmarks[&BM_SEARCH].empty()) {
-            vis_line_t first_hit;
+        if (this->tc_follow_deadline.tv_sec) {
+            struct timeval now;
 
-            first_hit = this->tc_bookmarks[&BM_SEARCH].
-                        next(vis_line_t(this->get_top() - 1));
-            if (first_hit != -1) {
-                if (first_hit > 0) {
-                    --first_hit;
+            gettimeofday(&now, NULL);
+            if (this->tc_follow_deadline < now) {
+                this->tc_follow_deadline.tv_sec = 0;
+                this->tc_follow_deadline.tv_usec = 0;
+            } else if (!this->tc_bookmarks[&BM_SEARCH].empty()) {
+                vis_line_t first_hit;
+
+                first_hit = this->tc_bookmarks[&BM_SEARCH].next(
+                    vis_line_t(this->get_top() - 1));
+                if (first_hit != -1) {
+                    if (first_hit > 0) {
+                        --first_hit;
+                    }
+                    if (first_hit > this->get_top()) {
+                        this->set_top(first_hit);
+                    }
                 }
-                this->set_top(first_hit);
             }
         }
         this->tc_search_action.invoke(this);
@@ -705,7 +708,14 @@ public:
 
     bool is_searching(void) { return this->tc_searching; };
 
-    void set_follow_search(bool fs) { this->tc_follow_search = fs; };
+    void set_follow_search_for(int64_t ms_to_deadline) {
+        struct timeval now, tv;
+
+        tv.tv_sec = ms_to_deadline / 1000;
+        tv.tv_usec = (ms_to_deadline % 1000) * 1000;
+        gettimeofday(&now, NULL);
+        timeradd(&now, &tv, &this->tc_follow_deadline);
+    };
 
     size_t get_match_count(void)
     {
@@ -735,6 +745,14 @@ public:
         }
     };
 
+    bool toggle_hide_fields() {
+        bool retval = this->tc_hide_fields;
+
+        this->tc_hide_fields = !this->tc_hide_fields;
+
+        return retval;
+    }
+
 protected:
     text_sub_source *tc_sub_source;
     text_delegate *tc_delegate;
@@ -742,7 +760,7 @@ protected:
     vis_bookmarks tc_bookmarks;
 
     bool   tc_searching;
-    bool   tc_follow_search;
+    struct timeval tc_follow_deadline;
     action tc_search_action;
 
     highlight_map_t           tc_highlights;
@@ -751,5 +769,6 @@ protected:
     vis_line_t tc_selection_start;
     vis_line_t tc_selection_last;
     bool tc_selection_cleared;
+    bool tc_hide_fields;
 };
 #endif

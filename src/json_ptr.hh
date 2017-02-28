@@ -40,8 +40,10 @@
 #include <string>
 #include <vector>
 
-#include "yajlpp.hh"
+#include "auto_mem.hh"
+#include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_tree.h"
+#include "yajl/api/yajl_gen.h"
 #include "lnav_log.hh"
 
 class json_ptr_walk {
@@ -182,6 +184,42 @@ public:
 
         return retval;
     };
+
+    static size_t decode(char *dst, const char *src, ssize_t src_len = -1) {
+        size_t retval = 0;
+
+        if (src_len == -1) {
+            src_len = strlen(src);
+        }
+
+        for (int lpc = 0; lpc < src_len; lpc++) {
+            switch (src[lpc]) {
+                case '~':
+                    if ((lpc + 1) < src_len) {
+                        switch (src[lpc + 1]) {
+                            case '0':
+                                dst[retval++] = '~';
+                                lpc += 1;
+                                break;
+                            case '1':
+                                dst[retval++] = '/';
+                                lpc += 1;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    break;
+                default:
+                    dst[retval++] = src[lpc];
+                    break;
+            }
+        }
+
+        dst[retval] = '\0';
+
+        return retval;
+    }
 
     json_ptr(const char *value)
         : jp_value(value), jp_pos(value), jp_depth(0), jp_array_index(-1),

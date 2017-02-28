@@ -23,8 +23,6 @@ export PATH=${FAKE_ROOT}/bin:${PATH}
 saved_LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${FAKE_ROOT}/lib
 ./autogen.sh
-export PATH=${saved_PATH}
-export LD_LIBRARY_PATH=${saved_LD_LIBRARY_PATH}
 
 rm -rf ~/github/lbuild
 mkdir -p ~/github/lbuild
@@ -48,6 +46,11 @@ fi
 
 make -j2 && strip -o /vagrant/lnav src/lnav
 
-mkdir instdir
-make install-strip DESTDIR=$PWD/instdir
-(cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
+if test x"${OS}" != x"FreeBSD"; then
+    mkdir instdir
+    make install-strip DESTDIR=$PWD/instdir
+    (cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
+fi
+
+export PATH=${saved_PATH}
+export LD_LIBRARY_PATH=${saved_LD_LIBRARY_PATH}

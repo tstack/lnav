@@ -166,6 +166,17 @@ Apr 10 02:58:07 2015 -- 456
 EOF
 
 
+run_test ./drive_logfile -t -f epoch_log ${srcdir}/logfile_epoch.1
+
+check_error_output "epoch" <<EOF
+EOF
+
+check_output "epoch_log timestamp interpreted incorrectly?" <<EOF
+Apr 09 19:58:07 2015 -- 123
+Apr 09 19:58:07 2015 -- 456
+EOF
+
+
 touch -t 201509130923 ${srcdir}/logfile_syslog_with_mixed_times.0
 run_test ./drive_logfile -t -f syslog_log ${srcdir}/logfile_syslog_with_mixed_times.0
 
@@ -321,3 +332,19 @@ error:logfile_bad_access_log.0:1:line did not match format access_log/regex/std
 error:logfile_bad_access_log.0:1:         line -- 192.168.202.254 [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 error:logfile_bad_access_log.0:1:partial match -- 192.168.202.254
 EOF
+
+run_test ${lnav_test} -n -I ${test_dir} ${srcdir}/logfile_epoch.0
+
+check_output "rewriting machine-oriented timestamp didn't work?" <<EOF
+2015-04-10 02:58:07.123000 Hello, World!
+2015-04-10 02:58:07.456000 Goodbye, World!
+EOF
+
+# XXX get this working...
+# run_test ${lnav_test} -n -I ${test_dir} <(cat ${srcdir}/logfile_access_log.0)
+#
+# check_output "opening a FIFO didn't work?" <<EOF
+# 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+# 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+# 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+# EOF

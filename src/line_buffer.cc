@@ -627,3 +627,14 @@ bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
 
     return true;
 }
+
+void line_buffer::read_available(shared_buffer_ref &sbr) throw(error)
+{
+    sbr.disown();
+
+    size_t len = this->lb_buffer_size;
+
+    char *line_start = this->get_range(this->lb_file_offset, len);
+
+    sbr.share(this->lb_share_manager, line_start, len);
+}

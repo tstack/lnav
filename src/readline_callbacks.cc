@@ -64,11 +64,14 @@ void rl_change(void *dummy, readline_curses *rc)
                 lnav_data.ld_bottom_source.grep_error("");
             }
             else if (args[0] == "config" && args.size() > 1) {
-                json_schema::path_to_handler_t::iterator path_iter;
+                yajlpp_parse_context ypc("input", lnav_config_handlers);
 
-                path_iter = lnav_config_schema.js_path_to_handler.find(args[1]);
-                if (path_iter != lnav_config_schema.js_path_to_handler.end()) {
-                    const json_path_handler_base *jph = path_iter->second;
+                ypc.set_path(args[1])
+                    .with_obj(lnav_config);
+                ypc.update_callbacks();
+
+                if (ypc.ypc_current_handler != NULL) {
+                    const json_path_handler_base *jph = ypc.ypc_current_handler;
                     char help_text[1024];
 
                     snprintf(help_text, sizeof(help_text),
@@ -202,7 +205,10 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
 void rl_search(void *dummy, readline_curses *rc)
 {
+    textview_curses *tc = lnav_data.ld_view_stack.top();
+
     rl_search_internal(dummy, rc);
+    tc->set_follow_search_for(60 * 60 * 1000);
 }
 
 void rl_abort(void *dummy, readline_curses *rc)
@@ -230,6 +236,7 @@ void rl_abort(void *dummy, readline_curses *rc)
 
 void rl_callback(void *dummy, readline_curses *rc)
 {
+    exec_context &ec = lnav_data.ld_exec_context;
     string alt_msg;
 
     lnav_data.ld_bottom_source.set_prompt("");
@@ -240,7 +247,7 @@ void rl_callback(void *dummy, readline_curses *rc)
 
     case LNM_COMMAND:
         rc->set_alt_value("");
-        rc->set_value(execute_command(rc->get_value()));
+        rc->set_value(execute_command(ec, rc->get_value()));
         break;
 
     case LNM_SEARCH:
@@ -253,7 +260,7 @@ void rl_callback(void *dummy, readline_curses *rc)
             if (pfile.in() != NULL) {
                 fprintf(pfile, "%s", rc->get_value().c_str());
             }
-            lnav_data.ld_view_stack.top()->set_follow_search(false);
+            lnav_data.ld_view_stack.top()->set_follow_search_for(750);
             rc->set_value("search: " + rc->get_value());
             rc->set_alt_value(HELP_MSG_2(
                                   n, N,
@@ -261,10 +268,17 @@ void rl_callback(void *dummy, readline_curses *rc)
         }
         break;
 
-    case LNM_SQL:
-        rc->set_value(execute_sql(rc->get_value(), alt_msg));
+    case LNM_SQL: {
+        string result = execute_sql(ec, rc->get_value(), alt_msg);
+
+        if (!result.empty()) {
+            result = "SQL Result: " + result;
+        }
+
+        rc->set_value(result);
         rc->set_alt_value(alt_msg);
         break;
+    }
 
     case LNM_EXEC: {
         char fn_template[PATH_MAX];
@@ -291,7 +305,7 @@ void rl_callback(void *dummy, readline_curses *rc)
 
                 if ((tmpout = fdopen(fd, "w+")) != NULL) {
                     lnav_data.ld_output_stack.push(tmpout);
-                    string result = execute_file(path_and_args);
+                    string result = execute_file(ec, path_and_args);
                     string::size_type lf_index = result.find('\n');
                     if (lf_index != string::npos) {
                         result = result.substr(0, lf_index);

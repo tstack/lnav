@@ -9,20 +9,6 @@ export PATH=${FAKE_ROOT}/bin:${PATH}
 
 cd ~/github
 
-PACKAGE_URLS="\
-    http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz \
-    http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz \
-    ftp://invisible-island.net/ncurses/ncurses-5.9.tar.gz \
-    ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.38.tar.gz \
-    ftp://ftp.cwru.edu/pub/bash/readline-6.3.tar.gz \
-    http://zlib.net/zlib-1.2.8.tar.gz \
-    http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz \
-    http://sqlite.org/2016/sqlite-autoconf-3120000.tar.gz \
-    http://openssl.org/source/openssl-1.0.1p.tar.gz \
-    http://www.libssh2.org/download/libssh2-1.7.0.tar.gz \
-    http://curl.haxx.se/download/curl-7.48.0.tar.gz \
-    "
-
 SQLITE_CFLAGS="\
     -DSQLITE_ENABLE_COLUMN_METADATA \
     -DSQLITE_SOUNDEX \
@@ -31,21 +17,18 @@ SQLITE_CFLAGS="\
     -DSQLITE_ENABLE_JSON1 \
     "
 
-cd ~/packages
-
-for url in $PACKAGE_URLS; do
-    wget --no-check-certificate -N $url
-done
 
 cd ~/extract
 
-for pkg in ~/packages/*.tar.gz; do
+for pkg in /vagrant/pkgs/*.tar.gz; do
     tar xfz $pkg
 done
 
 (cd autoconf-2.69 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
 (cd automake-1.15 && ./configure --prefix=${FAKE_ROOT} && make && make install)
+
+(cd make-4.2.1 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
 OS=$(uname -s)
 
@@ -55,7 +38,7 @@ OS=$(uname -s)
 (cd bzip2-1.0.6 && make install PREFIX=${FAKE_ROOT})
 
 (cd sqlite-* &&
- ./configure --prefix=${FAKE_ROOT} \
+ ./configure --disable-editline --prefix=${FAKE_ROOT} \
      CFLAGS="${SQLITE_CFLAGS}" \
      && \
  make && make install)

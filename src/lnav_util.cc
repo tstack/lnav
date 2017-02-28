@@ -111,7 +111,7 @@ size_t unquote(char *dst, const char *str, size_t len)
             lpc += 1;
         }
         else if (str[lpc] == '\\' && (lpc + 1) < len) {
-            switch (str[lpc] + 1) {
+            switch (str[lpc + 1]) {
                 case 'n':
                     dst[index] = '\n';
                     break;
@@ -319,7 +319,7 @@ static time_t BAD_DATE = -1;
 time_t tm2sec(const struct tm *t)
 {
     int       year;
-    time_t    days;
+    time_t    days, secs;
     const int dayoffset[12] =
     { 306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275 };
 
@@ -341,18 +341,18 @@ time_t tm2sec(const struct tm *t)
     days += dayoffset[t->tm_mon] + t->tm_mday - 1;
     days -= 25508; /* 1 jan 1970 is 25508 days since 1 mar 1900 */
 
-    days = ((days * 24 + t->tm_hour) * 60 + t->tm_min) * 60 + t->tm_sec;
+    secs = ((days * 24 + t->tm_hour) * 60 + t->tm_min) * 60 + t->tm_sec;
 
-    if (days < 0) {
+    if (secs < 0) {
         return BAD_DATE;
     }                          /* must have overflowed */
     else {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
         if (t->tm_zone) {
-            days -= t->tm_gmtoff;
+            secs -= t->tm_gmtoff;
         }
 #endif
-        return days;
+        return secs;
     }                          /* must be a valid time */
 }
 
@@ -547,7 +547,8 @@ const char *date_time_scanner::scan(const char *time_dest,
                 tm_out->et_tm.tm_zone = NULL;
             }
 #endif
-            if (func(tm_out, time_dest, off, time_len)) {
+            if (func(tm_out, time_dest, off, time_len) &&
+                (time_dest[off] == '.' || time_dest[off] == ',' || off == time_len)) {
                 retval = &time_dest[off];
 
                 if (tm_out->et_tm.tm_year < 70) {
@@ -572,7 +573,13 @@ const char *date_time_scanner::scan(const char *time_dest,
         else {
             off_t off = 0;
 
-            if (ptime_fmt(time_fmt[curr_time_fmt], tm_out, time_dest, off, time_len)) {
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+            if (!this->dts_keep_base_tz) {
+                tm_out->et_tm.tm_zone = NULL;
+            }
+#endif
+            if (ptime_fmt(time_fmt[curr_time_fmt], tm_out, time_dest, off, time_len) &&
+                (time_dest[off] == '.' || time_dest[off] == ',' || off == time_len)) {
                 retval = &time_dest[off];
                 if (tm_out->et_tm.tm_year < 70) {
                     tm_out->et_tm.tm_year = 80;
@@ -614,7 +621,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                 this->dts_fmt_len += 7;
                 retval += 7;
             }
-            else if (ptime_F(tm_out, time_dest, off, time_len)) {
+            else if (ptime_L(tm_out, time_dest, off, time_len)) {
                 tv_out.tv_usec = tm_out->et_nsec / 1000;
                 this->dts_fmt_len += 4;
                 retval += 4;
@@ -715,4 +722,33 @@ bool wordexperr(int rc, string &msg)
     }
 
     return true;
+}
+
+size_t abbreviate_str(char *str, size_t len, size_t max_len)
+{
+    size_t last_start = 1;
+
+    if (len < max_len) {
+        return len;
+    }
+
+    for (size_t index = 0; index < len; index++) {
+        switch (str[index]) {
+            case '.':
+            case '-':
+            case '/':
+            case ':':
+                memmove(&str[last_start], &str[index], len - index);
+                len -= (index - last_start);
+                index = last_start + 1;
+                last_start = index + 1;
+
+                if (len < max_len) {
+                    return len;
+                }
+                break;
+        }
+    }
+
+    return len;
 }

@@ -7,7 +7,11 @@
         "line-format" : [
             { "field" : "ts" },
             " ",
-            { "field" : "lvl" },
+            { "timestamp-format" : "abc %S def" },
+            " ",
+            { "field" : "lvl", "min-width": 5 },
+            " ",
+            { "field" : "cl", "max-width": 5},
             " ",
             { "field" : "msg" }
         ],
@@ -22,6 +26,9 @@
             "user" : {
                 "kind" : "string",
                 "identifier" : true
+            },
+            "cl" : {
+                "kind" : "string"
             }
         }
     }

@@ -38,6 +38,7 @@
 #include "ansi_scrubber.hh"
 #include "log_format.hh"
 #include "textview_curses.hh"
+#include "view_curses.hh"
 
 using namespace std;
 
@@ -59,16 +60,19 @@ bookmark_type_t textview_curses::BM_SEARCH("search");
 
 string_attr_type textview_curses::SA_ORIGINAL_LINE;
 string_attr_type textview_curses::SA_BODY;
+string_attr_type textview_curses::SA_HIDDEN;
 
 textview_curses::textview_curses()
     : tc_sub_source(NULL),
       tc_delegate(NULL),
       tc_searching(false),
-      tc_follow_search(false),
       tc_selection_start(-1),
       tc_selection_last(-1),
-      tc_selection_cleared(false)
+      tc_selection_cleared(false),
+      tc_hide_fields(true)
 {
+    this->tc_follow_deadline.tv_sec = 0;
+    this->tc_follow_deadline.tv_usec = 0;
     this->set_data_source(this);
 }
 
@@ -116,12 +120,14 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
                                              vis_line_t row,
                                              attr_line_t &value_out)
 {
+    view_colors &vc = view_colors::singleton();
     bookmark_vector<vis_line_t> &user_marks = this->tc_bookmarks[&BM_USER];
     bookmark_vector<vis_line_t> &part_marks = this->tc_bookmarks[&BM_PARTITION];
     string_attrs_t &             sa         = value_out.get_attrs();
     string &                     str        = value_out.get_string();
     highlight_map_t::iterator    iter;
     string::iterator             str_iter;
+    text_format_t source_format = this->tc_sub_source->get_text_format();
 
     this->tc_sub_source->text_value_for_line(*this, row, str);
     this->tc_sub_source->text_attrs_for_line(*this, row, sa);
@@ -141,13 +147,18 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
          iter++) {
         // XXX testing for '$search' here sucks
         bool internal_hl = iter->first[0] == '$' && iter->first != "$search";
-        int off, hcount = 0;
+        int off;
         size_t re_end;
 
         if (body.lr_end > 8192)
             re_end = 8192;
         else
             re_end = body.lr_end;
+
+        if (iter->second.h_text_format != TF_UNKNOWN &&
+            source_format != iter->second.h_text_format) {
+            continue;
+        }
 
         for (off = internal_hl ? body.lr_start : 0; off < (int)str.size(); ) {
             int rc, matches[60];
@@ -173,8 +184,7 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
 
                 if (lr.lr_end > lr.lr_start) {
                     sa.push_back(string_attr(
-                        lr, &view_curses::VC_STYLE, iter->second.get_attrs(hcount)));
-                    hcount++;
+                        lr, &view_curses::VC_STYLE, iter->second.get_attrs()));
 
                     off = matches[1];
                 }
@@ -184,6 +194,30 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
             }
             else {
                 off = str.size();
+            }
+        }
+    }
+
+    if (this->tc_hide_fields) {
+        for (auto &sattr : sa) {
+            if (sattr.sa_type == &SA_HIDDEN &&
+                sattr.sa_range.length() > 3) {
+                struct line_range &lr = sattr.sa_range;
+
+                str.replace(lr.lr_start, lr.length(), "...");
+                shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
+                sattr.sa_type = &VC_GRAPHIC;
+                sattr.sa_value.sav_int =
+                    vc.ansi_color_pair(COLOR_YELLOW, COLOR_BLACK) |
+                    ACS_BULLET | A_UNDERLINE;
+                lr.lr_end = lr.lr_start + 3;
+
+                for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {
+                    if (attr.sa_type == &VC_STYLE &&
+                        attr.sa_range.lr_start == lr.lr_start) {
+                        attr.sa_type = NULL;
+                    }
+                });
             }
         }
     }

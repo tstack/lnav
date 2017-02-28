@@ -99,7 +99,7 @@ public:
 
     virtual void get_columns(std::vector<vtab_column> &cols) { };
 
-    virtual void get_foreign_keys(std::vector<std::string> &keys_inout)
+    virtual void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {
         keys_inout.push_back("log_line");
         keys_inout.push_back("min(log_line)");

@@ -32,6 +32,11 @@ static int sql_callback(void *ptr,
     return 0;
 }
 
+std::string execute_any(exec_context &ec, const std::string &cmdline_with_mode)
+{
+    return "";
+}
+
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;

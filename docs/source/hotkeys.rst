@@ -214,6 +214,11 @@ Display
    * - |ks| Ctrl |ke| + |ks| l |ke|
      - Switch to lo-fi mode.  The displayed log lines will be dumped to the
        terminal without any decorations so they can be copied easily.
+   * - |ks| Ctrl |ke| + |ks| w |ke|
+     - Toggle word-wrap.
+   * - |ks| x |ke|
+     - Toggle the hiding of log message fields. The hidden fields will be
+       replaced with three bullets and highlighted in yellow.
 
 Session
 -------
@@ -224,7 +229,7 @@ Session
 
    * - Keypress
      - Command
-   * - |ks| Ctrl |ky| + |ks| R |ke|
+   * - |ks| Ctrl |ke| + |ks| R |ke|
      - Reset current session.
 
 Query

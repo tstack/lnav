@@ -115,6 +115,10 @@ public:
             this->ldh_namer.reset(new column_namer());
             this->ldh_json_pairs.clear();
 
+            for (auto lv : this->ldh_line_values) {
+                this->ldh_namer->add_column(lv.lv_name.get());
+            }
+
             for (std::vector<logline_value>::iterator iter =
                  this->ldh_line_values.begin();
                  iter != this->ldh_line_values.end();
@@ -193,9 +197,9 @@ public:
     logfile::iterator ldh_line;
     shared_buffer_ref ldh_msg;
     content_line_t ldh_line_index;
-    std::auto_ptr<data_scanner> ldh_scanner;
-    std::auto_ptr<data_parser> ldh_parser;
-    std::auto_ptr<column_namer> ldh_namer;
+    std::unique_ptr<data_scanner> ldh_scanner;
+    std::unique_ptr<data_parser> ldh_parser;
+    std::unique_ptr<column_namer> ldh_namer;
     string_attrs_t ldh_line_attrs;
     std::vector<logline_value> ldh_line_values;
     std::map<const intern_string_t, json_ptr_walk::walk_list_t> ldh_json_pairs;

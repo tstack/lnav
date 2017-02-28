@@ -74,6 +74,27 @@ fields:
 
     :field: The name of the message field that should be inserted at this
       point in the message.
+    :min-width: The minimum width for the field.  If the value for the field
+      in a given log message is shorter, padding will be added as needed to
+      meet the minimum-width requirement. (v0.8.2+)
+    :max-width: The maximum width for the field.  If the value for the field
+      in a given log message is longer, the overflow algorithm will be applied
+      to try and shorten the field. (v0.8.2+)
+    :align: Specifies the alignment for the field, either "left" or "right".
+      If "left", padding to meet the minimum-width will be added on the right.
+      If "right", padding will be added on the left. (v0.8.2+)
+    :overflow: The algorithm used to shorten a field that is longer than
+      "max-width".  The following algorithms are supported:
+
+        :abbrev: Removes all but the first letter in dotted text.  For example,
+          "com.example.foo" would be shortened to "c.e.foo".
+        :truncate: Truncates any text past the maximum width.
+        :dot-dot: Cuts out the middle of the text and replaces it with two
+          dots (i.e. '..').
+
+      (v0.8.2+)
+    :timestamp-format: The timestamp format to use when displaying the time
+      for this log message. (v0.8.2+)
     :default-value: The default value to use if the field could not be found
       in the current log message.  The built-in default is "-".
 
@@ -110,6 +131,9 @@ fields:
     determine the "sub" format.  This module identifier is used to help
     **lnav** quickly identify the format to use when parsing message bodies.
 
+  :hide-extra: A boolean for JSON logs that indicates whether fields not
+    present in the line-format should be displayed on their own lines.
+
   :level: A mapping of error levels to regular expressions.  During scanning
     the contents of the capture group specified by *level-field* will be
     checked against each of these regexes.  Once a match is found, the log
@@ -132,6 +156,22 @@ fields:
       an identifier and should be syntax colored.
     :foreign-key: A boolean that indicates that this field is a key and should
       not be graphed.  This should only need to be set for integer fields.
+    :hidden: A boolean for log fields that indicates whether they should
+      be displayed.  The behavior is slightly different for JSON logs and text
+      logs.  For a JSON log, this property determines whether an extra line
+      will be added with the key/value pair.  For text logs, this property
+      controls whether the value should be displayed by default or replaced
+      with an ellipsis.
+    :rewriter: A command to rewrite this field when pretty-printing log
+      messages containing this value.  The command must start with ':', ';',
+      or '|' to signify whether it is a regular command, SQL query, or a script
+      to be executed.  The other fields in the line are accessible in SQL by
+      using the ':' prefix.  The text value of this field will then be replaced
+      with the result of the command when pretty-printing.  For example, the
+      HTTP access log format will rewrite the status code field to include the
+      textual version (e.g. 200 (OK)) using the following SQL query::
+
+         ;SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '
 
   :sample: A list of objects that contain sample log messages.  All formats
     must include at least one sample and it must be matched by one of the

@@ -85,6 +85,7 @@ bool ptime_fmt(const char *fmt, struct exttm *dst, const char *str, off_t &off, 
                 FMT_CASE('I', I);
                 FMT_CASE('d', d);
                 FMT_CASE('e', e);
+                FMT_CASE('f', f);
                 FMT_CASE('k', k);
                 FMT_CASE('l', l);
                 FMT_CASE('m', m);
@@ -101,4 +102,50 @@ bool ptime_fmt(const char *fmt, struct exttm *dst, const char *str, off_t &off, 
     }
 
     return true;
+}
+
+#define FTIME_FMT_CASE(ch, c) \
+    case ch: \
+        ftime_ ## c(dst, off_inout, len, tm); \
+        lpc += 1; \
+        break
+
+size_t ftime_fmt(char *dst, size_t len, const char *fmt, const struct exttm &tm)
+{
+    off_t off_inout = 0;
+
+    for (ssize_t lpc = 0; fmt[lpc]; lpc++) {
+        if (fmt[lpc] == '%') {
+            switch (fmt[lpc + 1]) {
+                case '%':
+                    ftime_char(dst, off_inout, len, '%');
+                    break;
+                FTIME_FMT_CASE('b', b);
+                FTIME_FMT_CASE('S', S);
+                FTIME_FMT_CASE('s', s);
+                FTIME_FMT_CASE('L', L);
+                FTIME_FMT_CASE('M', M);
+                FTIME_FMT_CASE('H', H);
+                FTIME_FMT_CASE('i', i);
+                FTIME_FMT_CASE('I', I);
+                FTIME_FMT_CASE('d', d);
+                FTIME_FMT_CASE('e', e);
+                FTIME_FMT_CASE('f', f);
+                FTIME_FMT_CASE('k', k);
+                FTIME_FMT_CASE('l', l);
+                FTIME_FMT_CASE('m', m);
+                FTIME_FMT_CASE('p', p);
+                FTIME_FMT_CASE('Y', Y);
+                FTIME_FMT_CASE('y', y);
+                FTIME_FMT_CASE('z', z);
+            }
+        }
+        else {
+            ftime_char(dst, off_inout, len, fmt[lpc]);
+        }
+    }
+
+    dst[off_inout] = '\0';
+
+    return (size_t) off_inout;
 }

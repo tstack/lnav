@@ -46,6 +46,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <numeric>
 
 #include "ptimec.hh"
 #include "byte_array.hh"
@@ -190,6 +191,22 @@ file_format_t detect_file_format(const std::string &filename);
 
 bool next_format(const char * const fmt[], int &index, int &locked_index);
 
+namespace std {
+    inline string to_string(const string &s) { return s; }
+}
+
+template<class InputIt>
+inline std::string join(InputIt first, InputIt last, const std::string &delim)
+{
+    std::string retval;
+    return std::accumulate(first, last, retval, [&] (
+        typename InputIt::value_type l, typename InputIt::value_type r) {
+        std::string lstr = std::to_string(l);
+
+        return lstr + (lstr.empty() ? "" : delim) + std::to_string(r);
+    });
+}
+
 inline bool is_glob(const char *fn)
 {
     return (strchr(fn, '*') != NULL ||
@@ -261,7 +278,7 @@ bool operator<(time_t left, const struct timeval &right) {
 inline
 bool operator<(const struct timeval &left, const struct timeval &right) {
     return left.tv_sec < right.tv_sec ||
-        ((left.tv_sec == right.tv_usec) && (left.tv_usec < right.tv_usec));
+        ((left.tv_sec == right.tv_sec) && (left.tv_usec < right.tv_usec));
 };
 
 struct date_time_scanner {
@@ -293,6 +310,11 @@ struct date_time_scanner {
      * requested time falls outside of a fifteen minute range.
      */
     void to_localtime(time_t t, struct exttm &tm_out) {
+        if (t < (24 * 60 * 60)) {
+            // Don't convert and risk going past the epoch.
+            return;
+        }
+
         if (t < this->dts_local_offset_valid ||
                 t >= this->dts_local_offset_expiry) {
             time_t new_gmt;
@@ -335,15 +357,24 @@ struct date_time_scanner {
                      struct timeval &tv_out,
                      bool convert_local = true);
 
+    size_t ftime(char *dst, size_t len, const struct exttm &tm) {
+        off_t off = 0;
+
+        PTIMEC_FORMATS[this->dts_fmt_lock].pf_ffunc(dst, off, len, tm);
+
+        return (size_t) off;
+    };
+
     bool convert_to_timeval(const char *time_src,
                             ssize_t time_len,
+                            const char * const time_fmt[],
                             struct timeval &tv_out) {
         struct exttm tm;
 
         if (time_len == -1) {
             time_len = strlen(time_src);
         }
-        if (this->scan(time_src, time_len, NULL, &tm, tv_out) != NULL) {
+        if (this->scan(time_src, time_len, time_fmt, &tm, tv_out) != NULL) {
             return true;
         }
         return false;
@@ -415,5 +446,7 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
     diff_out.ru_nvcsw = left.ru_nvcsw + right.ru_nvcsw;
     diff_out.ru_nivcsw = left.ru_nivcsw + right.ru_nivcsw;
 }
+
+size_t abbreviate_str(char *str, size_t len, size_t max_len);
 
 #endif

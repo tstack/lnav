@@ -125,7 +125,7 @@ public:
                 this->lss_min_log_time.tv_usec != 0);
     };
 
-    void set_min_log_time(struct timeval &tv) {
+    void set_min_log_time(const struct timeval &tv) {
         this->lss_min_log_time = tv;
     };
 
@@ -595,6 +595,8 @@ private:
     std::string       lss_token_value;
     string_attrs_t    lss_token_attrs;
     std::vector<logline_value> lss_token_values;
+    int lss_token_shift_start;
+    int lss_token_shift_size;
     shared_buffer     lss_share_manager;
     logfile::iterator lss_token_line;
     std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];

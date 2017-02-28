@@ -1,0 +1,8 @@
+{
+    "keymap_def": {
+        "default": {
+            "x67": ":goto 0",
+            "x50": ":switch-to-view pretty"
+        }
+    }
+}

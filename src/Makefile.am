@@ -32,18 +32,27 @@ default-config-json.c: $(srcdir)/default-config.json bin2c
 init-sql.c: bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
 
-%.c: %.lnav bin2c
+%.c: $(srcdir)/%.lnav bin2c
+	$(BIN2C_V)./bin2c -z -c $< $@
+
+%.c: $(srcdir)/%.json bin2c
 	$(BIN2C_V)./bin2c -z -c $< $@
 
 TIME_FORMATS = \
     "@%@" \
     "%Y-%m-%d %H:%M:%S" \
+    "%Y-%m-%d %H:%M:%S%z" \
+    "%Y-%m-%d %H:%M:%S %z" \
     "%Y-%m-%d %H:%M" \
     "%Y-%m-%dT%H:%M:%S.%f%z" \
     "%y-%m-%dT%H:%M:%S.%f%z" \
     "%Y-%m-%dT%H:%M:%SZ" \
+    "%Y-%m-%dT%H:%M:%S%z" \
     "%Y-%m-%dT%H:%M:%S" \
+    "%Y-%m-%dT%H:%M:%S%z" \
     "%Y/%m/%d %H:%M:%S" \
+    "%Y/%m/%d %H:%M:%S %z" \
+    "%Y/%m/%d %H:%M:%S%z" \
     "%Y/%m/%d %H:%M" \
     "%a %b %d %H:%M:%S %Y" \
     "%a %b %d %H:%M:%S %Z %Y" \
@@ -52,6 +61,8 @@ TIME_FORMATS = \
     "%d/%b/%Y:%H:%M:%S +0000" \
     "%d/%b/%Y:%H:%M:%S %z" \
     "%b %d %H:%M:%S" \
+    "%b %d %k:%M:%S" \
+    "%b %d %l:%M:%S" \
     "%b %e, %Y %l:%M:%S %p" \
     "%m/%d/%y %H:%M:%S" \
     "%m/%d/%Y %I:%M:%S:%L %p %Z" \
@@ -102,6 +113,7 @@ dist_noinst_DATA = \
 	default-config.json \
 	dhclient-summary.lnav \
 	dump-pid.sh \
+	keymap-default.json \
 	partition-by-boot.lnav
 
 noinst_HEADERS = \
@@ -128,7 +140,6 @@ noinst_HEADERS = \
 	field_overlay_source.hh \
 	filter_observer.hh \
 	format-text-files.hh \
-	grapher.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
 	help.hh \
@@ -183,6 +194,7 @@ noinst_HEADERS = \
 	sysclip.hh \
 	termios_guard.hh \
 	term_extra.hh \
+	text_format.hh \
 	textfile_sub_source.hh \
 	textview_curses.hh \
 	time_T.hh \
@@ -266,6 +278,7 @@ libdiag_a_SOURCES = \
 	sqlite-extension-func.c \
 	statusview_curses.cc \
 	string-extension-functions.cc \
+	text_format.cc \
 	timer.cc \
 	pcrepp.cc \
 	piper_proc.cc \
@@ -309,6 +322,7 @@ TEXT2C_FILES = \
 	default-log-formats-json.o \
 	default-config-json.o \
 	dhclient-summary.o \
+	keymap-default.o \
 	partition-by-boot.o
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)

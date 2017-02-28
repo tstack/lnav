@@ -32,6 +32,7 @@ check_PROGRAMS = \
 	drive_readline_curses \
 	slicer \
 	scripty \
+	test_abbrev \
 	test_ansi_scrubber \
 	test_auto_fd \
 	test_auto_mem \
@@ -55,11 +56,15 @@ AM_LDFLAGS = \
 	$(READLINE_LDFLAGS) \
 	-pthread
 
+CONFIG_OBJS = \
+	../src/default-config-json.o \
+	../src/keymap-default.o
+
 LDADD = -lz
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 test_auto_fd_SOURCES = test_auto_fd.cc
 test_auto_fd_LDADD = ../src/libdiag.a
@@ -80,7 +85,7 @@ test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_hist_source_SOURCES = test_hist_source.cc
 test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 test_line_buffer2_SOURCES = test_line_buffer2.cc
 test_line_buffer2_LDADD = ../src/libdiag.a
@@ -94,7 +99,7 @@ test_pcrepp_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 test_top_status_SOURCES = test_top_status.cc
 test_top_status_LDADD = \
 	../src/libdiag.a \
-	../src/default-config-json.o \
+	$(CONFIG_OBJS) \
 	$(CURSES_LIB) \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \
@@ -103,6 +108,9 @@ test_top_status_LDADD = \
 
 test_yajlpp_SOURCES = test_yajlpp.cc
 test_yajlpp_LDADD = ../src/libdiag.a
+
+test_abbrev_SOURCES = test_abbrev.cc
+test_abbrev_LDADD = ../src/libdiag.a
 
 test_concise_SOURCES = test_concise.cc
 test_concise_LDADD = ../src/libdiag.a
@@ -127,13 +135,13 @@ drive_json_ptr_walk_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 drive_listview_SOURCES = drive_listview.cc
 drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 drive_logfile_SOURCES = drive_logfile.cc
 drive_logfile_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
-	../src/default-config-json.o \
+	$(CONFIG_OBJS) \
 	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
@@ -153,10 +161,11 @@ drive_data_scanner_SOURCES = \
 drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
-	../src/default-config-json.o \
+	$(CONFIG_OBJS) \
 	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
+	$(LIBCURL) \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \
 	-lpcrecpp \
@@ -164,24 +173,24 @@ drive_data_scanner_LDADD = \
 
 drive_mvwattrline_SOURCES = drive_mvwattrline.cc
 drive_mvwattrline_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 drive_view_colors_SOURCES = drive_view_colors.cc
 drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 drive_vt52_curses_SOURCES = drive_vt52_curses.cc
 drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 drive_readline_curses_SOURCES = drive_readline_curses.cc
 drive_readline_curses_LDADD = ../src/libdiag.a $(READLINE_LIBS) $(CURSES_LIB) \
-	../src/default-config-json.o
+	$(CONFIG_OBJS)
 
 drive_sql_SOURCES = \
 	drive_sql.cc
 drive_sql_LDADD = \
 	../src/libdiag.a \
-	../src/default-config-json.o \
+	$(CONFIG_OBJS) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
 	$(CURSES_LIB) \
@@ -259,6 +268,7 @@ dist_noinst_DATA = \
 	listview_output.4 \
 	listview_output.5 \
 	listview_output.6 \
+	log.clog \
 	logfile_access_log.0 \
 	logfile_access_log.1 \
 	logfile_bad_access_log.0 \
@@ -266,6 +276,7 @@ dist_noinst_DATA = \
 	logfile_blued.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \
+	logfile_epoch.1 \
 	logfile_filter.0 \
 	logfile_for_join.0 \
 	logfile_generic.0 \
@@ -274,6 +285,7 @@ dist_noinst_DATA = \
 	logfile_glog.0 \
 	logfile_json.json \
 	logfile_json2.json \
+	logfile_leveltest.0 \
 	logfile_multiline.0 \
 	logfile_nested_json.json \
 	logfile_openam.0 \
@@ -306,7 +318,10 @@ dist_noinst_DATA = \
 	vt52_curses_output.0 \
 	vt52_curses_output.1 \
 	formats/collision/format.json \
+	formats/customlevel/format.json \
 	formats/jsontest/format.json \
+	formats/jsontest/lnav-logstash.json \
+	formats/jsontest/rewrite-user.lnav \
 	formats/jsontest2/format.json \
 	formats/nestedjson/format.json \
 	formats/scripts/multiline-echo.lnav \
@@ -317,6 +332,7 @@ dist_noinst_DATA = \
 	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
 
 TESTS = \
+    test_abbrev \
 	test_ansi_scrubber \
 	test_auto_fd \
 	test_auto_mem \

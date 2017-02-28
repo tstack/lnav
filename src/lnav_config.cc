@@ -54,6 +54,7 @@ static const int MAX_CRASH_LOG_COUNT = 16;
 
 extern "C" {
 extern const char default_config_json[];
+extern const char keymap_default_json[];
 }
 
 struct _lnav_config lnav_config;
@@ -236,6 +237,46 @@ struct userdata {
     vector<string> &ud_errors;
 };
 
+static struct json_path_handler keymap_def_handlers[] = {
+    json_path_handler("(?<key_seq>(x[0-9a-f]{2})+)")
+        .with_synopsis("<command>")
+        .with_description("The command to execute for the given key sequence")
+        .with_pattern("[:|;].*")
+        .with_path_provider<key_map>([](key_map *km, vector<string> &paths_out) {
+            for (const auto &iter : km->km_seq_to_cmd) {
+                paths_out.push_back(iter.first);
+            }
+        })
+        .for_field(&nullobj<key_map>()->km_seq_to_cmd),
+
+    json_path_handler()
+};
+
+static struct json_path_handler keymap_defs_handlers[] = {
+    json_path_handler("(?<key_map_name>[^/]+)/")
+        .with_synopsis("<name>")
+        .with_description("The command to execute for the given key sequence")
+        .with_obj_provider<key_map, _lnav_config>([](const yajlpp_provider_context &ypc, _lnav_config *root) {
+            key_map &retval = root->lc_ui_keymaps[ypc.ypc_extractor.get_substr("key_map_name")];
+            return &retval;
+        })
+        .with_path_provider<_lnav_config>([](struct _lnav_config *cfg, vector<string> &paths_out) {
+            for (const auto &iter : cfg->lc_ui_keymaps) {
+                paths_out.push_back(iter.first);
+            }
+        })
+        .with_children(keymap_def_handlers),
+
+    json_path_handler()
+};
+
+static struct json_path_handler root_config_handlers[] = {
+    json_path_handler("/keymap_def/")
+        .with_children(keymap_defs_handlers),
+
+    json_path_handler()
+};
+
 static struct json_path_handler ui_handlers[] = {
         json_path_handler("clock-format")
                 .with_synopsis("<format>")
@@ -247,6 +288,10 @@ static struct json_path_handler ui_handlers[] = {
             .with_synopsis("<bool>")
             .with_description("Reduce the brightness of text (useful for xterms)")
             .for_field(&nullobj<_lnav_config>()->lc_ui_dim_text),
+        json_path_handler("keymap")
+            .with_synopsis("<name>")
+            .with_description("The name of the keymap to use")
+            .for_field(&nullobj<_lnav_config>()->lc_ui_keymap),
 
         json_path_handler()
 };
@@ -257,8 +302,6 @@ struct json_path_handler lnav_config_handlers[] = {
 
         json_path_handler()
 };
-
-json_schema lnav_config_schema(lnav_config_handlers);
 
 static void load_config_from(const string &path, vector<string> &errors)
 {
@@ -317,6 +360,7 @@ static void load_config_from(const string &path, vector<string> &errors)
 
 static void load_default_config(yajlpp_parse_context &ypc_builtin,
                                 struct _lnav_config &config_obj,
+                                const char *config_json,
                                 vector<string> &errors)
 {
     auto_mem<yajl_handle_t> handle(yajl_free);
@@ -327,22 +371,34 @@ static void load_default_config(yajlpp_parse_context &ypc_builtin,
     ypc_builtin.ypc_userdata = &ud;
     yajl_config(handle, yajl_allow_comments, 1);
     if (yajl_parse(handle,
-                   (const unsigned char *)default_config_json,
-                   strlen(default_config_json)) != yajl_status_ok) {
+                   (const unsigned char *) config_json,
+                   strlen(config_json)) != yajl_status_ok) {
         errors.push_back("builtin: invalid json -- " +
-                         string((char *)yajl_get_error(handle, 1, (unsigned char *)default_config_json, strlen(default_config_json))));
+                         string((char *)yajl_get_error(handle, 1, (unsigned char *) config_json, strlen(config_json))));
     }
     yajl_complete_parse(handle);
 }
 
 void load_config(const vector<string> &extra_paths, vector<string> &errors)
 {
-    yajlpp_parse_context ypc_builtin("builtin", lnav_config_handlers);
     string user_config = dotlnav_path("config.json");
 
-    load_default_config(ypc_builtin, lnav_config, errors);
-    load_default_config(ypc_builtin, lnav_default_config, errors);
-    load_config_from(user_config, errors);
+    {
+        yajlpp_parse_context ypc_builtin("keymap", root_config_handlers);
+        load_default_config(ypc_builtin, lnav_config, keymap_default_json,
+                            errors);
+    }
+
+    {
+        yajlpp_parse_context ypc_builtin("builtin", lnav_config_handlers);
+        ypc_builtin.reset(lnav_config_handlers);
+        load_default_config(ypc_builtin, lnav_default_config,
+                            default_config_json, errors);
+        ypc_builtin.reset(lnav_config_handlers);
+        load_default_config(ypc_builtin, lnav_config, default_config_json,
+                            errors);
+        load_config_from(user_config, errors);
+    }
 
     reload_config();
 }
@@ -353,10 +409,11 @@ void reset_config(const std::string &path)
     vector<string> errors;
 
     if (path != "*") {
+        ypc_builtin.ypc_ignore_unused = true;
         ypc_builtin.ypc_active_paths.insert(path);
     }
 
-    load_default_config(ypc_builtin, lnav_config, errors);
+    load_default_config(ypc_builtin, lnav_config, default_config_json, errors);
 }
 
 string save_config()
@@ -380,7 +437,7 @@ string save_config()
         vector<string> errors;
 
         ygc.with_default_obj(lnav_default_config)
-                .with_obj(lnav_config);
+           .with_obj(lnav_config);
         ygc.gen();
 
         const unsigned char *buffer;

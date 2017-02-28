@@ -51,6 +51,11 @@ using namespace std;
 
 const char *TMP_NAME = "scanned.tmp";
 
+string execute_any(exec_context &ec, const string &cmdline_with_mode)
+{
+    return "";
+}
+
 int main(int argc, char *argv[])
 {
     int  c, retval = EXIT_SUCCESS;
@@ -115,7 +120,7 @@ int main(int argc, char *argv[])
                 retval = EXIT_FAILURE;
             }
             else {
-                auto_ptr<log_format> format;
+                unique_ptr<log_format> format;
                 char *log_line;
                 bool found = false;
                 char   cmd[2048];

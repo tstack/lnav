@@ -46,6 +46,7 @@
 #include "byte_array.hh"
 #include "line_buffer.hh"
 #include "log_format.hh"
+#include "text_format.hh"
 #include "shared_buffer.hh"
 
 class logfile;
@@ -166,6 +167,10 @@ public:
      * will return a value other than NULL.
      */
     log_format *get_format() const { return this->lf_format.get(); };
+
+    text_format_t get_text_format() const {
+        return this->lf_text_format;
+    }
 
     /**
      * @return The last modified time of the file when the file was last
@@ -396,7 +401,7 @@ protected:
     std::string lf_filename;
     std::string lf_content_id;
     struct stat lf_stat;
-    std::auto_ptr<log_format> lf_format;
+    std::unique_ptr<log_format> lf_format;
     std::vector<logline>      lf_index;
     time_t      lf_index_time;
     off_t       lf_index_size;
@@ -408,6 +413,7 @@ protected:
     logline_observer *lf_logline_observer;
     logfile_observer *lf_logfile_observer;
     size_t lf_longest_line;
+    text_format_t lf_text_format;
 };
 
 class logline_observer {

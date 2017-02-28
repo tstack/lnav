@@ -1,4 +1,55 @@
 
+lnav v0.8.2:
+     Features:
+     * The timestamp format for JSON log files can be specified with the
+       "timestamp-format" option in the "line-format" array.
+     * Added "min-width", "max-width", "align", and "overflow" options to the
+       "line-format" in format definitions for JSON log files.  These options
+       give you more control over how the displayed line looks.
+     * Added a "hidden" option to log format values so that you can hide JSON
+       log fields from being displayed if they are not in the line format.
+     * Added a "rewriter" field to log format value definitions that is a
+       command used to rewrite the field in the pretty-printed version of a
+       log message.  For example, the HTTP access log format will rewrite the
+       status code field to include the textual version (e.g. 200 (OK)).
+     * Log message fields can now be hidden using the :hide-fields" command or
+       by setting the 'hidden' property in the log format.  When hidden, the
+       fields will be replaced with a yellow ellipsis when displayed.  Hiding
+       large fields that contain extra details can make the log easier to read.
+       The 'x' hotkey can be used to quickly toggle whether these fields are
+       displayed or not.
+
+     Interface Changes:
+     * The color used for text colored via ":highlight" is now based on the
+       the regex instead of randomly picked so that colors are consistent
+       across invocations.
+     * The "graph" view has been removed since it's functionality has been
+       obsoleted by other features, like ":create-search-table".
+     * When doing a search, if a hit is found within a second after hitting
+       <ENTER>, the view will move to the matched line.  The previous behavior
+       was to stay on the current line, which tended to be a surprise to new
+       users.
+     * Pressing 'n'/'N' to move through the next/previous search hit will now
+       skip adjacent lines, up to the vertical size of the view.  This should
+       make scanning through clusters of hits much faster.  Repeatedly
+       pressing these keys within a short time will also accelerate scanning
+       by moving the view at least a full page at a time.
+
+     Breaking Changes:
+     * The captured timestamp text in log files must fully match a known format
+       or an error will be reported.  The previous behavior was to ignore any
+       text at the end of the line.
+
+     Fixes:
+     * You can now execute commands from the standard input by using a dash (-)
+       with the '-f' command-line argument.  Reading commands from a file
+       descriptor should also work, for example, with the following bash
+       syntax:
+
+           $ lnav -f <(echo :open the-file-to-open)
+     * Programming language syntax highlighting should now only be applied to
+       source code files instead of everywhere.
+
 lnav v0.8.1:
      Features:
      * Added a spectrogram command and view that displays the values of a

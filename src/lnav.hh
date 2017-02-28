@@ -43,7 +43,6 @@
 #include <memory>
 
 #include "byte_array.hh"
-#include "grapher.hh"
 #include "logfile.hh"
 #include "hist_source.hh"
 #include "statusview_curses.hh"
@@ -64,6 +63,7 @@
 #include "relative_time.hh"
 #include "log_format_loader.hh"
 #include "spectro_source.hh"
+#include "command_executor.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -116,7 +116,6 @@ typedef enum {
     LNV_TEXT,
     LNV_HELP,
     LNV_HISTOGRAM,
-    LNV_GRAPH,
     LNV_DB,
     LNV_EXAMPLE,
     LNV_SCHEMA,
@@ -139,7 +138,6 @@ typedef enum {
 } lnav_status_t;
 
 typedef enum {
-    LG_GRAPH,
     LG_CAPTURE,
 
     LG__MAX
@@ -175,6 +173,40 @@ private:
 
     int ist_recent_key_presses[COUNT];
     size_t ist_index;
+};
+
+struct key_repeat_history {
+    key_repeat_history()
+        : krh_key(0),
+          krh_count(0) {
+        this->krh_last_press_time.tv_sec = 0;
+        this->krh_last_press_time.tv_usec = 0;
+    }
+
+    int krh_key;
+    int krh_count;
+    vis_line_t krh_start_line;
+    struct timeval krh_last_press_time;
+
+    void update(int ch, vis_line_t top) {
+        struct timeval now, diff;
+
+        gettimeofday(&now, NULL);
+        timersub(&now, &this->krh_last_press_time, &diff);
+        if (diff.tv_sec >= 1 || diff.tv_usec > (750 * 1000)) {
+            this->krh_key = 0;
+            this->krh_count = 0;
+        }
+        this->krh_last_press_time = now;
+
+        if (this->krh_key == ch) {
+            this->krh_count += 1;
+        } else {
+            this->krh_key = ch;
+            this->krh_count = 1;
+            this->krh_start_line = top;
+        }
+    };
 };
 
 struct _lnav_data {
@@ -221,7 +253,7 @@ struct _lnav_data {
     std::stack<textview_curses *>           ld_view_stack;
     textview_curses *ld_last_view;
     textview_curses                         ld_views[LNV__MAX];
-    std::auto_ptr<grep_highlighter>         ld_search_child[LNV__MAX];
+    std::unique_ptr<grep_highlighter>       ld_search_child[LNV__MAX];
     vis_line_t                              ld_search_start_line;
     readline_curses *                       ld_rl_view;
 
@@ -236,13 +268,11 @@ struct _lnav_data {
     std::map<textview_curses *, int>        ld_last_user_mark;
     std::map<textview_curses *, int>        ld_select_start;
 
-    grapher                                 ld_graph_source;
-
     db_label_source                         ld_db_row_source;
     db_overlay_source                       ld_db_overlay;
     std::vector<std::string>                ld_db_key_names;
 
-    std::auto_ptr<grep_highlighter>         ld_grep_child[LG__MAX];
+    std::unique_ptr<grep_highlighter>       ld_grep_child[LG__MAX];
     std::string                             ld_previous_search;
     std::string                             ld_last_search[LNV__MAX];
 
@@ -252,7 +282,7 @@ struct _lnav_data {
     auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
 
     std::list<pid_t>                        ld_children;
-    std::list<piper_proc *>                 ld_pipers;
+    std::list<std::shared_ptr<piper_proc>>  ld_pipers;
     xterm_mouse ld_mouse;
     term_extra ld_term_extra;
 
@@ -262,11 +292,15 @@ struct _lnav_data {
 
     relative_time ld_last_relative_time;
 
-    std::stack<std::map<std::string, std::string> > ld_local_vars;
-    std::stack<std::string> ld_path_stack;
     std::stack<FILE *> ld_output_stack;
 
     std::map<std::string, std::vector<script_metadata> > ld_scripts;
+
+    exec_context ld_exec_context;
+
+    int ld_fifo_counter;
+
+    struct key_repeat_history ld_key_repeat_history;
     bool disabled_filters;
 };
 
@@ -304,5 +338,7 @@ vis_line_t next_cluster(
 bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
         bookmark_type_t *bt,
         vis_line_t top);
+void previous_cluster(bookmark_type_t *bt, textview_curses *tc);
+vis_line_t search_forward_from(textview_curses *tc);
 
 #endif

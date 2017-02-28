@@ -51,7 +51,8 @@
             },
             "sc_status" : {
                 "kind" : "integer",
-                "foreign-key" : true
+                "foreign-key" : true,
+                "rewriter" : ";SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '"
             },
             "sc_bytes" : {
                 "kind" : "integer"
@@ -436,7 +437,7 @@
         "url" : "https://code.google.com/p/google-glog/",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>(?:.|\\n)*)"
+                "pattern" : "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) +(?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>(?:.|\\n)*)"
             }
         },
         "level-field" : "level",
@@ -465,7 +466,8 @@
         },
         "sample" : [
             {
-                "line" : "E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19"
+                "line" : "E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19",
+                "line" : "E0517 15:04:22.619632      52992 logging_unittest.cc:253] Log every 3, iteration 19"
             }
         ]
     },
@@ -770,6 +772,9 @@
         "timestamp-field" : "generated_at",
         "body-field" : "message",
         "value" : {
+            "display_received_at" : {
+                "kind" : "string"
+            },
             "program" : {
                 "kind" : "string",
                 "identifier" : true

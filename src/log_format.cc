@@ -41,6 +41,7 @@
 #include "log_vtab_impl.hh"
 #include "ptimec.hh"
 #include "log_search_table.hh"
+#include "command_executor.hh"
 
 using namespace std;
 
@@ -99,7 +100,7 @@ logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool e
     }
 
     if (((len == 1) || ((len > 1) && (levelstr[1] == ' '))) &&
-        (retval = abbrev2level(levelstr, len)) != LEVEL_UNKNOWN) {
+        (retval = abbrev2level(levelstr, 1)) != LEVEL_UNKNOWN) {
         return retval;
     }
 
@@ -107,7 +108,7 @@ logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool e
     pcre_context_static<10> pc;
 
     if (LEVEL_RE.match(pc, pi)) {
-        retval = abbrev2level(pi.get_substr_start(pc.begin()), 1);
+        retval = abbrev2level(pi.get_substr_start(pc.begin()), len);
     }
 
     return retval;
@@ -199,7 +200,7 @@ vector<log_format *> &log_format::get_root_formats(void)
     return lf_root_formats;
 }
 
-static bool next_format(const std::vector<external_log_format::pattern *> &patterns,
+static bool next_format(const std::vector<std::shared_ptr<external_log_format::pattern>> &patterns,
                         int &index,
                         int &locked_index)
 {
@@ -358,39 +359,15 @@ struct json_log_userdata {
     shared_buffer_ref &jlu_shared_buffer;
 };
 
-struct json_field_cmp {
-    json_field_cmp(external_log_format::json_log_field type,
-                   const intern_string_t name)
-        : jfc_type(type), jfc_field_name(name) {
-    };
-
-    bool operator()(const external_log_format::json_format_element &jfe) const {
-        return (this->jfc_type == jfe.jfe_type &&
-                this->jfc_field_name == jfe.jfe_value);
-    };
-
-    external_log_format::json_log_field jfc_type;
-    const intern_string_t jfc_field_name;
-};
-
 static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len);
 
 static int read_json_null(yajlpp_parse_context *ypc)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
-        return 1;
-    }
-    if (!jlu->jlu_format->jlf_hide_extra &&
-            find_if(line_format.begin(), line_format.end(),
-                json_field_cmp(external_log_format::JLF_VARIABLE,
-                               field_name)) == line_format.end()) {
-        jlu->jlu_sub_line_count += 1;
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -398,19 +375,10 @@ static int read_json_null(yajlpp_parse_context *ypc)
 static int read_json_bool(yajlpp_parse_context *ypc, int val)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
-        return 1;
-    }
-    if (!jlu->jlu_format->jlf_hide_extra &&
-        find_if(line_format.begin(), line_format.end(),
-            json_field_cmp(external_log_format::JLF_VARIABLE,
-                    field_name)) == line_format.end()) {
-        jlu->jlu_sub_line_count += 1;
-    }
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -418,13 +386,8 @@ static int read_json_bool(yajlpp_parse_context *ypc, int val)
 static int read_json_int(yajlpp_parse_context *ypc, long long val)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
-        return 1;
-    }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         long long divisor = jlu->jlu_format->elf_timestamp_divisor;
         struct timeval tv;
@@ -445,12 +408,9 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
             }
         }
     }
-    else if (!jlu->jlu_format->jlf_hide_extra &&
-             find_if(line_format.begin(), line_format.end(),
-                     json_field_cmp(external_log_format::JLF_VARIABLE,
-                         field_name)) == line_format.end()) {
-        jlu->jlu_sub_line_count += 1;
-    }
+
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -458,13 +418,8 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
 static int read_json_double(yajlpp_parse_context *ypc, double val)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
-        return 1;
-    }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         double divisor = jlu->jlu_format->elf_timestamp_divisor;
         struct timeval tv;
@@ -473,12 +428,9 @@ static int read_json_double(yajlpp_parse_context *ypc, double val)
         tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
         jlu->jlu_base_line->set_time(tv);
     }
-    else if (!jlu->jlu_format->jlf_hide_extra &&
-             find_if(line_format.begin(), line_format.end(),
-                     json_field_cmp(external_log_format::JLF_VARIABLE,
-                         field_name)) == line_format.end()) {
-        jlu->jlu_sub_line_count += 1;
-    }
+
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1));
 
     return 1;
 }
@@ -495,8 +447,9 @@ static int json_array_start(void *ctx)
 
         if (!jlu->jlu_format->jlf_hide_extra &&
             find_if(line_format.begin(), line_format.end(),
-                    json_field_cmp(external_log_format::JLF_VARIABLE,
-                                   field_name)) == line_format.end()) {
+                    external_log_format::json_field_cmp(
+                        external_log_format::JLF_VARIABLE,
+                        field_name)) == line_format.end()) {
             jlu->jlu_sub_line_count += 1;
         }
 
@@ -608,7 +561,7 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
         return false;
     }
 
-    pattern *pat = this->elf_pattern_order[this->lf_fmt_lock];
+    auto pat = this->elf_pattern_order[this->lf_fmt_lock];
     pcre_input pi(sbr.get_data(), 0, sbr.length());
 
     if (!this->elf_multiline) {
@@ -683,7 +636,7 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
     int curr_fmt = -1;
 
     while (::next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
-        pattern *fpat = this->elf_pattern_order[curr_fmt];
+        auto fpat = this->elf_pattern_order[curr_fmt];
         pcrepp *pat = fpat->p_pcre;
 
         if (fpat->p_module_format) {
@@ -754,19 +707,16 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
             }
         }
 
-        size_t numeric_def_count = this->elf_numeric_value_defs.size();
-
-        for (size_t num_def_index = 0;
-             num_def_index < numeric_def_count;
-             num_def_index += 1) {
-            value_def &vd = *this->elf_numeric_value_defs[num_def_index];
-            pcre_context::capture_t *num_cap = pc[vd.vd_index];
+        for (auto value_index : fpat->p_numeric_value_indexes) {
+            const indexed_value_def &ivd = fpat->p_value_by_index[value_index];
+            const value_def &vd = *ivd.ivd_value_def;
+            pcre_context::capture_t *num_cap = pc[ivd.ivd_index];
 
             if (num_cap != NULL && num_cap->is_valid()) {
                 const struct scaling_factor *scaling = NULL;
 
-                if (vd.vd_unit_field_index >= 0) {
-                    pcre_context::iterator unit_cap = pc[vd.vd_unit_field_index];
+                if (ivd.ivd_unit_field_index >= 0) {
+                    pcre_context::iterator unit_cap = pc[ivd.ivd_unit_field_index];
 
                     if (unit_cap != NULL && unit_cap->is_valid()) {
                         intern_string_t unit_val = intern_string::lookup(
@@ -790,7 +740,7 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
                     if (scaling != NULL) {
                         scaling->scale(dvalue);
                     }
-                    this->lf_value_stats[num_def_index].add_value(dvalue);
+                    this->lf_value_stats[vd.vd_values_index].add_value(dvalue);
                 }
             }
         }
@@ -822,7 +772,7 @@ uint8_t external_log_format::module_scan(const pcre_input &pi,
         int curr_fmt = -1, fmt_lock = -1;
 
         while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
-            pattern *fpat = elf->elf_pattern_order[curr_fmt];
+            auto fpat = elf->elf_pattern_order[curr_fmt];
             pcrepp *pat = fpat->p_pcre;
 
             if (!fpat->p_module_format) {
@@ -908,13 +858,14 @@ void external_log_format::annotate(shared_buffer_ref &line,
     sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
-        const value_def &vd = pat.p_value_by_index[lpc];
+        const indexed_value_def &ivd = pat.p_value_by_index[lpc];
         const struct scaling_factor *scaling = NULL;
-        pcre_context::capture_t *cap = pc[vd.vd_index];
+        pcre_context::capture_t *cap = pc[ivd.ivd_index];
+        const value_def &vd = *ivd.ivd_value_def;
         shared_buffer_ref field;
 
-        if (vd.vd_unit_field_index >= 0) {
-            pcre_context::iterator unit_cap = pc[vd.vd_unit_field_index];
+        if (ivd.ivd_unit_field_index >= 0) {
+            pcre_context::iterator unit_cap = pc[ivd.ivd_unit_field_index];
 
             if (unit_cap != NULL && unit_cap->c_begin != -1) {
                 intern_string_t unit_val = intern_string::lookup(
@@ -942,6 +893,7 @@ void external_log_format::annotate(shared_buffer_ref &line,
                                        cap->c_end,
                                        pat.p_module_format,
                                        this));
+        values.back().lv_hidden = vd.vd_hidden || vd.vd_user_hidden;
     }
 
     if (annotate_module && module_cap != NULL && body_cap != NULL &&
@@ -971,11 +923,57 @@ void external_log_format::annotate(shared_buffer_ref &line,
     }
 }
 
+void external_log_format::rewrite(exec_context &ec,
+                                  shared_buffer_ref &line,
+                                  string_attrs_t &sa,
+                                  string &value_out)
+{
+    vector<logline_value>::iterator iter, bind_iter, shift_iter;
+    vector<logline_value> &values = *ec.ec_line_values;
+
+    value_out.assign(line.get_data(), line.length());
+
+    for (iter = values.begin(); iter != values.end(); ++iter) {
+        if (!iter->lv_origin.is_valid()) {
+            log_debug("not rewriting value with invalid origin -- %s", iter->lv_name.get());
+            continue;
+        }
+
+        auto vd_iter = this->elf_value_defs.find(iter->lv_name);
+        if (vd_iter == this->elf_value_defs.end()) {
+            log_debug("not rewriting undefined value -- %s", iter->lv_name.get());
+            continue;
+        }
+
+        value_def &vd = *vd_iter->second;
+
+        if (!vd.vd_rewriter.empty()) {
+            string field_value = iter->to_string();
+
+            field_value = execute_any(ec, vd.vd_rewriter);
+
+            struct line_range adj_origin = iter->origin_in_full_msg(
+                value_out.c_str(), value_out.length());
+
+            value_out.erase(adj_origin.lr_start, adj_origin.length());
+
+            int32_t shift_amount = field_value.length() - adj_origin.length();
+            value_out.insert(adj_origin.lr_start, field_value);
+            for (shift_iter = values.begin();
+                 shift_iter != values.end(); ++shift_iter) {
+                if (shift_iter->lv_name == iter->lv_name) {
+                    continue;
+                }
+
+                shift_iter->lv_origin.shift(adj_origin.lr_start, shift_amount);
+            }
+        }
+    }
+}
+
 static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
     const intern_string_t field_name = ypc->get_path();
     struct exttm tm_out;
     struct timeval tv_out;
@@ -992,20 +990,9 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
         uint8_t opid = hash_str((const char *) str, len);
         jlu->jlu_base_line->set_opid(opid);
     }
-    else if (ypc->is_level(1) || jlu->jlu_format->elf_value_defs.find(field_name) !=
-             jlu->jlu_format->elf_value_defs.end()) {
-        if (!jlu->jlu_format->jlf_hide_extra &&
-            find_if(line_format.begin(), line_format.end(),
-                    json_field_cmp(external_log_format::JLF_VARIABLE,
-                                   field_name)) == line_format.end()) {
-            jlu->jlu_sub_line_count += 1;
-            for (size_t lpc = 0; lpc < len; lpc++) {
-                if (str[lpc] == '\n') {
-                    jlu->jlu_sub_line_count += 1;
-                }
-            }
-        }
-    }
+
+    jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(
+        field_name, ypc->is_level(1), str, len);
 
     return 1;
 }
@@ -1077,7 +1064,6 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
     if (this->jlf_cached_offset != ll.get_offset()) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
-        view_colors &vc = view_colors::singleton();
         yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
 
@@ -1114,13 +1100,13 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
             for (lv_iter = this->jlf_line_values.begin();
                  lv_iter != this->jlf_line_values.end();
                  ++lv_iter) {
-                map<const intern_string_t, external_log_format::value_def>::iterator vd_iter;
-
                 lv_iter->lv_format = this;
-                vd_iter = this->elf_value_defs.find(lv_iter->lv_name);
+                auto vd_iter = this->elf_value_defs.find(lv_iter->lv_name);
                 if (vd_iter != this->elf_value_defs.end()) {
-                    lv_iter->lv_identifier = vd_iter->second.vd_identifier;
-                    lv_iter->lv_column = vd_iter->second.vd_column;
+                    lv_iter->lv_identifier = vd_iter->second->vd_identifier;
+                    lv_iter->lv_column = vd_iter->second->vd_column;
+                    lv_iter->lv_hidden = vd_iter->second->vd_hidden;
+                    lv_iter->lv_user_hidden = vd_iter->second->vd_user_hidden;
                 }
             }
 
@@ -1128,27 +1114,66 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                  iter != this->jlf_line_format.end();
                  ++iter) {
                 static const intern_string_t ts_field = intern_string::lookup("__timestamp__", -1);
+                json_format_element &jfe = *iter;
 
-                switch (iter->jfe_type) {
+                switch (jfe.jfe_type) {
                 case JLF_CONSTANT:
-                    this->json_append_to_cache(iter->jfe_default_value.c_str(),
-                            iter->jfe_default_value.size());
+                    this->json_append_to_cache(jfe.jfe_default_value.c_str(),
+                            jfe.jfe_default_value.size());
                     break;
                 case JLF_VARIABLE:
                     lv_iter = find_if(this->jlf_line_values.begin(),
                                       this->jlf_line_values.end(),
-                                      logline_value_cmp(&iter->jfe_value));
+                                      logline_value_cmp(&jfe.jfe_value));
                     if (lv_iter != this->jlf_line_values.end()) {
                         string str = lv_iter->to_string();
                         size_t nl_pos = str.find('\n');
 
                         lr.lr_start = this->jlf_cached_line.size();
-                        this->json_append_to_cache(
-                                str.c_str(), str.size());
-                        if (nl_pos == string::npos)
+
+                        lv_iter->lv_hidden = lv_iter->lv_user_hidden;
+                        if (str.size() > jfe.jfe_max_width) {
+                            switch (jfe.jfe_overflow) {
+                                case json_format_element::ABBREV: {
+                                    this->json_append_to_cache(
+                                        str.c_str(), str.size());
+                                    size_t new_size = abbreviate_str(
+                                        &this->jlf_cached_line[lr.lr_start],
+                                        str.size(),
+                                        jfe.jfe_max_width);
+
+                                    this->jlf_cached_line.resize(
+                                        lr.lr_start + new_size);
+                                    break;
+                                }
+                                case json_format_element::TRUNCATE: {
+                                    this->json_append_to_cache(
+                                        str.c_str(), jfe.jfe_max_width);
+                                    break;
+                                }
+                                case json_format_element::DOTDOT: {
+                                    size_t middle = (jfe.jfe_max_width / 2) - 1;
+                                    this->json_append_to_cache(
+                                        str.c_str(), middle);
+                                    this->json_append_to_cache("..", 2);
+                                    size_t rest = (jfe.jfe_max_width - middle - 2);
+                                    this->json_append_to_cache(
+                                        str.c_str() + str.size() - rest, rest);
+                                    break;
+                                }
+                            }
+                        }
+                        else {
+                            this->json_append(jfe, str.c_str(), str.size());
+                        }
+
+                        if (nl_pos == string::npos) {
                             lr.lr_end = this->jlf_cached_line.size();
-                        else
+                        }
+                        else {
                             lr.lr_end = lr.lr_start + nl_pos;
+                        }
+
                         if (lv_iter->lv_name == this->lf_timestamp_field) {
                             this->jlf_line_attrs.push_back(
                                 string_attr(lr, &logline::L_TIMESTAMP));
@@ -1161,21 +1186,26 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             this->jlf_line_attrs.push_back(
                                     string_attr(lr, &logline::L_OPID));
                         }
-                        if (lv_iter->lv_identifier) {
-                            this->jlf_line_attrs.push_back(
-                                string_attr(lr, &view_curses::VC_STYLE,
-                                    vc.attrs_for_ident(str.c_str(), lr.length())));
-                        }
                         lv_iter->lv_origin = lr;
                         used_values[distance(this->jlf_line_values.begin(),
                                              lv_iter)] = true;
                     }
-                    else if (iter->jfe_value == ts_field) {
+                    else if (jfe.jfe_value == ts_field) {
                         struct line_range lr;
                         ssize_t ts_len;
                         char ts[64];
 
-                        ts_len = sql_strftime(ts, sizeof(ts), ll.get_timeval(), 'T');
+                        if (jfe.jfe_ts_format.empty()) {
+                            ts_len = sql_strftime(ts, sizeof(ts),
+                                                  ll.get_timeval(), 'T');
+                        } else {
+                            struct exttm et;
+
+                            ll.to_exttm(et);
+                            ts_len = ftime_fmt(ts, sizeof(ts),
+                                               jfe.jfe_ts_format.c_str(),
+                                               et);
+                        }
                         lr.lr_start = this->jlf_cached_line.size();
                         this->json_append_to_cache(ts, ts_len);
                         lr.lr_end = this->jlf_cached_line.size();
@@ -1183,14 +1213,15 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             string_attr(lr, &logline::L_TIMESTAMP));
                     }
                     else {
-                        this->json_append_to_cache(
-                                iter->jfe_default_value.c_str(),
-                                iter->jfe_default_value.size());
+                        this->json_append(jfe,
+                                          jfe.jfe_default_value.c_str(),
+                                          jfe.jfe_default_value.size());
                     }
                     break;
                 }
             }
             this->json_append_to_cache("\n", 1);
+            int sub_offset = 1;
             if (!this->jlf_hide_extra) {
                 for (size_t lpc = 0;
                      lpc < this->jlf_line_values.size(); lpc++) {
@@ -1198,17 +1229,18 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             "body", -1);
                     logline_value &lv = this->jlf_line_values[lpc];
 
-                    if (used_values[lpc] ||
+                    if (lv.lv_hidden ||
+                        used_values[lpc] ||
                         lv.lv_name == this->lf_timestamp_field ||
-                        lv.lv_name == body_name ||
-                        lv.lv_name == this->elf_level_field) {
+                        lv.lv_name == body_name) {
                         continue;
                     }
 
                     const std::string str = lv.to_string();
                     size_t curr_pos = 0, nl_pos, line_len = -1;
 
-                    lv.lv_origin.lr_start = this->jlf_cached_line.size();
+                    lv.lv_sub_offset = sub_offset;
+                    lv.lv_origin.lr_start = 2 + lv.lv_name.size() + 2;
                     do {
                         nl_pos = str.find('\n', curr_pos);
                         if (nl_pos != std::string::npos) {
@@ -1225,9 +1257,9 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                                 &str.c_str()[curr_pos], line_len);
                         this->json_append_to_cache("\n", 1);
                         curr_pos = nl_pos + 1;
+                        sub_offset += 1;
                     } while (nl_pos != std::string::npos &&
                              nl_pos < str.size());
-                    lv.lv_origin.lr_end = this->jlf_cached_line.size();
                 }
             }
 
@@ -1252,7 +1284,12 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         if (this->jlf_cached_line[this_off] == '\n') {
             this_off += 1;
         }
-        next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
+        if ((ll.get_sub_offset() + 1) < this->jlf_line_offsets.size()) {
+            next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
+        }
+        else {
+            next_off = this_off;
+        }
     }
 
     if (full_message) {
@@ -1268,6 +1305,35 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 }
 
 void external_log_format::build(std::vector<std::string> &errors) {
+    if (!this->lf_timestamp_field.empty()) {
+        auto &vd = this->elf_value_defs[this->lf_timestamp_field];
+        if (vd.get() == nullptr) {
+            vd = make_shared<external_log_format::value_def>();
+        }
+        vd->vd_name = this->lf_timestamp_field;
+        vd->vd_kind = logline_value::VALUE_TEXT;
+        vd->vd_internal = true;
+    }
+    if (!this->elf_level_field.empty() && this->elf_value_defs.
+        find(this->elf_level_field) == this->elf_value_defs.end()) {
+        auto &vd = this->elf_value_defs[this->elf_level_field];
+        if (vd.get() == nullptr) {
+            vd = make_shared<external_log_format::value_def>();
+        }
+        vd->vd_name = this->elf_level_field;
+        vd->vd_kind = logline_value::VALUE_TEXT;
+        vd->vd_internal = true;
+    }
+    if (!this->elf_body_field.empty()) {
+        auto &vd = this->elf_value_defs[this->elf_body_field];
+        if (vd.get() == nullptr) {
+            vd = make_shared<external_log_format::value_def>();
+        }
+        vd->vd_name = this->elf_body_field;
+        vd->vd_kind = logline_value::VALUE_TEXT;
+        vd->vd_internal = true;
+    }
+
     if (!this->lf_timestamp_format.empty()) {
         this->lf_timestamp_format.push_back(NULL);
     }
@@ -1279,10 +1345,10 @@ void external_log_format::build(std::vector<std::string> &errors) {
                          this->elf_name.to_string() + ".file-pattern:" +
                          e.what());
     }
-    for (std::map<string, pattern>::iterator iter = this->elf_patterns.begin();
+    for (auto iter = this->elf_patterns.begin();
          iter != this->elf_patterns.end();
          ++iter) {
-        pattern &pat = iter->second;
+        pattern &pat = *iter->second;
 
         if (pat.p_module_format) {
             this->elf_has_module_format = true;
@@ -1297,12 +1363,20 @@ void external_log_format::build(std::vector<std::string> &errors) {
                              iter->first + "]" +
                              ":" +
                              e.what());
+            errors.push_back("error:" +
+                             this->elf_name.to_string() + ".regex[" +
+                             iter->first + "]" +
+                             ":" + pat.p_string);
+            errors.push_back("error:" +
+                             this->elf_name.to_string() + ".regex[" +
+                             iter->first + "]" +
+                             ":" + string(e.e_offset, ' ') +
+                             "^");
             continue;
         }
         for (pcre_named_capture::iterator name_iter = pat.p_pcre->named_begin();
              name_iter != pat.p_pcre->named_end();
              ++name_iter) {
-            std::map<const intern_string_t, value_def>::iterator value_iter;
             const intern_string_t name = intern_string::lookup(
                 name_iter->pnc_name, -1);
 
@@ -1322,22 +1396,24 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 pat.p_body_field_index = name_iter->index();
             }
 
-            value_iter = this->elf_value_defs.find(name);
+            auto value_iter = this->elf_value_defs.find(name);
             if (value_iter != this->elf_value_defs.end()) {
-                value_def &vd = value_iter->second;
+                auto &vd = *value_iter->second;
+                indexed_value_def ivd;
 
-                vd.vd_index = name_iter->index();
+                ivd.ivd_index = name_iter->index();
                 if (!vd.vd_unit_field.empty()) {
-                    vd.vd_unit_field_index = pat.p_pcre->name_index(
+                    ivd.ivd_unit_field_index = pat.p_pcre->name_index(
                         vd.vd_unit_field.get());
                 }
                 else {
-                    vd.vd_unit_field_index = -1;
+                    ivd.ivd_unit_field_index = -1;
                 }
-                if (vd.vd_column == -1) {
+                if (!vd.vd_internal && vd.vd_column == -1) {
                     vd.vd_column = this->elf_column_count++;
                 }
-                pat.p_value_by_index.push_back(vd);
+                ivd.ivd_value_def = value_iter->second.get();
+                pat.p_value_by_index.push_back(ivd);
             }
         }
 
@@ -1360,7 +1436,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                         this->elf_body_field.get());
         }
 
-        this->elf_pattern_order.push_back(&iter->second);
+        this->elf_pattern_order.push_back(iter->second);
     }
 
     if (this->jlf_json) {
@@ -1403,17 +1479,21 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
     stable_sort(this->elf_level_pairs.begin(), this->elf_level_pairs.end());
 
-    for (std::map<const intern_string_t, value_def>::iterator iter = this->elf_value_defs.begin();
+    for (auto iter = this->elf_value_defs.begin();
          iter != this->elf_value_defs.end();
          ++iter) {
         std::vector<std::string>::iterator act_iter;
 
-        if (iter->second.vd_column == -1) {
-            iter->second.vd_column = this->elf_column_count++;
+        if (!iter->second->vd_internal && iter->second->vd_column == -1) {
+            iter->second->vd_column = this->elf_column_count++;
         }
 
-        for (act_iter = iter->second.vd_action_list.begin();
-             act_iter != iter->second.vd_action_list.end();
+        if (iter->second->vd_kind == logline_value::VALUE_UNKNOWN) {
+            iter->second->vd_kind = logline_value::VALUE_TEXT;
+        }
+
+        for (act_iter = iter->second->vd_action_list.begin();
+             act_iter != iter->second->vd_action_list.end();
              ++act_iter) {
             if (this->lf_action_defs.find(*act_iter) ==
                 this->lf_action_defs.end()) {
@@ -1438,7 +1518,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
         pcre_input pi(iter->s_line);
         bool found = false;
 
-        for (std::vector<pattern *>::iterator pat_iter = this->elf_pattern_order.begin();
+        for (auto pat_iter = this->elf_pattern_order.begin();
              pat_iter != this->elf_pattern_order.end() && !found;
              ++pat_iter) {
             pattern &pat = *(*pat_iter);
@@ -1520,7 +1600,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                              ":invalid sample         -- " +
                              iter->s_line);
 
-            for (std::vector<pattern *>::iterator pat_iter = this->elf_pattern_order.begin();
+            for (auto pat_iter = this->elf_pattern_order.begin();
                  pat_iter != this->elf_pattern_order.end();
                  ++pat_iter) {
                 pattern &pat = *(*pat_iter);
@@ -1548,17 +1628,18 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
     }
 
-    for (std::map<const intern_string_t, value_def>::iterator iter = this->elf_value_defs.begin();
+    for (auto iter = this->elf_value_defs.begin();
          iter != this->elf_value_defs.end();
          ++iter) {
-        if (iter->second.vd_foreign_key || iter->second.vd_identifier) {
+        if (iter->second->vd_foreign_key || iter->second->vd_identifier) {
             continue;
         }
 
-        switch (iter->second.vd_kind) {
+        switch (iter->second->vd_kind) {
             case logline_value::VALUE_INTEGER:
             case logline_value::VALUE_FLOAT:
-                this->elf_numeric_value_defs.push_back(&iter->second);
+                iter->second->vd_values_index = this->elf_numeric_value_defs.size();
+                this->elf_numeric_value_defs.push_back(iter->second);
                 break;
             default:
                 break;
@@ -1566,6 +1647,39 @@ void external_log_format::build(std::vector<std::string> &errors) {
     }
 
     this->lf_value_stats.resize(this->elf_numeric_value_defs.size());
+
+    int format_index = 0;
+    for (vector<json_format_element>::iterator iter = this->jlf_line_format.begin();
+         iter != this->jlf_line_format.end();
+         ++iter, format_index++) {
+        static const intern_string_t ts = intern_string::lookup("__timestamp__");
+        json_format_element &jfe = *iter;
+
+        if (jfe.jfe_value.empty() && !jfe.jfe_ts_format.empty()) {
+            jfe.jfe_value = ts;
+        }
+
+        switch (jfe.jfe_type) {
+            case JLF_VARIABLE: {
+                auto vd_iter = this->elf_value_defs.find(jfe.jfe_value);
+                if (jfe.jfe_value != ts &&
+                    vd_iter == this->elf_value_defs.end()) {
+                    char index_str[32];
+
+                    snprintf(index_str, sizeof(index_str), "%d", format_index);
+                    errors.push_back("error:" +
+                                     this->elf_name.to_string() +
+                                     ":line_format[" +
+                                     index_str +
+                                     "]:line format variable is not defined -- " +
+                                     jfe.jfe_value.to_string());
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 
 void external_log_format::register_vtabs(log_vtab_manager *vtab_manager,
@@ -1610,7 +1724,7 @@ bool external_log_format::match_samples(const vector<sample> &samples) const
     for (vector<sample>::const_iterator sample_iter = samples.begin();
          sample_iter != samples.end();
          ++sample_iter) {
-        for (std::vector<external_log_format::pattern *>::const_iterator pat_iter = this->elf_pattern_order.begin();
+        for (auto pat_iter = this->elf_pattern_order.begin();
              pat_iter != this->elf_pattern_order.end();
              ++pat_iter) {
             pattern &pat = *(*pat_iter);
@@ -1638,15 +1752,18 @@ public:
     };
 
     void get_columns(vector<vtab_column> &cols) {
-        std::map<const intern_string_t, external_log_format::value_def>::const_iterator iter;
         const external_log_format &elf = this->elt_format;
 
-        cols.resize(elf.elf_value_defs.size());
-        for (iter = elf.elf_value_defs.begin();
+        cols.resize(elf.elf_column_count);
+        for (auto iter = elf.elf_value_defs.begin();
              iter != elf.elf_value_defs.end();
              ++iter) {
-            const external_log_format::value_def &vd = iter->second;
+            const auto &vd = *iter->second;
             int type = 0;
+
+            if (vd.vd_column == -1) {
+                continue;
+            }
 
             switch (vd.vd_kind) {
             case logline_value::VALUE_NULL:
@@ -1673,16 +1790,14 @@ public:
         }
     };
 
-    void get_foreign_keys(std::vector<std::string> &keys_inout)
+    void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {
-        std::map<const intern_string_t, external_log_format::value_def>::const_iterator iter;
-
         log_vtab_impl::get_foreign_keys(keys_inout);
 
-        for (iter = this->elt_format.elf_value_defs.begin();
+        for (auto iter = this->elt_format.elf_value_defs.begin();
              iter != this->elt_format.elf_value_defs.end();
              ++iter) {
-            if (iter->second.vd_foreign_key) {
+            if (iter->second->vd_foreign_key) {
                 keys_inout.push_back(iter->first.to_string());
             }
         }

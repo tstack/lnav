@@ -94,6 +94,8 @@ std::string log_vtab_impl::get_table_statement(void)
         << "  log_body text hidden\n"
         << ");\n";
 
+    log_debug("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
+
     return oss.str();
 }
 
@@ -226,7 +228,8 @@ static int vt_next(sqlite3_vtab_cursor *cur)
     do {
         log_cursor_latest = vc->log_cursor;
         if (((log_cursor_latest.lc_curr_line % 1024) == 0) &&
-            log_vtab_progress_callback(log_cursor_latest)) {
+            (log_vtab_progress_callback != NULL &&
+             log_vtab_progress_callback(log_cursor_latest))) {
             break;
         }
         done = vt->vi->next(vc->log_cursor, *vt->lss);

@@ -122,6 +122,8 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     this->lss_share_manager.invalidate_refs();
     this->lss_token_value =
         this->lss_token_file->read_line(this->lss_token_line);
+    this->lss_token_shift_start = 0;
+    this->lss_token_shift_size = 0;
 
     log_format *format = this->lss_token_file->get_format();
 
@@ -130,12 +132,16 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         format->scrub(value_out);
     }
 
-    if (!this->lss_token_line->is_continued()) {
+    if (!this->lss_token_line->is_continued() ||
+        this->lss_token_line->get_sub_offset() != 0) {
         shared_buffer_ref sbr;
 
         sbr.share(this->lss_share_manager,
                   (char *)this->lss_token_value.c_str(), this->lss_token_value.size());
         format->annotate(sbr, this->lss_token_attrs, this->lss_token_values);
+        if (this->lss_token_line->get_sub_offset() != 0) {
+            this->lss_token_attrs.clear();
+        }
 
         if ((this->lss_token_file->is_time_adjusted() ||
              format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) &&
@@ -146,42 +152,27 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                 this->lss_token_attrs, &logline::L_TIMESTAMP);
             if (time_range.is_valid()) {
                 struct timeval adjusted_time;
-                struct tm adjusted_tm;
+                struct exttm adjusted_tm;
                 char buffer[128];
                 const char *fmt;
+                ssize_t len;
 
                 if (format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) {
                     format->lf_date_time.convert_to_timeval(
                         &this->lss_token_value.c_str()[time_range.lr_start],
                         time_range.length(),
+                        format->get_timestamp_formats(),
                         adjusted_time);
-                    fmt = "%Y-%m-%d %H:%M:%S.";
+                    fmt = "%Y-%m-%d %H:%M:%S.%f";
+                    gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
+                    adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
+                    len = ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm);
                 }
                 else {
-                    fmt = PTIMEC_FORMAT_STR[format->lf_date_time.dts_fmt_lock];
                     adjusted_time = this->lss_token_line->get_timeval();
-                }
-                strftime(buffer, sizeof(buffer),
-                         fmt,
-                         gmtime_r(&adjusted_time.tv_sec, &adjusted_tm));
-
-                if (format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) {
-                    size_t buffer_len = strlen(buffer);
-
-                    snprintf(&buffer[buffer_len], sizeof(buffer) - buffer_len,
-                             "%06d",
-                             adjusted_time.tv_usec);
-                }
-
-                const char *last = value_out.c_str();
-                ssize_t len = strlen(buffer);
-
-                if ((last[time_range.lr_start + len] == '.' ||
-                     last[time_range.lr_start + len] == ',') &&
-                    len + 4 <= time_range.length()) {
-                    len = snprintf(&buffer[len], sizeof(buffer) - len,
-                                   ".%03d",
-                                   this->lss_token_line->get_millis());
+                    gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
+                    adjusted_tm.et_nsec = adjusted_time.tv_usec * 1000;
+                    len = format->lf_date_time.ftime(buffer, sizeof(buffer), adjusted_tm);
                 }
 
                 if (len > time_range.length()) {
@@ -195,16 +186,17 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                                        padding);
                 }
                 value_out.replace(time_range.lr_start,
-                                  strlen(buffer),
-                                  string(buffer));
+                                  len,
+                                  buffer,
+                                  len);
+                this->lss_token_shift_start = time_range.lr_start;
+                this->lss_token_shift_size = len - time_range.length();
             }
         }
     }
 
-    if (this->lss_files.size() > 1) {
-        // Insert space for the file markers.
-        value_out.insert(0, 1, ' ');
-    }
+    // Insert space for the file/search-hit markers.
+    value_out.insert(0, 1, ' ');
 
     if (this->lss_flags & F_TIME_OFFSET) {
         int64_t start_millis, curr_millis;
@@ -267,7 +259,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         attrs |= A_UNDERLINE;
     }
 
-    std::vector<logline_value> &line_values = this->lss_token_values;
+    const std::vector<logline_value> &line_values = this->lss_token_values;
 
     lr.lr_start = 0;
     lr.lr_end = this->lss_token_value.length();
@@ -278,9 +270,19 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
 
-    for (vector<logline_value>::iterator lv_iter = line_values.begin();
+    for (vector<logline_value>::const_iterator lv_iter = line_values.begin();
          lv_iter != line_values.end();
          ++lv_iter) {
+        if (lv_iter->lv_sub_offset != this->lss_token_line->get_sub_offset() ||
+            !lv_iter->lv_origin.is_valid()) {
+            continue;
+        }
+
+        if (lv_iter->lv_hidden) {
+            value_out.push_back(string_attr(
+                lv_iter->lv_origin, &textview_curses::SA_HIDDEN));
+        }
+
         if (!lv_iter->lv_identifier || !lv_iter->lv_origin.is_valid()) {
             continue;
         }
@@ -292,52 +294,55 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                 lv_iter->lv_origin, &view_curses::VC_STYLE, id_attrs));
     }
 
-    if (this->lss_files.size() > 1) {
-        shift_string_attrs(value_out, 0, 1);
-
-        lr.lr_start = 0;
-        lr.lr_end = 1;
-        {
-            vis_bookmarks &bm = lv.get_bookmarks();
-            bookmark_vector<vis_line_t> &bv = bm[&BM_FILES];
-            bool is_first_for_file = binary_search(
-                    bv.begin(), bv.end(), vis_line_t(row));
-            bool is_last_for_file = binary_search(
-                    bv.begin(), bv.end(), vis_line_t(row + 1));
-            chtype graph = ACS_VLINE;
-            if (is_first_for_file) {
-                if (is_last_for_file) {
-                    graph = ACS_DIAMOND;
-                }
-                else {
-                    graph = ACS_ULCORNER;
-                }
-            }
-            else if (is_last_for_file) {
-                graph = ACS_LLCORNER;
-            }
-            value_out.push_back(
-                    string_attr(lr, &view_curses::VC_GRAPHIC, graph));
-        }
-        value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
-                this->lss_token_file->get_filename())));
+    if (this->lss_token_shift_size) {
+        shift_string_attrs(value_out, this->lss_token_shift_start + 1,
+                           this->lss_token_shift_size);
     }
+
+    shift_string_attrs(value_out, 0, 1);
+
+    lr.lr_start = 0;
+    lr.lr_end = 1;
+    {
+        vis_bookmarks &bm = lv.get_bookmarks();
+        bookmark_vector<vis_line_t> &bv = bm[&BM_FILES];
+        bool is_first_for_file = binary_search(
+            bv.begin(), bv.end(), vis_line_t(row));
+        bool is_last_for_file = binary_search(
+            bv.begin(), bv.end(), vis_line_t(row + 1));
+        chtype graph = ACS_VLINE;
+        if (is_first_for_file) {
+            if (is_last_for_file) {
+                graph = ACS_DIAMOND;
+            }
+            else {
+                graph = ACS_ULCORNER;
+            }
+        }
+        else if (is_last_for_file) {
+            graph = ACS_LLCORNER;
+        }
+        value_out.push_back(
+            string_attr(lr, &view_curses::VC_GRAPHIC, graph));
+
+        bookmark_vector<vis_line_t> &bv_search = bm[&textview_curses::BM_SEARCH];
+
+        if (binary_search(::begin(bv_search), ::end(bv_search), vis_line_t(row))) {
+            lr.lr_start = 0;
+            lr.lr_end = 1;
+            value_out.push_back(string_attr(
+                lr, &view_curses::VC_STYLE, A_REVERSE));
+        }
+    }
+    value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
+        this->lss_token_file->get_filename())));
 
     if (this->lss_flags & F_TIME_OFFSET) {
         time_offset_end = 13;
         lr.lr_start     = 0;
         lr.lr_end       = time_offset_end;
 
-        for (string_attrs_t::iterator iter = value_out.begin();
-             iter != value_out.end();
-             ++iter) {
-            struct line_range *existing_lr = (line_range *)&iter->sa_range;
-
-            existing_lr->lr_start += time_offset_end;
-            if (existing_lr->lr_end != -1) {
-                existing_lr->lr_end += time_offset_end;
-            }
-        }
+        shift_string_attrs(value_out, 0, time_offset_end);
 
         // attrs = vc.attrs_for_role(view_colors::VCR_OK);
         attrs = view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK);

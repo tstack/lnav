@@ -8,16 +8,18 @@ AC_PREFIX_DEFAULT(/usr)
 
 AC_CANONICAL_HOST
 
+AX_CXX_COMPILE_STDCXX_11([noext], [mandatory])
+
 for defdir in /opt/local /usr/local /usr /; do
     if test -d "$defdir/include"; then
         CPPFLAGS="$CPPFLAGS -I$defdir/include"
     fi
 
-    if test -d "$defdir/lib"; then
-        LDFLAGS="$LDFLAGS -L$defdir/lib"
-    fi
     if test -d "$defdir/lib64"; then
         LDFLAGS="$LDFLAGS -L$defdir/lib64"
+    fi
+    if test -d "$defdir/lib"; then
+        LDFLAGS="$LDFLAGS -L$defdir/lib"
     fi
 
     if test -d "$defdir/lib/x86_64-linux-gnu"; then
@@ -63,6 +65,7 @@ AC_SUBST(CFLAGS_PG)
 
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+AM_PROG_AR
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
@@ -112,7 +115,7 @@ dnl and gpm libraries with interdependencies. This check is not required on OS X
 AS_CASE(["$host_os"],
     [darwin*],
     [],
-    AC_SEARCH_LIBS(Gpm_Open, gpm,
+    AC_SEARCH_LIBS(Gpm_Open, [gpm :libgpm.so.2],
        AS_VAR_SET(HAVE_GPM, "1"),
        AC_MSG_WARN(m4_join([ ],
                    [libgpm not found. If build fails later],
@@ -148,7 +151,7 @@ esac
 AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
 
 AS_VAR_SET(static_lib_list,
-           ["libncurses.a libreadline.a libsqlite3.a libz.a libtinfo.a"])
+           ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a"])
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libpcre.a libpcrecpp.a libncursesw.a libbz2.a"])
 AS_VAR_SET(static_lib_list,
@@ -176,12 +179,22 @@ if test x"${enable_static}" != x"no"; then
         -L*)
                 libdir=`echo $libflag | sed -e 's/-L//'`
                 for slib in $static_lib_list; do
-                    if test -e "$libdir/$slib"; then
+                    if test -e "$libdir/$slib" -a ! -e "src/static-libs/$slib"; then
                         ln -sf "$libdir/$slib" src/static-libs/.
                     fi
                 done
         ;;
         esac
+    done
+
+    for slib in $static_lib_list; do
+        AC_MSG_CHECKING(for static library $slib)
+        if test -e "src/static-libs/$slib"; then
+            found_slib=`readlink src/static-libs/$slib`
+            AC_MSG_RESULT($found_slib)
+        else
+            AC_MSG_RESULT(not found)
+        fi
     done
 fi
 AC_SUBST(STATIC_LDFLAGS)
