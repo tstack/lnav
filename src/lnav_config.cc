@@ -280,6 +280,8 @@ static struct json_path_handler global_var_handlers[] = {
             }
         })
         .for_field(&nullobj<_lnav_config>()->lc_global_vars),
+
+    json_path_handler()
 };
 
 static struct json_path_handler root_config_handlers[] = {
