@@ -348,6 +348,23 @@ static string com_relative_goto(exec_context &ec, string cmdline, vector<string>
     return retval;
 }
 
+static string com_mark(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval = "";
+
+    if (args.empty()) {
+
+    } else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        lnav_data.ld_last_user_mark[tc] = tc->get_top();
+        tc->toggle_user_mark(&textview_curses::BM_USER,
+                             vis_line_t(lnav_data.ld_last_user_mark[tc]));
+        tc->reload_data();
+    }
+
+    return retval;
+}
+
 static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
@@ -368,11 +385,14 @@ static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &ar
             retval = "error: unknown bookmark type";
         }
         else {
-            moveto_cluster(args[0] == "next-mark" ?
-                    &bookmark_vector<vis_line_t>::next :
-                    &bookmark_vector<vis_line_t>::prev,
-                    bt,
-                    tc->get_top());
+            if (args[0] == "next-mark") {
+                moveto_cluster(&bookmark_vector<vis_line_t>::next,
+                               bt,
+                               search_forward_from(tc));
+            } else {
+                previous_cluster(bt, tc);
+            }
+            lnav_data.ld_bottom_source.grep_error("");
         }
     }
 
@@ -466,8 +486,12 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
 
     vector<string> split_args;
     shlex lexer(fn);
+    scoped_resolver scopes = {
+        &ec.ec_local_vars.top(),
+        &ec.ec_global_vars,
+    };
 
-    if (!lexer.split(split_args, ec.ec_local_vars.top())) {
+    if (!lexer.split(split_args, scopes)) {
         return "error: unable to parse arguments";
     }
     if (split_args.size() > 1) {
@@ -1313,8 +1337,12 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
 
     vector<string> split_args;
     shlex lexer(pat);
+    scoped_resolver scopes = {
+        &ec.ec_local_vars.top(),
+        &ec.ec_global_vars,
+    };
 
-    if (!lexer.split(split_args, ec.ec_local_vars.top())) {
+    if (!lexer.split(split_args, scopes)) {
         return "error: unable to parse arguments";
     }
 
@@ -2279,6 +2307,31 @@ static string com_echo(exec_context &ec, string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_alt_msg(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting a message";
+
+    if (args.empty()) {
+
+    }
+    else if (args.size() == 1) {
+        if (lnav_data.ld_rl_view != NULL) {
+            lnav_data.ld_rl_view->set_alt_value("");
+        }
+    }
+    else {
+        string msg = remaining_args(cmdline, args);
+
+        if (lnav_data.ld_rl_view != NULL) {
+            lnav_data.ld_rl_view->set_alt_value(msg);
+        }
+
+        retval = "";
+    }
+
+    return retval;
+}
+
 static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a command or query to evaluate";
@@ -2292,7 +2345,10 @@ static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
         shlex lexer(all_args.c_str(), all_args.size());
 
         log_debug("Evaluating: %s", all_args.c_str());
-        if (!lexer.eval(expanded_cmd, ec.ec_local_vars.top())) {
+        if (!lexer.eval(expanded_cmd, {
+            &ec.ec_local_vars.top(),
+            &ec.ec_global_vars,
+        })) {
             return "error: invalid arguments";
         }
         log_debug("Expanded command to evaluate: %s", expanded_cmd.c_str());
@@ -2822,6 +2878,12 @@ readline_context::command_t STD_COMMANDS[] = {
         com_relative_goto,
     },
     {
+        "mark",
+        NULL,
+        "Toggle the bookmark state for the top line in the current view",
+        com_mark,
+    },
+    {
         "next-mark",
         "error|warning|search|user|file|partition",
         "Move to the next bookmark of the given type in the current view",
@@ -3094,6 +3156,12 @@ readline_context::command_t STD_COMMANDS[] = {
         "[-n] <msg>",
         "Echo the given message",
         com_echo,
+    },
+    {
+        "alt-msg",
+        "<msg>",
+        "Display a message in the alternate command position",
+        com_alt_msg,
     },
     {
         "eval",

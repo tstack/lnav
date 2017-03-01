@@ -162,13 +162,19 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                                   SQLITE_TRANSIENT);
             }
             else if (name[0] == '$') {
-                map<string, string> &vars = ec.ec_local_vars.top();
-                map<string, string>::iterator local_var;
+                map<string, string> &lvars = ec.ec_local_vars.top();
+                map<string, string> &gvars = ec.ec_global_vars;
+                map<string, string>::iterator local_var, global_var;
                 const char *env_value;
 
-                if ((local_var = vars.find(&name[1])) != vars.end()) {
+                if ((local_var = lvars.find(&name[1])) != lvars.end()) {
                     sqlite3_bind_text(stmt.in(), lpc + 1,
                                       local_var->second.c_str(), -1,
+                                      SQLITE_TRANSIENT);
+                }
+                else if ((global_var = gvars.find(&name[1])) != gvars.end()) {
+                    sqlite3_bind_text(stmt.in(), lpc + 1,
+                                      global_var->second.c_str(), -1,
                                       SQLITE_TRANSIENT);
                 }
                 else if ((env_value = getenv(&name[1])) != NULL) {

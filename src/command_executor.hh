@@ -58,6 +58,7 @@ struct exec_context {
     std::map<std::string, std::string> ec_override;
     std::vector<logline_value> *ec_line_values;
     std::stack<std::map<std::string, std::string> > ec_local_vars;
+    std::map<std::string, std::string> ec_global_vars;
     std::stack<std::string> ec_path_stack;
 
     std::string ec_accumulator;

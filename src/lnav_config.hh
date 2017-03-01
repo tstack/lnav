@@ -90,7 +90,7 @@ void install_git_format(const char *repo);
 void install_extra_formats();
 
 struct key_map {
-    std::map<std::string, std::string> km_seq_to_cmd;
+    std::map<std::string, std::vector<std::string>> km_seq_to_cmd;
 };
 
 struct _lnav_config {
@@ -99,6 +99,7 @@ struct _lnav_config {
     std::string lc_ui_keymap;
     std::unordered_map<std::string, key_map> lc_ui_keymaps;
     std::map<std::string, std::string> lc_ui_key_overrides;
+    std::map<std::string, std::string> lc_global_vars;
 };
 
 extern struct _lnav_config lnav_config;

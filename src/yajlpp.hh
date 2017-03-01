@@ -158,8 +158,13 @@ int yajlpp_static_enum(yajlpp_parse_context *, const unsigned char *, size_t);
 yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
                                          const json_path_handler_base &,
                                          yajl_gen);
+yajl_gen_status yajlpp_static_gen_string_vector(yajlpp_gen_context &ygc,
+                                                const json_path_handler_base &,
+                                                yajl_gen);
 void yajlpp_validator_for_string(yajlpp_parse_context &ypc,
                                  const json_path_handler_base &jph);
+void yajlpp_validator_for_string_vector(yajlpp_parse_context &ypc,
+                                        const json_path_handler_base &jph);
 void yajlpp_validator_for_intern_string(yajlpp_parse_context &ypc,
                                         const json_path_handler_base &jph);
 void yajlpp_validator_for_int(yajlpp_parse_context &ypc,
@@ -315,6 +320,15 @@ struct json_path_handler : public json_path_handler_base {
         this->jph_simple_offset = field;
         this->jph_gen_callback = yajlpp_static_gen_string;
         this->jph_validator = yajlpp_validator_for_string;
+        return *this;
+    };
+
+    json_path_handler &for_field(std::map<std::string, std::vector<std::string>> *field) {
+        this->add_cb(yajlpp_static_string_vector);
+        this->jph_kv_pair = true;
+        this->jph_simple_offset = field;
+        this->jph_gen_callback = yajlpp_static_gen_string_vector;
+        this->jph_validator = yajlpp_validator_for_string_vector;
         return *this;
     };
 

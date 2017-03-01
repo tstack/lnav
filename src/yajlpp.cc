@@ -85,10 +85,19 @@ int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, si
 
 int yajlpp_static_string_vector(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    vector<string> &field_ptr = resolve_root<vector<string>>(ypc);
+    const json_path_handler_base *jph = ypc->ypc_current_handler;
 
-    field_ptr.push_back(string((const char *) str, len));
-    yajlpp_validator_for_string(*ypc, *ypc->ypc_current_handler);
+    if (jph->jph_kv_pair) {
+        map<string, vector<string>> &field_ptr = resolve_root<map<string, vector<string>>>(ypc);
+
+        field_ptr[ypc->get_path_fragment(-2)].push_back(string((const char *) str, len));
+    } else {
+        vector<string> &field_ptr = resolve_root<vector<string>>(ypc);
+
+        field_ptr.push_back(string((const char *) str, len));
+    }
+
+    yajlpp_validator_for_string_vector(*ypc, *ypc->ypc_current_handler);
 
     return 1;
 }
@@ -180,6 +189,43 @@ yajl_gen_status yajlpp_static_gen_string(yajlpp_gen_context &ygc,
     }
 }
 
+yajl_gen_status yajlpp_static_gen_string_vector(yajlpp_gen_context &ygc,
+                                                const json_path_handler_base &jph,
+                                                yajl_gen handle)
+{
+    if (jph.jph_kv_pair) {
+        map<string, vector<string>> *default_field_ptr = resolve_root<map<string, vector<string>>>(
+            ygc.ygc_default_stack, jph);
+        map<string, vector<string>> *field_ptr = resolve_root<map<string, vector<string>>>(
+            ygc.ygc_obj_stack, jph);
+        const string &base_name = ygc.ygc_base_name;
+
+        if (default_field_ptr != NULL &&
+            ((*default_field_ptr)[base_name] == (*field_ptr)[base_name])) {
+            return yajl_gen_status_ok;
+        }
+
+        if (ygc.ygc_depth) {
+            yajl_gen_string(handle, base_name);
+        }
+
+        {
+            yajlpp_array arr(handle);
+
+            for (string str : (*field_ptr)[base_name]) {
+                yajl_gen_string(handle, str);
+            }
+        }
+
+        return yajl_gen_status_ok;
+    }
+    else {
+        ensure(0);
+
+        return yajl_gen_status_ok;
+    }
+}
+
 void yajlpp_validator_for_string(yajlpp_parse_context &ypc,
                                  const json_path_handler_base &jph)
 {
@@ -194,6 +240,25 @@ void yajlpp_validator_for_string(yajlpp_parse_context &ypc,
     } else if (field_ptr.size() < jph.jph_min_length) {
         ypc.report_error("value must be at least %lu characters long",
                          jph.jph_min_length);
+    }
+}
+
+void yajlpp_validator_for_string_vector(yajlpp_parse_context &ypc,
+                                        const json_path_handler_base &jph)
+{
+    if (jph.jph_kv_pair) {
+        return; // XXX
+    }
+
+    vector<string> &field_ptr = resolve_root<vector<string>>(&ypc);
+
+    for (string str : field_ptr) {
+        if (str.empty() && jph.jph_min_length > 0) {
+            ypc.report_error("value must not be empty");
+        } else if (str.size() < jph.jph_min_length) {
+            ypc.report_error("value must be at least %lu characters long",
+                             jph.jph_min_length);
+        }
     }
 }
 

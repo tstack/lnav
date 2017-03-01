@@ -134,6 +134,7 @@
 #include "field_overlay_source.hh"
 #include "url_loader.hh"
 #include "log_search_table.hh"
+#include "shlex.hh"
 
 using namespace std;
 
@@ -240,6 +241,22 @@ public:
         }
     };
 };
+
+static void add_global_vars(exec_context &ec)
+{
+    for (const auto &iter : lnav_config.lc_global_vars) {
+        shlex subber(iter.second);
+        string str;
+
+        if (!subber.eval(str, ec.ec_global_vars)) {
+            log_error("Unable to evaluate global variable value: %s",
+                      iter.second.c_str());
+            continue;
+        }
+
+        ec.ec_global_vars[iter.first] = str;
+    }
+}
 
 bool setup_logline_table()
 {
@@ -791,7 +808,8 @@ static void open_pretty_view(void)
 
             format->annotate(sbr, sa, values);
             exec_context ec(&values, pretty_sql_callback, pretty_pipe_callback);
-            add_ansi_vars(ec.ec_local_vars.top());
+            add_ansi_vars(ec.ec_global_vars);
+            add_global_vars(ec);
             format->rewrite(ec, sbr, sa, rewritten_line);
 
             data_scanner ds(rewritten_line);
@@ -1699,9 +1717,11 @@ static void handle_key(int ch) {
 
         const auto &iter = km.km_seq_to_cmd.find(keyseq);
         if (iter != km.km_seq_to_cmd.end()) {
-            log_debug("executing key sequence x%02x: %s",
-                      keyseq, iter->second.c_str());
-            execute_any(lnav_data.ld_exec_context, iter->second);
+            for (string cmd : iter->second) {
+                log_debug("executing key sequence x%02x: %s",
+                          keyseq, cmd.c_str());
+                execute_any(lnav_data.ld_exec_context, cmd);
+            }
             return;
         }
     }
@@ -2524,7 +2544,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_exec_context.ec_pipe_callback = pipe_callback;
 
     lnav_data.ld_program_name = argv[0];
-    add_ansi_vars(ec.ec_local_vars.top());
+    add_ansi_vars(ec.ec_global_vars);
 
     rl_readline_name = "lnav";
 
@@ -2666,6 +2686,7 @@ int main(int argc, char *argv[])
         print_errors(config_errors);
         return EXIT_FAILURE;
     }
+    add_global_vars(ec);
 
     string formats_path = dotlnav_path("formats/");
 

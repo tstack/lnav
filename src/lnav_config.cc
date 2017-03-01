@@ -238,7 +238,7 @@ struct userdata {
 };
 
 static struct json_path_handler keymap_def_handlers[] = {
-    json_path_handler("(?<key_seq>(x[0-9a-f]{2})+)")
+    json_path_handler("(?<key_seq>(x[0-9a-f]{2})+)#")
         .with_synopsis("<command>")
         .with_description("The command to execute for the given key sequence")
         .with_pattern("[:|;].*")
@@ -270,9 +270,24 @@ static struct json_path_handler keymap_defs_handlers[] = {
     json_path_handler()
 };
 
+static struct json_path_handler global_var_handlers[] = {
+    json_path_handler("(?<var_name>\\w+)")
+        .with_synopsis("<name>")
+        .with_description("A global variable definition")
+        .with_path_provider<_lnav_config>([](struct _lnav_config *cfg, vector<string> &paths_out) {
+            for (const auto &iter : cfg->lc_global_vars) {
+                paths_out.push_back(iter.first);
+            }
+        })
+        .for_field(&nullobj<_lnav_config>()->lc_global_vars),
+};
+
 static struct json_path_handler root_config_handlers[] = {
     json_path_handler("/keymap_def/")
         .with_children(keymap_defs_handlers),
+
+    json_path_handler("/global/")
+        .with_children(global_var_handlers),
 
     json_path_handler()
 };

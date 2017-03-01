@@ -299,24 +299,6 @@ void handle_paging_key(int ch)
             lnav_data.ld_rl_view->set_value("Cleared bookmarks");
             break;
 
-        case 'e':
-            moveto_cluster(&bookmark_vector<vis_line_t>::next,
-                           &logfile_sub_source::BM_ERRORS,
-                           tc->get_top());
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    w, W,
-                    "to move forward/backward through warning messages"));
-            break;
-
-        case 'E':
-            moveto_cluster(&bookmark_vector<vis_line_t>::prev,
-                           &logfile_sub_source::BM_ERRORS,
-                           tc->get_top());
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    w, W,
-                    "to move forward/backward through warning messages"));
-            break;
-
         case 'w':
             moveto_cluster(&bookmark_vector<vis_line_t>::next,
                            &logfile_sub_source::BM_WARNINGS,
@@ -333,24 +315,6 @@ void handle_paging_key(int ch)
             lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
                     6, ^,
                     "to move to next/previous hour boundary"));
-            break;
-
-        case 'n':
-            moveto_cluster(&bookmark_vector<vis_line_t>::next,
-                           &textview_curses::BM_SEARCH,
-                           search_forward_from(tc));
-            lnav_data.ld_bottom_source.grep_error("");
-            lnav_data.ld_rl_view->set_alt_value(
-                "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
-                    "' to scroll horizontally to a search result");
-            break;
-
-        case 'N':
-            previous_cluster(&textview_curses::BM_SEARCH, tc);
-            lnav_data.ld_bottom_source.grep_error("");
-            lnav_data.ld_rl_view->set_alt_value(
-                "Press '" ANSI_BOLD(">") "' or '" ANSI_BOLD("<")
-                    "' to scroll horizontally to a search result");
             break;
 
         case 'y':
@@ -501,17 +465,6 @@ void handle_paging_key(int ch)
             }
             break;
         }
-
-        case 'm':
-            lnav_data.ld_last_user_mark[tc] = tc->get_top();
-            tc->toggle_user_mark(&textview_curses::BM_USER,
-                                 vis_line_t(lnav_data.ld_last_user_mark[tc]));
-            tc->reload_data();
-
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    u, U,
-                    "to move forward/backward through user bookmarks"));
-            break;
 
         case 'J':
             if (lnav_data.ld_last_user_mark.find(tc) ==

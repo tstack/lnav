@@ -33,6 +33,8 @@
 #define LNAV_SHLEX_HH_H
 
 #include <map>
+#include <vector>
+#include <string>
 
 #include "pcrepp.hh"
 
@@ -47,6 +49,33 @@ enum shlex_token_t {
     ST_VARIABLE_REF,
     ST_QUOTED_VARIABLE_REF,
     ST_TILDE,
+};
+
+class scoped_resolver {
+public:
+    scoped_resolver(std::initializer_list<std::map<std::string, std::string> *> l) {
+        this->sr_stack.insert(this->sr_stack.end(), l.begin(), l.end());
+    };
+
+    typedef std::map<std::string, std::string>::const_iterator const_iterator;
+
+    const_iterator find(const std::string &str) const {
+        const_iterator retval;
+
+        for (auto scope : this->sr_stack) {
+            if ((retval = scope->find(str)) != scope->end()) {
+                return retval;
+            }
+        }
+
+        return this->end();
+    };
+
+    const_iterator end() const {
+        return this->sr_stack.back()->end();
+    }
+
+    std::vector<const std::map<std::string, std::string> *> sr_stack;
 };
 
 class shlex {
@@ -165,7 +194,8 @@ public:
         return false;
     };
 
-    bool eval(std::string &result, const std::map<std::string, std::string> &vars) {
+    template <typename Resolver = scoped_resolver>
+    bool eval(std::string &result, const Resolver &vars) {
         result.clear();
 
         pcre_context::capture_t cap;
@@ -220,7 +250,8 @@ public:
         return true;
     };
 
-    bool split(std::vector<std::string> &result, const std::map<std::string, std::string> &vars) {
+    template <typename Resolver>
+    bool split(std::vector<std::string> &result, const Resolver &vars) {
         result.clear();
 
         pcre_context::capture_t cap;
