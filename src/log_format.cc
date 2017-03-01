@@ -1414,6 +1414,17 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 }
                 ivd.ivd_value_def = value_iter->second.get();
                 pat.p_value_by_index.push_back(ivd);
+
+                if (!vd.vd_foreign_key && !vd.vd_identifier) {
+                    switch (vd.vd_kind) {
+                        case logline_value::VALUE_INTEGER:
+                        case logline_value::VALUE_FLOAT:
+                            pat.p_numeric_value_indexes.push_back(ivd.ivd_index);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
 
