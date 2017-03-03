@@ -1414,21 +1414,26 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 }
                 ivd.ivd_value_def = value_iter->second.get();
                 pat.p_value_by_index.push_back(ivd);
-
-                if (!vd.vd_foreign_key && !vd.vd_identifier) {
-                    switch (vd.vd_kind) {
-                        case logline_value::VALUE_INTEGER:
-                        case logline_value::VALUE_FLOAT:
-                            pat.p_numeric_value_indexes.push_back(ivd.ivd_index);
-                            break;
-                        default:
-                            break;
-                    }
-                }
             }
         }
 
         stable_sort(pat.p_value_by_index.begin(), pat.p_value_by_index.end());
+
+        for (int lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
+            auto &ivd = pat.p_value_by_index[lpc];
+            auto &vd = *ivd.ivd_value_def;
+
+            if (!vd.vd_foreign_key && !vd.vd_identifier) {
+                switch (vd.vd_kind) {
+                    case logline_value::VALUE_INTEGER:
+                    case logline_value::VALUE_FLOAT:
+                        pat.p_numeric_value_indexes.push_back(lpc);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
 
         if (!this->elf_level_field.empty() && pat.p_level_field_index == -1) {
             log_warning("%s:level field '%s' not found in pattern",
