@@ -248,7 +248,7 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
     }
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         int   line_number, consumed;
         date_time_scanner dts;
         struct relative_time::parse_error pe;
@@ -326,7 +326,7 @@ static string com_relative_goto(exec_context &ec, string cmdline, vector<string>
     if (args.size() == 0) {
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         int   line_offset, consumed;
         float value;
 
@@ -352,10 +352,10 @@ static string com_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "";
 
-    if (args.empty()) {
+    if (args.empty() || lnav_data.ld_view_stack.empty()) {
 
     } else {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         lnav_data.ld_last_user_mark[tc] = tc->get_top();
         tc->toggle_user_mark(&textview_curses::BM_USER,
                              vis_line_t(lnav_data.ld_last_user_mark[tc]));
@@ -373,7 +373,7 @@ static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &ar
         args.push_back("mark-type");
     }
     else {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         string type_name = "user";
 
         if (args.size() > 1) {
@@ -506,7 +506,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
     }
 
 
-    textview_curses *            tc = lnav_data.ld_view_stack.top();
+    textview_curses *            tc = lnav_data.ld_view_stack.back();
     bookmark_vector<vis_line_t> &bv =
         tc->get_bookmarks()[&textview_curses::BM_USER];
     db_label_source &dls = lnav_data.ld_db_row_source;
@@ -684,7 +684,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
         return retval;
     }
 
-    textview_curses *            tc = lnav_data.ld_view_stack.top();
+    textview_curses *            tc = lnav_data.ld_view_stack.back();
     bookmark_vector<vis_line_t> &bv =
             tc->get_bookmarks()[&textview_curses::BM_USER];
     bool pipe_line_to = (args[0] == "pipe-line-to");
@@ -818,7 +818,7 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
         args.push_back("filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         textview_curses::highlight_map_t &hm = tc->get_highlights();
         const char *errptr;
         pcre *      code;
@@ -863,7 +863,7 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
         args.push_back("highlight");
     }
     else if (args.size() > 1 && args[1][0] != '$') {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         textview_curses::highlight_map_t &hm = tc->get_highlights();
         textview_curses::highlight_map_t::iterator hm_iter;
 
@@ -931,7 +931,7 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
         args.push_back("filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
         const char *errptr;
@@ -983,7 +983,7 @@ static string com_delete_filter(exec_context &ec, string cmdline, vector<string>
         args.push_back("filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
 
@@ -1009,7 +1009,7 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
         args.push_back("disabled-filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
         shared_ptr<text_filter> lf;
@@ -1041,7 +1041,7 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
         args.push_back("enabled-filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
         shared_ptr<text_filter> lf;
@@ -1472,7 +1472,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
 
     }
     else {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         string fn;
 
         if (tc == &lnav_data.ld_views[LNV_TEXT]) {
@@ -1486,7 +1486,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
                 tss.current_file()->close();
 
                 if (tss.size() == 1) {
-                    lnav_data.ld_view_stack.pop();
+                    lnav_data.ld_view_stack.pop_back();
                 }
             }
         }
@@ -1861,7 +1861,7 @@ static string com_add_test(exec_context &ec, string cmdline, vector<string> &arg
         retval = "error: not expecting any arguments";
     }
     else {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
 
         bookmark_vector<vis_line_t> &bv =
             tc->get_bookmarks()[&textview_curses::BM_USER];
@@ -1959,7 +1959,7 @@ static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args
                 }
 
                 if (!lnav_data.ld_view_stack.empty()) {
-                    lnav_data.ld_view_stack.top()->set_needs_update();
+                    lnav_data.ld_view_stack.back()->set_needs_update();
                 }
 
                 found = true;
@@ -2045,7 +2045,7 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
     } else if (args.size() < 2) {
         retval = "error: Expecting a log message field name";
     } else {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             retval = "error: hiding fields only works in the log view";
@@ -2107,7 +2107,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
         args.push_back("move-time");
     }
     else if (args.size() == 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         logfile_sub_source &lss = lnav_data.ld_log_source;
 
         if (tc == &lnav_data.ld_views[LNV_LOG]) {
@@ -2140,7 +2140,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
     }
     else if (args.size() >= 2) {
         string all_args = remaining_args(cmdline, args);
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         logfile_sub_source &lss = lnav_data.ld_log_source;
         date_time_scanner dts;
         struct timeval tv;
@@ -2207,7 +2207,7 @@ static string com_show_lines(exec_context &ec, string cmdline, vector<string> &a
 
     if (!args.empty()) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
 
         if (tc == &lnav_data.ld_views[LNV_LOG]) {
             lss.clear_min_max_log_times();
@@ -2318,6 +2318,7 @@ static string com_alt_msg(exec_context &ec, string cmdline, vector<string> &args
         if (lnav_data.ld_rl_view != NULL) {
             lnav_data.ld_rl_view->set_alt_value("");
         }
+        retval = "";
     }
     else {
         string msg = remaining_args(cmdline, args);
@@ -2804,7 +2805,7 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
         }
         ss.invalidate();
 
-        if (lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_DB]) {
+        if (lnav_data.ld_view_stack.back() == &lnav_data.ld_views[LNV_DB]) {
             unique_ptr<db_spectro_value_source> dsvs(
                 new db_spectro_value_source(colname));
 

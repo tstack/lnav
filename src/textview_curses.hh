@@ -751,7 +751,7 @@ public:
         this->tc_hide_fields = !this->tc_hide_fields;
 
         return retval;
-    }
+    };
 
 protected:
     text_sub_source *tc_sub_source;
@@ -771,4 +771,5 @@ protected:
     bool tc_selection_cleared;
     bool tc_hide_fields;
 };
+
 #endif

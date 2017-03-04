@@ -634,7 +634,7 @@ void rebuild_indexes(bool force)
             lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->start();
         }
 
-        lnav_data.ld_view_stack.top()->reload_data();
+        lnav_data.ld_view_stack.back()->reload_data();
     }
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -646,7 +646,7 @@ void rebuild_indexes(bool force)
     }
 
     if (!lnav_data.ld_view_stack.empty()) {
-        textview_curses *tc = lnav_data.ld_view_stack.top();
+        textview_curses *tc = lnav_data.ld_view_stack.back();
         lnav_data.ld_bottom_source.update_filtered(tc->get_sub_source());
         lnav_data.ld_scroll_broadcaster.invoke(tc);
     }
@@ -716,6 +716,7 @@ static void open_schema_view(void)
     schema += "\n\n-- Virtual Table Definitions --\n\n";
     schema += ENVIRON_CREATE_STMT;
     schema += LNAV_VIEWS_CREATE_STMT;
+    schema += LNAV_VIEW_STACK_CREATE_STMT;
     for (log_vtab_manager::iterator vtab_iter =
             lnav_data.ld_vtab_manager->begin();
          vtab_iter != lnav_data.ld_vtab_manager->end();
@@ -772,7 +773,7 @@ static void open_pretty_view(void)
     static const char *NOTHING_MSG =
             "Nothing to pretty-print";
 
-    textview_curses *top_tc = lnav_data.ld_view_stack.top();
+    textview_curses *top_tc = lnav_data.ld_view_stack.back();
     textview_curses *pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
     textview_curses *log_tc = &lnav_data.ld_views[LNV_LOG];
     textview_curses *text_tc = &lnav_data.ld_views[LNV_TEXT];
@@ -844,7 +845,7 @@ static void open_pretty_view(void)
 
 bool toggle_view(textview_curses *toggle_tc)
 {
-    textview_curses *tc     = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.top();
+    textview_curses *tc     = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.back();
     bool             retval = false;
 
     require(toggle_tc != NULL);
@@ -853,7 +854,7 @@ bool toggle_view(textview_curses *toggle_tc)
 
     if (tc == toggle_tc) {
         lnav_data.ld_last_view = tc;
-        lnav_data.ld_view_stack.pop();
+        lnav_data.ld_view_stack.pop_back();
     }
     else {
         if (toggle_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
@@ -863,14 +864,12 @@ bool toggle_view(textview_curses *toggle_tc)
             open_pretty_view();
         }
         lnav_data.ld_last_view = NULL;
-        lnav_data.ld_view_stack.push(toggle_tc);
+        lnav_data.ld_view_stack.push_back(toggle_tc);
         retval = true;
     }
-    tc = lnav_data.ld_view_stack.top();
+    tc = lnav_data.ld_view_stack.back();
     tc->set_needs_update();
-    lnav_data.ld_scroll_broadcaster.invoke(tc);
-
-    update_view_name();
+    lnav_data.ld_view_stack_broadcaster.invoke(tc);
 
     return retval;
 }
@@ -888,7 +887,7 @@ void redo_search(lnav_view_t view_index)
         gp->queue_request(grep_line_t(0));
         gp->start();
     }
-    if (tc == lnav_data.ld_view_stack.top()) {
+    if (tc == lnav_data.ld_view_stack.back()) {
         lnav_data.ld_scroll_broadcaster.invoke(tc);
     }
 }
@@ -901,7 +900,7 @@ void redo_search(lnav_view_t view_index)
  */
 bool ensure_view(textview_curses *expected_tc)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.top();
+    textview_curses *tc = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.back();
     bool retval = true;
 
     if (tc != expected_tc) {
@@ -916,7 +915,7 @@ vis_line_t next_cluster(
     bookmark_type_t *bt,
     const vis_line_t top)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.top();
+    textview_curses *tc = lnav_data.ld_view_stack.back();
     vis_bookmarks &bm = tc->get_bookmarks();
     bookmark_vector<vis_line_t> &bv = bm[bt];
     bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
@@ -957,7 +956,7 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
                     bookmark_type_t *bt,
                     vis_line_t top)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.top();
+    textview_curses *tc = lnav_data.ld_view_stack.back();
     vis_line_t new_top;
 
     new_top = next_cluster(f, bt, top);
@@ -1664,7 +1663,7 @@ public:
 
     void mouse_event(int button, bool release, int x, int y)
     {
-        textview_curses *   tc  = lnav_data.ld_view_stack.top();
+        textview_curses *   tc  = lnav_data.ld_view_stack.back();
         struct mouse_event me;
 
         switch (button & xterm_mouse::XT_BUTTON__MASK) {
@@ -1717,11 +1716,19 @@ static void handle_key(int ch) {
 
         const auto &iter = km.km_seq_to_cmd.find(keyseq);
         if (iter != km.km_seq_to_cmd.end()) {
+            auto &var_stack = lnav_data.ld_exec_context.ec_local_vars;
+            string result;
+
+            var_stack.push(map<string, string>());
+            auto &vars = var_stack.top();
+            vars["keyseq"] = keyseq;
             for (string cmd : iter->second) {
                 log_debug("executing key sequence x%02x: %s",
                           keyseq, cmd.c_str());
-                execute_any(lnav_data.ld_exec_context, cmd);
+                result = execute_any(lnav_data.ld_exec_context, cmd);
             }
+
+            lnav_data.ld_rl_view->set_value(result);
             return;
         }
     }
@@ -1754,7 +1761,7 @@ static void handle_key(int ch) {
 void update_hits(void *dummy, textview_curses *tc)
 {
     if (!lnav_data.ld_view_stack.empty() &&
-        tc == lnav_data.ld_view_stack.top()) {
+        tc == lnav_data.ld_view_stack.back()) {
         lnav_data.ld_bottom_source.update_hits(tc);
     }
 }
@@ -1818,6 +1825,8 @@ static void looper(void)
 
         listview_curses::action::broadcaster &sb =
             lnav_data.ld_scroll_broadcaster;
+        listview_curses::action::broadcaster &vsb =
+            lnav_data.ld_view_stack_broadcaster;
 
         rlc.add_context(LNM_COMMAND, command_context);
         rlc.add_context(LNM_SEARCH, search_context);
@@ -1885,8 +1894,7 @@ static void looper(void)
 
         (void)curs_set(0);
 
-        lnav_data.ld_view_stack.push(&lnav_data.ld_views[LNV_LOG]);
-        update_view_name();
+        lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
 
         for (lpc = 0; lpc < LNV__MAX; lpc++) {
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
@@ -1911,9 +1919,12 @@ static void looper(void)
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
 
+        vsb.push_back(sb.get_functor());
+
         sb.push_back(view_action<listview_curses>(update_times));
         sb.push_back(view_action<listview_curses>(clear_last_user_mark));
         sb.push_back(&lnav_data.ld_top_source.filename_wire);
+        vsb.push_back(&lnav_data.ld_top_source.view_name_wire);
         sb.push_back(&lnav_data.ld_bottom_source.line_number_wire);
         sb.push_back(&lnav_data.ld_bottom_source.percent_wire);
         sb.push_back(&lnav_data.ld_bottom_source.marks_wire);
@@ -1924,7 +1935,8 @@ static void looper(void)
 
         execute_file(ec, dotlnav_path("session"));
 
-        lnav_data.ld_scroll_broadcaster.invoke(lnav_data.ld_view_stack.top());
+        sb.invoke(lnav_data.ld_view_stack.back());
+        vsb.invoke(lnav_data.ld_view_stack.back());
 
         bool session_loaded = false;
         ui_periodic_timer &timer = ui_periodic_timer::singleton();
@@ -1944,7 +1956,7 @@ static void looper(void)
 
             lnav_data.ld_status[LNS_TOP].do_update();
             if (!lnav_data.ld_view_stack.empty()) {
-                lnav_data.ld_view_stack.top()->do_update();
+                lnav_data.ld_view_stack.back()->do_update();
             }
             lnav_data.ld_match_view.do_update();
             lnav_data.ld_status[LNS_BOTTOM].do_update();
@@ -2024,8 +2036,10 @@ static void looper(void)
                             continue;
                         }
 
-                        lnav_data.ld_key_repeat_history.update(
-                            ch, lnav_data.ld_view_stack.top()->get_top());
+                        if (!lnav_data.ld_view_stack.empty()) {
+                            lnav_data.ld_key_repeat_history.update(
+                                ch, lnav_data.ld_view_stack.back()->get_top());
+                        }
 
                         switch (ch) {
                         case CEOF:
@@ -2072,7 +2086,7 @@ static void looper(void)
 
                         if (!lnav_data.ld_view_stack.empty()) {
                             lnav_data.ld_bottom_source.
-                            update_hits(lnav_data.ld_view_stack.top());
+                            update_hits(lnav_data.ld_view_stack.back());
                         }
                     }
                 }
@@ -2081,11 +2095,11 @@ static void looper(void)
 
             if (timer.time_to_update(overlay_counter) &&
                 !lnav_data.ld_view_stack.empty()) {
-                lnav_data.ld_view_stack.top()->set_overlay_needs_update();
+                lnav_data.ld_view_stack.back()->set_overlay_needs_update();
             }
 
-            if (timer.fade_diff(index_counter) == 0) {
-                static bool initial_build = false;
+            static bool initial_build = false;
+            if (!initial_build || timer.fade_diff(index_counter) == 0) {
 
                 if (lnav_data.ld_mode == LNM_PAGING) {
                     timer.start_fade(index_counter, 1);
@@ -2104,11 +2118,11 @@ static void looper(void)
                                     "to switch to the next/previous file"));
                 }
                 if (!lnav_data.ld_view_stack.empty() &&
-                    lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_TEXT] &&
+                    lnav_data.ld_view_stack.back() == &lnav_data.ld_views[LNV_TEXT] &&
                     lnav_data.ld_text_source.empty() &&
                     lnav_data.ld_log_source.text_line_count() > 0) {
                     textview_curses *tc_log = &lnav_data.ld_views[LNV_LOG];
-                    lnav_data.ld_view_stack.pop();
+                    lnav_data.ld_view_stack.pop_back();
                     lnav_data.ld_views[LNV_LOG].set_top(tc_log->get_top_for_last_row());
                 }
                 if (!initial_build &&
@@ -2167,7 +2181,7 @@ static void looper(void)
                 lnav_data.ld_status[0].window_change();
                 lnav_data.ld_status[1].window_change();
                 if (!lnav_data.ld_view_stack.empty()) {
-                    lnav_data.ld_view_stack.top()->set_needs_update();
+                    lnav_data.ld_view_stack.back()->set_needs_update();
                 }
             }
 
@@ -2187,6 +2201,13 @@ static void looper(void)
                 }
 
                 gather_pipers();
+            }
+
+            if (lnav_data.ld_view_stack.empty() ||
+                (lnav_data.ld_view_stack.size() == 1 &&
+                 lnav_data.ld_file_names.size() ==
+                 lnav_data.ld_text_source.size())) {
+                lnav_data.ld_looping = false;
             }
         }
     }
@@ -2509,7 +2530,7 @@ static void print_errors(vector<string> error_list)
 class redraw_listener : public lnav_config_listener {
     void reload_config() {
         if (!lnav_data.ld_view_stack.empty()) {
-            textview_curses *tc = lnav_data.ld_view_stack.top();
+            textview_curses *tc = lnav_data.ld_view_stack.back();
 
             tc->set_needs_update();
         }
@@ -3159,7 +3180,7 @@ int main(int argc, char *argv[])
 
                 log_tc = &lnav_data.ld_views[LNV_LOG];
                 log_tc->set_height(vis_line_t(24));
-                lnav_data.ld_view_stack.push(log_tc);
+                lnav_data.ld_view_stack.push_back(log_tc);
                 // Read all of stdin
                 wait_for_pipers();
                 rebuild_indexes(true);
@@ -3201,7 +3222,7 @@ int main(int argc, char *argv[])
                     unsigned long view_index;
                     vis_line_t y;
 
-                    tc = lnav_data.ld_view_stack.top();
+                    tc = lnav_data.ld_view_stack.back();
                     view_index = tc - lnav_data.ld_views;
                     switch (view_index) {
                         case LNV_DB:

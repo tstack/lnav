@@ -1,2 +1,3 @@
-:echo Hello, World!
-Goodbye, World!
+;SELECT 'World' as name
+:eval :echo Hello, ${name}!
+Goodbye, ${name}!

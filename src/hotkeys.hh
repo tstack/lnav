@@ -32,6 +32,4 @@
 
 void handle_paging_key(int ch);
 
-void update_view_name(void);
-
 #endif //LNAV_HOTKEYS_H

@@ -54,6 +54,18 @@ available in this table:
     move the view left or right.
   :height: The number of lines that are displayed on the screen.
   :inner_height: The number of lines of content being displayed.
+  :top_time: The timestamp of the top line in the view or NULL if the view is
+    not time-based.  This value can be UPDATEd to move the view to the given
+    time.
+
+lnav_view_stack
+---------------
+
+The **lnav_view_stack** table allows you to SELECT and DELETE from the stack of
+**lnav** "views" (e.g. log, text, ...).  The following columns are available in
+this table:
+
+  :name: The name of the view.
 
 all_logs
 --------

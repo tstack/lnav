@@ -114,7 +114,8 @@ dist_noinst_DATA = \
 	dhclient-summary.lnav \
 	dump-pid.sh \
 	keymap-default.json \
-	partition-by-boot.lnav
+	partition-by-boot.lnav \
+	lnav-pop-view.lnav
 
 noinst_HEADERS = \
 	all_logs_vtab.hh \
@@ -323,7 +324,8 @@ TEXT2C_FILES = \
 	default-config-json.o \
 	dhclient-summary.o \
 	keymap-default.o \
-	partition-by-boot.o
+	partition-by-boot.o \
+	lnav-pop-view.o
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = \

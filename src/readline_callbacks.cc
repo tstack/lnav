@@ -194,7 +194,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         break;
     }
 
-    textview_curses *tc    = lnav_data.ld_view_stack.top();
+    textview_curses *tc    = lnav_data.ld_view_stack.back();
     lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
 
     if (!complete) {
@@ -205,7 +205,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
 void rl_search(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.top();
+    textview_curses *tc = lnav_data.ld_view_stack.back();
 
     rl_search_internal(dummy, rc);
     tc->set_follow_search_for(60 * 60 * 1000);
@@ -213,7 +213,7 @@ void rl_search(void *dummy, readline_curses *rc)
 
 void rl_abort(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc    = lnav_data.ld_view_stack.top();
+    textview_curses *tc    = lnav_data.ld_view_stack.back();
     lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
 
     lnav_data.ld_bottom_source.set_prompt("");
@@ -260,7 +260,7 @@ void rl_callback(void *dummy, readline_curses *rc)
             if (pfile.in() != NULL) {
                 fprintf(pfile, "%s", rc->get_value().c_str());
             }
-            lnav_data.ld_view_stack.top()->set_follow_search_for(750);
+            lnav_data.ld_view_stack.back()->set_follow_search_for(750);
             rc->set_value("search: " + rc->get_value());
             rc->set_alt_value(HELP_MSG_2(
                                   n, N,

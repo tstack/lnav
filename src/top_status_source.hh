@@ -56,7 +56,8 @@ public:
     } field_t;
 
     top_status_source()
-        : filename_wire(*this, &top_status_source::update_filename)
+        : filename_wire(*this, &top_status_source::update_filename),
+          view_name_wire(*this, &top_status_source::update_view_name)
     {
         this->tss_fields[TSF_TIME].set_width(24);
         this->tss_fields[TSF_PARTITION_NAME].set_width(34);
@@ -79,6 +80,7 @@ public:
     };
 
     lv_functor_t filename_wire;
+    lv_functor_t view_name_wire;
 
     size_t statusview_fields(void) { return TSF__MAX; };
 
@@ -154,6 +156,12 @@ public:
         sf_format.get_value().get_attrs().push_back(
             string_attr(lr, &view_curses::VC_STYLE,
                 A_REVERSE | view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK)));
+    };
+
+    void update_view_name(listview_curses *lc) {
+        status_field &sf_view_name = this->tss_fields[TSF_VIEW_NAME];
+
+        sf_view_name.set_value("%s ", lc->get_title().c_str());
     };
 
 private:

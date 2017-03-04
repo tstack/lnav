@@ -182,6 +182,7 @@ void add_view_text_possibilities(int context, const string &type, textview_curse
 
     rlc->clear_possibilities(context, type);
 
+    // XXX We might want to remove this since it can be kinda slow.
     {
         auto_mem<FILE> pfile(pclose);
 

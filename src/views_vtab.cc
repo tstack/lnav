@@ -46,11 +46,25 @@ using namespace std;
 const char *LNAV_VIEWS_CREATE_STMT = "\
 -- Access lnav's views through this table.\n\
 CREATE TABLE lnav_views (\n\
+    -- The name of the view.\n\
     name text PRIMARY KEY,\n\
+    -- The number of the line at the top of the view, starting from zero.\n\
     top integer,\n\
+    -- The left position of the viewport.\n\
     left integer,\n\
+    -- The height of the viewport.\n\
     height integer,\n\
-    inner_height integer\n\
+    -- The number of lines in the view.\n\
+    inner_height integer,\n\
+    -- The time of the top line in the view, if the content is time-based.\n\
+    top_time datetime\n\
+);\n\
+";
+
+const char *LNAV_VIEW_STACK_CREATE_STMT = "\
+-- Access lnav's view stack through this table.\n\
+CREATE TABLE lnav_view_stack (\n\
+    name text\n\
 );\n\
 ";
 
@@ -62,6 +76,11 @@ struct vtab {
 struct vtab_cursor {
     sqlite3_vtab_cursor        base;
     lnav_view_t vc_cursor;
+};
+
+struct stack_vtab_cursor {
+    sqlite3_vtab_cursor        base;
+    int vc_index;
 };
 
 static int vt_destructor(sqlite3_vtab *p_svt);
@@ -127,7 +146,7 @@ static int vt_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
 
     p_vt->base.zErrMsg = NULL;
 
-    vtab_cursor *p_cur = (vtab_cursor *)new vtab_cursor();
+    vtab_cursor *p_cur = new vtab_cursor();
 
     if (p_cur == NULL) {
         return SQLITE_NOMEM;
@@ -197,6 +216,20 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         case 4:
             sqlite3_result_int(ctx, tc.get_inner_height());
             break;
+        case 5: {
+            text_time_translator *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
+
+            if (time_source != NULL) {
+                char timestamp[64];
+
+                sql_strftime(timestamp, sizeof(timestamp), time_source->time_for_row(tc.get_top()), 0, 'T');
+
+                sqlite3_result_text(ctx, timestamp, -1, SQLITE_TRANSIENT);
+            } else {
+                sqlite3_result_null(ctx);
+            }
+            break;
+        }
     }
 
     return SQLITE_OK;
@@ -249,16 +282,36 @@ static int vt_update(sqlite3_vtab *tab,
     }
 
     textview_curses &tc = lnav_data.ld_views[index];
+    text_time_translator *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
     int64_t top = sqlite3_value_int64(argv[3]);
     int64_t left = sqlite3_value_int64(argv[4]);
+    const unsigned char *top_time = sqlite3_value_text(argv[7]);
 
-    tc.set_top(vis_line_t(top));
+    if (tc.get_top() != top) {
+        tc.set_top(vis_line_t(top));
+    } else if (top_time != NULL && time_source != NULL) {
+        date_time_scanner dts;
+        struct timeval tv;
+
+        if (dts.convert_to_timeval((const char *) top_time, -1, NULL, tv)) {
+            time_t last_time = time_source->time_for_row(tc.get_top());
+
+            if (tv.tv_sec != last_time) {
+                int row = time_source->row_for_time(tv.tv_sec);
+
+                tc.set_top(vis_line_t(row));
+            }
+        } else {
+            tab->zErrMsg = sqlite3_mprintf("Invalid time: %s", top_time);
+            return SQLITE_ERROR;
+        }
+    }
     tc.set_left(left);
 
     return SQLITE_OK;
 }
 
-static sqlite3_module vtab_module = {
+static sqlite3_module views_vtab_module = {
     0,              /* iVersion */
     vt_create,      /* xCreate       - create a vtable */
     vt_connect,     /* xConnect      - associate a vtable with a connection */
@@ -280,17 +333,212 @@ static sqlite3_module vtab_module = {
     NULL,           /* xFindFunction - function overloading */
 };
 
+static int vt_stack_create(sqlite3 *db,
+                           void *pAux,
+                           int argc, const char *const *argv,
+                           sqlite3_vtab **pp_vt,
+                           char **pzErr)
+{
+    vtab *p_vt;
+
+    /* Allocate the sqlite3_vtab/vtab structure itself */
+    p_vt = (vtab *)sqlite3_malloc(sizeof(*p_vt));
+
+    if (p_vt == NULL) {
+        return SQLITE_NOMEM;
+    }
+
+    memset(&p_vt->base, 0, sizeof(sqlite3_vtab));
+    p_vt->db = db;
+
+    *pp_vt = &p_vt->base;
+
+    int rc = sqlite3_declare_vtab(db, LNAV_VIEW_STACK_CREATE_STMT);
+
+    return rc;
+}
+
+static int vt_stack_next(sqlite3_vtab_cursor *cur);
+
+static int vt_stack_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
+{
+    vtab *p_vt = (vtab *)p_svt;
+
+    p_vt->base.zErrMsg = NULL;
+
+    stack_vtab_cursor *p_cur = new stack_vtab_cursor();
+
+    if (p_cur == NULL) {
+        return SQLITE_NOMEM;
+    } else {
+        *pp_cursor = &p_cur->base;
+
+        p_cur->base.pVtab = p_svt;
+        p_cur->vc_index = 0;
+    }
+
+    return SQLITE_OK;
+}
+
+static int vt_stack_close(sqlite3_vtab_cursor *cur)
+{
+    stack_vtab_cursor *p_cur = (stack_vtab_cursor *)cur;
+
+    /* Free cursor struct. */
+    delete p_cur;
+
+    return SQLITE_OK;
+}
+
+static int vt_stack_eof(sqlite3_vtab_cursor *cur)
+{
+    stack_vtab_cursor *vc = (stack_vtab_cursor *)cur;
+
+    return vc->vc_index == lnav_data.ld_view_stack.size();
+}
+
+static int vt_stack_next(sqlite3_vtab_cursor *cur)
+{
+    stack_vtab_cursor *vc = (stack_vtab_cursor *)cur;
+
+    if (vc->vc_index < lnav_data.ld_view_stack.size()) {
+        vc->vc_index += 1;
+    }
+
+    return SQLITE_OK;
+}
+
+static int vt_stack_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
+{
+    stack_vtab_cursor *vc = (stack_vtab_cursor *)cur;
+    textview_curses *tc = lnav_data.ld_view_stack[vc->vc_index];
+    lnav_view_t view = lnav_view_t(tc - lnav_data.ld_views);
+
+    switch (col) {
+        case 0:
+            sqlite3_result_text(ctx,
+                                lnav_view_strings[view], -1,
+                                SQLITE_STATIC);
+            break;
+    }
+
+    return SQLITE_OK;
+}
+
+static int vt_stack_rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *p_rowid)
+{
+    stack_vtab_cursor *p_cur = (stack_vtab_cursor *)cur;
+
+    *p_rowid = p_cur->vc_index;
+
+    return SQLITE_OK;
+}
+
+static int vt_stack_update(sqlite3_vtab *tab,
+                           int argc,
+                           sqlite3_value **argv,
+                           sqlite_int64 *rowid)
+{
+    if (argc <= 1) {
+        int64_t index = sqlite3_value_int64(argv[0]);
+
+        if (index != lnav_data.ld_view_stack.size() - 1) {
+            tab->zErrMsg = sqlite3_mprintf(
+                    "Only the top view in the stack can be deleted");
+            return SQLITE_ERROR;
+        }
+
+        lnav_data.ld_last_view = lnav_data.ld_view_stack.back();
+        lnav_data.ld_view_stack.pop_back();
+        if (!lnav_data.ld_view_stack.empty()) {
+            textview_curses *tc = lnav_data.ld_view_stack.back();
+
+            tc->set_needs_update();
+            lnav_data.ld_view_stack_broadcaster.invoke(tc);
+        }
+
+        return SQLITE_OK;
+    }
+
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
+        const unsigned char *name = sqlite3_value_text(argv[2]);
+
+        if (name == NULL) {
+            tab->zErrMsg = sqlite3_mprintf("'name' cannot be null");
+            return SQLITE_ERROR;
+        }
+
+        auto view_name_iter = find_if(
+            begin(lnav_view_strings), end(lnav_view_strings),
+            [&](const char *v) {
+                return v != NULL && strcmp(v, (const char *) name) == 0;
+            });
+
+        if (view_name_iter == end(lnav_view_strings)) {
+            tab->zErrMsg = sqlite3_mprintf("Unknown view name: %s", name);
+            return SQLITE_ERROR;
+        }
+
+        lnav_view_t view_index = lnav_view_t(view_name_iter - lnav_view_strings);
+        textview_curses *tc = &lnav_data.ld_views[view_index];
+        lnav_data.ld_view_stack.push_back(tc);
+        tc->set_needs_update();
+        lnav_data.ld_view_stack_broadcaster.invoke(tc);
+
+        *rowid = lnav_data.ld_view_stack.size() - 1;
+
+        return SQLITE_OK;
+    }
+
+    tab->zErrMsg = sqlite3_mprintf(
+        "The lnav_view_stack table cannot be updated");
+    return SQLITE_ERROR;
+}
+
+static sqlite3_module view_stack_vtab_module = {
+        0,              /* iVersion */
+        vt_stack_create,      /* xCreate       - create a vtable */
+        vt_connect,     /* xConnect      - associate a vtable with a connection */
+        vt_best_index,  /* xBestIndex    - best index */
+        vt_disconnect,  /* xDisconnect   - disassociate a vtable with a connection */
+        vt_destroy,     /* xDestroy      - destroy a vtable */
+        vt_stack_open,        /* xOpen         - open a cursor */
+        vt_stack_close,       /* xClose        - close a cursor */
+        vt_filter,      /* xFilter       - configure scan constraints */
+        vt_stack_next,        /* xNext         - advance a cursor */
+        vt_stack_eof,         /* xEof          - inidicate end of result set*/
+        vt_stack_column,      /* xColumn       - read data */
+        vt_stack_rowid,       /* xRowid        - read data */
+        vt_stack_update,      /* xUpdate       - write data */
+        NULL,           /* xBegin        - begin transaction */
+        NULL,           /* xSync         - sync transaction */
+        NULL,           /* xCommit       - commit transaction */
+        NULL,           /* xRollback     - rollback transaction */
+        NULL,           /* xFindFunction - function overloading */
+};
+
 int register_views_vtab(sqlite3 *db)
 {
     auto_mem<char, sqlite3_free> errmsg;
     int rc;
 
-    rc = sqlite3_create_module(db, "views_vtab_impl", &vtab_module, NULL);
+    rc = sqlite3_create_module(db, "views_vtab_impl", &views_vtab_module, NULL);
     assert(rc == SQLITE_OK);
     if ((rc = sqlite3_exec(db,
              "CREATE VIRTUAL TABLE lnav_views USING views_vtab_impl()",
              NULL, NULL, errmsg.out())) != SQLITE_OK) {
-        fprintf(stderr, "wtf %s\n", errmsg.in());
+        fprintf(stderr, "error: unable to create lnav_views %s\n", errmsg.in());
+    }
+
+    rc = sqlite3_create_module(db,
+                               "view_stack_vtab_impl",
+                               &view_stack_vtab_module,
+                               NULL);
+    assert(rc == SQLITE_OK);
+    if ((rc = sqlite3_exec(db,
+                           "CREATE VIRTUAL TABLE lnav_view_stack USING view_stack_vtab_impl()",
+                           NULL, NULL, errmsg.out())) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to create lnav_view_stack %s\n", errmsg.in());
     }
     return rc;
 }

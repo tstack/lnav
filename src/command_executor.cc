@@ -213,13 +213,13 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                 }
             }
             else {
+                sqlite3_bind_null(stmt.in(), lpc + 1);
                 log_warning("Could not bind variable: %s", name);
             }
         }
 
         if (lnav_data.ld_rl_view != NULL) {
             lnav_data.ld_rl_view->set_value("Executing query: " + sql + " ...");
-            lnav_data.ld_rl_view->do_update();
         }
 
         lnav_data.ld_log_source.text_clear_marks(&BM_QUERY);
@@ -245,6 +245,14 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                 done = true;
             }
                 break;
+            }
+        }
+
+        if (!dls.dls_rows.empty() && !ec.ec_local_vars.empty()) {
+            auto &vars = ec.ec_local_vars.top();
+
+            for (int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
+                vars[dls.dls_headers[lpc].hm_name] = dls.dls_rows[0][lpc];
             }
         }
     }
@@ -426,6 +434,7 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
         }
 
         vector<script_metadata> paths_to_exec;
+        map<string, const char *>::iterator internal_iter;
 
         find_format_scripts(lnav_data.ld_config_paths, scripts);
         if ((iter = scripts.find(script_name)) != scripts.end()) {

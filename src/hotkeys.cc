@@ -107,7 +107,7 @@ public:
  */
 static void copy_to_xclip(void)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.top();
+    textview_curses *tc = lnav_data.ld_view_stack.back();
 
     bookmark_vector<vis_line_t> &bv =
             tc->get_bookmarks()[&textview_curses::BM_USER];
@@ -142,7 +142,7 @@ static void copy_to_xclip(void)
 
 static void back_ten(int ten_minute)
 {
-    textview_curses *   tc  = lnav_data.ld_view_stack.top();
+    textview_curses *   tc  = lnav_data.ld_view_stack.back();
     logfile_sub_source *lss;
 
     lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
@@ -156,21 +156,16 @@ static void back_ten(int ten_minute)
     vis_line_t line = lss->find_from_time(hour);
 
     --line;
-    lnav_data.ld_view_stack.top()->set_top(line);
-}
-
-void update_view_name(void)
-{
-    status_field &sf = lnav_data.ld_top_source.statusview_value_for_field(
-            top_status_source::TSF_VIEW_NAME);
-    textview_curses * tc = lnav_data.ld_view_stack.top();
-
-    sf.set_value("%s ", tc->get_title().c_str());
+    lnav_data.ld_view_stack.back()->set_top(line);
 }
 
 void handle_paging_key(int ch)
 {
-    textview_curses *   tc  = lnav_data.ld_view_stack.top();
+    if (lnav_data.ld_view_stack.empty()) {
+        return;
+    }
+
+    textview_curses *   tc  = lnav_data.ld_view_stack.back();
     exec_context &ec = lnav_data.ld_exec_context;
     logfile_sub_source *lss = NULL;
     bookmarks<vis_line_t>::type &     bm  = tc->get_bookmarks();
@@ -183,56 +178,6 @@ void handle_paging_key(int ch)
 
     /* process the command keystroke */
     switch (ch) {
-        case 'q':
-        case 'Q': {
-            string msg = "";
-
-            if (tc == &lnav_data.ld_views[LNV_DB]) {
-                msg = HELP_MSG_2(v, V, "to switch to the SQL result view");
-            }
-            else if (tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
-                msg = HELP_MSG_2(i, I, "to switch to the histogram view");
-            }
-            else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
-                msg = HELP_MSG_1(t, "to switch to the text file view");
-            }
-
-            lnav_data.ld_rl_view->set_alt_value(msg);
-            lnav_data.ld_last_view = tc;
-            lnav_data.ld_view_stack.pop();
-            if (lnav_data.ld_view_stack.empty() ||
-                (lnav_data.ld_view_stack.size() == 1 &&
-                 lnav_data.ld_log_source.text_line_count() == 0)) {
-                lnav_data.ld_looping = false;
-            }
-            else {
-                tc = lnav_data.ld_view_stack.top();
-                tc->set_needs_update();
-                if (ch == 'Q') {
-                    text_time_translator *src_view = dynamic_cast<text_time_translator *>(lnav_data.ld_last_view->get_sub_source());
-                    text_time_translator *dst_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
-                    time_t last_time = 0;
-
-                    if (src_view != NULL && dst_view != NULL) {
-                        last_time = src_view->time_for_row(lnav_data.ld_last_view->get_top());
-                        if (last_time != -1) {
-                            time_t curr_top_time = dst_view->time_for_row(tc->get_top());
-
-                            if (src_view->row_for_time(last_time) !=
-                                src_view->row_for_time(curr_top_time)) {
-                                int new_top = dst_view->row_for_time(last_time);
-                                tc->set_top(vis_line_t(new_top));
-                                tc->set_needs_update();
-                            }
-                        }
-                    }
-                }
-                lnav_data.ld_scroll_broadcaster.invoke(tc);
-                update_view_name();
-            }
-            break;
-        }
-
         case 'a':
             if (lnav_data.ld_last_view == NULL) {
                 alerter::singleton().chime();
@@ -251,7 +196,7 @@ void handle_paging_key(int ch)
             }
             else {
                 textview_curses *tc = lnav_data.ld_last_view;
-                textview_curses *top_tc = lnav_data.ld_view_stack.top();
+                textview_curses *top_tc = lnav_data.ld_view_stack.back();
                 text_time_translator *dst_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
                 text_time_translator *src_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
 
@@ -1047,7 +992,7 @@ void handle_paging_key(int ch)
 
             if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
                 lss->text_filters_changed();
-                tc = lnav_data.ld_view_stack.top();
+                tc = lnav_data.ld_view_stack.back();
                 tc->set_top(vis_line_t(hs.row_for_time(log_top)));
             }
             else {

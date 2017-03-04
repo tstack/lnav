@@ -35,5 +35,6 @@
 int register_views_vtab(sqlite3 *db);
 
 extern const char *LNAV_VIEWS_CREATE_STMT;
+extern const char *LNAV_VIEW_STACK_CREATE_STMT;
 
 #endif

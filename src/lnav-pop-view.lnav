@@ -1,0 +1,22 @@
+#
+# @synopsis: lnav-pop-view
+# @description: Pop the top view on the view stack
+#
+
+;SELECT rowid as row_to_delete, name as last_view_name, CASE name
+   WHEN 'db' THEN $keymap_def_db_view
+   WHEN 'histogram' THEN $keymap_def_hist_view
+   WHEN 'text' THEN $keymap_def_text_view
+   ELSE ''
+ END as view_alt_msg FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1;
+;SELECT top_time as last_top_time FROM lnav_views WHERE name = $last_view_name;
+;DELETE FROM lnav_view_stack WHERE rowid = $row_to_delete;
+;SELECT name AS new_top_view_name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1;
+;SELECT top_time AS old_top_time FROM lnav_views WHERE name = $new_top_view_name;
+;SELECT $0, $1;
+;UPDATE lnav_views SET top_time = $last_top_time WHERE
+  $1 = 'x51' AND
+  name = $new_top_view_name AND
+  $last_top_time IS NOT NULL;
+:eval :alt-msg ${view_alt_msg}
+:echo

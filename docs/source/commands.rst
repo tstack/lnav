@@ -37,6 +37,7 @@ Navigation
   relative time (e.g. 'a minute ago').
 * relative-goto <line#|N%> - Move the current view up or down by the given
   amount.
+* mark - Bookmark the top line in the view.
 * next-mark error|warning|search|user|file|partition - Move to the next
   bookmark of the given type in the current view.
 * prev-mark error|warning|search|user|file|partition - Move to the previous
@@ -85,6 +86,9 @@ Display
 * zoom-to <zoom-level> - Set the zoom level for the histogram view.
 
 * redraw - Redraw the window to correct any corruption.
+
+* alt-msg <msg> - Set the message to be displayed on the bottom-right of the
+  screen.  This message is typically used for help text.
 
 
 SQL

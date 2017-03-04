@@ -145,6 +145,7 @@ drive_logfile_LDADD = \
 	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
+	../src/lnav-pop-view.o \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
@@ -165,6 +166,7 @@ drive_data_scanner_LDADD = \
 	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/partition-by-boot.o \
+	../src/lnav-pop-view.o \
 	$(LIBCURL) \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \

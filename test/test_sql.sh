@@ -478,8 +478,26 @@ check_output "updating lnav_views.top using inner_height does not work?" <<EOF
 EOF
 
 
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET top_time = 'bad-time' WHERE name = 'log'" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "updating lnav_views.top_time with a bad time works?" <<EOF
+error: Invalid time: bad-time
+EOF
+
+
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET top_time = '2014-10-08T00:00:00' WHERE name = 'log'" \
+    ${test_dir}/logfile_generic.0
+
+check_output "updating lnav_views.top_time does not work?" <<EOF
+2014-10-08 16:56:38,344:WARN:foo bar baz
+EOF
+
+
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n9
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n10
 }
 
 run_test schema_dump
@@ -488,6 +506,7 @@ check_output "schema view is not working" <<EOF
 ATTACH DATABASE '' AS 'main';
 CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
 CREATE VIRTUAL TABLE lnav_views USING views_vtab_impl();
+CREATE VIRTUAL TABLE lnav_view_stack USING view_stack_vtab_impl();
 CREATE TABLE http_status_codes (
     status integer PRIMARY KEY,
     message text,

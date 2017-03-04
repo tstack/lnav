@@ -18,6 +18,20 @@ lnav v0.8.2:
        large fields that contain extra details can make the log easier to read.
        The 'x' hotkey can be used to quickly toggle whether these fields are
        displayed or not.
+     * Added a ':mark' command to bookmark the top line in the current view.
+     * Added an ':alt-msg' command that can be used to set the text to be
+       displayed in the bottom right of the command line.  This command is
+       mostly intended for use by hotkey maps to set the help text.
+     * In lnav scripts, the first row of a SQL query result will now be turned
+       into local variables that can be referenced in other commands or
+       queries.  For example, the following script will print the number one:
+         ;SELECT 1 as foobar
+         :eval :echo ${foobar}
+     * Added an 'lnav_view_stack' SQL table that gives access to the view
+       stack.
+     * Added a 'top_time' column to the lnav_views table so that you can get
+       the timestamp for the top line in views that are time-based as well as
+       allowing you to move the view to a given time with an UPDATE statement.
 
      Interface Changes:
      * The color used for text colored via ":highlight" is now based on the

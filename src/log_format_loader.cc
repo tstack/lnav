@@ -566,6 +566,7 @@ static void write_sample_file(void)
     static const char *SCRIPTS[] = {
             partition_by_boot_lnav,
             dhclient_summary_lnav,
+            lnav_pop_view_lnav,
             NULL
     };
 

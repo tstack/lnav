@@ -2,7 +2,10 @@
     "global": {
         "keymap_def_alt_warning": "Press ${ansi_bold}w${ansi_norm}/${ansi_bold}W${ansi_norm} to move forward/backward through ${ansi_yellow}warning${ansi_norm} messages",
         "keymap_def_scroll_horiz": "Press \\'${ansi_bold}>${ansi_norm}\\' or \\'${ansi_bold}<${ansi_norm}\\' to scroll horizontally to a search result",
-        "keymap_def_next_user_mark": "Press ${ansi_bold}u${ansi_norm}/${ansi_bold}U${ansi_norm} to move forward/backward through user bookmarks"
+        "keymap_def_next_user_mark": "Press ${ansi_bold}u${ansi_norm}/${ansi_bold}U${ansi_norm} to move forward/backward through user bookmarks",
+        "keymap_def_db_view": "Press ${ansi_bold}v${ansi_norm}/${ansi_bold}V${ansi_norm} to switch to the SQL result view",
+        "keymap_def_hist_view": "Press ${ansi_bold}i${ansi_norm}/${ansi_bold}I${ansi_norm} to switch to the histogram view",
+        "keymap_def_text_view": "Press ${ansi_bold}t${ansi_norm} to switch to the text view"
     },
     "keymap_def": {
         "default": {
@@ -30,7 +33,10 @@
                 ":eval :alt-msg ${keymap_def_scroll_horiz}"
             ],
 
-            "x50": [":switch-to-view pretty"]
+            "x50": [":switch-to-view pretty"],
+
+            "x71": ["|lnav-pop-view ${keyseq}"],
+            "x51": ["|lnav-pop-view ${keyseq}"]
         }
     }
 }

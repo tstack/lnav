@@ -242,6 +242,7 @@ struct _lnav_data {
     top_status_source                       ld_top_source;
     bottom_status_source                    ld_bottom_source;
     listview_curses::action::broadcaster    ld_scroll_broadcaster;
+    listview_curses::action::broadcaster    ld_view_stack_broadcaster;
 
     time_t                                  ld_top_time;
     int                                     ld_top_time_millis;
@@ -250,7 +251,7 @@ struct _lnav_data {
 
     textview_curses                         ld_match_view;
 
-    std::stack<textview_curses *>           ld_view_stack;
+    std::vector<textview_curses *>           ld_view_stack;
     textview_curses *ld_last_view;
     textview_curses                         ld_views[LNV__MAX];
     std::unique_ptr<grep_highlighter>       ld_search_child[LNV__MAX];
