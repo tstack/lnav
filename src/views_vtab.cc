@@ -219,7 +219,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         case 5: {
             text_time_translator *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
 
-            if (time_source != NULL) {
+            if (time_source != NULL && tc.get_inner_height() > 0) {
                 char timestamp[64];
 
                 sql_strftime(timestamp, sizeof(timestamp), time_source->time_for_row(tc.get_top()), 0, 'T');
