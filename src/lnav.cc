@@ -119,6 +119,7 @@
 #include "views_vtab.hh"
 #include "pretty_printer.hh"
 #include "all_logs_vtab.hh"
+#include "file_vtab.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
@@ -278,8 +279,11 @@ bool setup_logline_table()
 
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
     bool             retval   = false;
+    bool update_possibilities = (
+        lnav_data.ld_rl_view != NULL &&
+        lnav_data.ld_exec_context.ec_local_vars.size() == 1);
 
-    if (lnav_data.ld_rl_view != NULL) {
+    if (update_possibilities) {
         lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
         add_view_text_possibilities(LNM_SQL, "*", &log_view);
     }
@@ -292,7 +296,7 @@ bool setup_logline_table()
         lnav_data.ld_vtab_manager->unregister_vtab(logline);
         lnav_data.ld_vtab_manager->register_vtab(new log_data_table(cl, logline));
 
-        if (lnav_data.ld_rl_view != NULL) {
+        if (update_possibilities) {
             log_data_helper ldh(lnav_data.ld_log_source);
 
             ldh.parse_line(cl);
@@ -311,9 +315,11 @@ bool setup_logline_table()
         retval = true;
     }
 
-    lnav_data.ld_db_key_names.clear();
+    auto &db_key_names = lnav_data.ld_db_key_names;
 
-    if (lnav_data.ld_rl_view != NULL) {
+    db_key_names.clear();
+
+    if (update_possibilities) {
         add_env_possibilities(LNM_SQL);
 
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);
@@ -349,11 +355,13 @@ bool setup_logline_table()
     walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
 
     for (const auto &iter : *lnav_data.ld_vtab_manager) {
-        iter.second->get_foreign_keys(lnav_data.ld_db_key_names);
+        iter.second->get_foreign_keys(db_key_names);
     }
 
-    stable_sort(lnav_data.ld_db_key_names.begin(),
-                lnav_data.ld_db_key_names.end());
+    db_key_names.push_back("device");
+    db_key_names.push_back("inode");
+
+    stable_sort(db_key_names.begin(), db_key_names.end());
 
     return retval;
 }
@@ -472,7 +480,10 @@ public:
         if (!lf->is_valid_filename()) {
             lnav_data.ld_file_names.erase(lf->get_filename());
         }
-        lnav_data.ld_files.remove(lf);
+        auto file_iter = find(lnav_data.ld_files.begin(),
+                              lnav_data.ld_files.end(),
+                              lf);
+        lnav_data.ld_files.erase(file_iter);
         delete lf;
     };
 
@@ -570,8 +581,7 @@ void rebuild_indexes(bool force)
         old_count = 0;
     }
 
-    list<logfile *>::iterator         file_iter;
-    for (file_iter = lnav_data.ld_files.begin();
+    for (auto file_iter = lnav_data.ld_files.begin();
          file_iter != lnav_data.ld_files.end(); ) {
         logfile *lf = *file_iter;
 
@@ -717,6 +727,7 @@ static void open_schema_view(void)
     schema += ENVIRON_CREATE_STMT;
     schema += LNAV_VIEWS_CREATE_STMT;
     schema += LNAV_VIEW_STACK_CREATE_STMT;
+    schema += LNAV_FILE_CREATE_STMT;
     for (log_vtab_manager::iterator vtab_iter =
             lnav_data.ld_vtab_manager->begin();
          vtab_iter != lnav_data.ld_vtab_manager->end();
@@ -809,6 +820,7 @@ static void open_pretty_view(void)
 
             format->annotate(sbr, sa, values);
             exec_context ec(&values, pretty_sql_callback, pretty_pipe_callback);
+            ec.ec_top_line = vl;
             add_ansi_vars(ec.ec_global_vars);
             add_global_vars(ec);
             format->rewrite(ec, sbr, sa, rewritten_line);
@@ -1277,7 +1289,6 @@ struct same_file {
 static bool watch_logfile(string filename, logfile_open_options &loo, bool required)
 {
     static loading_observer obs;
-    list<logfile *>::iterator file_iter;
     struct stat st;
     int         rc;
     bool retval = false;
@@ -1313,9 +1324,9 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
         }
     }
 
-    file_iter = find_if(lnav_data.ld_files.begin(),
-                        lnav_data.ld_files.end(),
-                        same_file(st));
+    auto file_iter = find_if(lnav_data.ld_files.begin(),
+                             lnav_data.ld_files.end(),
+                             same_file(st));
 
     if (file_iter == lnav_data.ld_files.end()) {
         if (find(lnav_data.ld_other_files.begin(),
@@ -1404,7 +1415,6 @@ static void expand_filename(string path, bool required)
 bool rescan_files(bool required)
 {
     map<string, logfile_open_options>::iterator iter;
-    list<logfile *>::iterator         file_iter;
     bool retval = false;
 
     for (iter = lnav_data.ld_file_names.begin();
@@ -1423,7 +1433,7 @@ bool rescan_files(bool required)
         }
     }
 
-    for (file_iter = lnav_data.ld_files.begin();
+    for (auto file_iter = lnav_data.ld_files.begin();
          file_iter != lnav_data.ld_files.end(); ) {
         logfile *lf = *file_iter;
 
@@ -2846,6 +2856,7 @@ int main(int argc, char *argv[])
 
     register_environ_vtab(lnav_data.ld_db.in());
     register_views_vtab(lnav_data.ld_db.in());
+    register_file_vtab(lnav_data.ld_db.in());
 
     lnav_data.ld_vtab_manager =
         new log_vtab_manager(lnav_data.ld_db,
@@ -3047,9 +3058,9 @@ int main(int argc, char *argv[])
 
     if (lnav_data.ld_flags & LNF_CHECK_CONFIG) {
         rescan_files(true);
-        for (list<logfile *>::iterator file_iter = lnav_data.ld_files.begin();
-                file_iter != lnav_data.ld_files.end();
-                ++file_iter) {
+        for (auto file_iter = lnav_data.ld_files.begin();
+             file_iter != lnav_data.ld_files.end();
+             ++file_iter) {
             logfile *lf = (*file_iter);
 
             lf->rebuild_index();
@@ -3298,13 +3309,12 @@ int main(int argc, char *argv[])
         if (stdin_out_fd != -1 &&
                 !(lnav_data.ld_flags & LNF_QUIET) &&
                 !(lnav_data.ld_flags & LNF_HEADLESS)) {
-            list<logfile *>::iterator file_iter;
             struct stat st;
 
             fstat(stdin_out_fd, &st);
-            file_iter = find_if(lnav_data.ld_files.begin(),
-                                lnav_data.ld_files.end(),
-                                same_file(st));
+            auto file_iter = find_if(lnav_data.ld_files.begin(),
+                                     lnav_data.ld_files.end(),
+                                     same_file(st));
             if (file_iter != lnav_data.ld_files.end()) {
                 logfile::iterator line_iter;
                 logfile *lf = *file_iter;

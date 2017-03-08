@@ -84,7 +84,7 @@ static string refresh_pt_search()
     }
 
 #ifdef HAVE_LIBCURL
-    for (list<logfile *>::iterator iter = lnav_data.ld_files.begin();
+    for (auto iter = lnav_data.ld_files.begin();
          iter != lnav_data.ld_files.end();
          ++iter) {
         logfile *lf = *iter;
@@ -709,7 +709,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
             const char *args[] = {
                     "sh", "-c", cmd.c_str(), NULL,
             };
-            vector<std::string> path_v;
+            vector<std::string> path_v = ec.ec_path_stack;
             string path;
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
@@ -797,6 +797,8 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                     log_perror(write(in_pipe.write_end(), "\n", 1));
                 }
             }
+
+            in_pipe.write_end().reset();
 
             if (reader.valid()) {
                 retval = reader.get();
@@ -1328,7 +1330,6 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
     }
 
     vector<string> word_exp;
-    list<logfile *>::iterator file_iter;
     size_t colon_index;
     int top = 0;
     string pat;
@@ -1363,9 +1364,8 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
             }
         }
 
-        for (file_iter = lnav_data.ld_files.begin();
-             file_iter != lnav_data.ld_files.end();
-             ++file_iter) {
+        auto file_iter = lnav_data.ld_files.begin();
+        for (; file_iter != lnav_data.ld_files.end(); ++file_iter) {
             logfile *lf = *file_iter;
 
             if (lf->get_filename() == fn) {

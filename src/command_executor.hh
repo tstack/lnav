@@ -50,7 +50,7 @@ struct exec_context {
           ec_sql_callback(sql_callback),
           ec_pipe_callback(pipe_callback) {
         this->ec_local_vars.push(std::map<std::string, std::string>());
-        this->ec_path_stack.push(".");
+        this->ec_path_stack.push_back(".");
     }
 
     vis_line_t ec_top_line;
@@ -59,7 +59,7 @@ struct exec_context {
     std::vector<logline_value> *ec_line_values;
     std::stack<std::map<std::string, std::string> > ec_local_vars;
     std::map<std::string, std::string> ec_global_vars;
-    std::stack<std::string> ec_path_stack;
+    std::vector<std::string> ec_path_stack;
 
     std::string ec_accumulator;
 

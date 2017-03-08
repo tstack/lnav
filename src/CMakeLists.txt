@@ -10,6 +10,7 @@ set(diag_STAT_SRCS
     environ_vtab.cc
     extension-functions.c
     field_overlay_source.cc
+    file_vtab.cc
     fs-extension-functions.cc
     grep_proc.cc
     hist_source.cc
@@ -92,6 +93,7 @@ set(diag_STAT_SRCS
     curl_looper.hh
     elem_to_json.hh
     field_overlay_source.hh
+    file_vtab.hh
     filter_observer.hh
     format-text-files.hh
     grep_highlighter.hh

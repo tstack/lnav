@@ -139,6 +139,7 @@ noinst_HEADERS = \
 	elem_to_json.hh \
 	environ_vtab.hh \
 	field_overlay_source.hh \
+	file_vtab.hh \
 	filter_observer.hh \
 	format-text-files.hh \
 	grep_highlighter.hh \
@@ -241,6 +242,7 @@ libdiag_a_SOURCES = \
 	environ_vtab.cc \
 	extension-functions.c \
 	field_overlay_source.cc \
+	file_vtab.cc \
     fs-extension-functions.cc \
 	grep_proc.cc \
 	hist_source.cc \

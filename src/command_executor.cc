@@ -258,7 +258,6 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
     }
 
     if (retcode == SQLITE_DONE) {
-        lnav_data.ld_views[LNV_LOG].reload_data();
         lnav_data.ld_views[LNV_DB].reload_data();
         lnav_data.ld_views[LNV_DB].set_left(0);
 
@@ -319,7 +318,6 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
         lnav_data.ld_status[LNS_BOTTOM].do_update();
         redo_search(LNV_DB);
     }
-    lnav_data.ld_views[LNV_LOG].reload_data();
 
     return retval;
 }
@@ -347,7 +345,7 @@ static string execute_file_contents(exec_context &ec, const string &path, bool m
     char mode = '\0';
     pair<string, string> dir_and_base = split_path(path);
 
-    ec.ec_path_stack.push(dir_and_base.first);
+    ec.ec_path_stack.push_back(dir_and_base.first);
     while ((line_size = getline(&line, &line_max_size, file)) != -1) {
         line_number += 1;
 
@@ -394,7 +392,7 @@ static string execute_file_contents(exec_context &ec, const string &path, bool m
     } else {
         fclose(file);
     }
-    ec.ec_path_stack.pop();
+    ec.ec_path_stack.pop_back();
 
     return retval;
 }
@@ -454,7 +452,7 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
             open_error = strerror(errno);
         }
         else {
-            string local_path = ec.ec_path_stack.top() + "/" + script_name;
+            string local_path = ec.ec_path_stack.back() + "/" + script_name;
 
             if (access(local_path.c_str(), R_OK) == 0) {
                 struct script_metadata meta;
