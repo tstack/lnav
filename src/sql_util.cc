@@ -597,11 +597,11 @@ char *sql_quote_ident(const char *ident)
     return retval;
 }
 
-void sql_execute_script(sqlite3 *db,
+void sql_compile_script(sqlite3 *db,
                         const char *src_name,
                         const char *script_orig,
-                        std::vector<std::string> &errors)
-{
+                        std::vector<sqlite3_stmt *> &stmts,
+                        std::vector<std::string> &errors) {
     const char *script = script_orig;
 
     while (script != NULL && script[0]) {
@@ -629,28 +629,81 @@ void sql_execute_script(sqlite3 *db,
             const char *errmsg = sqlite3_errmsg(db);
             auto_mem<char> full_msg;
 
-            if (asprintf(full_msg.out(), "error:%s:%d:%s", src_name, line_number, errmsg) == -1) {
+            if (asprintf(full_msg.out(), "error:%s:%d:%s", src_name,
+                         line_number, errmsg) == -1) {
                 log_error("unable to allocate error message");
                 break;
             }
             errors.push_back(full_msg.in());
             break;
-        }
-        else if (script == tail) {
+        } else if (script == tail) {
             break;
-        }
-        else if (stmt == NULL) {
+        } else if (stmt == NULL) {
 
+        } else {
+            stmts.push_back(stmt.release());
         }
-        else {
-            retcode = sqlite3_step(stmt.in());
+
+        script = tail;
+    }
+}
+
+void sql_execute_script(sqlite3 *db,
+                        const std::vector<sqlite3_stmt *> &stmts,
+                        std::vector<std::string> &errors)
+{
+    map<string, string> lvars;
+
+    for (sqlite3_stmt *stmt : stmts) {
+        bool done = false;
+        int param_count;
+
+        sqlite3_clear_bindings(stmt);
+
+        param_count = sqlite3_bind_parameter_count(stmt);
+        for (int lpc = 0; lpc < param_count; lpc++) {
+            const char *name;
+
+            name = sqlite3_bind_parameter_name(stmt, lpc + 1);
+            if (name[0] == '$') {
+                map<string, string>::iterator iter;
+                const char *env_value;
+
+                if ((iter = lvars.find(&name[1])) != lvars.end()) {
+                    sqlite3_bind_text(stmt, lpc + 1,
+                                      iter->second.c_str(), -1,
+                                      SQLITE_TRANSIENT);
+                } else if ((env_value = getenv(&name[1])) != NULL) {
+                    sqlite3_bind_text(stmt, lpc + 1,
+                                      env_value, -1,
+                                      SQLITE_TRANSIENT);
+                } else {
+                    sqlite3_bind_null(stmt, lpc + 1);
+                }
+            } else {
+                sqlite3_bind_null(stmt, lpc + 1);
+            }
+        }
+        while (!done) {
+            int retcode = sqlite3_step(stmt);
             switch (retcode) {
                 case SQLITE_OK:
                 case SQLITE_DONE:
+                    done = true;
                     break;
 
-                case SQLITE_ROW:
+                case SQLITE_ROW: {
+                    int ncols = sqlite3_column_count(stmt);
+
+                    for (int lpc = 0; lpc < ncols; lpc++) {
+                        const char *name = sqlite3_column_name(stmt, lpc);
+                        const char *value = (const char *)
+                                sqlite3_column_text(stmt, lpc);
+
+                        lvars[name] = value;
+                    }
                     break;
+                }
 
                 default: {
                     const char *errmsg;
@@ -662,7 +715,24 @@ void sql_execute_script(sqlite3 *db,
             }
         }
 
-        script = tail;
+        sqlite3_reset(stmt);
+    }
+}
+
+void sql_execute_script(sqlite3 *db,
+                        const char *src_name,
+                        const char *script,
+                        std::vector<std::string> &errors)
+{
+    vector<sqlite3_stmt *> stmts;
+
+    sql_compile_script(db, src_name, script, stmts, errors);
+    if (errors.empty()) {
+        sql_execute_script(db, stmts, errors);
+    }
+
+    for (sqlite3_stmt *stmt : stmts) {
+        sqlite3_finalize(stmt);
     }
 }
 
