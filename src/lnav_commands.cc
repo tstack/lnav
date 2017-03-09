@@ -714,7 +714,6 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
             path_v.push_back(dotlnav_path("formats/default"));
-            setenv("PATH", build_path(path_v).c_str(), 1);
 
             if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
                 logfile_sub_source &lss = lnav_data.ld_log_source;
@@ -722,6 +721,11 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                 char tmp_str[64];
 
                 ldh.parse_line(ec.ec_top_line, true);
+                log_format *format = ldh.ldh_file->get_format();
+                set<string> source_path = format->get_source_path();
+                path_v.insert(path_v.end(),
+                              source_path.begin(),
+                              source_path.end());
 
                 snprintf(tmp_str, sizeof(tmp_str), "%d", (int) ec.ec_top_line);
                 setenv("log_line", tmp_str, 1);
@@ -745,6 +749,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                 }
             }
 
+            setenv("PATH", build_path(path_v).c_str(), 1);
             execvp(args[0], (char *const *) args);
             _exit(1);
             break;
