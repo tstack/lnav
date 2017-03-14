@@ -215,9 +215,14 @@ struct vtab_module {
     };
 
     int create(sqlite3 *db, const char *name) {
+        std::string impl_name = name;
         vtab_module_schemas += T::CREATE_STMT;
 
-        return sqlite3_create_module(db, name, &this->vm_module, NULL);
+        // XXX Eponymous tables don't seem to work in older sqlite versions
+        impl_name += "_impl";
+        int rc = sqlite3_create_module(db, impl_name.c_str(), &this->vm_module, NULL);
+        std::string create_stmt = std::string("CREATE VIRTUAL TABLE ") + name + " USING " + impl_name + "()";
+        return sqlite3_exec(db, create_stmt.c_str(), NULL, NULL, NULL);
     };
 
     sqlite3_module vm_module;
