@@ -124,20 +124,20 @@ CREATE TABLE lnav_views (
         return SQLITE_OK;
     }
 
-    int delete_row(sqlite3_vtab *tab, int64_t rowid) {
+    int delete_row(sqlite3_vtab *tab, sqlite3_int64 rowid) {
         tab->zErrMsg = sqlite3_mprintf(
             "Rows cannot be deleted from the lnav_views table");
         return SQLITE_ERROR;
     }
 
-    int insert_row(sqlite3_vtab *tab, int64_t &rowid_out) {
+    int insert_row(sqlite3_vtab *tab, sqlite3_int64 &rowid_out) {
         tab->zErrMsg = sqlite3_mprintf(
             "Rows cannot be inserted into the lnav_views table");
         return SQLITE_ERROR;
     };
 
     int update_row(sqlite3_vtab *tab,
-                   int64_t &index,
+                   sqlite3_int64 &index,
                    const char *name,
                    int64_t top_row,
                    int64_t left,
@@ -212,7 +212,7 @@ CREATE TABLE lnav_view_stack (
         return SQLITE_OK;
     };
 
-    int delete_row(sqlite3_vtab *tab, int64_t rowid) {
+    int delete_row(sqlite3_vtab *tab, sqlite3_int64 rowid) {
         if (rowid != lnav_data.ld_view_stack.size() - 1) {
             tab->zErrMsg = sqlite3_mprintf(
                 "Only the top view in the stack can be deleted");
@@ -232,7 +232,7 @@ CREATE TABLE lnav_view_stack (
     };
 
     int insert_row(sqlite3_vtab *tab,
-                   int64_t &rowid_out,
+                   sqlite3_int64 &rowid_out,
                    const char *name) {
         if (name == nullptr) {
             tab->zErrMsg = sqlite3_mprintf("'name' cannot be null");
@@ -261,7 +261,7 @@ CREATE TABLE lnav_view_stack (
         return SQLITE_OK;
     };
 
-    int update_row(sqlite3_vtab *tab, int64_t &index) {
+    int update_row(sqlite3_vtab *tab, sqlite3_int64 &index) {
         tab->zErrMsg = sqlite3_mprintf(
             "The lnav_view_stack table cannot be updated");
         return SQLITE_ERROR;

@@ -78,16 +78,16 @@ struct vtab_module {
     };
 
     template<typename ... Args, size_t... Idx>
-    static int apply_impl(T &obj, int (T::*func)(sqlite3_vtab *, int64_t &, Args...), sqlite3_vtab *tab, int64_t &rowid, sqlite3_value **argv, std::index_sequence<Idx...>)
+    static int apply_impl(T &obj, int (T::*func)(sqlite3_vtab *, sqlite3_int64 &, Args...), sqlite3_vtab *tab, sqlite3_int64 &rowid, sqlite3_value **argv, std::index_sequence<Idx...>)
     {
         return (obj.*func)(tab, rowid, from_sqlite<Args>(argv[Idx])...);
     }
 
     template<typename ... Args>
     static int apply(T &obj,
-                     int (T::*func)(sqlite3_vtab *, int64_t &, Args...),
+                     int (T::*func)(sqlite3_vtab *, sqlite3_int64 &, Args...),
                      sqlite3_vtab *tab,
-                     int64_t &rowid,
+                     sqlite3_int64 &rowid,
                      int argc,
                      sqlite3_value **argv)
     {
@@ -175,17 +175,17 @@ struct vtab_module {
         T handler;
 
         if (argc <= 1) {
-            int64_t rowid = sqlite3_value_int64(argv[0]);
+            sqlite3_int64 rowid = sqlite3_value_int64(argv[0]);
 
             return handler.delete_row(tab, rowid);
         }
 
         if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
-            int64_t *rowid2 = rowid;
+            sqlite3_int64 *rowid2 = rowid;
             return vtab_module<T>::apply(handler, &T::insert_row, tab, *rowid2, argc - 2, argv + 2);
         }
 
-        int64_t index = sqlite3_value_int64(argv[0]);
+        sqlite3_int64 index = sqlite3_value_int64(argv[0]);
 
         if (index != sqlite3_value_int64(argv[1])) {
             tab->zErrMsg = sqlite3_mprintf(
@@ -264,19 +264,19 @@ struct tvt_iterator_cursor {
 
 template<typename T>
 struct tvt_no_update : public T {
-    int delete_row(sqlite3_vtab *vt, int64_t rowid) {
+    int delete_row(sqlite3_vtab *vt, sqlite3_int64 rowid) {
         vt->zErrMsg = sqlite3_mprintf(
             "Rows cannot be deleted from this table");
         return SQLITE_ERROR;
     };
 
-    int insert_row(sqlite3_vtab *tab, int64_t &rowid_out) {
+    int insert_row(sqlite3_vtab *tab, sqlite3_int64 &rowid_out) {
         tab->zErrMsg = sqlite3_mprintf(
             "Rows cannot be inserted into this table");
         return SQLITE_ERROR;
     };
 
-    int update_row(sqlite3_vtab *tab, int64_t &rowid_out) {
+    int update_row(sqlite3_vtab *tab, sqlite3_int64 &rowid_out) {
         tab->zErrMsg = sqlite3_mprintf(
             "Rows cannot be update in this table");
         return SQLITE_ERROR;
