@@ -21,6 +21,8 @@ addons:
     - re2c
     - gcc-5
     - g++-5
+    sources:
+    - ubuntu-toolchain-r-test
   coverity_scan:
     project:
       name: "tstack/lnav"
