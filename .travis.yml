@@ -19,8 +19,8 @@ addons:
     packages:
     - libgpm-dev
     - re2c
-    - gcc-4.8
-    - g++-4.8
+    - gcc-5
+    - g++-5
   coverity_scan:
     project:
       name: "tstack/lnav"
