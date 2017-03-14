@@ -573,12 +573,12 @@ public:
         int          prev_hit = -1, next_hit = INT_MAX;
 
         for (; start < end; ++start) {
-            attr_line_t al;
+            std::vector<attr_line_t> rows(1);
             int off;
 
-            this->listview_value_for_row(*this, start, al);
+            this->listview_value_for_rows(*this, start, rows);
 
-            const std::string &str = al.get_string();
+            const std::string &str = rows[0].get_string();
             for (off = 0; off < (int)str.size(); ) {
                 int rc, matches[128];
 
@@ -671,9 +671,11 @@ public:
                this->tc_sub_source->text_line_width(*this);
     };
 
-    void listview_value_for_row(const listview_curses &lv,
-                                vis_line_t line,
-                                attr_line_t &value_out);
+    void listview_value_for_rows(const listview_curses &lv,
+                                 vis_line_t line,
+                                 std::vector<attr_line_t> &rows_out);
+
+    void textview_value_for_row(vis_line_t line, attr_line_t &value_out);
 
     size_t listview_size_for_row(const listview_curses &lv, vis_line_t row) {
         return this->tc_sub_source->text_size_for_line(*this, row);

@@ -497,7 +497,7 @@ EOF
 
 
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n11
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n8
 }
 
 run_test schema_dump
@@ -505,9 +505,6 @@ run_test schema_dump
 check_output "schema view is not working" <<EOF
 ATTACH DATABASE '' AS 'main';
 CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
-CREATE VIRTUAL TABLE lnav_views USING views_vtab_impl();
-CREATE VIRTUAL TABLE lnav_view_stack USING view_stack_vtab_impl();
-CREATE VIRTUAL TABLE lnav_file USING lnav_file_vtab_impl();
 CREATE TABLE http_status_codes (
     status integer PRIMARY KEY,
     message text,

@@ -67,9 +67,9 @@ public:
      * @param row The row number.
      * @param value_out The destination for the string value.
      */
-    virtual void listview_value_for_row(const listview_curses &lv,
-                                        vis_line_t row,
-                                        attr_line_t &value_out) = 0;
+    virtual void listview_value_for_rows(const listview_curses &lv,
+                                         vis_line_t start_row,
+                                         std::vector<attr_line_t> &rows_out) = 0;
 
     virtual size_t listview_size_for_row(const listview_curses &lv,
         vis_line_t row) = 0;

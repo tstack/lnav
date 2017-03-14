@@ -60,6 +60,7 @@ set(diag_STAT_SRCS
     view_curses.cc
     views_vtab.cc
     vt52_curses.cc
+    vtab_module.cc
     log_vtab_impl.cc
     xterm_mouse.cc
     yajlpp.cc
@@ -130,6 +131,7 @@ set(diag_STAT_SRCS
     top_status_source.hh
     url_loader.hh
     views_vtab.hh
+    vtab_module.hh
 
     yajl/api/yajl_common.h
     yajl/api/yajl_gen.h

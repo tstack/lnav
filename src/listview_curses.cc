@@ -206,6 +206,8 @@ void listview_curses::do_update(void)
         row_count = this->get_inner_height();
         row   = this->lv_top;
         bottom = y + height;
+        vector<attr_line_t> rows(min((size_t) height, row_count - (int) this->lv_top));
+        this->lv_source->listview_value_for_rows(*this, row, rows);
         while (y < bottom) {
             lr.lr_start = this->lv_left;
             lr.lr_end   = this->lv_left + wrap_width;
@@ -219,9 +221,8 @@ void listview_curses::do_update(void)
                 ++y;
             }
             else if (row < (int)row_count) {
-                attr_line_t al;
+                attr_line_t &al = rows[row - this->lv_top];
 
-                this->lv_source->listview_value_for_row(*this, row, al);
                 do {
                     this->mvwattrline(this->lv_window, y, 0, al, lr);
                     if (this->lv_word_wrap) {

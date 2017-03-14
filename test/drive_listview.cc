@@ -50,23 +50,23 @@ public:
         return this->ms_rows;
     };
 
-    void listview_value_for_row(const listview_curses &lv,
-                                vis_line_t row,
-                                attr_line_t &value_out) {
-        if (row == 0) {
-            value_out = "Hello";
-        }
-        else if (row == 1) {
-            value_out = "World!";
-        }
-        else if (row < this->ms_rows) {
-            char buffer[32];
+    void listview_value_for_rows(const listview_curses &lv,
+                                 vis_line_t row,
+                                 vector<attr_line_t> &rows) {
+        for (auto &value_out : rows) {
+            if (row == 0) {
+                value_out = "Hello";
+            } else if (row == 1) {
+                value_out = "World!";
+            } else if (row < this->ms_rows) {
+                char buffer[32];
 
-            snprintf(buffer, sizeof(buffer), "%d", (int)row);
-            value_out = string(buffer);
-        }
-        else {
-            assert(0);
+                snprintf(buffer, sizeof(buffer), "%d", (int) row);
+                value_out = string(buffer);
+            } else {
+                assert(0);
+            }
+            ++row;
         }
     };
 

@@ -206,6 +206,7 @@ noinst_HEADERS = \
 	view_curses.hh \
 	views_vtab.hh \
 	vt52_curses.hh \
+	vtab_module.hh \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
 	xterm_mouse.hh \
@@ -295,6 +296,7 @@ libdiag_a_SOURCES = \
 	view_curses.cc \
 	views_vtab.cc \
 	vt52_curses.cc \
+	vtab_module.cc \
 	log_vtab_impl.cc \
 	xterm_mouse.cc \
 	yajlpp.cc \

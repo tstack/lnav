@@ -32,9 +32,8 @@
 
 #include <sqlite3.h>
 
-int register_views_vtab(sqlite3 *db);
+#include "vtab_module.hh"
 
-extern const char *LNAV_VIEWS_CREATE_STMT;
-extern const char *LNAV_VIEW_STACK_CREATE_STMT;
+int register_views_vtab(sqlite3 *db);
 
 #endif

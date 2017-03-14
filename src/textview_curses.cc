@@ -116,8 +116,99 @@ void textview_curses::grep_match(grep_proc &gp,
     }
 }
 
-void textview_curses::listview_value_for_row(const listview_curses &lv,
-                                             vis_line_t row,
+void textview_curses::listview_value_for_rows(const listview_curses &lv,
+                                              vis_line_t row,
+                                              vector<attr_line_t> &rows_out)
+{
+    for (auto &al : rows_out) {
+        this->textview_value_for_row(row, al);
+        ++row;
+    }
+}
+
+bool textview_curses::handle_mouse(mouse_event &me)
+{
+    unsigned long width;
+    vis_line_t height;
+
+    if (this->tc_selection_start == -1 &&
+        listview_curses::handle_mouse(me)) {
+        return true;
+    }
+
+    if (this->tc_delegate != NULL &&
+        this->tc_delegate->text_handle_mouse(*this, me)) {
+        return true;
+    }
+
+    if (me.me_button != BUTTON_LEFT) {
+        return false;
+    }
+
+    vis_line_t mouse_line(this->get_top() + me.me_y);
+
+    if (mouse_line > this->get_bottom()) {
+        mouse_line = this->get_bottom();
+    }
+
+    this->get_dimensions(height, width);
+
+    switch (me.me_state) {
+    case BUTTON_STATE_PRESSED:
+        this->tc_selection_start = mouse_line;
+        this->tc_selection_last = vis_line_t(-1);
+        this->tc_selection_cleared = false;
+        break;
+    case BUTTON_STATE_DRAGGED:
+        if (me.me_y <= 0) {
+            this->shift_top(vis_line_t(-1));
+            me.me_y = 0;
+            mouse_line = this->get_top();
+        }
+        if (me.me_y >= height && this->get_top() < this->get_top_for_last_row()) {
+            this->shift_top(vis_line_t(1));
+            me.me_y = height;
+            mouse_line = this->get_bottom();
+        }
+
+        if (this->tc_selection_last == mouse_line)
+            break;
+
+        if (this->tc_selection_last != -1) {
+            this->toggle_user_mark(&textview_curses::BM_USER,
+               this->tc_selection_start,
+               this->tc_selection_last);
+        }
+        if (this->tc_selection_start == mouse_line) {
+            this->tc_selection_last = vis_line_t(-1);
+        }
+        else {
+            if (!this->tc_selection_cleared) {
+                if (this->tc_sub_source != NULL) {
+                    this->tc_sub_source->text_clear_marks(&BM_USER);
+                }
+                this->tc_bookmarks[&BM_USER].clear();
+
+                this->tc_selection_cleared = true;
+            }
+            this->toggle_user_mark(&BM_USER,
+               this->tc_selection_start,
+               mouse_line);
+            this->tc_selection_last = mouse_line;
+        }
+        this->reload_data();
+        break;
+    case BUTTON_STATE_RELEASED:
+        this->tc_selection_start = vis_line_t(-1);
+        this->tc_selection_last = vis_line_t(-1);
+        this->tc_selection_cleared = false;
+        break;
+    }
+
+    return true;
+}
+
+void textview_curses::textview_value_for_row(vis_line_t row,
                                              attr_line_t &value_out)
 {
     view_colors &vc = view_colors::singleton();
@@ -289,86 +380,4 @@ void textview_curses::listview_value_for_row(const listview_curses &lv,
         sa.push_back(string_attr(
             line_range(0), &view_curses::VC_STYLE, A_UNDERLINE));
     }
-}
-
-bool textview_curses::handle_mouse(mouse_event &me)
-{
-    unsigned long width;
-    vis_line_t height;
-
-    if (this->tc_selection_start == -1 &&
-        listview_curses::handle_mouse(me)) {
-        return true;
-    }
-
-    if (this->tc_delegate != NULL &&
-        this->tc_delegate->text_handle_mouse(*this, me)) {
-        return true;
-    }
-
-    if (me.me_button != BUTTON_LEFT) {
-        return false;
-    }
-
-    vis_line_t mouse_line(this->get_top() + me.me_y);
-
-    if (mouse_line > this->get_bottom()) {
-        mouse_line = this->get_bottom();
-    }
-
-    this->get_dimensions(height, width);
-
-    switch (me.me_state) {
-    case BUTTON_STATE_PRESSED:
-        this->tc_selection_start = mouse_line;
-        this->tc_selection_last = vis_line_t(-1);
-        this->tc_selection_cleared = false;
-        break;
-    case BUTTON_STATE_DRAGGED:
-        if (me.me_y <= 0) {
-            this->shift_top(vis_line_t(-1));
-            me.me_y = 0;
-            mouse_line = this->get_top();
-        }
-        if (me.me_y >= height && this->get_top() < this->get_top_for_last_row()) {
-            this->shift_top(vis_line_t(1));
-            me.me_y = height;
-            mouse_line = this->get_bottom();
-        }
-
-        if (this->tc_selection_last == mouse_line)
-            break;
-
-        if (this->tc_selection_last != -1) {
-            this->toggle_user_mark(&textview_curses::BM_USER,
-               this->tc_selection_start,
-               this->tc_selection_last);
-        }
-        if (this->tc_selection_start == mouse_line) {
-            this->tc_selection_last = vis_line_t(-1);
-        }
-        else {
-            if (!this->tc_selection_cleared) {
-                if (this->tc_sub_source != NULL) {
-                    this->tc_sub_source->text_clear_marks(&BM_USER);
-                }
-                this->tc_bookmarks[&BM_USER].clear();
-
-                this->tc_selection_cleared = true;
-            }
-            this->toggle_user_mark(&BM_USER,
-               this->tc_selection_start,
-               mouse_line);
-            this->tc_selection_last = mouse_line;
-        }
-        this->reload_data();
-        break;
-    case BUTTON_STATE_RELEASED:
-        this->tc_selection_start = vis_line_t(-1);
-        this->tc_selection_last = vis_line_t(-1);
-        this->tc_selection_cleared = false;
-        break;
-    }
-
-    return true;
 }

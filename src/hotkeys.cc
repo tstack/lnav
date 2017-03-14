@@ -494,9 +494,9 @@ void handle_paging_key(int ch)
                                  "----------------\n\n",
                          (int) top, (int) bottom);
                 log_perror(write(STDOUT_FILENO, line_break, strlen(line_break)));
-                for (; top <= bottom; ++top) {
-                    attr_line_t al;
-                    tc->listview_value_for_row(*tc, top, al);
+                vector<attr_line_t> rows(bottom - top);
+                tc->listview_value_for_rows(*tc, top, rows);
+                for (auto &al : rows) {
                     struct line_range lr = find_string_attr_range(
                             al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
                     log_perror(write(STDOUT_FILENO, lr.substr(al.get_string()),

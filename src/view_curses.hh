@@ -396,6 +396,10 @@ public:
         return retval;
     };
 
+    bool empty() const {
+        return this->length() == 0;
+    };
+
     /** Clear the string and the attributes for the string. */
     attr_line_t &clear()
     {

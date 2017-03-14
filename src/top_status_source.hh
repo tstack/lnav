@@ -110,11 +110,11 @@ public:
 
         if (lc->get_inner_height() > 0) {
             string_attrs_t::const_iterator line_attr;
-            attr_line_t           al;
+            std::vector<attr_line_t> rows(1);
 
             lc->get_data_source()->
-            listview_value_for_row(*lc, lc->get_top(), al);
-            string_attrs_t &sa = al.get_attrs();
+            listview_value_for_rows(*lc, lc->get_top(), rows);
+            string_attrs_t &sa = rows[0].get_attrs();
             line_attr = find_string_attr(sa, &logline::L_FILE);
             if (line_attr != sa.end()) {
                 logfile *lf = (logfile *)line_attr->sa_value.sav_ptr;

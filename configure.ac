@@ -8,7 +8,7 @@ AC_PREFIX_DEFAULT(/usr)
 
 AC_CANONICAL_HOST
 
-AX_CXX_COMPILE_STDCXX_11([noext], [mandatory])
+AX_CXX_COMPILE_STDCXX_14([noext], [mandatory])
 
 for defdir in /opt/local /usr/local /usr /; do
     if test -d "$defdir/include"; then

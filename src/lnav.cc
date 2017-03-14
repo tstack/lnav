@@ -725,9 +725,7 @@ static void open_schema_view(void)
 
     schema += "\n\n-- Virtual Table Definitions --\n\n";
     schema += ENVIRON_CREATE_STMT;
-    schema += LNAV_VIEWS_CREATE_STMT;
-    schema += LNAV_VIEW_STACK_CREATE_STMT;
-    schema += LNAV_FILE_CREATE_STMT;
+    schema += vtab_module_schemas;
     for (log_vtab_manager::iterator vtab_iter =
             lnav_data.ld_vtab_manager->begin();
          vtab_iter != lnav_data.ld_vtab_manager->end();
@@ -3182,8 +3180,6 @@ int main(int argc, char *argv[])
                 std::vector<pair<string, string> > msgs;
                 std::vector<pair<string, string> >::iterator msg_iter;
                 textview_curses *log_tc, *text_tc, *tc;
-                attr_line_t al;
-                const std::string &line = al.get_string();
                 bool found_error = false;
 
                 lnav_data.ld_output_stack.push(stdout);
@@ -3249,6 +3245,8 @@ int main(int argc, char *argv[])
                     for (vis_line_t vl = tc->get_top();
                          vl < tc->get_inner_height();
                          ++vl, ++y) {
+                        attr_line_t al;
+                        string &line = al.get_string();
                         while (los != NULL &&
                                los->list_value_for_overlay(*tc, y, al)) {
                             if (write(STDOUT_FILENO, line.c_str(),
@@ -3259,15 +3257,16 @@ int main(int argc, char *argv[])
                             ++y;
                         }
 
-                        tc->listview_value_for_row(*tc, vl, al);
-                        if (suppress_empty_lines && line.empty()) {
+                        vector<attr_line_t> rows(1);
+                        tc->listview_value_for_rows(*tc, vl, rows);
+                        if (suppress_empty_lines && rows[0].empty()) {
                             continue;
                         }
 
                         struct line_range lr = find_string_attr_range(
-                                al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
-                        if (write(STDOUT_FILENO, lr.substr(al.get_string()),
-                                  lr.sublen(al.get_string())) == -1 ||
+                                rows[0].get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
+                        if (write(STDOUT_FILENO, lr.substr(rows[0].get_string()),
+                                  lr.sublen(rows[0].get_string())) == -1 ||
                             write(STDOUT_FILENO, "\n", 1) == -1) {
                             perror("write to STDOUT");
                         }

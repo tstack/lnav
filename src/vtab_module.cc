@@ -27,11 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __file_vtab_hh
-#define __file_vtab_hh
+#include "config.h"
 
-#include <sqlite3.h>
+#include "vtab_module.hh"
 
-int register_file_vtab(sqlite3 *db);
-
-#endif
+std::string vtab_module_schemas;
