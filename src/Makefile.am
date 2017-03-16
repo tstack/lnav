@@ -180,6 +180,7 @@ noinst_HEADERS = \
 	readline_curses.hh \
 	readline_highlighters.hh \
 	readline_possibilities.hh \
+	regexp_vtab.hh \
 	relative_time.hh \
 	sequence_matcher.hh \
 	sequence_sink.hh \
@@ -274,6 +275,7 @@ libdiag_a_SOURCES = \
 	readline_curses.cc \
 	readline_highlighters.cc \
 	readline_possibilities.cc \
+	regexp_vtab.cc \
 	relative_time.cc \
 	session_data.cc \
 	sequence_matcher.cc \

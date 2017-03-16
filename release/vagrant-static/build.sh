@@ -1,5 +1,9 @@
 #! /usr/bin/env bash
 
+if test x"${OS}" != x"FreeBSD"; then
+    source scl_source enable devtoolset-4
+fi
+
 FAKE_ROOT=/home/vagrant/fake.root
 
 SRC_VERSION=$1
@@ -33,8 +37,6 @@ OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
     ../lnav/configure \
         LDFLAGS="-L${FAKE_ROOT}/lib" \
-        CC="gcc44" \
-        CXX="g++44" \
         CPPFLAGS="-I${FAKE_ROOT}/include" \
         PATH="${FAKE_ROOT}/bin:${PATH}"
 else

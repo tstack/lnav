@@ -120,6 +120,8 @@ Original code 2006 June 05 by relicoder.
 #define SQLITE_SOUNDEX 1
 #define HAVE_TRIM 1		/* LMH 2007-03-25 if sqlite has trim functions */
 
+#define __STDC_FORMAT_MACROS
+
 #ifdef COMPILE_SQLITE_EXTENSIONS_AS_LOADABLE_MODULE
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1

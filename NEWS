@@ -32,6 +32,9 @@ lnav v0.8.2:
      * Added a 'top_time' column to the lnav_views table so that you can get
        the timestamp for the top line in views that are time-based as well as
        allowing you to move the view to a given time with an UPDATE statement.
+     * Added a 'regexp_capture(<string>, <pattern>)' table-valued function for
+       getting detailed results from matching a regular expression against a
+       string.
 
      Interface Changes:
      * The color used for text colored via ":highlight" is now based on the

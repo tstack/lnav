@@ -139,7 +139,7 @@ AS_VAR_IF([ax_cv_curses],[yes],[],
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
 AX_PATH_LIB_READLINE
 
-LNAV_WITH_SQLITE3("3.6.0")
+LNAV_WITH_SQLITE3("3.9.0")
 
 case "$host_os" in
     *)

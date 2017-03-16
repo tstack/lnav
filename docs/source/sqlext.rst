@@ -129,7 +129,6 @@ Additional string comparison and manipulation functions:
   algorithm as the *logline* table (see :ref:`data-ext`).  The discovered
   data is returned as a JSON-object that you can do further processing on.
 
-
 File Paths
 ----------
 

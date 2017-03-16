@@ -497,7 +497,7 @@ EOF
 
 
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n11
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n12
 }
 
 run_test schema_dump
@@ -508,6 +508,7 @@ CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
 CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
 CREATE VIRTUAL TABLE lnav_view_stack USING lnav_view_stack_impl();
 CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
+CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
 CREATE TABLE http_status_codes (
     status integer PRIMARY KEY,
     message text,
@@ -883,4 +884,16 @@ check_output "number column with null does not work?" <<EOF
 value
 10
 <NULL>
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT regexp_capture.content FROM access_log, regexp_capture(access_log.cs_version, 'HTTP/(\d+\.\d+)') WHERE regexp_capture.capture_index = 1" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "joining log table with regexp_capture is not working?" <<EOF
+content
+1.0
+1.0
+1.0
 EOF

@@ -21,14 +21,16 @@ efficiently zero in on problems.
 Prerequisites
 -------------
 
-Lnav requires the following software packages:
+The following software packages are required to build lnav:
 
+  * gcc/clang - A C++14-compatible compiler.
   * libpcre   - The Perl Compatible Regular Expression (PCRE) library.
-  * sqlite    - The SQLite database engine.
+  * sqlite    - The SQLite database engine.  Version 3.9.0 or higher is required.
   * ncurses   - The ncurses text UI library.
   * readline  - The readline line editing library.
   * zlib      - The zlib compression library.
   * bz2       - The bzip2 compression library.
+  * libcurl   - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
 
 
 Installation

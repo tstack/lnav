@@ -63,6 +63,107 @@ inline double from_sqlite<double>(sqlite3_value *val)
 
 extern std::string vtab_module_schemas;
 
+class vtab_index_constraints {
+public:
+    vtab_index_constraints(const sqlite3_index_info *index_info)
+        : vic_index_info(*index_info) {
+    };
+
+    struct const_iterator {
+        const_iterator(vtab_index_constraints *parent, int index = 0)
+            : i_parent(parent), i_index(index) {
+            while (this->i_index < this->i_parent->vic_index_info.nConstraint &&
+                   !this->i_parent->vic_index_info.aConstraint[this->i_index].usable) {
+                this->i_index += 1;
+            }
+        };
+
+        const_iterator& operator++() {
+            do {
+                this->i_index += 1;
+            } while (
+                this->i_index < this->i_parent->vic_index_info.nConstraint &&
+                !this->i_parent->vic_index_info.aConstraint[this->i_index].usable);
+
+            return *this;
+        };
+
+        const sqlite3_index_info::sqlite3_index_constraint &operator*() const {
+            return this->i_parent->vic_index_info.aConstraint[this->i_index];
+        };
+
+        const sqlite3_index_info::sqlite3_index_constraint *operator->() const {
+            return &this->i_parent->vic_index_info.aConstraint[this->i_index];
+        };
+
+        bool operator!=(const const_iterator &rhs) const {
+            return this->i_parent != rhs.i_parent || this->i_index != rhs.i_index;
+        };
+
+        const vtab_index_constraints *i_parent;
+        int i_index;
+    };
+
+    const_iterator begin() {
+        return const_iterator(this);
+    };
+
+    const_iterator end() {
+        return const_iterator(this, this->vic_index_info.nConstraint);
+    };
+
+private:
+    const sqlite3_index_info &vic_index_info;
+};
+
+class vtab_index_usage {
+public:
+    vtab_index_usage(sqlite3_index_info *index_info)
+        : viu_index_info(*index_info),
+          viu_used_column_count(0),
+          viu_max_column(0) {
+
+    };
+
+    void column_used(const vtab_index_constraints::const_iterator &iter) {
+        this->viu_max_column = std::max(iter->iColumn, this->viu_max_column);
+        this->viu_index_info.idxNum |= (1L << iter.i_index);
+        this->viu_used_column_count += 1;
+    };
+
+    void allocate_args(int expected) {
+        int n_arg = 0;
+
+        if (this->viu_used_column_count != expected) {
+            this->viu_index_info.estimatedCost = 2147483647;
+            this->viu_index_info.estimatedRows = 2147483647;
+            return;
+        }
+
+        for (int lpc = 0; lpc <= this->viu_max_column; lpc++) {
+            for (int cons_index = 0;
+                 cons_index < this->viu_index_info.nConstraint;
+                 cons_index++) {
+                if (this->viu_index_info.aConstraint[cons_index].iColumn != lpc) {
+                    continue;
+                }
+                if (!(this->viu_index_info.idxNum & (1L << cons_index))) {
+                    continue;
+                }
+
+                this->viu_index_info.aConstraintUsage[cons_index].argvIndex = ++n_arg;
+            }
+        }
+        this->viu_index_info.estimatedCost = 1.0;
+        this->viu_index_info.estimatedRows = 1;
+    };
+
+private:
+    sqlite3_index_info &viu_index_info;
+    int viu_used_column_count;
+    int viu_max_column;
+};
+
 template<typename T>
 struct vtab_module {
     static int tvt_create(sqlite3 *db,
@@ -196,6 +297,17 @@ struct vtab_module {
         return vtab_module<T>::apply(handler, &T::update_row, tab, index, argc - 2, argv + 2);
     };
 
+    template<typename U>
+    auto addUpdate(U u) -> decltype(&U::delete_row, void()) {
+        log_debug("has updates!");
+        this->vm_module.xUpdate = tvt_update;
+    };
+
+    template<typename U>
+    void addUpdate(...) {
+        log_debug("no has updates!");
+    };
+
     vtab_module() noexcept {
         memset(&this->vm_module, 0, sizeof(this->vm_module));
         this->vm_module.iVersion = 0;
@@ -211,7 +323,7 @@ struct vtab_module {
         this->vm_module.xBestIndex = vt_best_index;
         this->vm_module.xFilter = vt_filter;
         this->vm_module.xColumn = tvt_column;
-        this->vm_module.xUpdate = tvt_update;
+        this->addUpdate<T>(T());
     };
 
     int create(sqlite3 *db, const char *name) {

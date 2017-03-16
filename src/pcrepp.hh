@@ -120,7 +120,7 @@ public:
     /**
      * @return a capture_t that covers all of the text that was matched.
      */
-    capture_t *all() { return pc_captures; };
+    capture_t *all() const { return pc_captures; };
 
     /** @return An iterator to the first capture. */
     iterator begin() { return pc_captures + 1; };

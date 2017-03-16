@@ -652,7 +652,7 @@ static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
         p_info->idxNum = argvInUse;
         p_info->idxStr = (char *) index_copy;
         p_info->needToFreeIdxStr = 1;
-        p_info->estimatedCost = 1.0;
+        p_info->estimatedCost = 10.0;
     }
 
     return SQLITE_OK;

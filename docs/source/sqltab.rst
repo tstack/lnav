@@ -79,3 +79,10 @@ http_status_codes
 
 The **http_status_codes** table is a handy reference that can be used to turn
 HTTP status codes into human-readable messages.
+
+regexp_capture(<string>, <regex>)
+---------------------------------
+
+The **regexp_capture()** table-valued function applies the regular expression
+to the given string and returns detailed results for the captured portions of
+the string.

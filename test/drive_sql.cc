@@ -8,6 +8,7 @@
 #include "lnav.hh"
 #include "auto_mem.hh"
 #include "sqlite-extension-func.h"
+#include "regexp_vtab.hh"
 
 struct callback_state {
     int cs_row;
@@ -64,6 +65,8 @@ int main(int argc, char *argv[])
             register_sqlite_funcs(db.in(), sqlite_registration_funcs);
             register_collation_functions(db.in());
         }
+
+        register_regexp_vtab(db.in());
 
         if (sqlite3_exec(db.in(),
             argv[1],

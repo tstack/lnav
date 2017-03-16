@@ -142,3 +142,180 @@ check_output "" <<EOF
 Row 0:
   Column     result: {"foo":"abc","col_0":123.456}
 EOF
+
+
+run_test ./drive_sql "SELECT * FROM regexp_capture('foo bar', '\w+ (\w+)')"
+
+check_output "" <<EOF
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 0
+  Column range_stop: 7
+  Column    content: foo bar
+Row 1:
+  Column match_index: 0
+  Column capture_index: 1
+  Column capture_name:
+  Column capture_count: 2
+  Column range_start: 4
+  Column range_stop: 7
+  Column    content: bar
+EOF
+
+run_test ./drive_sql "SELECT * FROM regexp_capture('foo bar', '\w+ \w+')"
+
+check_output "" <<EOF
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 1
+  Column range_start: 0
+  Column range_stop: 7
+  Column    content: foo bar
+EOF
+
+run_test ./drive_sql "SELECT * FROM regexp_capture('foo bar', '\w+ (?<word>\w+)')"
+
+check_output "" <<EOF
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 0
+  Column range_stop: 7
+  Column    content: foo bar
+Row 1:
+  Column match_index: 0
+  Column capture_index: 1
+  Column capture_name: word
+  Column capture_count: 2
+  Column range_start: 4
+  Column range_stop: 7
+  Column    content: bar
+EOF
+
+run_test ./drive_sql "SELECT * FROM regexp_capture('foo bar', '(bar)|\w+ (?<word>\w+)')"
+
+check_output "" <<EOF
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 3
+  Column range_start: 0
+  Column range_stop: 7
+  Column    content: foo bar
+Row 1:
+  Column match_index: 0
+  Column capture_index: 1
+  Column capture_name:
+  Column capture_count: 3
+  Column range_start: -1
+  Column range_stop: -1
+  Column    content: (null)
+Row 2:
+  Column match_index: 0
+  Column capture_index: 2
+  Column capture_name: word
+  Column capture_count: 3
+  Column range_start: 4
+  Column range_stop: 7
+  Column    content: bar
+EOF
+
+run_test ./drive_sql "SELECT * FROM regexp_capture()"
+
+check_output "" <<EOF
+EOF
+
+run_test ./drive_sql "SELECT * FROM regexp_capture('foo bar')"
+
+check_output "" <<EOF
+EOF
+
+run_test ./drive_sql "SELECT * FROM regexp_capture('1 2 3 45', '(\d+)')"
+
+check_output "" <<EOF
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 0
+  Column range_stop: 1
+  Column    content: 1
+Row 1:
+  Column match_index: 0
+  Column capture_index: 1
+  Column capture_name:
+  Column capture_count: 2
+  Column range_start: 0
+  Column range_stop: 1
+  Column    content: 1
+Row 2:
+  Column match_index: 1
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 2
+  Column range_stop: 3
+  Column    content: 2
+Row 3:
+  Column match_index: 1
+  Column capture_index: 1
+  Column capture_name:
+  Column capture_count: 2
+  Column range_start: 2
+  Column range_stop: 3
+  Column    content: 2
+Row 4:
+  Column match_index: 2
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 4
+  Column range_stop: 5
+  Column    content: 3
+Row 5:
+  Column match_index: 2
+  Column capture_index: 1
+  Column capture_name:
+  Column capture_count: 2
+  Column range_start: 4
+  Column range_stop: 5
+  Column    content: 3
+Row 6:
+  Column match_index: 3
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 2
+  Column range_start: 6
+  Column range_stop: 8
+  Column    content: 45
+Row 7:
+  Column match_index: 3
+  Column capture_index: 1
+  Column capture_name:
+  Column capture_count: 2
+  Column range_start: 6
+  Column range_stop: 8
+  Column    content: 45
+EOF
+
+run_test ./drive_sql "SELECT * FROM regexp_capture('foo foo', '^foo')"
+
+check_output "" <<EOF
+Row 0:
+  Column match_index: 0
+  Column capture_index: 0
+  Column capture_name: (null)
+  Column capture_count: 1
+  Column range_start: 0
+  Column range_stop: 3
+  Column    content: foo
+EOF

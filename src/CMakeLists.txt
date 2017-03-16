@@ -40,6 +40,7 @@ set(diag_STAT_SRCS
     readline_curses.cc
     readline_highlighters.cc
     readline_possibilities.cc
+    regexp_vtab.cc
     relative_time.cc
     session_data.cc
     sequence_matcher.cc
@@ -115,6 +116,7 @@ set(diag_STAT_SRCS
     pthreadpp.hh
     readline_callbacks.hh
     readline_possibilities.hh
+    regexp_vtab.hh
     relative_time.hh
     sequence_sink.hh
     shlex.hh

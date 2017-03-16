@@ -110,7 +110,7 @@ CREATE TABLE lnav_file (
 
 int register_file_vtab(sqlite3 *db)
 {
-    static vtab_module<tvt_no_update<lnav_file>> LNAV_FILE_MODULE;
+    static vtab_module<lnav_file> LNAV_FILE_MODULE;
 
     int rc;
 

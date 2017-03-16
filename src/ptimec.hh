@@ -33,6 +33,7 @@
 #define __pctimec_hh
 
 // XXX
+#define __STDC_FORMAT_MACROS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -120,6 +120,7 @@
 #include "pretty_printer.hh"
 #include "all_logs_vtab.hh"
 #include "file_vtab.hh"
+#include "regexp_vtab.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
@@ -2855,6 +2856,7 @@ int main(int argc, char *argv[])
     register_environ_vtab(lnav_data.ld_db.in());
     register_views_vtab(lnav_data.ld_db.in());
     register_file_vtab(lnav_data.ld_db.in());
+    register_regexp_vtab(lnav_data.ld_db.in());
 
     lnav_data.ld_vtab_manager =
         new log_vtab_manager(lnav_data.ld_db,

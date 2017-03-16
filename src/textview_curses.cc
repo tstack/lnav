@@ -217,7 +217,6 @@ void textview_curses::textview_value_for_row(vis_line_t row,
     string_attrs_t &             sa         = value_out.get_attrs();
     string &                     str        = value_out.get_string();
     highlight_map_t::iterator    iter;
-    string::iterator             str_iter;
     text_format_t source_format = this->tc_sub_source->get_text_format();
 
     this->tc_sub_source->text_value_for_line(*this, row, str);

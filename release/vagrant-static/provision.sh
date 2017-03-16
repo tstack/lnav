@@ -1,5 +1,9 @@
 #! /usr/bin/env bash
 
+if test x"${OS}" != x"FreeBSD"; then
+    source scl_source enable devtoolset-4
+fi
+
 FAKE_ROOT=/home/vagrant/fake.root
 
 rm -rf ~/extract
@@ -24,10 +28,6 @@ cd ~/extract
 for pkg in /vagrant/pkgs/*.tar.gz; do
     tar xfz $pkg
 done
-
-(cd autoconf-2.69 && ./configure --prefix=${FAKE_ROOT} && make && make install)
-
-(cd automake-1.15 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
 (cd make-4.2.1 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
@@ -57,27 +57,24 @@ if test x"${OS}" != x"FreeBSD"; then
          --with-default-terminfo-dir=/usr/share/terminfo \
          --enable-ext-colors \
          --enable-widec \
-        CC="gcc44" \
-        CXX="g++44" \
          && \
      make && make install)
 
-    (cd pcre-8.38 && \
+    (cd pcre-8.40 && \
      ./configure --prefix=${FAKE_ROOT} \
          --enable-jit \
          --enable-utf \
-        CC="gcc44" \
-        CXX="g++44" \
          && \
      make && make install)
 
-    (cd zlib-1.2.8 && ./configure --prefix=${FAKE_ROOT} && make && make install)
+    (cd zlib-1.2.11 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
     (cd libssh2-* &&
      ./configure --prefix=${FAKE_ROOT} \
          --with-libssl-prefix=/home/vagrant/fake.root \
          --with-libz-prefix=/home/vagrant/fake.root \
-         "LDFLAGS=-ldl" &&
+         "CPPFLAGS=-I${FAKE_ROOT}/include" \
+         "LDFLAGS=-ldl -L${FAKE_ROOT}/lib" &&
      make &&
      make install)
 
@@ -100,14 +97,14 @@ else
          && \
      make && make install)
 
-    (cd pcre-8.38 && \
+    (cd pcre-8.40 && \
      ./configure --prefix=${FAKE_ROOT} \
          --enable-jit \
          --enable-utf \
          && \
      make && make install)
 
-    (cd zlib-1.2.8 && ./configure --prefix=${FAKE_ROOT} "CFLAGS=-fPIC" \
+    (cd zlib-1.2.11 && ./configure --prefix=${FAKE_ROOT} "CFLAGS=-fPIC" \
         && make && make install)
 
     (cd libssh2-* &&
