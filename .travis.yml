@@ -24,8 +24,10 @@ addons:
     - re2c
     - gcc-5
     - g++-5
+    - sqlite3
     sources:
     - ubuntu-toolchain-r-test
+    - sourceline: deb http://cz.archive.ubuntu.com/ubuntu xenial main
   coverity_scan:
     project:
       name: "tstack/lnav"
