@@ -223,8 +223,14 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
 
     pCur->c_content = value;
 
-    pCur->c_pattern = make_unique<pcrepp>(pattern);
-    pCur->c_pattern_string = pattern;
+    try {
+        pCur->c_pattern = make_unique<pcrepp>(pattern);
+        pCur->c_pattern_string = pattern;
+    } catch (const pcrepp::error &e) {
+        pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
+            "Invalid regular expression: %s", e.e_msg.c_str());
+        return SQLITE_ERROR;
+    }
 
     pCur->c_index = 0;
     pCur->c_context.set_count(0);

@@ -42,6 +42,13 @@ Row 0:
   Column basename('/foo///'): foo
 EOF
 
+run_test ./drive_sql "select basename('foo')"
+
+check_output "basename('foo') is not 'foo'" <<EOF
+Row 0:
+  Column basename('foo'): foo
+EOF
+
 
 run_test ./drive_sql "select dirname('')"
 

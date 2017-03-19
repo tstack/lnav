@@ -700,4 +700,20 @@ public:
     json_path_handler *ygc_handlers;
 };
 
+#define JSON_SUBTYPE  74    /* Ascii for "J" */
+
+struct json_string {
+    json_string(yajl_gen_t *gen) {
+        const unsigned char *buf;
+
+        yajl_gen_get_buf(gen, &buf, &this->js_len);
+
+        this->js_content = (const unsigned char *) malloc(this->js_len);
+        memcpy((void *) this->js_content, buf, this->js_len);
+    };
+
+    const unsigned char *js_content;
+    size_t js_len;
+};
+
 #endif

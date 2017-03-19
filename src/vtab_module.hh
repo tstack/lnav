@@ -35,31 +35,251 @@
 #include <string>
 #include <utility>
 
+#include "optional.hpp"
 #include "lnav_log.hh"
+#include "lnav_util.hh"
+#include "yajlpp.hh"
+#include "mapbox/variant.hpp"
+
+#include "sqlite-extension-func.h"
+
+struct from_sqlite_conversion_error : std::exception {
+    from_sqlite_conversion_error(const char *type, int argi)
+        : e_type(type), e_argi(argi) {
+
+    };
+
+    const char *e_type;
+    int e_argi;
+};
 
 template<typename T>
-inline T from_sqlite(sqlite3_value *val)
-{
-    return T();
-}
+struct from_sqlite {
+    inline T operator()(int argc, sqlite3_value **val, int argi) {
+        return T();
+    };
+};
 
 template<>
-inline int64_t from_sqlite<int64_t>(sqlite3_value *val)
-{
-    return sqlite3_value_int64(val);
-}
+struct from_sqlite<int64_t> {
+    inline int64_t operator()(int argc, sqlite3_value **val, int argi) {
+        if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
+            throw from_sqlite_conversion_error("integer", argi);
+        }
+
+        return sqlite3_value_int64(val[argi]);
+    }
+};
 
 template<>
-inline const char *from_sqlite<const char *>(sqlite3_value *val)
-{
-    return (const char *) sqlite3_value_text(val);
-}
+struct from_sqlite<int> {
+    inline int operator()(int argc, sqlite3_value **val, int argi) {
+        return sqlite3_value_int(val[argi]);
+    }
+};
 
 template<>
-inline double from_sqlite<double>(sqlite3_value *val)
+struct from_sqlite<const char *> {
+    inline const char *operator()(int argc, sqlite3_value **val, int argi) {
+        return (const char *) sqlite3_value_text(val[argi]);
+    }
+};
+
+template<>
+struct from_sqlite<double> {
+    inline double operator()(int argc, sqlite3_value **val, int argi) {
+        return sqlite3_value_double(val[argi]);
+    }
+};
+
+template<typename T>
+struct from_sqlite<nonstd::optional<T>> {
+    inline nonstd::optional<T> operator()(int argc, sqlite3_value **val, int argi) {
+        if (argi >= argc || sqlite3_value_type(val[argi]) == SQLITE_NULL) {
+            return nonstd::optional<T>();
+        }
+
+        return nonstd::optional<T>(from_sqlite<T>()(argc, val, argi));
+    }
+};
+
+inline void to_sqlite(sqlite3_context *ctx, const char *str)
 {
-    return sqlite3_value_double(val);
+    if (str == nullptr) {
+        sqlite3_result_null(ctx);
+    } else {
+        sqlite3_result_text(ctx, str, -1, SQLITE_STATIC);
+    }
 }
+
+inline void to_sqlite(sqlite3_context *ctx, const std::string &str)
+{
+    sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
+}
+
+inline void to_sqlite(sqlite3_context *ctx, const string_fragment &sf)
+{
+    if (sf.is_valid()) {
+        sqlite3_result_text(ctx,
+                            &sf.sf_string[sf.sf_begin], sf.length(),
+                            SQLITE_TRANSIENT);
+    } else {
+        sqlite3_result_null(ctx);
+    }
+}
+
+inline void to_sqlite(sqlite3_context *ctx, bool val)
+{
+    sqlite3_result_int(ctx, val);
+}
+
+inline void to_sqlite(sqlite3_context *ctx, int64_t val)
+{
+    sqlite3_result_int64(ctx, val);
+}
+
+inline void to_sqlite(sqlite3_context *ctx, double val)
+{
+    sqlite3_result_double(ctx, val);
+}
+
+inline void to_sqlite(sqlite3_context *ctx, const json_string &val)
+{
+    sqlite3_result_text(ctx,
+                        (const char *) val.js_content,
+                        val.js_len,
+                        free);
+    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+}
+
+struct ToSqliteVisitor {
+    ToSqliteVisitor(sqlite3_context *vctx) : tsv_context(vctx) {
+
+    };
+
+    template<typename T>
+    void operator()(T t) const {
+        to_sqlite(this->tsv_context, t);
+    }
+
+    sqlite3_context *tsv_context;
+};
+
+template<typename ... Types>
+void to_sqlite(sqlite3_context *ctx, const mapbox::util::variant<Types...> &val)
+{
+    ToSqliteVisitor visitor(ctx);
+
+    mapbox::util::apply_visitor(visitor, val);
+}
+
+template<typename ... Args>
+struct optional_counter;
+
+template<typename T>
+struct optional_counter<nonstd::optional<T>> {
+    constexpr static int value = 1;
+};
+
+template<typename T, typename ... Rest>
+struct optional_counter<nonstd::optional<T>, Rest...> {
+    constexpr static int value = 1 + sizeof...(Rest);
+};
+
+template<typename Arg>
+struct optional_counter<Arg> {
+    constexpr static int value = 0;
+};
+
+template<typename Arg1, typename ... Args>
+struct optional_counter<Arg1, Args...> : optional_counter<Args...> {
+
+};
+
+
+template<typename F, F f> struct sqlite_func_adapter;
+
+template<typename Return, typename ... Args, Return (*f)(Args...)>
+struct sqlite_func_adapter<Return (*)(Args...), f> {
+    constexpr static int OPT_COUNT = optional_counter<Args...>::value;
+    constexpr static int REQ_COUNT = sizeof...(Args) - OPT_COUNT;
+
+    template<size_t ... Idx>
+    static void func2(sqlite3_context *context,
+                      int argc, sqlite3_value **argv,
+                      std::index_sequence<Idx...>) {
+        try {
+            Return retval = f(from_sqlite<Args>()(argc, argv, Idx)...);
+
+            to_sqlite(context, retval);
+        } catch (from_sqlite_conversion_error &e) {
+            char buffer[64];
+
+            snprintf(buffer, sizeof(buffer),
+                     "Expecting an %s for argument number %d",
+                     e.e_type,
+                     e.e_argi);
+            sqlite3_result_error(context, buffer, -1);
+        } catch (const std::exception &e) {
+            sqlite3_result_error(context, e.what(), -1);
+        } catch (...) {
+            sqlite3_result_error(context, "Function threw an unexpected exception", -1);
+        }
+    };
+
+    static void func1(sqlite3_context *context,
+                      int argc, sqlite3_value **argv) {
+        if (argc < REQ_COUNT) {
+            char buffer[128];
+
+            if (OPT_COUNT == 0) {
+                snprintf(buffer, sizeof(buffer),
+                         "%s expects exactly %d argument%s",
+                         "foo",
+                         REQ_COUNT,
+                         REQ_COUNT == 1 ? "s" : "");
+            } else {
+                snprintf(buffer, sizeof(buffer),
+                         "%s expects between %d and %d arguments",
+                         "bar",
+                         REQ_COUNT,
+                         OPT_COUNT);
+            }
+            sqlite3_result_error(context, buffer, -1);
+            return;
+        }
+
+        for (int lpc = 0; lpc < REQ_COUNT; lpc++) {
+            if (sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
+                sqlite3_result_null(context);
+                return;
+            }
+        }
+
+        func2(context, argc, argv, std::make_index_sequence<sizeof...(Args)>{});
+    };
+
+
+    static FuncDef builder(const char name[],
+                           const char description[],
+                           std::initializer_list<FuncDef::ParamDoc> pdocs) {
+        static FuncDef::ParamDoc PARAM_DOCS[sizeof...(Args) + 1];
+
+        require(pdocs.size() == sizeof...(Args));
+
+        std::copy(std::begin(pdocs), std::end(pdocs), std::begin(PARAM_DOCS));
+        return {
+            name,
+            OPT_COUNT > 0 ? -1 : REQ_COUNT,
+            0,
+            SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+            0,
+            func1,
+            PARAM_DOCS,
+            description,
+        };
+    };
+};
 
 extern std::string vtab_module_schemas;
 
@@ -181,7 +401,7 @@ struct vtab_module {
     template<typename ... Args, size_t... Idx>
     static int apply_impl(T &obj, int (T::*func)(sqlite3_vtab *, sqlite3_int64 &, Args...), sqlite3_vtab *tab, sqlite3_int64 &rowid, sqlite3_value **argv, std::index_sequence<Idx...>)
     {
-        return (obj.*func)(tab, rowid, from_sqlite<Args>(argv[Idx])...);
+        return (obj.*func)(tab, rowid, from_sqlite<Args>()(sizeof...(Args), argv, Idx)...);
     }
 
     template<typename ... Args>
@@ -333,6 +553,7 @@ struct vtab_module {
         // XXX Eponymous tables don't seem to work in older sqlite versions
         impl_name += "_impl";
         int rc = sqlite3_create_module(db, impl_name.c_str(), &this->vm_module, NULL);
+        ensure(rc == SQLITE_OK);
         std::string create_stmt = std::string("CREATE VIRTUAL TABLE ") + name + " USING " + impl_name + "()";
         return sqlite3_exec(db, create_stmt.c_str(), NULL, NULL, NULL);
     };

@@ -86,8 +86,9 @@ EOF
 
 run_test ./drive_sql "select regexp_match(null, 'abc')"
 
-check_error_output "" <<EOF
-error: sqlite3_exec failed -- no regexp
+check_output "" <<EOF
+Row 0:
+  Column regexp_match(null, 'abc'): (null)
 EOF
 
 run_test ./drive_sql "select regexp_match('abc', null) as result"
@@ -236,6 +237,12 @@ EOF
 run_test ./drive_sql "SELECT * FROM regexp_capture('foo bar')"
 
 check_output "" <<EOF
+EOF
+
+run_test ./drive_sql "SELECT * FROM regexp_capture('foo bar', '(')"
+
+check_error_output "" <<EOF
+error: sqlite3_exec failed -- Invalid regular expression: missing )
 EOF
 
 run_test ./drive_sql "SELECT * FROM regexp_capture('1 2 3 45', '(\d+)')"

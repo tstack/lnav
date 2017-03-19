@@ -15,6 +15,8 @@
 #include <sqlite3.h>
 #include <pcrecpp.h>
 
+#include <unordered_map>
+
 #include "pcrepp.hh"
 
 #include "yajlpp.hh"
@@ -24,144 +26,67 @@
 #include "data_scanner.hh"
 #include "data_parser.hh"
 #include "elem_to_json.hh"
+#include "vtab_module.hh"
 
-typedef struct {
-    char *      s;
-    pcrecpp::RE *re;
-    pcrepp *re2;
-} cache_entry;
-
-#ifndef CACHE_SIZE
-#define CACHE_SIZE    16
-#endif
-
-#define JSON_SUBTYPE  74    /* Ascii for "J" */
+#include "optional.hpp"
+#include "mapbox/variant.hpp"
 
 using namespace std;
+using namespace mapbox;
 
-static
-cache_entry *find_re(sqlite3_context *ctx, const char *re)
+typedef struct {
+    shared_ptr<pcrecpp::RE> re;
+    shared_ptr<pcrepp> re2;
+} cache_entry;
+
+static cache_entry *find_re(const char *re)
 {
-    static cache_entry cache[CACHE_SIZE];
-    int i;
-    int found = 0;
+    static unordered_map<string, cache_entry> CACHE;
 
-    for (i = 0; i < CACHE_SIZE && cache[i].s; i++) {
-        if (strcmp(re, cache[i].s) == 0) {
-            found = 1;
-            break;
-        }
-    }
-    if (found) {
-        if (i > 0) {
-            cache_entry c = cache[i];
-            memmove(cache + 1, cache, i * sizeof(cache_entry));
-            cache[0] = c;
-        }
-    }
-    else {
+    string re_str = re;
+    auto iter = CACHE.find(re_str);
+
+    if (iter == CACHE.end()) {
         cache_entry c;
 
-        c.re = new pcrecpp::RE(re);
+        c.re2 = make_shared<pcrepp>(re_str);
+        c.re = make_shared<pcrecpp::RE>(re);
         if (!c.re->error().empty()) {
-            char *e2 = sqlite3_mprintf("%s: %s", re, c.re->error().c_str());
-            sqlite3_result_error(ctx, e2, -1);
-            sqlite3_free(e2);
-            delete c.re;
+            auto_mem<char> e2(sqlite3_free);
 
-            return NULL;
+            e2 = sqlite3_mprintf("%s: %s", re, c.re->error().c_str());
+            throw new pcrepp::error(e2.in(), 0);
         }
-        c.s = strdup(re);
-        if (!c.s) {
-            sqlite3_result_error(ctx, "strdup: ENOMEM", -1);
-            delete c.re;
-            return NULL;
-        }
-        c.re2 = new pcrepp(c.s);
-        i = CACHE_SIZE - 1;
-        if (cache[i].s) {
-            free(cache[i].s);
-            assert(cache[i].re);
-            delete cache[i].re;
-            delete cache[i].re2;
-        }
-        memmove(cache + 1, cache, i * sizeof(cache_entry));
-        cache[0] = c;
+        CACHE[re_str] = c;
+
+        iter = CACHE.find(re_str);
     }
 
-    return &cache[0];
+    return &iter->second;
+}
+
+static bool regexp(const char *re, const char *str)
+{
+    cache_entry *reobj = find_re(re);
+
+    return reobj->re->PartialMatch(str);
 }
 
 static
-void regexp(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+util::variant<int64_t, double, const char*, string_fragment, json_string>
+regexp_match(const char *re, const char *str)
 {
-    const char *re, *str;
-    cache_entry *reobj;
-
-    assert(argc == 2);
-
-    re = (const char *)sqlite3_value_text(argv[0]);
-    if (!re) {
-        sqlite3_result_error(ctx, "no regexp", -1);
-        return;
-    }
-
-    str = (const char *)sqlite3_value_text(argv[1]);
-    if (!str) {
-        sqlite3_result_error(ctx, "no string", -1);
-        return;
-    }
-
-    reobj = find_re(ctx, re);
-    if (reobj == NULL)
-        return;
-
-    {
-        bool rc = reobj->re->PartialMatch(str);
-        sqlite3_result_int(ctx, rc);
-        return;
-    }
-}
-
-static
-void regexp_match(sqlite3_context *ctx, int argc, sqlite3_value **argv)
-{
-    const char *re, *str;
-    cache_entry *reobj;
-
-    assert(argc == 2);
-
-    re = (const char *)sqlite3_value_text(argv[0]);
-    if (!re) {
-        sqlite3_result_error(ctx, "no regexp", -1);
-        return;
-    }
-
-    str = (const char *)sqlite3_value_text(argv[1]);
-    if (!str) {
-        sqlite3_result_null(ctx);
-        return;
-    }
-
-    reobj = find_re(ctx, re);
-    if (reobj == NULL) {
-        return;
-    }
-
+    cache_entry *reobj = find_re(re);
     pcre_context_static<30> pc;
     pcre_input pi(str);
     pcrepp &extractor = *reobj->re2;
 
     if (extractor.get_capture_count() == 0) {
-        sqlite3_result_error(ctx,
-                             "regular expression does not have any captures",
-                             -1);
-        return;
+        throw pcrepp::error("regular expression does not have any captures");
     }
 
     if (!extractor.match(pc, pi)) {
-        sqlite3_result_null(ctx);
-        return;
+        return static_cast<const char *>(nullptr);
     }
 
     auto_mem<yajl_gen_t> gen(yajl_gen_free);
@@ -174,7 +99,7 @@ void regexp_match(sqlite3_context *ctx, int argc, sqlite3_value **argv)
         const char *cap_start = pi.get_substr_start(cap);
 
         if (!cap->is_valid()) {
-            sqlite3_result_null(ctx);
+            return static_cast<const char *>(nullptr);
         }
         else {
             char *cap_copy = (char *)alloca(cap->length() + 1);
@@ -187,17 +112,16 @@ void regexp_match(sqlite3_context *ctx, int argc, sqlite3_value **argv)
 
             if (sscanf(cap_copy, "%lld%n", &i_value, &end_index) == 1 &&
                 (end_index == cap->length())) {
-                sqlite3_result_int64(ctx, i_value);
+                return i_value;
             }
             else if (sscanf(cap_copy, "%lf%n", &d_value, &end_index) == 1 &&
                      (end_index == cap->length())) {
-                sqlite3_result_double(ctx, d_value);
+                return d_value;
             }
             else {
-                sqlite3_result_text(ctx, cap_start, cap->length(), SQLITE_TRANSIENT);
+                return string_fragment(str, cap->c_begin, cap->c_end);
             }
         }
-        return;
     }
     else {
         yajlpp_map root_map(gen);
@@ -237,13 +161,12 @@ void regexp_match(sqlite3_context *ctx, int argc, sqlite3_value **argv)
         }
     }
 
-    const unsigned char *buf;
-    size_t len;
-
-    yajl_gen_get_buf(gen, &buf, &len);
+    return json_string(gen);
+#if 0
     sqlite3_result_text(ctx, (const char *) buf, len, SQLITE_TRANSIENT);
 #ifdef HAVE_SQLITE3_VALUE_SUBTYPE
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+#endif
 #endif
 }
 
@@ -284,107 +207,62 @@ void extract(sqlite3_context *ctx, int argc, sqlite3_value **argv)
 }
 
 static
-void regexp_replace(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+string regexp_replace(const char *str, const char *re, const char *repl)
 {
-    const char *re, *str, *repl;
-    cache_entry *reobj;
+    cache_entry *reobj = find_re(re);
+    string dest(str);
 
-    assert(argc == 3);
-
-    str = (const char *)sqlite3_value_text(argv[0]);
-    if (!str) {
-        sqlite3_result_error(ctx, "no string", -1);
-        return;
-    }
-
-    re = (const char *)sqlite3_value_text(argv[1]);
-    if (!re) {
-        sqlite3_result_error(ctx, "no regexp", -1);
-        return;
-    }
-
-    repl = (const char *)sqlite3_value_text(argv[2]);
-    if (!repl) {
-        sqlite3_result_error(ctx, "no string", -1);
-        return;
-    }
-
-    reobj = find_re(ctx, re);
-    if (reobj == NULL)
-        return;
-
-    {
-        string dest(str);
-        reobj->re->GlobalReplace(repl, &dest);
-        sqlite3_result_text(ctx, dest.c_str(), dest.length(), SQLITE_TRANSIENT);
-        return;
-    }
-}
-
-static
-void sql_startswith(sqlite3_context *context,
-                    int argc, sqlite3_value **argv)
-{
-    const char *str_in;
-    const char *prefix;
-
-    if ((sqlite3_value_type(argv[0]) == SQLITE_NULL) ||
-        (sqlite3_value_type(argv[1]) == SQLITE_NULL)) {
-        sqlite3_result_null(context);
-        return;
-    }
-
-    str_in = (const char *)sqlite3_value_text(argv[0]);
-    prefix = (const char *)sqlite3_value_text(argv[1]);
-
-    if (strncmp(str_in, prefix, strlen(prefix)) == 0)
-        sqlite3_result_int(context, 1);
-    else
-        sqlite3_result_int(context, 0);
-}
-
-static
-void sql_endswith(sqlite3_context *context,
-                  int argc, sqlite3_value **argv)
-{
-    const char *str_in;
-    const char *suffix;
-
-    if ((sqlite3_value_type(argv[0]) == SQLITE_NULL) ||
-        (sqlite3_value_type(argv[1]) == SQLITE_NULL)) {
-        sqlite3_result_null(context);
-        return;
-    }
-
-    str_in = (const char *)sqlite3_value_text(argv[0]);
-    suffix = (const char *)sqlite3_value_text(argv[1]);
-
-    int str_len = strlen(str_in);
-    int suffix_len = strlen(suffix);
-
-    if (str_len < suffix_len) {
-        sqlite3_result_int(context, 0);
-    }
-    else if (strcmp(&str_in[str_len - suffix_len], suffix) == 0) {
-        sqlite3_result_int(context, 1);
-    }
-    else {
-        sqlite3_result_int(context, 0);
-    }
+    reobj->re->GlobalReplace(repl, &dest);
+    return dest;
 }
 
 int string_extension_functions(const struct FuncDef **basic_funcs,
                                const struct FuncDefAgg **agg_funcs)
 {
     static const struct FuncDef string_funcs[] = {
-        { "regexp", 2, 0, SQLITE_UTF8, 0, regexp },
-        { "regexp_replace", 3, 0, SQLITE_UTF8, 0, regexp_replace },
-        { "regexp_match", 2, 0, SQLITE_UTF8, 0, regexp_match },
+        sqlite_func_adapter<decltype(&regexp), regexp>::builder(
+            "regexp",
+            "Test if a string matches a regular expression",
+            {
+                {"re", "The regular expression to use"},
+                {"str", "The string to test against the regular expression"},
+            }),
+
+        sqlite_func_adapter<decltype(&regexp_match), regexp_match>::builder(
+            "regexp_match",
+            "Match a string against a regular expression and return the capture groups",
+            {
+                {"re", "The regular expression to use"},
+                {"str", "The string to test against the regular expression"},
+            }),
+
+        sqlite_func_adapter<decltype(&regexp_replace), regexp_replace>::builder(
+            "regexp_replace",
+            "Replace the parts of a string that match a regular expression",
+            {
+                {"str", "The string to perform replacements on"},
+                {"re", "The regular expression to match"},
+                {"repl", "The replacement string"},
+            }),
 
         { "extract", 1, 0, SQLITE_UTF8, 0, extract },
 
-        { "startswith", 2, 0, SQLITE_UTF8, 0, sql_startswith },
-        { "endswith", 2, 0, SQLITE_UTF8, 0, sql_endswith },
+        sqlite_func_adapter<decltype(
+             static_cast<bool (*)(const char *, const char *)>(&startswith)),
+            startswith>::builder(
+            "startswith",
+            "Test if a string begins with the given prefix",
+            {
+                {"str", "The string to test"},
+                {"prefix", "The prefix to check in the string"},
+            }),
+        sqlite_func_adapter<decltype(&endswith), endswith>::builder(
+            "endswith",
+            "Test if a string ends with the given suffix",
+            {
+                {"str", "The string to test"},
+                {"suffix", "The suffix to check in the string"},
+            }),
 
         { NULL }
     };

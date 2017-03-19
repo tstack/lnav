@@ -43,31 +43,24 @@
 
 #include "sqlite-extension-func.h"
 
-static void sql_basename(sqlite3_context *context,
-                         int argc, sqlite3_value **argv)
+#include "vtab_module.hh"
+
+using namespace mapbox;
+
+static
+util::variant<const char *, string_fragment>
+sql_basename(const char *path_in)
 {
-    const char *path_in;
-    int         text_end = -1;
-
-    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
-        sqlite3_result_null(context);
-        return;
-    }
-
-    path_in = (const char *)sqlite3_value_text(argv[0]);
+    int text_end = -1;
 
     if (path_in[0] == '\0') {
-        sqlite3_result_text(context, ".", 1, SQLITE_STATIC);
-        return;
+        return ".";
     }
 
     for (ssize_t lpc = strlen(path_in) - 1; lpc >= 0; lpc--) {
         if (path_in[lpc] == '/' || path_in[lpc] == '\\') {
             if (text_end != -1) {
-                sqlite3_result_text(context,
-                                    &path_in[lpc + 1], (int) (text_end - lpc - 1),
-                                    SQLITE_TRANSIENT);
-                return;
+                return string_fragment(path_in, lpc + 1, text_end - lpc);
             }
         }
         else if (text_end == -1) {
@@ -76,12 +69,10 @@ static void sql_basename(sqlite3_context *context,
     }
 
     if (text_end == -1) {
-        sqlite3_result_text(context, "/", 1, SQLITE_STATIC);
+        return "/";
     }
     else {
-        sqlite3_result_text(context,
-                            path_in, text_end,
-                            SQLITE_TRANSIENT);
+        return string_fragment(path_in, 0, text_end);
     }
 }
 
@@ -161,7 +152,14 @@ int fs_extension_functions(const struct FuncDef **basic_funcs,
                            const struct FuncDefAgg **agg_funcs)
 {
     static const struct FuncDef fs_funcs[] = {
-        { "basename",  1, 0, SQLITE_UTF8, 0, sql_basename },
+
+        sqlite_func_adapter<decltype(&sql_basename), sql_basename>::builder(
+            "basename",
+            "Extract the base portion of a pathname",
+            {
+                {"path", "The path"},
+            }),
+
         { "dirname",   1, 0, SQLITE_UTF8, 0, sql_dirname  },
         { "joinpath", -1, 0, SQLITE_UTF8, 0, sql_joinpath },
 

@@ -169,6 +169,11 @@ noinst_HEADERS = \
 	log_search_table.hh \
 	logfile.hh \
 	logfile_sub_source.hh \
+	mapbox/recursive_wrapper.hpp \
+	mapbox/variant.hpp \
+	mapbox/variant_io.hpp \
+	mapbox/variant_visitor.hpp \
+	optional.hpp \
 	papertrail_proc.hh \
 	pcrepp.hh \
 	piper_proc.hh \

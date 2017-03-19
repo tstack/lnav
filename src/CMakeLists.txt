@@ -109,6 +109,7 @@ set(diag_STAT_SRCS
     log_format_impls.cc
     log_search_table.hh
     logfile_stats.hh
+    optional.hpp
     papertrail_proc.hh
     plain_text_source.hh
     pretty_printer.hh
@@ -134,6 +135,11 @@ set(diag_STAT_SRCS
     url_loader.hh
     views_vtab.hh
     vtab_module.hh
+
+    mapbox/recursive_wrapper.hpp
+    mapbox/variant.hpp
+    mapbox/variant_io.hpp
+    mapbox/variant_visitor.hpp
 
     yajl/api/yajl_common.h
     yajl/api/yajl_gen.h

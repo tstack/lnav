@@ -131,6 +131,7 @@ void rl_change(void *dummy, readline_curses *rc)
                          meta.sm_description.c_str());
                 lnav_data.ld_bottom_source.set_prompt(help_text);
             }
+            break;
         }
         default:
             break;

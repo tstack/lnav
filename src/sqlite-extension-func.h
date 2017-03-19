@@ -40,12 +40,17 @@ extern "C" {
 #endif
 
 struct FuncDef {
-     const char *zName;
-     signed char nArg;
-     uint8_t argType;           /* 0: none.  1: db  2: (-1) */
-     uint8_t eTextRep;          /* 1: UTF-16.  0: UTF-8 */
-     uint8_t needCollSeq;
-     void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
+    const char *zName;
+    signed char nArg;
+    uint8_t argType;           /* 0: none.  1: db  2: (-1) */
+    int eTextRep;          /* 1: UTF-16.  0: UTF-8 */
+    uint8_t needCollSeq;
+    void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
+    const struct ParamDoc {
+        const char *name;
+        const char *doc;
+    } *paramDoc;
+    const char *description;
 };
 
 struct FuncDefAgg {
