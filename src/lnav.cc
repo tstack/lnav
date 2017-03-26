@@ -407,8 +407,9 @@ private:
     void do_update(void)
     {
         lnav_data.ld_top_source.update_time();
-        lnav_data.ld_status[LNS_TOP].do_update();
-        lnav_data.ld_status[LNS_BOTTOM].do_update();
+        for (auto &sc : lnav_data.ld_status) {
+            sc.do_update();
+        }
         refresh();
     };
 
@@ -1916,17 +1917,19 @@ static void looper(void)
                 textview_curses::action(update_hits));
         }
 
+        lnav_data.ld_doc_view.set_window(lnav_data.ld_window);
+
         lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
-        for (lpc = 0; lpc < LNS__MAX; lpc++) {
-            lnav_data.ld_status[lpc].set_window(lnav_data.ld_window);
+        for (auto &sc : lnav_data.ld_status) {
+            sc.set_window(lnav_data.ld_window);
         }
         lnav_data.ld_status[LNS_TOP].set_data_source(
             &lnav_data.ld_top_source);
         lnav_data.ld_status[LNS_BOTTOM].set_data_source(
             &lnav_data.ld_bottom_source);
-
-        lnav_data.ld_match_view.set_show_bottom_border(true);
+        lnav_data.ld_status[LNS_DOC].set_data_source(
+            &lnav_data.ld_doc_status_source);
 
         vsb.push_back(sb.get_functor());
 
@@ -1939,8 +1942,11 @@ static void looper(void)
         sb.push_back(&lnav_data.ld_bottom_source.marks_wire);
         sb.push_back(&lnav_data.ld_term_extra.filename_wire);
 
-        lnav_data.ld_status[0].window_change();
-        lnav_data.ld_status[1].window_change();
+        lnav_data.ld_match_view.set_show_bottom_border(true);
+
+        for (auto &sc : lnav_data.ld_status) {
+            sc.window_change();
+        }
 
         execute_file(ec, dotlnav_path("session"));
 
@@ -1963,12 +1969,45 @@ static void looper(void)
                 rebuild_indexes(true);
             }
 
-            lnav_data.ld_status[LNS_TOP].do_update();
+            {
+                unsigned long width, height;
+
+                getmaxyx(lnav_data.ld_window, height, width);
+                bool doc_open = lnav_data.ld_doc_view.get_height() > 0;
+                int bottom_height =
+                    (doc_open ? 1 : 0)
+                    + lnav_data.ld_doc_view.get_height()
+                    + lnav_data.ld_match_view.get_height()
+                    + 1
+                    + lnav_data.ld_rl_view->get_height();
+
+                for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+                    textview_curses &tc = lnav_data.ld_views[lpc];
+
+                    tc.set_height(vis_line_t(-bottom_height));
+                }
+                lnav_data.ld_status[LNS_BOTTOM].set_top(
+                    -(lnav_data.ld_match_view.get_height() + 2));
+                lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
+                lnav_data.ld_status[LNS_DOC].set_enabled(doc_open);
+
+                lnav_data.ld_doc_view.set_y(height - bottom_height + 1);
+                lnav_data.ld_match_view.set_y(
+                    height
+                    - bottom_height
+                    + (doc_open ? 1 : 0)
+                    + 1
+                    + lnav_data.ld_doc_view.get_height());
+            }
+
             if (!lnav_data.ld_view_stack.empty()) {
                 lnav_data.ld_view_stack.back()->do_update();
             }
+            lnav_data.ld_doc_view.do_update();
             lnav_data.ld_match_view.do_update();
-            lnav_data.ld_status[LNS_BOTTOM].do_update();
+            for (auto &sc : lnav_data.ld_status) {
+                sc.do_update();
+            }
             rlc.do_update();
             refresh();
 
@@ -2187,11 +2226,14 @@ static void looper(void)
                     resizeterm(size.ws_row, size.ws_col);
                 }
                 rlc.window_change();
-                lnav_data.ld_status[0].window_change();
-                lnav_data.ld_status[1].window_change();
+                for (auto &sc : lnav_data.ld_status) {
+                    sc.window_change();
+                }
                 if (!lnav_data.ld_view_stack.empty()) {
                     lnav_data.ld_view_stack.back()->set_needs_update();
                 }
+                lnav_data.ld_doc_view.set_needs_update();
+                lnav_data.ld_match_view.set_needs_update();
             }
 
             if (lnav_data.ld_child_terminated) {
@@ -2934,6 +2976,8 @@ int main(int argc, char *argv[])
         .add_input_delegate(lnav_data.ld_spectro_source)
         .set_tail_space(vis_line_t(2));
 
+    lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source)
+             .set_left(0);
     lnav_data.ld_match_view.set_left(0);
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {

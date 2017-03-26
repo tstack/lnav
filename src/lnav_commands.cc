@@ -2856,7 +2856,13 @@ readline_context::command_t STD_COMMANDS[] = {
         "adjust-log-time",
         "<date>",
         "Change the timestamps of the top file to be relative to the given date",
-        com_adjust_log_time
+        com_adjust_log_time,
+
+        help_text(":adjust-log-time")
+            .with_summary("Change the timestamps of the top file to be relative to the given date")
+            .with_parameter(help_text("timestamp", "The new timestamp for the top line in the view")
+                                .with_format(HPF_DATETIME))
+            .with_example({"2017-01-02T05:33:00", ""})
     },
 
     {
@@ -2864,18 +2870,37 @@ readline_context::command_t STD_COMMANDS[] = {
         "<seconds>",
         "Convert epoch time to a human-readable form",
         com_unix_time,
+
+        help_text(":unix-time")
+            .with_summary("Convert epoch time to a human-readable form")
+            .with_parameter(help_text("seconds", "The epoch timestamp to convert")
+                                .with_format(HPF_INTEGER))
+            .with_example({"1490191111", "Wed Mar 22 06:58:31 2017  -0700 PDT -- 1490191111"})
     },
     {
         "current-time",
         NULL,
         "Print the current time in human-readable form and seconds since the epoch",
         com_current_time,
+
+        help_text(":current-time")
+            .with_summary("Print the current time in human-readable form and seconds since the epoch")
     },
     {
         "goto",
         "<line#|N%|date>",
         "Go to the given line number, N percent into the file, or the given timestamp in the log view",
         com_goto,
+
+        help_text(":goto")
+            .with_summary("Go to the given location in the top view")
+            .with_parameter(help_text("line#|N%|date", "A line number, percent into the file, or a timestamp"))
+            .with_examples(
+                {
+                    {"22"},
+                    {"75%"},
+                    {"2017-01-01"}
+                })
     },
     {
         "relative-goto",
@@ -2888,180 +2913,336 @@ readline_context::command_t STD_COMMANDS[] = {
         NULL,
         "Toggle the bookmark state for the top line in the current view",
         com_mark,
+
+        help_text(":mark")
+            .with_summary("Toggle the bookmark state for the top line in the current view")
     },
     {
         "next-mark",
         "error|warning|search|user|file|partition",
         "Move to the next bookmark of the given type in the current view",
         com_goto_mark,
+
+        help_text(":next-mark")
+            .with_summary("Move to the next bookmark of the given type in the current view")
+            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, partition"))
+            .with_example({"error"})
     },
     {
         "prev-mark",
         "error|warning|search|user|file|partition",
         "Move to the previous bookmark of the given type in the current view",
         com_goto_mark,
+
+        help_text(":prev-mark")
+            .with_summary("Move to the previous bookmark of the given type in the current view")
+            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, partition"))
+            .with_example({"error"})
     },
     {
         "help",
         NULL,
         "Open the help text view",
         com_help,
+
+        help_text(":help")
+            .with_summary("Open the help text view")
     },
     {
         "hide-fields",
         "<field-name1> [<field-name2> ... <field-nameN>]",
         "Hide log message fields by replacing them with an ellipsis",
         com_toggle_field,
+
+        help_text(":hide-fields")
+            .with_summary("Hide log message fields by replacing them with an ellipsis")
+            .with_parameter(help_text("field-name", "The name of the field to hide")
+                                .one_or_more())
+            .with_example({"log_procname"})
     },
     {
         "show-fields",
         "<field-name> [<field-name2> ... <field-nameN>]",
         "Show log message fields that were previously hidden",
         com_toggle_field,
+
+        help_text(":show-fields")
+            .with_summary("Show log message fields that were previously hidden")
+            .with_parameter(help_text("field-name", "The name of the field to show")
+                                .one_or_more())
+            .with_example({"log_procname"})
     },
     {
         "hide-lines-before",
         "<line#|date>",
         "Hide lines that come before the given line number or date",
         com_hide_line,
+
+        help_text(":hide-lines-before")
+            .with_summary("Hide lines that come before the given date")
+            .with_parameter(help_text("date", "An absolute or relative date"))
+            .with_examples(
+                {
+                    {"here"},
+                    {"6am"},
+                })
     },
     {
         "hide-lines-after",
         "<line#|date>",
         "Hide lines that come after the given line number or date",
         com_hide_line,
+
+        help_text(":hide-lines-after")
+            .with_summary("Hide lines that come after the given date")
+            .with_parameter(help_text("date", "An absolute or relative date"))
+            .with_examples(
+                {
+                    {"here"},
+                    {"6am"},
+                })
     },
     {
         "show-lines-before-and-after",
         NULL,
         "Show lines that were hidden by the 'hide-lines' commands",
         com_show_lines,
+
+        help_text(":show-lines-before-and-after")
+            .with_summary("Show lines that were hidden by the 'hide-lines' commands")
     },
     {
         "highlight",
-        "<regex>",
+        "<pattern>",
         "Add coloring to log messages fragments that match the given regular expression",
         com_highlight,
+
+        help_text(":highlight")
+            .with_summary("Add coloring to log messages fragments that match the given regular expression")
+            .with_parameter(help_text("pattern", "The regular expression to match"))
+            .with_example({R"(\d{3,})"})
     },
     {
         "clear-highlight",
-        "<regex>",
+        "<pattern>",
         "Remove a previously set highlight regular expression",
         com_clear_highlight,
+
+        help_text(":clear-highlight")
+            .with_summary("Remove a previously set highlight regular expression")
+            .with_parameter(help_text("pattern", "The regular expression previously used with :highlight"))
+            .with_example({"foobar"})
     },
     {
         "filter-in",
         "<regex>",
         "Only show lines that match the given regular expression in the current view",
         com_filter,
+
+        help_text(":filter-in")
+            .with_summary("Only show lines that match the given regular expression in the current view")
+            .with_parameter(help_text("pattern", "The regular expression to match"))
+        .with_example({"dhclient"})
     },
     {
         "filter-out",
         "<regex>",
         "Remove lines that match the given regular expression in the current view",
         com_filter,
+
+        help_text(":filter-out")
+            .with_summary("Remove lines that match the given regular expression in the current view")
+            .with_parameter(help_text("pattern", "The regular expression to match"))
+            .with_example({"last message repeated"})
     },
     {
         "delete-filter",
         "<regex>",
         "Delete the given filter",
         com_delete_filter,
+
+        help_text(":filter-out")
+            .with_summary("Delete the filter created with "
+                              ANSI_BOLD(":filter-in") " or " ANSI_BOLD(":filter-out"))
+            .with_parameter(help_text("pattern", "The regular expression to match"))
+            .with_example({"last message repeated"})
     },
     {
         "append-to",
         "<filename>",
         "Append marked lines in the current view to the given file",
         com_save_to,
+
+        help_text(":append-to")
+            .with_summary("Append marked lines in the current view to the given file")
+            .with_parameter(help_text("path", "The path to the file to append to"))
+            .with_example({"/tmp/interesting-lines.txt"})
     },
     {
         "write-to",
         "<filename>",
         "Overwrite the given file with any marked lines in the current view",
         com_save_to,
+
+        help_text(":write-to")
+            .with_summary("Overwrite the given file with any marked lines in the current view")
+            .with_parameter(help_text("path", "The path to the file to write"))
+            .with_example({"/tmp/interesting-lines.txt"})
     },
     {
         "write-csv-to",
         "<filename>",
         "Write SQL results to the given file in CSV format",
         com_save_to,
+
+        help_text(":write-csv-to")
+            .with_summary("Write SQL results to the given file in CSV format")
+            .with_parameter(help_text("path", "The path to the file to write"))
+            .with_example({"/tmp/table.csv"})
     },
     {
         "write-json-to",
         "<filename>",
         "Write SQL results to the given file in JSON format",
         com_save_to,
+
+        help_text(":write-json-to")
+            .with_summary("Write SQL results to the given file in JSON format")
+            .with_parameter(help_text("path", "The path to the file to write"))
+            .with_example({"/tmp/table.json"})
     },
     {
         "write-cols-to",
         "<filename>",
         "Write SQL results to the given file in a columnar format",
         com_save_to,
+
+        help_text(":write-cols-to")
+            .with_summary("Write SQL results to the given file in a columnar format")
+            .with_parameter(help_text("path", "The path to the file to write"))
+            .with_example({"/tmp/table.txt"})
     },
     {
         "write-raw-to",
         "<filename>",
         "Write SQL results to the given file without any formatting",
         com_save_to,
+
+        help_text(":write-raw-to")
+            .with_summary("Write SQL results to the given file without any formatting")
+            .with_parameter(help_text("path", "The path to the file to write"))
+            .with_example({"/tmp/table.txt"})
     },
     {
         "pipe-to",
         "<shell-cmd>",
         "Pipe the marked lines to the given shell command",
         com_pipe_to,
+
+        help_text(":pipe-to")
+            .with_summary("Pipe the marked lines to the given shell command")
+            .with_parameter(help_text("shell-cmd", "The shell command-line to execute"))
+            .with_example({"sed -e s/foo/bar/g"})
     },
     {
         "pipe-line-to",
         "<shell-cmd>",
         "Pipe the top line to the given shell command",
         com_pipe_to,
+
+        help_text(":pipe-line-to")
+            .with_summary("Pipe the top line to the given shell command")
+            .with_parameter(help_text("shell-cmd", "The shell command-line to execute"))
+            .with_example({"sed -e 's/foo/bar/g'"})
     },
     {
         "enable-filter",
         "<regex>",
         "Enable a previously created and disabled filter",
         com_enable_filter,
+
+        help_text(":enable-filter")
+            .with_summary("Enable a previously created and disabled filter")
+            .with_parameter(help_text("pattern", "The regular expression used in the filter command"))
+            .with_example({"last message repeated"})
     },
     {
         "disable-filter",
         "<regex>",
         "Disable a filter created with filter-in/filter-out",
         com_disable_filter,
+
+        help_text(":disable-filter")
+            .with_summary("Disable a filter created with filter-in/filter-out")
+            .with_parameter(help_text("pattern", "The regular expression used in the filter command"))
+            .with_example({"last message repeated"})
     },
     {
         "enable-word-wrap",
         NULL,
         "Enable word-wrapping for the current view",
         com_enable_word_wrap,
+
+        help_text(":enable-word-wrap")
+            .with_summary("Enable word-wrapping for the current view")
     },
     {
         "disable-word-wrap",
         NULL,
         "Disable word-wrapping for the current view",
         com_disable_word_wrap,
+
+        help_text(":disable-word-wrap")
+            .with_summary("Disable word-wrapping for the current view")
     },
     {
         "create-logline-table",
         "<table-name>",
         "Create an SQL table using the top line of the log view as a template",
         com_create_logline_table,
+
+        help_text(":create-logline-table")
+            .with_summary("Create an SQL table using the top line of the log view as a template")
+            .with_parameter(help_text("table-name", "The name for the new table"))
+            .with_example({"task_durations"})
     },
     {
         "delete-logline-table",
         "<table-name>",
         "Delete a table created with create-logline-table",
         com_delete_logline_table,
+
+        help_text(":delete-logline-table")
+            .with_summary("Delete a table created with create-logline-table")
+            .with_parameter(help_text("table-name", "The name of the table to delete"))
+            .with_example({"task_durations"})
     },
     {
         "create-search-table",
         "<table-name> [<regex>]",
         "Create an SQL table based on a regex search",
         com_create_search_table,
+
+        help_text(":create-search-table")
+            .with_summary("Create an SQL table based on a regex search")
+            .with_parameter(help_text("table-name", "The name of the table to create"))
+            .with_parameter(help_text(
+                "pattern",
+                "The regular expression used to capture the table columns.  "
+                    "If not given, the current search pattern is used.")
+                                .optional())
+            .with_example({R"(task_durations duration=(?<duration>\d+))"})
     },
     {
         "delete-search-table",
         "<table-name>",
         "Delete a table created with create-search-table",
         com_delete_search_table,
+
+        help_text(":delete-search-table")
+            .with_summary("Create an SQL table based on a regex search")
+            .with_parameter(help_text("table-name", "The name of the table to create"))
+            .with_example({"task_durations"})
     },
     {
         "open",
@@ -3072,24 +3253,48 @@ readline_context::command_t STD_COMMANDS[] = {
         "Open the given file(s) in lnav",
 #endif
         com_open,
+
+        help_text(":open")
+            .with_summary(
+#ifdef HAVE_LIBCURL
+                "Open the given file(s) or URLs in lnav"
+#else
+                "Open the given file(s) in lnav"
+#endif
+            )
+            .with_parameter(
+                help_text{"path", "The path to the file to open"}
+                    .one_or_more())
+            .with_example({"~/.lnav/example", ""})
     },
     {
         "close",
         NULL,
         "Close the top file",
         com_close,
+
+        help_text(":close")
+            .with_summary("Close the top file in the view")
     },
     {
         "partition-name",
         "<name>",
         "Mark the top line in the log view as the start of a new partition with the given name",
         com_partition_name,
+
+        help_text(":partition-name")
+            .with_summary("Mark the top line in the log view as the start of a new partition with the given name")
+            .with_parameter(help_text("name", "The name for the new partition"))
+            .with_example({"reboot"})
     },
     {
         "clear-partition",
         NULL,
         "Clear the partition the top line is a part of",
         com_clear_partition,
+
+        help_text(":clear-partition")
+            .with_summary("Clear the partition the top line is a part of")
     },
     {
         "pt-min-time",
@@ -3108,96 +3313,174 @@ readline_context::command_t STD_COMMANDS[] = {
         "<lnav-command>",
         "Add the given command to the session file (~/.lnav/session)",
         com_session,
+
+        help_text(":session")
+            .with_summary("Add the given command to the session file (~/.lnav/session)")
+            .with_parameter(help_text("lnav-command", "The lnav command to save."))
+            .with_example({":highlight foobar"})
     },
     {
         "summarize",
         "<column-name>",
         "Execute a SQL query that computes the characteristics of the values in the given column",
         com_summarize,
+
+        help_text(":summarize")
+            .with_summary("Execute a SQL query that computes the characteristics of the values in the given column")
+            .with_parameter(help_text("column-name", "The name of the column to analyze."))
+            .with_example({"sc_bytes"})
     },
     {
         "switch-to-view",
         "<view-name>",
         "Switch to the given view",
         com_switch_to_view,
+
+        help_text(":switch-to-view")
+            .with_summary("Switch to the given view")
+            .with_parameter(help_text("view-name", "The name of the view to switch to."))
+            .with_example({"schema"})
     },
     {
         "reset-session",
         NULL,
         "Reset the session state, clearing all filters, highlights, and bookmarks",
         com_reset_session,
+
+        help_text(":reset-session")
+            .with_summary("Reset the session state, clearing all filters, highlights, and bookmarks")
     },
     {
         "load-session",
         NULL,
         "Load the latest session state",
         com_load_session,
+
+        help_text(":load-session")
+            .with_summary("Load the latest session state")
     },
     {
         "save-session",
         NULL,
         "Save the current state as a session",
         com_save_session,
+
+        help_text(":save-session")
+            .with_summary("Save the current state as a session")
     },
     {
         "set-min-log-level",
         "<log-level>",
         "Set the minimum log level to display in the log view",
         com_set_min_log_level,
+
+        help_text(":set-min-log-level")
+            .with_summary("Set the minimum log level to display in the log view")
+            .with_parameter(help_text("log-level", "The new minimum log level"))
+            .with_example({"error"})
     },
     {
         "redraw",
         NULL,
         "Do a full redraw of the screen",
         com_redraw,
+
+        help_text(":redraw")
+            .with_summary("Do a full redraw of the screen")
     },
     {
         "zoom-to",
         "<zoom-level>",
         "Zoom the histogram view to the given level",
         com_zoom_to,
+
+        help_text(":zoom-to")
+            .with_summary("Zoom the histogram view to the given level")
+            .with_parameter(help_text("zoom-level", "The zoom level"))
+            .with_example({"1-week"})
     },
     {
         "echo",
         "[-n] <msg>",
         "Echo the given message",
         com_echo,
+
+        help_text(":echo")
+            .with_summary("Echo the given message")
+            .with_parameter(help_text("msg", "The message to display"))
+            .with_example({"Hello, World!"})
     },
     {
         "alt-msg",
         "<msg>",
         "Display a message in the alternate command position",
         com_alt_msg,
+
+        help_text(":alt-msg")
+            .with_summary("Display a message in the alternate command position")
+            .with_parameter(help_text("msg", "The message to display"))
+            .with_example({"Press t to switch to the text view"})
     },
     {
         "eval",
         "<msg>",
         "Evaluate the given command/query after doing environment variable substitution",
         com_eval,
+
+        help_text(":eval")
+            .with_summary(
+                "Evaluate the given command/query after doing environment variable substitution")
+            .with_parameter(help_text("command",
+                                      "The command or query to perform substitution on."))
+            .with_examples(
+                {
+                    {":echo $HOME"},
+                    {";SELECT * FROM ${table}"}
+                })
     },
     {
         "config",
         "<option> [<value>]",
         "Read or write a configuration option",
         com_config,
+
+        help_text(":config")
+            .with_summary("Read or write a configuration option")
+            .with_parameter(help_text("option", "The path to the option to read or write"))
+            .with_parameter(help_text("value", "The value to write.  If not given, the current value is returned")
+                                .optional())
+            .with_example({"/ui/clock-format"})
     },
     {
         "save-config",
         NULL,
         "Save the current configuration state",
         com_save_config,
+
+        help_text(":save-config")
+            .with_summary("Save the current configuration state")
     },
     {
         "reset-config",
         "<option>",
         "Reset the configuration option to its default value",
         com_reset_config,
+
+        help_text(":reset-config")
+            .with_summary("Reset the configuration option to its default value")
+            .with_parameter(help_text("option", "The path to the option to reset"))
+            .with_example({"/ui/clock-format"})
     },
     {
         "spectrogram",
         "<field-name>",
         "Visualize the given message field using a spectrogram",
         com_spectrogram,
+
+        help_text(":spectrogram")
+            .with_summary("Visualize the given message field using a spectrogram")
+            .with_parameter(help_text("field-name", "The name of the numeric field to visualize."))
+            .with_example({"sc_bytes"})
     },
 
     { NULL },

@@ -197,7 +197,12 @@ public:
     void set_show_scrollbar(bool ss) { this->lv_show_scrollbar = ss; };
     bool get_show_scrollbar() const { return this->lv_show_scrollbar; };
 
-    void set_show_bottom_border(bool val) { this->lv_show_bottom_border = val; };
+    void set_show_bottom_border(bool val) {
+        if (this->lv_show_bottom_border != val) {
+            this->lv_show_bottom_border = val;
+            this->set_needs_update();
+        }
+    };
     bool get_show_bottom_border() const { return this->lv_show_bottom_border; };
 
     listview_curses &set_word_wrap(bool ww) {
@@ -459,7 +464,7 @@ public:
         }
         else {
             getmaxyx(this->lv_window, height, width_out);
-            if (this->lv_height < 1) {
+            if (this->lv_height < 0) {
                 height_out = vis_line_t(height) +
                     this->lv_height -
                     vis_line_t(this->lv_y);

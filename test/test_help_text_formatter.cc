@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2017, Timothy Stack
  *
  * All rights reserved.
  * 
@@ -29,57 +29,58 @@
 
 #include "config.h"
 
+#include <stdio.h>
 #include <assert.h>
-#include <stdlib.h>
+#include <view_curses.hh>
+#include <attr_line.hh>
 
 #include "lnav_config.hh"
-#include "top_status_source.hh"
+#include "help_text_formatter.hh"
 
-using namespace std;
+struct _lnav_config lnav_config;
 
-static time_t current_time = 1;
-
-time_t time(time_t *arg)
-{
-    if (arg != NULL)
-	*arg = current_time;
-    
-    return current_time;
-}
-
-string execute_any(exec_context &ec, const string &cmdline_with_mode)
-{
-    return "";
-}
+lnav_config_listener *lnav_config_listener::LISTENER_LIST;
 
 int main(int argc, char *argv[])
 {
-    int retval = EXIT_SUCCESS;
+	int retval = EXIT_SUCCESS;
 
-    top_status_source tss;
-
-    setenv("HOME", "/", 1);
-
-    vector<string> paths, errors;
-
-    load_config(paths, errors);
+    static help_text ht = help_text(
+        "regexp_replace",
+        "Replace parts of a string that match a regular expression")
+        .with_parameters(
+            {
+                {"str", "The string to perform replacements on"},
+                {"re", "The regular expression to match"},
+                {"repl", "The replacement string"},
+            })
+        .with_example(
+            {
+                ";SELECT regexp_replace('abbb bbbc', 'b+', '') AS res",
+                "a c",
+            });
 
     {
-        status_field &sf = tss.
-                statusview_value_for_field(top_status_source::TSF_TIME);
-        attr_line_t val;
+        setenv("TERM", "ansi", 1);
+        screen_curses sc;
+        view_colors::init();
 
-        tss.update_time();
-        val = sf.get_value();
-        assert(val.get_string() == sf.get_value().get_string());
-        current_time += 2;
-        tss.update_time();
-        assert(val.get_string() != sf.get_value().get_string());
+        attr_line_t al;
 
-        lnav_config.lc_ui_clock_format = "abc";
-        tss.update_time();
-        val = sf.get_value();
-        assert(val.get_string() == " abc");
+        format_help_text_for_term(ht, 35, al);
+
+        std::vector<attr_line_t> lines;
+
+        al.split_lines(lines);
+
+        line_range lr{0, 80};
+
+        int y = 0;
+        for (auto &line : lines) {
+            view_curses::mvwattrline(sc.get_window(), y++, 0, line, lr);
+        }
+
+        getch();
     }
 
 	return retval;

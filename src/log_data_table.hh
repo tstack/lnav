@@ -73,7 +73,7 @@ public:
         lf->read_full_message(lf->begin() + cl_copy, line);
         format->annotate(line, sa, line_values);
         body = find_string_attr_range(sa, &textview_curses::SA_BODY);
-        if (body.lr_end == -1 || body.length() == 0) {
+        if (body.lr_end == -1) {
             this->ldt_schema_id.clear();
             return;
         }
@@ -158,7 +158,7 @@ public:
         lf->read_full_message(lf_iter, this->ldt_current_line);
         lf->get_format()->annotate(this->ldt_current_line, sa, line_values);
         body = find_string_attr_range(sa, &textview_curses::SA_BODY);
-        if (body.lr_end == -1 || body.length() == 0) {
+        if (body.lr_end == -1) {
             return false;
         }
 

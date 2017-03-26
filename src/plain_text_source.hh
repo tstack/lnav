@@ -33,9 +33,14 @@
 #include <string>
 #include <vector>
 
+#include "attr_line.hh"
+
 class plain_text_source
         : public text_sub_source {
 public:
+    plain_text_source() {
+    };
+
     plain_text_source(std::string text)
     {
         size_t start = 0, end;
@@ -52,8 +57,22 @@ public:
     };
 
     plain_text_source(const std::vector<std::string> &text_lines) {
+        for (auto &str : text_lines) {
+            this->tds_lines.emplace_back(str);
+        }
+        this->tds_longest_line = this->compute_longest_line();
+    };
+
+    plain_text_source(const std::vector<attr_line_t> &text_lines) {
         this->tds_lines = text_lines;
         this->tds_longest_line = this->compute_longest_line();
+    };
+
+    plain_text_source &replace_with(attr_line_t &text_lines) {
+        this->tds_lines.clear();
+        text_lines.split_lines(this->tds_lines);
+        this->tds_longest_line = this->compute_longest_line();
+        return *this;
     };
 
     size_t text_line_count()
@@ -68,9 +87,13 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &value_out,
-                             bool no_scrub)
-    {
-        value_out = this->tds_lines[row];
+                             bool no_scrub) {
+        value_out = this->tds_lines[row].get_string();
+    };
+
+    void text_attrs_for_line(textview_curses &tc, int line,
+                             string_attrs_t &value_out) {
+        value_out = this->tds_lines[line].get_attrs();
     };
 
     size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
@@ -80,15 +103,13 @@ public:
 private:
     size_t compute_longest_line() {
         size_t retval = 0;
-        for (std::vector<std::string>::iterator iter = this->tds_lines.begin();
-             iter != this->tds_lines.end();
-             ++iter) {
-            retval = std::max(retval, iter->length());
+        for (auto &iter : this->tds_lines) {
+            retval = std::max(retval, (size_t) iter.length());
         }
         return retval;
     };
 
-    std::vector<std::string> tds_lines;
+    std::vector<attr_line_t> tds_lines;
     size_t tds_longest_line;
 };
 

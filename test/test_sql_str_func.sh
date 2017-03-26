@@ -145,6 +145,35 @@ Row 0:
 EOF
 
 
+run_test ./drive_sql "select extract('foo=1') as result"
+
+check_output "" <<EOF
+Row 0:
+  Column     result: {"foo":1}
+EOF
+
+run_test ./drive_sql "select extract('foo=1; bar=2') as result"
+
+check_output "" <<EOF
+Row 0:
+  Column     result: {"foo":1,"bar":2}
+EOF
+
+run_test ./drive_sql "select extract(null) as result"
+
+check_output "" <<EOF
+Row 0:
+  Column     result: (null)
+EOF
+
+run_test ./drive_sql "select extract(1) as result"
+
+check_output "" <<EOF
+Row 0:
+  Column     result: {"col_0":1}
+EOF
+
+
 run_test ./drive_sql "SELECT * FROM regexp_capture('foo bar', '\w+ (\w+)')"
 
 check_output "" <<EOF

@@ -797,3 +797,113 @@ int sqlite_authorizer(void *pUserData, int action_code, const char *detail1,
     }
     return SQLITE_OK;
 }
+
+static string sql_keyword_re(void)
+{
+    string retval = "(?:";
+
+    for (int lpc = 0; sql_keywords[lpc]; lpc++) {
+        if (lpc > 0) {
+            retval.append("|");
+        }
+        retval.append("\\b");
+        retval.append(sql_keywords[lpc]);
+        retval.append("\\b");
+    }
+    retval += ")";
+
+    return retval;
+}
+
+string_attr_type SQL_KEYWORD_ATTR("sql_keyword");
+string_attr_type SQL_IDENTIFIER_ATTR("sql_ident");
+string_attr_type SQL_FUNCTION_ATTR("sql_func");
+string_attr_type SQL_STRING_ATTR("sql_string");
+string_attr_type SQL_OPERATOR_ATTR("sql_oper");
+string_attr_type SQL_PAREN_ATTR("sql_paren");
+string_attr_type SQL_GARBAGE_ATTR("sql_garbage");
+
+void annotate_sql_statement(attr_line_t &al)
+{
+    static string keyword_re_str =
+        R"(\A)" + sql_keyword_re() + R"(|\.schema|\.msgformats)";
+
+    static struct {
+        pcrepp re;
+        string_attr_type_t type;
+    } PATTERNS[] = {
+        { {keyword_re_str.c_str(), PCRE_CASELESS}, &SQL_KEYWORD_ATTR },
+        { {R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR },
+        { {R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])", PCRE_CASELESS}, &SQL_IDENTIFIER_ATTR },
+        { {R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR },
+        { {R"(\A\(|\))"}, &SQL_PAREN_ATTR },
+        { {R"(\A.)"}, &SQL_GARBAGE_ATTR },
+    };
+
+    static pcrepp ws_pattern(R"(\A\s+)");
+
+    pcre_context_static<30> pc;
+    pcre_input pi(al.get_string());
+    string &line = al.get_string();
+    string_attrs_t &sa = al.get_attrs();
+
+    while (pi.pi_next_offset < line.length()) {
+        if (ws_pattern.match(pc, pi, PCRE_ANCHORED)) {
+            continue;
+        }
+        for (auto &pat : PATTERNS) {
+            if (pat.re.match(pc, pi, PCRE_ANCHORED)) {
+                pcre_context::capture_t *cap = pc.all();
+                struct line_range lr(cap->c_begin, cap->c_end);
+
+                sa.emplace_back(lr, pat.type);
+                break;
+            }
+        }
+    }
+
+    string_attrs_t::const_iterator iter;
+    int start = 0;
+
+    while ((iter = find_string_attr(sa, &SQL_IDENTIFIER_ATTR, start)) != sa.end()) {
+        string_attrs_t::const_iterator piter;
+        bool found_open = false;
+        ssize_t lpc;
+
+        for (lpc = iter->sa_range.lr_end; lpc < line.length(); lpc++) {
+            if (line[lpc] == '(') {
+                found_open = true;
+                break;
+            } else if (!isspace(line[lpc])) {
+                break;
+            }
+        }
+
+        if (found_open) {
+            ssize_t pstart = lpc + 1;
+            int depth = 1;
+
+            while (depth > 0 &&
+                   (piter = find_string_attr(sa, &SQL_PAREN_ATTR, pstart)) != sa.end()) {
+                if (line[piter->sa_range.lr_start] == '(') {
+                    depth += 1;
+                } else {
+                    depth -= 1;
+                }
+                pstart = piter->sa_range.lr_end;
+            }
+
+            line_range func_range{iter->sa_range.lr_start};
+            if (piter == sa.end()) {
+                func_range.lr_end = line.length();
+            } else {
+                func_range.lr_end = piter->sa_range.lr_end;
+            }
+            sa.emplace_back(func_range, &SQL_FUNCTION_ATTR);
+        }
+
+        start = iter->sa_range.lr_end;
+    }
+
+    remove_string_attr(sa, &SQL_PAREN_ATTR);
+}

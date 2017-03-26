@@ -49,6 +49,7 @@
 #include "listview_curses.hh"
 #include "top_status_source.hh"
 #include "bottom_status_source.hh"
+#include "doc_status_source.hh"
 #include "grep_highlighter.hh"
 #include "db_sub_source.hh"
 #include "textfile_sub_source.hh"
@@ -64,6 +65,7 @@
 #include "log_format_loader.hh"
 #include "spectro_source.hh"
 #include "command_executor.hh"
+#include "plain_text_source.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -133,6 +135,7 @@ extern const char *lnav_zoom_strings[];
 typedef enum {
     LNS_TOP,
     LNS_BOTTOM,
+    LNS_DOC,
 
     LNS__MAX
 } lnav_status_t;
@@ -241,6 +244,7 @@ struct _lnav_data {
     statusview_curses                       ld_status[LNS__MAX];
     top_status_source                       ld_top_source;
     bottom_status_source                    ld_bottom_source;
+    doc_status_source                       ld_doc_status_source;
     listview_curses::action::broadcaster    ld_scroll_broadcaster;
     listview_curses::action::broadcaster    ld_view_stack_broadcaster;
 
@@ -249,6 +253,8 @@ struct _lnav_data {
     time_t                                  ld_bottom_time;
     int                                     ld_bottom_time_millis;
 
+    plain_text_source                       ld_doc_source;
+    textview_curses                         ld_doc_view;
     textview_curses                         ld_match_view;
 
     std::vector<textview_curses *>           ld_view_stack;

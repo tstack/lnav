@@ -54,6 +54,7 @@
 #include "auto_fd.hh"
 #include "vt52_curses.hh"
 #include "log_format.hh"
+#include "help_text_formatter.hh"
 
 struct exec_context;
 
@@ -75,6 +76,8 @@ public:
         const char *c_args;
         const char *c_description;
         command_func_t c_func;
+
+        struct help_text c_help;
 
         void operator=(command_func_t func) {
             this->c_name = "anon";

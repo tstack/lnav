@@ -490,6 +490,11 @@ static struct json_path_handler value_def_handlers[] = {
         .with_description("A command that will rewrite this field when pretty-printing")
         .for_field(&nullobj<external_log_format::value_def>()->vd_rewriter),
 
+    json_path_handler("description")
+        .with_synopsis("<string>")
+        .with_description("A description of the field")
+        .for_field(&nullobj<external_log_format::value_def>()->vd_description),
+
     json_path_handler()
 };
 

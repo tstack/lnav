@@ -99,6 +99,106 @@ attr_line_t &attr_line_t::with_ansi_string(const char *str, ...)
     return *this;
 }
 
+attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
+{
+    size_t start_len = this->al_string.length();
+
+    this->al_string.append(al.al_string);
+
+    for (auto &sa : al.al_attrs) {
+        this->al_attrs.emplace_back(sa);
+
+        this->al_attrs.back().sa_range.shift(0, start_len);
+    }
+
+    if (tws != nullptr && this->al_string.length() > tws->tws_width) {
+        ssize_t start_pos = start_len;
+        ssize_t line_start = this->al_string.rfind('\n', start_pos);
+
+        if (line_start == string::npos) {
+            line_start = 0;
+        } else {
+            line_start += 1;
+        }
+
+        ssize_t line_len = start_len - line_start;
+        ssize_t usable_width = tws->tws_width - tws->tws_indent;
+        ssize_t avail = max((ssize_t) 0, (ssize_t) tws->tws_width - line_len);
+
+        while (start_pos < this->al_string.length()) {
+            ssize_t lpc;
+
+            for (lpc = start_pos;
+                 lpc < this->al_string.length() &&
+                 (isalnum(this->al_string[lpc]) ||
+                  this->al_string[lpc] == ',' ||
+                  this->al_string[lpc] == ';');
+                 lpc++) {
+                if (this->al_string[lpc] == '-') {
+                    lpc += 1;
+                    break;
+                }
+            }
+
+            if (avail != usable_width && lpc - start_pos > avail) {
+                this->insert(start_pos, 1, '\n')
+                    .insert(start_pos + 1, tws->tws_indent, ' ');
+                start_pos += 1 + tws->tws_indent;
+                avail = tws->tws_width - tws->tws_indent;
+            } else {
+                avail -= (lpc - start_pos);
+                while (lpc < this->al_string.length() && avail) {
+                    if (isalnum(this->al_string[lpc])) {
+                        break;
+                    }
+                    avail -= 1;
+                    lpc += 1;
+                }
+                start_pos = lpc;
+                if (!avail) {
+                    this->insert(start_pos, 1, '\n')
+                        .insert(start_pos + 1, tws->tws_indent, ' ');
+                    start_pos += 1 + tws->tws_indent;
+                    avail = usable_width;
+                }
+            }
+        }
+    }
+
+    return *this;
+}
+
+attr_line_t attr_line_t::subline(size_t start, size_t len) const
+{
+    line_range lr{(int) start, (int) (start + len)};
+    attr_line_t retval;
+
+    retval.al_string = this->al_string.substr(start, len);
+    for (auto &sa : this->al_attrs) {
+        if (!lr.intersects(sa.sa_range)) {
+            continue;
+        }
+
+        retval.al_attrs.emplace_back(lr.intersection(sa.sa_range)
+                                       .shift(lr.lr_start, -lr.lr_start),
+                                     sa.sa_type,
+                                     sa.sa_value);
+    }
+
+    return retval;
+}
+
+void attr_line_t::split_lines(std::vector<attr_line_t> &lines) const
+{
+    size_t pos = 0, next_line;
+
+    while ((next_line = this->al_string.find('\n', pos)) != std::string::npos) {
+        lines.emplace_back(this->subline(pos, next_line - pos));
+        pos = next_line + 1;
+    }
+    lines.emplace_back(this->subline(pos));
+}
+
 void view_curses::mvwattrline(WINDOW *window,
                               int y,
                               int x,

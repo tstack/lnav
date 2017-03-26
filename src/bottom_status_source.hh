@@ -78,8 +78,10 @@ public:
         this->bss_fields[BSF_HELP].set_width(14);
         this->bss_fields[BSF_HELP].set_value("?:View Help");
         this->bss_fields[BSF_HELP].right_justify(true);
+        this->bss_prompt.set_left_pad(1);
         this->bss_prompt.set_min_width(35);
         this->bss_prompt.set_share(1);
+        this->bss_error.set_left_pad(1);
         this->bss_error.set_min_width(35);
         this->bss_error.set_share(1);
     };
@@ -134,10 +136,10 @@ public:
         status_field &sf = this->bss_fields[BSF_LINE_NUMBER];
 
         if (lc->get_inner_height() == 0) {
-            sf.set_value("L0");
+            sf.set_value(" L0");
         }
         else {
-            sf.set_value("L%'d", (int)lc->get_top());
+            sf.set_value(" L%'d", (int)lc->get_top());
         }
     };
 

@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2017, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,62 +25,52 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file drive_sql_anno.cc
  */
 
-#include "config.h"
-
-#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-#include "lnav_config.hh"
-#include "top_status_source.hh"
 
-using namespace std;
-
-static time_t current_time = 1;
-
-time_t time(time_t *arg)
-{
-    if (arg != NULL)
-	*arg = current_time;
-    
-    return current_time;
-}
-
-string execute_any(exec_context &ec, const string &cmdline_with_mode)
-{
-    return "";
-}
+#include "lnav.hh"
+#include "sql_util.hh"
 
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;
 
-    top_status_source tss;
+    log_argv(argc, argv);
 
-    setenv("HOME", "/", 1);
+    if (argc < 2) {
+        fprintf(stderr, "error: expecting an SQL statement\n");
+        retval = EXIT_FAILURE;
+    }
+    else {
+        attr_line_t al(argv[1]);
 
-    vector<string> paths, errors;
+        annotate_sql_statement(al);
 
-    load_config(paths, errors);
+        for (auto &attr : al.get_attrs()) {
+            auto &lr = attr.sa_range;
 
-    {
-        status_field &sf = tss.
-                statusview_value_for_field(top_status_source::TSF_TIME);
-        attr_line_t val;
+            printf("  %d:%d (%s) -- %s\n",
+                   lr.lr_start, lr.lr_end,
+                   attr.sa_type->sat_name,
+                   al.get_substring(lr).c_str());
+        }
 
-        tss.update_time();
-        val = sf.get_value();
-        assert(val.get_string() == sf.get_value().get_string());
-        current_time += 2;
-        tss.update_time();
-        assert(val.get_string() != sf.get_value().get_string());
+        if (argc == 3) {
+            int near;
+            sscanf(argv[2], "%d", &near);
 
-        lnav_config.lc_ui_clock_format = "abc";
-        tss.update_time();
-        val = sf.get_value();
-        assert(val.get_string() == " abc");
+            auto iter = find_string_attr(al.get_attrs(), (size_t) near);
+            if (iter != al.get_attrs().end()) {
+                printf("nearest %s\n",
+                       al.get_substring(iter->sa_range).c_str());
+            }
+        }
     }
 
-	return retval;
+    return retval;
 }

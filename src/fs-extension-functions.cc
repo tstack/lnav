@@ -76,18 +76,11 @@ sql_basename(const char *path_in)
     }
 }
 
-static void sql_dirname(sqlite3_context *context,
-                        int argc, sqlite3_value **argv)
+static
+util::variant<const char *, string_fragment>
+sql_dirname(const char *path_in)
 {
-    const char *path_in;
     ssize_t     text_end;
-
-    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
-        sqlite3_result_null(context);
-        return;
-    }
-
-    path_in = (const char *)sqlite3_value_text(argv[0]);
 
     text_end = strlen(path_in) - 1;
     while (text_end >= 0 &&
@@ -97,18 +90,13 @@ static void sql_dirname(sqlite3_context *context,
 
     while (text_end >= 0) {
         if (path_in[text_end] == '/' || path_in[text_end] == '\\') {
-            sqlite3_result_text(context,
-                                path_in, (int) (text_end == 0 ? 1 : text_end),
-                                SQLITE_TRANSIENT);
-            return;
+            return string_fragment(path_in, 0, text_end == 0 ? 1 : text_end);
         }
 
         text_end -= 1;
     }
 
-    sqlite3_result_text(context,
-                        path_in[0] == '/' ? "/" : ".", 1,
-                        SQLITE_STATIC);
+    return path_in[0] == '/' ? "/" : ".";
 }
 
 static void sql_joinpath(sqlite3_context *context,
@@ -160,7 +148,13 @@ int fs_extension_functions(const struct FuncDef **basic_funcs,
                 {"path", "The path"},
             }),
 
-        { "dirname",   1, 0, SQLITE_UTF8, 0, sql_dirname  },
+        sqlite_func_adapter<decltype(&sql_dirname), sql_dirname>::builder(
+            "dirname",
+            "Extract the directory portion of a pathname",
+            {
+                {"path", "The path"},
+            }),
+
         { "joinpath", -1, 0, SQLITE_UTF8, 0, sql_joinpath },
 
         /*

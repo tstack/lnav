@@ -39,6 +39,7 @@
 #include "readline_curses.hh"
 #include "log_search_table.hh"
 #include "log_format_loader.hh"
+#include "help_text_formatter.hh"
 
 using namespace std;
 
@@ -59,6 +60,7 @@ void rl_change(void *dummy, readline_curses *rc)
             }
             if (iter == lnav_commands.end() ||
                 iter->second.c_description == NULL) {
+                lnav_data.ld_doc_view.set_height(vis_line_t(0));
                 lnav_data.ld_bottom_source.set_prompt(
                         "Enter an lnav command: " ABORT_MSG);
                 lnav_data.ld_bottom_source.grep_error("");
@@ -89,21 +91,22 @@ void rl_change(void *dummy, readline_curses *rc)
             }
             else {
                 readline_context::command_t &cmd = iter->second;
-                char args_text[128] = {0};
-                char help_text[1024];
+                help_text &ht = cmd.c_help;
 
-                if (cmd.c_args != NULL && strlen(cmd.c_args) > 0) {
-                    snprintf(args_text, sizeof(args_text),
-                             " %s",
-                             cmd.c_args);
+                if (ht.ht_name) {
+                    textview_curses &dtc = lnav_data.ld_doc_view;
+                    vector<attr_line_t> lines;
+                    unsigned long width;
+                    vis_line_t height;
+                    attr_line_t al;
+
+                    dtc.get_dimensions(height, width);
+                    format_help_text_for_term(ht, min(70UL, width), al);
+                    al.split_lines(lines);
+                    lnav_data.ld_doc_source.replace_with(al);
+                    dtc.set_height(vis_line_t(lines.size()));
                 }
-                snprintf(help_text, sizeof(help_text),
-                         ANSI_BOLD("%s%s") " -- %s    " ABORT_MSG,
-                         cmd.c_name,
-                         args_text,
-                         cmd.c_description);
 
-                lnav_data.ld_bottom_source.set_prompt(help_text);
                 lnav_data.ld_bottom_source.grep_error("");
                 lnav_data.ld_status[LNS_BOTTOM].window_change();
             }
@@ -130,6 +133,26 @@ void rl_change(void *dummy, readline_curses *rc)
                          meta.sm_synopsis.c_str(),
                          meta.sm_description.c_str());
                 lnav_data.ld_bottom_source.set_prompt(help_text);
+            }
+            break;
+        }
+        case LNM_SQL: {
+            attr_line_t al(rc->get_line_buffer());
+            const string_attrs_t &sa = al.get_attrs();
+            size_t x = rc->get_x() - 1;
+
+            annotate_sql_statement(al);
+
+            if (x > 0 && x >= al.length()) {
+                x -= 1;
+            }
+
+            auto iter = find_string_attr(sa, x);
+
+            if (iter != sa.end()) {
+                if (iter->sa_type == &SQL_FUNCTION_ATTR) {
+
+                }
             }
             break;
         }
@@ -218,6 +241,7 @@ void rl_abort(void *dummy, readline_curses *rc)
     lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
 
     lnav_data.ld_bottom_source.set_prompt("");
+    lnav_data.ld_doc_view.set_height(vis_line_t(0));
 
     lnav_data.ld_bottom_source.grep_error("");
     switch (lnav_data.ld_mode) {
@@ -241,6 +265,7 @@ void rl_callback(void *dummy, readline_curses *rc)
     string alt_msg;
 
     lnav_data.ld_bottom_source.set_prompt("");
+    lnav_data.ld_doc_view.set_height(vis_line_t(0));
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
         require(0);
@@ -351,7 +376,7 @@ void rl_display_matches(void *dummy, readline_curses *rc)
     const std::vector<std::string> &matches = rc->get_matches();
     textview_curses &tc = lnav_data.ld_match_view;
     unsigned long width, height;
-    int max_len, cols, rows, match_height, bottom_height;
+    int max_len, cols, rows, match_height;
 
     getmaxyx(lnav_data.ld_window, height, width);
 
@@ -360,12 +385,6 @@ void rl_display_matches(void *dummy, readline_curses *rc)
     rows = (matches.size() + cols - 1) / cols;
 
     match_height = min((unsigned long)rows, (height - 4) / 2);
-    bottom_height = match_height + 1 + rc->get_height();
-
-    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
-        lnav_data.ld_views[lpc].set_height(vis_line_t(-bottom_height));
-    }
-    lnav_data.ld_status[LNS_BOTTOM].set_top(-bottom_height);
 
     delete tc.get_sub_source();
 
@@ -388,12 +407,12 @@ void rl_display_matches(void *dummy, readline_curses *rc)
 
     if (match_height > 0) {
         tc.set_window(lnav_data.ld_window);
-        tc.set_y(height - bottom_height + 1);
         tc.set_height(vis_line_t(match_height));
         tc.reload_data();
     }
     else {
         tc.set_window(NULL);
+        tc.set_height(vis_line_t(0));
     }
 }
 

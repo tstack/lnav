@@ -120,6 +120,7 @@ dist_noinst_DATA = \
 noinst_HEADERS = \
 	all_logs_vtab.hh \
 	ansi_scrubber.hh \
+	attr_line.hh \
 	auto_fd.hh \
 	auto_mem.hh \
 	auto_pid.hh \
@@ -136,6 +137,7 @@ noinst_HEADERS = \
 	data_parser.hh \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
+	doc_status_source.hh \
 	elem_to_json.hh \
 	environ_vtab.hh \
 	field_overlay_source.hh \
@@ -146,6 +148,7 @@ noinst_HEADERS = \
 	grep_proc.hh \
 	help.hh \
 	help.txt \
+	help_text_formatter.hh \
 	hist_source.hh \
 	hotkeys.hh \
 	init.sql \
@@ -252,6 +255,7 @@ libdiag_a_SOURCES = \
 	file_vtab.cc \
     fs-extension-functions.cc \
 	grep_proc.cc \
+	help_text_formatter.cc \
 	hist_source.cc \
 	hotkeys.cc \
 	intern_string.cc \

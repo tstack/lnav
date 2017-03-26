@@ -95,7 +95,8 @@ public:
         time_t        current_time = time(NULL);
         char          buffer[32];
 
-        strftime(buffer, sizeof(buffer),
+        buffer[0] = ' ';
+        strftime(&buffer[1], sizeof(buffer) - 1,
                  lnav_config.lc_ui_clock_format.c_str(),
                  localtime(&current_time));
         sf.set_value(buffer);

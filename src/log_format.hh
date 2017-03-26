@@ -269,6 +269,10 @@ public:
         memcpy(this->ll_schema, ba.in(), sizeof(this->ll_schema));
     };
 
+    char get_schema() const {
+        return this->ll_schema[0];
+    };
+
     /**
      * Perform a partial match of the given schema against this log line.
      * Storing the full schema is not practical, so we just keep the first four
@@ -894,6 +898,7 @@ public:
         bool vd_internal;
         std::vector<std::string> vd_action_list;
         std::string vd_rewriter;
+        std::string vd_description;
     };
 
     struct indexed_value_def {

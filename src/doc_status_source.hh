@@ -1,11 +1,11 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2017, Timothy Stack
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
  * * Neither the name of Timothy Stack nor the names of its contributors
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -27,60 +27,44 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "config.h"
+#ifndef _doc_status_source_hh
+#define _doc_status_source_hh
 
-#include <assert.h>
-#include <stdlib.h>
+#include <string>
 
 #include "lnav_config.hh"
-#include "top_status_source.hh"
+#include "logfile_sub_source.hh"
+#include "statusview_curses.hh"
 
-using namespace std;
+class doc_status_source
+    : public status_data_source {
+public:
+    typedef enum {
+        TSF_TITLE,
+        TSF_STITCH_TITLE,
 
-static time_t current_time = 1;
+        TSF__MAX
+    } field_t;
 
-time_t time(time_t *arg)
-{
-    if (arg != NULL)
-	*arg = current_time;
-    
-    return current_time;
-}
-
-string execute_any(exec_context &ec, const string &cmdline_with_mode)
-{
-    return "";
-}
-
-int main(int argc, char *argv[])
-{
-    int retval = EXIT_SUCCESS;
-
-    top_status_source tss;
-
-    setenv("HOME", "/", 1);
-
-    vector<string> paths, errors;
-
-    load_config(paths, errors);
-
+    doc_status_source()
     {
-        status_field &sf = tss.
-                statusview_value_for_field(top_status_source::TSF_TIME);
-        attr_line_t val;
+        this->tss_fields[TSF_TITLE].set_width(14);
+        this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_VIEW_STATUS);
+        this->tss_fields[TSF_TITLE].set_value(" Command Help ");
+        this->tss_fields[TSF_STITCH_TITLE].set_width(2);
+        this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
+            view_colors::ansi_color_pair_index(COLOR_BLUE, COLOR_WHITE));
+    };
 
-        tss.update_time();
-        val = sf.get_value();
-        assert(val.get_string() == sf.get_value().get_string());
-        current_time += 2;
-        tss.update_time();
-        assert(val.get_string() != sf.get_value().get_string());
+    size_t statusview_fields(void) { return TSF__MAX; };
 
-        lnav_config.lc_ui_clock_format = "abc";
-        tss.update_time();
-        val = sf.get_value();
-        assert(val.get_string() == " abc");
-    }
+    status_field &statusview_value_for_field(int field)
+    {
+        return this->tss_fields[field];
+    };
 
-	return retval;
-}
+private:
+    status_field tss_fields[TSF__MAX];
+};
+
+#endif

@@ -27,6 +27,7 @@ check_PROGRAMS = \
 	drive_sequencer \
 	drive_shlexer \
 	drive_sql \
+	drive_sql_anno \
 	drive_view_colors \
 	drive_vt52_curses \
 	drive_readline_curses \
@@ -41,6 +42,7 @@ check_PROGRAMS = \
 	test_concise \
 	test_date_time_scanner \
 	test_grep_proc2 \
+	test_help_text_formatter \
 	test_hist_source \
 	test_json_ptr \
 	test_line_buffer2 \
@@ -82,6 +84,10 @@ test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
 
 test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+
+test_help_text_formatter_SOURCES = test_help_text_formatter.cc
+test_help_text_formatter_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
+	$(CONFIG_OBJS) $(SQLITE3_LIBS)
 
 test_hist_source_SOURCES = test_hist_source.cc
 test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
@@ -191,6 +197,18 @@ drive_readline_curses_LDADD = ../src/libdiag.a $(READLINE_LIBS) $(CURSES_LIB) \
 drive_sql_SOURCES = \
 	drive_sql.cc
 drive_sql_LDADD = \
+	../src/libdiag.a \
+	$(CONFIG_OBJS) \
+	$(SQLITE3_LIBS) \
+	$(PCRE_LIBS) \
+	$(CURSES_LIB) \
+	$(READLINE_LIBS) \
+	$(LIBCURL) \
+	-lpcrecpp
+
+drive_sql_anno_SOURCES = \
+	drive_sql_anno.cc
+drive_sql_anno_LDADD = \
 	../src/libdiag.a \
 	$(CONFIG_OBJS) \
 	$(SQLITE3_LIBS) \

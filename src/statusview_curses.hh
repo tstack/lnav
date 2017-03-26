@@ -56,7 +56,8 @@ public:
           sf_cylon(false),
           sf_cylon_pos(0),
           sf_role(role),
-          sf_share(0) { };
+          sf_share(0),
+          sf_left_pad(0) { };
 
     virtual ~status_field() { };
 
@@ -142,6 +143,9 @@ public:
         sa.push_back(string_attr(lr, &view_curses::VC_STYLE, COLOR_PAIR(color_pair)));
     };
 
+    void set_left_pad(size_t val) { this->sf_left_pad = val; };
+    size_t get_left_pad() const { return this->sf_left_pad; };
+
     /** @return The string value for this field. */
     attr_line_t &get_value() { return this->sf_value; };
 
@@ -183,6 +187,7 @@ protected:
     attr_line_t         sf_value; /*< The value to display for this field. */
     view_colors::role_t sf_role;  /*< The color role for this field. */
     int sf_share;
+    size_t sf_left_pad;
 };
 
 /**
@@ -216,7 +221,8 @@ public:
         : sc_source(NULL),
           sc_window(NULL),
           sc_top(0),
-          sc_last_width(0) {
+          sc_last_width(0),
+          sc_enabled(true) {
     };
     virtual ~statusview_curses() { };
 
@@ -228,6 +234,9 @@ public:
 
     void set_window(WINDOW *win) { this->sc_window = win; };
     WINDOW *get_window() { return this->sc_window; };
+
+    void set_enabled(bool value) { this->sc_enabled = value; };
+    bool get_enabled() const { return this->sc_enabled; };
 
     void window_change(void) {
         if (this->sc_source == NULL) {
@@ -280,6 +289,7 @@ private:
     WINDOW *            sc_window;
     int sc_top;
     unsigned long sc_last_width;
+    bool sc_enabled;
 };
 
 #endif

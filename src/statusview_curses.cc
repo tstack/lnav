@@ -37,9 +37,13 @@ using namespace std;
 
 void statusview_curses::do_update(void)
 {
-    int           top, attrs, field, field_count, left = 1, right;
+    int           top, attrs, field, field_count, left = 0, right;
     view_colors & vc = view_colors::singleton();
     unsigned long width, height;
+
+    if (!this->sc_enabled) {
+        return;
+    }
 
     getmaxyx(this->sc_window, height, width);
     if (width != this->sc_last_width) {
@@ -66,6 +70,7 @@ void statusview_curses::do_update(void)
             int x;
 
             val = sf.get_value();
+            left += sf.get_left_pad();
 
             if (sf.is_right_justified()) {
                 right -= sf.get_width();
@@ -73,7 +78,7 @@ void statusview_curses::do_update(void)
             }
             else {
                 x = left;
-                left += sf.get_width() + 1;
+                left += sf.get_width();
             }
             this->mvwattrline(this->sc_window,
                               top, x,

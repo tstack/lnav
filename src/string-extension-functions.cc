@@ -171,18 +171,8 @@ regexp_match(const char *re, const char *str)
 }
 
 static
-void extract(sqlite3_context *ctx, int argc, sqlite3_value **argv)
+json_string extract(const char *str)
 {
-    const char *str;
-
-    assert(argc == 1);
-
-    str = (const char *)sqlite3_value_text(argv[0]);
-    if (!str) {
-        sqlite3_result_null(ctx);
-        return;
-    }
-
     data_scanner ds(str);
     data_parser dp(&ds);
 
@@ -196,14 +186,7 @@ void extract(sqlite3_context *ctx, int argc, sqlite3_value **argv)
 
     elements_to_json(gen, dp, &dp.dp_pairs);
 
-    const unsigned char *buf;
-    size_t len;
-
-    yajl_gen_get_buf(gen, &buf, &len);
-    sqlite3_result_text(ctx, (const char *) buf, len, SQLITE_TRANSIENT);
-#ifdef HAVE_SQLITE3_VALUE_SUBTYPE
-    sqlite3_result_subtype(ctx, JSON_SUBTYPE);
-#endif
+    return json_string(gen);
 }
 
 static
@@ -245,7 +228,12 @@ int string_extension_functions(const struct FuncDef **basic_funcs,
                 {"repl", "The replacement string"},
             }),
 
-        { "extract", 1, 0, SQLITE_UTF8, 0, extract },
+        sqlite_func_adapter<decltype(&extract), extract>::builder(
+                "extract",
+                "Automatically Parse and extract data from a string",
+                {
+                        {"str", "The string to parse"},
+                }),
 
         sqlite_func_adapter<decltype(
              static_cast<bool (*)(const char *, const char *)>(&startswith)),

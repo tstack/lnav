@@ -28,42 +28,52 @@
             "c_ip" : {
                 "kind" : "string",
                 "collate" : "ipaddress",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The client IP address"
             },
             "cs_username" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The username passed from the client to the server"
             },
             "cs_method" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The request method"
             },
             "cs_uri_stem" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The path part of the request URI"
             },
             "cs_uri_query" : {
-                "kind" : "string"
+                "kind" : "string",
+                "description" : "The query parameters in the request URI"
             },
             "cs_version" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The client's HTTP version"
             },
             "sc_status" : {
                 "kind" : "integer",
                 "foreign-key" : true,
-                "rewriter" : ";SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '"
+                "rewriter" : ";SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '",
+                "description" : "The status code returned by the server"
             },
             "sc_bytes" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "description" : "The number of bytes returned by the server"
             },
             "cs_referer" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The client's referrer"
             },
             "cs_user_agent" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The client's HTTP agent"
             }
         },
         "sample" : [
@@ -96,11 +106,13 @@
             "pid" : {
                 "kind" : "integer",
                 "identifier" : true,
-                "foreign-key" : true
+                "foreign-key" : true,
+                "description" : "The ID of the process that generated the message"
             },
             "module" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The name of the module that generated the message"
             }
         },
         "sample" : [
@@ -972,16 +984,19 @@
             "log_hostname" : {
                 "kind" : "string",
                 "collate" : "ipaddress",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The name of the host that generated the message"
             },
             "log_procname" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "description" : "The name of the process that generated the message"
             },
             "log_pid" : {
                 "kind" : "string",
                 "identifier" : true,
-                "action-list" : ["dump_pid"]
+                "action-list" : ["dump_pid"],
+                "description" : "The ID of the process that generated the message"
             }
         },
         "action" : {

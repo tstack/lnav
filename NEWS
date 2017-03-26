@@ -37,6 +37,8 @@ lnav v0.8.2:
        string.
 
      Interface Changes:
+     * Command documentation is now displayed in a section at the bottom of
+       the screen when a command is being entered.
      * The color used for text colored via ":highlight" is now based on the
        the regex instead of randomly picked so that colors are consistent
        across invocations.

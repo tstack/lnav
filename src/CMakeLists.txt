@@ -13,6 +13,7 @@ set(diag_STAT_SRCS
     file_vtab.cc
     fs-extension-functions.cc
     grep_proc.cc
+    help_text_formatter.cc
     hist_source.cc
     hotkeys.cc
     intern_string.cc
@@ -52,11 +53,13 @@ set(diag_STAT_SRCS
     sysclip.cc
     pcrepp.cc
     piper_proc.cc
+    ptimec.cc
     sql_util.cc
     state-extension-functions.cc
     strnatcmp.c
     text_format.cc
     textview_curses.cc
+    time-extension-functions.cc
     timer.cc
     view_curses.cc
     views_vtab.cc
@@ -83,6 +86,7 @@ set(diag_STAT_SRCS
     spookyhash/SpookyV2.cpp
 
     all_logs_vtab.hh
+    attr_line.hh
     auto_fd.hh
     auto_mem.hh
     auto_pid.hh
@@ -93,6 +97,7 @@ set(diag_STAT_SRCS
     concise_index.hh
     column_namer.hh
     curl_looper.hh
+    doc_status_source.hh
     elem_to_json.hh
     field_overlay_source.hh
     file_vtab.hh
@@ -100,6 +105,7 @@ set(diag_STAT_SRCS
     format-text-files.hh
     grep_highlighter.hh
     help.hh
+    help_text_formatter.hh
     hotkeys.hh
     init-sql.hh
     intern_string.hh

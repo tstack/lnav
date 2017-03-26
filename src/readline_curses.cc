@@ -61,6 +61,7 @@
 #include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "readline_curses.hh"
+#include "spookyhash/SpookyV2.h"
 
 using namespace std;
 
@@ -458,6 +459,8 @@ void readline_curses::start(void)
         }
         else {
             if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
+                static uint64_t last_h1, last_h2;
+
                 struct itimerval itv;
 
                 if (current_context == this->rc_contexts.end()) {
@@ -478,13 +481,21 @@ void readline_curses::start(void)
                     rl_callback_handler_remove();
                 }
                 else {
-                    if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
-                                'l',
-                                rl_line_buffer,
-                                rl_end) != 0) {
+                    uint64_t h1 = 1, h2 = 2;
+
+                    SpookyHash::Hash128(rl_line_buffer, rl_end, &h1, &h2);
+
+                    if (h1 == last_h1 && h2 == last_h2) {
+                        // do nothing
+                    } else if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                                       'l',
+                                       rl_line_buffer,
+                                       rl_end) != 0) {
                         perror("line: write failed");
                         _exit(1);
                     }
+                    last_h1 = h1;
+                    last_h2 = h2;
                 }
             }
             if (FD_ISSET(this->rc_command_pipe[RCF_SLAVE], &ready_rfds)) {
@@ -749,6 +760,8 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 case 'l':
                     this->rc_line_buffer = &msg[2];
                     this->rc_change.invoke(this);
+                    this->rc_matches.clear();
+                    this->rc_display_match.invoke(this);
                     break;
 
                 case 'n':

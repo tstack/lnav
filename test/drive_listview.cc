@@ -88,7 +88,7 @@ public:
 int main(int argc, char *argv[])
 {
     int c, retval = EXIT_SUCCESS;
-    bool wait_for_input = false;
+    bool wait_for_input = false, set_height = false;
     my_source ms;
     WINDOW *win;
 
@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
 	    break;
 	case 'h':
 	    lv.set_height(vis_line_t(atoi(optarg)));
+        set_height = true;
 	    break;
 	case 't':
 	    lv.set_top(vis_line_t(atoi(optarg)));
@@ -120,10 +121,17 @@ int main(int argc, char *argv[])
 	}
     }
 
+    if (!set_height) {
+        unsigned long height, width;
+        getmaxyx(win, height, width);
+        lv.set_height(vis_line_t(height - lv.get_y()));
+    }
+
     lv.do_update();
     refresh();
-    if (wait_for_input)
+    if (wait_for_input) {
         getch();
+    }
     endwin();
 
     return retval;
