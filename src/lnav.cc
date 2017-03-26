@@ -607,7 +607,6 @@ void rebuild_indexes(bool force)
     if (lss.rebuild_index(force)) {
         size_t      new_count = lss.text_line_count();
         grep_line_t start_line;
-        int         lpc;
 
         log_view.reload_data();
 
@@ -632,13 +631,6 @@ void rebuild_indexes(bool force)
             log_view.match_reset();
         }
 
-        for (lpc = 0; lpc < LG__MAX; lpc++) {
-            if (lnav_data.ld_grep_child[lpc].get() != NULL) {
-                lnav_data.ld_grep_child[lpc]->get_grep_proc()->
-                queue_request(start_line);
-                lnav_data.ld_grep_child[lpc]->get_grep_proc()->start();
-            }
-        }
         if (lnav_data.ld_search_child[LNV_LOG].get() != NULL) {
             lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->reset();
             lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->
@@ -2020,14 +2012,6 @@ static void looper(void)
                 });
             }
             rlc.update_poll_set(pollfds);
-            for (lpc = 0; lpc < LG__MAX; lpc++) {
-                unique_ptr<grep_highlighter> &gc =
-                        lnav_data.ld_grep_child[lpc];
-
-                if (gc.get() != NULL) {
-                    gc->get_grep_proc()->update_poll_set(pollfds);
-                }
-            }
             for (lpc = 0; lpc < LNV__MAX; lpc++) {
                 unique_ptr<grep_highlighter> &gc =
                         lnav_data.ld_search_child[lpc];
@@ -2041,7 +2025,6 @@ static void looper(void)
 
             if (rc < 0) {
                 switch (errno) {
-                break;
                 case 0:
                 case EINTR:
                     break;
@@ -2115,14 +2098,6 @@ static void looper(void)
                             // empty, which will cause issues.
                             break;
                         }
-                    }
-                }
-                for (lpc = 0; lpc < LG__MAX; lpc++) {
-                    unique_ptr<grep_highlighter> &gc =
-                        lnav_data.ld_grep_child[lpc];
-
-                    if (gc.get() != NULL) {
-                        gc->get_grep_proc()->check_poll_set(pollfds);
                     }
                 }
                 for (lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -2265,6 +2240,49 @@ static void looper(void)
     catch (readline_curses::error & e) {
         log_error("error: %s", strerror(e.e_err));
     }
+}
+
+void wait_for_children()
+{
+    vector<struct pollfd> pollfds;
+    struct timeval to = { 0, 333000 };
+
+    do {
+        pollfds.clear();
+
+        for (auto &gc : lnav_data.ld_search_child) {
+            if (gc.get() != NULL) {
+                gc->get_grep_proc()->update_poll_set(pollfds);
+            }
+        }
+
+        if (pollfds.empty()) {
+            return;
+        }
+
+        int rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
+
+        if (rc < 0) {
+            switch (errno) {
+                case 0:
+                case EINTR:
+                    break;
+                default:
+                    return;
+            }
+        }
+
+        for (auto &gc : lnav_data.ld_search_child) {
+            if (gc.get() != NULL) {
+                gc->get_grep_proc()->check_poll_set(pollfds);
+
+                if (!lnav_data.ld_view_stack.empty()) {
+                    lnav_data.ld_bottom_source.
+                        update_hits(lnav_data.ld_view_stack.back());
+                }
+            }
+        }
+    } while (true);
 }
 
 static textview_curses::highlighter static_highlighter(const string &regex) {

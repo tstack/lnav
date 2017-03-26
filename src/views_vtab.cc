@@ -67,7 +67,9 @@ CREATE TABLE lnav_views (
     -- The number of lines in the view.
     inner_height integer,
     -- The time of the top line in the view, if the content is time-based.
-    top_time datetime
+    top_time datetime,
+    -- The text to search for in the view.
+    search text
 );
 )";
 
@@ -82,6 +84,7 @@ CREATE TABLE lnav_views (
     }
 
     int get_column(cursor &vc, sqlite3_context *ctx, int col) {
+        lnav_view_t view_index = (lnav_view_t) distance(std::begin(lnav_data.ld_views), vc.iter);
         textview_curses &tc = *vc.iter;
         unsigned long width;
         vis_line_t height;
@@ -90,7 +93,7 @@ CREATE TABLE lnav_views (
         switch (col) {
             case 0:
                 sqlite3_result_text(ctx,
-                                    lnav_view_strings[distance(std::begin(lnav_data.ld_views), vc.iter)], -1,
+                                    lnav_view_strings[view_index], -1,
                                     SQLITE_STATIC);
                 break;
             case 1:
@@ -119,6 +122,12 @@ CREATE TABLE lnav_views (
                 }
                 break;
             }
+            case 6: {
+                const string &str = lnav_data.ld_last_search[view_index];
+
+                sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
+                break;
+            }
         }
 
         return SQLITE_OK;
@@ -143,7 +152,8 @@ CREATE TABLE lnav_views (
                    int64_t left,
                    int64_t height,
                    int64_t inner_height,
-                   const char *top_time) {
+                   const char *top_time,
+                   const char *search) {
         textview_curses &tc = lnav_data.ld_views[index];
         text_time_translator *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
 
@@ -167,6 +177,11 @@ CREATE TABLE lnav_views (
             }
         }
         tc.set_left(left);
+
+        if (search != lnav_data.ld_last_search[index]) {
+            execute_search((lnav_view_t) index, search);
+        }
+
         return SQLITE_OK;
     };
 };

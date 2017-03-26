@@ -507,6 +507,26 @@ check_output "updating lnav_views.top_time does not work?" <<EOF
 2014-10-08 16:56:38,344:WARN:foo bar baz
 EOF
 
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET search = 'warn' WHERE name = 'log'" \
+    -c ";SELECT search FROM lnav_views WHERE name = 'log'" \
+    ${test_dir}/logfile_generic.0
+
+check_output "updating lnav_views.search does not work?" <<EOF
+search
+warn
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET search = 'warn' WHERE name = 'log'" \
+    -c ":goto 0" \
+    -c ":next-mark search" \
+    ${test_dir}/logfile_generic.0
+
+check_output "updating lnav_views.search does not work?" <<EOF
+2014-10-08 16:56:38,344:WARN:foo bar baz
+EOF
+
 
 schema_dump() {
     ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n12

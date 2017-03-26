@@ -140,12 +140,6 @@ typedef enum {
     LNS__MAX
 } lnav_status_t;
 
-typedef enum {
-    LG_CAPTURE,
-
-    LG__MAX
-} lnav_grep_t;
-
 void sqlite_close_wrapper(void *mem);
 
 typedef std::pair<int, int>                      ppid_time_pair_t;
@@ -279,7 +273,6 @@ struct _lnav_data {
     db_overlay_source                       ld_db_overlay;
     std::vector<std::string>                ld_db_key_names;
 
-    std::unique_ptr<grep_highlighter>       ld_grep_child[LG__MAX];
     std::string                             ld_previous_search;
     std::string                             ld_last_search[LNV__MAX];
 
@@ -336,6 +329,8 @@ void execute_search(lnav_view_t view, const std::string &regex);
 void redo_search(lnav_view_t view_index);
 
 bool rescan_files(bool required = false);
+
+void wait_for_children();
 
 vis_line_t next_cluster(
         vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),

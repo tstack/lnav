@@ -555,6 +555,8 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
     for (auto &cmd : lnav_data.ld_commands) {
         string msg, alt_msg;
 
+        wait_for_children();
+
         switch (cmd.at(0)) {
         case ':':
             msg = execute_command(ec, cmd.substr(1));
