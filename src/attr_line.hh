@@ -32,6 +32,8 @@
 #ifndef __attr_line_hh
 #define __attr_line_hh
 
+#include <limits.h>
+
 #include <string>
 #include <vector>
 
