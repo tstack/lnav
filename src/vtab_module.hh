@@ -41,7 +41,7 @@
 #include "yajlpp.hh"
 #include "mapbox/variant.hpp"
 
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 
 struct from_sqlite_conversion_error : std::exception {
     from_sqlite_conversion_error(const char *type, int argi)

@@ -197,7 +197,7 @@ noinst_HEADERS = \
 	shlex.hh \
 	spectro_source.hh \
 	sql_util.hh \
-	sqlite-extension-func.h \
+	sqlite-extension-func.hh \
     status_controllers.hh \
 	statusview_curses.hh \
 	strnatcmp.h \
@@ -250,7 +250,7 @@ libdiag_a_SOURCES = \
 	db_sub_source.cc \
 	elem_to_json.cc \
 	environ_vtab.cc \
-	extension-functions.c \
+	extension-functions.cc \
 	field_overlay_source.cc \
 	file_vtab.cc \
     fs-extension-functions.cc \
@@ -290,7 +290,7 @@ libdiag_a_SOURCES = \
 	sequence_matcher.cc \
 	shared_buffer.cc \
 	shlex.cc \
-	sqlite-extension-func.c \
+	sqlite-extension-func.cc \
 	statusview_curses.cc \
 	string-extension-functions.cc \
 	text_format.cc \

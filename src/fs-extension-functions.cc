@@ -41,7 +41,7 @@
 
 #include "sqlite3.h"
 
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 
 #include "vtab_module.hh"
 

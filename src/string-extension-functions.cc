@@ -22,7 +22,7 @@
 #include "yajlpp.hh"
 #include "column_namer.hh"
 #include "yajl/api/yajl_gen.h"
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 #include "data_scanner.hh"
 #include "data_parser.hh"
 #include "elem_to_json.hh"

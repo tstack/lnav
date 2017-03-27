@@ -45,7 +45,7 @@
 
 #include "sqlite3.h"
 
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 
 static void timeslice(sqlite3_context *context,
                       int argc, sqlite3_value **argv)

@@ -45,7 +45,7 @@
 #include "sqlite3.h"
 
 #include "auto_mem.hh"
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 
 static void sql_gethostbyname(sqlite3_context *context,
                               int argc, sqlite3_value **argv)

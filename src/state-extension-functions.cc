@@ -43,7 +43,7 @@
 #include "lnav.hh"
 #include "lnav_log.hh"
 #include "sql_util.hh"
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 
 static void sql_log_top_line(sqlite3_context *context,
                              int argc, sqlite3_value **argv)

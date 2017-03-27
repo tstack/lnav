@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 
 sqlite_registration_func_t sqlite_registration_funcs[] = {
     common_extension_functions,

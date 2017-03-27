@@ -8,7 +8,7 @@ set(diag_STAT_SRCS
     db_sub_source.cc
     elem_to_json.cc
     environ_vtab.cc
-    extension-functions.c
+    extension-functions.cc
     field_overlay_source.cc
     file_vtab.cc
     fs-extension-functions.cc
@@ -47,7 +47,7 @@ set(diag_STAT_SRCS
     sequence_matcher.cc
     shared_buffer.cc
     shlex.cc
-    sqlite-extension-func.c
+        sqlite-extension-func.cc
     statusview_curses.cc
     string-extension-functions.cc
     sysclip.cc

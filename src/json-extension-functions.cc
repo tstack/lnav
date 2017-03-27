@@ -43,7 +43,7 @@
 #include "json_op.hh"
 
 #include "yajl/api/yajl_gen.h"
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 
 using namespace std;
 

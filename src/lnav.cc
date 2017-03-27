@@ -110,7 +110,7 @@
 #include "session_data.hh"
 #include "lnav_config.hh"
 #include "sql_util.hh"
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 #include "sysclip.hh"
 #include "term_extra.hh"
 #include "log_data_helper.hh"

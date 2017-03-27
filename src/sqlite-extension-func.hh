@@ -35,10 +35,6 @@
 #include <stdint.h>
 #include <sqlite3.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct FuncDef {
     const char *zName;
     signed char nArg;
@@ -89,9 +85,5 @@ int time_extension_functions(const struct FuncDef **basic_funcs,
 extern sqlite_registration_func_t sqlite_registration_funcs[];
 
 int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

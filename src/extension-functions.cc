@@ -145,7 +145,7 @@ SQLITE_EXTENSION_INIT1
 #include <stdint.h>
 #include <inttypes.h>
 
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 
 /*
 ** Simple binary tree implementation to use in median, mode and quartile calculations
@@ -207,7 +207,7 @@ typedef uint16_t        u16;
 typedef int64_t         i64;
 
 static char *sqlite3StrDup( const char *z ) {
-    char *res = sqlite3_malloc( strlen(z)+1 );
+    char *res = (char *) sqlite3_malloc(strlen(z) + 1 );
     return strcpy( res, z );
 }
 
@@ -269,7 +269,7 @@ static const int xtra_utf8_bits[] =  {
 ** masking the character with utf8_mask[N] must produce a non-zero
 ** result.  Otherwise, we have an (illegal) overlong encoding.
 */
-static const int utf_mask[] = {
+static const long utf_mask[] = {
   0x00000000,
   0xffffff80,
   0xfffff800,
@@ -687,8 +687,8 @@ static void replicateFunc(sqlite3_context *context, int argc, sqlite3_value **ar
 
     nLen  = sqlite3_value_bytes(argv[0]);
     nTLen = nLen*iCount;
-    z=sqlite3_malloc(nTLen+1);
-    zo=sqlite3_malloc(nLen+1);
+    z= (unsigned char *) sqlite3_malloc(nTLen + 1);
+    zo= (unsigned char *) sqlite3_malloc(nLen + 1);
     if (!z || !zo){
       sqlite3_result_error_nomem(context);
       if (z) sqlite3_free(z);
@@ -793,7 +793,7 @@ static void padlFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       }
       sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
     }else{
-      zo = sqlite3_malloc(strlen(zi)+ilen-zl+1);
+      zo = (char *) sqlite3_malloc(strlen(zi) + ilen - zl + 1);
       if (!zo){
         sqlite3_result_error_nomem(context);
         return;
@@ -848,7 +848,7 @@ static void padrFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
     }else{
       zll = strlen(zi);
-      zo = sqlite3_malloc(zll+ilen-zl+1);
+      zo = (char *) sqlite3_malloc(zll + ilen - zl + 1);
       if (!zo){
         sqlite3_result_error_nomem(context);
         return;
@@ -903,7 +903,7 @@ static void padcFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       sqlite3_result_text(context, zo, -1, SQLITE_TRANSIENT);
     }else{
       zll = strlen(zi);
-      zo = sqlite3_malloc(zll+ilen-zl+1);
+      zo = (char *) sqlite3_malloc(zll + ilen - zl + 1);
       if (!zo){
         sqlite3_result_error_nomem(context);
         return;
@@ -950,7 +950,7 @@ static void strfilterFunc(sqlite3_context *context, int argc, sqlite3_value **ar
     ** maybe I could allocate less, but that would imply 2 passes, rather waste
     ** (possibly) some memory
     */
-    zo = sqlite3_malloc(strlen(zi1)+1);
+    zo = (char *) sqlite3_malloc(strlen(zi1) + 1);
     if (!zo){
       sqlite3_result_error_nomem(context);
       return;
@@ -1089,7 +1089,7 @@ static void leftFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 
   cc=zt-z;
 
-  rz = sqlite3_malloc(zt-z+1);
+  rz = (unsigned char *) sqlite3_malloc(zt - z + 1);
   if (!rz){
     sqlite3_result_error_nomem(context);
     return;
@@ -1140,7 +1140,7 @@ static void rightFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
     sqliteNextChar(zt);
   }
 
-  rz = sqlite3_malloc(ze-zt+1);
+  rz = (char *) sqlite3_malloc(ze - zt + 1);
   if (!rz){
     sqlite3_result_error_nomem(context);
     return;
@@ -1331,7 +1331,7 @@ static void reverseFunc(sqlite3_context *context, int argc, sqlite3_value **argv
   }
   z = (char *)sqlite3_value_text(argv[0]);
   l = strlen(z);
-  rz = sqlite3_malloc(l+1);
+  rz = (char *) sqlite3_malloc(l + 1);
   if (!rz){
     sqlite3_result_error_nomem(context);
     return;
@@ -1396,7 +1396,7 @@ static void varianceStep(sqlite3_context *context, int argc, sqlite3_value **arg
   double x;
 
   assert( argc==1 );
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = (StdevCtx *) sqlite3_aggregate_context(context, sizeof(*p));
   /* only consider non-null values */
   if( SQLITE_NULL != sqlite3_value_numeric_type(argv[0]) ){
     p->cnt++;
@@ -1424,10 +1424,10 @@ static void modeStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( type == SQLITE_NULL)
     return;
 
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = (ModeCtx *) sqlite3_aggregate_context(context, sizeof(*p));
 
   if( 0==(p->m) ){
-    p->m = calloc(1, sizeof(map));
+    p->m = (map *) calloc(1, sizeof(map));
     if( type==SQLITE_INTEGER ){
       /* map will be used for integers */
       *(p->m) = map_make(int_cmp);
@@ -1530,7 +1530,7 @@ static void medianIterate(void* e, i64 c, void* pp){
 */
 static void modeFinalize(sqlite3_context *context){
   ModeCtx *p;
-  p = sqlite3_aggregate_context(context, 0);
+  p = (ModeCtx *) sqlite3_aggregate_context(context, 0);
   if( p && p->m ){
     map_iterate(p->m, modeIterate, p);
     map_destroy(p->m);
@@ -1608,7 +1608,7 @@ static void upper_quartileFinalize(sqlite3_context *context){
 */
 static void stdevFinalize(sqlite3_context *context){
   StdevCtx *p;
-  p = sqlite3_aggregate_context(context, 0);
+  p = (StdevCtx *) sqlite3_aggregate_context(context, 0);
   if( p && p->cnt>1 ){
     sqlite3_result_double(context, sqrt(p->rS/(p->cnt-1)));
   }else{
@@ -1621,7 +1621,7 @@ static void stdevFinalize(sqlite3_context *context){
 */
 static void varianceFinalize(sqlite3_context *context){
   StdevCtx *p;
-  p = sqlite3_aggregate_context(context, 0);
+  p = (StdevCtx *) sqlite3_aggregate_context(context, 0);
   if( p && p->cnt>1 ){
     sqlite3_result_double(context, p->rS/(p->cnt-1));
   }else{
@@ -1808,7 +1808,7 @@ map map_make(cmp_func cmp){
   return r;
 }
 
-void* xcalloc(size_t nmemb, size_t size, char* s){
+void* xcalloc(size_t nmemb, size_t size, const char* s){
   void* ret = calloc(nmemb, size);
   return ret;
 }

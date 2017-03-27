@@ -7,7 +7,7 @@
 
 #include "lnav.hh"
 #include "auto_mem.hh"
-#include "sqlite-extension-func.h"
+#include "sqlite-extension-func.hh"
 #include "regexp_vtab.hh"
 
 struct callback_state {

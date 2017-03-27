@@ -44,7 +44,7 @@
 #include "log_format.hh"
 
 extern "C" {
-        #include "strnatcmp.h"
+#include "strnatcmp.h"
 }
 
 #define MAX_ADDR_LEN    128
