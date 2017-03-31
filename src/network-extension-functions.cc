@@ -54,12 +54,10 @@ static string sql_gethostbyname(const char *name_in)
 {
     char             buffer[INET6_ADDRSTRLEN];
     auto_mem<struct addrinfo> ai(freeaddrinfo);
-    struct addrinfo hints = { 0 };
     void *           addr_ptr = NULL;
     int rc;
 
-    hints.ai_flags = AI_DEFAULT;
-    while ((rc = getaddrinfo(name_in, NULL, &hints, ai.out())) == EAI_AGAIN) {
+    while ((rc = getaddrinfo(name_in, NULL, NULL, ai.out())) == EAI_AGAIN) {
         sqlite3_sleep(10);
     }
     if (rc != 0) {
