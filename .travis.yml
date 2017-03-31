@@ -21,7 +21,6 @@ addons:
   apt:
     packages:
     - libgpm-dev
-    - re2c
     - gcc-5
     - g++-5
     - sqlite3
