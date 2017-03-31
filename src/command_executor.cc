@@ -127,6 +127,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
     }
 
     dls.clear();
+    ec.ec_accumulator.clear();
     sql_progress_guard progress_guard(sql_progress);
     retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
        stmt_str.c_str(),
@@ -255,6 +256,10 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                 vars[dls.dls_headers[lpc].hm_name] = dls.dls_rows[0][lpc];
             }
         }
+
+        if (lnav_data.ld_rl_view != NULL) {
+            lnav_data.ld_rl_view->set_value("");
+        }
     }
 
     if (retcode == SQLITE_DONE) {
@@ -262,8 +267,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
         lnav_data.ld_views[LNV_DB].set_left(0);
 
         if (!ec.ec_accumulator.empty()) {
-            retval = ec.ec_accumulator;
-            ec.ec_accumulator.clear();
+            retval = ec.ec_accumulator.get_string();
         }
         else if (dls.dls_rows.size() > 0) {
             vis_bookmarks &bm = lnav_data.ld_views[LNV_LOG].get_bookmarks();
@@ -284,17 +288,24 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                   "in the log view");
             }
             else if (dls.dls_rows.size() == 1) {
-                string row;
+                auto &row = dls.dls_rows[0];
 
-                dls.text_value_for_line(lnav_data.ld_views[LNV_DB], 0, row, true);
-                retval = row;
+                if (dls.dls_headers.size() == 1) {
+                    retval = row[0];
+                } else {
+                    for (int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
+                        if (lpc > 0) {
+                            retval.append("; ");
+                        }
+                        retval.append(dls.dls_headers[lpc].hm_name);
+                        retval.push_back('=');
+                        retval.append(row[lpc]);
+                    }
+                }
             }
             else {
                 char row_count[32];
 
-                if (ec.ec_local_vars.size() == 1) {
-                    ensure_view(&lnav_data.ld_views[LNV_DB]);
-                }
                 snprintf(row_count, sizeof(row_count),
                    ANSI_BOLD("%'d") " row(s) matched",
                    (int)dls.dls_rows.size());
@@ -551,6 +562,8 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
         return;
     }
 
+    db_label_source &dls = lnav_data.ld_db_row_source;
+
     log_info("Executing initial commands");
     for (auto &cmd : lnav_data.ld_commands) {
         string msg, alt_msg;
@@ -589,6 +602,10 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
             .with_fd(pt->copy_fd());
         lnav_data.ld_curl_looper.add_request(pt.release());
 #endif
+    }
+
+    if (dls.dls_rows.size() > 1) {
+        ensure_view(&lnav_data.ld_views[LNV_DB]);
     }
 
     lnav_data.ld_cmd_init_done = true;

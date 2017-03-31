@@ -35,54 +35,55 @@
 #include <stdint.h>
 #include <sqlite3.h>
 
+#include <string>
+#include <unordered_map>
+
+#include "help_text_formatter.hh"
+
 struct FuncDef {
     const char *zName;
     signed char nArg;
-    uint8_t argType;           /* 0: none.  1: db  2: (-1) */
     int eTextRep;          /* 1: UTF-16.  0: UTF-8 */
     uint8_t needCollSeq;
     void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
-    const struct ParamDoc {
-        const char *name;
-        const char *doc;
-    } *paramDoc;
-    const char *description;
+    help_text fd_help;
 };
 
 struct FuncDefAgg {
     const char *zName;
     signed char nArg;
-    uint8_t argType;
     uint8_t needCollSeq;
     void (*xStep)(sqlite3_context*,int,sqlite3_value**);
     void (*xFinalize)(sqlite3_context*);
 };
 
-typedef int (*sqlite_registration_func_t)(const struct FuncDef **basic_funcs,
-                                          const struct FuncDefAgg **agg_funcs);
+typedef int (*sqlite_registration_func_t)(struct FuncDef **basic_funcs,
+                                          struct FuncDefAgg **agg_funcs);
 
-int common_extension_functions(const struct FuncDef **basic_funcs,
-                               const struct FuncDefAgg **agg_funcs);
+int common_extension_functions(struct FuncDef **basic_funcs,
+                               struct FuncDefAgg **agg_funcs);
 
-int state_extension_functions(const struct FuncDef **basic_funcs,
-                              const struct FuncDefAgg **agg_funcs);
+int state_extension_functions(struct FuncDef **basic_funcs,
+                              struct FuncDefAgg **agg_funcs);
 
-int string_extension_functions(const struct FuncDef **basic_funcs,
-                               const struct FuncDefAgg **agg_funcs);
+int string_extension_functions(struct FuncDef **basic_funcs,
+                               struct FuncDefAgg **agg_funcs);
 
-int network_extension_functions(const struct FuncDef **basic_funcs,
-                                const struct FuncDefAgg **agg_funcs);
+int network_extension_functions(struct FuncDef **basic_funcs,
+                                struct FuncDefAgg **agg_funcs);
 
-int fs_extension_functions(const struct FuncDef **basic_funcs,
-                           const struct FuncDefAgg **agg_funcs);
+int fs_extension_functions(struct FuncDef **basic_funcs,
+                           struct FuncDefAgg **agg_funcs);
 
-int json_extension_functions(const struct FuncDef **basic_funcs,
-                             const struct FuncDefAgg **agg_funcs);
+int json_extension_functions(struct FuncDef **basic_funcs,
+                             struct FuncDefAgg **agg_funcs);
 
-int time_extension_functions(const struct FuncDef **basic_funcs,
-                             const struct FuncDefAgg **agg_funcs);
+int time_extension_functions(struct FuncDef **basic_funcs,
+                             struct FuncDefAgg **agg_funcs);
 
 extern sqlite_registration_func_t sqlite_registration_funcs[];
+
+extern std::unordered_map<std::string, help_text *> sqlite_function_help;
 
 int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs);
 

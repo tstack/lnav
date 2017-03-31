@@ -45,6 +45,7 @@
 
 #include "vtab_module.hh"
 
+using namespace std;
 using namespace mapbox;
 
 static
@@ -60,7 +61,7 @@ sql_basename(const char *path_in)
     for (ssize_t lpc = strlen(path_in) - 1; lpc >= 0; lpc--) {
         if (path_in[lpc] == '/' || path_in[lpc] == '\\') {
             if (text_end != -1) {
-                return string_fragment(path_in, lpc + 1, text_end - lpc);
+                return string_fragment(path_in, lpc + 1, text_end);
             }
         }
         else if (text_end == -1) {
@@ -99,28 +100,19 @@ sql_dirname(const char *path_in)
     return path_in[0] == '/' ? "/" : ".";
 }
 
-static void sql_joinpath(sqlite3_context *context,
-                         int argc, sqlite3_value **argv)
+static
+nonstd::optional<string> sql_joinpath(const vector<const char *> paths)
 {
     std::string full_path;
-    int         lpc;
 
-    if (argc == 0) {
-        sqlite3_result_null(context);
-        return;
+    if (paths.empty()) {
+        return nonstd::nullopt;
     }
 
-    for (lpc = 0; lpc < argc; lpc++) {
-        if (sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
-            sqlite3_result_null(context);
-            return;
+    for (auto &path_in : paths) {
+        if (path_in == nullptr) {
+            return nonstd::nullopt;
         }
-    }
-
-    for (lpc = 0; lpc < argc; lpc++) {
-        const char *path_in;
-
-        path_in = (const char *)sqlite3_value_text(argv[lpc]);
 
         if (path_in[0] == '/' || path_in[0] == '\\') {
             full_path.clear();
@@ -133,29 +125,53 @@ static void sql_joinpath(sqlite3_context *context,
         full_path += path_in;
     }
 
-    sqlite3_result_text(context, full_path.c_str(), -1, SQLITE_TRANSIENT);
+    return full_path;
 }
 
-int fs_extension_functions(const struct FuncDef **basic_funcs,
-                           const struct FuncDefAgg **agg_funcs)
+int fs_extension_functions(struct FuncDef **basic_funcs,
+                           struct FuncDefAgg **agg_funcs)
 {
-    static const struct FuncDef fs_funcs[] = {
+    static struct FuncDef fs_funcs[] = {
 
         sqlite_func_adapter<decltype(&sql_basename), sql_basename>::builder(
-            "basename",
-            "Extract the base portion of a pathname",
-            {
-                {"path", "The path"},
-            }),
+            help_text("basename",
+                      "Extract the base portion of a pathname.")
+                .sql_function()
+                .with_parameter({"path", "The path"})
+                .with_example({"SELECT basename('foobar')"})
+                .with_example({"SELECT basename('foo/bar')"})
+                .with_example({"SELECT basename('foo/bar/')"})
+                .with_example({"SELECT basename('')"})
+                .with_example({"SELECT basename('foo\\bar')"})
+                .with_example({"SELECT basename('foobar')"})
+                .with_example({"SELECT basename('/')"})
+        ),
 
         sqlite_func_adapter<decltype(&sql_dirname), sql_dirname>::builder(
-            "dirname",
-            "Extract the directory portion of a pathname",
-            {
-                {"path", "The path"},
-            }),
+            help_text("dirname",
+                      "Extract the directory portion of a pathname.")
+                .sql_function()
+                .with_parameter({"path", "The path"})
+                .with_example({"SELECT dirname('foo/bar')"})
+                .with_example({"SELECT dirname('/foo/bar')"})
+                .with_example({"SELECT dirname('/bar')"})
+                .with_example({"SELECT dirname('foo\\bar')"})
+                .with_example({"SELECT dirname('')"})
+        ),
 
-        { "joinpath", -1, 0, SQLITE_UTF8, 0, sql_joinpath },
+        sqlite_func_adapter<decltype(&sql_joinpath), sql_joinpath>::builder(
+            help_text("joinpath",
+                      "Join components of a path together.")
+                .sql_function()
+                .with_parameter(help_text("path", "One or more path components to join together.  "
+                    "If an argument starts with a forward or backward slash, it will be considered "
+                    "an absolute path and any preceding elements will be ignored.")
+                                    .one_or_more())
+                .with_example({"SELECT joinpath('foo', 'bar')"})
+                .with_example({"SELECT joinpath('', 'foo', 'bar')"})
+                .with_example({"SELECT joinpath('/', 'foo', 'bar')"})
+                .with_example({"SELECT joinpath('/', 'foo', '/bar')"})
+        ),
 
         /*
          * TODO: add other functions like readlink, normpath, ... 

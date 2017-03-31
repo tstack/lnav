@@ -693,7 +693,12 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
 
         rc = read(this->rc_pty[RCF_MASTER], buffer, sizeof(buffer));
         if (rc > 0) {
+            int old_x = this->vc_x;
+
             this->map_output(buffer, rc);
+            if (this->vc_x != old_x) {
+                this->rc_change.invoke(this);
+            }
         }
     }
     if (pollfd_ready(pollfds, this->rc_command_pipe[RCF_MASTER])) {
@@ -742,9 +747,7 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     break;
 
                 case 't':
-                    if (this->rc_value != old_value) {
-                        this->rc_timeout.invoke(this);
-                    }
+                    this->rc_timeout.invoke(this);
                     break;
 
                 case 'd':

@@ -249,6 +249,9 @@ struct _lnav_data {
 
     plain_text_source                       ld_doc_source;
     textview_curses                         ld_doc_view;
+    plain_text_source                       ld_example_source;
+    textview_curses                         ld_example_view;
+    plain_text_source                       ld_match_source;
     textview_curses                         ld_match_view;
 
     std::vector<textview_curses *>           ld_view_stack;

@@ -38,11 +38,11 @@
 class plain_text_source
         : public text_sub_source {
 public:
-    plain_text_source() {
+    plain_text_source()
+        : tds_text_format(TF_UNKNOWN), tds_longest_line(0) {
     };
 
-    plain_text_source(std::string text)
-    {
+    plain_text_source(std::string text) : tds_text_format(TF_UNKNOWN) {
         size_t start = 0, end;
 
         while ((end = text.find('\n', start)) != std::string::npos) {
@@ -56,14 +56,13 @@ public:
         this->tds_longest_line = this->compute_longest_line();
     };
 
-    plain_text_source(const std::vector<std::string> &text_lines) {
-        for (auto &str : text_lines) {
-            this->tds_lines.emplace_back(str);
-        }
-        this->tds_longest_line = this->compute_longest_line();
+    plain_text_source(const std::vector<std::string> &text_lines)
+        : tds_text_format(TF_UNKNOWN) {
+        this->replace_with(text_lines);
     };
 
-    plain_text_source(const std::vector<attr_line_t> &text_lines) {
+    plain_text_source(const std::vector<attr_line_t> &text_lines)
+        : tds_text_format(TF_UNKNOWN) {
         this->tds_lines = text_lines;
         this->tds_longest_line = this->compute_longest_line();
     };
@@ -73,6 +72,19 @@ public:
         text_lines.split_lines(this->tds_lines);
         this->tds_longest_line = this->compute_longest_line();
         return *this;
+    };
+
+    plain_text_source &replace_with(const std::vector<std::string> &text_lines) {
+        for (auto &str : text_lines) {
+            this->tds_lines.emplace_back(str);
+        }
+        this->tds_longest_line = this->compute_longest_line();
+        return *this;
+    };
+
+    void clear() {
+        this->tds_lines.clear();
+        this->tds_longest_line = 0;
     };
 
     size_t text_line_count()
@@ -100,6 +112,15 @@ public:
         return this->tds_lines[row].length();
     };
 
+    text_format_t get_text_format() const {
+        return this->tds_text_format;
+    };
+
+    plain_text_source &set_text_format(text_format_t format) {
+        this->tds_text_format = format;
+        return *this;
+    };
+
 private:
     size_t compute_longest_line() {
         size_t retval = 0;
@@ -110,6 +131,7 @@ private:
     };
 
     std::vector<attr_line_t> tds_lines;
+    text_format_t tds_text_format;
     size_t tds_longest_line;
 };
 

@@ -298,6 +298,10 @@ public:
     };
 
     size_t text_line_width(textview_curses &tc) {
+        if (tc.get_window() == NULL) {
+            return 80;
+        }
+
         unsigned long width;
         vis_line_t height;
 

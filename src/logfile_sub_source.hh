@@ -193,6 +193,10 @@ public:
 
     void text_mark(bookmark_type_t *bm, int line, bool added)
     {
+        if (line >= this->lss_index.size()) {
+            return;
+        }
+
         content_line_t cl = this->at(vis_line_t(line));
         std::vector<content_line_t>::iterator lb;
 

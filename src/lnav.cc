@@ -330,8 +330,8 @@ bool setup_logline_table()
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", commands);
 
         for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
-            const struct FuncDef *basic_funcs;
-            const struct FuncDefAgg *agg_funcs;
+            struct FuncDef *basic_funcs;
+            struct FuncDefAgg *agg_funcs;
 
             sqlite_registration_funcs[lpc](&basic_funcs, &agg_funcs);
             for (int lpc2 = 0; basic_funcs && basic_funcs[lpc2].zName; lpc2++) {
@@ -729,7 +729,10 @@ static void open_schema_view(void)
 
     delete schema_tc->get_sub_source();
 
-    schema_tc->set_sub_source(new plain_text_source(schema));
+    plain_text_source *pts = new plain_text_source(schema);
+    pts->set_text_format(TF_SQL);
+
+    schema_tc->set_sub_source(pts);
 }
 
 static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
@@ -738,7 +741,7 @@ static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 
     for (int lpc = 0; lpc < ncols; lpc++) {
         if (lpc > 0) {
-            ec.ec_accumulator += ", ";
+            ec.ec_accumulator.append(", ");
         }
         ec.ec_accumulator.append((const char *)sqlite3_column_text(stmt, lpc));
     }
@@ -891,7 +894,7 @@ void redo_search(lnav_view_t view_index)
         gp->queue_request(grep_line_t(0));
         gp->start();
     }
-    if (tc == lnav_data.ld_view_stack.back()) {
+    if (!lnav_data.ld_view_stack.empty() && tc == lnav_data.ld_view_stack.back()) {
         lnav_data.ld_scroll_broadcaster.invoke(tc);
     }
 }
@@ -1799,6 +1802,101 @@ static void wait_for_pipers(void)
     }
 }
 
+static void execute_examples()
+{
+    exec_context &ec = lnav_data.ld_exec_context;
+    db_label_source &dls = lnav_data.ld_db_row_source;
+    db_overlay_source &dos = lnav_data.ld_db_overlay;
+    textview_curses &db_tc = lnav_data.ld_views[LNV_DB];
+
+    for (auto &help_iter : sqlite_function_help) {
+        struct help_text &ht = *(help_iter.second);
+
+        for (auto &ex : ht.ht_example) {
+            string alt_msg;
+
+            switch (ht.ht_context) {
+                case HC_SQL_FUNCTION: {
+                    execute_sql(ec, ex.he_cmd, alt_msg);
+
+                    if (dls.dls_rows.size() == 1 &&
+                        dls.dls_rows[0].size() == 1) {
+                        ex.he_result.append(dls.dls_rows[0][0]);
+                    } else {
+                        attr_line_t al;
+                        dos.list_value_for_overlay(db_tc, vis_line_t(0),
+                                                   al);
+                        ex.he_result.append(al);
+                        for (int lpc = 0;
+                             lpc < dls.text_line_count(); lpc++) {
+                            al.clear();
+                            dls.text_value_for_line(db_tc, lpc,
+                                                    al.get_string(),
+                                                    false);
+                            dls.text_attrs_for_line(db_tc, lpc,
+                                                    al.get_attrs());
+                            ex.he_result.append("\n")
+                              .append(al);
+                        }
+                    }
+
+                    log_debug("example: %s", ex.he_cmd);
+                    log_debug("example result: %s",
+                              ex.he_result.get_string().c_str());
+                    break;
+                }
+            }
+        }
+    }
+
+    dls.clear();
+}
+
+static void layout_views()
+{
+    unsigned long width, height;
+
+    getmaxyx(lnav_data.ld_window, height, width);
+    int doc_height = std::max(
+        lnav_data.ld_doc_source.text_line_count(),
+        lnav_data.ld_example_source.text_line_count());
+    int match_rows = lnav_data.ld_match_source.text_line_count();
+    int match_height = min((unsigned long)match_rows, (height - 4) / 2);
+
+    lnav_data.ld_match_view.set_height(vis_line_t(match_height));
+
+    if (doc_height + 10 > (height - match_height)) {
+        doc_height = 0;
+    }
+
+    bool doc_open = doc_height > 0;
+    int bottom_height =
+        (doc_open ? 1 : 0)
+        + doc_height
+        + match_height
+        + 1
+        + lnav_data.ld_rl_view->get_height();
+
+    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+        textview_curses &tc = lnav_data.ld_views[lpc];
+
+        tc.set_height(vis_line_t(-bottom_height));
+    }
+    lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + 2));
+    lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
+    lnav_data.ld_status[LNS_DOC].set_enabled(doc_open);
+
+    lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
+    lnav_data.ld_doc_view.set_y(height - bottom_height + 1);
+    lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
+    lnav_data.ld_example_view.set_x(90);
+    lnav_data.ld_example_view.set_y(height - bottom_height + 1);
+    lnav_data.ld_match_view.set_y(
+        height
+        - lnav_data.ld_rl_view->get_height()
+        - match_height);
+}
+
 static void looper(void)
 {
     try {
@@ -1880,6 +1978,8 @@ static void looper(void)
             setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
         }
 
+        execute_examples();
+
         rlc.set_window(lnav_data.ld_window);
         rlc.set_y(-1);
         rlc.set_change_action(readline_curses::action(rl_change));
@@ -1910,6 +2010,12 @@ static void looper(void)
         }
 
         lnav_data.ld_doc_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_doc_view.set_show_scrollbar(false);
+
+        lnav_data.ld_example_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_example_view.set_show_scrollbar(false);
+
+        lnav_data.ld_match_view.set_window(lnav_data.ld_window);
 
         lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
@@ -1961,41 +2067,13 @@ static void looper(void)
                 rebuild_indexes(true);
             }
 
-            {
-                unsigned long width, height;
-
-                getmaxyx(lnav_data.ld_window, height, width);
-                bool doc_open = lnav_data.ld_doc_view.get_height() > 0;
-                int bottom_height =
-                    (doc_open ? 1 : 0)
-                    + lnav_data.ld_doc_view.get_height()
-                    + lnav_data.ld_match_view.get_height()
-                    + 1
-                    + lnav_data.ld_rl_view->get_height();
-
-                for (int lpc = 0; lpc < LNV__MAX; lpc++) {
-                    textview_curses &tc = lnav_data.ld_views[lpc];
-
-                    tc.set_height(vis_line_t(-bottom_height));
-                }
-                lnav_data.ld_status[LNS_BOTTOM].set_top(
-                    -(lnav_data.ld_match_view.get_height() + 2));
-                lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
-                lnav_data.ld_status[LNS_DOC].set_enabled(doc_open);
-
-                lnav_data.ld_doc_view.set_y(height - bottom_height + 1);
-                lnav_data.ld_match_view.set_y(
-                    height
-                    - bottom_height
-                    + (doc_open ? 1 : 0)
-                    + 1
-                    + lnav_data.ld_doc_view.get_height());
-            }
+            layout_views();
 
             if (!lnav_data.ld_view_stack.empty()) {
                 lnav_data.ld_view_stack.back()->do_update();
             }
             lnav_data.ld_doc_view.do_update();
+            lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
             for (auto &sc : lnav_data.ld_status) {
                 sc.do_update();
@@ -2200,6 +2278,7 @@ static void looper(void)
                 if (ioctl(fileno(stdout), TIOCGWINSZ, &size) == 0) {
                     resizeterm(size.ws_row, size.ws_col);
                 }
+                rlc.do_update();
                 rlc.window_change();
                 for (auto &sc : lnav_data.ld_status) {
                     sc.window_change();
@@ -2208,6 +2287,7 @@ static void looper(void)
                     lnav_data.ld_view_stack.back()->set_needs_update();
                 }
                 lnav_data.ld_doc_view.set_needs_update();
+                lnav_data.ld_example_view.set_needs_update();
                 lnav_data.ld_match_view.set_needs_update();
             }
 
@@ -2994,8 +3074,9 @@ int main(int argc, char *argv[])
         .add_input_delegate(lnav_data.ld_spectro_source)
         .set_tail_space(vis_line_t(2));
 
-    lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source)
-             .set_left(0);
+    lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
+    lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
+    lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
     lnav_data.ld_match_view.set_left(0);
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -3338,6 +3419,7 @@ int main(int argc, char *argv[])
                 }
             }
             else {
+
                 lnav_data.ld_curl_looper.start();
 
                 init_session();

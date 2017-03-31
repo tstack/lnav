@@ -199,58 +199,72 @@ string regexp_replace(const char *str, const char *re, const char *repl)
     return dest;
 }
 
-int string_extension_functions(const struct FuncDef **basic_funcs,
-                               const struct FuncDefAgg **agg_funcs)
+int string_extension_functions(struct FuncDef **basic_funcs,
+                               struct FuncDefAgg **agg_funcs)
 {
-    static const struct FuncDef string_funcs[] = {
+    static struct FuncDef string_funcs[] = {
         sqlite_func_adapter<decltype(&regexp), regexp>::builder(
-            "regexp",
-            "Test if a string matches a regular expression",
-            {
-                {"re", "The regular expression to use"},
-                {"str", "The string to test against the regular expression"},
-            }),
+            help_text("regexp",
+                      "Test if a string matches a regular expression")
+                .sql_function()
+                .with_parameter({"re", "The regular expression to use"})
+                .with_parameter({"str", "The string to test against the regular expression"})
+        ),
 
         sqlite_func_adapter<decltype(&regexp_match), regexp_match>::builder(
-            "regexp_match",
-            "Match a string against a regular expression and return the capture groups",
-            {
-                {"re", "The regular expression to use"},
-                {"str", "The string to test against the regular expression"},
-            }),
+            help_text("regexp_match",
+                      "Match a string against a regular expression and return the capture groups as JSON.")
+                .sql_function()
+                .with_parameter({"re", "The regular expression to use"})
+                .with_parameter({"str", "The string to test against the regular expression"})
+                .with_example({"SELECT regexp_match('(\\d+)', '123')"})
+                .with_example({"SELECT regexp_match('(\\d+) (\\w+)', '123 four')"})
+                .with_example({"SELECT regexp_match('(?<num>\\d+) (?<str>\\w+)', '123 four')"})
+        ),
 
         sqlite_func_adapter<decltype(&regexp_replace), regexp_replace>::builder(
-            "regexp_replace",
-            "Replace the parts of a string that match a regular expression",
-            {
-                {"str", "The string to perform replacements on"},
-                {"re", "The regular expression to match"},
-                {"repl", "The replacement string"},
-            }),
+            help_text("regexp_replace",
+                      "Replace the parts of a string that match a regular expression.")
+                .sql_function()
+                .with_parameter({"str", "The string to perform replacements on"})
+                .with_parameter({"re", "The regular expression to match"})
+                .with_parameter({"repl", "The replacement string.  "
+                    "You can reference capture groups with a backslash followed by the number of the "
+                    "group, starting with 1."})
+                .with_example({"SELECT regexp_replace('Hello, World!', '^(\\w+)', 'Goodbye')"})
+                .with_example({"SELECT regexp_replace('123 abc', '(\\w+)', '<\\1>')"})
+        ),
 
         sqlite_func_adapter<decltype(&extract), extract>::builder(
-                "extract",
-                "Automatically Parse and extract data from a string",
-                {
-                        {"str", "The string to parse"},
-                }),
+            help_text("extract",
+                      "Automatically Parse and extract data from a string")
+                .sql_function()
+                .with_parameter({"str", "The string to parse"})
+                .with_example({"SELECT extract('foo=1 bar=2 name=\"Rolo Tomassi\"')"})
+                .with_example({"SELECT extract('1.0 abc 2.0')"})
+        ),
 
         sqlite_func_adapter<decltype(
              static_cast<bool (*)(const char *, const char *)>(&startswith)),
             startswith>::builder(
-            "startswith",
-            "Test if a string begins with the given prefix",
-            {
-                {"str", "The string to test"},
-                {"prefix", "The prefix to check in the string"},
-            }),
+            help_text("startswith",
+                      "Test if a string begins with the given prefix")
+                .sql_function()
+                .with_parameter({"str", "The string to test"})
+                .with_parameter({"prefix", "The prefix to check in the string"})
+                .with_example({"SELECT startswith('foobar', 'foo')"})
+                .with_example({"SELECT startswith('foobar', 'bar')"})
+        ),
+
         sqlite_func_adapter<decltype(&endswith), endswith>::builder(
-            "endswith",
-            "Test if a string ends with the given suffix",
-            {
-                {"str", "The string to test"},
-                {"suffix", "The suffix to check in the string"},
-            }),
+            help_text("endswith",
+                      "Test if a string ends with the given suffix")
+                .sql_function()
+                .with_parameter({"str", "The string to test"})
+                .with_parameter({"suffix", "The suffix to check in the string"})
+                .with_example({"SELECT endswith('notbad.jpg', '.jpg')"})
+                .with_example({"SELECT endswith('notbad.png', '.jpg')"})
+        ),
 
         { NULL }
     };

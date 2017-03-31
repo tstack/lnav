@@ -40,6 +40,7 @@
 #include "log_search_table.hh"
 #include "log_format_loader.hh"
 #include "help_text_formatter.hh"
+#include "sqlite-extension-func.hh"
 
 using namespace std;
 
@@ -60,7 +61,8 @@ void rl_change(void *dummy, readline_curses *rc)
             }
             if (iter == lnav_commands.end() ||
                 iter->second.c_description == NULL) {
-                lnav_data.ld_doc_view.set_height(vis_line_t(0));
+                lnav_data.ld_doc_source.clear();
+                lnav_data.ld_example_source.clear();
                 lnav_data.ld_bottom_source.set_prompt(
                         "Enter an lnav command: " ABORT_MSG);
                 lnav_data.ld_bottom_source.grep_error("");
@@ -91,10 +93,11 @@ void rl_change(void *dummy, readline_curses *rc)
             }
             else {
                 readline_context::command_t &cmd = iter->second;
-                help_text &ht = cmd.c_help;
+                const help_text &ht = cmd.c_help;
 
                 if (ht.ht_name) {
                     textview_curses &dtc = lnav_data.ld_doc_view;
+                    textview_curses &etc = lnav_data.ld_example_view;
                     vector<attr_line_t> lines;
                     unsigned long width;
                     vis_line_t height;
@@ -104,7 +107,12 @@ void rl_change(void *dummy, readline_curses *rc)
                     format_help_text_for_term(ht, min(70UL, width), al);
                     al.split_lines(lines);
                     lnav_data.ld_doc_source.replace_with(al);
-                    dtc.set_height(vis_line_t(lines.size()));
+
+                    al.clear();
+                    lines.clear();
+                    format_example_text_for_term(ht, min(70UL, width), al);
+                    al.split_lines(lines);
+                    lnav_data.ld_example_source.replace_with(al);
                 }
 
                 lnav_data.ld_bottom_source.grep_error("");
@@ -136,26 +144,6 @@ void rl_change(void *dummy, readline_curses *rc)
             }
             break;
         }
-        case LNM_SQL: {
-            attr_line_t al(rc->get_line_buffer());
-            const string_attrs_t &sa = al.get_attrs();
-            size_t x = rc->get_x() - 1;
-
-            annotate_sql_statement(al);
-
-            if (x > 0 && x >= al.length()) {
-                x -= 1;
-            }
-
-            auto iter = find_string_attr(sa, x);
-
-            if (iter != sa.end()) {
-                if (iter->sa_type == &SQL_FUNCTION_ATTR) {
-
-                }
-            }
-            break;
-        }
         default:
             break;
     }
@@ -179,17 +167,15 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
     case LNM_COMMAND:
         return;
 
-    case LNM_SQL:
+    case LNM_SQL: {
         term_val = trim(rc->get_value() + ";");
 
         if (term_val.size() > 0 && term_val[0] == '.') {
             lnav_data.ld_bottom_source.grep_error("");
-        }
-        else if (!sqlite3_complete(term_val.c_str())) {
+        } else if (!sqlite3_complete(term_val.c_str())) {
             lnav_data.ld_bottom_source.
-            grep_error("sql error: incomplete statement");
-        }
-        else {
+                grep_error("sql error: incomplete statement");
+        } else {
             auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
             int retcode;
 
@@ -202,13 +188,77 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
                 const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
                 lnav_data.ld_bottom_source.
-                grep_error(string("sql error: ") + string(errmsg));
-            }
-            else {
+                    grep_error(string("sql error: ") + string(errmsg));
+            } else {
                 lnav_data.ld_bottom_source.grep_error("");
             }
         }
+
+        attr_line_t al(rc->get_line_buffer());
+        const string_attrs_t &sa = al.get_attrs();
+        size_t x = rc->get_x() - 1;
+        bool has_doc = false;
+
+        annotate_sql_statement(al);
+
+        if (x > 0 && x >= al.length()) {
+            x -= 1;
+        }
+
+        auto iter = al.find_attr(x);
+
+        if (iter != sa.end()) {
+            if (iter->sa_type == &SQL_FUNCTION_ATTR ||
+                iter->sa_type == &SQL_IDENTIFIER_ATTR ||
+                iter->sa_type == &SQL_KEYWORD_ATTR) {
+                const line_range &lr = iter->sa_range;
+                const string &str = al.get_string();
+                int lpc;
+
+                for (lpc = lr.lr_start; lpc < lr.lr_end; lpc++) {
+                    if (!isalnum(str[lpc]) && str[lpc] != '_') {
+                        break;
+                    }
+                }
+
+                name = str.substr(lr.lr_start, lpc - lr.lr_start);
+
+                const auto &func_iter = sqlite_function_help.find(tolower(name));
+
+                if (func_iter != sqlite_function_help.end()) {
+                    textview_curses &dtc = lnav_data.ld_doc_view;
+                    textview_curses &etc = lnav_data.ld_example_view;
+                    const help_text &ht = *func_iter->second;
+                    vector<attr_line_t> lines;
+                    unsigned long width;
+                    vis_line_t height;
+                    attr_line_t al;
+
+                    dtc.get_dimensions(height, width);
+                    format_help_text_for_term(ht, min(70UL, width), al);
+                    al.split_lines(lines);
+                    lnav_data.ld_doc_source.replace_with(al);
+                    dtc.reload_data();
+
+                    al.clear();
+                    lines.clear();
+                    etc.get_dimensions(height, width);
+                    format_example_text_for_term(ht, width, al);
+                    al.split_lines(lines);
+                    lnav_data.ld_example_source.replace_with(al);
+                    etc.reload_data();
+
+                    has_doc = true;
+                }
+            }
+        }
+
+        if (!has_doc) {
+            lnav_data.ld_doc_source.clear();
+            lnav_data.ld_example_source.clear();
+        }
         return;
+    }
 
     case LNM_EXEC:
         return;
@@ -241,7 +291,8 @@ void rl_abort(void *dummy, readline_curses *rc)
     lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
 
     lnav_data.ld_bottom_source.set_prompt("");
-    lnav_data.ld_doc_view.set_height(vis_line_t(0));
+    lnav_data.ld_example_source.clear();
+    lnav_data.ld_doc_source.clear();
 
     lnav_data.ld_bottom_source.grep_error("");
     switch (lnav_data.ld_mode) {
@@ -265,7 +316,8 @@ void rl_callback(void *dummy, readline_curses *rc)
     string alt_msg;
 
     lnav_data.ld_bottom_source.set_prompt("");
-    lnav_data.ld_doc_view.set_height(vis_line_t(0));
+    lnav_data.ld_doc_source.clear();
+    lnav_data.ld_example_source.clear();
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
         require(0);
@@ -296,9 +348,14 @@ void rl_callback(void *dummy, readline_curses *rc)
 
     case LNM_SQL: {
         string result = execute_sql(ec, rc->get_value(), alt_msg);
+        db_label_source &dls = lnav_data.ld_db_row_source;
 
         if (!result.empty()) {
             result = "SQL Result: " + result;
+        }
+
+        if (dls.dls_rows.size() > 1) {
+            ensure_view(&lnav_data.ld_views[LNV_DB]);
         }
 
         rc->set_value(result);
@@ -376,7 +433,7 @@ void rl_display_matches(void *dummy, readline_curses *rc)
     const std::vector<std::string> &matches = rc->get_matches();
     textview_curses &tc = lnav_data.ld_match_view;
     unsigned long width, height;
-    int max_len, cols, rows, match_height;
+    int max_len, cols, rows;
 
     getmaxyx(lnav_data.ld_window, height, width);
 
@@ -384,12 +441,11 @@ void rl_display_matches(void *dummy, readline_curses *rc)
     cols = max(1UL, width / max_len);
     rows = (matches.size() + cols - 1) / cols;
 
-    match_height = min((unsigned long)rows, (height - 4) / 2);
-
-    delete tc.get_sub_source();
-
-    if (cols == 1) {
-        tc.set_sub_source(new plain_text_source(rc->get_matches()));
+    if (matches.empty()) {
+        lnav_data.ld_match_source.clear();
+    }
+    else if (cols == 1) {
+        lnav_data.ld_match_source.replace_with(rc->get_matches());
     }
     else {
         std::vector<std::string> horiz_matches;
@@ -402,18 +458,10 @@ void rl_display_matches(void *dummy, readline_curses *rc)
             horiz_matches[curr_row].append(
                 max_len - matches[lpc].length(), ' ');
         }
-        tc.set_sub_source(new plain_text_source(horiz_matches));
+        lnav_data.ld_match_source.replace_with(horiz_matches);
     }
 
-    if (match_height > 0) {
-        tc.set_window(lnav_data.ld_window);
-        tc.set_height(vis_line_t(match_height));
-        tc.reload_data();
-    }
-    else {
-        tc.set_window(NULL);
-        tc.set_height(vis_line_t(0));
-    }
+    tc.reload_data();
 }
 
 void rl_display_next(void *dummy, readline_curses *rc)

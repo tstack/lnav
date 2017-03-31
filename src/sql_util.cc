@@ -103,7 +103,7 @@ const char *sql_keywords[] = {
     "FROM",
     "FULL",
     "GLOB",
-    "GROUP",
+    "GROUP BY",
     "HAVING",
     "IF",
     "IGNORE",
@@ -134,7 +134,7 @@ const char *sql_keywords[] = {
     "OFFSET",
     "ON",
     "OR",
-    "ORDER",
+    "ORDER BY",
     "OUTER",
     "PLAN",
     "PRAGMA",
@@ -171,6 +171,7 @@ const char *sql_keywords[] = {
     "VIRTUAL",
     "WHEN",
     "WHERE",
+    "WITH",
 
     NULL
 };
@@ -201,6 +202,7 @@ const char *sql_function_names[] = {
     "lower(",
     "ltrim(",
     "nullif(",
+    "printf(",
     "quote(",
     "random()",
     "randomblob(",

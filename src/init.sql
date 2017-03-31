@@ -64,3 +64,25 @@ INSERT INTO http_status_codes VALUES (507, "Insufficient Storage");
 INSERT INTO http_status_codes VALUES (508, "Loop Detected");
 INSERT INTO http_status_codes VALUES (510, "Not Extended");
 INSERT INTO http_status_codes VALUES (511, "Network Authentication Required");
+
+CREATE TABLE lnav_example_log (
+  log_line integer PRIMARY KEY,
+  log_part text collate naturalnocase,
+  log_time datetime,
+  log_actual_time datetime hidden,
+  log_idle_msecs int,
+  log_level text collate loglevel,
+  log_mark boolean,
+
+  ex_procname text collate 'BINARY',
+
+  log_path text hidden collate naturalnocase,
+  log_text text hidden,
+  log_body text hidden
+);
+
+INSERT INTO lnav_example_log VALUES
+    (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0, 'info', 0, 'hw', '/tmp/log', '2017-02-03T04:05:06.100 hw: Hello, World!', 'Hello, World!'),
+    (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100, 'error', 0, 'hw', '/tmp/log', '2017-02-03T04:05:06.200 hw: Goodbye, World!', 'Goodbye, World!'),
+    (2, null, '2017-02-03T04:25:06.200', '2017-02-03T04:25:06.200', 1200000, 'warn', 0, 'hw', '/tmp/log', '2017-02-03T04:25:06.200 hw: Goodbye, World!', 'Goodbye, World!'),
+    (3, null, '2017-02-03T04:55:06.200', '2017-02-03T04:55:06.200', 1800000, 'debug', 0, 'hw', '/tmp/log', '2017-02-03T04:55:06.200 hw: Goodbye, World!', 'Goodbye, World!');

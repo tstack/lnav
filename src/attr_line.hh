@@ -37,6 +37,8 @@
 #include <string>
 #include <vector>
 
+#include "lnav_log.hh"
+
 /**
  * Encapsulates a range in a string.
  */
@@ -68,8 +70,16 @@ struct line_range {
     };
 
     line_range intersection(const struct line_range &other) const {
-        return line_range{std::max(this->lr_start, other.lr_start),
-                          std::min(this->lr_end, other.lr_end)};
+        int actual_end;
+
+        if (this->lr_end == -1) {
+            actual_end = other.lr_end;
+        } else if (other.lr_end == -1) {
+            actual_end = this->lr_end;
+        } else {
+            actual_end = std::min(this->lr_end, other.lr_end);
+        }
+        return line_range{std::max(this->lr_start, other.lr_start), actual_end};
     };
 
     line_range &shift(int32_t start, int32_t amount) {
@@ -361,6 +371,14 @@ public:
         return *this;
     }
 
+    attr_line_t &erase(size_t pos, size_t len = std::string::npos) {
+        this->al_string.erase(pos, len);
+
+        shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
+
+        return *this;
+    };
+
     attr_line_t &right_justify(unsigned long width) {
         long padding = width - this->length();
         if (padding > 0) {
@@ -396,6 +414,16 @@ public:
             return "";
         }
         return this->al_string.substr(lr.lr_start, lr.length());
+    };
+
+    string_attrs_t::const_iterator find_attr(size_t near) const {
+        near = std::min(near, this->al_string.length() - 1);
+
+        while (near > 0 && isspace(this->al_string[near])) {
+            near -= 1;
+        }
+
+        return find_string_attr(this->al_attrs, near);
     };
 
     bool empty() const {

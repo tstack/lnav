@@ -1708,78 +1708,78 @@ static void differenceFunc(sqlite3_context *context, int argc, sqlite3_value **a
 ** functions.  This should be the only routine in this file with
 ** external linkage.
 */
-int common_extension_functions(const struct FuncDef **basic_funcs,
-                               const struct FuncDefAgg **agg_funcs) {
-  static const struct FuncDef aFuncs[] = {
+int common_extension_functions(struct FuncDef **basic_funcs,
+                               struct FuncDefAgg **agg_funcs) {
+  static struct FuncDef aFuncs[] = {
     /* math.h */
-    { "acos",               1, 0, SQLITE_UTF8,    0, acosFunc  },
-    { "asin",               1, 0, SQLITE_UTF8,    0, asinFunc  },
-    { "atan",               1, 0, SQLITE_UTF8,    0, atanFunc  },
-    { "atn2",               2, 0, SQLITE_UTF8,    0, atn2Func  },
+    { "acos",               1, SQLITE_UTF8,    0, acosFunc  },
+    { "asin",               1, SQLITE_UTF8,    0, asinFunc  },
+    { "atan",               1, SQLITE_UTF8,    0, atanFunc  },
+    { "atn2",               2, SQLITE_UTF8,    0, atn2Func  },
     /* XXX alias */
-    { "atan2",              2, 0, SQLITE_UTF8,    0, atn2Func  },
-    { "acosh",              1, 0, SQLITE_UTF8,    0, acoshFunc  },
-    { "asinh",              1, 0, SQLITE_UTF8,    0, asinhFunc  },
-    { "atanh",              1, 0, SQLITE_UTF8,    0, atanhFunc  },
+    { "atan2",              2, SQLITE_UTF8,    0, atn2Func  },
+    { "acosh",              1, SQLITE_UTF8,    0, acoshFunc  },
+    { "asinh",              1, SQLITE_UTF8,    0, asinhFunc  },
+    { "atanh",              1, SQLITE_UTF8,    0, atanhFunc  },
 
-    { "difference",         2, 0, SQLITE_UTF8,    0, differenceFunc},
-    { "degrees",            1, 0, SQLITE_UTF8,    0, rad2degFunc  },
-    { "radians",            1, 0, SQLITE_UTF8,    0, deg2radFunc  },
+    { "difference",         2, SQLITE_UTF8,    0, differenceFunc},
+    { "degrees",            1, SQLITE_UTF8,    0, rad2degFunc  },
+    { "radians",            1, SQLITE_UTF8,    0, deg2radFunc  },
 
-    { "cos",                1, 0, SQLITE_UTF8,    0, cosFunc  },
-    { "sin",                1, 0, SQLITE_UTF8,    0, sinFunc },
-    { "tan",                1, 0, SQLITE_UTF8,    0, tanFunc },
-    { "cot",                1, 0, SQLITE_UTF8,    0, cotFunc },
-    { "cosh",               1, 0, SQLITE_UTF8,    0, coshFunc  },
-    { "sinh",               1, 0, SQLITE_UTF8,    0, sinhFunc },
-    { "tanh",               1, 0, SQLITE_UTF8,    0, tanhFunc },
-    { "coth",               1, 0, SQLITE_UTF8,    0, cothFunc },
+    { "cos",                1, SQLITE_UTF8,    0, cosFunc  },
+    { "sin",                1, SQLITE_UTF8,    0, sinFunc },
+    { "tan",                1, SQLITE_UTF8,    0, tanFunc },
+    { "cot",                1, SQLITE_UTF8,    0, cotFunc },
+    { "cosh",               1, SQLITE_UTF8,    0, coshFunc  },
+    { "sinh",               1, SQLITE_UTF8,    0, sinhFunc },
+    { "tanh",               1, SQLITE_UTF8,    0, tanhFunc },
+    { "coth",               1, SQLITE_UTF8,    0, cothFunc },
 
-    { "exp",                1, 0, SQLITE_UTF8,    0, expFunc  },
-    { "log",                1, 0, SQLITE_UTF8,    0, logFunc  },
-    { "log10",              1, 0, SQLITE_UTF8,    0, log10Func  },
-    { "power",              2, 0, SQLITE_UTF8,    0, powerFunc  },
-    { "sign",               1, 0, SQLITE_UTF8,    0, signFunc },
-    { "sqrt",               1, 0, SQLITE_UTF8,    0, sqrtFunc },
-    { "square",             1, 0, SQLITE_UTF8,    0, squareFunc },
+    { "exp",                1, SQLITE_UTF8,    0, expFunc  },
+    { "log",                1, SQLITE_UTF8,    0, logFunc  },
+    { "log10",              1, SQLITE_UTF8,    0, log10Func  },
+    { "power",              2, SQLITE_UTF8,    0, powerFunc  },
+    { "sign",               1, SQLITE_UTF8,    0, signFunc },
+    { "sqrt",               1, SQLITE_UTF8,    0, sqrtFunc },
+    { "square",             1, SQLITE_UTF8,    0, squareFunc },
 
-    { "ceil",               1, 0, SQLITE_UTF8,    0, ceilFunc },
-    { "floor",              1, 0, SQLITE_UTF8,    0, floorFunc },
+    { "ceil",               1, SQLITE_UTF8,    0, ceilFunc },
+    { "floor",              1, SQLITE_UTF8,    0, floorFunc },
 
-    { "pi",                 0, 0, SQLITE_UTF8,    1, piFunc },
+    { "pi",                 0, SQLITE_UTF8,    1, piFunc },
 
 
     /* string */
-    { "replicate",          2, 0, SQLITE_UTF8,    0, replicateFunc },
-    { "charindex",          2, 0, SQLITE_UTF8,    0, charindexFunc },
-    { "charindex",          3, 0, SQLITE_UTF8,    0, charindexFunc },
-    { "leftstr",            2, 0, SQLITE_UTF8,    0, leftFunc },
-    { "rightstr",           2, 0, SQLITE_UTF8,    0, rightFunc },
+    { "replicate",          2, SQLITE_UTF8,    0, replicateFunc },
+    { "charindex",          2, SQLITE_UTF8,    0, charindexFunc },
+    { "charindex",          3, SQLITE_UTF8,    0, charindexFunc },
+    { "leftstr",            2, SQLITE_UTF8,    0, leftFunc },
+    { "rightstr",           2, SQLITE_UTF8,    0, rightFunc },
 #ifndef HAVE_TRIM
-    { "ltrim",              1, 0, SQLITE_UTF8,    0, ltrimFunc },
-    { "rtrim",              1, 0, SQLITE_UTF8,    0, rtrimFunc },
-    { "trim",               1, 0, SQLITE_UTF8,    0, trimFunc },
-    { "replace",            3, 0, SQLITE_UTF8,    0, replaceFunc },
+    { "ltrim",              1, SQLITE_UTF8,    0, ltrimFunc },
+    { "rtrim",              1, SQLITE_UTF8,    0, rtrimFunc },
+    { "trim",               1, SQLITE_UTF8,    0, trimFunc },
+    { "replace",            3, SQLITE_UTF8,    0, replaceFunc },
 #endif
-    { "reverse",            1, 0, SQLITE_UTF8,    0, reverseFunc },
-    { "proper",             1, 0, SQLITE_UTF8,    0, properFunc },
-    { "padl",               2, 0, SQLITE_UTF8,    0, padlFunc },
-    { "padr",               2, 0, SQLITE_UTF8,    0, padrFunc },
-    { "padc",               2, 0, SQLITE_UTF8,    0, padcFunc },
-    { "strfilter",          2, 0, SQLITE_UTF8,    0, strfilterFunc },
+    { "reverse",            1, SQLITE_UTF8,    0, reverseFunc },
+    { "proper",             1, SQLITE_UTF8,    0, properFunc },
+    { "padl",               2, SQLITE_UTF8,    0, padlFunc },
+    { "padr",               2, SQLITE_UTF8,    0, padrFunc },
+    { "padc",               2, SQLITE_UTF8,    0, padcFunc },
+    { "strfilter",          2, SQLITE_UTF8,    0, strfilterFunc },
 
     { NULL }
   };
 
   /* Aggregate functions */
-  static const struct FuncDefAgg aAggs[] = {
-    { "stdev",            1, 0, 0, varianceStep, stdevFinalize  },
-    { "stddev",            1, 0, 0, varianceStep, stdevFinalize  },
-    { "variance",         1, 0, 0, varianceStep, varianceFinalize  },
-    { "mode",             1, 0, 0, modeStep,     modeFinalize  },
-    { "median",           1, 0, 0, modeStep,     medianFinalize  },
-    { "lower_quartile",   1, 0, 0, modeStep,     lower_quartileFinalize  },
-    { "upper_quartile",   1, 0, 0, modeStep,     upper_quartileFinalize  },
+  static struct FuncDefAgg aAggs[] = {
+    { "stdev",            1, 0, varianceStep, stdevFinalize  },
+    { "stddev",           1, 0, varianceStep, stdevFinalize  },
+    { "variance",         1, 0, varianceStep, varianceFinalize  },
+    { "mode",             1, 0, modeStep,     modeFinalize  },
+    { "median",           1, 0, modeStep,     medianFinalize  },
+    { "lower_quartile",   1, 0, modeStep,     lower_quartileFinalize  },
+    { "upper_quartile",   1, 0, modeStep,     upper_quartileFinalize  },
 
     { NULL }
   };

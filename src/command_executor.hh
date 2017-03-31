@@ -35,6 +35,8 @@
 #include <future>
 #include <string>
 
+#include "attr_line.hh"
+
 struct exec_context;
 
 typedef int (*sql_callback_t)(exec_context &ec, sqlite3_stmt *stmt);
@@ -61,7 +63,7 @@ struct exec_context {
     std::map<std::string, std::string> ec_global_vars;
     std::vector<std::string> ec_path_stack;
 
-    std::string ec_accumulator;
+    attr_line_t ec_accumulator;
 
     sql_callback_t ec_sql_callback;
     pipe_callback_t ec_pipe_callback;

@@ -3,13 +3,14 @@
 run_test ./drive_sql "select timeslice()"
 
 check_error_output "timeslice()" <<EOF
-error: sqlite3_exec failed -- wrong number of arguments to function timeslice()
+error: sqlite3_exec failed -- timeslice() expects between 1 and 2 arguments
 EOF
 
-run_test ./drive_sql "select timeslice(1)"
+run_test ./drive_sql "select timeslice('2015-02-01T05:10:00')"
 
-check_error_output "timeslice(1)" <<EOF
-error: sqlite3_exec failed -- wrong number of arguments to function timeslice()
+check_output "timeslice('2015-02-01T05:10:00')" <<EOF
+Row 0:
+  Column timeslice('2015-02-01T05:10:00'): 2015-02-01 05:00:00.000
 EOF
 
 run_test ./drive_sql "select timeslice('', '')"
@@ -51,4 +52,26 @@ run_test ./drive_sql "select timeslice('2015-08-07 12:01:00', '1 month')"
 check_output "timeslice 1 month" <<EOF
 Row 0:
   Column timeslice('2015-08-07 12:01:00', '1 month'): 2015-08-03 00:00:00.000
+EOF
+
+
+run_test ./drive_sql "select timediff('2017-01-02T05:00:00.100', '2017-01-02T05:00:00.000')"
+
+check_output "timeslice ms" <<EOF
+Row 0:
+  Column timediff('2017-01-02T05:00:00.100', '2017-01-02T05:00:00.000'): 0.1
+EOF
+
+run_test ./drive_sql "select timediff('today', 'yesterday')"
+
+check_output "timeslice day" <<EOF
+Row 0:
+  Column timediff('today', 'yesterday'): 86400.0
+EOF
+
+run_test ./drive_sql "select timediff('foo', 'yesterday')"
+
+check_output "timeslice day" <<EOF
+Row 0:
+  Column timediff('foo', 'yesterday'): (null)
 EOF

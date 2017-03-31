@@ -33,6 +33,7 @@
 #include <sqlite3.h>
 
 #include <string>
+#include <vector>
 #include <utility>
 
 #include "optional.hpp"
@@ -51,6 +52,25 @@ struct from_sqlite_conversion_error : std::exception {
 
     const char *e_type;
     int e_argi;
+};
+
+struct sqlite_func_error : std::exception {
+    sqlite_func_error(const char *fmt, ...) {
+        char buffer[1024];
+        va_list args;
+
+        va_start(args, fmt);
+        vsnprintf(buffer, sizeof(buffer), fmt, args);
+        va_end(args);
+
+        this->e_what = buffer;
+    };
+
+    const char *what() const noexcept {
+        return this->e_what.c_str();
+    }
+
+    std::string e_what;
 };
 
 template<typename T>
@@ -74,6 +94,10 @@ struct from_sqlite<int64_t> {
 template<>
 struct from_sqlite<int> {
     inline int operator()(int argc, sqlite3_value **val, int argi) {
+        if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
+            throw from_sqlite_conversion_error("integer", argi);
+        }
+
         return sqlite3_value_int(val[argi]);
     }
 };
@@ -96,10 +120,23 @@ template<typename T>
 struct from_sqlite<nonstd::optional<T>> {
     inline nonstd::optional<T> operator()(int argc, sqlite3_value **val, int argi) {
         if (argi >= argc || sqlite3_value_type(val[argi]) == SQLITE_NULL) {
-            return nonstd::optional<T>();
+            return nonstd::nullopt;
         }
 
         return nonstd::optional<T>(from_sqlite<T>()(argc, val, argi));
+    }
+};
+
+template<typename T>
+struct from_sqlite<std::vector<T>> {
+    inline std::vector<T> operator()(int argc, sqlite3_value **val, int argi) {
+        std::vector<T> retval;
+
+        for (int lpc = argi; lpc < argc; lpc++) {
+            retval.emplace_back(from_sqlite<T>()(argc, val, lpc));
+        }
+
+        return retval;
     }
 };
 
@@ -152,6 +189,16 @@ inline void to_sqlite(sqlite3_context *ctx, const json_string &val)
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
 }
 
+template<typename T>
+inline void to_sqlite(sqlite3_context *ctx, const nonstd::optional<T> &val)
+{
+    if (val.has_value()) {
+        to_sqlite(ctx, val.value());
+    } else {
+        sqlite3_result_null(ctx);
+    }
+}
+
 struct ToSqliteVisitor {
     ToSqliteVisitor(sqlite3_context *vctx) : tsv_context(vctx) {
 
@@ -174,7 +221,9 @@ void to_sqlite(sqlite3_context *ctx, const mapbox::util::variant<Types...> &val)
 }
 
 template<typename ... Args>
-struct optional_counter;
+struct optional_counter {
+    constexpr static int value = 0;
+};
 
 template<typename T>
 struct optional_counter<nonstd::optional<T>> {
@@ -197,12 +246,34 @@ struct optional_counter<Arg1, Args...> : optional_counter<Args...> {
 };
 
 
+template<typename ... Args>
+struct variadic_counter {
+    constexpr static int value = 0;
+};
+
+template<typename T>
+struct variadic_counter<std::vector<T>> {
+    constexpr static int value = 1;
+};
+
+template<typename Arg>
+struct variadic_counter<Arg> {
+    constexpr static int value = 0;
+};
+
+template<typename Arg1, typename ... Args>
+struct variadic_counter<Arg1, Args...> : variadic_counter<Args...> {
+
+};
+
+
 template<typename F, F f> struct sqlite_func_adapter;
 
 template<typename Return, typename ... Args, Return (*f)(Args...)>
 struct sqlite_func_adapter<Return (*)(Args...), f> {
     constexpr static int OPT_COUNT = optional_counter<Args...>::value;
-    constexpr static int REQ_COUNT = sizeof...(Args) - OPT_COUNT;
+    constexpr static int VAR_COUNT = variadic_counter<Args...>::value;
+    constexpr static int REQ_COUNT = sizeof...(Args) - OPT_COUNT - VAR_COUNT;
 
     template<size_t ... Idx>
     static void func2(sqlite3_context *context,
@@ -229,21 +300,22 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
 
     static void func1(sqlite3_context *context,
                       int argc, sqlite3_value **argv) {
-        if (argc < REQ_COUNT) {
+        if (argc < REQ_COUNT && VAR_COUNT == 0) {
+            const struct FuncDef *fd = (const FuncDef *) sqlite3_user_data(context);
             char buffer[128];
 
             if (OPT_COUNT == 0) {
                 snprintf(buffer, sizeof(buffer),
-                         "%s expects exactly %d argument%s",
-                         "foo",
+                         "%s() expects exactly %d argument%s",
+                         fd->fd_help.ht_name,
                          REQ_COUNT,
                          REQ_COUNT == 1 ? "s" : "");
             } else {
                 snprintf(buffer, sizeof(buffer),
-                         "%s expects between %d and %d arguments",
-                         "bar",
+                         "%s() expects between %d and %d arguments",
+                         fd->fd_help.ht_name,
                          REQ_COUNT,
-                         OPT_COUNT);
+                         REQ_COUNT + OPT_COUNT);
             }
             sqlite3_result_error(context, buffer, -1);
             return;
@@ -259,24 +331,16 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
         func2(context, argc, argv, std::make_index_sequence<sizeof...(Args)>{});
     };
 
+    static FuncDef builder(help_text ht) {
+        require(ht.ht_parameters.size() == sizeof...(Args));
 
-    static FuncDef builder(const char name[],
-                           const char description[],
-                           std::initializer_list<FuncDef::ParamDoc> pdocs) {
-        static FuncDef::ParamDoc PARAM_DOCS[sizeof...(Args) + 1];
-
-        require(pdocs.size() == sizeof...(Args));
-
-        std::copy(std::begin(pdocs), std::end(pdocs), std::begin(PARAM_DOCS));
         return {
-            name,
-            OPT_COUNT > 0 ? -1 : REQ_COUNT,
-            0,
+            ht.ht_name,
+            (OPT_COUNT > 0 || VAR_COUNT > 0) ? -1 : REQ_COUNT,
             SQLITE_UTF8 | SQLITE_DETERMINISTIC,
             0,
             func1,
-            PARAM_DOCS,
-            description,
+            ht,
         };
     };
 };

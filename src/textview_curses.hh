@@ -509,6 +509,13 @@ public:
         if (start_line > end_line) {
             std::swap(start_line, end_line);
         }
+
+        if (start_line >= this->get_inner_height()) {
+            return;
+        }
+        if (end_line >= this->get_inner_height()) {
+            end_line = vis_line_t(this->get_inner_height() - 1);
+        }
         for (vis_line_t curr_line = start_line; curr_line <= end_line;
              ++curr_line) {
             bookmark_vector<vis_line_t> &bv =

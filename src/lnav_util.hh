@@ -47,6 +47,7 @@
 #include <vector>
 #include <sstream>
 #include <numeric>
+#include <algorithm>
 
 #include "ptimec.hh"
 #include "byte_array.hh"
@@ -59,6 +60,22 @@ inline std::string trim(const std::string &str)
     for (end = str.size(); end > 0 && isspace(str[end - 1]); end--);
 
     return str.substr(start, end - start);
+}
+
+inline std::string tolower(const char *str)
+{
+    std::string retval;
+
+    for (int lpc = 0; str[lpc]; lpc++) {
+        retval.push_back(::tolower(str[lpc]));
+    }
+
+    return retval;
+}
+
+inline std::string tolower(const std::string &str)
+{
+    return tolower(str.c_str());
 }
 
 size_t unquote(char *dst, const char *str, size_t len);
@@ -211,6 +228,7 @@ bool next_format(const char * const fmt[], int &index, int &locked_index);
 
 namespace std {
     inline string to_string(const string &s) { return s; }
+    inline string to_string(const char *s) { return s; }
 }
 
 template<class InputIt>
@@ -218,7 +236,7 @@ inline std::string join(InputIt first, InputIt last, const std::string &delim)
 {
     std::string retval;
     return std::accumulate(first, last, retval, [&] (
-        typename InputIt::value_type l, typename InputIt::value_type r) {
+        auto l, auto r) {
         std::string lstr = std::to_string(l);
 
         return lstr + (lstr.empty() ? "" : delim) + std::to_string(r);

@@ -46,6 +46,7 @@ listview_curses::listview_curses()
     : lv_source(NULL),
       lv_overlay_source(NULL),
       lv_window(NULL),
+      lv_x(0),
       lv_y(0),
       lv_top(0),
       lv_left(0),
@@ -216,7 +217,7 @@ void listview_curses::do_update(void)
                     *this,
                     y - vis_line_t(this->lv_y),
                     overlay_line)) {
-                this->mvwattrline(this->lv_window, y, 0, overlay_line, lr);
+                this->mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
                 overlay_line.clear();
                 ++y;
             }
@@ -224,7 +225,7 @@ void listview_curses::do_update(void)
                 attr_line_t &al = rows[row - this->lv_top];
 
                 do {
-                    this->mvwattrline(this->lv_window, y, 0, al, lr);
+                    this->mvwattrline(this->lv_window, y, this->lv_x, al, lr);
                     if (this->lv_word_wrap) {
                         wmove(this->lv_window, y, wrap_width);
                         wclrtoeol(this->lv_window);
@@ -236,7 +237,7 @@ void listview_curses::do_update(void)
                 ++row;
             }
             else {
-                wmove(this->lv_window, y, 0);
+                wmove(this->lv_window, y, this->lv_x);
                 wclrtoeol(this->lv_window);
                 ++y;
             }
@@ -283,12 +284,12 @@ void listview_curses::do_update(void)
                 mvwaddch(this->lv_window, gutter_y, width - 1, ch);
                 wattroff(this->lv_window, attrs);
             }
-            wmove(this->lv_window, this->lv_y + height - 1, 0);
+            wmove(this->lv_window, this->lv_y + height - 1, this->lv_x);
         }
 
         if (this->lv_show_bottom_border) {
             mvwchgat(this->lv_window,
-                this->lv_y + height - 1, 0, width - 1, A_UNDERLINE, 0, NULL);
+                this->lv_y + height - 1, this->lv_x, width - 1, A_UNDERLINE, 0, NULL);
         }
 
         this->lv_needs_update = false;
@@ -312,7 +313,7 @@ void listview_curses::do_update(void)
                     *this,
                     y - vis_line_t(this->lv_y),
                 overlay_line)) {
-                this->mvwattrline(this->lv_window, y, 0, overlay_line, lr);
+                this->mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
                 overlay_line.clear();
             }
             ++y;

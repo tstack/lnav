@@ -280,6 +280,15 @@ public:
     };
     unsigned int get_y() const { return this->lv_y; };
 
+    void set_x(unsigned int x)
+    {
+        if (x != this->lv_x) {
+            this->lv_x            = x;
+            this->lv_needs_update = true;
+        }
+    };
+    unsigned int get_x() const { return this->lv_x; };
+
     /**
      * Set the line number to be displayed at the top of the view.  If the
      * value is invalid, flash() will be called.  If the value is valid, the
@@ -460,7 +469,11 @@ public:
 
         if (this->lv_window == NULL) {
             height_out = std::max(this->lv_height, vis_line_t(1));
-            width_out = 80;
+            if (this->lv_source) {
+                width_out = this->lv_source->listview_width(*this);
+            } else {
+                width_out = 80;
+            }
         }
         else {
             getmaxyx(this->lv_window, height, width_out);
@@ -473,6 +486,7 @@ public:
                 height_out = this->lv_height;
             }
         }
+        width_out -= this->lv_x;
     };
 
     /** This method should be called when the data source has changed. */
@@ -520,6 +534,7 @@ protected:
     list_overlay_source *lv_overlay_source;
     action       lv_scroll;         /*< The scroll action. */
     WINDOW *     lv_window;         /*< The window that contains this view. */
+    unsigned int lv_x;
     unsigned int lv_y;              /*< The y offset of this view. */
     vis_line_t   lv_top;            /*< The line at the top of the view. */
     unsigned int lv_left;           /*< The column at the left of the view. */

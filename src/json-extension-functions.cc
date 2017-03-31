@@ -393,19 +393,19 @@ static void sql_json_group_array_final(sqlite3_context *context)
     }
 }
 
-int json_extension_functions(const struct FuncDef **basic_funcs,
-                             const struct FuncDefAgg **agg_funcs)
+int json_extension_functions(struct FuncDef **basic_funcs,
+                             struct FuncDefAgg **agg_funcs)
 {
-    static const struct FuncDef json_funcs[] = {
-        { "jget",  -1, 0, SQLITE_UTF8, 0, sql_jget },
+    static struct FuncDef json_funcs[] = {
+        { "jget", -1, SQLITE_UTF8, 0, sql_jget },
 
         { NULL }
     };
 
-    static const struct FuncDefAgg json_agg_funcs[] = {
-            { "json_group_object", -1, 0, 0,
+    static struct FuncDefAgg json_agg_funcs[] = {
+            { "json_group_object", -1, 0,
                     sql_json_group_object_step, sql_json_group_object_final, },
-            { "json_group_array", -1, 0, 0,
+            { "json_group_array", -1, 0,
                     sql_json_group_array_step, sql_json_group_array_final, },
 
             { NULL }

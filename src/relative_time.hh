@@ -132,6 +132,17 @@ public:
         return this->parse(str.c_str(), str.length(), pe_out);
     }
 
+    relative_time &add_now() {
+        struct exttm tm;
+        time_t now;
+
+        time(&now);
+        tm.et_tm = *gmtime(&now);
+        this->add(tm);
+
+        return *this;
+    };
+
     void add(struct exttm &tm) {
         if (this->rt_is_absolute[RTF_MICROSECONDS]) {
             tm.et_nsec = this->rt_field[RTF_MICROSECONDS] * 1000;

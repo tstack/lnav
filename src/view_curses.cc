@@ -39,11 +39,12 @@
 #include "view_curses.hh"
 #include "ansi_scrubber.hh"
 #include "lnav_config.hh"
+#include "attr_line.hh"
 
 using namespace std;
 
-string_attr_type view_curses::VC_STYLE;
-string_attr_type view_curses::VC_GRAPHIC;
+string_attr_type view_curses::VC_STYLE("style");
+string_attr_type view_curses::VC_GRAPHIC("graphic");
 
 const struct itimerval ui_periodic_timer::INTERVAL = {
     { 0, 350 * 1000 },
@@ -108,7 +109,12 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
     for (auto &sa : al.al_attrs) {
         this->al_attrs.emplace_back(sa);
 
-        this->al_attrs.back().sa_range.shift(0, start_len);
+        line_range &lr = this->al_attrs.back().sa_range;
+
+        lr.shift(0, start_len);
+        if (lr.lr_end == -1) {
+            lr.lr_end = this->al_string.length();
+        }
     }
 
     if (tws != nullptr && this->al_string.length() > tws->tws_width) {
@@ -128,27 +134,40 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
         while (start_pos < this->al_string.length()) {
             ssize_t lpc;
 
+            // Find the end of a word or a breakpoint.
             for (lpc = start_pos;
                  lpc < this->al_string.length() &&
                  (isalnum(this->al_string[lpc]) ||
                   this->al_string[lpc] == ',' ||
+                  this->al_string[lpc] == '_' ||
+                  this->al_string[lpc] == '.' ||
                   this->al_string[lpc] == ';');
                  lpc++) {
-                if (this->al_string[lpc] == '-') {
+                if (this->al_string[lpc] == '-' ||
+                    this->al_string[lpc] == '.') {
                     lpc += 1;
                     break;
                 }
             }
 
-            if (avail != usable_width && lpc - start_pos > avail) {
+            if (lpc - start_pos > avail) {
+                // Need to wrap the word.  Do the wrap.
                 this->insert(start_pos, 1, '\n')
                     .insert(start_pos + 1, tws->tws_indent, ' ');
                 start_pos += 1 + tws->tws_indent;
                 avail = tws->tws_width - tws->tws_indent;
             } else {
+                // There's still room to add stuff.
                 avail -= (lpc - start_pos);
                 while (lpc < this->al_string.length() && avail) {
-                    if (isalnum(this->al_string[lpc])) {
+                    if (this->al_string[lpc] == '\n') {
+                        this->insert(lpc + 1, tws->tws_indent, ' ');
+                        avail = usable_width;
+                        lpc += 1 + tws->tws_indent;
+                        break;
+                    }
+                    if (isalnum(this->al_string[lpc]) ||
+                        this->al_string[lpc] == '_') {
                         break;
                     }
                     avail -= 1;
@@ -160,6 +179,16 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
                         .insert(start_pos + 1, tws->tws_indent, ' ');
                     start_pos += 1 + tws->tws_indent;
                     avail = usable_width;
+
+                    for (lpc = start_pos;
+                         lpc < this->al_string.length() &&
+                         this->al_string[lpc] == ' ';
+                         lpc++) {
+                    }
+
+                    if (lpc != start_pos) {
+                        this->erase(start_pos, (lpc - start_pos));
+                    }
                 }
             }
         }
@@ -347,7 +376,7 @@ void view_curses::mvwattrline(WINDOW *window,
         for (int lpc2 = graphic_range[lpc].lr_start;
              lpc2 < graphic_range[lpc].lr_end;
              lpc2++) {
-            mvwaddch(window, y, lpc2, graphic_in[lpc]);
+            mvwaddch(window, y, x + lpc2, graphic_in[lpc]);
         }
     }
 }
@@ -462,7 +491,7 @@ void view_colors::init_roles(void)
     this->vc_role_colors[VCR_BOLD_STATUS] =
         ansi_color_pair(COLOR_BLACK, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_VIEW_STATUS] =
-        ansi_color_pair(COLOR_WHITE, COLOR_BLUE);
+        ansi_color_pair(COLOR_WHITE, COLOR_BLUE) | A_BOLD;
 
     this->vc_role_colors[VCR_KEYWORD] = ansi_color_pair(COLOR_BLUE, COLOR_BLACK);
     this->vc_role_colors[VCR_STRING] = ansi_color_pair(COLOR_GREEN, COLOR_BLACK) | A_BOLD;

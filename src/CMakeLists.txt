@@ -47,7 +47,7 @@ set(diag_STAT_SRCS
     sequence_matcher.cc
     shared_buffer.cc
     shlex.cc
-        sqlite-extension-func.cc
+    sqlite-extension-func.cc
     statusview_curses.cc
     string-extension-functions.cc
     sysclip.cc

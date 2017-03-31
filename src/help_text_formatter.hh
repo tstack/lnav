@@ -39,6 +39,7 @@ enum help_context_t {
     HC_NONE,
     HC_PARAMETER,
     HC_COMMAND,
+    HC_SQL_KEYWORD,
     HC_SQL_FUNCTION,
 };
 
@@ -60,13 +61,14 @@ enum help_parameter_format_t {
 
 struct help_example {
     const char *he_cmd;
-    const char *he_result;
+    attr_line_t he_result;
 };
 
 struct help_text {
     help_context_t ht_context;
     const char *ht_name;
     const char *ht_summary;
+    const char *ht_flag_name;
     const char *ht_description;
     std::vector<struct help_text> ht_parameters;
     std::vector<struct help_example> ht_example;
@@ -82,6 +84,7 @@ struct help_text {
         : ht_context(HC_NONE),
           ht_name(name),
           ht_summary(summary),
+          ht_flag_name(nullptr),
           ht_description(nullptr),
           ht_nargs(HN_REQUIRED),
           ht_format(HPF_STRING) {
@@ -96,10 +99,25 @@ struct help_text {
         return *this;
     };
 
+    help_text &sql_function() {
+        this->ht_context = HC_SQL_FUNCTION;
+        return *this;
+    };
+
+    help_text &sql_keyword() {
+        this->ht_context = HC_SQL_KEYWORD;
+        return *this;
+    };
+
     help_text &with_summary(const char *summary) {
         this->ht_summary = summary;
         return *this;
     };
+
+    help_text &with_flag_name(const char *flag) {
+        this->ht_flag_name = flag;
+        return *this;
+    }
 
     help_text &with_parameters(const std::initializer_list<help_text> &params) {
         this->ht_parameters = params;
@@ -152,5 +170,6 @@ struct help_text {
 };
 
 void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out);
+void format_example_text_for_term(const help_text &ht, int width, attr_line_t &out);
 
 #endif //LNAV_HELP_TEXT_FORMATTER_HH

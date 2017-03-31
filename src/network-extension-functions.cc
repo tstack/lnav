@@ -45,31 +45,25 @@
 #include "sqlite3.h"
 
 #include "auto_mem.hh"
+#include "vtab_module.hh"
 #include "sqlite-extension-func.hh"
 
-static void sql_gethostbyname(sqlite3_context *context,
-                              int argc, sqlite3_value **argv)
+using namespace std;
+
+static string sql_gethostbyname(const char *name_in)
 {
     char             buffer[INET6_ADDRSTRLEN];
-    const char *     name_in;
     auto_mem<struct addrinfo> ai(freeaddrinfo);
+    struct addrinfo hints = { 0 };
     void *           addr_ptr = NULL;
     int rc;
 
-    assert(argc >= 1 && argc <= 2);
-
-    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
-        sqlite3_result_null(context);
-        return;
-    }
-
-    name_in = (const char *)sqlite3_value_text(argv[0]);
-    while ((rc = getaddrinfo(name_in, NULL, NULL, ai.out())) == EAI_AGAIN) {
+    hints.ai_flags = AI_DEFAULT;
+    while ((rc = getaddrinfo(name_in, NULL, &hints, ai.out())) == EAI_AGAIN) {
         sqlite3_sleep(10);
     }
     if (rc != 0) {
-        sqlite3_result_text(context, name_in, -1, SQLITE_TRANSIENT);
-        return;
+        return name_in;
     }
 
     switch (ai.in()->ai_family) {
@@ -82,36 +76,24 @@ static void sql_gethostbyname(sqlite3_context *context,
         break;
 
     default:
-        sqlite3_result_error(context, "unknown address family", -1);
-        return;
+        return name_in;
     }
 
     inet_ntop(ai.in()->ai_family, addr_ptr, buffer, sizeof(buffer));
 
-    sqlite3_result_text(context, buffer, -1, SQLITE_TRANSIENT);
+    return buffer;
 }
 
-static void sql_gethostbyaddr(sqlite3_context *context,
-                              int argc, sqlite3_value **argv)
+static string sql_gethostbyaddr(const char *addr_str)
 {
     union {
         struct sockaddr_in  sin;
         struct sockaddr_in6 sin6;
     }           sa;
-    const char *addr_str;
     char        buffer[NI_MAXHOST];
     int         family, socklen;
     char *      addr_raw;
     int         rc;
-
-    assert(argc == 1);
-
-    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
-        sqlite3_result_null(context);
-        return;
-    }
-
-    addr_str = (const char *)sqlite3_value_text(argv[0]);
 
     memset(&sa, 0, sizeof(sa));
     if (strchr(addr_str, ':')) {
@@ -128,8 +110,7 @@ static void sql_gethostbyaddr(sqlite3_context *context,
     }
 
     if (inet_pton(family, addr_str, addr_raw) != 1) {
-        sqlite3_result_text(context, addr_str, -1, SQLITE_TRANSIENT);
-        return;
+        return addr_str;
     }
 
     while ((rc = getnameinfo((struct sockaddr *)&sa, socklen,
@@ -139,19 +120,31 @@ static void sql_gethostbyaddr(sqlite3_context *context,
     }
 
     if (rc != 0) {
-        sqlite3_result_text(context, addr_str, -1, SQLITE_TRANSIENT);
-        return;
+        return addr_str;
     }
 
-    sqlite3_result_text(context, buffer, -1, SQLITE_TRANSIENT);
+    return buffer;
 }
 
-int network_extension_functions(const struct FuncDef **basic_funcs,
-                                const struct FuncDefAgg **agg_funcs)
+int network_extension_functions(struct FuncDef **basic_funcs,
+                                struct FuncDefAgg **agg_funcs)
 {
-    static const struct FuncDef network_funcs[] = {
-        { "gethostbyname", 1, 0, SQLITE_UTF8, 0, sql_gethostbyname },
-        { "gethostbyaddr", 1, 0, SQLITE_UTF8, 0, sql_gethostbyaddr },
+    static struct FuncDef network_funcs[] = {
+        sqlite_func_adapter<decltype(&sql_gethostbyname), sql_gethostbyname>::builder(
+            help_text("gethostbyname",
+                      "Get the IP address for the given hostname")
+                .sql_function()
+                .with_parameter({"hostname", "The DNS hostname to lookup."})
+                .with_example({"SELECT gethostbyname('localhost')"})
+        ),
+
+        sqlite_func_adapter<decltype(&sql_gethostbyaddr), sql_gethostbyaddr>::builder(
+            help_text("gethostbyaddr",
+                      "Get the IP address for the given hostname")
+                .sql_function()
+                .with_parameter({"hostname", "The DNS hostname to lookup."})
+                .with_example({"SELECT gethostbyaddr('127.0.0.1')"})
+        ),
 
         { NULL }
     };

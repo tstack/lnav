@@ -32,7 +32,6 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -41,36 +40,39 @@
 #include "sqlite3.h"
 
 #include "lnav.hh"
-#include "lnav_log.hh"
 #include "sql_util.hh"
-#include "sqlite-extension-func.hh"
+#include "vtab_module.hh"
 
-static void sql_log_top_line(sqlite3_context *context,
-                             int argc, sqlite3_value **argv)
+static int64_t sql_log_top_line()
 {
-    sqlite3_result_int64(context,
-                         (int64_t)lnav_data.ld_views[LNV_LOG].get_top());
+    return (int64_t) lnav_data.ld_views[LNV_LOG].get_top();
 }
 
-static void sql_log_top_datetime(sqlite3_context *context,
-                                 int argc, sqlite3_value **argv)
+static std::string sql_log_top_datetime()
 {
     char buffer[64];
-
-    require(argc == 0);
 
     sql_strftime(buffer, sizeof(buffer),
                  lnav_data.ld_top_time,
                  lnav_data.ld_top_time_millis);
-    sqlite3_result_text(context, buffer, strlen(buffer), SQLITE_TRANSIENT);
+    return buffer;
 }
 
-int state_extension_functions(const struct FuncDef **basic_funcs,
-                              const struct FuncDefAgg **agg_funcs)
+int state_extension_functions(struct FuncDef **basic_funcs,
+                              struct FuncDefAgg **agg_funcs)
 {
-    static const struct FuncDef datetime_funcs[] = {
-        { "log_top_line", 0, 0, SQLITE_UTF8, 0, sql_log_top_line },
-        { "log_top_datetime", 0, 0, SQLITE_UTF8, 0, sql_log_top_datetime },
+    static struct FuncDef datetime_funcs[] = {
+        sqlite_func_adapter<decltype(&sql_log_top_line), sql_log_top_line>::builder(
+            help_text("log_top_line",
+                      "Return the line number at the top of the log view.")
+                .sql_function()
+        ),
+
+        sqlite_func_adapter<decltype(&sql_log_top_datetime), sql_log_top_datetime>::builder(
+            help_text("log_top_datetime",
+                      "Return the timestamp of the line at the top of the log view.")
+                .sql_function()
+        ),
 
         { NULL }
     };
