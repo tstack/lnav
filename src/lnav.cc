@@ -470,7 +470,7 @@ void rebuild_hist(size_t old_count, bool force)
     int zoom = lnav_data.ld_zoom_level;
 
     hs.set_time_slice(ZOOM_LEVELS[zoom]);
-    lss.text_filters_changed();
+    lss.reload_index_delegate();
 }
 
 class textfile_callback {

@@ -976,7 +976,6 @@ void handle_paging_key(int ch)
 
         case 'i':
             if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
-                lss->text_filters_changed();
                 lnav_data.ld_rl_view->set_alt_value(
                         HELP_MSG_2(z, Z, "to zoom in/out"));
             }
@@ -991,7 +990,6 @@ void handle_paging_key(int ch)
             hist_source2 &hs = lnav_data.ld_hist_source2;
 
             if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
-                lss->text_filters_changed();
                 tc = lnav_data.ld_view_stack.back();
                 tc->set_top(vis_line_t(hs.row_for_time(log_top)));
             }

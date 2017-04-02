@@ -445,11 +445,31 @@ public:
     };
 
     void set_index_delegate(index_delegate *id) {
-        this->lss_index_delegate = id;
+        if (id != this->lss_index_delegate) {
+            this->lss_index_delegate = id;
+            this->reload_index_delegate();
+        }
     };
 
     index_delegate *get_index_delegate() const {
         return this->lss_index_delegate;
+    };
+
+    void reload_index_delegate() {
+        if (this->lss_index_delegate == nullptr) {
+            return;
+        }
+
+        this->lss_index_delegate->index_start(*this);
+        for (size_t index = 0; index < this->lss_filtered_index.size(); index++) {
+            content_line_t cl = (content_line_t) this->lss_index[this->lss_filtered_index[index]];
+            uint64_t line_number;
+            logfile_data *ld = this->find_data(cl, line_number);
+            logfile *lf = ld->get_file();
+
+            this->lss_index_delegate->index_line(*this, lf, lf->begin() + line_number);
+        }
+        this->lss_index_delegate->index_complete(*this);
     };
 
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
