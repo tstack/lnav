@@ -186,6 +186,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                 .append("\n");
             break;
         }
+        default:
+            break;
     }
 
     if (!ht.ht_parameters.empty()) {
@@ -260,6 +262,8 @@ void format_example_text_for_term(const help_text &ht, int width, attr_line_t &o
                 case HC_SQL_FUNCTION:
                     readline_sqlite_highlighter(ex_line, 0);
                     prompt = ";";
+                    break;
+                default:
                     break;
             }
 

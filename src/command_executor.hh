@@ -48,7 +48,9 @@ struct exec_context {
     exec_context(std::vector<logline_value> *line_values = NULL,
                  sql_callback_t sql_callback = NULL,
                  pipe_callback_t pipe_callback = NULL)
-        : ec_line_values(line_values),
+        : ec_top_line(vis_line_t(0)),
+          ec_dry_run(false),
+          ec_line_values(line_values),
           ec_sql_callback(sql_callback),
           ec_pipe_callback(pipe_callback) {
         this->ec_local_vars.push(std::map<std::string, std::string>());
@@ -56,6 +58,7 @@ struct exec_context {
     }
 
     vis_line_t ec_top_line;
+    bool ec_dry_run;
 
     std::map<std::string, std::string> ec_override;
     std::vector<logline_value> *ec_line_values;

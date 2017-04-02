@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include <glob.h>
 #include <sys/stat.h>
 
 #include <string>
@@ -149,12 +150,24 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
         args[1] = remaining_args(cmdline, args);
         if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
             timersub(&new_time, &top_time, &time_diff);
-            
-            lf->adjust_content_time(top_content, time_diff, false);
 
-            rebuild_indexes(true);
+            if (ec.ec_dry_run) {
+                char buffer[1024];
 
-            retval = "info: adjusted time";
+                snprintf(buffer, sizeof(buffer),
+                         "info: log timestamps will be adjusted by %ld.%06d seconds",
+                         time_diff.tv_sec, time_diff.tv_usec);
+
+                retval = buffer;
+            } else {
+                lf->adjust_content_time(top_content, time_diff, false);
+
+                rebuild_indexes(true);
+
+                retval = "info: adjusted time";
+            }
+        } else {
+            retval = "error: could not parse timestamp";
         }
     }
 
@@ -276,11 +289,16 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                 tv.tv_usec = tm.et_nsec / 1000;
 
                 vl = lnav_data.ld_log_source.find_from_time(tv);
-                tc->set_top(vl);
-                retval = "";
-                if (!rt.is_absolute() && lnav_data.ld_rl_view != NULL) {
-                    lnav_data.ld_rl_view->set_alt_value(
-                            HELP_MSG_2(r, R, "to move forward/backward the same amount of time"));
+                if (ec.ec_dry_run) {
+                    retval = "info: will move to line " + to_string((int) vl);
+                } else {
+                    tc->set_top(vl);
+                    retval = "";
+                    if (!rt.is_absolute() && lnav_data.ld_rl_view != NULL) {
+                        lnav_data.ld_rl_view->set_alt_value(
+                            HELP_MSG_2(r, R,
+                                       "to move forward/backward the same amount of time"));
+                    }
                 }
             } else {
                 retval = "error: relative time values only work in the log view";
@@ -291,8 +309,12 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                 vis_line_t vl;
 
                 vl = lnav_data.ld_log_source.find_from_time(tv);
-                tc->set_top(vl);
-                retval = "";
+                if (ec.ec_dry_run) {
+                    retval = "info: will move to line " + to_string((int) vl);
+                } else {
+                    tc->set_top(vl);
+                    retval = "";
+                }
             }
             else {
                 retval = "error: time values only work in the log view";
@@ -310,9 +332,13 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                     line_number = tc->get_inner_height() + line_number;
                 }
             }
-            tc->set_top(vis_line_t(line_number));
+            if (ec.ec_dry_run) {
+                retval = "info: will move to line " + to_string(line_number);
+            } else {
+                tc->set_top(vis_line_t(line_number));
 
-            retval = "";
+                retval = "";
+            }
         }
     }
 
@@ -339,9 +365,14 @@ static string com_relative_goto(exec_context &ec, string cmdline, vector<string>
             else {
                 line_offset = (int)value;
             }
-            tc->shift_top(vis_line_t(line_offset), true);
 
-            retval = "";
+            if (ec.ec_dry_run) {
+                retval = "info: shifting top by " + to_string(line_offset) + " lines";
+            } else {
+                tc->shift_top(vis_line_t(line_offset), true);
+
+                retval = "";
+            }
         }
     }
 
@@ -354,7 +385,7 @@ static string com_mark(exec_context &ec, string cmdline, vector<string> &args)
 
     if (args.empty() || lnav_data.ld_view_stack.empty()) {
 
-    } else {
+    } else if (!ec.ec_dry_run) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
         lnav_data.ld_last_user_mark[tc] = tc->get_top();
         tc->toggle_user_mark(&textview_curses::BM_USER,
@@ -384,7 +415,7 @@ static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &ar
         if (bt == NULL) {
             retval = "error: unknown bookmark type";
         }
-        else {
+        else if (!ec.ec_dry_run) {
             if (args[0] == "next-mark") {
                 moveto_cluster(&bookmark_vector<vis_line_t>::next,
                                bt,
@@ -505,7 +536,6 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         mode = "w";
     }
 
-
     textview_curses *            tc = lnav_data.ld_view_stack.back();
     bookmark_vector<vis_line_t> &bv =
         tc->get_bookmarks()[&textview_curses::BM_USER];
@@ -526,7 +556,11 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         }
     }
 
-    if (split_args[0] == "-") {
+    if (ec.ec_dry_run) {
+        outfile = tmpfile();
+        toclose = outfile;
+    }
+    else if (split_args[0] == "-") {
         if (lnav_data.ld_output_stack.empty()) {
             outfile = stdout;
             nodelay(lnav_data.ld_window, 0);
@@ -576,6 +610,11 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         for (row_iter = dls.dls_rows.begin();
              row_iter != dls.dls_rows.end();
              ++row_iter) {
+            if (ec.ec_dry_run &&
+                distance(dls.dls_rows.begin(), row_iter) > 10) {
+                break;
+            }
+
             first = true;
             for (iter = row_iter->begin();
                  iter != row_iter->end();
@@ -596,6 +635,10 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         fputs(header_line.get_string().c_str(), outfile);
         fputc('\n', outfile);
         for (size_t lpc = 0; lpc < dls.text_line_count(); lpc++) {
+            if (ec.ec_dry_run && lpc > 10) {
+                break;
+            }
+
             string line;
 
             dls.text_value_for_line(lnav_data.ld_views[LNV_DB], lpc, line, true);
@@ -621,6 +664,10 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
                 yajlpp_array root_array(handle);
 
                 for (size_t row = 0; row < dls.dls_rows.size(); row++) {
+                    if (ec.ec_dry_run && row > 10) {
+                        break;
+                    }
+
                     json_write_row(handle, row);
                 }
             }
@@ -633,6 +680,11 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         for (row_iter = dls.dls_rows.begin();
              row_iter != dls.dls_rows.end();
              ++row_iter) {
+            if (ec.ec_dry_run &&
+                distance(dls.dls_rows.begin(), row_iter) > 10) {
+                break;
+            }
+
             for (iter = row_iter->begin();
                  iter != row_iter->end();
                  ++iter) {
@@ -643,9 +695,13 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
     }
     else {
         bookmark_vector<vis_line_t>::iterator iter;
+        size_t count = 0;
         string line;
 
-        for (iter = bv.begin(); iter != bv.end(); iter++) {
+        for (iter = bv.begin(); iter != bv.end(); iter++, count++) {
+            if (ec.ec_dry_run && count > 10) {
+                break;
+            }
             tc->grep_value_for_line(*iter, line);
             fprintf(outfile, "%s\n", line.c_str());
         }
@@ -658,6 +714,21 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         getch();
         refresh();
         nodelay(lnav_data.ld_window, 1);
+    }
+    if (ec.ec_dry_run) {
+        rewind(outfile);
+
+        char buffer[32 * 1024];
+        size_t rc = fread(buffer, 1, sizeof(buffer), outfile);
+
+        attr_line_t al(string(buffer, rc));
+
+        lnav_data.ld_preview_source
+                 .replace_with(al)
+                 .set_text_format(detect_text_format(buffer, rc))
+                 .truncate_to(10);
+        lnav_data.ld_preview_status_source.get_description()
+                 .set_value("First lines of file: %s", fn.c_str());
     }
     if (toclose != NULL) {
         fclose(toclose);
@@ -682,6 +753,10 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
 
     if (args.size() < 2) {
         return retval;
+    }
+
+    if (ec.ec_dry_run) {
+        return "";
     }
 
     textview_curses *            tc = lnav_data.ld_view_stack.back();
@@ -828,7 +903,7 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
         textview_curses *tc = lnav_data.ld_view_stack.back();
         textview_curses::highlight_map_t &hm = tc->get_highlights();
         const char *errptr;
-        pcre *      code;
+        auto_mem<pcre> code;
         int         eoff;
 
         args[1] = remaining_args(cmdline, args);
@@ -842,8 +917,11 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
                                       NULL)) == NULL) {
             retval = "error: " + string(errptr);
         }
+        else if (ec.ec_dry_run) {
+            retval = "";
+        }
         else {
-            textview_curses::highlighter hl(code);
+            textview_curses::highlighter hl(code.release());
 
             hl.with_attrs(view_colors::singleton().attrs_for_ident(args[1]));
 
@@ -879,6 +957,9 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
         if (hm_iter == hm.end()) {
             retval = "error: highlight does not exist";
         }
+        else if (ec.ec_dry_run) {
+            retval = "";
+        }
         else {
             hm.erase(hm_iter);
             retval = "info: highlight pattern cleared";
@@ -894,7 +975,7 @@ static string com_help(exec_context &ec, string cmdline, vector<string> &args)
     string retval = "";
 
     if (args.size() == 0) {}
-    else {
+    else if (!ec.ec_dry_run) {
         ensure_view(&lnav_data.ld_views[LNV_HELP]);
     }
 
@@ -942,7 +1023,7 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
         const char *errptr;
-        pcre *      code;
+        auto_mem<pcre> code;
         int         eoff;
 
         args[1] = remaining_args(cmdline, args);
@@ -960,11 +1041,14 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
                                       NULL)) == NULL) {
             retval = "error: " + string(errptr);
         }
+        else if (ec.ec_dry_run) {
+            retval = "";
+        }
         else {
             text_filter::type_t lt  = (args[0] == "filter-out") ?
                                          text_filter::EXCLUDE :
                                          text_filter::INCLUDE;
-            auto pf = make_shared<pcre_filter>(lt, args[1], fs.next_index(), code);
+            auto pf = make_shared<pcre_filter>(lt, args[1], fs.next_index(), code.release());
 
             log_debug("%s [%d] %s", args[0].c_str(), pf->get_index(), args[1].c_str());
             fs.add_filter(pf);
@@ -1029,6 +1113,9 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
         else if (lf->is_enabled()) {
             retval = "info: filter already enabled";
         }
+        else if (ec.ec_dry_run) {
+            retval = "";
+        }
         else {
             fs.set_filter_enabled(lf, true);
             tss->text_filters_changed();
@@ -1061,6 +1148,9 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
         else if (!lf->is_enabled()) {
             retval = "info: filter already disabled";
         }
+        else if (ec.ec_dry_run) {
+            retval = "";
+        }
         else {
             fs.set_filter_enabled(lf, false);
             tss->text_filters_changed();
@@ -1079,7 +1169,7 @@ static string com_enable_word_wrap(exec_context &ec, string cmdline, vector<stri
     if (args.size() == 0) {
 
     }
-    else {
+    else if (!ec.ec_dry_run) {
         lnav_data.ld_views[LNV_LOG].set_word_wrap(true);
         lnav_data.ld_views[LNV_TEXT].set_word_wrap(true);
         lnav_data.ld_views[LNV_PRETTY].set_word_wrap(true);
@@ -1095,7 +1185,7 @@ static string com_disable_word_wrap(exec_context &ec, string cmdline, vector<str
     if (args.size() == 0) {
 
     }
-    else {
+    else if (!ec.ec_dry_run) {
         lnav_data.ld_views[LNV_LOG].set_word_wrap(false);
         lnav_data.ld_views[LNV_TEXT].set_word_wrap(false);
         lnav_data.ld_views[LNV_PRETTY].set_word_wrap(false);
@@ -1121,21 +1211,35 @@ static string com_create_logline_table(exec_context &ec, string cmdline, vector<
             vis_line_t      vl  = log_view.get_top();
             content_line_t  cl  = lnav_data.ld_log_source.at_base(vl);
             log_data_table *ldt = new log_data_table(cl, intern_string::lookup(args[1]));
-            string          errmsg;
 
-            errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
-            if (errmsg.empty()) {
-                custom_logline_tables.insert(args[1]);
-                if (lnav_data.ld_rl_view != NULL) {
-                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
-                      "custom-table",
-                      args[1]);
-                }
-                retval = "info: created new log table -- " + args[1];
+            if (ec.ec_dry_run) {
+                attr_line_t al(ldt->get_table_statement());
+
+                lnav_data.ld_preview_status_source.get_description()
+                    .set_value("The following table will be created:");
+                lnav_data.ld_preview_source.replace_with(al)
+                         .set_text_format(TF_SQL);
+
+                delete ldt;
+
+                return "";
             }
             else {
-                delete ldt;
-                retval = "error: unable to create table -- " + errmsg;
+                string errmsg;
+
+                errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
+                if (errmsg.empty()) {
+                    custom_logline_tables.insert(args[1]);
+                    if (lnav_data.ld_rl_view != NULL) {
+                        lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                              "custom-table",
+                                                              args[1]);
+                    }
+                    retval = "info: created new log table -- " + args[1];
+                } else {
+                    delete ldt;
+                    retval = "error: unable to create table -- " + errmsg;
+                }
             }
         }
     }
@@ -1153,6 +1257,10 @@ static string com_delete_logline_table(exec_context &ec, string cmdline, vector<
     else if (args.size() == 2) {
         if (custom_logline_tables.find(args[1]) == custom_logline_tables.end()) {
             return "error: unknown logline table -- " + args[1];
+        }
+
+        if (ec.ec_dry_run) {
+            return "";
         }
 
         string rc = lnav_data.ld_vtab_manager->unregister_vtab(
@@ -1201,7 +1309,19 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
             return "error: unable to compile regex -- " + regex;
         }
 
-        string          errmsg;
+        if (ec.ec_dry_run) {
+            attr_line_t al(lst->get_table_statement());
+
+            lnav_data.ld_preview_status_source.get_description()
+                     .set_value("The following table will be created:");
+
+            lnav_data.ld_preview_source.replace_with(al)
+                .set_text_format(TF_SQL);
+
+            return "";
+        }
+
+        string errmsg;
 
         errmsg = lnav_data.ld_vtab_manager->register_vtab(lst);
         if (errmsg.empty()) {
@@ -1234,6 +1354,10 @@ static string com_delete_search_table(exec_context &ec, string cmdline, vector<s
             return "error: unknown search table -- " + args[1];
         }
 
+        if (ec.ec_dry_run) {
+            return "";
+        }
+
         string rc = lnav_data.ld_vtab_manager->unregister_vtab(
                 intern_string::lookup(args[1]));
 
@@ -1258,6 +1382,9 @@ static string com_session(exec_context &ec, string cmdline, vector<string> &args
     string retval = "error: expecting a command to save to the session file";
 
     if (args.size() == 0) {}
+    else if (ec.ec_dry_run) {
+        retval = "";
+    }
     else if (args.size() >= 2) {
         /* XXX put these in a map */
         if (args[1] != "highlight" &&
@@ -1336,7 +1463,6 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
 
     vector<string> word_exp;
     size_t colon_index;
-    int top = 0;
     string pat;
 
     pat = trim(remaining_args(cmdline, args));
@@ -1352,13 +1478,20 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
         return "error: unable to parse arguments";
     }
 
+    map<string, logfile_open_options> file_names;
+    vector<pair<string, int>> files_to_front;
+    vector<string> closed_files;
+
     for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
         string fn = split_args[lpc];
+        int top = 0;
 
         if (startswith(fn, "pt:")) {
-            lnav_data.ld_pt_search = fn;
+            if (!ec.ec_dry_run) {
+                lnav_data.ld_pt_search = fn;
 
-            refresh_pt_search();
+                refresh_pt_search();
+            }
             continue;
         }
 
@@ -1379,7 +1512,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                     break;
                 }
                 else {
-                    lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
+                    files_to_front.push_back(make_pair(fn, top));
                     retval = "";
                     break;
                 }
@@ -1394,18 +1527,21 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
 #ifndef HAVE_LIBCURL
                 retval = "error: lnav was not compiled with libcurl";
 #else
-                auto_ptr<url_loader> ul(new url_loader(fn));
+                if (!ec.ec_dry_run) {
+                    auto_ptr<url_loader> ul(new url_loader(fn));
 
-                lnav_data.ld_file_names[fn]
-                    .with_fd(ul->copy_fd());
-                lnav_data.ld_curl_looper.add_request(ul.release());
-                lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
-
-                retval = "info: opened URL";
+                    lnav_data.ld_file_names[fn]
+                        .with_fd(ul->copy_fd());
+                    lnav_data.ld_curl_looper.add_request(ul.release());
+                    lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
+                    retval = "info: opened URL";
+                } else {
+                    retval = "";
+                }
 #endif
             }
             else if (is_glob(fn.c_str())) {
-                lnav_data.ld_file_names[fn] = default_loo;
+                file_names[fn] = default_loo;
                 retval = "info: watching -- " + fn;
             }
             else if (stat(fn.c_str(), &st) == -1) {
@@ -1418,6 +1554,8 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                 if ((fifo_fd = open(fn.c_str(), O_RDONLY)) == -1) {
                     retval = "error: cannot open FIFO: " + fn + " -- "
                         + strerror(errno);
+                } else if (ec.ec_dry_run) {
+                    retval = "";
                 } else {
                     auto fifo_piper = make_shared<piper_proc>(
                         fifo_fd.release(), false);
@@ -1441,7 +1579,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                 if (dir_wild[dir_wild.size() - 1] == '/') {
                     dir_wild.resize(dir_wild.size() - 1);
                 }
-                lnav_data.ld_file_names[dir_wild + "/*"] = default_loo;
+                file_names[dir_wild + "/*"] = default_loo;
                 retval = "info: watching -- " + dir_wild;
             }
             else if (!S_ISREG(st.st_mode)) {
@@ -1453,16 +1591,78 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
             }
             else {
                 fn = abspath.in();
-                lnav_data.ld_file_names[fn] = default_loo;
+                file_names[fn] = default_loo;
                 retval = "info: opened -- " + fn;
-                lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
+                files_to_front.push_back(make_pair(fn, top));
 
-                lnav_data.ld_closed_files.erase(fn);
+                closed_files.push_back(fn);
                 if (lnav_data.ld_rl_view != NULL) {
                     lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
                         X, "to close the file"));
                 }
             }
+        }
+    }
+
+    if (ec.ec_dry_run) {
+        lnav_data.ld_preview_source.clear();
+        if (!file_names.empty()) {
+            auto iter = file_names.begin();
+            string fn = iter->first;
+            auto_fd preview_fd;
+
+            if (is_glob(fn.c_str())) {
+                static_root_mem<glob_t, globfree> gl;
+
+                if (glob(fn.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+                    attr_line_t al;
+
+                    for (size_t lpc = 0; lpc < gl->gl_pathc && lpc < 10; lpc++) {
+                        al.append(gl->gl_pathv[lpc])
+                          .append("\n");
+                    }
+                    if (gl->gl_pathc > 10) {
+                        al.append(" ... ")
+                          .append(to_string(gl->gl_pathc - 10),
+                                  &view_curses::VC_STYLE,
+                                  A_BOLD)
+                          .append(" files not shown ...");
+                    }
+                    lnav_data.ld_preview_status_source.get_description()
+                        .set_value("The following files will be loaded:");
+                    lnav_data.ld_preview_source.replace_with(al);
+                } else {
+                    retval = "error: failed to evaluate glob -- " + fn;
+                }
+            }
+            else if ((preview_fd = open(fn.c_str(), O_RDONLY)) == -1) {
+                retval = "error: unable to open file: " + fn + " -- " +
+                         strerror(errno);
+            }
+            else {
+                char buffer[32 * 1024];
+                ssize_t rc;
+
+                rc = read(preview_fd, buffer, sizeof(buffer));
+
+                attr_line_t al(string(buffer, rc));
+
+                lnav_data.ld_preview_source
+                         .replace_with(al)
+                         .set_text_format(detect_text_format(buffer, rc))
+                         .truncate_to(10);
+                lnav_data.ld_preview_status_source.get_description()
+                    .set_value("For file: %s", fn.c_str());
+            }
+        }
+    } else {
+        lnav_data.ld_files_to_front.insert(
+            lnav_data.ld_files_to_front.end(),
+            files_to_front.begin(),
+            files_to_front.end());
+        lnav_data.ld_file_names.insert(file_names.begin(), file_names.end());
+        for (const auto &fn : closed_files) {
+            lnav_data.ld_closed_files.erase(fn);
         }
     }
 
@@ -1510,12 +1710,17 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
             }
         }
         if (!fn.empty()) {
-            if (is_url(fn.c_str())) {
-                lnav_data.ld_curl_looper.close_request(fn);
+            if (ec.ec_dry_run) {
+                retval = "";
             }
-            lnav_data.ld_file_names.erase(fn);
-            lnav_data.ld_closed_files.insert(fn);
-            retval = "info: closed -- " + fn;
+            else {
+                if (is_url(fn.c_str())) {
+                    lnav_data.ld_curl_looper.close_request(fn);
+                }
+                lnav_data.ld_file_names.erase(fn);
+                lnav_data.ld_closed_files.insert(fn);
+                retval = "info: closed -- " + fn;
+            }
         }
     }
 
@@ -1530,18 +1735,24 @@ static string com_partition_name(exec_context &ec, string cmdline, vector<string
         return "";
     }
     else if (args.size() > 1) {
-        textview_curses &tc = lnav_data.ld_views[LNV_LOG];
-        logfile_sub_source &lss = lnav_data.ld_log_source;
-        std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+        if (ec.ec_dry_run) {
+            retval = "";
+        }
+        else {
+            textview_curses &tc = lnav_data.ld_views[LNV_LOG];
+            logfile_sub_source &lss = lnav_data.ld_log_source;
+            std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
 
-        args[1] = trim(remaining_args(cmdline, args));
+            args[1] = trim(remaining_args(cmdline, args));
 
-        tc.set_user_mark(&textview_curses::BM_PARTITION, tc.get_top(), true);
+            tc.set_user_mark(&textview_curses::BM_PARTITION, tc.get_top(),
+                             true);
 
-        bookmark_metadata &line_meta = bm[lss.at(tc.get_top())];
+            bookmark_metadata &line_meta = bm[lss.at(tc.get_top())];
 
-        line_meta.bm_name = args[1];
-        retval = "info: name set for partition";
+            line_meta.bm_name = args[1];
+            retval = "info: name set for partition";
+        }
     }
 
     return retval;
@@ -1571,7 +1782,7 @@ static string com_clear_partition(exec_context &ec, string cmdline, vector<strin
         if (part_start == -1) {
             retval = "error: top line is not in a partition";
         }
-        else {
+        else if (!ec.ec_dry_run) {
             tc.set_user_mark(
                 &textview_curses::BM_PARTITION, part_start, false);
 
@@ -1633,7 +1844,10 @@ static string com_pt_time(exec_context &ec, string cmdline, vector<string> &args
         else {
             dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time);
         }
-        if (new_time.tv_sec != 0) {
+        if (ec.ec_dry_run) {
+            retval = "";
+        }
+        else if (new_time.tv_sec != 0) {
             if (args[0] == "pt-min-time") {
                 lnav_data.ld_pt_min_time = new_time.tv_sec;
                 retval = refresh_pt_search();
@@ -1707,6 +1921,10 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
                 return "error: " + string(errmsg);
             }
             break;
+        }
+
+        if (ec.ec_dry_run) {
+            return "";
         }
 
         for (int lpc = 0; lpc < sqlite3_column_count(stmt.in()); lpc++) {
@@ -1865,6 +2083,9 @@ static string com_add_test(exec_context &ec, string cmdline, vector<string> &arg
     else if (args.size() > 1) {
         retval = "error: not expecting any arguments";
     }
+    else if (ec.ec_dry_run) {
+
+    }
     else {
         textview_curses *tc = lnav_data.ld_view_stack.back();
 
@@ -1910,7 +2131,9 @@ static string com_switch_to_view(exec_context &ec, string cmdline, vector<string
 
         for (int lpc = 0; lnav_view_strings[lpc] && !found; lpc++) {
             if (strcasecmp(args[1].c_str(), lnav_view_strings[lpc]) == 0) {
-                ensure_view(&lnav_data.ld_views[lpc]);
+                if (!ec.ec_dry_run) {
+                    ensure_view(&lnav_data.ld_views[lpc]);
+                }
                 found = true;
             }
         }
@@ -1929,6 +2152,9 @@ static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args
 
     if (args.size() == 0) {
         args.push_back("zoomlevel");
+    }
+    else if (ec.ec_dry_run) {
+
     }
     else if (args.size() > 1) {
         bool found = false;
@@ -1984,7 +2210,7 @@ static string com_reset_session(exec_context &ec, string cmdline, vector<string>
     if (args.empty()) {
 
     }
-    else {
+    else if (!ec.ec_dry_run) {
         reset_session();
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
@@ -1997,7 +2223,7 @@ static string com_load_session(exec_context &ec, string cmdline, vector<string> 
     if (args.empty()) {
 
     }
-    else {
+    else if (!ec.ec_dry_run) {
         scan_sessions();
         load_session();
         lnav_data.ld_views[LNV_LOG].reload_data();
@@ -2011,7 +2237,7 @@ static string com_save_session(exec_context &ec, string cmdline, vector<string> 
     if (args.empty()) {
 
     }
-    else {
+    else if (!ec.ec_dry_run) {
         save_session();
     }
 
@@ -2024,6 +2250,9 @@ static string com_set_min_log_level(exec_context &ec, string cmdline, vector<str
 
     if (args.empty()) {
         args.push_back("levelname");
+    }
+    else if (ec.ec_dry_run) {
+        retval = "";
     }
     else if (args.size() == 2) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
@@ -2056,6 +2285,8 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
             retval = "error: hiding fields only works in the log view";
         } else if (tc->get_inner_height() == 0) {
             retval = "error: no log messages to hide";
+        } else if (ec.ec_dry_run) {
+            retval = "";
         } else {
             logfile_sub_source &lss = lnav_data.ld_log_source;
             content_line_t cl = lss.at(tc->get_top());
@@ -2184,7 +2415,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
             }
         }
 
-        if (tv_set) {
+        if (tv_set && !ec.ec_dry_run) {
             char time_text[256];
             string relation;
 
@@ -2210,7 +2441,10 @@ static string com_show_lines(exec_context &ec, string cmdline, vector<string> &a
 {
     string retval = "info: showing lines";
 
-    if (!args.empty()) {
+    if (ec.ec_dry_run) {
+        retval = "";
+    }
+    else if (!args.empty()) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
         textview_curses *tc = lnav_data.ld_view_stack.back();
 
@@ -2229,7 +2463,7 @@ static string com_rebuild(exec_context &ec, string cmdline, vector<string> &args
     if (args.empty()) {
 
     }
-    else {
+    else if (!ec.ec_dry_run) {
         rebuild_indexes(false);
     }
 
@@ -2241,7 +2475,7 @@ static string com_shexec(exec_context &ec, string cmdline, vector<string> &args)
     if (args.empty()) {
 
     }
-    else {
+    else if (!ec.ec_dry_run) {
         log_perror(system(cmdline.substr(args[0].size()).c_str()));
     }
 
@@ -2253,7 +2487,7 @@ static string com_poll_now(exec_context &ec, string cmdline, vector<string> &arg
     if (args.empty()) {
 
     }
-    else {
+    else if (!ec.ec_dry_run) {
         lnav_data.ld_curl_looper.process_all();
     }
 
@@ -2263,6 +2497,9 @@ static string com_poll_now(exec_context &ec, string cmdline, vector<string> &arg
 static string com_redraw(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
+
+    }
+    else if (ec.ec_dry_run) {
 
     }
     else if (lnav_data.ld_window) {
@@ -2294,7 +2531,14 @@ static string com_echo(exec_context &ec, string cmdline, vector<string> &args)
         else {
             retval = "";
         }
-        if (!lnav_data.ld_output_stack.empty()) {
+
+        if (ec.ec_dry_run) {
+            lnav_data.ld_preview_status_source.get_description()
+                .set_value("The text to output:");
+            lnav_data.ld_preview_source.replace_with(attr_line_t(retval));
+            retval = "";
+        }
+        else if (!lnav_data.ld_output_stack.empty()) {
             FILE *outfile = lnav_data.ld_output_stack.top();
 
             if (outfile == stdout) {
@@ -2318,6 +2562,9 @@ static string com_alt_msg(exec_context &ec, string cmdline, vector<string> &args
 
     if (args.empty()) {
 
+    }
+    else if (ec.ec_dry_run) {
+        retval = "";
     }
     else if (args.size() == 1) {
         if (lnav_data.ld_rl_view != NULL) {
@@ -2361,6 +2608,17 @@ static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
 
         if (expanded_cmd.empty()) {
             return "error: empty result after evaluation";
+        }
+
+        if (ec.ec_dry_run) {
+            attr_line_t al(expanded_cmd);
+
+            lnav_data.ld_preview_status_source.get_description()
+                .set_value("The command to be executed:");
+
+            lnav_data.ld_preview_source.replace_with(al);
+
+            return "";
         }
 
         string alt_msg;
@@ -2424,20 +2682,27 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
                 string value = remaining_args(cmdline, args, 2);
 
                 if (ypc.ypc_current_handler->jph_callbacks.yajl_string) {
-
-                    ypc.ypc_callbacks.yajl_string(
-                        &ypc, (const unsigned char *) value.c_str(),
-                        value.size());
-                    retval = "info: changed config option -- " + option;
+                    if (ec.ec_dry_run) {
+                        retval = "";
+                    } else {
+                        ypc.ypc_callbacks.yajl_string(
+                            &ypc, (const unsigned char *) value.c_str(),
+                            value.size());
+                        retval = "info: changed config option -- " + option;
+                    }
                 }
                 else if (ypc.ypc_current_handler->jph_callbacks.yajl_boolean) {
-                    bool bvalue = false;
+                    if (ec.ec_dry_run) {
+                        retval = "";
+                    } else {
+                        bool bvalue = false;
 
-                    if (strcasecmp(value.c_str(), "true") == 0) {
-                        bvalue = true;
+                        if (strcasecmp(value.c_str(), "true") == 0) {
+                            bvalue = true;
+                        }
+                        ypc.ypc_callbacks.yajl_boolean(&ypc, bvalue);
+                        retval = "info: changed config option -- " + option;
                     }
-                    ypc.ypc_callbacks.yajl_boolean(&ypc, bvalue);
-                    retval = "info: changed config option -- " + option;
                 }
                 else {
                     retval = "error: unhandled type";
@@ -2460,7 +2725,7 @@ static string com_save_config(exec_context &ec, string cmdline, vector<string> &
 
     if (args.empty()) {
     }
-    else {
+    else if (!ec.ec_dry_run) {
         retval = save_config();
     }
 
@@ -2474,7 +2739,7 @@ static string com_reset_config(exec_context &ec, string cmdline, vector<string> 
     if (args.empty()) {
         args.push_back("config-option");
     }
-    else {
+    else if (!ec.ec_dry_run) {
         yajlpp_parse_context ypc("input", lnav_config_handlers);
         string option = args[1];
 
@@ -2797,6 +3062,9 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
 
     if (args.empty()) {
         args.push_back("numeric-colname");
+    }
+    else if (ec.ec_dry_run) {
+        retval = "";
     }
     else if (args.size() == 2) {
         string colname = remaining_args(cmdline, args);
@@ -3265,7 +3533,7 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(
                 help_text{"path", "The path to the file to open"}
                     .one_or_more())
-            .with_example({"~/.lnav/example", ""})
+            .with_example({"/path/to/file"})
     },
     {
         "close",

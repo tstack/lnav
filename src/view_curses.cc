@@ -483,7 +483,7 @@ void view_colors::init_roles(void)
     this->vc_role_colors[VCR_WARN_STATUS] =
         ansi_color_pair(COLOR_YELLOW, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_ALERT_STATUS] =
-        ansi_color_pair(COLOR_RED, COLOR_WHITE);
+        ansi_color_pair(COLOR_RED, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_ACTIVE_STATUS] =
         ansi_color_pair(COLOR_GREEN, COLOR_WHITE);
     this->vc_role_colors[VCR_ACTIVE_STATUS2] =

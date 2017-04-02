@@ -45,13 +45,13 @@ static const char *type_to_string(int type)
 {
     switch (type) {
     case SQLITE_FLOAT:
-        return "float";
+        return "FLOAT";
 
     case SQLITE_INTEGER:
-        return "integer";
+        return "INTEGER";
 
     case SQLITE_TEXT:
-        return "text";
+        return "TEXT";
     }
 
     ensure("Invalid sqlite type");
@@ -66,13 +66,13 @@ std::string log_vtab_impl::get_table_statement(void)
     std::ostringstream oss;
 
     oss << "CREATE TABLE " << this->get_name().to_string() << " (\n"
-        << "  log_line integer PRIMARY KEY,\n"
-        << "  log_part text collate naturalnocase,\n"
-        << "  log_time datetime,\n"
-        << "  log_actual_time datetime hidden,\n"
-        << "  log_idle_msecs int,\n"
-        << "  log_level text collate loglevel,\n"
-        << "  log_mark boolean,\n";
+        << "  log_line INTEGER PRIMARY KEY,\n"
+        << "  log_part TEXT COLLATE naturalnocase,\n"
+        << "  log_time DATETIME,\n"
+        << "  log_actual_time DATETIME HIDDEN,\n"
+        << "  log_idle_msecs INTEGER,\n"
+        << "  log_level TEXT COLLATE loglevel,\n"
+        << "  log_mark BOOLEAN,\n";
     this->get_columns(cols);
     this->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {
@@ -80,7 +80,7 @@ std::string log_vtab_impl::get_table_statement(void)
         auto_mem<char, sqlite3_free> colname;
 
         colname = sql_quote_ident(iter->vc_name.c_str());
-        coldecl = sqlite3_mprintf("  %s %s %s collate %Q,\n",
+        coldecl = sqlite3_mprintf("  %s %s %s COLLATE %Q,\n",
                                   colname.in(),
                                   type_to_string(iter->vc_type),
                                   iter->vc_hidden ? "hidden" : "",
@@ -89,9 +89,9 @@ std::string log_vtab_impl::get_table_statement(void)
                                   "BINARY" : iter->vc_collator);
         oss << coldecl;
     }
-    oss << "  log_path text hidden collate naturalnocase,\n"
-        << "  log_text text hidden,\n"
-        << "  log_body text hidden\n"
+    oss << "  log_path TEXT HIDDEN COLLATE naturalnocase,\n"
+        << "  log_text TEXT HIDDEN,\n"
+        << "  log_body TEXT HIDDEN\n"
         << ");\n";
 
     log_debug("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());

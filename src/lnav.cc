@@ -1845,6 +1845,9 @@ static void execute_examples()
                               ex.he_result.get_string().c_str());
                     break;
                 }
+                default:
+                    log_warning("Not executing example: %s", ex.he_cmd);
+                    break;
             }
         }
     }
@@ -1860,6 +1863,7 @@ static void layout_views()
     int doc_height = std::max(
         lnav_data.ld_doc_source.text_line_count(),
         lnav_data.ld_example_source.text_line_count());
+    int preview_height = lnav_data.ld_preview_source.text_line_count();
     int match_rows = lnav_data.ld_match_source.text_line_count();
     int match_height = min((unsigned long)match_rows, (height - 4) / 2);
 
@@ -1873,8 +1877,10 @@ static void layout_views()
     int bottom_height =
         (doc_open ? 1 : 0)
         + doc_height
-        + match_height
+        + (preview_height > 0 ? 1 : 0)
+        + preview_height
         + 1
+        + match_height
         + lnav_data.ld_rl_view->get_height();
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -1885,12 +1891,24 @@ static void layout_views()
     lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + 2));
     lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
     lnav_data.ld_status[LNS_DOC].set_enabled(doc_open);
+    lnav_data.ld_status[LNS_PREVIEW].set_top(height
+                                             - match_height
+                                             - 2
+                                             - preview_height
+                                             - lnav_data.ld_rl_view->get_height());
+    lnav_data.ld_status[LNS_PREVIEW].set_enabled(preview_height > 0);
 
     lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
     lnav_data.ld_doc_view.set_y(height - bottom_height + 1);
     lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
     lnav_data.ld_example_view.set_x(90);
     lnav_data.ld_example_view.set_y(height - bottom_height + 1);
+    lnav_data.ld_preview_view.set_height(vis_line_t(preview_height));
+    lnav_data.ld_preview_view.set_y(height
+                                    - match_height
+                                    - 1
+                                    - preview_height
+                                    - lnav_data.ld_rl_view->get_height());
     lnav_data.ld_match_view.set_y(
         height
         - lnav_data.ld_rl_view->get_height()
@@ -1976,6 +1994,7 @@ static void looper(void)
             setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
             setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
             setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
+            setup_highlights(lnav_data.ld_preview_view.get_highlights());
         }
 
         execute_examples();
@@ -2017,6 +2036,9 @@ static void looper(void)
 
         lnav_data.ld_match_view.set_window(lnav_data.ld_window);
 
+        lnav_data.ld_preview_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_preview_view.set_show_scrollbar(false);
+
         lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
         for (auto &sc : lnav_data.ld_status) {
@@ -2028,6 +2050,8 @@ static void looper(void)
             &lnav_data.ld_bottom_source);
         lnav_data.ld_status[LNS_DOC].set_data_source(
             &lnav_data.ld_doc_status_source);
+        lnav_data.ld_status[LNS_PREVIEW].set_data_source(
+            &lnav_data.ld_preview_status_source);
 
         vsb.push_back(sb.get_functor());
 
@@ -2075,6 +2099,7 @@ static void looper(void)
             lnav_data.ld_doc_view.do_update();
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
+            lnav_data.ld_preview_view.do_update();
             for (auto &sc : lnav_data.ld_status) {
                 sc.do_update();
             }
@@ -3077,7 +3102,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
     lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
-    lnav_data.ld_match_view.set_left(0);
+    lnav_data.ld_preview_view.set_sub_source(&lnav_data.ld_preview_source);
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());

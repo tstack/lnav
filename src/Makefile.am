@@ -182,6 +182,7 @@ noinst_HEADERS = \
 	piper_proc.hh \
 	plain_text_source.hh \
 	pretty_printer.hh \
+	preview_status_source.hh \
 	pthreadpp.hh \
 	ptimec.hh \
 	readline_callbacks.hh \

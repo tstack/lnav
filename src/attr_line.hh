@@ -333,8 +333,8 @@ public:
         return *this;
     };
 
-    template<typename T = void *>
-    attr_line_t &append(const char *str,
+    template<typename S, typename T = void *>
+    attr_line_t &append(S str,
                         string_attr_type_t type = nullptr,
                         T val = T()) {
         size_t start_len = this->al_string.length();

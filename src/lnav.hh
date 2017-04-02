@@ -66,6 +66,7 @@
 #include "spectro_source.hh"
 #include "command_executor.hh"
 #include "plain_text_source.hh"
+#include "preview_status_source.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -136,6 +137,7 @@ typedef enum {
     LNS_TOP,
     LNS_BOTTOM,
     LNS_DOC,
+    LNS_PREVIEW,
 
     LNS__MAX
 } lnav_status_t;
@@ -239,6 +241,7 @@ struct _lnav_data {
     top_status_source                       ld_top_source;
     bottom_status_source                    ld_bottom_source;
     doc_status_source                       ld_doc_status_source;
+    preview_status_source                   ld_preview_status_source;
     listview_curses::action::broadcaster    ld_scroll_broadcaster;
     listview_curses::action::broadcaster    ld_view_stack_broadcaster;
 
@@ -253,6 +256,8 @@ struct _lnav_data {
     textview_curses                         ld_example_view;
     plain_text_source                       ld_match_source;
     textview_curses                         ld_match_view;
+    plain_text_source                       ld_preview_source;
+    textview_curses                         ld_preview_view;
 
     std::vector<textview_curses *>           ld_view_stack;
     textview_curses *ld_last_view;

@@ -67,7 +67,7 @@ public:
         this->tds_longest_line = this->compute_longest_line();
     };
 
-    plain_text_source &replace_with(attr_line_t &text_lines) {
+    plain_text_source &replace_with(const attr_line_t &text_lines) {
         this->tds_lines.clear();
         text_lines.split_lines(this->tds_lines);
         this->tds_longest_line = this->compute_longest_line();
@@ -85,6 +85,14 @@ public:
     void clear() {
         this->tds_lines.clear();
         this->tds_longest_line = 0;
+        this->tds_text_format = TF_UNKNOWN;
+    };
+
+    plain_text_source &truncate_to(size_t max_lines) {
+        while (this->tds_lines.size() > max_lines) {
+            this->tds_lines.pop_back();
+        }
+        return *this;
     };
 
     size_t text_line_count()

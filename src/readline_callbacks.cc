@@ -46,6 +46,8 @@ using namespace std;
 
 #define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
 
+static const char *LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
+
 void rl_change(void *dummy, readline_curses *rc)
 {
     switch (lnav_data.ld_mode) {
@@ -63,8 +65,8 @@ void rl_change(void *dummy, readline_curses *rc)
                 iter->second.c_description == NULL) {
                 lnav_data.ld_doc_source.clear();
                 lnav_data.ld_example_source.clear();
-                lnav_data.ld_bottom_source.set_prompt(
-                        "Enter an lnav command: " ABORT_MSG);
+                lnav_data.ld_preview_source.clear();
+                lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
                 lnav_data.ld_bottom_source.grep_error("");
             }
             else if (args[0] == "config" && args.size() > 1) {
@@ -110,7 +112,8 @@ void rl_change(void *dummy, readline_curses *rc)
 
                     al.clear();
                     lines.clear();
-                    format_example_text_for_term(ht, min(70UL, width), al);
+                    etc.get_dimensions(height, width);
+                    format_example_text_for_term(ht, width, al);
                     al.split_lines(lines);
                     lnav_data.ld_example_source.replace_with(al);
                 }
@@ -164,8 +167,28 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         name = "$capture";
         break;
 
-    case LNM_COMMAND:
+    case LNM_COMMAND: {
+        lnav_data.ld_exec_context.ec_dry_run = true;
+
+        lnav_data.ld_preview_source.clear();
+        string result = execute_command(lnav_data.ld_exec_context, rc->get_value());
+
+        if (result.empty()) {
+            lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
+            lnav_data.ld_bottom_source.grep_error("");
+        } else if (startswith(result, "error:")) {
+            lnav_data.ld_bottom_source.set_prompt("");
+            lnav_data.ld_bottom_source.grep_error(result);
+        } else {
+            lnav_data.ld_bottom_source.set_prompt(result);
+            lnav_data.ld_bottom_source.grep_error("");
+        }
+
+        lnav_data.ld_preview_view.reload_data();
+
+        lnav_data.ld_exec_context.ec_dry_run = false;
         return;
+    }
 
     case LNM_SQL: {
         term_val = trim(rc->get_value() + ";");
@@ -256,6 +279,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         if (!has_doc) {
             lnav_data.ld_doc_source.clear();
             lnav_data.ld_example_source.clear();
+            lnav_data.ld_preview_source.clear();
         }
         return;
     }
@@ -293,6 +317,7 @@ void rl_abort(void *dummy, readline_curses *rc)
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_example_source.clear();
     lnav_data.ld_doc_source.clear();
+    lnav_data.ld_preview_source.clear();
 
     lnav_data.ld_bottom_source.grep_error("");
     switch (lnav_data.ld_mode) {
@@ -318,6 +343,7 @@ void rl_callback(void *dummy, readline_curses *rc)
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_doc_source.clear();
     lnav_data.ld_example_source.clear();
+    lnav_data.ld_preview_source.clear();
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
         require(0);

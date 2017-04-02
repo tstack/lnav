@@ -119,6 +119,7 @@ set(diag_STAT_SRCS
     papertrail_proc.hh
     plain_text_source.hh
     pretty_printer.hh
+    preview_status_source.hh
     ptimec.hh
     pthreadpp.hh
     readline_callbacks.hh
