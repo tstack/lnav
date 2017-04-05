@@ -18,18 +18,24 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :freebsd do |freebsd|
+      config.vm.synced_folder ".", "/vagrant", type: "nfs"
+      config.vm.network :private_network, ip: "10.11.12.13"
       config.vm.provision "shell", path:"pkg.sh"
       config.vm.provision "shell", path:"provision.sh"
       freebsd.vm.box = "arkadi/freebsd-10.1-amd64"
   end
 
   config.vm.define :linux do |linux|
+      config.vm.synced_folder ".", "/vagrant", type: "nfs"
+      config.vm.network :private_network, ip: "10.11.12.14"
       config.vm.provision "shell", path:"pkg.sh"
       config.vm.provision "shell", path:"provision.sh"
       linux.vm.box = "centos/7"
   end
 
   config.vm.define :pkger do |pkger|
+      config.vm.synced_folder ".", "/vagrant", type: "nfs"
+      config.vm.network :private_network, ip: "10.11.12.15"
       config.vm.provision "shell", path:"provision-pkg.sh"
       pkger.vm.box = "ubuntu/trusty64"
   end
