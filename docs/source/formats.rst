@@ -104,8 +104,12 @@ fields:
   :timestamp-format: An array of timestamp formats using a subset of the
     strftime conversion specification.  The following conversions are
     supported: %a, %b, %L, %M, %H, %I, %d, %e, %k, %l, %m, %p, %y, %Y, %S, %s,
-    %Z, %z.  In addition, you can also use '%i' for milliseconds from the
-    epoch.
+    %Z, %z.  In addition, you can also use the following:
+
+    :%L: Milliseconds as a decimal number (range 000 to 999).
+    :%f: Microseconds as a decimal number (range 000000 to 999999).
+    :%N: Nanoseconds as a decimal number (range 000000000 to 999999999).
+    :%i: Milliseconds from the epoch.
 
   :level-field: The name of the regex capture group that contains the log
     message level.  Defaults to "level".

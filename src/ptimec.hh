@@ -757,6 +757,44 @@ inline void ftime_f(char *dst, off_t &off_inout, ssize_t len, const struct exttm
     PTIME_APPEND('0' + ((micros /      1) % 10));
 }
 
+inline bool ptime_N(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
+{
+    PTIME_CONSUME(9, {
+        for (int lpc = 0; lpc < 9; lpc++) {
+            if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
+                return false;
+            }
+        }
+        dst->et_nsec = (
+            (str[off_inout + 0] - '0') * 100000000 +
+            (str[off_inout + 1] - '0') *  10000000 +
+            (str[off_inout + 2] - '0') *   1000000 +
+            (str[off_inout + 3] - '0') *    100000 +
+            (str[off_inout + 4] - '0') *     10000 +
+            (str[off_inout + 5] - '0') *      1000 +
+            (str[off_inout + 6] - '0') *       100 +
+            (str[off_inout + 7] - '0') *        10 +
+            (str[off_inout + 8] - '0') *         1);
+    });
+
+    return true;
+}
+
+inline void ftime_N(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    uint32_t nano = tm.et_nsec;
+
+    PTIME_APPEND('0' + ((nano / 100000000) % 10));
+    PTIME_APPEND('0' + ((nano /  10000000) % 10));
+    PTIME_APPEND('0' + ((nano /   1000000) % 10));
+    PTIME_APPEND('0' + ((nano /    100000) % 10));
+    PTIME_APPEND('0' + ((nano /     10000) % 10));
+    PTIME_APPEND('0' + ((nano /      1000) % 10));
+    PTIME_APPEND('0' + ((nano /       100) % 10));
+    PTIME_APPEND('0' + ((nano /        10) % 10));
+    PTIME_APPEND('0' + ((nano /         1) % 10));
+}
+
 inline bool ptime_char(char val, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(1, {
