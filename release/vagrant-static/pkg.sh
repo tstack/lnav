@@ -3,6 +3,8 @@
 OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
     sudo yum install -y \
+        zip \
+        unzip \
         m4 \
         autoconf \
         automake \

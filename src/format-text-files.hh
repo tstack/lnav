@@ -35,8 +35,9 @@
 extern "C" {
 extern const char dhclient_summary_lnav[];
 extern const char dump_pid_sh[];
-extern const char partition_by_boot_lnav[];
 extern const char lnav_pop_view_lnav[];
+extern const char partition_by_boot_lnav[];
+extern const char search_for_lnav[];
 }
 
 #endif

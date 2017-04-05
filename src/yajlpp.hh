@@ -383,7 +383,8 @@ public:
           ypc_handle(NULL),
           ypc_json_text(NULL),
           ypc_ignore_unused(false),
-          ypc_current_handler(NULL)
+          ypc_current_handler(NULL),
+          ypc_error_reporter(nullptr)
     {
         this->ypc_path.reserve(4096);
         this->ypc_path.push_back('\0');

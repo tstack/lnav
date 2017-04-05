@@ -86,7 +86,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                     out.append(", ");
                 }
                 out.append(param.ht_name, &view_curses::VC_STYLE, A_UNDERLINE);
-                if (param.ht_nargs == HN_ONE_OR_MORE) {
+                if (param.ht_nargs == HN_ZERO_OR_MORE ||
+                    param.ht_nargs == HN_ONE_OR_MORE) {
                     out.append(", ...");
                 }
                 needs_comma = true;

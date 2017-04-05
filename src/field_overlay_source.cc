@@ -209,7 +209,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     }
 
     char old_timestamp[64], curr_timestamp[64], orig_timestamp[64];
-    struct timeval curr_tv, offset_tv, orig_tv;
+    struct timeval curr_tv, offset_tv, orig_tv, diff_tv = { 0 };
     attr_line_t time_line;
     string &time_str = time_line.get_string();
     struct line_range time_lr;
@@ -267,8 +267,6 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
                 &view_curses::VC_STYLE,
                 vc.attrs_for_role(view_colors::VCR_SKEWED_TIME)));
 
-            struct timeval diff_tv;
-
             timersub(&curr_tv, &actual_tv, &diff_tv);
             time_str.append(";  Diff: ");
             time_lr.lr_start = time_str.length();
@@ -297,7 +295,9 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         time_str.append(offset_str);
     }
 
-    this->fos_lines.push_back(time_line);
+    if (this->fos_active || diff_tv.tv_sec > 0) {
+        this->fos_lines.push_back(time_line);
+    }
 
     if (!this->fos_active) {
         return;

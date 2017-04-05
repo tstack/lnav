@@ -75,6 +75,7 @@ CREATE TABLE lnav_example_log (
   log_mark boolean,
 
   ex_procname text collate 'BINARY',
+  ex_duration integer,
 
   log_path text hidden collate naturalnocase,
   log_text text hidden,
@@ -82,7 +83,7 @@ CREATE TABLE lnav_example_log (
 );
 
 INSERT INTO lnav_example_log VALUES
-    (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0, 'info', 0, 'hw', '/tmp/log', '2017-02-03T04:05:06.100 hw: Hello, World!', 'Hello, World!'),
-    (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100, 'error', 0, 'hw', '/tmp/log', '2017-02-03T04:05:06.200 hw: Goodbye, World!', 'Goodbye, World!'),
-    (2, null, '2017-02-03T04:25:06.200', '2017-02-03T04:25:06.200', 1200000, 'warn', 0, 'hw', '/tmp/log', '2017-02-03T04:25:06.200 hw: Goodbye, World!', 'Goodbye, World!'),
-    (3, null, '2017-02-03T04:55:06.200', '2017-02-03T04:55:06.200', 1800000, 'debug', 0, 'hw', '/tmp/log', '2017-02-03T04:55:06.200 hw: Goodbye, World!', 'Goodbye, World!');
+    (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0, 'info', 0, 'hw', 2, '/tmp/log', '2017-02-03T04:05:06.100 hw(2): Hello, World!', 'Hello, World!'),
+    (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100, 'error', 0, 'gw', 4, '/tmp/log', '2017-02-03T04:05:06.200 gw(4): Goodbye, World!', 'Goodbye, World!'),
+    (2, 'new', '2017-02-03T04:25:06.200', '2017-02-03T04:25:06.200', 1200000, 'warn', 0, 'gw', 1, '/tmp/log', '2017-02-03T04:25:06.200 gw(1): Goodbye, World!', 'Goodbye, World!'),
+    (3, 'new', '2017-02-03T04:55:06.200', '2017-02-03T04:55:06.200', 1800000, 'debug', 0, 'gw', 10, '/tmp/log', '2017-02-03T04:55:06.200 gw(10): Goodbye, World!', 'Goodbye, World!');

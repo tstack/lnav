@@ -231,8 +231,8 @@ char *readline_context::completion_generator(const char *text, int state)
                            strncmp : strncasecmp);
                 // Check for an exact match and for the quoted version.
                 if (cmpfunc(text, poss_str, len) == 0 ||
-                        ((strchr(loaded_context->rc_quote_chars, poss_str[0]) != NULL) &&
-                         cmpfunc(text, &poss_str[1], len) == 0)) {
+                    ((strchr(loaded_context->rc_quote_chars, poss_str[0]) != NULL) &&
+                     cmpfunc(text, &poss_str[1], len) == 0)) {
                     matches.push_back(*iter);
                 }
             }

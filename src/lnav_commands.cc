@@ -921,7 +921,7 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
             retval = "";
         }
         else {
-            textview_curses::highlighter hl(code.release());
+            highlighter hl(code.release());
 
             hl.with_attrs(view_colors::singleton().attrs_for_ident(args[1]));
 
@@ -2590,7 +2590,7 @@ static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
     string retval = "error: expecting a command or query to evaluate";
 
     if (args.empty()) {
-
+        args.push_back("*");
     }
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);

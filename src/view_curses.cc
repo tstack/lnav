@@ -131,6 +131,10 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
         ssize_t usable_width = tws->tws_width - tws->tws_indent;
         ssize_t avail = max((ssize_t) 0, (ssize_t) tws->tws_width - line_len);
 
+        if (avail == 0) {
+            avail = INT_MAX;
+        }
+
         while (start_pos < this->al_string.length()) {
             ssize_t lpc;
 
@@ -150,7 +154,7 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
                 }
             }
 
-            if (lpc - start_pos > avail) {
+            if ((avail != usable_width) && (lpc - start_pos > avail)) {
                 // Need to wrap the word.  Do the wrap.
                 this->insert(start_pos, 1, '\n')
                     .insert(start_pos + 1, tws->tws_indent, ' ');

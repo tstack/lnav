@@ -228,51 +228,50 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
             x -= 1;
         }
 
-        auto iter = al.find_attr(x);
+        auto iter = rfind_string_attr_if(sa, x, [](auto sa) {
+            return (sa.sa_type == &SQL_FUNCTION_ATTR ||
+                    sa.sa_type == &SQL_KEYWORD_ATTR);
+        });
 
         if (iter != sa.end()) {
-            if (iter->sa_type == &SQL_FUNCTION_ATTR ||
-                iter->sa_type == &SQL_IDENTIFIER_ATTR ||
-                iter->sa_type == &SQL_KEYWORD_ATTR) {
-                const line_range &lr = iter->sa_range;
-                const string &str = al.get_string();
-                int lpc;
+            const line_range &lr = iter->sa_range;
+            const string &str = al.get_string();
+            int lpc;
 
-                for (lpc = lr.lr_start; lpc < lr.lr_end; lpc++) {
-                    if (!isalnum(str[lpc]) && str[lpc] != '_') {
-                        break;
-                    }
+            for (lpc = lr.lr_start; lpc < lr.lr_end; lpc++) {
+                if (!isalnum(str[lpc]) && str[lpc] != '_') {
+                    break;
                 }
+            }
 
-                name = str.substr(lr.lr_start, lpc - lr.lr_start);
+            name = str.substr(lr.lr_start, lpc - lr.lr_start);
 
-                const auto &func_iter = sqlite_function_help.find(tolower(name));
+            const auto &func_iter = sqlite_function_help.find(tolower(name));
 
-                if (func_iter != sqlite_function_help.end()) {
-                    textview_curses &dtc = lnav_data.ld_doc_view;
-                    textview_curses &etc = lnav_data.ld_example_view;
-                    const help_text &ht = *func_iter->second;
-                    vector<attr_line_t> lines;
-                    unsigned long width;
-                    vis_line_t height;
-                    attr_line_t al;
+            if (func_iter != sqlite_function_help.end()) {
+                textview_curses &dtc = lnav_data.ld_doc_view;
+                textview_curses &etc = lnav_data.ld_example_view;
+                const help_text &ht = *func_iter->second;
+                vector<attr_line_t> lines;
+                unsigned long width;
+                vis_line_t height;
+                attr_line_t al;
 
-                    dtc.get_dimensions(height, width);
-                    format_help_text_for_term(ht, min(70UL, width), al);
-                    al.split_lines(lines);
-                    lnav_data.ld_doc_source.replace_with(al);
-                    dtc.reload_data();
+                dtc.get_dimensions(height, width);
+                format_help_text_for_term(ht, min(70UL, width), al);
+                al.split_lines(lines);
+                lnav_data.ld_doc_source.replace_with(al);
+                dtc.reload_data();
 
-                    al.clear();
-                    lines.clear();
-                    etc.get_dimensions(height, width);
-                    format_example_text_for_term(ht, width, al);
-                    al.split_lines(lines);
-                    lnav_data.ld_example_source.replace_with(al);
-                    etc.reload_data();
+                al.clear();
+                lines.clear();
+                etc.get_dimensions(height, width);
+                format_example_text_for_term(ht, width, al);
+                al.split_lines(lines);
+                lnav_data.ld_example_source.replace_with(al);
+                etc.reload_data();
 
-                    has_doc = true;
-                }
+                has_doc = true;
             }
         }
 

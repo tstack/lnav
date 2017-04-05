@@ -77,6 +77,8 @@ inline ssize_t sql_strftime(char *buffer, size_t buffer_size,
 
 void sql_install_logger(void);
 
+bool sql_ident_needs_quote(const char *ident);
+
 char *sql_quote_ident(const char *ident);
 
 void sql_compile_script(sqlite3 *db,

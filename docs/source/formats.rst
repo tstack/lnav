@@ -178,6 +178,11 @@ fields:
     included regexes.  Each object must contain the following field:
 
     :line: The sample message.
+    :level: The expected error level.  An error will be raised if this level
+      does not match the level parsed by lnav for this sample message.
+
+  :highlights: A list of strings that are regular expressions to be highlighted
+    in log messages.
 
 Example format::
 

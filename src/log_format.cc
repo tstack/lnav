@@ -86,7 +86,7 @@ const char *logline::level_names[LEVEL__MAX + 1] = {
 };
 
 static pcrepp LEVEL_RE(
-        "(?i)(TRACE|DEBUG\\d*|INFO|STATS|WARN(?:ING)?|ERR(?:OR)?|CRITICAL|SEVERE|FATAL)");
+        "(?i)(TRACE|DEBUG\\d*|INFO|NOTICE|STATS|WARN(?:ING)?|ERR(?:OR)?|CRITICAL|SEVERE|FATAL)");
 
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<external_log_format *> external_log_format::GRAPH_ORDERED_FORMATS;
@@ -139,6 +139,7 @@ logline::level_t logline::abbrev2level(const char *levelstr, ssize_t len)
             }
             return LEVEL_DEBUG;
         case 'I':
+        case 'N': // NOTICE
             return LEVEL_INFO;
         case 'S':
             return LEVEL_STATS;
@@ -656,7 +657,6 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
         const char *last;
         struct exttm log_time_tm;
         struct timeval log_tv;
-        logline::level_t level = logline::LEVEL_INFO;
         uint8_t mod_index = 0, opid = 0;
 
         if ((last = this->lf_date_time.scan(ts_str,
@@ -667,22 +667,9 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
             continue;
         }
 
-        this->lf_timestamp_flags = log_time_tm.et_flags;
-        if (level_cap != NULL && level_cap->c_begin != -1) {
-            pcre_context_static<128> pc_level;
-            pcre_input pi_level(pi.get_substr_start(level_cap),
-                                0,
-                                level_cap->length());
+        logline::level_t level = this->convert_level(pi, level_cap);
 
-            for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
-                 iter != this->elf_level_patterns.end();
-                 ++iter) {
-                if (iter->second.lp_pcre->match(pc_level, pi_level)) {
-                    level = iter->first;
-                    break;
-                }
-            }
-        }
+        this->lf_timestamp_flags = log_time_tm.et_flags;
 
         if (!((log_time_tm.et_flags & ETF_DAY_SET) &&
               (log_time_tm.et_flags & ETF_MONTH_SET) &&
@@ -1562,6 +1549,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 }
                 pcre_context::capture_t *ts_cap =
                     pc[this->lf_timestamp_field.get()];
+                pcre_context::capture_t *level_cap = pc[pat.p_level_field_index];
                 const char *ts = pi.get_substr_start(ts_cap);
                 ssize_t ts_len = pc[this->lf_timestamp_field.get()]->length();
                 const char *const *custom_formats = this->get_timestamp_formats();
@@ -1605,6 +1593,24 @@ void external_log_format::build(std::vector<std::string> &errors) {
                                              string(custom_formats[lpc]) +
                                              "; matched: " + string(ts, off));
                         }
+                    }
+                }
+
+                logline::level_t level = this->convert_level(pi, level_cap);
+
+                if (iter->s_level != logline::LEVEL_UNKNOWN) {
+                    if (iter->s_level != level) {
+                        errors.push_back("error:" +
+                                         this->elf_name.to_string() +
+                                         ":invalid sample -- " +
+                                         iter->s_line);
+                        errors.push_back("error:" +
+                                         this->elf_name.to_string() +
+                                         ":parsed level '" +
+                                         logline::level_names[level] +
+                                         "' does not match expected level of '" +
+                                         logline::level_names[iter->s_level] +
+                                         "'");
                     }
                 }
             }
@@ -1694,6 +1700,45 @@ void external_log_format::build(std::vector<std::string> &errors) {
             }
             default:
                 break;
+        }
+    }
+
+    for (int lpc = 0; lpc < this->elf_highlighter_patterns.size(); lpc++) {
+        const string &pattern = this->elf_highlighter_patterns[lpc];
+        const char *errptr;
+        int eoff;
+
+        pcre *code = pcre_compile(pattern.c_str(),
+                                  0,
+                                  &errptr,
+                                  &eoff,
+                                  nullptr);
+
+        if (code == nullptr) {
+            errors.push_back("error:"
+                             + this->elf_name.to_string()
+                             + ":highlighters["
+                             + to_string(lpc)
+                             + "]:"
+                             + string(errptr));
+            errors.push_back("error:"
+                             + this->elf_name.to_string()
+                             + ":highlighters["
+                             + to_string(lpc)
+                             + "]:"
+                             + pattern);
+            errors.push_back("error:"
+                             + this->elf_name.to_string()
+                             + ":highlighters["
+                             + to_string(lpc)
+                             + "]:"
+                             + string(eoff, ' ')
+                             + "^");
+        } else {
+            this->lf_highlighters.emplace_back(code);
+            this->lf_highlighters.back()
+                .with_pattern(pattern)
+                .with_format_name(this->elf_name);
         }
     }
 }

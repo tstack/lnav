@@ -39,6 +39,13 @@ lnav v0.8.2:
        string.
      * Added a 'timediff(<time1>, <time2>)' SQL function for computing the
        difference between two relative or absolute timestamps.
+     * Log formats can now define a default set of highlights with the
+       "highlights" property.
+     * Added a '|search-for <pattern>' built-in script that can be used to
+       start a search from the command-line.
+     * Log format definitions can now specify the expected log level for a
+       sample line.  This check should make it easier to validate the
+       definition.
 
      Interface Changes:
      * Command and SQL documentation is now displayed in a section at the

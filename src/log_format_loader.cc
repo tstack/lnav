@@ -308,16 +308,11 @@ static external_log_format::sample &ensure_sample(external_log_format *elf,
     return elf->elf_samples[index];
 }
 
-static int read_sample_line(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+static external_log_format::sample *sample_provider(const yajlpp_provider_context &ypc, external_log_format *elf)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
-    string val = string((const char *)str, len);
-    int index = ypc->ypc_array_index.back();
-    external_log_format::sample &sample = ensure_sample(elf, index);
+    external_log_format::sample &sample = ensure_sample(elf, ypc.ypc_index);
 
-    sample.s_line = val;
-
-    return 1;
+    return &sample;
 }
 
 static int read_json_constant(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
@@ -498,6 +493,37 @@ static struct json_path_handler value_def_handlers[] = {
     json_path_handler()
 };
 
+static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
+    make_pair(logline::level_names[logline::LEVEL_TRACE], logline::LEVEL_TRACE),
+    make_pair(logline::level_names[logline::LEVEL_DEBUG5], logline::LEVEL_DEBUG5),
+    make_pair(logline::level_names[logline::LEVEL_DEBUG4], logline::LEVEL_DEBUG4),
+    make_pair(logline::level_names[logline::LEVEL_DEBUG3], logline::LEVEL_DEBUG3),
+    make_pair(logline::level_names[logline::LEVEL_DEBUG2], logline::LEVEL_DEBUG2),
+    make_pair(logline::level_names[logline::LEVEL_DEBUG], logline::LEVEL_DEBUG),
+    make_pair(logline::level_names[logline::LEVEL_INFO], logline::LEVEL_INFO),
+    make_pair(logline::level_names[logline::LEVEL_STATS], logline::LEVEL_STATS),
+    make_pair(logline::level_names[logline::LEVEL_WARNING], logline::LEVEL_WARNING),
+    make_pair(logline::level_names[logline::LEVEL_ERROR], logline::LEVEL_ERROR),
+    make_pair(logline::level_names[logline::LEVEL_CRITICAL], logline::LEVEL_CRITICAL),
+    make_pair(logline::level_names[logline::LEVEL_FATAL], logline::LEVEL_FATAL),
+
+    json_path_handler_base::ENUM_TERMINATOR
+};
+
+struct json_path_handler sample_handlers[] = {
+    json_path_handler("line")
+        .with_synopsis("<log-line>")
+        .with_description("A sample log line that should match a pattern in this format.")
+        .for_field(&nullobj<external_log_format::sample>()->s_line),
+
+    json_path_handler("level")
+        .with_enum_values(LEVEL_ENUM)
+        .with_description("The expected level for this sample log line.")
+        .for_enum(&nullobj<external_log_format::sample>()->s_level),
+
+    json_path_handler()
+};
+
 struct json_path_handler format_handlers[] = {
     json_path_handler("regex/(?<pattern_name>[^/]+)/")
         .with_obj_provider(pattern_provider)
@@ -524,7 +550,9 @@ struct json_path_handler format_handlers[] = {
     json_path_handler("action/(?<action_name>[^/]+)/label", read_action_def),
     json_path_handler("action/(?<action_name>[^/]+)/capture-output", read_action_bool),
     json_path_handler("action/(?<action_name>[^/]+)/cmd#", read_action_cmd),
-    json_path_handler("sample#/line", read_sample_line),
+    json_path_handler("sample#/")
+        .with_obj_provider(sample_provider)
+        .with_children(sample_handlers),
 
     json_path_handler("line-format#/")
         .with_obj_provider(line_format_provider)
@@ -534,6 +562,11 @@ struct json_path_handler format_handlers[] = {
     json_path_handler("search-table/.+/pattern", create_search_table)
         .with_synopsis("<regex>")
         .with_description("The regular expression for this search table."),
+
+    json_path_handler("highlights#")
+        .with_synopsis("<regex>")
+        .with_description("A regular expression to highlight in logs of this format.")
+        .for_field(&nullobj<external_log_format>()->elf_highlighter_patterns),
 
     json_path_handler()
 };
@@ -572,6 +605,7 @@ static void write_sample_file(void)
             partition_by_boot_lnav,
             dhclient_summary_lnav,
             lnav_pop_view_lnav,
+            search_for_lnav,
             NULL
     };
 
@@ -718,6 +752,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
     ypc_builtin
         .with_obj(ud)
         .with_handle(handle)
+        .with_error_reporter(format_error_reporter)
         .ypc_userdata = &ud;
     yajl_config(handle, yajl_allow_comments, 1);
     if (ypc_builtin.parse((const unsigned char *)default_log_formats_json,

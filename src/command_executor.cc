@@ -38,6 +38,7 @@
 #include "lnav.hh"
 #include "log_format_loader.hh"
 #include "shlex.hh"
+#include "sql_util.hh"
 
 #include "command_executor.hh"
 #include "db_sub_source.hh"
@@ -249,11 +250,18 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
             }
         }
 
-        if (!dls.dls_rows.empty() && !ec.ec_local_vars.empty()) {
+        if (!dls.dls_rows.empty() && !ec.ec_local_vars.empty() &&
+            !ec.ec_dry_run) {
             auto &vars = ec.ec_local_vars.top();
 
             for (int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
-                vars[dls.dls_headers[lpc].hm_name] = dls.dls_rows[0][lpc];
+                const string &column_name = dls.dls_headers[lpc].hm_name;
+
+                if (sql_ident_needs_quote(column_name.c_str())) {
+                    continue;
+                }
+
+                vars[column_name] = dls.dls_rows[0][lpc];
             }
         }
 
@@ -430,17 +438,24 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
         string script_name = split_args[0];
         map<string, string> &vars = ec.ec_local_vars.top();
         char env_arg_name[32];
-        string result, open_error = "file not found";
+        string star, result, open_error = "file not found";
 
         add_ansi_vars(vars);
 
         snprintf(env_arg_name, sizeof(env_arg_name), "%d", (int) split_args.size() - 1);
 
         vars["#"] = env_arg_name;
-        for (unsigned int lpc = 0; lpc < split_args.size(); lpc++) {
-            snprintf(env_arg_name, sizeof(env_arg_name), "%d", lpc);
+        for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
+            snprintf(env_arg_name, sizeof(env_arg_name), "%lu", lpc);
             vars[env_arg_name] = split_args[lpc];
         }
+        for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
+            if (lpc > 1) {
+                star.append(" ");
+            }
+            star.append(split_args[lpc]);
+        }
+        vars["__all__"] = star;
 
         vector<script_metadata> paths_to_exec;
         map<string, const char *>::iterator internal_iter;

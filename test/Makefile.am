@@ -62,6 +62,13 @@ CONFIG_OBJS = \
 	../src/default-config-json.o \
 	../src/keymap-default.o
 
+TEXT2C_OBJS = \
+	../src/dhclient-summary.o \
+	../src/dump-pid-sh.o \
+	../src/lnav-pop-view.o \
+	../src/partition-by-boot.o \
+	../src/search-for.o
+
 LDADD = -lz
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
@@ -148,10 +155,7 @@ drive_logfile_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	$(CONFIG_OBJS) \
-	../src/dhclient-summary.o \
-	../src/dump-pid-sh.o \
-	../src/partition-by-boot.o \
-	../src/lnav-pop-view.o \
+	$(TEXT2C_OBJS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(PCRE_LIBS) \
@@ -169,10 +173,7 @@ drive_data_scanner_LDADD = \
 	../src/libdiag.a \
 	../src/default-log-formats-json.o \
 	$(CONFIG_OBJS) \
-	../src/dhclient-summary.o \
-	../src/dump-pid-sh.o \
-	../src/partition-by-boot.o \
-	../src/lnav-pop-view.o \
+	$(TEXT2C_OBJS) \
 	$(LIBCURL) \
 	$(PCRE_LIBS) \
 	$(SQLITE3_LIBS) \

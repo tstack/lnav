@@ -370,6 +370,94 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .sql_function()
             .with_parameter({"N", "The size of the BLOB."}),
 
+        help_text("date",
+                  "Returns the date in this format: YYYY-MM-DD.")
+            .sql_function()
+            .with_parameter({"timestring", "The string to convert to a date."})
+            .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
+                                .zero_or_more())
+            .with_example({"SELECT date('2017-01-02T03:04:05')"})
+            .with_example({"SELECT date('2017-01-02T03:04:05', '+1 day')"})
+            .with_example({"SELECT date(1491341842, 'unixepoch')"}),
+
+        help_text("time",
+                  "Returns the time in this format: HH:MM:SS.")
+            .sql_function()
+            .with_parameter({"timestring", "The string to convert to a time."})
+            .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
+                                .zero_or_more())
+            .with_example({"SELECT time('2017-01-02T03:04:05')"})
+            .with_example({"SELECT time('2017-01-02T03:04:05', '+1 minute')"})
+            .with_example({"SELECT time(1491341842, 'unixepoch')"}),
+
+        help_text("datetime",
+                  "Returns the date and time in this format: YYYY-MM-DD HH:MM:SS.")
+            .sql_function()
+            .with_parameter({"timestring", "The string to convert to a date with time."})
+            .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
+                                .zero_or_more())
+            .with_example({"SELECT datetime('2017-01-02T03:04:05')"})
+            .with_example({"SELECT datetime('2017-01-02T03:04:05', '+1 minute')"})
+            .with_example({"SELECT datetime(1491341842, 'unixepoch')"}),
+
+        help_text("julianday",
+                  "Returns the number of days since noon in Greenwich on November 24, 4714 B.C.")
+            .sql_function()
+            .with_parameter({"timestring", "The string to convert to a date with time."})
+            .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
+                                .zero_or_more())
+            .with_example({"SELECT julianday('2017-01-02T03:04:05')"})
+            .with_example({"SELECT julianday('2017-01-02T03:04:05', '+1 minute')"})
+            .with_example({"SELECT julianday(1491341842, 'unixepoch')"}),
+
+        help_text("strftime",
+                  "Returns the date formatted according to the format string specified as the first argument.")
+            .sql_function()
+            .with_parameter({"format", "A format string with substitutions similar to those found in the strftime() standard C library."})
+            .with_parameter({"timestring", "The string to convert to a date with time."})
+            .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
+                                .zero_or_more())
+            .with_example({"SELECT strftime('%Y', '2017-01-02T03:04:05')"})
+            .with_example({"SELECT strftime('The time is: %H%M%S', '2017-01-02T03:04:05', '+1 minute')"})
+            .with_example({"SELECT strftime('Julian day: %J', 1491341842, 'unixepoch')"}),
+
+        help_text("avg",
+                  "Returns the average value of all non-NULL numbers within a group.")
+            .sql_function()
+            .with_parameter({"X", "The value to compute the average of."})
+            .with_example({"SELECT avg(ex_duration) FROM lnav_example_log"})
+            .with_example({"SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY ex_procname"}),
+
+        help_text("count",
+                  "If the argument is '*', the total number of rows in the group is returned.  "
+                      "Otherwise, the number of times the argument is non-NULL.")
+            .sql_function()
+            .with_parameter({"X", "The value to count."})
+            .with_example({"SELECT count(*) FROM lnav_example_log"})
+            .with_example({"SELECT count(log_part) FROM lnav_example_log"}),
+
+        help_text("group_concat",
+                  "Returns a string which is the concatenation of all non-NULL values of X.")
+            .sql_function()
+            .with_parameter({"X", "The value to concatenate."})
+            .with_parameter(help_text("sep", "The separator to place between the values.")
+                                .optional())
+            .with_example({"SELECT group_concat(ex_procname) FROM lnav_example_log"})
+            .with_example({"SELECT group_concat(ex_procname, ', ') FROM lnav_example_log"})
+            .with_example({"SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log"}),
+
+        help_text("sum",
+                  "Returns the sum of the values in the group as an integer.")
+            .sql_function()
+            .with_parameter({"X", "The values to add."})
+            .with_example({"SELECT sum(ex_duration) FROM lnav_example_log"}),
+
+        help_text("total",
+                  "Returns the sum of the values in the group as a floating-point.")
+            .sql_function()
+            .with_parameter({"X", "The values to add."})
+            .with_example({"SELECT total(ex_duration) FROM lnav_example_log"})
+
     };
 
     for (auto &ht : builtin_funcs) {

@@ -308,6 +308,7 @@ static void sigabrt(int sig)
     time_t curr_time;
 
     if (lnav_log_crash_dir == NULL) {
+        printf("%*s", (int) log_ring.lr_length, log_ring.lr_data);
         return;
     }
 

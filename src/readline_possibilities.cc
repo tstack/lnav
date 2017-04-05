@@ -221,6 +221,18 @@ void add_env_possibilities(int context)
     for (char **var = environ; *var != NULL; var++) {
         rlc->add_possibility(context, "*", "$" + string(*var, strchr(*var, '=')));
     }
+
+    exec_context &ec = lnav_data.ld_exec_context;
+
+    if (!ec.ec_local_vars.empty()) {
+        for (const auto iter : ec.ec_local_vars.top()) {
+            rlc->add_possibility(context, "*", "$" + iter.first);
+        }
+    }
+
+    for (const auto iter : ec.ec_global_vars) {
+        rlc->add_possibility(context, "*", "$" + iter.first);
+    }
 }
 
 void add_filter_possibilities(textview_curses *tc)

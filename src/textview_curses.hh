@@ -39,10 +39,10 @@
 #include "listview_curses.hh"
 #include "lnav_log.hh"
 #include "concise_index.hh"
-#include "logfile.hh"
 #include "text_format.hh"
+#include "logfile.hh"
+#include "highlighter.hh"
 
-class logfile;
 class logline;
 class textview_curses;
 
@@ -437,62 +437,7 @@ public:
     static string_attr_type SA_ORIGINAL_LINE;
     static string_attr_type SA_BODY;
     static string_attr_type SA_HIDDEN;
-
-    struct highlighter {
-        highlighter()
-            : h_code(NULL),
-              h_code_extra(NULL),
-              h_attrs(-1),
-              h_text_format(TF_UNKNOWN) { };
-        highlighter(pcre *code)
-            : h_code(code), h_attrs(-1), h_text_format(TF_UNKNOWN)
-        {
-            const char *errptr;
-
-            this->h_code_extra = pcre_study(this->h_code, 0, &errptr);
-            if (!this->h_code_extra && errptr) {
-                log_error("pcre_study error: %s", errptr);
-            }
-            if (this->h_code_extra != NULL) {
-                pcre_extra *extra = this->h_code_extra;
-
-                extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
-                                 PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-                extra->match_limit           = 10000;
-                extra->match_limit_recursion = 500;
-            }
-        };
-
-        highlighter &with_role(view_colors::role_t role) {
-            this->h_attrs = view_colors::singleton().attrs_for_role(role);
-
-            return *this;
-        };
-
-        highlighter &with_attrs(int attrs) {
-            this->h_attrs = attrs;
-
-            return *this;
-        };
-
-        highlighter &with_text_format(text_format_t tf) {
-            this->h_text_format = tf;
-
-            return *this;
-        }
-
-        int get_attrs() const
-        {
-            ensure(this->h_attrs != -1);
-
-            return this->h_attrs;
-        };
-
-        pcre *                           h_code;
-        pcre_extra *                     h_code_extra;
-        int h_attrs;
-        text_format_t h_text_format;
-    };
+    static string_attr_type SA_FORMAT;
 
     textview_curses();
     virtual ~textview_curses();

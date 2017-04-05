@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "lnav_log.hh"
+#include "intern_string.hh"
 
 /**
  * Encapsulates a range in a string.
@@ -139,7 +140,7 @@ struct line_range {
  * Container for attribute values for a substring.
  */
 typedef union {
-    void *sav_ptr;
+    const void *sav_ptr;
     int64_t sav_int;
 } string_attr_value_t;
 
@@ -159,6 +160,11 @@ struct string_attr {
         this->sa_value.sav_ptr = val;
     };
 
+    string_attr(const struct line_range &lr, string_attr_type_t type, intern_string_t val)
+        : sa_range(lr), sa_type(type) {
+        this->sa_value.sav_ptr = val.unwrap();
+    };
+
     string_attr(const struct line_range &lr, string_attr_type_t type, int64_t val = 0)
         : sa_range(lr), sa_type(type) {
         this->sa_value.sav_int = val;
@@ -173,6 +179,10 @@ struct string_attr {
     bool operator<(const struct string_attr &rhs) const
     {
         return this->sa_range < rhs.sa_range;
+    };
+
+    intern_string_t to_string() const {
+        return intern_string_t((const intern_string *) this->sa_value.sav_ptr);
     };
 
     struct line_range sa_range;
@@ -221,6 +231,34 @@ find_string_attr(const string_attrs_t &sa, size_t near)
         auto &lr = iter->sa_range;
 
         if (!lr.is_valid() || !lr.contains(near)) {
+            continue;
+        }
+
+        ssize_t diff = near - lr.lr_start;
+        if (diff < last_diff) {
+            last_diff = diff;
+            nearest = iter;
+        }
+    }
+
+    return nearest;
+}
+
+template<typename T>
+inline string_attrs_t::const_iterator
+rfind_string_attr_if(const string_attrs_t &sa, ssize_t near, T predicate)
+{
+    string_attrs_t::const_iterator iter, nearest = sa.end();
+    ssize_t last_diff = INT_MAX;
+
+    for (iter = sa.begin(); iter != sa.end(); ++iter) {
+        auto &lr = iter->sa_range;
+
+        if (lr.lr_start > near) {
+            continue;
+        }
+
+        if (!predicate(*iter)) {
             continue;
         }
 

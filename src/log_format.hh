@@ -55,6 +55,7 @@
 #include "view_curses.hh"
 #include "intern_string.hh"
 #include "shared_buffer.hh"
+#include "highlighter.hh"
 
 struct sqlite3;
 class log_format;
@@ -836,6 +837,7 @@ public:
     int lf_timestamp_flags;
     std::map<std::string, action_def> lf_action_defs;
     std::vector<logline_value_stats> lf_value_stats;
+    std::vector<highlighter> lf_highlighters;
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -867,6 +869,8 @@ class external_log_format : public log_format {
 
 public:
     struct sample {
+        sample() : s_level(logline::LEVEL_UNKNOWN) {};
+
         std::string s_line;
         logline::level_t s_level;
     };
@@ -1165,6 +1169,32 @@ public:
         return this->elf_pattern_order[this->lf_fmt_lock]->p_string;
     }
 
+    logline::level_t convert_level(const pcre_input &pi, pcre_context::capture_t *level_cap) const {
+        logline::level_t retval = logline::LEVEL_INFO;
+
+        if (level_cap != NULL && level_cap->is_valid()) {
+            pcre_context_static<128> pc_level;
+            pcre_input pi_level(pi.get_substr_start(level_cap),
+                                0,
+                                level_cap->length());
+
+            if (this->elf_level_patterns.empty()) {
+                retval = logline::string2level(pi_level.get_string(), level_cap->length());
+            } else {
+                for (auto iter = this->elf_level_patterns.begin();
+                     iter != this->elf_level_patterns.end();
+                     ++iter) {
+                    if (iter->second.lp_pcre->match(pc_level, pi_level)) {
+                        retval = iter->first;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return retval;
+    }
+
     typedef std::map<intern_string_t, module_format> mod_map_t;
     static mod_map_t MODULE_FORMATS;
     static std::vector<external_log_format *> GRAPH_ORDERED_FORMATS;
@@ -1191,6 +1221,7 @@ public:
     bool elf_has_module_format;
     bool elf_builtin_format;
     std::vector<std::pair<intern_string_t, std::string> > elf_search_tables;
+    std::vector<std::string> elf_highlighter_patterns;
 
     void json_append_to_cache(const char *value, size_t len) {
         size_t old_size = this->jlf_cached_line.size();

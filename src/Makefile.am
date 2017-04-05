@@ -29,7 +29,7 @@ default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
 default-config-json.c: $(srcdir)/default-config.json bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/default-config.json $@
 
-init-sql.c: bin2c
+init-sql.c: bin2c init.sql
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
 
 %.c: $(srcdir)/%.lnav bin2c
@@ -55,6 +55,7 @@ TIME_FORMATS = \
     "%Y/%m/%d %H:%M:%S%z" \
     "%Y/%m/%d %H:%M" \
     "%a %b %d %H:%M:%S %Y" \
+    "%a %b %d %H:%M:%S.%f %Y" \
     "%a %b %d %H:%M:%S %Z %Y" \
     "%a %b %d %H:%M:%S " \
     "%a %b %d %H:%M:%S.%L " \
@@ -113,9 +114,10 @@ dist_noinst_DATA = \
 	default-config.json \
 	dhclient-summary.lnav \
 	dump-pid.sh \
+	lnav-pop-view.lnav \
 	keymap-default.json \
 	partition-by-boot.lnav \
-	lnav-pop-view.lnav
+	search-for.lnav
 
 noinst_HEADERS = \
 	all_logs_vtab.hh \
@@ -149,6 +151,7 @@ noinst_HEADERS = \
 	help.hh \
 	help.txt \
 	help_text_formatter.hh \
+	highlighter.hh \
 	hist_source.hh \
 	hotkeys.hh \
 	init.sql \
@@ -340,8 +343,9 @@ TEXT2C_FILES = \
 	default-config-json.o \
 	dhclient-summary.o \
 	keymap-default.o \
+	lnav-pop-view.o \
 	partition-by-boot.o \
-	lnav-pop-view.o
+	search-for.o
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = \

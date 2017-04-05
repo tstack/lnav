@@ -369,6 +369,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     lr.lr_start = 0;
     lr.lr_end   = -1;
     value_out.push_back(string_attr(lr, &logline::L_FILE, this->lss_token_file));
+    value_out.push_back(string_attr(lr, &textview_curses::SA_FORMAT,
+                                    this->lss_token_file->get_format()->get_name()));
 
     {
         bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_PARTITION];

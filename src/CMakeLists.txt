@@ -106,6 +106,7 @@ set(diag_STAT_SRCS
     grep_highlighter.hh
     help.hh
     help_text_formatter.hh
+    highlighter.hh
     hotkeys.hh
     init-sql.hh
     intern_string.hh

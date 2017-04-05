@@ -361,6 +361,7 @@ bool setup_logline_table()
 
     db_key_names.push_back("device");
     db_key_names.push_back("inode");
+    db_key_names.push_back("rowid");
 
     stable_sort(db_key_names.begin(), db_key_names.end());
 
@@ -1080,8 +1081,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
                                       &errptr,
                                       &eoff,
                                       NULL)) == NULL) {
-            lnav_data.ld_bottom_source.grep_error(
-                "regexp error: " + string(errptr));
+            string errmsg = string(errptr);
 
             quoted = true;
             regex = pcrecpp::RE::QuoteMeta(regex);
@@ -1093,11 +1093,16 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
                                      &eoff,
                                      NULL)) == NULL) {
                 log_error("Unable to compile quoted regex: %s", regex.c_str());
+            } else {
+                lnav_data.ld_bottom_source.grep_error(
+                    "regexp error: "
+                    + errmsg
+                    + "; falling back to non-regex search");
             }
         }
 
         if (code != NULL) {
-            textview_curses::highlighter hl(code);
+            highlighter hl(code);
 
             hl.with_role(view_colors::VCR_SEARCH);
 
@@ -1860,9 +1865,19 @@ static void layout_views()
     unsigned long width, height;
 
     getmaxyx(lnav_data.ld_window, height, width);
-    int doc_height = std::max(
-        lnav_data.ld_doc_source.text_line_count(),
-        lnav_data.ld_example_source.text_line_count());
+    int doc_height;
+    bool doc_side_by_side = width > (90 + 60);
+
+    if (doc_side_by_side) {
+        doc_height = std::max(
+            lnav_data.ld_doc_source.text_line_count(),
+            lnav_data.ld_example_source.text_line_count());
+    } else {
+        doc_height =
+            lnav_data.ld_doc_source.text_line_count() +
+            lnav_data.ld_example_source.text_line_count();
+    }
+
     int preview_height = lnav_data.ld_preview_source.text_line_count();
     int match_rows = lnav_data.ld_match_source.text_line_count();
     int match_height = min((unsigned long)match_rows, (height - 4) / 2);
@@ -1898,11 +1913,23 @@ static void layout_views()
                                              - lnav_data.ld_rl_view->get_height());
     lnav_data.ld_status[LNS_PREVIEW].set_enabled(preview_height > 0);
 
-    lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
+    if (doc_side_by_side) {
+        lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
+    } else {
+        lnav_data.ld_doc_view.set_height(vis_line_t(lnav_data.ld_doc_source.text_line_count()));
+    }
     lnav_data.ld_doc_view.set_y(height - bottom_height + 1);
-    lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
-    lnav_data.ld_example_view.set_x(90);
-    lnav_data.ld_example_view.set_y(height - bottom_height + 1);
+
+    if (doc_side_by_side) {
+        lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
+        lnav_data.ld_example_view.set_x(90);
+        lnav_data.ld_example_view.set_y(height - bottom_height + 1);
+    } else {
+        lnav_data.ld_example_view.set_height(vis_line_t(lnav_data.ld_example_source.text_line_count()));
+        lnav_data.ld_example_view.set_x(0);
+        lnav_data.ld_example_view.set_y(height - bottom_height + lnav_data.ld_doc_view.get_height() + 1);
+    }
+
     lnav_data.ld_preview_view.set_height(vis_line_t(preview_height));
     lnav_data.ld_preview_view.set_y(height
                                     - match_height
@@ -1995,6 +2022,15 @@ static void looper(void)
             setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
             setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
             setup_highlights(lnav_data.ld_preview_view.get_highlights());
+
+            for (auto format : log_format::get_root_formats()) {
+                for (auto &hl : format->lf_highlighters) {
+                    hl.with_attrs(view_colors::singleton().attrs_for_ident(hl.h_pattern));
+
+                    lnav_data.ld_views[LNV_LOG].get_highlights()[
+                        "$" + format->get_name().to_string() + "-" + hl.h_pattern] = hl;
+                }
+            }
         }
 
         execute_examples();
@@ -2336,7 +2372,8 @@ static void looper(void)
 
             if (lnav_data.ld_view_stack.empty() ||
                 (lnav_data.ld_view_stack.size() == 1 &&
-                 lnav_data.ld_file_names.size() ==
+                 lnav_data.ld_closed_files.empty() &&
+                 lnav_data.ld_files.size() ==
                  lnav_data.ld_text_source.size())) {
                 lnav_data.ld_looping = false;
             }
@@ -2390,14 +2427,14 @@ void wait_for_children()
     } while (true);
 }
 
-static textview_curses::highlighter static_highlighter(const string &regex) {
-    return textview_curses::highlighter(xpcre_compile(regex.c_str()))
+static highlighter static_highlighter(const string &regex) {
+    return highlighter(xpcre_compile(regex.c_str()))
         .with_attrs(view_colors::singleton().attrs_for_ident(regex));
 }
 
 static void setup_highlights(textview_curses::highlight_map_t &hm)
 {
-    hm["$python"] = textview_curses::highlighter(xpcre_compile(
+    hm["$python"] = highlighter(xpcre_compile(
         "(?:"
             "\\bFalse\\b|"
             "\\bNone\\b|"
@@ -2437,7 +2474,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_text_format(TF_PYTHON)
         .with_role(view_colors::VCR_KEYWORD);
 
-    hm["$clike"] = textview_curses::highlighter(xpcre_compile(
+    hm["$clike"] = highlighter(xpcre_compile(
         "(?:"
             "\\babstract\\b|"
             "\\bassert\\b|"
@@ -2521,7 +2558,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_text_format(TF_C_LIKE)
         .with_role(view_colors::VCR_KEYWORD);
 
-    hm["$sql"] = textview_curses::highlighter(xpcre_compile(
+    hm["$sql"] = highlighter(xpcre_compile(
         "(?:"
             "\\bABORT\\b|"
             "\\bACTION\\b|"
@@ -2657,31 +2694,31 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
             "\\d+")
         .with_role(view_colors::VCR_FILE);
     hm["$xml"] = static_highlighter("<(/?[^ >=]+)[^>]*>");
-    hm["$stringd"] = textview_curses::highlighter(xpcre_compile(
+    hm["$stringd"] = highlighter(xpcre_compile(
         "\"(?:\\\\.|[^\"])*\""))
         .with_role(view_colors::VCR_STRING);
-    hm["$strings"] = textview_curses::highlighter(xpcre_compile(
+    hm["$strings"] = highlighter(xpcre_compile(
         "(?<![A-WY-Za-qstv-z])\'(?:\\\\.|[^'])*\'"))
         .with_role(view_colors::VCR_STRING);
-    hm["$stringb"] = textview_curses::highlighter(xpcre_compile(
+    hm["$stringb"] = highlighter(xpcre_compile(
         "`(?:\\\\.|[^`])*`"))
         .with_role(view_colors::VCR_STRING);
-    hm["$diffp"] = textview_curses::highlighter(xpcre_compile(
+    hm["$diffp"] = highlighter(xpcre_compile(
         "^\\+.*"))
         .with_role(view_colors::VCR_DIFF_ADD);
-    hm["$diffm"] = textview_curses::highlighter(xpcre_compile(
+    hm["$diffm"] = highlighter(xpcre_compile(
         "^(?:--- .*|-$|-[^-].*)"))
         .with_role(view_colors::VCR_DIFF_DELETE);
-    hm["$diffs"] = textview_curses::highlighter(xpcre_compile(
+    hm["$diffs"] = highlighter(xpcre_compile(
         "^\\@@ .*"))
         .with_role(view_colors::VCR_DIFF_SECTION);
     hm["$ip"] = static_highlighter("\\d+\\.\\d+\\.\\d+\\.\\d+");
-    hm["$comment"] = textview_curses::highlighter(xpcre_compile(
+    hm["$comment"] = highlighter(xpcre_compile(
         "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"))
         .with_role(view_colors::VCR_COMMENT);
     hm["$javadoc"] = static_highlighter(
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");
-    hm["$var"] = textview_curses::highlighter(xpcre_compile(
+    hm["$var"] = highlighter(xpcre_compile(
         "(?:"
           "(?:var\\s+)?([\\-\\w]+)\\s*=|"
           "(?<!\\$)\\$(\\w+)|"

@@ -61,6 +61,7 @@ bookmark_type_t textview_curses::BM_SEARCH("search");
 string_attr_type textview_curses::SA_ORIGINAL_LINE;
 string_attr_type textview_curses::SA_BODY;
 string_attr_type textview_curses::SA_HIDDEN;
+string_attr_type textview_curses::SA_FORMAT;
 
 textview_curses::textview_curses()
     : tc_sub_source(NULL),
@@ -218,18 +219,30 @@ void textview_curses::textview_value_for_row(vis_line_t row,
     string &                     str        = value_out.get_string();
     highlight_map_t::iterator    iter;
     text_format_t source_format = this->tc_sub_source->get_text_format();
+    intern_string_t format_name;
 
     this->tc_sub_source->text_value_for_line(*this, row, str);
     this->tc_sub_source->text_attrs_for_line(*this, row, sa);
 
     scrub_ansi_string(str, sa);
 
-    struct line_range body;
+    struct line_range body, orig_line;
 
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_start == -1) {
         body.lr_start = 0;
         body.lr_end = str.size();
+    }
+
+    orig_line = find_string_attr_range(sa, &SA_ORIGINAL_LINE);
+    if (!orig_line.is_valid()) {
+        orig_line.lr_start = 0;
+        orig_line.lr_end = str.size();
+    }
+
+    auto sa_iter = find_string_attr(sa, &SA_FORMAT);
+    if (sa_iter != sa.end()) {
+        format_name = sa_iter->to_string();
     }
 
     for (iter = this->tc_highlights.begin();
@@ -247,6 +260,11 @@ void textview_curses::textview_value_for_row(vis_line_t row,
 
         if (iter->second.h_text_format != TF_UNKNOWN &&
             source_format != iter->second.h_text_format) {
+            continue;
+        }
+
+        if (!iter->second.h_format_name.empty() &&
+            iter->second.h_format_name != format_name) {
             continue;
         }
 
@@ -364,16 +382,19 @@ void textview_curses::textview_value_for_row(vis_line_t row,
 #endif
 
     if (binary_search(user_marks.begin(), user_marks.end(), row)) {
-        struct line_range        lr(0);
         string_attrs_t::iterator iter;
 
         for (iter = sa.begin(); iter != sa.end(); iter++) {
+            if (iter->sa_range.lr_start < orig_line.lr_start) {
+                continue;
+            }
+
             if (iter->sa_type == &view_curses::VC_STYLE) {
                 iter->sa_value.sav_int ^= A_REVERSE;
             }
         }
 
-        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_REVERSE));
+        sa.emplace_back(orig_line, &view_curses::VC_STYLE, A_REVERSE);
     }
     else if (binary_search(part_marks.begin(), part_marks.end(), row + 1)) {
         sa.push_back(string_attr(

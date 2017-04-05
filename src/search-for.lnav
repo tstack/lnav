@@ -1,0 +1,8 @@
+#
+# @synopsis: search-for
+# @description: Start a search for the given string.
+#
+
+;UPDATE lnav_views SET search = $__all__ WHERE name = (
+    SELECT name FROM lnav_view_stack ORDER BY ROWID DESC LIMIT 1)
+:echo done

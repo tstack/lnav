@@ -69,6 +69,7 @@ public:
     {
         this->bss_fields[BSF_LINE_NUMBER].set_width(11);
         this->bss_fields[BSF_PERCENT].set_width(4);
+        this->bss_fields[BSF_PERCENT].set_left_pad(1);
         this->bss_fields[BSF_HITS].set_width(36);
         this->bss_fields[BSF_FILTERED].set_width(20);
         this->bss_fields[BSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);

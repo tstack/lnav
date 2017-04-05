@@ -486,7 +486,11 @@ public:
                 height_out = this->lv_height;
             }
         }
-        width_out -= this->lv_x;
+        if (this->lv_x < width_out) {
+            width_out -= this->lv_x;
+        } else {
+            width_out = 0;
+        }
     };
 
     /** This method should be called when the data source has changed. */

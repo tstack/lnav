@@ -550,6 +550,17 @@ void sql_install_logger(void)
 #endif
 }
 
+bool sql_ident_needs_quote(const char *ident)
+{
+    for (int lpc = 0; ident[lpc]; lpc++) {
+        if (!isalnum(ident[lpc]) && ident[lpc] != '_') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 char *sql_quote_ident(const char *ident)
 {
     bool needs_quote = false;
