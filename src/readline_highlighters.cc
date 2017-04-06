@@ -507,7 +507,7 @@ void readline_shlex_highlighter(attr_line_t &al, int x)
     pcre_context::capture_t cap;
     shlex_token_t token;
     int quote_start = -1;
-    shlex lexer(trim(str));
+    shlex lexer(str);
 
     while (lexer.tokenize(cap, token)) {
         switch (token) {
