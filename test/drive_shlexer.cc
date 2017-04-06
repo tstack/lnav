@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     std::vector<std::string> sresult;
     if (lexer.split(sresult, map<string, string>())) {
         printf("split:\n");
-        for (int lpc = 0; lpc < sresult.size(); lpc++) {
+        for (size_t lpc = 0; lpc < sresult.size(); lpc++) {
             printf("  %d -- %s\n", lpc, sresult[lpc].c_str());
         }
     }

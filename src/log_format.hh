@@ -1235,8 +1235,7 @@ public:
         memset(&this->jlf_cached_line[old_size], ' ', len);
     };
 
-    void json_append(const json_format_element &jfe, const char *value, size_t len) {
-
+    void json_append(const json_format_element &jfe, const char *value, ssize_t len) {
         if (jfe.jfe_align == json_format_element::RIGHT) {
             if (len < jfe.jfe_min_width) {
                 this->json_append_to_cache(jfe.jfe_min_width - len);

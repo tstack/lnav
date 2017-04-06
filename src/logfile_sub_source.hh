@@ -193,7 +193,7 @@ public:
 
     void text_mark(bookmark_type_t *bm, int line, bool added)
     {
-        if (line >= this->lss_index.size()) {
+        if (line >= (int) this->lss_index.size()) {
             return;
         }
 

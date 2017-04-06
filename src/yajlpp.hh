@@ -449,7 +449,7 @@ public:
         this->ypc_path.resize(path.size() + 1);
         std::copy(path.begin(), path.end(), this->ypc_path.begin());
         this->ypc_path[path.size()] = '\0';
-        for (int lpc = 0; lpc < path.size(); lpc++) {
+        for (size_t lpc = 0; lpc < path.size(); lpc++) {
             switch (path[lpc]) {
                 case '/':
                     this->ypc_path_index_stack.push_back(lpc);
