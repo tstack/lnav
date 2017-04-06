@@ -107,6 +107,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
 {
     db_label_source &dls = lnav_data.ld_db_row_source;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    struct timeval start_tv, end_tv;
     string stmt_str = trim(sql);
     string retval;
     int retcode;
@@ -130,6 +131,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
     dls.clear();
     ec.ec_accumulator.clear();
     sql_progress_guard progress_guard(sql_progress);
+    gettimeofday(&start_tv, NULL);
     retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
        stmt_str.c_str(),
        -1,
@@ -270,6 +272,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
         }
     }
 
+    gettimeofday(&end_tv, NULL);
     if (retcode == SQLITE_DONE) {
         lnav_data.ld_views[LNV_DB].reload_data();
         lnav_data.ld_views[LNV_DB].set_left(0);
@@ -312,16 +315,23 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                 }
             }
             else {
-                char row_count[32];
+                int row_count = dls.dls_rows.size();
+                char row_count_buf[128];
+                struct timeval diff_tv;
 
-                snprintf(row_count, sizeof(row_count),
-                   ANSI_BOLD("%'d") " row(s) matched",
-                   (int)dls.dls_rows.size());
-                retval = row_count;
+                timersub(&end_tv, &start_tv, &diff_tv);
+                snprintf(row_count_buf, sizeof(row_count_buf),
+                         ANSI_BOLD("%'d") " row%s matched in "
+                         ANSI_BOLD("%ld.%03d") " seconds",
+                         row_count,
+                         row_count == 1 ? "" : "s",
+                         diff_tv.tv_sec,
+                         std::max(diff_tv.tv_usec / 1000, 1));
+                retval = row_count_buf;
                 alt_msg = HELP_MSG_2(
-                  y, Y,
-                  "to move forward/backward through query results "
-                  "in the log view");
+                    y, Y,
+                    "to move forward/backward through query results "
+                        "in the log view");
             }
         }
 #ifdef HAVE_SQLITE3_STMT_READONLY

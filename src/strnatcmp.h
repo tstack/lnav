@@ -20,6 +20,9 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* CUSTOMIZATION SECTION
  *
@@ -28,4 +31,11 @@
 typedef char nat_char;
 
 int strnatcmp(int a_len, nat_char const *a, int b_len, nat_char const *b);
+
 int strnatcasecmp(int a_len, nat_char const *a, int b_len, nat_char const *b);
+
+int ipv4cmp(int a_len, nat_char const *a, int b_len, nat_char const *b, int *res_out);
+
+#ifdef __cplusplus
+}
+#endif

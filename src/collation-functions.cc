@@ -43,24 +43,22 @@
 
 #include "log_format.hh"
 
-extern "C" {
 #include "strnatcmp.h"
-}
 
 #define MAX_ADDR_LEN    128
 
 static int try_inet_pton(int p_len, const char *p, char *n)
 {
-    static int family[] = { AF_INET6, AF_INET, AF_MAX };
+    static int ADDR_FAMILIES[] = { AF_INET, AF_INET6 };
 
     char buf[MAX_ADDR_LEN + 1];
     int  retval = AF_MAX;
 
     strncpy(buf, p, p_len);
     buf[p_len] = '\0';
-    for (int lpc = 0; family[lpc] != AF_MAX; lpc++) {
-        if (inet_pton(family[lpc], buf, n) == 1) {
-            retval = family[lpc];
+    for (int family : ADDR_FAMILIES) {
+        if (inet_pton(family, buf, n) == 1) {
+            retval = family;
             break;
         }
     }
@@ -92,8 +90,13 @@ int ipaddress(void *ptr,
     const char *a_str = (const char *)a_in, *b_str = (const char *)b_in;
     int         a_family, b_family, retval;
 
-    if (a_len > MAX_ADDR_LEN || b_len > MAX_ADDR_LEN) {
+    if ((a_len > MAX_ADDR_LEN) || (b_len > MAX_ADDR_LEN)) {
         return strnatcasecmp(a_len, a_str, b_len, b_str);
+    }
+
+    int v4res = 0;
+    if (ipv4cmp(a_len, a_str, b_len, b_str, &v4res)) {
+        return v4res;
     }
 
     a_family = try_inet_pton(a_len, a_str, a_addr);

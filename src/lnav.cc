@@ -2120,6 +2120,7 @@ static void looper(void)
             vector<struct pollfd> pollfds;
             struct timeval to = { 0, 333000 };
             int            rc;
+            size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
 
             lnav_data.ld_top_source.update_time();
 
@@ -2298,8 +2299,8 @@ static void looper(void)
                     initial_build = true;
                 }
                 if (lnav_data.ld_log_source.text_line_count() > 0 ||
-                        lnav_data.ld_text_source.text_line_count() > 0 ||
-                        !lnav_data.ld_other_files.empty()) {
+                    lnav_data.ld_text_source.text_line_count() > 0 ||
+                    !lnav_data.ld_other_files.empty()) {
                     initial_build = true;
                 }
 
@@ -2372,8 +2373,8 @@ static void looper(void)
 
             if (lnav_data.ld_view_stack.empty() ||
                 (lnav_data.ld_view_stack.size() == 1 &&
-                 lnav_data.ld_closed_files.empty() &&
-                 lnav_data.ld_files.size() ==
+                 starting_view_stack_size == 2 &&
+                 lnav_data.ld_file_names.size() ==
                  lnav_data.ld_text_source.size())) {
                 lnav_data.ld_looping = false;
             }
