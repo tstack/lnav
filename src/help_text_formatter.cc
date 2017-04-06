@@ -82,7 +82,11 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD)
                 .append("(");
             for (auto &param : ht.ht_parameters) {
-                if (needs_comma) {
+                if (param.ht_flag_name) {
+                    out.append(" ")
+                        .append(param.ht_flag_name, &view_curses::VC_STYLE, A_BOLD)
+                        .append(" ");
+                } else if (needs_comma) {
                     out.append(", ");
                 }
                 out.append(param.ht_name, &view_curses::VC_STYLE, A_UNDERLINE);

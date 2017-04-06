@@ -271,30 +271,35 @@ char **readline_context::attempted_completion(const char *text,
         arg_possibilities = &loaded_context->rc_possibilities["__command"];
         rl_completion_append_character = loaded_context->rc_append_character;
     }
-    else if (loaded_context->rc_possibilities.find("*") !=
-        loaded_context->rc_possibilities.end()) {
-        arg_possibilities = &loaded_context->rc_possibilities["*"];
-        rl_completion_append_character = loaded_context->rc_append_character;
-    }
     else {
         char * space;
         string cmd;
 
         rl_completion_append_character = 0;
         space = strchr(rl_line_buffer, ' ');
-        require(space != NULL);
+        if (space == nullptr) {
+            space = rl_line_buffer + strlen(rl_line_buffer);
+        }
         cmd = string(rl_line_buffer, space - rl_line_buffer);
 
-        vector<string> &proto = loaded_context->rc_prototypes[cmd];
+        auto iter = loaded_context->rc_prototypes.find(cmd);
 
-        if (proto.empty()) {
-            arg_possibilities = NULL;
-        }
-        else if (proto[0] == "filename") {
-            return NULL; /* XXX */
-        }
-        else {
-            arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);
+        if (iter == loaded_context->rc_prototypes.end()) {
+            if (loaded_context->rc_possibilities.find("*") !=
+                loaded_context->rc_possibilities.end()) {
+                arg_possibilities = &loaded_context->rc_possibilities["*"];
+                rl_completion_append_character = loaded_context->rc_append_character;
+            }
+        } else {
+            vector<string> &proto = loaded_context->rc_prototypes[cmd];
+
+            if (proto.empty()) {
+                arg_possibilities = NULL;
+            } else if (proto[0] == "filename") {
+                return NULL; /* XXX */
+            } else {
+                arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);
+            }
         }
     }
 

@@ -456,7 +456,7 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                   "Returns the sum of the values in the group as a floating-point.")
             .sql_function()
             .with_parameter({"X", "The values to add."})
-            .with_example({"SELECT total(ex_duration) FROM lnav_example_log"})
+            .with_example({"SELECT total(ex_duration) FROM lnav_example_log"}),
 
     };
 
@@ -528,6 +528,14 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("")
                                 .with_flag_name("END"))
             .with_example({"SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END"}),
+
+        help_text("CAST",
+                  "Convert the value of the given expression to a different storage class specified by type-name.")
+            .sql_function()
+            .with_parameter({"expr", "The value to convert."})
+            .with_parameter(help_text("type-name", "The name of the type to convert to.")
+                                .with_flag_name("AS"))
+            .with_example({"SELECT CAST(1.23 AS INTEGER)"}),
 
     };
 

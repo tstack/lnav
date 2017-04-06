@@ -5,4 +5,3 @@
 
 ;UPDATE lnav_views SET search = $__all__ WHERE name = (
     SELECT name FROM lnav_view_stack ORDER BY ROWID DESC LIMIT 1)
-:echo done

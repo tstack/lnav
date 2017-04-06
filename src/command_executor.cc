@@ -322,11 +322,11 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                 timersub(&end_tv, &start_tv, &diff_tv);
                 snprintf(row_count_buf, sizeof(row_count_buf),
                          ANSI_BOLD("%'d") " row%s matched in "
-                         ANSI_BOLD("%ld.%03d") " seconds",
+                         ANSI_BOLD("%ld.%03ld") " seconds",
                          row_count,
                          row_count == 1 ? "" : "s",
                          diff_tv.tv_sec,
-                         std::max(diff_tv.tv_usec / 1000, 1));
+                         std::max((long) diff_tv.tv_usec / 1000, 1L));
                 retval = row_count_buf;
                 alt_msg = HELP_MSG_2(
                     y, Y,
