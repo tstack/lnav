@@ -237,7 +237,7 @@ void grep_proc::child_loop(void)
 void grep_proc::cleanup(void)
 {
     if (this->gp_child != -1 && this->gp_child != 0) {
-        int status;
+        int status = 0;
 
         kill(this->gp_child, SIGTERM);
         while (waitpid(this->gp_child, &status, 0) < 0 && (errno == EINTR)) {
