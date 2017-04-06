@@ -512,7 +512,7 @@ ssize_t sql_strftime(char *buffer, size_t buffer_size, time_t time, int millis,
     buffer[index++] = '0' + ((millis / 100) % 10);
     buffer[index++] = '0' + ((millis /  10) % 10);
     buffer[index++] = '0' + ((millis /   1) % 10);
-    buffer[index++] = '\0';
+    buffer[index] = '\0';
 
     return index;
 }

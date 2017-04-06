@@ -1094,14 +1094,13 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                     lv_iter->lv_column = vd_iter->second->vd_column;
                     lv_iter->lv_hidden = vd_iter->second->vd_hidden;
                     lv_iter->lv_user_hidden = vd_iter->second->vd_user_hidden;
+                } else {
+                    lv_iter->lv_hidden = this->jlf_hide_extra;
                 }
             }
 
-            for (iter = this->jlf_line_format.begin();
-                 iter != this->jlf_line_format.end();
-                 ++iter) {
+            for (const auto &jfe : this->jlf_line_format) {
                 static const intern_string_t ts_field = intern_string::lookup("__timestamp__", -1);
-                json_format_element &jfe = *iter;
 
                 switch (jfe.jfe_type) {
                 case JLF_CONSTANT:
@@ -1196,8 +1195,13 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         lr.lr_start = this->jlf_cached_line.size();
                         this->json_append_to_cache(ts, ts_len);
                         lr.lr_end = this->jlf_cached_line.size();
-                        this->jlf_line_attrs.push_back(
-                            string_attr(lr, &logline::L_TIMESTAMP));
+                        this->jlf_line_attrs.emplace_back(lr, &logline::L_TIMESTAMP);
+
+                        lv_iter = find_if(this->jlf_line_values.begin(),
+                                          this->jlf_line_values.end(),
+                                          logline_value_cmp(&this->lf_timestamp_field));
+                        used_values[distance(this->jlf_line_values.begin(),
+                                             lv_iter)] = true;
                     }
                     else {
                         this->json_append(jfe,
@@ -1209,45 +1213,40 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
             }
             this->json_append_to_cache("\n", 1);
             int sub_offset = 1;
-            if (!this->jlf_hide_extra) {
-                for (size_t lpc = 0;
-                     lpc < this->jlf_line_values.size(); lpc++) {
-                    static const intern_string_t body_name = intern_string::lookup(
-                            "body", -1);
-                    logline_value &lv = this->jlf_line_values[lpc];
 
-                    if (lv.lv_hidden ||
-                        used_values[lpc] ||
-                        lv.lv_name == this->lf_timestamp_field ||
-                        lv.lv_name == body_name) {
-                        continue;
-                    }
+            for (size_t lpc = 0; lpc < this->jlf_line_values.size(); lpc++) {
+                static const intern_string_t body_name = intern_string::lookup(
+                    "body", -1);
+                logline_value &lv = this->jlf_line_values[lpc];
 
-                    const std::string str = lv.to_string();
-                    size_t curr_pos = 0, nl_pos, line_len = -1;
-
-                    lv.lv_sub_offset = sub_offset;
-                    lv.lv_origin.lr_start = 2 + lv.lv_name.size() + 2;
-                    do {
-                        nl_pos = str.find('\n', curr_pos);
-                        if (nl_pos != std::string::npos) {
-                            line_len = nl_pos - curr_pos;
-                        }
-                        else {
-                            line_len = str.size() - curr_pos;
-                        }
-                        this->json_append_to_cache("  ", 2);
-                        this->json_append_to_cache(lv.lv_name.get(),
-                                                   lv.lv_name.size());
-                        this->json_append_to_cache(": ", 2);
-                        this->json_append_to_cache(
-                                &str.c_str()[curr_pos], line_len);
-                        this->json_append_to_cache("\n", 1);
-                        curr_pos = nl_pos + 1;
-                        sub_offset += 1;
-                    } while (nl_pos != std::string::npos &&
-                             nl_pos < str.size());
+                if (lv.lv_hidden || used_values[lpc] || body_name == lv.lv_name) {
+                    continue;
                 }
+
+                const std::string str = lv.to_string();
+                size_t curr_pos = 0, nl_pos, line_len = -1;
+
+                lv.lv_sub_offset = sub_offset;
+                lv.lv_origin.lr_start = 2 + lv.lv_name.size() + 2;
+                do {
+                    nl_pos = str.find('\n', curr_pos);
+                    if (nl_pos != std::string::npos) {
+                        line_len = nl_pos - curr_pos;
+                    }
+                    else {
+                        line_len = str.size() - curr_pos;
+                    }
+                    this->json_append_to_cache("  ", 2);
+                    this->json_append_to_cache(lv.lv_name.get(),
+                                               lv.lv_name.size());
+                    this->json_append_to_cache(": ", 2);
+                    this->json_append_to_cache(
+                        &str.c_str()[curr_pos], line_len);
+                    this->json_append_to_cache("\n", 1);
+                    curr_pos = nl_pos + 1;
+                    sub_offset += 1;
+                } while (nl_pos != std::string::npos &&
+                         nl_pos < str.size());
             }
 
             this->jlf_line_offsets.push_back(0);
@@ -1684,8 +1683,9 @@ void external_log_format::build(std::vector<std::string> &errors) {
         switch (jfe.jfe_type) {
             case JLF_VARIABLE: {
                 auto vd_iter = this->elf_value_defs.find(jfe.jfe_value);
-                if (jfe.jfe_value != ts &&
-                    vd_iter == this->elf_value_defs.end()) {
+                if (jfe.jfe_value == ts) {
+                    this->elf_value_defs[this->lf_timestamp_field]->vd_hidden = true;
+                } else if (vd_iter == this->elf_value_defs.end()) {
                     char index_str[32];
 
                     snprintf(index_str, sizeof(index_str), "%d", format_index);

@@ -1223,13 +1223,13 @@ public:
     std::vector<std::pair<intern_string_t, std::string> > elf_search_tables;
     std::vector<std::string> elf_highlighter_patterns;
 
-    void json_append_to_cache(const char *value, size_t len) {
+    void json_append_to_cache(const char *value, ssize_t len) {
         size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
-        memcpy(&this->jlf_cached_line[old_size], value, len);
+        memcpy(&(this->jlf_cached_line.data()[old_size]), value, len);
     };
 
-    void json_append_to_cache(size_t len) {
+    void json_append_to_cache(ssize_t len) {
         size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
         memset(&this->jlf_cached_line[old_size], ' ', len);
