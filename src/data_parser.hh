@@ -641,18 +641,24 @@ private:
                                          key_comps,
                                          key_comps.begin(),
                                          key_iter);
-                            ++key_iter;
                             key_comps.POP_FRONT();
                             strip(key_comps, element_if(DT_WHITE));
+                            if (key_comps.empty()) {
+                                key_iter = key_comps.end();
+                            } else {
+                                key_iter = key_comps.begin();
+                            }
                             found = true;
                         }
-                        switch (key_iter->e_token) {
-                            case DT_WORD:
-                            case DT_SYMBOL:
-                                key_is_values = false;
-                                break;
-                            default:
-                                break;
+                        if (key_iter != key_comps.end()) {
+                            switch (key_iter->e_token) {
+                                case DT_WORD:
+                                case DT_SYMBOL:
+                                    key_is_values = false;
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
                     } while (key_iter != key_comps.begin() && !found);
                 }
