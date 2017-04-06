@@ -398,14 +398,25 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
         jlu->jlu_base_line->set_time(tv);
     }
     else if (jlu->jlu_format->elf_level_field == field_name) {
-        vector<pair<int64_t, logline::level_t> >::iterator iter;
+        if (jlu->jlu_format->elf_level_pairs.empty()) {
+            char level_buf[128];
 
-        for (iter = jlu->jlu_format->elf_level_pairs.begin();
-             iter != jlu->jlu_format->elf_level_pairs.end();
-             ++iter) {
-            if (iter->first == val) {
-                jlu->jlu_base_line->set_level(iter->second);
-                break;
+            snprintf(level_buf, sizeof(level_buf), "%lld", val);
+
+            pcre_input pi(level_buf);
+            pcre_context::capture_t level_cap = {0, (int) strlen(level_buf)};
+
+            jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(pi, &level_cap));
+        } else {
+            vector<pair<int64_t, logline::level_t> >::iterator iter;
+
+            for (iter = jlu->jlu_format->elf_level_pairs.begin();
+                 iter != jlu->jlu_format->elf_level_pairs.end();
+                 ++iter) {
+                if (iter->first == val) {
+                    jlu->jlu_base_line->set_level(iter->second);
+                    break;
+                }
             }
         }
     }
