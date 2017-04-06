@@ -42,5 +42,4 @@ deploy:
     secure: BQOrhEaDcR53WPGDmBj8UcCtcUjmuTb5g4u1oNhIiF0G5+8UweXOquLf8c52uIkUBYuruc/TB7qWGNisO3skSTh9t8+6v6PE1EAwk5PzavsQqqCmGF32izw75B8TC6SFWQY7AFyKjIc/bHxyz0FA0L2YtvMREtF3jF9ezGek07Y=
   file: lnav
   on:
-    repo: tstack/lnav
-    branch: master
+    tags: true
