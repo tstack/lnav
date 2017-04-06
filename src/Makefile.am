@@ -375,3 +375,8 @@ DISTCLEANFILES = \
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
 		$(HEADERS))
+
+install-exec-hook:
+	if test x"${TRAVIS_BUILD_DIR}" != x""; then \
+		cp lnav ${TRAVIS_BUILD_DIR}/; \
+	fi
