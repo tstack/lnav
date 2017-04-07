@@ -110,6 +110,7 @@ LDADD = \
 	-lpcrecpp
 
 dist_noinst_DATA = \
+	alpha-release.sh \
 	default-log-formats.json \
 	default-config.json \
 	dhclient-summary.lnav \
@@ -377,6 +378,4 @@ uncrusty:
 		$(HEADERS))
 
 install-exec-hook:
-	if test x"${TRAVIS_BUILD_DIR}" != x""; then \
-		cp lnav ${TRAVIS_BUILD_DIR}/; \
-	fi
+	bash alpha-release.sh

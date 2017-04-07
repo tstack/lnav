@@ -32,7 +32,7 @@ addons:
       name: tstack/lnav
       description: Your project description here
     notification_email: timothyshanestack@gmail.com
-    build_command_prepend: ./autogen.sh && ./configure
+    build_command_prepend: ./autogen.sh && ./configure LDFLAGS="-static-libstdc++ -static-libgcc"
     build_command: make
     branch_pattern: coverity_scan
 deploy:
