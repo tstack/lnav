@@ -378,4 +378,4 @@ uncrusty:
 		$(HEADERS))
 
 install-exec-hook:
-	bash alpha-release.sh
+	bash $(srcdir)/alpha-release.sh
