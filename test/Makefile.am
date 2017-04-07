@@ -306,6 +306,7 @@ dist_noinst_DATA = \
 	logfile_glog.0 \
 	logfile_json.json \
 	logfile_json2.json \
+	logfile_json3.json \
 	logfile_leveltest.0 \
 	logfile_multiline.0 \
 	logfile_nested_json.json \
@@ -344,6 +345,7 @@ dist_noinst_DATA = \
 	formats/jsontest/lnav-logstash.json \
 	formats/jsontest/rewrite-user.lnav \
 	formats/jsontest2/format.json \
+	formats/jsontest3/format.json \
 	formats/nestedjson/format.json \
 	formats/scripts/multiline-echo.lnav \
 	formats/sqldir/init.sql \
