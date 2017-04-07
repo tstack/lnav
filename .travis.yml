@@ -5,7 +5,7 @@ compiler: gcc
 sudo: false
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-script: ./autogen.sh && ./configure LDFLAGS="-static-libstdc++ -static-libgcc" && make distcheck -j3
+script: ./autogen.sh && ./configure LDFLAGS="-static" && make distcheck -j3
 after_script: test -e test/test-suite.log  && cat test/test-suite.log
 
 env:
