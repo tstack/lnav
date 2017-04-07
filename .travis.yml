@@ -1,5 +1,5 @@
 
-dist: trusty
+dist: precise
 language: cpp
 compiler: gcc
 sudo: false
