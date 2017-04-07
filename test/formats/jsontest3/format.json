@@ -1,0 +1,64 @@
+{
+    "json_log3": {
+        "title": "Test JSON Log Format",
+        "description": "Test JSON Log Format",
+        "file-pattern" : "logfile_json3\\.json",
+        "json": true,
+        "hide-extra": true,
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "client_ip"
+            },
+            " ",
+            {
+                "field": "request/method"
+            },
+            " ",
+            {
+                "field": "response/status"
+            },
+            " ",
+            {
+                "field": "request/uri"
+            }
+        ],
+        "value": {
+            "started_at": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "client_ip": {
+                "kind": "string",
+                "identifier": true
+            },
+            "request/method": {
+                "kind": "string",
+                "identifier": true
+            },
+            "request/uri": {
+                "kind": "string",
+                "identifier": true
+            },
+            "request/size": {
+                "kind": "integer",
+                "identifier": false,
+                "hidden": true
+            },
+            "response/status": {
+                "kind": "string"
+            }
+        },
+        "timestamp-field" : "started_at",
+        "timestamp-divisor" : 1000,
+        "level-field": "response/status",
+        "level": {
+            "info": "2\\d+",
+            "warning": "4\\d+",
+            "critical": "5\\d+"
+        }
+    }
+}

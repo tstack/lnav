@@ -533,7 +533,9 @@ struct json_path_handler format_handlers[] = {
     json_path_handler("(json|convert-to-local-time|"
         "hide-extra|multiline)", read_format_bool),
     json_path_handler("timestamp-divisor", read_format_double)
-        .add_cb(read_format_int),
+        .add_cb(read_format_int)
+        .with_synopsis("<number>")
+        .with_description("The value to divide a numeric timestamp by in a JSON log."),
     json_path_handler("(file-pattern|level-field|timestamp-field|"
                               "body-field|url|url#|title|description|"
                               "timestamp-format#|module-field|opid-field)$",
@@ -541,7 +543,10 @@ struct json_path_handler format_handlers[] = {
     json_path_handler("level/"
                       "(trace|debug\\d*|info|stats|warning|error|critical|fatal)")
         .add_cb(read_levels)
-        .add_cb(read_level_int),
+        .add_cb(read_level_int)
+        .with_synopsis("<pattern|integer>")
+        .with_description("The regular expression used to match the log text for this level.  "
+                              "For JSON logs with numeric levels, this should be the number for the corresponding level."),
 
     json_path_handler("value/(?<value_name>[^/]+)/")
         .with_obj_provider(value_def_provider)

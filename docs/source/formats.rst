@@ -73,7 +73,8 @@ fields:
     [ { "field": "ts" }, " ", { "field": "msg" } ]
 
     :field: The name of the message field that should be inserted at this
-      point in the message.
+      point in the message.  The special "__timestamp__" field name can be
+      used to insert a human-readable timestamp.
     :min-width: The minimum width for the field.  If the value for the field
       in a given log message is shorter, padding will be added as needed to
       meet the minimum-width requirement. (v0.8.2+)
@@ -111,6 +112,10 @@ fields:
     :%N: Nanoseconds as a decimal number (range 000000000 to 999999999).
     :%i: Milliseconds from the epoch.
 
+  :timestamp-divisor: For JSON logs with numeric timestamps, this value is used
+    to divide the timestamp by to get the number of seconds and fractional
+    seconds.
+
   :level-field: The name of the regex capture group that contains the log
     message level.  Defaults to "level".
 
@@ -144,6 +149,10 @@ fields:
     message level will set to the corresponding level.  The available levels,
     in order of severity, are: **fatal**, **critical**, **error**,
     **warning**, **stats**, **info**, **debug**, **debug2-5**, **trace**.
+    For JSON logs with exact numeric levels, the number for the corresponding
+    level can be supplied.  If the JSON log format uses numeric ranges instead
+    of exact numbers, you can supply a pattern and the number found in the log
+    will be converted to a string for pattern-matching.
 
   :multiline: If false, **lnav** will consider any log lines that do not
     match one of the message patterns to be in error when checking files with

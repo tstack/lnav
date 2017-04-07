@@ -247,3 +247,26 @@ check_output "pipe-line-to is not working" <<EOF
   @fields: { "lvl": "INFO", "msg": "Shutting down service", "user": "steve@example.com"}
 
 EOF
+
+run_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json3.json
+
+check_output "json log3 format is not working" <<EOF
+2017-03-24T20:06:26.240 1.1.1.1 GET 200 /example/uri/5
+2017-03-24T20:12:47.764 1.1.1.1 GET 500 /example/uri/5
+2017-03-24T20:15:31.694 1.1.1.1 GET 400 /example/uri/5
+EOF
+
+run_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ';select * from json_log3' \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json3.json
+
+check_output "json log3 format is not working" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,client_ip,request/method,request/size,request/uri,response/status
+0,<NULL>,2017-03-24 20:06:26.240,0,info,0,1.1.1.1,GET,166,/example/uri/5,200
+1,<NULL>,2017-03-24 20:12:47.764,381524,critical,0,1.1.1.1,GET,166,/example/uri/5,500
+2,<NULL>,2017-03-24 20:15:31.694,163930,warning,0,1.1.1.1,GET,166,/example/uri/5,400
+EOF

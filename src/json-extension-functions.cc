@@ -397,7 +397,16 @@ int json_extension_functions(struct FuncDef **basic_funcs,
                              struct FuncDefAgg **agg_funcs)
 {
     static struct FuncDef json_funcs[] = {
-        { "jget", -1, SQLITE_UTF8, 0, sql_jget },
+        {
+            "jget", -1, SQLITE_UTF8, 0, sql_jget,
+            help_text("jget",
+                      "Get the value from a JSON object using a JSON-Pointer.")
+                .sql_function()
+                .with_parameter({"json", "The JSON object to query."})
+                .with_parameter({"ptr", "The JSON-Pointer to lookup in the object."})
+                .with_example({"SELECT jget('1', '')"})
+                .with_example({"SELECT jget('{ \"a\": 1, \"b\": 2 }', '/b')"})
+        },
 
         { NULL }
     };
