@@ -1042,6 +1042,18 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
             retval = "error: " + string(errptr);
         }
         else if (ec.ec_dry_run) {
+            textview_curses::highlight_map_t &hm = tc->get_highlights();
+            view_colors &vc = view_colors::singleton();
+            highlighter hl(code.release());
+
+            hl.with_attrs(vc.ansi_color_pair(COLOR_BLACK, COLOR_RED) | A_BLINK);
+
+            hm["$preview"] = hl;
+            tc->reload_data();
+
+            lnav_data.ld_preview_status_source.get_description()
+                .set_value("Matches are highlighted in red in the text view");
+
             retval = "";
         }
         else {

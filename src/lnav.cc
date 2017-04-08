@@ -1867,6 +1867,8 @@ static void layout_views()
     getmaxyx(lnav_data.ld_window, height, width);
     int doc_height;
     bool doc_side_by_side = width > (90 + 60);
+    bool preview_status_open = !lnav_data.ld_preview_status_source
+        .get_description().empty();
 
     if (doc_side_by_side) {
         doc_height = std::max(
@@ -1892,7 +1894,7 @@ static void layout_views()
     int bottom_height =
         (doc_open ? 1 : 0)
         + doc_height
-        + (preview_height > 0 ? 1 : 0)
+        + (preview_status_open > 0 ? 1 : 0)
         + preview_height
         + 1
         + match_height
@@ -1911,7 +1913,7 @@ static void layout_views()
                                              - 2
                                              - preview_height
                                              - lnav_data.ld_rl_view->get_height());
-    lnav_data.ld_status[LNS_PREVIEW].set_enabled(preview_height > 0);
+    lnav_data.ld_status[LNS_PREVIEW].set_enabled(preview_status_open);
 
     if (doc_side_by_side) {
         lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));

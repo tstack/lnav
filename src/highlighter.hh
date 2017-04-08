@@ -38,13 +38,55 @@
 
 struct highlighter {
     highlighter()
-        : h_code(NULL),
-          h_code_extra(NULL),
+        : h_code(nullptr),
+          h_code_extra(nullptr),
           h_attrs(-1),
           h_text_format(TF_UNKNOWN) { };
+
     highlighter(pcre *code)
         : h_code(code), h_attrs(-1), h_text_format(TF_UNKNOWN)
     {
+        pcre_refcount(this->h_code, 1);
+        this->study();
+    };
+
+    highlighter(const highlighter &other) {
+        this->h_code = other.h_code;
+        pcre_refcount(this->h_code, 1);
+        this->study();
+        this->h_format_name = other.h_format_name;
+        this->h_attrs = other.h_attrs;
+        this->h_text_format = other.h_text_format;
+        this->h_pattern = other.h_pattern;
+    };
+
+    highlighter &operator=(const highlighter &other) {
+        if (this->h_code != nullptr && pcre_refcount(this->h_code, -1) == 0) {
+            free(this->h_code);
+            this->h_code = nullptr;
+        }
+        free(this->h_code_extra);
+
+        this->h_code = other.h_code;
+        pcre_refcount(this->h_code, 1);
+        this->study();
+        this->h_format_name = other.h_format_name;
+        this->h_attrs = other.h_attrs;
+        this->h_text_format = other.h_text_format;
+        this->h_pattern = other.h_pattern;
+
+        return *this;
+    };
+
+    virtual ~highlighter() {
+        if (this->h_code != nullptr && pcre_refcount(this->h_code, -1) == 0) {
+            free(this->h_code);
+            this->h_code = nullptr;
+        }
+        free(this->h_code_extra);
+    };
+
+    void study() {
         const char *errptr;
 
         this->h_code_extra = pcre_study(this->h_code, 0, &errptr);

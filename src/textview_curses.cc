@@ -249,7 +249,9 @@ void textview_curses::textview_value_for_row(vis_line_t row,
          iter != this->tc_highlights.end();
          iter++) {
         // XXX testing for '$search' here sucks
-        bool internal_hl = iter->first[0] == '$' && iter->first != "$search";
+        bool internal_hl = iter->first[0] == '$'
+                           && iter->first != "$search"
+                           && iter->first != "$preview";
         int off;
         size_t re_end;
 

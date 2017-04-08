@@ -52,7 +52,8 @@ lnav v0.8.2:
        bottom of the screen when a command or query is being entered.  Some
        commands will also display a preview of the command results.  For
        example, the ':open' command will display the first ten lines of the
-       file to be opened.
+       file to be opened and the ':filter-out' command will highlight text
+       that matches in the current view.
      * The color used for text colored via ":highlight" is now based on the
        the regex instead of randomly picked so that colors are consistent
        across invocations.

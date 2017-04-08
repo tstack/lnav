@@ -50,6 +50,13 @@ static const char *LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
 
 void rl_change(void *dummy, readline_curses *rc)
 {
+    textview_curses *tc = lnav_data.ld_view_stack.back();
+
+    tc->get_highlights().erase("$preview");
+    tc->reload_data();
+    lnav_data.ld_preview_source.clear();
+    lnav_data.ld_preview_status_source.get_description().clear();
+
     switch (lnav_data.ld_mode) {
         case LNM_COMMAND: {
             string line = rc->get_line_buffer();
@@ -66,6 +73,7 @@ void rl_change(void *dummy, readline_curses *rc)
                 lnav_data.ld_doc_source.clear();
                 lnav_data.ld_example_source.clear();
                 lnav_data.ld_preview_source.clear();
+                lnav_data.ld_preview_status_source.get_description().clear();
                 lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
                 lnav_data.ld_bottom_source.grep_error("");
             }
@@ -154,8 +162,12 @@ void rl_change(void *dummy, readline_curses *rc)
 
 static void rl_search_internal(void *dummy, readline_curses *rc, bool complete = false)
 {
+    textview_curses *tc = lnav_data.ld_view_stack.back();
     string term_val;
     string name;
+
+    tc->get_highlights().erase("$preview");
+    tc->reload_data();
 
     switch (lnav_data.ld_mode) {
     case LNM_SEARCH:
@@ -170,6 +182,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
     case LNM_COMMAND: {
         lnav_data.ld_exec_context.ec_dry_run = true;
 
+        lnav_data.ld_preview_status_source.get_description().clear();
         lnav_data.ld_preview_source.clear();
         string result = execute_command(lnav_data.ld_exec_context, rc->get_value());
 
@@ -291,7 +304,6 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         break;
     }
 
-    textview_curses *tc    = lnav_data.ld_view_stack.back();
     lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
 
     if (!complete) {
@@ -316,7 +328,9 @@ void rl_abort(void *dummy, readline_curses *rc)
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_example_source.clear();
     lnav_data.ld_doc_source.clear();
+    lnav_data.ld_preview_status_source.get_description().clear();
     lnav_data.ld_preview_source.clear();
+    tc->get_highlights().erase("$preview");
 
     lnav_data.ld_bottom_source.grep_error("");
     switch (lnav_data.ld_mode) {
@@ -336,13 +350,16 @@ void rl_abort(void *dummy, readline_curses *rc)
 
 void rl_callback(void *dummy, readline_curses *rc)
 {
+    textview_curses *tc = lnav_data.ld_view_stack.back();
     exec_context &ec = lnav_data.ld_exec_context;
     string alt_msg;
 
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_doc_source.clear();
     lnav_data.ld_example_source.clear();
+    lnav_data.ld_preview_status_source.get_description().clear();
     lnav_data.ld_preview_source.clear();
+    tc->get_highlights().erase("$preview");
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
         require(0);

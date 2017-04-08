@@ -519,7 +519,10 @@ COMMANDS
                     of lines that are filtered out will be shown in the
                     bottom status bar as 'Not Shown'.  Note that filtering
                     only works in the log and plain text views.  There is also
-                    a limit of 32 filters per-view at any one time.
+                    a limit of 32 filters per-view at any one time.  While
+                    entering the regular expression at the command-prompt, the
+                    matches in the current text view will be highlighted in red
+                    after a short delay.
 
   disable-filter <regex>
                     Disable an active 'filter-in' or 'filter-out'
