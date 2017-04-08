@@ -1042,19 +1042,33 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
             retval = "error: " + string(errptr);
         }
         else if (ec.ec_dry_run) {
-            textview_curses::highlight_map_t &hm = tc->get_highlights();
-            view_colors &vc = view_colors::singleton();
-            highlighter hl(code.release());
+            if (args[0] == "filter-in" && !fs.empty()) {
+                lnav_data.ld_preview_status_source.get_description()
+                    .set_value("Match preview for :filter-in only works if there are no other filters");
+            } else {
+                textview_curses::highlight_map_t &hm = tc->get_highlights();
+                view_colors &vc = view_colors::singleton();
+                highlighter hl(code.release());
+                int color;
 
-            hl.with_attrs(vc.ansi_color_pair(COLOR_BLACK, COLOR_RED) | A_BLINK);
+                if (args[0] == "filter-out") {
+                    color = COLOR_RED;
+                } else {
+                    color = COLOR_GREEN;
+                }
+                hl.with_attrs(
+                    vc.ansi_color_pair(COLOR_BLACK, color) | A_BLINK);
 
-            hm["$preview"] = hl;
-            tc->reload_data();
+                hm["$preview"] = hl;
+                tc->reload_data();
 
-            lnav_data.ld_preview_status_source.get_description()
-                .set_value("Matches are highlighted in red in the text view");
+                lnav_data.ld_preview_status_source.get_description()
+                    .set_value(
+                        "Matches are highlighted in %s in the text view",
+                        color == COLOR_RED ? "red" : "green");
 
-            retval = "";
+                retval = "";
+            }
         }
         else {
             text_filter::type_t lt  = (args[0] == "filter-out") ?
