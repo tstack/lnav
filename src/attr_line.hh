@@ -207,6 +207,20 @@ find_string_attr(const string_attrs_t &sa, string_attr_type_t type, int start = 
     return iter;
 }
 
+inline string_attrs_t::const_iterator
+find_string_attr_containing(const string_attrs_t &sa, string_attr_type_t type, int x)
+{
+    string_attrs_t::const_iterator iter;
+
+    for (iter = sa.begin(); iter != sa.end(); ++iter) {
+        if (iter->sa_type == type && iter->sa_range.contains(x)) {
+            break;
+        }
+    }
+
+    return iter;
+}
+
 inline string_attrs_t::iterator
 find_string_attr(string_attrs_t &sa, const struct line_range &lr)
 {

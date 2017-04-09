@@ -51,9 +51,10 @@ public:
           lst_regex(regex, PCRE_CASELESS),
           lst_instance(-1) {
         this->vi_supports_indexes = false;
+        this->get_columns_int(this->lst_cols);
     };
 
-    void get_columns(std::vector<vtab_column> &cols)
+    void get_columns_int(std::vector<vtab_column> &cols)
     {
         column_namer cn;
 
@@ -88,6 +89,10 @@ public:
             cols.push_back(vtab_column(colname, sqlite_type, collator));
         }
     };
+
+    void get_columns(std::vector<vtab_column> &cols) const {
+        cols = this->lst_cols;
+    }
 
     void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {
@@ -177,6 +182,7 @@ private:
     pcre_context_static<128> lst_match_context;
     std::vector<logline_value::kind_t> lst_column_types;
     int64_t lst_instance;
+    std::vector<vtab_column> lst_cols;
 };
 
 #endif

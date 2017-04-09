@@ -1823,7 +1823,7 @@ public:
         log_format_vtab_impl(elf), elt_format(elf) {
     };
 
-    void get_columns(vector<vtab_column> &cols) {
+    void get_columns(vector<vtab_column> &cols) const {
         const external_log_format &elf = this->elt_format;
 
         cols.resize(elf.elf_column_count);
@@ -1859,6 +1859,7 @@ public:
             cols[vd.vd_column].vc_name = vd.vd_name.get();
             cols[vd.vd_column].vc_type = type;
             cols[vd.vd_column].vc_collator = vd.vd_collate.c_str();
+            cols[vd.vd_column].vc_comment = vd.vd_description;
         }
     };
 

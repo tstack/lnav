@@ -64,34 +64,48 @@ std::string log_vtab_impl::get_table_statement(void)
     std::vector<log_vtab_impl::vtab_column> cols;
     std::vector<log_vtab_impl::vtab_column>::const_iterator iter;
     std::ostringstream oss;
+    size_t max_name_len = 15;
 
     oss << "CREATE TABLE " << this->get_name().to_string() << " (\n"
-        << "  log_line INTEGER PRIMARY KEY,\n"
-        << "  log_part TEXT COLLATE naturalnocase,\n"
-        << "  log_time DATETIME,\n"
+        << "  log_line        INTEGER  PRIMARY KEY,\n"
+        << "  log_part        TEXT     COLLATE naturalnocase,\n"
+        << "  log_time        DATETIME,\n"
         << "  log_actual_time DATETIME HIDDEN,\n"
-        << "  log_idle_msecs INTEGER,\n"
-        << "  log_level TEXT COLLATE loglevel,\n"
-        << "  log_mark BOOLEAN,\n";
+        << "  log_idle_msecs  INTEGER,\n"
+        << "  log_level       TEXT     COLLATE loglevel,\n"
+        << "  log_mark        BOOLEAN,\n"
+        << "  -- BEGIN Format-specific fields:\n";
     this->get_columns(cols);
     this->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {
+        max_name_len = std::max(max_name_len, iter->vc_name.length());
+    }
+    for (iter = cols.begin(); iter != cols.end(); iter++) {
         auto_mem<char, sqlite3_free> coldecl;
         auto_mem<char, sqlite3_free> colname;
+        string comment;
+
+        if (!iter->vc_comment.empty()) {
+            comment.append(" -- ")
+                   .append(iter->vc_comment);
+        }
 
         colname = sql_quote_ident(iter->vc_name.c_str());
-        coldecl = sqlite3_mprintf("  %s %s %s COLLATE %Q,\n",
+        coldecl = sqlite3_mprintf("  %-*s %-7s %s COLLATE %-15Q,%s\n",
+                                  max_name_len,
                                   colname.in(),
                                   type_to_string(iter->vc_type),
                                   iter->vc_hidden ? "hidden" : "",
                                   (iter->vc_collator == NULL ||
                                    iter->vc_collator[0] == '\0') ?
-                                  "BINARY" : iter->vc_collator);
+                                  "BINARY" : iter->vc_collator,
+                                  comment.c_str());
         oss << coldecl;
     }
-    oss << "  log_path TEXT HIDDEN COLLATE naturalnocase,\n"
-        << "  log_text TEXT HIDDEN,\n"
-        << "  log_body TEXT HIDDEN\n"
+    oss << "  -- END Format-specific fields\n"
+        << "  log_path        TEXT HIDDEN COLLATE naturalnocase,\n"
+        << "  log_text        TEXT HIDDEN,\n"
+        << "  log_body        TEXT HIDDEN\n"
         << ");\n";
 
     log_debug("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());

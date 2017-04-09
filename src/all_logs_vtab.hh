@@ -43,7 +43,7 @@ public:
         this->alv_schema_name = intern_string::lookup("log_msg_schema");
     }
 
-    void get_columns(std::vector<vtab_column> &cols) {
+    void get_columns(std::vector<vtab_column> &cols) const {
         cols.push_back(vtab_column(this->alv_value_name.get()));
         cols.push_back(vtab_column(this->alv_msg_name.get()));
         cols.push_back(vtab_column(this->alv_schema_name.get(), SQLITE3_TEXT, NULL, true));

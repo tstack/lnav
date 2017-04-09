@@ -54,9 +54,10 @@ public:
 
         this->vi_supports_indexes = false;
         this->ldt_format_impl = lnav_data.ld_vtab_manager->lookup_impl(format->get_name());
+        this->get_columns_int(this->ldt_cols);
     };
 
-    void get_columns(std::vector<vtab_column> &cols)
+    void get_columns_int(std::vector<vtab_column> &cols)
     {
         content_line_t cl_copy = this->ldt_template_line;
         logfile *      lf      = lnav_data.ld_log_source.find(cl_copy);
@@ -94,10 +95,7 @@ public:
             std::string colname  = cn.add_column(key_str);
             int         sql_type = SQLITE3_TEXT;
             const char *collator = NULL;
-            char *      name;
 
-            /* XXX LEAK */
-            name = strdup(colname.c_str());
             switch (pair_iter->e_sub_elements->back().value_token()) {
             case DT_IPV4_ADDRESS:
             case DT_IPV6_ADDRESS:
@@ -112,9 +110,13 @@ public:
                 collator = "naturalnocase";
                 break;
             }
-            cols.push_back(vtab_column(name, sql_type, collator));
+            cols.emplace_back(colname, sql_type, collator);
         }
         this->ldt_schema_id = dp.dp_schema_id;
+    };
+
+    void get_columns(std::vector<vtab_column> &cols) const {
+        cols = this->ldt_cols;
     };
 
     void get_foreign_keys(std::vector<std::string> &keys_inout) const
@@ -238,5 +240,6 @@ private:
     log_vtab_impl *ldt_format_impl;
     int ldt_parent_column_count;
     int64_t ldt_instance;
+    std::vector<vtab_column> ldt_cols;
 };
 #endif

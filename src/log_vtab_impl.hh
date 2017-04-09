@@ -74,13 +74,20 @@ public:
         vtab_column(const std::string name = "",
                     int type = SQLITE3_TEXT,
                     const char *collator = NULL,
-                    bool hidden = false)
-            : vc_name(name), vc_type(type), vc_collator(collator), vc_hidden(hidden) { };
+                    bool hidden = false,
+                    const std::string comment = "")
+            : vc_name(name),
+              vc_type(type),
+              vc_collator(collator),
+              vc_hidden(hidden),
+              vc_comment(comment) {
+        };
 
         std::string vc_name;
         int         vc_type;
         const char *vc_collator;
         bool vc_hidden;
+        std::string vc_comment;
     };
 
     log_vtab_impl(const intern_string_t name) : vi_supports_indexes(true), vi_name(name) {
@@ -97,7 +104,7 @@ public:
 
     virtual bool next(log_cursor &lc, logfile_sub_source &lss) = 0;
 
-    virtual void get_columns(std::vector<vtab_column> &cols) { };
+    virtual void get_columns(std::vector<vtab_column> &cols) const { };
 
     virtual void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {

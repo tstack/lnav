@@ -1026,18 +1026,19 @@ vis_line_t search_forward_from(textview_curses *tc)
 static void handle_rl_key(int ch)
 {
     switch (ch) {
-    case KEY_PPAGE:
-    case KEY_NPAGE:
-        handle_paging_key(ch);
-        break;
+        case KEY_PPAGE:
+        case KEY_NPAGE:
+        case KEY_CTRL_P:
+            handle_paging_key(ch);
+            break;
 
-    case KEY_CTRL_RBRACKET:
-        lnav_data.ld_rl_view->abort();
-        break;
+        case KEY_CTRL_RBRACKET:
+            lnav_data.ld_rl_view->abort();
+            break;
 
-    default:
-        lnav_data.ld_rl_view->handle_key(ch);
-        break;
+        default:
+            lnav_data.ld_rl_view->handle_key(ch);
+            break;
     }
 }
 
@@ -1880,14 +1881,17 @@ static void layout_views()
             lnav_data.ld_example_source.text_line_count();
     }
 
-    int preview_height = lnav_data.ld_preview_source.text_line_count();
+    int preview_height = lnav_data.ld_preview_hidden ? 0 :
+                         lnav_data.ld_preview_source.text_line_count();
     int match_rows = lnav_data.ld_match_source.text_line_count();
     int match_height = min((unsigned long)match_rows, (height - 4) / 2);
 
     lnav_data.ld_match_view.set_height(vis_line_t(match_height));
 
-    if (doc_height + 10 > (height - match_height)) {
+    if (doc_height + 14 > (height - match_height - preview_height - 2)) {
         doc_height = 0;
+        preview_height = 0;
+        preview_status_open = false;
     }
 
     bool doc_open = doc_height > 0;
@@ -2578,6 +2582,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
             "\\bBEFORE\\b|"
             "\\bBEGIN\\b|"
             "\\bBETWEEN\\b|"
+            "\\bBOOLEAN\\b|"
             "\\bBY\\b|"
             "\\bCASCADE\\b|"
             "\\bCASE\\b|"
@@ -2594,6 +2599,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
             "\\bCURRENT_TIME\\b|"
             "\\bCURRENT_TIMESTAMP\\b|"
             "\\bDATABASE\\b|"
+            "\\bDATETIME\\b|"
             "\\bDEFAULT\\b|"
             "\\bDEFERRABLE\\b|"
             "\\bDEFERRED\\b|"
@@ -2611,6 +2617,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
             "\\bEXISTS\\b|"
             "\\bEXPLAIN\\b|"
             "\\bFAIL\\b|"
+            "\\bFLOAT\\b|"
             "\\bFOR\\b|"
             "\\bFOREIGN\\b|"
             "\\bFROM\\b|"
@@ -2618,6 +2625,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
             "\\bGLOB\\b|"
             "\\bGROUP\\b|"
             "\\bHAVING\\b|"
+            "\\bHIDDEN\\b|"
             "\\bIF\\b|"
             "\\bIGNORE\\b|"
             "\\bIMMEDIATE\\b|"
@@ -2628,6 +2636,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
             "\\bINNER\\b|"
             "\\bINSERT\\b|"
             "\\bINSTEAD\\b|"
+            "\\bINTEGER\\b|"
             "\\bINTERSECT\\b|"
             "\\bINTO\\b|"
             "\\bIS\\b|"
@@ -2671,6 +2680,7 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
             "\\bTABLE\\b|"
             "\\bTEMP\\b|"
             "\\bTEMPORARY\\b|"
+            "\\bTEXT\\b|"
             "\\bTHEN\\b|"
             "\\bTO\\b|"
             "\\bTRANSACTION\\b|"
@@ -2718,6 +2728,10 @@ static void setup_highlights(textview_curses::highlight_map_t &hm)
     hm["$ip"] = static_highlighter("\\d+\\.\\d+\\.\\d+\\.\\d+");
     hm["$comment"] = highlighter(xpcre_compile(
         "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"))
+        .with_role(view_colors::VCR_COMMENT);
+    hm["$sqlcomment"] = highlighter(xpcre_compile(
+        "(?<=[\\s;])--.*"))
+        .with_text_format(TF_SQL)
         .with_role(view_colors::VCR_COMMENT);
     hm["$javadoc"] = static_highlighter(
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");

@@ -74,6 +74,8 @@ static int handle_table_list(void *ptr,
 {
     if (lnav_data.ld_rl_view != NULL) {
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[0]);
+
+        lnav_data.ld_table_ddl[colvalues[0]] = colvalues[1];
     }
 
     return 0;

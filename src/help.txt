@@ -347,6 +347,9 @@ Display options
 
   CTRL-W            Toggle word-wrapping.
 
+  CTRL-P            Show/hide the data preview panel that may be opened when
+                    entering commands or SQL queries.
+
   x                 Toggle the hiding of log message fields.  The hidden fields
                     will be replaced with three bullets and highlighted in
                     yellow.

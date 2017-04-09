@@ -1189,6 +1189,10 @@ void handle_paging_key(int ch)
                             "disable-word-wrap" : "enable-word-wrap");
             break;
 
+        case KEY_CTRL_P:
+            lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
+            break;
+
         default:
             log_warning("unhandled %d", ch);
             lnav_data.ld_rl_view->set_value("Unrecognized keystroke, press "

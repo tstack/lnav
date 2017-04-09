@@ -66,20 +66,20 @@ INSERT INTO http_status_codes VALUES (510, "Not Extended");
 INSERT INTO http_status_codes VALUES (511, "Network Authentication Required");
 
 CREATE TABLE lnav_example_log (
-  log_line integer PRIMARY KEY,
-  log_part text collate naturalnocase,
-  log_time datetime,
+  log_line        integer PRIMARY KEY,
+  log_part        text collate naturalnocase,
+  log_time        datetime,
   log_actual_time datetime hidden,
-  log_idle_msecs int,
-  log_level text collate loglevel,
-  log_mark boolean,
+  log_idle_msecs  int,
+  log_level       text collate loglevel,
+  log_mark        boolean,
 
-  ex_procname text collate 'BINARY',
-  ex_duration integer,
+  ex_procname     text collate 'BINARY',
+  ex_duration     integer,
 
-  log_path text hidden collate naturalnocase,
-  log_text text hidden,
-  log_body text hidden
+  log_path        text hidden collate naturalnocase,
+  log_text        text hidden,
+  log_body        text hidden
 );
 
 INSERT INTO lnav_example_log VALUES

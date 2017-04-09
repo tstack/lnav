@@ -242,6 +242,7 @@ struct _lnav_data {
     bottom_status_source                    ld_bottom_source;
     doc_status_source                       ld_doc_status_source;
     preview_status_source                   ld_preview_status_source;
+    bool                                    ld_preview_hidden;
     listview_curses::action::broadcaster    ld_scroll_broadcaster;
     listview_curses::action::broadcaster    ld_view_stack_broadcaster;
 
@@ -288,6 +289,8 @@ struct _lnav_data {
 
     log_vtab_manager *                      ld_vtab_manager;
     auto_mem<sqlite3, sqlite_close_wrapper> ld_db;
+
+    std::unordered_map<std::string, std::string> ld_table_ddl;
 
     std::list<pid_t>                        ld_children;
     std::list<std::shared_ptr<piper_proc>>  ld_pipers;

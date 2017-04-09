@@ -241,6 +241,10 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
             x -= 1;
         }
 
+        while (x > 0 && isspace(al.get_string()[x])) {
+            x -= 1;
+        }
+
         auto iter = rfind_string_attr_if(sa, x, [](auto sa) {
             return (sa.sa_type == &SQL_FUNCTION_ATTR ||
                     sa.sa_type == &SQL_KEYWORD_ATTR);
@@ -285,6 +289,35 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
                 etc.reload_data();
 
                 has_doc = true;
+            }
+        }
+
+        auto ident_iter = find_string_attr_containing(sa, &SQL_IDENTIFIER_ATTR, x);
+        if (ident_iter != sa.end()) {
+            string ident = al.get_substring(ident_iter->sa_range);
+
+            auto vtab = lnav_data.ld_vtab_manager->lookup_impl(
+                intern_string::lookup(ident));
+            string ddl;
+
+            if (vtab != nullptr) {
+                ddl = trim(vtab->get_table_statement());
+
+            } else {
+                auto table_ddl_iter = lnav_data.ld_table_ddl.find(ident);
+
+                if (table_ddl_iter != lnav_data.ld_table_ddl.end()) {
+                    ddl = table_ddl_iter->second;
+                }
+            }
+
+            if (!ddl.empty()) {
+                lnav_data.ld_preview_source.replace_with(ddl)
+                    .set_text_format(TF_SQL)
+                    .truncate_to(20);
+                lnav_data.ld_preview_status_source.get_description()
+                         .set_value("Definition for table -- %s",
+                                    ident.c_str());
             }
         }
 
