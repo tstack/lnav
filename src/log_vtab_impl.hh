@@ -202,9 +202,15 @@ public:
     std::string register_vtab(log_vtab_impl *vi);
     std::string unregister_vtab(intern_string_t name);
 
-    log_vtab_impl *lookup_impl(intern_string_t name)
+    log_vtab_impl *lookup_impl(intern_string_t name) const
     {
-        return this->vm_impls[name];
+        log_vtab_impl *retval = nullptr;
+        auto iter = this->vm_impls.find(name);
+
+        if (iter != this->vm_impls.end()) {
+            retval = iter->second;
+        }
+        return retval;
     };
 
     iterator begin() const

@@ -721,8 +721,7 @@ static void open_schema_view(void)
     schema += "\n\n-- Virtual Table Definitions --\n\n";
     schema += ENVIRON_CREATE_STMT;
     schema += vtab_module_schemas;
-    for (log_vtab_manager::iterator vtab_iter =
-            lnav_data.ld_vtab_manager->begin();
+    for (auto vtab_iter = lnav_data.ld_vtab_manager->begin();
          vtab_iter != lnav_data.ld_vtab_manager->end();
          ++vtab_iter) {
         schema += "\n" + vtab_iter->second->get_table_statement();
