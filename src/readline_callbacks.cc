@@ -53,6 +53,7 @@ void rl_change(void *dummy, readline_curses *rc)
     textview_curses *tc = lnav_data.ld_view_stack.back();
 
     tc->get_highlights().erase("$preview");
+    tc->get_highlights().erase("$bodypreview");
     tc->reload_data();
     lnav_data.ld_preview_source.clear();
     lnav_data.ld_preview_status_source.get_description().clear();
@@ -167,6 +168,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
     string name;
 
     tc->get_highlights().erase("$preview");
+    tc->get_highlights().erase("$bodypreview");
     tc->reload_data();
 
     switch (lnav_data.ld_mode) {
@@ -364,6 +366,7 @@ void rl_abort(void *dummy, readline_curses *rc)
     lnav_data.ld_preview_status_source.get_description().clear();
     lnav_data.ld_preview_source.clear();
     tc->get_highlights().erase("$preview");
+    tc->get_highlights().erase("$bodypreview");
 
     lnav_data.ld_bottom_source.grep_error("");
     switch (lnav_data.ld_mode) {
@@ -393,6 +396,7 @@ void rl_callback(void *dummy, readline_curses *rc)
     lnav_data.ld_preview_status_source.get_description().clear();
     lnav_data.ld_preview_source.clear();
     tc->get_highlights().erase("$preview");
+    tc->get_highlights().erase("$bodypreview");
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
         require(0);

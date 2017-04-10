@@ -1319,13 +1319,24 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
     }
     else if (args.size() >= 2) {
         log_search_table *lst;
+        auto_mem<pcre> code;
+        const char *errptr;
         string regex;
+        int eoff;
 
         if (args.size() >= 3) {
             regex = remaining_args(cmdline, args, 2);
         }
         else {
             regex = lnav_data.ld_last_search[LNV_LOG];
+        }
+
+        if ((code = pcre_compile(regex.c_str(),
+                                 PCRE_CASELESS,
+                                 &errptr,
+                                 &eoff,
+                                 NULL)) == NULL) {
+            return "error: " + string(errptr);
         }
 
         try {
@@ -1336,6 +1347,17 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
         }
 
         if (ec.ec_dry_run) {
+            textview_curses *tc = &lnav_data.ld_views[LNV_LOG];
+            textview_curses::highlight_map_t &hm = tc->get_highlights();
+            view_colors &vc = view_colors::singleton();
+            highlighter hl(code.release());
+
+            hl.with_attrs(
+                vc.ansi_color_pair(COLOR_BLACK, COLOR_CYAN) | A_BLINK);
+
+            hm["$bodypreview"] = hl;
+            tc->reload_data();
+
             attr_line_t al(lst->get_table_statement());
 
             lnav_data.ld_preview_status_source.get_description()

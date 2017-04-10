@@ -55,7 +55,13 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
             for (auto &param : ht.ht_parameters) {
                 out.append(" ");
+                if (param.ht_nargs == HN_OPTIONAL) {
+                    out.append("[");
+                }
                 out.append(param.ht_name, &view_curses::VC_STYLE, A_UNDERLINE);
+                if (param.ht_nargs == HN_OPTIONAL) {
+                    out.append("]");
+                }
                 if (param.ht_nargs == HN_ONE_OR_MORE) {
                     out.append("1", &view_curses::VC_STYLE, A_UNDERLINE);
                     out.append(" [");

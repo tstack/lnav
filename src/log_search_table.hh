@@ -174,7 +174,6 @@ public:
         }
     };
 
-private:
     std::string lst_regex_string;
     pcrepp lst_regex;
     shared_buffer_ref lst_current_line;
