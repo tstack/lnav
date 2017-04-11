@@ -897,7 +897,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 check_error_output "able to create table with a bad regex?" <<EOF
-error: unable to compile regex -- bad(
+error: missing )
 EOF
 
 NULL_GRAPH_SELECT_1=$(cat <<EOF
