@@ -609,8 +609,6 @@ void rebuild_indexes(bool force)
         size_t      new_count = lss.text_line_count();
         grep_line_t start_line;
 
-        log_view.reload_data();
-
         if (!scroll_downs[LNV_LOG] && force) {
             content_line_t new_top_content = content_line_t(-1);
 
@@ -639,7 +637,7 @@ void rebuild_indexes(bool force)
             lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->start();
         }
 
-        lnav_data.ld_view_stack.back()->reload_data();
+        log_view.reload_data();
     }
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
