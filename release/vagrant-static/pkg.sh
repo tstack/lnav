@@ -10,6 +10,7 @@ if test x"${OS}" != x"FreeBSD"; then
         automake \
         ncurses \
         ncurses-devel \
+        ncurses-static \
         git \
         centos-release-scl \
         perl-Data-Dumper
