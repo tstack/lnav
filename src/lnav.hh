@@ -312,6 +312,7 @@ struct _lnav_data {
     int ld_fifo_counter;
 
     struct key_repeat_history ld_key_repeat_history;
+    bool disabled_filters;
 };
 
 extern struct _lnav_data lnav_data;
@@ -348,8 +349,8 @@ vis_line_t next_cluster(
         bookmark_type_t *bt,
         vis_line_t top);
 bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
-                    bookmark_type_t *bt,
-                    vis_line_t top);
+        bookmark_type_t *bt,
+        vis_line_t top);
 void previous_cluster(bookmark_type_t *bt, textview_curses *tc);
 vis_line_t search_forward_from(textview_curses *tc);
 

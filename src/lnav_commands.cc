@@ -884,7 +884,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                 retval = reader.get();
             }
             else {
-                retval = "";
+            retval = "";
             }
             break;
     }
@@ -1151,6 +1151,64 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
     }
 
     return retval;
+}
+
+static string com_enable_filters(string cmdline, vector<string> &args)
+{
+    if (args.size() == 0) {
+        args.push_back("disabled-filters");
+    } else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        text_sub_source *tss = tc->get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        filter_stack::iterator filter_iter;
+
+        for (filter_iter = fs.begin();
+             filter_iter != fs.end();
+             ++filter_iter) {
+            text_filter *lf = *filter_iter;
+
+            if (!lf->is_enabled()) {
+                fs.set_filter_enabled(lf, true);
+            }
+        }
+
+        lnav_data.disabled_filters = false;
+
+        tss->text_filters_changed();
+        tc->reload_data();
+    }
+
+    return "info: filters disabled";
+}
+
+static string com_disable_filters(string cmdline, vector<string> &args)
+{
+    if (args.size() == 0) {
+        args.push_back("enabled-filters");
+    } else {
+        textview_curses *tc = lnav_data.ld_view_stack.top();
+        text_sub_source *tss = tc->get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        filter_stack::iterator filter_iter;
+
+        for (filter_iter = fs.begin();
+             filter_iter != fs.end();
+             ++filter_iter) {
+            text_filter *lf = *filter_iter;
+
+            if (lf->is_enabled()) {
+                fs.set_filter_enabled(lf, false);
+            }
+        }
+
+        lnav_data.disabled_filters = true;
+        
+        tss->text_filters_changed();
+        tc->reload_data();
+    }
+
+    return "info: filters disabled";
 }
 
 static string com_disable_filter(exec_context &ec, string cmdline, vector<string> &args)
@@ -2217,10 +2275,10 @@ static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args
                 textview_curses &hist_view = lnav_data.ld_views[LNV_HISTOGRAM];
 
                 if (hist_view.get_inner_height() > 0) {
-                    old_time = lnav_data.ld_hist_source2.time_for_row(
-                        lnav_data.ld_views[LNV_HISTOGRAM].get_top());
-                    rebuild_hist(0, true);
-                    lnav_data.ld_views[LNV_HISTOGRAM].set_top(
+                old_time = lnav_data.ld_hist_source2.time_for_row(
+                    lnav_data.ld_views[LNV_HISTOGRAM].get_top());
+                rebuild_hist(0, true);
+                lnav_data.ld_views[LNV_HISTOGRAM].set_top(
                         vis_line_t(
                             lnav_data.ld_hist_source2.row_for_time(old_time)));
                 }
@@ -2228,11 +2286,11 @@ static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args
                 textview_curses &spectro_view = lnav_data.ld_views[LNV_SPECTRO];
 
                 if (spectro_view.get_inner_height() > 0) {
-                    old_time = lnav_data.ld_spectro_source.time_for_row(
-                        lnav_data.ld_views[LNV_SPECTRO].get_top());
-                    ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
-                    ss.invalidate();
-                    lnav_data.ld_views[LNV_SPECTRO].set_top(
+                old_time = lnav_data.ld_spectro_source.time_for_row(
+                    lnav_data.ld_views[LNV_SPECTRO].get_top());
+                ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
+                ss.invalidate();
+                lnav_data.ld_views[LNV_SPECTRO].set_top(
                         vis_line_t(lnav_data.ld_spectro_source.row_for_time(
                             old_time)));
                 }
@@ -2703,7 +2761,7 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
         string option = args[1];
 
         ypc.set_path(option)
-           .with_obj(lnav_config);
+                .with_obj(lnav_config);
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
@@ -2792,7 +2850,7 @@ static string com_reset_config(exec_context &ec, string cmdline, vector<string> 
         string option = args[1];
 
         ypc.set_path(option)
-           .with_obj(lnav_config);
+                .with_obj(lnav_config);
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
@@ -3492,6 +3550,18 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_summary("Disable a filter created with filter-in/filter-out")
             .with_parameter(help_text("pattern", "The regular expression used in the filter command"))
             .with_example({"last message repeated"})
+    },
+    {
+        "disable-filters",
+        NULL,
+        "Disable all filters created with filter-in/filter-out",
+        com_disable_filters,
+    },
+    {
+        "enable-filters",
+        NULL,
+        "Enable all filters created with filter-in/filter-out",
+        com_enable_filters,
     },
     {
         "enable-word-wrap",
