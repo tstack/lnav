@@ -464,7 +464,7 @@ private:
     textview_curses &hid_view;
 };
 
-void rebuild_hist(size_t old_count, bool force)
+void rebuild_hist()
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     hist_source2 &hs = lnav_data.ld_hist_source2;
@@ -867,6 +867,10 @@ bool toggle_view(textview_curses *toggle_tc)
         }
         else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
             open_pretty_view();
+        }
+        else if (toggle_tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
+            // Rebuild to reflect changes in marks.
+            rebuild_hist();
         }
         lnav_data.ld_last_view = NULL;
         lnav_data.ld_view_stack.push_back(toggle_tc);

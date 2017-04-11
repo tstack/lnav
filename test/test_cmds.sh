@@ -751,6 +751,17 @@ check_output "histogram is not working?" <<EOF
 EOF
 
 run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":mark" \
+    -c ":switch-to-view histogram" \
+    ${test_dir}/logfile_syslog.0
+
+check_output "histogram is not working?" <<EOF
+ Sat Nov 03 09:20:00          1 normal         2 errors         0 warnings         1 marks
+ Sat Nov 03 09:45:00          1 normal         0 errors         0 warnings         0 marks
+EOF
+
+run_test ${lnav_test} -n \
     -c ":zoom-to bad" \
     ${test_dir}/logfile_access_log.0
 

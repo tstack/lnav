@@ -327,7 +327,7 @@ extern const ssize_t ZOOM_COUNT;
 #define HELP_MSG_2(x, y, msg) \
     "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
 
-void rebuild_hist(size_t old_count, bool force);
+void rebuild_hist();
 void rebuild_indexes(bool force);
 
 bool ensure_view(textview_curses *expected_tc);
