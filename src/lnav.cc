@@ -735,6 +735,10 @@ static void open_schema_view(void)
 
 static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 {
+    if (!sqlite3_stmt_busy(stmt)) {
+        return 0;
+    }
+
     int ncols = sqlite3_column_count(stmt);
 
     for (int lpc = 0; lpc < ncols; lpc++) {
@@ -846,6 +850,32 @@ static void open_pretty_view(void)
     }
     lnav_data.ld_last_pretty_print_top = log_tc->get_top();
     redo_search(LNV_PRETTY);
+}
+
+static int key_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
+{
+    if (!sqlite3_stmt_busy(stmt)) {
+        return 0;
+    }
+
+    int ncols = sqlite3_column_count(stmt);
+
+    auto &vars = ec.ec_local_vars.top();
+
+    for (int lpc = 0; lpc < ncols; lpc++) {
+        const char *column_name = sqlite3_column_name(stmt, lpc);
+
+        if (sql_ident_needs_quote(column_name)) {
+            continue;
+        }
+        if (sqlite3_column_type(stmt, lpc) == SQLITE_NULL) {
+            continue;
+        }
+
+        vars[column_name] = string((const char *) sqlite3_column_text(stmt, lpc));
+    }
+
+    return 0;
 }
 
 bool toggle_view(textview_curses *toggle_tc)
@@ -1724,6 +1754,14 @@ static void handle_key(int ch) {
     lnav_data.ld_input_state.push_back(ch);
 
     if (lnav_data.ld_mode == LNM_PAGING) {
+        if (!lnav_data.ld_view_stack.empty()) {
+            textview_curses *tc = lnav_data.ld_view_stack.back();
+
+            if (tc->handle_key(ch)) {
+                return;
+            }
+        }
+
         char keyseq[16];
 
         snprintf(keyseq, sizeof(keyseq), "x%02x", ch);
@@ -1732,16 +1770,19 @@ static void handle_key(int ch) {
 
         const auto &iter = km.km_seq_to_cmd.find(keyseq);
         if (iter != km.km_seq_to_cmd.end()) {
-            auto &var_stack = lnav_data.ld_exec_context.ec_local_vars;
+            vector<logline_value> values;
+            exec_context ec(&values, key_sql_callback, pipe_callback);
+            auto &var_stack = ec.ec_local_vars;
             string result;
 
+            ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
             var_stack.push(map<string, string>());
             auto &vars = var_stack.top();
             vars["keyseq"] = keyseq;
             for (string cmd : iter->second) {
                 log_debug("executing key sequence x%02x: %s",
                           keyseq, cmd.c_str());
-                result = execute_any(lnav_data.ld_exec_context, cmd);
+                result = execute_any(ec, cmd);
             }
 
             lnav_data.ld_rl_view->set_value(result);
@@ -1924,14 +1965,14 @@ static void layout_views()
                                              - lnav_data.ld_rl_view->get_height());
     lnav_data.ld_status[LNS_PREVIEW].set_enabled(preview_status_open);
 
-    if (doc_side_by_side) {
+    if (!doc_open || doc_side_by_side) {
         lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
     } else {
         lnav_data.ld_doc_view.set_height(vis_line_t(lnav_data.ld_doc_source.text_line_count()));
     }
     lnav_data.ld_doc_view.set_y(height - bottom_height + 1);
 
-    if (doc_side_by_side) {
+    if (!doc_open || doc_side_by_side) {
         lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
         lnav_data.ld_example_view.set_x(90);
         lnav_data.ld_example_view.set_y(height - bottom_height + 1);

@@ -2334,6 +2334,7 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
         } else if (tc->get_inner_height() == 0) {
             retval = "error: no log messages to hide";
         } else if (ec.ec_dry_run) {
+            // TODO: highlight the fields to be hidden.
             retval = "";
         } else {
             logfile_sub_source &lss = lnav_data.ld_log_source;

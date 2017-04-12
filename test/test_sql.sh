@@ -209,6 +209,18 @@ log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,c_ip,cs_method,cs_r
 1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
 EOF
 
+run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ";select log_line from access_log where log_level >= 'warning'" \
+    -c ":switch-to-view log" \
+    -c ":next-mark query" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "query bookmark not working?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
 
 # XXX The timestamp on the file is used to determine the year for syslog files.
 touch -t 201311030923 ${test_dir}/logfile_syslog.0

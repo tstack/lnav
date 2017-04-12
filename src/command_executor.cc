@@ -128,7 +128,6 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
         stmt_str = MSG_FORMAT_STMT;
     }
 
-    dls.clear();
     ec.ec_accumulator.clear();
     sql_progress_guard progress_guard(sql_progress);
     gettimeofday(&start_tv, NULL);
@@ -226,7 +225,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
             lnav_data.ld_rl_view->set_value("Executing query: " + sql + " ...");
         }
 
-        lnav_data.ld_log_source.text_clear_marks(&BM_QUERY);
+        ec.ec_sql_callback(ec, stmt.in());
         while (!done) {
             retcode = sqlite3_step(stmt.in());
 
@@ -638,8 +637,16 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
 
 int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 {
-    logfile_sub_source &lss = lnav_data.ld_log_source;
     db_label_source &dls = lnav_data.ld_db_row_source;
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+
+    if (!sqlite3_stmt_busy(stmt)) {
+        dls.clear();
+        lss.text_clear_marks(&BM_QUERY);
+
+        return 0;
+    }
+
     stacked_bar_chart<std::string> &chart = dls.dls_chart;
     view_colors &vc = view_colors::singleton();
     int ncols = sqlite3_column_count(stmt);
@@ -676,7 +683,8 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
             int line_number = -1;
 
             if (sscanf(value, "%d", &line_number) == 1) {
-                lss.text_mark(&BM_QUERY, line_number, true);
+                lnav_data.ld_views[LNV_LOG].toggle_user_mark(
+                    &BM_QUERY, vis_line_t(line_number));
             }
         }
     }

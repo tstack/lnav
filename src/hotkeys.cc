@@ -831,6 +831,12 @@ void handle_paging_key(int ch)
                      ++iter) {
                     lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname", *iter);
                 }
+                for (auto iter : ldh.ldh_namer->cn_builtin_names) {
+                    if (iter == "col") {
+                        continue;
+                    }
+                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname", iter);
+                }
 
                 ldh.clear();
 

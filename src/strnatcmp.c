@@ -73,7 +73,7 @@ compare_right(int a_len, nat_char const *a, int b_len, nat_char const *b, int *l
 	remember it in BIAS. */
 	for (;; a++, b++, a_len--, b_len--, (*len_out)++) {
 		if (a_len == 0 && b_len == 0)
-			return 0;
+			return bias;
 		if (a_len == 0)
 			return -1;
 		if (b_len == 0)

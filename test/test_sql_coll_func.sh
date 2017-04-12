@@ -14,6 +14,13 @@ Row 0:
   Column '192.168.1.10' < '192.168.1.2' collate ipaddress: 0
 EOF
 
+run_test ./drive_sql "select '192.168.1.10' < '192.168.1.12' collate ipaddress"
+
+check_output "" <<EOF
+Row 0:
+  Column '192.168.1.10' < '192.168.1.12' collate ipaddress: 1
+EOF
+
 run_test ./drive_sql "select '::ffff:192.168.1.10' = '192.168.1.10' collate ipaddress"
 
 check_output "" <<EOF

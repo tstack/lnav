@@ -183,7 +183,7 @@ bool listview_curses::handle_key(int ch)
 
 void listview_curses::do_update(void)
 {
-    if (this->lv_window == NULL) {
+    if (this->lv_window == NULL || this->lv_height == 0) {
         return;
     }
 
