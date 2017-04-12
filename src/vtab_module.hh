@@ -583,13 +583,11 @@ struct vtab_module {
 
     template<typename U>
     auto addUpdate(U u) -> decltype(&U::delete_row, void()) {
-        log_debug("has updates!");
         this->vm_module.xUpdate = tvt_update;
     };
 
     template<typename U>
     void addUpdate(...) {
-        log_debug("no has updates!");
     };
 
     vtab_module() noexcept {

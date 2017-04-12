@@ -958,6 +958,10 @@ vis_line_t next_cluster(
         last_top = new_top;
     }
 
+    if (last_top != top) {
+        return last_top;
+    }
+
     return vis_line_t(-1);
 }
 
