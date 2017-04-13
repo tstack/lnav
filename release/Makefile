@@ -51,7 +51,7 @@ osx-build:
 	rm -rf osx-build-dir
 	mkdir -p osx-build-dir
 	cd ../ && ./autogen.sh
-	cd osx-build-dir && ../../configure && make -j && make distcheck -j8 && make dist-bzip2
+	cd osx-build-dir && ../../configure && make -j && make dist -j8 && make dist-bzip2
 
 osx-package: clean-outbox osx-build
 	mkdir -p osx-pkg/lnav-${VERSION}
@@ -62,7 +62,7 @@ osx-package: clean-outbox osx-build
 	cd osx-pkg && zip -r ../outbox/lnav-${VERSION}-os-x.zip lnav-${VERSION}
 	rm -rf osx-pkg
 
-release: linux-ospkg freebsd-package osx-package
+release: linux-ospkg osx-package
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
