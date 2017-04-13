@@ -2001,7 +2001,7 @@ static void looper(void)
 
         readline_context command_context("cmd", &lnav_commands);
 
-        readline_context search_context("search");
+        readline_context search_context("search", NULL, false);
         readline_context index_context("capture");
         readline_context sql_context("sql", NULL, false);
         readline_context exec_context("exec");
