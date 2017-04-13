@@ -88,7 +88,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                 bookmark_vector<vis_line_t> &error_bookmarks =
                     bm[&logfile_sub_source::BM_ERRORS];
 
-                if (from_five_min_ago != -1) {
+                if (now > last_line->get_time() && from_five_min_ago != -1) {
                     bookmark_vector<vis_line_t>::iterator five_min_lower =
                         lower_bound(error_bookmarks.begin(),
                                     error_bookmarks.end(),
