@@ -1,6 +1,13 @@
 #! /bin/bash
 
 run_test ${lnav_test} -n \
+    -c ":switch-to-view help" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "switch-to-view help is not working" < ${top_srcdir}/test/expected_help.txt
+
+
+run_test ${lnav_test} -n \
     -c ":hide-fields foobar" \
     ${test_dir}/logfile_access_log.0
 
@@ -359,13 +366,6 @@ run_test eval ${lnav_test} -d /tmp/lnav.err -n \
 check_error_output "able to create too many filters?" <<EOF
 error: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
 EOF
-
-
-run_test ${lnav_test} -n \
-    -c ":switch-to-view help" \
-    ${test_dir}/logfile_access_log.0
-
-check_output "switch-to-view help is not working" < ${top_srcdir}/src/help.txt
 
 
 run_test ${lnav_test} -n \

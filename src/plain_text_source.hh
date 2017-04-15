@@ -95,9 +95,12 @@ public:
         return *this;
     };
 
-    size_t text_line_count()
-    {
+    size_t text_line_count() {
         return this->tds_lines.size();
+    };
+
+    bool empty() const {
+        return this->tds_lines.empty();
     };
 
     size_t text_line_width(textview_curses &curses) {

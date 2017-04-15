@@ -106,9 +106,9 @@ down to display the new lines, much like 'tail -f'.
 
 On color displays, the lines will be highlighted as follows:
 
-  * Errors will be colored in ${ansi_red}red${ansi_norm};
-  * warnings will be ${ansi_yellow}yellow${ansi_norm};
-  * boundaries between days will be ${ansi_underline}underlined${ansi_norm}; and
+  * Errors will be colored in red;
+  * warnings will be yellow;
+  * boundaries between days will be underlined; and
   * various color highlights will be applied to: IP addresses, SQL keywords,
     XML tags, file and line numbers in Java backtraces, and quoted strings.
 
@@ -379,7 +379,7 @@ Query
                     if you wanted to search for ethernet device names,
                     regardless of their ID number, you can type:
 
-                      eth\\d+
+                      eth\d+
 
                     You can find more information about Perl regular
                     expressions at:
@@ -403,11 +403,11 @@ Query
 
   |<script> [arg1 .. argN]
                     Execute an lnav script contained in a format directory
-                    (e.g. \~/.lnav/formats/default).  The script can contain
+                    (e.g. ~/.lnav/formats/default).  The script can contain
                     lines starting with ':', ';', or '|' to execute commands,
                     SQL queries or execute other files in lnav.  Any values
                     after the script name are treated as arguments can be
-                    referenced in the script using '\$1', '\$2', and so on, like
+                    referenced in the script using '$1', '$2', and so on, like
                     in a shell script.
 
   CTRL+]            Abort command-line entry started with '/', ':', ';', or '|'.
@@ -598,7 +598,7 @@ COMMANDS
                     syslog message.
 
   session <cmd>     Add the given command to the session file
-                    (\~/.lnav/session).  Any commands listed in the session file
+                    (~/.lnav/session).  Any commands listed in the session file
                     are executed on startup.  Only the highlight, word-wrap, and
                     filter-related commands can be added to the session file.
 
@@ -670,7 +670,7 @@ COMMANDS
                     '*' to reset all options.
 
   save-config       Save the current configuration state to:
-                        \~/.lnav/config.json
+                        ~/.lnav/config.json
 
 
 SQL QUERIES (experimental)
@@ -829,21 +829,21 @@ OTHER SQL FEATURES
 ==================
 
 Environment variables can be used in SQL statements by prefixing the
-variable name with a dollar-sign (\$).  For example, to read the value of
+variable name with a dollar-sign ($).  For example, to read the value of
 the HOME variable, you can do:
 
-  ;SELECT \$HOME;
+  ;SELECT $HOME;
 
 To select the syslog messages that have a hostname field that is equal
 to the HOSTNAME variable:
 
-  ;SELECT * FROM syslog_log WHERE log_hostname = \$HOSTNAME;
+  ;SELECT * FROM syslog_log WHERE log_hostname = $HOSTNAME;
 
 NOTE: Variable substitution is done for fields in the query and is not
 a plain text substitution.  For example, the following statement
 WILL NOT WORK:
 
-  ;SELECT * FROM \$TABLE_NAME; -- Syntax error
+  ;SELECT * FROM $TABLE_NAME; -- Syntax error
 
 
 Access to lnav's environment variables is also available via the "environ"
@@ -884,8 +884,8 @@ with "pt:" and passing the value as a file name.  For example, to search
 for log messages with the string 'Critical Error' when starting lnav you
 can do the following:
 
-  \$ setenv PAPERTRAIL_API_TOKEN xxxxxxxxx
-  \$ lnav "pt:'Critical Error'"
+  $ setenv PAPERTRAIL_API_TOKEN xxxxxxxxx
+  $ lnav "pt:'Critical Error'"
 
 If lnav is already started, you can use the ':open' command like so:
 
@@ -912,3 +912,893 @@ For support questions, email:
 
 REFERENCE
 =========
+
+
+Synopsis
+  CAST(expr AS type-name) -- Convert the value of the given expression to a 
+    different storage class specified by type-name.
+Parameters
+  expr        The value to convert.
+  type-name   The name of the type to convert to.
+
+Example
+#1 ;SELECT CAST(1.23 AS INTEGER)
+   
+
+
+Synopsis
+  abs(x) -- Return the absolute value of the argument
+Parameter
+  x   The number to convert
+
+Example
+#1 ;SELECT abs(-1)
+   
+
+
+Synopsis
+  avg(X) -- Returns the average value of all non-NULL numbers within a group.
+Parameter
+  X   The value to compute the average of.
+
+Examples
+#1 ;SELECT avg(ex_duration) FROM lnav_example_log
+   
+
+#2 ;SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY 
+          ex_procname
+   
+
+
+Synopsis
+  basename(path) -- Extract the base portion of a pathname.
+Parameter
+  path   The path
+
+Examples
+#1 ;SELECT basename('foobar')
+   
+
+#2 ;SELECT basename('foo/bar')
+   
+
+#3 ;SELECT basename('foo/bar/')
+   
+
+#4 ;SELECT basename('')
+   
+
+#5 ;SELECT basename('foo\bar')
+   
+
+#6 ;SELECT basename('foobar')
+   
+
+#7 ;SELECT basename('/')
+   
+
+
+Synopsis
+  changes() -- The number of database rows that were changed, inserted, or 
+    deleted by the most recent statement.
+
+
+Synopsis
+  char(X, ...) -- Returns a string composed of characters having the given 
+    unicode code point values
+Parameter
+  X   The unicode code point values
+
+Example
+#1 ;SELECT char(0x48, 0x49)
+   
+
+
+Synopsis
+  coalesce(X, Y, ...) -- Returns a copy of its first non-NULL argument, or NULL
+    if all arguments are NULL
+Parameters
+  X   A value to check for NULL-ness
+  Y   A value to check for NULL-ness
+
+Example
+#1 ;SELECT coalesce(null, 0, null)
+   
+
+
+Synopsis
+  count(X) -- If the argument is '*', the total number of rows in the group is 
+    returned.  Otherwise, the number of times the argument is non-NULL.
+Parameter
+  X   The value to count.
+
+Examples
+#1 ;SELECT count(*) FROM lnav_example_log
+   
+
+#2 ;SELECT count(log_part) FROM lnav_example_log
+   
+
+
+Synopsis
+  date(timestring, modifier, ...) -- Returns the date in this format: YYYY-MM-
+    DD.
+Parameters
+  timestring   The string to convert to a date.
+  modifier     A transformation that is applied to the value to the left.
+
+Examples
+#1 ;SELECT date('2017-01-02T03:04:05')
+   
+
+#2 ;SELECT date('2017-01-02T03:04:05', '+1 day')
+   
+
+#3 ;SELECT date(1491341842, 'unixepoch')
+   
+
+
+Synopsis
+  datetime(timestring, modifier, ...) -- Returns the date and time in this 
+    format: YYYY-MM-DD HH:MM:SS.
+Parameters
+  timestring   The string to convert to a date with time.
+  modifier     A transformation that is applied to the value to the left.
+
+Examples
+#1 ;SELECT datetime('2017-01-02T03:04:05')
+   
+
+#2 ;SELECT datetime('2017-01-02T03:04:05', '+1 minute')
+   
+
+#3 ;SELECT datetime(1491341842, 'unixepoch')
+   
+
+
+Synopsis
+  dirname(path) -- Extract the directory portion of a pathname.
+Parameter
+  path   The path
+
+Examples
+#1 ;SELECT dirname('foo/bar')
+   
+
+#2 ;SELECT dirname('/foo/bar')
+   
+
+#3 ;SELECT dirname('/bar')
+   
+
+#4 ;SELECT dirname('foo\bar')
+   
+
+#5 ;SELECT dirname('')
+   
+
+
+Synopsis
+  endswith(str, suffix) -- Test if a string ends with the given suffix
+Parameters
+  str      The string to test
+  suffix   The suffix to check in the string
+
+Examples
+#1 ;SELECT endswith('notbad.jpg', '.jpg')
+   
+
+#2 ;SELECT endswith('notbad.png', '.jpg')
+   
+
+
+Synopsis
+  extract(str) -- Automatically Parse and extract data from a string
+Parameter
+  str   The string to parse
+
+Examples
+#1 ;SELECT extract('foo=1 bar=2 name="Rolo Tomassi"')
+   
+
+#2 ;SELECT extract('1.0 abc 2.0')
+   
+
+
+Synopsis
+  gethostbyaddr(hostname) -- Get the IP address for the given hostname
+Parameter
+  hostname   The DNS hostname to lookup.
+
+Example
+#1 ;SELECT gethostbyaddr('127.0.0.1')
+   
+
+
+Synopsis
+  gethostbyname(hostname) -- Get the IP address for the given hostname
+Parameter
+  hostname   The DNS hostname to lookup.
+
+Example
+#1 ;SELECT gethostbyname('localhost')
+   
+
+
+Synopsis
+  glob(pattern, str) -- Match a string against Unix glob pattern
+Parameters
+  pattern   The glob pattern
+  str       The string to match
+
+Example
+#1 ;SELECT glob('a*', 'abc')
+   
+
+
+Synopsis
+  group_concat(X, sep) -- Returns a string which is the concatenation of all 
+    non-NULL values of X.
+Parameters
+  X     The value to concatenate.
+  sep   The separator to place between the values.
+
+Examples
+#1 ;SELECT group_concat(ex_procname) FROM lnav_example_log
+   
+
+#2 ;SELECT group_concat(ex_procname, ', ') FROM lnav_example_log
+   
+
+#3 ;SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log
+   
+
+
+Synopsis
+  hex(X) -- Returns a string which is the upper-case hexadecimal rendering of 
+    the content of its argument.
+Parameter
+  X   The blob to convert to hexadecimal
+
+Example
+#1 ;SELECT hex('abc')
+   
+
+
+Synopsis
+  ifnull(X, Y) -- Returns a copy of its first non-NULL argument, or NULL if 
+    both arguments are NULL
+Parameters
+  X   A value to check for NULL-ness
+  Y   A value to check for NULL-ness
+
+Example
+#1 ;SELECT ifnull(null, 0)
+   
+
+
+Synopsis
+  instr(haystack, needle) -- Finds the first occurrence of the needle within 
+    the haystack and returns the number of prior characters plus 1, or 0 if Y 
+    is nowhere found within X
+Parameters
+  haystack   The string to search within
+  needle     The string to look for in the haystack
+
+Example
+#1 ;SELECT instr('abc', 'b')
+   
+
+
+Synopsis
+  jget(json, ptr) -- Get the value from a JSON object using a JSON-Pointer.
+Parameters
+  json   The JSON object to query.
+  ptr    The JSON-Pointer to lookup in the object.
+
+Examples
+#1 ;SELECT jget('1', '')
+   
+
+#2 ;SELECT jget('{ "a": 1, "b": 2 }', '/b')
+   
+
+
+Synopsis
+  joinpath(path, ...) -- Join components of a path together.
+Parameter
+  path   One or more path components to join together.  If an argument starts 
+         with a forward or backward slash, it will be considered an absolute 
+         path and any preceding elements will be ignored.
+
+Examples
+#1 ;SELECT joinpath('foo', 'bar')
+   
+
+#2 ;SELECT joinpath('', 'foo', 'bar')
+   
+
+#3 ;SELECT joinpath('/', 'foo', 'bar')
+   
+
+#4 ;SELECT joinpath('/', 'foo', '/bar')
+   
+
+
+Synopsis
+  julianday(timestring, modifier, ...) -- Returns the number of days since noon
+    in Greenwich on November 24, 4714 B.C.
+Parameters
+  timestring   The string to convert to a date with time.
+  modifier     A transformation that is applied to the value to the left.
+
+Examples
+#1 ;SELECT julianday('2017-01-02T03:04:05')
+   
+
+#2 ;SELECT julianday('2017-01-02T03:04:05', '+1 minute')
+   
+
+#3 ;SELECT julianday(1491341842, 'unixepoch')
+   
+
+
+Synopsis
+  last_insert_rowid() -- Returns the ROWID of the last row insert from the 
+    database connection which invoked the function
+
+
+Synopsis
+  length(str) -- Returns the number of characters (not bytes) in the given 
+    string prior to the first NUL character
+Parameter
+  str   The string to determine the length of
+
+Example
+#1 ;SELECT length('abc')
+   
+
+
+Synopsis
+  like(pattern, str, escape) -- Match a string against a pattern
+Parameters
+  pattern   The pattern to match.  A percent symbol () will match zero or more 
+            characters and an underscore (_) will match a single character.
+  str       The string to match
+  escape    The escape character that can be used to prefix a literal percent 
+            or underscore in the pattern.
+
+Examples
+#1 ;SELECT like('%b%', 'aabcc')
+   
+
+#2 ;SELECT like('%b:%', 'aab%', ':')
+   
+
+
+Synopsis
+  likelihood(value, probability) -- Provides a hint to the query planner that 
+    the first argument is a boolean that is true with the given probability
+Parameters
+  value         The boolean value to return
+  probability   A floating point constant between 0.0 and 1.0
+
+
+Synopsis
+  likely(value) -- Short-hand for likelihood(X,0.9375)
+Parameter
+  value   The boolean value to return
+
+
+Synopsis
+  load_extension(path, entry-point) -- Loads SQLite extensions out of the given
+    shared library file using the given entry point.
+Parameters
+  path          The path to the shared library containing the extension.
+  entry-point   
+
+
+Synopsis
+  log_top_datetime() -- Return the timestamp of the line at the top of the log 
+    view.
+
+
+Synopsis
+  log_top_line() -- Return the line number at the top of the log view.
+
+
+Synopsis
+  lower(str) -- Returns a copy of the given string with all ASCII characters 
+    converted to lower case.
+Parameter
+  str   The string to convert.
+
+Example
+#1 ;SELECT lower('AbC')
+   
+
+
+Synopsis
+  ltrim(str, chars) -- Returns a string formed by removing any and all 
+    characters that appear in the second argument from the left side of the 
+    first.
+Parameters
+  str     The string to trim characters from the left side
+  chars   The characters to trim.  Defaults to spaces.
+
+Examples
+#1 ;SELECT ltrim('   abc')
+   
+
+#2 ;SELECT ltrim('aaaabbbc', 'ab')
+   
+
+
+Synopsis
+  max(X, ...) -- Returns the argument with the maximum value, or return NULL if
+    any argument is NULL.
+Parameter
+  X   The numbers to find the maximum of.  If only one argument is given, this 
+      function operates as an aggregate.
+
+Examples
+#1 ;SELECT max(2, 1, 3)
+   
+
+#2 ;SELECT max(status) FROM http_status_codes
+   
+
+
+Synopsis
+  min(X, ...) -- Returns the argument with the minimum value, or return NULL if
+    any argument is NULL.
+Parameter
+  X   The numbers to find the minimum of.  If only one argument is given, this 
+      function operates as an aggregate.
+
+Examples
+#1 ;SELECT min(2, 1, 3)
+   
+
+#2 ;SELECT min(status) FROM http_status_codes
+   
+
+
+Synopsis
+  nullif(X, Y) -- Returns its first argument if the arguments are different and
+    NULL if the arguments are the same.
+Parameters
+  X   The first argument to compare.
+  Y   The argument to compare against the first.
+
+Examples
+#1 ;SELECT nullif(1, 1)
+   
+
+#2 ;SELECT nullif(1, 2)
+   
+
+
+Synopsis
+  printf(format, X) -- Returns a string with this functions arguments 
+    substituted into the given format.  Substitution points are specified using
+    percent () options, much like the standard C printf() function.
+Parameters
+  format   The format of the string to return.
+  X        The argument to substitute at a given position in the format.
+
+Examples
+#1 ;SELECT printf('Hello, %s!', 'World')
+   
+
+#2 ;SELECT printf('align: % 10s', 'small')
+   
+
+#3 ;SELECT printf('value: %05d', 11)
+   
+
+
+Synopsis
+  quote(X) -- Returns the text of an SQL literal which is the value of its 
+    argument suitable for inclusion into an SQL statement.
+Parameter
+  X   The string to quote.
+
+Examples
+#1 ;SELECT quote('abc')
+   
+
+#2 ;SELECT quote('abc''123')
+   
+
+
+Synopsis
+  random() -- Returns a pseudo-random integer between -9223372036854775808 and 
+    +9223372036854775807.
+
+
+Synopsis
+  randomblob(N) -- Return an N-byte blob containing pseudo-random bytes.
+Parameter
+  N   The size of the blob in bytes.
+
+
+Synopsis
+  regexp(re, str) -- Test if a string matches a regular expression
+Parameters
+  re    The regular expression to use
+  str   The string to test against the regular expression
+
+
+Synopsis
+  regexp_match(re, str) -- Match a string against a regular expression and 
+    return the capture groups as JSON.
+Parameters
+  re    The regular expression to use
+  str   The string to test against the regular expression
+
+Examples
+#1 ;SELECT regexp_match('(\d+)', '123')
+   
+
+#2 ;SELECT regexp_match('(\d+) (\w+)', '123 four')
+   
+
+#3 ;SELECT regexp_match('(?<num>\d+) (?<str>\w+)', '123 four')
+   
+
+
+Synopsis
+  regexp_replace(str, re, repl) -- Replace the parts of a string that match a 
+    regular expression.
+Parameters
+  str    The string to perform replacements on
+  re     The regular expression to match
+  repl   The replacement string.  You can reference capture groups with a 
+         backslash followed by the number of the group, starting with 1.
+
+Examples
+#1 ;SELECT regexp_replace('Hello, World!', '^(\w+)', 'Goodbye')
+   
+
+#2 ;SELECT regexp_replace('123 abc', '(\w+)', '<\1>')
+   
+
+
+Synopsis
+  replace(str, old, replacement) -- Returns a string formed by substituting the
+    replacement string for every occurrence of the old string in the given 
+    string.
+Parameters
+  str           The string to perform substitutions on.
+  old           The string to be replaced.
+  replacement   The string to replace any occurrences of the old string with.
+
+Examples
+#1 ;SELECT replace('abc', 'x', 'z')
+   
+
+#2 ;SELECT replace('abc', 'a', 'z')
+   
+
+
+Synopsis
+  round(num, digits) -- Returns a floating-point value rounded to the given 
+    number of digits to the right of the decimal point.
+Parameters
+  num      The value to round.
+  digits   The number of digits to the right of the decimal to round to.
+
+Examples
+#1 ;SELECT round(123.456)
+   
+
+#2 ;SELECT round(123.456, 1)
+   
+
+#3 ;SELECT round(123.456, 5)
+   
+
+
+Synopsis
+  rtrim(str, chars) -- Returns a string formed by removing any and all 
+    characters that appear in the second argument from the right side of the 
+    first.
+Parameters
+  str     The string to trim characters from the right side
+  chars   The characters to trim.  Defaults to spaces.
+
+Examples
+#1 ;SELECT ltrim('abc   ')
+   
+
+#2 ;SELECT ltrim('abbbbcccc', 'bc')
+   
+
+
+Synopsis
+  sqlite_compileoption_get(N) -- Returns the N-th compile-time option used to 
+    build SQLite or NULL if N is out of range.
+Parameter
+  N   The option number to get
+
+
+Synopsis
+  sqlite_compileoption_used(option) -- Returns true (1) or false (0) depending 
+    on whether or not that compile-time option was used during the build.
+Parameter
+  option   The name of the compile-time option.
+
+Example
+#1 ;SELECT sqlite_compileoption_used('ENABLE_FTS3')
+   
+
+
+Synopsis
+  sqlite_source_id() -- Returns a string that identifies the specific version 
+    of the source code that was used to build the SQLite library.
+
+
+Synopsis
+  sqlite_version() -- Returns the version string for the SQLite library that is
+    running.
+
+
+Synopsis
+  startswith(str, prefix) -- Test if a string begins with the given prefix
+Parameters
+  str      The string to test
+  prefix   The prefix to check in the string
+
+Examples
+#1 ;SELECT startswith('foobar', 'foo')
+   
+
+#2 ;SELECT startswith('foobar', 'bar')
+   
+
+
+Synopsis
+  strftime(format, timestring, modifier, ...) -- Returns the date formatted 
+    according to the format string specified as the first argument.
+Parameters
+  format       A format string with substitutions similar to those found in the
+               strftime() standard C library.
+  timestring   The string to convert to a date with time.
+  modifier     A transformation that is applied to the value to the left.
+
+Examples
+#1 ;SELECT strftime('%Y', '2017-01-02T03:04:05')
+   
+
+#2 ;SELECT strftime('The time is: %H%M%S', '2017-01-02T03:04:05', '+1 minute')
+   
+
+#3 ;SELECT strftime('Julian day: %J', 1491341842, 'unixepoch')
+   
+
+
+Synopsis
+  substr(str, start, size) -- Returns a substring of input string X that begins
+    with the Y-th character and which is Z characters long.
+Parameters
+  str     The string to extract a substring from.
+  start   The index within 'str' that is the start of the substring.  Indexes 
+          begin at 1.  A negative value means that the substring is found by 
+          counting from the right rather than the left.  
+  size    The size of the substring.  If not given, then all characters through
+          the end of the string are returned.  If the value is negative, then 
+          the characters before the start are returned.
+
+Examples
+#1 ;SELECT substr('abc', 2)
+   
+
+#2 ;SELECT substr('abc', 2, 1)
+   
+
+#3 ;SELECT substr('abc', -1)
+   
+
+#4 ;SELECT substr('abc', -1, -1)
+   
+
+
+Synopsis
+  sum(X) -- Returns the sum of the values in the group as an integer.
+Parameter
+  X   The values to add.
+
+Example
+#1 ;SELECT sum(ex_duration) FROM lnav_example_log
+   
+
+
+Synopsis
+  time(timestring, modifier, ...) -- Returns the time in this format: HH:MM:SS.
+    
+Parameters
+  timestring   The string to convert to a time.
+  modifier     A transformation that is applied to the value to the left.
+
+Examples
+#1 ;SELECT time('2017-01-02T03:04:05')
+   
+
+#2 ;SELECT time('2017-01-02T03:04:05', '+1 minute')
+   
+
+#3 ;SELECT time(1491341842, 'unixepoch')
+   
+
+
+Synopsis
+  timediff(time1, time2) -- Compute the difference between two timestamps
+Parameters
+  time1   The first timestamp
+  time2   The timestamp to subtract from the first
+
+Examples
+#1 ;SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')
+   
+
+#2 ;SELECT timediff('today', 'yesterday')
+   
+
+
+Synopsis
+  timeslice(time, slice) -- Return the start of the slice of time that the 
+    given timestamp falls in.
+Parameters
+  time    The timestamp to get the time slice for.
+  slice   The size of the time slices
+
+Examples
+#1 ;SELECT timeslice('2017-01-01T05:05:00', '10m')
+   
+
+#2 ;SELECT timeslice(log_time, '5m') AS slice, count(*) FROM lnav_example_log 
+          GROUP BY slice
+   
+
+
+Synopsis
+  total(X) -- Returns the sum of the values in the group as a floating-point.
+Parameter
+  X   The values to add.
+
+Example
+#1 ;SELECT total(ex_duration) FROM lnav_example_log
+   
+
+
+Synopsis
+  total_changes() -- Returns the number of row changes caused by INSERT, UPDATE
+    or DELETE statements since the current database connection was opened.
+
+
+Synopsis
+  trim(str, chars) -- Returns a string formed by removing any and all 
+    characters that appear in the second argument from the left and right sides
+    of the first.
+Parameters
+  str     The string to trim characters from the left and right sides.
+  chars   The characters to trim.  Defaults to spaces.
+
+Examples
+#1 ;SELECT trim('    abc   ')
+   
+
+#2 ;SELECT trim('-+abc+-', '-+')
+   
+
+
+Synopsis
+  typeof(X) -- Returns a string that indicates the datatype of the expression X
+    : "null", "integer", "real", "text", or "blob".
+Parameter
+  X   The expression to check.
+
+Examples
+#1 ;SELECT typeof(1)
+   
+
+#2 ;SELECT typeof('abc')
+   
+
+
+Synopsis
+  unicode(X) -- Returns the numeric unicode code point corresponding to the 
+    first character of the string X.
+Parameter
+  X   The string to examine.
+
+Example
+#1 ;SELECT unicode('abc')
+   
+
+
+Synopsis
+  unlikely(value) -- Short-hand for likelihood(X, 0.0625)
+Parameter
+  value   The boolean value to return
+
+
+Synopsis
+  upper(str) -- Returns a copy of the given string with all ASCII characters 
+    converted to upper case.
+Parameter
+  str   The string to convert.
+
+Example
+#1 ;SELECT upper('aBc')
+   
+
+
+Synopsis
+  zeroblob(N) -- Returns a BLOB consisting of N bytes of 0x00.
+Parameter
+  N   The size of the BLOB.
+
+
+Synopsis
+  CASE [base-expr] WHEN cmp-expr1 THEN then-expr1 [... WHEN cmp-exprN THEN then-exprN]
+       [ELSE else-expr]
+       END
+
+  Evaluate a series of expressions in order until one evaluates to true and 
+  then return it's result.  Similar to an IF-THEN-ELSE construct in other 
+  languages.
+Parameters
+  base-expr   The base expression that is used for comparison in the branches
+  cmp-expr    The expression to test if this branch should be taken
+  else-expr   The result of this CASE if no branches matched.
+
+Example
+#1 ;SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END
+   
+
+
+Synopsis
+  SELECT result-column1 [, ... result-columnN] [FROM table1 [, ... tableN]]
+         [WHERE cond]
+         [GROUP BY grouping-expr1 [, ... grouping-exprN]]
+         [ORDER BY ordering-term1 [, ... ordering-termN]]
+         [LIMIT limit-expr1 [, ... limit-exprN]]
+
+  Query the database and return zero or more rows of data.
+Parameters
+  result-column   
+  table           The table(s) to query for data
+  cond            The conditions used to select the rows to return.
+  grouping-expr   The expression to use when grouping rows.
+  ordering-term   The values to use when ordering the result set.
+  limit-expr      The maximum number of rows to return
+
+Example
+#1 ;SELECT * FROM syslog_log
+   
+
+
+Synopsis
+  UPDATE table SET column-name1 = expr1 [, ... column-nameN = exprN]
+         [WHERE cond]
+
+  Modify a subset of values in zero or more rows of the given table
+Parameters
+  table         The table to update
+  column-name   The columns in the table to update.
+  cond          The condition used to determine whether a row should be 
+                updated.
+
+
+Synopsis
+  WITH [RECURSIVE] cte-table-name AS select-stmt
+
+  Create a temporary view that exists only for the duration of a SQL statement.
+  
+Parameters
+                   
+  cte-table-name   The name for the temporary table.
+  select-stmt      The SELECT statement used to populate the temporary table.
+

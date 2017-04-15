@@ -251,6 +251,8 @@ struct _lnav_data {
     time_t                                  ld_bottom_time;
     int                                     ld_bottom_time_millis;
 
+    plain_text_source                       ld_help_source;
+
     plain_text_source                       ld_doc_source;
     textview_curses                         ld_doc_view;
     plain_text_source                       ld_example_source;

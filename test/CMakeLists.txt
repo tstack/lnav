@@ -21,12 +21,6 @@ add_executable(test_abbrev test_abbrev.cc
         ../src/pcrepp.cc
         ../src/lnav_log.cc
         ../src/spookyhash/SpookyV2.cpp)
-add_executable(test_help_text_formatter test_help_text_formatter.cc
-        ../src/help_text_formatter.cc
-        ../src/view_curses.cc
-        ../src/lnav_log.cc
-        ../src/ansi_scrubber.cc
-        ../src/pcrepp.cc)
 add_executable(drive_sql_anno drive_sql_anno.cc ../src/lnav_log.cc ../src/pcrepp.cc)
 link_directories(/opt/local/lib)
 target_link_libraries(test_pcrepp /opt/local/lib/libpcre.a)
@@ -34,6 +28,3 @@ target_link_libraries(test_reltime /opt/local/lib/libpcre.a)
 target_link_libraries(test_date_time_scanner /opt/local/lib/libpcre.a)
 target_link_libraries(test_abbrev /opt/local/lib/libpcre.a)
 target_link_libraries(drive_sql_anno /opt/local/lib/libpcre.a)
-target_link_libraries(test_help_text_formatter
-        /opt/local/lib/libpcre.a
-        /opt/local/lib/libncurses.a)

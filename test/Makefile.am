@@ -42,7 +42,6 @@ check_PROGRAMS = \
 	test_concise \
 	test_date_time_scanner \
 	test_grep_proc2 \
-	test_help_text_formatter \
 	test_hist_source \
 	test_json_ptr \
 	test_line_buffer2 \
@@ -91,10 +90,6 @@ test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
 
 test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
-
-test_help_text_formatter_SOURCES = test_help_text_formatter.cc
-test_help_text_formatter_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
-	$(CONFIG_OBJS) $(SQLITE3_LIBS)
 
 test_hist_source_SOURCES = test_hist_source.cc
 test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
@@ -282,6 +277,7 @@ dist_noinst_DATA = \
 	datafile_simple.19 \
 	datafile_simple.20 \
 	datafile_xml.0 \
+	expected_help.txt \
 	listview_output.0 \
 	listview_output.1 \
 	listview_output.2 \

@@ -100,6 +100,14 @@ attr_line_t &attr_line_t::with_ansi_string(const char *str, ...)
     return *this;
 }
 
+attr_line_t &attr_line_t::with_ansi_string(const std::string &str)
+{
+    this->al_string = str;
+    scrub_ansi_string(this->al_string, this->al_attrs);
+
+    return *this;
+}
+
 attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
 {
     size_t start_len = this->al_string.length();

@@ -380,8 +380,20 @@ public:
 
     attr_line_t &with_ansi_string(const char *str, ...);
 
+    attr_line_t &with_ansi_string(const std::string &str);
+
     attr_line_t &with_attr(const string_attr &sa) {
         this->al_attrs.push_back(sa);
+        return *this;
+    };
+
+    attr_line_t &ensure_space() {
+        if (!this->al_string.empty() &&
+            this->al_string.back() != ' ' &&
+            this->al_string.back() != '[') {
+            this->append(1, ' ');
+        }
+
         return *this;
     };
 

@@ -878,6 +878,57 @@ static int key_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
     return 0;
 }
 
+static void build_all_help_text()
+{
+    if (!lnav_data.ld_help_source.empty()) {
+        return;
+    }
+
+    attr_line_t all_help_text;
+    shlex lexer(help_txt, strlen(help_txt));
+    string sub_help_text;
+
+    lexer.with_ignore_quotes(true)
+         .eval(sub_help_text, lnav_data.ld_exec_context.ec_global_vars);
+    all_help_text.with_ansi_string(sub_help_text);
+
+    map<string, help_text *> sql_funcs;
+    map<string, help_text *> sql_keywords;
+
+    for (auto iter : sqlite_function_help) {
+        switch (iter.second->ht_context) {
+            case HC_SQL_FUNCTION:
+                sql_funcs[iter.second->ht_name] = iter.second;
+                break;
+            case HC_SQL_KEYWORD:
+                sql_keywords[iter.second->ht_name] = iter.second;
+                break;
+            default:
+                break;
+        }
+    }
+
+    for (auto iter : sql_funcs) {
+        all_help_text.append(2, '\n');
+        format_help_text_for_term(*iter.second, 79, all_help_text);
+        if (!iter.second->ht_example.empty()) {
+            all_help_text.append(1, '\n');
+            format_example_text_for_term(*iter.second, 79, all_help_text);
+        }
+    }
+
+    for (auto iter : sql_keywords) {
+        all_help_text.append(2, '\n');
+        format_help_text_for_term(*iter.second, 79, all_help_text);
+        if (!iter.second->ht_example.empty()) {
+            all_help_text.append(1, '\n');
+            format_example_text_for_term(*iter.second, 79, all_help_text);
+        }
+    }
+
+    lnav_data.ld_help_source.replace_with(all_help_text);
+}
+
 bool toggle_view(textview_curses *toggle_tc)
 {
     textview_curses *tc     = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.back();
@@ -901,6 +952,9 @@ bool toggle_view(textview_curses *toggle_tc)
         else if (toggle_tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
             // Rebuild to reflect changes in marks.
             rebuild_hist();
+        }
+        else if (toggle_tc == &lnav_data.ld_views[LNV_HELP]) {
+            build_all_help_text();
         }
         lnav_data.ld_last_view = NULL;
         lnav_data.ld_view_stack.push_back(toggle_tc);
@@ -3177,7 +3231,7 @@ int main(int argc, char *argv[])
     init_lnav_commands(lnav_commands);
 
     lnav_data.ld_views[LNV_HELP]
-        .set_sub_source(new plain_text_source(help_txt))
+        .set_sub_source(&lnav_data.ld_help_source)
         .set_word_wrap(true);
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)

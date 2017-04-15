@@ -81,15 +81,27 @@ public:
 class shlex {
 public:
     shlex(const char *str, size_t len)
-            : s_str(str), s_len(len), s_index(0), s_state(STATE_NORMAL) {
+            : s_str(str),
+              s_len(len),
+              s_ignore_quotes(false),
+              s_index(0),
+              s_state(STATE_NORMAL) {
 
     };
 
     shlex(const std::string &str)
-            : s_str(str.c_str()), s_len(str.size()), s_index(0),
+            : s_str(str.c_str()),
+              s_len(str.size()),
+              s_ignore_quotes(false),
+              s_index(0),
               s_state(STATE_NORMAL) {
 
     };
+
+    shlex &with_ignore_quotes(bool val) {
+        this->s_ignore_quotes = val;
+        return *this;
+    }
 
     bool tokenize(pcre_context::capture_t &cap_out, shlex_token_t &token_out) {
         while (this->s_index < this->s_len) {
@@ -108,43 +120,47 @@ public:
                     }
                     return true;
                 case '\"':
-                    switch (this->s_state) {
-                        case STATE_NORMAL:
-                            cap_out.c_begin = this->s_index;
-                            this->s_index += 1;
-                            cap_out.c_end = this->s_index;
-                            token_out = ST_DOUBLE_QUOTE_START;
-                            this->s_state = STATE_IN_DOUBLE_QUOTE;
-                            return true;
-                        case STATE_IN_DOUBLE_QUOTE:
-                            cap_out.c_begin = this->s_index;
-                            this->s_index += 1;
-                            cap_out.c_end = this->s_index;
-                            token_out = ST_DOUBLE_QUOTE_END;
-                            this->s_state = STATE_NORMAL;
-                            return true;
-                        default:
-                            break;
+                    if (!this->s_ignore_quotes) {
+                        switch (this->s_state) {
+                            case STATE_NORMAL:
+                                cap_out.c_begin = this->s_index;
+                                this->s_index += 1;
+                                cap_out.c_end = this->s_index;
+                                token_out = ST_DOUBLE_QUOTE_START;
+                                this->s_state = STATE_IN_DOUBLE_QUOTE;
+                                return true;
+                            case STATE_IN_DOUBLE_QUOTE:
+                                cap_out.c_begin = this->s_index;
+                                this->s_index += 1;
+                                cap_out.c_end = this->s_index;
+                                token_out = ST_DOUBLE_QUOTE_END;
+                                this->s_state = STATE_NORMAL;
+                                return true;
+                            default:
+                                break;
+                        }
                     }
                     break;
                 case '\'':
-                    switch (this->s_state) {
-                        case STATE_NORMAL:
-                            cap_out.c_begin = this->s_index;
-                            this->s_index += 1;
-                            cap_out.c_end = this->s_index;
-                            token_out = ST_SINGLE_QUOTE_START;
-                            this->s_state = STATE_IN_SINGLE_QUOTE;
-                            return true;
-                        case STATE_IN_SINGLE_QUOTE:
-                            cap_out.c_begin = this->s_index;
-                            this->s_index += 1;
-                            cap_out.c_end = this->s_index;
-                            token_out = ST_SINGLE_QUOTE_END;
-                            this->s_state = STATE_NORMAL;
-                            return true;
-                        default:
-                            break;
+                    if (!this->s_ignore_quotes) {
+                        switch (this->s_state) {
+                            case STATE_NORMAL:
+                                cap_out.c_begin = this->s_index;
+                                this->s_index += 1;
+                                cap_out.c_end = this->s_index;
+                                token_out = ST_SINGLE_QUOTE_START;
+                                this->s_state = STATE_IN_SINGLE_QUOTE;
+                                return true;
+                            case STATE_IN_SINGLE_QUOTE:
+                                cap_out.c_begin = this->s_index;
+                                this->s_index += 1;
+                                cap_out.c_end = this->s_index;
+                                token_out = ST_SINGLE_QUOTE_END;
+                                this->s_state = STATE_NORMAL;
+                                return true;
+                            default:
+                                break;
+                        }
                     }
                     break;
                 case '$':
@@ -377,6 +393,7 @@ public:
 
     const char *s_str;
     ssize_t s_len;
+    bool s_ignore_quotes;
     ssize_t s_index;
     state_t s_state;
 };

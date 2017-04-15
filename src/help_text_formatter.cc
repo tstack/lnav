@@ -43,6 +43,7 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
     static size_t body_indent = 2;
 
     text_wrap_settings tws;
+    size_t start_index = out.get_string().length();
 
     tws.with_width(width);
 
@@ -118,32 +119,34 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
             for (auto &param : ht.ht_parameters) {
                 if (break_all ||
-                    (out.get_string().length() - line_start + 10) >=
+                    (out.get_string().length() - start_index - line_start + 10) >=
                     tws.tws_width) {
                     out.append("\n");
                     line_start = out.get_string().length();
                     out.append(body_indent + strlen(ht.ht_name) + 1, ' ');
                     break_all = true;
-                } else {
-                    out.append(" ");
                 }
                 if (param.ht_nargs == HN_ZERO_OR_MORE ||
                     param.ht_nargs == HN_OPTIONAL) {
+                    if (!break_all) {
+                        out.append(" ");
+                    }
                     out.append("[");
                 }
                 if (param.ht_flag_name) {
-                    out.append(param.ht_flag_name, &view_curses::VC_STYLE,
-                               A_BOLD);
+                    out.ensure_space()
+                        .append(param.ht_flag_name, &view_curses::VC_STYLE,
+                                A_BOLD);
                 }
                 if (param.ht_name[0]) {
-                    out.append(" ")
+                    out.ensure_space()
                         .append(param.ht_name, &view_curses::VC_STYLE,
                                 A_UNDERLINE);
-                    if (param.ht_nargs == HN_ZERO_OR_MORE ||
-                        param.ht_nargs == HN_ONE_OR_MORE) {
-                        out.append("1", &view_curses::VC_STYLE, A_UNDERLINE);
-                    }
                     if (!param.ht_parameters.empty()) {
+                        if (param.ht_nargs == HN_ZERO_OR_MORE ||
+                            param.ht_nargs == HN_ONE_OR_MORE) {
+                            out.append("1", &view_curses::VC_STYLE, A_UNDERLINE);
+                        }
                         if (param.ht_parameters[0].ht_flag_name) {
                             out.append(" ")
                                 .append(param.ht_parameters[0].ht_flag_name,
@@ -158,12 +161,15 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                 }
                 if (param.ht_nargs == HN_ZERO_OR_MORE ||
                     param.ht_nargs == HN_ONE_OR_MORE) {
+                    bool needs_comma = param.ht_parameters.empty() ||
+                                       !param.ht_flag_name;
+
                     out.append("1", &view_curses::VC_STYLE, A_UNDERLINE)
                         .append(" [")
-                        .append(param.ht_flag_name ? "" : ", ")
+                        .append(needs_comma ? ", " : "")
                         .append("...")
-                        .append(param.ht_flag_name ? " " : "")
-                        .append(param.ht_flag_name ? param.ht_flag_name : "",
+                        .append(needs_comma ? "" : " ")
+                        .append((needs_comma || !param.ht_flag_name) ? "" : param.ht_flag_name,
                                 &view_curses::VC_STYLE,
                                 A_BOLD)
                         .append(" ")
