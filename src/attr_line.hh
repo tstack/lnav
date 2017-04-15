@@ -364,7 +364,7 @@ public:
     static inline attr_line_t from_ansi_str(const char *str) {
         attr_line_t retval;
 
-        return retval.with_ansi_string(str);
+        return retval.with_ansi_string("%s", str);
     };
 
     /** @return The string itself. */

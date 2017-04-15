@@ -1262,7 +1262,7 @@ Example
 Synopsis
   like(pattern, str, escape) -- Match a string against a pattern
 Parameters
-  pattern   The pattern to match.  A percent symbol () will match zero or more 
+  pattern   The pattern to match.  A percent symbol (%) will match zero or more
             characters and an underscore (_) will match a single character.
   str       The string to match
   escape    The escape character that can be used to prefix a literal percent 
@@ -1382,7 +1382,7 @@ Examples
 Synopsis
   printf(format, X) -- Returns a string with this functions arguments 
     substituted into the given format.  Substitution points are specified using
-    percent () options, much like the standard C printf() function.
+    percent (%) options, much like the standard C printf() function.
 Parameters
   format   The format of the string to return.
   X        The argument to substitute at a given position in the format.
