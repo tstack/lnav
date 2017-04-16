@@ -2331,21 +2331,35 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             retval = "error: hiding fields only works in the log view";
-        } else if (tc->get_inner_height() == 0) {
-            retval = "error: no log messages to hide";
         } else if (ec.ec_dry_run) {
             // TODO: highlight the fields to be hidden.
             retval = "";
         } else {
             logfile_sub_source &lss = lnav_data.ld_log_source;
-            content_line_t cl = lss.at(tc->get_top());
-            logfile *lf = lss.find(cl);
-            log_format *format = lf->get_format();
             bool hide = args[0] == "hide-fields";
             vector<string> found_fields, missing_fields;
 
             for (int lpc = 1; lpc < args.size(); lpc++) {
-                const intern_string_t name = intern_string::lookup(args[lpc]);
+                intern_string_t name;
+                log_format *format = nullptr;
+                size_t dot;
+
+                if ((dot = args[lpc].find('.')) != string::npos) {
+                    const intern_string_t format_name = intern_string::lookup(args[lpc].c_str(), dot);
+
+                    format = log_format::find_root_format(format_name.get());
+                    if (!format) {
+                        return "error: unknown format -- " + format_name.to_string();
+                    }
+                    name = intern_string::lookup(&(args[lpc].c_str()[dot + 1]), args[lpc].length() - dot - 1);
+                } else if (tc->get_inner_height() == 0) {
+                    return "error: no log messages to hide";
+                } else {
+                    content_line_t cl = lss.at(tc->get_top());
+                    logfile *lf = lss.find(cl);
+                    format = lf->get_format();
+                    name = intern_string::lookup(args[lpc]);
+                }
 
                 if (format->hide_field(name, hide)) {
                     found_fields.push_back(args[lpc]);
@@ -3273,9 +3287,13 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":hide-fields")
             .with_summary("Hide log message fields by replacing them with an ellipsis")
-            .with_parameter(help_text("field-name", "The name of the field to hide")
+            .with_parameter(help_text("field-name",
+                                      "The name of the field to hide in the format for the top log line.  "
+                                          "A qualified name can be used where the field name is prefixed "
+                                          "by the format name and a dot to hide any field.")
                                 .one_or_more())
             .with_example({"log_procname"})
+            .with_example({"syslog_log.log_procname"})
     },
     {
         "show-fields",

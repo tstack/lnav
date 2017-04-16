@@ -1,4 +1,11 @@
 
+lnav v0.8.3:
+     Fixes:
+     * The help view now includes all the command-help that would pop up as
+       you entered commands and SQL queries.
+     * Hidden fields and lines hidden before/after times are now saved in the
+       current session and restored.
+
 lnav v0.8.2:
      Features:
      * The timestamp format for JSON log files can be specified with the

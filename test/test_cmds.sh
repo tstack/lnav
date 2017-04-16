@@ -26,7 +26,7 @@ check_output "hide-fields with uri" <<EOF
 EOF
 
 run_test ${lnav_test} -n \
-    -c ":hide-fields c_ip cs_uri_stem" \
+    -c ":hide-fields access_log.c_ip access_log.cs_uri_stem" \
     ${test_dir}/logfile_access_log.0
 
 check_output "hide-fields with IP and uri" <<EOF

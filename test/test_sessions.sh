@@ -66,3 +66,44 @@ check_output "adjust time is not saved in session" <<EOF
 192.168.202.254 - - [01/Jan/2010:00:00:03 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [01/Jan/2010:00:00:03 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
+
+
+rm -rf ./sessions
+mkdir -p $HOME
+run_test ${lnav_test} -nq \
+    -c ":hide-fields c_ip" \
+    -c ":save-session" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "hiding fields failed" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":load-session" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "restoring hidden fields failed" <<EOF
+... - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+... - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+... - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+rm -rf ./sessions
+mkdir -p $HOME
+run_test ${lnav_test} -nq -d /tmp/lnav.err \
+    -c ":hide-lines-before 2009-07-20 22:59:29" \
+    -c ":save-session" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "hiding fields failed" <<EOF
+EOF
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":load-session" \
+    ${test_dir}/logfile_access_log.0
+
+# XXX we don't actually check
+check_output "restoring hidden fields failed" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF

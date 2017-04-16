@@ -193,7 +193,11 @@ static void cleanup_session_data(void)
             int         timestamp;
             const char *base;
 
-            base = strrchr(path, '/') + 1;
+            base = strrchr(path, '/');
+            if (base == nullptr) {
+                continue;
+            }
+            base += 1;
             if (sscanf(base, "file-%63[^.].ts%d.json",
                        hash_id, &timestamp) == 2) {
                 session_count[hash_id] += 1;
@@ -307,14 +311,18 @@ void scan_sessions(void)
              view_info_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < view_info_list->gl_pathc; lpc++) {
             const char *path = view_info_list->gl_pathv[lpc];
-            int         timestamp, ppid;
+            int         timestamp, ppid, rc;
             const char *base;
 
-            base = strrchr(path, '/') + 1;
-            if (sscanf(base,
-                       "view-info-%*[^.].ts%d.ppid%d.json",
-                       &timestamp,
-                       &ppid) == 2) {
+            base = strrchr(path, '/');
+            if (base == nullptr) {
+                continue;
+            }
+            base += 1;
+            if ((rc = sscanf(base,
+                             "view-info-%*[^.].ts%d.ppid%d.json",
+                             &timestamp,
+                             &ppid)) == 2) {
                 ppid_time_pair_t ptp;
 
                 ptp.first  = (ppid == getppid()) ? 1 : 0;
@@ -1284,18 +1292,55 @@ void save_session(void)
                         cmd_array.gen((*filter_iter)->to_command());
                     }
 
-                    if (lpc == LNV_LOG) {
-                        textview_curses::highlight_map_t &hmap =
-                                lnav_data.ld_views[LNV_LOG].get_highlights();
-                        textview_curses::highlight_map_t::iterator hl_iter;
+                    textview_curses::highlight_map_t &hmap =
+                        lnav_data.ld_views[lpc].get_highlights();
+                    textview_curses::highlight_map_t::iterator hl_iter;
 
-                        for (hl_iter = hmap.begin();
-                             hl_iter != hmap.end();
-                             ++hl_iter) {
-                            if (hl_iter->first[0] == '$') {
+                    for (hl_iter = hmap.begin();
+                         hl_iter != hmap.end();
+                         ++hl_iter) {
+                        if (hl_iter->first[0] == '$') {
+                            continue;
+                        }
+                        cmd_array.gen("highlight " + hl_iter->first);
+                    }
+
+                    if (lpc == LNV_LOG) {
+                        for (auto format : log_format::get_root_formats()) {
+                            external_log_format *elf = dynamic_cast<external_log_format *>(format);
+
+                            if (elf == nullptr) {
                                 continue;
                             }
-                            cmd_array.gen("highlight " + hl_iter->first);
+
+                            for (auto vd : elf->elf_value_defs) {
+                                if (!vd.second->vd_user_hidden) {
+                                    continue;
+                                }
+
+                                cmd_array.gen("hide-fields "
+                                              + elf->get_name().to_string()
+                                              + "."
+                                              + vd.first.to_string());
+                            }
+                        }
+
+                        logfile_sub_source &lss = lnav_data.ld_log_source;
+
+                        struct timeval min_time, max_time;
+                        bool have_min_time = lss.get_min_log_time(min_time);
+                        bool have_max_time = lss.get_max_log_time(max_time);
+                        char min_time_str[32], max_time_str[32];
+
+                        sql_strftime(min_time_str, sizeof(min_time_str), min_time);
+                        sql_strftime(max_time_str, sizeof(max_time_str), max_time);
+                        if (have_min_time) {
+                            cmd_array.gen("hide-lines-before "
+                                          + string(min_time_str));
+                        }
+                        if (have_max_time) {
+                            cmd_array.gen("hide-lines-after "
+                                          + string(max_time_str));
                         }
                     }
                 }
@@ -1309,7 +1354,7 @@ void save_session(void)
 
         log_perror(rename(view_file_tmp_name.c_str(), view_file_name.c_str()));
 
-        log_debug("Saved session: %s", view_file_name.c_str());
+        log_info("Saved session: %s", view_file_name.c_str());
     }
 }
 
@@ -1363,5 +1408,17 @@ void reset_session(void)
         tss->text_clear_marks(&textview_curses::BM_PARTITION);
         tc.get_bookmarks()[&textview_curses::BM_PARTITION].clear();
         tc.reload_data();
+    }
+
+    for (auto format : log_format::get_root_formats()) {
+        external_log_format *elf = dynamic_cast<external_log_format *>(format);
+
+        if (elf == nullptr) {
+            continue;
+        }
+
+        for (auto vd : elf->elf_value_defs) {
+            vd.second->vd_user_hidden = false;
+        }
     }
 }

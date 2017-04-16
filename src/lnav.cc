@@ -3506,6 +3506,7 @@ int main(int argc, char *argv[])
                 textview_curses *log_tc, *text_tc, *tc;
                 bool found_error = false;
 
+                init_session();
                 lnav_data.ld_output_stack.push(stdout);
                 alerter::singleton().enabled(false);
 
