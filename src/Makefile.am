@@ -147,6 +147,7 @@ noinst_HEADERS = \
 	file_vtab.hh \
 	filter_observer.hh \
 	format-text-files.hh \
+	fstat_vtab.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
 	help.hh \
