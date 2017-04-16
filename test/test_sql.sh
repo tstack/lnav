@@ -941,3 +941,13 @@ content
 1.0
 1.0
 EOF
+
+# Test to see if lnav can recognize a sqlite3 db file passed in as an argument.
+run_test ${lnav_test} -n -c ";select * from person order by age asc" \
+    simple-db.db
+
+check_output "lnav not able to recognize sqlite3 db file?" <<EOF
+id first_name last_name age
+ 0 Phil       Myman      30
+ 1 Lem        Hewitt     35
+EOF
