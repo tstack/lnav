@@ -69,8 +69,7 @@ void rl_change(void *dummy, readline_curses *rc)
             if (!args.empty()) {
                 iter = lnav_commands.find(args[0]);
             }
-            if (iter == lnav_commands.end() ||
-                iter->second.c_description == NULL) {
+            if (iter == lnav_commands.end()) {
                 lnav_data.ld_doc_source.clear();
                 lnav_data.ld_example_source.clear();
                 lnav_data.ld_preview_source.clear();

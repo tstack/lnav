@@ -127,7 +127,12 @@ public:
 
     const T &in(void) const { return this->srm_value; };
 
-    T *inout(void) { return &this->srm_value; };
+    T *inout(void) {
+        free_func(&this->srm_value);
+        memset(&this->srm_value, 0, sizeof(T));
+        return &this->srm_value;
+    };
+
 private:
     static_root_mem &operator =(T &) { return *this; };
 

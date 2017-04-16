@@ -121,6 +121,7 @@
 #include "all_logs_vtab.hh"
 #include "file_vtab.hh"
 #include "regexp_vtab.hh"
+#include "fstat_vtab.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
@@ -362,6 +363,12 @@ bool setup_logline_table()
     db_key_names.push_back("device");
     db_key_names.push_back("inode");
     db_key_names.push_back("rowid");
+    db_key_names.push_back("st_dev");
+    db_key_names.push_back("st_ino");
+    db_key_names.push_back("st_mode");
+    db_key_names.push_back("st_rdev");
+    db_key_names.push_back("st_uid");
+    db_key_names.push_back("st_gid");
 
     stable_sort(db_key_names.begin(), db_key_names.end());
 
@@ -3176,6 +3183,7 @@ int main(int argc, char *argv[])
     register_views_vtab(lnav_data.ld_db.in());
     register_file_vtab(lnav_data.ld_db.in());
     register_regexp_vtab(lnav_data.ld_db.in());
+    register_fstat_vtab(lnav_data.ld_db.in());
 
     lnav_data.ld_vtab_manager =
         new log_vtab_manager(lnav_data.ld_db,

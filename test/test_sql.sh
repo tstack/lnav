@@ -541,7 +541,7 @@ EOF
 
 
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n12
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n13
 }
 
 run_test schema_dump
@@ -553,6 +553,7 @@ CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
 CREATE VIRTUAL TABLE lnav_view_stack USING lnav_view_stack_impl();
 CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
 CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
+CREATE VIRTUAL TABLE fstat USING fstat_impl();
 CREATE TABLE http_status_codes (
     status integer PRIMARY KEY,
     message text,

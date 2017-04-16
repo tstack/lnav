@@ -1,5 +1,9 @@
 
 lnav v0.8.3:
+     Features:
+     * Added an fstat() table-valued function for querying the local
+       filesystem.
+     * Added readlink() and realpath() SQL functions.
      Fixes:
      * The help view now includes all the command-help that would pop up as
        you entered commands and SQL queries.

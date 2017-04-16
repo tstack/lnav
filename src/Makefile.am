@@ -258,6 +258,7 @@ libdiag_a_SOURCES = \
 	extension-functions.cc \
 	field_overlay_source.cc \
 	file_vtab.cc \
+	fstat_vtab.cc \
     fs-extension-functions.cc \
 	grep_proc.cc \
 	help_text_formatter.cc \

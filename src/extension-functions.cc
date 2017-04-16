@@ -1750,18 +1750,47 @@ int common_extension_functions(struct FuncDef **basic_funcs,
 
 
     /* string */
-    { "replicate",          2, SQLITE_UTF8,    0, replicateFunc },
+    { "replicate",          2, SQLITE_UTF8,    0, replicateFunc,
+      help_text("replicate")
+          .sql_function()
+          .with_summary("Returns the given string concatenated N times.")
+          .with_parameter({"str", "The string to replicate."})
+          .with_parameter({"N", "The number of times to replicate the string."})
+          .with_example({"SELECT replicate('abc', 3)"})
+    },
     { "charindex",          2, SQLITE_UTF8,    0, charindexFunc },
     { "charindex",          3, SQLITE_UTF8,    0, charindexFunc },
-    { "leftstr",            2, SQLITE_UTF8,    0, leftFunc },
-    { "rightstr",           2, SQLITE_UTF8,    0, rightFunc },
+    { "leftstr",            2, SQLITE_UTF8,    0, leftFunc,
+      help_text("leftstr")
+          .sql_function()
+          .with_summary("Returns the N leftmost (UTF-8) characters in the given string.")
+          .with_parameter({"str", "The string to return subset."})
+          .with_parameter({"N", "The number of characters from the left side of the string to return."})
+          .with_example({"SELECT leftstr('abc', 1)"})
+          .with_example({"SELECT leftstr('abc', 10)"})
+    },
+    { "rightstr",           2, SQLITE_UTF8,    0, rightFunc,
+      help_text("rightstr")
+          .sql_function()
+          .with_summary("Returns the N rightmost (UTF-8) characters in the given string.")
+          .with_parameter({"str", "The string to return subset."})
+          .with_parameter({"N", "The number of characters from the right side of the string to return."})
+          .with_example({"SELECT rightstr('abc', 1)"})
+          .with_example({"SELECT rightstr('abc', 10)"})
+    },
 #ifndef HAVE_TRIM
     { "ltrim",              1, SQLITE_UTF8,    0, ltrimFunc },
     { "rtrim",              1, SQLITE_UTF8,    0, rtrimFunc },
     { "trim",               1, SQLITE_UTF8,    0, trimFunc },
     { "replace",            3, SQLITE_UTF8,    0, replaceFunc },
 #endif
-    { "reverse",            1, SQLITE_UTF8,    0, reverseFunc },
+    { "reverse",            1, SQLITE_UTF8,    0, reverseFunc,
+      help_text("reverse")
+          .sql_function()
+          .with_summary("Returns the reverse of the given string.")
+          .with_parameter({"str", "The string to reverse."})
+          .with_example({"SELECT reverse('abc')"})
+    },
     { "proper",             1, SQLITE_UTF8,    0, properFunc },
     { "padl",               2, SQLITE_UTF8,    0, padlFunc },
     { "padr",               2, SQLITE_UTF8,    0, padrFunc },

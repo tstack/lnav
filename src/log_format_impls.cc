@@ -29,6 +29,8 @@
  * @file log_format_impls.cc
  */
 
+#include "config.h"
+
 #include <stdio.h>
 
 #include "pcrepp.hh"

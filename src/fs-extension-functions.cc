@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <stdint.h>
 
 #include <string>
@@ -128,6 +129,43 @@ nonstd::optional<string> sql_joinpath(const vector<const char *> paths)
     return full_path;
 }
 
+static
+string sql_readlink(const char *path)
+{
+    struct stat st;
+
+    if (lstat(path, &st) == -1) {
+        throw sqlite_func_error("unable to stat path: %s -- %s", path, strerror(errno));
+    }
+
+    char buf[st.st_size];
+    ssize_t rc;
+
+    rc = readlink(path, buf, sizeof(buf));
+    if (rc < 0) {
+        if (errno == EINVAL) {
+            return path;
+        }
+        throw sqlite_func_error("unable to read link: %s -- %s", path, strerror(errno));
+    }
+
+    return string(buf, rc);
+}
+
+static
+string sql_realpath(const char *path)
+{
+    char resolved_path[PATH_MAX];
+
+    if (realpath(path, resolved_path) == NULL) {
+        throw sqlite_func_error("Could not get real path for %s -- %s",
+                                path, strerror(errno));
+    }
+
+    return resolved_path;
+}
+
+
 int fs_extension_functions(struct FuncDef **basic_funcs,
                            struct FuncDefAgg **agg_funcs)
 {
@@ -173,8 +211,23 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                 .with_example({"SELECT joinpath('/', 'foo', '/bar')"})
         ),
 
+        sqlite_func_adapter<decltype(&sql_readlink), sql_readlink>::builder(
+            help_text("readlink",
+                      "Read the target of a symbolic link.")
+                .sql_function()
+                .with_parameter({"path", "The path to the symbolic link."})
+        ),
+
+        sqlite_func_adapter<decltype(&sql_realpath), sql_realpath>::builder(
+            help_text("realpath",
+                      "Returns the resolved version of the given path, expanding symbolic links and "
+                          "resolving '.' and '..' references.")
+                .sql_function()
+                .with_parameter({"path", "The path to resolve."})
+        ),
+
         /*
-         * TODO: add other functions like readlink, normpath, ... 
+         * TODO: add other functions like normpath, ...
          */
 
         { NULL }

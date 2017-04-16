@@ -73,16 +73,12 @@ public:
             std::string cmdline, std::vector<std::string> &args);
     typedef struct {
         const char *c_name;
-        const char *c_args;
-        const char *c_description;
         command_func_t c_func;
 
         struct help_text c_help;
 
         void operator=(command_func_t func) {
             this->c_name = "anon";
-            this->c_args = NULL;
-            this->c_description = NULL;
             this->c_func = func;
         }
     } command_t;

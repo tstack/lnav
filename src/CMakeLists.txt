@@ -12,6 +12,7 @@ set(diag_STAT_SRCS
     field_overlay_source.cc
     file_vtab.cc
     fs-extension-functions.cc
+    fstat_vtab.cc
     grep_proc.cc
     help_text_formatter.cc
     hist_source.cc
@@ -103,6 +104,7 @@ set(diag_STAT_SRCS
     file_vtab.hh
     filter_observer.hh
     format-text-files.hh
+    fstat_vtab.hh
     grep_highlighter.hh
     help.hh
     help_text_formatter.hh
@@ -164,4 +166,5 @@ set(diag_STAT_SRCS
 set(lnav_SRCS lnav.cc)
 
 include_directories(../../lbuild/src /opt/local/include)
+include_directories(SYSTEM .)
 add_executable(lnav ${lnav_SRCS} ${diag_STAT_SRCS})

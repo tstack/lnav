@@ -1249,6 +1249,21 @@ Synopsis
 
 
 Synopsis
+  leftstr(str, N) -- Returns the N leftmost (UTF-8) characters in the given 
+    string.
+Parameters
+  str   The string to return subset.
+  N     The number of characters from the left side of the string to return.
+
+Examples
+#1 ;SELECT leftstr('abc', 1)
+   
+
+#2 ;SELECT leftstr('abc', 10)
+   
+
+
+Synopsis
   length(str) -- Returns the number of characters (not bytes) in the given 
     string prior to the first NUL character
 Parameter
@@ -1424,6 +1439,19 @@ Parameter
 
 
 Synopsis
+  readlink(path) -- Read the target of a symbolic link.
+Parameter
+  path   The path to the symbolic link.
+
+
+Synopsis
+  realpath(path) -- Returns the resolved version of the given path, expanding 
+    symbolic links and resolving '.' and '..' references.
+Parameter
+  path   The path to resolve.
+
+
+Synopsis
   regexp(re, str) -- Test if a string matches a regular expression
 Parameters
   re    The regular expression to use
@@ -1479,6 +1507,42 @@ Examples
    
 
 #2 ;SELECT replace('abc', 'a', 'z')
+   
+
+
+Synopsis
+  replicate(str, N) -- Returns the given string concatenated N times.
+Parameters
+  str   The string to replicate.
+  N     The number of times to replicate the string.
+
+Example
+#1 ;SELECT replicate('abc', 3)
+   
+
+
+Synopsis
+  reverse(str) -- Returns the reverse of the given string.
+Parameter
+  str   The string to reverse.
+
+Example
+#1 ;SELECT reverse('abc')
+   
+
+
+Synopsis
+  rightstr(str, N) -- Returns the N rightmost (UTF-8) characters in the given 
+    string.
+Parameters
+  str   The string to return subset.
+  N     The number of characters from the right side of the string to return.
+
+Examples
+#1 ;SELECT rightstr('abc', 1)
+   
+
+#2 ;SELECT rightstr('abc', 10)
    
 
 

@@ -3185,8 +3185,6 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
 readline_context::command_t STD_COMMANDS[] = {
     {
         "adjust-log-time",
-        "<date>",
-        "Change the timestamps of the top file to be relative to the given date",
         com_adjust_log_time,
 
         help_text(":adjust-log-time")
@@ -3198,8 +3196,6 @@ readline_context::command_t STD_COMMANDS[] = {
 
     {
         "unix-time",
-        "<seconds>",
-        "Convert epoch time to a human-readable form",
         com_unix_time,
 
         help_text(":unix-time")
@@ -3210,8 +3206,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "current-time",
-        NULL,
-        "Print the current time in human-readable form and seconds since the epoch",
         com_current_time,
 
         help_text(":current-time")
@@ -3219,8 +3213,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "goto",
-        "<line#|N%|date>",
-        "Go to the given line number, N percent into the file, or the given timestamp in the log view",
         com_goto,
 
         help_text(":goto")
@@ -3235,14 +3227,19 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "relative-goto",
-        "<line#|N%>",
-        "Move the current view up or down by the given amount",
         com_relative_goto,
+
+        help_text(":relative-goto")
+            .with_summary("Move the current view up or down by the given amount")
+            .with_parameter({"line-count|N%", "The amount to move the view by."})
+            .with_examples(
+                {
+                    {"+22"},
+                    {"-10%"},
+                })
     },
     {
         "mark",
-        NULL,
-        "Toggle the bookmark state for the top line in the current view",
         com_mark,
 
         help_text(":mark")
@@ -3250,8 +3247,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "next-mark",
-        "error|warning|search|user|file|partition",
-        "Move to the next bookmark of the given type in the current view",
         com_goto_mark,
 
         help_text(":next-mark")
@@ -3261,8 +3256,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "prev-mark",
-        "error|warning|search|user|file|partition",
-        "Move to the previous bookmark of the given type in the current view",
         com_goto_mark,
 
         help_text(":prev-mark")
@@ -3272,8 +3265,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "help",
-        NULL,
-        "Open the help text view",
         com_help,
 
         help_text(":help")
@@ -3281,8 +3272,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "hide-fields",
-        "<field-name1> [<field-name2> ... <field-nameN>]",
-        "Hide log message fields by replacing them with an ellipsis",
         com_toggle_field,
 
         help_text(":hide-fields")
@@ -3297,8 +3286,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "show-fields",
-        "<field-name> [<field-name2> ... <field-nameN>]",
-        "Show log message fields that were previously hidden",
         com_toggle_field,
 
         help_text(":show-fields")
@@ -3309,8 +3296,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "hide-lines-before",
-        "<line#|date>",
-        "Hide lines that come before the given line number or date",
         com_hide_line,
 
         help_text(":hide-lines-before")
@@ -3324,8 +3309,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "hide-lines-after",
-        "<line#|date>",
-        "Hide lines that come after the given line number or date",
         com_hide_line,
 
         help_text(":hide-lines-after")
@@ -3339,8 +3322,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "show-lines-before-and-after",
-        NULL,
-        "Show lines that were hidden by the 'hide-lines' commands",
         com_show_lines,
 
         help_text(":show-lines-before-and-after")
@@ -3348,8 +3329,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "highlight",
-        "<pattern>",
-        "Add coloring to log messages fragments that match the given regular expression",
         com_highlight,
 
         help_text(":highlight")
@@ -3359,8 +3338,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "clear-highlight",
-        "<pattern>",
-        "Remove a previously set highlight regular expression",
         com_clear_highlight,
 
         help_text(":clear-highlight")
@@ -3370,8 +3347,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "filter-in",
-        "<regex>",
-        "Only show lines that match the given regular expression in the current view",
         com_filter,
 
         help_text(":filter-in")
@@ -3381,8 +3356,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "filter-out",
-        "<regex>",
-        "Remove lines that match the given regular expression in the current view",
         com_filter,
 
         help_text(":filter-out")
@@ -3392,8 +3365,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "delete-filter",
-        "<regex>",
-        "Delete the given filter",
         com_delete_filter,
 
         help_text(":filter-out")
@@ -3404,8 +3375,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "append-to",
-        "<filename>",
-        "Append marked lines in the current view to the given file",
         com_save_to,
 
         help_text(":append-to")
@@ -3415,8 +3384,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "write-to",
-        "<filename>",
-        "Overwrite the given file with any marked lines in the current view",
         com_save_to,
 
         help_text(":write-to")
@@ -3426,8 +3393,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "write-csv-to",
-        "<filename>",
-        "Write SQL results to the given file in CSV format",
         com_save_to,
 
         help_text(":write-csv-to")
@@ -3437,8 +3402,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "write-json-to",
-        "<filename>",
-        "Write SQL results to the given file in JSON format",
         com_save_to,
 
         help_text(":write-json-to")
@@ -3448,8 +3411,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "write-cols-to",
-        "<filename>",
-        "Write SQL results to the given file in a columnar format",
         com_save_to,
 
         help_text(":write-cols-to")
@@ -3459,8 +3420,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "write-raw-to",
-        "<filename>",
-        "Write SQL results to the given file without any formatting",
         com_save_to,
 
         help_text(":write-raw-to")
@@ -3470,8 +3429,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "pipe-to",
-        "<shell-cmd>",
-        "Pipe the marked lines to the given shell command",
         com_pipe_to,
 
         help_text(":pipe-to")
@@ -3481,8 +3438,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "pipe-line-to",
-        "<shell-cmd>",
-        "Pipe the top line to the given shell command",
         com_pipe_to,
 
         help_text(":pipe-line-to")
@@ -3492,8 +3447,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "enable-filter",
-        "<regex>",
-        "Enable a previously created and disabled filter",
         com_enable_filter,
 
         help_text(":enable-filter")
@@ -3503,8 +3456,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "disable-filter",
-        "<regex>",
-        "Disable a filter created with filter-in/filter-out",
         com_disable_filter,
 
         help_text(":disable-filter")
@@ -3514,8 +3465,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "enable-word-wrap",
-        NULL,
-        "Enable word-wrapping for the current view",
         com_enable_word_wrap,
 
         help_text(":enable-word-wrap")
@@ -3523,8 +3472,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "disable-word-wrap",
-        NULL,
-        "Disable word-wrapping for the current view",
         com_disable_word_wrap,
 
         help_text(":disable-word-wrap")
@@ -3532,8 +3479,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "create-logline-table",
-        "<table-name>",
-        "Create an SQL table using the top line of the log view as a template",
         com_create_logline_table,
 
         help_text(":create-logline-table")
@@ -3543,8 +3488,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "delete-logline-table",
-        "<table-name>",
-        "Delete a table created with create-logline-table",
         com_delete_logline_table,
 
         help_text(":delete-logline-table")
@@ -3554,8 +3497,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "create-search-table",
-        "<table-name> [<regex>]",
-        "Create an SQL table based on a regex search",
         com_create_search_table,
 
         help_text(":create-search-table")
@@ -3570,8 +3511,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "delete-search-table",
-        "<table-name>",
-        "Delete a table created with create-search-table",
         com_delete_search_table,
 
         help_text(":delete-search-table")
@@ -3581,12 +3520,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "open",
-        "<filename>",
-#ifdef HAVE_LIBCURL
-        "Open the given file(s) or URLs in lnav",
-#else
-        "Open the given file(s) in lnav",
-#endif
         com_open,
 
         help_text(":open")
@@ -3604,8 +3537,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "close",
-        NULL,
-        "Close the top file",
         com_close,
 
         help_text(":close")
@@ -3613,8 +3544,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "partition-name",
-        "<name>",
-        "Mark the top line in the log view as the start of a new partition with the given name",
         com_partition_name,
 
         help_text(":partition-name")
@@ -3624,8 +3553,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "clear-partition",
-        NULL,
-        "Clear the partition the top line is a part of",
         com_clear_partition,
 
         help_text(":clear-partition")
@@ -3633,20 +3560,14 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "pt-min-time",
-        "[<time>]",
-        "Set/get the minimum time for papertrail searches",
         com_pt_time,
     },
     {
         "pt-max-time",
-        "[<time>]",
-        "Set/get the maximum time for papertrail searches",
         com_pt_time,
     },
     {
         "session",
-        "<lnav-command>",
-        "Add the given command to the session file (~/.lnav/session)",
         com_session,
 
         help_text(":session")
@@ -3656,8 +3577,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "summarize",
-        "<column-name>",
-        "Execute a SQL query that computes the characteristics of the values in the given column",
         com_summarize,
 
         help_text(":summarize")
@@ -3667,8 +3586,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "switch-to-view",
-        "<view-name>",
-        "Switch to the given view",
         com_switch_to_view,
 
         help_text(":switch-to-view")
@@ -3678,8 +3595,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "reset-session",
-        NULL,
-        "Reset the session state, clearing all filters, highlights, and bookmarks",
         com_reset_session,
 
         help_text(":reset-session")
@@ -3687,8 +3602,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "load-session",
-        NULL,
-        "Load the latest session state",
         com_load_session,
 
         help_text(":load-session")
@@ -3696,8 +3609,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "save-session",
-        NULL,
-        "Save the current state as a session",
         com_save_session,
 
         help_text(":save-session")
@@ -3705,8 +3616,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "set-min-log-level",
-        "<log-level>",
-        "Set the minimum log level to display in the log view",
         com_set_min_log_level,
 
         help_text(":set-min-log-level")
@@ -3716,8 +3625,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "redraw",
-        NULL,
-        "Do a full redraw of the screen",
         com_redraw,
 
         help_text(":redraw")
@@ -3725,8 +3632,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "zoom-to",
-        "<zoom-level>",
-        "Zoom the histogram view to the given level",
         com_zoom_to,
 
         help_text(":zoom-to")
@@ -3736,8 +3641,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "echo",
-        "[-n] <msg>",
-        "Echo the given message",
         com_echo,
 
         help_text(":echo")
@@ -3747,8 +3650,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "alt-msg",
-        "<msg>",
-        "Display a message in the alternate command position",
         com_alt_msg,
 
         help_text(":alt-msg")
@@ -3758,8 +3659,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "eval",
-        "<msg>",
-        "Evaluate the given command/query after doing environment variable substitution",
         com_eval,
 
         help_text(":eval")
@@ -3775,8 +3674,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "config",
-        "<option> [<value>]",
-        "Read or write a configuration option",
         com_config,
 
         help_text(":config")
@@ -3788,8 +3685,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "save-config",
-        NULL,
-        "Save the current configuration state",
         com_save_config,
 
         help_text(":save-config")
@@ -3797,8 +3692,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "reset-config",
-        "<option>",
-        "Reset the configuration option to its default value",
         com_reset_config,
 
         help_text(":reset-config")
@@ -3808,8 +3701,6 @@ readline_context::command_t STD_COMMANDS[] = {
     },
     {
         "spectrogram",
-        "<field-name>",
-        "Visualize the given message field using a spectrogram",
         com_spectrogram,
 
         help_text(":spectrogram")
