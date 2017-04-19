@@ -42,7 +42,7 @@ Lnav follows the usual GNU style for configuring and installing software:
     $ make
     $ sudo make install
 
-__Run ```./autogen.sh``` before running any of the above commands when
+__Run `./autogen.sh` before running any of the above commands when
 compiling from a cloned repository.__
 
 
@@ -55,15 +55,15 @@ Alternatively, you can get the generated binary from [AppVeyor](https://ci.appve
 
 Remember that you still need the lnav dependencies under Cygwin, here is a quick way to do it:
 
-`setup-x86_64.exe -q -P libpcre1 -P libpcrecpp0 -P libsqlite3_0 -P libstdc++6`
+    setup-x86_64.exe -q -P libpcre1 -P libpcrecpp0 -P libsqlite3_0 -P libstdc++6
 
 Currently, the x64 version seems to be working better than the x86 one.
 
 
-Using
+Usage
 -----
 
-The only file installed is the executable, "lnav".  You can execute it
+The only file installed is the executable, `lnav`.  You can execute it
 with no arguments to view the default set of files:
 
     $ lnav
@@ -71,6 +71,27 @@ with no arguments to view the default set of files:
 You can view all the syslog messages by running:
 
     $ lnav /var/log/messages*
+
+Usage with `systemd-journald`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On systems running `systemd-journald`, you can use `lnav` as the pager:
+
+    $ journalctl | lnav
+
+or in follow mode:
+
+    $ journalctl -f | lnav
+
+Since `journalctl`'s default output format omits the year, if you are
+viewing logs which span multiple years you will need to change the
+output format to include the year, otherwise `lnav` gets confused:
+
+    $ journalctl -o short-iso | lnav
+
+If your system has been running for a long time, for increased
+efficiency you may want to limit the number of log lines fed into
+`lnav`, e.g. via `journalctl`'s `-n` or `--since=...` options.
 
 
 Screenshot
@@ -80,6 +101,7 @@ The following screenshot shows a syslog file. Log lines are displayed with
 highlights. Errors are red and warnings are yellow.
 
 [![Screenshot](http://tstack.github.io/lnav/lnav-syslog-thumb.png)](http://tstack.github.io/lnav/lnav-syslog.png)
+
 
 See Also
 --------
