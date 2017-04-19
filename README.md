@@ -72,6 +72,27 @@ You can view all the syslog messages by running:
 
     $ lnav /var/log/messages*
 
+Usage with `systemd-journald`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On systems running `systemd-journald`, you can use `lnav` as the pager:
+
+    $ journalctl | lnav
+
+or in follow mode:
+
+    $ journalctl -f | lnav
+
+Since `journalctl`'s default output format omits the year, if you are
+viewing logs which span multiple years you will need to change the
+output format to include the year, otherwise `lnav` gets confused:
+
+    $ journalctl -o short-iso | lnav
+
+If your system has been running for a long time, for increased
+efficiency you may want to limit the number of log lines fed into
+`lnav`, e.g. via `journalctl`'s `-n` or `--since=...` options.
+
 
 Screenshot
 ----------
