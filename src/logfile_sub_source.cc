@@ -71,7 +71,7 @@ logfile *logfile_sub_source::find(const char *fn,
         if (ld.get_file() == NULL) {
             continue;
         }
-        if (strcmp(ld.get_file()->get_filename().c_str(), fn) == 0) {
+        if (strcmp(ld.get_file()->get_filepath().c_str(), fn) == 0) {
             retval = ld.get_file();
         }
         else {
@@ -193,6 +193,11 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                 this->lss_token_shift_size = len - time_range.length();
             }
         }
+    }
+
+    if (this->lss_flags & F_FILENAME) {
+        value_out.insert(0, 1, ' ');
+        value_out.insert(0, this->lss_token_file->get_filename());
     }
 
     // Insert space for the file/search-hit markers.
@@ -335,7 +340,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         }
     }
     value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
-        this->lss_token_file->get_filename())));
+        this->lss_token_file->get_filepath())));
 
     if (this->lss_flags & F_TIME_OFFSET) {
         time_offset_end = 13;

@@ -90,7 +90,7 @@ static string refresh_pt_search()
          ++iter) {
         logfile *lf = *iter;
 
-        if (startswith(lf->get_filename(), "pt:")) {
+        if (startswith(lf->get_filepath(), "pt:")) {
             lf->close();
         }
     }
@@ -806,7 +806,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                 setenv("log_line", tmp_str, 1);
                 sql_strftime(tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
                 setenv("log_time", tmp_str, 1);
-                setenv("log_path", ldh.ldh_file->get_filename().c_str(), 1);
+                setenv("log_path", ldh.ldh_file->get_filepath().c_str(), 1);
                 for (vector<logline_value>::iterator iter = ldh.ldh_line_values.begin();
                      iter != ldh.ldh_line_values.end();
                      ++iter) {
@@ -1554,7 +1554,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
         for (; file_iter != lnav_data.ld_files.end(); ++file_iter) {
             logfile *lf = *file_iter;
 
-            if (lf->get_filename() == fn) {
+            if (lf->get_filepath() == fn) {
                 if (lf->get_format() != NULL) {
                     retval = "info: log file already loaded";
                     break;
@@ -1735,7 +1735,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
                 retval = "error: no text files are opened";
             }
             else {
-                fn = tss.current_file()->get_filename();
+                fn = tss.current_file()->get_filepath();
                 tss.current_file()->close();
 
                 if (tss.size() == 1) {
@@ -1753,7 +1753,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
                 content_line_t cl = lss.at(vl);
                 logfile *lf = lss.find(cl);
 
-                fn = lf->get_filename();
+                fn = lf->get_filepath();
                 lf->close();
             }
         }

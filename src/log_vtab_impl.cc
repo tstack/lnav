@@ -394,7 +394,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 
             switch (post_col_number) {
                 case 0: {
-                    const string &fn = lf->get_filename();
+                    const string &fn = lf->get_filepath();
 
                     sqlite3_result_text(ctx,
                                         fn.c_str(),

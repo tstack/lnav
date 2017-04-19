@@ -123,7 +123,7 @@ public:
             return "";
         }
 
-        return this->tss_files.front()->get_filename();
+        return this->tss_files.front()->get_filepath();
     };
 
     void to_front(logfile *lf) {

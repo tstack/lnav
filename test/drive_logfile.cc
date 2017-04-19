@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
       struct stat st;
 
       stat(argv[0], &st);
-      assert(strcmp(argv[0], lf.get_filename().c_str()) == 0);
+      assert(strcmp(argv[0], lf.get_filepath().c_str()) == 0);
 
       lf.rebuild_index();
       assert(!lf.is_closed());

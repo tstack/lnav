@@ -124,14 +124,14 @@ public:
                     sf_format.set_value("% 13s",
                                         lf->get_format()->get_name().get());
                 }
-                else if (!lf->get_filename().empty()) {
+                else if (!lf->get_filepath().empty()) {
                     sf_format.set_value("% 13s", "plain text");
                 }
                 else{
                     sf_format.clear();
                 }
 
-                sf_filename.set_value(lf->get_filename());
+                sf_filename.set_value(lf->get_filepath());
             }
             else {
                 sf_format.clear();

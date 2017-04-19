@@ -48,6 +48,7 @@
 #include "log_format.hh"
 #include "text_format.hh"
 #include "shared_buffer.hh"
+#include "filesystem/path.h"
 
 class logfile;
 class logline_observer;
@@ -121,12 +122,12 @@ public:
     /**
      * Construct a logfile with the given arguments.
      *
-     * @param filename The name of the log file.
+     * @param filepath The name of the log file.
      * @param fd The file descriptor for accessing the file or -1 if the
-     * constructor should open the file specified by 'filename'.  The
+     * constructor should open the file specified by 'filepath'.  The
      * descriptor needs to be seekable.
      */
-    logfile(const std::string &filename, logfile_open_options &loo) throw (error);
+    logfile(const std::string &filepath, logfile_open_options &loo) throw (error);
 
     virtual ~logfile();
 
@@ -134,15 +135,20 @@ public:
         return this->lf_activity;
     };
 
-    /** @return The filename as given in the constructor. */
+    /** @return The filepath as given in the constructor. */
+    const std::string &get_filepath() const { return this->lf_filepath; };
+
+    /** @return The filename as given in the constructor, excluding the path prefix. */
     const std::string &get_filename() const { return this->lf_filename; };
 
     int get_fd() const { return this->lf_line_buffer.get_fd(); };
 
-    /** @param filename The new filename for this log file. */
-    void set_filename(const std::string &filename)
+    /** @param filepath The new filepath for this log file. */
+    void set_filepath(const std::string &filepath)
     {
-        this->lf_filename = filename;
+        this->lf_filepath = filepath;
+        filesystem::path p(filepath);
+        this->lf_filename = p.filename();
     };
 
     const std::string &get_content_id() const { return this->lf_content_id; };
@@ -158,8 +164,8 @@ public:
         return this->lf_line_buffer.is_compressed();
     };
 
-    bool is_valid_filename() const {
-        return this->lf_valid_filename;
+    bool is_valid_filepath() const {
+        return this->lf_valid_filepath;
     };
 
     /**
@@ -377,7 +383,7 @@ public:
     /** Check the invariants for this object. */
     bool invariant(void)
     {
-        require(this->lf_filename.size() > 0);
+        require(this->lf_filepath.size() > 0);
 
         return true;
     };
@@ -397,7 +403,8 @@ protected:
 
     logfile_open_options lf_options;
     logfile_activity lf_activity;
-    bool        lf_valid_filename;
+    bool        lf_valid_filepath;
+    std::string lf_filepath;
     std::string lf_filename;
     std::string lf_content_id;
     struct stat lf_stat;

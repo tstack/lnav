@@ -560,7 +560,7 @@ static void load_time_bookmarks(void)
         if (lf == NULL)
             continue;
 
-        lss.find(lf->get_filename().c_str(), base_content_line);
+        lss.find(lf->get_filepath().c_str(), base_content_line);
 
         logfile::iterator line_iter = lf->begin();
 

@@ -407,7 +407,7 @@ public:
         }
 
         if (!lnav_data.ld_looping) {
-            throw logfile::error(lf.get_filename(), EINTR);
+            throw logfile::error(lf.get_filepath(), EINTR);
         }
     };
 
@@ -486,9 +486,9 @@ public:
     textfile_callback() : force(false), front_file(NULL), front_top(-1) { };
 
     void closed_file(logfile *lf) {
-        log_info("closed text file: %s", lf->get_filename().c_str());
-        if (!lf->is_valid_filename()) {
-            lnav_data.ld_file_names.erase(lf->get_filename());
+        log_info("closed text file: %s", lf->get_filepath().c_str());
+        if (!lf->is_valid_filepath()) {
+            lnav_data.ld_file_names.erase(lf->get_filepath());
         }
         auto file_iter = find(lnav_data.ld_files.begin(),
                               lnav_data.ld_files.end(),
@@ -509,7 +509,7 @@ public:
     void scanned_file(logfile *lf) {
         if (!lnav_data.ld_files_to_front.empty() &&
                 lnav_data.ld_files_to_front.front().first ==
-                        lf->get_filename()) {
+                        lf->get_filepath()) {
             this->front_file = lf;
             this->front_top = lnav_data.ld_files_to_front.front().second;
 
@@ -596,9 +596,9 @@ void rebuild_indexes(bool force)
         logfile *lf = *file_iter;
 
         if (!lf->exists() || lf->is_closed()) {
-            log_info("closed log file: %s", lf->get_filename().c_str());
-            if (!lf->is_valid_filename()) {
-                lnav_data.ld_file_names.erase(lf->get_filename());
+            log_info("closed log file: %s", lf->get_filepath().c_str());
+            if (!lf->is_valid_filepath()) {
+                lnav_data.ld_file_names.erase(lf->get_filepath());
             }
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
@@ -1456,7 +1456,7 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
         /* The file is already loaded, but has been found under a different
          * name.  We just need to update the stored file name.
          */
-        (*file_iter)->set_filename(filename);
+        (*file_iter)->set_filepath(filename);
     }
 
     return retval;
@@ -1536,7 +1536,7 @@ bool rescan_files(bool required)
 
         if (!lf->exists() || lf->is_closed()) {
             log_info("Log file no longer exists or is closed: %s",
-                     lf->get_filename().c_str());
+                     lf->get_filepath().c_str());
             return true;
         }
         else {
@@ -1588,7 +1588,7 @@ static string execute_action(log_data_helper &ldh,
             int value_line;
             string path;
 
-            setenv("LNAV_ACTION_FILE", lf->get_filename().c_str(), 1);
+            setenv("LNAV_ACTION_FILE", lf->get_filepath().c_str(), 1);
             snprintf(env_buffer, sizeof(env_buffer),
                 "%ld",
                 (ldh.ldh_line - lf->begin()) + 1);
@@ -3399,7 +3399,7 @@ int main(int argc, char *argv[])
             log_format *fmt = lf->get_format();
             if (fmt == NULL) {
                 fprintf(stderr, "error:%s:no format found for file\n",
-                        lf->get_filename().c_str());
+                        lf->get_filepath().c_str());
                 retval = EXIT_FAILURE;
                 continue;
             }
@@ -3421,22 +3421,22 @@ int main(int argc, char *argv[])
 
                     fprintf(stderr,
                             "error:%s:%ld:line did not match format %s\n",
-                            lf->get_filename().c_str(), line_number,
+                            lf->get_filepath().c_str(), line_number,
                             fmt->get_pattern_name().c_str());
                     fprintf(stderr,
                             "error:%s:%ld:         line -- %s\n",
-                            lf->get_filename().c_str(), line_number,
+                            lf->get_filepath().c_str(), line_number,
                             full_line.c_str());
                     if (partial_len > 0) {
                         fprintf(stderr,
                                 "error:%s:%ld:partial match -- %s\n",
-                                lf->get_filename().c_str(), line_number,
+                                lf->get_filepath().c_str(), line_number,
                                 partial_line.c_str());
                     }
                     else {
                         fprintf(stderr,
                                 "error:%s:%ld:no partial match found\n",
-                                lf->get_filename().c_str(), line_number);
+                                lf->get_filepath().c_str(), line_number);
                     }
                     retval = EXIT_FAILURE;
                 }
