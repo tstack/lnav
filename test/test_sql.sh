@@ -35,14 +35,14 @@ log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,bro_ts,bro_uid,bro_
 4,<NULL>,2011-11-03 00:19:26.831,0,info,0,1320279566.831643,CT0JIh479jXIGt0Po1,192.168.2.76,52031,72.21.211.173,80,1,GET,f.thumbs.redditmedia.com,/uuy31444rLSyKdHS.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,1595,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,Fdk0MZ1wQmKWAJ4WH4,<NULL>,image/jpeg
 EOF
 
-run_test ${lnav_test} -n \
+run_test env TZ=UTC ${lnav_test} -n \
     -c ";SELECT * FROM bro_http_log WHERE log_level = 'error'" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_bro_http.log.0
 
 check_output "bro logs are not recognized?" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,bro_ts,bro_uid,bro_id_orig_h,bro_id_orig_p,bro_id_resp_h,bro_id_resp_p,bro_trans_depth,bro_method,bro_host,bro_uri,bro_referrer,bro_version,bro_user_agent,bro_request_body_len,bro_response_body_len,bro_status_code,bro_status_msg,bro_info_code,bro_info_msg,bro_tags,bro_username,bro_password,bro_proxied,bro_orig_fuids,bro_orig_filenames,bro_orig_mime_types,bro_resp_fuids,bro_resp_filenames,bro_resp_mime_types
-118,<NULL>,2011-11-02 17:19:49.337,18,error,0,1320279589.337053,CBHHuR1xFnm5C5CQBc,192.168.2.76,52074,74.125.225.76,80,1,GET,i4.ytimg.com,/vi/gDbg_GeuiSY/hqdefault.jpg,<NULL>,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,893,404,Not Found,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,F2GiAw3j1m22R2yIg2,<NULL>,image/jpeg
+118,<NULL>,2011-11-03 00:19:49.337,18,error,0,1320279589.337053,CBHHuR1xFnm5C5CQBc,192.168.2.76,52074,74.125.225.76,80,1,GET,i4.ytimg.com,/vi/gDbg_GeuiSY/hqdefault.jpg,<NULL>,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,893,404,Not Found,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,F2GiAw3j1m22R2yIg2,<NULL>,image/jpeg
 EOF
 
 run_test ${lnav_test} -n \
