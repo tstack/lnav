@@ -298,9 +298,13 @@ public:
         return (this->ll_time < rhs.ll_time) ||
                (this->ll_time == rhs.ll_time &&
                 this->ll_millis < rhs.ll_millis) ||
-            (this->ll_time == rhs.ll_time &&
-             this->ll_millis == rhs.ll_millis &&
-             this->ll_offset < rhs.ll_offset);
+               (this->ll_time == rhs.ll_time &&
+                this->ll_millis == rhs.ll_millis &&
+                this->ll_offset < rhs.ll_offset) ||
+               (this->ll_time == rhs.ll_time &&
+                this->ll_millis == rhs.ll_millis &&
+                this->ll_offset == rhs.ll_offset &&
+                this->ll_sub_offset < rhs.ll_sub_offset);
     };
 
     bool operator<(const time_t &rhs) const { return this->ll_time < rhs; };
