@@ -239,6 +239,29 @@ string from_escaped_string(const char *str, size_t len)
     return retval;
 }
 
+const char *
+lnav_strnstr(const char *s, const char *find, size_t slen)
+{
+	char c, sc;
+	size_t len;
+
+	if ((c = *find++) != '\0') {
+		len = strlen(find);
+		do {
+			do {
+				if (slen < 1 || (sc = *s) == '\0')
+					return (NULL);
+				--slen;
+				++s;
+			} while (sc != c);
+			if (len > slen)
+				return (NULL);
+		} while (strncmp(s, find, len) != 0);
+		s--;
+	}
+	return s;
+}
+
 struct separated_string {
     const char *ss_str;
     size_t ss_len;
@@ -271,8 +294,8 @@ struct separated_string {
             const separated_string &ss = this->i_parent;
             const char *next_field;
 
-            next_field = strnstr(this->i_pos, ss.ss_separator,
-                                 ss.ss_len - (this->i_pos - ss.ss_str));
+            next_field = lnav_strnstr(this->i_pos, ss.ss_separator,
+                                      ss.ss_len - (this->i_pos - ss.ss_str));
             if (next_field == nullptr) {
                 this->i_next_pos = ss.ss_str + ss.ss_len;
             } else {
