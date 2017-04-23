@@ -87,7 +87,7 @@ struct line_range {
         if (this->lr_start >= start) {
             this->lr_start = std::max(0, this->lr_start + amount);
         }
-        if (this->lr_end != -1 && start < this->lr_end) {
+        if (this->lr_end != -1 && start <= this->lr_end) {
             this->lr_end += amount;
             if (this->lr_end < this->lr_start) {
                 this->lr_end = this->lr_start;

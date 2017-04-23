@@ -3594,7 +3594,7 @@ int main(int argc, char *argv[])
                             if (write(STDOUT_FILENO, line.c_str(),
                                       line.length()) == -1 ||
                                 write(STDOUT_FILENO, "\n", 1) == -1) {
-                                perror("write to STDOUT");
+                                perror("1 write to STDOUT");
                             }
                             ++y;
                         }
@@ -3610,7 +3610,7 @@ int main(int argc, char *argv[])
                         if (write(STDOUT_FILENO, lr.substr(rows[0].get_string()),
                                   lr.sublen(rows[0].get_string())) == -1 ||
                             write(STDOUT_FILENO, "\n", 1) == -1) {
-                            perror("write to STDOUT");
+                            perror("2 write to STDOUT");
                         }
                     }
                 }
@@ -3669,7 +3669,7 @@ int main(int argc, char *argv[])
 
                     if (write(STDOUT_FILENO, str.c_str(), str.size()) == -1 ||
                         write(STDOUT_FILENO, "\n", 1) == -1) {
-                        perror("write to STDOUT");
+                        perror("3 write to STDOUT");
                     }
                 }
             }
