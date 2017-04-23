@@ -45,7 +45,7 @@
 #include "strong_int.hh"
 #include "logfile.hh"
 #include "bookmarks.hh"
-#include "chunky_index.hh"
+#include "big_array.hh"
 #include "textview_curses.hh"
 #include "filter_observer.hh"
 
@@ -609,7 +609,7 @@ private:
     unsigned long             lss_flags;
     std::vector<logfile_data *> lss_files;
 
-    chunky_index<indexed_content> lss_index;
+    big_array<indexed_content> lss_index;
     std::vector<uint32_t> lss_filtered_index;
 
     bookmarks<content_line_t>::type lss_user_marks;

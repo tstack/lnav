@@ -1,6 +1,8 @@
 
 lnav v0.8.3:
      Features:
+     * Support for the Bro Network Security Monitor (https://www.bro.org) log
+       file format.
      * Added an fstat() table-valued function for querying the local
        filesystem.
      * Added readlink() and realpath() SQL functions.

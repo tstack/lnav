@@ -167,8 +167,11 @@ static int read_format_bool(yajlpp_parse_context *ypc, int val)
 
     if (field_name == "convert-to-local-time")
         elf->lf_date_time.dts_local_time = val;
-    else if (field_name == "json")
-        elf->jlf_json = val;
+    else if (field_name == "json") {
+        if (val) {
+            elf->elf_type = external_log_format::ELF_TYPE_JSON;
+        }
+    }
     else if (field_name == "hide-extra")
         elf->jlf_hide_extra = val;
     else if (field_name == "multiline")
@@ -524,6 +527,14 @@ struct json_path_handler sample_handlers[] = {
     json_path_handler()
 };
 
+static const json_path_handler_base::enum_value_t TYPE_ENUM[] = {
+    make_pair("text", external_log_format::elf_type_t::ELF_TYPE_TEXT),
+    make_pair("json", external_log_format::elf_type_t::ELF_TYPE_JSON),
+    make_pair("csv", external_log_format::elf_type_t::ELF_TYPE_CSV),
+
+    json_path_handler_base::ENUM_TERMINATOR
+};
+
 struct json_path_handler format_handlers[] = {
     json_path_handler("regex/(?<pattern_name>[^/]+)/")
         .with_obj_provider(pattern_provider)
@@ -572,6 +583,11 @@ struct json_path_handler format_handlers[] = {
         .with_synopsis("<regex>")
         .with_description("A regular expression to highlight in logs of this format.")
         .for_field(&nullobj<external_log_format>()->elf_highlighter_patterns),
+
+    json_path_handler("file-type")
+        .with_synopsis("The type of file that contains the log messages")
+        .with_enum_values(TYPE_ENUM)
+        .for_enum(&nullobj<external_log_format>()->elf_type),
 
     json_path_handler()
 };

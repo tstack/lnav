@@ -146,11 +146,10 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         if ((this->lss_token_file->is_time_adjusted() ||
              format->lf_timestamp_flags & ETF_MACHINE_ORIENTED) &&
             format->lf_date_time.dts_fmt_lock != -1) {
-            struct line_range time_range;
-
-            time_range = find_string_attr_range(
+            auto time_attr = find_string_attr(
                 this->lss_token_attrs, &logline::L_TIMESTAMP);
-            if (time_range.is_valid()) {
+            if (time_attr != this->lss_token_attrs.end()) {
+                const struct line_range time_range = time_attr->sa_range;
                 struct timeval adjusted_time;
                 struct exttm adjusted_tm;
                 char buffer[128];
@@ -181,9 +180,6 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                     value_out.insert(time_range.lr_start,
                                      padding,
                                      ' ');
-                    shift_string_attrs(this->lss_token_attrs,
-                                       time_range.lr_start + 1,
-                                       padding);
                 }
                 value_out.replace(time_range.lr_start,
                                   len,
@@ -426,7 +422,7 @@ bool logfile_sub_source::rebuild_index(bool force)
 {
     iterator iter;
     size_t total_lines = 0;
-    bool retval = force;
+    bool retval = force, full_sort = false;
     int file_count = 0;
 
     for (iter = this->lss_files.begin();
@@ -439,14 +435,26 @@ bool logfile_sub_source::rebuild_index(bool force)
             }
         }
         else {
-            if ((*iter)->get_file()->rebuild_index()) {
-                retval = true;
+            switch ((*iter)->get_file()->rebuild_index()) {
+                case logfile::RR_NEW_LINES:
+                    retval = true;
+                    break;
+                case logfile::RR_NEW_ORDER:
+                    retval = true;
+                    force = true;
+                    break;
             }
             file_count += 1;
             total_lines += (*iter)->get_file()->size();
         }
     }
+
+    if (this->lss_index.reserve(total_lines)) {
+        force = true;
+    }
+
     if (force) {
+        full_sort = true;
         for (iter = this->lss_files.begin();
              iter != this->lss_files.end();
              iter++) {
@@ -460,50 +468,73 @@ bool logfile_sub_source::rebuild_index(bool force)
 
     if (retval || force) {
         size_t index_size = 0, start_size = this->lss_index.size();
+        logline_cmp line_cmper(*this);
 
-        kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(file_count);
-
-        for (iter = this->lss_files.begin();
-             iter != this->lss_files.end();
-             iter++) {
-            logfile_data *ld = *iter;
+        for (auto ld : this->lss_files) {
             logfile *lf = ld->get_file();
-            if (lf == NULL) {
+
+            if (lf == nullptr) {
                 continue;
             }
-
-            merge.add(ld,
-                      lf->begin() + ld->ld_lines_indexed,
-                      lf->end());
-            index_size += lf->size();
-            this->lss_longest_line = std::max(this->lss_longest_line, lf->get_longest_line_length());
+            this->lss_longest_line = std::max(
+                this->lss_longest_line, lf->get_longest_line_length());
         }
 
-        this->lss_index.reset();
+        if (full_sort) {
+            for (auto ld : this->lss_files) {
+                logfile *lf = ld->get_file();
 
-        merge.execute();
-        for (;;) {
-            logfile::iterator lf_iter;
-            logfile_data *ld;
+                if (lf == nullptr) {
+                    continue;
+                }
 
-            if (!merge.get_top(ld, lf_iter)) {
-                break;
+                for (size_t line_index = 0; line_index < lf->size(); line_index++) {
+                    content_line_t con_line(ld->ld_file_index * MAX_LINES_PER_FILE +
+                                            line_index);
+
+                    this->lss_index.push_back(con_line);
+                }
             }
 
-            int file_index = ld->ld_file_index;
-            int line_index = lf_iter - ld->get_file()->begin();
+            sort(this->lss_index.begin(), this->lss_index.end(), line_cmper);
+        } else {
+            kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(
+                file_count);
 
-            content_line_t con_line(file_index * MAX_LINES_PER_FILE +
-                                    line_index);
+            for (iter = this->lss_files.begin();
+                 iter != this->lss_files.end();
+                 iter++) {
+                logfile_data *ld = *iter;
+                logfile *lf = ld->get_file();
+                if (lf == NULL) {
+                    continue;
+                }
 
-            off_t insert_point = this->lss_index.merge_value(
-                    con_line, logline_cmp(*this));
-            if (insert_point < (off_t)start_size) {
-                start_size = 0;
-                this->lss_filtered_index.clear();
+                merge.add(ld,
+                          lf->begin() + ld->ld_lines_indexed,
+                          lf->end());
+                index_size += lf->size();
             }
 
-            merge.next();
+            merge.execute();
+            for (;;) {
+                logfile::iterator lf_iter;
+                logfile_data *ld;
+
+                if (!merge.get_top(ld, lf_iter)) {
+                    break;
+                }
+
+                int file_index = ld->ld_file_index;
+                int line_index = lf_iter - ld->get_file()->begin();
+
+                content_line_t con_line(file_index * MAX_LINES_PER_FILE +
+                                        line_index);
+
+                this->lss_index.push_back(con_line);
+
+                merge.next();
+            }
         }
 
         for (iter = this->lss_files.begin();
@@ -514,8 +545,6 @@ bool logfile_sub_source::rebuild_index(bool force)
 
             (*iter)->ld_lines_indexed = (*iter)->get_file()->size();
         }
-
-        this->lss_index.finish();
 
         this->lss_filtered_index.reserve(this->lss_index.size());
 

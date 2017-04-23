@@ -38,7 +38,6 @@ check_PROGRAMS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
-	test_chunky_index \
 	test_concise \
 	test_date_time_scanner \
 	test_grep_proc2 \
@@ -81,9 +80,6 @@ test_auto_mem_SOURCES = test_auto_mem.cc
 
 test_bookmarks_SOURCES = test_bookmarks.cc
 test_bookmarks_LDADD = ../src/libdiag.a
-
-test_chunky_index_SOURCES = test_chunky_index.cc
-test_chunky_index_LDADD = ../src/libdiag.a
 
 test_date_time_scanner_SOURCES = test_date_time_scanner.cc
 test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
@@ -290,6 +286,8 @@ dist_noinst_DATA = \
 	logfile_access_log.1 \
 	logfile_bad_access_log.0 \
 	logfile_bad_syslog.0 \
+	logfile_bro_conn.log.0 \
+	logfile_bro_http.log.0 \
 	logfile_blued.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \
@@ -356,7 +354,6 @@ TESTS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
-	test_chunky_index \
 	test_date_time_scanner \
 	test_format_installer.sh \
 	test_format_loader.sh \

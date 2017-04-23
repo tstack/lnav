@@ -610,6 +610,23 @@ char *sql_quote_ident(const char *ident)
     return retval;
 }
 
+string sql_safe_ident(const string_fragment &ident)
+{
+    string retval = to_string(ident);
+
+    for (size_t lpc = 0; lpc < retval.size(); lpc++) {
+        char ch = retval[lpc];
+
+        if (isalnum(ch) || ch == '_') {
+            retval[lpc] = ch;
+        } else {
+            retval[lpc] = '_';
+        }
+    }
+
+    return retval;
+}
+
 void sql_compile_script(sqlite3 *db,
                         const char *src_name,
                         const char *script_orig,

@@ -79,6 +79,11 @@ const intern_string *intern_string::lookup(const char *str, ssize_t len)
     return curr;
 }
 
+const intern_string *intern_string::lookup(const string_fragment &sf)
+{
+    return lookup(sf.data(), sf.length());
+}
+
 const intern_string *intern_string::lookup(const std::string &str)
 {
     return lookup(str.c_str(), str.size());

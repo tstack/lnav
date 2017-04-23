@@ -569,7 +569,7 @@ static struct json_path_handler json_log_rewrite_handlers[] = {
 
 bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_out)
 {
-    if (this->jlf_json) {
+    if (this->elf_type != ELF_TYPE_TEXT) {
         return false;
     }
 
@@ -590,11 +590,12 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
     return len_out > pat->p_timestamp_end;
 }
 
-log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
+log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> lf,
+                                                    std::vector<logline> &dst,
                                                     off_t offset,
                                                     shared_buffer_ref &sbr)
 {
-    if (this->jlf_json) {
+    if (this->elf_type == ELF_TYPE_JSON) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         logline ll(offset, 0, 0, logline::LEVEL_INFO);
         yajl_handle handle = this->jlf_yajl_handle.in();
@@ -743,7 +744,7 @@ log_format::scan_result_t external_log_format::scan(std::vector<logline> &dst,
             }
         }
 
-        dst.push_back(logline(offset, log_tv, level, mod_index, opid));
+        dst.emplace_back(offset, log_tv, level, mod_index, opid);
 
         this->lf_fmt_lock = curr_fmt;
         return log_format::SCAN_MATCH;
@@ -809,7 +810,7 @@ void external_log_format::annotate(shared_buffer_ref &line,
     struct line_range lr;
     pcre_context::capture_t *cap, *body_cap, *module_cap = NULL;
 
-    if (this->jlf_json) {
+    if (this->elf_type != ELF_TYPE_TEXT) {
         values = this->jlf_line_values;
         sa = this->jlf_line_attrs;
         return;
@@ -1056,7 +1057,7 @@ static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *st
 
 void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr, bool full_message)
 {
-    if (!this->jlf_json) {
+    if (this->elf_type == ELF_TYPE_TEXT) {
         return;
     }
 
@@ -1452,13 +1453,13 @@ void external_log_format::build(std::vector<std::string> &errors) {
         this->elf_pattern_order.push_back(iter->second);
     }
 
-    if (this->jlf_json) {
+    if (this->elf_type != ELF_TYPE_TEXT) {
         if (!this->elf_patterns.empty()) {
             errors.push_back("error:" +
                              this->elf_name.to_string() +
-                             ": JSON logs cannot have regexes");
+                             ": structured logs cannot have regexes");
         }
-        if (this->jlf_json) {
+        if (this->elf_type == ELF_TYPE_JSON) {
             this->jlf_parse_context.reset(
                 new yajlpp_parse_context(this->elf_name.to_string()));
             this->jlf_yajl_handle.reset(yajl_alloc(
@@ -1518,7 +1519,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
     }
 
-    if (!this->jlf_json && this->elf_samples.empty()) {
+    if (this->elf_type == ELF_TYPE_TEXT && this->elf_samples.empty()) {
         errors.push_back("error:" +
                          this->elf_name.to_string() +
                          ":no sample logs provided, all formats must have samples");
@@ -1831,31 +1832,12 @@ public:
              iter != elf.elf_value_defs.end();
              ++iter) {
             const auto &vd = *iter->second;
-            int type = 0;
+            int type = log_vtab_impl::logline_value_to_sqlite_type(vd.vd_kind);
 
             if (vd.vd_column == -1) {
                 continue;
             }
 
-            switch (vd.vd_kind) {
-            case logline_value::VALUE_NULL:
-            case logline_value::VALUE_TEXT:
-            case logline_value::VALUE_JSON:
-            case logline_value::VALUE_QUOTED:
-                type = SQLITE3_TEXT;
-                break;
-            case logline_value::VALUE_FLOAT:
-                type = SQLITE_FLOAT;
-                break;
-            case logline_value::VALUE_BOOLEAN:
-            case logline_value::VALUE_INTEGER:
-                type = SQLITE_INTEGER;
-                break;
-            case logline_value::VALUE_UNKNOWN:
-            case logline_value::VALUE__MAX:
-                ensure(0);
-                break;
-            }
             cols[vd.vd_column].vc_name = vd.vd_name.get();
             cols[vd.vd_column].vc_type = type;
             cols[vd.vd_column].vc_collator = vd.vd_collate.c_str();

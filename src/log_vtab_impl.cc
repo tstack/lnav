@@ -113,6 +113,33 @@ std::string log_vtab_impl::get_table_statement(void)
     return oss.str();
 }
 
+int log_vtab_impl::logline_value_to_sqlite_type(logline_value::kind_t kind)
+{
+    int type = 0;
+
+    switch (kind) {
+        case logline_value::VALUE_NULL:
+        case logline_value::VALUE_TEXT:
+        case logline_value::VALUE_JSON:
+        case logline_value::VALUE_QUOTED:
+        case logline_value::VALUE_TIMESTAMP:
+            type = SQLITE3_TEXT;
+            break;
+        case logline_value::VALUE_FLOAT:
+            type = SQLITE_FLOAT;
+            break;
+        case logline_value::VALUE_BOOLEAN:
+        case logline_value::VALUE_INTEGER:
+            type = SQLITE_INTEGER;
+            break;
+        case logline_value::VALUE_UNKNOWN:
+        case logline_value::VALUE__MAX:
+            ensure(0);
+            break;
+    }
+    return type;
+}
+
 struct vtab {
     sqlite3_vtab        base;
     sqlite3 *           db;
@@ -461,7 +488,8 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                     sqlite3_result_null(ctx);
                     break;
                 case logline_value::VALUE_JSON:
-                case logline_value::VALUE_TEXT: {
+                case logline_value::VALUE_TEXT:
+                case logline_value::VALUE_TIMESTAMP: {
                     sqlite3_result_text(ctx,
                                         lv_iter->text_value(),
                                         lv_iter->text_length(),

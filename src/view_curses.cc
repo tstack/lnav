@@ -240,6 +240,21 @@ void attr_line_t::split_lines(std::vector<attr_line_t> &lines) const
     lines.emplace_back(this->subline(pos));
 }
 
+struct tab_mapping {
+    size_t tm_origin;
+    size_t tm_dst_start;
+    size_t tm_dst_end;
+
+    tab_mapping(size_t origin, size_t dst_start, size_t dst_end)
+        : tm_origin(origin), tm_dst_start(dst_start), tm_dst_end(dst_end) {
+
+    };
+
+    size_t length() const {
+        return this->tm_dst_end - this->tm_dst_start;
+    };
+};
+
 void view_curses::mvwattrline(WINDOW *window,
                               int y,
                               int x,
@@ -250,8 +265,8 @@ void view_curses::mvwattrline(WINDOW *window,
     int text_attrs, attrs, line_width;
     string_attrs_t &         sa   = al.get_attrs();
     string &                 line = al.get_string();
-    string_attrs_t::iterator iter;
-    std::map<size_t, size_t, std::greater<size_t> > tab_list;
+    string_attrs_t::const_iterator iter;
+    vector<tab_mapping> tab_list;
     int    tab_count = 0;
     char  *expanded_line;
     size_t exp_index = 0;
@@ -264,13 +279,15 @@ void view_curses::mvwattrline(WINDOW *window,
     expanded_line = (char *)alloca(line.size() + tab_count * 8 + 1);
 
     for (size_t lpc = 0; lpc < line.size(); lpc++) {
+        int exp_start_index = exp_index;
+
         switch (line[lpc]) {
         case '\t':
             do {
                 expanded_line[exp_index] = ' ';
                 exp_index += 1;
             } while (exp_index % 8);
-            tab_list[lpc] = exp_index;
+            tab_list.emplace_back(lpc, exp_start_index, exp_index);
             break;
 
         case '\r':
@@ -310,24 +327,24 @@ void view_curses::mvwattrline(WINDOW *window,
     stable_sort(sa.begin(), sa.end());
     for (iter = sa.begin(); iter != sa.end(); ++iter) {
         struct line_range attr_range = iter->sa_range;
-        std::map<size_t, size_t>::iterator tab_iter;
 
         require(attr_range.lr_start >= 0);
         require(attr_range.lr_end >= -1);
 
-        tab_iter = tab_list.lower_bound(attr_range.lr_start);
-        if (tab_iter != tab_list.end()) {
-            if ((size_t)attr_range.lr_start > tab_iter->first) {
-                attr_range.lr_start += (tab_iter->second - tab_iter->first) - 1;
+        for (auto tab_iter = tab_list.rbegin();
+             tab_iter != tab_list.rend();
+             ++tab_iter) {
+            if (tab_iter->tm_origin < attr_range.lr_start) {
+                attr_range.lr_start += tab_iter->length() - 1;
             }
         }
 
         if (attr_range.lr_end != -1) {
-            tab_iter = tab_list.lower_bound(attr_range.lr_end);
-            if (tab_iter != tab_list.end()) {
-                if ((size_t)attr_range.lr_end > tab_iter->first) {
-                    attr_range.lr_end += (
-                        tab_iter->second - tab_iter->first) - 1;
+            for (auto tab_iter = tab_list.rbegin();
+                 tab_iter != tab_list.rend();
+                 ++tab_iter) {
+                if (tab_iter->tm_origin < attr_range.lr_end) {
+                    attr_range.lr_end += tab_iter->length() - 1;
                 }
             }
         }
@@ -341,7 +358,7 @@ void view_curses::mvwattrline(WINDOW *window,
             attr_range.lr_end - lr.lr_start);
 
         if (attr_range.lr_end > attr_range.lr_start) {
-            string_attrs_t::iterator range_iter;
+            string_attrs_t::const_iterator range_iter;
             int awidth = attr_range.length();
             int color_pair = -1;
 

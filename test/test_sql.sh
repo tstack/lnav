@@ -3,6 +3,49 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
+    -c ";SELECT bro_conn_log.bro_duration as duration, bro_conn_log.bro_uid, group_concat( distinct (bro_method || ' ' || bro_host)) as req from bro_http_log, bro_conn_log where bro_http_log.bro_uid = bro_conn_log.bro_uid group by bro_http_log.bro_uid order by duration desc limit 10" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_bro_http.log.0 ${test_dir}/logfile_bro_conn.log.0
+
+check_output "bro logs are not recognized?" <<EOF
+duration,bro_uid,req
+116.438679,CwFs1P2UcUdlSxD2La,GET www.reddit.com
+115.202498,CdZUPH2DKOE7zzCLE3,GET feeds.bbci.co.uk
+115.121914,CdrfXZ1NOFPEawF218,GET c.thumbs.redditmedia.com
+115.121837,CoX7zA3OJKGUOSCBY2,GET e.thumbs.redditmedia.com
+115.12181,CJxSUgkInyKSHiju1,GET e.thumbs.redditmedia.com
+115.121506,CT0JIh479jXIGt0Po1,GET f.thumbs.redditmedia.com
+115.121339,CJwUi9bdB9c1lLW44,GET f.thumbs.redditmedia.com
+115.119217,C6Q4Vm14ZJIlZhsXqk,GET a.thumbs.redditmedia.com
+72.274459,CbNCgO1MzloHRNeY4f,GET www.google.com
+71.658218,CnGze54kQWWpKqrrZ4,GET ajax.googleapis.com
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT * FROM bro_http_log LIMIT 5" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_bro_http.log.0
+
+check_output "bro logs are not recognized?" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,bro_ts,bro_uid,bro_id_orig_h,bro_id_orig_p,bro_id_resp_h,bro_id_resp_p,bro_trans_depth,bro_method,bro_host,bro_uri,bro_referrer,bro_version,bro_user_agent,bro_request_body_len,bro_response_body_len,bro_status_code,bro_status_msg,bro_info_code,bro_info_msg,bro_tags,bro_username,bro_password,bro_proxied,bro_orig_fuids,bro_orig_filenames,bro_orig_mime_types,bro_resp_fuids,bro_resp_filenames,bro_resp_mime_types
+0,<NULL>,2011-11-02 17:19:26.452,0,info,0,1320279566.452687,CwFs1P2UcUdlSxD2La,192.168.2.76,52026,132.235.215.119,80,1,GET,www.reddit.com,/,<NULL>,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,109978,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,Ftw3fJ2JJF3ntMTL2,<NULL>,text/html
+1,<NULL>,2011-11-02 17:19:26.831,379,info,0,1320279566.831619,CJxSUgkInyKSHiju1,192.168.2.76,52030,72.21.211.173,80,1,GET,e.thumbs.redditmedia.com,/E-pbDbmiBclPkDaX.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2300,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,FFTf9Zdgk3YkfCKo3,<NULL>,image/jpeg
+2,<NULL>,2011-11-02 17:19:26.831,0,info,0,1320279566.831563,CJwUi9bdB9c1lLW44,192.168.2.76,52029,72.21.211.173,80,1,GET,f.thumbs.redditmedia.com,/BP5bQfy4o-C7cF6A.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2272,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,FfXtOj3o7aub4vbs2j,<NULL>,image/jpeg
+3,<NULL>,2011-11-02 17:19:26.831,0,info,0,1320279566.831473,CoX7zA3OJKGUOSCBY2,192.168.2.76,52027,72.21.211.173,80,1,GET,e.thumbs.redditmedia.com,/SVUtep3Rhg5FTRn4.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2562,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,F21Ybs3PTqS6O4Q2Zh,<NULL>,image/jpeg
+4,<NULL>,2011-11-02 17:19:26.831,0,info,0,1320279566.831643,CT0JIh479jXIGt0Po1,192.168.2.76,52031,72.21.211.173,80,1,GET,f.thumbs.redditmedia.com,/uuy31444rLSyKdHS.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,1595,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,Fdk0MZ1wQmKWAJ4WH4,<NULL>,image/jpeg
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";SELECT * FROM bro_http_log WHERE log_level = 'error'" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_bro_http.log.0
+
+check_output "bro logs are not recognized?" <<EOF
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,bro_ts,bro_uid,bro_id_orig_h,bro_id_orig_p,bro_id_resp_h,bro_id_resp_p,bro_trans_depth,bro_method,bro_host,bro_uri,bro_referrer,bro_version,bro_user_agent,bro_request_body_len,bro_response_body_len,bro_status_code,bro_status_msg,bro_info_code,bro_info_msg,bro_tags,bro_username,bro_password,bro_proxied,bro_orig_fuids,bro_orig_filenames,bro_orig_mime_types,bro_resp_fuids,bro_resp_filenames,bro_resp_mime_types
+118,<NULL>,2011-11-02 17:19:49.337,18,error,0,1320279589.337053,CBHHuR1xFnm5C5CQBc,192.168.2.76,52074,74.125.225.76,80,1,GET,i4.ytimg.com,/vi/gDbg_GeuiSY/hqdefault.jpg,<NULL>,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,893,404,Not Found,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,F2GiAw3j1m22R2yIg2,<NULL>,image/jpeg
+EOF
+
+run_test ${lnav_test} -n \
     -c ';select log_time from access_log where log_line > 100000' \
     -c ':switch-to-view db' \
     ${test_dir}/logfile_access_log.0

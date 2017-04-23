@@ -31,7 +31,11 @@
 
 #include <assert.h>
 
+#include <intern_string.hh>
+
 #include "relative_time.hh"
+
+using namespace std;
 
 static struct {
     const char *reltime;

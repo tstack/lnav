@@ -145,14 +145,15 @@ void logfile::set_format_base_time(log_format *lf)
     lf->lf_date_time.set_base_time(file_time);
 }
 
-void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
+bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 {
     log_format::scan_result_t found = log_format::SCAN_NO_MATCH;
     size_t prescan_size = this->lf_index.size();
+    bool retval = false;
 
     if (this->lf_format.get() != NULL) {
         /* We've locked onto a format, just use that scanner. */
-        found = this->lf_format->scan(this->lf_index, offset, sbr);
+        found = this->lf_format->scan(this, this->lf_index, offset, sbr);
     }
     else if (this->lf_options.loo_detect_format &&
              this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
@@ -173,7 +174,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 
             (*iter)->clear();
             this->set_format_base_time(*iter);
-            found = (*iter)->scan(this->lf_index, offset, sbr);
+            found = (*iter)->scan(this, this->lf_index, offset, sbr);
             if (found == log_format::SCAN_MATCH) {
 #if 0
                 require(this->lf_index.size() == 1 ||
@@ -200,6 +201,7 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                     this->lf_index[lpc].set_time(last_line.get_time());
                     this->lf_index[lpc].set_millis(last_line.get_millis());
                 }
+                break;
             }
         }
     }
@@ -211,19 +213,26 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 logline &latest = this->lf_index[prescan_size];
 
                 if (latest < second_to_last) {
-                    log_debug("%s:%d: out-of-time-order line detected %d.%03d < %d.%03d",
-                              this->lf_filename.c_str(),
-                              prescan_size,
-                              latest.get_time(),
-                              latest.get_millis(),
-                              second_to_last.get_time(),
-                              second_to_last.get_millis());
-                    for (size_t lpc = prescan_size; lpc < this->lf_index.size(); lpc++) {
-                        logline &line_to_update = this->lf_index[lpc];
+                    if (this->lf_format->lf_time_ordered) {
+                        log_debug(
+                            "%s:%d: out-of-time-order line detected %d.%03d < %d.%03d",
+                            this->lf_filename.c_str(),
+                            prescan_size,
+                            latest.get_time(),
+                            latest.get_millis(),
+                            second_to_last.get_time(),
+                            second_to_last.get_millis());
+                        for (size_t lpc = prescan_size;
+                             lpc < this->lf_index.size(); lpc++) {
+                            logline &line_to_update = this->lf_index[lpc];
 
-                        line_to_update.set_time_skew(true);
-                        line_to_update.set_time(second_to_last.get_time());
-                        line_to_update.set_millis(second_to_last.get_millis());
+                            line_to_update.set_time_skew(true);
+                            line_to_update.set_time(second_to_last.get_time());
+                            line_to_update.set_millis(
+                                second_to_last.get_millis());
+                        }
+                    } else {
+                        retval = true;
                     }
                 }
             }
@@ -261,12 +270,14 @@ void logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
         case log_format::SCAN_INCOMPLETE:
             break;
     }
+
+    return retval;
 }
 
-bool logfile::rebuild_index()
+logfile::rebuild_result_t logfile::rebuild_index()
 throw (line_buffer::error, logfile::error)
 {
-    bool        retval = false;
+    rebuild_result_t retval = RR_NO_NEW_LINES;
     struct stat st;
 
     this->lf_activity.la_polls += 1;
@@ -280,7 +291,7 @@ throw (line_buffer::error, logfile::error)
         log_info("truncated file detected, closing -- %s",
                  this->lf_filename.c_str());
         this->close();
-        return false;
+        return RR_NO_NEW_LINES;
     }
     else if (this->lf_line_buffer.is_data_available(this->lf_index_size, st.st_size)) {
         this->lf_activity.la_reads += 1;
@@ -320,7 +331,7 @@ throw (line_buffer::error, logfile::error)
                     log_info("overwritten file detected, closing -- %s",
                              this->lf_filename.c_str());
                     this->close();
-                    return false;
+                    return RR_NO_NEW_LINES;
                 }
             }
         }
@@ -331,6 +342,9 @@ throw (line_buffer::error, logfile::error)
         if (this->lf_logline_observer != NULL) {
             this->lf_logline_observer->logline_restart(*this);
         }
+
+        bool sort_needed = false;
+
         while (this->lf_line_buffer.read_line(off, sbr, &lv)) {
             size_t old_size = this->lf_index.size();
 
@@ -344,8 +358,12 @@ throw (line_buffer::error, logfile::error)
 
             this->lf_longest_line = std::max(this->lf_longest_line, sbr.length());
             this->lf_partial_line = lv.lv_partial;
-            this->process_prefix(last_off, sbr);
+            sort_needed = this->process_prefix(last_off, sbr) || sort_needed;
             last_off = off;
+
+            if (old_size > this->lf_index.size()) {
+                old_size = 0;
+            }
 
             for (logfile::iterator iter = this->begin() + old_size;
                     iter != this->end(); ++iter) {
@@ -365,6 +383,7 @@ throw (line_buffer::error, logfile::error)
                 break;
             }
         }
+
         if (this->lf_logline_observer != NULL) {
             this->lf_logline_observer->logline_eof(*this);
         }
@@ -389,7 +408,11 @@ throw (line_buffer::error, logfile::error)
         this->lf_index_size = off;
         this->lf_stat = st;
 
-        retval = true;
+        if (sort_needed) {
+            retval = RR_NEW_ORDER;
+        } else {
+            retval = RR_NEW_LINES;
+        }
     }
 
     this->lf_index_time = this->lf_line_buffer.get_file_time();

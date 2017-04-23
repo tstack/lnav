@@ -335,6 +335,12 @@ public:
 
     void read_full_message(iterator ll, shared_buffer_ref &msg_out, int max_lines=50);
 
+    enum rebuild_result_t {
+        RR_NO_NEW_LINES,
+        RR_NEW_LINES,
+        RR_NEW_ORDER,
+    };
+
     /**
      * Index any new data in the log file.
      *
@@ -342,7 +348,7 @@ public:
      * indexing.
      * @return True if any new lines were indexed.
      */
-    bool rebuild_index()
+    rebuild_result_t rebuild_index()
         throw (line_buffer::error, logfile::error);
 
     void reobserve_from(iterator iter);
@@ -391,7 +397,7 @@ protected:
      * @param prefix The contents of the line.
      * @param len The length of the 'prefix' string.
      */
-    void process_prefix(off_t offset, shared_buffer_ref &sbr);
+    bool process_prefix(off_t offset, shared_buffer_ref &sbr);
 
     void set_format_base_time(log_format *lf);
 

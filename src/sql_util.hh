@@ -81,6 +81,8 @@ bool sql_ident_needs_quote(const char *ident);
 
 char *sql_quote_ident(const char *ident);
 
+std::string sql_safe_ident(const string_fragment &ident);
+
 void sql_compile_script(sqlite3 *db,
                         const char *src_name,
                         const char *script,

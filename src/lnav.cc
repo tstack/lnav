@@ -500,6 +500,15 @@ public:
     void promote_file(logfile *lf) {
         if (lnav_data.ld_log_source.insert_file(lf)) {
             force = true;
+
+            log_format *format = lf->get_format();
+            if (format->lf_is_self_describing) {
+                log_vtab_impl *vt = format->get_vtab_impl();
+
+                if (vt) {
+                    lnav_data.ld_vtab_manager->register_vtab(vt);
+                }
+            }
         }
         else {
             this->closed_file(lf);

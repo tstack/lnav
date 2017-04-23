@@ -37,10 +37,96 @@
 
 #include <string>
 
+struct string_fragment {
+    explicit string_fragment(const char *str, int begin = 0, int end = -1)
+        : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end) {
+    };
+
+    bool is_valid() const {
+        return this->sf_begin != -1;
+    };
+
+    int length() const {
+        return this->sf_end - this->sf_begin;
+    };
+
+    const char *data() const {
+        return &this->sf_string[this->sf_begin];
+    }
+
+    bool empty() const {
+        return length() == 0;
+    };
+
+    char operator[](int index) const {
+        return this->sf_string[sf_begin + index];
+    };
+
+    bool operator==(const std::string &str) const {
+        if (this->length() != str.length()) {
+            return false;
+        }
+
+        return memcmp(&this->sf_string[this->sf_begin],
+                      str.c_str(),
+                      str.length()) == 0;
+    };
+
+    bool operator==(const string_fragment &sf) const {
+        if (this->length() != sf.length()) {
+            return false;
+        }
+
+        return memcmp(this->data(), sf.data(), sf.length()) == 0;
+    };
+
+    bool operator==(const char *str) const {
+        return strncmp(this->data(), str, this->length()) == 0;
+    };
+
+    const char *to_string(char *buf) {
+        memcpy(buf, this->data(), this->length());
+        buf[this->length()] = '\0';
+
+        return buf;
+    };
+
+    void clear() {
+        this->sf_begin = 0;
+        this->sf_end = 0;
+    };
+
+    void invalidate() {
+        this->sf_begin = -1;
+        this->sf_end = -1;
+    };
+
+    const char *sf_string;
+    int sf_begin;
+    int sf_end;
+};
+
+inline bool operator<(const char *left, const string_fragment &right) {
+    int rc = strncmp(left, right.data(), right.length());
+    return rc < 0;
+}
+
+inline bool operator<(const string_fragment &left, const char *right) {
+    return strncmp(left.data(), right, left.length()) < 0;
+}
+
+namespace std {
+    inline string to_string(const string_fragment &s) {
+        return string(s.data(), s.length());
+    }
+}
+
 class intern_string {
 
 public:
     static const intern_string *lookup(const char *str, ssize_t len);
+
+    static const intern_string *lookup(const string_fragment &sf);
 
     static const intern_string *lookup(const std::string &str);
 
@@ -87,6 +173,10 @@ public:
     const intern_string *unwrap() const {
         return this->ist_interned_string;
     }
+
+    void clear(void) {
+        this->ist_interned_string = nullptr;
+    };
 
     bool empty(void) const {
         return this->ist_interned_string == NULL;
@@ -138,5 +228,24 @@ private:
 };
 
 unsigned long hash_str(const char *str, size_t len);
+
+inline bool operator<(const char *left, const intern_string_t &right) {
+    int rc = strncmp(left, right.get(), right.size());
+    return rc < 0;
+}
+
+inline bool operator<(const intern_string_t &left, const char *right) {
+    return strncmp(left.get(), right, left.size()) < 0;
+}
+
+inline bool operator==(const intern_string_t &left, const string_fragment &sf) {
+    return (left.size() == sf.length()) &&
+           (memcmp(left.get(), sf.data(), left.size()));
+}
+
+inline bool operator==(const string_fragment &left, const intern_string_t &right) {
+    return (left.length() == right.size()) &&
+           (memcmp(left.data(), right.get(), left.length()) == 0);
+}
 
 #endif

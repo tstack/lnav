@@ -36,6 +36,14 @@ run_test ./drive_logfile -f zblued_log ${srcdir}/logfile_blued.0
 
 on_error_fail_with "Didn't infer blued_log that collides with syslog?"
 
+run_test ./drive_logfile -f bro_http_log ${srcdir}/logfile_bro_http.log.0
+
+on_error_fail_with "Didn't infer bro_http_log log format?"
+
+run_test ./drive_logfile -f bro_conn_log ${srcdir}/logfile_bro_conn.log.0
+
+on_error_fail_with "Didn't infer bro_conn_log log format?"
+
 
 run_test ./drive_logfile ${srcdir}/logfile_empty.0
 

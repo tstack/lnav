@@ -99,9 +99,9 @@ inline int rounddown_offset(size_t size, int step, int offset)
     return size - ((size - offset) % step);
 }
 
-inline int roundup_size(size_t size, int step)
+inline size_t roundup_size(size_t size, int step)
 {
-    int retval = size + step;
+    size_t retval = size + step;
 
     retval -= (retval % step);
 
@@ -163,24 +163,6 @@ struct hash_updater {
 std::string hash_string(const std::string &str);
 
 std::string hash_bytes(const char *str1, size_t s1len, ...);
-
-struct string_fragment {
-    string_fragment(const char *str, int begin, int end)
-        : sf_string(str), sf_begin(begin), sf_end(end) {
-    };
-
-    bool is_valid() const {
-        return this->sf_begin != -1;
-    };
-
-    int length() const {
-        return this->sf_end - this->sf_begin;
-    };
-
-    const char *sf_string;
-    int sf_begin;
-    int sf_end;
-};
 
 template<typename UnaryFunction, typename Member>
 struct object_field_t {

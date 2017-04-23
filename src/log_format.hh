@@ -47,6 +47,7 @@
 #include <memory>
 #include <sstream>
 
+#include "optional.hpp"
 #include "pcrepp.hh"
 #include "yajlpp.hh"
 #include "lnav_log.hh"
@@ -58,6 +59,7 @@
 #include "highlighter.hh"
 
 struct sqlite3;
+class logfile;
 class log_format;
 class log_vtab_manager;
 struct exec_context;
@@ -293,9 +295,12 @@ public:
      */
     bool operator<(const logline &rhs) const
     {
-        return this->ll_time < rhs.ll_time ||
+        return (this->ll_time < rhs.ll_time) ||
                (this->ll_time == rhs.ll_time &&
-                this->ll_millis < rhs.ll_millis);
+                this->ll_millis < rhs.ll_millis) ||
+            (this->ll_time == rhs.ll_time &&
+             this->ll_millis == rhs.ll_millis &&
+             this->ll_offset < rhs.ll_offset);
     };
 
     bool operator<(const time_t &rhs) const { return this->ll_time < rhs; };
@@ -360,6 +365,7 @@ public:
         VALUE_BOOLEAN,
         VALUE_JSON,
         VALUE_QUOTED,
+        VALUE_TIMESTAMP,
 
         VALUE__MAX
     };
@@ -412,6 +418,7 @@ public:
         case VALUE_JSON:
         case VALUE_TEXT:
         case VALUE_QUOTED:
+        case VALUE_TIMESTAMP:
             this->lv_sbr = sbr;
             break;
 
@@ -464,6 +471,7 @@ public:
 
         case VALUE_JSON:
         case VALUE_TEXT:
+        case VALUE_TIMESTAMP:
             if (this->lv_sbr.empty()) {
                 return this->lv_intern_string.to_string();
             }
@@ -713,7 +721,9 @@ public:
     log_format() : lf_mod_index(0),
                    lf_fmt_lock(-1),
                    lf_timestamp_field(intern_string::lookup("timestamp", -1)),
-                   lf_timestamp_flags(0) {
+                   lf_timestamp_flags(0),
+                   lf_is_self_describing(false),
+                   lf_time_ordered(true) {
     };
 
     virtual ~log_format() { };
@@ -748,7 +758,8 @@ public:
      * @param prefix The contents of the line.
      * @param len The length of the prefix string.
      */
-    virtual scan_result_t scan(std::vector<logline> &dst,
+    virtual scan_result_t scan(nonstd::optional<logfile *> lf,
+                               std::vector<logline> &dst,
                                off_t offset,
                                shared_buffer_ref &sbr) = 0;
 
@@ -838,6 +849,8 @@ public:
     std::map<std::string, action_def> lf_action_defs;
     std::vector<logline_value_stats> lf_value_stats;
     std::vector<highlighter> lf_highlighters;
+    bool lf_is_self_describing;
+    bool lf_time_ordered;
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -965,7 +978,7 @@ public:
           elf_container(false),
           elf_has_module_format(false),
           elf_builtin_format(false),
-          jlf_json(false),
+          elf_type(ELF_TYPE_TEXT),
           jlf_hide_extra(false),
           jlf_cached_offset(-1),
           jlf_yajl_handle(yajl_free),
@@ -984,7 +997,8 @@ public:
         return this->elf_filename_pcre->match(pc, pi);
     };
 
-    scan_result_t scan(std::vector<logline> &dst,
+    scan_result_t scan(nonstd::optional<logfile *> lf,
+                       std::vector<logline> &dst,
                        off_t offset,
                        shared_buffer_ref &sbr);
 
@@ -1026,7 +1040,7 @@ public:
             elf->lf_fmt_lock = fmt_lock;
         }
 
-        if (this->jlf_json) {
+        if (this->elf_type == ELF_TYPE_JSON) {
             this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name.to_string()));
             this->jlf_yajl_handle.reset(yajl_alloc(
                     &this->jlf_parse_context->ypc_callbacks,
@@ -1156,14 +1170,14 @@ public:
     };
 
     std::string get_pattern_name() const {
-        if (this->jlf_json) {
-            return "json";
+        if (this->elf_type != ELF_TYPE_TEXT) {
+            return "structured";
         }
         return this->elf_pattern_order[this->lf_fmt_lock]->p_config_path;
     }
 
     std::string get_pattern_regex() const {
-        if (this->jlf_json) {
+        if (this->elf_type != ELF_TYPE_TEXT) {
             return "";
         }
         return this->elf_pattern_order[this->lf_fmt_lock]->p_string;
@@ -1223,6 +1237,14 @@ public:
     std::vector<std::pair<intern_string_t, std::string> > elf_search_tables;
     std::vector<std::string> elf_highlighter_patterns;
 
+    enum elf_type_t {
+        ELF_TYPE_TEXT,
+        ELF_TYPE_JSON,
+        ELF_TYPE_CSV,
+    };
+
+    elf_type_t elf_type;
+
     void json_append_to_cache(const char *value, ssize_t len) {
         size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
@@ -1249,7 +1271,6 @@ public:
         }
     };
 
-    bool jlf_json;
     bool jlf_hide_extra;
     std::vector<json_format_element> jlf_line_format;
     std::vector<logline_value> jlf_line_values;

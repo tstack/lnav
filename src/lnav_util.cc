@@ -172,8 +172,12 @@ std::string time_ago(time_t last_time, bool convert_local)
         fmt    = "%d days ago";
         amount = delta / (24 * 60 * 60);
     }
-    else {
+    else if (delta < (2 * 365 * 24 * 60 * 60)) {
         return "over a year ago";
+    }
+    else {
+        fmt = "over %d years ago";
+        amount = delta / (365 * 24 * 60 * 60);
     }
 
     snprintf(buffer, sizeof(buffer), fmt, amount);
