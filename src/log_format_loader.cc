@@ -461,6 +461,7 @@ static struct json_path_handler value_def_handlers[] = {
         .for_field(&nullobj<external_log_format::value_def>()->vd_collate),
 
     json_path_handler("unit/")
+        .with_description("Unit definitions for this field")
         .with_children(unit_handlers),
 
     json_path_handler("identifier")
@@ -679,8 +680,9 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
         char errmsg[1024];
 
         snprintf(errmsg, sizeof(errmsg),
-                "error: unable to open format file -- %s",
-                filename.c_str());
+                 "error:unable to open format file '%s' -- %s",
+                 filename.c_str(),
+                 strerror(errno));
         errors.push_back(errmsg);
     }
     else {
@@ -699,9 +701,11 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
                 break;
             }
             else if (rc == -1) {
-                errors.push_back(filename +
-                        ":unable to read file -- " +
-                        string(strerror(errno)));
+                errors.push_back(
+                    "error:" +
+                    filename +
+                    ":unable to read file -- " +
+                    string(strerror(errno)));
                 break;
             }
             if (offset == 0 && (rc > 2) &&
@@ -710,18 +714,26 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
                 buffer[0] = buffer[1] = '/';
             }
             if (ypc.parse((const unsigned char *)buffer, rc) != yajl_status_ok) {
-                errors.push_back(filename +
-                        ": invalid json -- " +
-                        string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
+                errors.push_back(
+                    "error:" +
+                    filename +
+                    ":" +
+                    to_string(ypc.get_line_number()) +
+                    ":invalid json -- " +
+                    string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
                 break;
             }
             offset += rc;
         }
         if (rc == 0) {
             if (ypc.complete_parse() != yajl_status_ok) {
-                errors.push_back(filename +
-                        ": invalid json -- " +
-                        string((char *)yajl_get_error(handle, 0, NULL, 0)));
+                errors.push_back(
+                    "error:" +
+                    filename +
+                    ":" +
+                    to_string(ypc.get_line_number()) +
+                    ":invalid json -- " +
+                    string((char *)yajl_get_error(handle, 0, NULL, 0)));
             }
         }
     }
@@ -912,7 +924,11 @@ static void exec_sql_in_path(sqlite3 *db, const string &path, std::vector<string
                 sql_execute_script(db, filename.c_str(), content.c_str(), errors);
             }
             else {
-                errors.push_back("Unable to read file: " + filename);
+                errors.push_back(
+                    "error:unable to read file '" +
+                    filename +
+                    "' -- " +
+                    string(strerror(errno)));
             }
         }
     }

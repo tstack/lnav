@@ -553,6 +553,8 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
         return;
     }
 
+    this->ypc_sibling_handlers = orig_handlers;
+
     pcre_input pi(&this->ypc_path[0], 0, this->ypc_path.size() - 1);
 
     this->ypc_callbacks = DEFAULT_CALLBACKS;
@@ -731,10 +733,20 @@ int yajlpp_parse_context::handle_unused(void *ctx)
     }
 
     if (handler == NULL) {
+        const json_path_handler_base *accepted_handlers;
+
+        if (ypc->ypc_sibling_handlers) {
+            accepted_handlers = ypc->ypc_sibling_handlers;
+        } else {
+            accepted_handlers = ypc->ypc_handlers;
+        }
+
         fprintf(stderr, "  accepted paths --\n");
-        for (int lpc = 0; ypc->ypc_handlers[lpc].jph_path[0]; lpc++) {
-            fprintf(stderr, "    %s\n",
-                    ypc->ypc_handlers[lpc].jph_path);
+        for (int lpc = 0; accepted_handlers[lpc].jph_path[0]; lpc++) {
+            fprintf(stderr, "    %s %s -- %s\n",
+                    accepted_handlers[lpc].jph_path,
+                    accepted_handlers[lpc].jph_synopsis,
+                    accepted_handlers[lpc].jph_description);
         }
     }
 

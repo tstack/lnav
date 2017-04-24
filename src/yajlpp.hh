@@ -383,7 +383,8 @@ public:
           ypc_handle(NULL),
           ypc_json_text(NULL),
           ypc_ignore_unused(false),
-          ypc_current_handler(NULL),
+          ypc_sibling_handlers(nullptr),
+          ypc_current_handler(nullptr),
           ypc_error_reporter(nullptr)
     {
         this->ypc_path.reserve(4096);
@@ -467,7 +468,8 @@ public:
         this->ypc_array_index.clear();
         this->ypc_callbacks = DEFAULT_CALLBACKS;
         memset(&this->ypc_alt_callbacks, 0, sizeof(this->ypc_alt_callbacks));
-        this->ypc_current_handler = NULL;
+        this->ypc_sibling_handlers = nullptr;
+        this->ypc_current_handler = nullptr;
         while (!this->ypc_obj_stack.empty()) {
             this->ypc_obj_stack.pop();
         }
@@ -511,11 +513,9 @@ public:
 
         yajl_status retval = yajl_parse(this->ypc_handle, jsonText, jsonTextLen);
 
-        if (retval == yajl_status_ok) {
-            size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
+        size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
 
-            this->ypc_line_number += std::count(&jsonText[0], &jsonText[consumed], '\n');
-        }
+        this->ypc_line_number += std::count(&jsonText[0], &jsonText[consumed], '\n');
 
         this->ypc_json_text = NULL;
         return retval;
@@ -531,7 +531,7 @@ public:
             return this->ypc_line_number + current_count;
         }
         else {
-            return 0;
+            return this->ypc_line_number;
         }
     };
 
@@ -567,6 +567,7 @@ public:
     std::vector<int>        ypc_array_index;
     pcre_context_static<30> ypc_pcre_context;
     bool                    ypc_ignore_unused;
+    const struct json_path_handler_base *ypc_sibling_handlers;
     const struct json_path_handler_base *ypc_current_handler;
     std::set<std::string>   ypc_active_paths;
     error_reporter_t ypc_error_reporter;

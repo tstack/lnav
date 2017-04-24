@@ -1,0 +1,9 @@
+{
+    "invalid_key_log" : {
+        "value" : {
+            "test": {
+                "identifiers" : true
+            }
+        }
+    }
+}

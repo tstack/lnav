@@ -4,6 +4,39 @@ lnav_test="${top_builddir}/src/lnav-test"
 
 
 run_test ${lnav_test} -C \
+    -I ${test_dir}/bad-config-json
+
+sed -i "" -e "s|/.*/format|format|g" `test_err_filename`
+
+check_error_output "invalid format not detected?" <<EOF
+warning:format.json:line 5
+  unexpected path --
+    /invalid_key_log/value/test/identifiers
+  accepted paths --
+    kind string|integer|float|boolean|json|quoted -- The type of data in the field
+    collate <function> -- The collating function to use for this column
+    unit/  -- Unit definitions for this field
+    identifier <bool> -- Indicates whether or not this field contains an identifier that should be highlighted
+    foreign-key <bool> -- Indicates whether or not this field should be treated as a foreign key for row in another table
+    hidden <bool> -- Indicates whether or not this field should be hidden
+    action-list# <string> -- Actions to execute when this field is clicked on
+    rewriter <command> -- A command that will rewrite this field when pretty-printing
+    description <string> -- A description of the field
+error:format.json:4:invalid json -- parse error: object key and value must be separated by a colon (':')
+          ar_log": {         "abc"     } }
+                     (right here) ------^
+error:format2.json:3:invalid json -- lexical error: invalid char in json text.
+          baz_log" : {         "abc" : def     } }
+                     (right here) ------^
+error:foobar_log: no regexes specified for format
+error:foobar_log:no sample logs provided, all formats must have samples
+error:foobaz_log: no regexes specified for format
+error:foobaz_log:no sample logs provided, all formats must have samples
+error:invalid_key_log: no regexes specified for format
+error:invalid_key_log:no sample logs provided, all formats must have samples
+EOF
+
+run_test ${lnav_test} -C \
     -I ${test_dir}/bad-config
 
 sed -i "" -e "s|/.*/init.sql|init.sql|g" `test_err_filename`
