@@ -127,10 +127,10 @@ test_reltime_SOURCES = test_reltime.cc
 test_reltime_LDADD = ../src/libdiag.a
 
 drive_line_buffer_SOURCES = drive_line_buffer.cc
-drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz
+drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz $(CURSES_LIB)
 
 drive_grep_proc_SOURCES = drive_grep_proc.cc
-drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz $(CURSES_LIB)
 
 drive_json_op_SOURCES = drive_json_op.cc
 drive_json_op_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz $(CURSES_LIB)
@@ -312,6 +312,7 @@ dist_noinst_DATA = \
 	logfile_plain.0 \
 	logfile_pretty.0 \
 	logfile_rollover.0 \
+	logfile_rollover.1 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \
@@ -412,6 +413,7 @@ DISTCLEANFILES = \
 	truncfile.0 \
 	logfile_append.0 \
 	logfile_changed.0 \
+	logfile_rollover.1.live \
 	test.log \
 	logfile_stdin.log \
 	logfile_syslog.0 \
