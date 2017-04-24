@@ -212,10 +212,10 @@ drive_sql_anno_LDADD = \
 	-lpcrecpp
 
 slicer_SOURCES = slicer.cc
-slicer_LDADD = ../src/libdiag.a
+slicer_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 scripty_SOURCES = scripty.cc
-scripty_LDADD = ../src/libdiag.a
+scripty_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
