@@ -97,6 +97,7 @@ const struct termios *lnav_log_orig_termios;
 static pthread_mutex_t lnav_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 log_state_dumper::log_state_list log_state_dumper::DUMPER_LIST;
+log_crash_recoverer::log_crash_list log_crash_recoverer::CRASH_LIST;
 
 static struct {
     size_t lr_length;
@@ -355,8 +356,8 @@ static void sigabrt(int sig)
             log_state_dumper *lsd;
 
             for (lsd = LIST_FIRST(&log_state_dumper::DUMPER_LIST.lsl_list);
-                    lsd != NULL;
-                    lsd = LIST_NEXT(lsd, lsd_link)) {
+                 lsd != NULL;
+                 lsd = LIST_NEXT(lsd, lsd_link)) {
                 lsd->log_state();
             }
         }
@@ -373,7 +374,16 @@ static void sigabrt(int sig)
     }
 
     if (lnav_log_orig_termios != NULL) {
-        endwin();
+        {
+            log_crash_recoverer *lcr;
+
+            for (lcr = LIST_FIRST(&log_crash_recoverer::CRASH_LIST.lcl_list);
+                 lcr != NULL;
+                 lcr = LIST_NEXT(lcr, lcr_link)) {
+                lcr->log_crash_recover();
+            }
+        }
+
         tcsetattr(STDOUT_FILENO, TCSAFLUSH, lnav_log_orig_termios);
     }
     fprintf(stderr, CRASH_MSG, crash_path);

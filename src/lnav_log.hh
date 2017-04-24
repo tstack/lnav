@@ -90,6 +90,31 @@ public:
     LIST_ENTRY(log_state_dumper) lsd_link;
 };
 
+class log_crash_recoverer {
+public:
+    log_crash_recoverer() {
+        LIST_INSERT_HEAD(&CRASH_LIST.lcl_list, this, lcr_link);
+    }
+
+    virtual ~log_crash_recoverer() {
+        LIST_REMOVE(this, lcr_link);
+    };
+
+    virtual void log_crash_recover() = 0;
+
+    struct log_crash_list {
+        log_crash_list() {
+            LIST_INIT(&this->lcl_list);
+        }
+
+        LIST_HEAD(crash_head, log_crash_recoverer) lcl_list;
+    };
+
+    static log_crash_list CRASH_LIST;
+
+    LIST_ENTRY(log_crash_recoverer) lcr_link;
+};
+
 extern FILE *lnav_log_file;
 extern const char *lnav_log_crash_dir;
 extern const struct termios *lnav_log_orig_termios;

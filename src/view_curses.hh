@@ -75,8 +75,12 @@ class view_curses;
 /**
  * An RAII class that initializes and deinitializes curses.
  */
-class screen_curses {
+class screen_curses : public log_crash_recoverer {
 public:
+    void log_crash_recover() override {
+        endwin();
+    };
+
     screen_curses()
         : sc_main_window(initscr()) {
     };
