@@ -721,6 +721,23 @@ check_output "histogram is not working?" <<EOF
 }
 EOF
 
+cp ${test_dir}/logfile_rollover.1 logfile_rollover.1
+touch -t 200711030923 ${srcdir}/logfile_rollover.1
+chmod ug+w logfile_rollover.1
+
+run_test ${lnav_test} -n \
+    -c ":shexec echo 'Jan  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt' >> logfile_rollover.1" \
+    -c ":rebuild" \
+    -c ":switch-to-view histogram" \
+    logfile_rollover.1
+
+check_output "rollover is not working with histogram" <<EOF
+ Tue Nov 03 09:20:00          1 normal         2 errors         0 warnings         0 marks
+ Tue Nov 03 09:45:00          1 normal         0 errors         0 warnings         0 marks
+ Wed Feb 03 09:20:00          0 normal         1 errors         0 warnings         0 marks
+ Tue Jan 03 09:20:00          1 normal         0 errors         0 warnings         0 marks
+EOF
+
 touch -t 200711030923 ${srcdir}/logfile_syslog.0
 run_test ${lnav_test} -n \
     -c ":switch-to-view histogram" \

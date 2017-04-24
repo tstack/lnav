@@ -308,7 +308,7 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
     if (diff <= 0) {
         return;
     }
-    if (diff > (60 * 24 * 60 * 60)) {
+    if ((etm.et_flags & ETF_MONTH_SET) && diff >= (24 * 60 * 60)) {
         off_year = 1;
     } else if (diff >= (24 * 60 * 60)) {
         off_month = 1;

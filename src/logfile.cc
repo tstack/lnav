@@ -149,9 +149,11 @@ bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 {
     log_format::scan_result_t found = log_format::SCAN_NO_MATCH;
     size_t prescan_size = this->lf_index.size();
+    time_t prescan_time = 0;
     bool retval = false;
 
     if (this->lf_format.get() != NULL) {
+        prescan_time = this->lf_index[0].get_time();
         /* We've locked onto a format, just use that scanner. */
         found = this->lf_format->scan(this, this->lf_index, offset, sbr);
     }
@@ -208,6 +210,9 @@ bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 
     switch (found) {
         case log_format::SCAN_MATCH:
+            if (!this->lf_index.empty() && prescan_time != this->lf_index[0].get_time()) {
+                retval = true;
+            }
             if (prescan_size > 0 && prescan_size < this->lf_index.size()) {
                 logline &second_to_last = this->lf_index[prescan_size - 1];
                 logline &latest = this->lf_index[prescan_size];

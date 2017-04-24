@@ -133,13 +133,13 @@ drive_grep_proc_SOURCES = drive_grep_proc.cc
 drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 drive_json_op_SOURCES = drive_json_op.cc
-drive_json_op_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+drive_json_op_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz $(CURSES_LIB)
 
 drive_json_ptr_walk_SOURCES = drive_json_ptr_walk.cc
-drive_json_ptr_walk_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
+drive_json_ptr_walk_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz $(CURSES_LIB)
 
 drive_listview_SOURCES = drive_listview.cc
-drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
+drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz $(CURSES_LIB) \
 	$(CONFIG_OBJS)
 
 drive_logfile_SOURCES = drive_logfile.cc
