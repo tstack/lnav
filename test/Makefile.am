@@ -68,7 +68,7 @@ TEXT2C_OBJS = \
 	../src/partition-by-boot.o \
 	../src/search-for.o
 
-LDADD = -lz
+LDADD = -lz $(CURSES_LIB)
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB) \
