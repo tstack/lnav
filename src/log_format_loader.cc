@@ -595,6 +595,7 @@ struct json_path_handler format_handlers[] = {
 
 struct json_path_handler root_format_handler[] = {
     json_path_handler("/(?<format_name>\\w+)/")
+        .with_description("The definition of a log file format.")
         .with_obj_provider(ensure_format)
         .with_children(format_handlers),
 

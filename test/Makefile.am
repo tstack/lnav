@@ -54,6 +54,7 @@ AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
 	$(READLINE_LDFLAGS) \
+	$(CURSES_LIB) \
 	-pthread
 
 CONFIG_OBJS = \
@@ -253,6 +254,7 @@ dist_noinst_DATA = \
 	bad-config/formats/no-samples/format.json \
 	bad-config-json/formats/invalid-json/format.json \
 	bad-config-json/formats/invalid-json/format2.json \
+	bad-config-json/formats/invalid-key/format.json \
 	datafile_simple.0 \
 	datafile_simple.1 \
 	datafile_simple.2 \
