@@ -31,6 +31,7 @@ check_PROGRAMS = \
 	drive_view_colors \
 	drive_vt52_curses \
 	drive_readline_curses \
+	lnav_doctests \
 	slicer \
 	scripty \
 	test_abbrev \
@@ -125,6 +126,9 @@ test_json_ptr_LDADD = ../src/libdiag.a
 
 test_reltime_SOURCES = test_reltime.cc
 test_reltime_LDADD = ../src/libdiag.a
+
+lnav_doctests_SOURCES = lnav_doctests.cc
+lnav_doctests_LDADD = ../src/libdiag.a
 
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz $(CURSES_LIB)
@@ -353,6 +357,7 @@ dist_noinst_DATA = \
 	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt
 
 TESTS = \
+    lnav_doctests \
     test_abbrev \
 	test_ansi_scrubber \
 	test_auto_fd \

@@ -142,6 +142,7 @@ noinst_HEADERS = \
 	default-log-formats-json.hh \
 	db_sub_source.hh \
 	doc_status_source.hh \
+	doctest.hh \
 	elem_to_json.hh \
 	environ_vtab.hh \
 	field_overlay_source.hh \

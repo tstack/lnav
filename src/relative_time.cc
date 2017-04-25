@@ -329,7 +329,8 @@ size_t str2reltime(int64_t millis, std::string &value_out)
         { 1000, "%03qd%s", ""  },
         {   60, "%qd%s",   "s" },
         {   60, "%qd%s",   "m" },
-        {    0, "%qd%s",   "h" },
+        {   24, "%qd%s",   "h" },
+        {    0, "%qd%s",   "d" },
         {    0, NULL, NULL }
     };
 
@@ -366,3 +367,4 @@ size_t str2reltime(int64_t millis, std::string &value_out)
 
     return retval;
 }
+
