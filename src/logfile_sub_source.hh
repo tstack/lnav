@@ -116,6 +116,7 @@ public:
     void set_min_log_level(logline::level_t level) {
         if (this->lss_min_log_level != level) {
             this->lss_min_log_level = level;
+            this->lss_force_rebuild = true;
         }
     };
 
@@ -126,7 +127,10 @@ public:
     };
 
     void set_min_log_time(const struct timeval &tv) {
-        this->lss_min_log_time = tv;
+        if (this->lss_min_log_time != tv) {
+            this->lss_min_log_time = tv;
+            this->lss_force_rebuild = true;
+        }
     };
 
     bool get_max_log_time(struct timeval &tv_out) const {
@@ -136,13 +140,17 @@ public:
     };
 
     void set_max_log_time(struct timeval &tv) {
-        this->lss_max_log_time = tv;
+        if (this->lss_max_log_time != tv) {
+            this->lss_max_log_time = tv;
+            this->lss_force_rebuild = true;
+        }
     };
 
     void clear_min_max_log_times() {
         memset(&this->lss_min_log_time, 0, sizeof(this->lss_min_log_time));
         this->lss_max_log_time.tv_sec = INT_MAX;
         this->lss_max_log_time.tv_usec = 0;
+        this->lss_force_rebuild = true;
     };
 
     size_t text_line_count()
@@ -607,6 +615,7 @@ private:
     };
 
     unsigned long             lss_flags;
+    bool lss_force_rebuild;
     std::vector<logfile_data *> lss_files;
 
     big_array<indexed_content> lss_index;

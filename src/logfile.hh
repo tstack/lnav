@@ -208,6 +208,7 @@ public:
             timeradd(&diff, &this->lf_time_offset, &new_time);
             iter->set_time(new_time);
         }
+        this->lf_sort_needed = true;
     };
 
     void clear_time_offset(void) {
@@ -411,6 +412,7 @@ protected:
     std::vector<logline>      lf_index;
     time_t      lf_index_time;
     off_t       lf_index_size;
+    bool lf_sort_needed;
     line_buffer lf_line_buffer;
     int lf_time_offset_line;
     struct timeval lf_time_offset;

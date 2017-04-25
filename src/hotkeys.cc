@@ -1187,7 +1187,6 @@ void handle_paging_key(int ch)
 
         case KEY_CTRL_R:
             reset_session();
-            rebuild_indexes(true);
             break;
 
         case KEY_CTRL_W:

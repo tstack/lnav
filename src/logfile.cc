@@ -58,6 +58,7 @@ throw (error)
     : lf_filename(filename),
       lf_index_time(0),
       lf_index_size(0),
+      lf_sort_needed(false),
       lf_is_closed(false),
       lf_logline_observer(NULL),
       lf_logfile_observer(NULL),
@@ -348,7 +349,8 @@ throw (line_buffer::error, logfile::error)
             this->lf_logline_observer->logline_restart(*this);
         }
 
-        bool sort_needed = false;
+        bool sort_needed = this->lf_sort_needed;
+        this->lf_sort_needed = false;
 
         while (this->lf_line_buffer.read_line(off, sbr, &lv)) {
             size_t old_size = this->lf_index.size();

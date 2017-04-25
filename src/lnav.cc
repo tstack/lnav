@@ -2449,7 +2449,6 @@ static void looper(void)
                         lnav_data.ld_rl_view->set_alt_value(last_msg.second);
                     }
 
-                    rebuild_indexes(true);
                     session_loaded = true;
                 }
             }

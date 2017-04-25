@@ -45,6 +45,7 @@ bookmark_type_t logfile_sub_source::BM_FILES("");
 
 logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
+      lss_force_rebuild(false),
       lss_token_file(NULL),
       lss_min_log_level(logline::LEVEL_UNKNOWN),
       lss_index_delegate(NULL),
@@ -422,8 +423,12 @@ bool logfile_sub_source::rebuild_index(bool force)
 {
     iterator iter;
     size_t total_lines = 0;
-    bool retval = force, full_sort = false;
+    bool retval, full_sort = false;
     int file_count = 0;
+
+    force = force || this->lss_force_rebuild;
+    this->lss_force_rebuild = false;
+    retval = force;
 
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end();
