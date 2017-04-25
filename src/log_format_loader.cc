@@ -552,6 +552,10 @@ struct json_path_handler format_handlers[] = {
                               "body-field|url|url#|title|description|"
                               "timestamp-format#|module-field|opid-field)$",
                       read_format_field),
+    json_path_handler("ordered-by-time")
+        .with_synopsis("<bool>")
+        .with_description("Indicates that the order of messages in the file is time-based.")
+        .for_field(&nullobj<external_log_format>()->lf_time_ordered),
     json_path_handler("level/"
                       "(trace|debug\\d*|info|stats|warning|error|critical|fatal)")
         .add_cb(read_levels)

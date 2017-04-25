@@ -123,6 +123,11 @@ fields:
     to divide the timestamp by to get the number of seconds and fractional
     seconds.
 
+  :ordered-by-time: (v0.8.3+) Indicates that the order of messages in the file
+    is time-based.  Files that are not naturally ordered by time will be sorted
+    in order to display them in the correct order.  Note that this sorting can
+    incur a performance penalty when tailing logs.
+
   :level-field: The name of the regex capture group that contains the log
     message level.  Defaults to "level".
 
