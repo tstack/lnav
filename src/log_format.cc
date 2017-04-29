@@ -187,6 +187,9 @@ logline_value::kind_t logline_value::string2kind(const char *kindstr)
     else if (strcmp(kindstr, "json") == 0) {
         return VALUE_JSON;
     }
+    else if (strcmp(kindstr, "struct") == 0) {
+        return VALUE_STRUCT;
+    }
     else if (strcmp(kindstr, "quoted") == 0) {
         return VALUE_QUOTED;
     }
@@ -676,7 +679,14 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
                                             this->get_timestamp_formats(),
                                             &log_time_tm,
                                             log_tv)) == NULL) {
-            continue;
+            this->lf_date_time.unlock();
+            if ((last = this->lf_date_time.scan(ts_str,
+                                                ts->length(),
+                                                this->get_timestamp_formats(),
+                                                &log_time_tm,
+                                                log_tv)) == NULL) {
+                continue;
+            }
         }
 
         logline::level_t level = this->convert_level(pi, level_cap);

@@ -273,11 +273,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "syslog_log table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname
-0,<NULL>,2013-11-03 09:23:38.000,0,error,0,veridian,7998,automount
-1,<NULL>,2013-11-03 09:23:38.000,0,info,0,veridian,16442,automount
-2,<NULL>,2013-11-03 09:23:38.000,0,error,0,veridian,7999,automount
-3,<NULL>,2013-11-03 09:47:02.000,1404000,info,0,veridian,<NULL>,sudo
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version
+0,<NULL>,2013-11-03 09:23:38.000,0,error,0,veridian,<NULL>,7998,<NULL>,automount,<NULL>,<NULL>
+1,<NULL>,2013-11-03 09:23:38.000,0,info,0,veridian,<NULL>,16442,<NULL>,automount,<NULL>,<NULL>
+2,<NULL>,2013-11-03 09:23:38.000,0,error,0,veridian,<NULL>,7999,<NULL>,automount,<NULL>,<NULL>
+3,<NULL>,2013-11-03 09:47:02.000,1404000,info,0,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>
 EOF
 
 
@@ -287,8 +287,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "log_time collation is wrong" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname
-3,<NULL>,2013-11-03 09:47:02.000,1404000,info,0,veridian,<NULL>,sudo
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version
+3,<NULL>,2013-11-03 09:47:02.000,1404000,info,0,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>
 EOF
 
 
@@ -299,8 +299,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "logline table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
-0,<NULL>,2013-11-03 09:47:02.000,0,info,0,veridian,<NULL>,sudo,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version,log_msg_instance,col_0,TTY,PWD,USER,COMMAND
+0,<NULL>,2013-11-03 09:47:02.000,0,info,0,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,<NULL>,0,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
 EOF
 
 
@@ -311,8 +311,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.1
 
 check_output "logline table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_pid,log_procname,log_msg_instance,col_0
-1,<NULL>,2006-12-03 09:23:38.000,0,info,0,veridian,16442,automount,0,/auto/opt
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,syslog_version,log_msg_instance,col_0
+1,<NULL>,2006-12-03 09:23:38.000,0,info,0,veridian,<NULL>,16442,<NULL>,automount,<NULL>,<NULL>,0,/auto/opt
 EOF
 
 run_test ${lnav_test} -n \
@@ -763,10 +763,10 @@ cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
     -c ";select * from syslog_log where log_procname = 'automount'"
 
 check_output "querying against stdin is not working?" <<EOF
-log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_pid log_procname
-       0   <NULL> 2017-11-03 09:23:38.000              0 error            0 veridian     7998    automount
-       1   <NULL> 2017-11-03 09:23:38.000              0 info             0 veridian     16442   automount
-       2   <NULL> 2017-11-03 09:23:38.000              0 error            0 veridian     7999    automount
+log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_msgid log_pid log_pri log_procname log_struct syslog_version
+       0   <NULL> 2017-11-03 09:23:38.000              0 error            0 veridian        <NULL> 7998     <NULL> automount        <NULL>         <NULL>
+       1   <NULL> 2017-11-03 09:23:38.000              0 info             0 veridian        <NULL> 16442    <NULL> automount        <NULL>         <NULL>
+       2   <NULL> 2017-11-03 09:23:38.000              0 error            0 veridian        <NULL> 7999     <NULL> automount        <NULL>         <NULL>
 EOF
 
 
@@ -774,8 +774,8 @@ cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
     -c ";select * from syslog_log where log_procname = 'sudo'"
 
 check_output "single result is not working?" <<EOF
-log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_pid log_procname
-       3   <NULL> 2017-11-03 09:47:02.000        1404000 info             0 veridian      <NULL> sudo
+log_line log_part         log_time        log_idle_msecs log_level log_mark log_hostname log_msgid log_pid log_pri log_procname log_struct syslog_version
+       3   <NULL> 2017-11-03 09:47:02.000        1404000 info             0 veridian        <NULL>  <NULL>  <NULL> sudo             <NULL>         <NULL>
 EOF
 
 # Create a dummy database for the next couple of tests to consume.

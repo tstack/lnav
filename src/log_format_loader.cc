@@ -429,6 +429,7 @@ static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
     {"float", logline_value::VALUE_FLOAT},
     {"boolean", logline_value::VALUE_BOOLEAN},
     {"json", logline_value::VALUE_JSON},
+    {"struct", logline_value::VALUE_STRUCT},
     {"quoted", logline_value::VALUE_QUOTED},
 
     json_path_handler_base::ENUM_TERMINATOR

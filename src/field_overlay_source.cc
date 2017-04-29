@@ -37,6 +37,8 @@
 
 using namespace std;
 
+json_string extract(const char *str);
+
 void field_overlay_source::build_summary_lines(const listview_curses &lv)
 {
     textfile_sub_source &tss = lnav_data.ld_text_source;
@@ -310,8 +312,13 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
             this->fos_log_helper.ldh_line_values.begin();
          iter != this->fos_log_helper.ldh_line_values.end();
          ++iter) {
-        this->fos_known_key_size = max(this->fos_known_key_size,
-                                       (int)iter->lv_name.size());
+        int this_key_size = iter->lv_name.size();
+
+        if (iter->lv_kind == logline_value::VALUE_STRUCT) {
+            this_key_size += 9;
+        }
+        this->fos_known_key_size = max(
+            this->fos_known_key_size, this_key_size);
     }
 
     for (data_parser::element_list_t::iterator iter =
@@ -348,7 +355,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         logline_value &lv = this->fos_log_helper.ldh_line_values[lpc];
         string format_name = lv.lv_format->get_name().to_string();
         attr_line_t al;
-        string str;
+        string str, value_str = lv.to_string();
 
         if (lv.lv_format != last_format) {
             this->fos_lines.push_back(" Known message fields for table " +
@@ -363,7 +370,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
 
         str = "   " + lv.lv_name.to_string();
         str.append(this->fos_known_key_size - lv.lv_name.size() + 3, ' ');
-        str += " = " + lv.to_string();
+        str += " = " + value_str;
 
         al.with_string(str)
                 .with_attr(string_attr(
@@ -373,6 +380,26 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
 
         this->fos_lines.push_back(al);
         this->add_key_line_attrs(this->fos_known_key_size);
+
+        if (lv.lv_kind == logline_value::VALUE_STRUCT) {
+            json_string js = extract(value_str.c_str());
+            auto_mem<const unsigned char> extracted;
+
+            extracted = js.js_content;
+
+            al.clear()
+              .append("   extract(")
+              .append(lv.lv_name.get(),
+                      &view_curses::VC_STYLE,
+                      vc.attrs_for_ident(lv.lv_name.get(), lv.lv_name.size()))
+              .append(")")
+              .append(this->fos_known_key_size - lv.lv_name.size() - 9 + 3, ' ')
+              .append(" = ")
+              .append((const char *) js.js_content, js.js_len);
+            this->fos_lines.push_back(al);
+            this->add_key_line_attrs(this->fos_known_key_size);
+        }
+
     }
 
     std::map<const intern_string_t, json_ptr_walk::walk_list_t>::iterator json_iter;

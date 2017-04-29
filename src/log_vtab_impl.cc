@@ -121,6 +121,7 @@ int log_vtab_impl::logline_value_to_sqlite_type(logline_value::kind_t kind)
         case logline_value::VALUE_NULL:
         case logline_value::VALUE_TEXT:
         case logline_value::VALUE_JSON:
+        case logline_value::VALUE_STRUCT:
         case logline_value::VALUE_QUOTED:
         case logline_value::VALUE_TIMESTAMP:
             type = SQLITE3_TEXT;
@@ -488,6 +489,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                     sqlite3_result_null(ctx);
                     break;
                 case logline_value::VALUE_JSON:
+                case logline_value::VALUE_STRUCT:
                 case logline_value::VALUE_TEXT:
                 case logline_value::VALUE_TIMESTAMP: {
                     sqlite3_result_text(ctx,

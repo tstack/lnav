@@ -368,6 +368,7 @@ public:
         VALUE_FLOAT,
         VALUE_BOOLEAN,
         VALUE_JSON,
+        VALUE_STRUCT,
         VALUE_QUOTED,
         VALUE_TIMESTAMP,
 
@@ -420,6 +421,7 @@ public:
 
         switch (kind) {
         case VALUE_JSON:
+        case VALUE_STRUCT:
         case VALUE_TEXT:
         case VALUE_QUOTED:
         case VALUE_TIMESTAMP:
@@ -474,6 +476,7 @@ public:
             return "null";
 
         case VALUE_JSON:
+        case VALUE_STRUCT:
         case VALUE_TEXT:
         case VALUE_TIMESTAMP:
             if (this->lv_sbr.empty()) {

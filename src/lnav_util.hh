@@ -321,6 +321,11 @@ struct date_time_scanner {
         this->dts_fmt_len = -1;
     };
 
+    void unlock(void) {
+        this->dts_fmt_lock = -1;
+        this->dts_fmt_len = -1;
+    }
+
     void set_base_time(time_t base_time) {
         this->dts_base_time = base_time;
         localtime_r(&base_time, &this->dts_base_tm.et_tm);

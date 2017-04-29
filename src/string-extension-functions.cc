@@ -170,7 +170,6 @@ regexp_match(const char *re, const char *str)
 #endif
 }
 
-static
 json_string extract(const char *str)
 {
     data_scanner ds(str);

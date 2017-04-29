@@ -1011,6 +1011,9 @@
         "regex" : {
             "std" : {
                 "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+            },
+            "rfc5424" : {
+                "pattern" : "^<(?<log_pri>\\d+)>(?<syslog_version>\\d+) (?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{6})?(?:[^ ]+)?) (?<log_hostname>[^ ]+|-) (?<log_procname>[^ ]+|-) (?<log_pid>[^ ]+|-) (?<log_msgid>[^ ]+|-) (?<log_struct>\\[(?:[^\\]\"]|\"(?:\\.|[^\"])+\")*\\]|-|)\\s+(?<body>(?:.|\\n)*)"
             }
         },
         "level-field" : "body",
@@ -1019,8 +1022,19 @@
             "warning" : "(?:(?:(?i)warn)|not responding|init: cannot execute)"
         },
         "opid-field" : "log_pid",
+        "multiline" : false,
         "module-field" : "log_procname",
         "value" : {
+            "log_pri" : {
+                "kind" : "integer",
+                "foreign-key" : true,
+                "description" : "The priority level of the message"
+            },
+            "syslog_version" : {
+                "kind" : "integer",
+                "foreign-key" : true,
+                "description" : "The version of the syslog format used for this message"
+            },
             "log_hostname" : {
                 "kind" : "string",
                 "collate" : "ipaddress",
@@ -1037,6 +1051,13 @@
                 "identifier" : true,
                 "action-list" : ["dump_pid"],
                 "description" : "The ID of the process that generated the message"
+            },
+            "log_msgid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "log_struct" : {
+                "kind" : "struct"
             }
         },
         "action" : {
@@ -1052,6 +1073,15 @@
             },
             {
                 "line" : "Jun 20 17:26:13 ip-10-188-149-5 [CLOUDINIT] util.py[DEBUG]: Restoring selinux mode for /var/lib/cloud (recursive=False)"
+            },
+            {
+                "line" : "<46>1 2017-04-27T07:50:47.381967+02:00 logserver rsyslogd - - [origin software=\"rsyslogd\" swVersion=\"8.4.2\" x-pid=\"900\" x-info=\"http://www.rsyslog.com\"] start"
+            },
+            {
+                "line" : "<30>1 2017-04-27T07:59:12+02:00 nextcloud dhclient - - -  DHCPREQUEST on eth0 to 192.168.1.1 port 67"
+            },
+            {
+                "line" : "<78>1 2017-04-27T08:09:01+02:00 nextcloud CRON 1472 - -  (root) CMD (  [ -x /usr/lib/php5/sessionclean ] && /usr/lib/php5/sessionclean)"
             }
         ]
     },

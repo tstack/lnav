@@ -412,6 +412,12 @@ public:
         return *this;
     };
 
+    attr_line_t &append(const char *str, size_t len) {
+        this->al_string.append(str, len);
+
+        return *this;
+    };
+
     attr_line_t &append(const attr_line_t &al, text_wrap_settings *tws = nullptr);
 
     attr_line_t &append(size_t len, char c) {
