@@ -156,7 +156,7 @@ class generic_log_format : public log_format {
                 &level)) != NULL) {
             const char *level_str = &sbr.get_data()[level.c_begin];
             logline::level_t level_val = logline::string2level(
-                    level_str, level.length());
+                    level_str, strlen(level_str));
 
             if (!((log_time.et_flags & ETF_DAY_SET) &&
                   (log_time.et_flags & ETF_MONTH_SET) &&
