@@ -5,8 +5,7 @@
 
 _This is the source repository for **lnav**, visit [http://lnav.org](http://lnav.org) for a high level overview._
 
-LNAV -- The Logfile Navigator
-=============================
+# LNAV -- The Logfile Navigator
 
 The log file navigator, lnav, is an enhanced log file viewer that
 takes advantage of any semantic information that can be gleaned from
@@ -18,8 +17,7 @@ hoped that these features will allow the user to quickly and
 efficiently zero in on problems.
 
 
-Prerequisites
--------------
+## Prerequisites
 
 The following software packages are required to build lnav:
 
@@ -33,8 +31,7 @@ The following software packages are required to build lnav:
   * libcurl   - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
 
 
-Installation
-------------
+## Installation
 
 Lnav follows the usual GNU style for configuring and installing software:
 
@@ -46,8 +43,7 @@ __Run `./autogen.sh` before running any of the above commands when
 compiling from a cloned repository.__
 
 
-Cygwin users
-------------
+## Cygwin users
 
 It should compile fine in Cygwin.
 
@@ -60,8 +56,7 @@ Remember that you still need the lnav dependencies under Cygwin, here is a quick
 Currently, the x64 version seems to be working better than the x86 one.
 
 
-Usage
------
+## Usage
 
 The only file installed is the executable, `lnav`.  You can execute it
 with no arguments to view the default set of files:
@@ -72,8 +67,7 @@ You can view all the syslog messages by running:
 
     $ lnav /var/log/messages*
 
-Usage with `systemd-journald`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Usage with `systemd-journald`
 
 On systems running `systemd-journald`, you can use `lnav` as the pager:
 
@@ -94,8 +88,7 @@ efficiency you may want to limit the number of log lines fed into
 `lnav`, e.g. via `journalctl`'s `-n` or `--since=...` options.
 
 
-Screenshot
-----------
+## Screenshot
 
 The following screenshot shows a syslog file. Log lines are displayed with
 highlights. Errors are red and warnings are yellow.
@@ -109,3 +102,4 @@ See Also
 The lnav website can be found at:
 
 > [http://lnav.org](http://lnav.org)
+
