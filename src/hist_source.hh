@@ -172,7 +172,9 @@ public:
             std::map<bucket_group_t, bucket_array_t>::const_iterator iter;
 
             iter = this->hs_groups.begin();
-            std::advance(iter, grow);
+            size_t groups_size = (size_t)this->hs_groups.size();
+            std::advance(iter,
+                (groups_size >= (size_t)grow) ? grow : groups_size);
 
             bucket_group_t bg = iter->first;
 
