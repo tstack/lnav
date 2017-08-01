@@ -148,6 +148,8 @@ case "$host_os" in
         ;;
 esac
 
+AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1], [Wide character support for ncurses])
+
 AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LDFLAGS")
 
 AS_VAR_SET(static_lib_list,

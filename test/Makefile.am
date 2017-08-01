@@ -46,6 +46,7 @@ check_PROGRAMS = \
 	test_json_ptr \
 	test_line_buffer2 \
 	test_log_accel \
+	test_ncurses_unicode \
 	test_pcrepp \
 	test_reltime \
 	test_top_status \
@@ -126,6 +127,8 @@ test_json_ptr_LDADD = ../src/libdiag.a
 
 test_reltime_SOURCES = test_reltime.cc
 test_reltime_LDADD = ../src/libdiag.a
+
+test_ncurses_unicode_SOURCES = test_ncurses_unicode.cc
 
 lnav_doctests_SOURCES = lnav_doctests.cc
 lnav_doctests_LDADD = ../src/libdiag.a

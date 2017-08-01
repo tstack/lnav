@@ -377,18 +377,18 @@ void view_curses::mvwattrline(WINDOW *window,
             if (attrs != 0) {
                 int x_pos = x + attr_range.lr_start;
                 int ch_width = min(awidth, (line_width - attr_range.lr_start));
-                chtype row_ch[ch_width + 1];
+                cchar_t row_ch[ch_width + 1];
 
-                mvwinchnstr(window, y, x_pos, row_ch, ch_width);
+                mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
                 for (int lpc = 0; lpc < ch_width; lpc++) {
                     if (color_pair > 0) {
-                        row_ch[lpc] &= ~A_COLOR;
-                        row_ch[lpc] |= (attrs & ~A_COLOR) | COLOR_PAIR(color_pair);
+                        row_ch[lpc].attr = attrs & ~A_COLOR;
+                        row_ch[lpc].ext_color = color_pair;
                     } else {
-                        row_ch[lpc] |= (attrs);
+                        row_ch[lpc].attr = attrs;
                     }
                 }
-                mvwaddchnstr(window, y, x_pos, row_ch, ch_width);
+                mvwadd_wchnstr(window, y, x_pos, row_ch, ch_width);
             }
             for (range_iter = iter;
                  range_iter != sa.end() && range_iter->sa_range == iter->sa_range;
