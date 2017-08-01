@@ -63,7 +63,7 @@ struct string_fragment {
     };
 
     bool operator==(const std::string &str) const {
-        if (this->length() != str.length()) {
+        if (this->length() != (int) str.length()) {
             return false;
         }
 
@@ -239,12 +239,12 @@ inline bool operator<(const intern_string_t &left, const char *right) {
 }
 
 inline bool operator==(const intern_string_t &left, const string_fragment &sf) {
-    return (left.size() == sf.length()) &&
-           (memcmp(left.get(), sf.data(), left.size()));
+    return ((int) left.size() == sf.length()) &&
+           (memcmp(left.get(), sf.data(), left.size()) == 0);
 }
 
 inline bool operator==(const string_fragment &left, const intern_string_t &right) {
-    return (left.length() == right.size()) &&
+    return (left.length() == (int) right.size()) &&
            (memcmp(left.data(), right.get(), left.length()) == 0);
 }
 

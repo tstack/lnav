@@ -383,7 +383,11 @@ void view_curses::mvwattrline(WINDOW *window,
                 for (int lpc = 0; lpc < ch_width; lpc++) {
                     if (color_pair > 0) {
                         row_ch[lpc].attr = attrs & ~A_COLOR;
+#ifdef NCURSES_EXT_COLORS
                         row_ch[lpc].ext_color = color_pair;
+#else
+                        row_ch[lpc].attr |= COLOR_PAIR(color_pair);
+#endif
                     } else {
                         row_ch[lpc].attr = attrs;
                     }
