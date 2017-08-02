@@ -11,6 +11,8 @@ lnav v0.8.3:
        you entered commands and SQL queries.
      * Hidden fields and lines hidden before/after times are now saved in the
        current session and restored.
+     * Unicode characters should now be displayed correctly (make sure you
+       have LANG set to a UTF-8 locale).
 
 lnav v0.8.2:
      Features:
