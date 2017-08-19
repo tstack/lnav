@@ -2,6 +2,13 @@
 
 lnav_test="${top_builddir}/src/lnav-test"
 
+run_test ${lnav_test} -n \
+    -c ";SELECT * FROM access_log LIMIT 0"
+    ${test_dir}/logfile_access_log.0
+
+check_output "output generated for empty result set?" <<EOF
+EOF
+
 run_test env TZ=UTC ${lnav_test} -n \
     -c ";SELECT bro_conn_log.bro_duration as duration, bro_conn_log.bro_uid, group_concat( distinct (bro_method || ' ' || bro_host)) as req from bro_http_log, bro_conn_log where bro_http_log.bro_uid = bro_conn_log.bro_uid group by bro_http_log.bro_uid order by duration desc limit 10" \
     -c ":write-csv-to -" \
