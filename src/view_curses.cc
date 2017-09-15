@@ -462,26 +462,33 @@ void view_colors::init(void)
 
         start_color();
 
-        /* use_default_colors(); */
+        use_default_colors();
         for (int fg = 0; fg < 8; fg++) {
             for (int bg = 0; bg < 8; bg++) {
                 if (fg == 0 && bg == 0)
                     continue;
-                init_pair(ansi_color_pair_index(fg, bg),
-                          ansi_colors_to_curses[fg],
-                          ansi_colors_to_curses[bg]);
+                if (lnav_config.lc_ui_default_colors) {
+                    init_pair(ansi_color_pair_index(fg, bg),
+                              (fg == COLOR_WHITE ? -1 : ansi_colors_to_curses[fg]),
+                              (bg == COLOR_BLACK ? -1 : ansi_colors_to_curses[bg]));
+                } else {
+                    init_pair(ansi_color_pair_index(fg, bg),
+                              ansi_colors_to_curses[fg],
+                              ansi_colors_to_curses[bg]);
+                }
             }
         }
 
         if (COLORS == 256) {
             int color_pair_base = VC_ANSI_END;
+            int bg = (lnav_config.lc_ui_default_colors ? -1 : COLOR_BLACK);
 
             for (int z = 0; z < 6; z++) {
                 for (int x = 1; x < 6; x += 2) {
                     for (int y = 1; y < 6; y += 2) {
                         int fg = 16 + x + (y * 6) + (z * 6 * 6);
 
-                        init_pair(color_pair_base, fg, COLOR_BLACK);
+                        init_pair(color_pair_base, fg, bg);
                         color_pair_base += 1;
                     }
                 }

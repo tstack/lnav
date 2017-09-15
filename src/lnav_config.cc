@@ -305,6 +305,10 @@ static struct json_path_handler ui_handlers[] = {
             .with_synopsis("<bool>")
             .with_description("Reduce the brightness of text (useful for xterms)")
             .for_field(&nullobj<_lnav_config>()->lc_ui_dim_text),
+        json_path_handler("default-colors")
+            .with_synopsis("<bool>")
+            .with_description("Use default terminal fg/bg colors")
+            .for_field(&nullobj<_lnav_config>()->lc_ui_default_colors),
         json_path_handler("keymap")
             .with_synopsis("<name>")
             .with_description("The name of the keymap to use")
