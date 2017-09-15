@@ -151,6 +151,9 @@ The following options are available:
   in strftime(3).
 * /ui/dim-text - Reduce the brightness of text.  This setting can be useful
   when running in an xterm where the white color is very bright.
+* /ui/default-colors - Use default terminal background and foreground colors
+  instead of black and white for all text coloring.  This setting can be useful
+  when transparent background or alternate color theme terminal is used.
 
 .. note:: The following commands can be disabled by setting the ``LNAVSECURE``
    environment variable before executing the **lnav** binary:
