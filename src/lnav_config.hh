@@ -96,6 +96,7 @@ struct key_map {
 struct _lnav_config {
     std::string lc_ui_clock_format;
     bool lc_ui_dim_text;
+    bool lc_ui_default_colors;
     std::string lc_ui_keymap;
     std::unordered_map<std::string, key_map> lc_ui_keymaps;
     std::map<std::string, std::string> lc_ui_key_overrides;
