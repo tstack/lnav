@@ -964,6 +964,12 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
             hm.erase(hm_iter);
             retval = "info: highlight pattern cleared";
             tc->reload_data();
+
+            if (lnav_data.ld_rl_view != NULL) {
+                lnav_data.ld_rl_view->rem_possibility(
+                    LNM_COMMAND, "highlight", args[1]);
+            }
+
         }
     }
 
