@@ -135,6 +135,7 @@ Miscellaneous
   environment variable substitution.  The argument to *eval* must start with a
   colon, semi-colon, or pipe character to signify whether the argument is a
   command, SQL query, or a script to be executed, respectively.
+* quit - Quit lnav. Alternatively, ':q' can be used as an alias for 'quit'.
 
 Configuration
 -------------
