@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <unordered_map>
 
 #include <pcrecpp.h>
 
@@ -3188,6 +3189,17 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
     return retval;
 }
 
+static string com_quit(exec_context &ec, string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+
+    }
+    else if (!ec.ec_dry_run) {
+        lnav_data.ld_looping = false;
+    }
+    return "";
+}
+
 readline_context::command_t STD_COMMANDS[] = {
     {
         "adjust-log-time",
@@ -3714,8 +3726,19 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text("field-name", "The name of the numeric field to visualize."))
             .with_example({"sc_bytes"})
     },
+    {
+        "quit",
+        com_quit,
+
+        help_text(":quit")
+            .with_summary("Quit lnav")
+    },
 
     { NULL },
+};
+
+unordered_map<char const *, vector<char const *>> aliases = {
+    { "quit", { "q" } },
 };
 
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
@@ -3724,6 +3747,14 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
         readline_context::command_t &cmd = STD_COMMANDS[lpc];
 
         cmd_map[cmd.c_name] = cmd;
+
+        auto itr = aliases.find(cmd.c_name);
+        if (itr != aliases.end()) {
+            for (char const * alias: itr->second) {
+                cmd_map[alias] = cmd;
+            }
+        }
+
     }
 
     if (getenv("LNAV_SRC") != NULL) {
