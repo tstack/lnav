@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     if (lexer.split(sresult, map<string, string>())) {
         printf("split:\n");
         for (size_t lpc = 0; lpc < sresult.size(); lpc++) {
-            printf("  %d -- %s\n", lpc, sresult[lpc].c_str());
+            printf("  %zu -- %s\n", lpc, sresult[lpc].c_str());
         }
     }
 
