@@ -321,7 +321,13 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
 
     const char *pattern = (const char *) sqlite3_value_text(argv[0]);
     pCur->c_pattern = pattern;
-    switch (glob(pattern, GLOB_ERR|GLOB_TILDE, nullptr, pCur->c_glob.inout())) {
+    switch (glob(pattern,
+#ifdef GLOB_TILDE
+                 GLOB_TILDE|
+#endif
+                 GLOB_ERR,
+                 nullptr,
+                 pCur->c_glob.inout())) {
         case GLOB_NOSPACE:
             pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
                 "No space to perform glob()");

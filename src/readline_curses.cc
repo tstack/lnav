@@ -78,6 +78,7 @@ static const char *RL_INIT[] = {
      * up if it wraps around.
      */
     "set horizontal-scroll-mode on",
+    "set bell-style none",
 
     NULL
 };
@@ -485,6 +486,17 @@ void readline_curses::start(void)
                     this->line_ready("");
                     rl_callback_handler_remove();
                 }
+                else if (rl_end == 0) {
+                    if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                                'a',
+                                rl_line_buffer,
+                                rl_end) != 0) {
+                        perror("line: write failed");
+                        _exit(1);
+                    }
+                    got_line = 1;
+                    rl_callback_handler_remove();
+                }
                 else {
                     uint64_t h1 = 1, h2 = 2;
 
@@ -740,8 +752,6 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 }
                 switch (msg[0]) {
                 case 'a':
-                    require(rc == 1);
-
                     this->rc_active_context = -1;
                     this->vc_past_lines.clear();
                     this->rc_matches.clear();
