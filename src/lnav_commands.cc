@@ -27,10 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef __CYGWIN__
+#undef __STRICT_ANSI__
+#endif
 #include "config.h"
 
 #include <glob.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #include <string>
 #include <vector>
