@@ -31,6 +31,7 @@
 
 #include <glob.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #include <string>
 #include <vector>
