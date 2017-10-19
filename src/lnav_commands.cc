@@ -31,6 +31,9 @@
 
 #include <glob.h>
 #include <sys/stat.h>
+#ifdef __CYGWIN__
+#undef __STRICT_ANSI__
+#endif
 #include <time.h>
 
 #include <string>
