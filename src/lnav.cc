@@ -59,7 +59,7 @@
 
 #include <readline/readline.h>
 
-#if defined(__OpenBSD__) && defined(__OpenBSD__) && \
+#if defined(__OpenBSD__) && defined(__clang__) && \
     !defined(_WCHAR_H_CPLUSPLUS_98_CONFORMANCE_)
 #define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
 #endif
