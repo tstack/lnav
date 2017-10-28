@@ -60,7 +60,9 @@
 #include <readline/readline.h>
 
 #ifdef __clang__
-#define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_ 1
+#ifndef _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
+#define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
+#endif
 #endif
 #include <map>
 #include <set>
