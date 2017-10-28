@@ -29,8 +29,6 @@
 
 #include "config.h"
 
-#include <wordexp.h>
-
 #include <vector>
 
 #include "json_ptr.hh"

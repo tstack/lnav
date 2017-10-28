@@ -436,8 +436,6 @@ inline bool pollfd_ready(const std::vector<struct pollfd> &pollfds, int fd, shor
     return false;
 };
 
-bool wordexperr(int rc, std::string &msg);
-
 inline void rusagesub(const struct rusage &left, const struct rusage &right, struct rusage &diff_out)
 {
     timersub(&left.ru_utime, &right.ru_utime, &diff_out.ru_utime);

@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include <wordexp.h>
 
 #include <fstream>
 
@@ -698,36 +697,6 @@ bool read_file(const char *filename, string &out)
     }
 
     return false;
-}
-
-bool wordexperr(int rc, string &msg)
-{
-    switch (rc) {
-        case WRDE_BADCHAR:
-            msg = "error: invalid filename character";
-            return false;
-
-        case WRDE_CMDSUB:
-            msg = "error: command substitution is not allowed";
-            return false;
-
-        case WRDE_BADVAL:
-            msg = "error: unknown environment variable in file name";
-            return false;
-
-        case WRDE_NOSPACE:
-            msg = "error: out of memory";
-            return false;
-
-        case WRDE_SYNTAX:
-            msg = "error: invalid syntax";
-            return false;
-
-        default:
-            break;
-    }
-
-    return true;
 }
 
 size_t abbreviate_str(char *str, size_t len, size_t max_len)

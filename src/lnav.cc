@@ -59,6 +59,7 @@
 
 #include <readline/readline.h>
 
+#define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_ 1
 #include <map>
 #include <set>
 #include <stack>
@@ -2079,6 +2080,7 @@ static void looper(void)
         sig_atomic_t overlay_counter = 0;
         int lpc;
 
+	rl_completer_word_break_characters = (char *)" \t\n"; /* XXX */
         command_context.set_highlighter(readline_command_highlighter);
         search_context
                 .set_append_character(0)
@@ -2086,7 +2088,7 @@ static void looper(void)
         sql_context
                 .set_highlighter(readline_sqlite_highlighter)
                 .set_quote_chars("\"")
-                .with_readline_var(&rl_completer_word_break_characters,
+                .with_readline_var((char **)&rl_completer_word_break_characters,
                                    " \t\n(),");
         exec_context.set_highlighter(readline_shlex_highlighter);
 
