@@ -159,9 +159,9 @@ void grep_proc::child_loop(void)
     char   outbuf[BUFSIZ * 2];
     string line_value;
 
-    FILE *std_out = fdopen(STDOUT_FILENO, "w");
+    *stdout = *(fdopen(STDOUT_FILENO, "w"));
     /* Make sure buffering is on, not sure of the state in the parent. */
-    if (setvbuf(std_out, outbuf, _IOFBF, BUFSIZ * 2) < 0) {
+    if (setvbuf(stdout, outbuf, _IOFBF, BUFSIZ * 2) < 0) {
         perror("setvbuf");
     }
     line_value.reserve(BUFSIZ * 2);
@@ -189,16 +189,16 @@ void grep_proc::child_loop(void)
                     pcre_context::capture_t *m;
 
                     if (pi.pi_offset == 0) {
-                        fprintf(std_out, "%d\n", line);
+                        fprintf(stdout, "%d\n", line);
                     }
                     m = pc.all();
-                    fprintf(std_out, "[%d:%d]\n", m->c_begin, m->c_end);
+                    fprintf(stdout, "[%d:%d]\n", m->c_begin, m->c_end);
                     for (pc_iter = pc.begin(); pc_iter != pc.end();
                          pc_iter++) {
                         if (!pc_iter->is_valid()) {
                             continue;
                         }
-                        fprintf(std_out,
+                        fprintf(stdout,
                                 "(%d:%d)",
                                 pc_iter->c_begin,
                                 pc_iter->c_end);
@@ -210,11 +210,11 @@ void grep_proc::child_loop(void)
                             fwrite(pi.get_substr_start(pc_iter),
                                    1,
                                    pc_iter->length(),
-                                   std_out);
+                                   stdout);
                         }
-                        fputc('\n', std_out);
+                        fputc('\n', stdout);
                     }
-                    fprintf(std_out, "/\n");
+                    fprintf(stdout, "/\n");
                 }
             }
 
@@ -228,7 +228,7 @@ void grep_proc::child_loop(void)
             // When scanning to the end of the source, we need to return the
             // highest line that was seen so that the next request that
             // continues from the end works properly.
-            fprintf(std_out, "h%d\n", line - 1);
+            fprintf(stdout, "h%d\n", line - 1);
         }
         this->child_term();
     }
