@@ -2082,7 +2082,6 @@ static void looper(void)
         sig_atomic_t overlay_counter = 0;
         int lpc;
 
-	rl_completer_word_break_characters = (char *)" \t\n"; /* XXX */
         command_context.set_highlighter(readline_command_highlighter);
         search_context
                 .set_append_character(0)
