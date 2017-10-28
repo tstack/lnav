@@ -59,10 +59,9 @@
 
 #include <readline/readline.h>
 
-#ifdef __clang__
-#ifndef _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
+#if defined(__OpenBSD__) && defined(__OpenBSD__) && \
+    !defined(_WCHAR_H_CPLUSPLUS_98_CONFORMANCE_)
 #define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
-#endif
 #endif
 #include <map>
 #include <set>
