@@ -29,8 +29,6 @@
 
 #include "config.h"
 
-#include <wordexp.h>
-
 #include "lnav.hh"
 #include "lnav_util.hh"
 #include "sysclip.hh"

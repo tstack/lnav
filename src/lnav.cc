@@ -59,6 +59,10 @@
 
 #include <readline/readline.h>
 
+#if defined(__OpenBSD__) && defined(__clang__) && \
+    !defined(_WCHAR_H_CPLUSPLUS_98_CONFORMANCE_)
+#define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
+#endif
 #include <map>
 #include <set>
 #include <stack>
@@ -2086,7 +2090,7 @@ static void looper(void)
         sql_context
                 .set_highlighter(readline_sqlite_highlighter)
                 .set_quote_chars("\"")
-                .with_readline_var(&rl_completer_word_break_characters,
+                .with_readline_var((char **)&rl_completer_word_break_characters,
                                    " \t\n(),");
         exec_context.set_highlighter(readline_shlex_highlighter);
 
