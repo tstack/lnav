@@ -178,6 +178,10 @@ void handle_paging_key(int ch)
 
     /* process the command keystroke */
     switch (ch) {
+        case 0x7f:
+        case KEY_BACKSPACE:
+            break;
+
         case 'a':
             if (lnav_data.ld_last_view == NULL) {
                 alerter::singleton().chime();

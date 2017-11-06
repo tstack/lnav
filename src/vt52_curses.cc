@@ -170,6 +170,11 @@ const char *vt52_curses::map_input(int ch, int &len_out)
         len_out = strlen(retval);
     }
     else {
+        switch (ch) {
+            case 0x7f:
+                ch = BACKSPACE;
+                break;
+        }
         this->vc_map_buffer = (char)ch;
         retval  = &this->vc_map_buffer; /* XXX probably shouldn't do this. */
         len_out = 1;

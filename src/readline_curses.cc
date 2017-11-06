@@ -312,6 +312,16 @@ char **readline_context::attempted_completion(const char *text,
     return retval;
 }
 
+static int rubout_char_or_abort(int count, int key)
+{
+    if (rl_line_buffer[0] == '\0') {
+        rl_done = true;
+        return 0;
+    } else {
+        return rl_rubout(count, '\b');
+    }
+}
+
 readline_curses::readline_curses()
     : rc_active_context(-1),
       rc_child(-1),
@@ -365,6 +375,8 @@ readline_curses::readline_curses()
         rl_initialize();
         using_history();
         stifle_history(HISTORY_SIZE);
+
+        rl_add_defun("rubout-char-or-abort", rubout_char_or_abort, '\b');
 
         for (int lpc = 0; RL_INIT[lpc]; lpc++) {
             snprintf(buffer, sizeof(buffer), "%s", RL_INIT[lpc]);
@@ -484,17 +496,6 @@ void readline_curses::start(void)
                 if (RL_ISSTATE(RL_STATE_DONE) && !got_line) {
                     got_line = 1;
                     this->line_ready("");
-                    rl_callback_handler_remove();
-                }
-                else if (rl_end == 0) {
-                    if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
-                                'a',
-                                rl_line_buffer,
-                                rl_end) != 0) {
-                        perror("line: write failed");
-                        _exit(1);
-                    }
-                    got_line = 1;
                     rl_callback_handler_remove();
                 }
                 else {
