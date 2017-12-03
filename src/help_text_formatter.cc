@@ -42,6 +42,7 @@ using namespace std;
 void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out) {
     static size_t body_indent = 2;
 
+    view_colors &vc = view_colors::singleton();
     text_wrap_settings tws;
     size_t start_index = out.get_string().length();
 
@@ -228,8 +229,7 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
             out.append(body_indent, ' ')
                 .append(param.ht_name,
                         &view_curses::VC_STYLE,
-                        view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK) |
-                        A_BOLD)
+                        vc.attrs_for_role(view_colors::VCR_VARIABLE) | A_BOLD)
                 .append(max_param_name_width - strlen(param.ht_name), ' ')
                 .append("   ")
                 .append(attr_line_t::from_ansi_str(param.ht_summary),

@@ -341,8 +341,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
         shift_string_attrs(value_out, 0, time_offset_end);
 
-        // attrs = vc.attrs_for_role(view_colors::VCR_OK);
-        attrs = view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK);
+        attrs = vc.attrs_for_role(view_colors::VCR_OFFSET_TIME);
         value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
         value_out.push_back(string_attr(line_range(12, 13),
             &view_curses::VC_GRAPHIC, ACS_VLINE));
@@ -353,10 +352,10 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         case log_accel::A_STEADY:
             break;
         case log_accel::A_DECEL:
-            bar_attrs = view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK);
+            bar_attrs = vc.attrs_for_role(view_colors::VCR_DIFF_DELETE);
             break;
         case log_accel::A_ACCEL:
-            bar_attrs = view_colors::ansi_color_pair(COLOR_GREEN, COLOR_BLACK);
+            bar_attrs = vc.attrs_for_role(view_colors::VCR_DIFF_ADD);
             break;
         }
         value_out.push_back(

@@ -306,8 +306,10 @@ public:
         VCR_ERROR,              /*< An error message. */
         VCR_WARNING,            /*< A warning message. */
         VCR_ALT_ROW,            /*< Highlight for alternating rows in a list */
+        VCR_HIDDEN,
         VCR_ADJUSTED_TIME,
         VCR_SKEWED_TIME,
+        VCR_OFFSET_TIME,
         VCR_STATUS,             /*< Normal status line text. */
         VCR_WARN_STATUS,
         VCR_ALERT_STATUS,       /*< Alert status line text. */
@@ -320,6 +322,9 @@ public:
         VCR_STRING,
         VCR_COMMENT,
         VCR_VARIABLE,
+        VCR_SYMBOL,
+        VCR_RE_SPECIAL,
+        VCR_RE_REPEAT,
         VCR_FILE,
 
         VCR_DIFF_DELETE,        /*< Deleted line in a diff. */
@@ -343,7 +348,7 @@ public:
      */
     static void init(void);
 
-    void init_roles(void);
+    void init_roles(int color_pair_base);
 
     /**
      * @param role The role to retrieve character attributes for.

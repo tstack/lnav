@@ -70,11 +70,11 @@ static bool is_bracket(const string &str, int index, bool is_lit)
 
 static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
 {
-    static int matching_bracket_attrs = (
-        A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_GREEN, COLOR_BLACK));
-    static int missing_bracket_attrs = (
-        A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK));
-
+    view_colors &vc = view_colors::singleton();
+    int matching_bracket_attrs =
+        A_BOLD|A_REVERSE|vc.attrs_for_role(view_colors::VCR_OK);
+    int missing_bracket_attrs =
+        A_BOLD|A_REVERSE|vc.attrs_for_role(view_colors::VCR_ERROR);
     bool is_lit = (left == 'Q');
     const string &line = al.get_string();
     int depth = 0;
@@ -162,16 +162,15 @@ static char safe_read(const string &str, string::size_type index)
 
 static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
 {
-    static int special_char = (
-        A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));
-    static int class_attrs = (
-        A_BOLD|view_colors::ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK));
-    static int repeated_char_attrs = (
-        view_colors::ansi_color_pair(COLOR_YELLOW, COLOR_BLACK));
-    static int bracket_attrs = (
-        view_colors::ansi_color_pair(COLOR_GREEN, COLOR_BLACK));
-    static int error_attrs = (
-        A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK));
+    view_colors &vc = view_colors::singleton();
+    int special_char = (
+        A_BOLD|vc.attrs_for_role(view_colors::VCR_RE_SPECIAL));
+    int class_attrs = (
+        A_BOLD|vc.attrs_for_role(view_colors::VCR_SYMBOL));
+    int repeated_char_attrs = vc.attrs_for_role(view_colors::VCR_RE_REPEAT);
+    int bracket_attrs = vc.attrs_for_role(view_colors::VCR_OK);
+    int error_attrs = (
+        A_BOLD|A_REVERSE|vc.attrs_for_role(view_colors::VCR_ERROR));
 
     static const char *brackets[] = {
         "[]",
@@ -355,8 +354,10 @@ void readline_command_highlighter(attr_line_t &al, int x)
     static const pcrepp RE_PREFIXES(
         R"(^:(filter-in|filter-out|delete-filter|enable-filter|disable-filter|highlight|clear-highlight|create-search-table\s+[^\s]+\s+))");
     static const pcrepp SH_PREFIXES("^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
-    static int keyword_attrs = (
-            A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));
+
+    view_colors &vc = view_colors::singleton();
+    int keyword_attrs = (
+            A_BOLD|vc.attrs_for_role(view_colors::VCR_KEYWORD));
 
     const string &line = al.get_string();
     pcre_context_static<30> pc;
@@ -398,15 +399,6 @@ static string sql_keyword_re(void)
 
 void readline_sqlite_highlighter(attr_line_t &al, int x)
 {
-    static int keyword_attrs = (
-        A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));
-    static int symbol_attrs = (
-        view_colors::ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK));
-    static int string_attrs = (
-        view_colors::ansi_color_pair(COLOR_GREEN, COLOR_BLACK));
-    static int error_attrs = (
-        A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK));
-
     static string keyword_re_str = sql_keyword_re() + "|\\.schema|\\.msgformats";
     static pcrepp keyword_pcre(keyword_re_str.c_str(), PCRE_CASELESS);
     static pcrepp string_literal_pcre("'[^']*('(?:'[^']*')*|$)");
@@ -420,6 +412,12 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
     };
 
     view_colors &vc = view_colors::singleton();
+
+    int keyword_attrs = vc.attrs_for_role(view_colors::VCR_KEYWORD);
+    int symbol_attrs = vc.attrs_for_role(view_colors::VCR_SYMBOL);
+    int string_attrs = vc.attrs_for_role(view_colors::VCR_STRING);
+    int error_attrs = vc.attrs_for_role(view_colors::VCR_ERROR) | A_REVERSE;
+
     pcre_context_static<30> pc;
     pcre_input pi(al.get_string());
     string &line = al.get_string();
@@ -495,14 +493,11 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
 
 void readline_shlex_highlighter(attr_line_t &al, int x)
 {
-    static int special_char = (
-            A_BOLD|view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK));
-    static int error_attrs = (
-            A_BOLD|A_REVERSE|view_colors::ansi_color_pair(COLOR_RED, COLOR_BLACK));
-    static int string_attrs = (
-            view_colors::ansi_color_pair(COLOR_GREEN, COLOR_BLACK));
-
     view_colors &vc = view_colors::singleton();
+    int special_char = (
+        A_BOLD|vc.attrs_for_role(view_colors::VCR_SYMBOL));
+    int error_attrs = vc.attrs_for_role(view_colors::VCR_ERROR) | A_REVERSE;
+    int string_attrs = vc.attrs_for_role(view_colors::VCR_STRING);
     const string &str = al.get_string();
     pcre_context::capture_t cap;
     shlex_token_t token;

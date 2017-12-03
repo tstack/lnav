@@ -244,6 +244,7 @@ void listview_curses::do_update(void)
         }
 
         if (this->lv_show_scrollbar) {
+            view_colors &vc = view_colors::singleton();
             double progress = 1.0;
             double coverage = 1.0;
             double adjusted_height = (double)row_count / (double)height;
@@ -263,7 +264,9 @@ void listview_curses::do_update(void)
                  gutter_y < (this->lv_y + height);
                  gutter_y++) {
                 int range_start = 0, range_end;
-                int fg = COLOR_WHITE, bg = COLOR_BLACK, attrs;
+                view_colors::role_t role = view_colors::VCR_TEXT;
+                view_colors::role_t bar_role = view_colors::VCR_STATUS;
+                int attrs;
                 chtype ch = ACS_VLINE;
 
                 if (row_count > 0) {
@@ -272,14 +275,11 @@ void listview_curses::do_update(void)
                 range_end = range_start + adjusted_height;
 
                 this->lv_gutter_source->listview_gutter_value_for_range(
-                    *this, range_start, range_end, ch, fg);
+                    *this, range_start, range_end, ch, role, bar_role);
                 if (gutter_y >= (unsigned int)y && gutter_y <= (unsigned int)lines) {
-                    bg = COLOR_WHITE;
-                    if (fg == bg) {
-                        fg = COLOR_BLACK;
-                    }
+                    role = bar_role;
                 }
-                attrs = view_colors::ansi_color_pair(fg, bg);
+                attrs = vc.attrs_for_role(role);
                 wattron(this->lv_window, attrs);
                 mvwaddch(this->lv_window, gutter_y, width - 1, ch);
                 wattroff(this->lv_window, attrs);

@@ -318,7 +318,7 @@ void textview_curses::textview_value_for_row(vis_line_t row,
                 shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
                 sattr.sa_type = &VC_GRAPHIC;
                 sattr.sa_value.sav_int =
-                    vc.ansi_color_pair(COLOR_YELLOW, COLOR_BLACK) |
+                    vc.attrs_for_role(view_colors::VCR_HIDDEN) |
                     ACS_BULLET | A_UNDERLINE;
                 lr.lr_end = lr.lr_start + 3;
 

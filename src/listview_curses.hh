@@ -87,9 +87,12 @@ public:
 
     virtual void listview_gutter_value_for_range(
         const listview_curses &lv, int start, int end,
-        chtype &ch_out, int &fg_out) {
+        chtype &ch_out,
+        view_colors::role_t &role_out,
+        view_colors::role_t &bar_role_out) {
         ch_out = ACS_VLINE;
-        fg_out = COLOR_WHITE;
+        role_out = view_colors::VCR_TEXT;
+        bar_role_out = view_colors::VCR_STATUS;
     };
 };
 

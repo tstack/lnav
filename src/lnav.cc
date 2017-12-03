@@ -212,7 +212,8 @@ static const char *view_titles[LNV__MAX] = {
 class log_gutter_source : public list_gutter_source {
 public:
     void listview_gutter_value_for_range(
-        const listview_curses &lv, int start, int end, chtype &ch, int &fg_out) {
+        const listview_curses &lv, int start, int end, chtype &ch,
+        view_colors::role_t &role_out, view_colors::role_t &bar_role_out) {
         textview_curses *tc = (textview_curses *)&lv;
         vis_bookmarks &bm = tc->get_bookmarks();
         vis_line_t next;
@@ -238,12 +239,14 @@ public:
         }
         next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
         if (next != -1 && next <= end) {
-            fg_out = COLOR_RED;
+            role_out = view_colors::VCR_ERROR;
+            bar_role_out = view_colors::VCR_ALERT_STATUS;
         }
         else {
             next = bm[&logfile_sub_source::BM_WARNINGS].next(vis_line_t(start));
             if (next != -1 && next <= end) {
-                fg_out = COLOR_YELLOW;
+                role_out = view_colors::VCR_WARNING;
+                bar_role_out = view_colors::VCR_WARN_STATUS;
             }
         }
     };
