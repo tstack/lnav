@@ -174,6 +174,7 @@ void grep_proc::child_loop(void)
         this->gp_queue.pop_front();
         if (start_line == -1) {
             start_line = this->gp_highest_line;
+            log_debug("highest %d", start_line);
         }
         for (line = start_line;
              (stop_line == -1 || line < stop_line) && !done;
@@ -184,6 +185,7 @@ void grep_proc::child_loop(void)
                 pcre_context_static<128> pc;
                 pcre_input pi(line_value);
 
+                log_debug("wtf %s", line_value.c_str());
                 while (this->gp_pcre.match(pc, pi)) {
                     pcre_context::iterator   pc_iter;
                     pcre_context::capture_t *m;

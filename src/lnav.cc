@@ -998,6 +998,7 @@ void redo_search(lnav_view_t view_index)
     if (lnav_data.ld_search_child[view_index].get() != NULL) {
         grep_proc *gp = lnav_data.ld_search_child[view_index]->get_grep_proc();
 
+        gp->invalidate();
         tc->match_reset();
         gp->reset();
         gp->queue_request(grep_line_t(0));

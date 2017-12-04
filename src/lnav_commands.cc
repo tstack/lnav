@@ -1082,11 +1082,12 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
                                          text_filter::EXCLUDE :
                                          text_filter::INCLUDE;
             auto pf = make_shared<pcre_filter>(lt, args[1], fs.next_index(), code.release());
+            lnav_view_t view_index = lnav_view_t(tc - lnav_data.ld_views);
 
             log_debug("%s [%d] %s", args[0].c_str(), pf->get_index(), args[1].c_str());
             fs.add_filter(pf);
             tss->text_filters_changed();
-            tc->reload_data();
+            redo_search(view_index);
             if (lnav_data.ld_rl_view != NULL) {
                 lnav_data.ld_rl_view->add_possibility(
                     LNM_COMMAND, "enabled-filter", args[1]);
@@ -1115,7 +1116,7 @@ static string com_delete_filter(exec_context &ec, string cmdline, vector<string>
         if (fs.delete_filter(args[1])) {
             retval = "info: deleted filter";
             tss->text_filters_changed();
-            tc->reload_data();
+            redo_search(lnav_view_t(tc - lnav_data.ld_views));
         }
         else {
             retval = "error: unknown filter -- " + args[1];
@@ -1152,7 +1153,7 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
         else {
             fs.set_filter_enabled(lf, true);
             tss->text_filters_changed();
-            tc->reload_data();
+            redo_search(lnav_view_t(tc - lnav_data.ld_views));
             retval = "info: filter enabled";
         }
     }
@@ -1187,7 +1188,7 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
         else {
             fs.set_filter_enabled(lf, false);
             tss->text_filters_changed();
-            tc->reload_data();
+            redo_search(lnav_view_t(tc - lnav_data.ld_views));
             retval = "info: filter disabled";
         }
     }

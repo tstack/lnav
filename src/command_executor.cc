@@ -531,6 +531,13 @@ string execute_from_file(exec_context &ec, const string &path, int line_number, 
             retval = execute_command(ec, cmdline);
             break;
         case '/':
+            if (!lnav_data.ld_view_stack.empty()) {
+                lnav_view_t index = lnav_view_t(lnav_data.ld_view_stack.back() - lnav_data.ld_views);
+
+                execute_search(index, cmdline.substr(1));
+                retval = "";
+            }
+            break;
         case ';':
             setup_logline_table();
             retval = execute_sql(ec, cmdline, alt_msg);
@@ -564,6 +571,13 @@ string execute_any(exec_context &ec, const string &cmdline_with_mode)
             retval = execute_command(ec, cmdline);
             break;
         case '/':
+            if (!lnav_data.ld_view_stack.empty()) {
+                lnav_view_t index = lnav_view_t(lnav_data.ld_view_stack.back() - lnav_data.ld_views);
+
+                execute_search(index, cmdline.substr(1));
+                retval = "";
+            }
+            break;
         case ';':
             setup_logline_table();
             retval = execute_sql(ec, cmdline, alt_msg);
@@ -603,6 +617,12 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
             msg = execute_command(ec, cmd.substr(1));
             break;
         case '/':
+            if (!lnav_data.ld_view_stack.empty()) {
+                lnav_view_t index = lnav_view_t(lnav_data.ld_view_stack.back() - lnav_data.ld_views);
+
+                execute_search(index, cmd.substr(1));
+            }
+            break;
         case ';':
             setup_logline_table();
             msg = execute_sql(ec, cmd.substr(1), alt_msg);

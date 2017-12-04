@@ -303,6 +303,22 @@ EOF
 cp ${test_dir}/logfile_multiline.0 logfile_append.0
 chmod ug+w logfile_append.0
 
+run_test ${lnav_test} -n -d /tmp/lnav-search.err \
+    -c "/goodbye" \
+    -c ";update generic_log set log_mark=1" \
+    -c ":filter-in Goodbye" \
+    -c ":append-to logfile_append.0" \
+    -c ":rebuild" \
+    -c ":next-mark search" \
+    logfile_append.0
+
+check_output "search after filter-in is not working" <<EOF
+2009-07-20 22:59:30,221:ERROR:Goodbye, World!
+EOF
+
+cp ${test_dir}/logfile_multiline.0 logfile_append.0
+chmod ug+w logfile_append.0
+
 run_test ${lnav_test} -n \
     -c ":filter-out Goodbye" \
     -c ":shexec echo '2009-07-20 22:59:30,221:ERROR:Goodbye, World!' >> logfile_append.0" \
