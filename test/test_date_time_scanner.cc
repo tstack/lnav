@@ -36,6 +36,7 @@
 #include "../src/lnav_util.hh"
 
 static const char *GOOD_TIMES[] = {
+    "2017 May 08 Mon 18:57:57.578",
     "May 01 00:00:01",
     "May 10 12:00:01",
     "2014-02-11 16:12:34",

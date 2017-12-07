@@ -172,7 +172,48 @@ inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, ssize_
 
 inline void ftime_a(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
 {
-
+    switch (tm.et_tm.tm_wday) {
+        case 0:
+            PTIME_APPEND('S');
+            PTIME_APPEND('u');
+            PTIME_APPEND('n');
+            break;
+        case 1:
+            PTIME_APPEND('M');
+            PTIME_APPEND('o');
+            PTIME_APPEND('n');
+            break;
+        case 2:
+            PTIME_APPEND('T');
+            PTIME_APPEND('u');
+            PTIME_APPEND('e');
+            break;
+        case 3:
+            PTIME_APPEND('W');
+            PTIME_APPEND('e');
+            PTIME_APPEND('d');
+            break;
+        case 4:
+            PTIME_APPEND('T');
+            PTIME_APPEND('h');
+            PTIME_APPEND('u');
+            break;
+        case 5:
+            PTIME_APPEND('F');
+            PTIME_APPEND('r');
+            PTIME_APPEND('i');
+            break;
+        case 6:
+            PTIME_APPEND('S');
+            PTIME_APPEND('a');
+            PTIME_APPEND('t');
+            break;
+        default:
+            PTIME_APPEND('X');
+            PTIME_APPEND('X');
+            PTIME_APPEND('X');
+            break;
+    }
 }
 
 inline void ftime_Z(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)

@@ -121,6 +121,7 @@ size_t ftime_fmt(char *dst, size_t len, const char *fmt, const struct exttm &tm)
                 case '%':
                     ftime_char(dst, off_inout, len, '%');
                     break;
+                FTIME_FMT_CASE('a', a);
                 FTIME_FMT_CASE('b', b);
                 FTIME_FMT_CASE('S', S);
                 FTIME_FMT_CASE('s', s);

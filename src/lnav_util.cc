@@ -380,6 +380,26 @@ static const int year_lengths[2] = {
         366
 } ;
 
+static void secs2wday(const struct timeval &tv, struct tm *res)
+{
+    long days, rem;
+    time_t lcltime;
+
+    /* base decision about std/dst time on current time */
+    lcltime = tv.tv_sec;
+
+    days = ((long) lcltime) / SECSPERDAY;
+    rem = ((long) lcltime) % SECSPERDAY;
+    while (rem < 0) {
+        rem += SECSPERDAY;
+        --days;
+    }
+
+    /* compute day of week */
+    if ((res->tm_wday = ((EPOCH_WDAY + days) % DAYSPERWEEK)) < 0)
+        res->tm_wday += DAYSPERWEEK;
+}
+
 struct tm *secs2tm(time_t *tim_p, struct tm *res)
 {
     long days, rem;
@@ -567,6 +587,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                 }
                 tv_out.tv_sec = tm2sec(&tm_out->et_tm);
                 tv_out.tv_usec = tm_out->et_nsec / 1000;
+                secs2wday(tv_out, &tm_out->et_tm);
 
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len  = retval - time_dest;
@@ -602,6 +623,7 @@ const char *date_time_scanner::scan(const char *time_dest,
 
                 tv_out.tv_sec = tm2sec(&tm_out->et_tm);
                 tv_out.tv_usec = tm_out->et_nsec / 1000;
+                secs2wday(tv_out, &tm_out->et_tm);
 
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len  = retval - time_dest;
