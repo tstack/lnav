@@ -37,7 +37,7 @@
 #include <string>
 
 #include "json_ptr.hh"
-#include "yajlpp.hh"
+#include "yajl/api/yajl_parse.h"
 
 class json_op {
     static int handle_null(void *ctx);

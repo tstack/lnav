@@ -1145,6 +1145,17 @@ public:
         const intern_string_t jfc_field_name;
     };
 
+    struct highlighter_def {
+        highlighter_def() : hd_underline(false), hd_blink(false) {
+        }
+
+        std::string hd_pattern;
+        std::string hd_color;
+        std::string hd_background_color;
+        bool hd_underline;
+        bool hd_blink;
+    };
+
     long value_line_count(const intern_string_t ist,
                           bool top_level,
                           const unsigned char *str = NULL,
@@ -1242,7 +1253,7 @@ public:
     bool elf_has_module_format;
     bool elf_builtin_format;
     std::vector<std::pair<intern_string_t, std::string> > elf_search_tables;
-    std::vector<std::string> elf_highlighter_patterns;
+    std::map<const intern_string_t, highlighter_def> elf_highlighter_patterns;
 
     enum elf_type_t {
         ELF_TYPE_TEXT,

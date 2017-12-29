@@ -6,6 +6,8 @@ lnav v0.8.3:
      * Added an fstat() table-valued function for querying the local
        filesystem.
      * Added readlink() and realpath() SQL functions.
+     * Highlights specified in log formats can now specify the colors to use
+       for the highlighted parts of the log message.
      Fixes:
      * The help view now includes all the command-help that would pop up as
        you entered commands and SQL queries.

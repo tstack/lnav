@@ -185,7 +185,6 @@ void grep_proc::child_loop(void)
                 pcre_context_static<128> pc;
                 pcre_input pi(line_value);
 
-                log_debug("wtf %s", line_value.c_str());
                 while (this->gp_pcre.match(pc, pi)) {
                     pcre_context::iterator   pc_iter;
                     pcre_context::capture_t *m;

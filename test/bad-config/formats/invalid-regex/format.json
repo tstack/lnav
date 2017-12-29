@@ -17,8 +17,10 @@
                 "line": "1428634687123; foo"
             }
         ],
-        "highlights": [
-            "abc("
-        ]
+        "highlights": {
+            "foobar": {
+                "pattern": "abc("
+            }
+        }
     }
 }

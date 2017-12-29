@@ -43,6 +43,7 @@
 #include <string>
 #include <algorithm>
 
+#include "optional.hpp"
 #include "pcrepp.hh"
 #include "json_ptr.hh"
 #include "intern_string.hh"
@@ -121,7 +122,8 @@ struct json_path_handler_base {
               jph_min_length(0),
               jph_max_length(INT_MAX),
               jph_enum_values(NULL),
-              jph_min_value(LLONG_MIN)
+              jph_min_value(LLONG_MIN),
+              jph_optional_wrapper(false)
     {
         memset(&this->jph_callbacks, 0, sizeof(this->jph_callbacks));
     };
@@ -149,6 +151,7 @@ struct json_path_handler_base {
     size_t         jph_max_length;
     const enum_value_t  *jph_enum_values;
     long long      jph_min_value;
+    bool           jph_optional_wrapper;
 };
 
 int yajlpp_static_string(yajlpp_parse_context *, const unsigned char *, size_t);
@@ -172,7 +175,8 @@ void yajlpp_validator_for_int(yajlpp_parse_context &ypc,
 void yajlpp_validator_for_double(yajlpp_parse_context &ypc,
                                  const json_path_handler_base &jph);
 
-int yajlpp_static_number(yajlpp_parse_context *, long long);
+template<typename T>
+int yajlpp_static_number(yajlpp_parse_context *ypc, long long num);
 int yajlpp_static_decimal(yajlpp_parse_context *, double);
 
 int yajlpp_static_bool(yajlpp_parse_context *, int);
@@ -340,8 +344,9 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     };
 
-    json_path_handler &for_field(long long *field) {
-        this->add_cb(yajlpp_static_number);
+    template<typename T, typename T2 = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+    json_path_handler &for_field(T *field) {
+        this->add_cb(yajlpp_static_number<T>);
         this->jph_simple_offset = field;
         this->jph_validator = yajlpp_validator_for_int;
         return *this;
@@ -358,6 +363,16 @@ struct json_path_handler : public json_path_handler_base {
         this->add_cb(yajlpp_static_bool);
         this->jph_simple_offset = field;
         this->jph_gen_callback = yajlpp_static_gen_bool;
+        return *this;
+    };
+
+    template<typename T>
+    json_path_handler &for_field(nonstd::optional<T> *field) {
+        T dummy;
+
+        this->for_field(&dummy);
+        this->jph_simple_offset = field;
+        this->jph_optional_wrapper = true;
         return *this;
     };
 
@@ -505,6 +520,11 @@ public:
 
     yajlpp_parse_context &with_error_reporter(error_reporter_t err) {
         this->ypc_error_reporter = err;
+        return *this;
+    }
+
+    yajlpp_parse_context &with_ignore_unused(bool ignore) {
+        this->ypc_ignore_unused = ignore;
         return *this;
     }
 

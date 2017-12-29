@@ -32,6 +32,7 @@
 #ifndef __highlighter_hh
 #define __highlighter_hh
 
+#include "optional.hpp"
 #include "pcrepp.hh"
 #include "text_format.hh"
 #include "view_curses.hh"
@@ -133,6 +134,13 @@ struct highlighter {
         return *this;
     };
 
+    highlighter &with_color(const rgb_color &fg, const rgb_color &bg) {
+        this->h_fg = fg;
+        this->h_bg = bg;
+
+        return *this;
+    };
+
     int get_attrs() const
     {
         ensure(this->h_attrs != -1);
@@ -141,6 +149,8 @@ struct highlighter {
     };
 
     std::string h_pattern;
+    rgb_color h_fg;
+    rgb_color h_bg;
     pcre *                           h_code;
     pcre_extra *                     h_code_extra;
     int h_attrs;

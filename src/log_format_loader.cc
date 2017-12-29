@@ -498,6 +498,35 @@ static struct json_path_handler value_def_handlers[] = {
     json_path_handler()
 };
 
+static struct json_path_handler highlighter_def_handlers[] = {
+    json_path_handler("pattern")
+        .with_synopsis("<regex>")
+        .with_description("A regular expression to highlight in logs of this format.")
+        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_pattern),
+
+    json_path_handler("color")
+        .with_synopsis("#<hex>|<name>")
+        .with_description("The color to use when highlighting this pattern.")
+        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_color),
+
+    json_path_handler("background-color")
+        .with_synopsis("#<hex>|<name>")
+        .with_description("The background color to use when highlighting this pattern.")
+        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_background_color),
+
+    json_path_handler("underline")
+        .with_synopsis("<enabled>")
+        .with_description("Highlight this pattern with an underline.")
+        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_underline),
+
+    json_path_handler("blink")
+        .with_synopsis("<enabled>")
+        .with_description("Highlight this pattern by blinking.")
+        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_blink),
+
+    json_path_handler()
+};
+
 static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
     make_pair(logline::level_names[logline::LEVEL_TRACE], logline::LEVEL_TRACE),
     make_pair(logline::level_names[logline::LEVEL_DEBUG5], logline::LEVEL_DEBUG5),
@@ -585,10 +614,11 @@ struct json_path_handler format_handlers[] = {
         .with_synopsis("<regex>")
         .with_description("The regular expression for this search table."),
 
-    json_path_handler("highlights#")
-        .with_synopsis("<regex>")
-        .with_description("A regular expression to highlight in logs of this format.")
-        .for_field(&nullobj<external_log_format>()->elf_highlighter_patterns),
+    json_path_handler("highlights/(?<highlight_name>[^/]+)/")
+        .with_obj_provider<external_log_format::highlighter_def, external_log_format>([](const yajlpp_provider_context &ypc, external_log_format *root) {
+            return &(root->elf_highlighter_patterns[ypc.get_substr_i(0)]);
+        })
+        .with_children(highlighter_def_handlers),
 
     json_path_handler("file-type")
         .with_synopsis("The type of file that contains the log messages")

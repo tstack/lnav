@@ -39,8 +39,6 @@
 #include <vector>
 #include <unordered_map>
 
-#include "yajlpp.hh"
-
 class lnav_config_listener {
 public:
     lnav_config_listener() {

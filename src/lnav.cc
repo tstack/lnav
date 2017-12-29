@@ -2144,7 +2144,8 @@ static void looper(void)
         define_key("\033Od", KEY_BEG);
         define_key("\033Oc", KEY_END);
 
-        view_colors::singleton().init();
+        view_colors &vc = view_colors::singleton();
+        vc.init();
 
         {
             setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
@@ -2155,7 +2156,11 @@ static void looper(void)
 
             for (auto format : log_format::get_root_formats()) {
                 for (auto &hl : format->lf_highlighters) {
-                    hl.with_attrs(view_colors::singleton().attrs_for_ident(hl.h_pattern));
+                    if (hl.h_fg.empty()) {
+                        hl.with_attrs(hl.h_attrs | vc.attrs_for_ident(hl.h_pattern));
+                    } else {
+                        hl.with_attrs(hl.h_attrs | vc.ensure_color_pair(hl.h_fg, hl.h_bg));
+                    }
 
                     lnav_data.ld_views[LNV_LOG].get_highlights()[
                         "$" + format->get_name().to_string() + "-" + hl.h_pattern] = hl;

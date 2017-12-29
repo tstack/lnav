@@ -42,7 +42,6 @@
 
 #include "lnav_log.hh"
 #include "lnav_util.hh"
-#include "yajlpp.hh"
 #include "pcrepp.hh"
 #include "byte_array.hh"
 #include "data_scanner.hh"

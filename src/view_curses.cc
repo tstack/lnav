@@ -32,16 +32,131 @@
 #include "config.h"
 
 #include <string>
-#include <algorithm>
 
 #include "auto_mem.hh"
 #include "lnav_log.hh"
 #include "view_curses.hh"
 #include "ansi_scrubber.hh"
 #include "lnav_config.hh"
-#include "attr_line.hh"
+#include "yajlpp.hh"
+#include "xterm-palette.hh"
 
 using namespace std;
+
+struct xterm_color {
+    short xc_id;
+    string xc_name;
+    rgb_color xc_color;
+    lab_color xc_lab_color;
+};
+
+static struct json_path_handler xterm_color_handler[] = {
+    json_path_handler("colorId")
+        .for_field(&nullobj<xterm_color>()->xc_id),
+    json_path_handler("name")
+        .for_field(&nullobj<xterm_color>()->xc_name),
+    json_path_handler("rgb/r")
+        .for_field(&nullobj<xterm_color>()->xc_color.rc_r),
+    json_path_handler("rgb/g")
+        .for_field(&nullobj<xterm_color>()->xc_color.rc_g),
+    json_path_handler("rgb/b")
+        .for_field(&nullobj<xterm_color>()->xc_color.rc_b),
+
+    json_path_handler()
+};
+
+static struct json_path_handler root_color_handler[] = {
+    json_path_handler("#/")
+        .with_obj_provider<xterm_color, vector<xterm_color>>(
+            [](const yajlpp_provider_context &ypc, vector<xterm_color> *palette) {
+                palette->resize(ypc.ypc_index + 1);
+                return &((*palette)[ypc.ypc_index]);
+            })
+        .with_children(xterm_color_handler),
+
+    json_path_handler()
+};
+
+static struct _xterm_colors {
+    _xterm_colors() {
+        yajlpp_parse_context ypc_xterm("xterm-palette.json", root_color_handler);
+        yajl_handle handle;
+
+        handle = yajl_alloc(&ypc_xterm.ypc_callbacks, NULL, &ypc_xterm);
+        ypc_xterm
+            .with_ignore_unused(true)
+            .with_obj(this->xc_palette)
+            .with_handle(handle);
+        ypc_xterm.parse((const unsigned char *) xterm_palette_json,
+                        strlen(xterm_palette_json));
+        ypc_xterm.complete_parse();
+        yajl_free(handle);
+
+        for (auto &xc : this->xc_palette) {
+            xc.xc_lab_color = lab_color(xc.xc_color);
+        }
+    };
+
+    short match_color(const lab_color &to_match) {
+        double lowest = 1000.0;
+        short lowest_id = -1;
+
+        for (auto &xc : this->xc_palette) {
+            double xc_delta = xc.xc_lab_color.deltaE(to_match);
+
+            if (lowest_id == -1) {
+                lowest = xc_delta;
+                lowest_id = xc.xc_id;
+                continue;
+            }
+
+            if (xc_delta < lowest) {
+                lowest = xc_delta;
+                lowest_id = xc.xc_id;
+            }
+        }
+
+        return lowest_id;
+    };
+
+    vector<xterm_color> xc_palette;
+} xterm_colors;
+
+bool rgb_color::from_str(const string_fragment &color,
+                         rgb_color &rgb_out,
+                         std::string &errmsg)
+{
+    if (color[0] == '#') {
+        switch (color.length()) {
+            case 4:
+                if (sscanf(color.data(), "#%1hx%1hx%1hx",
+                           &rgb_out.rc_r, &rgb_out.rc_g, &rgb_out.rc_b) == 3) {
+                    rgb_out.rc_r |= rgb_out.rc_r << 4;
+                    rgb_out.rc_g |= rgb_out.rc_g << 4;
+                    rgb_out.rc_b |= rgb_out.rc_b << 4;
+                    return true;
+                }
+                break;
+            case 7:
+                if (sscanf(color.data(), "#%2hx%2hx%2hx",
+                           &rgb_out.rc_r, &rgb_out.rc_g, &rgb_out.rc_b) == 3) {
+                    return true;
+                }
+                break;
+        }
+        errmsg = "Could not parse color: " + color.to_string();
+        return false;
+    }
+
+    for (const auto &xc : xterm_colors.xc_palette) {
+        if (color == xc.xc_name) {
+            rgb_out = xc.xc_color;
+            return true;
+        }
+    }
+
+    return false;
+}
 
 string_attr_type view_curses::VC_STYLE("style");
 string_attr_type view_curses::VC_GRAPHIC("graphic");
@@ -440,7 +555,7 @@ view_colors &view_colors::singleton(void)
     return s_vc;
 }
 
-view_colors::view_colors()
+view_colors::view_colors() : vc_color_pair_end(0)
 {
 }
 
@@ -566,4 +681,14 @@ void view_colors::init_roles(int color_pair_base)
     this->vc_role_colors[VCR_LOW_THRESHOLD] = attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_GREEN);
     this->vc_role_colors[VCR_MED_THRESHOLD] = attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_YELLOW);
     this->vc_role_colors[VCR_HIGH_THRESHOLD] = attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_RED);
+
+    this->vc_color_pair_end = color_pair_base + 1;
+}
+
+int view_colors::ensure_color_pair(const rgb_color &rgb_fg, const rgb_color &rgb_bg)
+{
+    return attr_for_colors(
+        this->vc_color_pair_end,
+        xterm_colors.match_color(rgb_fg),
+        rgb_bg.empty() ? (short) COLOR_BLACK : xterm_colors.match_color(rgb_bg));
 }

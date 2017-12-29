@@ -46,6 +46,14 @@ static T &resolve_root(yajlpp_parse_context *ypc)
 
     ptrdiff_t offset = (char *) jph->jph_simple_offset - (char *) NULL;
     char *retval = (char *) ypc->ypc_obj_stack.top();
+    char *ptr = retval + offset;
+
+    if (jph->jph_optional_wrapper) {
+        nonstd::optional<T> &wrapper = *(nonstd::optional<T> *) ptr;
+
+        wrapper = nonstd::make_optional(T());
+        return wrapper.value();
+    }
 
     return *((T *) (retval + offset));
 }
@@ -307,14 +315,20 @@ void yajlpp_validator_for_double(yajlpp_parse_context &ypc,
     }
 }
 
+template<typename T>
 int yajlpp_static_number(yajlpp_parse_context *ypc, long long num)
 {
-    long long &field_ptr = resolve_root<long long>(ypc);
+    T &field_ptr = resolve_root<T>(ypc);
 
     field_ptr = num;
 
     return 1;
 }
+
+template
+int yajlpp_static_number<long long>(yajlpp_parse_context *ypc, long long num);
+template
+int yajlpp_static_number<short>(yajlpp_parse_context *ypc, long long num);
 
 int yajlpp_static_decimal(yajlpp_parse_context *ypc, double num)
 {

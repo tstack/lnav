@@ -98,6 +98,7 @@ set(diag_STAT_SRCS
     concise_index.hh
     column_namer.hh
     curl_looper.hh
+    default-log-formats-json.hh
     doc_status_source.hh
     elem_to_json.hh
     field_overlay_source.hh
@@ -145,6 +146,7 @@ set(diag_STAT_SRCS
     url_loader.hh
     views_vtab.hh
     vtab_module.hh
+    xterm-palette.hh
 
     mapbox/recursive_wrapper.hpp
     mapbox/variant.hpp

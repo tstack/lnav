@@ -42,6 +42,11 @@ struct string_fragment {
         : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end) {
     };
 
+    string_fragment(const std::string &str)
+        : sf_string(str.c_str()), sf_begin(0), sf_end(str.length()) {
+
+    }
+
     bool is_valid() const {
         return this->sf_begin != -1;
     };
@@ -90,6 +95,10 @@ struct string_fragment {
 
         return buf;
     };
+
+    std::string to_string() const {
+        return std::string(this->data(), this->length());
+    }
 
     void clear() {
         this->sf_begin = 0;

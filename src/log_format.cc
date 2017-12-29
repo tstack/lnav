@@ -1725,10 +1725,42 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
     }
 
-    for (int lpc = 0; lpc < this->elf_highlighter_patterns.size(); lpc++) {
-        const string &pattern = this->elf_highlighter_patterns[lpc];
+    for (auto &hd_pair : this->elf_highlighter_patterns) {
+        external_log_format::highlighter_def &hd = hd_pair.second;
+        const std::string &pattern = hd.hd_pattern;
+        std::string errmsg;
         const char *errptr;
-        int eoff;
+        rgb_color fg, bg;
+        int eoff, attrs = 0;
+
+        if (!hd.hd_color.empty()) {
+            if (!rgb_color::from_str(hd.hd_color, fg, errmsg)) {
+                errors.push_back("error:"
+                                 + this->elf_name.to_string()
+                                 + ":highlighters/"
+                                 + hd_pair.first.to_string()
+                                 + "/color:"
+                                 + errmsg);
+            }
+        }
+
+        if (!hd.hd_background_color.empty()) {
+            if (!rgb_color::from_str(hd.hd_background_color, bg, errmsg)) {
+                errors.push_back("error:"
+                                 + this->elf_name.to_string()
+                                 + ":highlighters/"
+                                 + hd_pair.first.to_string()
+                                 + "/color:"
+                                 + errmsg);
+            }
+        }
+
+        if (hd.hd_underline) {
+            attrs |= A_UNDERLINE;
+        }
+        if (hd.hd_blink) {
+            attrs |= A_BLINK;
+        }
 
         pcre *code = pcre_compile(pattern.c_str(),
                                   0,
@@ -1739,29 +1771,32 @@ void external_log_format::build(std::vector<std::string> &errors) {
         if (code == nullptr) {
             errors.push_back("error:"
                              + this->elf_name.to_string()
-                             + ":highlighters["
-                             + to_string(lpc)
-                             + "]:"
+                             + ":highlighters/"
+                             + hd_pair.first.to_string()
+                             + ":"
                              + string(errptr));
             errors.push_back("error:"
                              + this->elf_name.to_string()
-                             + ":highlighters["
-                             + to_string(lpc)
-                             + "]:"
+                             + ":highlighters/"
+                             + hd_pair.first.to_string()
+                             + ":"
                              + pattern);
             errors.push_back("error:"
                              + this->elf_name.to_string()
-                             + ":highlighters["
-                             + to_string(lpc)
-                             + "]:"
+                             + ":highlighters/"
+                             + hd_pair.first.to_string()
+                             + ":"
                              + string(eoff, ' ')
                              + "^");
         } else {
             this->lf_highlighters.emplace_back(code);
             this->lf_highlighters.back()
                 .with_pattern(pattern)
-                .with_format_name(this->elf_name);
+                .with_format_name(this->elf_name)
+                .with_color(fg, bg)
+                .with_attrs(attrs);
         }
+
     }
 }
 

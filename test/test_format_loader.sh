@@ -42,9 +42,9 @@ error:bad_regex_log.regex[std]:^(?<timestamp>\d+: (?<body>.*)$
 error:bad_regex_log.regex[std]:                               ^
 error:bad_regex_log.level:missing )
 error:bad_regex_log:invalid sample -- 1428634687123; foo
-error:bad_regex_log:highlighters[0]:missing )
-error:bad_regex_log:highlighters[0]:abc(
-error:bad_regex_log:highlighters[0]:    ^
+error:bad_regex_log:highlighters/foobar:missing )
+error:bad_regex_log:highlighters/foobar:abc(
+error:bad_regex_log:highlighters/foobar:    ^
 error:bad_sample_log:invalid sample -- 1428634687123; foo bar
 error:bad_sample_log:partial sample matched -- 1428634687123; foo
 error:  against pattern -- ^(?<timestamp>\d+); (?<body>\w+)$

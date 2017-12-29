@@ -236,6 +236,7 @@ noinst_HEADERS = \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
 	xterm_mouse.hh \
+	xterm-palette.hh \
 	yajlpp.hh \
 	spookyhash/SpookyV2.h \
 	filesystem/fwd.h \
@@ -328,6 +329,7 @@ libdiag_a_SOURCES = \
 	vtab_module.cc \
 	log_vtab_impl.cc \
 	xterm_mouse.cc \
+	xterm-palette.c \
 	yajlpp.cc \
 	spookyhash/SpookyV2.cpp
 
@@ -359,7 +361,8 @@ TEXT2C_FILES = \
 	keymap-default.o \
 	lnav-pop-view.o \
 	partition-by-boot.o \
-	search-for.o
+	search-for.o \
+	xterm-palette.o
 
 lnav_SOURCES = lnav.cc $(HELP_SRC)
 lnav_LDADD = \
@@ -384,7 +387,8 @@ DISTCLEANFILES = \
 	init-sql.c \
 	default-log-formats-json.c \
 	default-config-json.c \
-    time_fmts.cc
+    time_fmts.cc \
+    xterm-palette.c
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

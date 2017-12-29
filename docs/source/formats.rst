@@ -206,8 +206,22 @@ fields:
     :level: The expected error level.  An error will be raised if this level
       does not match the level parsed by lnav for this sample message.
 
-  :highlights: A list of strings that are regular expressions to be highlighted
-    in log messages.
+  :highlights: This object contains the definitions for patterns to be
+      highlighted in a log message.  Each entry should have a name and a
+      definition with the following fields:
+    :pattern: The regular expression to match in the log message body.
+    :color: The foreground color to use when highlighting the part of the
+      message that matched the pattern.  If no color is specified, one will be
+      picked automatically.  Colors can be specified using hexadecimal notation
+      by starting with a hash (e.g. #aabbcc) or using a color name as found
+      at http://jonasjacek.github.io/colors/.
+    :background-color: The background color to use when highlighting the part
+      of the message that matched the pattern.  If no background color is
+      specified, black will be used.  The background color is only considered
+      if a foreground color is specified.
+    :underline: If true, underline the part of the message that matched the
+      pattern.
+    :blink: If true, blink the part of the message that matched the pattern.
 
 Example format::
 
