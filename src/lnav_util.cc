@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 #include <fstream>
 
