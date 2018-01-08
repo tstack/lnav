@@ -703,7 +703,7 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
         dls.push_column(value);
         if (value != NULL &&
             (dls.dls_headers[lpc].hm_name == "log_line" ||
-             dls.dls_headers[lpc].hm_name == "min(log_line)")) {
+             strstr(dls.dls_headers[lpc].hm_name.c_str(), "log_line"))) {
             int line_number = -1;
 
             if (sscanf(value, "%d", &line_number) == 1) {

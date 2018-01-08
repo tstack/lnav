@@ -429,9 +429,9 @@ lnav v0.3.0:
 
      Features:
      * You can now switch between the SQL result view and the log view while
-       keeping the top of the views in sync with the "line_number" column.
+       keeping the top of the views in sync with the "log_line" column.
 
      Fixes:
-     * The "line_number" column is no longer included in the SQL result view's
+     * The "log_line" column is no longer included in the SQL result view's
        stacked bar graph.
      * Added a "warnings" count to the histogram view.
