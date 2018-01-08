@@ -2012,7 +2012,7 @@ static void layout_views()
 
     lnav_data.ld_match_view.set_height(vis_line_t(match_height));
 
-    if (doc_height + 14 > (height - match_height - preview_height - 2)) {
+q    if (doc_height + 14 > ((int) height - match_height - preview_height - 2)) {
         doc_height = 0;
         preview_height = 0;
         preview_status_open = false;
