@@ -1,5 +1,5 @@
 
-VERSION=0.8.2
+VERSION=0.8.3
 
 SRC_VERSION=master
 
@@ -11,15 +11,15 @@ clean-outbox: outbox
 
 PACKAGE_URLS = \
 	https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz \
-	ftp://invisible-island.net/ncurses/ncurses-5.9.tar.gz \
-	ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.40.tar.gz \
+	ftp://ftp.gnu.org/gnu/ncurses//ncurses-5.9.tar.gz \
+	ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.41.tar.gz \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	http://www.zlib.net/zlib-1.2.11.tar.gz \
 	http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz \
-	https://sqlite.org/2017/sqlite-autoconf-3170000.tar.gz \
-	https://www.openssl.org/source/openssl-1.0.2k.tar.gz \
+	https://sqlite.org/2017/sqlite-autoconf-3210000.tar.gz \
+	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.8.0.tar.gz \
-	https://curl.haxx.se/download/curl-7.53.1.tar.gz
+	https://curl.haxx.se/download/curl-7.57.0.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs
 
@@ -66,7 +66,7 @@ release: linux-ospkg osx-package
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
-	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.8.1-1.x86_64.rpm
+	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.8.3-1.x86_64.rpm
 
 clean:
 	cd vagrant-static && vagrant destroy -f
