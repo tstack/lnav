@@ -94,6 +94,8 @@ class generic_log_format : public log_format {
             pcre_format("^(?<timestamp>[\\dTZ: +/\\-,\\.-]+)([^:]+)"),
             pcre_format("^(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)"),
             pcre_format("^(?<timestamp>[\\w:,/\\.-]+) (.*)"),
+            pcre_format("^(?<timestamp>[\\w:,/\\.-]+) - (.*)"),
+            pcre_format("^(?<timestamp>[\\w: \\.,/-]+) - (.*)"),
             pcre_format("^(?<timestamp>[\\w: \\.,/-]+)\\[[^\\]]+\\](.*)"),
             pcre_format("^(?<timestamp>[\\w: \\.,/-]+) (.*)"),
 

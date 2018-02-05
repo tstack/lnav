@@ -508,6 +508,8 @@ public:
         if (lnav_data.ld_log_source.insert_file(lf)) {
             force = true;
 
+            log_info("promoting text file to log file: %s",
+                     lf->get_filename().c_str());
             log_format *format = lf->get_format();
             if (format->lf_is_self_describing) {
                 log_vtab_impl *vt = format->get_vtab_impl();

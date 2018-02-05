@@ -485,34 +485,6 @@ bool next_format(const char * const fmt[], int &index, int &locked_index)
     return retval;
 }
 
-static const char *time_fmt_with_zone = "%a %b %d %H:%M:%S ";
-
-const char *std_time_fmt[] = {
-    "%Y-%m-%d %H:%M:%S",
-    "%Y-%m-%d %H:%M",
-    "%Y-%m-%dT%H:%M:%S",
-    "%Y-%m-%dT%H:%M:%SZ",
-    "%Y/%m/%d %H:%M:%S",
-    "%Y/%m/%d %H:%M",
-
-    "%a %b %d %H:%M:%S %Y",
-    "%a %b %d %H:%M:%S %Z %Y",
-    time_fmt_with_zone,
-
-    "%d/%b/%Y:%H:%M:%S +0000",
-    "%d/%b/%Y:%H:%M:%S %z",
-
-    "%b %d %H:%M:%S",
-
-    "%m/%d/%y %H:%M:%S",
-
-    "%m%d %H:%M:%S",
-
-    "+%s",
-
-    NULL,
-};
-
 const char *date_time_scanner::scan(const char *time_dest,
                                     size_t time_len,
                                     const char * const time_fmt[],
@@ -573,8 +545,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                 tm_out->et_tm.tm_zone = NULL;
             }
 #endif
-            if (func(tm_out, time_dest, off, time_len) &&
-                (time_dest[off] == '.' || time_dest[off] == ',' || off == time_len)) {
+            if (func(tm_out, time_dest, off, time_len)) {
                 retval = &time_dest[off];
 
                 if (tm_out->et_tm.tm_year < 70) {

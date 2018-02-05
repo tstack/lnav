@@ -665,6 +665,10 @@ inline bool ptime_Y(struct exttm *dst, const char *str, off_t &off_inout, ssize_
             (str[off_inout + 2] - '0') *   10 +
             (str[off_inout + 3] - '0') *    1) - 1900;
 
+        if (dst->et_tm.tm_year < 0 || dst->et_tm.tm_year > 1100) {
+            return false;
+        }
+
         dst->et_flags |= ETF_YEAR_SET;
     });
 
