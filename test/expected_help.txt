@@ -1807,6 +1807,19 @@ Parameter
 
 
 Synopsis
+  ATTACH DATABASE filename AS schema-name
+
+  Attach a database file to the current connection.
+Parameters
+  filename      The path to the database file.
+  schema-name   The prefix for tables in this database.
+
+Example
+#1 ;ATTACH DATABASE '/tmp/customers.db' AS customers
+   
+
+
+Synopsis
   CASE [base-expr] WHEN cmp-expr1 THEN then-expr1 [... WHEN cmp-exprN THEN then-exprN]
        [ELSE else-expr]
        END
@@ -1821,6 +1834,18 @@ Parameters
 
 Example
 #1 ;SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END
+   
+
+
+Synopsis
+  DETACH DATABASE schema-name
+
+  Detach a database from the current connection.
+Parameter
+  schema-name   The prefix for tables in this database.
+
+Example
+#1 ;DETACH DATABASE customers
    
 
 

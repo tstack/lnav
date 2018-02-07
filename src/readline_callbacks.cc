@@ -52,7 +52,6 @@ void rl_change(void *dummy, readline_curses *rc)
 
     tc->get_highlights().erase("$preview");
     tc->get_highlights().erase("$bodypreview");
-    tc->reload_data();
     lnav_data.ld_preview_source.clear();
     lnav_data.ld_preview_status_source.get_description().clear();
 

@@ -104,6 +104,18 @@ public:
 
     std::string get_table_statement(void);
 
+    virtual bool is_valid(log_cursor &lc, logfile_sub_source &lss) {
+        content_line_t    cl(lss.at(lc.lc_curr_line));
+        logfile *         lf      = lss.find(cl);
+        logfile::iterator lf_iter = lf->begin() + cl;
+
+        if (lf_iter->is_continued()) {
+            return false;
+        }
+
+        return true;
+    };
+
     virtual bool next(log_cursor &lc, logfile_sub_source &lss) = 0;
 
     virtual void get_columns(std::vector<vtab_column> &cols) const { };

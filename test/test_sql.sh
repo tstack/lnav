@@ -889,6 +889,14 @@ check_output "multiline data is not right?" <<EOF
 ]
 EOF
 
+run_test ${lnav_test} -n \
+    -c ";select log_text from generic_log where log_line = 1" \
+    -c ":write-json-to -" \
+    ${test_dir}/logfile_multiline.0
+
+check_output "able to select a continued line?" <<EOF
+EOF
+
 
 run_test ${lnav_test} -n \
     -c ":create-search-table search_test1 (\w+), world!" \

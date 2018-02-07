@@ -636,6 +636,10 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
         }
     }
 
+    while (!p_cur->log_cursor.is_eof() && !vt->vi->is_valid(p_cur->log_cursor, *vt->lss)) {
+        p_cur->log_cursor.lc_curr_line += vis_line_t(1);
+    }
+
     return SQLITE_OK;
 }
 

@@ -465,6 +465,22 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
     }
 
     static help_text idents[] = {
+        help_text("ATTACH",
+                  "Attach a database file to the current connection.")
+            .sql_keyword()
+            .with_parameter(help_text("filename", "The path to the database file.")
+                                .with_flag_name("DATABASE"))
+            .with_parameter(help_text("schema-name", "The prefix for tables in this database.")
+                                .with_flag_name("AS"))
+            .with_example({"ATTACH DATABASE '/tmp/customers.db' AS customers"}),
+
+        help_text("DETACH",
+                  "Detach a database from the current connection.")
+            .sql_keyword()
+            .with_parameter(help_text("schema-name", "The prefix for tables in this database.")
+                                .with_flag_name("DATABASE"))
+            .with_example({"DETACH DATABASE customers"}),
+
         help_text("SELECT",
                   "Query the database and return zero or more rows of data.")
             .sql_keyword()

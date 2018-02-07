@@ -87,6 +87,18 @@ public:
         values.push_back({this->alv_schema_name, schema_ref, 2});
     }
 
+    bool is_valid(log_cursor &lc, logfile_sub_source &lss) {
+        content_line_t    cl(lss.at(lc.lc_curr_line));
+        logfile *         lf      = lss.find(cl);
+        logfile::iterator lf_iter = lf->begin() + cl;
+
+        if (lf_iter->is_continued()) {
+            return false;
+        }
+
+        return true;
+    };
+
     bool next(log_cursor &lc, logfile_sub_source &lss) {
         lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
         lc.lc_sub_index = 0;
