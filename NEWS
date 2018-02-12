@@ -8,6 +8,15 @@ lnav v0.8.3:
      * Added readlink() and realpath() SQL functions.
      * Highlights specified in log formats can now specify the colors to use
        for the highlighted parts of the log message.
+     * Added a ":quit" command.
+     * Added a "/ui/default-colors" configuration option to specify that the
+       terminal's default background and foreground colors should be used
+       instead of black and white.
+
+     Interface Changes:
+     * Pressing delete at a command-prompt will exit the prompt if there is no
+       other input.
+
      Fixes:
      * The help view now includes all the command-help that would pop up as
        you entered commands and SQL queries.
