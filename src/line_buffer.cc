@@ -303,8 +303,8 @@ throw (error)
 
         available = this->lb_buffer_max - (start - this->lb_file_offset);
         if (max_length > available) {
-            this->resize_buffer(this->lb_buffer_max +
-                                DEFAULT_LINE_BUFFER_SIZE);
+            this->resize_buffer(
+                roundup_size(max_length, DEFAULT_INCREMENT));
         }
     }
 }
@@ -623,6 +623,7 @@ bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
     this->fill_range(offset, len);
     line_start = this->get_range(offset, avail);
 
+    ensure(len <= avail);
     sbr.share(this->lb_share_manager, line_start, len);
 
     return true;
