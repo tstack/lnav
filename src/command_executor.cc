@@ -253,7 +253,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
             !ec.ec_dry_run) {
             auto &vars = ec.ec_local_vars.top();
 
-            for (int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
+            for (unsigned int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
                 const string &column_name = dls.dls_headers[lpc].hm_name;
 
                 if (sql_ident_needs_quote(column_name.c_str())) {
@@ -301,7 +301,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                 if (dls.dls_headers.size() == 1) {
                     retval = row[0];
                 } else {
-                    for (int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
+                    for (unsigned int lpc = 0; lpc < dls.dls_headers.size(); lpc++) {
                         if (lpc > 0) {
                             retval.append("; ");
                         }
