@@ -439,39 +439,28 @@ void rl_callback(void *dummy, readline_curses *rc)
     }
 
     case LNM_EXEC: {
-        char fn_template[PATH_MAX];
-        auto_mem<char> abspath;
-        auto_fd fd;
+        auto_mem<FILE> tmpout(fclose);
 
-        snprintf(fn_template, sizeof(fn_template),
-                 "/%s/lnav-script-out.XXXXXX",
-                 getenv("TMPDIR"));
-        if ((fd = mkstemp(fn_template)) == -1) {
+        tmpout = std::tmpfile();
+
+        if (!tmpout) {
             rc->set_value("Unable to open temporary output file: " + string(strerror(errno)));
         }
-        else if ((abspath = realpath(fn_template, NULL)) == NULL) {
-            rc->set_value("Unable to get real path to temporary file");
-        }
         else {
+            auto_fd fd(fileno(tmpout));
             auto_fd fd_copy((const auto_fd &) fd);
             char desc[256], timestamp[32];
             time_t current_time = time(NULL);
             string path_and_args = rc->get_value();
 
-            {
-                auto_mem<FILE> tmpout(fclose);
-
-                if ((tmpout = fdopen(fd, "w+")) != NULL) {
-                    lnav_data.ld_output_stack.push(tmpout);
-                    string result = execute_file(ec, path_and_args);
-                    string::size_type lf_index = result.find('\n');
-                    if (lf_index != string::npos) {
-                        result = result.substr(0, lf_index);
-                    }
-                    rc->set_value(result);
-                    lnav_data.ld_output_stack.pop();
-                }
-            }
+	    lnav_data.ld_output_stack.push(tmpout);
+	    string result = execute_file(ec, path_and_args);
+	    string::size_type lf_index = result.find('\n');
+	    if (lf_index != string::npos) {
+		result = result.substr(0, lf_index);
+	    }
+	    rc->set_value(result);
+	    lnav_data.ld_output_stack.pop();
 
             struct stat st;
 
@@ -493,8 +482,6 @@ void rl_callback(void *dummy, readline_curses *rc)
                                                             X, "to close the file"));
                 }
             }
-
-            remove(abspath.in());
         }
         break;
     }
