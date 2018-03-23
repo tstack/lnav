@@ -316,7 +316,7 @@ public:
     };
 
     bool operator<=(const struct timeval &rhs) const {
-        return ((this->ll_time <= rhs.tv_sec) ||
+        return ((this->ll_time < rhs.tv_sec) ||
                 ((this->ll_time == rhs.tv_sec) &&
                  (this->ll_millis <= (rhs.tv_usec / 1000))));
     };

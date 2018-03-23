@@ -49,7 +49,8 @@ static struct {
     { "a", pcrepp("\\Aa\\b") },
     { "an", pcrepp("\\Aan\\b") },
     { "at", pcrepp("\\Aat\\b") },
-    { "time", pcrepp("\\A(\\d{1,2}):(\\d{2})(?::(\\d{2}))?") },
+    { "time",
+        pcrepp("\\A(\\d{1,2}):(\\d{2})(?::(\\d{2})(?:\\.(\\d{3,6}))?)?") },
     { "num", pcrepp("\\A((?:-|\\+)?\\d+)") },
     { "us", pcrepp("\\Amicros(?:econds?)?|us(?![a-zA-Z])") },
     { "ms", pcrepp("\\Amillis(?:econds?)?|ms(?![a-zA-Z])") },
@@ -202,12 +203,26 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                     if (pc[2]->is_valid()) {
                         string sstr = pi.get_substr(pc[2]);
                         this->rt_field[RTF_SECONDS] = atoi(sstr.c_str());
+                        if (pc[3]->is_valid()) {
+                            string substr = pi.get_substr(pc[3]);
+
+                            switch (substr.length()) {
+                                case 3:
+                                    this->rt_field[RTF_MICROSECONDS] =
+                                        atoi(substr.c_str()) * 1000;
+                                    break;
+                                case 6:
+                                    this->rt_field[RTF_MICROSECONDS] =
+                                        atoi(substr.c_str());
+                                    break;
+                            }
+                        }
                     }
                     else {
                         this->rt_field[RTF_SECONDS] = 0;
+                        this->rt_field[RTF_MICROSECONDS] = 0;
                     }
                     this->rt_is_absolute[RTF_SECONDS] = true;
-                    this->rt_field[RTF_MICROSECONDS] = 0;
                     this->rt_is_absolute[RTF_MICROSECONDS] = true;
                     break;
                 }

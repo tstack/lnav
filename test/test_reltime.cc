@@ -52,6 +52,7 @@ static struct {
         { "01:40", "0y0m0d1H40M0S0U" },
         { "1h40m", "0y0m0d1h40m0s0u" },
         { "1pm", "0y0m0d13H0M0S0U" },
+        { "00:27:18.567", "0y0m0d0H27M18S567000U" },
 
         { NULL, NULL }
 };
