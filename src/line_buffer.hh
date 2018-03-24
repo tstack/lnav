@@ -231,6 +231,9 @@ private:
 
         require(buffer_offset >= 0);
 
+        // XXX: require(this->lb_buffer_size >= buffer_offset);
+        buffer_offset = std::min(buffer_offset, this->lb_buffer_size);
+
         retval    = &this->lb_buffer[buffer_offset];
         avail_out = this->lb_buffer_size - buffer_offset;
 
