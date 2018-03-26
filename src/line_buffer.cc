@@ -222,23 +222,24 @@ throw (error)
 void line_buffer::resize_buffer(size_t new_max)
 throw (error)
 {
-    char *tmp, *old;
-
     require(this->lb_bz_file || this->lb_gz_file ||
         new_max <= MAX_LINE_BUFFER_SIZE);
 
-    /* Still need more space, try a realloc. */
-    old = this->lb_buffer.release();
-    this->lb_share_manager.invalidate_refs();
-    tmp = (char *)realloc(old, new_max);
-    if (tmp != NULL) {
-        this->lb_buffer     = tmp;
-        this->lb_buffer_max = new_max;
-    }
-    else {
-        this->lb_buffer = old;
+    if  (new_max > this->lb_buffer_max) {
+        char *tmp, *old;
 
-        throw error(ENOMEM);
+        /* Still need more space, try a realloc. */
+        old = this->lb_buffer.release();
+        this->lb_share_manager.invalidate_refs();
+        tmp = (char *) realloc(old, new_max);
+        if (tmp != NULL) {
+            this->lb_buffer = tmp;
+            this->lb_buffer_max = new_max;
+        } else {
+            this->lb_buffer = old;
+
+            throw error(ENOMEM);
+        }
     }
 }
 
@@ -248,6 +249,12 @@ throw (error)
     size_t prefill, available;
 
     require(max_length <= MAX_LINE_BUFFER_SIZE);
+
+    if (this->lb_file_size != -1) {
+        if (start + max_length > this->lb_file_size) {
+            max_length = (this->lb_file_size - start);
+        }
+    }
 
     /*
      * Check to see if the start is inside the cached range or immediately

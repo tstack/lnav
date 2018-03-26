@@ -230,6 +230,7 @@ private:
         char *retval;
 
         require(buffer_offset >= 0);
+        require(this->lb_buffer_size >= buffer_offset);
 
         retval    = &this->lb_buffer[buffer_offset];
         avail_out = this->lb_buffer_size - buffer_offset;
