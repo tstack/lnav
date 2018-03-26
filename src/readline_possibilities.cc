@@ -243,11 +243,13 @@ void add_filter_possibilities(textview_curses *tc)
     text_sub_source *tss = tc->get_sub_source();
     filter_stack &fs = tss->get_filters();
 
+    rc->clear_possibilities(LNM_COMMAND, "all-filters");
     rc->clear_possibilities(LNM_COMMAND, "disabled-filter");
     rc->clear_possibilities(LNM_COMMAND, "enabled-filter");
     for (auto iter = fs.begin(); iter != fs.end(); ++iter) {
         shared_ptr<text_filter> tf = *iter;
 
+        rc->add_possibility(LNM_COMMAND, "all-filters", tf->get_id());
         if (tf->is_enabled()) {
             rc->add_possibility(LNM_COMMAND, "enabled-filter", tf->get_id());
         }

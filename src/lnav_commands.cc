@@ -1105,7 +1105,7 @@ static string com_delete_filter(exec_context &ec, string cmdline, vector<string>
     string retval = "error: expecting a filter to delete";
 
     if (args.size() == 0) {
-        args.push_back("filter");
+        args.push_back("all-filters");
     }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -3386,7 +3386,7 @@ readline_context::command_t STD_COMMANDS[] = {
         "delete-filter",
         com_delete_filter,
 
-        help_text(":filter-out")
+        help_text(":delete-filter")
             .with_summary("Delete the filter created with "
                               ANSI_BOLD(":filter-in") " or " ANSI_BOLD(":filter-out"))
             .with_parameter(help_text("pattern", "The regular expression to match"))
