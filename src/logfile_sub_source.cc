@@ -192,11 +192,18 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         }
     }
 
-    if (this->lss_flags & F_FILENAME) {
-        auto file_offset_end = this->lss_basename_width + 1;
-        auto const & basename = this->lss_token_file->get_basename();
-        value_out.insert(0, file_offset_end - basename.size(), ' ');
-        value_out.insert(0, basename);
+    if (this->lss_flags & F_FILENAME || this->lss_flags & F_BASENAME) {
+        size_t file_offset_end;
+        std::string name;
+        if (this->lss_flags & F_FILENAME) {
+            file_offset_end = this->lss_filename_width;
+            name = this->lss_token_file->get_filename();
+        } else {
+            file_offset_end = this->lss_basename_width;
+            name = this->lss_token_file->get_basename();
+        }
+        value_out.insert(0, file_offset_end - name.size() + 1, ' ');
+        value_out.insert(0, name);
     } else {
         // Insert space for the file/search-hit markers.
         value_out.insert(0, 1, ' ');
@@ -339,16 +346,21 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         }
     }
 
-    if (this->lss_flags & F_FILENAME) {
-        auto file_offset_end = this->lss_basename_width;
-
-        shift_string_attrs(value_out, 0, file_offset_end );
-        lr.lr_start = 0;
-        lr.lr_end   = file_offset_end + 1;
-    }
-
     value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
         this->lss_token_file->get_filename())));
+
+    if (this->lss_flags & F_FILENAME || this->lss_flags & F_BASENAME) {
+        size_t file_offset_end = (this->lss_flags & F_FILENAME) ?
+                                    this->lss_filename_width :
+                                    this->lss_basename_width ;
+
+        shift_string_attrs(value_out, 0, file_offset_end);
+
+        lr.lr_start = 0;
+        lr.lr_end   = file_offset_end + 1;
+        value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
+            this->lss_token_file->get_filename())));
+    }
 
     if (this->lss_flags & F_TIME_OFFSET) {
         time_offset_end = 13;
@@ -485,6 +497,7 @@ bool logfile_sub_source::rebuild_index(bool force)
         this->lss_filtered_index.clear();
         this->lss_longest_line = 0;
         this->lss_basename_width = 0;
+        this->lss_filename_width = 0;
     }
 
     if (retval || force) {
@@ -501,6 +514,8 @@ bool logfile_sub_source::rebuild_index(bool force)
                 this->lss_longest_line, lf->get_longest_line_length());
             this->lss_basename_width = std::max(
                 this->lss_basename_width, lf->get_basename().size());;
+            this->lss_filename_width = std::max(
+                this->lss_filename_width, lf->get_filename().size());;
         }
 
         if (full_sort) {

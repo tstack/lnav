@@ -98,7 +98,17 @@ public:
     };
 
     void toggle_filename(void) {
-        this->lss_flags ^= F_FILENAME;
+        // NONE -> F_BASENAME -> F_FILENAME -> NONE ...
+        if (this->lss_flags & F_BASENAME) {
+            // F_BASENAME -> F_FILENAME
+            this->lss_flags ^= F_BASENAME | F_FILENAME;
+        } else if (this->lss_flags & F_FILENAME) {
+            // F_FILENAME -> NONE
+            this->lss_flags ^= F_FILENAME;
+        } else {
+            // NONE -> F_BASENAME
+            this->lss_flags ^= F_BASENAME;
+        }
         this->clear_line_size_cache();
     };
 
@@ -116,6 +126,10 @@ public:
 
     bool is_filename_enabled(void) const {
         return (bool) (this->lss_flags & F_FILENAME);
+    };
+
+    bool is_basename_enabled(void) const {
+        return (bool) (this->lss_flags & F_BASENAME);
     };
 
     logline::level_t get_min_log_level(void) const {
@@ -501,12 +515,14 @@ private:
         B_SCRUB,
         B_TIME_OFFSET,
         B_FILENAME,
+        B_BASENAME,
     };
 
     enum {
         F_SCRUB       = (1L << B_SCRUB),
         F_TIME_OFFSET = (1L << B_TIME_OFFSET),
         F_FILENAME    = (1L << B_FILENAME),
+        F_BASENAME    = (1L << B_BASENAME),
     };
 
     struct __attribute__((__packed__)) indexed_content {
@@ -626,6 +642,7 @@ private:
     };
 
     size_t                    lss_basename_width = 0;
+    size_t                    lss_filename_width = 0;
     unsigned long             lss_flags;
     bool lss_force_rebuild;
     std::vector<logfile_data *> lss_files;
