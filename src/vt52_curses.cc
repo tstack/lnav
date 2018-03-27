@@ -122,11 +122,14 @@ private:
         this->vem_map[KEY_RIGHT]     = tgetstr((char *)"kr", &area);
         this->vem_map[KEY_LEFT]      = tgetstr((char *)"kl", &area);
         this->vem_map[KEY_HOME]      = tgetstr((char *)"kh", &area);
+        if (this->vem_map[KEY_HOME] == NULL) {
+            this->vem_map[KEY_HOME] = "\x01";
+        }
         this->vem_map[KEY_BACKSPACE] = "\010";
-        this->vem_map[KEY_DC]        = "\x4";
+        this->vem_map[KEY_DC]        = "\x04";
 
-        this->vem_map[KEY_BEG] = "\x1";
-        this->vem_map[KEY_END] = "\x5";
+        this->vem_map[KEY_BEG] = "\x01";
+        this->vem_map[KEY_END] = "\x05";
 
         this->vem_map[KEY_SLEFT] = tgetstr((char *)"#4", &area);
         if (this->vem_map[KEY_SLEFT] == NULL) {
