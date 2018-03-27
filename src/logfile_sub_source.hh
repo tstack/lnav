@@ -625,6 +625,7 @@ private:
             ll <= this->lss_max_log_time);
     };
 
+    size_t                    lss_basename_width = 0;
     unsigned long             lss_flags;
     bool lss_force_rebuild;
     std::vector<logfile_data *> lss_files;
