@@ -227,6 +227,11 @@ public:
         return &this->pi_string[iter->c_begin];
     };
 
+    size_t get_substr_len(pcre_context::const_iterator iter) const
+    {
+        return iter->length();
+    };
+
     std::string get_substr(pcre_context::const_iterator iter) const
     {
         if (iter->c_begin == -1) {
