@@ -295,6 +295,9 @@ Display options
                     means it has sped up.  You can use the "s/S" hotkeys to
                     scan through the slow downs.
 
+  .                 In the log view, toggle the display of filenames showing
+                    where each log line comes from.
+
   i                 View/leave a histogram of the log messages over
                     time.  The histogram counts the number of
                     displayed log lines for each bucket of time.  The

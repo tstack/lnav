@@ -16,6 +16,7 @@
 #include <sstream>
 #include <cctype>
 #include <cstdlib>
+#include <cstdio>
 #include <cerrno>
 #include <cstring>
 
