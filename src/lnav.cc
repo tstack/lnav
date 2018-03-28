@@ -1836,33 +1836,6 @@ static void handle_key(int ch) {
     if (lnav_data.ld_mode == LNM_PAGING) {
         if (!lnav_data.ld_view_stack.empty()) {
             textview_curses *tc = lnav_data.ld_view_stack.back();
-            logfile_sub_source *lss = NULL;
-
-            lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
-
-            if (lss != nullptr) {
-                switch (ch) {
-                    case 'h':
-                    case 'H':
-                    case KEY_SLEFT:
-                    case KEY_LEFT:
-                        if (tc->get_left() == 0) {
-                            lss->increase_line_context();
-                            tc->set_needs_update();
-                            return;
-                        }
-                        break;
-                    case 'l':
-                    case 'L':
-                    case KEY_SRIGHT:
-                    case KEY_RIGHT:
-                        if (lss->decrease_line_context()) {
-                            tc->set_needs_update();
-                            return;
-                        }
-                        break;
-                }
-            }
 
             if (tc->handle_key(ch)) {
                 return;
@@ -3294,6 +3267,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)
         .set_delegate(new action_delegate(lnav_data.ld_log_source))
+        .add_input_delegate(lnav_data.ld_log_source)
         .set_tail_space(vis_line_t(2))
         .set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
     lnav_data.ld_views[LNV_TEXT]

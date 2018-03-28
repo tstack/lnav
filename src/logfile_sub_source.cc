@@ -751,3 +751,29 @@ void logfile_sub_source::text_filters_changed()
         this->lss_index_delegate->index_complete(*this);
     }
 }
+
+bool logfile_sub_source::list_input_handle_key(listview_curses &lv, int ch)
+{
+    switch (ch) {
+        case 'h':
+        case 'H':
+        case KEY_SLEFT:
+        case KEY_LEFT:
+            if (lv.get_left() == 0) {
+                this->increase_line_context();
+                lv.set_needs_update();
+                return true;
+            }
+            break;
+        case 'l':
+        case 'L':
+        case KEY_SRIGHT:
+        case KEY_RIGHT:
+            if (this->decrease_line_context()) {
+                lv.set_needs_update();
+                return true;
+            }
+            break;
+    }
+    return false;
+}

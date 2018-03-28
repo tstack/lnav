@@ -75,7 +75,9 @@ public:
  * source of data for a text view.
  */
 class logfile_sub_source
-    : public text_sub_source, public text_time_translator {
+    : public text_sub_source,
+      public text_time_translator,
+      public list_input_delegate {
 public:
 
     static bookmark_type_t BM_ERRORS;
@@ -194,6 +196,8 @@ public:
         this->lss_max_log_time.tv_usec = 0;
         this->lss_force_rebuild = true;
     };
+
+    bool list_input_handle_key(listview_curses &lv, int ch);
 
     size_t text_line_count()
     {
