@@ -127,7 +127,7 @@ public:
      * constructor should open the file specified by 'filename'.  The
      * descriptor needs to be seekable.
      */
-    logfile(const std::string &filename, logfile_open_options &loo) throw (error);
+    logfile(const std::string &filename, logfile_open_options &loo);
 
     virtual ~logfile();
 
@@ -359,8 +359,7 @@ public:
      * indexing.
      * @return True if any new lines were indexed.
      */
-    rebuild_result_t rebuild_index()
-        throw (line_buffer::error, logfile::error);
+    rebuild_result_t rebuild_index();
 
     void reobserve_from(iterator iter);
 

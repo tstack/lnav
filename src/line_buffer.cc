@@ -139,7 +139,6 @@ line_buffer::~line_buffer()
 }
 
 void line_buffer::set_fd(auto_fd &fd)
-throw (error)
 {
     off_t newoff = 0;
 
@@ -220,7 +219,6 @@ throw (error)
 }
 
 void line_buffer::resize_buffer(size_t new_max)
-throw (error)
 {
     require(this->lb_bz_file || this->lb_gz_file ||
         new_max <= MAX_LINE_BUFFER_SIZE);
@@ -244,7 +242,6 @@ throw (error)
 }
 
 void line_buffer::ensure_available(off_t start, size_t max_length)
-throw (error)
 {
     size_t prefill, available;
 
@@ -317,7 +314,6 @@ throw (error)
 }
 
 bool line_buffer::fill_range(off_t start, size_t max_length)
-throw (error)
 {
     bool retval = false;
 
@@ -484,7 +480,6 @@ throw (error)
 }
 
 bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
-throw (error)
 {
     size_t request_size = DEFAULT_INCREMENT;
     bool retval = false;
@@ -592,7 +587,6 @@ throw (error)
 }
 
 bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_value *lv)
-    throw (error)
 {
     line_value lv_tmp;
     bool retval;
@@ -612,7 +606,6 @@ bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_va
 }
 
 bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
-    throw (error)
 {
     char *line_start;
     size_t avail;
@@ -636,7 +629,7 @@ bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
     return true;
 }
 
-void line_buffer::read_available(shared_buffer_ref &sbr) throw(error)
+void line_buffer::read_available(shared_buffer_ref &sbr)
 {
     sbr.disown();
 

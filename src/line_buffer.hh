@@ -82,7 +82,7 @@ public:
     virtual ~line_buffer();
 
     /** @param fd The file descriptor that data should be pulled from. */
-    void set_fd(auto_fd &fd) throw (error);
+    void set_fd(auto_fd &fd);
 
     /** @return The file descriptor that data should be pulled from. */
     int get_fd() const { return this->lb_fd; };
@@ -140,16 +140,13 @@ public:
      * line to refresh the buffer.
      */
     bool read_line(off_t &offset_inout, line_value &lv,
-        bool include_delim = false)
-        throw (error);
+        bool include_delim = false);
 
-    bool read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_value *lv = NULL)
-        throw (error);
+    bool read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_value *lv = NULL);
 
-    bool read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
-        throw (error);
+    bool read_range(off_t offset, size_t len, shared_buffer_ref &sbr);
 
-    void read_available(shared_buffer_ref &sbr) throw(error);
+    void read_available(shared_buffer_ref &sbr);
 
     void clear()
     {
@@ -188,7 +185,7 @@ private:
                off < (int)(this->lb_file_offset + this->lb_buffer_size);
     };
 
-    void resize_buffer(size_t new_max) throw (error);
+    void resize_buffer(size_t new_max);
 
     /**
      * Ensure there is enough room in the buffer to cache a range of data from
@@ -202,7 +199,7 @@ private:
      * @param start The file offset of the start of the line.
      * @param max_length The amount of data to be cached in the buffer.
      */
-    void ensure_available(off_t start, size_t max_length) throw (error);
+    void ensure_available(off_t start, size_t max_length);
 
     /**
      * Fill the buffer with the given range of data from the file.
@@ -212,7 +209,7 @@ private:
      * @param max_length The maximum amount of data to read from the file.
      * @return True if any data was read from the file.
      */
-    bool fill_range(off_t start, size_t max_length) throw (error);
+    bool fill_range(off_t start, size_t max_length);
 
     /**
      * After a successful fill, the cached data can be retrieved with this
