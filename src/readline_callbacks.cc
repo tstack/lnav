@@ -502,7 +502,9 @@ void rl_display_matches(void *dummy, readline_curses *rc)
 {
     const std::vector<std::string> &matches = rc->get_matches();
     textview_curses &tc = lnav_data.ld_match_view;
-    unsigned long width, height;
+    unsigned long width;
+    __attribute((unused))
+    unsigned long height;
     int max_len, cols, rows;
 
     getmaxyx(lnav_data.ld_window, height, width);

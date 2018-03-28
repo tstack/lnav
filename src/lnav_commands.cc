@@ -156,7 +156,7 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
                 char buffer[1024];
 
                 snprintf(buffer, sizeof(buffer),
-                         "info: log timestamps will be adjusted by %ld.%06d seconds",
+                         "info: log timestamps will be adjusted by %ld.%06ld seconds",
                          time_diff.tv_sec, time_diff.tv_usec);
 
                 retval = buffer;

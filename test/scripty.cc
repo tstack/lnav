@@ -517,7 +517,7 @@ int main(int argc, char *argv[])
 	else {
 	    int maxfd, out_len = 0;
 	    bool got_expected = true;
-	    bool got_user_step;
+	    bool got_user_step = false;
 	    struct timeval last, now;
 	    char out_buffer[8192];
 	    fd_set read_fds;

@@ -27,8 +27,9 @@ int main(int argc, char *argv[])
     FILE *file = fopen(argv[1], "r");
     int row = 0;
     while (!feof(file)) {
-        fgets(buf, sizeof(buf), file);
-        mvwaddstr(stdscr, row++, 0, buf);
+        if (0 < fgets(buf, sizeof(buf), file)) {
+            mvwaddstr(stdscr, row++, 0, buf);
+        }
     }
     getch();
     endwin();

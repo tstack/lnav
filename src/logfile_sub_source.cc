@@ -324,7 +324,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         chtype graph = ACS_VLINE;
         if (is_first_for_file) {
             if (is_last_for_file) {
-                graph = ACS_DIAMOND;
+                graph = ACS_HLINE;
             }
             else {
                 graph = ACS_ULCORNER;
@@ -472,6 +472,9 @@ bool logfile_sub_source::rebuild_index(bool force)
             logfile &lf = *ld.get_file();
 
             switch (lf.rebuild_index()) {
+                case logfile::RR_NO_NEW_LINES:
+                    // No changes
+                    break;
                 case logfile::RR_NEW_LINES:
                     retval = true;
                     if (!this->lss_index.empty()) {

@@ -849,6 +849,7 @@ string log_vtab_manager::unregister_vtab(intern_string_t name)
     }
     else {
         auto_mem<char> sql(sqlite3_free);
+        __attribute((unused))
         int   rc;
 
         sql = sqlite3_mprintf("DROP TABLE %s ", name.get());
