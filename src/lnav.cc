@@ -1836,6 +1836,33 @@ static void handle_key(int ch) {
     if (lnav_data.ld_mode == LNM_PAGING) {
         if (!lnav_data.ld_view_stack.empty()) {
             textview_curses *tc = lnav_data.ld_view_stack.back();
+            logfile_sub_source *lss = NULL;
+
+            lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
+
+            if (lss != nullptr) {
+                switch (ch) {
+                    case 'h':
+                    case 'H':
+                    case KEY_SLEFT:
+                    case KEY_LEFT:
+                        if (tc->get_left() == 0) {
+                            lss->increase_line_context();
+                            tc->set_needs_update();
+                            return;
+                        }
+                        break;
+                    case 'l':
+                    case 'L':
+                    case KEY_SRIGHT:
+                    case KEY_RIGHT:
+                        if (lss->decrease_line_context()) {
+                            tc->set_needs_update();
+                            return;
+                        }
+                        break;
+                }
+            }
 
             if (tc->handle_key(ch)) {
                 return;

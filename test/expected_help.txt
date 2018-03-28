@@ -119,8 +119,10 @@ the file where warnings or errors are detected by coloring the bar
 yellow or red, respectively.  Tick marks will also be added to the
 left and right hand side of the bar, for search hits and bookmarks.
 
-When multiple files are open, a bar on the left side is color coded and
-broken up to indicate which messages are from the same file.
+A bar on the left side is color coded and broken up to indicate which
+messages are from the same file.  Pressing the left-arrow or 'h' will
+reveal the source file names for each message and pressing again will
+show the full paths.
 
 When at the bottom of the log view, a summary line will be displayed on the
 right-hand-side to give you some more information about your logs, including:
@@ -190,7 +192,9 @@ Spatial Navigation
   b/bs/pgup         Move up a page.
   j/cr/down-arrow   Move down a line.
   k/up-arrow        Move up a line.
-  h/left-arrow      Move to the left.
+  h/left-arrow      Move to the left.  In the log view, moving left will reveal
+                    the source log file names for each line.  Pressing again
+                    will reveal the full path.
   l/right-arrow     Move to the right.
   H/Shift+left      Move to the left by a smaller increment.
   L/Shift+right     Move to the right by a smaller increment.
@@ -294,9 +298,6 @@ Display options
                     highlight means the message rate has slowed down and green
                     means it has sped up.  You can use the "s/S" hotkeys to
                     scan through the slow downs.
-
-  .                 In the log view, toggle the display of filenames showing
-                    where each log line comes from.
 
   i                 View/leave a histogram of the log messages over
                     time.  The histogram counts the number of

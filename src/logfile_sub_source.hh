@@ -97,19 +97,38 @@ public:
         this->clear_line_size_cache();
     };
 
-    void toggle_filename(void) {
-        // NONE -> F_BASENAME -> F_FILENAME -> NONE ...
-        if (this->lss_flags & F_BASENAME) {
-            // F_BASENAME -> F_FILENAME
-            this->lss_flags ^= F_BASENAME | F_FILENAME;
-        } else if (this->lss_flags & F_FILENAME) {
-            // F_FILENAME -> NONE
-            this->lss_flags ^= F_FILENAME;
+    void increase_line_context(void) {
+        long old_flags = this->lss_flags;
+
+        if (this->lss_flags & F_FILENAME) {
+            // Nothing to do
+        } else if (this->lss_flags & F_BASENAME) {
+            this->lss_flags &= ~F_NAME_MASK;
+            this->lss_flags |= F_FILENAME;
         } else {
-            // NONE -> F_BASENAME
-            this->lss_flags ^= F_BASENAME;
+            this->lss_flags |= F_BASENAME;
         }
-        this->clear_line_size_cache();
+        if (old_flags != this->lss_flags) {
+            this->clear_line_size_cache();
+        }
+    };
+
+    bool decrease_line_context(void) {
+        long old_flags = this->lss_flags;
+
+        if (this->lss_flags & F_FILENAME) {
+            this->lss_flags &= ~F_NAME_MASK;
+            this->lss_flags |= F_BASENAME;
+        } else if (this->lss_flags & F_BASENAME) {
+            this->lss_flags &= ~F_NAME_MASK;
+        }
+        if (old_flags != this->lss_flags) {
+            this->clear_line_size_cache();
+
+            return true;
+        }
+
+        return false;
     };
 
     void set_time_offset(bool enabled) {
@@ -523,6 +542,8 @@ private:
         F_TIME_OFFSET = (1L << B_TIME_OFFSET),
         F_FILENAME    = (1L << B_FILENAME),
         F_BASENAME    = (1L << B_BASENAME),
+
+        F_NAME_MASK   = (F_FILENAME | F_BASENAME),
     };
 
     struct __attribute__((__packed__)) indexed_content {

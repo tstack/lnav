@@ -70,7 +70,9 @@ Spatial Navigation
    * - |ks| h |ke|
      - |ks| ← |ke|
      -
-     - Left half a page
+     - Left half a page.  In the log view, pressing left while at the start of
+       the message text will reveal the source file name for each line.
+       Pressing again will reveal the full path.
    * - |ks| Shift |ke| + |ks| h |ke|
      - |ks| Shift |ke| + |ks| ← |ke|
      -
@@ -209,8 +211,6 @@ Display
        log_line column
    * - |ks| p |ke|
      - Toggle the display of the log parser results
-   * - |ks| . |ke|
-     - Toggle the display of the log file names
    * - |ks| Tab |ke|
      - Cycle through colums to graph in the SQL result view
    * - |ks| Ctrl |ke| + |ks| l |ke|

@@ -1,4 +1,15 @@
 
+lnav v0.8.4:
+     Features:
+     * Pressing left-arrow while viewing log messages will reveal the source
+       file name for each line.  Pressing again will reveal the full path.
+
+     Fixes:
+     * The HOME key should now work in the command-prompt and move the cursor
+       to the beginning of the line.
+     * The :delete-filter command should now tab-complete existing filters.
+     * Milliseconds can now be used in relative times (e.g. 10:00:00.123)
+
 lnav v0.8.3:
      Features:
      * Support for the Bro Network Security Monitor (https://www.bro.org) log
