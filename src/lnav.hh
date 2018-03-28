@@ -346,10 +346,10 @@ bool rescan_files(bool required = false);
 void wait_for_children();
 
 vis_line_t next_cluster(
-        vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
+        vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
         bookmark_type_t *bt,
         vis_line_t top);
-bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
+bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
                     bookmark_type_t *bt,
                     vis_line_t top);
 void previous_cluster(bookmark_type_t *bt, textview_curses *tc);

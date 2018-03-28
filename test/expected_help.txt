@@ -366,7 +366,9 @@ Query
   /<regexp>         Start a search for the given regular expression.
                     The search is live, so when there is a pause in
                     typing, the currently running search will be
-                    canceled and a new one started.  History is
+                    canceled and a new one started.  The first ten lines
+                    that match the search will be displayed in the preview
+                    window at the bottom of the view.  History is
                     maintained for your searches so you can rerun them
                     easily.  Words that are currently displayed are also
                     available for tab-completion, so you can easily

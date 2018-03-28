@@ -92,7 +92,7 @@ public:
      * the next bookmark is returned.  If the 'start' value is not a
      * bookmark, the next highest value in the vector is returned.
      */
-    LineType next(LineType start);
+    LineType next(LineType start) const;
 
     /**
      * @param start The value to start the search for the previous
@@ -101,7 +101,7 @@ public:
      * are no more prior bookmarks.
      * @see next
      */
-    LineType prev(LineType start);
+    LineType prev(LineType start) const;
 };
 
 /**

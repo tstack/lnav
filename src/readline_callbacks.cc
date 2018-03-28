@@ -348,7 +348,7 @@ void rl_search(void *dummy, readline_curses *rc)
     textview_curses *tc = lnav_data.ld_view_stack.back();
 
     rl_search_internal(dummy, rc);
-    tc->set_follow_search_for(60 * 60 * 1000);
+    tc->set_follow_search_for(0);
 }
 
 void rl_abort(void *dummy, readline_curses *rc)
@@ -408,12 +408,20 @@ void rl_callback(void *dummy, readline_curses *rc)
         rl_search_internal(dummy, rc, true);
         if (rc->get_value().size() > 0) {
             auto_mem<FILE> pfile(pclose);
+            textview_curses *tc = lnav_data.ld_view_stack.back();
+            vis_bookmarks &bm = tc->get_bookmarks();
+            const auto &bv = bm[&textview_curses::BM_SEARCH];
+            vis_line_t vl = bv.next(tc->get_top());
 
             pfile = open_clipboard(CT_FIND);
             if (pfile.in() != NULL) {
                 fprintf(pfile, "%s", rc->get_value().c_str());
             }
-            lnav_data.ld_view_stack.back()->set_follow_search_for(750);
+            if (vl != -1_vl) {
+                tc->set_top(vl);
+            } else {
+                tc->set_follow_search_for(750);
+            }
             rc->set_value("search: " + rc->get_value());
             rc->set_alt_value(HELP_MSG_2(
                                   n, N,
@@ -531,7 +539,7 @@ void rl_display_next(void *dummy, readline_curses *rc)
     textview_curses &tc = lnav_data.ld_match_view;
 
     if (tc.get_top() >= (tc.get_top_for_last_row() - 1)) {
-        tc.set_top(vis_line_t(0));
+        tc.set_top(0_vl);
     }
     else {
         tc.shift_top(tc.get_height());

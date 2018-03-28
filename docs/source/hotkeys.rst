@@ -247,7 +247,7 @@ Query
    * - Keypress
      - Command
    * - |ks| / |ke|
-     - Search for a regular expression
+     - Search for lines matching a regular expression
    * - |ks| ; |ke|
      - Execute an SQL query
    * - |ks| : |ke|

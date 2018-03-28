@@ -70,12 +70,11 @@ listview_curses::~listview_curses()
 void listview_curses::reload_data(void)
 {
     if (this->lv_source == NULL) {
-        this->lv_top  = vis_line_t(0);
+        this->lv_top  = 0_vl;
         this->lv_left = 0;
     }
     else if (this->lv_top >= this->get_inner_height()) {
-        this->lv_top = max(vis_line_t(0),
-                           vis_line_t(this->get_inner_height() - 1));
+        this->lv_top = max(0_vl, vis_line_t(this->get_inner_height() - 1));
     }
     this->lv_needs_update = true;
 }
@@ -118,28 +117,28 @@ bool listview_curses::handle_key(int ch)
     case '\r':
     case 'j':
     case KEY_DOWN:
-        this->shift_top(vis_line_t(1));
+        this->shift_top(1_vl);
         break;
 
     case 'k':
     case KEY_UP:
-        this->shift_top(vis_line_t(-1));
+        this->shift_top(-1_vl);
         break;
 
     case 'b':
     case KEY_BACKSPACE:
     case KEY_PPAGE:
-        this->shift_top(-(this->rows_available(this->lv_top, RD_UP) - vis_line_t(1)));
+        this->shift_top(-(this->rows_available(this->lv_top, RD_UP) - 1_vl));
         break;
 
     case ' ':
     case KEY_NPAGE:
-        this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - vis_line_t(1));
+        this->shift_top(this->rows_available(this->lv_top, RD_DOWN) - 1_vl);
         break;
 
     case 'g':
     case KEY_HOME:
-        this->set_top(vis_line_t(0));
+        this->set_top(0_vl);
         break;
 
     case 'G':

@@ -36,16 +36,14 @@
 using namespace std;
 
 template<typename LineType>
-LineType bookmark_vector<LineType>::next(LineType start)
+LineType bookmark_vector<LineType>::next(LineType start) const
 {
-    typename bookmark_vector::iterator ub;
-
     LineType retval(-1);
 
     require(start >= -1);
 
-    ub = upper_bound(this->begin(), this->end(), start);
-    if (ub != this->end()) {
+    auto ub = upper_bound(this->cbegin(), this->cend(), start);
+    if (ub != this->cend()) {
         retval = *ub;
     }
 
@@ -55,16 +53,14 @@ LineType bookmark_vector<LineType>::next(LineType start)
 }
 
 template<typename LineType>
-LineType bookmark_vector<LineType>::prev(LineType start)
+LineType bookmark_vector<LineType>::prev(LineType start) const
 {
-    typename bookmark_vector::iterator lb;
-
     LineType retval(-1);
 
     require(start >= 0);
 
-    lb = lower_bound(this->begin(), this->end(), start);
-    if (lb != this->begin()) {
+    auto lb = lower_bound(this->cbegin(), this->cend(), start);
+    if (lb != this->cbegin()) {
         lb    -= 1;
         retval = *lb;
     }

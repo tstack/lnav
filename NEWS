@@ -4,6 +4,11 @@ lnav v0.8.4:
      * Pressing left-arrow while viewing log messages will reveal the source
        file name for each line.  Pressing again will reveal the full path.
 
+     Interface Changes:
+     * When typing in a search, instead of moving the view to the first match
+       that was found, the first ten matches will be displayed in the preview
+       window.
+
      Fixes:
      * The HOME key should now work in the command-prompt and move the cursor
        to the beginning of the line.

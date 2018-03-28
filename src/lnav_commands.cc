@@ -632,7 +632,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
     else if (args[0] == "write-cols-to") {
         attr_line_t header_line;
 
-        dos.list_value_for_overlay(lnav_data.ld_views[LNV_DB], vis_line_t(0), header_line);
+        dos.list_value_for_overlay(lnav_data.ld_views[LNV_DB], 0_vl, header_line);
         fputs(header_line.get_string().c_str(), outfile);
         fputc('\n', outfile);
         for (size_t lpc = 0; lpc < dls.text_line_count(); lpc++) {
@@ -2883,7 +2883,7 @@ public:
         }
 
         if (this->lsvs_begin_time) {
-            time_t filtered_begin_time = lss.find_line(lss.at(vis_line_t(0)))->get_time();
+            time_t filtered_begin_time = lss.find_line(lss.at(0_vl))->get_time();
             time_t filtered_end_time = lss.find_line(lss.at(vis_line_t(lss.text_line_count() - 1)))->get_time();
 
             if (filtered_begin_time > this->lsvs_begin_time) {
@@ -2919,7 +2919,7 @@ public:
         string_attrs_t sa;
 
         if (begin_line == -1) {
-            begin_line = vis_line_t(0);
+            begin_line = 0_vl;
         }
         if (end_line == -1) {
             end_line = vis_line_t(lss.text_line_count());
@@ -2972,7 +2972,7 @@ public:
         string_attrs_t sa;
 
         if (begin_line == -1) {
-            begin_line = vis_line_t(0);
+            begin_line = 0_vl;
         }
         if (end_line == -1) {
             end_line = vis_line_t(lss.text_line_count());

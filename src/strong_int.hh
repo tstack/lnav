@@ -44,7 +44,7 @@
 template<typename T, class DISTINCT>
 class strong_int {
 public:
-    explicit strong_int(T v = 0) : value(v) { };
+    explicit constexpr strong_int(T v = 0) : value(v) { };
     operator const T &() const { return this->value; };
     strong_int operator+(const strong_int &rhs)
     {

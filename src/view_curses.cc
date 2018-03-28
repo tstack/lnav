@@ -326,6 +326,10 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
 
 attr_line_t attr_line_t::subline(size_t start, size_t len) const
 {
+    if (len == std::string::npos) {
+        len = this->length();
+    }
+
     line_range lr{(int) start, (int) (start + len)};
     attr_line_t retval;
 

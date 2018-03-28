@@ -1030,7 +1030,7 @@ bool ensure_view(textview_curses *expected_tc)
 }
 
 vis_line_t next_cluster(
-    vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
+    vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
     bookmark_type_t *bt,
     const vis_line_t top)
 {
@@ -1075,7 +1075,7 @@ vis_line_t next_cluster(
     return vis_line_t(-1);
 }
 
-bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t),
+bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
                     bookmark_type_t *bt,
                     vis_line_t top)
 {
@@ -1900,6 +1900,57 @@ void update_hits(void *dummy, textview_curses *tc)
     if (!lnav_data.ld_view_stack.empty() &&
         tc == lnav_data.ld_view_stack.back()) {
         lnav_data.ld_bottom_source.update_hits(tc);
+
+        if (lnav_data.ld_mode == LNM_SEARCH) {
+            const int MAX_MATCH_COUNT = 10;
+            const vis_line_t PREVIEW_SIZE = vis_line_t(MAX_MATCH_COUNT + 1);
+
+            int preview_count = 0;
+
+            vis_bookmarks &bm = tc->get_bookmarks();
+            const auto &bv = bm[&textview_curses::BM_SEARCH];
+            vis_line_t vl = tc->get_top();
+            unsigned long width;
+            vis_line_t height;
+            attr_line_t all_matches;
+            char linebuf[32];
+            int last_line = tc->get_inner_height();
+            int max_line_width;
+
+            snprintf(linebuf, sizeof(linebuf), "%d", last_line);
+            max_line_width = strlen(linebuf);
+
+            tc->get_dimensions(height, width);
+            vl += height;
+            if (vl > PREVIEW_SIZE) {
+                vl -= PREVIEW_SIZE;
+            }
+
+            while ((vl = bv.next(vl)) != -1_vl &&
+                preview_count < MAX_MATCH_COUNT) {
+                attr_line_t al;
+
+                tc->textview_value_for_row(vl, al);
+                if (preview_count > 0) {
+                    all_matches.append("\n");
+                }
+                snprintf(linebuf, sizeof(linebuf),
+                         "L%*d: ",
+                         max_line_width, (int) vl);
+                all_matches
+                    .append(linebuf)
+                    .append(al);
+                preview_count += 1;
+            }
+
+            if (preview_count > 0) {
+                lnav_data.ld_preview_status_source.get_description()
+                         .set_value("Matching lines for search");
+                lnav_data.ld_preview_source
+                         .replace_with(all_matches)
+                         .set_text_format(TF_UNKNOWN);
+            }
+        }
     }
 }
 

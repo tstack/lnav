@@ -45,6 +45,11 @@
 /** Strongly-typed integer for visible lines. */
 STRONG_INT_TYPE(int, vis_line);
 
+constexpr vis_line_t operator "" _vl(unsigned long long line)
+{
+    return vis_line_t((int) line);
+}
+
 class listview_curses;
 
 /**
