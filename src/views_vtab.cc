@@ -231,7 +231,7 @@ CREATE TABLE lnav_view_stack (
     };
 
     int delete_row(sqlite3_vtab *tab, sqlite3_int64 rowid) {
-        if (rowid != lnav_data.ld_view_stack.size() - 1) {
+        if ((size_t)rowid != lnav_data.ld_view_stack.size() - 1) {
             tab->zErrMsg = sqlite3_mprintf(
                 "Only the top view in the stack can be deleted");
             return SQLITE_ERROR;

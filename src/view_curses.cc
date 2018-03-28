@@ -240,11 +240,11 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
         }
     }
 
-    if (tws != nullptr && this->al_string.length() > tws->tws_width) {
+    if (tws != nullptr && (int)this->al_string.length() > tws->tws_width) {
         ssize_t start_pos = start_len;
         ssize_t line_start = this->al_string.rfind('\n', start_pos);
 
-        if (line_start == string::npos) {
+        if (line_start == (ssize_t)string::npos) {
             line_start = 0;
         } else {
             line_start += 1;
@@ -258,12 +258,12 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
             avail = INT_MAX;
         }
 
-        while (start_pos < this->al_string.length()) {
+        while (start_pos < (int)this->al_string.length()) {
             ssize_t lpc;
 
             // Find the end of a word or a breakpoint.
             for (lpc = start_pos;
-                 lpc < this->al_string.length() &&
+                 lpc < (int)this->al_string.length() &&
                  (isalnum(this->al_string[lpc]) ||
                   this->al_string[lpc] == ',' ||
                   this->al_string[lpc] == '_' ||
@@ -286,7 +286,7 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
             } else {
                 // There's still room to add stuff.
                 avail -= (lpc - start_pos);
-                while (lpc < this->al_string.length() && avail) {
+                while (lpc < (int)this->al_string.length() && avail) {
                     if (this->al_string[lpc] == '\n') {
                         this->insert(lpc + 1, tws->tws_indent, ' ');
                         avail = usable_width;
@@ -308,7 +308,7 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
                     avail = usable_width;
 
                     for (lpc = start_pos;
-                         lpc < this->al_string.length() &&
+                         lpc < (int)this->al_string.length() &&
                          this->al_string[lpc] == ' ';
                          lpc++) {
                     }
@@ -453,7 +453,7 @@ void view_curses::mvwattrline(WINDOW *window,
         for (auto tab_iter = tab_list.rbegin();
              tab_iter != tab_list.rend();
              ++tab_iter) {
-            if (tab_iter->tm_origin < attr_range.lr_start) {
+            if ((int)tab_iter->tm_origin < attr_range.lr_start) {
                 attr_range.lr_start += tab_iter->length() - 1;
             }
         }
@@ -462,7 +462,7 @@ void view_curses::mvwattrline(WINDOW *window,
             for (auto tab_iter = tab_list.rbegin();
                  tab_iter != tab_list.rend();
                  ++tab_iter) {
-                if (tab_iter->tm_origin < attr_range.lr_end) {
+                if ((int)tab_iter->tm_origin < attr_range.lr_end) {
                     attr_range.lr_end += tab_iter->length() - 1;
                 }
             }

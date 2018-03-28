@@ -615,7 +615,7 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
                 this->update_callbacks(jph.jph_children, child_start + cap->c_end);
             }
             else {
-                if (child_start + cap->c_end != this->ypc_path.size() - 1) {
+                if (child_start + cap->c_end != (int)this->ypc_path.size() - 1) {
                     continue;
                 }
 

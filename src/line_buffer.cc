@@ -223,7 +223,7 @@ void line_buffer::resize_buffer(size_t new_max)
     require(this->lb_bz_file || this->lb_gz_file ||
         new_max <= MAX_LINE_BUFFER_SIZE);
 
-    if  (new_max > this->lb_buffer_max) {
+    if  (new_max > (size_t)this->lb_buffer_max) {
         char *tmp, *old;
 
         /* Still need more space, try a realloc. */
@@ -248,7 +248,7 @@ void line_buffer::ensure_available(off_t start, size_t max_length)
     require(max_length <= MAX_LINE_BUFFER_SIZE);
 
     if (this->lb_file_size != -1) {
-        if (start + max_length > this->lb_file_size) {
+        if (start + (off_t)max_length > this->lb_file_size) {
             max_length = (this->lb_file_size - start);
         }
     }

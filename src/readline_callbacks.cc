@@ -235,7 +235,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
         annotate_sql_statement(al);
 
-        if (x > 0 && x >= al.length()) {
+        if (x > 0 && (int)x >= al.length()) {
             x -= 1;
         }
 
