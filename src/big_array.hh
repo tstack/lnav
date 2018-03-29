@@ -78,6 +78,10 @@ struct big_array {
         return this->ba_size;
     };
 
+    bool empty() const {
+        return this->ba_size == 0;
+    };
+
     void push_back(const T &val) {
         this->ba_ptr[this->ba_size] = val;
         this->ba_size += 1;
@@ -86,6 +90,10 @@ struct big_array {
     T &operator[](size_t index) {
         return this->ba_ptr[index];
     };
+
+    T &back() {
+        return this->ba_ptr[this->ba_size - 1];
+    }
 
     typedef T *iterator;
 

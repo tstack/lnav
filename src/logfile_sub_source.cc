@@ -460,16 +460,31 @@ bool logfile_sub_source::rebuild_index(bool force)
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end();
          iter++) {
-        if ((*iter)->get_file() == NULL) {
-            if ((*iter)->ld_lines_indexed > 0) {
+        logfile_data &ld = *(*iter);
+
+        if (ld.get_file() == NULL) {
+            if (ld.ld_lines_indexed > 0) {
                 force  = true;
                 retval = true;
             }
         }
         else {
-            switch ((*iter)->get_file()->rebuild_index()) {
+            logfile &lf = *ld.get_file();
+
+            switch (lf.rebuild_index()) {
                 case logfile::RR_NEW_LINES:
                     retval = true;
+                    if (!this->lss_index.empty()) {
+                        logline &new_file_line = lf[ld.ld_lines_indexed];
+                        content_line_t cl = this->lss_index.back();
+                        logline *last_indexed_line = this->find_line(cl);
+
+                        // If there are new lines that are older than what we
+                        // have in the index, we need to resort.
+                        if (new_file_line < last_indexed_line->get_timeval()) {
+                            force = true;
+                        }
+                    }
                     break;
                 case logfile::RR_NEW_ORDER:
                     retval = true;
@@ -513,9 +528,9 @@ bool logfile_sub_source::rebuild_index(bool force)
             this->lss_longest_line = std::max(
                 this->lss_longest_line, lf->get_longest_line_length());
             this->lss_basename_width = std::max(
-                this->lss_basename_width, lf->get_basename().size());;
+                this->lss_basename_width, lf->get_basename().size());
             this->lss_filename_width = std::max(
-                this->lss_filename_width, lf->get_filename().size());;
+                this->lss_filename_width, lf->get_filename().size());
         }
 
         if (full_sort) {

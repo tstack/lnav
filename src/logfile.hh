@@ -241,6 +241,10 @@ public:
 
     logline &operator[](int index) { return this->lf_index[index]; };
 
+    logline &back() {
+        return this->lf_index.back();
+    };
+
     /** @return True if this log file still exists. */
     bool exists(void) const;
 
