@@ -585,13 +585,13 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
         return true;
     }
 
-    if (pat->p_timestamp_end == -1 || pat->p_timestamp_end > sbr.length()) {
+    if (pat->p_timestamp_end == -1 || pat->p_timestamp_end > (int)sbr.length()) {
         len_out = 0;
         return false;
     }
 
     len_out = pat->p_pcre->match_partial(pi);
-    return len_out > pat->p_timestamp_end;
+    return (int)len_out > pat->p_timestamp_end;
 }
 
 log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> lf,
@@ -1141,7 +1141,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         lr.lr_start = this->jlf_cached_line.size();
 
                         lv_iter->lv_hidden = lv_iter->lv_user_hidden;
-                        if (str.size() > jfe.jfe_max_width) {
+                        if ((int)str.size() > jfe.jfe_max_width) {
                             switch (jfe.jfe_overflow) {
                                 case json_format_element::ABBREV: {
                                     this->json_append_to_cache(
@@ -1293,7 +1293,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         if (this->jlf_cached_line[this_off] == '\n') {
             this_off += 1;
         }
-        if ((ll.get_sub_offset() + 1) < this->jlf_line_offsets.size()) {
+        if ((ll.get_sub_offset() + 1) < (int)this->jlf_line_offsets.size()) {
             next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
         }
         else {
@@ -1428,7 +1428,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
         stable_sort(pat.p_value_by_index.begin(), pat.p_value_by_index.end());
 
-        for (int lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
+        for (int lpc = 0; lpc < (int)pat.p_value_by_index.size(); lpc++) {
             auto &ivd = pat.p_value_by_index[lpc];
             auto &vd = *ivd.ivd_value_def;
 

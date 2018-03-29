@@ -103,7 +103,7 @@ regexp_match(const char *re, const char *str)
         }
         else {
             char *cap_copy = (char *)alloca(cap->length() + 1);
-            int64_t i_value;
+            long long int i_value;
             double d_value;
             int end_index;
 
@@ -112,7 +112,7 @@ regexp_match(const char *re, const char *str)
 
             if (sscanf(cap_copy, "%lld%n", &i_value, &end_index) == 1 &&
                 (end_index == cap->length())) {
-                return i_value;
+                return (int64_t)i_value;
             }
             else if (sscanf(cap_copy, "%lf%n", &d_value, &end_index) == 1 &&
                      (end_index == cap->length())) {
@@ -139,7 +139,7 @@ regexp_match(const char *re, const char *str)
             else {
                 const char *cap_start = pi.get_substr_start(cap);
                 char *cap_copy = (char *) alloca(cap->length() + 1);
-                int64_t i_value;
+                long long int i_value;
                 double d_value;
                 int end_index;
 

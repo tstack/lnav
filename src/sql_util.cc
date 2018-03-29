@@ -900,7 +900,7 @@ void annotate_sql_statement(attr_line_t &al)
         bool found_open = false;
         ssize_t lpc;
 
-        for (lpc = iter->sa_range.lr_end; lpc < line.length(); lpc++) {
+        for (lpc = iter->sa_range.lr_end; lpc < (int)line.length(); lpc++) {
             if (line[lpc] == '(') {
                 found_open = true;
                 break;

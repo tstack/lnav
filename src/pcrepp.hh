@@ -340,7 +340,7 @@ public:
 public:
         error(std::string msg, int offset = 0)
             : e_msg(msg), e_offset(offset) { };
-        virtual ~error() throw () { };
+        virtual ~error() { };
 
         virtual const char *what() const throw() {
             return this->e_msg.c_str();

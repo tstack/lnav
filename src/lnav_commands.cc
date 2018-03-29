@@ -156,7 +156,7 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
                 char buffer[1024];
 
                 snprintf(buffer, sizeof(buffer),
-                         "info: log timestamps will be adjusted by %ld.%06d seconds",
+                         "info: log timestamps will be adjusted by %ld.%06ld seconds",
                          time_diff.tv_sec, time_diff.tv_usec);
 
                 retval = buffer;
@@ -2347,7 +2347,7 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
             bool hide = args[0] == "hide-fields";
             vector<string> found_fields, missing_fields;
 
-            for (int lpc = 1; lpc < args.size(); lpc++) {
+            for (int lpc = 1; lpc < (int)args.size(); lpc++) {
                 intern_string_t name;
                 log_format *format = nullptr;
                 size_t dot;

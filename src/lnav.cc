@@ -2011,7 +2011,7 @@ static void execute_examples()
                                                    al);
                         ex.he_result.append(al);
                         for (int lpc = 0;
-                             lpc < dls.text_line_count(); lpc++) {
+                             lpc < (int)dls.text_line_count(); lpc++) {
                             al.clear();
                             dls.text_value_for_line(db_tc, lpc,
                                                     al.get_string(),

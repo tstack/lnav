@@ -139,7 +139,6 @@ line_buffer::~line_buffer()
 }
 
 void line_buffer::set_fd(auto_fd &fd)
-throw (error)
 {
     off_t newoff = 0;
 
@@ -220,12 +219,11 @@ throw (error)
 }
 
 void line_buffer::resize_buffer(size_t new_max)
-throw (error)
 {
     require(this->lb_bz_file || this->lb_gz_file ||
         new_max <= MAX_LINE_BUFFER_SIZE);
 
-    if  (new_max > this->lb_buffer_max) {
+    if  (new_max > (size_t)this->lb_buffer_max) {
         char *tmp, *old;
 
         /* Still need more space, try a realloc. */
@@ -244,14 +242,13 @@ throw (error)
 }
 
 void line_buffer::ensure_available(off_t start, size_t max_length)
-throw (error)
 {
     size_t prefill, available;
 
     require(max_length <= MAX_LINE_BUFFER_SIZE);
 
     if (this->lb_file_size != -1) {
-        if (start + max_length > this->lb_file_size) {
+        if (start + (off_t)max_length > this->lb_file_size) {
             max_length = (this->lb_file_size - start);
         }
     }
@@ -317,7 +314,6 @@ throw (error)
 }
 
 bool line_buffer::fill_range(off_t start, size_t max_length)
-throw (error)
 {
     bool retval = false;
 
@@ -484,7 +480,6 @@ throw (error)
 }
 
 bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
-throw (error)
 {
     size_t request_size = DEFAULT_INCREMENT;
     bool retval = false;
@@ -592,7 +587,6 @@ throw (error)
 }
 
 bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_value *lv)
-    throw (error)
 {
     line_value lv_tmp;
     bool retval;
@@ -612,7 +606,6 @@ bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_va
 }
 
 bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
-    throw (error)
 {
     char *line_start;
     size_t avail;
@@ -636,7 +629,7 @@ bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
     return true;
 }
 
-void line_buffer::read_available(shared_buffer_ref &sbr) throw(error)
+void line_buffer::read_available(shared_buffer_ref &sbr)
 {
     sbr.disown();
 

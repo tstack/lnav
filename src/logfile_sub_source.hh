@@ -100,7 +100,7 @@ public:
     };
 
     void increase_line_context(void) {
-        long old_flags = this->lss_flags;
+        auto old_flags = this->lss_flags;
 
         if (this->lss_flags & F_FILENAME) {
             // Nothing to do
@@ -116,7 +116,7 @@ public:
     };
 
     bool decrease_line_context(void) {
-        long old_flags = this->lss_flags;
+        auto old_flags = this->lss_flags;
 
         if (this->lss_flags & F_FILENAME) {
             this->lss_flags &= ~F_NAME_MASK;

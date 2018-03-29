@@ -120,7 +120,7 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
             for (auto &param : ht.ht_parameters) {
                 if (break_all ||
-                    (out.get_string().length() - start_index - line_start + 10) >=
+                    (int)(out.get_string().length() - start_index - line_start + 10) >=
                     tws.tws_width) {
                     out.append("\n");
                     line_start = out.get_string().length();

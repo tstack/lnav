@@ -310,7 +310,7 @@ public:
         if (this->sbc_ident_to_show < -1) {
             this->sbc_ident_to_show = this->sbc_idents.size() - 1;
         }
-        else if (this->sbc_ident_to_show >= this->sbc_idents.size()) {
+        else if (this->sbc_ident_to_show >= (int)this->sbc_idents.size()) {
             this->sbc_ident_to_show = -1;
         }
         return this->sbc_ident_to_show;

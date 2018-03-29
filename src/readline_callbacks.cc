@@ -235,7 +235,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
         annotate_sql_statement(al);
 
-        if (x > 0 && x >= al.length()) {
+        if (x > 0 && (int)x >= al.length()) {
             x -= 1;
         }
 
@@ -502,7 +502,9 @@ void rl_display_matches(void *dummy, readline_curses *rc)
 {
     const std::vector<std::string> &matches = rc->get_matches();
     textview_curses &tc = lnav_data.ld_match_view;
-    unsigned long width, height;
+    unsigned long width;
+    __attribute((unused))
+    unsigned long height;
     int max_len, cols, rows;
 
     getmaxyx(lnav_data.ld_window, height, width);

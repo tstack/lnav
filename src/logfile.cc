@@ -54,7 +54,6 @@ static const size_t MAX_UNRECOGNIZED_LINES = 1000;
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
 logfile::logfile(const string &filename, logfile_open_options &loo)
-throw (error)
     : lf_filename(filename),
       lf_index_time(0),
       lf_index_size(0),
@@ -281,7 +280,6 @@ bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 }
 
 logfile::rebuild_result_t logfile::rebuild_index()
-throw (line_buffer::error, logfile::error)
 {
     rebuild_result_t retval = RR_NO_NEW_LINES;
     struct stat st;

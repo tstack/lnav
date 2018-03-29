@@ -305,6 +305,8 @@ void log_msg_extra_complete()
     }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
 static void sigabrt(int sig)
 {
     char crash_path[1024], latest_crash_path[1024];
@@ -339,10 +341,10 @@ static void sigabrt(int sig)
         "%s/latest-crash.log", lnav_log_crash_dir);
     if ((fd = open(crash_path, O_CREAT|O_TRUNC|O_WRONLY, 0600)) != -1) {
         if (log_ring.lr_frag_start < (off_t)BUFFER_SIZE) {
-            write(fd, &log_ring.lr_data[log_ring.lr_frag_start],
+            (void)write(fd, &log_ring.lr_data[log_ring.lr_frag_start],
                 log_ring.lr_frag_end - log_ring.lr_frag_start);
         }
-        write(fd, log_ring.lr_data, log_ring.lr_length);
+        (void)write(fd, log_ring.lr_data, log_ring.lr_length);
 #ifdef HAVE_EXECINFO_H
         backtrace_symbols_fd(frames, frame_count, fd);
 #endif
@@ -395,9 +397,7 @@ static void sigabrt(int sig)
         fprintf(stderr, "\nWould you like to attach a debugger? (y/N) ");
         fflush(stderr);
 
-        scanf("%c", &response);
-
-        if (tolower(response) == 'y') {
+        if (scanf("%c", &response) > 0 && tolower(response) == 'y') {
             pid_t lnav_pid = getpid();
             pid_t child_pid;
 
@@ -436,6 +436,7 @@ static void sigabrt(int sig)
 
     _exit(1);
 }
+#pragma GCC diagnostic pop
 
 void log_install_handlers(void)
 {
