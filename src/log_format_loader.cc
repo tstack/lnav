@@ -842,6 +842,10 @@ void load_formats(const std::vector<std::string> &extra_paths,
         load_from_path(*path_iter, errors);
     }
 
+    if (!errors.empty()) {
+        return;
+    }
+
     uint8_t mod_counter = 0;
 
     vector<external_log_format *> alpha_ordered_formats;
