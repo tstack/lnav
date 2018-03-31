@@ -25,10 +25,6 @@ warning:format.json:line 5
 error:format.json:4:invalid json -- parse error: object key and value must be separated by a colon (':')
           ar_log": {         "abc"     } }
                      (right here) ------^
-error:foobar_log: no regexes specified for format
-error:foobar_log:no sample logs provided, all formats must have samples
-error:invalid_key_log: no regexes specified for format
-error:invalid_key_log:no sample logs provided, all formats must have samples
 EOF
 
 run_test ${lnav_test} -C \
