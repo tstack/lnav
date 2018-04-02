@@ -250,6 +250,10 @@ public:
         dst[iter->length()] = '\0';
     };
 
+    void reset_next_offset() {
+        this->pi_next_offset = this->pi_offset;
+    };
+
     void reset(const char *str, size_t off = 0, size_t len = -1)
     {
         this->pi_string      = str;

@@ -62,6 +62,7 @@ data_format_state_t dfs_prefix_next(data_format_state_t state,
         case DT_RSQUARE:
         case DT_LANGLE:
         case DT_RANGLE:
+        case DT_EMPTY_CONTAINER:
             break;
 
         default:
@@ -180,6 +181,10 @@ data_format_state_t dfs_comma_next(data_format_state_t state,
         case DT_LSQUARE:
         case DT_LANGLE:
             retval = DFS_VALUE;
+            break;
+
+        case DT_EMPTY_CONTAINER:
+            retval = DFS_INIT;
             break;
 
         case DT_COMMA:

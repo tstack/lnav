@@ -48,6 +48,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
         CAPTURE(tok); \
         return true; \
     }
+    static const char *EMPTY = "";
     pcre_input &pi = this->ds_pcre_input;
     struct _YYCURSOR {
         const YYCTYPE operator*() const {
@@ -58,7 +59,10 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
         }
 
         operator const YYCTYPE *() const {
-            return this->val;
+            if (this->val < this->lim) {
+                return this->val;
+            }
+            return EMPTY;
         }
 
         const YYCTYPE *operator=(const YYCTYPE *rhs) {
@@ -70,6 +74,11 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
             return this->val + rhs;
         }
 
+        const _YYCURSOR *operator-=(int rhs) {
+            this->val -= rhs;
+            return this;
+        }
+
         _YYCURSOR& operator++() {
             this->val += 1;
             return *this;
@@ -79,9 +88,10 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
         const YYCTYPE *lim;
     } YYCURSOR;
     YYCURSOR = pi.get_string() + pi.pi_next_offset;
+    _YYCURSOR yyt1;
+    _YYCURSOR yyt2;
     const YYCTYPE *YYLIMIT = pi.get_string() + pi.pi_length;
     const YYCTYPE *YYMARKER = YYCURSOR;
-    const YYCTYPE *YYCTXMARKER = YYCURSOR;
     pcre_context::capture_t *cap = pc.all();
 
     YYCURSOR.lim = YYLIMIT;
@@ -92,6 +102,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 
     /*!re2c
        re2c:yyfill:enable = 0;
+       re2c:flags:tags = 1;
 
        SPACE = [ \t\r];
        ALPHA = [a-zA-Z];
@@ -177,6 +188,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        "=" { RET(DT_EQUALS); }
        "," { RET(DT_COMMA); }
        ";" { RET(DT_SEMI); }
+       "()" | "{}" | "[]" { RET(DT_EMPTY_CONTAINER); }
        "{" { RET(DT_LCURLY); }
        "}" { RET(DT_RCURLY); }
        "[" { RET(DT_LSQUARE); }

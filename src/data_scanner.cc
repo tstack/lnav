@@ -83,6 +83,9 @@ static struct {
     { "semi",    pcrepp("\\A(;)"),
     },
 
+    { "empt",    pcrepp("\\A(\\(\\)|\\{\\}|\\[\\])"),
+    },
+
     { "lcurly",  pcrepp("\\A({)"),
     },
     { "rcurly",  pcrepp("\\A(})"),

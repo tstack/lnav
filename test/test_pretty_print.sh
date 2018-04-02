@@ -1,5 +1,30 @@
 #! /bin/bash
 
+run_test ${lnav_test} -n \
+    -c ":switch-to-view pretty" \
+    ${test_dir}/logfile_cxx.0
+check_output "pretty-printer is not working for C++ dumps" <<EOF
+Mar 24 15:17:38.999  000000000264F I shmem.res 262144 262144 1 chassis_msg_svc/osenv::req_blocking<osenv::req_lambda<tcp_messaging_impl::register_app(svc::messaging_port,
+    defs::atom*,
+    defs::borrowed<svc::messaging_session>,
+    defs::owned<svc::connection_eviction_strategy>&&,
+    svc::messaging::connection_type,
+    svc::messaging::app_param
+)::{lambda()#1}>, osenv::aloc_dynamic_named<tcp_messaging_impl::register_app(svc::messaging_port,
+    defs::atom*,
+    defs::borrowed<svc::messaging_session>,
+    defs::owned<svc::connection_eviction_strategy>&&,
+    svc::messaginconnection_type,
+    svc::messaging::app_param
+)::{lambda()#1}, osenv::temporal, tcp_messaging_impl::register_app(svc::messaging_port,
+    defs::atom*,
+    defs::borrowed<svc::messaging_session>,
+    des::owned<svc::connection_eviction_strategy>&&,
+    svc::messaging::connection_type,
+    svc::messaging::app_param
+)::{lambda()#1}>, osenv::req>->fiber stacks
+EOF
+
 echo '2015-04-18T13:16:30.003 8.8.8.8 <foo>8.8.8.8</foo>9 8.8.8.8<1054 198.51.100.1546 544.9.8.7 98.542.241.99 19143.2.5.6' | \
     run_test ${lnav_test} -n -c ":switch-to-view pretty"
 

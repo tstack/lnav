@@ -56,6 +56,8 @@ enum data_token_t {
     DT_COMMA,
     DT_SEMI,
 
+    DT_EMPTY_CONTAINER,
+
     DT_LCURLY,
     DT_RCURLY,
 
@@ -131,6 +133,14 @@ public:
     bool tokenize2(pcre_context &pc, data_token_t &token_out);
 
     pcre_input &get_input() { return this->ds_pcre_input; };
+
+    void reset() {
+        this->ds_pcre_input.reset_next_offset();
+        if (!this->ds_line.empty() &&
+            this->ds_line[this->ds_line.length() - 1] == '.') {
+            this->ds_pcre_input.pi_length -= 1;
+        }
+    }
 
 private:
     std::string ds_line;

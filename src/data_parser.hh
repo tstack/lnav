@@ -978,6 +978,22 @@ private:
                 state_stack.push(discover_format_state());
                 break;
 
+            case DT_EMPTY_CONTAINER: {
+                auto &curr_group = this->dp_group_stack.back();
+                auto empty_list = element_list_t("_anon_", __FILE__, __LINE__);
+                discover_format_state dfs;
+
+                dfs.finalize();
+
+                empty_list.el_format = dfs.dfs_format;
+                curr_group.PUSH_BACK(element(empty_list, DNT_GROUP));
+
+                auto &empty = curr_group.back();
+                empty.e_capture.c_begin = elem.e_capture.c_begin + 1;
+                empty.e_capture.c_end = elem.e_capture.c_begin + 1;
+                break;
+            }
+
             case DT_RPAREN:
             case DT_RANGLE:
             case DT_RCURLY:
