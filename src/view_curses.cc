@@ -32,7 +32,6 @@
 #include "config.h"
 
 #include <string>
-#include <ncurses.h>
 
 #include "auto_mem.hh"
 #include "lnav_log.hh"
@@ -482,7 +481,6 @@ void view_curses::mvwattrline(WINDOW *window,
         attr_range.lr_end = min((int)line_width,
             attr_range.lr_end - lr.lr_start);
 
-        log_debug("wtf %s", al.get_string().c_str());
         if (attr_range.lr_end > attr_range.lr_start) {
             string_attrs_t::const_iterator range_iter;
             int awidth = attr_range.length();
