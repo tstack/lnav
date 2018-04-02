@@ -986,11 +986,13 @@ private:
                 dfs.finalize();
 
                 empty_list.el_format = dfs.dfs_format;
-                curr_group.PUSH_BACK(element(empty_list, DNT_GROUP));
+                curr_group.PUSH_BACK(element());
 
                 auto &empty = curr_group.back();
                 empty.e_capture.c_begin = elem.e_capture.c_begin + 1;
                 empty.e_capture.c_end = elem.e_capture.c_begin + 1;
+                empty.e_token = DNT_GROUP;
+                empty.assign_elements(empty_list);
                 break;
             }
 
