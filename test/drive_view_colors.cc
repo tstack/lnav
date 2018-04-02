@@ -44,6 +44,7 @@ public:
 	}
 
 	void do_update(void) {
+		view_colors &vc = view_colors::singleton();
 		int lpc;
 
 		for (lpc = 0; lpc < 16; lpc++) {
@@ -69,6 +70,19 @@ public:
                               lr,
                               view_colors::VCR_TEXT);
 		}
+
+		attr_line_t al;
+		line_range lr{0, 40};
+
+		al = "before <123> after";
+		al.with_attr({line_range{8, 11}, &VC_STYLE, vc.ansi_color_pair(COLOR_CYAN, COLOR_BLACK)});
+		al.with_attr({line_range{8, 11}, &VC_STYLE, A_REVERSE});
+		this->mvwattrline(this->tc_window,
+						  lpc,
+						  0,
+						  al,
+						  lr,
+						  view_colors::VCR_TEXT);
 	};
 
 	WINDOW *tc_window;
@@ -93,6 +107,7 @@ int main(int argc, char *argv[])
 	}
 
 	view_colors::singleton().init();
+	curs_set(0);
 	tc.tc_window = win;
 	tc.do_update();
 	refresh();

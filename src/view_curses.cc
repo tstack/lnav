@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <string>
+#include <ncurses.h>
 
 #include "auto_mem.hh"
 #include "lnav_log.hh"
@@ -40,6 +41,7 @@
 #include "lnav_config.hh"
 #include "yajlpp.hh"
 #include "xterm-palette.hh"
+#include "attr_line.hh"
 
 using namespace std;
 
@@ -450,6 +452,10 @@ void view_curses::mvwattrline(WINDOW *window,
         require(attr_range.lr_start >= 0);
         require(attr_range.lr_end >= -1);
 
+        if (!(iter->sa_type == &VC_STYLE || iter->sa_type == &VC_GRAPHIC)) {
+            continue;
+        }
+
         for (auto tab_iter = tab_list.rbegin();
              tab_iter != tab_list.rend();
              ++tab_iter) {
@@ -476,24 +482,16 @@ void view_curses::mvwattrline(WINDOW *window,
         attr_range.lr_end = min((int)line_width,
             attr_range.lr_end - lr.lr_start);
 
+        log_debug("wtf %s", al.get_string().c_str());
         if (attr_range.lr_end > attr_range.lr_start) {
             string_attrs_t::const_iterator range_iter;
             int awidth = attr_range.length();
-            int color_pair = -1;
+            int color_pair;
 
-            attrs = 0;
-            for (range_iter = iter;
-                 range_iter != sa.end() && range_iter->sa_range == iter->sa_range;
-                 ++range_iter) {
-                if (range_iter->sa_type == &VC_STYLE) {
-                    if (color_pair <= 0) {
-                        color_pair = PAIR_NUMBER(range_iter->sa_value.sav_int);
-                    }
-                    attrs |= range_iter->sa_value.sav_int;
-                }
-            }
+            attrs = iter->sa_value.sav_int & ~A_COLOR;
+            color_pair = PAIR_NUMBER(iter->sa_value.sav_int);
 
-            if (attrs != 0) {
+            if (attrs || color_pair > 0) {
                 int x_pos = x + attr_range.lr_start;
                 int ch_width = min(awidth, (line_width - attr_range.lr_start));
                 cchar_t row_ch[ch_width + 1];
@@ -501,14 +499,15 @@ void view_curses::mvwattrline(WINDOW *window,
                 mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
                 for (int lpc = 0; lpc < ch_width; lpc++) {
                     if (color_pair > 0) {
-                        row_ch[lpc].attr = attrs & ~A_COLOR;
+                        row_ch[lpc].attr =
+                            attrs | (row_ch[lpc].attr & ~A_COLOR);
 #ifdef NCURSES_EXT_COLORS
                         row_ch[lpc].ext_color = color_pair;
 #else
                         row_ch[lpc].attr |= COLOR_PAIR(color_pair);
 #endif
                     } else {
-                        row_ch[lpc].attr = attrs;
+                        row_ch[lpc].attr |= attrs;
                     }
                 }
                 mvwadd_wchnstr(window, y, x_pos, row_ch, ch_width);
@@ -643,8 +642,7 @@ void view_colors::init_roles(int color_pair_base)
     if (lnav_config.lc_ui_dim_text) {
         this->vc_role_colors[VCR_TEXT] |= A_DIM;
     }
-    this->vc_role_colors[VCR_SEARCH] =
-        this->vc_role_colors[VCR_TEXT] | A_REVERSE;
+    this->vc_role_colors[VCR_SEARCH] = A_REVERSE;
     this->vc_role_colors[VCR_OK]      = attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_BLACK) | A_BOLD;
     this->vc_role_colors[VCR_ERROR]   = attr_for_colors(color_pair_base, COLOR_RED, COLOR_BLACK) | A_BOLD;
     this->vc_role_colors[VCR_WARNING] = attr_for_colors(color_pair_base, COLOR_YELLOW, COLOR_BLACK) | A_BOLD;

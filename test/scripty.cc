@@ -342,7 +342,7 @@ static void usage(void)
         "\n"
         "Options:\n"
         "  -h         Print this message, then exit.\n"
-		"  -n         Pass the output to the console.\n"
+		"  -n         Do not pass the output to the console.\n"
         "  -t <file>  The file where any input sent to the child process\n"
         "             should be stored.\n"
         "  -f <file>  The file where any output from the child process\n"
