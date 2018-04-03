@@ -1914,7 +1914,7 @@ public:
         }
 
         content_line_t    cl(lss.at(lc.lc_curr_line));
-        logfile *         lf      = lss.find(cl);
+        shared_ptr<logfile> lf = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 
@@ -1965,7 +1965,7 @@ public:
         return false;
     };
 
-    virtual void extract(logfile *lf,
+    virtual void extract(shared_ptr<logfile> lf,
                          shared_buffer_ref &line,
                          std::vector<logline_value> &values)
     {

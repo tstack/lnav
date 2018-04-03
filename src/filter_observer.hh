@@ -37,7 +37,7 @@
 
 class line_filter_observer : public logline_observer {
 public:
-    line_filter_observer(filter_stack &fs, logfile *lf)
+    line_filter_observer(filter_stack &fs, std::shared_ptr<logfile> lf)
             : lfo_filter_stack(fs), lfo_filter_state(lf) {
 
     };
@@ -53,7 +53,7 @@ public:
     void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr) {
         size_t offset = std::distance(lf.begin(), ll);
 
-        require(&lf == this->lfo_filter_state.tfs_logfile);
+        require(&lf == this->lfo_filter_state.tfs_logfile.get());
 
         this->lfo_filter_state.resize(lf.size());
         if (!this->lfo_filter_stack.empty()) {

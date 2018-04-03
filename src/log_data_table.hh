@@ -49,7 +49,7 @@ public:
           ldt_template_line(template_line),
           ldt_parent_column_count(0),
           ldt_instance(-1) {
-        logfile *lf = lnav_data.ld_log_source.find(template_line);
+        std::shared_ptr<logfile> lf = lnav_data.ld_log_source.find(template_line);
         log_format *format = lf->get_format();
 
         this->vi_supports_indexes = false;
@@ -60,7 +60,7 @@ public:
     void get_columns_int(std::vector<vtab_column> &cols)
     {
         content_line_t cl_copy = this->ldt_template_line;
-        logfile *      lf      = lnav_data.ld_log_source.find(cl_copy);
+        std::shared_ptr<logfile>       lf      = lnav_data.ld_log_source.find(cl_copy);
         struct line_range          body;
         string_attrs_t             sa;
         std::vector<logline_value> line_values;
@@ -141,7 +141,7 @@ public:
         content_line_t cl;
 
         cl = lss.at(lc.lc_curr_line);
-        logfile *         lf      = lss.find(cl);
+        std::shared_ptr<logfile> lf = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {
@@ -183,7 +183,7 @@ public:
         return true;
     };
 
-    void extract(logfile *lf,
+    void extract(std::shared_ptr<logfile> lf,
                  shared_buffer_ref &line,
                  std::vector<logline_value> &values)
     {

@@ -228,6 +228,7 @@ noinst_HEADERS = \
 	time_T.hh \
 	timer.hh \
 	top_status_source.hh \
+	unique_path.hh \
 	url_loader.hh \
 	view_curses.hh \
 	views_vtab.hh \

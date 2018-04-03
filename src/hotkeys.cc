@@ -58,7 +58,7 @@ public:
 
     logline &move_to_msg_start() {
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
-        logfile *lf = this->lh_sub_source.find(cl);
+        std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
         logfile::iterator ll = lf->begin() + cl;
         while (ll->is_continued()) {
             --ll;
@@ -70,7 +70,7 @@ public:
 
     logline &current_line() {
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
-        logfile *lf = this->lh_sub_source.find(cl);
+        std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
 
         return (*lf)[cl];
     };
@@ -79,7 +79,7 @@ public:
         this->lh_string_attrs.clear();
         this->lh_line_values.clear();
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
-        logfile *lf = this->lh_sub_source.find(cl);
+        std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
         logfile::iterator ll = lf->begin() + cl;
         log_format *format = lf->get_format();
         lf->read_full_message(ll, this->lh_msg_buffer);
@@ -787,7 +787,7 @@ void handle_paging_key(int ch)
                 logfile_sub_source &lss      = lnav_data.ld_log_source;
                 textview_curses &   log_view = lnav_data.ld_views[LNV_LOG];
                 content_line_t      cl       = lss.at(log_view.get_top());
-                logfile *           lf       = lss.find(cl);
+                std::shared_ptr<logfile>           lf       = lss.find(cl);
                 logfile::iterator ll = lf->begin() + cl;
                 log_data_helper ldh(lss);
 

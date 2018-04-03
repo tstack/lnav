@@ -97,7 +97,7 @@ static bool bind_line(sqlite3 *db,
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     logfile::iterator line_iter;
-    logfile *lf;
+    shared_ptr<logfile> lf;
 
     lf = lss.find(cl);
 
@@ -390,7 +390,7 @@ static void load_time_bookmarks(void)
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
         char low_timestamp[64], high_timestamp[64];
-        logfile *lf = (*file_iter)->get_file();
+        shared_ptr<logfile> lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
         if (lf == NULL)
@@ -554,7 +554,7 @@ static void load_time_bookmarks(void)
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
         char low_timestamp[64], high_timestamp[64];
-        logfile *lf = (*file_iter)->get_file();
+        shared_ptr<logfile> lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
         if (lf == NULL)
@@ -978,7 +978,7 @@ static void save_time_bookmarks(void)
         for (file_iter = lnav_data.ld_log_source.begin();
              file_iter != lnav_data.ld_log_source.end();
              ++file_iter) {
-            logfile *lf = (*file_iter)->get_file();
+            shared_ptr<logfile> lf = (*file_iter)->get_file();
             content_line_t base_content_line;
 
             if (lf == NULL)
@@ -1065,7 +1065,7 @@ static void save_time_bookmarks(void)
         for (file_iter = lnav_data.ld_log_source.begin();
              file_iter != lnav_data.ld_log_source.end();
              ++file_iter) {
-            logfile *lf = (*file_iter)->get_file();
+            shared_ptr<logfile> lf = (*file_iter)->get_file();
             content_line_t base_content_line;
 
             if (lf == NULL)
@@ -1109,7 +1109,7 @@ static void save_time_bookmarks(void)
         if ((*file_iter)->get_file() == NULL)
             continue;
 
-        logfile *lf = (*file_iter)->get_file();
+        shared_ptr<logfile> lf = (*file_iter)->get_file();
 
         if (!lf->is_time_adjusted())
             continue;
@@ -1385,7 +1385,7 @@ void reset_session(void)
     for (file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
-        logfile *lf             = (*file_iter)->get_file();
+        shared_ptr<logfile> lf             = (*file_iter)->get_file();
 
         lf->clear_time_offset();
     }

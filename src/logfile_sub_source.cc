@@ -58,11 +58,11 @@ logfile_sub_source::logfile_sub_source()
 logfile_sub_source::~logfile_sub_source()
 { }
 
-logfile *logfile_sub_source::find(const char *fn,
+shared_ptr<logfile> logfile_sub_source::find(const char *fn,
                                   content_line_t &line_base)
 {
     iterator iter;
-    logfile *retval = NULL;
+    shared_ptr<logfile> retval = NULL;
 
     line_base = content_line_t(0);
     for (iter = this->lss_files.begin();
@@ -198,9 +198,17 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         if (this->lss_flags & F_FILENAME) {
             file_offset_end = this->lss_filename_width;
             name = this->lss_token_file->get_filename();
+            if (file_offset_end < name.size()) {
+                file_offset_end = name.size();
+                this->lss_filename_width = name.size();
+            }
         } else {
             file_offset_end = this->lss_basename_width;
-            name = this->lss_token_file->get_basename();
+            name = this->lss_token_file->get_unique_path();
+            if (file_offset_end < name.size()) {
+                file_offset_end = name.size();
+                this->lss_basename_width = name.size();
+            }
         }
         value_out.insert(0, file_offset_end - name.size() + 1, ' ');
         value_out.insert(0, name);
@@ -274,12 +282,12 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     lr.lr_start = 0;
     lr.lr_end = this->lss_token_value.length();
-    value_out.push_back(string_attr(lr, &textview_curses::SA_ORIGINAL_LINE));
+    value_out.emplace_back(lr, &textview_curses::SA_ORIGINAL_LINE);
 
     lr.lr_start = time_offset_end;
     lr.lr_end   = -1;
 
-    value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
+    value_out.emplace_back(lr, &view_curses::VC_STYLE, attrs);
 
     for (vector<logline_value>::const_iterator lv_iter = line_values.begin();
          lv_iter != line_values.end();
@@ -290,8 +298,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         }
 
         if (lv_iter->lv_hidden) {
-            value_out.push_back(string_attr(
-                lv_iter->lv_origin, &textview_curses::SA_HIDDEN));
+            value_out.emplace_back(
+                lv_iter->lv_origin, &textview_curses::SA_HIDDEN);
         }
 
         if (!lv_iter->lv_identifier || !lv_iter->lv_origin.is_valid()) {
@@ -301,8 +309,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         int id_attrs = vc.attrs_for_ident(lv_iter->text_value(),
                                           lv_iter->text_length());
 
-        value_out.push_back(string_attr(
-                lv_iter->lv_origin, &view_curses::VC_STYLE, id_attrs));
+        value_out.emplace_back(
+                lv_iter->lv_origin, &view_curses::VC_STYLE, id_attrs);
     }
 
     if (this->lss_token_shift_size) {
@@ -341,13 +349,12 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         if (binary_search(::begin(bv_search), ::end(bv_search), vis_line_t(row))) {
             lr.lr_start = 0;
             lr.lr_end = 1;
-            value_out.push_back(string_attr(
-                lr, &view_curses::VC_STYLE, A_REVERSE));
+            value_out.emplace_back(lr, &view_curses::VC_STYLE, A_REVERSE);
         }
     }
 
-    value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
-        this->lss_token_file->get_filename())));
+    value_out.emplace_back(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
+        this->lss_token_file->get_filename()));
 
     if (this->lss_flags & F_FILENAME || this->lss_flags & F_BASENAME) {
         size_t file_offset_end = (this->lss_flags & F_FILENAME) ?
@@ -358,8 +365,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
         lr.lr_start = 0;
         lr.lr_end   = file_offset_end + 1;
-        value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
-            this->lss_token_file->get_filename())));
+        value_out.emplace_back(lr, &view_curses::VC_STYLE, vc.attrs_for_ident(
+            this->lss_token_file->get_filename()));
     }
 
     if (this->lss_flags & F_TIME_OFFSET) {
@@ -370,9 +377,9 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         shift_string_attrs(value_out, 0, time_offset_end);
 
         attrs = vc.attrs_for_role(view_colors::VCR_OFFSET_TIME);
-        value_out.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
-        value_out.push_back(string_attr(line_range(12, 13),
-            &view_curses::VC_GRAPHIC, ACS_VLINE));
+        value_out.emplace_back(lr, &view_curses::VC_STYLE, attrs);
+        value_out.emplace_back(line_range(12, 13),
+            &view_curses::VC_GRAPHIC, ACS_VLINE);
 
         int bar_attrs = 0;
 
@@ -392,9 +399,9 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     lr.lr_start = 0;
     lr.lr_end   = -1;
-    value_out.push_back(string_attr(lr, &logline::L_FILE, this->lss_token_file));
-    value_out.push_back(string_attr(lr, &textview_curses::SA_FORMAT,
-                                    this->lss_token_file->get_format()->get_name()));
+    value_out.emplace_back(lr, &logline::L_FILE, this->lss_token_file.get());
+    value_out.emplace_back(lr, &textview_curses::SA_FORMAT,
+                           this->lss_token_file->get_format()->get_name());
 
     {
         bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_PARTITION];
@@ -410,7 +417,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                 != this->lss_user_mark_metadata.end()) {
                 lr.lr_start = 0;
                 lr.lr_end   = -1;
-                value_out.push_back(string_attr(lr, &logline::L_PARTITION, &bm_iter->second));
+                value_out.emplace_back(lr, &logline::L_PARTITION, &bm_iter->second);
             }
         }
     }
@@ -421,7 +428,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
         if (time_range.lr_end != -1) {
             attrs = vc.attrs_for_role(view_colors::VCR_ADJUSTED_TIME);
-            value_out.push_back(string_attr(time_range, &view_curses::VC_STYLE, attrs));
+            value_out.emplace_back(time_range, &view_curses::VC_STYLE, attrs);
         }
     }
     else if ((((this->lss_token_line->get_time() / (5 * 60)) % 2) == 0) &&
@@ -431,7 +438,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
         if (time_range.lr_end != -1) {
             attrs = vc.attrs_for_role(view_colors::VCR_ALT_ROW);
-            value_out.push_back(string_attr(time_range, &view_curses::VC_STYLE, attrs));
+            value_out.emplace_back(time_range, &view_curses::VC_STYLE, attrs);
         }
     }
 
@@ -441,7 +448,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
         if (time_range.lr_end != -1) {
             attrs = vc.attrs_for_role(view_colors::VCR_SKEWED_TIME);
-            value_out.push_back(string_attr(time_range, &view_curses::VC_STYLE, attrs));
+            value_out.emplace_back(time_range, &view_curses::VC_STYLE, attrs);
         }
     }
 }
@@ -523,7 +530,7 @@ bool logfile_sub_source::rebuild_index(bool force)
         logline_cmp line_cmper(*this);
 
         for (auto ld : this->lss_files) {
-            logfile *lf = ld->get_file();
+            std::shared_ptr<logfile> lf = ld->get_file();
 
             if (lf == nullptr) {
                 continue;
@@ -531,14 +538,14 @@ bool logfile_sub_source::rebuild_index(bool force)
             this->lss_longest_line = std::max(
                 this->lss_longest_line, lf->get_longest_line_length());
             this->lss_basename_width = std::max(
-                this->lss_basename_width, lf->get_basename().size());
+                this->lss_basename_width, lf->get_unique_path().size());
             this->lss_filename_width = std::max(
                 this->lss_filename_width, lf->get_filename().size());
         }
 
         if (full_sort) {
             for (auto ld : this->lss_files) {
-                logfile *lf = ld->get_file();
+                shared_ptr<logfile> lf = ld->get_file();
 
                 if (lf == nullptr) {
                     continue;
@@ -561,7 +568,7 @@ bool logfile_sub_source::rebuild_index(bool force)
                  iter != this->lss_files.end();
                  iter++) {
                 logfile_data *ld = *iter;
-                logfile *lf = ld->get_file();
+                shared_ptr<logfile> lf = ld->get_file();
                 if (lf == NULL) {
                     continue;
                 }
@@ -623,9 +630,9 @@ bool logfile_sub_source::rebuild_index(bool force)
                     line_number) && this->check_extra_filters(*line_iter)) {
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != NULL) {
-                    logfile *lf = ld->get_file();
+                    shared_ptr<logfile> lf = ld->get_file();
                     this->lss_index_delegate->index_line(
-                            *this, lf, lf->begin() + line_number);
+                            *this, lf.get(), lf->begin() + line_number);
                 }
             }
         }
@@ -640,7 +647,7 @@ bool logfile_sub_source::rebuild_index(bool force)
 
 void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
 {
-    logfile *  last_file = NULL;
+    shared_ptr<logfile>   last_file = NULL;
     vis_line_t vl;
 
     bm[&BM_WARNINGS].clear();
@@ -657,7 +664,7 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
     for (; vl < (int)this->lss_filtered_index.size(); ++vl) {
         const content_line_t orig_cl = this->at(vl);
         content_line_t cl = orig_cl;
-        logfile *      lf;
+        shared_ptr<logfile>       lf;
 
         lf = this->find(cl);
 
@@ -731,7 +738,7 @@ void logfile_sub_source::text_filters_changed()
 {
     for (iterator iter = this->begin(); iter != this->end(); ++iter) {
         logfile_data *ld = *iter;
-        logfile *lf = ld->get_file();
+        shared_ptr<logfile> lf = ld->get_file();
 
         if (lf != NULL) {
             ld->ld_filter_state.clear_deleted_filter_state();
@@ -758,9 +765,9 @@ void logfile_sub_source::text_filters_changed()
                 line_number) && this->check_extra_filters(*line_iter)) {
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != NULL) {
-                logfile *lf = ld->get_file();
+                shared_ptr<logfile> lf = ld->get_file();
                 this->lss_index_delegate->index_line(
-                        *this, lf, lf->begin() + line_number);
+                        *this, lf.get(), lf->begin() + line_number);
             }
         }
     }

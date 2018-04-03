@@ -286,7 +286,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     vtab *       vt = (vtab *)cur->pVtab;
 
     content_line_t    cl(vt->lss->at(vc->log_cursor.lc_curr_line));
-    logfile *         lf = vt->lss->find(cl);
+    shared_ptr<logfile>         lf = vt->lss->find(cl);
     logfile::iterator ll = lf->begin() + cl;
 
     require(col >= 0);
@@ -384,7 +384,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
             content_line_t prev_cl(vt->lss->at(vis_line_t(
                                                    vc->log_cursor.lc_curr_line -
                                                    1)));
-            logfile *         prev_lf = vt->lss->find(prev_cl);
+            shared_ptr<logfile>         prev_lf = vt->lss->find(prev_cl);
             logfile::iterator prev_ll = prev_lf->begin() + prev_cl;
             uint64_t          prev_time, curr_line_time;
 

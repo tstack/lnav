@@ -33,6 +33,7 @@
 #include "doctest.hh"
 
 #include "relative_time.hh"
+#include "unique_path.hh"
 
 using namespace std;
 
@@ -53,4 +54,43 @@ TEST_CASE("str2reltime") {
     val.clear();
     str2reltime(0, val);
     CHECK(val == "");
+}
+
+class my_path_source : public unique_path_source {
+public:
+    my_path_source(const filesystem::path &p) : mps_path(p) {
+
+    }
+
+    filesystem::path get_path() const override {
+        return this->mps_path;
+    }
+
+    filesystem::path mps_path;
+};
+
+TEST_CASE("unique_path") {
+    unique_path_generator upg;
+
+    auto bar = make_shared<my_path_source>("/foo/bar");
+    auto baz = make_shared<my_path_source>("/foo/baz");
+    auto baz2 = make_shared<my_path_source>("/foo2/bar");
+    auto log1 = make_shared<my_path_source>(
+        "/home/bob/downloads/machine1/var/log/syslog.log");
+    auto log2 = make_shared<my_path_source>(
+        "/home/bob/downloads/machine2/var/log/syslog.log");
+
+    upg.add_source(bar);
+    upg.add_source(baz);
+    upg.add_source(baz2);
+    upg.add_source(log1);
+    upg.add_source(log2);
+
+    upg.generate();
+
+    CHECK(bar->get_unique_path() == "[foo]/bar");
+    CHECK(baz->get_unique_path() == "baz");
+    CHECK(baz2->get_unique_path() == "[foo2]/bar");
+    CHECK(log1->get_unique_path() == "[machine1]/syslog.log");
+    CHECK(log2->get_unique_path() == "[machine2]/syslog.log");
 }

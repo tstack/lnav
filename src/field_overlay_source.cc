@@ -208,7 +208,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     }
 
     content_line_t cl = lss.at(lv.get_top());
-    logfile *file = lss.find(cl);
+    std::shared_ptr<logfile> file = lss.find(cl);
     logfile::iterator ll = file->begin() + cl;
     log_format *format = file->get_format();
     bool display = false;

@@ -106,7 +106,7 @@ public:
 
     virtual bool is_valid(log_cursor &lc, logfile_sub_source &lss) {
         content_line_t    cl(lss.at(lc.lc_curr_line));
-        logfile *         lf      = lss.find(cl);
+        std::shared_ptr<logfile> lf = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {
@@ -127,7 +127,7 @@ public:
         keys_inout.push_back("log_mark");
     };
 
-    virtual void extract(logfile *lf,
+    virtual void extract(std::shared_ptr<logfile> lf,
                          shared_buffer_ref &line,
                          std::vector<logline_value> &values)
     {
@@ -162,7 +162,7 @@ public:
         }
 
         content_line_t    cl(lss.at(lc.lc_curr_line));
-        logfile *         lf      = lss.find(cl);
+        std::shared_ptr<logfile> lf = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 

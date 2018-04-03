@@ -46,6 +46,7 @@
 #include "byte_array.hh"
 #include "line_buffer.hh"
 #include "log_format.hh"
+#include "unique_path.hh"
 #include "text_format.hh"
 #include "shared_buffer.hh"
 #include "filesystem/path.h"
@@ -103,7 +104,7 @@ struct logfile_activity {
 /**
  * Container for the lines in a log file and some metadata.
  */
-class logfile {
+class logfile : public unique_path_source {
 public:
 
     class error {
@@ -396,7 +397,9 @@ public:
         require(this->lf_filename.size() > 0);
 
         return true;
-    };
+    }
+
+    filesystem::path get_path() const override;
 
 protected:
 

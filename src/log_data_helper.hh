@@ -192,7 +192,7 @@ public:
 
     logfile_sub_source &ldh_log_source;
     content_line_t ldh_source_line;
-    logfile *ldh_file;
+    std::shared_ptr<logfile> ldh_file;
     int ldh_y_offset;
     logfile::iterator ldh_line;
     shared_buffer_ref ldh_msg;

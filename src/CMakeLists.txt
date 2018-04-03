@@ -62,6 +62,7 @@ set(diag_STAT_SRCS
     textview_curses.cc
     time-extension-functions.cc
     timer.cc
+    unique_path.hh
     view_curses.cc
     views_vtab.cc
     vt52_curses.cc

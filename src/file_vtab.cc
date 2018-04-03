@@ -43,7 +43,7 @@
 using namespace std;
 
 struct lnav_file : public tvt_iterator_cursor<lnav_file> {
-    using iterator = vector<logfile *>::iterator;
+    using iterator = vector<shared_ptr<logfile>>::iterator;
 
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's open file list through this table.
@@ -73,7 +73,7 @@ CREATE TABLE lnav_file (
     }
 
     int get_column(const cursor &vc, sqlite3_context *ctx, int col) {
-        logfile *lf = *vc.iter;
+        auto lf = *vc.iter;
         const struct stat &st = lf->get_stat();
         const string &name = lf->get_filename();
         log_format *format = lf->get_format();

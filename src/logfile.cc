@@ -558,3 +558,8 @@ void logfile::reobserve_from(iterator iter)
         this->lf_logline_observer->logline_eof(*this);
     }
 }
+
+filesystem::path logfile::get_path() const
+{
+    return this->lf_filename;
+}

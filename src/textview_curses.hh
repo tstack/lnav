@@ -48,7 +48,7 @@ class textview_curses;
 
 class logfile_filter_state {
 public:
-    logfile_filter_state(logfile *lf = NULL) : tfs_logfile(lf) {
+    logfile_filter_state(std::shared_ptr<logfile> lf = nullptr) : tfs_logfile(lf) {
         memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
         this->tfs_mask.reserve(64 * 1024);
     };
@@ -84,7 +84,7 @@ public:
 
     const static int MAX_FILTERS = 32;
 
-    logfile *tfs_logfile;
+    std::shared_ptr<logfile> tfs_logfile;
     size_t tfs_filter_count[MAX_FILTERS];
     std::vector<uint32_t> tfs_mask;
     std::vector<uint32_t> tfs_index;

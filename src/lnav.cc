@@ -268,6 +268,17 @@ static void add_global_vars(exec_context &ec)
     }
 }
 
+static void regenerate_unique_file_names()
+{
+    unique_path_generator upg;
+
+    for (auto lf : lnav_data.ld_files) {
+        upg.add_source(shared_ptr<logfile>(lf));
+    }
+
+    upg.generate();
+}
+
 bool setup_logline_table()
 {
     // Hidden columns don't show up in the table_info pragma.
@@ -492,7 +503,7 @@ class textfile_callback {
 public:
     textfile_callback() : force(false), front_file(NULL), front_top(-1) { };
 
-    void closed_file(logfile *lf) {
+    void closed_file(shared_ptr<logfile> lf) {
         log_info("closed text file: %s", lf->get_filename().c_str());
         if (!lf->is_valid_filename()) {
             lnav_data.ld_file_names.erase(lf->get_filename());
@@ -501,10 +512,11 @@ public:
                               lnav_data.ld_files.end(),
                               lf);
         lnav_data.ld_files.erase(file_iter);
-        delete lf;
+
+        regenerate_unique_file_names();
     };
 
-    void promote_file(logfile *lf) {
+    void promote_file(shared_ptr<logfile> lf) {
         if (lnav_data.ld_log_source.insert_file(lf)) {
             force = true;
 
@@ -524,7 +536,7 @@ public:
         }
     };
 
-    void scanned_file(logfile *lf) {
+    void scanned_file(shared_ptr<logfile> lf) {
         if (!lnav_data.ld_files_to_front.empty() &&
                 lnav_data.ld_files_to_front.front().first ==
                         lf->get_filename()) {
@@ -536,7 +548,7 @@ public:
     };
 
     bool force;
-    logfile *front_file;
+    shared_ptr<logfile> front_file;
     int front_top;
 };
 
@@ -566,8 +578,7 @@ void rebuild_indexes(bool force)
     }
 
     {
-        textfile_sub_source *          tss = &lnav_data.ld_text_source;
-        std::list<logfile *>::iterator iter;
+        textfile_sub_source *tss = &lnav_data.ld_text_source;
         textfile_callback cb;
         bool new_data;
 
@@ -611,7 +622,7 @@ void rebuild_indexes(bool force)
 
     for (auto file_iter = lnav_data.ld_files.begin();
          file_iter != lnav_data.ld_files.end(); ) {
-        logfile *lf = *file_iter;
+        auto lf = *file_iter;
 
         if (!lf->exists() || lf->is_closed()) {
             log_info("closed log file: %s", lf->get_filename().c_str());
@@ -621,9 +632,10 @@ void rebuild_indexes(bool force)
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
             file_iter = lnav_data.ld_files.erase(file_iter);
-            force = true;
 
-            delete lf;
+            regenerate_unique_file_names();
+
+            force = true;
         }
         else {
             ++file_iter;
@@ -824,7 +836,7 @@ static void open_pretty_view(void)
 
         for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             content_line_t cl = lss.at(vl);
-            logfile *lf = lss.find(cl);
+            shared_ptr<logfile> lf = lss.find(cl);
             log_format *format = lf->get_format();
             logfile::iterator ll = lf->begin() + cl;
             shared_buffer_ref sbr;
@@ -856,7 +868,7 @@ static void open_pretty_view(void)
         }
     }
     else if (top_tc == text_tc) {
-        logfile *lf = lnav_data.ld_text_source.current_file();
+        shared_ptr<logfile> lf = lnav_data.ld_text_source.current_file();
 
         for (vis_line_t vl = text_tc->get_top(); vl <= text_tc->get_bottom(); ++vl) {
             logfile::iterator ll = lf->begin() + vl;
@@ -1384,7 +1396,7 @@ struct same_file {
      * @return    True if the dev/inode values in the stat given in the
      *   constructor matches the stat in the logfile object.
      */
-    bool operator()(const logfile *lf) const
+    bool operator()(const shared_ptr<logfile> &lf) const
     {
         return this->sf_stat.st_dev == lf->get_stat().st_dev &&
                this->sf_stat.st_ino == lf->get_stat().st_ino;
@@ -1459,13 +1471,16 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
 
             default:
                 /* It's a new file, load it in. */
-                logfile *lf = new logfile(filename, loo);
+                shared_ptr<logfile> lf = make_shared<logfile>(filename, loo);
 
                 log_info("loading new file: filename=%s",
                          filename.c_str());
                 lf->set_logfile_observer(&obs);
                 lnav_data.ld_files.push_back(lf);
                 lnav_data.ld_text_source.push_back(lf);
+
+                regenerate_unique_file_names();
+
                 retval = true;
                 break;
             }
@@ -1551,7 +1566,7 @@ bool rescan_files(bool required)
 
     for (auto file_iter = lnav_data.ld_files.begin();
          file_iter != lnav_data.ld_files.end(); ) {
-        logfile *lf = *file_iter;
+        auto lf = *file_iter;
 
         if (!lf->exists() || lf->is_closed()) {
             log_info("Log file no longer exists or is closed: %s",
@@ -1572,7 +1587,7 @@ static string execute_action(log_data_helper &ldh,
 {
     std::map<string, log_format::action_def>::const_iterator iter;
     logline_value &lv = ldh.ldh_line_values[value_index];
-    logfile *lf = ldh.ldh_file;
+    shared_ptr<logfile> lf = ldh.ldh_file;
     const log_format *format = lf->get_format();
     pid_t child_pid;
     string retval;
@@ -1746,7 +1761,7 @@ public:
                 int x_offset = this->ad_line_index + mouse_left;
 
                 if (lv.lv_origin.contains(x_offset)) {
-                    logfile *lf = this->ad_log_helper.ldh_file;
+                    shared_ptr<logfile> lf = this->ad_log_helper.ldh_file;
                     const vector<string> *actions;
 
                     actions = lf->get_format()->get_actions(lv);
@@ -3466,7 +3481,7 @@ int main(int argc, char *argv[])
         for (auto file_iter = lnav_data.ld_files.begin();
              file_iter != lnav_data.ld_files.end();
              ++file_iter) {
-            logfile *lf = (*file_iter);
+            auto lf = (*file_iter);
 
             lf->rebuild_index();
 
@@ -3725,7 +3740,7 @@ int main(int argc, char *argv[])
                                      same_file(st));
             if (file_iter != lnav_data.ld_files.end()) {
                 logfile::iterator line_iter;
-                logfile *lf = *file_iter;
+                auto lf = *file_iter;
                 string str;
 
                 for (line_iter = lf->begin();

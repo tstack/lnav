@@ -116,7 +116,7 @@ public:
         content_line_t cl;
 
         cl = lss.at(lc.lc_curr_line);
-        logfile *         lf      = lss.find(cl);
+        std::shared_ptr<logfile> lf = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {
@@ -146,7 +146,7 @@ public:
         return true;
     };
 
-    void extract(logfile *lf,
+    void extract(std::shared_ptr<logfile> lf,
                  shared_buffer_ref &line,
                  std::vector<logline_value> &values)
     {

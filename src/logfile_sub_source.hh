@@ -288,7 +288,7 @@ public:
         this->lss_user_marks[bm].clear();
     };
 
-    bool insert_file(logfile *lf)
+    bool insert_file(std::shared_ptr<logfile> lf)
     {
         iterator existing;
 
@@ -311,7 +311,7 @@ public:
         return true;
     };
 
-    void remove_file(logfile *lf)
+    void remove_file(std::shared_ptr<logfile> lf)
     {
         iterator iter;
 
@@ -368,11 +368,11 @@ public:
         return this->lss_index.size() - this->lss_filtered_index.size();
     };
 
-    logfile *find(const char *fn, content_line_t &line_base);
+    std::shared_ptr<logfile> find(const char *fn, content_line_t &line_base);
 
-    logfile *find(content_line_t &line)
+    std::shared_ptr<logfile> find(content_line_t &line)
     {
-        logfile *retval;
+        std::shared_ptr<logfile> retval;
 
         retval = this->lss_files[line / MAX_LINES_PER_FILE]->get_file();
         line   = content_line_t(line % MAX_LINES_PER_FILE);
@@ -383,7 +383,7 @@ public:
     logline *find_line(content_line_t line)
     {
         logline *retval = NULL;
-        logfile *lf     = this->find(line);
+        std::shared_ptr<logfile> lf     = this->find(line);
 
         if (lf != NULL) {
             logfile::iterator ll_iter = lf->begin() + line;
@@ -429,7 +429,7 @@ public:
      * logfile have been indexed.
      */
     struct logfile_data {
-        logfile_data(size_t index, filter_stack &fs, logfile *lf)
+        logfile_data(size_t index, filter_stack &fs, std::shared_ptr<logfile> lf)
             : ld_file_index(index),
               ld_filter_state(fs, lf),
               ld_lines_indexed(0),
@@ -446,12 +446,14 @@ public:
             this->ld_enabled = enabled;
         }
 
-        void set_file(logfile *lf) {
+        void set_file(std::shared_ptr<logfile> lf) {
             this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
             lf->set_logline_observer(&this->ld_filter_state);
         };
 
-        logfile *get_file() const { return this->ld_filter_state.lfo_filter_state.tfs_logfile; };
+        std::shared_ptr<logfile> get_file() const {
+            return this->ld_filter_state.lfo_filter_state.tfs_logfile;
+        };
 
         size_t ld_file_index;
         line_filter_observer ld_filter_state;
@@ -519,9 +521,9 @@ public:
             content_line_t cl = (content_line_t) this->lss_index[this->lss_filtered_index[index]];
             uint64_t line_number;
             logfile_data *ld = this->find_data(cl, line_number);
-            logfile *lf = ld->get_file();
+            std::shared_ptr<logfile> lf = ld->get_file();
 
-            this->lss_index_delegate->index_line(*this, lf, lf->begin() + line_number);
+            this->lss_index_delegate->index_line(*this, lf.get(), lf->begin() + line_number);
         }
         this->lss_index_delegate->index_complete(*this);
     };
@@ -644,14 +646,14 @@ private:
      * Functor for comparing the ld_file field of the logfile_data struct.
      */
     struct logfile_data_eq {
-        logfile_data_eq(logfile *lf) : lde_file(lf) { };
+        logfile_data_eq(std::shared_ptr<logfile> lf) : lde_file(lf) { };
 
         bool operator()(const logfile_data *ld)
         {
             return this->lde_file == ld->get_file();
         }
 
-        logfile *lde_file;
+        std::shared_ptr<logfile> lde_file;
     };
 
     void clear_line_size_cache(void) {
@@ -678,7 +680,7 @@ private:
     bookmarks<content_line_t>::type lss_user_marks;
     std::map<content_line_t, bookmark_metadata> lss_user_mark_metadata;
 
-    logfile *         lss_token_file;
+    std::shared_ptr<logfile> lss_token_file;
     std::string       lss_token_value;
     string_attrs_t    lss_token_attrs;
     std::vector<logline_value> lss_token_values;

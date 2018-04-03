@@ -86,11 +86,7 @@ static string refresh_pt_search()
     }
 
 #ifdef HAVE_LIBCURL
-    for (auto iter = lnav_data.ld_files.begin();
-         iter != lnav_data.ld_files.end();
-         ++iter) {
-        logfile *lf = *iter;
-
+    for (auto lf : lnav_data.ld_files) {
         if (startswith(lf->get_filename(), "pt:")) {
             lf->close();
         }
@@ -137,7 +133,7 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
         date_time_scanner dts;
         vis_line_t top_line;
         struct exttm tm;
-        logfile *lf;
+        std::shared_ptr<logfile> lf;
 
         top_line = lnav_data.ld_views[LNV_LOG].get_top();
         top_content = lss.at(top_line);
@@ -853,7 +849,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                 else if (tc == &lnav_data.ld_views[LNV_LOG]) {
                     logfile_sub_source &lss = lnav_data.ld_log_source;
                     content_line_t cl = lss.at(tc->get_top());
-                    logfile *lf = lss.find(cl);
+                    std::shared_ptr<logfile> lf = lss.find(cl);
                     shared_buffer_ref sbr;
                     lf->read_full_message(lf->message_start(lf->begin() + cl), sbr);
                     if (write(in_pipe.write_end(), sbr.get_data(), sbr.length()) == -1) {
@@ -1560,7 +1556,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
 
         auto file_iter = lnav_data.ld_files.begin();
         for (; file_iter != lnav_data.ld_files.end(); ++file_iter) {
-            logfile *lf = *file_iter;
+            auto lf = *file_iter;
 
             if (lf->get_filename() == fn) {
                 if (lf->get_format() != NULL) {
@@ -1759,7 +1755,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
                 logfile_sub_source &lss = lnav_data.ld_log_source;
                 vis_line_t vl = tc->get_top();
                 content_line_t cl = lss.at(vl);
-                logfile *lf = lss.find(cl);
+                std::shared_ptr<logfile> lf = lss.find(cl);
 
                 fn = lf->get_filename();
                 lf->close();
@@ -2364,7 +2360,7 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
                     return "error: no log messages to hide";
                 } else {
                     content_line_t cl = lss.at(tc->get_top());
-                    logfile *lf = lss.find(cl);
+                    std::shared_ptr<logfile> lf = lss.find(cl);
                     format = lf->get_format();
                     name = intern_string::lookup(args[lpc]);
                 }
@@ -2854,7 +2850,7 @@ public:
         this->lsvs_end_time = 0;
         this->lsvs_stats.clear();
         for (iter = lss.begin(); iter != lss.end(); iter++) {
-            logfile *lf = (*iter)->get_file();
+            std::shared_ptr<logfile> lf = (*iter)->get_file();
 
             if (lf == NULL) {
                 continue;
@@ -2926,7 +2922,7 @@ public:
         }
         for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
             content_line_t cl = lss.at(curr_line);
-            logfile *lf = lss.find(cl);
+            std::shared_ptr<logfile> lf = lss.find(cl);
             logfile::iterator ll = lf->begin() + cl;
             log_format *format = lf->get_format();
             shared_buffer_ref sbr;
@@ -2979,7 +2975,7 @@ public:
         }
         for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
             content_line_t cl = lss.at(curr_line);
-            logfile *lf = lss.find(cl);
+            std::shared_ptr<logfile> lf = lss.find(cl);
             logfile::iterator ll = lf->begin() + cl;
             log_format *format = lf->get_format();
             shared_buffer_ref sbr;

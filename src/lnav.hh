@@ -222,7 +222,7 @@ struct _lnav_data {
     bool                                    ld_cmd_init_done;
     std::vector<std::string>                ld_config_paths;
     std::map<std::string, logfile_open_options> ld_file_names;
-    std::vector<logfile *>                  ld_files;
+    std::vector<std::shared_ptr<logfile>>   ld_files;
     std::list<std::string>                  ld_other_files;
     std::set<std::string>                   ld_closed_files;
     std::list<std::pair<std::string, int> > ld_files_to_front;

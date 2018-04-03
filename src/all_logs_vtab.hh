@@ -49,7 +49,7 @@ public:
         cols.push_back(vtab_column(this->alv_schema_name.get(), SQLITE3_TEXT, NULL, true));
     };
 
-    void extract(logfile *lf, shared_buffer_ref &line,
+    void extract(std::shared_ptr<logfile> lf, shared_buffer_ref &line,
                  std::vector<logline_value> &values) {
         log_format *format = lf->get_format();
         values.push_back(logline_value(this->alv_value_name,
@@ -89,7 +89,7 @@ public:
 
     bool is_valid(log_cursor &lc, logfile_sub_source &lss) {
         content_line_t    cl(lss.at(lc.lc_curr_line));
-        logfile *         lf      = lss.find(cl);
+        std::shared_ptr<logfile> lf = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {
@@ -108,7 +108,7 @@ public:
         }
 
         content_line_t    cl(lss.at(lc.lc_curr_line));
-        logfile *         lf      = lss.find(cl);
+        std::shared_ptr<logfile> lf = lss.find(cl);
         logfile::iterator lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {

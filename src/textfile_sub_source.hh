@@ -38,7 +38,7 @@
 
 class textfile_sub_source : public text_sub_source {
 public:
-    typedef std::list<logfile *>::iterator file_iterator;
+    typedef std::list<std::shared_ptr<logfile>>::iterator file_iterator;
 
     textfile_sub_source() { };
 
@@ -55,7 +55,7 @@ public:
         size_t retval = 0;
 
         if (!this->tss_files.empty()) {
-            logfile *lf = this->current_file();
+            std::shared_ptr<logfile> lf = this->current_file();
             line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
             retval = lfo->lfo_filter_state.tfs_index.size();
         }
@@ -73,7 +73,7 @@ public:
                              bool raw = false)
     {
         if (!this->tss_files.empty()) {
-            logfile *lf = this->current_file();
+            std::shared_ptr<logfile> lf = this->current_file();
             line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
             lf->read_line(lf->begin() + lfo->lfo_filter_state.tfs_index[line], value_out);
         }
@@ -94,14 +94,14 @@ public:
 
         lr.lr_start = 0;
         lr.lr_end   = -1;
-        value_out.push_back(string_attr(lr, &logline::L_FILE, this->current_file()));
+        value_out.push_back(string_attr(lr, &logline::L_FILE, this->current_file().get()));
     };
 
     size_t text_size_for_line(textview_curses &tc, int line, bool raw) {
         size_t retval = 0;
 
         if (!this->tss_files.empty()) {
-            logfile *lf = this->current_file();
+            std::shared_ptr<logfile> lf = this->current_file();
             line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
             retval = lf->line_length(lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
         }
@@ -109,7 +109,7 @@ public:
         return retval;
     };
 
-    logfile *current_file(void) const
+    std::shared_ptr<logfile> current_file(void) const
     {
         if (this->tss_files.empty()) {
             return NULL;
@@ -126,7 +126,7 @@ public:
         return this->tss_files.front()->get_filename();
     };
 
-    void to_front(logfile *lf) {
+    void to_front(std::shared_ptr<logfile> lf) {
         this->tss_files.remove(lf);
         this->tss_files.push_front(lf);
     };
@@ -141,7 +141,7 @@ public:
         this->tss_files.pop_back();
     };
 
-    void remove(logfile *lf) {
+    void remove(std::shared_ptr<logfile> lf) {
         file_iterator iter = std::find(this->tss_files.begin(),
                 this->tss_files.end(), lf);
         if (iter != this->tss_files.end()) {
@@ -150,7 +150,7 @@ public:
         }
     };
 
-    void push_back(logfile *lf) {
+    void push_back(std::shared_ptr<logfile> lf) {
         line_filter_observer *lfo = new line_filter_observer(
                 this->get_filters(), lf);
         lf->set_logline_observer(lfo);
@@ -162,7 +162,7 @@ public:
         bool retval = false;
 
         for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
-            logfile *lf = (*iter);
+            std::shared_ptr<logfile> lf = (*iter);
 
             if (!lf->exists() || lf->is_closed()) {
                 iter = this->tss_files.erase(iter);
@@ -211,7 +211,7 @@ public:
     };
 
     virtual void text_filters_changed() {
-        logfile *lf = this->current_file();
+        std::shared_ptr<logfile> lf = this->current_file();
 
         if (lf == NULL) {
             return;
@@ -234,7 +234,7 @@ public:
     };
 
     int get_filtered_count() const {
-        logfile *lf = this->current_file();
+        std::shared_ptr<logfile> lf = this->current_file();
         int retval = 0;
 
         if (lf != NULL) {
@@ -253,13 +253,13 @@ public:
     }
 
 private:
-    void detach_observer(logfile *lf) {
+    void detach_observer(std::shared_ptr<logfile> lf) {
         line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
         lf->set_logline_observer(NULL);
         delete lfo;
     };
 
-    std::list<logfile *> tss_files;
+    std::list<std::shared_ptr<logfile>> tss_files;
 };
 
 #endif

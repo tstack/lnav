@@ -441,9 +441,6 @@ void view_curses::mvwattrline(WINDOW *window,
     }
     wattroff(window, attrs);
 
-    std::vector<line_range> graphic_range;
-    std::vector<int>        graphic_in;
-
     stable_sort(sa.begin(), sa.end());
     for (iter = sa.begin(); iter != sa.end(); ++iter) {
         struct line_range attr_range = iter->sa_range;
@@ -478,8 +475,12 @@ void view_curses::mvwattrline(WINDOW *window,
             attr_range.lr_end = lr.lr_start + line_width;
         }
 
-        attr_range.lr_end = min((int)line_width,
-            attr_range.lr_end - lr.lr_start);
+        attr_range.lr_end = min(line_width, attr_range.lr_end - lr.lr_start);
+
+        if (iter->sa_type == &VC_GRAPHIC) {
+            mvwaddch(window, y, x + attr_range.lr_start, iter->sa_value.sav_int);
+            continue;
+        }
 
         if (attr_range.lr_end > attr_range.lr_start) {
             string_attrs_t::const_iterator range_iter;
@@ -510,22 +511,6 @@ void view_curses::mvwattrline(WINDOW *window,
                 }
                 mvwadd_wchnstr(window, y, x_pos, row_ch, ch_width);
             }
-            for (range_iter = iter;
-                 range_iter != sa.end() && range_iter->sa_range == iter->sa_range;
-                 ++range_iter) {
-                if (range_iter->sa_type == &VC_GRAPHIC) {
-                    graphic_range.push_back(attr_range);
-                    graphic_in.push_back(range_iter->sa_value.sav_int | attrs);
-                }
-            }
-        }
-    }
-
-    for (size_t lpc = 0; lpc < graphic_range.size(); lpc++) {
-        for (int lpc2 = graphic_range[lpc].lr_start;
-             lpc2 < graphic_range[lpc].lr_end;
-             lpc2++) {
-            mvwaddch(window, y, x + lpc2, graphic_in[lpc]);
         }
     }
 }
