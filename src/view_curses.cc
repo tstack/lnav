@@ -478,7 +478,11 @@ void view_curses::mvwattrline(WINDOW *window,
         attr_range.lr_end = min(line_width, attr_range.lr_end - lr.lr_start);
 
         if (iter->sa_type == &VC_GRAPHIC) {
-            mvwaddch(window, y, x + attr_range.lr_start, iter->sa_value.sav_int);
+            for (int index = attr_range.lr_start;
+                index < attr_range.lr_end;
+                index++) {
+                mvwaddch(window, y, x + index, iter->sa_value.sav_int);
+            }
             continue;
         }
 
