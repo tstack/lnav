@@ -84,6 +84,15 @@ int main(int argc, char *argv[])
                 A_REVERSE));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
+        al.clear().with_string("Two\ttabs\twith text")
+          .with_attr(string_attr(line_range(4, 6),
+                                 &view_curses::VC_STYLE,
+                                 A_REVERSE))
+          .with_attr(string_attr(line_range(9, 13),
+                                 &view_curses::VC_STYLE,
+                                 A_REVERSE));
+        view_curses::mvwattrline(win, y++, 0, al, lr);
+
         al.clear().with_string("Text with mixed attributes.")
             .with_attr(string_attr(line_range(5, 9),
                 &view_curses::VC_STYLE,
