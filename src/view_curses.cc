@@ -469,14 +469,14 @@ void view_curses::mvwattrline(WINDOW *window,
         }
 
         for (const auto &adj : utf_adjustments) {
-            if (adj.uda_origin < attr_range.lr_start) {
+            if (adj.uda_origin < iter->sa_range.lr_start) {
                 attr_range.lr_start += adj.uda_offset;
             }
         }
 
         if (attr_range.lr_end != -1) {
             for (const auto &adj : utf_adjustments) {
-                if (adj.uda_origin < attr_range.lr_end) {
+                if (adj.uda_origin < iter->sa_range.lr_end) {
                     attr_range.lr_end += adj.uda_offset;
                 }
             }
