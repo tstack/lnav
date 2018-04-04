@@ -360,18 +360,13 @@ void attr_line_t::split_lines(std::vector<attr_line_t> &lines) const
     lines.emplace_back(this->subline(pos));
 }
 
-struct tab_mapping {
-    size_t tm_origin;
-    size_t tm_dst_start;
-    size_t tm_dst_end;
+struct utf_to_display_adjustment {
+    int uda_origin;
+    int uda_offset;
 
-    tab_mapping(size_t origin, size_t dst_start, size_t dst_end)
-        : tm_origin(origin), tm_dst_start(dst_start), tm_dst_end(dst_end) {
+    utf_to_display_adjustment(int utf_origin, int offset)
+        : uda_origin(utf_origin), uda_offset(offset) {
 
-    };
-
-    size_t length() const {
-        return this->tm_dst_end - this->tm_dst_start;
     };
 };
 
@@ -386,10 +381,11 @@ void view_curses::mvwattrline(WINDOW *window,
     string_attrs_t &         sa   = al.get_attrs();
     string &                 line = al.get_string();
     string_attrs_t::const_iterator iter;
-    vector<tab_mapping> tab_list;
-    int    tab_count = 0;
-    char  *expanded_line;
-    size_t exp_index = 0;
+    vector<utf_to_display_adjustment> utf_adjustments;
+    int tab_count = 0;
+    char *expanded_line;
+    int exp_index = 0;
+    int exp_offset = 0;
     string full_line;
 
     require(lr.lr_end >= 0);
@@ -400,14 +396,15 @@ void view_curses::mvwattrline(WINDOW *window,
 
     for (size_t lpc = 0; lpc < line.size(); lpc++) {
         int exp_start_index = exp_index;
+        unsigned char ch = static_cast<unsigned char>(line[lpc]);
 
-        switch (line[lpc]) {
+        switch (ch) {
         case '\t':
             do {
                 expanded_line[exp_index] = ' ';
                 exp_index += 1;
             } while (exp_index % 8);
-            tab_list.emplace_back(lpc, exp_start_index, exp_index);
+            utf_adjustments.emplace_back(lpc, exp_index - exp_start_index - 1);
             break;
 
         case '\r':
@@ -419,10 +416,29 @@ void view_curses::mvwattrline(WINDOW *window,
             exp_index += 1;
             break;
 
-        default:
+        default: {
+            int offset = 0;
+
             expanded_line[exp_index] = line[lpc];
             exp_index += 1;
+            if ((ch & 0xf8) == 0xf0) {
+                offset = -3;
+            } else if ((ch & 0xf0) == 0xe0) {
+                offset = -2;
+            } else if ((ch & 0xe0) == 0xc0) {
+                offset = -1;
+            }
+
+            if (offset) {
+                exp_offset += offset;
+                utf_adjustments.emplace_back(lpc, offset);
+                for (; offset && (lpc + 1) < line.size(); lpc++, offset++) {
+                    expanded_line[exp_index] = line[lpc + 1];
+                    exp_index += 1;
+                }
+            }
             break;
+        }
         }
     }
 
@@ -437,7 +453,7 @@ void view_curses::mvwattrline(WINDOW *window,
         waddnstr(window, &full_line.c_str()[lr.lr_start], line_width);
     }
     if (lr.lr_end > (int)full_line.size()) {
-        whline(window, ' ', lr.lr_end - full_line.size());
+        whline(window, ' ', lr.lr_end - (full_line.size() + exp_offset));
     }
     wattroff(window, attrs);
 
@@ -452,20 +468,16 @@ void view_curses::mvwattrline(WINDOW *window,
             continue;
         }
 
-        for (auto tab_iter = tab_list.rbegin();
-             tab_iter != tab_list.rend();
-             ++tab_iter) {
-            if ((int)tab_iter->tm_origin < attr_range.lr_start) {
-                attr_range.lr_start += tab_iter->length() - 1;
+        for (const auto &adj : utf_adjustments) {
+            if (adj.uda_origin < attr_range.lr_start) {
+                attr_range.lr_start += adj.uda_offset;
             }
         }
 
         if (attr_range.lr_end != -1) {
-            for (auto tab_iter = tab_list.rbegin();
-                 tab_iter != tab_list.rend();
-                 ++tab_iter) {
-                if ((int)tab_iter->tm_origin < attr_range.lr_end) {
-                    attr_range.lr_end += tab_iter->length() - 1;
+            for (const auto &adj : utf_adjustments) {
+                if (adj.uda_origin < attr_range.lr_end) {
+                    attr_range.lr_end += adj.uda_offset;
                 }
             }
         }

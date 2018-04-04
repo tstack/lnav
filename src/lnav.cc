@@ -2973,6 +2973,11 @@ int main(int argc, char *argv[])
     const char *         stdin_out = NULL;
     int                  stdin_out_fd = -1;
     bool exec_stdin = false;
+    const char *LANG = getenv("LANG");
+
+    if (LANG == nullptr || strcmp(LANG, "C") == 0) {
+        setenv("LANG", "en_US.utf-8", 1);
+    }
 
     (void)signal(SIGPIPE, SIG_IGN);
     setlocale(LC_ALL, "");

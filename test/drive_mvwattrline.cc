@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <locale.h>
 
 #include "view_curses.hh"
 
@@ -48,6 +49,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    setenv("LANG", "en_US.utf-8", 1);
+    setlocale(LC_ALL, "");
+
     {
         screen_curses sc;
         WINDOW *win = sc.get_window();
@@ -55,6 +59,7 @@ int main(int argc, char *argv[])
         attr_line_t al;
         int y = 0;
 
+        curs_set(0);
         noecho();
         view_colors::singleton().init();
 
@@ -86,6 +91,14 @@ int main(int argc, char *argv[])
             .with_attr(string_attr(line_range(7, 12),
                 &view_curses::VC_STYLE,
                 A_REVERSE));
+        view_curses::mvwattrline(win, y++, 0, al, lr);
+
+        const char *text = u8"Text with unicode ▶ characters";
+        int offset = strstr(text, "char") - text;
+        al.clear().with_string(text)
+          .with_attr(string_attr(line_range(offset, offset + 4),
+                                 &view_curses::VC_STYLE,
+                                 A_REVERSE));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
 
