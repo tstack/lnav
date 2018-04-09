@@ -153,7 +153,9 @@ bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
     bool retval = false;
 
     if (this->lf_format.get() != NULL) {
-        prescan_time = this->lf_index[0].get_time();
+        if (!this->lf_index.empty()) {
+            prescan_time = this->lf_index[0].get_time();
+        }
         /* We've locked onto a format, just use that scanner. */
         found = this->lf_format->scan(this, this->lf_index, offset, sbr);
     }

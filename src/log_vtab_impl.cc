@@ -85,6 +85,8 @@ std::string log_vtab_impl::get_table_statement(void)
         auto_mem<char, sqlite3_free> colname;
         string comment;
 
+        require(!iter->vc_name.empty());
+
         if (!iter->vc_comment.empty()) {
             comment.append(" -- ")
                    .append(iter->vc_comment);

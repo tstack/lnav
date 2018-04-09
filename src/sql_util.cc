@@ -564,7 +564,7 @@ bool sql_ident_needs_quote(const char *ident)
 char *sql_quote_ident(const char *ident)
 {
     bool needs_quote = false;
-    size_t quote_count = 0;
+    size_t quote_count = 0, alloc_size;
     char *retval;
 
     for (int lpc = 0; ident[lpc]; lpc++) {
@@ -572,13 +572,13 @@ char *sql_quote_ident(const char *ident)
                 (!isalnum(ident[lpc]) && ident[lpc] != '_')) {
             needs_quote = true;
         }
-        else if (ident[lpc] == '"') {
+        if (ident[lpc] == '"') {
             quote_count += 1;
         }
     }
 
-    if ((retval = (char *)sqlite3_malloc(
-        strlen(ident) + quote_count * 2 + (needs_quote ? 2: 0) + 1)) == NULL) {
+    alloc_size = strlen(ident) + quote_count * 2 + (needs_quote ? 2: 0) + 1;
+    if ((retval = (char *)sqlite3_malloc(alloc_size)) == NULL) {
         retval = NULL;
     }
     else {
