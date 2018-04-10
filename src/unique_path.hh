@@ -114,7 +114,11 @@ public:
                             for (auto &src : pair.second) {
                                 auto &path = src->get_path_prefix();
 
-                                src->set_path_prefix(path.parent_path());
+                                if (path.empty()) {
+                                    all_common = false;
+                                } else {
+                                    src->set_path_prefix(path.parent_path());
+                                }
                             }
                         }
                     } while (all_common);
@@ -137,9 +141,17 @@ public:
                 } else {
                     src->set_unique_path(prefix.filename() + "/" + unique_path);
                 }
-                src->set_path_prefix(prefix.parent_path());
 
-                this->upg_unique_paths[src->get_unique_path()].push_back(src);
+                filesystem::path parent = prefix.parent_path();
+
+                src->set_path_prefix(parent);
+
+                if (!parent.empty()) {
+                    this->upg_unique_paths[src->get_unique_path()].push_back(
+                        src);
+                } else {
+                    src->set_unique_path("[" + src->get_unique_path());
+                }
             }
 
             loop_count += 1;

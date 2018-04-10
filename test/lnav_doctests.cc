@@ -73,6 +73,7 @@ TEST_CASE("unique_path") {
     unique_path_generator upg;
 
     auto bar = make_shared<my_path_source>("/foo/bar");
+    auto bar_dupe = make_shared<my_path_source>("/foo/bar");
     auto baz = make_shared<my_path_source>("/foo/baz");
     auto baz2 = make_shared<my_path_source>("/foo2/bar");
     auto log1 = make_shared<my_path_source>(
@@ -81,6 +82,7 @@ TEST_CASE("unique_path") {
         "/home/bob/downloads/machine2/var/log/syslog.log");
 
     upg.add_source(bar);
+    upg.add_source(bar_dupe);
     upg.add_source(baz);
     upg.add_source(baz2);
     upg.add_source(log1);
@@ -89,6 +91,7 @@ TEST_CASE("unique_path") {
     upg.generate();
 
     CHECK(bar->get_unique_path() == "[foo]/bar");
+    CHECK(bar_dupe->get_unique_path() == "[foo]/bar");
     CHECK(baz->get_unique_path() == "baz");
     CHECK(baz2->get_unique_path() == "[foo2]/bar");
     CHECK(log1->get_unique_path() == "[machine1]/syslog.log");
