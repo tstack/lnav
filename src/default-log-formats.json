@@ -372,6 +372,136 @@
             }
         ]
     },
+    "alb_log": {
+      "title": "Amazon ALB log",
+      "description": "Log format for Amazon Application Load Balancers",
+      "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-access-logs.html",
+      "regex": {
+        "std": {
+          "pattern": "^(?<type>(http)|(https)|(h2)|(ws)|(wss)) (?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z) (?<elb>[^ ]+) (?<client_ip>[\\w\\.:]+):(?<client_port>\\d+) (?<target_ip>[\\w\\.:]+):(?<target_port>\\d+) (?<request_processing_time>(-1)|(\\d+(\\.\\d+))?) (?<target_processing_time>(-1)|(\\d+(\\.\\d+))?) (?<response_processing_time>(-1)|(\\d+(\\.\\d+))?) (?<elb_status_code>\\d+|-) (?<target_status_code>\\d+|-) (?<received_bytes>\\d+) (?<sent_bytes>\\d+) \"(?:\\-|(?<cs_method>\\w+|-) (?<cs_uri_whole>(?<cs_uri_stem>(?:(?<cs_uri_scheme>https|http)?:\/\/)?(?:(?<cs_uri_hostname>[^:]+):(?<cs_uri_port>\\d+)?)?(?<cs_uri_path>[^ \\?]+)?)(?:\\?(?<cs_uri_query>[^ ]*))?) (?<cs_version>[\\w\/\\.]+|-)\\s*)\" \"(?<user_agent>[^\"]+)\" (?<ssl_cipher>[\\w-]+) (?<ssl_protocol>[\\w\\.-]+) (?<target_group_arn>[^ ]+) \"(?<trace_id>[^ ]+)\" (?<domain_name>[^ ]+) (?<chosen_cert_arn>[^ ]+) ?(?<matched_rule_priority>(-1)|\\b([0-9]|[1-8][0-9]|9[0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|[1-8][0-9]{3}|9[0-8][0-9]{2}|99[0-8][0-9]|999[0-9]|[1-4][0-9]{4}|50000)\\b)?"
+        }
+      },
+      "level-field": "elb_status_code",
+      "level": {
+        "error": "^[^123].*"
+      },
+      "opid-field": "client_ip",
+      "value": {
+        "type": {
+          "kind": "string",
+          "identifier": true
+        },
+        "alb": {
+          "kind": "string",
+          "identifier": true
+        },
+        "client_ip": {
+          "kind": "string",
+          "collate": "ipaddress",
+          "identifier": true
+        },
+        "client_port": {
+          "kind": "integer",
+          "foreign-key": true
+        },
+        "target_ip": {
+          "kind": "string",
+          "collate": "ipaddress",
+          "identifier": true
+        },
+        "target_port": {
+          "kind": "integer",
+          "foreign-key": true
+        },
+        "request_processing_time": {
+          "kind": "float"
+        },
+        "target_processing_time": {
+          "kind": "float"
+        },
+        "response_processing_time": {
+          "kind": "float"
+        },
+        "elb_status_code": {
+          "kind": "integer",
+          "foreign-key": true
+        },
+        "target_status_code": {
+          "kind": "integer",
+          "foreign-key": true
+        },
+        "received_bytes": {
+          "kind": "integer"
+        },
+        "sent_bytes": {
+          "kind": "integer"
+        },
+        "cs_method": {
+          "kind": "string",
+          "identifier": true
+        },
+        "cs_uri_stem": {
+          "kind": "string",
+          "identifier": true
+        },
+        "cs_uri_query": {
+          "kind": "string"
+        },
+        "cs_version": {
+          "kind": "string",
+          "identifier": true
+        },
+        "user_agent": {
+          "kind": "string",
+          "identifier": true
+        },
+        "ssl_cipher": {
+          "kind": "string",
+          "identifier": true
+        },
+        "ssl_protocol": {
+          "kind": "string",
+          "identifier": true
+        },
+        "target_group_arn": {
+          "kind": "string",
+          "identifier": true
+        },
+        "trace_id": {
+          "kind": "string",
+          "identifier": true
+        },
+        "domain_name": {
+          "kind": "string",
+          "identifier": true
+        },
+        "chosen_cert_arn": {
+          "kind": "string",
+          "identifier": true
+        },
+	      "matched_rule_priority": {
+	        "kind": "integer",
+	        "identifier": true
+	      }
+      },
+      "sample": [
+        {
+          "line": "http 2016-08-10T22:08:42.945958Z app/my-loadbalancer/50dc6c495c0c9188 192.168.131.39:2817 10.0.0.1:80 0.000 0.001 0.000 200 200 34 366 \"GET http://www.example.com:80/ HTTP/1.1\" \"curl/7.46.0\" - - arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/my-targets/73e2d6bc24d8a067 \"Root=1-58337262-36d228ad5d99923122bbe354\" - -"
+        },
+        {
+          "line": "https 2016-08-10T23:39:43.065466Z app/my-loadbalancer/50dc6c495c0c9188 192.168.131.39:2817 10.0.0.1:80 0.086 0.048 0.037 200 200 0 57 \"GET https://www.example.com:443/ HTTP/1.1\" \"curl/7.46.0\" ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/my-targets/73e2d6bc24d8a067 \"Root=1-58337281-1d84f3d73c47ec4e58577259\" www.example.com arn:aws:acm:us-east-2:123456789012:certificate/12345678-1234-1234-1234-123456789012"
+        },
+        {
+          "line": "h2 2016-08-10T00:10:33.145057Z app/my-loadbalancer/50dc6c495c0c9188 10.0.1.252:48160 10.0.0.66:9000 0.000 0.002 0.000 200 200 5 257 \"GET https://10.0.2.105:773/ HTTP/2.0\" \"curl/7.46.0\" ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/my-targets/73e2d6bc24d8a067 \"Root=1-58337327-72bd00b0343d75b906739c42\" - -"
+        },
+        {
+          "line": "ws 2016-08-10T00:32:08.923954Z app/my-loadbalancer/50dc6c495c0c9188 10.0.0.140:40914 10.0.1.192:8010 0.001 0.003 0.000 101 101 218 587 \"GET http://10.0.0.30:80/ HTTP/1.1\" \"-\" - - arn:aws:elasticloadbalancing:us-east-2:123456789012:targetgroup/my-targets/73e2d6bc24d8a067 \"Root=1-58337364-23a8c76965a2ef7629b185e3\" - -"
+        },
+        {
+          "line": "wss 2016-08-10T00:42:46.423695Z app/my-loadbalancer/50dc6c495c0c9188 10.0.0.140:44244 10.0.0.171:8010 0.000 0.001 0.000 101 101 218 786 \"GET https://10.0.0.30:443/ HTTP/1.1\" \"-\" ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2 arn:aws:elasticloadbalancing:us-west-2:123456789012:targetgroup/my-targets/73e2d6bc24d8a067 \"Root=1-58337364-23a8c76965a2ef7629b185e3\" - -"
+        }
+      ]
+    },
     "engine_log" : {
         "title" : "engine log",
         "description" : "The log format for the engine.log files from RHEV/oVirt",
