@@ -491,7 +491,8 @@ bool logfile_sub_source::rebuild_index(bool force)
 
                         // If there are new lines that are older than what we
                         // have in the index, we need to resort.
-                        if (new_file_line < last_indexed_line->get_timeval()) {
+                        if (last_indexed_line == nullptr ||
+                            new_file_line < last_indexed_line->get_timeval()) {
                             force = true;
                         }
                     }
