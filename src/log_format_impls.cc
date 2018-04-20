@@ -90,20 +90,20 @@ class generic_log_format : public log_format {
 
     static pcre_format *get_pcre_log_formats() {
         static pcre_format log_fmt[] = {
-            pcre_format("^(?<timestamp>@[0-9a-zA-Z]{16,24})(.*)"),
-            pcre_format("^(?<timestamp>[\\dTZ: +/\\-,\\.-]+)([^:]+)"),
-            pcre_format("^(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)"),
-            pcre_format("^(?<timestamp>[\\w:,/\\.-]+) (.*)"),
-            pcre_format("^(?<timestamp>[\\w:,/\\.-]+) - (.*)"),
-            pcre_format("^(?<timestamp>[\\w: \\.,/-]+) - (.*)"),
-            pcre_format("^(?<timestamp>[\\w: \\.,/-]+)\\[[^\\]]+\\](.*)"),
-            pcre_format("^(?<timestamp>[\\w: \\.,/-]+) (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24})(.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\dTZ: +/\\-,\\.-]+)([^:]+)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:,/\\.-]+) (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:,/\\.-]+) - (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+) - (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+)\\[[^\\]]+\\](.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w: \\.,/-]+) (.*)"),
 
-            pcre_format(R"(^\[(?<timestamp>[\w: \.,+/-]+)\]\s*(\w+):?)"),
-            pcre_format("^\\[(?<timestamp>[\\w: \\.,+/-]+)\\] (.*)"),
-            pcre_format("^\\[(?<timestamp>[\\w: \\.,+/-]+)\\] \\[(\\w+)\\]"),
-            pcre_format("^\\[(?<timestamp>[\\w: \\.,+/-]+)\\] \\w+ (.*)"),
-            pcre_format("^\\[(?<timestamp>[\\w: ,+/-]+)\\] \\(\\d+\\) (.*)"),
+            pcre_format(R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w: \.,+/-]+)\]\s*(\w+):?)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: \\.,+/-]+)\\] (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: \\.,+/-]+)\\] \\[(\\w+)\\]"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: \\.,+/-]+)\\] \\w+ (.*)"),
+            pcre_format("^(?:\\*\\*\\*\\s+)?\\[(?<timestamp>[\\w: ,+/-]+)\\] \\(\\d+\\) (.*)"),
 
             pcre_format()
         };
