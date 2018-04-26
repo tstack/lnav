@@ -1886,7 +1886,7 @@ static void handle_key(int ch) {
     }
 
     switch (ch) {
-    case CEOF:
+    case CTRL('d'):
     case KEY_RESIZE:
         break;
     default:
@@ -2416,7 +2416,7 @@ static void looper(void)
                         }
 
                         switch (ch) {
-                        case CEOF:
+                        case CTRL('d'):
                         case KEY_RESIZE:
                             break;
 
