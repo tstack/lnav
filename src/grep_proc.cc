@@ -159,7 +159,6 @@ void grep_proc::child_loop(void)
     char   outbuf[BUFSIZ * 2];
     string line_value;
 
-    *stdout = *(fdopen(STDOUT_FILENO, "w"));
     /* Make sure buffering is on, not sure of the state in the parent. */
     if (setvbuf(stdout, outbuf, _IOFBF, BUFSIZ * 2) < 0) {
         perror("setvbuf");
