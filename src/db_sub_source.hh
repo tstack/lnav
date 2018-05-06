@@ -454,7 +454,7 @@ public:
                                                dls->dls_headers[lpc].hm_column_size);
 
                 int attrs =
-                        vc.attrs_for_ident(dls->dls_headers[lpc].hm_name) | A_UNDERLINE;
+                        vc.attrs_for_ident(dls->dls_headers[lpc].hm_name) | A_REVERSE;
                 if (!this->dos_labels->dls_headers[lpc].hm_graphable) {
                     attrs = A_UNDERLINE;
                 }
