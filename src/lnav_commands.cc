@@ -2311,7 +2311,7 @@ static string com_set_min_log_level(exec_context &ec, string cmdline, vector<str
         logline::level_t new_level;
 
         new_level = logline::string2level(
-            args[1].c_str(), args[1].size(), true);
+            args[1].c_str(), args[1].size(), false);
         lss.set_min_log_level(new_level);
         rebuild_indexes(true);
 

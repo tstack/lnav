@@ -109,7 +109,10 @@ logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool e
 
     if (LEVEL_RE.match(pc, pi)) {
         auto iter = pc.begin();
-        retval = abbrev2level(pi.get_substr_start(iter), pi.get_substr_len(iter));
+        if (!exact || pc[0]->c_begin == 0) {
+            retval = abbrev2level(pi.get_substr_start(iter),
+                                  pi.get_substr_len(iter));
+        }
     }
 
     return retval;
