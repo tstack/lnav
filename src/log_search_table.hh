@@ -128,14 +128,9 @@ public:
 
         lf->read_full_message(lf_iter, this->lst_current_line);
         lf->get_format()->annotate(this->lst_current_line, sa, line_values);
-        this->lst_body = find_string_attr_range(sa, &textview_curses::SA_BODY);
-        if (this->lst_body.lr_end == -1 || this->lst_body.length() == 0) {
-            return false;
-        }
-
-        pcre_input pi(&this->lst_current_line.get_data()[this->lst_body.lr_start],
+        pcre_input pi(this->lst_current_line.get_data(),
                       0,
-                      this->lst_body.length());
+                      this->lst_current_line.length());
 
         if (!this->lst_regex.match(this->lst_match_context, pi)) {
             return false;
@@ -153,9 +148,9 @@ public:
         static intern_string_t instance_name = intern_string::lookup("log_msg_instance");
         static intern_string_t empty = intern_string::lookup("", 0);
 
-        pcre_input pi(&this->lst_current_line.get_data()[this->lst_body.lr_start],
+        pcre_input pi(this->lst_current_line.get_data(),
                       0,
-                      this->lst_body.length());
+                      this->lst_current_line.length());
         int next_column = 0;
 
         values.push_back(logline_value(instance_name, this->lst_instance));
@@ -164,9 +159,7 @@ public:
             pcre_context::capture_t *cap = this->lst_match_context[lpc];
             shared_buffer_ref value_sbr;
 
-            value_sbr.subset(line,
-                             this->lst_body.lr_start + cap->c_begin,
-                             cap->length());
+            value_sbr.subset(line, cap->c_begin, cap->length());
             values.push_back(logline_value(empty,
                                            this->lst_column_types[lpc],
                                            value_sbr));
@@ -177,7 +170,6 @@ public:
     std::string lst_regex_string;
     pcrepp lst_regex;
     shared_buffer_ref lst_current_line;
-    struct line_range lst_body;
     pcre_context_static<128> lst_match_context;
     std::vector<logline_value::kind_t> lst_column_types;
     int64_t lst_instance;

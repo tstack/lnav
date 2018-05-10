@@ -1360,7 +1360,7 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
             hl.with_attrs(
                 vc.ansi_color_pair(COLOR_BLACK, COLOR_CYAN) | A_BLINK);
 
-            hm["$bodypreview"] = hl;
+            hm["$preview"] = hl;
             tc->reload_data();
 
             attr_line_t al(lst->get_table_statement());
