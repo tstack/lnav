@@ -41,7 +41,7 @@ void sigalrm_handler(int sig)
     }
 }
 
-std::string pretty_printer::print() {
+void pretty_printer::append_to(attr_line_t &al) {
     pcre_context_static<30> pc;
     data_token_t dt;
 
@@ -51,16 +51,16 @@ std::string pretty_printer::print() {
 
         switch (dt) {
             case DT_XML_EMPTY_TAG:
-                if (is_xml) {
+                if (this->pp_is_xml && this->pp_line_length > 0) {
                     this->start_new_line();
                 }
                 this->pp_values.push_back(el);
-                if (is_xml) {
+                if (this->pp_is_xml) {
                     this->start_new_line();
                 }
                 continue;
             case DT_XML_OPEN_TAG:
-                if (is_xml) {
+                if (this->pp_is_xml) {
                     this->start_new_line();
                     this->write_element(el);
                     this->descend();
@@ -100,8 +100,9 @@ std::string pretty_printer::print() {
                 }
                 break;
             case DT_WHITE:
-                if (this->pp_values.empty() && this->pp_depth == 0) {
-                    // this->pp_leading_indent = el.e_capture.length();
+                if (this->pp_values.empty() && this->pp_depth == 0 &&
+                    this->pp_line_length == 0) {
+                    this->pp_leading_indent = el.e_capture.length();
                     continue;
                 }
                 break;
@@ -115,7 +116,14 @@ std::string pretty_printer::print() {
     }
     this->flush_values();
 
-    return this->pp_stream.str();
+    attr_line_t combined;
+    combined.get_string() = this->pp_stream.str();
+    combined.get_attrs() = this->pp_attrs;
+
+    if (!al.empty()) {
+        al.append("\n");
+    }
+    al.append(combined);
 }
 
 void pretty_printer::convert_ip_address(const pretty_printer::element &el) {
@@ -170,33 +178,41 @@ void pretty_printer::convert_ip_address(const pretty_printer::element &el) {
             log_info("Reverse lookup in pretty-print view disabled");
         }
     }
-    this->pp_stream << " " << ANSI_UNDERLINE_START <<
-                    "(" << result << ")" <<
-                    ANSI_NORM;
+    ssize_t start_size = this->pp_stream.tellp();
+    this->pp_stream << " (" << result << ")";
+    struct line_range lr{(int) start_size + 1, (int) this->pp_stream.tellp()};
+    this->pp_attrs.emplace_back(lr, &view_curses::VC_STYLE, A_UNDERLINE);
 }
 
 void pretty_printer::write_element(const pretty_printer::element &el) {
     if (this->pp_leading_indent == 0 &&
         this->pp_line_length == 0 &&
         el.e_token == DT_WHITE) {
+        if (this->pp_depth == 0) {
+            this->pp_soft_indent += el.e_capture.length();
+        }
         return;
     }
-    if (this->pp_line_length == 0 && el.e_token == DT_LINE) {
+    if (this->pp_line_length <= this->pp_leading_indent && el.e_token == DT_LINE) {
+        this->pp_soft_indent = 0;
         return;
     }
     pcre_input &pi = this->pp_scanner->get_input();
     if (this->pp_line_length == 0) {
         this->append_indent();
     }
+    ssize_t start_size = this->pp_stream.tellp();
     if (el.e_token == DT_QUOTED_STRING) {
         auto_mem<char> unquoted_str((char *)malloc(el.e_capture.length() + 1));
         const char *start = pi.get_substr_start(&el.e_capture);
         unquote(unquoted_str.in(), start, el.e_capture.length());
         data_scanner ds(unquoted_str.in());
-        pretty_printer str_pp(&ds,
+        string_attrs_t sa;
+        pretty_printer str_pp(&ds, sa,
                               this->pp_leading_indent + this->pp_depth * 4);
-        std::string result = str_pp.print();
-        if (result.find('\n') != std::string::npos) {
+        attr_line_t result;
+        str_pp.append_to(result);
+        if (result.get_string().find('\n') != std::string::npos) {
             switch (start[0]) {
                 case 'r':
                 case 'u':
@@ -209,8 +225,8 @@ void pretty_printer::write_element(const pretty_printer::element &el) {
             }
             this->pp_stream
                 << std::endl
-                << result;
-            if (!endswith(result.c_str(), "\n")) {
+                << result.get_string();
+            if (!endswith(result.get_string().c_str(), "\n")) {
                 this->pp_stream << std::endl;
             }
             this->pp_stream
@@ -221,14 +237,9 @@ void pretty_printer::write_element(const pretty_printer::element &el) {
         }
     } else {
         this->pp_stream << pi.get_substr(&el.e_capture);
-        switch (el.e_token) {
-            case DT_IPV4_ADDRESS:
-            case DT_IPV6_ADDRESS:
-                this->convert_ip_address(el);
-                break;
-            default:
-                break;
-        }
+        int shift_amount = start_size - el.e_capture.c_begin - this->pp_shift_accum;
+        shift_string_attrs(this->pp_attrs, el.e_capture.c_begin, shift_amount);
+        this->pp_shift_accum = start_size - el.e_capture.c_begin;
     }
     this->pp_line_length += el.e_capture.length();
     if (el.e_token == DT_LINE) {
@@ -238,7 +249,8 @@ void pretty_printer::write_element(const pretty_printer::element &el) {
 }
 
 void pretty_printer::append_indent() {
-    this->pp_stream << std::string(this->pp_leading_indent, ' ');
+    this->pp_stream << std::string(this->pp_leading_indent + this->pp_soft_indent, ' ');
+    this->pp_soft_indent = 0;
     if (this->pp_stream.tellp() == this->pp_leading_indent) {
         return;
     }

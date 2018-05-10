@@ -319,7 +319,6 @@ struct _lnav_data {
 extern struct _lnav_data lnav_data;
 
 extern readline_context::command_map_t lnav_commands;
-extern bookmark_type_t BM_QUERY;
 extern const int ZOOM_LEVELS[];
 extern const ssize_t ZOOM_COUNT;
 

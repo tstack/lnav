@@ -60,12 +60,12 @@ using namespace std;
  *   iostat
  */
 
-string_attr_type logline::L_PREFIX;
-string_attr_type logline::L_TIMESTAMP;
-string_attr_type logline::L_FILE;
-string_attr_type logline::L_PARTITION;
-string_attr_type logline::L_MODULE;
-string_attr_type logline::L_OPID;
+string_attr_type logline::L_PREFIX("prefix");
+string_attr_type logline::L_TIMESTAMP("timestamp");
+string_attr_type logline::L_FILE("file");
+string_attr_type logline::L_PARTITION("partition");
+string_attr_type logline::L_MODULE("module");
+string_attr_type logline::L_OPID("opid");
 
 const char *logline::level_names[LEVEL__MAX + 1] = {
     "unknown",
@@ -199,6 +199,47 @@ logline_value::kind_t logline_value::string2kind(const char *kindstr)
     }
 
     return VALUE_UNKNOWN;
+}
+
+struct line_range logline_value::origin_in_full_msg(const char *msg, size_t len) const
+{
+    if (this->lv_sub_offset == 0) {
+        return this->lv_origin;
+    }
+
+    if (len == -1) {
+        len = strlen(msg);
+    }
+
+    struct line_range retval = this->lv_origin;
+    const char *last = msg, *msg_end = msg + len;
+
+    for (int lpc = 0; lpc < this->lv_sub_offset; lpc++) {
+        const auto *next = (const char *) memchr(last, '\n', msg_end - last);
+        require(next != NULL);
+
+        next += 1;
+        int amount = (next - last);
+
+        retval.lr_start += amount;
+        if (retval.lr_end != -1) {
+            retval.lr_end += amount;
+        }
+
+        last = next + 1;
+    }
+
+    if (retval.lr_end == -1) {
+        const auto *eol = (const char *) memchr(last, '\n', msg_end - last);
+
+        if (eol == nullptr) {
+            retval.lr_end = len;
+        } else {
+            retval.lr_end = eol - msg;
+        }
+    }
+
+    return retval;
 }
 
 vector<log_format *> log_format::lf_root_formats;
@@ -960,27 +1001,23 @@ void external_log_format::rewrite(exec_context &ec,
 
         value_def &vd = *vd_iter->second;
 
-        if (!vd.vd_rewriter.empty()) {
-            string field_value = iter->to_string();
-
-            field_value = execute_any(ec, vd.vd_rewriter);
-
-            struct line_range adj_origin = iter->origin_in_full_msg(
-                value_out.c_str(), value_out.length());
-
-            value_out.erase(adj_origin.lr_start, adj_origin.length());
-
-            int32_t shift_amount = field_value.length() - adj_origin.length();
-            value_out.insert(adj_origin.lr_start, field_value);
-            for (shift_iter = values.begin();
-                 shift_iter != values.end(); ++shift_iter) {
-                if (shift_iter->lv_name == iter->lv_name) {
-                    continue;
-                }
-
-                shift_iter->lv_origin.shift(adj_origin.lr_start, shift_amount);
-            }
+        if (vd.vd_rewriter.empty()) {
+            continue;
         }
+
+        string field_value = execute_any(ec, vd.vd_rewriter);
+        struct line_range adj_origin = iter->origin_in_full_msg(
+            value_out.c_str(), value_out.length());
+
+        value_out.erase(adj_origin.lr_start, adj_origin.length());
+
+        int32_t shift_amount = field_value.length() - adj_origin.length();
+        value_out.insert(adj_origin.lr_start, field_value);
+        for (shift_iter = values.begin();
+             shift_iter != values.end(); ++shift_iter) {
+            shift_iter->lv_origin.shift(adj_origin.lr_start, shift_amount);
+        }
+        shift_string_attrs(sa, adj_origin.lr_start, shift_amount);
     }
 }
 

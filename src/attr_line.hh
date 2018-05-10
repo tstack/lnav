@@ -418,7 +418,11 @@ public:
         return *this;
     };
 
-    attr_line_t &append(const attr_line_t &al, text_wrap_settings *tws = nullptr);
+    attr_line_t &insert(size_t index, const attr_line_t &al, text_wrap_settings *tws = nullptr);
+
+    attr_line_t &append(const attr_line_t &al, text_wrap_settings *tws = nullptr) {
+        return this->insert(this->al_string.length(), al, tws);
+    };
 
     attr_line_t &append(size_t len, char c) {
         this->al_string.append(len, c);

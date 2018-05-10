@@ -70,7 +70,7 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int line,
                              std::string &value_out,
-                             bool raw = false)
+                             line_flags_t flags)
     {
         if (!this->tss_files.empty()) {
             std::shared_ptr<logfile> lf = this->current_file();
@@ -97,7 +97,7 @@ public:
         value_out.push_back(string_attr(lr, &logline::L_FILE, this->current_file().get()));
     };
 
-    size_t text_size_for_line(textview_curses &tc, int line, bool raw) {
+    size_t text_size_for_line(textview_curses &tc, int line, line_flags_t flags) {
         size_t retval = 0;
 
         if (!this->tss_files.empty()) {

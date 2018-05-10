@@ -309,7 +309,7 @@ public:
         return width;
     };
 
-    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+    size_t text_size_for_line(textview_curses &tc, int row, line_flags_t flags) {
         return 0;
     };
 
@@ -345,7 +345,7 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &value_out,
-                             bool no_scrub) {
+                             line_flags_t flags) {
         spectrogram_row &s_row = this->load_row(tc, row);
 
         time_t row_time;

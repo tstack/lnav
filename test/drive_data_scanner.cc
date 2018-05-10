@@ -56,6 +56,10 @@ string execute_any(exec_context &ec, const string &cmdline_with_mode)
     return "";
 }
 
+void add_global_vars(exec_context &ec)
+{
+}
+
 int main(int argc, char *argv[])
 {
     int  c, retval = EXIT_SUCCESS;
@@ -157,10 +161,10 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                if (format.get() != NULL) {
-                    vector<logline_value> ll_values;
-                    string_attrs_t sa;
+                vector<logline_value> ll_values;
+                string_attrs_t sa;
 
+                if (format.get() != NULL) {
                     format->annotate(sbr, sa, ll_values);
                     body = find_string_attr_range(sa, &textview_curses::SA_BODY);
                 }
@@ -179,10 +183,11 @@ int main(int argc, char *argv[])
 
                 if (pretty_print) {
                     data_scanner ds2(sub_line, body.lr_start, sub_line.length());
-                    pretty_printer pp(&ds2);
+                    pretty_printer pp(&ds2, sa);
+                    attr_line_t pretty_out;
 
-                    string pretty_out = pp.print();
-                    fprintf(out, "\n--\n%s", pretty_out.c_str());
+                    pp.append_to(pretty_out);
+                    fprintf(out, "\n--\n%s", pretty_out.get_string().c_str());
                 }
 
                 auto_mem<yajl_gen_t> gen(yajl_gen_free);

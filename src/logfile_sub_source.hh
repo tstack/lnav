@@ -226,19 +226,19 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &value_out,
-                             bool raw);
+                             line_flags_t flags);
 
     void text_attrs_for_line(textview_curses &tc,
                              int row,
                              string_attrs_t &value_out);
 
-    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+    size_t text_size_for_line(textview_curses &tc, int row, line_flags_t flags) {
         size_t index = row % LINE_SIZE_CACHE_SIZE;
 
         if (this->lss_line_size_cache[index].first != row) {
             std::string value;
 
-            this->text_value_for_line(tc, row, value, raw);
+            this->text_value_for_line(tc, row, value, flags);
             this->lss_line_size_cache[index].second = value.size();
             this->lss_line_size_cache[index].first = row;
         }
@@ -680,6 +680,7 @@ private:
     bookmarks<content_line_t>::type lss_user_marks;
     std::map<content_line_t, bookmark_metadata> lss_user_mark_metadata;
 
+    line_flags_t lss_token_flags;
     std::shared_ptr<logfile> lss_token_file;
     std::string       lss_token_value;
     string_attrs_t    lss_token_attrs;

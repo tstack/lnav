@@ -110,7 +110,7 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &value_out,
-                             bool no_scrub) {
+                             line_flags_t flags) {
         value_out = this->tds_lines[row].get_string();
     };
 
@@ -119,7 +119,7 @@ public:
         value_out = this->tds_lines[line].get_attrs();
     };
 
-    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+    size_t text_size_for_line(textview_curses &tc, int row, line_flags_t flags) {
         return this->tds_lines[row].length();
     };
 

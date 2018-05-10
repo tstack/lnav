@@ -49,7 +49,7 @@ hist_source::hist_source()
 void hist_source::text_value_for_line(textview_curses &tc,
                                       int row,
                                       std::string &value_out,
-                                      bool no_scrub)
+                                      line_flags_t flags)
 {
     int grow = row / (this->buckets_per_group() + 1);
     int brow = row % (this->buckets_per_group() + 1);

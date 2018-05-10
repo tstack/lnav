@@ -8,6 +8,8 @@ lnav v0.8.4:
      * When typing in a search, instead of moving the view to the first match
        that was found, the first ten matches will be displayed in the preview
        window.
+     * The pretty-print view maintains highlighting from the log view.
+     * The pretty-print view no longer tries to reverse lookup IP addresses.
 
      Fixes:
      * The HOME key should now work in the command-prompt and move the cursor

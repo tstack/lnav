@@ -545,37 +545,7 @@ public:
         return this->lv_sbr.length();
     }
 
-    struct line_range origin_in_full_msg(const char *msg, size_t len) {
-        if (this->lv_sub_offset == 0) {
-            return this->lv_origin;
-        }
-
-        struct line_range retval = this->lv_origin;
-        const char *last = msg;
-
-        for (int lpc = 0; lpc < this->lv_sub_offset; lpc++) {
-            const char *next = strchr(last, '\n');
-            require(next != NULL);
-
-            next += 1;
-            int amount = (next - last);
-
-            retval.lr_start += amount;
-            if (retval.lr_end != -1) {
-                retval.lr_end += amount;
-            }
-
-            last = next + 1;
-        }
-
-        if (retval.lr_end == -1) {
-            const char *eol = strchr(last, '\n');
-
-            retval.lr_end = eol - msg;
-        }
-
-        return retval;
-    };
+    struct line_range origin_in_full_msg(const char *msg, size_t len) const;;
 
     intern_string_t lv_name;
     kind_t      lv_kind;

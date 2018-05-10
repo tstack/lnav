@@ -93,7 +93,7 @@ time_fmts.cc: ptimec
 
 if HAVE_RE2C
 %.cc: %.re
-	$(RE2C_V)$(RE2C_CMD) -o $@ $<
+	$(RE2C_V)$(RE2C_CMD) -8 -o $@ $<
 	$(REC2_V)test $@ -ef $(srcdir)/$*.cc || cp $@ $(srcdir)/$*.cc
 endif
 

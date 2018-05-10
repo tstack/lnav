@@ -153,12 +153,12 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &value_out,
-                             bool no_scrub);
+                             line_flags_t flags);
     void text_attrs_for_line(textview_curses &tc,
                              int row,
                              string_attrs_t &value_out);
 
-    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+    size_t text_size_for_line(textview_curses &tc, int row, line_flags_t flags) {
         return 0;
     };
 
@@ -550,7 +550,7 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &value_out,
-                             bool no_scrub) {
+                             line_flags_t flags) {
         bucket_t &bucket = this->find_bucket(row);
         struct tm bucket_tm;
         char tm_buffer[128];
@@ -591,7 +591,7 @@ public:
         }
     };
 
-    size_t text_size_for_line(textview_curses &tc, int row, bool raw) {
+    size_t text_size_for_line(textview_curses &tc, int row, line_flags_t flags) {
         return 0;
     };
 

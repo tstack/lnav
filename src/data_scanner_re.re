@@ -37,9 +37,9 @@
 
 bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
 {
-#   define YYCTYPE char
+#   define YYCTYPE unsigned char
 #   define CAPTURE(tok) { \
-        pi.pi_next_offset = YYCURSOR.val - pi.get_string(); \
+        pi.pi_next_offset = YYCURSOR.val - (const unsigned char *) pi.get_string(); \
         cap[0].c_end = pi.pi_next_offset; \
         cap[1].c_end = pi.pi_next_offset; \
         token_out = tok; \
@@ -48,7 +48,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
         CAPTURE(tok); \
         return true; \
     }
-    static const char *EMPTY = "";
+    static const unsigned char *EMPTY = (const unsigned char *) "";
     pcre_input &pi = this->ds_pcre_input;
     struct _YYCURSOR {
         const YYCTYPE operator*() const {
@@ -87,10 +87,12 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
         const YYCTYPE *val;
         const YYCTYPE *lim;
     } YYCURSOR;
-    YYCURSOR = pi.get_string() + pi.pi_next_offset;
+    YYCURSOR = (const unsigned char *) pi.get_string() + pi.pi_next_offset;
     _YYCURSOR yyt1;
     _YYCURSOR yyt2;
-    const YYCTYPE *YYLIMIT = pi.get_string() + pi.pi_length;
+    _YYCURSOR yyt3;
+    _YYCURSOR yyt4;
+    const YYCTYPE *YYLIMIT = (const unsigned char *) pi.get_string() + pi.pi_length;
     const YYCTYPE *YYMARKER = YYCURSOR;
     pcre_context::capture_t *cap = pc.all();
 
@@ -161,7 +163,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
        [0-9a-fA-F][0-9a-fA-F](":"[0-9a-fA-F][0-9a-fA-F])+ {
-           if ((YYCURSOR - pi.get_string()) == 17) {
+           if ((YYCURSOR - (const unsigned char *) pi.get_string()) == 17) {
                RET(DT_MAC_ADDRESS);
            } else {
                RET(DT_HEX_DUMP);

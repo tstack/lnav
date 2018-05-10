@@ -166,8 +166,6 @@ const int ZOOM_LEVELS[] = {
 
 const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
 
-bookmark_type_t BM_QUERY("query");
-
 const char *lnav_view_strings[LNV__MAX + 1] = {
     "log",
     "text",
@@ -251,22 +249,6 @@ public:
         }
     };
 };
-
-static void add_global_vars(exec_context &ec)
-{
-    for (const auto &iter : lnav_config.lc_global_vars) {
-        shlex subber(iter.second);
-        string str;
-
-        if (!subber.eval(str, ec.ec_global_vars)) {
-            log_error("Unable to evaluate global variable value: %s",
-                      iter.second.c_str());
-            continue;
-        }
-
-        ec.ec_global_vars[iter.first] = str;
-    }
-}
 
 static void regenerate_unique_file_names()
 {
@@ -770,49 +752,6 @@ static void open_schema_view(void)
     schema_tc->set_sub_source(pts);
 }
 
-static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
-{
-    if (!sqlite3_stmt_busy(stmt)) {
-        return 0;
-    }
-
-    int ncols = sqlite3_column_count(stmt);
-
-    for (int lpc = 0; lpc < ncols; lpc++) {
-        if (lpc > 0) {
-            ec.ec_accumulator.append(", ");
-        }
-        ec.ec_accumulator.append((const char *)sqlite3_column_text(stmt, lpc));
-    }
-
-    return 0;
-}
-
-static future<string> pretty_pipe_callback(exec_context &ec,
-                                           const string &cmdline,
-                                           auto_fd &fd)
-{
-    auto retval = std::async(std::launch::async, [&]() {
-        char buffer[1024];
-        ostringstream ss;
-        ssize_t rc;
-
-        while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
-            ss.write(buffer, rc);
-        }
-
-        string retval = ss.str();
-
-        if (endswith(retval.c_str(), "\n")) {
-            retval.resize(retval.length() - 1);
-        }
-
-        return retval;
-    });
-
-    return retval;
-}
-
 static void open_pretty_view(void)
 {
     static const char *NOTHING_MSG =
@@ -822,7 +761,7 @@ static void open_pretty_view(void)
     textview_curses *pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
     textview_curses *log_tc = &lnav_data.ld_views[LNV_LOG];
     textview_curses *text_tc = &lnav_data.ld_views[LNV_TEXT];
-    ostringstream stream;
+    attr_line_t full_text;
 
     delete pretty_tc->get_sub_source();
     if (top_tc->get_inner_height() == 0) {
@@ -837,34 +776,50 @@ static void open_pretty_view(void)
         for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             content_line_t cl = lss.at(vl);
             shared_ptr<logfile> lf = lss.find(cl);
-            log_format *format = lf->get_format();
-            logfile::iterator ll = lf->begin() + cl;
+            auto ll = lf->begin() + cl;
             shared_buffer_ref sbr;
 
             if (!first_line && ll->is_continued()) {
                 continue;
             }
-            ll = lf->message_start(ll);
-
-            lf->read_full_message(ll, sbr);
-
-            string_attrs_t sa;
+            auto ll_start = lf->message_start(ll);
             vector<logline_value> values;
-            string rewritten_line;
+            attr_line_t al;
 
-            format->annotate(sbr, sa, values);
-            exec_context ec(&values, pretty_sql_callback, pretty_pipe_callback);
-            ec.ec_top_line = vl;
-            add_ansi_vars(ec.ec_global_vars);
-            add_global_vars(ec);
-            format->rewrite(ec, sbr, sa, rewritten_line);
+            vl -= vis_line_t(distance(ll_start, ll));
+            lss.text_value_for_line(*log_tc, vl, al.get_string(),
+                                    text_sub_source::RF_FULL|
+                                    text_sub_source::RF_REWRITE);
+            lss.text_attrs_for_line(*log_tc, vl, al.get_attrs());
 
-            data_scanner ds(rewritten_line);
-            pretty_printer pp(&ds);
+            line_range orig_lr = find_string_attr_range(
+                al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
+            attr_line_t orig_al = al.subline(orig_lr.lr_start, orig_lr.length());
+            attr_line_t prefix_al = al.subline(0, orig_lr.lr_start);
+
+            data_scanner ds(orig_al.get_string());
+            pretty_printer pp(&ds, orig_al.get_attrs());
+            attr_line_t pretty_al;
+            vector<attr_line_t> pretty_lines;
 
             // TODO: dump more details of the line in the output.
-            stream << trim(pp.print()) << endl;
+            pp.append_to(pretty_al);
+            pretty_al.split_lines(pretty_lines);
+
+            for (auto &pretty_line : pretty_lines) {
+                if (pretty_line.empty() && &pretty_line == &pretty_lines.back()) {
+                    break;
+                }
+                pretty_line.insert(0, prefix_al);
+                pretty_line.append("\n");
+                full_text.append(pretty_line);
+            }
+
             first_line = false;
+        }
+
+        if (!full_text.empty()) {
+            full_text.erase(full_text.length() - 1, 1);
         }
     }
     else if (top_tc == text_tc) {
@@ -876,12 +831,15 @@ static void open_pretty_view(void)
 
             lf->read_full_message(ll, sbr);
             data_scanner ds(sbr);
-            pretty_printer pp(&ds);
+            string_attrs_t sa;
+            pretty_printer pp(&ds, sa);
 
-            stream << pp.print() << endl;
+            pp.append_to(full_text);
         }
     }
-    pretty_tc->set_sub_source(new plain_text_source(stream.str()));
+    plain_text_source *pts = new plain_text_source();
+    pts->replace_with(full_text);
+    pretty_tc->set_sub_source(pts);
     if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
         pretty_tc->set_top(vis_line_t(0));
     }

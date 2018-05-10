@@ -56,7 +56,7 @@ public:
         return this->dls_rows.size();
     };
 
-    size_t text_size_for_line(textview_curses &tc, int line, bool raw) {
+    size_t text_size_for_line(textview_curses &tc, int line, line_flags_t flags) {
         return this->text_line_width(tc);
     };
 
@@ -74,7 +74,7 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &label_out,
-                             bool raw)
+                             line_flags_t flags)
     {
         /*
          * start_value is the result rowid, each bucket type is a column value

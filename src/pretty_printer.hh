@@ -42,7 +42,7 @@
 #include <deque>
 #include <sstream>
 #include <iomanip>
-
+#include <utility>
 #include "timer.hh"
 #include "ansi_scrubber.hh"
 #include "data_scanner.hh"
@@ -66,12 +66,10 @@ public:
         pcre_context::capture_t e_capture;
     };
 
-    pretty_printer(data_scanner *ds, int leading_indent=0)
+    pretty_printer(data_scanner *ds, string_attrs_t sa, int leading_indent=0)
             : pp_leading_indent(leading_indent),
-              pp_depth(0),
-              pp_line_length(0),
               pp_scanner(ds),
-              is_xml(false) {
+              pp_attrs(sa) {
         this->pp_body_lines.push(0);
 
         pcre_context_static<30> pc;
@@ -80,12 +78,12 @@ public:
         this->pp_scanner->reset();
         while (this->pp_scanner->tokenize2(pc, dt)) {
             if (dt == DT_XML_CLOSE_TAG) {
-                is_xml = true;
+                pp_is_xml = true;
             }
         }
     };
 
-    std::string print();
+    void append_to(attr_line_t &al);
 
 private:
 
@@ -104,13 +102,16 @@ private:
     void write_element(const element &el);
 
     int pp_leading_indent;
-    int pp_depth;
-    int pp_line_length;
-    std::stack<int> pp_body_lines;
+    int pp_depth{0};
+    int pp_line_length{0};
+    int pp_soft_indent{0};
+    std::stack<int> pp_body_lines{};
     data_scanner *pp_scanner;
+    string_attrs_t pp_attrs;
     std::ostringstream pp_stream;
-    std::deque<element> pp_values;
-    bool is_xml;
+    std::deque<element> pp_values{};
+    int pp_shift_accum{0};
+    bool pp_is_xml{false};
 };
 
 #endif

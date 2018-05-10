@@ -41,8 +41,15 @@ AC_PROG_CXX
 
 CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE -D__STDC_LIMIT_MACROS -D_GNU_SOURCE"
 
-# CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
-# CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
+AC_ARG_ENABLE([debug],
+              AS_HELP_STRING([--enable-debug],
+                             [Compile with symbols]))
+
+AS_VAR_IF([enable_profiling], [yes],
+      [CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
+       CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`],
+      [enable_debug=no]dnl
+)
 
 AC_ARG_VAR(SFTP_TEST_URL)
 

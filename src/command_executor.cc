@@ -45,6 +45,8 @@ using namespace std;
 
 exec_context INIT_EXEC_CONTEXT;
 
+bookmark_type_t BM_QUERY("query");
+
 static const string MSG_FORMAT_STMT =
         "SELECT count(*) as total, min(log_line) as log_line, log_msg_format "
                 "FROM all_logs GROUP BY log_msg_format ORDER BY total desc";
@@ -741,4 +743,20 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
     task();
 
     return task.get_future();
+}
+
+void add_global_vars(exec_context &ec)
+{
+    for (const auto &iter : lnav_config.lc_global_vars) {
+        shlex subber(iter.second);
+        string str;
+
+        if (!subber.eval(str, ec.ec_global_vars)) {
+            log_error("Unable to evaluate global variable value: %s",
+                      iter.second.c_str());
+            continue;
+        }
+
+        ec.ec_global_vars[iter.first] = str;
+    }
 }

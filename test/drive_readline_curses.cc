@@ -61,6 +61,10 @@ string execute_any(exec_context &ec, const string &cmdline_with_mode)
     return "";
 }
 
+void add_global_vars(exec_context &ec)
+{
+}
+
 struct exec_context {
 
 };

@@ -47,6 +47,7 @@
 #include "auto_pid.hh"
 #include "lnav_config.hh"
 #include "yajlpp.hh"
+#include "shlex.hh"
 
 using namespace std;
 

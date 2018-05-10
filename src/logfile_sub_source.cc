@@ -29,19 +29,72 @@
 
 #include "config.h"
 
+#include <future>
 #include <algorithm>
+#include <sqlite3.h>
 
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "log_accel.hh"
 #include "relative_time.hh"
 #include "logfile_sub_source.hh"
+#include "command_executor.hh"
+#include "ansi_scrubber.hh"
 
 using namespace std;
 
 bookmark_type_t logfile_sub_source::BM_ERRORS("error");
 bookmark_type_t logfile_sub_source::BM_WARNINGS("warning");
 bookmark_type_t logfile_sub_source::BM_FILES("");
+
+static int pretty_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
+{
+    if (!sqlite3_stmt_busy(stmt)) {
+        return 0;
+    }
+
+    int ncols = sqlite3_column_count(stmt);
+
+    for (int lpc = 0; lpc < ncols; lpc++) {
+        if (!ec.ec_accumulator.empty()) {
+            ec.ec_accumulator.append(", ");
+        }
+
+        const char *res = (const char *)sqlite3_column_text(stmt, lpc);
+        if (res == nullptr) {
+            continue;
+        }
+
+        ec.ec_accumulator.append(res);
+    }
+
+    return 0;
+}
+
+static future<string> pretty_pipe_callback(exec_context &ec,
+                                           const string &cmdline,
+                                           auto_fd &fd)
+{
+    auto retval = std::async(std::launch::async, [&]() {
+        char buffer[1024];
+        ostringstream ss;
+        ssize_t rc;
+
+        while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+            ss.write(buffer, rc);
+        }
+
+        string retval = ss.str();
+
+        if (endswith(retval.c_str(), "\n")) {
+            retval.resize(retval.length() - 1);
+        }
+
+        return retval;
+    });
+
+    return retval;
+}
 
 logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
@@ -102,7 +155,7 @@ vis_line_t logfile_sub_source::find_from_time(const struct timeval &start)
 void logfile_sub_source::text_value_for_line(textview_curses &tc,
                                              int row,
                                              string &value_out,
-                                             bool raw)
+                                             line_flags_t flags)
 {
     content_line_t line(0);
 
@@ -110,19 +163,27 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     require((size_t)row < this->lss_filtered_index.size());
 
     line = this->at(vis_line_t(row));
-    this->lss_token_file   = this->find(line);
-    this->lss_token_line   = this->lss_token_file->begin() + line;
 
-    if (raw) {
-        this->lss_token_file->read_line(this->lss_token_line, value_out);
+    if (flags & RF_RAW) {
+        shared_ptr<logfile> lf = this->find(line);
+        lf->read_line(lf->begin() + line, value_out);
         return;
     }
+
+    this->lss_token_flags = flags;
+    this->lss_token_file   = this->find(line);
+    this->lss_token_line   = this->lss_token_file->begin() + line;
 
     this->lss_token_attrs.clear();
     this->lss_token_values.clear();
     this->lss_share_manager.invalidate_refs();
-    this->lss_token_value =
-        this->lss_token_file->read_line(this->lss_token_line);
+    if (flags & text_sub_source::RF_FULL) {
+        this->lss_token_file->read_full_message(this->lss_token_line,
+                                                this->lss_token_value);
+    } else {
+        this->lss_token_value =
+            this->lss_token_file->read_line(this->lss_token_line);
+    }
     this->lss_token_shift_start = 0;
     this->lss_token_shift_size = 0;
 
@@ -142,6 +203,17 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
         format->annotate(sbr, this->lss_token_attrs, this->lss_token_values);
         if (this->lss_token_line->get_sub_offset() != 0) {
             this->lss_token_attrs.clear();
+        }
+        if (flags & RF_REWRITE) {
+            exec_context ec(&this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
+            string rewritten_line;
+
+            ec.ec_top_line = vis_line_t(row);
+            add_ansi_vars(ec.ec_global_vars);
+            add_global_vars(ec);
+            format->rewrite(ec, sbr, this->lss_token_attrs, rewritten_line);
+            this->lss_token_value.assign(rewritten_line);
+            value_out = this->lss_token_value;
         }
 
         if ((this->lss_token_file->is_time_adjusted() ||
@@ -289,10 +361,11 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     value_out.emplace_back(lr, &view_curses::VC_STYLE, attrs);
 
-    for (vector<logline_value>::const_iterator lv_iter = line_values.begin();
-         lv_iter != line_values.end();
+    for (auto lv_iter = line_values.cbegin();
+         lv_iter != line_values.cend();
          ++lv_iter) {
-        if (lv_iter->lv_sub_offset != this->lss_token_line->get_sub_offset() ||
+        if ((!(this->lss_token_flags & RF_FULL) &&
+             lv_iter->lv_sub_offset != this->lss_token_line->get_sub_offset()) ||
             !lv_iter->lv_origin.is_valid()) {
             continue;
         }
@@ -309,8 +382,13 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         int id_attrs = vc.attrs_for_ident(lv_iter->text_value(),
                                           lv_iter->text_length());
 
-        value_out.emplace_back(
-                lv_iter->lv_origin, &view_curses::VC_STYLE, id_attrs);
+        line_range ident_range = lv_iter->lv_origin;
+        if (this->lss_token_flags & RF_FULL) {
+            ident_range = lv_iter->origin_in_full_msg(
+                this->lss_token_value.c_str(), this->lss_token_value.length());
+        }
+
+        value_out.emplace_back(ident_range, &view_curses::VC_STYLE, id_attrs);
     }
 
     if (this->lss_token_shift_size) {
@@ -344,12 +422,15 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
         value_out.push_back(
             string_attr(lr, &view_curses::VC_GRAPHIC, graph));
 
-        bookmark_vector<vis_line_t> &bv_search = bm[&textview_curses::BM_SEARCH];
+        if (!(this->lss_token_flags & RF_FULL)) {
+            bookmark_vector<vis_line_t> &bv_search = bm[&textview_curses::BM_SEARCH];
 
-        if (binary_search(::begin(bv_search), ::end(bv_search), vis_line_t(row))) {
-            lr.lr_start = 0;
-            lr.lr_end = 1;
-            value_out.emplace_back(lr, &view_curses::VC_STYLE, A_REVERSE);
+            if (binary_search(::begin(bv_search), ::end(bv_search),
+                              vis_line_t(row))) {
+                lr.lr_start = 0;
+                lr.lr_end = 1;
+                value_out.emplace_back(lr, &view_curses::VC_STYLE, A_REVERSE);
+            }
         }
     }
 

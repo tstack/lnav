@@ -136,11 +136,7 @@ public:
 
     void reset() {
         this->ds_pcre_input.reset_next_offset();
-        if (!this->ds_line.empty() &&
-            this->ds_line[this->ds_line.length() - 1] == '.') {
-            this->ds_pcre_input.pi_length -= 1;
-        }
-    }
+    };
 
 private:
     std::string ds_line;

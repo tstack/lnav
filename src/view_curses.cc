@@ -224,25 +224,27 @@ attr_line_t &attr_line_t::with_ansi_string(const std::string &str)
     return *this;
 }
 
-attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
+attr_line_t &attr_line_t::insert(size_t index, const attr_line_t &al, text_wrap_settings *tws)
 {
-    size_t start_len = this->al_string.length();
+    if (index < this->al_string.length()) {
+        shift_string_attrs(this->al_attrs, index, al.al_string.length());
+    }
 
-    this->al_string.append(al.al_string);
+    this->al_string.insert(index, al.al_string);
 
     for (auto &sa : al.al_attrs) {
         this->al_attrs.emplace_back(sa);
 
         line_range &lr = this->al_attrs.back().sa_range;
 
-        lr.shift(0, start_len);
+        lr.shift(0, index);
         if (lr.lr_end == -1) {
-            lr.lr_end = this->al_string.length();
+            lr.lr_end = index + al.al_string.length();
         }
     }
 
     if (tws != nullptr && (int)this->al_string.length() > tws->tws_width) {
-        ssize_t start_pos = start_len;
+        ssize_t start_pos = index;
         ssize_t line_start = this->al_string.rfind('\n', start_pos);
 
         if (line_start == (ssize_t)string::npos) {
@@ -251,7 +253,7 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
             line_start += 1;
         }
 
-        ssize_t line_len = start_len - line_start;
+        ssize_t line_len = index - line_start;
         ssize_t usable_width = tws->tws_width - tws->tws_indent;
         ssize_t avail = max((ssize_t) 0, (ssize_t) tws->tws_width - line_len);
 
@@ -328,7 +330,7 @@ attr_line_t &attr_line_t::append(const attr_line_t &al, text_wrap_settings *tws)
 attr_line_t attr_line_t::subline(size_t start, size_t len) const
 {
     if (len == std::string::npos) {
-        len = this->length();
+        len = this->al_string.length() - start;
     }
 
     line_range lr{(int) start, (int) (start + len)};
@@ -342,8 +344,11 @@ attr_line_t attr_line_t::subline(size_t start, size_t len) const
 
         retval.al_attrs.emplace_back(lr.intersection(sa.sa_range)
                                        .shift(lr.lr_start, -lr.lr_start),
-                                     sa.sa_type,
-                                     sa.sa_value);
+                                     sa.sa_type, sa.sa_value);
+
+        line_range &last_lr = retval.al_attrs.back().sa_range;
+
+        ensure(last_lr.lr_end <= retval.al_string.length());
     }
 
     return retval;

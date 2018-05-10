@@ -614,21 +614,21 @@ check_output "pretty-printer is not working" <<EOF
 <response>
     <locale>en-US</locale>
     <requestid>ipInfo</requestid>
-    <value id="ipv4Gateway" actions="enabled">198.51.100.253 (unknown)</value>
+    <value id="ipv4Gateway" actions="enabled">198.51.100.253</value>
     <value id="ipv6Gateway" actions="enabled"/>
     <value id="ipv6Enabled" actions="enabled">true</value>
     <value id="ipv4Enabled" actions="enabled">true</value>
     <value id="name" actions="enabled">nic1</value>
     <value id="v4config" actions="enabled">
-        <value id="defaultGateway" actions="enabled">0.0.0.0 (unknown)</value>
+        <value id="defaultGateway" actions="enabled">0.0.0.0</value>
         <value id="updateable" actions="enabled">True</value>
         <value id="prefix" actions="enabled">22</value>
         <value id="mode" actions="enabled">dhcp</value>
-        <value id="address" actions="enabled">198.51.100.110 (unknown)</value>
+        <value id="address" actions="enabled">198.51.100.110</value>
         <value id="interface" actions="enabled">nic1</value>
     </value>
     <value id="v6config" actions="enabled">
-        <value id="defaultGateway" actions="enabled">fe80::214:f609:19f7:6bf1 (unknown)</value>
+        <value id="defaultGateway" actions="enabled">fe80::214:f609:19f7:6bf1</value>
         <value id="updateable" actions="enabled">True</value>
         <value id="interface" actions="enabled">nic1</value>
         <value id="dhcp" actions="enabled">False</value>
@@ -637,7 +637,7 @@ check_output "pretty-printer is not working" <<EOF
             <value id="origin" actions="enabled">other</value>
             <value id="status" actions="enabled">preferred</value>
             <value id="prefix" actions="enabled">64</value>
-            <value id="address" actions="enabled">fe80::250:56ff:feaa:5abf (unknown)</value>
+            <value id="address" actions="enabled">fe80::250:56ff:feaa:5abf</value>
         </value>
     </value>
     <value id="interfaceInfo" actions="enabled">

@@ -209,7 +209,7 @@ void add_view_text_possibilities(int context, const string &type, textview_curse
          ++curr_line) {
         string line;
 
-        tss->text_value_for_line(*tc, curr_line, line);
+        tss->text_value_for_line(*tc, curr_line, line, text_sub_source::RF_RAW);
 
         add_text_possibilities(context, type, line);
     }

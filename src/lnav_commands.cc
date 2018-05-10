@@ -638,7 +638,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
 
             string line;
 
-            dls.text_value_for_line(lnav_data.ld_views[LNV_DB], lpc, line, true);
+            dls.text_value_for_line(lnav_data.ld_views[LNV_DB], lpc, line,
+                                    text_sub_source::RF_RAW);
             fputs(line.c_str(), outfile);
             fputc('\n', outfile);
         }

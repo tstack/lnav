@@ -85,4 +85,8 @@ std::future<std::string> pipe_callback(
 
 int sql_progress(const struct log_cursor &lc);
 
+void add_global_vars(exec_context &ec);
+
+extern bookmark_type_t BM_QUERY;
+
 #endif //LNAV_COMMAND_EXECUTOR_H

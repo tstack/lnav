@@ -58,10 +58,10 @@ bookmark_type_t textview_curses::BM_USER("user");
 bookmark_type_t textview_curses::BM_PARTITION("partition");
 bookmark_type_t textview_curses::BM_SEARCH("search");
 
-string_attr_type textview_curses::SA_ORIGINAL_LINE;
-string_attr_type textview_curses::SA_BODY;
-string_attr_type textview_curses::SA_HIDDEN;
-string_attr_type textview_curses::SA_FORMAT;
+string_attr_type textview_curses::SA_ORIGINAL_LINE("original_line");
+string_attr_type textview_curses::SA_BODY("body");
+string_attr_type textview_curses::SA_HIDDEN("hidden");
+string_attr_type textview_curses::SA_FORMAT("format");
 
 textview_curses::textview_curses()
     : tc_sub_source(NULL),

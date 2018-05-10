@@ -313,6 +313,20 @@ class text_sub_source {
 public:
     virtual ~text_sub_source() { };
 
+    enum {
+        RB_RAW,
+        RB_FULL,
+        RB_REWRITE,
+    };
+
+    enum {
+        RF_RAW = (1L << RB_RAW),
+        RF_FULL = (1L << RB_FULL),
+        RF_REWRITE = (1L << RB_REWRITE),
+    };
+
+    typedef long line_flags_t;
+
     virtual void toggle_scrub(void) { };
 
     /**
@@ -337,9 +351,9 @@ public:
     virtual void text_value_for_line(textview_curses &tc,
                                      int line,
                                      std::string &value_out,
-                                     bool raw = false) = 0;
+                                     line_flags_t flags = 0) = 0;
 
-    virtual size_t text_size_for_line(textview_curses &tc, int line, bool raw = false) = 0;
+    virtual size_t text_size_for_line(textview_curses &tc, int line, line_flags_t raw = 0) = 0;
 
     /**
      * Inform the source that the given line has been marked/unmarked.  This
@@ -647,7 +661,7 @@ public:
             this->tc_sub_source->text_value_for_line(*this,
                                                      line,
                                                      value_out,
-                                                     true);
+                                                     text_sub_source::RF_RAW);
             retval = true;
         }
 
