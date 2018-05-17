@@ -432,5 +432,6 @@ DISTCLEANFILES = \
 
 distclean-local:
 	$(RM_V)rm -rf sessions
+	$(RM_V)rm -rf meta-sessions
 	$(RM_V)rm -rf .lnav
 	$(RM_V)rm -rf ../installer-test-home
