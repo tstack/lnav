@@ -101,30 +101,13 @@ public:
     };
 };
 
-struct listview_overlay {
-    listview_overlay(int y, const attr_line_t &al) : lo_y(y), lo_line(al) { };
-
-    int         get_absolute_y(int height) const
-    {
-        if (this->lo_y >= 0) {
-            return this->lo_y;
-        }
-
-        return height + this->lo_y;
-    };
-
-    int         lo_y;
-    attr_line_t lo_line;
-};
-
 class list_overlay_source {
 public:
     virtual ~list_overlay_source() { };
 
-    virtual size_t list_overlay_count(const listview_curses &lv) = 0;
-
     virtual bool list_value_for_overlay(const listview_curses &lv,
-                                        vis_line_t y,
+                                        int y, int bottom,
+                                        vis_line_t line,
                                         attr_line_t &value_out) = 0;
 };
 

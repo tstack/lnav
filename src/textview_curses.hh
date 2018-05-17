@@ -32,6 +32,7 @@
 #ifndef __textview_curses_hh
 #define __textview_curses_hh
 
+#include <utility>
 #include <vector>
 
 #include "grep_proc.hh"
@@ -48,13 +49,14 @@ class textview_curses;
 
 class logfile_filter_state {
 public:
-    logfile_filter_state(std::shared_ptr<logfile> lf = nullptr) : tfs_logfile(lf) {
+    logfile_filter_state(std::shared_ptr<logfile> lf = nullptr) : tfs_logfile(
+        std::move(lf)) {
         memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
         this->tfs_mask.reserve(64 * 1024);
     };
 
-    void clear(void) {
-        this->tfs_logfile = NULL;
+    void clear() {
+        this->tfs_logfile = nullptr;
         memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
         this->tfs_mask.clear();
         this->tfs_index.clear();
@@ -113,13 +115,13 @@ public:
               lf_index(index) { };
     virtual ~text_filter() { };
 
-    type_t get_type(void) const { return this->lf_type; };
-    std::string get_id(void) const { return this->lf_id; };
-    size_t get_index(void) const { return this->lf_index; };
+    type_t get_type() const { return this->lf_type; };
+    std::string get_id() const { return this->lf_id; };
+    size_t get_index() const { return this->lf_index; };
 
-    bool is_enabled(void) { return this->lf_enabled; };
-    void enable(void) { this->lf_enabled = true; };
-    void disable(void) { this->lf_enabled = false; };
+    bool is_enabled() { return this->lf_enabled; };
+    void enable() { this->lf_enabled = true; };
+    void disable() { this->lf_enabled = false; };
 
     void revert_to_last(logfile_filter_state &lfs) {
         this->lf_message_matched = this->lf_last_message_matched;
@@ -160,7 +162,7 @@ public:
 
     virtual bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) = 0;
 
-    virtual std::string to_command(void) = 0;
+    virtual std::string to_command() = 0;
 
     bool operator==(const std::string &rhs) {
         return this->lf_id == rhs;
@@ -206,14 +208,14 @@ public:
         bool used[32];
 
         memset(used, 0, sizeof(used));
-        for (iterator iter = this->begin(); iter != this->end(); ++iter) {
-            size_t index = (*iter)->get_index();
+        for (auto &iter : *this) {
+            size_t index = iter->get_index();
 
             require(used[index] == false);
 
             used[index] = true;
         }
-        for (int lpc = 0; lpc < logfile_filter_state::MAX_FILTERS; lpc++) {
+        for (size_t lpc = 0; lpc < logfile_filter_state::MAX_FILTERS; lpc++) {
             if (!used[lpc]) {
                 return lpc;
             }
@@ -221,17 +223,17 @@ public:
         throw "No more filters";
     };
 
-    void add_filter(std::shared_ptr<text_filter> filter) {
+    void add_filter(const std::shared_ptr<text_filter> &filter) {
         this->fs_filters.push_back(filter);
     };
 
-    void clear_filters(void) {
+    void clear_filters() {
         while (!this->fs_filters.empty()) {
             this->fs_filters.pop_back();
         }
     };
 
-    void set_filter_enabled(std::shared_ptr<text_filter> filter, bool enabled) {
+    void set_filter_enabled(const std::shared_ptr<text_filter> &filter, bool enabled) {
         if (enabled) {
             filter->enable();
         }
@@ -240,7 +242,7 @@ public:
         }
     }
 
-    std::shared_ptr<text_filter> get_filter(std::string id)
+    std::shared_ptr<text_filter> get_filter(const std::string &id)
     {
         auto iter = this->fs_filters.begin();
         std::shared_ptr<text_filter> retval;
@@ -255,7 +257,7 @@ public:
         return retval;
     };
 
-    bool delete_filter(std::string id) {
+    bool delete_filter(const std::string &id) {
         auto iter = this->fs_filters.begin();
 
         for (;
@@ -273,7 +275,7 @@ public:
 
     void get_enabled_mask(uint32_t &filter_in_mask, uint32_t &filter_out_mask) {
         filter_in_mask = filter_out_mask = 0;
-        for (iterator iter = this->begin(); iter != this->end(); ++iter) {
+        for (auto iter = this->begin(); iter != this->end(); ++iter) {
             std::shared_ptr<text_filter> tf = (*iter);
             if (tf->is_enabled()) {
                 uint32_t bit = (1UL << tf->get_index());
@@ -320,14 +322,16 @@ public:
     };
 
     enum {
-        RF_RAW = (1L << RB_RAW),
-        RF_FULL = (1L << RB_FULL),
-        RF_REWRITE = (1L << RB_REWRITE),
+        RF_RAW = (1UL << RB_RAW),
+        RF_FULL = (1UL << RB_FULL),
+        RF_REWRITE = (1UL << RB_REWRITE),
     };
 
     typedef long line_flags_t;
 
-    virtual void toggle_scrub(void) { };
+    void register_view(textview_curses *tc) {
+        this->tss_view = tc;
+    };
 
     /**
      * @return The total number of lines available from the source.
@@ -367,7 +371,7 @@ public:
      * @param added True if the line was bookmarked and false if it was
      *   unmarked.
      */
-    virtual void text_mark(bookmark_type_t *bm, int line, bool added) {};
+    virtual void text_mark(bookmark_type_t *bm, vis_line_t line, bool added) {};
 
     /**
      * Clear the bookmarks for a particular type in the text source.
@@ -416,7 +420,8 @@ public:
         return TF_UNKNOWN;
     };
 
-private:
+protected:
+    textview_curses *tss_view;
     filter_stack tss_filters;
 };
 
@@ -438,15 +443,15 @@ public:
 class textview_curses
     : public listview_curses,
       public list_data_source,
-      public grep_proc_source,
-      public grep_proc_sink {
+      public grep_proc_source<vis_line_t>,
+      public grep_proc_sink<vis_line_t> {
 public:
 
     typedef view_action<textview_curses> action;
 
     static bookmark_type_t BM_USER;
-    static bookmark_type_t BM_PARTITION;
     static bookmark_type_t BM_SEARCH;
+    static bookmark_type_t BM_META;
 
     static string_attr_type SA_ORIGINAL_LINE;
     static string_attr_type SA_BODY;
@@ -477,8 +482,7 @@ public:
         }
         for (vis_line_t curr_line = start_line; curr_line <= end_line;
              ++curr_line) {
-            bookmark_vector<vis_line_t> &bv =
-                this->tc_bookmarks[bm];
+            bookmark_vector<vis_line_t> &bv = this->tc_bookmarks[bm];
             bookmark_vector<vis_line_t>::iterator iter;
             bool added;
 
@@ -490,8 +494,8 @@ public:
                 bv.erase(iter);
                 added = false;
             }
-            if (this->tc_sub_source != NULL) {
-                this->tc_sub_source->text_mark(bm, (int)curr_line, added);
+            if (this->tc_sub_source) {
+                this->tc_sub_source->text_mark(bm, curr_line, added);
             }
         }
     };
@@ -509,13 +513,14 @@ public:
                 bv.erase(iter);
             }
         }
-        if (this->tc_sub_source != NULL) {
-            this->tc_sub_source->text_mark(bm, (int)vl, marked);
+        if (this->tc_sub_source) {
+            this->tc_sub_source->text_mark(bm, vl, marked);
         }
     };
 
     textview_curses &set_sub_source(text_sub_source *src) {
         this->tc_sub_source = src;
+        src->register_view(this);
         this->reload_data();
         return *this;
     };
@@ -532,7 +537,7 @@ public:
 
     void horiz_shift(vis_line_t start, vis_line_t end,
                      int off_start,
-                     std::string highlight_name,
+                     const std::string &highlight_name,
                      std::pair<int, int> &range_out)
     {
         highlighter &hl       = this->tc_highlights[highlight_name];
@@ -598,7 +603,7 @@ public:
         this->tc_search_action = action(mf);
     };
 
-    void grep_end_batch(grep_proc &gp)
+    void grep_end_batch(grep_proc<vis_line_t> &gp)
     {
         if (this->tc_follow_deadline.tv_sec) {
             struct timeval now;
@@ -624,16 +629,16 @@ public:
         }
         this->tc_search_action.invoke(this);
     };
-    void grep_end(grep_proc &gp);
+    void grep_end(grep_proc<vis_line_t> &gp);
 
     size_t listview_rows(const listview_curses &lv)
     {
-        return this->tc_sub_source == NULL ? 0 :
+        return this->tc_sub_source == nullptr ? 0 :
                this->tc_sub_source->text_line_count();
     };
 
     size_t listview_width(const listview_curses &lv) {
-        return this->tc_sub_source == NULL ? 0 :
+        return this->tc_sub_source == nullptr ? 0 :
                this->tc_sub_source->text_line_width(*this);
     };
 
@@ -648,15 +653,15 @@ public:
     };
 
     std::string listview_source_name(const listview_curses &lv) {
-        return this->tc_sub_source == NULL ? "" :
+        return this->tc_sub_source == nullptr ? "" :
                this->tc_sub_source->text_source_name(*this);
     };
 
-    bool grep_value_for_line(int line, std::string &value_out)
+    bool grep_value_for_line(vis_line_t line, std::string &value_out)
     {
         bool retval = false;
 
-        if (this->tc_sub_source != NULL &&
+        if (this->tc_sub_source &&
             line < (int)this->tc_sub_source->text_line_count()) {
             this->tc_sub_source->text_value_for_line(*this,
                                                      line,
@@ -668,20 +673,20 @@ public:
         return retval;
     };
 
-    void grep_begin(grep_proc &gp);
-    void grep_match(grep_proc &gp,
-                    grep_line_t line,
+    void grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vis_line_t stop);
+    void grep_match(grep_proc<vis_line_t> &gp,
+                    vis_line_t line,
                     int start,
                     int end);
 
-    bool is_searching(void) { return this->tc_searching; };
+    bool is_searching(void) { return this->tc_searching > 0; };
 
     void set_follow_search_for(int64_t ms_to_deadline) {
         struct timeval now, tv;
 
         tv.tv_sec = ms_to_deadline / 1000;
         tv.tv_usec = (ms_to_deadline % 1000) * 1000;
-        gettimeofday(&now, NULL);
+        gettimeofday(&now, nullptr);
         timeradd(&now, &tv, &this->tc_follow_deadline);
     };
 
@@ -701,6 +706,8 @@ public:
     typedef std::map<std::string, highlighter> highlight_map_t;
 
     highlight_map_t &get_highlights() { return this->tc_highlights; };
+
+    const highlight_map_t &get_highlights() const { return this->tc_highlights; };
 
     bool handle_mouse(mouse_event &me);
 
@@ -727,12 +734,11 @@ protected:
 
     vis_bookmarks tc_bookmarks;
 
-    bool   tc_searching;
+    int tc_searching{0};
     struct timeval tc_follow_deadline;
     action tc_search_action;
 
     highlight_map_t           tc_highlights;
-    highlight_map_t::iterator tc_current_highlight;
 
     vis_line_t tc_selection_start;
     vis_line_t tc_selection_last;

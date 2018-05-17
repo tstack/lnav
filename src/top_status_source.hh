@@ -61,6 +61,7 @@ public:
     {
         this->tss_fields[TSF_TIME].set_width(24);
         this->tss_fields[TSF_PARTITION_NAME].set_width(34);
+        this->tss_fields[TSF_PARTITION_NAME].set_left_pad(1);
         this->tss_fields[TSF_VIEW_NAME].set_width(8);
         this->tss_fields[TSF_VIEW_NAME].set_role(view_colors::VCR_VIEW_STATUS);
         this->tss_fields[TSF_VIEW_NAME].right_justify(true);

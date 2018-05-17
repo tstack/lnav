@@ -100,6 +100,10 @@ struct string_fragment {
         return std::string(this->data(), this->length());
     }
 
+    std::string to_string() {
+        return std::string(&this->sf_string[this->sf_begin], this->length());
+    };
+
     void clear() {
         this->sf_begin = 0;
         this->sf_end = 0;

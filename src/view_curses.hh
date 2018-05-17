@@ -206,7 +206,7 @@ public:
 
         broadcaster()
             : b_functor(*this, &broadcaster::invoke) { };
-        virtual ~broadcaster() { };
+        virtual ~broadcaster() = default;
 
         void invoke(_Sender *sender)
         {
@@ -233,8 +233,8 @@ private:
      * parameters, the first being the value of the receiver pointer and the
      * second being the sender pointer as passed to invoke().
      */
-    view_action(void(*invoker)(void *, _Sender *) = NULL)
-        : va_functor(NULL),
+    view_action(void(*invoker)(void *, _Sender *) = nullptr)
+        : va_functor(nullptr),
           va_invoker(invoker) { };
 
     template<class _Receiver>
@@ -350,10 +350,12 @@ struct lab_color {
         return i < 0.0 ? 0.0 : sqrt(i);
     }
 
-    void operator=(const lab_color &other) {
+    lab_color& operator=(const lab_color &other) {
         this->lc_l = other.lc_l;
         this->lc_a = other.lc_a;
         this->lc_b = other.lc_b;
+
+        return *this;
     };
 
     double lc_l;
@@ -369,7 +371,7 @@ public:
     static const unsigned long BASIC_COLOR_COUNT = 8;
     static const unsigned long HI_COLOR_COUNT = 6 * 3 * 3;
 
-    static int BASIC_HL_PAIRS[BASIC_COLOR_COUNT];
+    static attr_t BASIC_HL_PAIRS[BASIC_COLOR_COUNT];
 
     /** Roles that can be mapped to curses attributes using attrs_for_role() */
     typedef enum {
@@ -429,7 +431,7 @@ public:
      * @param role The role to retrieve character attributes for.
      * @return The attributes to use for the given role.
      */
-    int attrs_for_role(role_t role) const
+    attr_t attrs_for_role(role_t role) const
     {
         require(role >= 0);
         require(role < VCR__MAX);
@@ -437,7 +439,7 @@ public:
         return this->vc_role_colors[role];
     };
 
-    int reverse_attrs_for_role(role_t role) const
+    attr_t reverse_attrs_for_role(role_t role) const
     {
         require(role >= 0);
         require(role < VCR__MAX);
@@ -445,9 +447,9 @@ public:
         return this->vc_role_reverse_colors[role];
     };
 
-    int attrs_for_ident(const char *str, size_t len) const {
+    attr_t attrs_for_ident(const char *str, size_t len) const {
         unsigned long index = crc32(1, (const Bytef*)str, len);
-        int retval;
+        attr_t retval;
 
         if (COLORS >= 256) {
             unsigned long offset = index % HI_COLOR_COUNT;
@@ -460,7 +462,7 @@ public:
         return retval;
     };
 
-    int attrs_for_ident(const std::string &str) const {
+    attr_t attrs_for_ident(const std::string &str) const {
         return this->attrs_for_ident(str.c_str(), str.length());
     };
 
@@ -471,7 +473,7 @@ public:
         return VC_ANSI_START + ((fg * 8) + bg);
     };
 
-    static inline int ansi_color_pair(int fg, int bg)
+    static inline attr_t ansi_color_pair(int fg, int bg)
     {
         return COLOR_PAIR(ansi_color_pair_index(fg, bg));
     };
@@ -489,9 +491,9 @@ private:
     static bool initialized;
 
     /** Map of role IDs to attribute values. */
-    int vc_role_colors[VCR__MAX];
+    attr_t vc_role_colors[VCR__MAX];
     /** Map of role IDs to reverse-video attribute values. */
-    int vc_role_reverse_colors[VCR__MAX];
+    attr_t vc_role_reverse_colors[VCR__MAX];
     int vc_color_pair_end;
 
 };

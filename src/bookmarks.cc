@@ -35,6 +35,8 @@
 
 using namespace std;
 
+set<string> bookmark_metadata::KNOWN_TAGS;
+
 template<typename LineType>
 LineType bookmark_vector<LineType>::next(LineType start) const
 {

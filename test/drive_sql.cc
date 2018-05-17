@@ -5,6 +5,8 @@
 
 #include <sqlite3.h>
 
+#include <iostream>
+
 #include "lnav.hh"
 #include "auto_mem.hh"
 #include "sqlite-extension-func.hh"
@@ -46,14 +48,17 @@ int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;
     auto_mem<sqlite3> db(sqlite3_close);
+    std::string stmt;
 
     log_argv(argc, argv);
 
-    if (argc != 2) {
-        fprintf(stderr, "error: expecting an SQL statement\n");
-        retval = EXIT_FAILURE;
+    if (argc == 2) {
+        stmt = argv[1];
+    } else {
+        std::getline(std::cin, stmt, '\0');
     }
-    else if (sqlite3_open(":memory:", db.out()) != SQLITE_OK) {
+
+    if (sqlite3_open(":memory:", db.out()) != SQLITE_OK) {
         fprintf(stderr, "error: unable to make sqlite memory database\n");
         retval = EXIT_FAILURE;
     }
@@ -73,7 +78,7 @@ int main(int argc, char *argv[])
         register_regexp_vtab(db.in());
 
         if (sqlite3_exec(db.in(),
-            argv[1],
+            stmt.c_str(),
             sql_callback,
             &state,
             errmsg.out()) != SQLITE_OK) {

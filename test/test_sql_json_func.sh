@@ -1,5 +1,57 @@
 #! /bin/bash
 
+run_test ./drive_sql "select json_contains('4', 4)"
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column json_contains('4', 4): 1
+EOF
+
+run_test ./drive_sql "select json_contains('4', 2)"
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column json_contains('4', 2): 0
+EOF
+
+run_test ./drive_sql <<EOF
+select json_contains('"hi"', 'hi')
+EOF
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column json_contains('"hi"', 'hi'): 1
+EOF
+
+run_test ./drive_sql <<EOF
+select json_contains('["hi", "bye"]', 'hola') as res
+EOF
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column res: 0
+EOF
+
+run_test ./drive_sql <<EOF
+select json_contains('["hi", "bye", "solong"]', 'bye') as res
+EOF
+
+check_output "json_contains does not work" <<EOF
+Row 0:
+  Column res: 1
+EOF
+
+run_test ./drive_sql <<EOF
+select json_contains('["hi", "bye", "solong]', 'bye') as res
+EOF
+
+check_error_output "json_contains does not work" <<EOF
+error: sqlite3_exec failed -- parse error: premature EOF
+                                       ["hi", "bye", "solong]
+                     (right here) ------^
+
+EOF
+
 run_test ./drive_sql "select jget('4', '')"
 
 check_output "jget root does not work" <<EOF

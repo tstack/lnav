@@ -239,6 +239,7 @@ dist_noinst_SCRIPTS = \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
+	test_meta.sh \
 	test_mvwattrline.sh \
 	test_scripts.sh \
 	test_sessions.sh \
@@ -376,6 +377,7 @@ TESTS = \
 	test_line_buffer2 \
 	test_line_buffer.sh \
 	test_listview.sh \
+	test_meta.sh \
 	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_hist_source \

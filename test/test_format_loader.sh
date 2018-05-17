@@ -10,18 +10,18 @@ sed -i "" -e "s|/.*/format|format|g" `test_err_filename`
 
 check_error_output "invalid format not detected?" <<EOF
 warning:format.json:line 5
-  unexpected path --
-    /invalid_key_log/value/test/identifiers
-  accepted paths --
-    kind string|integer|float|boolean|json|quoted -- The type of data in the field
-    collate <function> -- The collating function to use for this column
-    unit/  -- Unit definitions for this field
-    identifier <bool> -- Indicates whether or not this field contains an identifier that should be highlighted
-    foreign-key <bool> -- Indicates whether or not this field should be treated as a foreign key for row in another table
-    hidden <bool> -- Indicates whether or not this field should be hidden
-    action-list# <string> -- Actions to execute when this field is clicked on
-    rewriter <command> -- A command that will rewrite this field when pretty-printing
-    description <string> -- A description of the field
+warning:  unexpected path --
+warning:    /invalid_key_log/value/test/identifiers
+warning:  accepted paths --
+warning:    kind string|integer|float|boolean|json|quoted -- The type of data in the field
+warning:    collate <function> -- The collating function to use for this column
+warning:    unit/  -- Unit definitions for this field
+warning:    identifier <bool> -- Indicates whether or not this field contains an identifier that should be highlighted
+warning:    foreign-key <bool> -- Indicates whether or not this field should be treated as a foreign key for row in another table
+warning:    hidden <bool> -- Indicates whether or not this field should be hidden
+warning:    action-list# <string> -- Actions to execute when this field is clicked on
+warning:    rewriter <command> -- A command that will rewrite this field when pretty-printing
+warning:    description <string> -- A description of the field
 error:format.json:4:invalid json -- parse error: object key and value must be separated by a colon (':')
           ar_log": {         "abc"     } }
                      (right here) ------^
@@ -57,13 +57,13 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_leveltest.0
 
 check_output "levels are not correct?" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark
-0,<NULL>,2016-06-30 12:00:01.000,0,trace,0
-1,<NULL>,2016-06-30 12:00:02.000,1000,debug,0
-2,<NULL>,2016-06-30 12:00:03.000,1000,debug2,0
-3,<NULL>,2016-06-30 12:00:04.000,1000,debug3,0
-4,<NULL>,2016-06-30 12:00:05.000,1000,info,0
-5,<NULL>,2016-06-30 12:00:06.000,1000,warning,0
-6,<NULL>,2016-06-30 12:00:07.000,1000,fatal,0
-7,<NULL>,2016-06-30 12:00:08.000,1000,info,0
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags
+0,<NULL>,2016-06-30 12:00:01.000,0,trace,0,<NULL>,<NULL>
+1,<NULL>,2016-06-30 12:00:02.000,1000,debug,0,<NULL>,<NULL>
+2,<NULL>,2016-06-30 12:00:03.000,1000,debug2,0,<NULL>,<NULL>
+3,<NULL>,2016-06-30 12:00:04.000,1000,debug3,0,<NULL>,<NULL>
+4,<NULL>,2016-06-30 12:00:05.000,1000,info,0,<NULL>,<NULL>
+5,<NULL>,2016-06-30 12:00:06.000,1000,warning,0,<NULL>,<NULL>
+6,<NULL>,2016-06-30 12:00:07.000,1000,fatal,0,<NULL>,<NULL>
+7,<NULL>,2016-06-30 12:00:08.000,1000,info,0,<NULL>,<NULL>
 EOF

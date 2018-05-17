@@ -432,12 +432,14 @@ public:
     };
 
     bool list_value_for_overlay(const listview_curses &lv,
-                                vis_line_t y,
+                                int y, int bottom,
+                                vis_line_t row,
                                 attr_line_t &value_out)
     {
         view_colors &vc = view_colors::singleton();
 
         if (y == 0) {
+            this->list_overlay_count(lv);
             std::string &line = value_out.get_string();
             db_label_source *dls = this->dos_labels;
             string_attrs_t &sa = value_out.get_attrs();

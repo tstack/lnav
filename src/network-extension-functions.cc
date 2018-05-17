@@ -133,6 +133,7 @@ int network_extension_functions(struct FuncDef **basic_funcs,
                       "Get the IP address for the given hostname")
                 .sql_function()
                 .with_parameter({"hostname", "The DNS hostname to lookup."})
+                .with_tags({"net"})
                 .with_example({"SELECT gethostbyname('localhost')"})
         ),
 
@@ -141,6 +142,7 @@ int network_extension_functions(struct FuncDef **basic_funcs,
                       "Get the IP address for the given hostname")
                 .sql_function()
                 .with_parameter({"hostname", "The DNS hostname to lookup."})
+                .with_tags({"net"})
                 .with_example({"SELECT gethostbyaddr('127.0.0.1')"})
         ),
 

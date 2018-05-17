@@ -37,6 +37,7 @@
 #include <map>
 #include <list>
 #include <sstream>
+#include <utility>
 #include <vector>
 #include <algorithm>
 
@@ -89,17 +90,12 @@ public:
     logfile_sub_source();
     virtual ~logfile_sub_source();
 
-    void toggle_scrub(void) {
-        this->lss_flags ^= F_SCRUB;
-        this->clear_line_size_cache();
-    };
-
-    void toggle_time_offset(void) {
+    void toggle_time_offset() {
         this->lss_flags ^= F_TIME_OFFSET;
         this->clear_line_size_cache();
     };
 
-    void increase_line_context(void) {
+    void increase_line_context() {
         auto old_flags = this->lss_flags;
 
         if (this->lss_flags & F_FILENAME) {
@@ -115,7 +111,7 @@ public:
         }
     };
 
-    bool decrease_line_context(void) {
+    bool decrease_line_context() {
         auto old_flags = this->lss_flags;
 
         if (this->lss_flags & F_FILENAME) {
@@ -141,19 +137,19 @@ public:
         this->clear_line_size_cache();
     };
 
-    bool is_time_offset_enabled(void) const {
+    bool is_time_offset_enabled() const {
         return (bool) (this->lss_flags & F_TIME_OFFSET);
     };
 
-    bool is_filename_enabled(void) const {
+    bool is_filename_enabled() const {
         return (bool) (this->lss_flags & F_FILENAME);
     };
 
-    bool is_basename_enabled(void) const {
+    bool is_basename_enabled() const {
         return (bool) (this->lss_flags & F_BASENAME);
     };
 
-    logline::level_t get_min_log_level(void) const {
+    logline::level_t get_min_log_level() const {
         return this->lss_min_log_level;
     };
 
@@ -198,6 +194,17 @@ public:
     };
 
     bool list_input_handle_key(listview_curses &lv, int ch);
+
+    void set_marked_only(bool val) {
+        if (this->lss_marked_only != val) {
+            this->lss_marked_only = val;
+            this->lss_force_rebuild = true;
+        }
+    };
+
+    bool get_marked_only() {
+        return this->lss_marked_only;
+    };
 
     size_t text_line_count()
     {
@@ -245,13 +252,13 @@ public:
         return this->lss_line_size_cache[index].second;
     };
 
-    void text_mark(bookmark_type_t *bm, int line, bool added)
+    void text_mark(bookmark_type_t *bm, vis_line_t line, bool added)
     {
         if (line >= (int) this->lss_index.size()) {
             return;
         }
 
-        content_line_t cl = this->at(vis_line_t(line));
+        content_line_t cl = this->at(line);
         std::vector<content_line_t>::iterator lb;
 
         if (bm == &textview_curses::BM_USER) {
@@ -272,6 +279,10 @@ public:
 
             this->lss_user_marks[bm].erase(lb);
         }
+        if (bm == &textview_curses::BM_META &&
+            this->lss_meta_grepper.gps_proc != nullptr) {
+            this->lss_meta_grepper.gps_proc->queue_request(line, line + 1_vl);
+        }
     };
 
     void text_clear_marks(bookmark_type_t *bm)
@@ -280,12 +291,18 @@ public:
 
         if (bm == &textview_curses::BM_USER) {
             for (iter = this->lss_user_marks[bm].begin();
-                 iter != this->lss_user_marks[bm].end();
-                 ++iter) {
+                 iter != this->lss_user_marks[bm].end();) {
+                auto bm_iter = this->lss_user_mark_metadata.find(*iter);
+                if (bm_iter != this->lss_user_mark_metadata.end()) {
+                    ++iter;
+                    continue;
+                }
                 this->find_line(*iter)->set_mark(false);
+                iter = this->lss_user_marks[bm].erase(iter);
             }
+        } else {
+            this->lss_user_marks[bm].clear();
         }
-        this->lss_user_marks[bm].clear();
     };
 
     bool insert_file(std::shared_ptr<logfile> lf)
@@ -355,12 +372,12 @@ public:
         this->lss_user_marks[bm].insert_once(cl);
     };
 
-    bookmarks<content_line_t>::type &get_user_bookmarks(void)
+    bookmarks<content_line_t>::type &get_user_bookmarks()
     {
         return this->lss_user_marks;
     };
 
-    std::map<content_line_t, bookmark_metadata> &get_user_bookmark_metadata(void) {
+    std::map<content_line_t, bookmark_metadata> &get_user_bookmark_metadata() {
         return this->lss_user_mark_metadata;
     };
 
@@ -382,11 +399,11 @@ public:
 
     logline *find_line(content_line_t line)
     {
-        logline *retval = NULL;
+        logline *retval = nullptr;
         std::shared_ptr<logfile> lf     = this->find(line);
 
-        if (lf != NULL) {
-            logfile::iterator ll_iter = lf->begin() + line;
+        if (lf != nullptr) {
+            auto ll_iter = lf->begin() + line;
 
             retval = &(*ll_iter);
         }
@@ -437,7 +454,7 @@ public:
             lf->set_logline_observer(&this->ld_filter_state);
         };
 
-        void clear(void)
+        void clear()
         {
             this->ld_filter_state.lfo_filter_state.clear();
         };
@@ -446,7 +463,7 @@ public:
             this->ld_enabled = enabled;
         }
 
-        void set_file(std::shared_ptr<logfile> lf) {
+        void set_file(const std::shared_ptr<logfile> &lf) {
             this->ld_filter_state.lfo_filter_state.tfs_logfile = lf;
             lf->set_logline_observer(&this->ld_filter_state);
         };
@@ -495,7 +512,7 @@ public:
     };
 
     content_line_t get_file_base_content_line(iterator iter) {
-        int index = std::distance(this->begin(), iter);
+        ssize_t index = std::distance(this->begin(), iter);
 
         return content_line_t(index * MAX_LINES_PER_FILE);
     };
@@ -517,8 +534,8 @@ public:
         }
 
         this->lss_index_delegate->index_start(*this);
-        for (size_t index = 0; index < this->lss_filtered_index.size(); index++) {
-            content_line_t cl = (content_line_t) this->lss_index[this->lss_filtered_index[index]];
+        for (unsigned int index : this->lss_filtered_index) {
+            content_line_t cl = (content_line_t) this->lss_index[index];
             uint64_t line_number;
             logfile_data *ld = this->find_data(cl, line_number);
             std::shared_ptr<logfile> lf = ld->get_file();
@@ -527,6 +544,77 @@ public:
         }
         this->lss_index_delegate->index_complete(*this);
     };
+
+    class meta_grepper
+        : public grep_proc_source<vis_line_t>,
+          public grep_proc_sink<vis_line_t> {
+    public:
+        meta_grepper(logfile_sub_source &source)
+            : lmg_source(source) {
+        };
+
+        bool grep_value_for_line(vis_line_t line, std::string &value_out) override {
+            content_line_t cl = this->lmg_source.at(vis_line_t(line));
+            std::map<content_line_t, bookmark_metadata> &user_mark_meta =
+                lmg_source.get_user_bookmark_metadata();
+            auto meta_iter = user_mark_meta.find(cl);
+
+            if (meta_iter == user_mark_meta.end()) {
+                value_out.clear();
+            } else {
+                bookmark_metadata &bm = meta_iter->second;
+
+                value_out.append(bm.bm_comment);
+                for (const auto &tag : bm.bm_tags) {
+                    value_out.append(tag);
+                }
+            }
+
+            return !this->lmg_done;
+        };
+
+        vis_line_t grep_initial_line(vis_line_t start, vis_line_t highest) override {
+            vis_bookmarks &bm = this->lmg_source.tss_view->get_bookmarks();
+            bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_META];
+
+            if (bv.empty()) {
+                return -1_vl;
+            }
+            return *bv.begin();
+        };
+
+        void grep_next_line(vis_line_t &line) override {
+            vis_bookmarks &bm = this->lmg_source.tss_view->get_bookmarks();
+            bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_META];
+
+            line = bv.next(vis_line_t(line));
+            if (line == -1) {
+                this->lmg_done = true;
+            }
+        };
+
+        void grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vis_line_t stop) override {
+            this->lmg_source.tss_view->grep_begin(gp, start, stop);
+        };
+
+        void grep_end(grep_proc<vis_line_t> &gp) override {
+            this->lmg_source.tss_view->grep_end(gp);
+        };
+
+        void grep_match(grep_proc<vis_line_t> &gp,
+                        vis_line_t line,
+                        int start,
+                        int end) override {
+            this->lmg_source.tss_view->grep_match(gp, line, start, end);
+        };
+
+        logfile_sub_source &lmg_source;
+        bool lmg_done{false};
+    };
+
+    meta_grepper &get_meta_grepper() {
+        return this->lss_meta_grepper;
+    }
 
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
@@ -544,10 +632,10 @@ private:
     };
 
     enum {
-        F_SCRUB       = (1L << B_SCRUB),
-        F_TIME_OFFSET = (1L << B_TIME_OFFSET),
-        F_FILENAME    = (1L << B_FILENAME),
-        F_BASENAME    = (1L << B_BASENAME),
+        F_SCRUB       = (1UL << B_SCRUB),
+        F_TIME_OFFSET = (1UL << B_TIME_OFFSET),
+        F_FILENAME    = (1UL << B_FILENAME),
+        F_BASENAME    = (1UL << B_BASENAME),
 
         F_NAME_MASK   = (F_FILENAME | F_BASENAME),
     };
@@ -646,7 +734,7 @@ private:
      * Functor for comparing the ld_file field of the logfile_data struct.
      */
     struct logfile_data_eq {
-        logfile_data_eq(std::shared_ptr<logfile> lf) : lde_file(lf) { };
+        explicit logfile_data_eq(std::shared_ptr<logfile> lf) : lde_file(std::move(lf)) { };
 
         bool operator()(const logfile_data *ld)
         {
@@ -656,12 +744,16 @@ private:
         std::shared_ptr<logfile> lde_file;
     };
 
-    void clear_line_size_cache(void) {
+    void clear_line_size_cache() {
         memset(this->lss_line_size_cache, 0, sizeof(this->lss_line_size_cache));
         this->lss_line_size_cache[0].first = -1;
     };
 
     bool check_extra_filters(const logline &ll) {
+        if (this->lss_marked_only && !ll.is_marked()) {
+            return false;
+        }
+
         return (
             ll.get_msg_level() >= this->lss_min_log_level &&
             !(ll < this->lss_min_log_time) &&
@@ -693,8 +785,10 @@ private:
     logline::level_t  lss_min_log_level;
     struct timeval    lss_min_log_time;
     struct timeval    lss_max_log_time;
+    bool lss_marked_only;
     index_delegate    *lss_index_delegate;
     size_t            lss_longest_line;
+    meta_grepper lss_meta_grepper;
 };
 
 #endif

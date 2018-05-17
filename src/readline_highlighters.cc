@@ -329,10 +329,10 @@ static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
                 break;
             default:
                 if (isdigit(line[lpc])) {
-                    al.get_attrs().push_back(string_attr(
+                    al.get_attrs().emplace_back(
                         line_range(lpc - 1, lpc + 1),
                         &view_curses::VC_STYLE,
-                        special_char));
+                        special_char);
                 }
                 break;
             }
@@ -354,6 +354,7 @@ void readline_command_highlighter(attr_line_t &al, int x)
     static const pcrepp RE_PREFIXES(
         R"(^:(filter-in|filter-out|delete-filter|enable-filter|disable-filter|highlight|clear-highlight|create-search-table\s+[^\s]+\s+))");
     static const pcrepp SH_PREFIXES("^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
+    static const pcrepp IDENT_PREFIXES("^:(tag|untag|delete-tags)");
 
     view_colors &vc = view_colors::singleton();
     int keyword_attrs = (
@@ -365,6 +366,7 @@ void readline_command_highlighter(attr_line_t &al, int x)
     size_t ws_index;
 
     ws_index = line.find(' ');
+    string command = line.substr(0, ws_index);
     if (ws_index != string::npos) {
         al.get_attrs().push_back(string_attr(
                 line_range(1, ws_index),
@@ -377,6 +379,32 @@ void readline_command_highlighter(attr_line_t &al, int x)
     pi.reset(line);
     if (SH_PREFIXES.match(pc, pi)) {
         readline_shlex_highlighter(al, x);
+    }
+    pi.reset(line);
+    if (IDENT_PREFIXES.match(pc, pi)) {
+        size_t start = ws_index, last;
+
+        do {
+            for (; start < line.length() && isspace(line[start]); start++);
+            for (last = start; last < line.length() && !isspace(line[last]); last++);
+            struct line_range lr{(int) start, (int) last};
+
+            if (lr.length() > 0 && !lr.contains(x) && !lr.contains(x - 1)) {
+                string value(lr.substr(line), lr.sublen(line));
+
+                if ((command == ":tag" ||
+                     command == ":untag" ||
+                     command == ":delete-tags") &&
+                    !startswith(value, "#")) {
+                    value = "#" + value;
+                }
+                al.get_attrs().emplace_back(lr,
+                                            &view_curses::VC_STYLE,
+                                            vc.attrs_for_ident(value));
+            }
+
+            start = last;
+        } while (start < line.length());
     }
 }
 

@@ -51,6 +51,7 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 #include <vector>
 #include <exception>
 
@@ -343,10 +344,10 @@ public:
     class error : public std::exception {
 public:
         error(std::string msg, int offset = 0)
-            : e_msg(msg), e_offset(offset) { };
+            : e_msg(std::move(msg)), e_offset(offset) { };
         virtual ~error() { };
 
-        virtual const char *what() const throw() {
+        virtual const char *what() const noexcept {
             return this->e_msg.c_str();
         };
 

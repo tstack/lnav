@@ -48,7 +48,7 @@ static int handle_collation_list(void *ptr,
                                  char **colvalues,
                                  char **colnames)
 {
-    if (lnav_data.ld_rl_view != NULL) {
+    if (lnav_data.ld_rl_view != nullptr) {
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
     }
 
@@ -60,7 +60,7 @@ static int handle_db_list(void *ptr,
                           char **colvalues,
                           char **colnames)
 {
-    if (lnav_data.ld_rl_view != NULL) {
+    if (lnav_data.ld_rl_view != nullptr) {
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[1]);
     }
 
@@ -72,7 +72,7 @@ static int handle_table_list(void *ptr,
                              char **colvalues,
                              char **colnames)
 {
-    if (lnav_data.ld_rl_view != NULL) {
+    if (lnav_data.ld_rl_view != nullptr) {
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[0]);
 
         lnav_data.ld_table_ddl[colvalues[0]] = colvalues[1];
@@ -86,7 +86,7 @@ static int handle_table_info(void *ptr,
                              char **colvalues,
                              char **colnames)
 {
-    if (lnav_data.ld_rl_view != NULL) {
+    if (lnav_data.ld_rl_view != nullptr) {
         auto_mem<char, sqlite3_free> quoted_name;
 
         quoted_name = sql_quote_ident(colvalues[1]);
@@ -94,7 +94,7 @@ static int handle_table_info(void *ptr,
                                               string(quoted_name));
     }
     if (strcmp(colvalues[5], "1") == 0) {
-        lnav_data.ld_db_key_names.push_back(colvalues[1]);
+        lnav_data.ld_db_key_names.emplace_back(colvalues[1]);
     }
     return 0;
 }
@@ -104,8 +104,8 @@ static int handle_foreign_key_list(void *ptr,
                                    char **colvalues,
                                    char **colnames)
 {
-    lnav_data.ld_db_key_names.push_back(colvalues[3]);
-    lnav_data.ld_db_key_names.push_back(colvalues[4]);
+    lnav_data.ld_db_key_names.emplace_back(colvalues[3]);
+    lnav_data.ld_db_key_names.emplace_back(colvalues[4]);
     return 0;
 }
 
@@ -189,14 +189,14 @@ void add_view_text_possibilities(int context, const string &type, textview_curse
         auto_mem<FILE> pfile(pclose);
 
         pfile = open_clipboard(CT_FIND, CO_READ);
-        if (pfile.in() != NULL) {
+        if (pfile.in() != nullptr) {
             char buffer[64];
 
-            if (fgets(buffer, sizeof(buffer), pfile) != NULL) {
+            if (fgets(buffer, sizeof(buffer), pfile) != nullptr) {
                 char *nl;
 
                 buffer[sizeof(buffer) - 1] = '\0';
-                if ((nl = strchr(buffer, '\n')) != NULL) {
+                if ((nl = strchr(buffer, '\n')) != nullptr) {
                     *nl = '\0';
                 }
                 rlc->add_possibility(context, type, std::string(buffer));
@@ -213,6 +213,8 @@ void add_view_text_possibilities(int context, const string &type, textview_curse
 
         add_text_possibilities(context, type, line);
     }
+
+    rlc->add_possibility(context, type, bookmark_metadata::KNOWN_TAGS);
 }
 
 void add_env_possibilities(int context)
@@ -220,19 +222,19 @@ void add_env_possibilities(int context)
     extern char **environ;
     readline_curses *rlc = lnav_data.ld_rl_view;
 
-    for (char **var = environ; *var != NULL; var++) {
+    for (char **var = environ; *var != nullptr; var++) {
         rlc->add_possibility(context, "*", "$" + string(*var, strchr(*var, '=')));
     }
 
     exec_context &ec = lnav_data.ld_exec_context;
 
     if (!ec.ec_local_vars.empty()) {
-        for (const auto iter : ec.ec_local_vars.top()) {
+        for (const auto &iter : ec.ec_local_vars.top()) {
             rlc->add_possibility(context, "*", "$" + iter.first);
         }
     }
 
-    for (const auto iter : ec.ec_global_vars) {
+    for (const auto &iter : ec.ec_global_vars) {
         rlc->add_possibility(context, "*", "$" + iter.first);
     }
 }
@@ -246,9 +248,7 @@ void add_filter_possibilities(textview_curses *tc)
     rc->clear_possibilities(LNM_COMMAND, "all-filters");
     rc->clear_possibilities(LNM_COMMAND, "disabled-filter");
     rc->clear_possibilities(LNM_COMMAND, "enabled-filter");
-    for (auto iter = fs.begin(); iter != fs.end(); ++iter) {
-        shared_ptr<text_filter> tf = *iter;
-
+    for (const auto &tf : fs) {
         rc->add_possibility(LNM_COMMAND, "all-filters", tf->get_id());
         if (tf->is_enabled()) {
             rc->add_possibility(LNM_COMMAND, "enabled-filter", tf->get_id());
@@ -264,7 +264,7 @@ void add_mark_possibilities()
     readline_curses *rc = lnav_data.ld_rl_view;
 
     rc->clear_possibilities(LNM_COMMAND, "mark-type");
-    for (bookmark_type_t::type_iterator iter = bookmark_type_t::type_begin();
+    for (auto iter = bookmark_type_t::type_begin();
          iter != bookmark_type_t::type_end();
          ++iter) {
         bookmark_type_t *bt = (*iter);
@@ -287,4 +287,26 @@ void add_config_possibilities()
         lnav_config_handlers[lpc].possibilities(config_options, &lnav_config);
     }
     rc->add_possibility(LNM_COMMAND, "config-option", config_options);
+}
+
+void add_tag_possibilities()
+{
+    readline_curses *rc = lnav_data.ld_rl_view;
+
+    rc->clear_possibilities(LNM_COMMAND, "tag");
+    rc->clear_possibilities(LNM_COMMAND, "line-tags");
+    rc->add_possibility(LNM_COMMAND, "tag", bookmark_metadata::KNOWN_TAGS);
+    if (lnav_data.ld_view_stack.back() == &lnav_data.ld_views[LNV_LOG]) {
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        content_line_t cl = lss.at(lnav_data.ld_views[LNV_LOG].get_top());
+        const map<content_line_t, bookmark_metadata> &user_meta =
+            lss.get_user_bookmark_metadata();
+        auto meta_iter = user_meta.find(cl);
+
+        if (meta_iter != user_meta.end()) {
+            rc->add_possibility(LNM_COMMAND,
+                                "line-tags",
+                                meta_iter->second.bm_tags);
+        }
+    }
 }

@@ -472,11 +472,32 @@ COMMANDS
   relative-goto <line#|N%>
                     Move the current view up or down by the given amount.
 
-  next-mark error|warning|search|user|file|partition
+  comment <message>
+                    Add a comment to the top line in the log view.  The
+                    comment will be saved in the session and will be available
+                    the next time the file is loaded.  Searches will also scan
+                    the comment for any matches.
+
+  clear-comment     Clear the comment that is attached to the top line in the
+                    log view.
+
+  tag <tag1> [<tag2> [... <tagN>]]
+                    Attach a tag to the top line in the log view.  The tags are
+                    prefixed with a '#', if they don't have one already.  And,
+                    like comments, they are saved in the session and
+                    searchable.
+
+  untag <tag1> [<tag2> [... <tagN>]]
+                    Detach a tag from the top line in the log view.
+
+  delete-tags <tag1> [<tag2> [... <tagN>]]
+                    Detach the tags from all log lines.
+
+  next-mark error|warning|search|user|file|meta
                     Move to the next bookmark of the given type in the
                     current view.
 
-  prev-mark error|warning|search|user|file|partition
+  prev-mark error|warning|search|user|file|meta
                     Move to the previous bookmark of the given type in the
                     current view.
 
@@ -937,7 +958,8 @@ Synopsis
   abs(x) -- Return the absolute value of the argument
 Parameter
   x   The number to convert
-
+See Also
+  avg(), max(), min(), round(), sum(), total()
 Example
 #1 ;SELECT abs(-1)
    
@@ -947,7 +969,8 @@ Synopsis
   avg(X) -- Returns the average value of all non-NULL numbers within a group.
 Parameter
   X   The value to compute the average of.
-
+See Also
+  abs(), max(), min(), round(), sum(), total()
 Examples
 #1 ;SELECT avg(ex_duration) FROM lnav_example_log
    
@@ -961,7 +984,8 @@ Synopsis
   basename(path) -- Extract the base portion of a pathname.
 Parameter
   path   The path
-
+See Also
+  dirname(), joinpath(), readlink(), realpath()
 Examples
 #1 ;SELECT basename('foobar')
    
@@ -995,7 +1019,10 @@ Synopsis
     unicode code point values
 Parameter
   X   The unicode code point values
-
+See Also
+  endswith(), extract(), group_concat(), instr(), leftstr(), length(), lower(), 
+  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT char(0x48, 0x49)
    
@@ -1033,7 +1060,8 @@ Synopsis
 Parameters
   timestring   The string to convert to a date.
   modifier     A transformation that is applied to the value to the left.
-
+See Also
+  datetime(), julianday(), strftime(), time(), timediff(), timeslice()
 Examples
 #1 ;SELECT date('2017-01-02T03:04:05')
    
@@ -1051,7 +1079,8 @@ Synopsis
 Parameters
   timestring   The string to convert to a date with time.
   modifier     A transformation that is applied to the value to the left.
-
+See Also
+  date(), julianday(), strftime(), time(), timediff(), timeslice()
 Examples
 #1 ;SELECT datetime('2017-01-02T03:04:05')
    
@@ -1067,7 +1096,8 @@ Synopsis
   dirname(path) -- Extract the directory portion of a pathname.
 Parameter
   path   The path
-
+See Also
+  basename(), joinpath(), readlink(), realpath()
 Examples
 #1 ;SELECT dirname('foo/bar')
    
@@ -1090,7 +1120,10 @@ Synopsis
 Parameters
   str      The string to test
   suffix   The suffix to check in the string
-
+See Also
+  char(), extract(), group_concat(), instr(), leftstr(), length(), lower(), 
+  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT endswith('notbad.jpg', '.jpg')
    
@@ -1103,7 +1136,10 @@ Synopsis
   extract(str) -- Automatically Parse and extract data from a string
 Parameter
   str   The string to parse
-
+See Also
+  char(), endswith(), group_concat(), instr(), leftstr(), length(), lower(), 
+  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT extract('foo=1 bar=2 name="Rolo Tomassi"')
    
@@ -1116,7 +1152,8 @@ Synopsis
   gethostbyaddr(hostname) -- Get the IP address for the given hostname
 Parameter
   hostname   The DNS hostname to lookup.
-
+See Also
+  gethostbyname()
 Example
 #1 ;SELECT gethostbyaddr('127.0.0.1')
    
@@ -1126,7 +1163,8 @@ Synopsis
   gethostbyname(hostname) -- Get the IP address for the given hostname
 Parameter
   hostname   The DNS hostname to lookup.
-
+See Also
+  gethostbyaddr()
 Example
 #1 ;SELECT gethostbyname('localhost')
    
@@ -1149,7 +1187,10 @@ Synopsis
 Parameters
   X     The value to concatenate.
   sep   The separator to place between the values.
-
+See Also
+  char(), endswith(), extract(), instr(), leftstr(), length(), lower(), ltrim(), 
+  printf(), regexp_match(), regexp_replace(), replace(), replicate(), reverse(), 
+  rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT group_concat(ex_procname) FROM lnav_example_log
    
@@ -1191,7 +1232,10 @@ Synopsis
 Parameters
   haystack   The string to search within
   needle     The string to look for in the haystack
-
+See Also
+  char(), endswith(), extract(), group_concat(), leftstr(), length(), lower(), 
+  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT instr('abc', 'b')
    
@@ -1202,7 +1246,8 @@ Synopsis
 Parameters
   json   The JSON object to query.
   ptr    The JSON-Pointer to lookup in the object.
-
+See Also
+  json_contains()
 Examples
 #1 ;SELECT jget('1', '')
    
@@ -1217,7 +1262,8 @@ Parameter
   path   One or more path components to join together.  If an argument starts 
          with a forward or backward slash, it will be considered an absolute 
          path and any preceding elements will be ignored.
-
+See Also
+  basename(), dirname(), readlink(), realpath()
 Examples
 #1 ;SELECT joinpath('foo', 'bar')
    
@@ -1233,12 +1279,28 @@ Examples
 
 
 Synopsis
+  json_contains(json, value) -- 
+Parameters
+  json    The JSON value to query.
+  value   The value to look for in the first argument
+See Also
+  jget()
+Examples
+#1 ;SELECT json_contains('[1, 2, 3]', 4)
+   
+
+#2 ;SELECT json_contains('["abc", "def"]', 'def')
+   
+
+
+Synopsis
   julianday(timestring, modifier, ...) -- Returns the number of days since noon
     in Greenwich on November 24, 4714 B.C.
 Parameters
   timestring   The string to convert to a date with time.
   modifier     A transformation that is applied to the value to the left.
-
+See Also
+  date(), datetime(), strftime(), time(), timediff(), timeslice()
 Examples
 #1 ;SELECT julianday('2017-01-02T03:04:05')
    
@@ -1261,7 +1323,10 @@ Synopsis
 Parameters
   str   The string to return subset.
   N     The number of characters from the left side of the string to return.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), length(), lower(), 
+  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT leftstr('abc', 1)
    
@@ -1275,7 +1340,10 @@ Synopsis
     string prior to the first NUL character
 Parameter
   str   The string to determine the length of
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), lower(), 
+  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT length('abc')
    
@@ -1334,7 +1402,10 @@ Synopsis
     converted to lower case.
 Parameter
   str   The string to convert.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT lower('AbC')
    
@@ -1347,7 +1418,10 @@ Synopsis
 Parameters
   str     The string to trim characters from the left side
   chars   The characters to trim.  Defaults to spaces.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT ltrim('   abc')
    
@@ -1362,7 +1436,8 @@ Synopsis
 Parameter
   X   The numbers to find the maximum of.  If only one argument is given, this 
       function operates as an aggregate.
-
+See Also
+  abs(), avg(), min(), round(), sum(), total()
 Examples
 #1 ;SELECT max(2, 1, 3)
    
@@ -1377,7 +1452,8 @@ Synopsis
 Parameter
   X   The numbers to find the minimum of.  If only one argument is given, this 
       function operates as an aggregate.
-
+See Also
+  abs(), avg(), max(), round(), sum(), total()
 Examples
 #1 ;SELECT min(2, 1, 3)
    
@@ -1408,7 +1484,10 @@ Synopsis
 Parameters
   format   The format of the string to return.
   X        The argument to substitute at a given position in the format.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), regexp_match(), regexp_replace(), replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT printf('Hello, %s!', 'World')
    
@@ -1449,14 +1528,16 @@ Synopsis
   readlink(path) -- Read the target of a symbolic link.
 Parameter
   path   The path to the symbolic link.
-
+See Also
+  basename(), dirname(), joinpath(), realpath()
 
 Synopsis
   realpath(path) -- Returns the resolved version of the given path, expanding 
     symbolic links and resolving '.' and '..' references.
 Parameter
   path   The path to resolve.
-
+See Also
+  basename(), dirname(), joinpath(), readlink()
 
 Synopsis
   regexp(re, str) -- Test if a string matches a regular expression
@@ -1471,7 +1552,11 @@ Synopsis
 Parameters
   re    The regular expression to use
   str   The string to test against the regular expression
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_replace(), regexp_replace(), replace(), 
+  replicate(), reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), 
+  upper()
 Examples
 #1 ;SELECT regexp_match('(\d+)', '123')
    
@@ -1491,7 +1576,11 @@ Parameters
   re     The regular expression to match
   repl   The replacement string.  You can reference capture groups with a 
          backslash followed by the number of the group, starting with 1.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_match(), replace(), 
+  replicate(), reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), 
+  upper()
 Examples
 #1 ;SELECT regexp_replace('Hello, World!', '^(\w+)', 'Goodbye')
    
@@ -1508,7 +1597,10 @@ Parameters
   str           The string to perform substitutions on.
   old           The string to be replaced.
   replacement   The string to replace any occurrences of the old string with.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replicate(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT replace('abc', 'x', 'z')
    
@@ -1522,7 +1614,10 @@ Synopsis
 Parameters
   str   The string to replicate.
   N     The number of times to replicate the string.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT replicate('abc', 3)
    
@@ -1532,7 +1627,10 @@ Synopsis
   reverse(str) -- Returns the reverse of the given string.
 Parameter
   str   The string to reverse.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  replicate(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT reverse('abc')
    
@@ -1544,7 +1642,10 @@ Synopsis
 Parameters
   str   The string to return subset.
   N     The number of characters from the right side of the string to return.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  replicate(), reverse(), rtrim(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT rightstr('abc', 1)
    
@@ -1559,7 +1660,8 @@ Synopsis
 Parameters
   num      The value to round.
   digits   The number of digits to the right of the decimal to round to.
-
+See Also
+  abs(), avg(), max(), min(), sum(), total()
 Examples
 #1 ;SELECT round(123.456)
    
@@ -1578,7 +1680,10 @@ Synopsis
 Parameters
   str     The string to trim characters from the right side
   chars   The characters to trim.  Defaults to spaces.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  replicate(), reverse(), rightstr(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT ltrim('abc   ')
    
@@ -1620,7 +1725,10 @@ Synopsis
 Parameters
   str      The string to test
   prefix   The prefix to check in the string
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  replicate(), reverse(), rightstr(), rtrim(), substr(), trim(), upper()
 Examples
 #1 ;SELECT startswith('foobar', 'foo')
    
@@ -1637,7 +1745,8 @@ Parameters
                strftime() standard C library.
   timestring   The string to convert to a date with time.
   modifier     A transformation that is applied to the value to the left.
-
+See Also
+  date(), datetime(), julianday(), time(), timediff(), timeslice()
 Examples
 #1 ;SELECT strftime('%Y', '2017-01-02T03:04:05')
    
@@ -1660,7 +1769,10 @@ Parameters
   size    The size of the substring.  If not given, then all characters through
           the end of the string are returned.  If the value is negative, then 
           the characters before the start are returned.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  replicate(), reverse(), rightstr(), rtrim(), startswith(), trim(), upper()
 Examples
 #1 ;SELECT substr('abc', 2)
    
@@ -1679,7 +1791,8 @@ Synopsis
   sum(X) -- Returns the sum of the values in the group as an integer.
 Parameter
   X   The values to add.
-
+See Also
+  abs(), avg(), max(), min(), round(), total()
 Example
 #1 ;SELECT sum(ex_duration) FROM lnav_example_log
    
@@ -1691,7 +1804,8 @@ Synopsis
 Parameters
   timestring   The string to convert to a time.
   modifier     A transformation that is applied to the value to the left.
-
+See Also
+  date(), datetime(), julianday(), strftime(), timediff(), timeslice()
 Examples
 #1 ;SELECT time('2017-01-02T03:04:05')
    
@@ -1708,7 +1822,8 @@ Synopsis
 Parameters
   time1   The first timestamp
   time2   The timestamp to subtract from the first
-
+See Also
+  date(), datetime(), julianday(), strftime(), time(), timeslice()
 Examples
 #1 ;SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')
    
@@ -1723,7 +1838,8 @@ Synopsis
 Parameters
   time    The timestamp to get the time slice for.
   slice   The size of the time slices
-
+See Also
+  date(), datetime(), julianday(), strftime(), time(), timediff()
 Examples
 #1 ;SELECT timeslice('2017-01-01T05:05:00', '10m')
    
@@ -1737,7 +1853,8 @@ Synopsis
   total(X) -- Returns the sum of the values in the group as a floating-point.
 Parameter
   X   The values to add.
-
+See Also
+  abs(), avg(), max(), min(), round(), sum()
 Example
 #1 ;SELECT total(ex_duration) FROM lnav_example_log
    
@@ -1755,7 +1872,10 @@ Synopsis
 Parameters
   str     The string to trim characters from the left and right sides.
   chars   The characters to trim.  Defaults to spaces.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  replicate(), reverse(), rightstr(), rtrim(), startswith(), substr(), upper()
 Examples
 #1 ;SELECT trim('    abc   ')
    
@@ -1800,7 +1920,10 @@ Synopsis
     converted to upper case.
 Parameter
   str   The string to convert.
-
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  replicate(), reverse(), rightstr(), rtrim(), startswith(), substr(), trim()
 Example
 #1 ;SELECT upper('aBc')
    
@@ -1844,6 +1967,30 @@ Example
 
 
 Synopsis
+  CREATE [TEMP] VIEW [IF NOT EXISTS] [schema-name.] view-name AS select-stmt
+
+  Assign a name to a SELECT statement
+Parameters
+  IF NOT EXISTS   Do not create the view if it already exists
+  schema-name.    The database to create the view in
+  view-name       The name of the view
+  select-stmt     The SELECT statement the view represents
+
+
+Synopsis
+  DELETE FROM table-name [WHERE cond]
+
+  Delete rows from a table
+Parameters
+  table-name   The name of the table
+  cond         The conditions used to delete the rows.
+
+Example
+#1 ;SELECT * FROM syslog_log
+   
+
+
+Synopsis
   DETACH DATABASE schema-name
 
   Detach a database from the current connection.
@@ -1853,6 +2000,13 @@ Parameter
 Example
 #1 ;DETACH DATABASE customers
    
+
+
+Synopsis
+  DROP VIEW [IF EXISTS] [schema-name.] view-name
+
+  Drop a view
+Parameters
 
 
 Synopsis

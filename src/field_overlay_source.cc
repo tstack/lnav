@@ -42,7 +42,7 @@ json_string extract(const char *str);
 void field_overlay_source::build_summary_lines(const listview_curses &lv)
 {
     textfile_sub_source &tss = lnav_data.ld_text_source;
-    logfile_sub_source &lss = lnav_data.ld_log_source;
+    logfile_sub_source &lss = this->fos_lss;
 
     this->fos_summary_lines.clear();
 
@@ -55,7 +55,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
 
         lv.get_dimensions(height, width);
         free_rows = height - filled_rows - vis_line_t(this->fos_lines.size());
-        if (free_rows < 2) {
+        if (free_rows < 2 || lnav_data.ld_flags & LNF_HEADLESS) {
             this->fos_summary_lines.clear();
         }
         else {
@@ -82,10 +82,8 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                 time_t five_minutes_ago = local_now - (5 * 60 * 60);
                 time_t ten_secs_ago = local_now - 10;
 
-                vis_line_t from_five_min_ago = lnav_data.ld_log_source.
-                    find_from_time(five_minutes_ago);
-                vis_line_t from_ten_secs_ago = lnav_data.ld_log_source.
-                    find_from_time(ten_secs_ago);
+                vis_line_t from_five_min_ago = lss.find_from_time(five_minutes_ago);
+                vis_line_t from_ten_secs_ago = lss.find_from_time(ten_secs_ago);
                 vis_bookmarks &bm = lnav_data.ld_views[LNV_LOG].get_bookmarks();
                 bookmark_vector<vis_line_t> &error_bookmarks =
                     bm[&logfile_sub_source::BM_ERRORS];
@@ -196,7 +194,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
 
 void field_overlay_source::build_field_lines(const listview_curses &lv)
 {
-    logfile_sub_source &lss = lnav_data.ld_log_source;
+    logfile_sub_source &lss = this->fos_lss;
     view_colors &vc = view_colors::singleton();
 
     this->fos_lines.clear();
@@ -219,6 +217,8 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     if (this->fos_active) {
         display = true;
     }
+
+    this->build_meta_line(lv, this->fos_lines, lv.get_top());
 
     if (!display) {
         return;
@@ -316,7 +316,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     }
 
     if (this->fos_active || diff_tv.tv_sec > 0) {
-        this->fos_lines.push_back(time_line);
+        this->fos_lines.emplace_back(time_line);
     }
 
     if (!this->fos_active) {
@@ -359,12 +359,12 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         int skip = pattern_str.length();
         pattern_str += lf->get_pattern_regex();
         readline_regex_highlighter(pattern_al, skip);
-        this->fos_lines.push_back(pattern_al);
+        this->fos_lines.emplace_back(pattern_al);
     }
 
 
     if (this->fos_log_helper.ldh_line_values.empty()) {
-        this->fos_lines.push_back(" No known message fields");
+        this->fos_lines.emplace_back(" No known message fields");
     }
 
     const log_format *last_format = NULL;
@@ -376,9 +376,9 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         string str, value_str = lv.to_string();
 
         if (lv.lv_format != last_format) {
-            this->fos_lines.push_back(" Known message fields for table " +
-                                      format_name +
-                                      ":");
+            this->fos_lines.emplace_back(" Known message fields for table " +
+                                         format_name +
+                                         ":");
             this->fos_lines.back().with_attr(string_attr(
                 line_range(32, 32 + format_name.length()),
                 &view_curses::VC_STYLE,
@@ -396,7 +396,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
                         &view_curses::VC_STYLE,
                         vc.attrs_for_ident(lv.lv_name.to_string())));
 
-        this->fos_lines.push_back(al);
+        this->fos_lines.emplace_back(al);
         this->add_key_line_attrs(this->fos_known_key_size);
 
         if (lv.lv_kind == logline_value::VALUE_STRUCT) {
@@ -414,7 +414,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
               .append(this->fos_known_key_size - lv.lv_name.size() - 9 + 3, ' ')
               .append(" = ")
               .append((const char *) js.js_content, js.js_len);
-            this->fos_lines.push_back(al);
+            this->fos_lines.emplace_back(al);
             this->add_key_line_attrs(this->fos_known_key_size);
         }
 
@@ -423,7 +423,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     std::map<const intern_string_t, json_ptr_walk::walk_list_t>::iterator json_iter;
 
     if (!this->fos_log_helper.ldh_json_pairs.empty()) {
-        this->fos_lines.push_back(" JSON fields:");
+        this->fos_lines.emplace_back(" JSON fields:");
     }
 
     for (json_iter = this->fos_log_helper.ldh_json_pairs.begin();
@@ -432,18 +432,19 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         json_ptr_walk::walk_list_t &jpairs = json_iter->second;
 
         for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
-            this->fos_lines.push_back("   " +
-                                      this->fos_log_helper.format_json_getter(json_iter->first, lpc) + " = " +
-                                      jpairs[lpc].wt_value);
+            this->fos_lines.emplace_back(
+                "   " +
+                this->fos_log_helper.format_json_getter(json_iter->first, lpc) + " = " +
+                jpairs[lpc].wt_value);
             this->add_key_line_attrs(0);
         }
     }
 
     if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
-        this->fos_lines.push_back(" No discovered message fields");
+        this->fos_lines.emplace_back(" No discovered message fields");
     }
     else {
-        this->fos_lines.push_back(" Discovered fields for logline table from message format: ");
+        this->fos_lines.emplace_back(" Discovered fields for logline table from message format: ");
         this->fos_lines.back().with_attr(string_attr(
             line_range(23, 23 + 7),
             &view_curses::VC_STYLE,
@@ -474,8 +475,60 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
                 &view_curses::VC_STYLE,
                 vc.attrs_for_ident(name)));
 
-        this->fos_lines.push_back(al);
+        this->fos_lines.emplace_back(al);
         this->add_key_line_attrs(this->fos_unknown_key_size,
                                  lpc == (this->fos_log_helper.ldh_parser->dp_pairs.size() - 1));
     }
-};
+}
+
+void field_overlay_source::build_meta_line(const listview_curses &lv,
+                                           std::vector<attr_line_t> &dst,
+                                           vis_line_t row)
+{
+    content_line_t cl = this->fos_lss.at(row);
+    auto const &bm = this->fos_lss.get_user_bookmark_metadata();
+    view_colors &vc = view_colors::singleton();
+    auto iter = bm.find(cl);
+
+    if (iter != bm.end()) {
+        const bookmark_metadata &line_meta = iter->second;
+
+        if (!line_meta.bm_comment.empty()) {
+            attr_line_t al;
+
+            al.with_string(" + ")
+              .with_attr(string_attr(
+                  line_range(1, 2),
+                  &view_curses::VC_GRAPHIC,
+                  line_meta.bm_tags.empty() ? ACS_LLCORNER : ACS_LTEE
+              ))
+              .append(line_meta.bm_comment);
+            dst.emplace_back(al);
+        }
+        if (!line_meta.bm_tags.empty()) {
+            attr_line_t al;
+
+            al.with_string(" +")
+              .with_attr(string_attr(
+                  line_range(1, 2),
+                  &view_curses::VC_GRAPHIC,
+                  ACS_LLCORNER
+              ));
+            for (const auto &str : line_meta.bm_tags) {
+                al.append(1, ' ')
+                  .append(str, &view_curses::VC_STYLE, vc.attrs_for_ident(str));
+            }
+
+            const auto *tc = dynamic_cast<const textview_curses *>(&lv);
+            if (tc) {
+                const textview_curses::highlight_map_t &hm = tc->get_highlights();
+                auto hl_iter = hm.find("$search");
+
+                if (hl_iter != hm.end()) {
+                    hl_iter->second.annotate(al, 2);
+                }
+            }
+            dst.emplace_back(al);
+        }
+    }
+}

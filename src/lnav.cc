@@ -64,6 +64,7 @@
 #define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
 #endif
 #include <map>
+#include <memory>
 #include <set>
 #include <stack>
 #include <vector>
@@ -227,7 +228,7 @@ public:
 
         next = bm[&textview_curses::BM_USER].next(vis_line_t(start));
         if (next == -1) {
-            next = bm[&textview_curses::BM_PARTITION].next(vis_line_t(start));
+            next = bm[&textview_curses::BM_META].next(vis_line_t(start));
         }
         if (next != -1 && next <= end) {
             ch = search_hit ? ACS_PLUS : ACS_LTEE;
@@ -588,11 +589,10 @@ void rebuild_indexes(bool force)
             }
         }
 
-        if (new_data && lnav_data.ld_search_child[LNV_TEXT].get() != NULL) {
-            lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc()->reset();
+        if (new_data && lnav_data.ld_search_child[LNV_TEXT]) {
             lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc()->
-            queue_request(grep_line_t(-1));
-            lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc()->start();
+                                                   queue_request(-1_vl)
+                                               .start();
         }
         text_view.reload_data();
     }
@@ -626,7 +626,7 @@ void rebuild_indexes(bool force)
 
     if (lss.rebuild_index(force)) {
         size_t      new_count = lss.text_line_count();
-        grep_line_t start_line;
+        vis_line_t start_line;
 
         if (!scroll_downs[LNV_LOG] && force) {
             content_line_t new_top_content = content_line_t(-1);
@@ -640,20 +640,22 @@ void rebuild_indexes(bool force)
             }
         }
 
-        start_line = force ? grep_line_t(0) : grep_line_t(-1);
+        start_line = force ? 0_vl : -1_vl;
 
         if (force) {
-            if (lnav_data.ld_search_child[LNV_LOG].get() != NULL) {
+            if (lnav_data.ld_search_child[LNV_LOG]) {
                 lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->invalidate();
+            }
+            if (lnav_data.ld_meta_search) {
+                lnav_data.ld_meta_search->invalidate();
             }
             log_view.match_reset();
         }
 
-        if (lnav_data.ld_search_child[LNV_LOG].get() != NULL) {
-            lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->reset();
+        if (lnav_data.ld_search_child[LNV_LOG]) {
             lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->
-            queue_request(start_line);
-            lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->start();
+                                                  queue_request(start_line)
+                                              .start();
         }
 
         log_view.reload_data();
@@ -951,7 +953,7 @@ bool toggle_view(textview_curses *toggle_tc)
         else if (toggle_tc == &lnav_data.ld_views[LNV_HELP]) {
             build_all_help_text();
         }
-        lnav_data.ld_last_view = NULL;
+        lnav_data.ld_last_view = nullptr;
         lnav_data.ld_view_stack.push_back(toggle_tc);
         retval = true;
     }
@@ -967,14 +969,18 @@ void redo_search(lnav_view_t view_index)
     textview_curses *tc = &lnav_data.ld_views[view_index];
 
     tc->reload_data();
-    if (lnav_data.ld_search_child[view_index].get() != NULL) {
-        grep_proc *gp = lnav_data.ld_search_child[view_index]->get_grep_proc();
+    if (lnav_data.ld_search_child[view_index] != NULL) {
+        grep_proc<vis_line_t> *gp = lnav_data.ld_search_child[view_index]->get_grep_proc();
 
         gp->invalidate();
         tc->match_reset();
-        gp->reset();
-        gp->queue_request(grep_line_t(0));
+        gp->queue_request(0_vl);
         gp->start();
+    }
+    if (view_index == LNV_LOG && lnav_data.ld_meta_search) {
+        lnav_data.ld_meta_search->invalidate()
+                 .queue_request(0_vl)
+                 .start();
     }
     if (!lnav_data.ld_view_stack.empty() && tc == lnav_data.ld_view_stack.back()) {
         lnav_data.ld_scroll_broadcaster.invoke(tc);
@@ -989,7 +995,7 @@ void redo_search(lnav_view_t view_index)
  */
 bool ensure_view(textview_curses *expected_tc)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.back();
+    textview_curses *tc = lnav_data.ld_view_stack.empty() ? nullptr : lnav_data.ld_view_stack.back();
     bool retval = true;
 
     if (tc != expected_tc) {
@@ -1140,19 +1146,19 @@ readline_context::command_map_t lnav_commands;
 void execute_search(lnav_view_t view, const std::string &regex_orig)
 {
     unique_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
-    textview_curses &           tc = lnav_data.ld_views[view];
+    textview_curses &tc = lnav_data.ld_views[view];
     std::string regex = regex_orig;
-    pcre *      code = NULL;
+    pcre *code = nullptr;
 
-    if ((gc.get() == NULL) || (regex != lnav_data.ld_last_search[view])) {
+    if ((gc.get() == nullptr) || (regex != lnav_data.ld_last_search[view])) {
         const char *errptr;
         int         eoff;
         bool quoted = false;
 
         tc.match_reset();
 
-        if (regex.empty() && gc.get() != NULL) {
-            tc.grep_begin(*(gc->get_grep_proc()));
+        if (regex.empty() && gc != nullptr) {
+            tc.grep_begin(*(gc->get_grep_proc()), 0_vl, -1_vl);
             tc.grep_end(*(gc->get_grep_proc()));
         }
         gc.reset();
@@ -1166,7 +1172,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
                                       PCRE_CASELESS,
                                       &errptr,
                                       &eoff,
-                                      NULL)) == NULL) {
+                                      nullptr)) == nullptr) {
             string errmsg = string(errptr);
 
             quoted = true;
@@ -1177,7 +1183,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
                                      PCRE_CASELESS,
                                      &errptr,
                                      &eoff,
-                                     NULL)) == NULL) {
+                                     nullptr)) == nullptr) {
                 log_error("Unable to compile quoted regex: %s", regex.c_str());
             } else {
                 lnav_data.ld_bottom_source.grep_error(
@@ -1187,7 +1193,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
             }
         }
 
-        if (code != NULL) {
+        if (code != nullptr) {
             highlighter hl(code);
 
             hl.with_role(view_colors::VCR_SEARCH);
@@ -1200,23 +1206,34 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
             textview_curses::highlight_map_t &hm = tc.get_highlights();
             hm["$search"] = hl;
 
-            unique_ptr<grep_proc> gp(new grep_proc(code, tc));
+            unique_ptr<grep_proc<vis_line_t>> gp = make_unique<grep_proc<vis_line_t>>(code, tc);
 
-            gp->queue_request(grep_line_t(tc.get_top()));
+            gp->set_sink(&tc);
+            gp->queue_request(tc.get_top());
             if (tc.get_top() > 0) {
-                gp->queue_request(grep_line_t(0), grep_line_t(tc.get_top()));
+                gp->queue_request(0_vl, tc.get_top());
             }
             gp->start();
-            gp->set_sink(&tc);
 
-            gc.reset(new grep_highlighter(gp, "$search", hm));
+            gc = std::make_unique<grep_highlighter>(gp, "$search", hm);
+
+            if (view == LNV_LOG) {
+                logfile_sub_source::meta_grepper &mg = lnav_data.ld_log_source.get_meta_grepper();
+                shared_ptr<grep_proc<vis_line_t>> mgp = make_shared<grep_proc<vis_line_t>>(code, mg);
+
+                mgp->set_sink(&mg);
+                mgp->queue_request(0_vl);
+                mgp->start();
+
+                lnav_data.ld_meta_search = mgp;
+            }
         }
 
         if (view == LNV_LOG) {
             static intern_string_t log_search_name = intern_string::lookup("log_search");
 
             lnav_data.ld_vtab_manager->unregister_vtab(log_search_name);
-            if (code != NULL) {
+            if (code != nullptr) {
                 lnav_data.ld_vtab_manager->register_vtab(new log_search_table(
                         regex.c_str(), log_search_name));
             }
@@ -1226,7 +1243,7 @@ void execute_search(lnav_view_t view, const std::string &regex_orig)
     lnav_data.ld_last_search[view] = regex;
 }
 
-static void usage(void)
+static void usage()
 {
     const char *usage_msg =
         "usage: %s [options] [logfile1 logfile2 ...]\n"
@@ -1486,7 +1503,7 @@ static void expand_filename(string path, bool required)
         for (lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             auto_mem<char> abspath;
 
-            if ((abspath = realpath(gl->gl_pathv[lpc], NULL)) == NULL) {
+            if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) == NULL) {
                 if (required) {
                     fprintf(stderr, "Cannot find file: %s -- %s",
                         gl->gl_pathv[lpc], strerror(errno));
@@ -1980,7 +1997,9 @@ static void execute_examples()
                         ex.he_result.append(dls.dls_rows[0][0]);
                     } else {
                         attr_line_t al;
-                        dos.list_value_for_overlay(db_tc, vis_line_t(0),
+                        dos.list_value_for_overlay(db_tc,
+                                                   0, 1,
+                                                   vis_line_t(0),
                                                    al);
                         ex.he_result.append(al);
                         for (int lpc = 0;
@@ -2321,6 +2340,9 @@ static void looper(void)
                     gc->get_grep_proc()->update_poll_set(pollfds);
                 }
             }
+            if (lnav_data.ld_meta_search) {
+                lnav_data.ld_meta_search->update_poll_set(pollfds);
+            }
 
             rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
 
@@ -2413,6 +2435,9 @@ static void looper(void)
                             update_hits(lnav_data.ld_view_stack.back());
                         }
                     }
+                }
+                if (lnav_data.ld_meta_search) {
+                    lnav_data.ld_meta_search->check_poll_set(pollfds);
                 }
                 rlc.check_poll_set(pollfds);
             }
@@ -2531,6 +2556,10 @@ static void looper(void)
                 gather_pipers();
             }
 
+            if (lnav_data.ld_meta_search) {
+                lnav_data.ld_meta_search->start();
+            }
+
             if (lnav_data.ld_view_stack.empty() ||
                 (lnav_data.ld_view_stack.size() == 1 &&
                  starting_view_stack_size == 2 &&
@@ -2550,6 +2579,10 @@ void wait_for_children()
     vector<struct pollfd> pollfds;
     struct timeval to = { 0, 333000 };
 
+    if (lnav_data.ld_meta_search) {
+        lnav_data.ld_meta_search->start();
+    }
+
     do {
         pollfds.clear();
 
@@ -2557,6 +2590,9 @@ void wait_for_children()
             if (gc.get() != NULL) {
                 gc->get_grep_proc()->update_poll_set(pollfds);
             }
+        }
+        if (lnav_data.ld_meta_search) {
+            lnav_data.ld_meta_search->update_poll_set(pollfds);
         }
 
         if (pollfds.empty()) {
@@ -2584,6 +2620,9 @@ void wait_for_children()
                         update_hits(lnav_data.ld_view_stack.back());
                 }
             }
+        }
+        if (lnav_data.ld_meta_search) {
+            lnav_data.ld_meta_search->check_poll_set(pollfds);
         }
     } while (true);
 }
@@ -3628,13 +3667,14 @@ int main(int argc, char *argv[])
 
                     los = tc->get_overlay_source();
 
-                    for (vis_line_t vl = tc->get_top();
+                    vis_line_t vl;
+                    for (vl = tc->get_top();
                          vl < tc->get_inner_height();
                          ++vl, ++y) {
                         attr_line_t al;
                         string &line = al.get_string();
-                        while (los != NULL &&
-                               los->list_value_for_overlay(*tc, y, al)) {
+                        while (los != nullptr &&
+                               los->list_value_for_overlay(*tc, y, tc->get_inner_height(), vl, al)) {
                             if (write(STDOUT_FILENO, line.c_str(),
                                       line.length()) == -1 ||
                                 write(STDOUT_FILENO, "\n", 1) == -1) {
@@ -3655,6 +3695,22 @@ int main(int argc, char *argv[])
                                   lr.sublen(rows[0].get_string())) == -1 ||
                             write(STDOUT_FILENO, "\n", 1) == -1) {
                             perror("2 write to STDOUT");
+                        }
+
+                    }
+                    {
+                        attr_line_t al;
+                        string &line = al.get_string();
+
+                        while (los != nullptr &&
+                               los->list_value_for_overlay(*tc, y, tc->get_inner_height(), vl, al) &&
+                               !al.empty()) {
+                            if (write(STDOUT_FILENO, line.c_str(),
+                                      line.length()) == -1 ||
+                                write(STDOUT_FILENO, "\n", 1) == -1) {
+                                perror("1 write to STDOUT");
+                            }
+                            ++y;
                         }
                     }
                 }

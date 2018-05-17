@@ -423,18 +423,18 @@ protected:
     struct stat lf_stat;
     std::unique_ptr<log_format> lf_format;
     std::vector<logline>      lf_index;
-    time_t      lf_index_time;
-    off_t       lf_index_size;
-    bool lf_sort_needed;
+    time_t      lf_index_time{0};
+    off_t       lf_index_size{0};
+    bool lf_sort_needed{false};
     line_buffer lf_line_buffer;
-    int lf_time_offset_line;
-    struct timeval lf_time_offset;
-    bool lf_is_closed;
-    bool lf_partial_line;
-    logline_observer *lf_logline_observer;
-    logfile_observer *lf_logfile_observer;
-    size_t lf_longest_line;
-    text_format_t lf_text_format;
+    int lf_time_offset_line{0};
+    struct timeval lf_time_offset{0, 0};
+    bool lf_is_closed{false};
+    bool lf_partial_line{false};
+    logline_observer *lf_logline_observer{nullptr};
+    logfile_observer *lf_logfile_observer{nullptr};
+    size_t lf_longest_line{0};
+    text_format_t lf_text_format{TF_UNKNOWN};
 };
 
 class logline_observer {

@@ -113,7 +113,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "include nonexistent" <<EOF
-error: unknown script -- nonexistent.lnav -- file not found
+error:command-option:1:unknown script -- nonexistent.lnav -- file not found
 EOF
 
 
@@ -457,6 +457,8 @@ check_output "write-json-to is not working" <<EOF
         "log_idle_msecs": 0,
         "log_level": "info",
         "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",
@@ -475,6 +477,8 @@ check_output "write-json-to is not working" <<EOF
         "log_idle_msecs": 3000,
         "log_level": "error",
         "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",
@@ -493,6 +497,8 @@ check_output "write-json-to is not working" <<EOF
         "log_idle_msecs": 0,
         "log_level": "info",
         "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",

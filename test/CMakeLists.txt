@@ -1,5 +1,5 @@
 
-include_directories(../../lbuild/src ../src/ /opt/local/include)
+include_directories(../../lbuild-debug/src ../src/ /opt/local/include)
 
 add_executable(lnav_doctests
         lnav_doctests.cc
@@ -13,14 +13,14 @@ add_executable(test_reltime test_reltime.cc
         ../src/lnav_log.cc)
 add_executable(test_date_time_scanner test_date_time_scanner.cc
         ../src/lnav_util.cc
-        ../../lbuild/src/time_fmts.cc
+        ../../lbuild-debug/src/time_fmts.cc
         ../src/ptimec_rt.cc
         ../src/pcrepp.cc
         ../src/lnav_log.cc
         ../src/spookyhash/SpookyV2.cpp)
 add_executable(test_abbrev test_abbrev.cc
         ../src/lnav_util.cc
-        ../../lbuild/src/time_fmts.cc
+        ../../lbuild-debug/src/time_fmts.cc
         ../src/ptimec_rt.cc
         ../src/pcrepp.cc
         ../src/lnav_log.cc

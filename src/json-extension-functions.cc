@@ -40,12 +40,16 @@
 
 #include "sqlite3.h"
 
+#include "yajlpp.hh"
 #include "json_op.hh"
+#include "mapbox/variant.hpp"
+#include "vtab_module.hh"
 
 #include "yajl/api/yajl_gen.h"
 #include "sqlite-extension-func.hh"
 
 using namespace std;
+using namespace mapbox;
 
 #define JSON_SUBTYPE  74    /* Ascii for "J" */
 
@@ -66,6 +70,61 @@ static void null_or_default(sqlite3_context *context, int argc, sqlite3_value **
     else {
         sqlite3_result_null(context);
     }
+}
+
+struct contains_userdata {
+    util::variant<const char *, int64_t, bool> cu_match_value{false};
+    bool cu_result{false};
+};
+
+static int contains_string(void *ctx, const unsigned char *str, size_t len)
+{
+    auto &cu = *((contains_userdata *) ctx);
+
+    if (strncmp((const char *) str, cu.cu_match_value.get<const char *>(), len) == 0) {
+        cu.cu_result = true;
+    }
+
+    return 1;
+}
+
+static int contains_integer(void *ctx, int64_t value)
+{
+    auto &cu = *((contains_userdata *) ctx);
+
+    if (cu.cu_match_value.get<int64_t>() == value) {
+        cu.cu_result = true;
+    }
+
+    return 1;
+}
+
+static bool json_contains(const char *json_in, sqlite3_value *value)
+{
+    auto_mem<yajl_handle_t> handle(yajl_free);
+    yajl_callbacks cb;
+    contains_userdata cu;
+
+    memset(&cb, 0, sizeof(cb));
+    handle = yajl_alloc(&cb, nullptr, &cu);
+
+    switch (sqlite3_value_type(value)) {
+        case SQLITE3_TEXT:
+            cb.yajl_string = contains_string;
+            cu.cu_match_value = (const char *) sqlite3_value_text(value);
+            break;
+        case SQLITE_INTEGER:
+            cb.yajl_integer = contains_integer;
+            cu.cu_match_value = sqlite3_value_int64(value);
+            break;
+    }
+
+    if (yajl_parse(handle.in(), (const unsigned char *) json_in, strlen(json_in)) != yajl_status_ok ||
+        yajl_complete_parse(handle.in()) != yajl_status_ok) {
+        throw yajlpp_error(handle.in(), json_in, strlen(json_in));
+    }
+
+    return cu.cu_result;
 }
 
 static int gen_handle_null(void *ctx)
@@ -142,7 +201,7 @@ static void sql_jget(sqlite3_context *context,
     auto_mem<yajl_handle_t> handle(yajl_free);
     const unsigned char *err;
 
-    gen = yajl_gen_alloc(NULL);
+    gen = yajl_gen_alloc(nullptr);
     yajl_gen_config(gen.in(), yajl_gen_beautify, false);
 
     jo.jo_ptr_callbacks = json_op::gen_callbacks;
@@ -151,7 +210,7 @@ static void sql_jget(sqlite3_context *context,
     jo.jo_ptr_callbacks.yajl_string = gen_handle_string;
     jo.jo_ptr_data = gen.in();
 
-    handle.reset(yajl_alloc(&json_op::ptr_callbacks, NULL, &jo));
+    handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
     switch (yajl_parse(handle.in(), (const unsigned char *)json_in, strlen(json_in))) {
     case yajl_status_error:
         err = yajl_get_error(handle.in(), 0, (const unsigned char *)json_in, strlen(json_in));
@@ -397,6 +456,16 @@ int json_extension_functions(struct FuncDef **basic_funcs,
                              struct FuncDefAgg **agg_funcs)
 {
     static struct FuncDef json_funcs[] = {
+        sqlite_func_adapter<decltype(&json_contains), json_contains>::builder(
+            help_text("json_contains", "")
+                .sql_function()
+                .with_parameter({"json", "The JSON value to query."})
+                .with_parameter({"value", "The value to look for in the first argument"})
+                .with_tags({"json"})
+                .with_example({"SELECT json_contains('[1, 2, 3]', 4)"})
+                .with_example({"SELECT json_contains('[\"abc\", \"def\"]', 'def')"})
+        ),
+
         {
             "jget", -1, SQLITE_UTF8, 0, sql_jget,
             help_text("jget",
@@ -404,6 +473,7 @@ int json_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"json", "The JSON object to query."})
                 .with_parameter({"ptr", "The JSON-Pointer to lookup in the object."})
+                .with_tags({"json"})
                 .with_example({"SELECT jget('1', '')"})
                 .with_example({"SELECT jget('{ \"a\": 1, \"b\": 2 }', '/b')"})
         },

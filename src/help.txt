@@ -472,11 +472,32 @@ COMMANDS
   relative-goto <line#|N%>
                     Move the current view up or down by the given amount.
 
-  next-mark error|warning|search|user|file|partition
+  comment <message>
+                    Add a comment to the top line in the log view.  The
+                    comment will be saved in the session and will be available
+                    the next time the file is loaded.  Searches will also scan
+                    the comment for any matches.
+
+  clear-comment     Clear the comment that is attached to the top line in the
+                    log view.
+
+  tag <tag1> [<tag2> [... <tagN>]]
+                    Attach a tag to the top line in the log view.  The tags are
+                    prefixed with a '#', if they don't have one already.  And,
+                    like comments, they are saved in the session and
+                    searchable.
+
+  untag <tag1> [<tag2> [... <tagN>]]
+                    Detach a tag from the top line in the log view.
+
+  delete-tags <tag1> [<tag2> [... <tagN>]]
+                    Detach the tags from all log lines.
+
+  next-mark error|warning|search|user|file|meta
                     Move to the next bookmark of the given type in the
                     current view.
 
-  prev-mark error|warning|search|user|file|partition
+  prev-mark error|warning|search|user|file|meta
                     Move to the previous bookmark of the given type in the
                     current view.
 

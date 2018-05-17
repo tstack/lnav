@@ -55,8 +55,8 @@ void text_filter::add_line(
 }
 
 bookmark_type_t textview_curses::BM_USER("user");
-bookmark_type_t textview_curses::BM_PARTITION("partition");
 bookmark_type_t textview_curses::BM_SEARCH("search");
+bookmark_type_t textview_curses::BM_META("meta");
 
 string_attr_type textview_curses::SA_ORIGINAL_LINE("original_line");
 string_attr_type textview_curses::SA_BODY("body");
@@ -66,7 +66,6 @@ string_attr_type textview_curses::SA_FORMAT("format");
 textview_curses::textview_curses()
     : tc_sub_source(NULL),
       tc_delegate(NULL),
-      tc_searching(false),
       tc_selection_start(-1),
       tc_selection_last(-1),
       tc_selection_cleared(false),
@@ -82,33 +81,49 @@ textview_curses::~textview_curses()
 
 void textview_curses::reload_data(void)
 {
-    if (this->tc_sub_source != NULL) {
+    if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
     }
     this->listview_curses::reload_data();
 }
 
-void textview_curses::grep_begin(grep_proc &gp)
+void textview_curses::grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vis_line_t stop)
 {
-    this->tc_searching = true;
+    require(this->tc_searching >= 0);
+
+    this->tc_searching += 1;
     this->tc_search_action.invoke(this);
+
+    bookmark_vector<vis_line_t> &search_bv = this->tc_bookmarks[&BM_SEARCH];
+
+    if (start != -1) {
+        auto pair = search_bv.equal_range(vis_line_t(start), vis_line_t(stop));
+
+        for (auto mark_iter = pair.first;
+             mark_iter != pair.second;
+             ++mark_iter) {
+            this->set_user_mark(&BM_SEARCH, *mark_iter, false);
+        }
+    }
 
     listview_curses::reload_data();
 }
 
-void textview_curses::grep_end(grep_proc &gp)
+void textview_curses::grep_end(grep_proc<vis_line_t> &gp)
 {
-    this->tc_searching = false;
+    this->tc_searching -= 1;
     this->tc_search_action.invoke(this);
+
+    ensure(this->tc_searching >= 0);
 }
 
-void textview_curses::grep_match(grep_proc &gp,
-                                 grep_line_t line,
+void textview_curses::grep_match(grep_proc<vis_line_t> &gp,
+                                 vis_line_t line,
                                  int start,
                                  int end)
 {
     this->tc_bookmarks[&BM_SEARCH].insert_once(vis_line_t(line));
-    if (this->tc_sub_source != NULL) {
+    if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_mark(&BM_SEARCH, line, true);
     }
 
@@ -137,7 +152,7 @@ bool textview_curses::handle_mouse(mouse_event &me)
         return true;
     }
 
-    if (this->tc_delegate != NULL &&
+    if (this->tc_delegate != nullptr &&
         this->tc_delegate->text_handle_mouse(*this, me)) {
         return true;
     }
@@ -214,10 +229,8 @@ void textview_curses::textview_value_for_row(vis_line_t row,
 {
     view_colors &vc = view_colors::singleton();
     bookmark_vector<vis_line_t> &user_marks = this->tc_bookmarks[&BM_USER];
-    bookmark_vector<vis_line_t> &part_marks = this->tc_bookmarks[&BM_PARTITION];
-    string_attrs_t &             sa         = value_out.get_attrs();
-    string &                     str        = value_out.get_string();
-    highlight_map_t::iterator    iter;
+    string_attrs_t &sa = value_out.get_attrs();
+    string &str = value_out.get_string();
     text_format_t source_format = this->tc_sub_source->get_text_format();
     intern_string_t format_name;
 
@@ -245,20 +258,13 @@ void textview_curses::textview_value_for_row(vis_line_t row,
         format_name = sa_iter->to_string();
     }
 
-    for (iter = this->tc_highlights.begin();
+    for (auto iter = this->tc_highlights.begin();
          iter != this->tc_highlights.end();
          iter++) {
         // XXX testing for '$search' here sucks
         bool internal_hl = iter->first[0] == '$'
                            && iter->first != "$search"
                            && iter->first != "$preview";
-        int off;
-        size_t re_end;
-
-        if (body.lr_end > 8192)
-            re_end = 8192;
-        else
-            re_end = body.lr_end;
 
         if (iter->second.h_text_format != TF_UNKNOWN &&
             source_format != iter->second.h_text_format) {
@@ -270,42 +276,7 @@ void textview_curses::textview_value_for_row(vis_line_t row,
             continue;
         }
 
-        for (off = internal_hl ? body.lr_start : 0; off < (int)str.size(); ) {
-            int rc, matches[60];
-            rc = pcre_exec(iter->second.h_code,
-                           iter->second.h_code_extra,
-                           str.c_str(),
-                           re_end,
-                           off,
-                           0,
-                           matches,
-                           60);
-            if (rc > 0) {
-                struct line_range lr;
-
-                if (rc == 2) {
-                    lr.lr_start = matches[2];
-                    lr.lr_end   = matches[3];
-                }
-                else {
-                    lr.lr_start = matches[0];
-                    lr.lr_end   = matches[1];
-                }
-
-                if (lr.lr_end > lr.lr_start) {
-                    sa.push_back(string_attr(
-                        lr, &view_curses::VC_STYLE, iter->second.get_attrs()));
-
-                    off = matches[1];
-                }
-                else {
-                    off += 1;
-                }
-            }
-            else {
-                off = str.size();
-            }
-        }
+        iter->second.annotate(value_out, internal_hl ? body.lr_start : 0);
     }
 
     if (this->tc_hide_fields) {
@@ -397,9 +368,5 @@ void textview_curses::textview_value_for_row(vis_line_t row,
         }
 
         sa.emplace_back(orig_line, &view_curses::VC_STYLE, A_REVERSE);
-    }
-    else if (binary_search(part_marks.begin(), part_marks.end(), row + 1)) {
-        sa.push_back(string_attr(
-            line_range(0), &view_curses::VC_STYLE, A_UNDERLINE));
     }
 }

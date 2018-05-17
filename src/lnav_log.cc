@@ -264,7 +264,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     }
     line[prefix_size + rc] = '\n';
     log_ring.lr_length += prefix_size + rc + 1;
-    if (lnav_log_file != NULL) {
+    if (lnav_log_file != nullptr) {
         fwrite(line, 1, prefix_size + rc + 1, lnav_log_file);
         fflush(lnav_log_file);
     }
@@ -283,7 +283,7 @@ void log_msg_extra(const char *fmt, ...)
     line = log_alloc();
     rc = vsnprintf(line, MAX_LOG_LINE_SIZE - 1, fmt, args);
     log_ring.lr_length += rc;
-    if (lnav_log_file != NULL) {
+    if (lnav_log_file != nullptr) {
         fwrite(line, 1, rc, lnav_log_file);
         fflush(lnav_log_file);
     }
@@ -299,7 +299,7 @@ void log_msg_extra_complete()
     line = log_alloc();
     line[0] = '\n';
     log_ring.lr_length += 1;
-    if (lnav_log_file != NULL) {
+    if (lnav_log_file != nullptr) {
         fwrite(line, 1, 1, lnav_log_file);
         fflush(lnav_log_file);
     }
@@ -315,7 +315,7 @@ static void sigabrt(int sig)
     struct tm localtm;
     time_t curr_time;
 
-    if (lnav_log_crash_dir == NULL) {
+    if (lnav_log_crash_dir == nullptr) {
         printf("%*s", (int) log_ring.lr_length, log_ring.lr_data);
         return;
     }
@@ -325,7 +325,7 @@ static void sigabrt(int sig)
 #ifdef HAVE_EXECINFO_H
     frame_count = backtrace(frames, 128);
 #endif
-    curr_time = time(NULL);
+    curr_time = time(nullptr);
     localtime_r(&curr_time, &localtm);
     snprintf(crash_path, sizeof(crash_path),
         "%s/crash-%4d-%02d-%02d-%02d-%02d-%02d.%d.log",

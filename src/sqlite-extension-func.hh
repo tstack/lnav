@@ -36,7 +36,7 @@
 #include <sqlite3.h>
 
 #include <string>
-#include <unordered_map>
+#include <map>
 
 #include "help_text_formatter.hh"
 
@@ -83,7 +83,7 @@ int time_extension_functions(struct FuncDef **basic_funcs,
 
 extern sqlite_registration_func_t sqlite_registration_funcs[];
 
-extern std::unordered_map<std::string, help_text *> sqlite_function_help;
+extern std::multimap<std::string, help_text *> sqlite_function_help;
 
 int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs);
 

@@ -71,7 +71,7 @@ class readline_context {
 public:
     typedef std::string (*command_func_t)(exec_context &ec,
             std::string cmdline, std::vector<std::string> &args);
-    typedef struct {
+    typedef struct _command_t {
         const char *c_name;
         command_func_t c_func;
 
@@ -82,7 +82,7 @@ public:
             this->c_func = func;
         }
     } command_t;
-    typedef std::map<std::string, command_t> command_map_t;
+    typedef std::map<std::string, command_t *> command_map_t;
 
     readline_context(const std::string &name,
                      command_map_t *commands = NULL,
@@ -101,7 +101,7 @@ public:
                 std::string cmd = iter->first;
 
                 this->rc_possibilities["__command"].insert(cmd);
-                iter->second.c_func(INIT_EXEC_CONTEXT, cmd, this->rc_prototypes[cmd]);
+                iter->second->c_func(INIT_EXEC_CONTEXT, cmd, this->rc_prototypes[cmd]);
             }
         }
 
@@ -354,14 +354,13 @@ public:
         }
     };
 
+    template<template<typename ...> class Container>
     void add_possibility(int context,
                          const std::string &type,
-                         const std::vector<std::string> &values)
+                         const Container<std::string> &values)
     {
-        for (std::vector<std::string>::const_iterator iter = values.begin();
-             iter != values.end();
-             ++iter) {
-            this->add_possibility(context, type, *iter);
+        for (const auto &str : values) {
+            this->add_possibility(context, type, str);
         }
     };
 

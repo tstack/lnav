@@ -39,19 +39,8 @@
 class field_overlay_source : public list_overlay_source {
 public:
     field_overlay_source(logfile_sub_source &lss)
-            : fos_active(false),
-              fos_active_prev(false),
-              fos_log_helper(lss),
-              fos_known_key_size(0),
-              fos_unknown_key_size(0) {
+            : fos_lss(lss), fos_log_helper(lss) {
 
-    };
-
-    size_t list_overlay_count(const listview_curses &lv) {
-        this->build_field_lines(lv);
-        this->build_summary_lines(lv);
-
-        return this->fos_lines.size() + this->fos_summary_lines.size();
     };
 
     void add_key_line_attrs(int key_size, bool last_line = false) {
@@ -61,28 +50,38 @@ public:
 
         lr.lr_start = 3 + key_size + 3;
         lr.lr_end   = -1;
-        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD));
+        sa.emplace_back(lr, &view_curses::VC_STYLE, A_BOLD);
     };
 
     bool list_value_for_overlay(const listview_curses &lv,
-                                vis_line_t y,
-                                attr_line_t &value_out)
-    {
+                                int y, int bottom,
+                                vis_line_t row,
+                                attr_line_t &value_out) override {
+        if (y == 0) {
+            this->build_field_lines(lv);
+            this->build_summary_lines(lv);
+            return false;
+        }
+
         if (1 <= y && y <= (int)this->fos_lines.size()) {
             value_out = this->fos_lines[y - 1];
             return true;
         }
 
-        if (!this->fos_summary_lines.empty()) {
-            unsigned long width;
-            vis_line_t height;
+        if (!this->fos_summary_lines.empty() && y == (bottom - 1)) {
+            value_out = this->fos_summary_lines[0];
+            return true;
+        }
 
-            lv.get_dimensions(height, width);
+        if (!this->fos_meta_lines.empty()) {
+            value_out = this->fos_meta_lines.front();
+            this->fos_meta_lines.erase(this->fos_meta_lines.begin());
 
-            if (y == height - 1) {
-                value_out = this->fos_summary_lines[0];
-                return true;
-            }
+            return true;
+        }
+
+        if (row < lv.get_inner_height()) {
+            this->build_meta_line(lv, this->fos_meta_lines, row);
         }
 
         return false;
@@ -90,14 +89,19 @@ public:
 
     void build_field_lines(const listview_curses &lv);
     void build_summary_lines(const listview_curses &lv);
+    void build_meta_line(const listview_curses &lv,
+                         std::vector<attr_line_t> &dst,
+                         vis_line_t row);
 
-    bool          fos_active;
-    bool          fos_active_prev;
+    bool fos_active{false};
+    bool fos_active_prev{false};
+    logfile_sub_source &fos_lss;
     log_data_helper fos_log_helper;
-    int fos_known_key_size;
-    int fos_unknown_key_size;
+    int fos_known_key_size{0};
+    int fos_unknown_key_size{0};
     std::vector<attr_line_t> fos_lines;
     std::vector<attr_line_t> fos_summary_lines;
+    std::vector<attr_line_t> fos_meta_lines;
 };
 
 #endif //LNAV_FIELD_OVERLAY_SOURCE_H

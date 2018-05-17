@@ -54,7 +54,18 @@ struct exec_context {
           ec_sql_callback(sql_callback),
           ec_pipe_callback(pipe_callback) {
         this->ec_local_vars.push(std::map<std::string, std::string>());
-        this->ec_path_stack.push_back(".");
+        this->ec_path_stack.emplace_back(".");
+        this->ec_source.emplace("unknown", 0);
+    }
+
+    std::string get_error_prefix() {
+        if (this->ec_source.size() <= 1) {
+            return "error: ";
+        }
+
+        std::pair<std::string, int> source = this->ec_source.top();
+
+        return "error:" + source.first + ":" + std::to_string(source.second) + ":";
     }
 
     vis_line_t ec_top_line;
@@ -65,6 +76,7 @@ struct exec_context {
     std::stack<std::map<std::string, std::string> > ec_local_vars;
     std::map<std::string, std::string> ec_global_vars;
     std::vector<std::string> ec_path_stack;
+    std::stack<std::pair<std::string, int>> ec_source;
 
     attr_line_t ec_accumulator;
 

@@ -1,8 +1,23 @@
 
 lnav v0.8.4:
      Features:
+     * Added the ':comment' command that can be used to attach a comment to a
+       log line.  The comment will be displayed below the line, like so:
+         2017-01-01T15:30:00 error: computer is on fire
+           + This is where it all went wrong
+       The ':clear-comment' command will remove the attached comment.  Comments
+       are searchable with the standard search mechanism and they are available
+       in SQL through the "log_comment" column.
+     * Added the ':tag', ':untag', and ':delete-tags' commands that can be used
+       to attach/detach tags on the top log line and delete all instances of
+       a tag.  Tags are also searchable and are available in SQL as a JSON
+       array in the "log_tags" column.
      * Pressing left-arrow while viewing log messages will reveal the source
        file name for each line.  Pressing again will reveal the full path.
+     * Added the ":hide-unmarked-lines" and ":show-unmarked-lines" commands
+       that hide/show lines based on whether they are bookmarked.
+     * Added the "json_contains()" SQL function to check if a JSON value
+       contains a number of a string.
 
      Interface Changes:
      * When typing in a search, instead of moving the view to the first match
@@ -10,6 +25,8 @@ lnav v0.8.4:
        window.
      * The pretty-print view maintains highlighting from the log view.
      * The pretty-print view no longer tries to reverse lookup IP addresses.
+     * The online help for commands and SQL functions now includes a 'See Also'
+       section that lists related commands/functions.
 
      Fixes:
      * The HOME key should now work in the command-prompt and move the cursor

@@ -57,17 +57,20 @@
 #include "strong_int.hh"
 #include "line_buffer.hh"
 
-/** Strongly-typed integer for matched line numbers. */
-STRONG_INT_TYPE(int, grep_line);
-
+template<typename LineType>
 class grep_proc;
 
 /**
  * Data source for lines to be searched using a grep_proc.
  */
+template<typename LineType>
 class grep_proc_source {
 public:
     virtual ~grep_proc_source() { };
+
+    virtual void register_proc(grep_proc<LineType> *proc) {
+        this->gps_proc = proc;
+    }
 
     /**
      * Get the value for a particular line in the source.
@@ -75,7 +78,20 @@ public:
      * @param line The line to retrieve.
      * @param value_out The destination for the line value.
      */
-    virtual bool grep_value_for_line(int line, std::string &value_out) = 0;
+    virtual bool grep_value_for_line(LineType line, std::string &value_out) = 0;
+
+    virtual LineType grep_initial_line(LineType start, LineType highest) {
+        if (start == -1) {
+            return highest;
+        }
+        return start;
+    };
+
+    virtual void grep_next_line(LineType &line) {
+        line = line + LineType(1);
+    };
+
+    grep_proc<LineType> *gps_proc;
 };
 
 /**
@@ -93,18 +109,19 @@ public:
 /**
  * Sink for matches produced by a grep_proc instance.
  */
+template<typename LineType>
 class grep_proc_sink {
 public:
-    virtual ~grep_proc_sink() { };
+    virtual ~grep_proc_sink() = default;
 
     /** Called at the start of a new grep run. */
-    virtual void grep_begin(grep_proc &gp) { };
+    virtual void grep_begin(grep_proc<LineType> &gp, LineType start, LineType stop) { };
 
     /** Called periodically between grep_begin and grep_end. */
-    virtual void grep_end_batch(grep_proc &gp) { };
+    virtual void grep_end_batch(grep_proc<LineType> &gp) { };
 
     /** Called at the end of a grep run. */
-    virtual void grep_end(grep_proc &gp) { };
+    virtual void grep_end(grep_proc<LineType> &gp) { };
 
     /**
      * Called when a match is found on 'line' and between [start, end).
@@ -114,8 +131,8 @@ public:
      * @param end The offset of the character after the last character in the
      * match.
      */
-    virtual void grep_match(grep_proc &gp,
-                            grep_line_t line,
+    virtual void grep_match(grep_proc<LineType> &gp,
+                            LineType line,
                             int start,
                             int end) = 0;
 
@@ -128,13 +145,13 @@ public:
      * capture.
      * @param capture The captured substring itself.
      */
-    virtual void grep_capture(grep_proc &gp,
-                              grep_line_t line,
+    virtual void grep_capture(grep_proc<LineType> &gp,
+                              LineType line,
                               int start,
                               int end,
                               char *capture) { };
 
-    virtual void grep_match_end(grep_proc &gp, grep_line_t line) { };
+    virtual void grep_match_end(grep_proc<LineType> &gp, LineType line) { };
 };
 
 /**
@@ -147,6 +164,7 @@ public:
  * Note: The "grep" executable is not actually used, instead we use the pcre(3)
  * library directly.
  */
+template<typename LineType>
 class grep_proc {
 public:
     class error
@@ -165,7 +183,7 @@ public:
      * @param code The pcre code to run over the lines of input.
      * @param gps The source of the data to match.
      */
-    grep_proc(pcre *code, grep_proc_source &gps);
+    grep_proc(pcre *code, grep_proc_source<LineType> &gps);
 
     virtual ~grep_proc();
 
@@ -173,21 +191,14 @@ public:
     pcre *get_code() { return this->gp_code; };
 
     /** @param gpd The sink to send resuls to. */
-    void set_sink(grep_proc_sink *gpd)
+    void set_sink(grep_proc_sink<LineType> *gpd)
     {
         this->gp_sink = gpd;
-        this->reset();
     };
 
-    void reset()
-    {
-        if (this->gp_sink != NULL) {
-            this->gp_sink->grep_begin(*this);
-        }
-    };
-
-    void invalidate() {
+    grep_proc &invalidate() {
         this->cleanup();
+        return *this;
     };
 
     /** @param gpd The sink to send results to. */
@@ -197,7 +208,7 @@ public:
     };
 
     /** @return The sink to send resuls to. */
-    grep_proc_sink *get_sink() { return this->gp_sink; };
+    grep_proc_sink<LineType> *get_sink() { return this->gp_sink; };
 
     /**
      * Queue a request to search the input between the given line numbers.
@@ -206,19 +217,24 @@ public:
      * @param stop The line number to stop the search at or -1 to read until
      * the end-of-file.
      */
-    void queue_request(grep_line_t start = grep_line_t(0),
-                       grep_line_t stop = grep_line_t(-1))
+    grep_proc &queue_request(LineType start = LineType(0),
+                             LineType stop = LineType(-1))
     {
         require(start != -1 || stop == -1);
         require(stop == -1 || start < stop);
 
-        this->gp_queue.push_back(std::make_pair(start, stop));
+        this->gp_queue.emplace_back(start, stop);
+        if (this->gp_sink) {
+            this->gp_sink->grep_begin(*this, start, stop);
+        }
+
+        return *this;
     };
 
     /**
      * Start the search requests that have been queued up with queue_request.
      */
-    void start(void);
+    void start();
 
     void update_poll_set(std::vector<struct pollfd> &pollfds)
     {
@@ -273,15 +289,15 @@ protected:
      * Free any resources used by the object and make sure the child has been
      * terminated.
      */
-    void cleanup(void);
+    void cleanup();
 
-    void child_loop(void);
+    void child_loop();
 
-    virtual void child_init(void) { };
+    virtual void child_init() { };
 
-    virtual void child_batch(void) { fflush(stdout); };
+    virtual void child_batch() { fflush(stdout); };
 
-    virtual void child_term(void) { fflush(stdout); };
+    virtual void child_term() { fflush(stdout); };
 
     virtual void handle_match(int line,
                               std::string &line_value,
@@ -291,31 +307,32 @@ protected:
 
     pcrepp             gp_pcre;
     pcre *             gp_code;          /*< The compiled pattern. */
-    grep_proc_source & gp_source;        /*< The data source delegate. */
+    grep_proc_source<LineType> &gp_source;        /*< The data source delegate. */
 
     auto_fd     gp_err_pipe;             /*< Standard error from the child. */
     line_buffer gp_line_buffer;          /*< Standard out from the child. */
-    off_t       gp_pipe_offset;
+    off_t       gp_pipe_offset{0};
 
-    pid_t gp_child;                     /*<
+    pid_t gp_child{-1};                     /*<
                                          * The child's pid or zero in the
                                          * child.
                                          */
-    bool     gp_child_started;          /*< True if the child was start()'d. */
+    bool     gp_child_started{false};          /*< True if the child was start()'d. */
+    size_t gp_child_queue_size{0};
 
     /** The queue of search requests. */
-    std::deque<std::pair<grep_line_t, grep_line_t> > gp_queue;
-    grep_line_t gp_last_line;           /*<
+    std::deque<std::pair<LineType, LineType> > gp_queue;
+    LineType gp_last_line{0};           /*<
                                          * The last line number received from
                                          * the child.  For multiple matches,
                                          * the line number is only sent once.
                                          */
-    grep_line_t gp_highest_line;        /*< The highest numbered line processed
+    LineType gp_highest_line;        /*< The highest numbered line processed
                                          * by the grep child process.  This
                                          * value is used when the start line
                                          * for a queued request is -1.
                                          */
-    grep_proc_sink *   gp_sink;         /*< The sink delegate. */
-    grep_proc_control *gp_control;      /*< The control delegate. */
+    grep_proc_sink<LineType> *gp_sink{nullptr};         /*< The sink delegate. */
+    grep_proc_control *gp_control{nullptr};      /*< The control delegate. */
 };
 #endif

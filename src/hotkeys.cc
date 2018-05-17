@@ -364,7 +364,7 @@ void handle_paging_key(int ch)
             break;
 
         case 'u': {
-            vis_line_t user_top, part_top;
+            vis_line_t user_top, meta_top;
 
             lnav_data.ld_rl_view->set_alt_value(
                     HELP_MSG_1(c, "to copy marked lines to the clipboard; ")
@@ -373,44 +373,39 @@ void handle_paging_key(int ch)
             user_top = next_cluster(&bookmark_vector<vis_line_t>::next,
                                     &textview_curses::BM_USER,
                                     tc->get_top());
-            part_top = next_cluster(&bookmark_vector<vis_line_t>::next,
-                                    &textview_curses::BM_PARTITION,
+            meta_top = next_cluster(&bookmark_vector<vis_line_t>::next,
+                                    &textview_curses::BM_META,
                                     tc->get_top());
-            if (part_top == -1 && user_top == -1) {
+            if (user_top == -1 && meta_top == -1) {
                 alerter::singleton().chime();
             }
-            else if (part_top == -1) {
-                tc->set_top(user_top);
-            }
-            else if (user_top == -1) {
-                tc->set_top(part_top);
-            }
             else {
-                tc->set_top(min(user_top, part_top));
+                if (user_top == -1) {
+                    user_top = vis_line_t(INT_MAX);
+                }
+                if (meta_top == -1) {
+                    meta_top = vis_line_t(INT_MAX);
+                }
+
+                tc->set_top(min(user_top, meta_top));
             }
             break;
         }
 
         case 'U': {
-            vis_line_t user_top, part_top;
+            vis_line_t user_top, meta_top;
 
             user_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
                                     &textview_curses::BM_USER,
                                     tc->get_top());
-            part_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
-                                    &textview_curses::BM_PARTITION,
+            meta_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
+                                    &textview_curses::BM_META,
                                     tc->get_top());
-            if (part_top == -1 && user_top == -1) {
+            if (user_top == -1 && meta_top == -1) {
                 alerter::singleton().chime();
             }
-            else if (part_top == -1) {
-                tc->set_top(user_top);
-            }
-            else if (user_top == -1) {
-                tc->set_top(part_top);
-            }
             else {
-                tc->set_top(max(user_top, part_top));
+                tc->set_top(max(user_top, meta_top));
             }
             break;
         }
@@ -882,6 +877,7 @@ void handle_paging_key(int ch)
             add_mark_possibilities();
             add_config_possibilities();
             add_env_possibilities(LNM_COMMAND);
+            add_tag_possibilities();
             lnav_data.ld_mode = LNM_COMMAND;
             lnav_data.ld_rl_view->focus(LNM_COMMAND, ":");
             break;

@@ -83,7 +83,7 @@ static struct _xterm_colors {
         yajlpp_parse_context ypc_xterm("xterm-palette.json", root_color_handler);
         yajl_handle handle;
 
-        handle = yajl_alloc(&ypc_xterm.ypc_callbacks, NULL, &ypc_xterm);
+        handle = yajl_alloc(&ypc_xterm.ypc_callbacks, nullptr, &ypc_xterm);
         ypc_xterm
             .with_ignore_unused(true)
             .with_obj(this->xc_palette)
@@ -175,8 +175,8 @@ ui_periodic_timer::ui_periodic_timer()
     sa.sa_handler = ui_periodic_timer::sigalrm;
     sa.sa_flags = SA_RESTART;
     sigemptyset(&sa.sa_mask);
-    sigaction(SIGALRM, &sa, NULL);
-    if (setitimer(ITIMER_REAL, &INTERVAL, NULL) == -1) {
+    sigaction(SIGALRM, &sa, nullptr);
+    if (setitimer(ITIMER_REAL, &INTERVAL, nullptr) == -1) {
         perror("setitimer");
     }
 }
@@ -208,7 +208,7 @@ attr_line_t &attr_line_t::with_ansi_string(const char *str, ...)
     auto ret = vasprintf(formatted_str.out(), str, args);
     va_end(args);
 
-    if (ret >= 0 && formatted_str != NULL) {
+    if (ret >= 0 && formatted_str != nullptr) {
         this->al_string = formatted_str;
         scrub_ansi_string(this->al_string, this->al_attrs);
     }
@@ -382,7 +382,8 @@ void view_curses::mvwattrline(WINDOW *window,
                               const struct line_range &lr,
                               view_colors::role_t base_role)
 {
-    int text_attrs, attrs, line_width;
+    attr_t text_attrs, attrs;
+    int line_width;
     string_attrs_t &         sa   = al.get_attrs();
     string &                 line = al.get_string();
     string_attrs_t::const_iterator iter;
@@ -544,7 +545,7 @@ class color_listener : public lnav_config_listener {
 
 static color_listener _COLOR_LISTENER;
 
-int view_colors::BASIC_HL_PAIRS[view_colors::BASIC_COLOR_COUNT] = {
+attr_t view_colors::BASIC_HL_PAIRS[view_colors::BASIC_COLOR_COUNT] = {
     ansi_color_pair(COLOR_BLUE, COLOR_BLACK),
     ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
     ansi_color_pair(COLOR_GREEN, COLOR_BLACK),
@@ -620,7 +621,7 @@ void view_colors::init(void)
     initialized = true;
 }
 
-inline int attr_for_colors(int &pair_base, short fg, short bg)
+inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
 {
     int pair = ++pair_base;
 

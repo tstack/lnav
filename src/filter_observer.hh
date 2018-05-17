@@ -43,10 +43,8 @@ public:
     };
 
     void logline_restart(const logfile &lf) {
-        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
-             iter != this->lfo_filter_stack.end();
-             ++iter) {
-            (*iter)->revert_to_last(this->lfo_filter_state);
+        for (auto &filter : this->lfo_filter_stack) {
+            filter->revert_to_last(this->lfo_filter_state);
         }
     };
 
@@ -57,24 +55,20 @@ public:
 
         this->lfo_filter_state.resize(lf.size());
         if (!this->lfo_filter_stack.empty()) {
-            if (lf.get_format() != NULL) {
+            if (lf.get_format() != nullptr) {
                 lf.get_format()->get_subline(*ll, sbr);
             }
-            for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
-                 iter != this->lfo_filter_stack.end();
-                 ++iter) {
-                if (offset >= this->lfo_filter_state.tfs_filter_count[(*iter)->get_index()]) {
-                    (*iter)->add_line(this->lfo_filter_state, ll, sbr);
+            for (auto &filter : this->lfo_filter_stack) {
+                if (offset >= this->lfo_filter_state.tfs_filter_count[filter->get_index()]) {
+                    filter->add_line(this->lfo_filter_state, ll, sbr);
                 }
             }
         }
     };
 
     void logline_eof(const logfile &lf) {
-        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
-             iter != this->lfo_filter_stack.end();
-             ++iter) {
-            (*iter)->end_of_message(this->lfo_filter_state);
+        for (auto &iter : this->lfo_filter_stack) {
+            iter->end_of_message(this->lfo_filter_state);
         }
     };
 
@@ -90,10 +84,8 @@ public:
     size_t get_min_count(size_t max) const {
         size_t retval = max;
 
-        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
-             iter != this->lfo_filter_stack.end();
-             ++iter) {
-            retval = std::min(retval, this->lfo_filter_state.tfs_filter_count[(*iter)->get_index()]);
+        for (auto &filter : this->lfo_filter_stack) {
+            retval = std::min(retval, this->lfo_filter_state.tfs_filter_count[filter->get_index()]);
         }
 
         return retval;
@@ -102,10 +94,8 @@ public:
     void clear_deleted_filter_state() {
         uint32_t used_mask = 0;
 
-        for (filter_stack::iterator iter = this->lfo_filter_stack.begin();
-             iter != this->lfo_filter_stack.end();
-             ++iter) {
-            used_mask |= (1L << (*iter)->get_index());
+        for (auto &filter : this->lfo_filter_stack) {
+            used_mask |= (1UL << filter->get_index());
         }
         this->lfo_filter_state.clear_deleted_filter_state(used_mask);
     };

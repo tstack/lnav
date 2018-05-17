@@ -177,6 +177,7 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                       "Extract the base portion of a pathname.")
                 .sql_function()
                 .with_parameter({"path", "The path"})
+                .with_tags({"filename"})
                 .with_example({"SELECT basename('foobar')"})
                 .with_example({"SELECT basename('foo/bar')"})
                 .with_example({"SELECT basename('foo/bar/')"})
@@ -191,6 +192,7 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                       "Extract the directory portion of a pathname.")
                 .sql_function()
                 .with_parameter({"path", "The path"})
+                .with_tags({"filename"})
                 .with_example({"SELECT dirname('foo/bar')"})
                 .with_example({"SELECT dirname('/foo/bar')"})
                 .with_example({"SELECT dirname('/bar')"})
@@ -206,6 +208,7 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                     "If an argument starts with a forward or backward slash, it will be considered "
                     "an absolute path and any preceding elements will be ignored.")
                                     .one_or_more())
+                .with_tags({"filename"})
                 .with_example({"SELECT joinpath('foo', 'bar')"})
                 .with_example({"SELECT joinpath('', 'foo', 'bar')"})
                 .with_example({"SELECT joinpath('/', 'foo', 'bar')"})
@@ -217,6 +220,7 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                       "Read the target of a symbolic link.")
                 .sql_function()
                 .with_parameter({"path", "The path to the symbolic link."})
+                .with_tags({"filename"})
         ),
 
         sqlite_func_adapter<decltype(&sql_realpath), sql_realpath>::builder(
@@ -225,6 +229,7 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                           "resolving '.' and '..' references.")
                 .sql_function()
                 .with_parameter({"path", "The path to resolve."})
+                .with_tags({"filename"})
         ),
 
         /*

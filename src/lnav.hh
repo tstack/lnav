@@ -266,6 +266,7 @@ struct _lnav_data {
     textview_curses *ld_last_view;
     textview_curses                         ld_views[LNV__MAX];
     std::unique_ptr<grep_highlighter>       ld_search_child[LNV__MAX];
+    std::shared_ptr<grep_proc<vis_line_t>> ld_meta_search;
     vis_line_t                              ld_search_start_line;
     readline_curses *                       ld_rl_view;
 

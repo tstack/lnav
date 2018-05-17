@@ -33,6 +33,7 @@
 #define __bookmarks_hh
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -41,7 +42,43 @@
 #include "listview_curses.hh"
 
 struct bookmark_metadata {
+    static std::set<std::string> KNOWN_TAGS;
+
     std::string bm_name;
+    std::string bm_comment;
+    std::vector<std::string> bm_tags;
+
+    void add_tag(const std::string &tag) {
+        if (std::find(this->bm_tags.begin(),
+                      this->bm_tags.end(),
+                      tag) == this->bm_tags.end()) {
+            this->bm_tags.push_back(tag);
+        }
+    };
+
+    bool remove_tag(const std::string &tag) {
+        auto iter = std::find(this->bm_tags.begin(),
+                              this->bm_tags.end(),
+                              tag);
+        bool retval = false;
+
+        if (iter != this->bm_tags.end()) {
+            this->bm_tags.erase(iter);
+            retval = true;
+        }
+        return retval;
+    };
+
+    bool empty() {
+        return this->bm_name.empty() &&
+               this->bm_comment.empty() &&
+               this->bm_tags.empty();
+    };
+
+    void clear() {
+        this->bm_comment.clear();
+        this->bm_tags.clear();
+    };
 };
 
 /**
@@ -59,7 +96,12 @@ struct bookmark_metadata {
  */
 template<typename LineType>
 class bookmark_vector : public std::vector<LineType> {
+    typedef std::vector<LineType> base_vector;
+
 public:
+    typedef typename base_vector::size_type       size_type;
+    typedef typename base_vector::iterator        iterator;
+    typedef typename base_vector::const_iterator  const_iterator;
 
     /**
      * Insert a bookmark into this vector, but only if it is not already in the
@@ -67,9 +109,9 @@ public:
      *
      * @param vl The line to bookmark.
      */
-    typename bookmark_vector::iterator insert_once(LineType vl)
+    iterator insert_once(LineType vl)
     {
-        typename bookmark_vector::iterator lb, retval;
+        iterator lb, retval;
 
         require(vl >= 0);
 
@@ -83,6 +125,18 @@ public:
         }
 
         return retval;
+    };
+
+    std::pair<iterator, iterator> equal_range(LineType start, LineType stop) {
+        auto lb = std::lower_bound(this->begin(), this->end(), start);
+
+        if (stop == LineType(-1)) {
+            return std::make_pair(lb, this->end());
+        } else {
+            auto up = std::upper_bound(this->begin(), this->end(), stop);
+
+            return std::make_pair(lb, up);
+        }
     };
 
     /**

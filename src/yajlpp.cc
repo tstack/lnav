@@ -91,18 +91,50 @@ int yajlpp_static_string(yajlpp_parse_context *ypc, const unsigned char *str, si
     return 1;
 }
 
+bool yajlpp_string_validator(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    const json_path_handler_base *jph = ypc->ypc_current_handler;
+    bool retval = true;
+
+    if (jph->jph_pattern) {
+        pcre_input pi((const char *) str, 0, len);
+        pcre_context_static<30> pc;
+
+        if (!jph->jph_pattern->match(pc, pi)) {
+            ypc->report_error(LOG_LEVEL_ERROR,
+                              "Value (%.*s) does not match pattern: %s",
+                              len, str,
+                              jph->jph_pattern_re);
+            retval = false;
+        }
+    }
+    if (len == 0 && jph->jph_min_length > 0) {
+        ypc->report_error(LOG_LEVEL_ERROR, "value must not be empty");
+        retval = false;
+    } else if (len < jph->jph_min_length) {
+        ypc->report_error(LOG_LEVEL_ERROR,
+                          "value must be at least %lu characters long",
+                          jph->jph_min_length);
+        retval = false;
+    }
+
+    return retval;
+}
+
 int yajlpp_static_string_vector(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     const json_path_handler_base *jph = ypc->ypc_current_handler;
 
     if (jph->jph_kv_pair) {
-        map<string, vector<string>> &field_ptr = resolve_root<map<string, vector<string>>>(ypc);
+        auto &field_ptr = resolve_root<map<string, vector<string>>>(ypc);
 
         field_ptr[ypc->get_path_fragment(-2)].push_back(string((const char *) str, len));
     } else {
-        vector<string> &field_ptr = resolve_root<vector<string>>(ypc);
+        auto &field_ptr = resolve_root<vector<string>>(ypc);
 
-        field_ptr.push_back(string((const char *) str, len));
+        if (yajlpp_string_validator(ypc, str, len)) {
+            field_ptr.emplace_back((const char *) str, len);
+        }
     }
 
     yajlpp_validator_for_string_vector(*ypc, *ypc->ypc_current_handler);
@@ -112,7 +144,7 @@ int yajlpp_static_string_vector(yajlpp_parse_context *ypc, const unsigned char *
 
 int yajlpp_static_intern_string(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    intern_string_t &field_ptr = resolve_root<intern_string_t>(ypc);
+    auto &field_ptr = resolve_root<intern_string_t>(ypc);
 
     field_ptr = intern_string::lookup((const char *) str, len);
 
@@ -138,22 +170,25 @@ int yajlpp_static_enum(yajlpp_parse_context *ypc, const unsigned char *str, size
     }
 
     if (!found) {
-        ypc->report_error("error:%s:line %d\n  "
+        ypc->report_error(LOG_LEVEL_ERROR,
+                          "error:%s:line %d\n  "
                               "Invalid value, '%.*s', for option:",
                           ypc->ypc_source.c_str(),
                           ypc->get_line_number(),
                           len,
                           str);
 
-        ypc->report_error("    %s %s -- %s\n",
+        ypc->report_error(LOG_LEVEL_ERROR,
+                          "    %s %s -- %s\n",
                           &ypc->ypc_path[0],
                           jph.jph_synopsis,
                           jph.jph_description);
-        ypc->report_error("  Allowed values: ");
+        ypc->report_error(LOG_LEVEL_ERROR,
+                          "  Allowed values: ");
         for (int lpc = 0; jph.jph_enum_values[lpc].first; lpc++) {
             const json_path_handler::enum_value_t &ev = jph.jph_enum_values[lpc];
 
-            ypc->report_error("    %s\n", ev.first);
+            ypc->report_error(LOG_LEVEL_ERROR, "    %s\n", ev.first);
         }
     }
 
@@ -202,9 +237,9 @@ yajl_gen_status yajlpp_static_gen_string_vector(yajlpp_gen_context &ygc,
                                                 yajl_gen handle)
 {
     if (jph.jph_kv_pair) {
-        map<string, vector<string>> *default_field_ptr = resolve_root<map<string, vector<string>>>(
+        auto *default_field_ptr = resolve_root<map<string, vector<string>>>(
             ygc.ygc_default_stack, jph);
-        map<string, vector<string>> *field_ptr = resolve_root<map<string, vector<string>>>(
+        auto *field_ptr = resolve_root<map<string, vector<string>>>(
             ygc.ygc_obj_stack, jph);
         const string &base_name = ygc.ygc_base_name;
 
@@ -241,12 +276,12 @@ void yajlpp_validator_for_string(yajlpp_parse_context &ypc,
         return; // XXX
     }
 
-    string &field_ptr = resolve_root<string>(&ypc);
+    auto &field_ptr = resolve_root<string>(&ypc);
 
     if (field_ptr.empty() && jph.jph_min_length > 0) {
-        ypc.report_error("value must not be empty");
+        ypc.report_error(LOG_LEVEL_ERROR, "value must not be empty");
     } else if (field_ptr.size() < jph.jph_min_length) {
-        ypc.report_error("value must be at least %lu characters long",
+        ypc.report_error(LOG_LEVEL_ERROR, "value must be at least %lu characters long",
                          jph.jph_min_length);
     }
 }
@@ -258,13 +293,13 @@ void yajlpp_validator_for_string_vector(yajlpp_parse_context &ypc,
         return; // XXX
     }
 
-    vector<string> &field_ptr = resolve_root<vector<string>>(&ypc);
+    auto &field_ptr = resolve_root<vector<string>>(&ypc);
 
-    for (string str : field_ptr) {
+    for (const string &str : field_ptr) {
         if (str.empty() && jph.jph_min_length > 0) {
-            ypc.report_error("value must not be empty");
+            ypc.report_error(LOG_LEVEL_ERROR, "value must not be empty");
         } else if (str.size() < jph.jph_min_length) {
-            ypc.report_error("value must be at least %lu characters long",
+            ypc.report_error(LOG_LEVEL_ERROR, "value must be at least %lu characters long",
                              jph.jph_min_length);
         }
     }
@@ -273,17 +308,17 @@ void yajlpp_validator_for_string_vector(yajlpp_parse_context &ypc,
 void yajlpp_validator_for_intern_string(yajlpp_parse_context &ypc,
                                         const json_path_handler_base &jph)
 {
-    intern_string_t &field_ptr = resolve_root<intern_string_t>(&ypc);
+    auto &field_ptr = resolve_root<intern_string_t>(&ypc);
     char buffer[1024];
 
     if (field_ptr.empty() && jph.jph_min_length > 0) {
-        ypc.report_error("value must not be empty");
+        ypc.report_error(LOG_LEVEL_ERROR, "value must not be empty");
     }
     else if (field_ptr.size() < jph.jph_min_length) {
         snprintf(buffer, sizeof(buffer),
                  "value must be at least %lu characters long",
                  jph.jph_min_length);
-        ypc.report_error(buffer);
+        ypc.report_error(LOG_LEVEL_ERROR, buffer);
     }
 }
 
@@ -297,7 +332,7 @@ void yajlpp_validator_for_int(yajlpp_parse_context &ypc,
         snprintf(buffer, sizeof(buffer),
                  "value must be greater than %lld",
                  jph.jph_min_value);
-        ypc.report_error(buffer);
+        ypc.report_error(LOG_LEVEL_ERROR, buffer);
     }
 }
 
@@ -311,7 +346,7 @@ void yajlpp_validator_for_double(yajlpp_parse_context &ypc,
         snprintf(buffer, sizeof(buffer),
                  "value must be greater than %lld",
                  jph.jph_min_value);
-        ypc.report_error(buffer);
+        ypc.report_error(LOG_LEVEL_ERROR, buffer);
     }
 }
 
@@ -703,50 +738,58 @@ int yajlpp_parse_context::handle_unused(void *ctx)
 
     int line_number = ypc->get_line_number();
 
-    if (handler != NULL && strlen(handler->jph_synopsis) > 0 &&
+    if (handler != nullptr && strlen(handler->jph_synopsis) > 0 &&
         strlen(handler->jph_description) > 0) {
 
-        fprintf(stderr,
-                "warning:%s:line %d\n  unexpected data for path -- \n",
-                ypc->ypc_source.c_str(),
-                line_number);
+        ypc->report_error(
+            LOG_LEVEL_WARNING,
+            "%s:line %d",
+            ypc->ypc_source.c_str(),
+            line_number);
+        ypc->report_error(LOG_LEVEL_WARNING, "  unexpected data for path");
 
-        fprintf(stderr, "    %s %s -- %s\n",
-                &ypc->ypc_path[0],
-                handler->jph_synopsis,
-                handler->jph_description
-        );
+        ypc->report_error(LOG_LEVEL_WARNING,
+                          "    %s %s -- %s",
+                          &ypc->ypc_path[0],
+                          handler->jph_synopsis,
+                          handler->jph_description);
     }
-    else {
-        fprintf(stderr,
-                "warning:%s:line %d\n  unexpected path -- \n",
-                ypc->ypc_source.c_str(),
-                line_number);
+    else if (ypc->ypc_path[0]) {
+        ypc->report_error(LOG_LEVEL_WARNING,
+                          "%s:line %d",
+                          ypc->ypc_source.c_str(),
+                          line_number);
+        ypc->report_error(LOG_LEVEL_WARNING, "  unexpected path --");
 
-        fprintf(stderr, "    %s\n", &ypc->ypc_path[0]);
+        ypc->report_error(LOG_LEVEL_WARNING, "    %s", &ypc->ypc_path[0]);
+    } else {
+        ypc->report_error(LOG_LEVEL_WARNING,
+                          "%s:line %d\n  unexpected JSON value",
+                          ypc->ypc_source.c_str(),
+                          line_number);
     }
 
     if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused ||
         ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused ||
         ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused ||
         ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "  expecting one of the following data types --\n");
+        ypc->report_error(LOG_LEVEL_WARNING, "  expecting one of the following data types --");
     }
 
     if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "    boolean\n");
+        ypc->report_error(LOG_LEVEL_WARNING, "    boolean");
     }
     if (ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "    integer\n");
+        ypc->report_error(LOG_LEVEL_WARNING, "    integer");
     }
     if (ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "    float\n");
+        ypc->report_error(LOG_LEVEL_WARNING, "    float");
     }
     if (ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
-        fprintf(stderr, "    string\n");
+        ypc->report_error(LOG_LEVEL_WARNING, "    string");
     }
 
-    if (handler == NULL) {
+    if (handler == nullptr) {
         const json_path_handler_base *accepted_handlers;
 
         if (ypc->ypc_sibling_handlers) {
@@ -755,9 +798,9 @@ int yajlpp_parse_context::handle_unused(void *ctx)
             accepted_handlers = ypc->ypc_handlers;
         }
 
-        fprintf(stderr, "  accepted paths --\n");
+        ypc->report_error(LOG_LEVEL_WARNING, "  accepted paths --");
         for (int lpc = 0; accepted_handlers[lpc].jph_path[0]; lpc++) {
-            fprintf(stderr, "    %s %s -- %s\n",
+            ypc->report_error(LOG_LEVEL_WARNING, "    %s %s -- %s",
                     accepted_handlers[lpc].jph_path,
                     accepted_handlers[lpc].jph_synopsis,
                     accepted_handlers[lpc].jph_description);

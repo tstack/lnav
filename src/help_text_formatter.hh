@@ -30,6 +30,7 @@
 #ifndef LNAV_HELP_TEXT_FORMATTER_HH
 #define LNAV_HELP_TEXT_FORMATTER_HH
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -65,34 +66,31 @@ struct help_example {
 };
 
 struct help_text {
-    help_context_t ht_context;
+    help_context_t ht_context{HC_NONE};
     const char *ht_name;
     const char *ht_summary;
-    const char *ht_flag_name;
-    const char *ht_description;
+    const char *ht_flag_name{nullptr};
+    const char *ht_description{nullptr};
     std::vector<struct help_text> ht_parameters;
     std::vector<struct help_example> ht_example;
-    help_nargs_t ht_nargs;
-    help_parameter_format_t ht_format;
+    help_nargs_t ht_nargs{HN_REQUIRED};
+    help_parameter_format_t ht_format{HPF_STRING};
     std::vector<const char *> ht_enum_values;
+    std::vector<const char *> ht_tags;
+    std::vector<const char *> ht_opposites;
 
-    help_text() : ht_context(HC_NONE) {
+    help_text() {
 
     };
 
     help_text(const char *name, const char *summary = nullptr)
-        : ht_context(HC_NONE),
-          ht_name(name),
-          ht_summary(summary),
-          ht_flag_name(nullptr),
-          ht_description(nullptr),
-          ht_nargs(HN_REQUIRED),
-          ht_format(HPF_STRING) {
+        : ht_name(name),
+          ht_summary(summary) {
         if (name[0] == ':') {
             this->ht_context = HC_COMMAND;
             this->ht_name = &name[1];
         }
-    }
+    };
 
     help_text &command() {
         this->ht_context = HC_COMMAND;
@@ -167,9 +165,27 @@ struct help_text {
         this->ht_enum_values = enum_values;
         return *this;
     };
+
+    help_text &with_tags(const std::initializer_list<const char*> &tags) {
+        this->ht_tags = tags;
+        return *this;
+    };
+
+    help_text &with_opposites(const std::initializer_list<const char*> &opps) {
+        this->ht_opposites = opps;
+        return *this;
+    };
+
+    void index_tags() {
+        for (const auto &tag: this->ht_tags) {
+            TAGGED.insert(std::make_pair(tag, this));
+        }
+    };
+
+    static std::multimap<std::string, help_text *> TAGGED;
 };
 
-void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out);
+void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out, bool synopsis_only = false);
 void format_example_text_for_term(const help_text &ht, int width, attr_line_t &out);
 
 #endif //LNAV_HELP_TEXT_FORMATTER_HH

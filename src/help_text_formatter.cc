@@ -39,7 +39,10 @@
 using namespace std;
 
 
-void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out) {
+std::multimap<std::string, help_text *> help_text::TAGGED;
+
+void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out, bool synopsis_only)
+{
     static size_t body_indent = 2;
 
     view_colors &vc = view_colors::singleton();
@@ -114,10 +117,12 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
             size_t line_start = body_indent;
             bool break_all = false;
 
-            out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
-                .append("\n")
-                .append(body_indent, ' ')
-                .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
+            if (!synopsis_only) {
+                out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
+                   .append("\n");
+            }
+            out.append(body_indent, ' ')
+               .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
             for (auto &param : ht.ht_parameters) {
                 if (break_all ||
                     (int)(out.get_string().length() - start_index - line_start + 10) >=
@@ -198,17 +203,21 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                     out.append("]");
                 }
             }
-            out.append("\n\n")
-                .append(body_indent, ' ')
-                .append(ht.ht_summary, &tws)
-                .append("\n");
+            if (!synopsis_only) {
+                out.append("\n\n")
+                   .append(body_indent, ' ')
+                   .append(ht.ht_summary, &tws)
+                   .append("\n");
+            } else {
+                out.append("\n");
+            }
             break;
         }
         default:
             break;
     }
 
-    if (!ht.ht_parameters.empty()) {
+    if (!synopsis_only && !ht.ht_parameters.empty()) {
         size_t max_param_name_width = 0;
 
         for (auto &param : ht.ht_parameters) {
@@ -235,6 +244,66 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out)
                 .append(attr_line_t::from_ansi_str(param.ht_summary),
                         &(tws.with_indent(2 + max_param_name_width + 3)))
                 .append("\n");
+        }
+    }
+    if (!synopsis_only && !ht.ht_tags.empty()) {
+        vector<string> tags;
+
+        for (const auto &tag : ht.ht_tags) {
+            auto tagged = help_text::TAGGED.equal_range(tag);
+
+            for (auto tag_iter = tagged.first;
+                 tag_iter != tagged.second;
+                 ++tag_iter) {
+                if (tag_iter->second == &ht) {
+                    continue;
+                }
+
+                help_text &related = *tag_iter->second;
+
+                if (!related.ht_opposites.empty() &&
+                    find_if(related.ht_opposites.begin(),
+                            related.ht_opposites.end(),
+                            [&ht](const char *x) {
+                                return strcmp(x, ht.ht_name) == 0;
+                            }) == related.ht_opposites.end()) {
+                    continue;
+                }
+
+                string name = related.ht_name;
+                switch (related.ht_context) {
+                    case HC_COMMAND:
+                        name = ":" + name;
+                        break;
+                    case HC_SQL_FUNCTION:
+                        name = name + "()";
+                        break;
+                    default:
+                        break;
+                }
+                tags.push_back(name);
+            }
+        }
+
+        stable_sort(tags.begin(), tags.end());
+
+        out.append("See Also", &view_curses::VC_STYLE, A_UNDERLINE)
+           .append("\n")
+           .append(body_indent, ' ');
+
+        bool first = true;
+        size_t line_start = out.length();
+        for (const auto &tag : tags) {
+            if (!first) {
+                out.append(", ");
+            }
+            if ((out.length() - line_start + tag.length()) > width) {
+                out.append("\n")
+                   .append(body_indent, ' ');
+                line_start = out.length();
+            }
+            out.append(tag, &view_curses::VC_STYLE, A_BOLD);
+            first = false;
         }
     }
 }

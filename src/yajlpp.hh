@@ -37,8 +37,10 @@
 #include <limits.h>
 
 #include <map>
+#include <memory>
 #include <set>
 #include <stack>
+#include <utility>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -103,6 +105,27 @@ struct yajlpp_provider_context {
     };
 };
 
+class yajlpp_error : public std::exception {
+public:
+    yajlpp_error(yajl_handle handle, const char *json, size_t len) {
+        auto_mem<unsigned char> yajl_msg;
+
+        yajl_msg = yajl_get_error(handle, 1, (const unsigned char *) json, len);
+        this->msg = (const char *) yajl_msg.in();
+    }
+
+    ~yajlpp_error() override {
+
+    }
+
+    const char *what() const noexcept override {
+        return this->msg.c_str();
+    }
+
+private:
+    std::string msg;
+};
+
 struct json_path_handler_base {
     typedef std::pair<const char *, int> enum_value_t;
 
@@ -147,6 +170,7 @@ struct json_path_handler_base {
     json_path_handler_base *jph_children;
     bool           jph_kv_pair;
     std::shared_ptr<pcrepp> jph_pattern;
+    const char * jph_pattern_re{nullptr};
     size_t         jph_min_length;
     size_t         jph_max_length;
     const enum_value_t  *jph_enum_values;
@@ -275,7 +299,8 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     json_path_handler &with_pattern(const char *re) {
-        this->jph_pattern.reset(new pcrepp(re));
+        this->jph_pattern_re = re;
+        this->jph_pattern = std::make_shared<pcrepp>(re);
         return *this;
     };
 
@@ -387,20 +412,13 @@ struct json_path_handler : public json_path_handler_base {
 class yajlpp_parse_context {
 public:
     typedef void (*error_reporter_t)(const yajlpp_parse_context &ypc,
+                                     lnav_log_level_t level,
                                      const char *msg);
 
-    yajlpp_parse_context(const std::string &source,
-                         struct json_path_handler *handlers = NULL)
-        : ypc_source(source),
-          ypc_line_number(1),
-          ypc_handlers(handlers),
-          ypc_userdata(NULL),
-          ypc_handle(NULL),
-          ypc_json_text(NULL),
-          ypc_ignore_unused(false),
-          ypc_sibling_handlers(nullptr),
-          ypc_current_handler(nullptr),
-          ypc_error_reporter(nullptr)
+    yajlpp_parse_context(std::string source,
+                         struct json_path_handler *handlers = nullptr)
+        : ypc_source(std::move(source)),
+          ypc_handlers(handlers)
     {
         this->ypc_path.reserve(4096);
         this->ypc_path.push_back('\0');
@@ -422,7 +440,7 @@ public:
         else {
             end = this->ypc_path.size() - 1;
         }
-        if (this->ypc_handlers != NULL) {
+        if (this->ypc_handlers) {
             len_out = json_ptr::decode(frag_in, &this->ypc_path[start], end - start);
             retval = frag_in;
         }
@@ -495,15 +513,15 @@ public:
         this->ypc_path.push_back('\0');
         this->ypc_path_index_stack.clear();
         this->ypc_array_index.clear();
-        if (jph.jph_callbacks.yajl_null != NULL)
+        if (jph.jph_callbacks.yajl_null != nullptr)
             this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
-        if (jph.jph_callbacks.yajl_boolean != NULL)
+        if (jph.jph_callbacks.yajl_boolean != nullptr)
             this->ypc_callbacks.yajl_boolean = jph.jph_callbacks.yajl_boolean;
-        if (jph.jph_callbacks.yajl_integer != NULL)
+        if (jph.jph_callbacks.yajl_integer != nullptr)
             this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
-        if (jph.jph_callbacks.yajl_double != NULL)
+        if (jph.jph_callbacks.yajl_double != nullptr)
             this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
-        if (jph.jph_callbacks.yajl_string != NULL)
+        if (jph.jph_callbacks.yajl_string != nullptr)
             this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
     }
 
@@ -559,38 +577,38 @@ public:
         return yajl_complete_parse(this->ypc_handle);
     };
 
-    void report_error(const char *format, ...) {
+    void report_error(lnav_log_level_t level, const char *format, ...) {
         va_list args;
 
         va_start(args, format);
-        if (this->ypc_error_reporter != NULL) {
+        if (this->ypc_error_reporter) {
             char buffer[1024];
 
             vsnprintf(buffer, sizeof(buffer), format, args);
 
-            this->ypc_error_reporter(*this, buffer);
+            this->ypc_error_reporter(*this, level, buffer);
         }
         va_end(args);
     }
 
     const std::string ypc_source;
-    int ypc_line_number;
+    int ypc_line_number{1};
     struct json_path_handler *ypc_handlers;
-    void *                  ypc_userdata;
+    void *                  ypc_userdata{nullptr};
     std::stack<void *>      ypc_obj_stack;
-    yajl_handle             ypc_handle;
-    const unsigned char *   ypc_json_text;
+    yajl_handle             ypc_handle{nullptr};
+    const unsigned char *   ypc_json_text{nullptr};
     yajl_callbacks          ypc_callbacks;
     yajl_callbacks          ypc_alt_callbacks;
     std::vector<char>       ypc_path;
     std::vector<size_t>     ypc_path_index_stack;
     std::vector<int>        ypc_array_index;
     pcre_context_static<30> ypc_pcre_context;
-    bool                    ypc_ignore_unused;
-    const struct json_path_handler_base *ypc_sibling_handlers;
-    const struct json_path_handler_base *ypc_current_handler;
+    bool                    ypc_ignore_unused{false};
+    const struct json_path_handler_base *ypc_sibling_handlers{nullptr};
+    const struct json_path_handler_base *ypc_current_handler{nullptr};
     std::set<std::string>   ypc_active_paths;
-    error_reporter_t ypc_error_reporter;
+    error_reporter_t ypc_error_reporter{nullptr};
 
     void update_callbacks(const json_path_handler_base *handlers = NULL,
                           int child_start = 0);
@@ -736,6 +754,29 @@ struct json_string {
 
     const unsigned char *js_content;
     size_t js_len;
+};
+
+class yajlpp_gen {
+public:
+    yajlpp_gen() : yg_handle(yajl_gen_free) {
+        this->yg_handle = yajl_gen_alloc(NULL);
+    };
+
+    operator yajl_gen_t *() {
+        return this->yg_handle.in();
+    };
+
+    string_fragment to_string_fragment() {
+        const unsigned char *buf;
+        size_t len;
+
+        yajl_gen_get_buf(this->yg_handle.in(), &buf, &len);
+
+        return string_fragment((const char *) buf, 0, len);
+    };
+
+private:
+    auto_mem<yajl_gen_t> yg_handle;
 };
 
 #endif

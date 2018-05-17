@@ -92,6 +92,13 @@ struct from_sqlite<int64_t> {
 };
 
 template<>
+struct from_sqlite<sqlite3_value *> {
+    inline sqlite3_value *operator()(int argc, sqlite3_value **val, int argi) {
+        return val[argi];
+    }
+};
+
+template<>
 struct from_sqlite<int> {
     inline int operator()(int argc, sqlite3_value **val, int argi) {
         if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
@@ -171,6 +178,11 @@ inline void to_sqlite(sqlite3_context *ctx, bool val)
 }
 
 inline void to_sqlite(sqlite3_context *ctx, int64_t val)
+{
+    sqlite3_result_int64(ctx, val);
+}
+
+inline void to_sqlite(sqlite3_context *ctx, int val)
 {
     sqlite3_result_int64(ctx, val);
 }

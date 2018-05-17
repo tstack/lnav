@@ -187,17 +187,13 @@ void listview_curses::do_update(void)
     }
 
     if (this->lv_needs_update) {
-        vis_line_t        y(this->lv_y), height, bottom, row;
+        vis_line_t        height, row;
         attr_line_t       overlay_line;
         vis_line_t        overlay_height(0);
         struct line_range lr;
         unsigned long     width, wrap_width;
         size_t            row_count;
-
-        if (this->lv_overlay_source != NULL) {
-            overlay_height = vis_line_t(
-                this->lv_overlay_source->list_overlay_count(*this));
-        }
+        int y = this->lv_y, bottom;
 
         this->get_dimensions(height, width);
 
@@ -214,7 +210,8 @@ void listview_curses::do_update(void)
             if (this->lv_overlay_source != NULL &&
                 this->lv_overlay_source->list_value_for_overlay(
                     *this,
-                    y - vis_line_t(this->lv_y),
+                    y - this->lv_y, bottom - this->lv_y,
+                    row,
                     overlay_line)) {
                 this->mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
                 overlay_line.clear();
@@ -254,10 +251,8 @@ void listview_curses::do_update(void)
                 coverage = (double)height / (double)row_count;
             }
 
-            y = vis_line_t(this->lv_y) +
-                vis_line_t((int)(progress * (double)height));
-            lines = y + min(height, vis_line_t(
-                                (int)(coverage * (double)height)));
+            y = this->lv_y + (int)(progress * (double)height);
+            lines = vis_line_t(y + min((int) height, (int)(coverage * (double)height)));
 
             for (unsigned int gutter_y = this->lv_y;
                  gutter_y < (this->lv_y + height);
@@ -293,6 +288,7 @@ void listview_curses::do_update(void)
 
         this->lv_needs_update = false;
     }
+#if 0
     else if (this->lv_overlay_needs_update && this->lv_overlay_source != NULL) {
         vis_line_t y(this->lv_y), height, bottom;
         attr_line_t overlay_line;
@@ -318,6 +314,7 @@ void listview_curses::do_update(void)
             ++y;
         }
     }
+#endif
 }
 
 static int scroll_polarity(mouse_button_t button)

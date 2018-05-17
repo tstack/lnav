@@ -37,6 +37,7 @@
 #include <sys/wait.h>
 
 #include "grep_proc.hh"
+#include "listview_curses.hh"
 
 using namespace std;
 
@@ -53,12 +54,12 @@ static struct {
     { 2, "" },
 };
 
-class my_source : public grep_proc_source {
+class my_source : public grep_proc_source<vis_line_t> {
 
 public:
     my_source() : ms_current_line(0) { };
 
-    bool grep_value_for_line(int line_number, string &value_out) {
+    bool grep_value_for_line(vis_line_t line_number, string &value_out) {
 	bool retval = true;
 
 	assert(line_number == MS_LINES[this->ms_current_line].l_number);
@@ -72,32 +73,32 @@ public:
     int ms_current_line;
 };
 
-class my_sleeper_source : public grep_proc_source {
-    bool grep_value_for_line(int line_number, string &value_out) {
+class my_sleeper_source : public grep_proc_source<vis_line_t> {
+    bool grep_value_for_line(vis_line_t line_number, string &value_out) {
        sleep(1000);
        return true;
     };
 };
 
-class my_sink : public grep_proc_sink {
+class my_sink : public grep_proc_sink<vis_line_t> {
 
 public:
     my_sink() : ms_finished(false) { };
     
-    void grep_match(grep_proc &gp,
-		    grep_line_t line,
+    void grep_match(grep_proc<vis_line_t> &gp,
+		    vis_line_t line,
 		    int start,
 		    int end) {
     };
 
-    void grep_end(grep_proc &gp) {
+    void grep_end(grep_proc<vis_line_t> &gp) {
        this->ms_finished = true;
     };
 
     bool ms_finished;
 };
 
-static void looper(grep_proc &gp)
+static void looper(grep_proc<vis_line_t> &gp)
 {
     my_sink msink;
     
@@ -129,17 +130,17 @@ int main(int argc, char *argv[])
 
     {
        my_source ms;
-       grep_proc gp(code, ms);
+       grep_proc<vis_line_t> gp(code, ms);
 	
-       gp.queue_request(grep_line_t(10), grep_line_t(14));
-       gp.queue_request(grep_line_t(0), grep_line_t(3));
+       gp.queue_request(10_vl, 14_vl);
+       gp.queue_request(0_vl, 3_vl);
        gp.start();
        looper(gp);
     }
 
     {
        my_sleeper_source mss;
-       grep_proc *gp = new grep_proc(code, mss);
+       grep_proc<vis_line_t> *gp = new grep_proc<vis_line_t>(code, mss);
        int status;
 
        gp->queue_request();

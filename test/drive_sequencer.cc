@@ -50,14 +50,14 @@
 
 using namespace std;
 
-class my_source : public grep_proc_source {
+class my_source : public grep_proc_source<vis_line_t> {
     
 public:
     my_source(auto_fd &fd) : ms_offset(0) {
 	this->ms_buffer.set_fd(fd);
     };
 
-    bool grep_value_for_line(int line_number, string &value_out) {
+    bool grep_value_for_line(vis_line_t line_number, string &value_out) {
 	bool retval = false;
 
 	try {
@@ -131,11 +131,11 @@ int main(int argc, char *argv[])
 	vis_bookmarks bm;
 	sequence_sink ss(sm, bm[&SEQUENCE]);
 
-	grep_proc gp(code, ms);
-	
+	grep_proc<vis_line_t> gp(code, ms);
+
+	gp.set_sink(&ss);
 	gp.queue_request();
 	gp.start();
-	gp.set_sink(&ss);
 
 	while (bm[&SEQUENCE].size() == 0) {
 		vector<struct pollfd> pollfds;

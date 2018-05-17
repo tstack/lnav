@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "lnav.hh"
 #include "lnav_log.hh"
 #include "sql_util.hh"
 #include "log_vtab_impl.hh"
@@ -39,7 +40,7 @@ using namespace std;
 
 static struct log_cursor log_cursor_latest;
 
-sql_progress_callback_t log_vtab_progress_callback;
+struct _log_vtab_data log_vtab_data;
 
 static const char *type_to_string(int type)
 {
@@ -59,7 +60,7 @@ static const char *type_to_string(int type)
     return NULL;
 }
 
-std::string log_vtab_impl::get_table_statement(void)
+std::string log_vtab_impl::get_table_statement()
 {
     std::vector<log_vtab_impl::vtab_column> cols;
     std::vector<log_vtab_impl::vtab_column>::const_iterator iter;
@@ -74,6 +75,8 @@ std::string log_vtab_impl::get_table_statement(void)
         << "  log_idle_msecs  INTEGER,\n"
         << "  log_level       TEXT     COLLATE loglevel,\n"
         << "  log_mark        BOOLEAN,\n"
+        << "  log_comment     TEXT,\n"
+        << "  log_tags        TEXT,\n"
         << "  -- BEGIN Format-specific fields:\n";
     this->get_columns(cols);
     this->vi_column_count = cols.size();
@@ -272,8 +275,8 @@ static int vt_next(sqlite3_vtab_cursor *cur)
     do {
         log_cursor_latest = vc->log_cursor;
         if (((log_cursor_latest.lc_curr_line % 1024) == 0) &&
-            (log_vtab_progress_callback != NULL &&
-             log_vtab_progress_callback(log_cursor_latest))) {
+            (log_vtab_data.lvd_progress != NULL &&
+             log_vtab_data.lvd_progress(log_cursor_latest))) {
             break;
         }
         done = vt->vi->next(vc->log_cursor, *vt->lss);
@@ -304,7 +307,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     case VT_COL_PARTITION:
     {
         vis_bookmarks &vb = vt->tc->get_bookmarks();
-        bookmark_vector<vis_line_t> &bv = vb[&textview_curses::BM_PARTITION];
+        bookmark_vector<vis_line_t> &bv = vb[&textview_curses::BM_META];
         bookmark_vector<vis_line_t>::iterator iter;
         vis_line_t curr_line;
 
@@ -323,7 +326,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
             std::map<content_line_t, bookmark_metadata>::iterator meta_iter;
 
             meta_iter = bm_meta.find(part_line);
-            if (meta_iter != bm_meta.end()) {
+            if (meta_iter != bm_meta.end() && !meta_iter->second.bm_name.empty()) {
                 sqlite3_result_text(ctx,
                                     meta_iter->second.bm_name.c_str(),
                                     meta_iter->second.bm_name.size(),
@@ -415,6 +418,54 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         sqlite3_result_int(ctx, ll->is_marked());
     }
     break;
+
+        case VT_COL_LOG_COMMENT: {
+            const map<content_line_t, bookmark_metadata> &bm = vt->lss->get_user_bookmark_metadata();
+
+            auto bm_iter = bm.find(vt->lss->at(vc->log_cursor.lc_curr_line));
+            if (bm_iter == bm.end() || bm_iter->second.bm_comment.empty()) {
+                sqlite3_result_null(ctx);
+            } else {
+                const bookmark_metadata &meta = bm_iter->second;
+                sqlite3_result_text(ctx,
+                                    meta.bm_comment.c_str(),
+                                    meta.bm_comment.length(),
+                                    SQLITE_TRANSIENT);
+            }
+            break;
+        }
+
+        case VT_COL_LOG_TAGS: {
+            const map<content_line_t, bookmark_metadata> &bm = vt->lss->get_user_bookmark_metadata();
+
+            auto bm_iter = bm.find(vt->lss->at(vc->log_cursor.lc_curr_line));
+            if (bm_iter == bm.end() || bm_iter->second.bm_tags.empty()) {
+                sqlite3_result_null(ctx);
+            } else {
+                const bookmark_metadata &meta = bm_iter->second;
+
+                yajlpp_gen gen;
+
+                yajl_gen_config(gen, yajl_gen_beautify, false);
+
+                {
+                    yajlpp_array arr(gen);
+
+                    for (auto str : meta.bm_tags) {
+                        arr.gen(str);
+                    }
+                }
+
+                string_fragment sf = gen.to_string_fragment();
+
+                sqlite3_result_text(ctx,
+                                    sf.data(),
+                                    sf.length(),
+                                    SQLITE_TRANSIENT);
+                sqlite3_result_subtype(ctx, 'J');
+            }
+            break;
+        }
 
     default:
         if (col > (VT_COL_MAX + vt->vi->vi_column_count - 1)) {
@@ -708,6 +759,16 @@ static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
     return SQLITE_OK;
 }
 
+static struct json_path_handler tags_handler[] = {
+    json_path_handler("#")
+        .with_synopsis("<tag>")
+        .with_description("A tag for the log line")
+        .with_pattern(R"(^#[^\s]+$)")
+        .for_field(&nullobj<bookmark_metadata>()->bm_tags),
+
+    json_path_handler()
+};
+
 static int vt_update(sqlite3_vtab *tab,
                      int argc,
                      sqlite3_value **argv,
@@ -724,33 +785,66 @@ static int vt_update(sqlite3_vtab *tab,
 
         std::map<content_line_t, bookmark_metadata> &bm = vt->lss->get_user_bookmark_metadata();
         const unsigned char *part_name = sqlite3_value_text(argv[2 + VT_COL_PARTITION]);
+        const unsigned char *log_comment = sqlite3_value_text(argv[2 + VT_COL_LOG_COMMENT]);
+        const unsigned char *log_tags = sqlite3_value_text(argv[2 + VT_COL_LOG_TAGS]);
 
         bookmark_vector<vis_line_t> &bv = vt->tc->get_bookmarks()[
-                &textview_curses::BM_PARTITION];
-        bookmark_vector<vis_line_t>::iterator part_iter;
-        bool set_name = false;
+                &textview_curses::BM_META];
+        bool has_meta = part_name != nullptr || log_comment != nullptr ||
+            log_tags != nullptr;
 
-        if ((part_iter = find(bv.begin(), bv.end(), vrowid)) != bv.end()) {
-            if (part_name == NULL) {
-                vt->tc->set_user_mark(&textview_curses::BM_PARTITION, vrowid, false);
-                bm.erase(vt->lss->at(vrowid));
-            }
-            else {
-                set_name = true;
-            }
-        }
-        else if (part_name != NULL) {
-            vt->tc->set_user_mark(&textview_curses::BM_PARTITION, vrowid, true);
-            set_name = true;
+        if (binary_search(bv.begin(), bv.end(), vrowid) && !has_meta) {
+            vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, false);
+            bm.erase(vt->lss->at(vrowid));
         }
 
-        if (set_name) {
+        if (has_meta) {
             bookmark_metadata &line_meta = bm[vt->lss->at(vrowid)];
 
-            line_meta.bm_name = string((const char *) part_name);
+            vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, true);
+            if (part_name) {
+                line_meta.bm_name = string((const char *) part_name);
+            } else {
+                line_meta.bm_name.clear();
+            }
+            if (log_comment) {
+                line_meta.bm_comment = string((const char *) log_comment);
+            } else {
+                line_meta.bm_comment.clear();
+            }
+            if (log_tags) {
+                vector<string> errors;
+                yajlpp_parse_context ypc(log_vtab_data.lvd_source, tags_handler);
+                auto_mem<yajl_handle_t> handle(yajl_free);
+
+                line_meta.bm_tags.clear();
+                handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+                ypc.ypc_userdata = &errors;
+                ypc.ypc_line_number = log_vtab_data.lvd_line_number;
+                ypc.with_handle(handle)
+                   .with_error_reporter([](const yajlpp_parse_context &ypc,
+                                           lnav_log_level_t level,
+                                           const char *msg) {
+                       vector<string> &errors = *((vector<string> *) ypc.ypc_userdata);
+                       errors.emplace_back(msg);
+                   })
+                   .with_obj(line_meta);
+                ypc.parse(log_tags, strlen((const char *) log_tags));
+                ypc.complete_parse();
+                if (!errors.empty()) {
+                    tab->zErrMsg = sqlite3_mprintf("%s",
+                        join(errors.begin(), errors.end(), "\n").c_str());
+                    retval = SQLITE_ERROR;
+                }
+                for (const auto &tag : line_meta.bm_tags) {
+                    bookmark_metadata::KNOWN_TAGS.insert(tag);
+                }
+            } else {
+                line_meta.bm_tags.clear();
+            }
         }
 
-        vt->tc->set_user_mark(&textview_curses::BM_USER, vis_line_t(rowid), val);
+        vt->tc->set_user_mark(&textview_curses::BM_USER, vrowid, val);
         rowid += 1;
         while ((size_t)rowid < vt->lss->text_line_count()) {
             vis_line_t vl(rowid);
@@ -763,7 +857,9 @@ static int vt_update(sqlite3_vtab *tab,
             rowid += 1;
         }
 
-        retval = SQLITE_OK;
+        if (retval != SQLITE_ERROR) {
+            retval = SQLITE_OK;
+        }
     }
 
     return retval;
@@ -795,8 +891,8 @@ static int progress_callback(void *ptr)
 {
     int retval = 0;
 
-    if (log_vtab_progress_callback != NULL) {
-        retval = log_vtab_progress_callback(log_cursor_latest);
+    if (log_vtab_data.lvd_progress != NULL) {
+        retval = log_vtab_data.lvd_progress(log_cursor_latest);
     }
 
     return retval;

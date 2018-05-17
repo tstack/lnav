@@ -93,10 +93,10 @@ string execute_command(exec_context &ec, const string &cmdline)
 
         if ((iter = lnav_commands.find(args[0])) ==
             lnav_commands.end()) {
-            msg = "error: unknown command - " + args[0];
+            msg = ec.get_error_prefix() + "unknown command - " + args[0];
         }
         else {
-            msg = iter->second.c_func(ec, cmdline, args);
+            msg = iter->second->c_func(ec, cmdline, args);
         }
     }
 
@@ -129,7 +129,11 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
     }
 
     ec.ec_accumulator.clear();
-    sql_progress_guard progress_guard(sql_progress);
+
+    pair<string, int> source = ec.ec_source.top();
+    sql_progress_guard progress_guard(sql_progress,
+                                      source.first,
+                                      source.second);
     gettimeofday(&start_tv, NULL);
     retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
        stmt_str.c_str(),
@@ -139,7 +143,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
     if (retcode != SQLITE_OK) {
         const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
-        retval = "error: " + string(errmsg);
+        retval = ec.get_error_prefix() + string(errmsg);
         alt_msg = "";
     }
     else if (stmt == NULL) {
@@ -244,7 +248,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
 
                 log_error("sqlite3_step error code: %d", retcode);
                 errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                retval = "error: " + string(errmsg);
+                retval = ec.get_error_prefix() + string(errmsg);
                 done = true;
             }
                 break;
@@ -367,12 +371,12 @@ static string execute_file_contents(exec_context &ec, const string &path, bool m
         }
         file = stdin;
     }
-    else if ((file = fopen(path.c_str(), "r")) == NULL) {
-        return "error: unable to open file";
+    else if ((file = fopen(path.c_str(), "r")) == nullptr) {
+        return ec.get_error_prefix() + "unable to open file";
     }
 
     int    line_number = 0, starting_line_number = 0;
-    char *line = NULL;
+    char *line = nullptr;
     size_t line_max_size;
     ssize_t line_size;
     string cmdline;
@@ -442,10 +446,10 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
     log_info("Executing file: %s", path_and_args.c_str());
 
     if (!lexer.split(split_args, ec.ec_local_vars.top())) {
-        retval = "error: unable to parse path";
+        retval = ec.get_error_prefix() + "unable to parse path";
     }
     else if (split_args.empty()) {
-        retval = "error: no script specified";
+        retval = ec.get_error_prefix() + "no script specified";
     }
     else {
         ec.ec_local_vars.push(map<string, string>());
@@ -516,7 +520,8 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
             retval = result;
         }
         else {
-            retval = "error: unknown script -- " + script_name + " -- " + open_error;
+            retval = ec.get_error_prefix()
+                + "unknown script -- " + script_name + " -- " + open_error;
         }
         ec.ec_local_vars.pop();
     }
@@ -528,6 +533,7 @@ string execute_from_file(exec_context &ec, const string &path, int line_number, 
 {
     string retval, alt_msg;
 
+    ec.ec_source.emplace(path, line_number);
     switch (mode) {
         case ':':
             retval = execute_command(ec, cmdline);
@@ -560,6 +566,8 @@ string execute_from_file(exec_context &ec, const string &path, int line_number, 
             path.c_str(),
             line_number,
             retval.c_str());
+
+    ec.ec_source.pop();
 
     return retval;
 }
@@ -607,6 +615,7 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
     }
 
     db_label_source &dls = lnav_data.ld_db_row_source;
+    int option_index = 1;
 
     log_info("Executing initial commands");
     for (auto &cmd : lnav_data.ld_commands) {
@@ -614,6 +623,7 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
 
         wait_for_children();
 
+        ec.ec_source.emplace("command-option", option_index++);
         switch (cmd.at(0)) {
         case ':':
             msg = execute_command(ec, cmd.substr(1));
@@ -639,6 +649,8 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
         if (rescan_files()) {
             rebuild_indexes(true);
         }
+
+        ec.ec_source.pop();
     }
     lnav_data.ld_commands.clear();
 
@@ -732,7 +744,7 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
     lnav_data.ld_file_names[desc]
         .with_fd(pp->get_fd())
         .with_detect_format(false);
-    lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+    lnav_data.ld_files_to_front.emplace_back(desc, 0);
     if (lnav_data.ld_rl_view != NULL) {
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
                                                 X, "to close the file"));

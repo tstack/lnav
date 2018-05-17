@@ -97,7 +97,7 @@ static string refresh_pt_search()
     if (lnav_data.ld_pt_search.empty()) {
         return "info: no papertrail query is active";
     }
-    auto_ptr<papertrail_proc> pt(new papertrail_proc(
+    unique_ptr<papertrail_proc> pt(new papertrail_proc(
             lnav_data.ld_pt_search.substr(3),
             lnav_data.ld_pt_min_time,
             lnav_data.ld_pt_max_time));
@@ -119,8 +119,8 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
 {
     string retval = "error: expecting new time value";
 
-    if (args.size() == 0) {
-        args.push_back("line-time");
+    if (args.empty()) {
+        args.emplace_back("line-time");
     }
     else if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
         retval = "error: no log messages";
@@ -175,7 +175,7 @@ static string com_unix_time(exec_context &ec, string cmdline, vector<string> &ar
 {
     string retval = "error: expecting a unix time value";
 
-    if (args.size() == 0) { }
+    if (args.empty()) { }
     else if (args.size() >= 2) {
         char      ftime[128] = "";
         bool      parsed     = false;
@@ -253,8 +253,8 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting line number/percentage, timestamp, or relative time";
 
-    if (args.size() == 0) {
-        args.push_back("move-time");
+    if (args.empty()) {
+        args.emplace_back("move-time");
     }
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);
@@ -346,7 +346,7 @@ static string com_relative_goto(exec_context &ec, string cmdline, vector<string>
 {
     string retval = "error: expecting line number/percentage";
 
-    if (args.size() == 0) {
+    if (args.empty()) {
     }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -378,7 +378,7 @@ static string com_relative_goto(exec_context &ec, string cmdline, vector<string>
 
 static string com_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
     if (args.empty() || lnav_data.ld_view_stack.empty()) {
 
@@ -395,10 +395,10 @@ static string com_mark(exec_context &ec, string cmdline, vector<string> &args)
 
 static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
     if (args.empty()) {
-        args.push_back("mark-type");
+        args.emplace_back("mark-type");
     }
     else {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -409,7 +409,7 @@ static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &ar
         }
 
         bookmark_type_t *bt = bookmark_type_t::find_type(type_name);
-        if (bt == NULL) {
+        if (bt == nullptr) {
             retval = "error: unknown bookmark type";
         }
         else if (!ec.ec_dry_run) {
@@ -497,8 +497,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
     string fn, retval;
     bool to_term = false;
 
-    if (args.size() == 0) {
-        args.push_back("filename");
+    if (args.empty()) {
+        args.emplace_back("filename");
         return "";
     }
 
@@ -628,7 +628,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
     else if (args[0] == "write-cols-to") {
         attr_line_t header_line;
 
-        dos.list_value_for_overlay(lnav_data.ld_views[LNV_DB], 0_vl, header_line);
+        dos.list_value_for_overlay(lnav_data.ld_views[LNV_DB], 0, 1, 0_vl, header_line);
         fputs(header_line.get_string().c_str(), outfile);
         fputc('\n', outfile);
         for (size_t lpc = 0; lpc < dls.text_line_count(); lpc++) {
@@ -740,8 +740,8 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
 {
     string retval = "error: expecting command to execute";
 
-    if (args.size() == 0) {
-        args.push_back("filename");
+    if (args.empty()) {
+        args.emplace_back("filename");
         return "";
     }
 
@@ -894,8 +894,8 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
 {
     string retval = "error: expecting regular expression to highlight";
 
-    if (args.size() == 0) {
-        args.push_back("filter");
+    if (args.empty()) {
+        args.emplace_back("filter");
     }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -915,22 +915,33 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
                                       NULL)) == NULL) {
             retval = "error: " + string(errptr);
         }
-        else if (ec.ec_dry_run) {
-            retval = "";
-        }
         else {
             highlighter hl(code.release());
+            attr_t hl_attrs = view_colors::singleton().attrs_for_ident(args[1]);
 
-            hl.with_attrs(view_colors::singleton().attrs_for_ident(args[1]));
-
-            hm[args[1]] = hl;
-
-            if (lnav_data.ld_rl_view != NULL) {
-                lnav_data.ld_rl_view->add_possibility(
-                        LNM_COMMAND, "highlight", args[1]);
+            if (ec.ec_dry_run) {
+                hl_attrs |= A_BLINK;
             }
 
-            retval = "info: highlight pattern now active";
+            hl.with_attrs(hl_attrs);
+
+            if (ec.ec_dry_run) {
+                hm["$preview"] = hl;
+
+                lnav_data.ld_preview_status_source.get_description()
+                         .set_value("Matches are highlighted in the view");
+
+                retval = "";
+            } else {
+                hm[args[1]] = hl;
+
+                if (lnav_data.ld_rl_view != NULL) {
+                    lnav_data.ld_rl_view->add_possibility(
+                        LNM_COMMAND, "highlight", args[1]);
+                }
+
+                retval = "info: highlight pattern now active";
+            }
             tc->reload_data();
         }
     }
@@ -942,8 +953,8 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
 {
     string retval = "error: expecting highlight expression to clear";
 
-    if (args.size() == 0) {
-        args.push_back("highlight");
+    if (args.empty()) {
+        args.emplace_back("highlight");
     }
     else if (args.size() > 1 && args[1][0] != '$') {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -976,9 +987,9 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
 
 static string com_help(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
-    if (args.size() == 0) {}
+    if (args.empty()) {}
     else if (!ec.ec_dry_run) {
         ensure_view(&lnav_data.ld_views[LNV_HELP]);
     }
@@ -992,18 +1003,17 @@ public:
     pcre_filter(type_t type, const string id, size_t index, pcre *code)
         : text_filter(type, id, index),
           pf_pcre(code) { };
-    virtual ~pcre_filter() { };
 
-    bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line)
-    {
+    ~pcre_filter() override { };
+
+    bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) override {
         pcre_context_static<30> pc;
         pcre_input pi(line.get_data(), 0, line.length());
 
         return this->pf_pcre.match(pc, pi);
     };
 
-    std::string to_command(void)
-    {
+    std::string to_command(void) override {
         return (this->lf_type == text_filter::INCLUDE ?
                 "filter-in " : "filter-out ") +
                this->lf_id;
@@ -1019,8 +1029,8 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting regular expression to filter out";
 
-    if (args.size() == 0) {
-        args.push_back("filter");
+    if (args.empty()) {
+        args.emplace_back("filter");
     }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -1042,7 +1052,7 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
                                       PCRE_CASELESS,
                                       &errptr,
                                       &eoff,
-                                      NULL)) == NULL) {
+                                      nullptr)) == NULL) {
             retval = "error: " + string(errptr);
         }
         else if (ec.ec_dry_run) {
@@ -1051,7 +1061,6 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
                     .set_value("Match preview for :filter-in only works if there are no other filters");
             } else {
                 textview_curses::highlight_map_t &hm = tc->get_highlights();
-                view_colors &vc = view_colors::singleton();
                 highlighter hl(code.release());
                 int color;
 
@@ -1061,7 +1070,7 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
                     color = COLOR_GREEN;
                 }
                 hl.with_attrs(
-                    vc.ansi_color_pair(COLOR_BLACK, color) | A_BLINK);
+                    view_colors::ansi_color_pair(COLOR_BLACK, color) | A_BLINK);
 
                 hm["$preview"] = hl;
                 tc->reload_data();
@@ -1101,8 +1110,8 @@ static string com_delete_filter(exec_context &ec, string cmdline, vector<string>
 {
     string retval = "error: expecting a filter to delete";
 
-    if (args.size() == 0) {
-        args.push_back("all-filters");
+    if (args.empty()) {
+        args.emplace_back("all-filters");
     }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -1127,8 +1136,8 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
 {
     string retval = "error: expecting disabled filter to enable";
 
-    if (args.size() == 0) {
-        args.push_back("disabled-filter");
+    if (args.empty()) {
+        args.emplace_back("disabled-filter");
     }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -1162,8 +1171,8 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
 {
     string retval = "error: expecting enabled filter to disable";
 
-    if (args.size() == 0) {
-        args.push_back("enabled-filter");
+    if (args.empty()) {
+        args.emplace_back("enabled-filter");
     }
     else if (args.size() > 1) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -1195,9 +1204,9 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
 
 static string com_enable_word_wrap(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
-    if (args.size() == 0) {
+    if (args.empty()) {
 
     }
     else if (!ec.ec_dry_run) {
@@ -1211,9 +1220,9 @@ static string com_enable_word_wrap(exec_context &ec, string cmdline, vector<stri
 
 static string com_disable_word_wrap(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
-    if (args.size() == 0) {
+    if (args.empty()) {
 
     }
     else if (!ec.ec_dry_run) {
@@ -1231,7 +1240,7 @@ static string com_create_logline_table(exec_context &ec, string cmdline, vector<
 {
     string retval = "error: expecting a table name";
 
-    if (args.size() == 0) {}
+    if (args.empty()) {}
     else if (args.size() == 2) {
         textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
 
@@ -1282,8 +1291,8 @@ static string com_delete_logline_table(exec_context &ec, string cmdline, vector<
 {
     string retval = "error: expecting a table name";
 
-    if (args.size() == 0) {
-        args.push_back("custom-table");
+    if (args.empty()) {
+        args.emplace_back("custom-table");
     }
     else if (args.size() == 2) {
         if (custom_logline_tables.find(args[1]) == custom_logline_tables.end()) {
@@ -1319,7 +1328,7 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
 {
     string retval = "error: expecting a table name";
 
-    if (args.size() == 0) {
+    if (args.empty()) {
 
     }
     else if (args.size() >= 2) {
@@ -1399,8 +1408,8 @@ static string com_delete_search_table(exec_context &ec, string cmdline, vector<s
 {
     string retval = "error: expecting a table name";
 
-    if (args.size() == 0) {
-        args.push_back("search-table");
+    if (args.empty()) {
+        args.emplace_back("search-table");
     }
     else if (args.size() == 2) {
         if (custom_search_tables.find(args[1]) == custom_search_tables.end()) {
@@ -1434,7 +1443,7 @@ static string com_session(exec_context &ec, string cmdline, vector<string> &args
 {
     string retval = "error: expecting a command to save to the session file";
 
-    if (args.size() == 0) {}
+    if (args.empty()) {}
     else if (ec.ec_dry_run) {
         retval = "";
     }
@@ -1503,8 +1512,8 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting file name to open";
 
-    if (args.size() == 0) {
-        args.push_back("filename");
+    if (args.empty()) {
+        args.emplace_back("filename");
         return "";
     }
     else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
@@ -1780,11 +1789,228 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
     return retval;
 }
 
+static string com_comment(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting some comment text";
+
+    if (args.empty()) {
+        return "";
+    }
+    else if (args.size() > 1) {
+        if (ec.ec_dry_run) {
+            return "";
+        }
+        textview_curses *tc = lnav_data.ld_view_stack.back();
+
+        if (tc != &lnav_data.ld_views[LNV_LOG]) {
+            return "error: The :comment command only works in the log view";
+        }
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+
+        args[1] = trim(remaining_args(cmdline, args));
+
+        tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
+
+        bookmark_metadata &line_meta = bm[lss.at(tc->get_top())];
+
+        line_meta.bm_comment = args[1];
+
+        retval = "info: comment added to line";
+    }
+
+    return retval;
+}
+
+static string com_clear_comment(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+        return "";
+    }
+    else if (ec.ec_dry_run) {
+        return "";
+    } else {
+        textview_curses *tc = lnav_data.ld_view_stack.back();
+
+        if (tc != &lnav_data.ld_views[LNV_LOG]) {
+            return "error: The :clear-comment command only works in the log view";
+        }
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+
+        auto iter = bm.find(lss.at(tc->get_top()));
+        if (iter != bm.end()) {
+            bookmark_metadata &line_meta = iter->second;
+
+            line_meta.bm_comment.clear();
+            if (line_meta.empty()) {
+                bm.erase(iter);
+                tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), false);
+            }
+
+            retval = "info: cleared comment";
+        }
+    }
+
+    return retval;
+}
+
+static string com_tag(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting one or more tags";
+
+    if (args.empty()) {
+        args.emplace_back("tag");
+        return "";
+    }
+    else if (args.size() > 1) {
+        if (ec.ec_dry_run) {
+            return "";
+        }
+        textview_curses *tc = lnav_data.ld_view_stack.back();
+
+        if (tc != &lnav_data.ld_views[LNV_LOG]) {
+            return "error: The :tag command only works in the log view";
+        }
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+
+        tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
+        bookmark_metadata &line_meta = bm[lss.at(tc->get_top())];
+        for (int lpc = 1; lpc < args.size(); lpc++) {
+            string tag = args[lpc];
+
+            if (!startswith(tag, "#")) {
+                tag = "#" + tag;
+            }
+            bookmark_metadata::KNOWN_TAGS.insert(tag);
+            line_meta.add_tag(tag);
+        }
+
+        retval = "info: tag(s) added to line";
+    }
+
+    return retval;
+}
+
+static string com_untag(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting one or more tags";
+
+    if (args.empty()) {
+        args.emplace_back("line-tags");
+        return "";
+    }
+    else if (args.size() > 1) {
+        if (ec.ec_dry_run) {
+            return "";
+        }
+        textview_curses *tc = lnav_data.ld_view_stack.back();
+
+        if (tc != &lnav_data.ld_views[LNV_LOG]) {
+            return "error: The :untag command only works in the log view";
+        }
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+
+        auto iter = bm.find(lss.at(tc->get_top()));
+        if (iter != bm.end()) {
+            bookmark_metadata &line_meta = iter->second;
+
+            for (int lpc = 1; lpc < args.size(); lpc++) {
+                string tag = args[lpc];
+
+                if (!startswith(tag, "#")) {
+                    tag = "#" + tag;
+                }
+                line_meta.remove_tag(tag);
+            }
+            if (line_meta.empty()) {
+                tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), false);
+            }
+        }
+
+        retval = "info: tag(s) removed from line";
+    }
+
+    return retval;
+}
+
+static string com_delete_tags(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval = "error: expecting one or more tags";
+
+    if (args.empty()) {
+        args.emplace_back("tag");
+        return "";
+    }
+    else if (args.size() > 1) {
+        if (ec.ec_dry_run) {
+            return "";
+        }
+        textview_curses *tc = lnav_data.ld_view_stack.back();
+
+        if (tc != &lnav_data.ld_views[LNV_LOG]) {
+            return "error: The :delete-tag command only works in the log view";
+        }
+
+        set<string> &known_tags = bookmark_metadata::KNOWN_TAGS;
+        vector<string> tags;
+
+        for (int lpc = 1; lpc < args.size(); lpc++) {
+            string tag = args[lpc];
+
+            if (!startswith(tag, "#")) {
+                tag = "#" + tag;
+            }
+            if (known_tags.find(tag) == known_tags.end()) {
+                return "error: Unknown tag -- " + tag;
+            }
+
+            tags.emplace_back(tag);
+            known_tags.erase(tag);
+        }
+
+        logfile_sub_source &lss = lnav_data.ld_log_source;
+        bookmark_vector<vis_line_t> &vbm = tc->get_bookmarks()[&textview_curses::BM_META];
+        std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+
+        for (auto iter = vbm.begin(); iter != vbm.end();) {
+            content_line_t cl = lss.at(*iter);
+            auto line_meta = bm.find(cl);
+
+            if (line_meta == bm.end()) {
+                ++iter;
+                continue;
+            }
+
+            for (const auto &tag : tags) {
+                line_meta->second.remove_tag(tag);
+            }
+
+            if (line_meta->second.empty()) {
+                size_t off = distance(vbm.begin(), iter);
+
+                tc->set_user_mark(&textview_curses::BM_META, *iter, false);
+                iter = next(vbm.begin(), off);
+            } else {
+                ++iter;
+            }
+        }
+
+        retval = "info: deleted tag(s)";
+    }
+
+    return retval;
+}
+
 static string com_partition_name(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting partition name";
 
-    if (args.size() == 0) {
+    if (args.empty()) {
         return "";
     }
     else if (args.size() > 1) {
@@ -1798,8 +2024,7 @@ static string com_partition_name(exec_context &ec, string cmdline, vector<string
 
             args[1] = trim(remaining_args(cmdline, args));
 
-            tc.set_user_mark(&textview_curses::BM_PARTITION, tc.get_top(),
-                             true);
+            tc.set_user_mark(&textview_curses::BM_META, tc.get_top(), true);
 
             bookmark_metadata &line_meta = bm[lss.at(tc.get_top())];
 
@@ -1813,16 +2038,16 @@ static string com_partition_name(exec_context &ec, string cmdline, vector<string
 
 static string com_clear_partition(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
-    if (args.size() == 0) {
+    if (args.empty()) {
         return "";
     }
     else if (args.size() == 1) {
         textview_curses &tc = lnav_data.ld_views[LNV_LOG];
         logfile_sub_source &lss = lnav_data.ld_log_source;
         bookmark_vector<vis_line_t> &bv = tc.get_bookmarks()[
-            &textview_curses::BM_PARTITION];
+            &textview_curses::BM_META];
         std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
         vis_line_t part_start;
 
@@ -1836,10 +2061,14 @@ static string com_clear_partition(exec_context &ec, string cmdline, vector<strin
             retval = "error: top line is not in a partition";
         }
         else if (!ec.ec_dry_run) {
-            tc.set_user_mark(
-                &textview_curses::BM_PARTITION, part_start, false);
+            content_line_t cl = lss.at(part_start);
+            bookmark_metadata &line_meta = bm[cl];
 
-            bm.erase(lss.at(part_start));
+            line_meta.bm_name.clear();
+            if (line_meta.empty()) {
+                tc.set_user_mark(&textview_curses::BM_META, part_start, false);
+            }
+
             retval = "info: cleared partition name";
         }
     }
@@ -1851,8 +2080,8 @@ static string com_pt_time(exec_context &ec, string cmdline, vector<string> &args
 {
     string retval = "error: expecting a time value";
 
-    if (args.size() == 0) {
-        args.push_back("move-time");
+    if (args.empty()) {
+        args.emplace_back("move-time");
         retval = "";
     }
     else if (args.size() == 1) {
@@ -1917,10 +2146,10 @@ static string com_pt_time(exec_context &ec, string cmdline, vector<string> &args
 
 static string com_summarize(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
-    if (args.size() == 0) {
-        args.push_back("colname");
+    if (args.empty()) {
+        args.emplace_back("colname");
         return retval;
     }
     else if (!setup_logline_table()) {
@@ -1933,7 +2162,9 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
         auto_mem<char, sqlite3_free> query_frag;
         std::vector<string>          other_columns;
         std::vector<string>          num_columns;
-        sql_progress_guard progress_guard(sql_progress);
+        sql_progress_guard progress_guard(sql_progress,
+                                          ec.ec_source.top().first,
+                                          ec.ec_source.top().second);
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
         int retcode;
         string query;
@@ -2130,9 +2361,9 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
 
 static string com_add_test(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
-    if (args.size() == 0) {}
+    if (args.empty()) {}
     else if (args.size() > 1) {
         retval = "error: not expecting any arguments";
     }
@@ -2174,10 +2405,10 @@ static string com_add_test(exec_context &ec, string cmdline, vector<string> &arg
 
 static string com_switch_to_view(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
-    if (args.size() == 0) {
-        args.push_back("viewname");
+    if (args.empty()) {
+        args.emplace_back("viewname");
     }
     else if (args.size() > 1) {
         bool found = false;
@@ -2201,10 +2432,10 @@ static string com_switch_to_view(exec_context &ec, string cmdline, vector<string
 
 static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "";
+    string retval;
 
-    if (args.size() == 0) {
-        args.push_back("zoomlevel");
+    if (args.empty()) {
+        args.emplace_back("zoomlevel");
     }
     else if (ec.ec_dry_run) {
 
@@ -2302,7 +2533,7 @@ static string com_set_min_log_level(exec_context &ec, string cmdline, vector<str
     string retval = "error: expecting log level name";
 
     if (args.empty()) {
-        args.push_back("levelname");
+        args.emplace_back("levelname");
     }
     else if (ec.ec_dry_run) {
         retval = "";
@@ -2328,7 +2559,7 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
     string retval;
 
     if (args.empty()) {
-        args.push_back("colname");
+        args.emplace_back("colname");
     } else if (args.size() < 2) {
         retval = "error: Expecting a log message field name";
     } else {
@@ -2408,7 +2639,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
     string retval;
 
     if (args.empty()) {
-        args.push_back("move-time");
+        args.emplace_back("move-time");
     }
     else if (args.size() == 1) {
         textview_curses *tc = lnav_data.ld_view_stack.back();
@@ -2521,6 +2752,32 @@ static string com_show_lines(exec_context &ec, string cmdline, vector<string> &a
         }
 
         rebuild_indexes(true);
+    }
+
+    return retval;
+}
+
+static string com_hide_unmarked(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval = "info: hid unmarked lines";
+
+    if (ec.ec_dry_run) {
+        retval = "";
+    } else {
+        lnav_data.ld_log_source.set_marked_only(true);
+    }
+
+    return retval;
+}
+
+static string com_show_unmarked(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval = "info: showing unmarked lines";
+
+    if (ec.ec_dry_run) {
+        retval = "";
+    } else {
+        lnav_data.ld_log_source.set_marked_only(false);
     }
 
     return retval;
@@ -2658,7 +2915,7 @@ static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
     string retval = "error: expecting a command or query to evaluate";
 
     if (args.empty()) {
-        args.push_back("*");
+        args.emplace_back("*");
     }
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);
@@ -2716,7 +2973,7 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
     string retval = "error: expecting a configuration option to read or write";
 
     if (args.empty()) {
-        args.push_back("config-option");
+        args.emplace_back("config-option");
     }
     else if (args.size() > 1) {
         yajlpp_parse_context ypc("input", lnav_config_handlers);
@@ -2805,7 +3062,7 @@ static string com_reset_config(exec_context &ec, string cmdline, vector<string> 
     string retval = "error: expecting a configuration option to reset";
 
     if (args.empty()) {
-        args.push_back("config-option");
+        args.emplace_back("config-option");
     }
     else if (!ec.ec_dry_run) {
         yajlpp_parse_context ypc("input", lnav_config_handlers);
@@ -3129,7 +3386,7 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
     string retval = "error: expecting a message field name";
 
     if (args.empty()) {
-        args.push_back("numeric-colname");
+        args.emplace_back("numeric-colname");
     }
     else if (ec.ec_dry_run) {
         retval = "";
@@ -3240,6 +3497,7 @@ readline_context::command_t STD_COMMANDS[] = {
                     {"75%"},
                     {"2017-01-01"}
                 })
+            .with_tags({"navigation"})
     },
     {
         "relative-goto",
@@ -3253,6 +3511,7 @@ readline_context::command_t STD_COMMANDS[] = {
                     {"+22"},
                     {"-10%"},
                 })
+            .with_tags({"navigation"})
     },
     {
         "mark",
@@ -3260,6 +3519,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":mark")
             .with_summary("Toggle the bookmark state for the top line in the current view")
+            .with_tags({"bookmarks"})
     },
     {
         "next-mark",
@@ -3267,8 +3527,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":next-mark")
             .with_summary("Move to the next bookmark of the given type in the current view")
-            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, partition"))
+            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, meta"))
             .with_example({"error"})
+            .with_tags({"bookmarks", "navigation"})
     },
     {
         "prev-mark",
@@ -3276,8 +3537,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":prev-mark")
             .with_summary("Move to the previous bookmark of the given type in the current view")
-            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, partition"))
+            .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, meta"))
             .with_example({"error"})
+            .with_tags({"bookmarks", "navigation"})
     },
     {
         "help",
@@ -3299,6 +3561,7 @@ readline_context::command_t STD_COMMANDS[] = {
                                 .one_or_more())
             .with_example({"log_procname"})
             .with_example({"syslog_log.log_procname"})
+            .with_tags({"display"})
     },
     {
         "show-fields",
@@ -3309,6 +3572,8 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text("field-name", "The name of the field to show")
                                 .one_or_more())
             .with_example({"log_procname"})
+            .with_opposites({"hide-fields"})
+            .with_tags({"display"})
     },
     {
         "hide-lines-before",
@@ -3322,6 +3587,7 @@ readline_context::command_t STD_COMMANDS[] = {
                     {"here"},
                     {"6am"},
                 })
+            .with_tags({"filtering"})
     },
     {
         "hide-lines-after",
@@ -3335,6 +3601,7 @@ readline_context::command_t STD_COMMANDS[] = {
                     {"here"},
                     {"6am"},
                 })
+            .with_tags({"filtering"})
     },
     {
         "show-lines-before-and-after",
@@ -3342,6 +3609,25 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":show-lines-before-and-after")
             .with_summary("Show lines that were hidden by the 'hide-lines' commands")
+            .with_opposites({"hide-lines-before", "hide-lines-after"})
+            .with_tags({"filtering"})
+    },
+    {
+        "hide-unmarked-lines",
+        com_hide_unmarked,
+
+        help_text(":hide-unmarked-lines")
+            .with_summary("Hide lines that have not been bookmarked")
+            .with_tags({"filtering", "bookmarks"})
+    },
+    {
+        "show-unmarked-lines",
+        com_show_unmarked,
+
+        help_text(":show-unmarked-lines")
+            .with_summary("Show lines that have not been bookmarked")
+            .with_opposites({"show-unmarked-lines"})
+            .with_tags({"filtering", "bookmarks"})
     },
     {
         "highlight",
@@ -3350,6 +3636,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":highlight")
             .with_summary("Add coloring to log messages fragments that match the given regular expression")
             .with_parameter(help_text("pattern", "The regular expression to match"))
+            .with_tags({"display"})
             .with_example({R"(\d{3,})"})
     },
     {
@@ -3359,6 +3646,8 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":clear-highlight")
             .with_summary("Remove a previously set highlight regular expression")
             .with_parameter(help_text("pattern", "The regular expression previously used with :highlight"))
+            .with_tags({"display"})
+            .with_opposites({"highlight"})
             .with_example({"foobar"})
     },
     {
@@ -3368,7 +3657,8 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":filter-in")
             .with_summary("Only show lines that match the given regular expression in the current view")
             .with_parameter(help_text("pattern", "The regular expression to match"))
-        .with_example({"dhclient"})
+            .with_tags({"filtering"})
+            .with_example({"dhclient"})
     },
     {
         "filter-out",
@@ -3377,6 +3667,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":filter-out")
             .with_summary("Remove lines that match the given regular expression in the current view")
             .with_parameter(help_text("pattern", "The regular expression to match"))
+            .with_tags({"filtering"})
             .with_example({"last message repeated"})
     },
     {
@@ -3387,6 +3678,8 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_summary("Delete the filter created with "
                               ANSI_BOLD(":filter-in") " or " ANSI_BOLD(":filter-out"))
             .with_parameter(help_text("pattern", "The regular expression to match"))
+            .with_opposites({"filter-in", "filter-out"})
+            .with_tags({"filtering"})
             .with_example({"last message repeated"})
     },
     {
@@ -3396,6 +3689,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":append-to")
             .with_summary("Append marked lines in the current view to the given file")
             .with_parameter(help_text("path", "The path to the file to append to"))
+            .with_tags({"io"})
             .with_example({"/tmp/interesting-lines.txt"})
     },
     {
@@ -3405,6 +3699,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":write-to")
             .with_summary("Overwrite the given file with any marked lines in the current view")
             .with_parameter(help_text("path", "The path to the file to write"))
+            .with_tags({"io", "scripting"})
             .with_example({"/tmp/interesting-lines.txt"})
     },
     {
@@ -3414,6 +3709,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":write-csv-to")
             .with_summary("Write SQL results to the given file in CSV format")
             .with_parameter(help_text("path", "The path to the file to write"))
+            .with_tags({"io", "scripting", "sql"})
             .with_example({"/tmp/table.csv"})
     },
     {
@@ -3423,6 +3719,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":write-json-to")
             .with_summary("Write SQL results to the given file in JSON format")
             .with_parameter(help_text("path", "The path to the file to write"))
+            .with_tags({"io", "scripting", "sql"})
             .with_example({"/tmp/table.json"})
     },
     {
@@ -3432,6 +3729,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":write-cols-to")
             .with_summary("Write SQL results to the given file in a columnar format")
             .with_parameter(help_text("path", "The path to the file to write"))
+            .with_tags({"io", "scripting", "sql"})
             .with_example({"/tmp/table.txt"})
     },
     {
@@ -3441,6 +3739,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":write-raw-to")
             .with_summary("Write SQL results to the given file without any formatting")
             .with_parameter(help_text("path", "The path to the file to write"))
+            .with_tags({"io", "scripting", "sql"})
             .with_example({"/tmp/table.txt"})
     },
     {
@@ -3450,6 +3749,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":pipe-to")
             .with_summary("Pipe the marked lines to the given shell command")
             .with_parameter(help_text("shell-cmd", "The shell command-line to execute"))
+            .with_tags({"io"})
             .with_example({"sed -e s/foo/bar/g"})
     },
     {
@@ -3459,6 +3759,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":pipe-line-to")
             .with_summary("Pipe the top line to the given shell command")
             .with_parameter(help_text("shell-cmd", "The shell command-line to execute"))
+            .with_tags({"io"})
             .with_example({"sed -e 's/foo/bar/g'"})
     },
     {
@@ -3468,6 +3769,8 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":enable-filter")
             .with_summary("Enable a previously created and disabled filter")
             .with_parameter(help_text("pattern", "The regular expression used in the filter command"))
+            .with_tags({"filtering"})
+            .with_opposites({"disable-filter"})
             .with_example({"last message repeated"})
     },
     {
@@ -3477,6 +3780,8 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":disable-filter")
             .with_summary("Disable a filter created with filter-in/filter-out")
             .with_parameter(help_text("pattern", "The regular expression used in the filter command"))
+            .with_tags({"filtering"})
+            .with_opposites({"filter-out", "filter-in"})
             .with_example({"last message repeated"})
     },
     {
@@ -3485,6 +3790,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":enable-word-wrap")
             .with_summary("Enable word-wrapping for the current view")
+            .with_tags({"display"})
     },
     {
         "disable-word-wrap",
@@ -3492,6 +3798,8 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":disable-word-wrap")
             .with_summary("Disable word-wrapping for the current view")
+            .with_opposites({"enable-word-wrap"})
+            .with_tags({"display"})
     },
     {
         "create-logline-table",
@@ -3500,6 +3808,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":create-logline-table")
             .with_summary("Create an SQL table using the top line of the log view as a template")
             .with_parameter(help_text("table-name", "The name for the new table"))
+            .with_tags({"vtables", "sql"})
             .with_example({"task_durations"})
     },
     {
@@ -3509,6 +3818,8 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":delete-logline-table")
             .with_summary("Delete a table created with create-logline-table")
             .with_parameter(help_text("table-name", "The name of the table to delete"))
+            .with_opposites({"delete-logline-table"})
+            .with_tags({"vtables", "sql"})
             .with_example({"task_durations"})
     },
     {
@@ -3523,6 +3834,7 @@ readline_context::command_t STD_COMMANDS[] = {
                 "The regular expression used to capture the table columns.  "
                     "If not given, the current search pattern is used.")
                                 .optional())
+            .with_tags({"vtables", "sql"})
             .with_example({R"(task_durations duration=(?<duration>\d+))"})
     },
     {
@@ -3532,6 +3844,8 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":delete-search-table")
             .with_summary("Create an SQL table based on a regex search")
             .with_parameter(help_text("table-name", "The name of the table to create"))
+            .with_opposites({"create-search-table"})
+            .with_tags({"vtables", "sql"})
             .with_example({"task_durations"})
     },
     {
@@ -3557,6 +3871,61 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":close")
             .with_summary("Close the top file in the view")
+            .with_opposites({"open"})
+    },
+    {
+        "comment",
+        com_comment,
+
+        help_text(":comment")
+            .with_summary("Attach a comment to the top log line")
+            .with_parameter(help_text("text", "The comment text"))
+            .with_example({"This is where it all went wrong"})
+            .with_tags({"metadata"})
+    },
+    {
+        "clear-comment",
+        com_clear_comment,
+
+        help_text(":clear-comment")
+            .with_summary("Clear the comment attached to the top log line")
+            .with_opposites({"comment"})
+            .with_tags({"metadata"})
+    },
+    {
+        "tag",
+        com_tag,
+
+        help_text(":tag")
+            .with_summary("Attach tags to the top log line")
+            .with_parameter(help_text("tag", "The tags to attach")
+                                .one_or_more())
+            .with_example({"#BUG123 #needs-review"})
+            .with_tags({"metadata"})
+    },
+    {
+        "untag",
+        com_untag,
+
+        help_text(":untag")
+            .with_summary("Detach tags from the top log line")
+            .with_parameter(help_text("tag", "The tags to detach")
+                                .one_or_more())
+            .with_example({"#BUG123 #needs-review"})
+            .with_opposites({"tag"})
+            .with_tags({"metadata"})
+    },
+    {
+        "delete-tags",
+        com_delete_tags,
+
+        help_text(":delete-tags")
+            .with_summary("Remove the given tags from all log lines")
+            .with_parameter(help_text("tag", "The tags to delete")
+                                .one_or_more())
+            .with_example({"#BUG123 #needs-review"})
+            .with_opposites({"tag"})
+            .with_tags({"metadata"})
     },
     {
         "partition-name",
@@ -3573,6 +3942,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":clear-partition")
             .with_summary("Clear the partition the top line is a part of")
+            .with_opposites({"partition-name"})
     },
     {
         "pt-min-time",
@@ -3662,6 +4032,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":echo")
             .with_summary("Echo the given message")
             .with_parameter(help_text("msg", "The message to display"))
+            .with_tags({"scripting"})
             .with_example({"Hello, World!"})
     },
     {
@@ -3671,6 +4042,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":alt-msg")
             .with_summary("Display a message in the alternate command position")
             .with_parameter(help_text("msg", "The message to display"))
+            .with_tags({"scripting"})
             .with_example({"Press t to switch to the text view"})
     },
     {
@@ -3682,6 +4054,7 @@ readline_context::command_t STD_COMMANDS[] = {
                 "Evaluate the given command/query after doing environment variable substitution")
             .with_parameter(help_text("command",
                                       "The command or query to perform substitution on."))
+            .with_tags({"scripting"})
             .with_examples(
                 {
                     {":echo $HOME"},
@@ -3698,6 +4071,7 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text("value", "The value to write.  If not given, the current value is returned")
                                 .optional())
             .with_example({"/ui/clock-format"})
+            .with_tags({"configuration"})
     },
     {
         "save-config",
@@ -3705,6 +4079,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":save-config")
             .with_summary("Save the current configuration state")
+            .with_tags({"configuration"})
     },
     {
         "reset-config",
@@ -3714,6 +4089,7 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_summary("Reset the configuration option to its default value")
             .with_parameter(help_text("option", "The path to the option to reset"))
             .with_example({"/ui/clock-format"})
+            .with_tags({"configuration"})
     },
     {
         "spectrogram",
@@ -3744,23 +4120,31 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     for (int lpc = 0; STD_COMMANDS[lpc].c_name != NULL; lpc++) {
         readline_context::command_t &cmd = STD_COMMANDS[lpc];
 
-        cmd_map[cmd.c_name] = cmd;
+        cmd.c_help.index_tags();
+        cmd_map[cmd.c_name] = &cmd;
 
         auto itr = aliases.find(cmd.c_name);
         if (itr != aliases.end()) {
             for (char const * alias: itr->second) {
-                cmd_map[alias] = cmd;
+                cmd_map[alias] = &cmd;
             }
         }
-
     }
 
     if (getenv("LNAV_SRC") != NULL) {
-        cmd_map["add-test"] = com_add_test;
+        static readline_context::command_t add_test;
+
+        add_test = com_add_test;
+        cmd_map["add-test"] = &add_test;
     }
     if (getenv("lnav_test") != NULL) {
-        cmd_map["rebuild"] = com_rebuild;
-        cmd_map["shexec"] = com_shexec;
-        cmd_map["poll-now"] = com_poll_now;
+        static readline_context::command_t rebuild, shexec, poll_now;
+
+        rebuild = com_rebuild;
+        cmd_map["rebuild"] = &rebuild;
+        shexec = com_shexec;
+        cmd_map["shexec"] = &shexec;
+        poll_now = com_poll_now;
+        cmd_map["poll-now"] = &poll_now;
     }
 }

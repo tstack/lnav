@@ -47,6 +47,8 @@ enum {
     VT_COL_IDLE_MSECS,
     VT_COL_LEVEL,
     VT_COL_MARK,
+    VT_COL_LOG_COMMENT,
+    VT_COL_LOG_TAGS,
     VT_COL_MAX
 };
 
@@ -188,16 +190,26 @@ protected:
 
 typedef int (*sql_progress_callback_t)(const log_cursor &lc);
 
-extern sql_progress_callback_t log_vtab_progress_callback;
+extern struct _log_vtab_data {
+    sql_progress_callback_t lvd_progress;
+    std::string lvd_source;
+    int lvd_line_number{0};
+} log_vtab_data;
 
 class sql_progress_guard {
 public:
-    sql_progress_guard(sql_progress_callback_t cb) {
-        log_vtab_progress_callback = cb;
+    sql_progress_guard(sql_progress_callback_t cb,
+                       const std::string &source,
+                       int line_number) {
+        log_vtab_data.lvd_progress = cb;
+        log_vtab_data.lvd_source = source;
+        log_vtab_data.lvd_line_number = line_number;
     };
 
     ~sql_progress_guard() {
-        log_vtab_progress_callback = NULL;
+        log_vtab_data.lvd_progress = NULL;
+        log_vtab_data.lvd_source.clear();
+        log_vtab_data.lvd_line_number = 0;
     };
 };
 

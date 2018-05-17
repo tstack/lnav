@@ -78,6 +78,22 @@ inline std::string tolower(const std::string &str)
     return tolower(str.c_str());
 }
 
+inline std::string toupper(const char *str)
+{
+    std::string retval;
+
+    for (int lpc = 0; str[lpc]; lpc++) {
+        retval.push_back(::toupper(str[lpc]));
+    }
+
+    return retval;
+}
+
+inline std::string toupper(const std::string &str)
+{
+    return toupper(str.c_str());
+}
+
 size_t unquote(char *dst, const char *str, size_t len);
 
 #undef rounddown

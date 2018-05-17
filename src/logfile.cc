@@ -54,21 +54,10 @@ static const size_t MAX_UNRECOGNIZED_LINES = 1000;
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
 logfile::logfile(const string &filename, logfile_open_options &loo)
-    : lf_filename(filename),
-      lf_index_time(0),
-      lf_index_size(0),
-      lf_sort_needed(false),
-      lf_is_closed(false),
-      lf_logline_observer(NULL),
-      lf_logfile_observer(NULL),
-      lf_longest_line(0),
-      lf_text_format(TF_UNKNOWN)
+    : lf_filename(filename)
 {
     require(filename.size() > 0);
 
-    this->lf_time_offset.tv_sec = 0;
-    this->lf_time_offset.tv_usec = 0;
-    
     memset(&this->lf_stat, 0, sizeof(this->lf_stat));
     if (loo.loo_fd == -1) {
         char resolved_path[PATH_MAX];
@@ -372,7 +361,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
                 old_size = 0;
             }
 
-            for (logfile::iterator iter = this->begin() + old_size;
+            for (auto iter = this->begin() + old_size;
                     iter != this->end(); ++iter) {
                 if (this->lf_logline_observer != NULL) {
                     this->lf_logline_observer->logline_new_line(*this, iter, sbr);
@@ -386,7 +375,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
                     st.st_size);
             }
 
-            if (!has_format && this->lf_format.get() != NULL) {
+            if (!has_format && this->lf_format != NULL) {
                 break;
             }
         }
@@ -438,7 +427,7 @@ void logfile::read_line(logfile::iterator ll, string &line_out)
 
         line_out.clear();
         if (this->lf_line_buffer.read_line(off, sbr)) {
-            if (this->lf_format.get() != NULL) {
+            if (this->lf_format != NULL) {
                 this->lf_format->get_subline(*ll, sbr);
             }
             line_out.append(sbr.get_data(), sbr.length());
@@ -458,7 +447,7 @@ bool logfile::read_line(logfile::iterator ll, shared_buffer_ref &sbr)
         off_t       off = ll->get_offset();
 
         if (this->lf_line_buffer.read_line(off, sbr)) {
-            if (this->lf_format.get() != NULL) {
+            if (this->lf_format != NULL) {
                 this->lf_format->get_subline(*ll, sbr);
             }
             return true;

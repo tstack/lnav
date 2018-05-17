@@ -227,12 +227,9 @@ public:
         }
     };
 
-    size_t list_overlay_count(const listview_curses &lv) {
-        return 1;
-    };
-
     bool list_value_for_overlay(const listview_curses &lv,
-                                vis_line_t y,
+                                int y, int bottom,
+                                vis_line_t row,
                                 attr_line_t &value_out) {
         if (y != 0) {
             return false;

@@ -1756,6 +1756,7 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .with_summary("Returns the given string concatenated N times.")
           .with_parameter({"str", "The string to replicate."})
           .with_parameter({"N", "The number of times to replicate the string."})
+          .with_tags({"string"})
           .with_example({"SELECT replicate('abc', 3)"})
     },
     { "charindex",          2, SQLITE_UTF8,    0, charindexFunc },
@@ -1766,6 +1767,7 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .with_summary("Returns the N leftmost (UTF-8) characters in the given string.")
           .with_parameter({"str", "The string to return subset."})
           .with_parameter({"N", "The number of characters from the left side of the string to return."})
+          .with_tags({"string"})
           .with_example({"SELECT leftstr('abc', 1)"})
           .with_example({"SELECT leftstr('abc', 10)"})
     },
@@ -1775,6 +1777,7 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .with_summary("Returns the N rightmost (UTF-8) characters in the given string.")
           .with_parameter({"str", "The string to return subset."})
           .with_parameter({"N", "The number of characters from the right side of the string to return."})
+          .with_tags({"string"})
           .with_example({"SELECT rightstr('abc', 1)"})
           .with_example({"SELECT rightstr('abc', 10)"})
     },
@@ -1789,6 +1792,7 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .sql_function()
           .with_summary("Returns the reverse of the given string.")
           .with_parameter({"str", "The string to reverse."})
+          .with_tags({"string"})
           .with_example({"SELECT reverse('abc')"})
     },
     { "proper",             1, SQLITE_UTF8,    0, properFunc },

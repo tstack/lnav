@@ -99,27 +99,23 @@ void rl_change(void *dummy, readline_curses *rc)
                 }
             }
             else {
-                readline_context::command_t &cmd = iter->second;
+                readline_context::command_t &cmd = *iter->second;
                 const help_text &ht = cmd.c_help;
 
                 if (ht.ht_name) {
                     textview_curses &dtc = lnav_data.ld_doc_view;
                     textview_curses &etc = lnav_data.ld_example_view;
-                    vector<attr_line_t> lines;
                     unsigned long width;
                     vis_line_t height;
                     attr_line_t al;
 
                     dtc.get_dimensions(height, width);
                     format_help_text_for_term(ht, min(70UL, width), al);
-                    al.split_lines(lines);
                     lnav_data.ld_doc_source.replace_with(al);
 
                     al.clear();
-                    lines.clear();
                     etc.get_dimensions(height, width);
                     format_example_text_for_term(ht, width, al);
-                    al.split_lines(lines);
                     lnav_data.ld_example_source.replace_with(al);
                 }
 
@@ -243,14 +239,15 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
             x -= 1;
         }
 
-        auto iter = rfind_string_attr_if(sa, x, [](auto sa) {
-            return (sa.sa_type == &SQL_FUNCTION_ATTR ||
-                    sa.sa_type == &SQL_KEYWORD_ATTR);
-        });
+        vector<string> kw;
+        auto iter = rfind_string_attr_if(sa, x, [&al, &name, &kw](auto sa) {
+            if (sa.sa_type != &SQL_FUNCTION_ATTR &&
+                sa.sa_type != &SQL_KEYWORD_ATTR) {
+                return false;
+            }
 
-        if (iter != sa.end()) {
-            const line_range &lr = iter->sa_range;
             const string &str = al.get_string();
+            const line_range &lr = sa.sa_range;
             int lpc;
 
             for (lpc = lr.lr_start; lpc < lr.lr_end; lpc++) {
@@ -259,32 +256,58 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
                 }
             }
 
-            name = str.substr(lr.lr_start, lpc - lr.lr_start);
+            string tmp_name = str.substr(lr.lr_start, lpc - lr.lr_start);
+            if (sa.sa_type == &SQL_KEYWORD_ATTR) {
+                tmp_name = toupper(tmp_name);
+            }
+            bool retval = sqlite_function_help.count(tmp_name) > 0;
 
-            const auto &func_iter = sqlite_function_help.find(tolower(name));
+            if (retval) {
+                kw.push_back(tmp_name);
+                name = tmp_name;
+            }
+            return retval;
+        });
 
-            if (func_iter != sqlite_function_help.end()) {
-                textview_curses &dtc = lnav_data.ld_doc_view;
-                textview_curses &etc = lnav_data.ld_example_view;
+        if (iter != sa.end()) {
+            auto func_pair = sqlite_function_help.equal_range(name);
+            size_t help_count = distance(func_pair.first, func_pair.second);
+            textview_curses &dtc = lnav_data.ld_doc_view;
+            textview_curses &etc = lnav_data.ld_example_view;
+            unsigned long doc_width, ex_width;
+            vis_line_t doc_height, ex_height;
+            attr_line_t doc_al, ex_al;
+
+            dtc.get_dimensions(doc_height, doc_width);
+            etc.get_dimensions(ex_height, ex_width);
+            if (help_count > 1 && name != func_pair.first->second->ht_name) {
+                while (find(kw.begin(), kw.end(),
+                            func_pair.first->second->ht_name) == kw.end()) {
+                    ++func_pair.first;
+                }
+                func_pair.second = next(func_pair.first);
+                help_count = 1;
+            }
+            for (auto func_iter = func_pair.first;
+                 func_iter != func_pair.second;
+                 ++func_iter) {
                 const help_text &ht = *func_iter->second;
-                vector<attr_line_t> lines;
-                unsigned long width;
-                vis_line_t height;
-                attr_line_t al;
 
-                dtc.get_dimensions(height, width);
-                format_help_text_for_term(ht, min(70UL, width), al);
-                al.split_lines(lines);
-                lnav_data.ld_doc_source.replace_with(al);
+                format_help_text_for_term(ht, min(70UL, doc_width), doc_al,
+                                          help_count > 1);
+                if (help_count == 1) {
+                    format_example_text_for_term(ht, ex_width, ex_al);
+                }
+            }
+
+            if (!doc_al.empty()) {
+                lnav_data.ld_doc_source.replace_with(doc_al);
                 dtc.reload_data();
 
-                al.clear();
-                lines.clear();
-                etc.get_dimensions(height, width);
-                format_example_text_for_term(ht, width, al);
-                al.split_lines(lines);
-                lnav_data.ld_example_source.replace_with(al);
-                etc.reload_data();
+                if (!ex_al.empty()) {
+                    lnav_data.ld_example_source.replace_with(ex_al);
+                    etc.reload_data();
+                }
 
                 has_doc = true;
             }

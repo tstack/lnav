@@ -1005,6 +1005,10 @@ void external_log_format::rewrite(exec_context &ec,
             continue;
         }
 
+        ec.ec_source.emplace(this->elf_name.to_string() +
+                             ":" +
+                             vd_iter->first.to_string(),
+                             1);
         string field_value = execute_any(ec, vd.vd_rewriter);
         struct line_range adj_origin = iter->origin_in_full_msg(
             value_out.c_str(), value_out.length());

@@ -55,7 +55,7 @@ static cache_entry *find_re(const char *re)
             auto_mem<char> e2(sqlite3_free);
 
             e2 = sqlite3_mprintf("%s: %s", re, c.re->error().c_str());
-            throw new pcrepp::error(e2.in(), 0);
+            throw pcrepp::error(e2.in(), 0);
         }
         CACHE[re_str] = c;
 
@@ -91,7 +91,7 @@ regexp_match(const char *re, const char *str)
 
     auto_mem<yajl_gen_t> gen(yajl_gen_free);
 
-    gen = yajl_gen_alloc(NULL);
+    gen = yajl_gen_alloc(nullptr);
     yajl_gen_config(gen.in(), yajl_gen_beautify, false);
 
     if (extractor.get_capture_count() == 1) {
@@ -216,6 +216,7 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"re", "The regular expression to use"})
                 .with_parameter({"str", "The string to test against the regular expression"})
+                .with_tags({"string", "regex"})
                 .with_example({"SELECT regexp_match('(\\d+)', '123')"})
                 .with_example({"SELECT regexp_match('(\\d+) (\\w+)', '123 four')"})
                 .with_example({"SELECT regexp_match('(?<num>\\d+) (?<str>\\w+)', '123 four')"})
@@ -230,6 +231,7 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter({"repl", "The replacement string.  "
                     "You can reference capture groups with a backslash followed by the number of the "
                     "group, starting with 1."})
+                .with_tags({"string", "regex"})
                 .with_example({"SELECT regexp_replace('Hello, World!', '^(\\w+)', 'Goodbye')"})
                 .with_example({"SELECT regexp_replace('123 abc', '(\\w+)', '<\\1>')"})
         ),
@@ -239,6 +241,7 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                       "Automatically Parse and extract data from a string")
                 .sql_function()
                 .with_parameter({"str", "The string to parse"})
+                .with_tags({"string"})
                 .with_example({"SELECT extract('foo=1 bar=2 name=\"Rolo Tomassi\"')"})
                 .with_example({"SELECT extract('1.0 abc 2.0')"})
         ),
@@ -251,6 +254,7 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"str", "The string to test"})
                 .with_parameter({"prefix", "The prefix to check in the string"})
+                .with_tags({"string"})
                 .with_example({"SELECT startswith('foobar', 'foo')"})
                 .with_example({"SELECT startswith('foobar', 'bar')"})
         ),
@@ -261,6 +265,7 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"str", "The string to test"})
                 .with_parameter({"suffix", "The suffix to check in the string"})
+                .with_tags({"string"})
                 .with_example({"SELECT endswith('notbad.jpg', '.jpg')"})
                 .with_example({"SELECT endswith('notbad.png', '.jpg')"})
         ),

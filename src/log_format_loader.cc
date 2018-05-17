@@ -692,11 +692,17 @@ static void write_sample_file(void)
     }
 }
 
-static void format_error_reporter(const yajlpp_parse_context &ypc, const char *msg)
+static void format_error_reporter(const yajlpp_parse_context &ypc,
+                                  lnav_log_level_t level,
+                                  const char *msg)
 {
-    struct userdata *ud = (userdata *) ypc.ypc_userdata;
+    if (level >= LOG_LEVEL_ERROR) {
+        struct userdata *ud = (userdata *) ypc.ypc_userdata;
 
-    ud->ud_errors->push_back(msg);
+        ud->ud_errors->push_back(msg);
+    } else {
+        fprintf(stderr, "warning:%s\n",  msg);
+    }
 }
 
 std::vector<intern_string_t> load_format_file(const string &filename, std::vector<string> &errors)

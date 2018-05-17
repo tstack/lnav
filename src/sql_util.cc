@@ -786,8 +786,6 @@ int guess_type_from_pcre(const string &pattern, const char **collator)
         vector<int> matches;
         int retval = SQLITE3_TEXT;
 
-        log_debug("guess pattern %s", pattern.c_str());
-
         *collator = NULL;
         for (int lpc = 0; TYPE_TEST_VALUE[lpc].sqlite_type != SQLITE_NULL; lpc++) {
             pcre_context_static<30> pc;
@@ -799,7 +797,6 @@ int guess_type_from_pcre(const string &pattern, const char **collator)
             }
         }
 
-        log_debug("match size %d", matches.size());
         if (matches.size() == 1) {
             retval = TYPE_TEST_VALUE[matches.front()].sqlite_type;
             *collator = TYPE_TEST_VALUE[matches.front()].collator;

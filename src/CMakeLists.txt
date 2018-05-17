@@ -163,11 +163,11 @@ set(diag_STAT_SRCS
     filesystem/path.h
     filesystem/resolver.h
 
-    ../../lbuild/src/config.h
+    ../../lbuild-debug/src/config.h
     )
 
 set(lnav_SRCS lnav.cc)
 
-include_directories(../../lbuild/src /opt/local/include)
+include_directories(../../lbuild-debug/src /opt/local/include)
 include_directories(SYSTEM .)
 add_executable(lnav ${lnav_SRCS} ${diag_STAT_SRCS})

@@ -101,8 +101,10 @@ logfile_sub_source::logfile_sub_source()
       lss_force_rebuild(false),
       lss_token_file(NULL),
       lss_min_log_level(logline::LEVEL_UNKNOWN),
+      lss_marked_only(false),
       lss_index_delegate(NULL),
-      lss_longest_line(0)
+      lss_longest_line(0),
+      lss_meta_grepper(*this)
 {
     this->clear_line_size_cache();
     this->clear_min_max_log_times();
@@ -485,7 +487,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                            this->lss_token_file->get_format()->get_name());
 
     {
-        bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_PARTITION];
+        bookmark_vector<vis_line_t> &bv = lv.get_bookmarks()[&textview_curses::BM_META];
         bookmark_vector<vis_line_t>::iterator bv_iter;
 
         bv_iter = lower_bound(bv.begin(), bv.end(), vis_line_t(row + 1));
@@ -495,7 +497,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
             std::map<content_line_t, bookmark_metadata>::iterator bm_iter;
 
             if ((bm_iter = this->lss_user_mark_metadata.find(part_start_line))
-                != this->lss_user_mark_metadata.end()) {
+                != this->lss_user_mark_metadata.end() &&
+                !bm_iter->second.bm_name.empty()) {
                 lr.lr_start = 0;
                 lr.lr_end   = -1;
                 value_out.emplace_back(lr, &logline::L_PARTITION, &bm_iter->second);
@@ -706,7 +709,7 @@ bool logfile_sub_source::rebuild_index(bool force)
             content_line_t cl = (content_line_t) this->lss_index[index_index];
             uint64_t line_number;
             logfile_data *ld = this->find_data(cl, line_number);
-            logfile::iterator line_iter = ld->get_file()->begin() + line_number;
+            auto line_iter = ld->get_file()->begin() + line_number;
 
             if (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
                     line_number) && this->check_extra_filters(*line_iter)) {
@@ -719,7 +722,7 @@ bool logfile_sub_source::rebuild_index(bool force)
             }
         }
 
-        if (this->lss_index_delegate != NULL) {
+        if (this->lss_index_delegate != nullptr) {
             this->lss_index_delegate->index_complete(*this);
         }
     }
@@ -729,37 +732,31 @@ bool logfile_sub_source::rebuild_index(bool force)
 
 void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
 {
-    shared_ptr<logfile>   last_file = NULL;
+    shared_ptr<logfile> last_file = nullptr;
     vis_line_t vl;
 
     bm[&BM_WARNINGS].clear();
     bm[&BM_ERRORS].clear();
     bm[&BM_FILES].clear();
 
-    for (bookmarks<content_line_t>::type::iterator iter =
-             this->lss_user_marks.begin();
-         iter != this->lss_user_marks.end();
-         ++iter) {
-        bm[iter->first].clear();
+    for (auto &lss_user_mark : this->lss_user_marks) {
+        bm[lss_user_mark.first].clear();
     }
 
     for (; vl < (int)this->lss_filtered_index.size(); ++vl) {
         const content_line_t orig_cl = this->at(vl);
         content_line_t cl = orig_cl;
-        shared_ptr<logfile>       lf;
+        shared_ptr<logfile> lf;
 
         lf = this->find(cl);
 
-        for (bookmarks<content_line_t>::type::iterator iter =
-                 this->lss_user_marks.begin();
-             iter != this->lss_user_marks.end();
-             ++iter) {
-            if (binary_search(iter->second.begin(),
-                              iter->second.end(),
+        for (auto &lss_user_mark : this->lss_user_marks) {
+            if (binary_search(lss_user_mark.second.begin(),
+                              lss_user_mark.second.end(),
                               orig_cl)) {
-                bm[iter->first].insert_once(vl);
+                bm[lss_user_mark.first].insert_once(vl);
 
-                if (iter->first == &textview_curses::BM_USER) {
+                if (lss_user_mark.first == &textview_curses::BM_USER) {
                     logfile::iterator ll = lf->begin() + cl;
 
                     ll->set_mark(true);
@@ -771,7 +768,7 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
             bm[&BM_FILES].insert_once(vl);
         }
 
-        logfile::iterator line_iter = lf->begin() + cl;
+        auto line_iter = lf->begin() + cl;
         if (!line_iter->is_continued()) {
             switch (line_iter->get_msg_level()) {
                 case logline::LEVEL_WARNING:

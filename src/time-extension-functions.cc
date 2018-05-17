@@ -127,6 +127,7 @@ int time_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"time", "The timestamp to get the time slice for."})
                 .with_parameter({"slice", "The size of the time slices"})
+                .with_tags({"datetime"})
                 .with_example({"SELECT timeslice('2017-01-01T05:05:00', '10m')"})
                 .with_example({"SELECT timeslice(log_time, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY slice"})
         ),
@@ -137,6 +138,7 @@ int time_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"time1", "The first timestamp"})
                 .with_parameter({"time2", "The timestamp to subtract from the first"})
+                .with_tags({"datetime"})
                 .with_example({"SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')"})
                 .with_example({"SELECT timediff('today', 'yesterday')"})
         ),

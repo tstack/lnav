@@ -29,6 +29,24 @@ with the following commands:
 * hide-lines-after <abs-time|rel-time> - Hide lines after the given time.
 * show-lines-before-and-after - Show lines that were hidden by the "hide-lines" commands.
 
+Bookmarks
+---------
+
+* mark - Bookmark the top line in the view.
+* partition-name <name> - Partition the log file around the top line in the
+  log view and assign the given name.  The top line and all that follow, up to
+  the start of the next partition, will be included in the partition.  The name
+  of the partition for a log line is visible in the top status bar to the right
+  of the time stamp.  The partition name for a log line can be retrieved via
+  the *log_part* field in any log table.
+* comment <text> - Attach a comment to the top line in the log view and
+  bookmark that line.
+* clear-comment - Clear the comment attached to the top line in the view.
+* tag <tag1> [<tag2> ... [<tagN>]] - Attach one or more tags to a log line.
+  A '#' will automatically be prepended to the tag name if it is not already there.
+* untag <tag1> [<tag2> ... [<tagN>]] - Detach one or more tags from a log line.
+* delete-tags <tag1> [<tag2> ... [<tagN>]] - Detach the given tags from all log lines.
+
 Navigation
 ----------
 
@@ -37,7 +55,6 @@ Navigation
   relative time (e.g. 'a minute ago').
 * relative-goto <line#|N%> - Move the current view up or down by the given
   amount.
-* mark - Bookmark the top line in the view.
 * next-mark error|warning|search|user|file|partition - Move to the next
   bookmark of the given type in the current view.
 * prev-mark error|warning|search|user|file|partition - Move to the previous

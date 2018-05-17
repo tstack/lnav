@@ -40,17 +40,18 @@
 
 #include "grep_proc.hh"
 #include "line_buffer.hh"
+#include "listview_curses.hh"
 
 using namespace std;
 
-class my_source : public grep_proc_source {
+class my_source : public grep_proc_source<vis_line_t> {
 
 public:
     my_source(auto_fd &fd) : ms_offset(0) {
 	this->ms_buffer.set_fd(fd);
     };
 
-    bool grep_value_for_line(int line_number, string &value_out) {
+    bool grep_value_for_line(vis_line_t line_number, string &value_out) {
 	bool retval = false;
 
 	try {
@@ -77,27 +78,27 @@ private:
     
 };
 
-class my_sink : public grep_proc_sink {
+class my_sink : public grep_proc_sink<vis_line_t> {
 
 public:
     my_sink() : ms_finished(false) { };
     
-    void grep_match(grep_proc &gp,
-		    grep_line_t line,
+    void grep_match(grep_proc<vis_line_t> &gp,
+		    vis_line_t line,
 		    int start,
 		    int end) {
 	printf("%d:%d:%d\n", (int)line, start, end);
     };
 
-    void grep_capture(grep_proc &gp,
-		      grep_line_t line,
+    void grep_capture(grep_proc<vis_line_t> &gp,
+		      vis_line_t line,
 		      int start,
 		      int end,
 		      char *capture) {
 	fprintf(stderr, "%d(%d:%d)%s\n", (int)line, start, end, capture);
     };
 
-    void grep_end(grep_proc &gp) {
+    void grep_end(grep_proc<vis_line_t> &gp) {
 	this->ms_finished = true;
     };
 
@@ -131,11 +132,11 @@ int main(int argc, char *argv[])
 	my_source ms(fd);
 	my_sink msink;
 
-	grep_proc gp(code, ms);
-	
+	grep_proc<vis_line_t> gp(code, ms);
+
+	gp.set_sink(&msink);
 	gp.queue_request();
 	gp.start();
-	gp.set_sink(&msink);
 
 	while (!msink.ms_finished) {
 		vector<struct pollfd> pollfds;

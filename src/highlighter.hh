@@ -148,6 +148,52 @@ struct highlighter {
         return this->h_attrs;
     };
 
+    void annotate(attr_line_t &al, int start) const {
+        const std::string &str = al.get_string();
+        string_attrs_t &sa = al.get_attrs();
+        size_t re_end;
+
+        if (str.length() > 8192)
+            re_end = 8192;
+        else
+            re_end = str.length();
+        for (int off = start; off < (int)str.size(); ) {
+            int rc, matches[60];
+            rc = pcre_exec(this->h_code,
+                           this->h_code_extra,
+                           str.c_str(),
+                           re_end,
+                           off,
+                           0,
+                           matches,
+                           60);
+            if (rc > 0) {
+                struct line_range lr;
+
+                if (rc == 2) {
+                    lr.lr_start = matches[2];
+                    lr.lr_end   = matches[3];
+                }
+                else {
+                    lr.lr_start = matches[0];
+                    lr.lr_end   = matches[1];
+                }
+
+                if (lr.lr_end > lr.lr_start) {
+                    sa.emplace_back(lr, &view_curses::VC_STYLE, this->h_attrs);
+
+                    off = matches[1];
+                }
+                else {
+                    off += 1;
+                }
+            }
+            else {
+                off = str.size();
+            }
+        }
+    };
+
     std::string h_pattern;
     rgb_color h_fg;
     rgb_color h_bg;

@@ -36,22 +36,22 @@
 #include "grep_proc.hh"
 #include "sequence_matcher.hh"
 
-class sequence_sink : public grep_proc_sink {
+class sequence_sink : public grep_proc_sink<vis_line_t> {
 public:
     sequence_sink(sequence_matcher &sm, bookmark_vector<vis_line_t> &bv)
         : ss_matcher(sm),
           ss_bookmarks(bv) {};
 
-    void grep_match(grep_proc &gp,
-                    grep_line_t line,
+    void grep_match(grep_proc<vis_line_t> &gp,
+                    vis_line_t line,
                     int start,
                     int end)
     {
         this->ss_line_values.clear();
     };
 
-    void grep_capture(grep_proc &gp,
-                      grep_line_t line,
+    void grep_capture(grep_proc<vis_line_t> &gp,
+                      vis_line_t line,
                       int start,
                       int end,
                       char *capture)
@@ -64,17 +64,17 @@ public:
         }
     };
 
-    void grep_match_end(grep_proc &gp, grep_line_t line)
+    void grep_match_end(grep_proc<vis_line_t> &gp, vis_line_t line)
     {
         sequence_matcher::id_t line_id;
 
         this->ss_matcher.identity(this->ss_line_values, line_id);
 
-        std::vector<grep_line_t> &line_state = this->ss_state[line_id];
+        std::vector<vis_line_t> &line_state = this->ss_state[line_id];
         if (this->ss_matcher.match(this->ss_line_values,
                                    line_state,
                                    line)) {
-            std::vector<grep_line_t>::iterator iter;
+            std::vector<vis_line_t>::iterator iter;
 
             for (iter = line_state.begin();
                  iter != line_state.end();
@@ -89,6 +89,6 @@ private:
     sequence_matcher &           ss_matcher;
     bookmark_vector<vis_line_t> &ss_bookmarks;
     std::vector<std::string>     ss_line_values;
-    std::map<sequence_matcher::id_t, std::vector<grep_line_t> > ss_state;
+    std::map<sequence_matcher::id_t, std::vector<vis_line_t> > ss_state;
 };
 #endif

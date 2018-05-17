@@ -43,36 +43,36 @@
 #include "lnav_log.hh"
 #include "lnav_util.hh"
 #include "grep_proc.hh"
+#include "listview_curses.hh"
 
 #include "time_T.hh"
 
 using namespace std;
 
-grep_proc::grep_proc(pcre *code, grep_proc_source &gps)
+template<typename LineType>
+grep_proc<LineType>::grep_proc(pcre *code, grep_proc_source<LineType> &gps)
     : gp_pcre(code),
       gp_code(code),
-      gp_source(gps),
-      gp_pipe_offset(0),
-      gp_child(-1),
-      gp_child_started(false),
-      gp_last_line(0),
-      gp_sink(NULL),
-      gp_control(NULL)
+      gp_source(gps)
 {
     require(this->invariant());
+
+    gps.register_proc(this);
 }
 
-grep_proc::~grep_proc()
+template<typename LineType>
+grep_proc<LineType>::~grep_proc()
 {
     this->gp_queue.clear();
     this->cleanup();
 }
 
-void grep_proc::handle_match(int line,
-                             string &line_value,
-                             int off,
-                             int *matches,
-                             int count)
+template<typename LineType>
+void grep_proc<LineType>::handle_match(int line,
+                                       string &line_value,
+                                       int off,
+                                       int *matches,
+                                       int count)
 {
     int lpc;
 
@@ -94,7 +94,8 @@ void grep_proc::handle_match(int line,
     }
 }
 
-void grep_proc::start(void)
+template<typename LineType>
+void grep_proc<LineType>::start()
 {
     require(this->invariant());
 
@@ -133,6 +134,7 @@ void grep_proc::start(void)
         require(this->gp_err_pipe.get() == -1);
         this->gp_err_pipe      = err_pipe.read_end();
         this->gp_child_started = true;
+        this->gp_child_queue_size = this->gp_queue.size();
 
         this->gp_queue.clear();
         return;
@@ -154,7 +156,8 @@ void grep_proc::start(void)
     _exit(0);
 }
 
-void grep_proc::child_loop(void)
+template<typename LineType>
+void grep_proc<LineType>::child_loop()
 {
     char   outbuf[BUFSIZ * 2];
     string line_value;
@@ -163,21 +166,18 @@ void grep_proc::child_loop(void)
     if (setvbuf(stdout, outbuf, _IOFBF, BUFSIZ * 2) < 0) {
         perror("setvbuf");
     }
+    lnav_log_file = fopen("/tmp/lnav.grep.err", "a");
     line_value.reserve(BUFSIZ * 2);
     while (!this->gp_queue.empty()) {
-        grep_line_t start_line = this->gp_queue.front().first;
-        grep_line_t stop_line  = this->gp_queue.front().second;
+        LineType start_line = this->gp_queue.front().first;
+        LineType stop_line  = this->gp_queue.front().second;
         bool        done       = false;
-        int         line;
+        LineType line;
 
         this->gp_queue.pop_front();
-        if (start_line == -1) {
-            start_line = this->gp_highest_line;
-            log_debug("highest %d", start_line);
-        }
-        for (line = start_line;
-             (stop_line == -1 || line < stop_line) && !done;
-             line++) {
+        for (line = this->gp_source.grep_initial_line(start_line, this->gp_highest_line);
+             line != -1 && (stop_line == -1 || line < stop_line) && !done;
+             this->gp_source.grep_next_line(line)) {
             line_value.clear();
             done = !this->gp_source.grep_value_for_line(line, line_value);
             if (!done) {
@@ -189,7 +189,7 @@ void grep_proc::child_loop(void)
                     pcre_context::capture_t *m;
 
                     if (pi.pi_offset == 0) {
-                        fprintf(stdout, "%d\n", line);
+                        fprintf(stdout, "%d\n", (int) line);
                     }
                     m = pc.all();
                     fprintf(stdout, "[%d:%d]\n", m->c_begin, m->c_end);
@@ -234,7 +234,8 @@ void grep_proc::child_loop(void)
     }
 }
 
-void grep_proc::cleanup(void)
+template<typename LineType>
+void grep_proc<LineType>::cleanup()
 {
     if (this->gp_child != -1 && this->gp_child != 0) {
         int status = 0;
@@ -248,7 +249,9 @@ void grep_proc::cleanup(void)
         this->gp_child_started = false;
 
         if (this->gp_sink) {
-            this->gp_sink->grep_end(*this);
+            for (int lpc = 0; lpc < this->gp_child_queue_size; lpc++) {
+                this->gp_sink->grep_end(*this);
+            }
         }
     }
 
@@ -266,14 +269,18 @@ void grep_proc::cleanup(void)
     }
 }
 
-void grep_proc::dispatch_line(char *line)
+template<typename LineType>
+void grep_proc<LineType>::dispatch_line(char *line)
 {
     int start, end, capture_start;
 
     require(line != NULL);
 
     if (sscanf(line, "h%d", this->gp_highest_line.out()) == 1) {
-
+        if (this->gp_sink) {
+            this->gp_sink->grep_end(*this);
+        }
+        this->gp_child_queue_size -= 1;
     } else if (sscanf(line, "%d", this->gp_last_line.out()) == 1) {
         /* Starting a new line with matches. */
         ensure(this->gp_last_line >= 0);
@@ -311,7 +318,8 @@ void grep_proc::dispatch_line(char *line)
     }
 }
 
-void grep_proc::check_poll_set(const std::vector<struct pollfd> &pollfds)
+template<typename LineType>
+void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollfds)
 {
     require(this->invariant());
 
@@ -327,10 +335,10 @@ void grep_proc::check_poll_set(const std::vector<struct pollfd> &pollfds)
             if (strncmp(buffer, PREFIX, strlen(PREFIX)) == 0) {
                 char *lf;
 
-                if ((lf = strchr(buffer, '\n')) != NULL) {
+                if ((lf = strchr(buffer, '\n')) != nullptr) {
                     *lf = '\0';
                 }
-                if (this->gp_control != NULL) {
+                if (this->gp_control != nullptr) {
                     this->gp_control->grep_error(&buffer[strlen(PREFIX)]);
                 }
             }
@@ -355,7 +363,7 @@ void grep_proc::check_poll_set(const std::vector<struct pollfd> &pollfds)
                 loop_count += 1;
             }
 
-            if (this->gp_sink != NULL) {
+            if (this->gp_sink != nullptr) {
                 this->gp_sink->grep_end_batch(*this);
             }
 
@@ -371,3 +379,5 @@ void grep_proc::check_poll_set(const std::vector<struct pollfd> &pollfds)
 
     ensure(this->invariant());
 }
+
+template class grep_proc<vis_line_t>;
