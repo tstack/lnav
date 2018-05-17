@@ -73,7 +73,7 @@ static void null_or_default(sqlite3_context *context, int argc, sqlite3_value **
 }
 
 struct contains_userdata {
-    util::variant<const char *, int64_t, bool> cu_match_value{false};
+    util::variant<const char *, sqlite3_int64, bool> cu_match_value{false};
     bool cu_result{false};
 };
 
@@ -88,11 +88,11 @@ static int contains_string(void *ctx, const unsigned char *str, size_t len)
     return 1;
 }
 
-static int contains_integer(void *ctx, int64_t value)
+static int contains_integer(void *ctx, long long value)
 {
     auto &cu = *((contains_userdata *) ctx);
 
-    if (cu.cu_match_value.get<int64_t>() == value) {
+    if (cu.cu_match_value.get<sqlite3_int64>() == value) {
         cu.cu_result = true;
     }
 
