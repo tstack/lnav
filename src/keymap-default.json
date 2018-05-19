@@ -9,6 +9,9 @@
     },
     "keymap_def": {
         "default": {
+            "x0c": [
+                ":write-raw-to -"
+            ],
             "x45": [
                 ":prev-mark error",
                 ":eval :alt-msg ${keymap_def_alt_warning}"

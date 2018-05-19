@@ -541,13 +541,12 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
 
     if (args[0] == "write-csv-to" ||
         args[0] == "write-json-to" ||
-        args[0] == "write-cols-to" ||
-        args[0] == "write-raw-to") {
+        args[0] == "write-cols-to") {
         if (dls.dls_headers.empty()) {
             return "error: no query result to write, use ';' to execute a query";
         }
     }
-    else {
+    else if (args[0] != "write-raw-to") {
         if (bv.empty()) {
             return "error: no lines marked to write, use 'm' to mark lines";
         }
@@ -569,9 +568,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
             setvbuf(stdout, NULL, _IONBF, 0);
             to_term = true;
             fprintf(outfile,
-                    "\n---------------- %s output, press any key to exit "
-                            "----------------\n\n",
-                    args[0].c_str());
+                    "\n---------------- Press any key to exit lo-fi display "
+                            "----------------\n\n");
         }
         else {
             outfile = lnav_data.ld_output_stack.top();
@@ -672,23 +670,46 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         }
     }
     else if (args[0] == "write-raw-to") {
-        std::vector<std::vector<const char *> >::iterator row_iter;
-        std::vector<const char *>::iterator iter;
+        if (tc == &lnav_data.ld_views[LNV_DB]) {
+            std::vector<std::vector<const char *> >::iterator row_iter;
+            std::vector<const char *>::iterator iter;
 
-        for (row_iter = dls.dls_rows.begin();
-             row_iter != dls.dls_rows.end();
-             ++row_iter) {
-            if (ec.ec_dry_run &&
-                distance(dls.dls_rows.begin(), row_iter) > 10) {
-                break;
+            for (row_iter = dls.dls_rows.begin();
+                 row_iter != dls.dls_rows.end();
+                 ++row_iter) {
+                if (ec.ec_dry_run &&
+                    distance(dls.dls_rows.begin(), row_iter) > 10) {
+                    break;
+                }
+
+                for (iter = row_iter->begin();
+                     iter != row_iter->end();
+                     ++iter) {
+                    fputs(*iter, outfile);
+                }
+                fprintf(outfile, "\n");
+            }
+        } else {
+            bool wrapped = tc->get_word_wrap();
+            vis_line_t orig_top = tc->get_top();
+
+            tc->set_word_wrap(to_term);
+
+            vis_line_t top = tc->get_top();
+            vis_line_t bottom = tc->get_bottom();
+            vector<attr_line_t> rows(bottom - top + 1);
+
+            tc->listview_value_for_rows(*tc, top, rows);
+            for (auto &al : rows) {
+                struct line_range lr = find_string_attr_range(
+                    al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
+                log_perror(write(STDOUT_FILENO, lr.substr(al.get_string()),
+                                 lr.sublen(al.get_string())));
+                log_perror(write(STDOUT_FILENO, "\n", 1));
             }
 
-            for (iter = row_iter->begin();
-                 iter != row_iter->end();
-                 ++iter) {
-                fputs(*iter, outfile);
-            }
-            fprintf(outfile, "\n");
+            tc->set_word_wrap(wrapped);
+            tc->set_top(orig_top);
         }
     }
     else {
@@ -3737,7 +3758,7 @@ readline_context::command_t STD_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-raw-to")
-            .with_summary("Write SQL results to the given file without any formatting")
+            .with_summary("Write the displayed text or SQL results to the given file without any formatting")
             .with_parameter(help_text("path", "The path to the file to write"))
             .with_tags({"io", "scripting", "sql"})
             .with_example({"/tmp/table.txt"})

@@ -475,41 +475,6 @@ void handle_paging_key(int ch)
         }
             break;
 
-        case KEY_CTRL_L: {
-            vis_line_t top = tc->get_top();
-            vis_line_t bottom = tc->get_bottom();
-            char line_break[120];
-
-            nodelay(lnav_data.ld_window, 0);
-            endwin();
-            {
-                guard_termios tguard(STDOUT_FILENO);
-                struct termios new_termios = *tguard.get_termios();
-                new_termios.c_oflag |= ONLCR | OPOST;
-                tcsetattr(STDOUT_FILENO, TCSANOW, &new_termios);
-                snprintf(line_break, sizeof(line_break),
-                         "\n---------------- Lines %'d-%'d, "
-                                 "press any key to exit lo-fi mode "
-                                 "----------------\n\n",
-                         (int) top, (int) bottom);
-                log_perror(write(STDOUT_FILENO, line_break, strlen(line_break)));
-                vector<attr_line_t> rows(bottom - top);
-                tc->listview_value_for_rows(*tc, top, rows);
-                for (auto &al : rows) {
-                    struct line_range lr = find_string_attr_range(
-                            al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
-                    log_perror(write(STDOUT_FILENO, lr.substr(al.get_string()),
-                          lr.sublen(al.get_string())));
-                    log_perror(write(STDOUT_FILENO, "\n", 1));
-                }
-            }
-            cbreak();
-            getch();
-            refresh();
-            nodelay(lnav_data.ld_window, 1);
-            break;
-        }
-
         case 'M':
             if (lnav_data.ld_last_user_mark.find(tc) ==
                 lnav_data.ld_last_user_mark.end()) {
