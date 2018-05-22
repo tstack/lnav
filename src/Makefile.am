@@ -75,6 +75,9 @@ TIME_FORMATS = \
     "%b %e, %Y %l:%M:%S %p" \
     "%m/%d/%y %H:%M:%S" \
     "%m/%d/%Y %I:%M:%S:%L %p %Z" \
+    "%m/%d/%Y %I:%M:%S %p %Z" \
+    "%m/%d/%Y %l:%M:%S %p %Z" \
+    "%m/%e/%Y %I:%M:%S %p" \
     "%m/%e/%Y %l:%M:%S %p" \
     "%d/%b/%y %H:%M:%S" \
     "%m%d %H:%M:%S" \

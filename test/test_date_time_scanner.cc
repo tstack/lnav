@@ -40,6 +40,7 @@ static const char *GOOD_TIMES[] = {
     "May 01 00:00:01",
     "May 10 12:00:01",
     "2014-02-11 16:12:34",
+    "05/18/2018 12:00:53 PM",
 
     NULL
 };
@@ -71,6 +72,7 @@ int main(int argc, char *argv[])
 
         char ts[64];
 
+        gmtime_r(&tv.tv_sec, &tm.et_tm);
         dts.ftime(ts, sizeof(ts), tm);
         printf("orig %s\n", GOOD_TIMES[lpc]);
         printf("loop %s\n", ts);

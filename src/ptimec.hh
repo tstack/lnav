@@ -635,7 +635,9 @@ inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         else if ((lead & 0xdf) == 'A') {
         }
         else if ((lead & 0xdf) == 'P') {
-            dst->et_tm.tm_hour += 12;
+            if (dst->et_tm.tm_hour > 12) {
+                dst->et_tm.tm_hour += 12;
+            }
         }
         else {
             return false;
