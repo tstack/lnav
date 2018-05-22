@@ -669,22 +669,23 @@ static int vt_filter(sqlite3_vtab_cursor *p_vtc,
                 vis_line_t(sqlite3_value_int64(argv[lpc])));
             break;
 
-        case VT_COL_LOG_TIME: {
-            const unsigned char *datestr = sqlite3_value_text(argv[lpc]);
-            date_time_scanner dts;
-            struct timeval tv;
-            struct exttm mytm;
-            vis_line_t vl;
+        case VT_COL_LOG_TIME:
+            if (sqlite3_value_type(argv[lpc]) == SQLITE3_TEXT) {
+                const unsigned char *datestr = sqlite3_value_text(argv[lpc]);
+                date_time_scanner dts;
+                struct timeval tv;
+                struct exttm mytm;
+                vis_line_t vl;
 
-            dts.scan((const char *)datestr, strlen((const char *)datestr), NULL, &mytm, tv);
-            if ((vl = vt->lss->find_from_time(tv)) == -1) {
-                p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
-            }
-            else {
-                p_cur->log_cursor.update(index[lpc].op, vl, false);
+                dts.scan((const char *)datestr, strlen((const char *)datestr), NULL, &mytm, tv);
+                if ((vl = vt->lss->find_from_time(tv)) == -1) {
+                    p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
+                }
+                else {
+                    p_cur->log_cursor.update(index[lpc].op, vl, false);
+                }
             }
             break;
-        }
 
         }
     }

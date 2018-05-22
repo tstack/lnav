@@ -289,6 +289,15 @@ EOF
 
 
 run_test ${lnav_test} -n \
+    -c ";select * from syslog_log where log_time >= NULL" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_syslog.0
+
+check_output "log_time collation failed on null" <<EOF
+EOF
+
+
+run_test ${lnav_test} -n \
     -c ";select * from syslog_log where log_time >= datetime('2013-11-03T09:47:02.000')" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_syslog.0
