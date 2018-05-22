@@ -72,7 +72,7 @@ struct fstat_table {
     using iterator = vector<logfile *>::iterator;
 
     static constexpr const char *CREATE_STMT = R"(
-CREATE TABLE regexp_capture (
+CREATE TABLE fstat (
     st_parent TEXT,
     st_name TEXT,
     st_dev INTEGER,
