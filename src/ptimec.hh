@@ -438,9 +438,13 @@ inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, ssize_
             return false;
         }
         dst->et_tm.tm_hour = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+
+        if (dst->et_tm.tm_hour < 1 || dst->et_tm.tm_hour > 12) {
+            return false;
+        }
     });
 
-    return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
+    return true;
 }
 
 inline void ftime_I(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
@@ -523,6 +527,8 @@ inline void ftime_e(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 
 inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
+    off_t orig_off = off_inout;
+
     dst->et_tm.tm_mon = 0;
     PTIME_CONSUME(1, {
         if (str[off_inout] < '0' || str[off_inout] > '9') {
@@ -544,6 +550,8 @@ inline bool ptime_m(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         dst->et_flags |= ETF_MONTH_SET;
         return true;
     }
+
+    off_inout = orig_off;
     return false;
 }
 
@@ -586,6 +594,8 @@ inline void ftime_k(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 
 inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
+    off_t orig_off = off_inout;
+
     dst->et_tm.tm_hour = 0;
     PTIME_CONSUME(1, {
         if (str[off_inout] < '1' || str[off_inout] > '9') {
@@ -601,7 +611,12 @@ inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         }
     }
 
-    return (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12);
+    if (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12) {
+        return true;
+    }
+
+    off_inout = orig_off;
+    return false;
 }
 
 inline void ftime_l(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)

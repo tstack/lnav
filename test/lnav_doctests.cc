@@ -56,6 +56,16 @@ TEST_CASE("str2reltime") {
     CHECK(val == "");
 }
 
+TEST_CASE("ptime_fmt") {
+    const char *date_str = "2018-05-16 18:16:42";
+    struct exttm tm;
+    off_t off = 0;
+
+    bool rc = ptime_fmt("%Y-%d-%m\t%H:%M:%S", &tm, date_str, off, strlen(date_str));
+    CHECK(!rc);
+    CHECK(off == 8);
+}
+
 class my_path_source : public unique_path_source {
 public:
     my_path_source(const filesystem::path &p) : mps_path(p) {
