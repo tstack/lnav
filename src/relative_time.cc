@@ -182,7 +182,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                             this->rt_field[RTF_HOURS] = 0;
                         }
                     }
-                    else {
+                    else if (this->rt_field[RTF_HOURS] < 12) {
                         this->rt_field[RTF_HOURS] += 12;
                     }
                     break;

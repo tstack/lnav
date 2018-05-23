@@ -451,11 +451,11 @@ inline void ftime_I(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 {
     int hour = tm.et_tm.tm_hour;
 
-    if (hour > 12) {
+    if (hour >= 12) {
         hour -= 12;
-        if (hour == 0) {
-            hour = 12;
-        }
+    }
+    if (hour == 0) {
+        hour = 12;
     }
 
     PTIME_APPEND('0' + ((hour / 10) % 10));
@@ -623,11 +623,11 @@ inline void ftime_l(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 {
     int hour = tm.et_tm.tm_hour;
 
-    if (hour > 12) {
+    if (hour >= 12) {
         hour -= 12;
-        if (hour == 0) {
-            hour = 12;
-        }
+    }
+    if (hour == 0) {
+        hour = 12;
     }
 
     if (hour < 10) {
@@ -648,6 +648,9 @@ inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, ssize_
             return false;
         }
         else if ((lead & 0xdf) == 'A') {
+            if (dst->et_tm.tm_hour == 12) {
+                dst->et_tm.tm_hour -= 12;
+            }
         }
         else if ((lead & 0xdf) == 'P') {
             if (dst->et_tm.tm_hour > 12) {
