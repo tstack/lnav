@@ -59,6 +59,11 @@ public:
     auto_mem(F free_func)
         : am_ptr(NULL), am_free_func((free_func_t)free_func) { };
 
+    auto_mem(auto_mem &&other) : am_ptr(nullptr) {
+        this->reset(other.release());
+        this->am_free_func = other.am_free_func;
+    };
+
     ~auto_mem()
     {
         this->reset();

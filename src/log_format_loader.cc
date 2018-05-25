@@ -42,6 +42,7 @@
 #include <fstream>
 
 #include "yajlpp.hh"
+#include "yajlpp_def.hh"
 #include "lnav_config.hh"
 #include "log_format.hh"
 #include "auto_fd.hh"
@@ -132,10 +133,10 @@ static scaling_factor *scaling_factor_provider(const yajlpp_provider_context &yp
     scaling_factor &retval = value_def->vd_unit_scaling[scale_name];
 
     if (scale_spec[0] == '/') {
-        retval.sf_op = SO_DIVIDE;
+        retval.sf_op = scale_op_t::SO_DIVIDE;
     }
     else if (scale_spec[0] == '*') {
-        retval.sf_op = SO_MULTIPLY;
+        retval.sf_op = scale_op_t::SO_MULTIPLY;
     }
 
     return &retval;
@@ -248,7 +249,7 @@ static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size
     external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string regex = string((const char *)str, len);
     string level_name_or_number = ypc->get_path_fragment(2);
-    logline::level_t level = logline::string2level(level_name_or_number.c_str());
+    log_level_t level = string2level(level_name_or_number.c_str());
     elf->elf_level_patterns[level].lp_regex = regex;
 
     return 1;
@@ -258,7 +259,7 @@ static int read_level_int(yajlpp_parse_context *ypc, long long val)
 {
     external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
     string level_name_or_number = ypc->get_path_fragment(2);
-    logline::level_t level = logline::string2level(level_name_or_number.c_str());
+    log_level_t level = string2level(level_name_or_number.c_str());
 
     elf->elf_level_pairs.push_back(make_pair(val, level));
 
@@ -352,28 +353,28 @@ static struct json_path_handler pattern_handlers[] = {
         .with_description(
             "The regular expression to match a log message and capture fields.")
         .with_min_length(1)
-        .for_field(&nullobj<external_log_format::pattern>()->p_string),
+        .FOR_FIELD(external_log_format::pattern, p_string),
     json_path_handler("module-format")
         .with_synopsis("<bool>")
         .with_description(
             "If true, this pattern will only be used to parse message bodies "
                 "of container formats, like syslog")
-        .for_field(&nullobj<external_log_format::pattern>()->p_module_format),
+        .FOR_FIELD(external_log_format::pattern, p_module_format),
 
     json_path_handler()
 };
 
 static const json_path_handler_base::enum_value_t ALIGN_ENUM[] = {
-    make_pair("left", external_log_format::json_format_element::LEFT),
-    make_pair("right", external_log_format::json_format_element::RIGHT),
+    { "left", external_log_format::json_format_element::align_t::LEFT },
+    { "right", external_log_format::json_format_element::align_t::RIGHT },
 
     json_path_handler_base::ENUM_TERMINATOR
 };
 
 static const json_path_handler_base::enum_value_t OVERFLOW_ENUM[] = {
-    make_pair("abbrev", external_log_format::json_format_element::ABBREV),
-    make_pair("truncate", external_log_format::json_format_element::TRUNCATE),
-    make_pair("dot-dot", external_log_format::json_format_element::DOTDOT),
+    { "abbrev", external_log_format::json_format_element::overflow_t::ABBREV },
+    { "truncate", external_log_format::json_format_element::overflow_t::TRUNCATE },
+    { "dot-dot", external_log_format::json_format_element::overflow_t::DOTDOT },
 
     json_path_handler_base::ENUM_TERMINATOR
 };
@@ -383,42 +384,42 @@ static struct json_path_handler line_format_handlers[] = {
         .with_synopsis("<field-name>")
         .with_description("The name of the field to substitute at this position")
         .with_min_length(1)
-        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_value),
+        .FOR_FIELD(external_log_format::json_format_element, jfe_value),
 
     json_path_handler("default-value")
         .with_synopsis("<string>")
         .with_description("The default value for this position if the field is null")
-        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_default_value),
+        .FOR_FIELD(external_log_format::json_format_element, jfe_default_value),
 
     json_path_handler("timestamp-format")
         .with_synopsis("<string>")
         .with_min_length(1)
         .with_description("The strftime(3) format for this field")
-        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_ts_format),
+        .FOR_FIELD(external_log_format::json_format_element, jfe_ts_format),
 
     json_path_handler("min-width")
         .with_min_value(0)
         .with_synopsis("<size>")
         .with_description("The minimum width of the field")
-        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_min_width),
+        .FOR_FIELD(external_log_format::json_format_element, jfe_min_width),
 
     json_path_handler("max-width")
         .with_min_value(0)
         .with_synopsis("<size>")
         .with_description("The maximum width of the field")
-        .for_field(&nullobj<external_log_format::json_format_element>()->jfe_max_width),
+        .FOR_FIELD(external_log_format::json_format_element, jfe_max_width),
 
     json_path_handler("align")
         .with_synopsis("left|right")
         .with_description("Align the text in the column to the left or right side")
         .with_enum_values(ALIGN_ENUM)
-        .for_enum(&nullobj<external_log_format::json_format_element>()->jfe_align),
+        .FOR_FIELD(external_log_format::json_format_element, jfe_align),
 
     json_path_handler("overflow")
         .with_synopsis("abbrev|truncate|dot-dot")
         .with_description("Overflow style")
         .with_enum_values(OVERFLOW_ENUM)
-        .for_enum(&nullobj<external_log_format::json_format_element>()->jfe_overflow),
+        .FOR_FIELD(external_log_format::json_format_element, jfe_overflow),
 
     json_path_handler()
 };
@@ -439,12 +440,12 @@ static struct json_path_handler unit_handlers[] = {
     json_path_handler("field")
         .with_synopsis("<field-name>")
         .with_description("The name of the field that contains the units for this field")
-        .for_field(&nullobj<external_log_format::value_def>()->vd_unit_field),
+        .FOR_FIELD(external_log_format::value_def, vd_unit_field),
 
     json_path_handler("scaling-factor/(?<scale>.*)$")
         .with_synopsis("[*,/]<unit>")
         .with_obj_provider(scaling_factor_provider)
-        .for_field(&nullobj<scaling_factor>()->sf_value),
+        .FOR_FIELD(scaling_factor, sf_value),
 
     json_path_handler()
 };
@@ -454,12 +455,12 @@ static struct json_path_handler value_def_handlers[] = {
         .with_synopsis("string|integer|float|boolean|json|quoted")
         .with_description("The type of data in the field")
         .with_enum_values(KIND_ENUM)
-        .for_enum(&nullobj<external_log_format::value_def>()->vd_kind),
+        .FOR_FIELD(external_log_format::value_def, vd_kind),
 
     json_path_handler("collate")
         .with_synopsis("<function>")
         .with_description("The collating function to use for this column")
-        .for_field(&nullobj<external_log_format::value_def>()->vd_collate),
+        .FOR_FIELD(external_log_format::value_def, vd_collate),
 
     json_path_handler("unit/")
         .with_description("Unit definitions for this field")
@@ -468,32 +469,32 @@ static struct json_path_handler value_def_handlers[] = {
     json_path_handler("identifier")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field contains an identifier that should be highlighted")
-        .for_field(&nullobj<external_log_format::value_def>()->vd_identifier),
+        .FOR_FIELD(external_log_format::value_def, vd_identifier),
 
     json_path_handler("foreign-key")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field should be treated as a foreign key for row in another table")
-        .for_field(&nullobj<external_log_format::value_def>()->vd_foreign_key),
+        .FOR_FIELD(external_log_format::value_def, vd_foreign_key),
 
     json_path_handler("hidden")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field should be hidden")
-        .for_field(&nullobj<external_log_format::value_def>()->vd_hidden),
+        .FOR_FIELD(external_log_format::value_def, vd_hidden),
 
     json_path_handler("action-list#")
         .with_synopsis("<string>")
         .with_description("Actions to execute when this field is clicked on")
-        .for_field(&nullobj<external_log_format::value_def>()->vd_action_list),
+        .FOR_FIELD(external_log_format::value_def, vd_action_list),
 
     json_path_handler("rewriter")
         .with_synopsis("<command>")
         .with_description("A command that will rewrite this field when pretty-printing")
-        .for_field(&nullobj<external_log_format::value_def>()->vd_rewriter),
+        .FOR_FIELD(external_log_format::value_def, vd_rewriter),
 
     json_path_handler("description")
         .with_synopsis("<string>")
         .with_description("A description of the field")
-        .for_field(&nullobj<external_log_format::value_def>()->vd_description),
+        .FOR_FIELD(external_log_format::value_def, vd_description),
 
     json_path_handler()
 };
@@ -502,44 +503,44 @@ static struct json_path_handler highlighter_def_handlers[] = {
     json_path_handler("pattern")
         .with_synopsis("<regex>")
         .with_description("A regular expression to highlight in logs of this format.")
-        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_pattern),
+        .FOR_FIELD(external_log_format::highlighter_def, hd_pattern),
 
     json_path_handler("color")
         .with_synopsis("#<hex>|<name>")
         .with_description("The color to use when highlighting this pattern.")
-        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_color),
+        .FOR_FIELD(external_log_format::highlighter_def, hd_color),
 
     json_path_handler("background-color")
         .with_synopsis("#<hex>|<name>")
         .with_description("The background color to use when highlighting this pattern.")
-        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_background_color),
+        .FOR_FIELD(external_log_format::highlighter_def, hd_background_color),
 
     json_path_handler("underline")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern with an underline.")
-        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_underline),
+        .FOR_FIELD(external_log_format::highlighter_def, hd_underline),
 
     json_path_handler("blink")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern by blinking.")
-        .for_field(&nullobj<external_log_format::highlighter_def>()->hd_blink),
+        .FOR_FIELD(external_log_format::highlighter_def, hd_blink),
 
     json_path_handler()
 };
 
 static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
-    make_pair(logline::level_names[logline::LEVEL_TRACE], logline::LEVEL_TRACE),
-    make_pair(logline::level_names[logline::LEVEL_DEBUG5], logline::LEVEL_DEBUG5),
-    make_pair(logline::level_names[logline::LEVEL_DEBUG4], logline::LEVEL_DEBUG4),
-    make_pair(logline::level_names[logline::LEVEL_DEBUG3], logline::LEVEL_DEBUG3),
-    make_pair(logline::level_names[logline::LEVEL_DEBUG2], logline::LEVEL_DEBUG2),
-    make_pair(logline::level_names[logline::LEVEL_DEBUG], logline::LEVEL_DEBUG),
-    make_pair(logline::level_names[logline::LEVEL_INFO], logline::LEVEL_INFO),
-    make_pair(logline::level_names[logline::LEVEL_STATS], logline::LEVEL_STATS),
-    make_pair(logline::level_names[logline::LEVEL_WARNING], logline::LEVEL_WARNING),
-    make_pair(logline::level_names[logline::LEVEL_ERROR], logline::LEVEL_ERROR),
-    make_pair(logline::level_names[logline::LEVEL_CRITICAL], logline::LEVEL_CRITICAL),
-    make_pair(logline::level_names[logline::LEVEL_FATAL], logline::LEVEL_FATAL),
+    { level_names[LEVEL_TRACE], LEVEL_TRACE },
+    { level_names[LEVEL_DEBUG5], LEVEL_DEBUG5 },
+    { level_names[LEVEL_DEBUG4], LEVEL_DEBUG4 },
+    { level_names[LEVEL_DEBUG3], LEVEL_DEBUG3 },
+    { level_names[LEVEL_DEBUG2], LEVEL_DEBUG2 },
+    { level_names[LEVEL_DEBUG], LEVEL_DEBUG },
+    { level_names[LEVEL_INFO], LEVEL_INFO },
+    { level_names[LEVEL_STATS], LEVEL_STATS },
+    { level_names[LEVEL_WARNING], LEVEL_WARNING },
+    { level_names[LEVEL_ERROR], LEVEL_ERROR },
+    { level_names[LEVEL_CRITICAL], LEVEL_CRITICAL },
+    { level_names[LEVEL_FATAL], LEVEL_FATAL },
 
     json_path_handler_base::ENUM_TERMINATOR
 };
@@ -548,20 +549,20 @@ struct json_path_handler sample_handlers[] = {
     json_path_handler("line")
         .with_synopsis("<log-line>")
         .with_description("A sample log line that should match a pattern in this format.")
-        .for_field(&nullobj<external_log_format::sample>()->s_line),
+        .FOR_FIELD(external_log_format::sample, s_line),
 
     json_path_handler("level")
         .with_enum_values(LEVEL_ENUM)
         .with_description("The expected level for this sample log line.")
-        .for_enum(&nullobj<external_log_format::sample>()->s_level),
+        .FOR_FIELD(external_log_format::sample, s_level),
 
     json_path_handler()
 };
 
 static const json_path_handler_base::enum_value_t TYPE_ENUM[] = {
-    make_pair("text", external_log_format::elf_type_t::ELF_TYPE_TEXT),
-    make_pair("json", external_log_format::elf_type_t::ELF_TYPE_JSON),
-    make_pair("csv", external_log_format::elf_type_t::ELF_TYPE_CSV),
+    { "text", external_log_format::elf_type_t::ELF_TYPE_TEXT },
+    { "json", external_log_format::elf_type_t::ELF_TYPE_JSON },
+    { "csv", external_log_format::elf_type_t::ELF_TYPE_CSV },
 
     json_path_handler_base::ENUM_TERMINATOR
 };
@@ -585,7 +586,7 @@ struct json_path_handler format_handlers[] = {
     json_path_handler("ordered-by-time")
         .with_synopsis("<bool>")
         .with_description("Indicates that the order of messages in the file is time-based.")
-        .for_field(&nullobj<external_log_format>()->lf_time_ordered),
+        .FOR_FIELD(log_format, lf_time_ordered),
     json_path_handler("level/"
                       "(trace|debug\\d*|info|stats|warning|error|critical|fatal)")
         .add_cb(read_levels)
@@ -623,7 +624,7 @@ struct json_path_handler format_handlers[] = {
     json_path_handler("file-type")
         .with_synopsis("The type of file that contains the log messages")
         .with_enum_values(TYPE_ENUM)
-        .for_enum(&nullobj<external_log_format>()->elf_type),
+        .FOR_FIELD(external_log_format, elf_type),
 
     json_path_handler()
 };
@@ -666,7 +667,6 @@ static void write_sample_file(void)
             search_for_lnav,
             NULL
     };
-
 
     for (int lpc = 0; SCRIPTS[lpc]; lpc++) {
         struct script_metadata meta;

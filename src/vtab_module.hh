@@ -39,7 +39,8 @@
 #include "optional.hpp"
 #include "lnav_log.hh"
 #include "lnav_util.hh"
-#include "yajlpp.hh"
+#include "auto_mem.hh"
+#include "yajl/api/yajl_gen.h"
 #include "mapbox/variant.hpp"
 
 #include "sqlite-extension-func.hh"
@@ -192,10 +193,26 @@ inline void to_sqlite(sqlite3_context *ctx, double val)
     sqlite3_result_double(ctx, val);
 }
 
-inline void to_sqlite(sqlite3_context *ctx, const json_string &val)
+#define JSON_SUBTYPE  74    /* Ascii for "J" */
+
+struct json_string {
+    json_string(yajl_gen_t *gen) {
+        const unsigned char *buf;
+
+        yajl_gen_get_buf(gen, &buf, &this->js_len);
+
+        this->js_content = (const unsigned char *) malloc(this->js_len);
+        memcpy((void *) this->js_content.in(), buf, this->js_len);
+    };
+
+    auto_mem<const unsigned char> js_content;
+    size_t js_len;
+};
+
+inline void to_sqlite(sqlite3_context *ctx, json_string &val)
 {
     sqlite3_result_text(ctx,
-                        (const char *) val.js_content,
+                        (const char *) val.js_content.release(),
                         val.js_len,
                         free);
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
@@ -225,7 +242,7 @@ struct ToSqliteVisitor {
 };
 
 template<typename ... Types>
-void to_sqlite(sqlite3_context *ctx, const mapbox::util::variant<Types...> &val)
+void to_sqlite(sqlite3_context *ctx, mapbox::util::variant<Types...> &val)
 {
     ToSqliteVisitor visitor(ctx);
 

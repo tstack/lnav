@@ -152,3 +152,31 @@ size_t ftime_fmt(char *dst, size_t len, const char *fmt, const struct exttm &tm)
 
     return (size_t) off_inout;
 }
+
+std::ostream &operator<<(std::ostream &os, const exttm &value)
+{
+    os << value.et_tm.tm_year + 1900
+       << '-'
+       << std::setfill('0') << std::setw(2)
+       << value.et_tm.tm_mon + 1
+       << '-'
+       << std::setfill('0') << std::setw(2)
+       << value.et_tm.tm_mday
+       << 'T'
+       << std::setfill('0') << std::setw(2)
+       << value.et_tm.tm_hour
+       << ':'
+       << std::setfill('0') << std::setw(2)
+       << value.et_tm.tm_min
+       << ':'
+       << std::setfill('0') << std::setw(2)
+       << value.et_tm.tm_sec
+       << '.'
+       << std::setfill('0') << std::setw(6)
+       << value.et_nsec / 1000
+       << (value.et_gmtoff < 0 ? '-' : '+')
+       << std::setfill('0') << std::setw(4)
+       << value.et_gmtoff;
+
+    return os;
+}

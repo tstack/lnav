@@ -37,7 +37,6 @@
 #include <string>
 #include <vector>
 
-#include "lnav_log.hh"
 #include "intern_string.hh"
 
 /**

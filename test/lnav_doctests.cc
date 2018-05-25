@@ -32,6 +32,8 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.hh"
 
+#include "lnav_config.hh"
+#include "view_curses.hh"
 #include "relative_time.hh"
 #include "unique_path.hh"
 
@@ -64,6 +66,47 @@ TEST_CASE("ptime_fmt") {
     bool rc = ptime_fmt("%Y-%d-%m\t%H:%M:%S", &tm, date_str, off, strlen(date_str));
     CHECK(!rc);
     CHECK(off == 8);
+}
+
+TEST_CASE("rgb_color from string") {
+    string name = "SkyBlue1";
+    rgb_color color;
+    string errmsg;
+    bool rc;
+
+    rc = rgb_color::from_str(name, color, errmsg);
+    CHECK(rc);
+    CHECK(color.rc_r == 135);
+    CHECK(color.rc_g == 215);
+    CHECK(color.rc_b == 255);
+}
+
+TEST_CASE("ptime_roundtrip") {
+    const char *fmt = "%Y-%d-%m\t%H:%M:%S";
+    time_t now = time(nullptr);
+
+    for (time_t sec = now; sec < (now + (24 * 60 * 60)); sec++) {
+        char ftime_result[128];
+        char strftime_result[128];
+        struct exttm etm;
+
+        memset(&etm, 0, sizeof(etm));
+        gmtime_r(&sec, &etm.et_tm);
+        etm.et_flags = ETF_YEAR_SET | ETF_MONTH_SET | ETF_DAY_SET;
+        size_t ftime_size = ftime_fmt(ftime_result, sizeof(ftime_result), fmt, etm);
+        size_t strftime_size = strftime(strftime_result, sizeof(strftime_result), fmt, &etm.et_tm);
+
+        CHECK(string(ftime_result, ftime_size) ==
+              string(strftime_result, strftime_size));
+
+        struct exttm etm2;
+        off_t off = 0;
+
+        memset(&etm2, 0, sizeof(etm2));
+        bool rc = ptime_fmt(fmt, &etm2, ftime_result, off, ftime_size);
+        CHECK(rc);
+        CHECK(sec == tm2sec(&etm2.et_tm));
+    }
 }
 
 class my_path_source : public unique_path_source {

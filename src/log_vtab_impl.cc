@@ -33,6 +33,7 @@
 #include "lnav_log.hh"
 #include "sql_util.hh"
 #include "log_vtab_impl.hh"
+#include "yajlpp_def.hh"
 
 #include "logfile_sub_source.hh"
 
@@ -765,7 +766,7 @@ static struct json_path_handler tags_handler[] = {
         .with_synopsis("<tag>")
         .with_description("A tag for the log line")
         .with_pattern(R"(^#[^\s]+$)")
-        .for_field(&nullobj<bookmark_metadata>()->bm_tags),
+        .FOR_FIELD(bookmark_metadata, bm_tags),
 
     json_path_handler()
 };

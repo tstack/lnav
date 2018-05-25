@@ -30,6 +30,7 @@ set(diag_STAT_SRCS
     log_accel.cc
     log_format.cc
     log_format_loader.cc
+    log_level.cc
     logfile.cc
     logfile_sub_source.cc
     network-extension-functions.cc
@@ -118,6 +119,7 @@ set(diag_STAT_SRCS
     log_data_helper.hh
     log_data_table.hh
     log_format_impls.cc
+    log_level.hh
     log_search_table.hh
     logfile_stats.hh
     optional.hpp
@@ -148,6 +150,8 @@ set(diag_STAT_SRCS
     views_vtab.hh
     vtab_module.hh
     xterm-palette.hh
+    yajlpp.hh
+    yajlpp_def.hh
 
     mapbox/recursive_wrapper.hpp
     mapbox/variant.hpp

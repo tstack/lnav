@@ -188,6 +188,7 @@ noinst_HEADERS = \
     log_data_table.hh \
 	log_format.hh \
 	log_format_loader.hh \
+	log_level.hh \
 	log_search_table.hh \
 	logfile.hh \
 	logfile_sub_source.hh \
@@ -242,6 +243,7 @@ noinst_HEADERS = \
 	xterm_mouse.hh \
 	xterm-palette.hh \
 	yajlpp.hh \
+	yajlpp_def.hh \
 	spookyhash/SpookyV2.h \
 	filesystem/fwd.h \
 	filesystem/path.h \
@@ -294,6 +296,7 @@ libdiag_a_SOURCES = \
 	log_accel.cc \
 	log_format.cc \
 	log_format_loader.cc \
+	log_level.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
 	network-extension-functions.cc \

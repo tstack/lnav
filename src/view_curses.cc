@@ -39,6 +39,7 @@
 #include "ansi_scrubber.hh"
 #include "lnav_config.hh"
 #include "yajlpp.hh"
+#include "yajlpp_def.hh"
 #include "xterm-palette.hh"
 #include "attr_line.hh"
 
@@ -51,17 +52,25 @@ struct xterm_color {
     lab_color xc_lab_color;
 };
 
+static struct json_path_handler xterm_color_rgb_handler[] = {
+    json_path_handler("r")
+        .FOR_FIELD(rgb_color, rc_r),
+    json_path_handler("g")
+        .FOR_FIELD(rgb_color, rc_g),
+    json_path_handler("b")
+        .FOR_FIELD(rgb_color, rc_b),
+
+    json_path_handler()
+};
+
 static struct json_path_handler xterm_color_handler[] = {
     json_path_handler("colorId")
-        .for_field(&nullobj<xterm_color>()->xc_id),
+        .FOR_FIELD(xterm_color, xc_id),
     json_path_handler("name")
-        .for_field(&nullobj<xterm_color>()->xc_name),
-    json_path_handler("rgb/r")
-        .for_field(&nullobj<xterm_color>()->xc_color.rc_r),
-    json_path_handler("rgb/g")
-        .for_field(&nullobj<xterm_color>()->xc_color.rc_g),
-    json_path_handler("rgb/b")
-        .for_field(&nullobj<xterm_color>()->xc_color.rc_b),
+        .FOR_FIELD(xterm_color, xc_name),
+    json_path_handler("rgb/")
+        .with_obj_provider<rgb_color, xterm_color>([](const auto &pc, xterm_color *xc) { return &xc->xc_color; })
+        .with_children(xterm_color_rgb_handler),
 
     json_path_handler()
 };

@@ -47,6 +47,7 @@
 #include "auto_pid.hh"
 #include "lnav_config.hh"
 #include "yajlpp.hh"
+#include "yajlpp_def.hh"
 #include "shlex.hh"
 
 using namespace std;
@@ -248,7 +249,7 @@ static struct json_path_handler keymap_def_handlers[] = {
                 paths_out.push_back(iter.first);
             }
         })
-        .for_field(&nullobj<key_map>()->km_seq_to_cmd),
+        .FOR_FIELD(key_map, km_seq_to_cmd),
 
     json_path_handler()
 };
@@ -280,7 +281,7 @@ static struct json_path_handler global_var_handlers[] = {
                 paths_out.push_back(iter.first);
             }
         })
-        .for_field(&nullobj<_lnav_config>()->lc_global_vars),
+        .FOR_FIELD(_lnav_config, lc_global_vars),
 
     json_path_handler()
 };
@@ -297,23 +298,23 @@ static struct json_path_handler root_config_handlers[] = {
 
 static struct json_path_handler ui_handlers[] = {
         json_path_handler("clock-format")
-                .with_synopsis("<format>")
-                .with_description(
-                        "The format for the clock displayed in "
-                        "the top-left corner using strftime(3) conversions")
-                .for_field(&nullobj<_lnav_config>()->lc_ui_clock_format),
+            .with_synopsis("<format>")
+            .with_description(
+                "The format for the clock displayed in "
+                "the top-left corner using strftime(3) conversions")
+            .FOR_FIELD(_lnav_config, lc_ui_clock_format),
         json_path_handler("dim-text")
             .with_synopsis("<bool>")
             .with_description("Reduce the brightness of text (useful for xterms)")
-            .for_field(&nullobj<_lnav_config>()->lc_ui_dim_text),
+            .FOR_FIELD(_lnav_config, lc_ui_dim_text),
         json_path_handler("default-colors")
             .with_synopsis("<bool>")
             .with_description("Use default terminal fg/bg colors")
-            .for_field(&nullobj<_lnav_config>()->lc_ui_default_colors),
+            .FOR_FIELD(_lnav_config, lc_ui_default_colors),
         json_path_handler("keymap")
             .with_synopsis("<name>")
             .with_description("The name of the keymap to use")
-            .for_field(&nullobj<_lnav_config>()->lc_ui_keymap),
+            .FOR_FIELD(_lnav_config, lc_ui_keymap),
 
         json_path_handler()
 };
@@ -340,7 +341,7 @@ static void load_config_from(const string &path, vector<string> &errors)
             snprintf(errmsg, sizeof(errmsg),
                      "error: unable to open format file -- %s",
                      path.c_str());
-            errors.push_back(errmsg);
+            errors.emplace_back(errmsg);
         }
     }
     else {
@@ -409,6 +410,12 @@ void load_config(const vector<string> &extra_paths, vector<string> &errors)
         yajlpp_parse_context ypc_builtin("keymap", root_config_handlers);
         load_default_config(ypc_builtin, lnav_config, keymap_default_json,
                             errors);
+    }
+
+    for (auto pair : lnav_config.lc_ui_keymaps) {
+        for (auto pair2 : pair.second.km_seq_to_cmd) {
+            log_debug("foo %s %d", pair2.first.c_str(), pair2.second.size());
+        }
     }
 
     {

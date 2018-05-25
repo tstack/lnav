@@ -42,6 +42,12 @@ struct string_fragment {
         : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end) {
     };
 
+    explicit string_fragment(const unsigned char *str, int begin = 0, int end = -1)
+        : sf_string((const char *) str),
+          sf_begin(begin),
+          sf_end(end == -1 ? strlen((const char *) str) : end) {
+    };
+
     string_fragment(const std::string &str)
         : sf_string(str.c_str()), sf_begin(0), sf_end(str.length()) {
 
@@ -86,7 +92,10 @@ struct string_fragment {
     };
 
     bool operator==(const char *str) const {
-        return strncmp(this->data(), str, this->length()) == 0;
+        size_t len = strlen(str);
+
+        return len == this->length() &&
+               strncmp(this->data(), str, this->length()) == 0;
     };
 
     const char *to_string(char *buf) {
@@ -128,12 +137,6 @@ inline bool operator<(const string_fragment &left, const char *right) {
     return strncmp(left.data(), right, left.length()) < 0;
 }
 
-namespace std {
-    inline string to_string(const string_fragment &s) {
-        return string(s.data(), s.length());
-    }
-}
-
 class intern_string {
 
 public:
@@ -143,11 +146,11 @@ public:
 
     static const intern_string *lookup(const std::string &str);
 
-    const char *get(void) const {
+    const char *get() const {
         return this->is_str;
     };
 
-    size_t size(void) const {
+    size_t size() const {
         return this->is_len;
     }
 
@@ -168,7 +171,7 @@ public:
 
 private:
     intern_string(const char *str, ssize_t len)
-            : is_next(NULL), is_str(str), is_len(len) {
+            : is_next(nullptr), is_str(str), is_len(len) {
 
     }
 
@@ -179,7 +182,7 @@ private:
 
 class intern_string_t {
 public:
-    intern_string_t(const intern_string *is = NULL) : ist_interned_string(is) {
+    intern_string_t(const intern_string *is = nullptr) : ist_interned_string(is) {
 
     }
 
@@ -187,30 +190,30 @@ public:
         return this->ist_interned_string;
     }
 
-    void clear(void) {
+    void clear() {
         this->ist_interned_string = nullptr;
     };
 
-    bool empty(void) const {
-        return this->ist_interned_string == NULL;
+    bool empty() const {
+        return this->ist_interned_string == nullptr;
     }
 
-    const char *get(void) const {
+    const char *get() const {
         if (this->empty()) {
             return "";
         }
         return this->ist_interned_string->get();
     }
 
-    size_t size(void) const {
-        if (this->ist_interned_string == NULL) {
+    size_t size() const {
+        if (this->ist_interned_string == nullptr) {
             return 0;
         }
         return this->ist_interned_string->size();
     }
 
-    std::string to_string(void) const {
-        if (this->ist_interned_string == NULL) {
+    std::string to_string() const {
+        if (this->ist_interned_string == nullptr) {
             return "";
         }
         return this->ist_interned_string->to_string();
@@ -259,6 +262,28 @@ inline bool operator==(const intern_string_t &left, const string_fragment &sf) {
 inline bool operator==(const string_fragment &left, const intern_string_t &right) {
     return (left.length() == (int) right.size()) &&
            (memcmp(left.data(), right.get(), left.length()) == 0);
+}
+
+namespace std {
+    inline string to_string(const string_fragment &s) {
+        return string(s.data(), s.length());
+    }
+
+    inline string to_string(const intern_string_t &s) {
+        return s.to_string();
+    }
+}
+
+inline string_fragment to_string_fragment(const string_fragment &s) {
+    return s;
+}
+
+inline string_fragment to_string_fragment(const intern_string_t &s) {
+    return string_fragment(s.get(), 0, s.size());
+}
+
+inline string_fragment to_string_fragment(const std::string &s) {
+    return string_fragment(s.c_str(), 0, s.length());
 }
 
 #endif

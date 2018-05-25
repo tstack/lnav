@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include "view_curses.hh"
 #include "pretty_printer.hh"
 
 sig_atomic_t reverse_lookup_enabled = 1;

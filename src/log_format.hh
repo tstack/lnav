@@ -57,6 +57,7 @@
 #include "intern_string.hh"
 #include "shared_buffer.hh"
 #include "highlighter.hh"
+#include "log_level.hh"
 
 struct sqlite3;
 class logfile;
@@ -77,47 +78,6 @@ public:
     static string_attr_type L_OPID;
 
     /**
-     * The logging level identifiers for a line(s).
-     */
-    typedef enum {
-        LEVEL_UNKNOWN,
-        LEVEL_TRACE,
-        LEVEL_DEBUG5,
-        LEVEL_DEBUG4,
-        LEVEL_DEBUG3,
-        LEVEL_DEBUG2,
-        LEVEL_DEBUG,
-        LEVEL_INFO,
-        LEVEL_STATS,
-        LEVEL_WARNING,
-        LEVEL_ERROR,
-        LEVEL_CRITICAL,
-        LEVEL_FATAL,
-
-        LEVEL__MAX,
-
-        LEVEL_TIME_SKEW = 0x20,  /*< Received after timestamp. */
-        LEVEL_MARK      = 0x40,  /*< Bookmarked line. */
-        LEVEL_CONTINUED = 0x80,  /*< Continuation of multiline entry. */
-
-        /** Mask of flags for the level field. */
-        LEVEL__FLAGS    = (
-            LEVEL_TIME_SKEW |
-            LEVEL_MARK |
-            LEVEL_CONTINUED
-        )
-    } level_t;
-
-    static const char *level_names[LEVEL__MAX + 1];
-
-    static level_t string2level(const char *levelstr, ssize_t len = -1, bool exact = false);
-
-    static level_t abbrev2level(const char *levelstr, ssize_t len = -1);
-
-    static int levelcmp(const char *l1, ssize_t l1_len,
-        const char *l2, ssize_t l2_len);
-
-    /**
      * Construct a logline object with the given values.
      *
      * @param off The offset of the line in the file.
@@ -128,7 +88,7 @@ public:
     logline(off_t off,
             time_t t,
             uint16_t millis,
-            level_t l,
+            log_level_t l,
             uint8_t mod = 0,
             uint8_t opid = 0)
         : ll_offset(off),
@@ -144,7 +104,7 @@ public:
 
     logline(off_t off,
             const struct timeval &tv,
-            level_t l,
+            log_level_t l,
             uint8_t mod = 0,
             uint8_t opid = 0)
         : ll_offset(off),
@@ -219,15 +179,15 @@ public:
     };
 
     /** @param l The logging level. */
-    void set_level(level_t l) { this->ll_level = l; };
+    void set_level(log_level_t l) { this->ll_level = l; };
 
     /** @return The logging level. */
-    level_t get_level_and_flags() const {
-        return (level_t)this->ll_level;
+    log_level_t get_level_and_flags() const {
+        return (log_level_t)this->ll_level;
     };
 
-    level_t get_msg_level() const {
-        return (level_t)(this->ll_level & ~LEVEL__FLAGS);
+    log_level_t get_msg_level() const {
+        return (log_level_t)(this->ll_level & ~LEVEL__FLAGS);
     };
 
     const char *get_level_name() const
@@ -331,24 +291,24 @@ private:
     char     ll_schema[2];
 };
 
-enum scale_op_t {
+enum class scale_op_t {
     SO_IDENTITY,
     SO_MULTIPLY,
     SO_DIVIDE
 };
 
 struct scaling_factor {
-    scaling_factor() : sf_op(SO_IDENTITY), sf_value(1) { };
+    scaling_factor() : sf_op(scale_op_t::SO_IDENTITY), sf_value(1) { };
 
     template<typename T>
     void scale(T &val) const {
         switch (this->sf_op) {
-        case SO_IDENTITY:
+        case scale_op_t::SO_IDENTITY:
             break;
-        case SO_DIVIDE:
+        case scale_op_t::SO_DIVIDE:
             val = val / (T)this->sf_value;
             break;
-        case SO_MULTIPLY:
+        case scale_op_t::SO_MULTIPLY:
             val = val * (T)this->sf_value;
             break;
         }
@@ -374,9 +334,6 @@ public:
 
         VALUE__MAX
     };
-
-    static const char *value_names[VALUE__MAX];
-    static kind_t string2kind(const char *kindstr);
 
     logline_value(const intern_string_t name)
         : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1),
@@ -859,10 +816,10 @@ class external_log_format : public log_format {
 
 public:
     struct sample {
-        sample() : s_level(logline::LEVEL_UNKNOWN) {};
+        sample() : s_level(LEVEL_UNKNOWN) {};
 
         std::string s_line;
-        logline::level_t s_level;
+        log_level_t s_level;
     };
 
     struct value_def {
@@ -1073,12 +1030,12 @@ public:
     };
 
     struct json_format_element {
-        enum align_t {
+        enum class align_t {
             LEFT,
             RIGHT,
         };
 
-        enum overflow_t {
+        enum class overflow_t {
             ABBREV,
             TRUNCATE,
             DOTDOT,
@@ -1086,8 +1043,8 @@ public:
 
         json_format_element()
             : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0),
-              jfe_max_width(LLONG_MAX), jfe_align(LEFT),
-              jfe_overflow(ABBREV)
+              jfe_max_width(LLONG_MAX), jfe_align(align_t::LEFT),
+              jfe_overflow(overflow_t::ABBREV)
         { };
 
         json_log_field jfe_type;
@@ -1171,8 +1128,8 @@ public:
         return this->elf_pattern_order[this->lf_fmt_lock]->p_string;
     }
 
-    logline::level_t convert_level(const pcre_input &pi, pcre_context::capture_t *level_cap) const {
-        logline::level_t retval = logline::LEVEL_INFO;
+    log_level_t convert_level(const pcre_input &pi, pcre_context::capture_t *level_cap) const {
+        log_level_t retval = LEVEL_INFO;
 
         if (level_cap != NULL && level_cap->is_valid()) {
             pcre_context_static<128> pc_level;
@@ -1181,7 +1138,7 @@ public:
                                 level_cap->length());
 
             if (this->elf_level_patterns.empty()) {
-                retval = logline::string2level(pi_level.get_string(), level_cap->length());
+                retval = string2level(pi_level.get_string(), level_cap->length());
             } else {
                 for (auto iter = this->elf_level_patterns.begin();
                      iter != this->elf_level_patterns.end();
@@ -1216,8 +1173,8 @@ public:
     intern_string_t elf_body_field;
     intern_string_t elf_module_id_field;
     intern_string_t elf_opid_field;
-    std::map<logline::level_t, level_pattern> elf_level_patterns;
-    std::vector<std::pair<int64_t, logline::level_t> > elf_level_pairs;
+    std::map<log_level_t, level_pattern> elf_level_patterns;
+    std::vector<std::pair<int64_t, log_level_t> > elf_level_pairs;
     bool elf_multiline;
     bool elf_container;
     bool elf_has_module_format;
@@ -1246,13 +1203,13 @@ public:
     };
 
     void json_append(const json_format_element &jfe, const char *value, ssize_t len) {
-        if (jfe.jfe_align == json_format_element::RIGHT) {
+        if (jfe.jfe_align == json_format_element::align_t::RIGHT) {
             if (len < jfe.jfe_min_width) {
                 this->json_append_to_cache(jfe.jfe_min_width - len);
             }
         }
         this->json_append_to_cache(value, len);
-        if (jfe.jfe_align == json_format_element::LEFT) {
+        if (jfe.jfe_align == json_format_element::align_t::LEFT) {
             if (len < jfe.jfe_min_width) {
                 this->json_append_to_cache(jfe.jfe_min_width - len);
             }

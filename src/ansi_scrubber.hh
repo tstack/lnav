@@ -32,9 +32,10 @@
 #ifndef _ansi_scrubber_hh
 #define _ansi_scrubber_hh
 
+#include <map>
 #include <string>
 
-#include "view_curses.hh"
+#include "attr_line.hh"
 
 #define ANSI_CSI              "\x1b["
 #define ANSI_BOLD_START       ANSI_CSI "1m"

@@ -37,6 +37,7 @@
 #include "sql_util.hh"
 #include "data_parser.hh"
 #include "sysclip.hh"
+#include "yajlpp_def.hh"
 #include "lnav_config.hh"
 
 #include "readline_possibilities.hh"

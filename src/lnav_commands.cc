@@ -2561,15 +2561,15 @@ static string com_set_min_log_level(exec_context &ec, string cmdline, vector<str
     }
     else if (args.size() == 2) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
-        logline::level_t new_level;
+        log_level_t new_level;
 
-        new_level = logline::string2level(
+        new_level = string2level(
             args[1].c_str(), args[1].size(), false);
         lss.set_min_log_level(new_level);
         rebuild_indexes(true);
 
         retval = ("info: minimum log level is now -- " +
-            string(logline::level_names[new_level]));
+            string(level_names[new_level]));
     }
 
     return retval;

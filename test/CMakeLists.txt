@@ -4,6 +4,8 @@ include_directories(../../lbuild-debug/src ../src/ /opt/local/include)
 add_executable(lnav_doctests
         lnav_doctests.cc
         ../src/relative_time.cc
+        ../../lbuild-debug/src/time_fmts.cc
+        ../src/ptimec_rt.cc
         ../src/pcrepp.cc
         ../src/lnav_log.cc)
 add_executable(test_pcrepp test_pcrepp.cc ../src/lnav_log.cc ../src/pcrepp.cc)

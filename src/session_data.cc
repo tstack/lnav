@@ -44,6 +44,7 @@
 #include <yajl/api/yajl_tree.h>
 
 #include "yajlpp.hh"
+#include "yajlpp_def.hh"
 #include "lnav.hh"
 #include "logfile.hh"
 #include "sql_util.hh"

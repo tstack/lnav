@@ -36,8 +36,8 @@
 #include <sys/stat.h>
 #include <glob.h>
 #include <grp.h>
+#include <pwd.h>
 
-#include "lnav.hh"
 #include "auto_mem.hh"
 #include "lnav_log.hh"
 #include "sql_util.hh"
@@ -69,8 +69,6 @@ enum {
 };
 
 struct fstat_table {
-    using iterator = vector<logfile *>::iterator;
-
     static constexpr const char *CREATE_STMT = R"(
 CREATE TABLE fstat (
     st_parent TEXT,

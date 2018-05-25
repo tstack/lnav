@@ -30,7 +30,7 @@
 #include "config.h"
 
 #include "lnav.hh"
-
+#include "vtab_module.hh"
 #include "relative_time.hh"
 #include "field_overlay_source.hh"
 #include "readline_highlighters.hh"
@@ -401,9 +401,6 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
 
         if (lv.lv_kind == logline_value::VALUE_STRUCT) {
             json_string js = extract(value_str.c_str());
-            auto_mem<const unsigned char> extracted;
-
-            extracted = js.js_content;
 
             al.clear()
               .append("   extract(")
@@ -413,7 +410,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
               .append(")")
               .append(this->fos_known_key_size - lv.lv_name.size() - 9 + 3, ' ')
               .append(" = ")
-              .append((const char *) js.js_content, js.js_len);
+              .append((const char *) js.js_content.in(), js.js_len);
             this->fos_lines.emplace_back(al);
             this->add_key_line_attrs(this->fos_known_key_size);
         }

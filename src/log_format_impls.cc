@@ -157,8 +157,7 @@ class generic_log_format : public log_format {
                 &ts,
                 &level)) != NULL) {
             const char *level_str = &sbr.get_data()[level.c_begin];
-            logline::level_t level_val = logline::string2level(
-                    level_str, level.length());
+            log_level_t level_val = string2level(level_str, level.length());
 
             if (!((log_time.et_flags & ETF_DAY_SET) &&
                   (log_time.et_flags & ETF_MONTH_SET) &&
@@ -194,7 +193,7 @@ class generic_log_format : public log_format {
 
         const char *level = &line.get_data()[pc[1]->c_begin];
 
-        if (logline::string2level(level, pc[1]->length(), true) == logline::LEVEL_UNKNOWN) {
+        if (string2level(level, pc[1]->length(), true) == LEVEL_UNKNOWN) {
             prefix_len = pc[0]->c_end;
         }
         else {
@@ -409,7 +408,7 @@ public:
         struct timeval tv;
         struct exttm tm;
         bool found_ts = false;
-        logline::level_t level = logline::LEVEL_INFO;
+        log_level_t level = LEVEL_INFO;
         uint8_t opid = 0;
 
         ss.with_separator(this->blf_separator.get());
@@ -436,7 +435,7 @@ public:
                 string_fragment sf = *iter;
 
                 if (!sf.empty() && sf[0] >= '4') {
-                    level = logline::LEVEL_ERROR;
+                    level = LEVEL_ERROR;
                 }
             } else if (UID == fd.fd_name) {
                 string_fragment sf = *iter;

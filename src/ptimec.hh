@@ -44,6 +44,8 @@
 #include <arpa/inet.h>
 
 #include <cstdlib>
+#include <iomanip>
+#include <ostream>
 
 struct tm *secs2tm(time_t *tim_p, struct tm *res);
 time_t tm2sec(const struct tm *t);
@@ -57,11 +59,11 @@ enum exttm_bits_t {
 };
 
 enum exttm_flags_t {
-    ETF_YEAR_SET = (1L << ETB_YEAR_SET),
-    ETF_MONTH_SET = (1L << ETB_MONTH_SET),
-    ETF_DAY_SET = (1L << ETB_DAY_SET),
-    ETF_MACHINE_ORIENTED = (1L << ETB_MACHINE_ORIENTED),
-    ETF_EPOCH_TIME = (1L << ETB_EPOCH_TIME),
+    ETF_YEAR_SET = (1UL << ETB_YEAR_SET),
+    ETF_MONTH_SET = (1UL << ETB_MONTH_SET),
+    ETF_DAY_SET = (1UL << ETB_DAY_SET),
+    ETF_MACHINE_ORIENTED = (1UL << ETB_MACHINE_ORIENTED),
+    ETF_EPOCH_TIME = (1UL << ETB_EPOCH_TIME),
 };
 
 struct exttm {
@@ -69,7 +71,13 @@ struct exttm {
     int32_t et_nsec;
     int et_flags;
     long et_gmtoff;
+
+    bool operator==(const exttm &other) const {
+        return memcmp(this, &other, sizeof(exttm)) == 0;
+    };
 };
+
+std::ostream& operator<< (std::ostream& os, const exttm& value);
 
 #define PTIME_CONSUME(amount, block) \
     if ((off_inout + amount) > len) { \

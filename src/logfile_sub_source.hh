@@ -149,11 +149,11 @@ public:
         return (bool) (this->lss_flags & F_BASENAME);
     };
 
-    logline::level_t get_min_log_level() const {
+    log_level_t get_min_log_level() const {
         return this->lss_min_log_level;
     };
 
-    void set_min_log_level(logline::level_t level) {
+    void set_min_log_level(log_level_t level) {
         if (this->lss_min_log_level != level) {
             this->lss_min_log_level = level;
             this->lss_force_rebuild = true;
@@ -782,7 +782,7 @@ private:
     shared_buffer     lss_share_manager;
     logfile::iterator lss_token_line;
     std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];
-    logline::level_t  lss_min_log_level;
+    log_level_t  lss_min_log_level;
     struct timeval    lss_min_log_time;
     struct timeval    lss_max_log_time;
     bool lss_marked_only;

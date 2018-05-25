@@ -43,6 +43,7 @@
 #include <sstream>
 #include <iomanip>
 #include <utility>
+
 #include "timer.hh"
 #include "ansi_scrubber.hh"
 #include "data_scanner.hh"
@@ -69,7 +70,7 @@ public:
     pretty_printer(data_scanner *ds, string_attrs_t sa, int leading_indent=0)
             : pp_leading_indent(leading_indent),
               pp_scanner(ds),
-              pp_attrs(sa) {
+              pp_attrs(std::move(sa)) {
         this->pp_body_lines.push(0);
 
         pcre_context_static<30> pc;

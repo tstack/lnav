@@ -36,6 +36,7 @@
 #include <strings.h>
 
 #include "yajlpp.hh"
+#include "yajlpp_def.hh"
 #include "sql_util.hh"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"
@@ -67,139 +68,8 @@ string_attr_type logline::L_PARTITION("partition");
 string_attr_type logline::L_MODULE("module");
 string_attr_type logline::L_OPID("opid");
 
-const char *logline::level_names[LEVEL__MAX + 1] = {
-    "unknown",
-    "trace",
-    "debug5",
-    "debug4",
-    "debug3",
-    "debug2",
-    "debug",
-    "info",
-    "stats",
-    "warning",
-    "error",
-    "critical",
-    "fatal",
-
-    NULL
-};
-
-static pcrepp LEVEL_RE(
-        "(?i)(TRACE|DEBUG\\d*|INFO|NOTICE|STATS|WARN(?:ING)?|ERR(?:OR)?|CRITICAL|SEVERE|FATAL)");
-
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<external_log_format *> external_log_format::GRAPH_ORDERED_FORMATS;
-
-logline::level_t logline::string2level(const char *levelstr, ssize_t len, bool exact)
-{
-    logline::level_t retval = logline::LEVEL_UNKNOWN;
-
-    if (len == (ssize_t)-1) {
-        len = strlen(levelstr);
-    }
-
-    if (((len == 1) || ((len > 1) && (levelstr[1] == ' '))) &&
-        (retval = abbrev2level(levelstr, 1)) != LEVEL_UNKNOWN) {
-        return retval;
-    }
-
-    pcre_input pi(levelstr, 0, len);
-    pcre_context_static<10> pc;
-
-    if (LEVEL_RE.match(pc, pi)) {
-        auto iter = pc.begin();
-        if (!exact || pc[0]->c_begin == 0) {
-            retval = abbrev2level(pi.get_substr_start(iter),
-                                  pi.get_substr_len(iter));
-        }
-    }
-
-    return retval;
-}
-
-logline::level_t logline::abbrev2level(const char *levelstr, ssize_t len)
-{
-    if (len == 0 || levelstr[0] == '\0') {
-        return LEVEL_UNKNOWN;
-    }
-
-    switch (toupper(levelstr[0])) {
-        case 'T':
-            return LEVEL_TRACE;
-        case 'D':
-        case 'V':
-            if (len > 1) {
-                switch (levelstr[len - 1]) {
-                    case '2':
-                        return LEVEL_DEBUG2;
-                    case '3':
-                        return LEVEL_DEBUG3;
-                    case '4':
-                        return LEVEL_DEBUG4;
-                    case '5':
-                        return LEVEL_DEBUG5;
-                }
-            }
-            return LEVEL_DEBUG;
-        case 'I':
-        case 'N': // NOTICE
-            return LEVEL_INFO;
-        case 'S':
-            return LEVEL_STATS;
-        case 'W':
-            return LEVEL_WARNING;
-        case 'E':
-            return LEVEL_ERROR;
-        case 'C':
-            return LEVEL_CRITICAL;
-        case 'F':
-            return LEVEL_FATAL;
-        default:
-            return LEVEL_UNKNOWN;
-    }
-}
-
-int logline::levelcmp(const char *l1, ssize_t l1_len, const char *l2, ssize_t l2_len)
-{
-    return abbrev2level(l1, l1_len) - abbrev2level(l2, l2_len);
-}
-
-const char *logline_value::value_names[VALUE__MAX] = {
-    "null",
-    "text",
-    "int",
-    "float",
-    "bool",
-    "json"
-};
-
-logline_value::kind_t logline_value::string2kind(const char *kindstr)
-{
-    if (strcmp(kindstr, "string") == 0) {
-        return VALUE_TEXT;
-    }
-    else if (strcmp(kindstr, "integer") == 0) {
-        return VALUE_INTEGER;
-    }
-    else if (strcmp(kindstr, "float") == 0) {
-        return VALUE_FLOAT;
-    }
-    else if (strcmp(kindstr, "boolean") == 0) {
-        return VALUE_BOOLEAN;
-    }
-    else if (strcmp(kindstr, "json") == 0) {
-        return VALUE_JSON;
-    }
-    else if (strcmp(kindstr, "struct") == 0) {
-        return VALUE_STRUCT;
-    }
-    else if (strcmp(kindstr, "quoted") == 0) {
-        return VALUE_QUOTED;
-    }
-
-    return VALUE_UNKNOWN;
-}
 
 struct line_range logline_value::origin_in_full_msg(const char *msg, size_t len) const
 {
@@ -244,7 +114,7 @@ struct line_range logline_value::origin_in_full_msg(const char *msg, size_t len)
 
 vector<log_format *> log_format::lf_root_formats;
 
-vector<log_format *> &log_format::get_root_formats(void)
+vector<log_format *> &log_format::get_root_formats()
 {
     return lf_root_formats;
 }
@@ -456,7 +326,7 @@ static int read_json_int(yajlpp_parse_context *ypc, long long val)
 
             jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(pi, &level_cap));
         } else {
-            vector<pair<int64_t, logline::level_t> >::iterator iter;
+            vector<pair<int64_t, log_level_t> >::iterator iter;
 
             for (iter = jlu->jlu_format->elf_level_pairs.begin();
                  iter != jlu->jlu_format->elf_level_pairs.end();
@@ -645,7 +515,7 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
 {
     if (this->elf_type == ELF_TYPE_JSON) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
-        logline ll(offset, 0, 0, logline::LEVEL_INFO);
+        logline ll(offset, 0, 0, LEVEL_INFO);
         yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
 
@@ -672,8 +542,8 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
                 if (lpc > 0) {
-                    ll.set_level((logline::level_t) (ll.get_level_and_flags() |
-                        logline::LEVEL_CONTINUED));
+                    ll.set_level((log_level_t) (ll.get_level_and_flags() |
+                        LEVEL_CONTINUED));
                 }
                 dst.push_back(ll);
             }
@@ -734,7 +604,7 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
             }
         }
 
-        logline::level_t level = this->convert_level(pi, level_cap);
+        log_level_t level = this->convert_level(pi, level_cap);
 
         this->lf_timestamp_flags = log_time_tm.et_flags;
 
@@ -1038,7 +908,7 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
         jlu->jlu_base_line->set_time(tv_out);
     }
     else if (jlu->jlu_format->elf_level_field == field_name) {
-        jlu->jlu_base_line->set_level(logline::abbrev2level((const char *)str, len));
+        jlu->jlu_base_line->set_level(abbrev2level((const char *)str, len));
     }
     else if (jlu->jlu_format->elf_opid_field == field_name) {
         uint8_t opid = hash_str((const char *) str, len);
@@ -1187,7 +1057,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         lv_iter->lv_hidden = lv_iter->lv_user_hidden;
                         if ((int)str.size() > jfe.jfe_max_width) {
                             switch (jfe.jfe_overflow) {
-                                case json_format_element::ABBREV: {
+                                case json_format_element::overflow_t::ABBREV: {
                                     this->json_append_to_cache(
                                         str.c_str(), str.size());
                                     size_t new_size = abbreviate_str(
@@ -1199,12 +1069,12 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                                         lr.lr_start + new_size);
                                     break;
                                 }
-                                case json_format_element::TRUNCATE: {
+                                case json_format_element::overflow_t::TRUNCATE: {
                                     this->json_append_to_cache(
                                         str.c_str(), jfe.jfe_max_width);
                                     break;
                                 }
-                                case json_format_element::DOTDOT: {
+                                case json_format_element::overflow_t::DOTDOT: {
                                     size_t middle = (jfe.jfe_max_width / 2) - 1;
                                     this->json_append_to_cache(
                                         str.c_str(), middle);
@@ -1534,7 +1404,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
     }
 
-    for (std::map<logline::level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
+    for (std::map<log_level_t, level_pattern>::iterator iter = this->elf_level_patterns.begin();
          iter != this->elf_level_patterns.end();
          ++iter) {
         try {
@@ -1662,9 +1532,9 @@ void external_log_format::build(std::vector<std::string> &errors) {
                     }
                 }
 
-                logline::level_t level = this->convert_level(pi, level_cap);
+                log_level_t level = this->convert_level(pi, level_cap);
 
-                if (iter->s_level != logline::LEVEL_UNKNOWN) {
+                if (iter->s_level != LEVEL_UNKNOWN) {
                     if (iter->s_level != level) {
                         errors.push_back("error:" +
                                          this->elf_name.to_string() +
@@ -1673,9 +1543,9 @@ void external_log_format::build(std::vector<std::string> &errors) {
                         errors.push_back("error:" +
                                          this->elf_name.to_string() +
                                          ":parsed level '" +
-                                         logline::level_names[level] +
+                                         level_names[level] +
                                          "' does not match expected level of '" +
-                                         logline::level_names[iter->s_level] +
+                                         level_names[iter->s_level] +
                                          "'");
                     }
                 }
@@ -1884,20 +1754,16 @@ void external_log_format::register_vtabs(log_vtab_manager *vtab_manager,
 
 bool external_log_format::match_samples(const vector<sample> &samples) const
 {
-    for (vector<sample>::const_iterator sample_iter = samples.begin();
-         sample_iter != samples.end();
-         ++sample_iter) {
-        for (auto pat_iter = this->elf_pattern_order.begin();
-             pat_iter != this->elf_pattern_order.end();
-             ++pat_iter) {
-            pattern &pat = *(*pat_iter);
+    for (const auto &sample_iter : samples) {
+        for (const auto &pat_iter : this->elf_pattern_order) {
+            pattern &pat = *pat_iter;
 
             if (!pat.p_pcre) {
                 continue;
             }
 
             pcre_context_static<128> pc;
-            pcre_input pi(sample_iter->s_line);
+            pcre_input pi(sample_iter.s_line);
 
             if (pat.p_pcre->match(pc, pi)) {
                 return true;
@@ -1918,10 +1784,8 @@ public:
         const external_log_format &elf = this->elt_format;
 
         cols.resize(elf.elf_column_count);
-        for (auto iter = elf.elf_value_defs.begin();
-             iter != elf.elf_value_defs.end();
-             ++iter) {
-            const auto &vd = *iter->second;
+        for (const auto &elf_value_def : elf.elf_value_defs) {
+            const auto &vd = *elf_value_def.second;
             int type = log_vtab_impl::logline_value_to_sqlite_type(vd.vd_kind);
 
             if (vd.vd_column == -1) {
@@ -1939,11 +1803,9 @@ public:
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
 
-        for (auto iter = this->elt_format.elf_value_defs.begin();
-             iter != this->elt_format.elf_value_defs.end();
-             ++iter) {
-            if (iter->second->vd_foreign_key) {
-                keys_inout.push_back(iter->first.to_string());
+        for (const auto &elf_value_def : this->elt_format.elf_value_defs) {
+            if (elf_value_def.second->vd_foreign_key) {
+                keys_inout.push_back(elf_value_def.first.to_string());
             }
         }
     };
@@ -1959,7 +1821,7 @@ public:
 
         content_line_t    cl(lss.at(lc.lc_curr_line));
         shared_ptr<logfile> lf = lss.find(cl);
-        logfile::iterator lf_iter = lf->begin() + cl;
+        auto lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
 
         if (lf_iter->is_continued()) {

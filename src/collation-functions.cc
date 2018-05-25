@@ -41,8 +41,7 @@
 
 #include <algorithm>
 
-#include "log_format.hh"
-
+#include "log_level.hh"
 #include "strnatcmp.h"
 
 #define MAX_ADDR_LEN    128
@@ -152,18 +151,18 @@ int sql_loglevelcmp(void *ptr,
     int a_len, const void *a_in,
     int b_len, const void *b_in)
 {
-    return logline::levelcmp((const char *)a_in, a_len,
+    return levelcmp((const char *)a_in, a_len,
         (const char *)b_in, b_len);
 }
 
 int register_collation_functions(sqlite3 *db)
 {
-    sqlite3_create_collation(db, "ipaddress", SQLITE_UTF8, NULL, ipaddress);
-    sqlite3_create_collation(db, "naturalcase", SQLITE_UTF8, NULL,
+    sqlite3_create_collation(db, "ipaddress", SQLITE_UTF8, nullptr, ipaddress);
+    sqlite3_create_collation(db, "naturalcase", SQLITE_UTF8, nullptr,
                              sql_strnatcmp);
-    sqlite3_create_collation(db, "naturalnocase", SQLITE_UTF8, NULL,
+    sqlite3_create_collation(db, "naturalnocase", SQLITE_UTF8, nullptr,
                              sql_strnatcasecmp);
-    sqlite3_create_collation(db, "loglevel", SQLITE_UTF8, NULL,
+    sqlite3_create_collation(db, "loglevel", SQLITE_UTF8, nullptr,
                              sql_loglevelcmp);
 
     return 0;

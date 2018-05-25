@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #include "yajlpp.hh"
+#include "yajlpp_def.hh"
 
 const char *TEST_DATA =
     "[{ \"foo\": 0 }, { \"foo\": 1 }]";

@@ -33,12 +33,13 @@
 
 #include <vector>
 
+#include "view_curses.hh"
 #include "pcrepp.hh"
 #include "ansi_scrubber.hh"
 
 using namespace std;
 
-static pcrepp &ansi_regex(void)
+static pcrepp &ansi_regex()
 {
     static pcrepp retval("\x1b\\[([\\d=;]*)([a-zA-Z])");
 
@@ -58,9 +59,9 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
         pcre_context::capture_t *caps = context.all();
         struct line_range        lr;
         bool has_attrs = false;
-        int  attrs     = 0;
-        int  bg        = 0;
-        int  fg        = 0;
+        attr_t attrs   = 0;
+        int bg         = 0;
+        int fg         = 0;
         size_t lpc;
 
         switch (pi.get_substr_start(&caps[2])[0]) {

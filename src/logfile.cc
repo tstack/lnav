@@ -234,7 +234,7 @@ bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
             }
             break;
         case log_format::SCAN_NO_MATCH: {
-            logline::level_t last_level = logline::LEVEL_UNKNOWN;
+            log_level_t last_level = LEVEL_UNKNOWN;
             time_t last_time = this->lf_index_time;
             short last_millis = 0;
             uint8_t last_mod = 0, last_opid = 0;
@@ -249,8 +249,8 @@ bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 last_time = ll.get_time();
                 last_millis = ll.get_millis();
                 if (this->lf_format.get() != NULL) {
-                    last_level = (logline::level_t)(ll.get_level_and_flags() |
-                        logline::LEVEL_CONTINUED);
+                    last_level = (log_level_t)(ll.get_level_and_flags() |
+                        LEVEL_CONTINUED);
                 }
                 last_mod = ll.get_module_id();
                 last_opid = ll.get_opid();

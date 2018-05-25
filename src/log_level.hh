@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2018, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,47 +26,51 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file test_ansi_scrubber.cc
- *
- * Test for the scrub_ansi_string function.
- *
- * TODO: Add a test for the ansi-colors.0.in file.  It has a matrix of all the
- * color/style combinations.
+ * @file log_level.hh
  */
 
-#include "config.h"
+#ifndef __log_level_hh
+#define __log_level_hh
 
-#include <assert.h>
+/**
+ * The logging level identifiers for a line(s).
+ */
+typedef enum {
+    LEVEL_UNKNOWN,
+    LEVEL_TRACE,
+    LEVEL_DEBUG5,
+    LEVEL_DEBUG4,
+    LEVEL_DEBUG3,
+    LEVEL_DEBUG2,
+    LEVEL_DEBUG,
+    LEVEL_INFO,
+    LEVEL_STATS,
+    LEVEL_WARNING,
+    LEVEL_ERROR,
+    LEVEL_CRITICAL,
+    LEVEL_FATAL,
 
-#include "view_curses.hh"
-#include "ansi_scrubber.hh"
+    LEVEL__MAX,
 
-using namespace std;
+    LEVEL_TIME_SKEW = 0x20,  /*< Received after timestamp. */
+    LEVEL_MARK      = 0x40,  /*< Bookmarked line. */
+    LEVEL_CONTINUED = 0x80,  /*< Continuation of multiline entry. */
 
-int main(int argc, char *argv[])
-{
-    view_colors &vc = view_colors::singleton();
-    string_attrs_t::iterator iter;
-    string_attrs_t sa;
-    string str_cp;
+    /** Mask of flags for the level field. */
+        LEVEL__FLAGS    = (
+        LEVEL_TIME_SKEW |
+        LEVEL_MARK |
+        LEVEL_CONTINUED
+    )
+} log_level_t;
 
-    str_cp = "Hello, World!";
-    scrub_ansi_string(str_cp, sa);
+extern const char *level_names[LEVEL__MAX + 1];
 
-    assert(str_cp == "Hello, World!");
-    assert(sa.empty());
+log_level_t string2level(const char *levelstr, ssize_t len = -1, bool exact = false);
 
-    str_cp = "Hello\x1b[44;m, \x1b[33;mWorld\x1b[0;m!";
-    scrub_ansi_string(str_cp, sa);
-    assert(str_cp == "Hello, World!");
-    
-    assert(sa[0].sa_range.lr_start == 5);
-    assert(sa[0].sa_range.lr_end == 7);
-    assert(sa[0].sa_type == &view_curses::VC_STYLE);
-    assert(sa[0].sa_value.sav_int == vc.ansi_color_pair(0, 4));
+log_level_t abbrev2level(const char *levelstr, ssize_t len = -1);
 
-    assert(sa[1].sa_range.lr_start == 7);
-    assert(sa[1].sa_range.lr_end == 12);
-    assert(sa[1].sa_type == &view_curses::VC_STYLE);
-    assert(sa[1].sa_value.sav_int == vc.ansi_color_pair(3, 0));
-}
+int levelcmp(const char *l1, ssize_t l1_len,
+             const char *l2, ssize_t l2_len);
+
+#endif

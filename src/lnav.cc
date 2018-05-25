@@ -444,12 +444,12 @@ public:
         hist_source2::hist_type_t ht;
 
         switch (ll->get_msg_level()) {
-            case logline::LEVEL_FATAL:
-            case logline::LEVEL_CRITICAL:
-            case logline::LEVEL_ERROR:
+            case LEVEL_FATAL:
+            case LEVEL_CRITICAL:
+            case LEVEL_ERROR:
                 ht = hist_source2::HT_ERROR;
                 break;
-            case logline::LEVEL_WARNING:
+            case LEVEL_WARNING:
                 ht = hist_source2::HT_WARNING;
                 break;
             default:
@@ -2164,7 +2164,7 @@ static void looper(void)
             LNM_COMMAND, "zoomlevel", lnav_zoom_strings);
 
         lnav_data.ld_rl_view->add_possibility(
-            LNM_COMMAND, "levelname", logline::level_names);
+            LNM_COMMAND, "levelname", level_names);
 
         (void)signal(SIGINT, sigint);
         (void)signal(SIGTERM, sigint);

@@ -100,7 +100,7 @@ logfile_sub_source::logfile_sub_source()
     : lss_flags(0),
       lss_force_rebuild(false),
       lss_token_file(NULL),
-      lss_min_log_level(logline::LEVEL_UNKNOWN),
+      lss_min_log_level(LEVEL_UNKNOWN),
       lss_marked_only(false),
       lss_index_delegate(NULL),
       lss_longest_line(0),
@@ -327,13 +327,13 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
     value_out = this->lss_token_attrs;
     switch (this->lss_token_line->get_msg_level()) {
-    case logline::LEVEL_FATAL:
-    case logline::LEVEL_CRITICAL:
-    case logline::LEVEL_ERROR:
+    case LEVEL_FATAL:
+    case LEVEL_CRITICAL:
+    case LEVEL_ERROR:
         attrs = vc.attrs_for_role(view_colors::VCR_ERROR);
         break;
 
-    case logline::LEVEL_WARNING:
+    case LEVEL_WARNING:
         attrs = vc.attrs_for_role(view_colors::VCR_WARNING);
         break;
 
@@ -771,13 +771,13 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
         auto line_iter = lf->begin() + cl;
         if (!line_iter->is_continued()) {
             switch (line_iter->get_msg_level()) {
-                case logline::LEVEL_WARNING:
+                case LEVEL_WARNING:
                     bm[&BM_WARNINGS].insert_once(vl);
                     break;
 
-                case logline::LEVEL_FATAL:
-                case logline::LEVEL_ERROR:
-                case logline::LEVEL_CRITICAL:
+                case LEVEL_FATAL:
+                case LEVEL_ERROR:
+                case LEVEL_CRITICAL:
                     bm[&BM_ERRORS].insert_once(vl);
                     break;
 
