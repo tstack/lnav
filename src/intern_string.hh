@@ -94,7 +94,7 @@ struct string_fragment {
     bool operator==(const char *str) const {
         size_t len = strlen(str);
 
-        return len == this->length() &&
+        return len == (size_t) this->length() &&
                strncmp(this->data(), str, this->length()) == 0;
     };
 

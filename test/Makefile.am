@@ -131,7 +131,7 @@ test_reltime_LDADD = ../src/libdiag.a
 test_ncurses_unicode_SOURCES = test_ncurses_unicode.cc
 
 lnav_doctests_SOURCES = lnav_doctests.cc
-lnav_doctests_LDADD = ../src/libdiag.a $(CONFIG_OBJS)
+lnav_doctests_LDADD = ../src/libdiag.a $(CONFIG_OBJS) $(CURSES_LIB)
 
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz $(CURSES_LIB)
