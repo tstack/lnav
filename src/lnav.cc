@@ -325,7 +325,9 @@ bool setup_logline_table()
     if (update_possibilities) {
         add_env_possibilities(LNM_SQL);
 
-        lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_keywords);
+        lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*",
+                                              std::begin(sql_keywords),
+                                              std::end(sql_keywords));
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", sql_function_names);
         lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*",
             hidden_table_columns);

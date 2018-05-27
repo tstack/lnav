@@ -354,6 +354,16 @@ public:
         }
     };
 
+    void add_possibility(int context,
+                         const std::string &type,
+                         const char **first,
+                         const char **last)
+    {
+        for (; first < last; first++) {
+            this->add_possibility(context, type, *first);
+        }
+    };
+
     template<template<typename ...> class Container>
     void add_possibility(int context,
                          const std::string &type,

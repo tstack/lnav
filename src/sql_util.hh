@@ -43,7 +43,7 @@
 
 #include "attr_line.hh"
 
-extern const char *sql_keywords[];
+extern const char *sql_keywords[122];
 extern const char *sql_function_names[];
 
 typedef int (*sqlite_exec_callback)(void *, int, char **, char **);
@@ -116,5 +116,7 @@ extern string_attr_type SQL_PAREN_ATTR;
 extern string_attr_type SQL_GARBAGE_ATTR;
 
 void annotate_sql_statement(attr_line_t &al_inout);
+
+std::string sql_keyword_re(void);
 
 #endif

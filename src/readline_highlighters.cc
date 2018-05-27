@@ -408,23 +408,6 @@ void readline_command_highlighter(attr_line_t &al, int x)
     }
 }
 
-static string sql_keyword_re(void)
-{
-    string retval = "(?:";
-
-    for (int lpc = 0; sql_keywords[lpc]; lpc++) {
-        if (lpc > 0) {
-            retval.append("|");
-        }
-        retval.append("\\b");
-        retval.append(sql_keywords[lpc]);
-        retval.append("\\b");
-    }
-    retval += ")";
-
-    return retval;
-}
-
 void readline_sqlite_highlighter(attr_line_t &al, int x)
 {
     static string keyword_re_str = sql_keyword_re() + "|\\.schema|\\.msgformats";

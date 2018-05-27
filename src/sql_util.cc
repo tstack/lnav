@@ -172,8 +172,6 @@ const char *sql_keywords[] = {
     "WHEN",
     "WHERE",
     "WITH",
-
-    NULL
 };
 
 const char *sql_function_names[] = {
@@ -825,16 +823,19 @@ int sqlite_authorizer(void *pUserData, int action_code, const char *detail1,
     return SQLITE_OK;
 }
 
-static string sql_keyword_re(void)
+string sql_keyword_re(void)
 {
     string retval = "(?:";
+    bool first = true;
 
-    for (int lpc = 0; sql_keywords[lpc]; lpc++) {
-        if (lpc > 0) {
+    for (const char *kw : sql_keywords) {
+        if (!first) {
             retval.append("|");
+        } else {
+            first = false;
         }
         retval.append("\\b");
-        retval.append(sql_keywords[lpc]);
+        retval.append(kw);
         retval.append("\\b");
     }
     retval += ")";

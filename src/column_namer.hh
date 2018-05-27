@@ -37,6 +37,9 @@
 #include <vector>
 #include <algorithm>
 
+#include "sql_util.hh"
+#include "lnav_util.hh"
+
 class column_namer {
 public:
     column_namer()
@@ -46,14 +49,21 @@ public:
 
     bool existing_name(const std::string &in_name) const
     {
+        if (std::binary_search(std::begin(sql_keywords),
+                               std::end(sql_keywords),
+                               toupper(in_name))) {
+            return true;
+        }
+
         if (find(this->cn_builtin_names.begin(),
                  this->cn_builtin_names.end(),
                  in_name) != this->cn_builtin_names.end()) {
             return true;
         }
-        else if (find(this->cn_names.begin(),
-                      this->cn_names.end(),
-                      in_name) != this->cn_names.end()) {
+
+        if (find(this->cn_names.begin(),
+                 this->cn_names.end(),
+                 in_name) != this->cn_names.end()) {
             return true;
         }
 
