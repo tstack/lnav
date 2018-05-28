@@ -82,30 +82,38 @@ TEST_CASE("rgb_color from string") {
 }
 
 TEST_CASE("ptime_roundtrip") {
-    const char *fmt = "%Y-%d-%m\t%H:%M:%S";
+    const char *fmts[] = {
+        "%Y-%m-%d %l:%M:%S %p",
+        "%Y-%m-%d %I:%M:%S %p",
+    };
     time_t now = time(nullptr);
 
-    for (time_t sec = now; sec < (now + (24 * 60 * 60)); sec++) {
-        char ftime_result[128];
-        char strftime_result[128];
-        struct exttm etm;
+    for (auto fmt : fmts) {
+        for (time_t sec = now; sec < (now + (24 * 60 * 60)); sec++) {
+            char ftime_result[128];
+            char strftime_result[128];
+            struct exttm etm;
 
-        memset(&etm, 0, sizeof(etm));
-        gmtime_r(&sec, &etm.et_tm);
-        etm.et_flags = ETF_YEAR_SET | ETF_MONTH_SET | ETF_DAY_SET;
-        size_t ftime_size = ftime_fmt(ftime_result, sizeof(ftime_result), fmt, etm);
-        size_t strftime_size = strftime(strftime_result, sizeof(strftime_result), fmt, &etm.et_tm);
+            memset(&etm, 0, sizeof(etm));
+            gmtime_r(&sec, &etm.et_tm);
+            etm.et_flags = ETF_YEAR_SET | ETF_MONTH_SET | ETF_DAY_SET;
+            size_t ftime_size = ftime_fmt(ftime_result, sizeof(ftime_result),
+                                          fmt, etm);
+            size_t strftime_size = strftime(strftime_result,
+                                            sizeof(strftime_result), fmt,
+                                            &etm.et_tm);
 
-        CHECK(string(ftime_result, ftime_size) ==
-              string(strftime_result, strftime_size));
+                CHECK(string(ftime_result, ftime_size) ==
+                      string(strftime_result, strftime_size));
 
-        struct exttm etm2;
-        off_t off = 0;
+            struct exttm etm2;
+            off_t off = 0;
 
-        memset(&etm2, 0, sizeof(etm2));
-        bool rc = ptime_fmt(fmt, &etm2, ftime_result, off, ftime_size);
-        CHECK(rc);
-        CHECK(sec == tm2sec(&etm2.et_tm));
+            memset(&etm2, 0, sizeof(etm2));
+            bool rc = ptime_fmt(fmt, &etm2, ftime_result, off, ftime_size);
+                CHECK(rc);
+                CHECK(sec == tm2sec(&etm2.et_tm));
+        }
     }
 }
 

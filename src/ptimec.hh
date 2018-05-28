@@ -603,23 +603,41 @@ inline void ftime_k(char *dst, off_t &off_inout, ssize_t len, const struct exttm
 inline bool ptime_l(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     off_t orig_off = off_inout;
+    bool consumed_space = false;
 
     dst->et_tm.tm_hour = 0;
-    PTIME_CONSUME(1, {
-        if (str[off_inout] < '1' || str[off_inout] > '9') {
-            return false;
-        }
-        dst->et_tm.tm_hour = str[off_inout] - '0';
-    });
-    if (off_inout + 1 < len) {
-        if (str[off_inout] >= '0' && str[off_inout] <= '9') {
-            dst->et_tm.tm_hour *= 10;
-            dst->et_tm.tm_hour += str[off_inout] - '0';
-            off_inout += 1;
-        }
+
+    if ((off_inout + 1) > len) {
+        return false;
     }
 
-    if (dst->et_tm.tm_hour >= 1 && dst->et_tm.tm_hour <= 12) {
+    if (str[off_inout] == ' ') {
+        consumed_space = true;
+        off_inout += 1;
+    }
+
+    if ((off_inout + 1) > len) {
+        off_inout = orig_off;
+        return false;
+    }
+
+    if (str[off_inout] < '1' || str[off_inout] > '9') {
+        off_inout = orig_off;
+        return false;
+    }
+
+    dst->et_tm.tm_hour = str[off_inout] - '0';
+    off_inout += 1;
+
+    if (consumed_space || str[off_inout] < '0' || str[off_inout] > '9') {
+        return true;
+    }
+
+    dst->et_tm.tm_hour *= 10;
+    dst->et_tm.tm_hour += str[off_inout] - '0';
+    off_inout += 1;
+
+    if (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23) {
         return true;
     }
 
@@ -657,11 +675,11 @@ inline bool ptime_p(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         }
         else if ((lead & 0xdf) == 'A') {
             if (dst->et_tm.tm_hour == 12) {
-                dst->et_tm.tm_hour -= 12;
+                dst->et_tm.tm_hour = 0;
             }
         }
         else if ((lead & 0xdf) == 'P') {
-            if (dst->et_tm.tm_hour > 12) {
+            if (dst->et_tm.tm_hour < 12) {
                 dst->et_tm.tm_hour += 12;
             }
         }
