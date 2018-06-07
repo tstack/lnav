@@ -2437,7 +2437,11 @@ static string com_switch_to_view(exec_context &ec, string cmdline, vector<string
         for (int lpc = 0; lnav_view_strings[lpc] && !found; lpc++) {
             if (strcasecmp(args[1].c_str(), lnav_view_strings[lpc]) == 0) {
                 if (!ec.ec_dry_run) {
-                    ensure_view(&lnav_data.ld_views[lpc]);
+                    if (args[0] == "switch-to-view") {
+                        ensure_view(&lnav_data.ld_views[lpc]);
+                    } else {
+                        toggle_view(&lnav_data.ld_views[lpc]);
+                    }
                 }
                 found = true;
             }
@@ -3998,6 +4002,16 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":switch-to-view")
             .with_summary("Switch to the given view")
             .with_parameter(help_text("view-name", "The name of the view to switch to."))
+            .with_example({"schema"})
+    },
+    {
+        "toggle-view",
+        com_switch_to_view,
+
+        help_text(":toggle-view")
+            .with_summary("Switch to the given view or, if it is already displayed, "
+                          "switch to the previous view")
+            .with_parameter(help_text("view-name", "The name of the view to toggle the display of."))
             .with_example({"schema"})
     },
     {

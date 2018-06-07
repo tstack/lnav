@@ -36,7 +36,9 @@
                 ":eval :alt-msg ${keymap_def_scroll_horiz}"
             ],
 
-            "x50": [":switch-to-view pretty"],
+            "x3f": [":toggle-view help"],
+            "x50": [":toggle-view pretty"],
+            "x76": [":toggle-view db"],
 
             "x71": ["|lnav-pop-view ${keyseq}"],
             "x51": ["|lnav-pop-view ${keyseq}"]

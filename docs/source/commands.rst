@@ -99,6 +99,7 @@ Display
   top left and right sides of the view, respectively.
 
 * switch-to-view <name> - Switch to the given view name (e.g. log, text, ...)
+* toggle-view <name> - Toggle the display of the given view (e.g. log, text, ...)
 
 * zoom-to <zoom-level> - Set the zoom level for the histogram view.
 

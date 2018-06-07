@@ -938,6 +938,9 @@ bool toggle_view(textview_curses *toggle_tc)
     require(toggle_tc < &lnav_data.ld_views[LNV__MAX]);
 
     if (tc == toggle_tc) {
+        if (lnav_data.ld_view_stack.size() == 1) {
+            return false;
+        }
         lnav_data.ld_last_view = tc;
         lnav_data.ld_view_stack.pop_back();
     }

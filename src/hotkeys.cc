@@ -921,10 +921,6 @@ void handle_paging_key(int ch)
             }
             break;
 
-        case 'P':
-            toggle_view(&lnav_data.ld_views[LNV_PRETTY]);
-            break;
-
         case 't':
             if (lnav_data.ld_text_source.current_file() == NULL) {
                 alerter::singleton().chime();
@@ -978,14 +974,6 @@ void handle_paging_key(int ch)
                 }
             }
         }
-            break;
-
-        case '?':
-            toggle_view(&lnav_data.ld_views[LNV_HELP]);
-            break;
-
-        case 'v':
-            toggle_view(&lnav_data.ld_views[LNV_DB]);
             break;
 
         case 'V':
