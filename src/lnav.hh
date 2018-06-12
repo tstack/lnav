@@ -271,7 +271,6 @@ struct _lnav_data {
     readline_curses *                       ld_rl_view;
 
     logfile_sub_source                      ld_log_source;
-    hist_source                             ld_hist_source;
     hist_source2                            ld_hist_source2;
     int                                     ld_zoom_level;
     spectrogram_source ld_spectro_source;

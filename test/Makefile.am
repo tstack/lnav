@@ -42,7 +42,6 @@ check_PROGRAMS = \
 	test_concise \
 	test_date_time_scanner \
 	test_grep_proc2 \
-	test_hist_source \
 	test_json_ptr \
 	test_line_buffer2 \
 	test_log_accel \
@@ -89,10 +88,6 @@ test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
 
 test_grep_proc2_SOURCES = test_grep_proc2.cc
 test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
-
-test_hist_source_SOURCES = test_hist_source.cc
-test_hist_source_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz \
-	$(CONFIG_OBJS)
 
 test_line_buffer2_SOURCES = test_line_buffer2.cc
 test_line_buffer2_LDADD = ../src/libdiag.a
@@ -380,7 +375,6 @@ TESTS = \
 	test_meta.sh \
 	test_grep_proc.sh \
 	test_grep_proc2 \
-	test_hist_source \
 	test_json_format.sh \
 	test_json_op.sh \
 	test_json_ptr_walk.sh \

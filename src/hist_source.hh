@@ -39,6 +39,8 @@
 #include <string>
 #include <vector>
 
+#include "mapbox/variant.hpp"
+
 #include "lnav_log.hh"
 #include "strong_int.hh"
 #include "textview_curses.hh"
@@ -51,238 +53,31 @@ STRONG_INT_TYPE(int, bucket_group);
 /** Type used to differentiate values added to the same row in the histogram */
 STRONG_INT_TYPE(int, bucket_type);
 
-/**
- * A text source that displays data as a histogram using horizontal bars.  Data
- * is added to the histogram using the add_value() method.  Once all of the
- * values have been added, the analyze() method needs to be called to analyze
- * the data so that it can be displayed.
- *
- * For example, if the values (7, 3, 4, 2) were added, they would be displayed
- * like so:
- *
- *   ******
- *   ***
- *   ****
- *   **
- */
-class hist_source
-    : public text_sub_source {
-public:
-    typedef std::map<bucket_type_t, bucket_count_t> bucket_t;
+struct stacked_bar_chart_base {
+    struct show_none {};
+    struct show_all {};
+    struct show_one {
+        int so_index;
 
-    /**
-     * Source for labels on each bucket and group.
-     */
-    class label_source {
-public:
-        virtual ~label_source() { };
+        show_one(int so_index) : so_index(so_index) {
 
-        virtual size_t hist_label_width() {
-            return INT_MAX;
-        };
-
-        virtual void hist_label_for_group(int group,
-                                          std::string &label_out) { };
-
-        virtual void hist_label_for_bucket(int bucket_start_value,
-                                           const bucket_t &bucket,
-                                           std::string &label_out) { };
-
-        virtual void hist_attrs_for_bucket(int bucket_start_value,
-                                           const bucket_t &bucket,
-                                           string_attrs_t &sa) { };
-    };
-
-    hist_source();
-    virtual ~hist_source() { };
-
-    void set_bucket_size(unsigned int bs)
-    {
-        require(bs > 0);
-
-        this->hs_bucket_size = bs;
-    };
-    unsigned int get_bucket_size(void) const { return this->hs_bucket_size; };
-
-    void set_group_size(unsigned int gs)
-    {
-        require(gs > 0);
-        this->hs_group_size = gs;
-    };
-    unsigned int get_group_size(void) const { return this->hs_group_size; };
-
-    void set_label_source(label_source *hls)
-    {
-        this->hs_label_source = hls;
-    }
-
-    label_source *get_label_source(void)
-    {
-        return this->hs_label_source;
-    };
-
-    int buckets_per_group(void) const
-    {
-        return this->hs_group_size / this->hs_bucket_size;
-    };
-
-    void clear(void) {
-        this->hs_groups.clear();
-        this->hs_bucket_stats.clear();
-    };
-
-    size_t text_line_count()
-    {
-        return (this->buckets_per_group() + 1) * this->hs_groups.size();
-    };
-
-    size_t text_line_width(textview_curses &curses) {
-        return this->hs_label_source == NULL ? 0 :
-               this->hs_label_source->hist_label_width();
-    };
-
-    void set_role_for_type(bucket_type_t bt, view_colors::role_t role)
-    {
-        this->hs_type2role[bt] = role;
-    };
-    const view_colors::role_t &get_role_for_type(bucket_type_t bt)
-    {
-        return this->hs_type2role[bt];
-    };
-
-    void text_value_for_line(textview_curses &tc,
-                             int row,
-                             std::string &value_out,
-                             line_flags_t flags);
-    void text_attrs_for_line(textview_curses &tc,
-                             int row,
-                             string_attrs_t &value_out);
-
-    size_t text_size_for_line(textview_curses &tc, int row, line_flags_t flags) {
-        return 0;
-    };
-
-    int value_for_row(vis_line_t row)
-    {
-        int grow   = row / (this->buckets_per_group() + 1);
-        int brow   = row % (this->buckets_per_group() + 1);
-        int retval = 0;
-
-        if (!this->hs_groups.empty()) {
-            std::map<bucket_group_t, bucket_array_t>::const_iterator iter;
-
-            iter = this->hs_groups.begin();
-            std::advance(iter, grow);
-
-            bucket_group_t bg = iter->first;
-
-            if (brow > 0) {
-                brow -= 1;
-            }
-            retval =
-                (bg * this->hs_group_size) + (brow * this->hs_bucket_size);
-        }
-
-        return retval;
-    };
-
-    vis_line_t row_for_value(int value)
-    {
-        vis_line_t retval;
-
-        if (!this->hs_groups.empty()) {
-            bucket_group_t bg(value / this->hs_group_size);
-
-            std::map<bucket_group_t, bucket_array_t>::iterator lb;
-
-            lb = this->hs_groups.lower_bound(bg);
-            retval = vis_line_t(distance(this->hs_groups.begin(), lb) *
-                                (this->buckets_per_group() + 1));
-            retval += vis_line_t(1 +
-                                 (value % this->hs_group_size) /
-                                 this->hs_bucket_size);
-        }
-
-        return retval;
-    };
-
-    /**
-     * Add a value to the histogram.
-     *
-     * @param value The row in the histogram.
-     * @param bt The type of data.
-     * @param amount The amount to add to this row in the histogram.
-     */
-    void add_value(unsigned int value,
-                   bucket_type_t bt,
-                   bucket_count_t amount = 1.0);
-
-    void add_empty_value(unsigned int value)
-    {
-        bucket_group_t bg;
-
-        bg = bucket_group_t(value / this->hs_group_size);
-
-        bucket_array_t &ba = this->hs_groups[bg];
-
-        if (ba.empty()) {
-            ba.resize(this->buckets_per_group());
         }
     };
 
-    std::vector<bucket_type_t> &get_displayed_buckets() {
-        return this->hs_displayed_buckets;
+    typedef mapbox::util::variant<show_none, show_all, show_one> show_state;
+
+    enum class direction {
+        forward,
+        backward,
     };
-
-    bool is_bucket_graphed(bucket_type_t type) const {
-        return (this->hs_displayed_buckets.empty() ||
-                std::find(this->hs_displayed_buckets.begin(),
-                          this->hs_displayed_buckets.end(),
-                          type) != this->hs_displayed_buckets.end());
-    };
-
-protected:
-    typedef std::vector<bucket_t> bucket_array_t;
-
-    struct bucket_stats_t {
-        bucket_stats_t() :
-            bs_min_count(std::numeric_limits<bucket_count_t>::max()),
-            bs_max_count(0)
-        {
-        };
-
-        void merge(const bucket_stats_t &rhs) {
-            this->bs_min_count = std::min(this->bs_min_count, rhs.bs_min_count);
-            this->bs_max_count += rhs.bs_max_count;
-        };
-
-        bucket_count_t width() const {
-            return fabs(this->bs_max_count - this->bs_min_count);
-        };
-
-        bucket_count_t bs_min_count;
-        bucket_count_t bs_max_count;
-    };
-
-    std::map<bucket_type_t, view_colors::role_t> hs_type2role;
-
-    std::map<bucket_group_t, bucket_array_t> hs_groups;
-    std::map<bucket_type_t, bucket_stats_t> hs_bucket_stats;
-
-    unsigned int   hs_bucket_size; /* hours */
-    unsigned int   hs_group_size;  /* days */
-    label_source *hs_label_source;
-
-    bucket_t *hs_token_bucket;
-    std::vector<bucket_type_t> hs_displayed_buckets;
 };
 
 template<typename T>
-class stacked_bar_chart {
+class stacked_bar_chart : public stacked_bar_chart_base {
 
 public:
     stacked_bar_chart()
-            : sbc_do_stacking(true), sbc_left(0), sbc_right(0), sbc_ident_to_show(-1) {
+            : sbc_do_stacking(true), sbc_left(0), sbc_right(0), sbc_show_state(show_all()) {
 
     };
 
@@ -305,21 +100,63 @@ public:
         return *this;
     };
 
-    int show_next_ident(int offset = 1) {
-        this->sbc_ident_to_show += offset;
-        if (this->sbc_ident_to_show < -1) {
-            this->sbc_ident_to_show = this->sbc_idents.size() - 1;
+    show_state show_next_ident(direction dir) {
+        bool single_ident = this->sbc_idents.size() == 1;
+
+        if (this->sbc_idents.empty()) {
+            return this->sbc_show_state;
         }
-        else if (this->sbc_ident_to_show >= (int)this->sbc_idents.size()) {
-            this->sbc_ident_to_show = -1;
-        }
-        return this->sbc_ident_to_show;
+
+        this->sbc_show_state = this->sbc_show_state.match(
+            [&] (show_none) -> show_state {
+                switch (dir) {
+                    case direction::forward:
+                        if (single_ident) {
+                            return show_all();
+                        }
+                        return show_one(0);
+                    case direction::backward:
+                        return show_all();
+                }
+            },
+            [&] (show_one &one) -> show_state {
+                switch (dir) {
+                    case direction::forward:
+                        if (one.so_index + 1 == this->sbc_idents.size()) {
+                            return show_all();
+                        }
+                        return show_one(one.so_index + 1);
+                    case direction::backward:
+                        if (one.so_index == 0) {
+                            return show_none();
+                        }
+                        return show_one(one.so_index - 1);
+                }
+            },
+            [&] (show_all) -> show_state {
+                switch (dir) {
+                    case direction::forward:
+                        return show_none();
+                    case direction::backward:
+                        if (single_ident) {
+                            return show_none();
+                        }
+                        return show_one(this->sbc_idents.size() - 1);
+                }
+            }
+        );
+
+        return this->sbc_show_state;
     };
 
-    void get_ident_to_show(T &ident_out) {
-        if (this->sbc_ident_to_show != -1) {
-            ident_out = this->sbc_idents[this->sbc_ident_to_show].ci_ident;
-        }
+    void get_ident_to_show(T &ident_out) const {
+        this->sbc_show_state.match(
+            [] (const show_none) {},
+            [] (const show_all) {},
+            [&] (const show_one &one) {
+                ident_out = this->sbc_idents[one.so_index].ci_ident;
+            }
+        );
     };
 
     void chart_attrs_for_value(const listview_curses &lc,
@@ -328,7 +165,7 @@ public:
                                double value,
                                string_attrs_t &value_out) const
     {
-        typename std::map<T, unsigned int>::const_iterator ident_iter = this->sbc_ident_lookup.find(ident);
+        auto ident_iter = this->sbc_ident_lookup.find(ident);
 
         require(ident_iter != this->sbc_ident_lookup.end());
 
@@ -338,20 +175,31 @@ public:
         struct line_range lr;
         vis_line_t height;
 
-        if (this->sbc_ident_to_show != -1 &&
-            this->sbc_ident_to_show != ident_index) {
+        int ident_to_show = this->sbc_show_state.match(
+            [] (const show_none) {
+                return -1;
+            },
+            [ident_index] (const show_all) {
+                return ident_index;
+            },
+            [] (const show_one &one) {
+                return one.so_index;
+            }
+        );
+
+        if (ident_to_show != ident_index) {
             return;
         }
 
         lc.get_dimensions(height, width);
 
         for (size_t lpc = 0; lpc < this->sbc_idents.size(); lpc++) {
-            if (this->sbc_ident_to_show == -1 || lpc == (size_t) this->sbc_ident_to_show) {
+            if (this->sbc_show_state.template is<show_all>() || lpc == (size_t) ident_to_show) {
                 overall_stats.merge(this->sbc_idents[lpc].ci_stats, this->sbc_do_stacking);
             }
         }
 
-        if (this->sbc_ident_to_show == -1) {
+        if (this->sbc_show_state.template is<show_all>()) {
             avail_width = width - this->sbc_idents.size();
         }
         else {
@@ -386,10 +234,10 @@ public:
         }
     };
 
-    void clear(void) {
+    void clear() {
         this->sbc_idents.clear();
         this->sbc_ident_lookup.clear();
-        this->sbc_ident_to_show = -1;
+        this->sbc_show_state = show_all();
     };
 
     void add_value(const T &ident, double amount = 1.0) {
@@ -439,7 +287,7 @@ protected:
         chart_ident(const T &ident) : ci_ident(ident) { };
 
         T ci_ident;
-        int ci_attrs;
+        int ci_attrs{0};
         bucket_stats_t ci_stats;
     };
 
@@ -459,7 +307,7 @@ protected:
     unsigned long sbc_left, sbc_right;
     std::vector<struct chart_ident> sbc_idents;
     std::map<T, unsigned int> sbc_ident_lookup;
-    int sbc_ident_to_show;
+    show_state sbc_show_state;
 };
 
 class hist_source2
@@ -510,7 +358,7 @@ public:
         return strlen(LINE_FORMAT) + 8 * 4;
     };
 
-    void clear(void) {
+    void clear() {
         this->hs_line_count = 0;
         this->hs_last_bucket = -1;
         this->hs_last_row = -1;

@@ -1052,19 +1052,29 @@ void handle_paging_key(int ch)
         case KEY_BTAB:
             if (tc == &lnav_data.ld_views[LNV_DB])
             {
-                stacked_bar_chart<string> &chart = lnav_data.ld_db_row_source.dls_chart;
+                auto &chart = lnav_data.ld_db_row_source.dls_chart;
+                const auto &state = chart.show_next_ident(
+                    ch == '\t' ?
+                    stacked_bar_chart_base::direction::forward :
+                    stacked_bar_chart_base::direction::backward);
 
-                if (chart.show_next_ident(ch == '\t' ? 1 : -1) == -1) {
-                    lnav_data.ld_rl_view->set_value("Graphing all values");
-                }
-                else {
-                    string colname;
+                state.match(
+                    [] (stacked_bar_chart_base::show_none) {
+                        lnav_data.ld_rl_view->set_value("Graphing no values");
+                    },
+                    [] (stacked_bar_chart_base::show_all) {
+                        lnav_data.ld_rl_view->set_value("Graphing all values");
+                    },
+                    [] (stacked_bar_chart_base::show_one) {
+                        string colname;
 
-                    chart.get_ident_to_show(colname);
-                    lnav_data.ld_rl_view->set_value(
+                        chart.get_ident_to_show(colname);
+                        lnav_data.ld_rl_view->set_value(
                             "Graphing column " ANSI_BOLD_START +
                             colname + ANSI_NORM);
-                }
+                    }
+                );
+
                 tc->reload_data();
             }
             break;
@@ -1084,16 +1094,12 @@ void handle_paging_key(int ch)
 
         case '\\':
         {
-            vis_bookmarks &bm = tc->get_bookmarks();
-            string         ex;
+            string ex;
 
-            for (bookmark_vector<vis_line_t>::iterator iter =
-                    bm[&BM_EXAMPLE].begin();
-                 iter != bm[&BM_EXAMPLE].end();
-                 ++iter) {
+            for (auto &iter : bm[&BM_EXAMPLE]) {
                 string line;
 
-                tc->get_sub_source()->text_value_for_line(*tc, *iter, line);
+                tc->get_sub_source()->text_value_for_line(*tc, iter, line);
                 ex += line + "\n";
             }
             lnav_data.ld_views[LNV_EXAMPLE].set_sub_source(new plain_text_source(
