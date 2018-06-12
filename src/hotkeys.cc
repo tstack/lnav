@@ -1059,13 +1059,13 @@ void handle_paging_key(int ch)
                     stacked_bar_chart_base::direction::backward);
 
                 state.match(
-                    [] (stacked_bar_chart_base::show_none) {
+                    [&] (stacked_bar_chart_base::show_none) {
                         lnav_data.ld_rl_view->set_value("Graphing no values");
                     },
-                    [] (stacked_bar_chart_base::show_all) {
+                    [&] (stacked_bar_chart_base::show_all) {
                         lnav_data.ld_rl_view->set_value("Graphing all values");
                     },
-                    [] (stacked_bar_chart_base::show_one) {
+                    [&] (stacked_bar_chart_base::show_one) {
                         string colname;
 
                         chart.get_ident_to_show(colname);

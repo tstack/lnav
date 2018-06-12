@@ -118,6 +118,8 @@ public:
                     case direction::backward:
                         return show_all();
                 }
+
+                return show_all();
             },
             [&] (show_one &one) -> show_state {
                 switch (dir) {
@@ -132,6 +134,8 @@ public:
                         }
                         return show_one(one.so_index - 1);
                 }
+
+                return show_all();
             },
             [&] (show_all) -> show_state {
                 switch (dir) {
@@ -143,6 +147,8 @@ public:
                         }
                         return show_one(this->sbc_idents.size() - 1);
                 }
+
+                return show_all();
             }
         );
 
