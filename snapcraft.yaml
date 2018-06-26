@@ -1,0 +1,38 @@
+name: lnav
+version: '0.8.3'
+summary: Log file navigator
+description: |
+  The log file navigator, lnav, is an enhanced log file viewer 
+  that takes advantage of any semantic information 
+  that can be gleaned from the files being viewed.
+
+grade: stable
+confinement: strict
+
+apps:
+  lnav-simosx:
+    command: lnav
+    plugs: 
+      - home            # optional, allows to read log files from home directory
+      - log-observe     # required, provide access to system logs in /var/log
+      - network         # required, lnav uses sendto() with UNIX domain socket 
+
+parts:
+  lnav:
+    plugin: autotools
+    source: https://github.com/tstack/lnav.git
+    source-tag: v0.8.3
+    build-packages: 
+      - build-essential
+      - libpcre3-dev
+      - libsqlite3-dev
+      - libncursesw5-dev
+      - libreadline-dev
+      - zlib1g-dev
+      - libbz2-dev
+      - libgpm-dev
+    stage-packages: 
+      - zlib1g
+      - libncursesw5
+      - libpcre3
+      - libgpm2
