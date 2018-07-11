@@ -10,7 +10,7 @@ grade: stable
 confinement: strict
 
 apps:
-  lnav-simosx:
+  lnav:
     command: lnav
     plugs: 
       - home            # optional, allows to read log files from home directory
