@@ -132,7 +132,11 @@ public:
                     sf_format.clear();
                 }
 
-                sf_filename.set_value(lf->get_filename());
+                if (sf_filename.get_width() > lf->get_filename().length()) {
+                    sf_filename.set_value(lf->get_filename());
+                } else {
+                    sf_filename.set_value(lf->get_unique_path());
+                }
             }
             else {
                 sf_format.clear();
