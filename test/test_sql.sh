@@ -646,6 +646,7 @@ check_output "errors are not reported" <<EOF
 EOF
 
 
+touch -t 201504070732 ${test_dir}/logfile_pretty.0
 run_test ${lnav_test} -n \
     -c ":goto 1" \
     -c ":partition-name middle" \

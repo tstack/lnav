@@ -13,7 +13,11 @@ lnav v0.8.4:
        a tag.  Tags are also searchable and are available in SQL as a JSON
        array in the "log_tags" column.
      * Pressing left-arrow while viewing log messages will reveal the source
-       file name for each line.  Pressing again will reveal the full path.
+       file name for each line and the unique parts of the source path.
+       Pressing again will reveal the full path.
+     * The file name section of the top status line will show only the unique
+       parts of the log file path if there is not enough room to show the full
+       path.
      * Added the ":hide-unmarked-lines" and ":show-unmarked-lines" commands
        that hide/show lines based on whether they are bookmarked.
      * Added the "json_contains()" SQL function to check if a JSON value
