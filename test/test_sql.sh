@@ -649,17 +649,21 @@ EOF
 run_test ${lnav_test} -n \
     -c ":goto 1" \
     -c ":partition-name middle" \
-    -c ";select * from access_log" \
+    -c ":goto 21" \
+    -c ":partition-name end" \
+    -c ";select log_line,log_part,log_time from syslog_log" \
     -c ":write-csv-to -" \
-    ${test_dir}/logfile_access_log.0
+    ${test_dir}/logfile_pretty.0
 
 check_output "partition-name does not work" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status
-0,<NULL>,2009-07-20 22:59:26.000,0,info,0,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200
-1,middle,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404
-2,middle,2009-07-20 22:59:29.000,0,info,0,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200
+log_line,log_part,log_time
+0,<NULL>,2015-04-07 00:49:42.000
+1,middle,2015-04-07 05:49:53.000
+18,middle,2015-04-07 07:31:56.000
+20,middle,2015-04-07 07:31:56.000
+21,end,2015-04-07 07:31:56.000
+22,end,2015-04-07 07:32:56.000
 EOF
-
 
 run_test ${lnav_test} -n \
     -c ":goto 1" \

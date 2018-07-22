@@ -309,31 +309,31 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     {
         vis_bookmarks &vb = vt->tc->get_bookmarks();
         bookmark_vector<vis_line_t> &bv = vb[&textview_curses::BM_META];
-        bookmark_vector<vis_line_t>::iterator iter;
-        vis_line_t curr_line;
 
-        curr_line = vis_line_t(vc->log_cursor.lc_curr_line);
-        iter = lower_bound(bv.begin(), bv.end(), curr_line);
-
-        if (bv.empty() || (iter != bv.end() && curr_line < *iter)) {
+        if (bv.empty()) {
             sqlite3_result_null(ctx);
         }
         else {
-            if (iter == bv.end() || *iter != curr_line) {
-                --iter;
-            }
-            content_line_t part_line = vt->lss->at(*iter);
-            std::map<content_line_t, bookmark_metadata> &bm_meta = vt->lss->get_user_bookmark_metadata();
-            std::map<content_line_t, bookmark_metadata>::iterator meta_iter;
+            vis_line_t curr_line(vc->log_cursor.lc_curr_line);
+            auto iter = lower_bound(bv.begin(), bv.end(), curr_line + 1_vl);
 
-            meta_iter = bm_meta.find(part_line);
-            if (meta_iter != bm_meta.end() && !meta_iter->second.bm_name.empty()) {
-                sqlite3_result_text(ctx,
-                                    meta_iter->second.bm_name.c_str(),
-                                    meta_iter->second.bm_name.size(),
-                                    SQLITE_TRANSIENT);
-            }
-            else {
+            if (iter != bv.begin()) {
+                --iter;
+                content_line_t part_line = vt->lss->at(*iter);
+                std::map<content_line_t, bookmark_metadata> &bm_meta = vt->lss->get_user_bookmark_metadata();
+                std::map<content_line_t, bookmark_metadata>::iterator meta_iter;
+
+                meta_iter = bm_meta.find(part_line);
+                if (meta_iter != bm_meta.end() &&
+                    !meta_iter->second.bm_name.empty()) {
+                    sqlite3_result_text(ctx,
+                                        meta_iter->second.bm_name.c_str(),
+                                        meta_iter->second.bm_name.size(),
+                                        SQLITE_TRANSIENT);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+            } else {
                 sqlite3_result_null(ctx);
             }
         }
