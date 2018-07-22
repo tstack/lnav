@@ -637,5 +637,6 @@ void line_buffer::read_available(shared_buffer_ref &sbr)
 
     char *line_start = this->get_range(this->lb_file_offset, len);
 
-    sbr.share(this->lb_share_manager, line_start, len);
+    sbr.share(this->lb_share_manager, line_start,
+              std::min(len, (size_t) MAX_LINE_BUFFER_SIZE));
 }
