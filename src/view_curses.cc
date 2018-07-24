@@ -165,6 +165,8 @@ bool rgb_color::from_str(const string_fragment &color,
         }
     }
 
+    errmsg = "Unknown color: " + color.to_string() +
+        ".  See https://jonasjacek.github.io/colors/ for a list of supported color names";
     return false;
 }
 

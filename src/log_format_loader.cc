@@ -616,6 +616,7 @@ struct json_path_handler format_handlers[] = {
         .with_description("The regular expression for this search table."),
 
     json_path_handler("highlights/(?<highlight_name>[^/]+)/")
+        .with_description("Highlight definitions")
         .with_obj_provider<external_log_format::highlighter_def, external_log_format>([](const yajlpp_provider_context &ypc, external_log_format *root) {
             return &(root->elf_highlighter_patterns[ypc.get_substr_i(0)]);
         })

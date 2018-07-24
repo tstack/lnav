@@ -292,7 +292,7 @@ struct rgb_color {
                          rgb_color &rgb_out,
                          std::string &errmsg);
 
-    rgb_color(short r = -1, short g = -1, short b = -1)
+    explicit rgb_color(short r = -1, short g = -1, short b = -1)
         : rc_r(r), rc_g(g), rc_b(b) {
     }
 

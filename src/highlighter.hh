@@ -52,13 +52,15 @@ struct highlighter {
     };
 
     highlighter(const highlighter &other) {
+        this->h_pattern = other.h_pattern;
+        this->h_fg = other.h_fg;
+        this->h_bg = other.h_bg;
         this->h_code = other.h_code;
         pcre_refcount(this->h_code, 1);
         this->study();
-        this->h_format_name = other.h_format_name;
         this->h_attrs = other.h_attrs;
         this->h_text_format = other.h_text_format;
-        this->h_pattern = other.h_pattern;
+        this->h_format_name = other.h_format_name;
     };
 
     highlighter &operator=(const highlighter &other) {
@@ -68,13 +70,15 @@ struct highlighter {
         }
         free(this->h_code_extra);
 
+        this->h_pattern = other.h_pattern;
+        this->h_fg = other.h_fg;
+        this->h_bg = other.h_bg;
         this->h_code = other.h_code;
         pcre_refcount(this->h_code, 1);
         this->study();
         this->h_format_name = other.h_format_name;
         this->h_attrs = other.h_attrs;
         this->h_text_format = other.h_text_format;
-        this->h_pattern = other.h_pattern;
 
         return *this;
     };

@@ -1450,11 +1450,9 @@ void external_log_format::build(std::vector<std::string> &errors) {
                          ":no sample logs provided, all formats must have samples");
     }
 
-    for (std::vector<sample>::iterator iter = this->elf_samples.begin();
-         iter != this->elf_samples.end();
-         ++iter) {
+    for (auto &elf_sample : this->elf_samples) {
         pcre_context_static<128> pc;
-        pcre_input pi(iter->s_line);
+        pcre_input pi(elf_sample.s_line);
         bool found = false;
 
         for (auto pat_iter = this->elf_pattern_order.begin();
@@ -1502,7 +1500,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                     errors.push_back("error:" +
                                      this->elf_name.to_string() +
                                      ":invalid sample -- " +
-                                     iter->s_line);
+                                         elf_sample.s_line);
                     errors.push_back("error:" +
                                      this->elf_name.to_string() +
                                      ":unrecognized timestamp format -- " + ts);
@@ -1534,18 +1532,18 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
                 log_level_t level = this->convert_level(pi, level_cap);
 
-                if (iter->s_level != LEVEL_UNKNOWN) {
-                    if (iter->s_level != level) {
+                if (elf_sample.s_level != LEVEL_UNKNOWN) {
+                    if (elf_sample.s_level != level) {
                         errors.push_back("error:" +
                                          this->elf_name.to_string() +
                                          ":invalid sample -- " +
-                                         iter->s_line);
+                                             elf_sample.s_line);
                         errors.push_back("error:" +
                                          this->elf_name.to_string() +
                                          ":parsed level '" +
                                          level_names[level] +
                                          "' does not match expected level of '" +
-                                         level_names[iter->s_level] +
+                                         level_names[elf_sample.s_level] +
                                          "'");
                     }
                 }
@@ -1556,7 +1554,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
             errors.push_back("error:" +
                              this->elf_name.to_string() +
                              ":invalid sample         -- " +
-                             iter->s_line);
+                                 elf_sample.s_line);
 
             for (auto pat_iter = this->elf_pattern_order.begin();
                  pat_iter != this->elf_pattern_order.end();
@@ -1573,7 +1571,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                     errors.push_back("error:" +
                                      this->elf_name.to_string() +
                                      ":partial sample matched -- " +
-                                     iter->s_line.substr(0, partial_len));
+                                         elf_sample.s_line.substr(0, partial_len));
                     errors.push_back("error:  against pattern -- " +
                                      (*pat_iter)->p_string);
                 }
@@ -1586,18 +1584,16 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
     }
 
-    for (auto iter = this->elf_value_defs.begin();
-         iter != this->elf_value_defs.end();
-         ++iter) {
-        if (iter->second->vd_foreign_key || iter->second->vd_identifier) {
+    for (auto &elf_value_def : this->elf_value_defs) {
+        if (elf_value_def.second->vd_foreign_key || elf_value_def.second->vd_identifier) {
             continue;
         }
 
-        switch (iter->second->vd_kind) {
+        switch (elf_value_def.second->vd_kind) {
             case logline_value::VALUE_INTEGER:
             case logline_value::VALUE_FLOAT:
-                iter->second->vd_values_index = this->elf_numeric_value_defs.size();
-                this->elf_numeric_value_defs.push_back(iter->second);
+                elf_value_def.second->vd_values_index = this->elf_numeric_value_defs.size();
+                this->elf_numeric_value_defs.push_back(elf_value_def.second);
                 break;
             default:
                 break;
@@ -1711,7 +1707,6 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 .with_color(fg, bg)
                 .with_attrs(attrs);
         }
-
     }
 }
 
