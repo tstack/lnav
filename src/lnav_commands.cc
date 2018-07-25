@@ -1048,7 +1048,7 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
 
 static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting regular expression to filter out";
+    string retval = "error: expecting regular expression to filter";
 
     if (args.empty()) {
         args.emplace_back("filter");
@@ -1080,6 +1080,7 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
             if (args[0] == "filter-in" && !fs.empty()) {
                 lnav_data.ld_preview_status_source.get_description()
                     .set_value("Match preview for :filter-in only works if there are no other filters");
+                retval = "";
             } else {
                 textview_curses::highlight_map_t &hm = tc->get_highlights();
                 highlighter hl(code.release());
