@@ -66,11 +66,15 @@ static struct {
     { "tomo", pcrepp("\\Atomorrow\\b") },
     { "noon", pcrepp("\\Anoon\\b") },
     { "and", pcrepp("\\Aand\\b") },
+    { "the", pcrepp("\\Athe\\b") },
     { "ago", pcrepp("\\Aago\\b") },
     { "lter", pcrepp("\\Alater\\b") },
     { "bfor", pcrepp("\\Abefore\\b") },
+    { "aft", pcrepp("\\Aafter\\b") },
     { "now", pcrepp("\\Anow\\b") },
     { "here", pcrepp("\\Ahere\\b") },
+    { "next", pcrepp("\\Anext\\b") },
+    { "previous", pcrepp("\\Aprevious|last\\b") },
 };
 
 static int64_t TIME_SCALES[] = {
@@ -80,12 +84,24 @@ static int64_t TIME_SCALES[] = {
         24,
 };
 
+const char relative_time::FIELD_CHARS[] = {
+    'u',
+    's',
+    'm',
+    'h',
+    'd',
+    'M',
+    'y',
+};
+
 bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_out)
 {
     pcre_input pi(str, 0, len);
     pcre_context_static<30> pc;
     int64_t number = 0;
-    bool number_set = false;
+    bool number_set = false, number_was_set = false;
+    bool next_set = false;
+    token_t base_token = RTT_INVALID;
 
     pe_out.pe_column = -1;
     pe_out.pe_msg.clear();
@@ -112,9 +128,17 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
             found = true;
             if (RTT_MICROS <= token && token <= RTT_YEARS) {
                 if (!number_set) {
-                    pe_out.pe_msg = "Expecting a number before time unit";
-                    return false;
+                    if (base_token != RTT_INVALID) {
+                        base_token = RTT_INVALID;
+                        this->rt_is_absolute = true;
+                        continue;
+                    }
+                    if (!this->rt_next && !this->rt_previous) {
+                        pe_out.pe_msg = "Expecting a number before time unit";
+                        return false;
+                    }
                 }
+                number_was_set = number_set;
                 number_set = false;
             }
             switch (token) {
@@ -123,7 +147,6 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                 case RTT_NOW: {
                     struct timeval tv;
                     struct exttm tm;
-                    int abs_start = 0, abs_end = RTF__MAX;
 
                     gettimeofday(&tv, NULL);
                     localtime_r(&tv.tv_sec, &tm.et_tm);
@@ -141,7 +164,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                             this->rt_field[RTF_MICROSECONDS] = tm.et_nsec / 1000;
                             break;
                         case RTT_YESTERDAY:
-                            this->rt_field[RTF_DAYS] -= 1;
+                            this->rt_field[RTF_DAYS].value -= 1;
                         case RTT_TODAY:
                             this->rt_field[RTF_HOURS] = 0;
                             this->rt_field[RTF_MINUTES] = 0;
@@ -151,39 +174,35 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         default:
                             break;
                     }
-                    for (int lpc = abs_start; lpc <= abs_end; lpc++) {
-                        this->rt_is_absolute[lpc] = true;
-                    }
+                    this->rt_is_absolute = true;
                     break;
                 }
                 case RTT_INVALID:
                 case RTT_WHITE:
                 case RTT_AND:
+                case RTT_THE:
                     break;
                 case RTT_AM:
                 case RTT_PM:
                     if (number_set) {
                         this->rt_field[RTF_HOURS] = number;
-                        this->rt_is_absolute[RTF_HOURS] = true;
                         this->rt_field[RTF_MINUTES] = 0;
-                        this->rt_is_absolute[RTF_MINUTES] = true;
                         this->rt_field[RTF_SECONDS] = 0;
-                        this->rt_is_absolute[RTF_SECONDS] = true;
                         this->rt_field[RTF_MICROSECONDS] = 0;
-                        this->rt_is_absolute[RTF_MICROSECONDS] = true;
+                        this->rt_is_absolute = true;
                         number_set = false;
                     }
-                    if (!this->rt_is_absolute[RTF_HOURS]) {
+                    if (!this->rt_is_absolute) {
                         pe_out.pe_msg = "Expecting absolute time with A.M. or P.M.";
                         return false;
                     }
                     if (token == RTT_AM) {
-                        if (this->rt_field[RTF_HOURS] == 12) {
+                        if (this->rt_field[RTF_HOURS].value == 12) {
                             this->rt_field[RTF_HOURS] = 0;
                         }
                     }
-                    else if (this->rt_field[RTF_HOURS] < 12) {
-                        this->rt_field[RTF_HOURS] += 12;
+                    else if (this->rt_field[RTF_HOURS].value < 12) {
+                        this->rt_field[RTF_HOURS].value += 12;
                     }
                     break;
                 case RTT_A:
@@ -197,9 +216,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                     string hstr = pi.get_substr(pc[0]);
                     string mstr = pi.get_substr(pc[1]);
                     this->rt_field[RTF_HOURS] = atoi(hstr.c_str());
-                    this->rt_is_absolute[RTF_HOURS] = true;
                     this->rt_field[RTF_MINUTES] = atoi(mstr.c_str());
-                    this->rt_is_absolute[RTF_MINUTES] = true;
                     if (pc[2]->is_valid()) {
                         string sstr = pi.get_substr(pc[2]);
                         this->rt_field[RTF_SECONDS] = atoi(sstr.c_str());
@@ -222,8 +239,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         this->rt_field[RTF_SECONDS] = 0;
                         this->rt_field[RTF_MICROSECONDS] = 0;
                     }
-                    this->rt_is_absolute[RTF_SECONDS] = true;
-                    this->rt_is_absolute[RTF_MICROSECONDS] = true;
+                    this->rt_is_absolute = true;
                     break;
                 }
                 case RTT_NUMBER: {
@@ -248,25 +264,70 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                     this->rt_field[RTF_MICROSECONDS] = number * 1000;
                     break;
                 case RTT_SECONDS:
-                    this->rt_field[RTF_SECONDS] = number;
+                    if (number_was_set) {
+                        this->rt_field[RTF_SECONDS] = number;
+                    } else if (next_set) {
+                        this->rt_field[RTF_MICROSECONDS] = 0;
+                        this->rt_is_absolute = true;
+                    }
                     break;
                 case RTT_MINUTES:
-                    this->rt_field[RTF_MINUTES] = number;
+                    if (number_was_set) {
+                        this->rt_field[RTF_MINUTES] = number;
+                    } else if (next_set) {
+                        this->rt_field[RTF_MICROSECONDS] = 0;
+                        this->rt_field[RTF_SECONDS] = 0;
+                        this->rt_is_absolute = true;
+                    }
                     break;
                 case RTT_HOURS:
-                    this->rt_field[RTF_HOURS] = number;
+                    if (number_was_set) {
+                        this->rt_field[RTF_HOURS] = number;
+                    } else if (next_set) {
+                        this->rt_field[RTF_MICROSECONDS] = 0;
+                        this->rt_field[RTF_SECONDS] = 0;
+                        this->rt_field[RTF_MINUTES] = 0;
+                        this->rt_is_absolute = true;
+                    }
                     break;
                 case RTT_DAYS:
-                    this->rt_field[RTF_DAYS] = number;
+                    if (number_was_set) {
+                        this->rt_field[RTF_DAYS] = number;
+                    } else if (next_set) {
+                        this->rt_field[RTF_MICROSECONDS] = 0;
+                        this->rt_field[RTF_SECONDS] = 0;
+                        this->rt_field[RTF_MINUTES] = 0;
+                        this->rt_field[RTF_HOURS] = 0;
+                        this->rt_is_absolute = true;
+                    }
                     break;
                 case RTT_WEEKS:
                     this->rt_field[RTF_DAYS] = number * 7;
                     break;
                 case RTT_MONTHS:
-                    this->rt_field[RTF_MONTHS] = number;
+                    if (number_was_set) {
+                        this->rt_field[RTF_MONTHS] = number;
+                    } else if (next_set) {
+                        this->rt_field[RTF_MICROSECONDS] = 0;
+                        this->rt_field[RTF_SECONDS] = 0;
+                        this->rt_field[RTF_MINUTES] = 0;
+                        this->rt_field[RTF_HOURS] = 0;
+                        this->rt_field[RTF_DAYS] = 0;
+                        this->rt_is_absolute = true;
+                    }
                     break;
                 case RTT_YEARS:
-                    this->rt_field[RTF_YEARS] = number;
+                    if (number_was_set) {
+                        this->rt_field[RTF_YEARS] = number;
+                    } else if (next_set) {
+                        this->rt_field[RTF_MICROSECONDS] = 0;
+                        this->rt_field[RTF_SECONDS] = 0;
+                        this->rt_field[RTF_MINUTES] = 0;
+                        this->rt_field[RTF_HOURS] = 0;
+                        this->rt_field[RTF_DAYS] = 0;
+                        this->rt_field[RTF_MONTHS] = 0;
+                        this->rt_is_absolute = true;
+                    }
                     break;
                 case RTT_BEFORE:
                 case RTT_AGO:
@@ -275,10 +336,13 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         return false;
                     }
                     for (int field = 0; field < RTF__MAX; field++) {
-                        if (this->rt_field[field] > 0) {
-                            this->rt_field[field] = -this->rt_field[field];
+                        if (this->rt_field[field].value > 0) {
+                            this->rt_field[field] = -this->rt_field[field].value;
                         }
                     }
+                    break;
+                case RTT_AFTER:
+                    base_token = token;
                     break;
                 case RTT_LATER:
                     if (this->empty()) {
@@ -288,15 +352,24 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                     break;
                 case RTT_HERE:
                     break;
+                case RTT_NEXT:
+                    this->rt_next = true;
+                    next_set = true;
+                    break;
+                case RTT_PREVIOUS:
+                    this->rt_previous = true;
+                    next_set = true;
+                    break;
                 case RTT_TOMORROW:
                     this->rt_field[RTF_DAYS] = 1;
                     break;
                 case RTT_NOON:
                     this->rt_field[RTF_HOURS] = 12;
-                    this->rt_is_absolute[RTF_HOURS] = true;
-                    for (int lpc = RTF_MICROSECONDS; lpc < RTF_HOURS; lpc++) {
-                        this->rt_field[lpc] = 0;
-                        this->rt_is_absolute[lpc] = true;
+                    this->rt_is_absolute = true;
+                    for (int lpc2 = RTF_MICROSECONDS;
+                         lpc2 < RTF_HOURS;
+                         lpc2++) {
+                        this->rt_field[lpc2] = 0;
                     }
                     break;
 
@@ -304,6 +377,14 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                     assert(false);
                     break;
             }
+
+            if (token != RTT_NEXT &&
+                token != RTT_PREVIOUS &&
+                token != RTT_WHITE) {
+                next_set = false;
+            }
+
+            number_was_set = false;
         }
 
         if (!found) {
@@ -316,20 +397,94 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
 void relative_time::rollover()
 {
     for (int lpc = 0; lpc < RTF_DAYS; lpc++) {
-        int64_t val = this->rt_field[lpc];
+        if (!this->rt_field[lpc].is_set) {
+            continue;
+        }
+        int64_t val = this->rt_field[lpc].value;
         this->rt_field[lpc] = val % TIME_SCALES[lpc];
-        this->rt_field[lpc + 1] += val / TIME_SCALES[lpc];
+        this->rt_field[lpc + 1].value += val / TIME_SCALES[lpc];
     }
-    if (std::abs(this->rt_field[RTF_DAYS]) > 31) {
-        int64_t val = this->rt_field[RTF_DAYS];
+    if (std::abs(this->rt_field[RTF_DAYS].value) > 31) {
+        int64_t val = this->rt_field[RTF_DAYS].value;
         this->rt_field[RTF_DAYS] = val % 31;
-        this->rt_field[RTF_MONTHS] += val / 31;
+        this->rt_field[RTF_MONTHS].value += val / 31;
     }
-    if (std::abs(this->rt_field[RTF_MONTHS]) > 12) {
-        int64_t val = this->rt_field[RTF_MONTHS];
+    if (std::abs(this->rt_field[RTF_MONTHS].value) > 12) {
+        int64_t val = this->rt_field[RTF_MONTHS].value;
         this->rt_field[RTF_MONTHS] = val % 12;
-        this->rt_field[RTF_YEARS] += val / 12;
+        this->rt_field[RTF_YEARS].value += val / 12;
     }
+}
+
+std::string relative_time::to_string()
+{
+    char dst[128] = "";
+    char *pos = dst;
+
+    if (this->is_absolute()) {
+        pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                        "%s",
+                        this->rt_next ? "next " :
+                        (this->rt_previous ? "last " : ""));
+        if (this->rt_field[RTF_YEARS].is_set &&
+            (this->rt_next || this->rt_previous ||
+             this->rt_field[RTF_YEARS].value != 0)) {
+            pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                            "year %" PRId64 " ",
+                            this->rt_field[RTF_YEARS].value);
+        } else if ((this->rt_next || this->rt_previous) &&
+                   this->rt_field[RTF_MONTHS].is_set) {
+            pos += snprintf(pos, sizeof(dst) - (pos - dst), "year ");
+        }
+        if (this->rt_field[RTF_MONTHS].is_set &&
+            (this->rt_next || this->rt_previous ||
+             this->rt_field[RTF_MONTHS].value != 0)) {
+            pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                            "month %" PRId64 " ",
+                            this->rt_field[RTF_MONTHS].value);
+        } else if ((this->rt_next || this->rt_previous) &&
+                   this->rt_field[RTF_DAYS].is_set) {
+            pos += snprintf(pos, sizeof(dst) - (pos - dst), "month ");
+        }
+        if (this->rt_field[RTF_DAYS].is_set &&
+            (this->rt_next || this->rt_previous ||
+             this->rt_field[RTF_DAYS].value != 0)) {
+            pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                            "day %" PRId64 " ",
+                            this->rt_field[RTF_DAYS].value);
+        } else if ((this->rt_next || this->rt_previous) &&
+                   this->rt_field[RTF_HOURS].is_set) {
+            pos += snprintf(pos, sizeof(dst) - (pos - dst), "day ");
+        }
+        pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                        "%" PRId64 ":%02" PRId64,
+                        this->rt_field[RTF_HOURS].value,
+                        this->rt_field[RTF_MINUTES].value);
+        if (this->rt_field[RTF_SECONDS].is_set &&
+            this->rt_field[RTF_SECONDS].value != 0) {
+            pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                            ":%.02" PRId64,
+                            this->rt_field[RTF_SECONDS].value);
+            if (this->rt_field[RTF_MICROSECONDS].is_set &&
+                this->rt_field[RTF_MICROSECONDS].value != 0) {
+                pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                                ".%.03" PRId64,
+                                this->rt_field[RTF_MICROSECONDS].value / 1000);
+            }
+        }
+    } else {
+        for (int lpc = RTF__MAX - 1; lpc >= 0; lpc--) {
+            if (this->rt_field[lpc].value == 0) {
+                continue;
+            }
+            pos += snprintf(pos, sizeof(dst) - (pos - dst),
+                            "%" PRId64 "%c",
+                            this->rt_field[lpc].value,
+                            FIELD_CHARS[lpc]);
+        }
+    }
+
+    return dst;
 }
 
 size_t str2reltime(int64_t millis, std::string &value_out)

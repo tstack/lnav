@@ -419,6 +419,15 @@ public:
         return this->find_from_time(tv);
     };
 
+    vis_line_t find_from_time(exttm &etm) {
+        struct timeval tv;
+
+        tv.tv_sec = timegm(&etm.et_tm);
+        tv.tv_usec = etm.et_nsec / 1000;
+
+        return this->find_from_time(tv);
+    };
+
     time_t time_for_row(int row) {
         return this->find_line(this->at(vis_line_t(row)))->get_time();
     };

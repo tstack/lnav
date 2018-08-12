@@ -262,7 +262,7 @@ static void regenerate_unique_file_names()
     upg.generate();
 }
 
-bool setup_logline_table()
+bool setup_logline_table(exec_context &ec)
 {
     // Hidden columns don't show up in the table_info pragma.
     static const char *hidden_table_columns[] = {
@@ -284,7 +284,7 @@ bool setup_logline_table()
     bool             retval   = false;
     bool update_possibilities = (
         lnav_data.ld_rl_view != NULL &&
-        lnav_data.ld_exec_context.ec_local_vars.size() == 1);
+        ec.ec_local_vars.size() == 1);
 
     if (update_possibilities) {
         lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
@@ -1358,7 +1358,7 @@ static void clear_last_user_mark(void *, listview_curses *lv)
 {
     textview_curses *tc = (textview_curses *) lv;
     if (lnav_data.ld_select_start.find(tc) != lnav_data.ld_select_start.end() &&
-            lnav_data.ld_select_start[tc] != tc->get_top()) {
+            !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
         lnav_data.ld_select_start.erase(tc);
         lnav_data.ld_last_user_mark.erase(tc);
     }

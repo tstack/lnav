@@ -334,7 +334,7 @@ void rebuild_indexes(bool force);
 bool ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);
 
-bool setup_logline_table();
+bool setup_logline_table(exec_context &ec);
 
 void execute_search(lnav_view_t view, const std::string &regex);
 

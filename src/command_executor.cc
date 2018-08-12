@@ -547,7 +547,7 @@ string execute_from_file(exec_context &ec, const string &path, int line_number, 
             }
             break;
         case ';':
-            setup_logline_table();
+            setup_logline_table(ec);
             retval = execute_sql(ec, cmdline, alt_msg);
             break;
         case '|':
@@ -589,7 +589,7 @@ string execute_any(exec_context &ec, const string &cmdline_with_mode)
             }
             break;
         case ';':
-            setup_logline_table();
+            setup_logline_table(ec);
             retval = execute_sql(ec, cmdline, alt_msg);
             break;
         case '|': {
@@ -636,7 +636,7 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
             }
             break;
         case ';':
-            setup_logline_table();
+            setup_logline_table(ec);
             msg = execute_sql(ec, cmd.substr(1), alt_msg);
             break;
         case '|':

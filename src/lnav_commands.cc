@@ -270,10 +270,11 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
         if (rt.parse(all_args, pe)) {
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
                 content_line_t cl;
-                vis_line_t vl;
+                vis_line_t vl, new_vl;
                 logline *ll;
+                bool done = false;
 
-                if (!rt.is_absolute()) {
+                if (rt.is_relative()) {
                     lnav_data.ld_last_relative_time = rt;
                 }
 
@@ -281,17 +282,23 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                 cl = lnav_data.ld_log_source.at(vl);
                 ll = lnav_data.ld_log_source.find_line(cl);
                 ll->to_exttm(tm);
-                rt.add(tm);
-                tv.tv_sec = timegm(&tm.et_tm);
-                tv.tv_usec = tm.et_nsec / 1000;
 
-                vl = lnav_data.ld_log_source.find_from_time(tv);
+                do {
+                    rt.add(tm);
+
+                    new_vl = lnav_data.ld_log_source.find_from_time(tm);
+
+                    if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
+                        vl = new_vl;
+                        done = true;
+                    }
+                } while (!done);
                 if (ec.ec_dry_run) {
                     retval = "info: will move to line " + to_string((int) vl);
                 } else {
                     tc->set_top(vl);
                     retval = "";
-                    if (!rt.is_absolute() && lnav_data.ld_rl_view != NULL) {
+                    if (!rt.is_absolute() && lnav_data.ld_rl_view != nullptr) {
                         lnav_data.ld_rl_view->set_alt_value(
                             HELP_MSG_2(r, R,
                                        "to move forward/backward the same amount of time"));
@@ -301,7 +308,8 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                 retval = "error: relative time values only work in the log view";
             }
         }
-        else if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, tv) != NULL) {
+        else if (dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, tv) !=
+            nullptr) {
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
                 vis_line_t vl;
 
@@ -2174,7 +2182,7 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
         args.emplace_back("colname");
         return retval;
     }
-    else if (!setup_logline_table()) {
+    else if (!setup_logline_table(ec)) {
         retval = "error: no log data available";
     }
     else if (args.size() == 1) {

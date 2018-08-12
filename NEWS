@@ -22,6 +22,9 @@ lnav v0.8.4:
        that hide/show lines based on whether they are bookmarked.
      * Added the "json_contains()" SQL function to check if a JSON value
        contains a number of a string.
+     * The relative time parser recognizes "next" at the beginning of the
+       input, for example, "next hour" or "next day".  Handy for use in the
+       ":goto" command.
 
      Interface Changes:
      * When typing in a search, instead of moving the view to the first match
@@ -37,6 +40,8 @@ lnav v0.8.4:
        to the beginning of the line.
      * The :delete-filter command should now tab-complete existing filters.
      * Milliseconds can now be used in relative times (e.g. 10:00:00.123)
+     * The J/K hotkeys were not marking lines correctly when the bottom of
+       the view was reached.
 
 lnav v0.8.3:
      Features:

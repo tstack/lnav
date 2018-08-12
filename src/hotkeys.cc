@@ -140,25 +140,6 @@ static void copy_to_xclip(void)
     lnav_data.ld_rl_view->set_value(buffer);
 }
 
-static void back_ten(int ten_minute)
-{
-    textview_curses *   tc  = lnav_data.ld_view_stack.back();
-    logfile_sub_source *lss;
-
-    lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
-
-    if (!lss)
-        return;
-
-    time_t hour = rounddown_offset(lnav_data.ld_top_time,
-                                   60 * 60,
-                                   ten_minute * 10 * 60);
-    vis_line_t line = lss->find_from_time(hour);
-
-    --line;
-    lnav_data.ld_view_stack.back()->set_top(line);
-}
-
 void handle_paging_key(int ch)
 {
     if (lnav_data.ld_view_stack.empty()) {
@@ -246,32 +227,6 @@ void handle_paging_key(int ch)
             tc->reload_data();
 
             lnav_data.ld_rl_view->set_value("Cleared bookmarks");
-            break;
-
-        case 'w':
-            moveto_cluster(&bookmark_vector<vis_line_t>::next,
-                           &logfile_sub_source::BM_WARNINGS,
-                           tc->get_top());
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    6, ^,
-                    "to move to next/previous hour boundary"));
-            break;
-
-        case 'W':
-            moveto_cluster(&bookmark_vector<vis_line_t>::prev,
-                           &logfile_sub_source::BM_WARNINGS,
-                           tc->get_top());
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                    6, ^,
-                    "to move to next/previous hour boundary"));
-            break;
-
-        case 'y':
-            tc->set_top(bm[&BM_QUERY].next(tc->get_top()));
-            break;
-
-        case 'Y':
-            tc->set_top(bm[&BM_QUERY].prev(tc->get_top()));
             break;
 
         case '>':
@@ -422,7 +377,7 @@ void handle_paging_key(int ch)
                 unsigned long width;
 
                 tc->get_dimensions(height, width);
-                if (lnav_data.ld_last_user_mark[tc] > tc->get_bottom() - 2 &&
+                if (lnav_data.ld_last_user_mark[tc] > (tc->get_bottom() - 2) &&
                     tc->get_top() + height < tc->get_inner_height()) {
                     tc->shift_top(vis_line_t(1));
                 }
@@ -556,49 +511,6 @@ void handle_paging_key(int ch)
                     --next_top;
                 }
             }
-            break;
-
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-            if (lss) {
-                int    ten_minute = (ch - '0') * 10 * 60;
-                time_t hour       = rounddown(lnav_data.ld_top_time +
-                                              (60 * 60) -
-                                              ten_minute +
-                                              1,
-                                              60 * 60);
-                vis_line_t line = lss->find_from_time(hour + ten_minute);
-
-                tc->set_top(line);
-            }
-            break;
-
-        case '!':
-            back_ten(1);
-            break;
-
-        case '@':
-            back_ten(2);
-            break;
-
-        case '#':
-            back_ten(3);
-            break;
-
-        case '$':
-            back_ten(4);
-            break;
-
-        case '%':
-            back_ten(5);
-            break;
-
-        case '^':
-            back_ten(6);
             break;
 
         case '9':
@@ -866,7 +778,7 @@ void handle_paging_key(int ch)
                 lnav_data.ld_exec_context.ec_top_line = tc->get_top();
 
                 lnav_data.ld_mode = LNM_SQL;
-                setup_logline_table();
+                setup_logline_table(lnav_data.ld_exec_context);
                 lnav_data.ld_rl_view->focus(LNM_SQL, ";");
 
                 lnav_data.ld_bottom_source.update_loading(0, 0);
@@ -940,16 +852,6 @@ void handle_paging_key(int ch)
                         HELP_MSG_2(s, S, "to move forward/backward through slow downs"));
             }
             tc->reload_data();
-            break;
-
-        case 'i':
-            if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
-                lnav_data.ld_rl_view->set_alt_value(
-                        HELP_MSG_2(z, Z, "to zoom in/out"));
-            }
-            else {
-                lnav_data.ld_rl_view->set_alt_value("");
-            }
             break;
 
         case 'I':
@@ -1088,10 +990,6 @@ void handle_paging_key(int ch)
             tc->set_needs_update();
             break;
 
-        case 'X':
-            lnav_data.ld_rl_view->set_value(execute_command(ec, "close"));
-            break;
-
         case '\\':
         {
             string ex;
@@ -1116,36 +1014,38 @@ void handle_paging_key(int ch)
                             "Use the 'goto' command to set the relative time to move by");
                 }
                 else {
-                    vis_line_t vl = tc->get_top();
+                    vis_line_t vl = tc->get_top(), new_vl;
                     relative_time rt = lnav_data.ld_last_relative_time;
-                    struct timeval tv;
                     content_line_t cl;
                     struct exttm tm;
+                    bool done = false;
 
-                    if (ch == 'R') {
-                        rt.negate();
+                    if (ch == 'r') {
+                        if (rt.is_negative()) {
+                            rt.negate();
+                        }
+                    } else if (ch == 'R') {
+                        if (!rt.is_negative()) {
+                            rt.negate();
+                        }
                     }
 
                     cl = lnav_data.ld_log_source.at(vl);
                     logline *ll = lnav_data.ld_log_source.find_line(cl);
                     ll->to_exttm(tm);
-                    rt.add(tm);
-                    tv.tv_sec = timegm(&tm.et_tm);
-                    tv.tv_usec = tm.et_nsec / 1000;
-                    vl = lnav_data.ld_log_source.find_from_time(tv);
-                    if (rt.is_negative() && (vl > vis_line_t(0))) {
-                        --vl;
-                        if (vl == tc->get_top()) {
-                            vl = vis_line_t(0);
+                    do {
+                        rt.add(tm);
+                        new_vl = lnav_data.ld_log_source.find_from_time(tm);
+
+                        if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
+                            vl = new_vl;
+                            done = true;
                         }
-                    }
+                    } while (!done);
                     tc->set_top(vl);
+                    lnav_data.ld_rl_view->set_value(" " + rt.to_string());
                 }
             }
-            break;
-
-        case KEY_CTRL_R:
-            reset_session();
             break;
 
         case KEY_CTRL_W:

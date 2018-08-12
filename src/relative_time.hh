@@ -68,11 +68,15 @@ public:
         RTT_TOMORROW,
         RTT_NOON,
         RTT_AND,
+        RTT_THE,
         RTT_AGO,
         RTT_LATER,
         RTT_BEFORE,
+        RTT_AFTER,
         RTT_NOW,
         RTT_HERE,
+        RTT_NEXT,
+        RTT_PREVIOUS,
 
         RTT__MAX
     };
@@ -83,20 +87,35 @@ public:
 
     void clear() {
         memset(this->rt_field, 0, sizeof(this->rt_field));
-        memset(this->rt_is_absolute, 0, sizeof(this->rt_is_absolute));
+        this->rt_next = false;
+        this->rt_previous = false;
+        this->rt_is_absolute = false;
     };
 
     void negate() {
+        if (this->rt_is_absolute) {
+            if (this->rt_next) {
+                this->rt_next = false;
+                this->rt_previous = true;
+            } else if (this->rt_previous) {
+                this->rt_next = true;
+                this->rt_previous = false;
+            }
+            return;
+        }
         for (int lpc = 0; lpc < RTF__MAX; lpc++) {
-            if (!this->rt_is_absolute[lpc] && this->rt_field[lpc] != 0) {
-                this->rt_field[lpc] = -this->rt_field[lpc];
+            if (this->rt_field[lpc].value != 0) {
+                this->rt_field[lpc].value = -this->rt_field[lpc].value;
             }
         }
     };
 
     bool is_negative() const {
-        for (int lpc = 0; lpc < RTF__MAX; lpc++) {
-            if (this->rt_field[lpc] < 0) {
+        if (this->rt_previous) {
+            return true;
+        }
+        for (auto rtf : this->rt_field) {
+            if (rtf.value < 0) {
                 return true;
             }
         }
@@ -104,17 +123,16 @@ public:
     };
 
     bool is_absolute() const {
-        for (int lpc = 0; lpc < RTF__MAX; lpc++) {
-            if (this->rt_is_absolute[lpc]) {
-                return true;
-            }
-        }
-        return false;
+        return this->rt_is_absolute;
     };
 
+    bool is_relative() const {
+        return !this->rt_is_absolute || this->rt_next || this->rt_previous;
+    }
+
     bool empty() const {
-        for (int lpc = 0; lpc < RTF__MAX; lpc++) {
-            if (this->rt_field[lpc]) {
+        for (auto rtf : this->rt_field) {
+            if (rtf.is_set) {
                 return false;
             }
         }
@@ -144,59 +162,99 @@ public:
     };
 
     void add(struct exttm &tm) {
-        if (this->rt_is_absolute[RTF_MICROSECONDS]) {
-            tm.et_nsec = this->rt_field[RTF_MICROSECONDS] * 1000;
+        if (this->rt_field[RTF_MICROSECONDS].is_set && this->rt_is_absolute) {
+            tm.et_nsec = this->rt_field[RTF_MICROSECONDS].value * 1000;
         }
         else {
-            tm.et_nsec += this->rt_field[RTF_MICROSECONDS] * 1000;
+            tm.et_nsec += this->rt_field[RTF_MICROSECONDS].value * 1000;
         }
-        if (this->rt_is_absolute[RTF_SECONDS]) {
-            tm.et_tm.tm_sec = this->rt_field[RTF_SECONDS];
-        }
-        else {
-            tm.et_tm.tm_sec += this->rt_field[RTF_SECONDS];
-        }
-        if (this->rt_is_absolute[RTF_MINUTES]) {
-            tm.et_tm.tm_min = this->rt_field[RTF_MINUTES];
-        }
-        else {
-            tm.et_tm.tm_min += this->rt_field[RTF_MINUTES];
-        }
-        if (this->rt_is_absolute[RTF_HOURS]) {
-            tm.et_tm.tm_hour = this->rt_field[RTF_HOURS];
+        if (this->rt_field[RTF_SECONDS].is_set && this->rt_is_absolute) {
+            if (this->rt_next &&
+                this->rt_field[RTF_SECONDS].value <= tm.et_tm.tm_sec) {
+                tm.et_tm.tm_min += 1;
+            }
+            if (this->rt_previous &&
+                this->rt_field[RTF_SECONDS].value >= tm.et_tm.tm_sec) {
+                tm.et_tm.tm_min -= 1;
+            }
+            tm.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
         }
         else {
-            tm.et_tm.tm_hour += this->rt_field[RTF_HOURS];
+            tm.et_tm.tm_sec += this->rt_field[RTF_SECONDS].value;
         }
-        if (this->rt_is_absolute[RTF_DAYS]) {
-            tm.et_tm.tm_mday = this->rt_field[RTF_DAYS];
-        }
-        else {
-            tm.et_tm.tm_mday += this->rt_field[RTF_DAYS];
-        }
-        if (this->rt_is_absolute[RTF_MONTHS]) {
-            tm.et_tm.tm_mon = this->rt_field[RTF_MONTHS];
-        }
-        else {
-            tm.et_tm.tm_mon += this->rt_field[RTF_MONTHS];
-        }
-        if (this->rt_is_absolute[RTF_YEARS]) {
-            tm.et_tm.tm_year = this->rt_field[RTF_YEARS];
+        if (this->rt_field[RTF_MINUTES].is_set && this->rt_is_absolute) {
+            if (this->rt_next &&
+                this->rt_field[RTF_MINUTES].value <= tm.et_tm.tm_min) {
+                tm.et_tm.tm_hour += 1;
+            }
+            if (this->rt_previous && (this->rt_field[RTF_MINUTES].value == 0 ||
+                (this->rt_field[RTF_MINUTES].value >= tm.et_tm.tm_min))) {
+                tm.et_tm.tm_hour -= 1;
+            }
+            tm.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
         }
         else {
-            tm.et_tm.tm_year += this->rt_field[RTF_YEARS];
+            tm.et_tm.tm_min += this->rt_field[RTF_MINUTES].value;
+        }
+        if (this->rt_field[RTF_HOURS].is_set && this->rt_is_absolute) {
+            if (this->rt_next &&
+                this->rt_field[RTF_HOURS].value <= tm.et_tm.tm_hour) {
+                tm.et_tm.tm_mday += 1;
+            }
+            if (this->rt_previous &&
+                this->rt_field[RTF_HOURS].value >= tm.et_tm.tm_hour) {
+                tm.et_tm.tm_mday -= 1;
+            }
+            tm.et_tm.tm_hour = this->rt_field[RTF_HOURS].value;
+        }
+        else {
+            tm.et_tm.tm_hour += this->rt_field[RTF_HOURS].value;
+        }
+        if (this->rt_field[RTF_DAYS].is_set && this->rt_is_absolute) {
+            if (this->rt_next &&
+                this->rt_field[RTF_DAYS].value <= tm.et_tm.tm_hour) {
+                tm.et_tm.tm_mon += 1;
+            }
+            if (this->rt_previous &&
+                this->rt_field[RTF_DAYS].value >= tm.et_tm.tm_hour) {
+                tm.et_tm.tm_mon -= 1;
+            }
+            tm.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
+        }
+        else {
+            tm.et_tm.tm_mday += this->rt_field[RTF_DAYS].value;
+        }
+        if (this->rt_field[RTF_MONTHS].is_set && this->rt_is_absolute) {
+            if (this->rt_next &&
+                this->rt_field[RTF_MONTHS].value <= tm.et_tm.tm_mon) {
+                tm.et_tm.tm_year += 1;
+            }
+            if (this->rt_previous &&
+                this->rt_field[RTF_MONTHS].value >= tm.et_tm.tm_mon) {
+                tm.et_tm.tm_year -= 1;
+            }
+            tm.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value;
+        }
+        else {
+            tm.et_tm.tm_mon += this->rt_field[RTF_MONTHS].value;
+        }
+        if (this->rt_field[RTF_YEARS].is_set && this->rt_is_absolute) {
+            tm.et_tm.tm_year = this->rt_field[RTF_YEARS].value;
+        }
+        else {
+            tm.et_tm.tm_year += this->rt_field[RTF_YEARS].value;
         }
     };
 
     int64_t to_microseconds() {
         int64_t retval;
 
-        retval = this->rt_field[RTF_YEARS] * 12;
-        retval = (retval + this->rt_field[RTF_MONTHS]) * 30;
-        retval = (retval + this->rt_field[RTF_DAYS]) * 24;
-        retval = (retval + this->rt_field[RTF_HOURS]) * 60;
-        retval = (retval + this->rt_field[RTF_MINUTES]) * 60;
-        retval = (retval + this->rt_field[RTF_SECONDS]) * 1000 * 1000;
+        retval = this->rt_field[RTF_YEARS].value * 12;
+        retval = (retval + this->rt_field[RTF_MONTHS].value) * 30;
+        retval = (retval + this->rt_field[RTF_DAYS].value) * 24;
+        retval = (retval + this->rt_field[RTF_HOURS].value) * 60;
+        retval = (retval + this->rt_field[RTF_MINUTES].value) * 60;
+        retval = (retval + this->rt_field[RTF_SECONDS].value) * 1000 * 1000;
 
         return retval;
     };
@@ -208,27 +266,7 @@ public:
         tv_out.tv_usec = us % (1000 * 1000);
     };
 
-    std::string to_string() {
-        char dst[128];
-
-        snprintf(dst, sizeof(dst),
-                 "%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c%" PRId64 "%c",
-                 this->rt_field[RTF_YEARS],
-                 this->rt_is_absolute[RTF_YEARS] ? 'Y' : 'y',
-                 this->rt_field[RTF_MONTHS],
-                 this->rt_is_absolute[RTF_MONTHS] ? 'M' : 'm',
-                 this->rt_field[RTF_DAYS],
-                 this->rt_is_absolute[RTF_DAYS] ? 'D' : 'd',
-                 this->rt_field[RTF_HOURS],
-                 this->rt_is_absolute[RTF_HOURS] ? 'H' : 'h',
-                 this->rt_field[RTF_MINUTES],
-                 this->rt_is_absolute[RTF_MINUTES] ? 'M' : 'm',
-                 this->rt_field[RTF_SECONDS],
-                 this->rt_is_absolute[RTF_SECONDS] ? 'S' : 's',
-                 this->rt_field[RTF_MICROSECONDS],
-                 this->rt_is_absolute[RTF_MICROSECONDS] ? 'U' : 'u');
-        return dst;
-    };
+    std::string to_string();
 
     void rollover();
 
@@ -244,8 +282,22 @@ public:
         RTF__MAX
     };
 
-    int64_t rt_field[RTF__MAX];
-    bool rt_is_absolute[RTF__MAX];
+    static const char FIELD_CHARS[RTF__MAX];
+
+    struct _rt_field {
+        _rt_field(int64_t value) : value(value), is_set(true) {
+        };
+
+        _rt_field() : value(0), is_set(false) {
+        };
+
+        int64_t value;
+        bool is_set;
+    } rt_field[RTF__MAX];
+
+    bool rt_next;
+    bool rt_previous;
+    bool rt_is_absolute;
 };
 
 size_t str2reltime(int64_t millis, std::string &value_out);

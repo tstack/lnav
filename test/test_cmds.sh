@@ -771,6 +771,16 @@ check_output "rollover is not working with histogram" <<EOF
  Wed Jan 03 09:20:00          1 normal         0 errors         0 warnings         0 marks
 EOF
 
+run_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":goto next year" \
+    logfile_rollover.1.live
+
+check_output ":goto next year is not working" <<EOF
+Feb  3 09:23:38 veridian automount[7998]: lookup(file): lookup for foobar failed
+Jan  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
+EOF
+
 touch -t 200711030923 ${srcdir}/logfile_syslog.0
 run_test ${lnav_test} -n \
     -c ":switch-to-view histogram" \
