@@ -519,7 +519,18 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
         yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
 
-        if (sbr.empty() || sbr.get_data()[sbr.length() - 1] != '}') {
+        if (sbr.empty()) {
+            return log_format::SCAN_INCOMPLETE;
+        }
+
+        const unsigned char *line_data = (const unsigned char *) sbr.get_data();
+        size_t line_end = sbr.length() - 1;
+
+        while (line_end > 0 && isspace(line_data[line_end])) {
+            line_end -= 1;
+        }
+
+        if (line_end == 0 || line_data[line_end] != '}') {
             return log_format::SCAN_INCOMPLETE;
         }
 
@@ -536,8 +547,7 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
         jlu.jlu_line_value = sbr.get_data();
         jlu.jlu_line_size = sbr.length();
         jlu.jlu_handle = handle;
-        if (yajl_parse(handle,
-                       (const unsigned char *)sbr.get_data(), sbr.length()) == yajl_status_ok &&
+        if (yajl_parse(handle, line_data, sbr.length()) == yajl_status_ok &&
             yajl_complete_parse(handle) == yajl_status_ok) {
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
