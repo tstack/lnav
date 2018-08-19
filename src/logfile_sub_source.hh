@@ -129,6 +129,16 @@ public:
         return false;
     };
 
+    size_t get_filename_offset() const {
+        if (this->lss_flags & F_FILENAME) {
+            return this->lss_filename_width;
+        } else if (this->lss_flags & F_BASENAME) {
+            return this->lss_basename_width;
+        }
+
+        return 0;
+    }
+
     void set_time_offset(bool enabled) {
         if (enabled)
             this->lss_flags |= F_TIME_OFFSET;

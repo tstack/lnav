@@ -489,6 +489,7 @@ void field_overlay_source::build_meta_line(const listview_curses &lv,
 
     if (iter != bm.end()) {
         const bookmark_metadata &line_meta = iter->second;
+        size_t filename_width = this->fos_lss.get_filename_offset();
 
         if (!line_meta.bm_comment.empty()) {
             attr_line_t al;
@@ -500,6 +501,7 @@ void field_overlay_source::build_meta_line(const listview_curses &lv,
                   line_meta.bm_tags.empty() ? ACS_LLCORNER : ACS_LTEE
               ))
               .append(line_meta.bm_comment);
+            al.insert(0, filename_width, ' ');
             dst.emplace_back(al);
         }
         if (!line_meta.bm_tags.empty()) {
@@ -525,6 +527,7 @@ void field_overlay_source::build_meta_line(const listview_curses &lv,
                     hl_iter->second.annotate(al, 2);
                 }
             }
+            al.insert(0, filename_width, ' ');
             dst.emplace_back(al);
         }
     }
