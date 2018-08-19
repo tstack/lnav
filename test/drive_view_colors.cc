@@ -75,7 +75,8 @@ public:
 		line_range lr{0, 40};
 
 		al = "before <123> after";
-		al.with_attr({line_range{8, 11}, &VC_STYLE, vc.ansi_color_pair(COLOR_CYAN, COLOR_BLACK)});
+		al.with_attr({line_range{8, 11}, &VC_STYLE,
+					  (int64_t) vc.ansi_color_pair(COLOR_CYAN, COLOR_BLACK)});
 		al.with_attr({line_range{8, 11}, &VC_STYLE, A_REVERSE});
 		this->mvwattrline(this->tc_window,
 						  lpc,
