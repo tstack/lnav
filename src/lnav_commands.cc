@@ -2795,10 +2795,20 @@ static string com_hide_unmarked(exec_context &ec, string cmdline, vector<string>
 {
     string retval = "info: hid unmarked lines";
 
-    if (ec.ec_dry_run) {
+    if (args.empty()) {
+
+    } else if (ec.ec_dry_run) {
         retval = "";
     } else {
-        lnav_data.ld_log_source.set_marked_only(true);
+        textview_curses *            tc = lnav_data.ld_view_stack.back();
+        bookmark_vector<vis_line_t> &bv =
+            tc->get_bookmarks()[&textview_curses::BM_USER];
+
+        if (bv.empty()) {
+            retval = "error: no lines have been marked";
+        } else {
+            lnav_data.ld_log_source.set_marked_only(true);
+        }
     }
 
     return retval;
