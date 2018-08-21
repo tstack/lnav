@@ -379,6 +379,15 @@ static const json_path_handler_base::enum_value_t OVERFLOW_ENUM[] = {
     json_path_handler_base::ENUM_TERMINATOR
 };
 
+static const json_path_handler_base::enum_value_t TRANSFORM_ENUM[] = {
+    { "none", external_log_format::json_format_element::transform_t::NONE },
+    { "uppercase", external_log_format::json_format_element::transform_t::UPPERCASE },
+    { "lowercase", external_log_format::json_format_element::transform_t::LOWERCASE },
+    { "capitalize", external_log_format::json_format_element::transform_t::CAPITALIZE },
+
+    json_path_handler_base::ENUM_TERMINATOR
+};
+
 static struct json_path_handler line_format_handlers[] = {
     json_path_handler("field")
         .with_synopsis("<field-name>")
@@ -420,6 +429,12 @@ static struct json_path_handler line_format_handlers[] = {
         .with_description("Overflow style")
         .with_enum_values(OVERFLOW_ENUM)
         .FOR_FIELD(external_log_format::json_format_element, jfe_overflow),
+
+    json_path_handler("text-transform")
+        .with_synopsis("none|uppercase|lowercase|capitalize")
+        .with_description("Text transformation")
+        .with_enum_values(TRANSFORM_ENUM)
+        .FOR_FIELD(external_log_format::json_format_element, jfe_text_transform),
 
     json_path_handler()
 };

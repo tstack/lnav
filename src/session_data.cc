@@ -1422,12 +1422,12 @@ void save_session(void)
                         char min_time_str[32], max_time_str[32];
 
                         sql_strftime(min_time_str, sizeof(min_time_str), min_time);
-                        sql_strftime(max_time_str, sizeof(max_time_str), max_time);
                         if (have_min_time) {
                             cmd_array.gen("hide-lines-before "
                                           + string(min_time_str));
                         }
                         if (have_max_time) {
+                            sql_strftime(max_time_str, sizeof(max_time_str), max_time);
                             cmd_array.gen("hide-lines-after "
                                           + string(max_time_str));
                         }

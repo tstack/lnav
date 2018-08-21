@@ -3736,6 +3736,8 @@ int main(int argc, char *argv[])
 
                 looper();
 
+                signal(SIGINT, SIG_DFL);
+
                 save_session();
             }
         }

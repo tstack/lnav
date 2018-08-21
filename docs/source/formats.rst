@@ -81,7 +81,8 @@ fields:
 
     :field: The name of the message field that should be inserted at this
       point in the message.  The special "__timestamp__" field name can be
-      used to insert a human-readable timestamp.
+      used to insert a human-readable timestamp.  The "__level__" field can
+      be used to insert the level name as defined by lnav.
     :min-width: The minimum width for the field.  If the value for the field
       in a given log message is shorter, padding will be added as needed to
       meet the minimum-width requirement. (v0.8.2+)
@@ -105,6 +106,8 @@ fields:
       for this log message. (v0.8.2+)
     :default-value: The default value to use if the field could not be found
       in the current log message.  The built-in default is "-".
+    :text-transform: Transform the text in the field.  Supported options are:
+      none, uppercase, lowercase, capitalize
 
   :timestamp-field: The name of the field that contains the log message
     timestamp.  Defaults to "timestamp".
@@ -118,6 +121,7 @@ fields:
     :%f: Microseconds as a decimal number (range 000000 to 999999).
     :%N: Nanoseconds as a decimal number (range 000000000 to 999999999).
     :%i: Milliseconds from the epoch.
+    :%6: Microseconds from the epoch.
 
   :timestamp-divisor: For JSON logs with numeric timestamps, this value is used
     to divide the timestamp by to get the number of seconds and fractional

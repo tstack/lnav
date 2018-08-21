@@ -1041,10 +1041,18 @@ public:
             DOTDOT,
         };
 
+        enum class transform_t {
+            NONE,
+            UPPERCASE,
+            LOWERCASE,
+            CAPITALIZE,
+        };
+
         json_format_element()
             : jfe_type(JLF_CONSTANT), jfe_default_value("-"), jfe_min_width(0),
               jfe_max_width(LLONG_MAX), jfe_align(align_t::LEFT),
-              jfe_overflow(overflow_t::ABBREV)
+              jfe_overflow(overflow_t::ABBREV),
+              jfe_text_transform(transform_t::NONE)
         { };
 
         json_log_field jfe_type;
@@ -1054,6 +1062,7 @@ public:
         long long jfe_max_width;
         align_t jfe_align;
         overflow_t jfe_overflow;
+        transform_t jfe_text_transform;
         std::string jfe_ts_format;
     };
 
@@ -1192,6 +1201,9 @@ public:
 
     void json_append_to_cache(const char *value, ssize_t len) {
         size_t old_size = this->jlf_cached_line.size();
+        if (len == -1) {
+            len = strlen(value);
+        }
         this->jlf_cached_line.resize(old_size + len);
         memcpy(&(this->jlf_cached_line.data()[old_size]), value, len);
     };
@@ -1203,6 +1215,9 @@ public:
     };
 
     void json_append(const json_format_element &jfe, const char *value, ssize_t len) {
+        if (len == -1) {
+            len = strlen(value);
+        }
         if (jfe.jfe_align == json_format_element::align_t::RIGHT) {
             if (len < jfe.jfe_min_width) {
                 this->json_append_to_cache(jfe.jfe_min_width - len);

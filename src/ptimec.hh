@@ -439,6 +439,36 @@ inline void ftime_i(char *dst, off_t &off_inout, ssize_t len, const struct exttm
     off_inout = strlen(dst);
 }
 
+#include "lnav_log.hh"
+
+inline bool ptime_6(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
+{
+    uint64_t epoch_us = 0;
+    time_t epoch;
+
+    while (off_inout < len && isdigit(str[off_inout])) {
+        epoch_us *= 10;
+        epoch_us += str[off_inout] - '0';
+        off_inout += 1;
+    }
+
+    dst->et_nsec = (epoch_us % 1000000ULL) * 1000ULL;
+    epoch = (epoch_us / 1000000ULL);
+    secs2tm(&epoch, &dst->et_tm);
+    dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
+
+    return (epoch_us > 0);
+}
+
+inline void ftime_6(char *dst, off_t &off_inout, ssize_t len, const struct exttm &tm)
+{
+    int64_t t = tm2sec(&tm.et_tm);
+
+    t += tm.et_nsec / 1000;
+    snprintf(&dst[off_inout], len - off_inout, "%" PRId64, t);
+    off_inout = strlen(dst);
+}
+
 inline bool ptime_I(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {

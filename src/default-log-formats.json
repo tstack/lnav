@@ -694,6 +694,49 @@
             }
         ]
     },
+    "journald_json_log" : {
+        "title" : "journalctl JSON log format",
+        "description" : "Logger format as created by systemd journalctl -o json",
+        "url" : "https://www.freedesktop.org/wiki/Software/systemd/json/",
+        "json" : true,
+        "hide-extra" : true,
+        "line-format" : [
+            { "field" : "__timestamp__" },
+            " ",
+            { "field" : "_SYSTEMD_UNIT" },
+            " ",
+            { "field" : "SYSLOG_IDENTIFIER" },
+            "[",
+            { "field" : "_PID" },
+            "] ",
+            { "field" : "__level__", "text-transform": "uppercase" },
+            " ",
+            { "field" : "MESSAGE" }
+        ],
+        "timestamp-field": "__REALTIME_TIMESTAMP",
+        "timestamp-format": [
+            "%6"
+        ],
+        "level-field" : "PRIORITY",
+        "level": {
+            "fatal" : "0",
+            "critical" : "2",
+            "error" : "3",
+            "warning" : "4",
+            "stats" : "5",
+            "info" : "6",
+            "debug" : "7"
+        },
+        "value": {
+            "__REALTIME_TIMESTAMP" : { "kind": "integer" },
+            "__MONOTONIC_TIMESTAMP" : { "kind": "integer", "hidden": true },
+            "_SYSTEMD_UNIT" : { "kind": "string", "identifier" : true },
+            "SYSLOG_IDENTIFIER" : { "kind": "string", "identifier" : true },
+            "_PID" : { "kind": "integer" },
+            "PRIORITY": { "kind": "string", "identifier" : true },
+            "MESSAGE": { "kind": "string", "identifier" : true }
+        }
+    },
     "katello_log" : {
         "title" : "Katello log format",
         "description" : "Log format used by katello and foreman as used in Satellite 6.",

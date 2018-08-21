@@ -549,6 +549,10 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
         jlu.jlu_handle = handle;
         if (yajl_parse(handle, line_data, sbr.length()) == yajl_status_ok &&
             yajl_complete_parse(handle) == yajl_status_ok) {
+            if (ll.get_time() == 0) {
+                return log_format::SCAN_NO_MATCH;
+            }
+
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
                 if (lpc > 0) {
@@ -914,11 +918,15 @@ static int read_json_field(yajlpp_parse_context *ypc, const unsigned char *str, 
 
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         jlu->jlu_format->lf_date_time.scan((const char *)str, len, jlu->jlu_format->get_timestamp_formats(), &tm_out, tv_out);
-        jlu->jlu_format->lf_timestamp_flags = tm_out.et_flags;
+        // Leave off the machine oriented flag since we convert it anyhow
+        jlu->jlu_format->lf_timestamp_flags = tm_out.et_flags & ~ETF_MACHINE_ORIENTED;
         jlu->jlu_base_line->set_time(tv_out);
     }
     else if (jlu->jlu_format->elf_level_field == field_name) {
-        jlu->jlu_base_line->set_level(abbrev2level((const char *)str, len));
+        pcre_input pi((const char *) str, 0, len);
+        pcre_context::capture_t level_cap = {0, (int) len};
+
+        jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(pi, &level_cap));
     }
     else if (jlu->jlu_format->elf_opid_field == field_name) {
         uint8_t opid = hash_str((const char *) str, len);
@@ -1048,6 +1056,8 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
             for (const auto &jfe : this->jlf_line_format) {
                 static const intern_string_t ts_field = intern_string::lookup("__timestamp__", -1);
+                static const intern_string_t level_field = intern_string::lookup("__level__");
+                size_t begin_size = this->jlf_cached_line.size();
 
                 switch (jfe.jfe_type) {
                 case JLF_CONSTANT:
@@ -1147,13 +1157,41 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         lv_iter = find_if(this->jlf_line_values.begin(),
                                           this->jlf_line_values.end(),
                                           logline_value_cmp(&this->lf_timestamp_field));
-                        used_values[distance(this->jlf_line_values.begin(),
-                                             lv_iter)] = true;
+                        if (lv_iter != this->jlf_line_values.end()) {
+                            used_values[distance(this->jlf_line_values.begin(),
+                                                 lv_iter)] = true;
+                        }
+                    }
+                    else if (jfe.jfe_value == level_field) {
+                        this->json_append(jfe, ll.get_level_name(), -1);
                     }
                     else {
                         this->json_append(jfe,
                                           jfe.jfe_default_value.c_str(),
                                           jfe.jfe_default_value.size());
+                    }
+
+                    switch (jfe.jfe_text_transform) {
+                        case external_log_format::json_format_element::transform_t::NONE:
+                            break;
+                        case external_log_format::json_format_element::transform_t::UPPERCASE:
+                            for (size_t cindex = begin_size; cindex < this->jlf_cached_line.size(); cindex++) {
+                                this->jlf_cached_line[cindex] = toupper(this->jlf_cached_line[cindex]);
+                            }
+                            break;
+                        case external_log_format::json_format_element::transform_t::LOWERCASE:
+                            for (size_t cindex = begin_size; cindex < this->jlf_cached_line.size(); cindex++) {
+                                this->jlf_cached_line[cindex] = tolower(this->jlf_cached_line[cindex]);
+                            }
+                            break;
+                        case external_log_format::json_format_element::transform_t::CAPITALIZE:
+                            for (size_t cindex = begin_size; cindex < begin_size + 1; cindex++) {
+                                this->jlf_cached_line[cindex] = toupper(this->jlf_cached_line[cindex]);
+                            }
+                            for (size_t cindex = begin_size + 1; cindex < this->jlf_cached_line.size(); cindex++) {
+                                this->jlf_cached_line[cindex] = tolower(this->jlf_cached_line[cindex]);
+                            }
+                            break;
                     }
                     break;
                 }
@@ -1617,6 +1655,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
          iter != this->jlf_line_format.end();
          ++iter, format_index++) {
         static const intern_string_t ts = intern_string::lookup("__timestamp__");
+        static const intern_string_t level_field = intern_string::lookup("__level__");
         json_format_element &jfe = *iter;
 
         if (jfe.jfe_value.empty() && !jfe.jfe_ts_format.empty()) {
@@ -1628,6 +1667,8 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 auto vd_iter = this->elf_value_defs.find(jfe.jfe_value);
                 if (jfe.jfe_value == ts) {
                     this->elf_value_defs[this->lf_timestamp_field]->vd_hidden = true;
+                } else if (jfe.jfe_value == level_field) {
+                    this->elf_value_defs[this->elf_level_field]->vd_hidden = true;
                 } else if (vd_iter == this->elf_value_defs.end()) {
                     char index_str[32];
 

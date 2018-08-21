@@ -25,6 +25,11 @@ lnav v0.8.4:
      * The relative time parser recognizes "next" at the beginning of the
        input, for example, "next hour" or "next day".  Handy for use in the
        ":goto" command.
+     * Added a "text-transform" option for formatting JSON log messages.  The
+       supported options are: none, uppercase, lowercase, and capitalize.
+     * Added a special "__level__" field name for formatting JSON messages so
+       that the lnav level name can be used instead of the internal value in
+       the JSON object.
 
      Interface Changes:
      * When typing in a search, instead of moving the view to the first match
@@ -42,6 +47,8 @@ lnav v0.8.4:
      * Milliseconds can now be used in relative times (e.g. 10:00:00.123)
      * The J/K hotkeys were not marking lines correctly when the bottom of
        the view was reached.
+     * The level field in JSON logs should now be recognized by the level
+       patterns in the format.
 
 lnav v0.8.3:
      Features:

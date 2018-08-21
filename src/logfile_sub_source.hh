@@ -185,7 +185,7 @@ public:
 
     bool get_max_log_time(struct timeval &tv_out) const {
         tv_out = this->lss_max_log_time;
-        return (this->lss_max_log_time.tv_sec != INT_MAX ||
+        return (this->lss_max_log_time.tv_sec != std::numeric_limits<time_t>::max() ||
                 this->lss_max_log_time.tv_usec != 0);
     };
 
@@ -198,7 +198,7 @@ public:
 
     void clear_min_max_log_times() {
         memset(&this->lss_min_log_time, 0, sizeof(this->lss_min_log_time));
-        this->lss_max_log_time.tv_sec = INT_MAX;
+        this->lss_max_log_time.tv_sec = std::numeric_limits<time_t>::max();
         this->lss_max_log_time.tv_usec = 0;
         this->lss_force_rebuild = true;
     };
