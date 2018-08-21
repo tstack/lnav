@@ -703,6 +703,8 @@
         "line-format" : [
             { "field" : "__timestamp__" },
             " ",
+            { "field" : "__MONOTONIC_TIMESTAMP" },
+            " ",
             { "field" : "_SYSTEMD_UNIT" },
             " ",
             { "field" : "SYSLOG_IDENTIFIER" },
@@ -719,7 +721,7 @@
         ],
         "level-field" : "PRIORITY",
         "level": {
-            "fatal" : "0",
+            "fatal" : "0|1",
             "critical" : "2",
             "error" : "3",
             "warning" : "4",
