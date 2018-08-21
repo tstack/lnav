@@ -2,13 +2,13 @@
 
 lnav_test="${top_builddir}/src/lnav-test"
 
-run_test ${lnav_test} -n \
+run_test env TZ=UTC ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_journald.json
 
 check_output "journald json log format is not working" <<EOF
-2018-08-21T07:04:21.221 medusa-GpsLocator.service python[184] INFO GPS Reference longitude: 7.358143333
-2018-08-21T07:04:21.221 medusa-GpsLocator.service python[184] INFO GPS Reference latitude: 46.908706667
+2018-08-21T14:04:21.221 medusa-GpsLocator.service python[184] INFO GPS Reference longitude: 7.358143333
+2018-08-21T14:04:21.221 medusa-GpsLocator.service python[184] INFO GPS Reference latitude: 46.908706667
 EOF
 
 
