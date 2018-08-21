@@ -30,6 +30,7 @@ lnav v0.8.4:
      * Added a special "__level__" field name for formatting JSON messages so
        that the lnav level name can be used instead of the internal value in
        the JSON object.
+     * Added a log format for journald JSON logs.
 
      Interface Changes:
      * When typing in a search, instead of moving the view to the first match
