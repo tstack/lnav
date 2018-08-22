@@ -1,5 +1,6 @@
 #! /bin/bash
 
+locale -a
 cp ${srcdir}/logfile_syslog_fr.0 logfile_syslog_fr.0
 touch -t 200711030923 logfile_syslog_fr.0
 run_test env LC_TIME=fr_FR.UTF-8 ${lnav_test} -n \

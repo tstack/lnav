@@ -267,16 +267,22 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         this->fos_log_helper.ldh_line_attrs, &logline::L_TIMESTAMP);
 
     curr_tv = this->fos_log_helper.ldh_line->get_timeval();
-    if (this->fos_log_helper.ldh_line->is_time_skewed() && time_range.lr_end != -1) {
+    if (ll->is_time_skewed() && time_range.lr_end != -1) {
         const char *time_src = this->fos_log_helper.ldh_msg.get_data() +
                                time_range.lr_start;
         struct timeval actual_tv;
+        date_time_scanner dts;
         struct exttm tm;
 
+        dts.set_base_time(format->lf_date_time.dts_base_time);
         if (format->lf_date_time.scan(time_src, time_range.length(),
                                       format->get_timestamp_formats(),
                                       &tm, actual_tv,
-                                      false)) {
+                                      false) ||
+            dts.scan(time_src, time_range.length(),
+                     nullptr,
+                     &tm, actual_tv,
+                     false)) {
             sql_strftime(orig_timestamp, sizeof(orig_timestamp), actual_tv, 'T');
             time_str.append(";  Actual Time: ");
             time_lr.lr_start = time_str.length();

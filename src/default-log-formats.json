@@ -700,8 +700,9 @@
         "url" : "https://www.freedesktop.org/wiki/Software/systemd/json/",
         "json" : true,
         "hide-extra" : true,
+        "convert-to-local-time" : true,
         "line-format" : [
-            { "field" : "__timestamp__" },
+            { "field" : "__REALTIME_TIMESTAMP" },
             " ",
             { "field" : "__MONOTONIC_TIMESTAMP" },
             " ",
@@ -729,14 +730,15 @@
             "info" : "6",
             "debug" : "7"
         },
+        "body-field": "MESSAGE",
         "value": {
             "__REALTIME_TIMESTAMP" : { "kind": "integer" },
-            "__MONOTONIC_TIMESTAMP" : { "kind": "integer", "hidden": true },
+            "__MONOTONIC_TIMESTAMP" : { "kind": "integer" },
             "_SYSTEMD_UNIT" : { "kind": "string", "identifier" : true },
             "SYSLOG_IDENTIFIER" : { "kind": "string", "identifier" : true },
-            "_PID" : { "kind": "integer" },
-            "PRIORITY": { "kind": "string", "identifier" : true },
-            "MESSAGE": { "kind": "string", "identifier" : true }
+            "_PID" : { "kind": "integer", "identifier": true },
+            "PRIORITY": { "kind": "string", "identifier" : true, "foreign-key": true },
+            "MESSAGE": { "kind": "string" }
         }
     },
     "katello_log" : {

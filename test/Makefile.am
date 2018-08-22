@@ -425,6 +425,7 @@ DISTCLEANFILES = \
 	logfile_stdin.log \
 	logfile_syslog.0 \
 	logfile_syslog_fr.0 \
+	logfile_syslog_with_mixed_times.0 \
 	unreadable.log \
 	empty \
 	scripts-empty
