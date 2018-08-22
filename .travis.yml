@@ -1,5 +1,5 @@
 
-dist: precise
+dist: trusty
 language: cpp
 compiler: gcc
 sudo: false
@@ -25,6 +25,7 @@ addons:
     - gcc-5
     - g++-5
     - sqlite3
+    - language-pack-fr
     sources:
     - ubuntu-toolchain-r-test
     - sourceline: deb http://cz.archive.ubuntu.com/ubuntu xenial main
