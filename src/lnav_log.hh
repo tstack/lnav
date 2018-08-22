@@ -63,7 +63,7 @@ void log_msg_extra_complete();
 void log_install_handlers(void);
 void log_abort(void) __dead2;
 
-class log_state_dumper {
+struct log_state_dumper {
 public:
     log_state_dumper() {
         LIST_INSERT_HEAD(&DUMPER_LIST.lsl_list, this, lsd_link);
