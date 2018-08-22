@@ -90,7 +90,7 @@ public:
     LIST_ENTRY(log_state_dumper) lsd_link;
 };
 
-class log_crash_recoverer {
+struct log_crash_recoverer {
 public:
     log_crash_recoverer() {
         LIST_INSERT_HEAD(&CRASH_LIST.lcl_list, this, lcr_link);
