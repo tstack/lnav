@@ -131,7 +131,7 @@
         "description" : "A generic format for logs, like cron, that have a date at the start of a block.",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})(?<body>(?:.|\\n)*)$"
+                "pattern" : "^(?<timestamp>\\S{3,8} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})(?<body>(?:.|\\n)*)$"
             }
         },
         "sample" : [
@@ -199,10 +199,10 @@
         "description" : "Log format used by the Common Unix Printing System",
         "regex" : {
             "system" : {
-                "pattern" : "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<section>\\w+): (?<body>.*)$"
+                "pattern" : "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\S{3,8}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<section>\\w+): (?<body>.*)$"
             },
             "default" : {
-                "pattern" : "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<body>.*)$"
+                "pattern" : "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\S{3,8}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<body>.*)$"
             }
         },
         "level" : {
@@ -594,7 +594,7 @@
         "description" : "Log for the fsck_hfs tool on Mac OS X.",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<device>[^:]+): fsck_hfs (?:run|started) at (?<timestamp>\\w{3} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})(?<body>(?:.|\\n)*)"
+                "pattern" : "^(?<device>[^:]+): fsck_hfs (?:run|started) at (?<timestamp>\\S{3,8} \\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\d{4})(?<body>(?:.|\\n)*)"
             }
         },
         "value" : {
@@ -1070,10 +1070,10 @@
         "url" : "http://fedorahosted.org/sssd",
         "regex" : {
             "core" : {
-                "pattern" : "^\\((?<timestamp>\\w{3} \\w{3} ( \\d|\\d{2}) \\d{2}:\\d{2}:\\d{2} \\d{4})\\) \\[sssd\\] \\[(?<function>\\w+)\\] \\((?<debug_level>0x[0-9a-fA-F]{4})\\): (?<body>.*)$"
+                "pattern" : "^\\((?<timestamp>\\S{3,8} \\S{3,8} ( \\d|\\d{2}) \\d{2}:\\d{2}:\\d{2} \\d{4})\\) \\[sssd\\] \\[(?<function>\\w+)\\] \\((?<debug_level>0x[0-9a-fA-F]{4})\\): (?<body>.*)$"
             },
             "module" : {
-                "pattern" : "^\\((?<timestamp>\\w{3} \\w{3} ( \\d|\\d{2}) \\d{2}:\\d{2}:\\d{2} \\d{4})\\) \\[sssd(?<module>\\[.*?\\])\\] \\[(?<function>\\w+)\\] \\((?<debug_level>0x[0-9a-fA-F]{4})\\): (?<body>.*)$"
+                "pattern" : "^\\((?<timestamp>\\S{3,8} \\S{3,8} ( \\d|\\d{2}) \\d{2}:\\d{2}:\\d{2} \\d{4})\\) \\[sssd(?<module>\\[.*?\\])\\] \\[(?<function>\\w+)\\] \\((?<debug_level>0x[0-9a-fA-F]{4})\\): (?<body>.*)$"
             }
         },
         "value" : {
@@ -1185,7 +1185,7 @@
         "url" : "http://en.wikipedia.org/wiki/Syslog",
         "regex" : {
             "std" : {
-                "pattern" : "^(?<timestamp>\\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern" : "^(?<timestamp>\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2})(?: (?<log_hostname>[a-zA-Z0-9:][^ ]+[a-zA-Z0-9]))?(?:(?: (?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?:(?<body>(?:.|\\n)*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             },
             "rfc5424" : {
                 "pattern" : "^<(?<log_pri>\\d+)>(?<syslog_version>\\d+) (?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{6})?(?:[^ ]+)?) (?<log_hostname>[^ ]+|-) (?<log_procname>[^ ]+|-) (?<log_pid>[^ ]+|-) (?<log_msgid>[^ ]+|-) (?<log_struct>\\[(?:[^\\]\"]|\"(?:\\.|[^\"])+\")*\\]|-|)\\s+(?<body>(?:.|\\n)*)"

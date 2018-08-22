@@ -118,6 +118,20 @@ int main(int argc, char *argv[])
     }
 
     {
+        const char *en_date = "Jan  1 12:00:00";
+        const char *fr_date = "août 19 11:08:37";
+        struct timeval en_tv, fr_tv;
+        struct exttm en_tm, fr_tm;
+        date_time_scanner dts;
+
+        if (setlocale(LC_TIME, "fr_FR.UTF-8") != NULL) {
+            assert(dts.scan(en_date, strlen(en_date), NULL, &en_tm, en_tv) != NULL);
+            dts.clear();
+            assert(dts.scan(fr_date, strlen(fr_date), NULL, &fr_tm, fr_tv) != NULL);
+        }
+    }
+
+    {
         const char *epoch_str = "ts 1428721664 ]";
         struct exttm tm;
         off_t off = 0;

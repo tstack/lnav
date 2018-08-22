@@ -374,7 +374,7 @@ public:
         int         eoff;
 
         if ((this->p_code = pcre_compile(pattern,
-                                         options,
+                                         options | PCRE_UTF8,
                                          &errptr,
                                          &eoff,
                                          NULL)) == NULL) {
@@ -393,7 +393,7 @@ public:
         int         eoff;
 
         if ((this->p_code = pcre_compile(pattern.c_str(),
-                                         options,
+                                         options | PCRE_UTF8,
                                          &errptr,
                                          &eoff,
                                          NULL)) == NULL) {

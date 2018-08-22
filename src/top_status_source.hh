@@ -59,7 +59,7 @@ public:
         : filename_wire(*this, &top_status_source::update_filename),
           view_name_wire(*this, &top_status_source::update_view_name)
     {
-        this->tss_fields[TSF_TIME].set_width(24);
+        this->tss_fields[TSF_TIME].set_width(28);
         this->tss_fields[TSF_PARTITION_NAME].set_width(34);
         this->tss_fields[TSF_PARTITION_NAME].set_left_pad(1);
         this->tss_fields[TSF_VIEW_NAME].set_width(8);
