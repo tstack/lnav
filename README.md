@@ -84,9 +84,16 @@ output format to include the year, otherwise `lnav` gets confused:
     $ journalctl -o short-iso | lnav
 
 It is also possible to use `journalctl`'s json output format and `lnav`
-will make us of additional fields such as PRIORITY and _SYSTEMD_UNIT:
+will make use of additional fields such as PRIORITY and _SYSTEMD_UNIT:
 
     $ journalctl -o json | lnav
+
+In case some MESSAGE fields contain special characters such as
+ANSI color codes which are considered as unprintable by journalctl,
+specifying `journalctl`'s `-a` option might be preferable in order
+to output those messages still in a non binary representation:
+
+    $ journalctl -a -o json | lnav
 
 If using systemd v236 or newer, the output fields can be limited to
 the ones actually recognized by `lnav` for increased efficiency:
@@ -99,7 +106,6 @@ efficiency you may want to limit the number of log lines fed into
 
 In case of a persistent journal, you may want to limit the number
 of log lines fed into `lnav` via `journalctl`'s `-b` option.
-
 
 ## Screenshot
 
