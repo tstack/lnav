@@ -1,5 +1,5 @@
 
-VERSION=0.8.3
+VERSION=0.8.4
 
 SRC_VERSION=master
 
@@ -16,10 +16,10 @@ PACKAGE_URLS = \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	http://www.zlib.net/zlib-1.2.11.tar.gz \
 	http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz \
-	https://sqlite.org/2017/sqlite-autoconf-3210000.tar.gz \
+	https://sqlite.org/2018/sqlite-autoconf-3240000.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.8.0.tar.gz \
-	https://curl.haxx.se/download/curl-7.57.0.tar.gz
+	https://curl.haxx.se/download/curl-7.61.0.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs
 
@@ -51,7 +51,7 @@ osx-build:
 	rm -rf osx-build-dir
 	mkdir -p osx-build-dir
 	cd ../ && ./autogen.sh
-	cd osx-build-dir && ../../configure && make -j && make dist -j8 && make dist-bzip2
+	cd osx-build-dir && ../../configure --with-readline=/usr/local/opt/readline && make -j8 && make dist -j8 && make dist-bzip2
 
 osx-package: clean-outbox osx-build
 	mkdir -p osx-pkg/lnav-${VERSION}
@@ -66,7 +66,7 @@ release: linux-ospkg osx-package
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
-	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.8.3-1.x86_64.rpm
+	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.8.4-1.x86_64.rpm
 
 clean:
 	cd vagrant-static && vagrant destroy -f
