@@ -528,32 +528,43 @@ void rl_display_matches(void *dummy, readline_curses *rc)
     unsigned long width;
     __attribute((unused))
     unsigned long height;
-    int max_len, cols, rows;
+    int max_len, cols;
 
     getmaxyx(lnav_data.ld_window, height, width);
 
     max_len = rc->get_max_match_length() + 2;
     cols = max(1UL, width / max_len);
-    rows = (matches.size() + cols - 1) / cols;
 
     if (matches.empty()) {
         lnav_data.ld_match_source.clear();
     }
-    else if (cols == 1) {
-        lnav_data.ld_match_source.replace_with(rc->get_matches());
-    }
     else {
-        std::vector<std::string> horiz_matches;
+        string current_match = rc->get_match_string();
+        int curr_col = 0;
+        attr_line_t al;
+        bool add_nl = false;
 
-        horiz_matches.resize(rows);
-        for (size_t lpc = 0; lpc < matches.size(); lpc++) {
-            int curr_row = lpc % rows;
+        for (auto match : matches) {
+            if (add_nl) {
+                al.append(1, '\n');
+                add_nl = false;
+            }
+            if (match == current_match) {
+                al.append(match, &view_curses::VC_STYLE, A_REVERSE);
+            } else {
+                al.append(match);
+            }
+            curr_col += 1;
+            if (curr_col < cols) {
+                int padding = max_len - match.size();
 
-            horiz_matches[curr_row].append(matches[lpc]);
-            horiz_matches[curr_row].append(
-                max_len - matches[lpc].length(), ' ');
+                al.append(padding, ' ');
+            } else {
+                curr_col = 0;
+                add_nl = true;
+            }
         }
-        lnav_data.ld_match_source.replace_with(horiz_matches);
+        lnav_data.ld_match_source.replace_with(al);
     }
 
     tc.reload_data();

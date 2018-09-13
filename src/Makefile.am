@@ -162,6 +162,7 @@ noinst_HEADERS = \
 	filter_observer.hh \
 	format-text-files.hh \
 	fstat_vtab.hh \
+	fts_fuzzy_match.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
 	help.hh \
@@ -279,6 +280,7 @@ libdiag_a_SOURCES = \
 	file_vtab.cc \
 	fstat_vtab.cc \
     fs-extension-functions.cc \
+    fts_fuzzy_match.cc \
 	grep_proc.cc \
 	help_text_formatter.cc \
 	hist_source.cc \

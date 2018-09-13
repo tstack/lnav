@@ -1,4 +1,14 @@
 
+lnav v0.8.5:
+     Interface Changes:
+     * The auto-complete behavior in the prompt has been modified to fall back
+       to a fuzzy search if the prefix search finds no matches.  For example,
+       typing in ":fin" and pressing TAB would previously not do anything.
+       Now, the ":fin" will be completed to ":filter-in " since that is a
+       strong fuzzy match.  If there are multiple matches, as would happen
+       with ":dfil", readline's menu-complete behavior will be engaged and
+       you can press TAB cycle through the options.
+
 lnav v0.8.4:
      Features:
      * Added the ':comment' command that can be used to attach a comment to a

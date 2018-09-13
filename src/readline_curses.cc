@@ -62,6 +62,7 @@
 #include "ansi_scrubber.hh"
 #include "readline_curses.hh"
 #include "spookyhash/SpookyV2.h"
+#include "fts_fuzzy_match.hh"
 
 using namespace std;
 
@@ -71,6 +72,7 @@ static sig_atomic_t     got_winch   = 0;
 static readline_curses *child_this;
 static sig_atomic_t     looping      = 1;
 static const int        HISTORY_SIZE = 256;
+static int              completion_start;
 
 static const char *RL_INIT[] = {
     /*
@@ -79,6 +81,11 @@ static const char *RL_INIT[] = {
      */
     "set horizontal-scroll-mode on",
     "set bell-style none",
+    "set show-all-if-ambiguous on",
+    "set show-all-if-unmodified on",
+    "set menu-complete-display-prefix on",
+    "TAB: menu-complete",
+    "\"\\x0b\": menu-complete-backward",
 
     NULL
 };
@@ -237,6 +244,37 @@ char *readline_context::completion_generator(const char *text, int state)
                     matches.push_back(*iter);
                 }
             }
+
+            if (matches.empty()) {
+                vector<pair<int, string>> fuzzy_matches;
+
+                for (iter = arg_possibilities->begin();
+                     iter != arg_possibilities->end();
+                     ++iter) {
+                    const char *poss_str = iter->c_str();
+                    int score;
+
+                    if (fts::fuzzy_match(text, poss_str, score) && score > 0) {
+                        log_debug("match score %d %s %s", score, text, poss_str);
+                        fuzzy_matches.emplace_back(score, *iter);
+                    }
+                }
+
+                if (!fuzzy_matches.empty()) {
+                    stable_sort(begin(fuzzy_matches), end(fuzzy_matches),
+                        [](auto l, auto r) { return r.first < l.first; });
+
+                    int highest = fuzzy_matches[0].first;
+
+                    for (auto pair : fuzzy_matches) {
+                        if (highest - pair.first < 10) {
+                            matches.push_back(pair.second);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         if (matches.size() == 1) {
@@ -246,8 +284,8 @@ char *readline_context::completion_generator(const char *text, int state)
 
             last_match_str_valid = false;
             if (sendstring(child_this->rc_command_pipe[readline_curses::RCF_SLAVE],
-                           "m:0:0",
-                           5) == -1) {
+                           "m:0:0:0",
+                           7) == -1) {
                 _exit(1);
             }
         }
@@ -267,6 +305,7 @@ char **readline_context::attempted_completion(const char *text,
 {
     char **retval = NULL;
 
+    completion_start = start;
     if (start == 0 && loaded_context->rc_possibilities.find("__command") !=
             loaded_context->rc_possibilities.end()) {
         arg_possibilities = &loaded_context->rc_possibilities["__command"];
@@ -320,6 +359,19 @@ static int rubout_char_or_abort(int count, int key)
     } else {
         return rl_rubout(count, '\b');
     }
+}
+
+int readline_context::command_complete(int count, int key)
+{
+    if (loaded_context->rc_possibilities.find("__command") !=
+        loaded_context->rc_possibilities.end()) {
+        char *space = strchr(rl_line_buffer, ' ');
+
+        if (space == nullptr) {
+            return rl_menu_complete(count, key);
+        }
+    }
+    return rl_insert(count, key);
 }
 
 readline_curses::readline_curses()
@@ -377,6 +429,7 @@ readline_curses::readline_curses()
         stifle_history(HISTORY_SIZE);
 
         rl_add_defun("rubout-char-or-abort", rubout_char_or_abort, '\b');
+        // rl_add_defun("command-complete", readline_context::command_complete, ' ');
 
         for (int lpc = 0; RL_INIT[lpc]; lpc++) {
             snprintf(buffer, sizeof(buffer), "%s", RL_INIT[lpc]);
@@ -425,7 +478,9 @@ void readline_curses::store_matches(
         }
     }
     else {
-        rc = snprintf(msg, sizeof(msg), "m:%d:%d", num_matches, max_len);
+        rc = snprintf(msg, sizeof(msg),
+                      "m:%d:%d:%d",
+                      completion_start, num_matches, max_len);
         if (sendstring(child_this->rc_command_pipe[RCF_SLAVE], msg, rc) == -1) {
             _exit(1);
         }
@@ -503,10 +558,18 @@ void readline_curses::start(void)
 
                     SpookyHash::Hash128(rl_line_buffer, rl_end, &h1, &h2);
 
+                    if (rl_last_func == readline_context::command_complete) {
+                        rl_last_func = rl_menu_complete;
+                    }
+
+                    bool complete_done = (
+                        rl_last_func != rl_menu_complete &&
+                        rl_last_func != rl_backward_menu_complete);
+
                     if (h1 == last_h1 && h2 == last_h2) {
                         // do nothing
                     } else if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
-                                       'l',
+                                       complete_done ? 'l': 'c',
                                        rl_line_buffer,
                                        rl_end) != 0) {
                         perror("line: write failed");
@@ -735,8 +798,10 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 }
             }
             else if (msg[0] == 'm') {
-                if (sscanf(msg, "m:%d:%d", &this->rc_matches_remaining,
-                           &this->rc_max_match_length) != 2) {
+                if (sscanf(msg, "m:%d:%d:%d",
+                           &this->rc_match_start,
+                           &this->rc_matches_remaining,
+                           &this->rc_max_match_length) != 3) {
                     require(0);
                 }
                 this->rc_matches.clear();
@@ -780,6 +845,12 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_line_buffer = &msg[2];
                     this->rc_change.invoke(this);
                     this->rc_matches.clear();
+                    this->rc_display_match.invoke(this);
+                    break;
+
+                case 'c':
+                    this->rc_line_buffer = &msg[2];
+                    this->rc_change.invoke(this);
                     this->rc_display_match.invoke(this);
                     break;
 

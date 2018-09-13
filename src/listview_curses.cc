@@ -282,8 +282,14 @@ void listview_curses::do_update(void)
         }
 
         if (this->lv_show_bottom_border) {
-            mvwchgat(this->lv_window,
-                this->lv_y + height - 1, this->lv_x, width - 1, A_UNDERLINE, 0, NULL);
+            cchar_t row_ch[width];
+            int y = this->lv_y + height - 1;
+
+            mvwin_wchnstr(this->lv_window, y, this->lv_x, row_ch, width - 1);
+            for (int lpc = 0; lpc < width - 1; lpc++) {
+                row_ch[lpc].attr |= A_UNDERLINE;
+            }
+            mvwadd_wchnstr(this->lv_window, y, this->lv_x, row_ch, width - 1);
         }
 
         this->lv_needs_update = false;

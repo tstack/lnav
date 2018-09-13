@@ -214,7 +214,7 @@ void add_view_text_possibilities(int context, const string &type, textview_curse
 
         add_text_possibilities(context, type, line);
     }
-
+    
     rlc->add_possibility(context, type, bookmark_metadata::KNOWN_TAGS);
 }
 

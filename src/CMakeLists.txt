@@ -13,6 +13,7 @@ set(diag_STAT_SRCS
     file_vtab.cc
     fs-extension-functions.cc
     fstat_vtab.cc
+    fts_fuzzy_match.cc
     grep_proc.cc
     help_text_formatter.cc
     hist_source.cc
@@ -108,6 +109,7 @@ set(diag_STAT_SRCS
     filter_observer.hh
     format-text-files.hh
     fstat_vtab.hh
+    fts_fuzzy_match.hh
     grep_highlighter.hh
     help.hh
     help_text_formatter.hh

@@ -203,6 +203,7 @@ public:
         return this->rc_highlighter;
     };
 
+    static int command_complete(int, int);
 private:
     static char **attempted_completion(const char *text, int start, int end);
     static char *completion_generator(const char *text, int state);
@@ -383,6 +384,19 @@ public:
         return this->rc_matches;
     };
 
+    int get_match_start() const {
+        return this->rc_match_start;
+    }
+
+    std::string get_match_string() const {
+        size_t space_index = this->rc_line_buffer.find(' ', this->rc_match_start);
+
+        if (space_index > 0) {
+            space_index = space_index - this->rc_match_start;
+        }
+        return this->rc_line_buffer.substr(this->rc_match_start, space_index);
+    }
+
     int get_max_match_length() const {
         return this->rc_max_match_length;
     };
@@ -408,6 +422,7 @@ private:
     std::string rc_line_buffer;
     time_t      rc_value_expiration;
     std::string rc_alt_value;
+    int rc_match_start{0};
     int rc_matches_remaining;
     int rc_max_match_length;
     std::vector<std::string> rc_matches;

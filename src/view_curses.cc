@@ -516,7 +516,6 @@ void view_curses::mvwattrline(WINDOW *window,
         }
 
         if (attr_range.lr_end > attr_range.lr_start) {
-            string_attrs_t::const_iterator range_iter;
             int awidth = attr_range.length();
             int color_pair;
 

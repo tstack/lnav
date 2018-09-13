@@ -177,6 +177,9 @@ const char *vt52_curses::map_input(int ch, int &len_out)
             case 0x7f:
                 ch = BACKSPACE;
                 break;
+            case KEY_BTAB:
+                ch = BACKTAB;
+                break;
         }
         this->vc_map_buffer = (char)ch;
         retval  = &this->vc_map_buffer; /* XXX probably shouldn't do this. */
