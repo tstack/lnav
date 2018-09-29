@@ -117,7 +117,7 @@ CREATE TABLE lnav_views (
                 if (time_source != nullptr && tc.get_inner_height() > 0) {
                     char timestamp[64];
 
-                    sql_strftime(timestamp, sizeof(timestamp), time_source->time_for_row(tc.get_top()), 0, 'T');
+                    sql_strftime(timestamp, sizeof(timestamp), time_source->time_for_row(tc.get_top()), 'T');
 
                     sqlite3_result_text(ctx, timestamp, -1, SQLITE_TRANSIENT);
                 } else {
@@ -167,10 +167,10 @@ CREATE TABLE lnav_views (
             struct timeval tv;
 
             if (dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
-                time_t last_time = time_source->time_for_row(tc.get_top());
+                struct timeval last_time = time_source->time_for_row(tc.get_top());
 
-                if (tv.tv_sec != last_time) {
-                    int row = time_source->row_for_time(tv.tv_sec);
+                if (tv != last_time) {
+                    int row = time_source->row_for_time(tv);
 
                     tc.set_top(vis_line_t(row));
                 }

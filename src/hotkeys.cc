@@ -187,7 +187,7 @@ void handle_paging_key(int ch)
 
                 lnav_data.ld_last_view = NULL;
                 if (src_view != NULL && dst_view != NULL) {
-                    time_t top_time = src_view->time_for_row(top_tc->get_top());
+                    struct timeval top_time = src_view->time_for_row(top_tc->get_top());
 
                     tc->set_top(vis_line_t(dst_view->row_for_time(top_time)));
                 }
@@ -531,7 +531,7 @@ void handle_paging_key(int ch)
 
         case '0':
             if (lss) {
-                time_t     first_time = lnav_data.ld_top_time;
+                time_t     first_time = lnav_data.ld_top_time.tv_sec;
                 int        step       = 24 * 60 * 60;
                 vis_line_t line       =
                         lss->find_from_time(roundup_size(first_time, step));
@@ -542,7 +542,7 @@ void handle_paging_key(int ch)
 
         case ')':
             if (lss) {
-                time_t     day  = rounddown(lnav_data.ld_top_time, 24 * 60 * 60);
+                time_t     day  = rounddown(lnav_data.ld_top_time.tv_sec, 24 * 60 * 60);
                 vis_line_t line = lss->find_from_time(day);
 
                 --line;
@@ -556,7 +556,7 @@ void handle_paging_key(int ch)
             }
             else if (lss) {
                 int        step     = ch == 'D' ? (24 * 60 * 60) : (60 * 60);
-                time_t     top_time = lnav_data.ld_top_time;
+                time_t     top_time = lnav_data.ld_top_time.tv_sec;
                 vis_line_t line     = lss->find_from_time(top_time - step);
 
                 if (line != 0) {
@@ -572,7 +572,7 @@ void handle_paging_key(int ch)
             if (lss) {
                 int        step = ch == 'd' ? (24 * 60 * 60) : (60 * 60);
                 vis_line_t line =
-                        lss->find_from_time(lnav_data.ld_top_time + step);
+                        lss->find_from_time(lnav_data.ld_top_time.tv_sec + step);
 
                 tc->set_top(line);
 
@@ -856,7 +856,7 @@ void handle_paging_key(int ch)
 
         case 'I':
         {
-            time_t log_top = lnav_data.ld_top_time;
+            struct timeval log_top = lnav_data.ld_top_time;
             hist_source2 &hs = lnav_data.ld_hist_source2;
 
             if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
@@ -867,8 +867,8 @@ void handle_paging_key(int ch)
                 textview_curses &hist_tc = lnav_data.ld_views[LNV_HISTOGRAM];
                 textview_curses &log_tc = lnav_data.ld_views[LNV_LOG];
                 lss = &lnav_data.ld_log_source;
-                time_t hist_top_time = hs.time_for_row(hist_tc.get_top());
-                time_t curr_top_time = lss->time_for_row(log_tc.get_top());
+                struct timeval hist_top_time = hs.time_for_row(hist_tc.get_top());
+                struct timeval curr_top_time = lss->time_for_row(log_tc.get_top());
                 if (hs.row_for_time(hist_top_time) != hs.row_for_time(curr_top_time)) {
                     vis_line_t new_top = lss->find_from_time(hist_top_time);
                     log_tc.set_top(new_top);

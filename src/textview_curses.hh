@@ -303,9 +303,9 @@ class text_time_translator {
 public:
     virtual ~text_time_translator() { };
 
-    virtual int row_for_time(time_t time_bucket) = 0;
+    virtual int row_for_time(struct timeval time_bucket) = 0;
 
-    virtual time_t time_for_row(int row) = 0;
+    virtual struct timeval time_for_row(int row) = 0;
 };
 
 /**

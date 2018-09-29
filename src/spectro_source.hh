@@ -156,8 +156,10 @@ public:
                 lv.get_dimensions(height, width);
 
                 spectrogram_bounds &sb = this->ss_cached_bounds;
-                time_t begin_time = this->time_for_row(this->ss_cursor_top);
-                time_t end_time = begin_time + this->ss_granularity;
+                struct timeval begin_time = this->time_for_row(this->ss_cursor_top);
+                struct timeval end_time = begin_time;
+
+                end_time.tv_sec += this->ss_granularity;
                 double range_min, range_max, column_size;
 
                 column_size = (sb.sb_max_value_out - sb.sb_min_value_out) /
@@ -165,7 +167,7 @@ public:
                 range_min = sb.sb_min_value_out + this->ss_cursor_column * column_size;
                 range_max = range_min + column_size + column_size * 0.01;
                 this->ss_value_source->spectro_mark((textview_curses &) lv,
-                                                    begin_time, end_time,
+                                                    begin_time.tv_sec, end_time.tv_sec,
                                                     range_min, range_max);
                 this->invalidate();
                 lv.reload_data();
@@ -310,17 +312,18 @@ public:
         return 0;
     };
 
-    time_t time_for_row(int row) {
-        time_t retval;
+    struct timeval time_for_row(int row) {
+        struct timeval retval { 0, 0 };
 
         this->cache_bounds();
-        retval = rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity) +
-                 row * this->ss_granularity;
+        retval.tv_sec =
+            rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity) +
+            row * this->ss_granularity;
 
         return retval;
     }
 
-    int row_for_time(time_t time_bucket) {
+    int row_for_time(struct timeval time_bucket) {
         if (this->ss_value_source == NULL) {
             return 0;
         }
@@ -329,11 +332,11 @@ public:
         int retval;
 
         this->cache_bounds();
-        if (time_bucket < this->ss_cached_bounds.sb_begin_time) {
+        if (time_bucket.tv_sec < this->ss_cached_bounds.sb_begin_time) {
             return 0;
         }
 
-        diff = time_bucket - this->ss_cached_bounds.sb_begin_time;
+        diff = time_bucket.tv_sec - this->ss_cached_bounds.sb_begin_time;
         retval = diff / this->ss_granularity;
 
         return retval;
@@ -345,13 +348,13 @@ public:
                              line_flags_t flags) {
         spectrogram_row &s_row = this->load_row(tc, row);
 
-        time_t row_time;
+        struct timeval row_time;
         char tm_buffer[128];
         struct tm tm;
 
         row_time = this->time_for_row(row);
 
-        gmtime_r(&row_time, &tm);
+        gmtime_r(&row_time.tv_sec, &tm);
         strftime(tm_buffer, sizeof(tm_buffer), " %a %b %d %H:%M:%S", &tm);
 
         value_out = tm_buffer;

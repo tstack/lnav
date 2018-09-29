@@ -244,7 +244,7 @@ public:
         else {
             switch (dir) {
             case RD_UP:
-                retval = std::min(height, line + vis_line_t(1));
+                retval = std::min(height, line + 1_vl);
                 break;
             case RD_DOWN:
                 retval = std::min(height,

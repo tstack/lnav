@@ -159,7 +159,7 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
             } else {
                 lf->adjust_content_time(top_content, time_diff, false);
 
-                rebuild_indexes(true);
+                lnav_data.ld_flags |= LNF_FORCE_REINDEX;
 
                 retval = "info: adjusted time";
             }
@@ -2480,7 +2480,7 @@ static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args
         for (int lpc = 0; lnav_zoom_strings[lpc] && !found; lpc++) {
             if (strcasecmp(args[1].c_str(), lnav_zoom_strings[lpc]) == 0) {
                 spectrogram_source &ss = lnav_data.ld_spectro_source;
-                time_t old_time;
+                struct timeval old_time;
 
                 lnav_data.ld_zoom_level = lpc;
 
@@ -2579,7 +2579,7 @@ static string com_set_min_log_level(exec_context &ec, string cmdline, vector<str
         new_level = string2level(
             args[1].c_str(), args[1].size(), false);
         lss.set_min_log_level(new_level);
-        rebuild_indexes(true);
+        lnav_data.ld_flags |= LNF_FORCE_REINDEX;
 
         retval = ("info: minimum log level is now -- " +
             string(level_names[new_level]));
@@ -2761,7 +2761,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
                 lss.set_max_log_time(tv);
                 relation = "after";
             }
-            rebuild_indexes(true);
+            lnav_data.ld_flags |= LNF_FORCE_REINDEX;
 
             retval = "info: hiding lines " + relation + " " + time_text;
         }
@@ -2785,7 +2785,7 @@ static string com_show_lines(exec_context &ec, string cmdline, vector<string> &a
             lss.clear_min_max_log_times();
         }
 
-        rebuild_indexes(true);
+        lnav_data.ld_flags |= LNF_FORCE_REINDEX;
     }
 
     return retval;
@@ -3393,8 +3393,8 @@ public:
 
     void spectro_row(spectrogram_request &sr, spectrogram_row &row_out) {
         db_label_source &dls = lnav_data.ld_db_row_source;
-        int begin_row = dls.row_for_time(sr.sr_begin_time);
-        int end_row = dls.row_for_time(sr.sr_end_time);
+        int begin_row = dls.row_for_time({ sr.sr_begin_time, 0 });
+        int end_row = dls.row_for_time({ sr.sr_end_time, 0 });
 
         if (begin_row == -1) {
             begin_row = 0;

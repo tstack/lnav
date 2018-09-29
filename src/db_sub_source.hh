@@ -268,7 +268,7 @@ public:
         return std::distance(this->dls_headers.begin(), iter);
     };
 
-    int row_for_time(time_t time_bucket) {
+    int row_for_time(struct timeval time_bucket) {
         std::vector<struct timeval>::iterator iter;
 
         iter = std::lower_bound(this->dls_time_column.begin(),
@@ -280,12 +280,12 @@ public:
         return -1;
     };
 
-    time_t time_for_row(int row) {
+    struct timeval time_for_row(int row) {
         if ((row < 0) || (((size_t) row) >= this->dls_time_column.size())) {
-            return -1;
+            return { -1, 0 };
         }
 
-        return this->dls_time_column[row].tv_sec;
+        return this->dls_time_column[row];
     };
 
     struct header_meta {

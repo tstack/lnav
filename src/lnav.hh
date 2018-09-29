@@ -35,6 +35,7 @@
 #include "config.h"
 
 #include <signal.h>
+#include <sys/time.h>
 
 #include <map>
 #include <set>
@@ -92,6 +93,8 @@ enum {
     LNB_UPDATE_FORMATS,
     LNB_VERBOSE,
     LNB_SECURE_MODE,
+    LNB_REINDEX,
+    LNB_FORCE_REINDEX,
 };
 
 /** Flags set on the lnav command-line. */
@@ -109,6 +112,8 @@ typedef enum {
     LNF_UPDATE_FORMATS = (1L << LNB_UPDATE_FORMATS),
     LNF_VERBOSE = (1L << LNB_VERBOSE),
     LNF_SECURE_MODE = (1L << LNB_SECURE_MODE),
+    LNF_REINDEX = (1L << LNB_REINDEX),
+    LNF_FORCE_REINDEX = (1L << LNB_FORCE_REINDEX),
 
     LNF__ALL      = (LNF_SYSLOG|LNF_HELP),
 } lnav_flags_t;
@@ -246,10 +251,8 @@ struct _lnav_data {
     listview_curses::action::broadcaster    ld_scroll_broadcaster;
     listview_curses::action::broadcaster    ld_view_stack_broadcaster;
 
-    time_t                                  ld_top_time;
-    int                                     ld_top_time_millis;
-    time_t                                  ld_bottom_time;
-    int                                     ld_bottom_time_millis;
+    struct timeval                          ld_top_time;
+    struct timeval                          ld_bottom_time;
 
     plain_text_source                       ld_help_source;
 

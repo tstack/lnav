@@ -52,9 +52,7 @@ static std::string sql_log_top_datetime()
 {
     char buffer[64];
 
-    sql_strftime(buffer, sizeof(buffer),
-                 lnav_data.ld_top_time,
-                 lnav_data.ld_top_time_millis);
+    sql_strftime(buffer, sizeof(buffer), lnav_data.ld_top_time);
     return buffer;
 }
 

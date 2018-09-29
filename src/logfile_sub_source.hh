@@ -438,11 +438,11 @@ public:
         return this->find_from_time(tv);
     };
 
-    time_t time_for_row(int row) {
-        return this->find_line(this->at(vis_line_t(row)))->get_time();
+    struct timeval time_for_row(int row) {
+        return this->find_line(this->at(vis_line_t(row)))->get_timeval();
     };
 
-    int row_for_time(time_t time_bucket) {
+    int row_for_time(struct timeval time_bucket) {
         return this->find_from_time(time_bucket);
     };
 

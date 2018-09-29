@@ -73,6 +73,7 @@ static readline_curses *child_this;
 static sig_atomic_t     looping      = 1;
 static const int        HISTORY_SIZE = 256;
 static int              completion_start;
+static const int        FUZZY_PEER_THRESHOLD = 30;
 
 static const char *RL_INIT[] = {
     /*
@@ -256,6 +257,9 @@ char *readline_context::completion_generator(const char *text, int state)
 
                     if (fts::fuzzy_match(text, poss_str, score) && score > 0) {
                         log_debug("match score %d %s %s", score, text, poss_str);
+                        if (score <= 0) {
+                            continue;
+                        }
                         fuzzy_matches.emplace_back(score, *iter);
                     }
                 }
@@ -267,7 +271,7 @@ char *readline_context::completion_generator(const char *text, int state)
                     int highest = fuzzy_matches[0].first;
 
                     for (auto pair : fuzzy_matches) {
-                        if (highest - pair.first < 10) {
+                        if (highest - pair.first < FUZZY_PEER_THRESHOLD) {
                             matches.push_back(pair.second);
                         } else {
                             break;

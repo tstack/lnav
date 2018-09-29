@@ -449,20 +449,19 @@ public:
         return 0;
     };
 
-    time_t time_for_row(int row) {
+    struct timeval time_for_row(int row) {
         require(row >= 0);
         require(row < this->hs_line_count);
 
         bucket_t &bucket = this->find_bucket(row);
 
-        return bucket.b_time;
+        return { bucket.b_time, 0 };
     };
 
-    int row_for_time(time_t time_bucket) {
+    int row_for_time(struct timeval tv_bucket) {
         std::map<int64_t, struct bucket_block>::iterator iter;
         int retval = 0;
-
-        time_bucket = rounddown(time_bucket, this->hs_time_slice);
+        time_t time_bucket = rounddown(tv_bucket.tv_sec, this->hs_time_slice);
 
         for (iter = this->hs_blocks.begin();
              iter != this->hs_blocks.end();

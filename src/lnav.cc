@@ -547,7 +547,7 @@ void rebuild_indexes(bool force)
 
     bool          scroll_downs[LNV__MAX];
     size_t        old_count;
-    time_t        old_time;
+    struct timeval old_time;
 
     old_count = lss.text_line_count();
 
@@ -570,7 +570,7 @@ void rebuild_indexes(bool force)
         new_data = tss->rescan_files(cb);
         force = force || cb.force;
 
-        if (cb.front_file != NULL) {
+        if (cb.front_file != nullptr) {
             ensure_view(&text_view);
 
             if (tss->current_file() != cb.front_file) {
@@ -627,19 +627,12 @@ void rebuild_indexes(bool force)
     }
 
     if (lss.rebuild_index(force)) {
-        size_t      new_count = lss.text_line_count();
+        size_t new_count = lss.text_line_count();
         vis_line_t start_line;
 
-        if (!scroll_downs[LNV_LOG] && force) {
-            content_line_t new_top_content = content_line_t(-1);
-
-            if (new_count) {
-                new_top_content = lss.at(log_view.get_top());
-            }
-
-            if (new_top_content != top_content) {
-                log_view.set_top(lss.find_from_time(old_time));
-            }
+        if ((!scroll_downs[LNV_LOG] || log_view.get_top() > new_count) && force) {
+            log_view.set_top(lss.find_from_time(old_time));
+            scroll_downs[LNV_LOG] = false;
         }
 
         start_line = force ? 0_vl : -1_vl;
@@ -1337,20 +1330,16 @@ static void update_times(void *, listview_curses *lv)
         logline *ll;
 
         ll = lss.find_line(lss.at(lv->get_top()));
-        lnav_data.ld_top_time = ll->get_time();
-        lnav_data.ld_top_time_millis = ll->get_millis();
+        lnav_data.ld_top_time = ll->get_timeval();
         ll = lss.find_line(lss.at(lv->get_bottom()));
-        lnav_data.ld_bottom_time = ll->get_time();
-        lnav_data.ld_bottom_time_millis = ll->get_millis();
+        lnav_data.ld_bottom_time = ll->get_timeval();
     }
     if (lv == &lnav_data.ld_views[LNV_HISTOGRAM] &&
         lv->get_inner_height() > 0) {
         hist_source2 &hs = lnav_data.ld_hist_source2;
 
         lnav_data.ld_top_time    = hs.time_for_row(lv->get_top());
-        lnav_data.ld_top_time_millis = 0;
         lnav_data.ld_bottom_time = hs.time_for_row(lv->get_bottom());
-        lnav_data.ld_bottom_time_millis = 0;
     }
 }
 
@@ -2309,11 +2298,16 @@ static void looper(void)
 
             lnav_data.ld_top_source.update_time();
 
+            layout_views();
+
             if (rescan_files()) {
-                rebuild_indexes(true);
+                lnav_data.ld_flags |= LNF_FORCE_REINDEX;
             }
 
-            layout_views();
+            if (lnav_data.ld_flags & (LNF_REINDEX | LNF_FORCE_REINDEX)) {
+                rebuild_indexes(lnav_data.ld_flags & LNF_FORCE_REINDEX);
+                lnav_data.ld_flags &= ~(LNF_REINDEX | LNF_FORCE_REINDEX);
+            }
 
             if (!lnav_data.ld_view_stack.empty()) {
                 lnav_data.ld_view_stack.back()->do_update();
