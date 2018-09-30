@@ -53,6 +53,7 @@
 #include "relative_time.hh"
 #include "log_search_table.hh"
 #include "shlex.hh"
+#include "sysclip.hh"
 #include "yajl/api/yajl_parse.h"
 #include "db_sub_source.hh"
 
@@ -500,10 +501,11 @@ static void json_write_row(yajl_gen handle, int row)
 
 static string com_save_to(exec_context &ec, string cmdline, vector<string> &args)
 {
-    FILE *outfile = NULL, *toclose = NULL;
+    FILE *outfile = nullptr, *toclose = nullptr;
     const char *mode    = "";
     string fn, retval;
     bool to_term = false;
+    int (*closer)(FILE *) = fclose;
 
     if (args.empty()) {
         args.emplace_back("filename");
@@ -564,7 +566,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         outfile = tmpfile();
         toclose = outfile;
     }
-    else if (split_args[0] == "-") {
+    else if (split_args[0] == "-" || split_args[0] == "/dev/stdout") {
         if (lnav_data.ld_output_stack.empty()) {
             outfile = stdout;
             nodelay(lnav_data.ld_window, 0);
@@ -586,12 +588,23 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
             lnav_data.ld_stdout_used = true;
         }
     }
-    else if ((outfile = fopen(split_args[0].c_str(), mode)) == NULL) {
+    else if (split_args[0] == "/dev/clipboard") {
+        toclose = outfile = open_clipboard(CT_GENERAL);
+        closer = pclose;
+        if (!outfile) {
+            alerter::singleton().chime();
+            return "error: Unable to copy to clipboard.  "
+                   "Make sure xclip or pbcopy is installed.";
+        }
+    }
+    else if ((outfile = fopen(split_args[0].c_str(), mode)) == nullptr) {
         return "error: unable to open file -- " + split_args[0];
     }
     else {
         toclose = outfile;
     }
+
+    int line_count = 0;
 
     if (args[0] == "write-csv-to") {
         std::vector<std::vector<const char *> >::iterator row_iter;
@@ -629,6 +642,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
                 first = false;
             }
             fprintf(outfile, "\n");
+
+            line_count += 1;
         }
     }
     else if (args[0] == "write-cols-to") {
@@ -648,6 +663,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
                                     text_sub_source::RF_RAW);
             fputs(line.c_str(), outfile);
             fputc('\n', outfile);
+
+            line_count += 1;
         }
     }
     else if (args[0] == "write-json-to") {
@@ -696,6 +713,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
                     fputs(*iter, outfile);
                 }
                 fprintf(outfile, "\n");
+
+                line_count += 1;
             }
         } else {
             bool wrapped = tc->get_word_wrap();
@@ -714,6 +733,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
                 log_perror(write(STDOUT_FILENO, lr.substr(al.get_string()),
                                  lr.sublen(al.get_string())));
                 log_perror(write(STDOUT_FILENO, "\n", 1));
+
+                line_count += 1;
             }
 
             tc->set_word_wrap(wrapped);
@@ -731,6 +752,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
             }
             tc->grep_value_for_line(*iter, line);
             fprintf(outfile, "%s\n", line.c_str());
+
+            line_count += 1;
         }
     }
 
@@ -756,13 +779,15 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
                  .truncate_to(10);
         lnav_data.ld_preview_status_source.get_description()
                  .set_value("First lines of file: %s", fn.c_str());
+    } else {
+        retval = "Wrote " + to_string(line_count) + " line to " + split_args[0];
     }
-    if (toclose != NULL) {
-        fclose(toclose);
+    if (toclose != nullptr) {
+        closer(toclose);
     }
-    outfile = NULL;
+    outfile = nullptr;
 
-    return "";
+    return retval;
 }
 
 static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args)
@@ -834,13 +859,11 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                 sql_strftime(tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
                 setenv("log_time", tmp_str, 1);
                 setenv("log_path", ldh.ldh_file->get_filename().c_str(), 1);
-                for (vector<logline_value>::iterator iter = ldh.ldh_line_values.begin();
-                     iter != ldh.ldh_line_values.end();
-                     ++iter) {
-                    setenv(iter->lv_name.get(), iter->to_string().c_str(), 1);
+                for (auto &ldh_line_value : ldh.ldh_line_values) {
+                    setenv(ldh_line_value.lv_name.get(),
+                           ldh_line_value.to_string().c_str(), 1);
                 }
-                data_parser::element_list_t::iterator iter =
-                        ldh.ldh_parser->dp_pairs.begin();
+                auto iter = ldh.ldh_parser->dp_pairs.begin();
                 for (size_t lpc = 0; lpc < ldh.ldh_parser->dp_pairs.size(); lpc++, ++iter) {
                     std::string colname = ldh.ldh_parser->get_element_string(
                             iter->e_sub_elements->front());

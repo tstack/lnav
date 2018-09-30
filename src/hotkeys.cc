@@ -101,45 +101,6 @@ public:
     vector<logline_value> lh_line_values;
 };
 
-/* XXX For one, this code is kinda crappy.  For two, we should probably link
- * directly with X so we don't need to have xclip installed and it'll work if
- * we're ssh'd into a box.
- */
-static void copy_to_xclip(void)
-{
-    textview_curses *tc = lnav_data.ld_view_stack.back();
-
-    bookmark_vector<vis_line_t> &bv =
-            tc->get_bookmarks()[&textview_curses::BM_USER];
-    bookmark_vector<vis_line_t>::iterator iter;
-    auto_mem<FILE> pfile(pclose);
-    int    line_count = 0;
-    string line;
-
-    pfile = open_clipboard(CT_GENERAL);
-
-    if (!pfile.in()) {
-        alerter::singleton().chime();
-        lnav_data.ld_rl_view->set_value(
-                "error: Unable to copy to clipboard.  "
-                        "Make sure xclip or pbcopy is installed.");
-        return;
-    }
-
-    for (iter = bv.begin(); iter != bv.end(); iter++) {
-        tc->grep_value_for_line(*iter, line);
-        fprintf(pfile, "%s\n", line.c_str());
-        line_count += 1;
-    }
-
-    char buffer[128];
-
-    snprintf(buffer, sizeof(buffer),
-             "Copied " ANSI_BOLD("%d") " lines to the clipboard",
-             line_count);
-    lnav_data.ld_rl_view->set_value(buffer);
-}
-
 void handle_paging_key(int ch)
 {
     if (lnav_data.ld_view_stack.empty()) {
@@ -208,12 +169,6 @@ void handle_paging_key(int ch)
                         "error: mouse support is not available, make sure your TERM is set to "
                                 "xterm or xterm-256color");
             }
-            break;
-
-        case 'c':
-            copy_to_xclip();
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                    C, "to clear marked messages"));
             break;
 
         case 'C':
@@ -673,24 +628,20 @@ void handle_paging_key(int ch)
                 if (tc == &lnav_data.ld_views[LNV_DB]) {
                     db_label_source &dls = lnav_data.ld_db_row_source;
 
-                    for (vector<db_label_source::header_meta>::iterator iter = dls.dls_headers.begin();
-                         iter != dls.dls_headers.end();
-                         ++iter) {
-                        if (!iter->hm_graphable) {
+                    for (auto &dls_header : dls.dls_headers) {
+                        if (!dls_header.hm_graphable) {
                             continue;
                         }
 
                         lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
                                                               "numeric-colname",
-                                                              iter->hm_name);
+                                                              dls_header.hm_name);
                     }
                 }
                 else {
-                    for (vector<logline_value>::iterator iter = ldh.ldh_line_values.begin();
-                         iter != ldh.ldh_line_values.end();
-                         ++iter) {
-                        const logline_value_stats *stats = iter->lv_format->stats_for_value(
-                            iter->lv_name);
+                    for (auto &ldh_line_value : ldh.ldh_line_values) {
+                        const logline_value_stats *stats = ldh_line_value.lv_format->stats_for_value(
+                            ldh_line_value.lv_name);
 
                         if (stats == NULL) {
                             continue;
@@ -698,14 +649,13 @@ void handle_paging_key(int ch)
 
                         lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
                                                               "numeric-colname",
-                                                              iter->lv_name.to_string());
+                                                              ldh_line_value.lv_name.to_string());
                     }
                 }
 
-                for (vector<string>::iterator iter = ldh.ldh_namer->cn_names.begin();
-                     iter != ldh.ldh_namer->cn_names.end();
-                     ++iter) {
-                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname", *iter);
+                for (auto &cn_name : ldh.ldh_namer->cn_names) {
+                    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname",
+                                                          cn_name);
                 }
                 for (auto iter : ldh.ldh_namer->cn_builtin_names) {
                     if (iter == "col") {
@@ -834,7 +784,7 @@ void handle_paging_key(int ch)
             break;
 
         case 't':
-            if (lnav_data.ld_text_source.current_file() == NULL) {
+            if (lnav_data.ld_text_source.current_file() == nullptr) {
                 alerter::singleton().chime();
                 lnav_data.ld_rl_view->set_value("No text files loaded");
             }

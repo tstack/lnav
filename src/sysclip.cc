@@ -51,7 +51,7 @@ static clip_command *get_commands()
     static clip_command X_CMDS[] = {
             { { "xclip -i > /dev/null 2>&1",
                     "xclip -o < /dev/null 2>/dev/null" } },
-            { { NULL, NULL } },
+            { { nullptr, nullptr } },
     };
     if (system("which pbcopy > /dev/null 2>&1") == 0) {
         return OSX_CMDS;
@@ -59,7 +59,7 @@ static clip_command *get_commands()
     if (system("which xclip > /dev/null 2>&1") == 0) {
         return X_CMDS;
     }
-    return NULL;
+    return nullptr;
 }
 
 /* XXX For one, this code is kinda crappy.  For two, we should probably link
@@ -70,9 +70,9 @@ FILE *open_clipboard(clip_type_t type, clip_op_t op)
 {
     const char *mode = op == CO_WRITE ? "w" : "r";
     clip_command *cc = get_commands();
-    FILE *pfile = NULL;
+    FILE *pfile = nullptr;
 
-    if (cc != NULL && cc[type].cc_cmd[op] != NULL) {
+    if (cc != nullptr && cc[type].cc_cmd[op] != nullptr) {
         pfile = popen(cc[type].cc_cmd[op], mode);
     }
 

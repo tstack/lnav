@@ -131,11 +131,14 @@ Output
 * append-to <file> - Append any bookmarked lines in the current view to the
   given file.
 * write-to <file> - Overwrite the given file with any bookmarked lines in
-  the current view.  Use '-' to write the lines to the terminal.
+  the current view.  Use '-' to write the lines to the terminal and '/dev/clipboard'
+  to write to the system clipboard.
 * write-csv-to <file> - Write SQL query results to the given file in CSV format.
-  Use '-' to write the lines to the terminal.
+  Use '-' to write the lines to the terminal and '/dev/clipboard' to write to
+  the system clipboard.
 * write-json-to <file> - Write SQL query results to the given file in JSON
-  format.  Use '-' to write the lines to the terminal.
+  format.  Use '-' to write the lines to the terminal and '/dev/clipboard'
+  to write to the system clipboard..
 * pipe-to <shell-cmd> - Pipe the bookmarked lines in the current view to a
   shell command and open the output in lnav.
 * pipe-line-to <shell-cmd> - Pipe the top line in the current view to a shell

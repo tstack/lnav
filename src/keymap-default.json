@@ -8,7 +8,8 @@
         "keymap_def_hist_view": "Press ${ansi_bold}i${ansi_norm}/${ansi_bold}I${ansi_norm} to switch to the histogram view",
         "keymap_def_text_view": "Press ${ansi_bold}t${ansi_norm} to switch to the text view",
         "keymap_def_pop_view": "Press ${ansi_bold}q${ansi_norm} to return to the previous view",
-        "keymap_def_zoom": "Press ${ansi_bold}z${ansi_norm}/${ansi_bold}z${ansi_norm} to zoom in/out"
+        "keymap_def_zoom": "Press ${ansi_bold}z${ansi_norm}/${ansi_bold}z${ansi_norm} to zoom in/out",
+        "keymap_def_clear": "Press ${ansi_bold}C${ansi_norm} to clear marked messages"
     },
     "keymap_def": {
         "default": {
@@ -47,6 +48,11 @@
             ],
             "x79": [
                 ":next-mark query"
+            ],
+
+            "x63": [
+                ":eval :alt-msg ${keymap_def_clear}",
+                ":write-to /dev/clipboard"
             ],
 
             "x67": [":goto 0"],
