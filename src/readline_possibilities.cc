@@ -299,15 +299,17 @@ void add_tag_possibilities()
     rc->add_possibility(LNM_COMMAND, "tag", bookmark_metadata::KNOWN_TAGS);
     if (lnav_data.ld_view_stack.back() == &lnav_data.ld_views[LNV_LOG]) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
-        content_line_t cl = lss.at(lnav_data.ld_views[LNV_LOG].get_top());
-        const map<content_line_t, bookmark_metadata> &user_meta =
-            lss.get_user_bookmark_metadata();
-        auto meta_iter = user_meta.find(cl);
+        if (lss.text_line_count() > 0) {
+            content_line_t cl = lss.at(lnav_data.ld_views[LNV_LOG].get_top());
+            const map<content_line_t, bookmark_metadata> &user_meta =
+                lss.get_user_bookmark_metadata();
+            auto meta_iter = user_meta.find(cl);
 
-        if (meta_iter != user_meta.end()) {
-            rc->add_possibility(LNM_COMMAND,
-                                "line-tags",
-                                meta_iter->second.bm_tags);
+            if (meta_iter != user_meta.end()) {
+                rc->add_possibility(LNM_COMMAND,
+                                    "line-tags",
+                                    meta_iter->second.bm_tags);
+            }
         }
     }
 }

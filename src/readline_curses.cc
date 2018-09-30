@@ -508,7 +508,6 @@ void readline_curses::start(void)
     }
 
     map<int, readline_context *>::iterator current_context;
-    fd_set rfds;
     int    maxfd;
 
     require(!this->rc_contexts.empty());
@@ -517,17 +516,19 @@ void readline_curses::start(void)
 
     current_context = this->rc_contexts.end();
 
-    FD_ZERO(&rfds);
-    FD_SET(STDIN_FILENO, &rfds);
-    FD_SET(this->rc_command_pipe[RCF_SLAVE], &rfds);
-
     maxfd = max(STDIN_FILENO, this->rc_command_pipe[RCF_SLAVE].get());
 
     while (looping) {
-        fd_set ready_rfds = rfds;
+        fd_set ready_rfds;
         int    rc;
 
-        rc = select(maxfd + 1, &ready_rfds, NULL, NULL, NULL);
+        FD_ZERO(&ready_rfds);
+        if (current_context != this->rc_contexts.end()) {
+            FD_SET(STDIN_FILENO, &ready_rfds);
+        }
+        FD_SET(this->rc_command_pipe[RCF_SLAVE], &ready_rfds);
+
+        rc = select(maxfd + 1, &ready_rfds, nullptr, nullptr, nullptr);
         if (rc < 0) {
             switch (errno) {
             case EINTR:
@@ -539,11 +540,6 @@ void readline_curses::start(void)
                 static uint64_t last_h1, last_h2;
 
                 struct itimerval itv;
-
-                if (current_context == this->rc_contexts.end()) {
-                    looping = false;
-                    break;
-                }
 
                 itv.it_value.tv_sec     = 0;
                 itv.it_value.tv_usec    = KEY_TIMEOUT;
@@ -589,6 +585,7 @@ void readline_curses::start(void)
                 if ((rc = recvstring(this->rc_command_pipe[RCF_SLAVE],
                                      msg,
                                      sizeof(msg) - 1)) < 0) {
+                    looping = false;
                 }
                 else {
                     int  context, prompt_start = 0;
@@ -636,8 +633,8 @@ void readline_curses::start(void)
                         require(this->rc_contexts[context] != NULL);
 
                         this->rc_contexts[context]->
-                        add_possibility(string(type),
-                                        string(&msg[prompt_start]));
+                                                      add_possibility(string(type),
+                                                                      string(&msg[prompt_start]));
                     }
                     else if (sscanf(msg,
                                     "rp:%d:%31[^:]:%n",
@@ -647,8 +644,8 @@ void readline_curses::start(void)
                         require(this->rc_contexts[context] != NULL);
 
                         this->rc_contexts[context]->
-                        rem_possibility(string(type),
-                                        string(&msg[prompt_start]));
+                                                      rem_possibility(string(type),
+                                                                      string(&msg[prompt_start]));
                     }
                     else if (sscanf(msg, "cp:%d:%s", &context, type)) {
                         this->rc_contexts[context]->clear_possibilities(type);

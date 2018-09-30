@@ -2719,21 +2719,23 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
 
         if (rt.parse(all_args, pe)) {
             if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                content_line_t cl;
-                struct exttm tm;
-                vis_line_t vl;
-                logline *ll;
+                if (tc->get_inner_height() > 0) {
+                    content_line_t cl;
+                    struct exttm tm;
+                    vis_line_t vl;
+                    logline *ll;
 
-                vl = tc->get_top();
-                cl = lnav_data.ld_log_source.at(vl);
-                ll = lnav_data.ld_log_source.find_line(cl);
-                ll->to_exttm(tm);
-                rt.add(tm);
+                    vl = tc->get_top();
+                    cl = lnav_data.ld_log_source.at(vl);
+                    ll = lnav_data.ld_log_source.find_line(cl);
+                    ll->to_exttm(tm);
+                    rt.add(tm);
 
-                tv.tv_sec = timegm(&tm.et_tm);
-                tv.tv_usec = tm.et_nsec / 1000;
+                    tv.tv_sec = timegm(&tm.et_tm);
+                    tv.tv_usec = tm.et_nsec / 1000;
 
-                tv_set = true;
+                    tv_set = true;
+                }
             }
             else {
                 retval = "error: relative time values only work in the log view";
