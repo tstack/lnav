@@ -355,18 +355,6 @@ void textview_curses::textview_value_for_row(vis_line_t row,
 #endif
 
     if (binary_search(user_marks.begin(), user_marks.end(), row)) {
-        string_attrs_t::iterator iter;
-
-        for (iter = sa.begin(); iter != sa.end(); iter++) {
-            if (iter->sa_range.lr_start < orig_line.lr_start) {
-                continue;
-            }
-
-            if (iter->sa_type == &view_curses::VC_STYLE) {
-                iter->sa_value.sav_int ^= A_REVERSE;
-            }
-        }
-
         sa.emplace_back(orig_line, &view_curses::VC_STYLE, A_REVERSE);
     }
 }
