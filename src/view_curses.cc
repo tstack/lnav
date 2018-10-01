@@ -529,6 +529,11 @@ void view_curses::mvwattrline(WINDOW *window,
 
                 mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
                 for (int lpc = 0; lpc < ch_width; lpc++) {
+                    bool clear_rev = false;
+
+                    if (row_ch[lpc].attr & A_REVERSE && attrs & A_REVERSE) {
+                        clear_rev = true;
+                    }
                     if (color_pair > 0) {
                         row_ch[lpc].attr =
                             attrs | (row_ch[lpc].attr & ~A_COLOR);
@@ -539,6 +544,10 @@ void view_curses::mvwattrline(WINDOW *window,
 #endif
                     } else {
                         row_ch[lpc].attr |= attrs;
+                    }
+                    if (clear_rev) {
+                        row_ch[lpc].attr &= ~A_REVERSE;
+                        log_debug(" %c %d clear_rev", row_ch[lpc].chars[0], lpc);
                     }
                 }
                 mvwadd_wchnstr(window, y, x_pos, row_ch, ch_width);
