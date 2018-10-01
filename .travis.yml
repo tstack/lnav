@@ -28,7 +28,7 @@ addons:
     - language-pack-fr
     sources:
     - ubuntu-toolchain-r-test
-#    - sourceline: deb http://cz.archive.ubuntu.com/ubuntu xenial main
+    - sourceline: deb http://cz.archive.ubuntu.com/ubuntu xenial main
   coverity_scan:
     project:
       name: tstack/lnav
