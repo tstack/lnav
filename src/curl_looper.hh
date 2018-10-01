@@ -78,7 +78,10 @@ public:
         curl_easy_setopt(this->cr_handle, CURLOPT_VERBOSE, 1);
         if (getenv("SSH_AUTH_SOCK") != NULL) {
             curl_easy_setopt(this->cr_handle, CURLOPT_SSH_AUTH_TYPES,
-                             CURLSSH_AUTH_AGENT|CURLSSH_AUTH_PASSWORD);
+#ifdef CURLSSH_AUTH_AGENT
+                             CURLSSH_AUTH_AGENT|
+#endif
+                             CURLSSH_AUTH_PASSWORD);
         }
     };
 
