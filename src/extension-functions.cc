@@ -1488,7 +1488,7 @@ static void modeIterate(void* e, i64 c, void* pp){
 
 /*
 **  Auxiliary function that iterates all elements in a map and finds the median
-**  (the value such that the number of elements smaller is equal the the number of
+**  (the value such that the number of elements smaller is equal the number of
 **  elements larger)
 */
 static void medianIterate(void* e, i64 c, void* pp){
