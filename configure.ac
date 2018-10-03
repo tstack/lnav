@@ -148,13 +148,13 @@ AX_PATH_LIB_READLINE
 
 LNAV_WITH_SQLITE3("3.9.0")
 
-case "$host_os" in
-    *)
-        # AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
-        AC_DEFINE([_DEFAULT_SOURCE], [1], [Need pread])
-        AC_DEFINE([_BSD_SOURCE], [1], [Need pread])
-        ;;
-esac
+dnl case "$host_os" in
+dnl     *)
+dnl         # AC_DEFINE([_XOPEN_SOURCE], [500], [Need pread])
+dnl         AC_DEFINE([_DEFAULT_SOURCE], [1], [Need pread])
+dnl         AC_DEFINE([_BSD_SOURCE], [1], [Need pread])
+dnl         ;;
+dnl esac
 
 AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1], [Wide character support for ncurses])
 
