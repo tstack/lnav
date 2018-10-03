@@ -39,7 +39,6 @@ check_PROGRAMS = \
 	test_auto_fd \
 	test_auto_mem \
 	test_bookmarks \
-	test_concise \
 	test_date_time_scanner \
 	test_grep_proc2 \
 	test_json_ptr \
@@ -113,9 +112,6 @@ test_yajlpp_LDADD = ../src/libdiag.a
 
 test_abbrev_SOURCES = test_abbrev.cc
 test_abbrev_LDADD = ../src/libdiag.a
-
-test_concise_SOURCES = test_concise.cc
-test_concise_LDADD = ../src/libdiag.a
 
 test_json_ptr_SOURCES = test_json_ptr.cc
 test_json_ptr_LDADD = ../src/libdiag.a
@@ -370,7 +366,6 @@ TESTS = \
 	test_format_loader.sh \
 	test_cli.sh \
 	test_cmds.sh \
-	test_concise \
 	test_line_buffer2 \
 	test_line_buffer.sh \
 	test_listview.sh \

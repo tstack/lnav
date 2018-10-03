@@ -39,7 +39,6 @@
 #include "bookmarks.hh"
 #include "listview_curses.hh"
 #include "lnav_log.hh"
-#include "concise_index.hh"
 #include "text_format.hh"
 #include "logfile.hh"
 #include "highlighter.hh"

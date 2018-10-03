@@ -98,7 +98,6 @@ set(diag_STAT_SRCS
     bottom_status_source.hh
     byte_array.hh
     command_executor.hh
-    concise_index.hh
     column_namer.hh
     curl_looper.hh
     default-log-formats-json.hh

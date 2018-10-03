@@ -146,7 +146,6 @@ noinst_HEADERS = \
 	byte_array.hh \
 	column_namer.hh \
 	command_executor.hh \
-	concise_index.hh \
 	curl_looper.hh \
 	data_scanner.hh \
 	data_scanner_re.re \
