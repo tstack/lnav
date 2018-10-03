@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-#include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>

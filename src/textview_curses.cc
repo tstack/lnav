@@ -84,7 +84,7 @@ void textview_curses::reload_data(void)
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
     }
-    this->listview_curses::reload_data();
+    listview_curses::reload_data();
 }
 
 void textview_curses::grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vis_line_t stop)

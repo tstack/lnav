@@ -32,8 +32,9 @@
 #include "config.h"
 
 #include <time.h>
-#include <math.h>
 #include <sys/time.h>
+
+#include <cmath>
 
 #include "lnav_log.hh"
 #include "listview_curses.hh"

@@ -32,9 +32,8 @@
 #ifndef __hist_source_hh
 #define __hist_source_hh
 
-#include <math.h>
-
 #include <map>
+#include <cmath>
 #include <limits>
 #include <string>
 #include <vector>
@@ -269,7 +268,7 @@ public:
         };
 
         double width() const {
-            return fabs(this->bs_max_value - this->bs_min_value);
+            return std::fabs(this->bs_max_value - this->bs_min_value);
         };
 
         void update(double value) {

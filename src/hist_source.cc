@@ -29,11 +29,6 @@
 
 #include "config.h"
 
-#include <math.h>
-#include <limits.h>
-
-#include <numeric>
-
 #include "lnav_util.hh"
 #include "hist_source.hh"
 

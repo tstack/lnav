@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include <math.h>
 #include <time.h>
 #include <glob.h>
 #include <locale.h>
