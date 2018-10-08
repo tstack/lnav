@@ -305,6 +305,12 @@ public:
     virtual int row_for_time(struct timeval time_bucket) = 0;
 
     virtual struct timeval time_for_row(int row) = 0;
+
+    void scroll_invoked(textview_curses *tc);
+
+    void data_reloaded(textview_curses *tc);
+protected:
+    struct timeval ttt_top_time{0, 0};
 };
 
 /**
@@ -728,6 +734,18 @@ public:
     };
 
 protected:
+    void invoke_scroll() {
+        if (this->tc_sub_source != nullptr) {
+            auto ttt = dynamic_cast<text_time_translator *>(this->tc_sub_source);
+
+            if (ttt != nullptr) {
+                ttt->scroll_invoked(this);
+            }
+        }
+
+        listview_curses::invoke_scroll();
+    }
+
     text_sub_source *tc_sub_source;
     text_delegate *tc_delegate;
 

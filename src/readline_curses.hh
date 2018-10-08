@@ -90,11 +90,11 @@ public:
         : rc_name(name),
           rc_case_sensitive(case_sensitive),
           rc_quote_chars("\"'"),
-          rc_highlighter(NULL)
+          rc_highlighter(nullptr)
     {
         char *home;
 
-        if (commands != NULL) {
+        if (commands != nullptr) {
             command_map_t::iterator iter;
 
             for (iter = commands->begin(); iter != commands->end(); ++iter) {
@@ -127,7 +127,7 @@ public:
     {
         char buffer[128];
 
-        rl_completer_word_break_characters = (char *)" \t\n"; /* XXX */
+        rl_completer_word_break_characters = (char *)" \t\n|()"; /* XXX */
         /*
          * XXX Need to keep the input on a single line since the display screws
          * up if it wraps around.
@@ -140,10 +140,8 @@ public:
         loaded_context = this;
         rl_attempted_completion_function = attempted_completion;
         history_set_history_state(&this->rc_history);
-        for (std::vector<readline_var>::iterator iter = this->rc_vars.begin();
-             iter != this->rc_vars.end();
-             ++iter) {
-            *(iter->rv_dst.ch) = (char *) iter->rv_val.ch;
+        for (auto &rc_var : this->rc_vars) {
+            *(rc_var.rv_dst.ch) = (char *) rc_var.rv_val.ch;
         }
     };
 

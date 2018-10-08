@@ -2539,7 +2539,7 @@ static void looper(void)
             if (lnav_data.ld_child_terminated) {
                 lnav_data.ld_child_terminated = false;
 
-                for (std::list<pid_t>::iterator iter = lnav_data.ld_children.begin();
+                for (auto iter = lnav_data.ld_children.begin();
                     iter != lnav_data.ld_children.end();
                     ++iter) {
                     int rc, child_stat;

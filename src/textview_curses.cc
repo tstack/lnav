@@ -85,6 +85,14 @@ void textview_curses::reload_data(void)
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
     }
     listview_curses::reload_data();
+
+    if (this->tc_sub_source != nullptr) {
+        auto ttt = dynamic_cast<text_time_translator *>(this->tc_sub_source);
+
+        if (ttt != nullptr) {
+            ttt->data_reloaded(this);
+        }
+    }
 }
 
 void textview_curses::grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vis_line_t stop)
@@ -258,25 +266,23 @@ void textview_curses::textview_value_for_row(vis_line_t row,
         format_name = sa_iter->to_string();
     }
 
-    for (auto iter = this->tc_highlights.begin();
-         iter != this->tc_highlights.end();
-         iter++) {
+    for (auto &tc_highlight : this->tc_highlights) {
         // XXX testing for '$search' here sucks
-        bool internal_hl = iter->first[0] == '$'
-                           && iter->first != "$search"
-                           && iter->first != "$preview";
+        bool internal_hl = tc_highlight.first[0] == '$'
+                           && tc_highlight.first != "$search"
+                           && tc_highlight.first != "$preview";
 
-        if (iter->second.h_text_format != TF_UNKNOWN &&
-            source_format != iter->second.h_text_format) {
+        if (tc_highlight.second.h_text_format != TF_UNKNOWN &&
+            source_format != tc_highlight.second.h_text_format) {
             continue;
         }
 
-        if (!iter->second.h_format_name.empty() &&
-            iter->second.h_format_name != format_name) {
+        if (!tc_highlight.second.h_format_name.empty() &&
+            tc_highlight.second.h_format_name != format_name) {
             continue;
         }
 
-        iter->second.annotate(value_out, internal_hl ? body.lr_start : 0);
+        tc_highlight.second.annotate(value_out, internal_hl ? body.lr_start : 0);
     }
 
     if (this->tc_hide_fields) {
@@ -296,7 +302,7 @@ void textview_curses::textview_value_for_row(vis_line_t row,
                 for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {
                     if (attr.sa_type == &VC_STYLE &&
                         attr.sa_range.lr_start == lr.lr_start) {
-                        attr.sa_type = NULL;
+                        attr.sa_type = nullptr;
                     }
                 });
             }
@@ -356,5 +362,26 @@ void textview_curses::textview_value_for_row(vis_line_t row,
 
     if (binary_search(user_marks.begin(), user_marks.end(), row)) {
         sa.emplace_back(orig_line, &view_curses::VC_STYLE, A_REVERSE);
+    }
+}
+
+void text_time_translator::scroll_invoked(textview_curses *tc)
+{
+    if (tc->get_inner_height() > 0) {
+        this->ttt_top_time = this->time_for_row((int) tc->get_top());
+    }
+}
+
+void text_time_translator::data_reloaded(textview_curses *tc)
+{
+    if (tc->get_inner_height() > 0) {
+        if (this->ttt_top_time.tv_sec != 0) {
+            vis_line_t new_top(this->row_for_time(this->ttt_top_time));
+
+            if (new_top >= 0) {
+                tc->set_top(new_top);
+            }
+        }
+        this->ttt_top_time = this->time_for_row((int) tc->get_top());
     }
 }

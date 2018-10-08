@@ -1147,7 +1147,7 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
             fs.add_filter(pf);
             tss->text_filters_changed();
             redo_search(view_index);
-            if (lnav_data.ld_rl_view != NULL) {
+            if (lnav_data.ld_rl_view != nullptr) {
                 lnav_data.ld_rl_view->add_possibility(
                     LNM_COMMAND, "enabled-filter", args[1]);
             }

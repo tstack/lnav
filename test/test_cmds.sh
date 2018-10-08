@@ -1,5 +1,17 @@
 #! /bin/bash
 
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":filter-in vmk" \
+    -c ":rebuild" \
+    -c ":reset-session" \
+    -c ":rebuild" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "filter-in vmk is not working" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
 run_test ${lnav_test} -n \
     -c ":switch-to-view help" \
     ${test_dir}/logfile_access_log.0
@@ -762,6 +774,7 @@ run_test ${lnav_test} -n \
     -c ":shexec echo 'Jan  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt' >> logfile_rollover.1.live" \
     -c ":rebuild" \
     -c ":switch-to-view histogram" \
+    -c ":goto 0" \
     logfile_rollover.1.live
 
 check_output "rollover is not working with histogram" <<EOF

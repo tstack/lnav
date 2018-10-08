@@ -815,11 +815,10 @@ log_accel::direction_t logfile_sub_source::get_line_accel_direction(
 
 void logfile_sub_source::text_filters_changed()
 {
-    for (iterator iter = this->begin(); iter != this->end(); ++iter) {
-        logfile_data *ld = *iter;
+    for (auto ld : *this) {
         shared_ptr<logfile> lf = ld->get_file();
 
-        if (lf != NULL) {
+        if (lf != nullptr) {
             ld->ld_filter_state.clear_deleted_filter_state();
             lf->reobserve_from(lf->begin() + ld->ld_filter_state.get_min_count(lf->size()));
         }
@@ -829,7 +828,7 @@ void logfile_sub_source::text_filters_changed()
 
     this->get_filters().get_enabled_mask(filtered_in_mask, filtered_out_mask);
 
-    if (this->lss_index_delegate != NULL) {
+    if (this->lss_index_delegate != nullptr) {
         this->lss_index_delegate->index_start(*this);
     }
 
@@ -838,12 +837,12 @@ void logfile_sub_source::text_filters_changed()
         content_line_t cl = (content_line_t) this->lss_index[index_index];
         uint64_t line_number;
         logfile_data *ld = this->find_data(cl, line_number);
-        logfile::iterator line_iter = ld->get_file()->begin() + line_number;
+        auto line_iter = ld->get_file()->begin() + line_number;
 
         if (!ld->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
                 line_number) && this->check_extra_filters(*line_iter)) {
             this->lss_filtered_index.push_back(index_index);
-            if (this->lss_index_delegate != NULL) {
+            if (this->lss_index_delegate != nullptr) {
                 shared_ptr<logfile> lf = ld->get_file();
                 this->lss_index_delegate->index_line(
                         *this, lf.get(), lf->begin() + line_number);
@@ -851,7 +850,7 @@ void logfile_sub_source::text_filters_changed()
         }
     }
 
-    if (this->lss_index_delegate != NULL) {
+    if (this->lss_index_delegate != nullptr) {
         this->lss_index_delegate->index_complete(*this);
     }
 }

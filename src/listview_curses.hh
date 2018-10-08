@@ -143,6 +143,7 @@ public:
     void set_data_source(list_data_source *src)
     {
         this->lv_source = src;
+        this->invoke_scroll();
         this->reload_data();
     };
 
@@ -300,8 +301,8 @@ public:
         }
         else if (this->lv_top != top) {
             this->lv_top = top;
-            this->lv_scroll.invoke(this);
-            this->lv_needs_update = true;
+            this->invoke_scroll();
+            this->set_needs_update();
         }
     };
 
@@ -386,7 +387,7 @@ public:
         }
 
         this->lv_left = left;
-        this->lv_scroll.invoke(this);
+        this->invoke_scroll();
         this->lv_needs_update = true;
     };
 
@@ -522,6 +523,10 @@ protected:
     };
 
     static list_gutter_source DEFAULT_GUTTER_SOURCE;
+
+    virtual void invoke_scroll() {
+        this->lv_scroll.invoke(this);
+    }
 
     std::string lv_title;
     list_data_source *   lv_source; /*< The data source delegate. */
