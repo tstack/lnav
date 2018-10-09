@@ -375,13 +375,17 @@ void text_time_translator::scroll_invoked(textview_curses *tc)
 void text_time_translator::data_reloaded(textview_curses *tc)
 {
     if (tc->get_inner_height() > 0) {
-        if (this->ttt_top_time.tv_sec != 0) {
-            vis_line_t new_top(this->row_for_time(this->ttt_top_time));
+        struct timeval top_time = this->time_for_row((int) tc->get_top());
 
-            if (new_top >= 0) {
-                tc->set_top(new_top);
+        if (top_time != this->ttt_top_time) {
+            if (this->ttt_top_time.tv_sec != 0) {
+                vis_line_t new_top(this->row_for_time(this->ttt_top_time));
+
+                if (new_top >= 0) {
+                    tc->set_top(new_top);
+                }
             }
+            this->ttt_top_time = this->time_for_row((int) tc->get_top());
         }
-        this->ttt_top_time = this->time_for_row((int) tc->get_top());
     }
 }
