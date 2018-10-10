@@ -195,11 +195,11 @@ public:
         return level_names[this->ll_level & ~LEVEL__FLAGS];
     };
 
-    bool is_continued(void) const {
+    bool is_continued() const {
         return this->ll_level & LEVEL_CONTINUED;
     };
 
-    uint8_t get_module_id(void) const {
+    uint8_t get_module_id() const {
         return this->ll_module_id;
     };
 
@@ -207,7 +207,7 @@ public:
         this->ll_opid = opid;
     };
 
-    uint8_t get_opid(void) const {
+    uint8_t get_opid() const {
         return this->ll_opid;
     };
 

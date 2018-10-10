@@ -142,7 +142,7 @@ public:
 
         cl = lss.at(lc.lc_curr_line);
         std::shared_ptr<logfile> lf = lss.find(cl);
-        logfile::iterator lf_iter = lf->begin() + cl;
+        auto lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {
             return false;

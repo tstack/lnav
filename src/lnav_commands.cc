@@ -4187,7 +4187,7 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_summary("Quit lnav")
     },
 
-    { NULL },
+    { nullptr },
 };
 
 unordered_map<char const *, vector<char const *>> aliases = {
@@ -4196,7 +4196,7 @@ unordered_map<char const *, vector<char const *>> aliases = {
 
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
-    for (int lpc = 0; STD_COMMANDS[lpc].c_name != NULL; lpc++) {
+    for (int lpc = 0; STD_COMMANDS[lpc].c_name != nullptr; lpc++) {
         readline_context::command_t &cmd = STD_COMMANDS[lpc];
 
         cmd.c_help.index_tags();
@@ -4210,13 +4210,13 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
         }
     }
 
-    if (getenv("LNAV_SRC") != NULL) {
+    if (getenv("LNAV_SRC") != nullptr) {
         static readline_context::command_t add_test;
 
         add_test = com_add_test;
         cmd_map["add-test"] = &add_test;
     }
-    if (getenv("lnav_test") != NULL) {
+    if (getenv("lnav_test") != nullptr) {
         static readline_context::command_t rebuild, shexec, poll_now;
 
         rebuild = com_rebuild;
