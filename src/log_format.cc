@@ -667,12 +667,12 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
                     }
                 }
 
-                char cap_copy[num_cap->length() + 1];
-                double dvalue;
+                const char *num_cap_start = pi.get_substr_start(num_cap);
+                const char *num_cap_end = num_cap_start + num_cap->length();
+                double dvalue = strtod(num_cap_start, (char **) &num_cap_end);
 
-                pi.get_substr(num_cap, cap_copy);
-                if (sscanf(cap_copy, "%lf", &dvalue) == 1) {
-                    if (scaling != NULL) {
+                if (num_cap_end == num_cap_start + num_cap->length()) {
+                    if (scaling != nullptr) {
                         scaling->scale(dvalue);
                     }
                     this->lf_value_stats[vd.vd_values_index].add_value(dvalue);
