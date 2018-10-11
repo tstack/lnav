@@ -35,7 +35,9 @@
 #include <future>
 #include <string>
 
+#include "auto_fd.hh"
 #include "attr_line.hh"
+#include "textview_curses.hh"
 
 struct exec_context;
 
