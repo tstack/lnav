@@ -47,6 +47,7 @@
 #include "logfile.hh"
 #include "sequence_sink.hh"
 #include "sequence_matcher.hh"
+#include "textview_curses.hh"
 
 using namespace std;
 

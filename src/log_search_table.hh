@@ -35,7 +35,6 @@
 #include <string>
 #include <vector>
 
-#include "lnav.hh"
 #include "logfile.hh"
 #include "sql_util.hh"
 #include "data_parser.hh"

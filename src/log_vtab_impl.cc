@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-#include "lnav.hh"
 #include "lnav_log.hh"
 #include "sql_util.hh"
 #include "log_vtab_impl.hh"

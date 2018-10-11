@@ -34,6 +34,7 @@
 #include <assert.h>
 
 #include "bookmarks.hh"
+#include "textview_curses.hh"
 
 int main(int argc, char *argv[])
 {

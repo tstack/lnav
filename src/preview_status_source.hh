@@ -32,7 +32,6 @@
 
 #include <string>
 
-#include "lnav_config.hh"
 #include "statusview_curses.hh"
 
 class preview_status_source

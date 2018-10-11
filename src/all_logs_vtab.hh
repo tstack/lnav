@@ -30,7 +30,6 @@
 #ifndef LNAV_ALL_LOGS_VTAB_HH
 #define LNAV_ALL_LOGS_VTAB_HH
 
-#include "byte_array.hh"
 #include "log_vtab_impl.hh"
 #include "data_parser.hh"
 
@@ -44,16 +43,15 @@ public:
     }
 
     void get_columns(std::vector<vtab_column> &cols) const {
-        cols.push_back(vtab_column(this->alv_value_name.get()));
-        cols.push_back(vtab_column(this->alv_msg_name.get()));
-        cols.push_back(vtab_column(this->alv_schema_name.get(), SQLITE3_TEXT, NULL, true));
+        cols.emplace_back(this->alv_value_name.get());
+        cols.emplace_back(this->alv_msg_name.get());
+        cols.emplace_back(this->alv_schema_name.get(), SQLITE3_TEXT, nullptr, true);
     };
 
     void extract(std::shared_ptr<logfile> lf, shared_buffer_ref &line,
                  std::vector<logline_value> &values) {
         log_format *format = lf->get_format();
-        values.push_back(logline_value(this->alv_value_name,
-                                       format->get_name(), 0));
+        values.emplace_back(this->alv_value_name, format->get_name(), 0);
 
         std::vector<logline_value> sub_values;
         struct line_range body;
@@ -76,7 +74,7 @@ public:
 
         tmp_shared_buffer tsb(str.c_str());
 
-        values.push_back(logline_value(this->alv_msg_name, tsb.tsb_ref, 1));
+        values.emplace_back(this->alv_msg_name, tsb.tsb_ref, 1);
 
         this->alv_schema_manager.invalidate_refs();
         dp.dp_schema_id.to_string(this->alv_schema_buffer);
@@ -84,13 +82,13 @@ public:
         schema_ref.share(this->alv_schema_manager,
                          this->alv_schema_buffer,
                          data_parser::schema_id_t::STRING_SIZE - 1);
-        values.push_back({this->alv_schema_name, schema_ref, 2});
+        values.emplace_back(this->alv_schema_name, schema_ref, 2);
     }
 
     bool is_valid(log_cursor &lc, logfile_sub_source &lss) {
         content_line_t    cl(lss.at(lc.lc_curr_line));
         std::shared_ptr<logfile> lf = lss.find(cl);
-        logfile::iterator lf_iter = lf->begin() + cl;
+        auto lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {
             return false;
@@ -109,7 +107,7 @@ public:
 
         content_line_t    cl(lss.at(lc.lc_curr_line));
         std::shared_ptr<logfile> lf = lss.find(cl);
-        logfile::iterator lf_iter = lf->begin() + cl;
+        auto lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {
             return false;

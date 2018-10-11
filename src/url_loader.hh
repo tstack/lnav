@@ -31,6 +31,7 @@
 #define url_loader_hh
 
 #ifdef HAVE_LIBCURL
+#include <paths.h>
 #include <curl/curl.h>
 
 class url_loader : public curl_request {

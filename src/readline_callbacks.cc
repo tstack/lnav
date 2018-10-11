@@ -475,23 +475,23 @@ void rl_callback(void *dummy, readline_curses *rc)
         tmpout = std::tmpfile();
 
         if (!tmpout) {
-            rc->set_value("Unable to open temporary output file: " + string(strerror(errno)));
-        }
-        else {
+            rc->set_value("Unable to open temporary output file: " +
+                          string(strerror(errno)));
+        } else {
             auto_fd fd(fileno(tmpout));
             auto_fd fd_copy((const auto_fd &) fd);
             char desc[256], timestamp[32];
             time_t current_time = time(NULL);
             string path_and_args = rc->get_value();
 
-	    lnav_data.ld_output_stack.push(tmpout);
-	    string result = execute_file(ec, path_and_args);
-	    string::size_type lf_index = result.find('\n');
-	    if (lf_index != string::npos) {
-		result = result.substr(0, lf_index);
-	    }
-	    rc->set_value(result);
-	    lnav_data.ld_output_stack.pop();
+            lnav_data.ld_output_stack.push(tmpout);
+            string result = execute_file(ec, path_and_args);
+            string::size_type lf_index = result.find('\n');
+            if (lf_index != string::npos) {
+                result = result.substr(0, lf_index);
+            }
+            rc->set_value(result);
+            lnav_data.ld_output_stack.pop();
 
             struct stat st;
 
@@ -509,8 +509,8 @@ void rl_callback(void *dummy, readline_curses *rc)
                 lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
 
                 if (lnav_data.ld_rl_view != NULL) {
-                    lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                                                            X, "to close the file"));
+                    lnav_data.ld_rl_view->set_alt_value(
+                        HELP_MSG_1(X, "to close the file"));
                 }
             }
         }

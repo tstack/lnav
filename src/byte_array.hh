@@ -59,7 +59,7 @@ struct byte_array {
         return memcmp(this->ba_data, other.ba_data, BYTE_COUNT) != 0;
     };
 
-    void                 clear(void)
+    void clear()
     {
         memset(this->ba_data, 0, BYTE_COUNT);
     };

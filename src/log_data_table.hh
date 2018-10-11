@@ -35,8 +35,8 @@
 #include <string>
 #include <vector>
 
-#include "lnav.hh"
 #include "logfile.hh"
+#include "logfile_sub_source.hh"
 #include "data_parser.hh"
 #include "column_namer.hh"
 #include "log_vtab_impl.hh"
@@ -44,23 +44,27 @@
 class log_data_table : public log_vtab_impl {
 public:
 
-    log_data_table(content_line_t template_line, intern_string_t table_name)
+    log_data_table(logfile_sub_source &lss,
+                   log_vtab_manager &lvm,
+                   content_line_t template_line,
+                   intern_string_t table_name)
         : log_vtab_impl(table_name),
+          ldt_log_source(lss),
           ldt_template_line(template_line),
           ldt_parent_column_count(0),
           ldt_instance(-1) {
-        std::shared_ptr<logfile> lf = lnav_data.ld_log_source.find(template_line);
+        std::shared_ptr<logfile> lf = lss.find(template_line);
         log_format *format = lf->get_format();
 
         this->vi_supports_indexes = false;
-        this->ldt_format_impl = lnav_data.ld_vtab_manager->lookup_impl(format->get_name());
+        this->ldt_format_impl = lvm.lookup_impl(format->get_name());
         this->get_columns_int(this->ldt_cols);
     };
 
     void get_columns_int(std::vector<vtab_column> &cols)
     {
         content_line_t cl_copy = this->ldt_template_line;
-        std::shared_ptr<logfile>       lf      = lnav_data.ld_log_source.find(cl_copy);
+        std::shared_ptr<logfile> lf = this->ldt_log_source.find(cl_copy);
         struct line_range          body;
         string_attrs_t             sa;
         std::vector<logline_value> line_values;
@@ -85,9 +89,8 @@ public:
 
         dp.parse();
 
-        cols.push_back(vtab_column("log_msg_instance", SQLITE_INTEGER, NULL));
-        for (data_parser::element_list_t::iterator pair_iter =
-                 dp.dp_pairs.begin();
+        cols.emplace_back("log_msg_instance", SQLITE_INTEGER, nullptr);
+        for (auto pair_iter = dp.dp_pairs.begin();
              pair_iter != dp.dp_pairs.end();
              ++pair_iter) {
             std::string key_str = dp.get_element_string(
@@ -122,7 +125,7 @@ public:
     void get_foreign_keys(std::vector<std::string> &keys_inout) const
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
-        keys_inout.push_back("log_msg_instance");
+        keys_inout.emplace_back("log_msg_instance");
     };
 
     bool next(log_cursor &lc, logfile_sub_source &lss)
@@ -192,14 +195,11 @@ public:
         int next_column = this->ldt_parent_column_count;
 
         this->ldt_format_impl->extract(lf, line, values);
-        values.push_back(logline_value(instance_name, this->ldt_instance));
+        values.emplace_back(instance_name, this->ldt_instance);
         logline_value &lv = values.back();
         lv.lv_column = next_column++;
-        for (data_parser::element_list_t::iterator pair_iter =
-                 this->ldt_pairs.begin();
-             pair_iter != this->ldt_pairs.end();
-             ++pair_iter) {
-            const data_parser::element &pvalue = pair_iter->get_pair_value();
+        for (auto &ldt_pair : this->ldt_pairs) {
+            const data_parser::element &pvalue = ldt_pair.get_pair_value();
 
             switch (pvalue.value_token()) {
             case DT_NUMBER: {
@@ -213,7 +213,7 @@ public:
                 if (sscanf(scan_value, "%lf", &d) != 1) {
                     d = 0.0;
                 }
-                values.push_back(logline_value(intern_string::lookup("", 0), d));
+                values.emplace_back(intern_string::lookup("", 0), d);
             }
             break;
 
@@ -222,8 +222,8 @@ public:
 
                 value_sbr.subset(line,
                     pvalue.e_capture.c_begin, pvalue.e_capture.length());
-                values.push_back(logline_value(intern_string::lookup("", 0),
-                    logline_value::VALUE_TEXT, value_sbr));
+                values.emplace_back(intern_string::lookup("", 0),
+                    logline_value::VALUE_TEXT, value_sbr);
                 break;
             }
 
@@ -233,6 +233,7 @@ public:
     };
 
 private:
+    logfile_sub_source &ldt_log_source;
     const content_line_t     ldt_template_line;
     data_parser::schema_id_t ldt_schema_id;
     shared_buffer_ref ldt_current_line;
@@ -242,4 +243,5 @@ private:
     int64_t ldt_instance;
     std::vector<vtab_column> ldt_cols;
 };
+
 #endif

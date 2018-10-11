@@ -31,6 +31,8 @@
 
 #include "config.h"
 
+#include "yajl/api/yajl_gen.h"
+
 #include "json_ptr.hh"
 
 using namespace std;
@@ -39,8 +41,7 @@ static int handle_null(void *ctx)
 {
     json_ptr_walk *jpw = (json_ptr_walk *)ctx;
 
-    jpw->jpw_values.push_back(
-            json_ptr_walk::walk_triple(jpw->current_ptr(), yajl_t_null, "null"));
+    jpw->jpw_values.emplace_back(jpw->current_ptr(), yajl_t_null, "null");
     jpw->inc_array_index();
 
     return 1;
@@ -50,10 +51,9 @@ static int handle_boolean(void *ctx, int boolVal)
 {
     json_ptr_walk *jpw = (json_ptr_walk *)ctx;
 
-    jpw->jpw_values.push_back(
-            json_ptr_walk::walk_triple(jpw->current_ptr(),
-                                       boolVal ? yajl_t_true : yajl_t_false,
-                                       boolVal ? "true" : "false"));
+    jpw->jpw_values.emplace_back(jpw->current_ptr(),
+                                 boolVal ? yajl_t_true : yajl_t_false,
+                                 boolVal ? "true" : "false");
     jpw->inc_array_index();
 
     return 1;
@@ -63,10 +63,9 @@ static int handle_number(void *ctx, const char *numberVal, size_t numberLen)
 {
     json_ptr_walk *jpw = (json_ptr_walk *)ctx;
 
-    jpw->jpw_values.push_back(
-            json_ptr_walk::walk_triple(jpw->current_ptr(),
-                                       yajl_t_number,
-                                       string(numberVal, numberLen)));
+    jpw->jpw_values.emplace_back(jpw->current_ptr(),
+                                 yajl_t_number,
+                                 string(numberVal, numberLen));
     jpw->inc_array_index();
 
     return 1;
@@ -85,11 +84,10 @@ static int handle_string(void *ctx, const unsigned char * stringVal, size_t len)
     auto_mem<yajl_gen_t> gen(yajl_gen_free);
     string str;
 
-    gen = yajl_gen_alloc(NULL);
+    gen = yajl_gen_alloc(nullptr);
     yajl_gen_config(gen.in(), yajl_gen_print_callback, appender, &str);
     yajl_gen_string(gen.in(), stringVal, len);
-    jpw->jpw_values.push_back(
-            json_ptr_walk::walk_triple(jpw->current_ptr(), yajl_t_string, str));
+    jpw->jpw_values.emplace_back(jpw->current_ptr(), yajl_t_string, str);
     jpw->inc_array_index();
 
     return 1;
@@ -99,7 +97,7 @@ static int handle_start_map(void *ctx)
 {
     json_ptr_walk *jpw = (json_ptr_walk *)ctx;
 
-    jpw->jpw_keys.push_back("");
+    jpw->jpw_keys.emplace_back("");
     jpw->jpw_array_indexes.push_back(-1);
 
     return 1;
@@ -145,7 +143,7 @@ static int handle_start_array(void *ctx)
 {
     json_ptr_walk *jpw = (json_ptr_walk *)ctx;
 
-    jpw->jpw_keys.push_back("");
+    jpw->jpw_keys.emplace_back("");
     jpw->jpw_array_indexes.push_back(0);
 
     return 1;

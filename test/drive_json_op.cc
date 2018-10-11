@@ -33,7 +33,10 @@
 
 #include <stdlib.h>
 
+#include "yajl/api/yajl_gen.h"
+
 #include "json_op.hh"
+#include "lnav_log.hh"
 
 static void printer(void *ctx, const char *numberVal, size_t numberLen)
 {

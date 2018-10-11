@@ -67,7 +67,6 @@
 #include <set>
 #include <stack>
 #include <vector>
-#include <memory>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -296,7 +295,11 @@ bool setup_logline_table(exec_context &ec)
         content_line_t cl = lnav_data.ld_log_source.at_base(vl);
 
         lnav_data.ld_vtab_manager->unregister_vtab(logline);
-        lnav_data.ld_vtab_manager->register_vtab(new log_data_table(cl, logline));
+        lnav_data.ld_vtab_manager->register_vtab(
+            new log_data_table(lnav_data.ld_log_source,
+                               *lnav_data.ld_vtab_manager,
+                               cl,
+                               logline));
 
         if (update_possibilities) {
             log_data_helper ldh(lnav_data.ld_log_source);

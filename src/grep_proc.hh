@@ -262,7 +262,7 @@ public:
     void check_poll_set(const std::vector<struct pollfd> &pollfds);
 
     /** Check the invariants for this object. */
-    bool invariant(void)
+    bool invariant()
     {
         require(this->gp_code != NULL);
         if (this->gp_child_started) {

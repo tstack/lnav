@@ -32,6 +32,8 @@
 #ifndef __sysclip_hh
 #define __sysclip_hh
 
+#include <stdio.h>
+
 enum clip_type_t {
     CT_GENERAL,
     CT_FIND,

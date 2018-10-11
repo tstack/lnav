@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "lnav.hh"
+#include "logfile.hh"
 #include "auto_mem.hh"
 #include "lnav_log.hh"
 #include "sql_util.hh"

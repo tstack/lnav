@@ -35,6 +35,7 @@
 #include "bookmarks.hh"
 #include "grep_proc.hh"
 #include "sequence_matcher.hh"
+#include "listview_curses.hh"
 
 class sequence_sink : public grep_proc_sink<vis_line_t> {
 public:

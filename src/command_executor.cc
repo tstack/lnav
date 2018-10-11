@@ -40,6 +40,7 @@
 
 #include "command_executor.hh"
 #include "db_sub_source.hh"
+#include "papertrail_proc.hh"
 
 using namespace std;
 
@@ -512,10 +513,8 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
         }
 
         if (!paths_to_exec.empty()) {
-            for (vector<script_metadata>::iterator path_iter = paths_to_exec.begin();
-                 path_iter != paths_to_exec.end();
-                 ++path_iter) {
-                result = execute_file_contents(ec, path_iter->sm_path, multiline);
+            for (auto &path_iter : paths_to_exec) {
+                result = execute_file_contents(ec, path_iter.sm_path, multiline);
             }
             retval = result;
         }
@@ -644,7 +643,7 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
             break;
         }
 
-        msgs.push_back(make_pair(msg, alt_msg));
+        msgs.emplace_back(msg, alt_msg);
 
         if (rescan_files()) {
             rebuild_indexes(true);
@@ -715,7 +714,7 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
         const char *value     = (const char *)sqlite3_column_text(stmt, lpc);
 
         dls.push_column(value);
-        if (value != NULL &&
+        if (value != nullptr &&
             (dls.dls_headers[lpc].hm_name == "log_line" ||
              strstr(dls.dls_headers[lpc].hm_name.c_str(), "log_line"))) {
             int line_number = -1;
@@ -745,7 +744,7 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
         .with_fd(pp->get_fd())
         .with_detect_format(false);
     lnav_data.ld_files_to_front.emplace_back(desc, 0);
-    if (lnav_data.ld_rl_view != NULL) {
+    if (lnav_data.ld_rl_view != nullptr) {
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
                                                 X, "to close the file"));
     }

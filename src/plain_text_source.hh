@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "attr_line.hh"
+#include "textview_curses.hh"
 
 class plain_text_source
         : public text_sub_source {
@@ -42,16 +43,16 @@ public:
         : tds_text_format(TF_UNKNOWN), tds_longest_line(0) {
     };
 
-    plain_text_source(std::string text) : tds_text_format(TF_UNKNOWN) {
+    plain_text_source(const std::string &text) : tds_text_format(TF_UNKNOWN) {
         size_t start = 0, end;
 
         while ((end = text.find('\n', start)) != std::string::npos) {
             size_t len = (end - start);
-            this->tds_lines.push_back(text.substr(start, len));
+            this->tds_lines.emplace_back(text.substr(start, len));
             start = end + 1;
         }
         if (start < text.length()) {
-            this->tds_lines.push_back(text.substr(start));
+            this->tds_lines.emplace_back(text.substr(start));
         }
         this->tds_longest_line = this->compute_longest_line();
     };

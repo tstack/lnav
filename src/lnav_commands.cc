@@ -56,6 +56,7 @@
 #include "sysclip.hh"
 #include "yajl/api/yajl_parse.h"
 #include "db_sub_source.hh"
+#include "papertrail_proc.hh"
 
 using namespace std;
 
@@ -1065,7 +1066,7 @@ public:
         return this->pf_pcre.match(pc, pi);
     };
 
-    std::string to_command(void) override {
+    std::string to_command() override {
         return (this->lf_type == text_filter::INCLUDE ?
                 "filter-in " : "filter-out ") +
                this->lf_id;
@@ -1235,7 +1236,7 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
 
         args[1] = remaining_args(cmdline, args);
         lf      = fs.get_filter(args[1]);
-        if (lf == NULL) {
+        if (lf == nullptr) {
             retval = "error: no such filter -- " + args[1];
         }
         else if (!lf->is_enabled()) {
@@ -1303,7 +1304,11 @@ static string com_create_logline_table(exec_context &ec, string cmdline, vector<
         else {
             vis_line_t      vl  = log_view.get_top();
             content_line_t  cl  = lnav_data.ld_log_source.at_base(vl);
-            log_data_table *ldt = new log_data_table(cl, intern_string::lookup(args[1]));
+            log_data_table *ldt = new log_data_table(
+                lnav_data.ld_log_source,
+                *lnav_data.ld_vtab_manager,
+                cl,
+                intern_string::lookup(args[1]));
 
             if (ec.ec_dry_run) {
                 attr_line_t al(ldt->get_table_statement());
@@ -1648,7 +1653,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                     lnav_data.ld_file_names[fn]
                         .with_fd(ul->copy_fd());
                     lnav_data.ld_curl_looper.add_request(ul.release());
-                    lnav_data.ld_files_to_front.push_back(make_pair(fn, top));
+                    lnav_data.ld_files_to_front.emplace_back(fn, top);
                     retval = "info: opened URL";
                 } else {
                     retval = "";
@@ -1708,7 +1713,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                 fn = abspath.in();
                 file_names[fn] = default_loo;
                 retval = "info: opened -- " + fn;
-                files_to_front.push_back(make_pair(fn, top));
+                files_to_front.emplace_back(fn, top);
 
                 closed_files.push_back(fn);
                 if (lnav_data.ld_rl_view != NULL) {
@@ -2277,7 +2282,7 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
         }
 
         query = "SELECT";
-        for (std::vector<string>::iterator iter = other_columns.begin();
+        for (auto iter = other_columns.begin();
              iter != other_columns.end();
              ++iter) {
             if (iter != other_columns.begin()) {
@@ -2294,7 +2299,7 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
             query += ", ";
         }
 
-        for (std::vector<string>::iterator iter = num_columns.begin();
+        for (auto iter = num_columns.begin();
              iter != num_columns.end();
              ++iter) {
             if (iter != num_columns.begin()) {
@@ -2320,7 +2325,7 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
                 "WHERE (logline.log_part is null or "
                 "startswith(logline.log_part, '.') = 0) ");
 
-        for (std::vector<string>::iterator iter = other_columns.begin();
+        for (auto iter = other_columns.begin();
              iter != other_columns.end();
              ++iter) {
             if (iter == other_columns.begin()) {
@@ -2333,7 +2338,7 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
             query     += query_frag;
         }
 
-        for (std::vector<string>::iterator iter = other_columns.begin();
+        for (auto iter = other_columns.begin();
              iter != other_columns.end();
              ++iter) {
             if (iter == other_columns.begin()) {
@@ -3190,7 +3195,7 @@ public:
                 continue;
             }
 
-            logfile::iterator ll = lf->begin();
+            auto ll = lf->begin();
 
             if (this->lsvs_begin_time == 0 || ll->get_time() < this->lsvs_begin_time) {
                 this->lsvs_begin_time = ll->get_time();
@@ -3250,7 +3255,7 @@ public:
         for (vis_line_t curr_line = begin_line; curr_line < end_line; ++curr_line) {
             content_line_t cl = lss.at(curr_line);
             std::shared_ptr<logfile> lf = lss.find(cl);
-            logfile::iterator ll = lf->begin() + cl;
+            auto ll = lf->begin() + cl;
             log_format *format = lf->get_format();
             shared_buffer_ref sbr;
 

@@ -88,10 +88,8 @@ void map_elements_to_json2(yajl_gen gen, data_parser &dp, data_parser::element_l
     yajlpp_map root_map(gen);
     int col = 0;
 
-    for (data_parser::element_list_t::iterator iter = el->begin();
-         iter != el->end();
-         ++iter) {
-        const data_parser::element &pvalue = iter->get_pair_value();
+    for (auto &iter : *el) {
+        const data_parser::element &pvalue = iter.get_pair_value();
 
         if (pvalue.value_token() == DT_INVALID) {
             log_debug("invalid!!");
@@ -99,7 +97,7 @@ void map_elements_to_json2(yajl_gen gen, data_parser &dp, data_parser::element_l
         }
 
         std::string key_str = dp.get_element_string(
-            iter->e_sub_elements->front());
+            iter.e_sub_elements->front());
 
         if (key_str.empty()) {
             char buffer[32];
@@ -116,10 +114,8 @@ void map_elements_to_json2(yajl_gen gen, data_parser &dp, data_parser::element_l
 static
 void list_body_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_list_t *el)
 {
-    for (data_parser::element_list_t::iterator iter = el->begin();
-         iter != el->end();
-         ++iter) {
-        element_to_json(gen, dp, *iter);
+    for (auto &iter : *el) {
+        element_to_json(gen, dp, iter);
     }
 }
 
@@ -137,10 +133,8 @@ void map_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_li
     bool unique_names = el->size() > 1;
     vector<string> names;
 
-    for (data_parser::element_list_t::iterator iter = el->begin();
-         iter != el->end();
-         ++iter) {
-        const data_parser::element &pvalue = iter->get_pair_value();
+    for (auto &iter : *el) {
+        const data_parser::element &pvalue = iter.get_pair_value();
 
         if (pvalue.value_token() == DT_INVALID) {
             log_debug("invalid!!");
@@ -148,7 +142,7 @@ void map_elements_to_json(yajl_gen gen, data_parser &dp, data_parser::element_li
         }
 
         std::string key_str = dp.get_element_string(
-            iter->e_sub_elements->front());
+            iter.e_sub_elements->front());
         if (key_str.empty()) {
             continue;
         }

@@ -1,3 +1,5 @@
+#include <utility>
+
 /**
  * Copyright (c) 2017, Timothy Stack
  *
@@ -288,7 +290,7 @@ rfind_string_attr_if(const string_attrs_t &sa, ssize_t near, T predicate)
 inline struct line_range
 find_string_attr_range(const string_attrs_t &sa, string_attr_type_t type)
 {
-    string_attrs_t::const_iterator iter = find_string_attr(sa, type);
+    auto iter = find_string_attr(sa, type);
 
     if (iter != sa.end()) {
         return iter->sa_range;
@@ -321,8 +323,8 @@ inline void remove_string_attr(string_attrs_t &sa, string_attr_type_t type)
 
 inline void shift_string_attrs(string_attrs_t &sa, int32_t start, int32_t amount)
 {
-    for (string_attrs_t::iterator iter = sa.begin(); iter != sa.end(); ++iter) {
-        iter->sa_range.shift(start, amount);
+    for (auto &iter : sa) {
+        iter.sa_range.shift(start, amount);
     }
 }
 
@@ -352,7 +354,7 @@ public:
         this->al_attrs.reserve(RESERVE_SIZE);
     };
 
-    attr_line_t(const std::string &str) : al_string(str) {
+    attr_line_t(std::string str) : al_string(std::move(str)) {
         this->al_attrs.reserve(RESERVE_SIZE);
     };
 
@@ -456,11 +458,9 @@ public:
         long padding = width - this->length();
         if (padding > 0) {
             this->al_string.insert(0, padding, ' ');
-            for (std::vector<string_attr>::iterator iter = this->al_attrs.begin();
-                 iter != this->al_attrs.end();
-                 ++iter) {
-                iter->sa_range.lr_start += padding;
-                iter->sa_range.lr_end += padding;
+            for (auto &al_attr : this->al_attrs) {
+                al_attr.sa_range.lr_start += padding;
+                al_attr.sa_range.lr_end += padding;
             }
         }
 
@@ -470,12 +470,10 @@ public:
     ssize_t length() const {
         size_t retval = this->al_string.length();
 
-        for (std::vector<string_attr>::const_iterator iter = this->al_attrs.begin();
-             iter != this->al_attrs.end();
-             ++iter) {
-            retval = std::max(retval, (size_t) iter->sa_range.lr_start);
-            if (iter->sa_range.lr_end != -1) {
-                retval = std::max(retval, (size_t) iter->sa_range.lr_end);
+        for (const auto &al_attr : this->al_attrs) {
+            retval = std::max(retval, (size_t) al_attr.sa_range.lr_start);
+            if (al_attr.sa_range.lr_end != -1) {
+                retval = std::max(retval, (size_t) al_attr.sa_range.lr_end);
             }
         }
 

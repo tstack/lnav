@@ -46,6 +46,8 @@
 class logline;
 class textview_curses;
 
+using vis_bookmarks = bookmarks<vis_line_t>::type;
+
 class logfile_filter_state {
 public:
     logfile_filter_state(std::shared_ptr<logfile> lf = nullptr) : tfs_logfile(

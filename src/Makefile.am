@@ -219,7 +219,6 @@ noinst_HEADERS = \
 	spectro_source.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \
-    status_controllers.hh \
 	statusview_curses.hh \
 	strnatcmp.h \
 	strong_int.hh \

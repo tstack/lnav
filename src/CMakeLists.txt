@@ -137,7 +137,6 @@ set(diag_STAT_SRCS
     sequence_sink.hh
     shlex.hh
     spectro_source.hh
-    status_controllers.hh
     strong_int.hh
     sysclip.hh
     term_extra.hh

@@ -34,6 +34,7 @@
 #include <stdlib.h>
 
 #include "json_ptr.hh"
+#include "lnav_log.hh"
 
 int main(int argc, char *argv[])
 {

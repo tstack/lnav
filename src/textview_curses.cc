@@ -389,3 +389,5 @@ void text_time_translator::data_reloaded(textview_curses *tc)
         }
     }
 }
+
+template class bookmark_vector<vis_line_t>;

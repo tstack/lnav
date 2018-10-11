@@ -86,10 +86,10 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
             }
             else if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
-                    al.get_attrs().push_back(string_attr(
+                    al.get_attrs().emplace_back(
                         line_range(lpc, lpc + 1),
                         &view_curses::VC_STYLE,
-                        matching_bracket_attrs));
+                        matching_bracket_attrs);
                     break;
                 }
                 else {
@@ -106,10 +106,10 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
             }
             else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
-                    al.get_attrs().push_back(string_attr(
+                    al.get_attrs().emplace_back(
                         line_range(lpc, lpc + 1),
                         &view_curses::VC_STYLE,
-                        matching_bracket_attrs));
+                        matching_bracket_attrs);
                     break;
                 }
                 else {
@@ -135,19 +135,19 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
                 depth -= 1;
             }
             else {
-                al.get_attrs().push_back(string_attr(
+                al.get_attrs().emplace_back(
                     line_range(is_lit ? lpc - 1 : lpc, lpc + 1),
                     &view_curses::VC_STYLE,
-                    missing_bracket_attrs));
+                    missing_bracket_attrs);
             }
         }
     }
 
     if (depth > 0) {
-        al.get_attrs().push_back(string_attr(
+        al.get_attrs().emplace_back(
             line_range(is_lit ? first_left - 1 : first_left, first_left + 1),
             &view_curses::VC_STYLE,
-            missing_bracket_attrs));
+            missing_bracket_attrs);
     }
 }
 
@@ -193,17 +193,17 @@ static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
             case '+':
             case '|':
             case '.':
-                al.get_attrs().push_back(string_attr(
+                al.get_attrs().emplace_back(
                     line_range(lpc, lpc + 1),
                     &view_curses::VC_STYLE,
-                    special_char));
+                    special_char);
 
                 if ((line[lpc] == '*' || line[lpc] == '+') &&
                     check_re_prev(line, lpc)) {
-                    al.get_attrs().push_back(string_attr(
+                    al.get_attrs().emplace_back(
                         line_range(lpc - 1, lpc),
                         &view_curses::VC_STYLE,
-                        repeated_char_attrs));
+                        repeated_char_attrs);
                 }
                 break;
             case '?': {
@@ -219,22 +219,22 @@ static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
                         lr.lr_end += 1;
                         break;
                     }
-                    al.get_attrs().push_back(string_attr(
+                    al.get_attrs().emplace_back(
                         lr,
                         &view_curses::VC_STYLE,
-                        bracket_attrs));
+                        bracket_attrs);
                 }
                 else {
-                    al.get_attrs().push_back(string_attr(
+                    al.get_attrs().emplace_back(
                         lr,
                         &view_curses::VC_STYLE,
-                        special_char));
+                        special_char);
 
                     if (check_re_prev(line, lpc)) {
-                        al.get_attrs().push_back(string_attr(
+                        al.get_attrs().emplace_back(
                             line_range(lpc - 1, lpc),
                             &view_curses::VC_STYLE,
-                            repeated_char_attrs));
+                            repeated_char_attrs);
                     }
                 }
                 break;
@@ -246,10 +246,10 @@ static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
             case '}':
             case '[':
             case ']':
-                al.get_attrs().push_back(string_attr(
+                al.get_attrs().emplace_back(
                     line_range(lpc, lpc + 1),
                     &view_curses::VC_STYLE,
-                    bracket_attrs));
+                    bracket_attrs);
                 break;
 
             }
@@ -287,16 +287,16 @@ static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
             case 'G':
             case 'Z':
             case 'z':
-                al.get_attrs().push_back(string_attr(
+                al.get_attrs().emplace_back(
                     line_range(lpc - 1, lpc + 1),
                     &view_curses::VC_STYLE,
-                    class_attrs));
+                    class_attrs);
                 break;
             case ' ':
-                al.get_attrs().push_back(string_attr(
+                al.get_attrs().emplace_back(
                     line_range(lpc - 1, lpc + 1),
                     &view_curses::VC_STYLE,
-                    error_attrs));
+                    error_attrs);
                 break;
             case '0':
             case 'x':
@@ -368,10 +368,10 @@ void readline_command_highlighter(attr_line_t &al, int x)
     ws_index = line.find(' ');
     string command = line.substr(0, ws_index);
     if (ws_index != string::npos) {
-        al.get_attrs().push_back(string_attr(
+        al.get_attrs().emplace_back(
                 line_range(1, ws_index),
                 &view_curses::VC_STYLE,
-                keyword_attrs));
+                keyword_attrs);
     }
     if (RE_PREFIXES.match(pc, pi)) {
         readline_regex_highlighter_int(al, x, 1 + pc[0]->length());
@@ -442,8 +442,8 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
 
         }
         else if (!lr.contains(x) && !lr.contains(x - 1)) {
-            al.get_attrs().push_back(string_attr(
-                lr, &view_curses::VC_STYLE, attrs));
+            al.get_attrs().emplace_back(
+                lr, &view_curses::VC_STYLE, attrs);
         }
     }
 
@@ -452,10 +452,10 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
     while (keyword_pcre.match(pc, pi)) {
         pcre_context::capture_t *cap = pc.all();
 
-        al.get_attrs().push_back(string_attr(
+        al.get_attrs().emplace_back(
             line_range(cap->c_begin, cap->c_end),
             &view_curses::VC_STYLE,
-            keyword_attrs));
+            keyword_attrs);
     }
 
     for (size_t lpc = 0; lpc < line.length(); lpc++) {
@@ -467,10 +467,10 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         case '!':
         case '-':
         case '+':
-            al.get_attrs().push_back(string_attr(
+            al.get_attrs().emplace_back(
                 line_range(lpc, lpc + 1),
                 &view_curses::VC_STYLE,
-                symbol_attrs));
+                symbol_attrs);
             break;
         }
     }
@@ -485,16 +485,13 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         remove_string_attr(sa, lr);
 
         if (line[cap->c_end - 1] != '\'') {
-            sa.push_back(string_attr(
+            sa.emplace_back(
                 line_range(cap->c_begin, cap->c_begin + 1),
                 &view_curses::VC_STYLE,
-                error_attrs));
+                error_attrs);
             lr.lr_start += 1;
         }
-        sa.push_back(string_attr(
-            lr,
-            &view_curses::VC_STYLE,
-            string_attrs));
+        sa.emplace_back(lr, &view_curses::VC_STYLE, string_attrs);
     }
 
     for (int lpc = 0; brackets[lpc]; lpc++) {

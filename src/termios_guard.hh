@@ -33,6 +33,7 @@
 #define __termios_guard_hh
 
 #include <stdio.h>
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
 

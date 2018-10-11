@@ -99,7 +99,7 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
                                 break;
                         }
                     }
-                    lpc = str.find(";", lpc);
+                    lpc = str.find(';', lpc);
                     if (lpc != string::npos) {
                         lpc += 1;
                     }

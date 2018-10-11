@@ -43,7 +43,6 @@
 #include <stack>
 #include <memory>
 
-#include "byte_array.hh"
 #include "logfile.hh"
 #include "hist_source.hh"
 #include "statusview_curses.hh"
@@ -59,9 +58,7 @@
 #include "xterm_mouse.hh"
 #include "piper_proc.hh"
 #include "term_extra.hh"
-#include "ansi_scrubber.hh"
 #include "curl_looper.hh"
-#include "papertrail_proc.hh"
 #include "relative_time.hh"
 #include "log_format_loader.hh"
 #include "spectro_source.hh"

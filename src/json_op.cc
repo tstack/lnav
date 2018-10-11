@@ -31,6 +31,8 @@
 
 #include "config.h"
 
+#include "yajl/api/yajl_gen.h"
+
 #include "json_op.hh"
 #include "lnav_log.hh"
 

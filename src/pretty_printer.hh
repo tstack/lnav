@@ -32,10 +32,6 @@
 
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
 #include <signal.h>
 
 #include <stack>
@@ -44,14 +40,9 @@
 #include <iomanip>
 #include <utility>
 
-#include "timer.hh"
-#include "ansi_scrubber.hh"
+#include "attr_line.hh"
 #include "data_scanner.hh"
 #include "lnav_util.hh"
-
-extern sig_atomic_t reverse_lookup_enabled;
-
-void sigalrm_handler(int sig);
 
 class pretty_printer {
 
@@ -87,8 +78,6 @@ public:
     void append_to(attr_line_t &al);
 
 private:
-
-    void convert_ip_address(const element &el);
 
     void descend();
 

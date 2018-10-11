@@ -1,3 +1,5 @@
+#include <utility>
+
 /**
  * Copyright (c) 2014, Timothy Stack
  *
@@ -43,8 +45,6 @@
 #include "auto_mem.hh"
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_tree.h"
-#include "yajl/api/yajl_gen.h"
-#include "lnav_log.hh"
 
 class json_ptr_walk {
 public:
@@ -118,7 +118,8 @@ public:
 
     struct walk_triple {
         walk_triple(std::string ptr, yajl_type type, std::string value)
-                : wt_ptr(ptr), wt_type(type), wt_value(value) {
+                : wt_ptr(std::move(ptr)), wt_type(type), wt_value(
+            std::move(value)) {
 
         };
 

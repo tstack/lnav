@@ -1,3 +1,5 @@
+#include <utility>
+
 /**
  * Copyright (c) 2007-2012, Timothy Stack
  *
@@ -39,7 +41,6 @@
 #include <algorithm>
 
 #include "lnav_log.hh"
-#include "listview_curses.hh"
 
 struct bookmark_metadata {
     static std::set<std::string> KNOWN_TAGS;
@@ -190,7 +191,7 @@ public:
         return all_types;
     };
 
-    bookmark_type_t(const std::string &name) : bt_name(name) {
+    bookmark_type_t(std::string name) : bt_name(std::move(name)) {
         get_all_types().push_back(this);
     };
 
@@ -212,6 +213,41 @@ private:
     const std::string bt_name;
 };
 
+template<typename LineType>
+LineType bookmark_vector<LineType>::next(LineType start) const
+{
+    LineType retval(-1);
+
+    require(start >= -1);
+
+    auto ub = upper_bound(this->cbegin(), this->cend(), start);
+    if (ub != this->cend()) {
+        retval = *ub;
+    }
+
+    ensure(retval == -1 || start < retval);
+
+    return retval;
+}
+
+template<typename LineType>
+LineType bookmark_vector<LineType>::prev(LineType start) const
+{
+    LineType retval(-1);
+
+    require(start >= 0);
+
+    auto lb = lower_bound(this->cbegin(), this->cend(), start);
+    if (lb != this->cbegin()) {
+        lb    -= 1;
+        retval = *lb;
+    }
+
+    ensure(retval < start);
+
+    return retval;
+}
+
 /**
  * Map of bookmark types to bookmark vectors.
  */
@@ -220,6 +256,4 @@ struct bookmarks {
     typedef std::map<bookmark_type_t *, bookmark_vector<LineType> > type;
 };
 
-typedef bookmarks<vis_line_t>::type
-    vis_bookmarks;
 #endif
