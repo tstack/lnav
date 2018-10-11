@@ -562,10 +562,12 @@ check_output "pipe-to is not working" <<EOF
 EOF
 
 run_test ${lnav_test} -n \
+    -c ":echo Hello, World!" \
     -c ":goto 2" \
     -c ":pipe-line-to sed -e 's/World!/Bork!/g' -e 's/2009//g'" \
     ${test_dir}/logfile_multiline.0
 check_output "pipe-line-to is not working" <<EOF
+Hello, World!
 -07-20 22:59:30,221:ERROR:Goodbye, Bork!
 EOF
 

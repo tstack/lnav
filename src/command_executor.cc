@@ -731,29 +731,47 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 
 future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &fd)
 {
-    auto pp = make_shared<piper_proc>(fd, false);
-    static int exec_count = 0;
-    char desc[128];
+    if (lnav_data.ld_output_stack.empty()) {
+        auto pp = make_shared<piper_proc>(fd, false);
+        static int exec_count = 0;
+        char desc[128];
 
-    lnav_data.ld_pipers.push_back(pp);
-    snprintf(desc,
-             sizeof(desc), "[%d] Output of %s",
-             exec_count++,
-             cmdline.c_str());
-    lnav_data.ld_file_names[desc]
-        .with_fd(pp->get_fd())
-        .with_detect_format(false);
-    lnav_data.ld_files_to_front.emplace_back(desc, 0);
-    if (lnav_data.ld_rl_view != nullptr) {
-        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                                                X, "to close the file"));
+        lnav_data.ld_pipers.push_back(pp);
+        snprintf(desc,
+                 sizeof(desc), "[%d] Output of %s",
+                 exec_count++,
+                 cmdline.c_str());
+        lnav_data.ld_file_names[desc]
+            .with_fd(pp->get_fd())
+            .with_detect_format(false);
+        lnav_data.ld_files_to_front.emplace_back(desc, 0);
+        if (lnav_data.ld_rl_view != nullptr) {
+            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
+                                                    X, "to close the file"));
+        }
+
+        packaged_task<string()> task([]() { return ""; });
+
+        task();
+
+        return task.get_future();
+    } else {
+        return std::async(std::launch::async, [&]() {
+            FILE *file = lnav_data.ld_output_stack.top();
+            char buffer[1024];
+            ssize_t rc;
+
+            if (file == stdout) {
+                lnav_data.ld_stdout_used = true;
+            }
+
+            while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+                fwrite(buffer, rc, 1, file);
+            }
+
+            return string();
+        });
     }
-
-    packaged_task<string()> task([]() { return ""; });
-
-    task();
-
-    return task.get_future();
 }
 
 void add_global_vars(exec_context &ec)
