@@ -731,9 +731,11 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
             for (auto &al : rows) {
                 struct line_range lr = find_string_attr_range(
                     al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
-                log_perror(write(STDOUT_FILENO, lr.substr(al.get_string()),
-                                 lr.sublen(al.get_string())));
-                log_perror(write(STDOUT_FILENO, "\n", 1));
+                fwrite(lr.substr(al.get_string()),
+                       1,
+                       lr.sublen(al.get_string()),
+                       outfile);
+                fwrite("\n", 1, 1, outfile);
 
                 line_count += 1;
             }
