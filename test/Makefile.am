@@ -291,6 +291,7 @@ dist_noinst_DATA = \
 	logfile_bro_conn.log.0 \
 	logfile_bro_http.log.0 \
 	logfile_blued.0 \
+	logfile_crlf.0 \
 	logfile_cxx.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \

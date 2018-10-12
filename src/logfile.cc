@@ -255,12 +255,12 @@ bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
                 last_mod = ll.get_module_id();
                 last_opid = ll.get_opid();
             }
-            this->lf_index.push_back(logline(offset,
-                                             last_time,
-                                             last_millis,
-                                             last_level,
-                                             last_mod,
-                                             last_opid));
+            this->lf_index.emplace_back(offset,
+                                        last_time,
+                                        last_millis,
+                                        last_level,
+                                        last_mod,
+                                        last_opid);
             break;
         }
         case log_format::SCAN_INCOMPLETE:

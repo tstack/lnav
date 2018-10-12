@@ -522,6 +522,7 @@ bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
                 else {
                     if (lv.lv_len > 1 && line_start[lv.lv_len - 1] == '\r') {
                         lv.lv_len -= 1;
+                        offset += 1;
                     }
                     offset += 1; /* Skip the delimiter. */
                 }

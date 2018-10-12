@@ -360,6 +360,13 @@ check_output "rewriting machine-oriented timestamp didn't work?" <<EOF
 2015-04-10 02:58:07.456000 Goodbye, World!
 EOF
 
+run_test ${lnav_test} -n -I ${test_dir} ${srcdir}/logfile_crlf.0
+
+check_output "CR-LF line-endings not handled?" <<EOF
+2012-07-02 10:22:40,672:DEBUG:foo bar baz
+2014-10-08 16:56:38,344:WARN:foo bar baz
+EOF
+
 # XXX get this working...
 # run_test ${lnav_test} -n -I ${test_dir} <(cat ${srcdir}/logfile_access_log.0)
 #
