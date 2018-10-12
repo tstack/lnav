@@ -385,6 +385,7 @@ static string execute_file_contents(exec_context &ec, const string &path, bool m
     pair<string, string> dir_and_base = split_path(path);
 
     ec.ec_path_stack.push_back(dir_and_base.first);
+    ec.ec_output_stack.emplace_back(nonstd::nullopt);
     while ((line_size = getline(&line, &line_max_size, file)) != -1) {
         line_number += 1;
 
@@ -431,6 +432,7 @@ static string execute_file_contents(exec_context &ec, const string &path, bool m
     } else {
         fclose(file);
     }
+    ec.ec_output_stack.pop_back();
     ec.ec_path_stack.pop_back();
 
     return retval;
@@ -731,7 +733,26 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 
 future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &fd)
 {
-    if (lnav_data.ld_output_stack.empty()) {
+    auto out = ec.get_output();
+
+    if (out) {
+        FILE *file = *out;
+
+        return std::async(std::launch::async, [&fd, file]() {
+            char buffer[1024];
+            ssize_t rc;
+
+            if (file == stdout) {
+                lnav_data.ld_stdout_used = true;
+            }
+
+            while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+                fwrite(buffer, rc, 1, file);
+            }
+
+            return string();
+        });
+    } else {
         auto pp = make_shared<piper_proc>(fd, false);
         static int exec_count = 0;
         char desc[128];
@@ -755,22 +776,6 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
         task();
 
         return task.get_future();
-    } else {
-        return std::async(std::launch::async, [&]() {
-            FILE *file = lnav_data.ld_output_stack.top();
-            char buffer[1024];
-            ssize_t rc;
-
-            if (file == stdout) {
-                lnav_data.ld_stdout_used = true;
-            }
-
-            while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
-                fwrite(buffer, rc, 1, file);
-            }
-
-            return string();
-        });
     }
 }
 

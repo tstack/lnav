@@ -1,0 +1,5 @@
+:echo HOWDY!
+:redirect-to hw2.txt
+:echo HELLO, WORLD!
+:redirect-to
+:echo GOODBYE, WORLD!

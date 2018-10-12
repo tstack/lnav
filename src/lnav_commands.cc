@@ -568,7 +568,9 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         toclose = outfile;
     }
     else if (split_args[0] == "-" || split_args[0] == "/dev/stdout") {
-        if (lnav_data.ld_output_stack.empty()) {
+        auto ec_out = ec.get_output();
+
+        if (!ec_out) {
             outfile = stdout;
             nodelay(lnav_data.ld_window, 0);
             endwin();
@@ -583,7 +585,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
                             "----------------\n\n");
         }
         else {
-            outfile = lnav_data.ld_output_stack.top();
+            outfile = *ec_out;
         }
         if (outfile == stdout) {
             lnav_data.ld_stdout_used = true;
@@ -673,7 +675,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
 
         if ((handle = yajl_gen_alloc(NULL)) == NULL) {
             if (outfile != stdout) {
-                fclose(outfile);
+                closer(outfile);
             }
             return "error: unable to allocate memory";
         }
@@ -943,6 +945,52 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
     }
 
     return retval;
+}
+
+static string com_redirect_to(exec_context &ec, string cmdline, vector<string> &args)
+{
+    if (args.empty()) {
+        args.emplace_back("filename");
+        return "";
+    }
+
+    if (args.size() == 1) {
+        if (ec.ec_dry_run) {
+            return "info: redirect will be cleared";
+        }
+
+        ec.ec_output_stack.back() = nonstd::nullopt;
+        return "info: cleared redirect";
+    }
+
+    string fn = trim(remaining_args(cmdline, args));
+    vector<string> split_args;
+    shlex lexer(fn);
+    scoped_resolver scopes = {
+        &ec.ec_local_vars.top(),
+        &ec.ec_global_vars,
+    };
+
+    if (!lexer.split(split_args, scopes)) {
+        return "error: unable to parse arguments";
+    }
+    if (split_args.size() > 1) {
+        return "error: more than one file name was matched";
+    }
+
+    if (ec.ec_dry_run) {
+        return "info: output will be redirected to -- " + split_args[0];
+    }
+
+    FILE *file = fopen(split_args[0].c_str(), "w");
+
+    if (file == nullptr) {
+        return "error: unable to open file -- " + split_args[0];
+    }
+
+    ec.ec_output_stack.back() = file;
+
+    return "info: redirecting output to file -- " + split_args[0];
 }
 
 static string com_highlight(exec_context &ec, string cmdline, vector<string> &args)
@@ -2933,14 +2981,15 @@ static string com_echo(exec_context &ec, string cmdline, vector<string> &args)
             retval = "";
         }
 
+        auto ec_out = ec.get_output();
         if (ec.ec_dry_run) {
             lnav_data.ld_preview_status_source.get_description()
                 .set_value("The text to output:");
             lnav_data.ld_preview_source.replace_with(attr_line_t(retval));
             retval = "";
         }
-        else if (!lnav_data.ld_output_stack.empty()) {
-            FILE *outfile = lnav_data.ld_output_stack.top();
+        else if (ec_out) {
+            FILE *outfile = *ec_out;
 
             if (outfile == stdout) {
                 lnav_data.ld_stdout_used = true;
@@ -2951,6 +3000,8 @@ static string com_echo(exec_context &ec, string cmdline, vector<string> &args)
                 putc('\n', outfile);
             }
             fflush(outfile);
+
+            retval = "";
         }
     }
 
@@ -3837,6 +3888,19 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text("shell-cmd", "The shell command-line to execute"))
             .with_tags({"io"})
             .with_example({"sed -e 's/foo/bar/g'"})
+    },
+    {
+        "redirect-to",
+        com_redirect_to,
+
+        help_text(":redirect-to")
+            .with_summary("Redirect the output of commands to the given file")
+            .with_parameter(help_text(
+                "path", "The path to the file to write."
+                        "  If not specified, the current redirect will be cleared")
+                                .optional())
+            .with_tags({"io", "scripting"})
+            .with_example({"/tmp/script-output.txt"})
     },
     {
         "enable-filter",

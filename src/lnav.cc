@@ -3302,10 +3302,8 @@ int main(int argc, char *argv[])
     lnav_data.ld_vtab_manager->register_vtab(new log_format_vtab_impl(
             *log_format::find_root_format("generic_log")));
 
-    for (std::vector<log_format *>::iterator iter = log_format::get_root_formats().begin();
-         iter != log_format::get_root_formats().end();
-         ++iter) {
-        log_vtab_impl *lvi = (*iter)->get_vtab_impl();
+    for (auto &iter : log_format::get_root_formats()) {
+        log_vtab_impl *lvi = iter->get_vtab_impl();
 
         if (lvi != NULL) {
             lnav_data.ld_vtab_manager->register_vtab(lvi);
@@ -3481,10 +3479,8 @@ int main(int argc, char *argv[])
 
     if (lnav_data.ld_flags & LNF_CHECK_CONFIG) {
         rescan_files(true);
-        for (auto file_iter = lnav_data.ld_files.begin();
-             file_iter != lnav_data.ld_files.end();
-             ++file_iter) {
-            auto lf = (*file_iter);
+        for (auto &ld_file : lnav_data.ld_files) {
+            auto lf = ld_file;
 
             lf->rebuild_index();
 
@@ -3496,7 +3492,7 @@ int main(int argc, char *argv[])
                 retval = EXIT_FAILURE;
                 continue;
             }
-            for (logfile::iterator line_iter = lf->begin();
+            for (auto line_iter = lf->begin();
                     line_iter != lf->end();
                     ++line_iter) {
                 if (!line_iter->is_continued()) {
@@ -3587,14 +3583,14 @@ int main(int argc, char *argv[])
             log_info("lnav_data:");
             log_info("  flags=%x", lnav_data.ld_flags);
             log_info("  commands:");
-            for (std::list<string>::iterator cmd_iter =
+            for (auto cmd_iter =
                  lnav_data.ld_commands.begin();
                  cmd_iter != lnav_data.ld_commands.end();
                  ++cmd_iter) {
                 log_info("    %s", cmd_iter->c_str());
             }
             log_info("  files:");
-            for (map<string, logfile_open_options>::iterator file_iter =
+            for (auto file_iter =
                  lnav_data.ld_file_names.begin();
                  file_iter != lnav_data.ld_file_names.end();
                  ++file_iter) {
@@ -3608,7 +3604,7 @@ int main(int argc, char *argv[])
                 bool found_error = false;
 
                 init_session();
-                lnav_data.ld_output_stack.push(stdout);
+                lnav_data.ld_exec_context.ec_output_stack.back() = stdout;
                 alerter::singleton().enabled(false);
 
                 log_tc = &lnav_data.ld_views[LNV_LOG];

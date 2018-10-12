@@ -3,6 +3,10 @@ lnav v0.8.5:
      Features:
      * The ":write-*" commands will now accept "/dev/clipboard" as a file name
        that writes to the system clipboard.
+     * Added a ":redirect-to <path>" command to redirect command output to the
+       given file.  This command is mostly useful in scripts where one might
+       want to redirect all output from commands like ":echo" and ":write-to -"
+       to a single file.
 
      Interface Changes:
      * The auto-complete behavior in the prompt has been modified to fall back

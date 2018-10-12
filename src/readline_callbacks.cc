@@ -484,14 +484,14 @@ void rl_callback(void *dummy, readline_curses *rc)
             time_t current_time = time(NULL);
             string path_and_args = rc->get_value();
 
-            lnav_data.ld_output_stack.push(tmpout);
+            ec.ec_output_stack.back() = tmpout.in();
             string result = execute_file(ec, path_and_args);
             string::size_type lf_index = result.find('\n');
             if (lf_index != string::npos) {
                 result = result.substr(0, lf_index);
             }
             rc->set_value(result);
-            lnav_data.ld_output_stack.pop();
+            ec.ec_output_stack.back() = nonstd::nullopt;
 
             struct stat st;
 
@@ -506,7 +506,7 @@ void rl_callback(void *dummy, readline_curses *rc)
                 lnav_data.ld_file_names[desc]
                     .with_fd(fd_copy)
                     .with_detect_format(false);
-                lnav_data.ld_files_to_front.push_back(make_pair(desc, 0));
+                lnav_data.ld_files_to_front.emplace_back(desc, 0);
 
                 if (lnav_data.ld_rl_view != NULL) {
                     lnav_data.ld_rl_view->set_alt_value(

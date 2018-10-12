@@ -348,6 +348,8 @@ dist_noinst_DATA = \
 	formats/jsontest3/format.json \
 	formats/nestedjson/format.json \
 	formats/scripts/multiline-echo.lnav \
+	formats/scripts/redirecting.lnav \
+	formats/scripts/nested-redirecting.lnav \
 	formats/sqldir/init.sql \
 	formats/timestamp/format.json \
 	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \

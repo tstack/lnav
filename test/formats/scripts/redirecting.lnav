@@ -1,0 +1,6 @@
+:echo Howdy!
+:redirect-to hw.txt
+:echo Hello, World!
+|nested-redirecting
+:redirect-to
+:echo Goodbye, World!

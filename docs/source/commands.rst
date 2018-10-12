@@ -143,6 +143,10 @@ Output
   shell command and open the output in lnav.
 * pipe-line-to <shell-cmd> - Pipe the top line in the current view to a shell
   command and open the output in lnav.
+* redirect-to [path] - If a path is given, all output from commands, like
+  ":echo" and when writing to stdout (e.g. :write-to -), will be sent to the
+  given file.  If no path is specified, the current redirect will be cleared
+  and output will be captured as it was before the redirect was done.
 
 .. _misc-cmd:
 

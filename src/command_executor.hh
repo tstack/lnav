@@ -35,6 +35,7 @@
 #include <future>
 #include <string>
 
+#include "optional.hpp"
 #include "auto_fd.hh"
 #include "attr_line.hh"
 #include "textview_curses.hh"
@@ -47,9 +48,9 @@ typedef std::future<std::string> (*pipe_callback_t)(
     exec_context &ec, const std::string &cmdline, auto_fd &fd);
 
 struct exec_context {
-    exec_context(std::vector<logline_value> *line_values = NULL,
-                 sql_callback_t sql_callback = NULL,
-                 pipe_callback_t pipe_callback = NULL)
+    exec_context(std::vector<logline_value> *line_values = nullptr,
+                 sql_callback_t sql_callback = nullptr,
+                 pipe_callback_t pipe_callback = nullptr)
         : ec_top_line(vis_line_t(0)),
           ec_dry_run(false),
           ec_line_values(line_values),
@@ -58,6 +59,7 @@ struct exec_context {
         this->ec_local_vars.push(std::map<std::string, std::string>());
         this->ec_path_stack.emplace_back(".");
         this->ec_source.emplace("unknown", 0);
+        this->ec_output_stack.emplace_back(nonstd::nullopt);
     }
 
     std::string get_error_prefix() {
@@ -70,6 +72,18 @@ struct exec_context {
         return "error:" + source.first + ":" + std::to_string(source.second) + ":";
     }
 
+    nonstd::optional<FILE *> get_output() {
+        for (auto iter = this->ec_output_stack.rbegin();
+             iter != this->ec_output_stack.rend();
+             ++iter) {
+            if (*iter) {
+                return *iter;
+            }
+        }
+
+        return nonstd::nullopt;
+    }
+
     vis_line_t ec_top_line;
     bool ec_dry_run;
 
@@ -79,6 +93,7 @@ struct exec_context {
     std::map<std::string, std::string> ec_global_vars;
     std::vector<std::string> ec_path_stack;
     std::stack<std::pair<std::string, int>> ec_source;
+    std::vector<nonstd::optional<FILE *>> ec_output_stack;
 
     attr_line_t ec_accumulator;
 

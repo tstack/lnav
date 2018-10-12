@@ -305,8 +305,6 @@ struct _lnav_data {
 
     relative_time ld_last_relative_time;
 
-    std::stack<FILE *> ld_output_stack;
-
     std::map<std::string, std::vector<script_metadata> > ld_scripts;
 
     exec_context ld_exec_context;
