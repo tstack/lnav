@@ -414,6 +414,8 @@ DISTCLEANFILES = \
 	*.tmp \
 	*.gz \
 	*.bz2 \
+	hw.txt \
+	hw2.txt \
 	truncfile.0 \
 	logfile_append.0 \
 	logfile_changed.0 \
