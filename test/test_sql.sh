@@ -3,7 +3,7 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
-    -c ";SELECT * FROM access_log LIMIT 0"
+    -c ";SELECT * FROM access_log LIMIT 0" \
     ${test_dir}/logfile_access_log.0
 
 check_output "output generated for empty result set?" <<EOF
