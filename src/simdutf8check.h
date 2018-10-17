@@ -33,7 +33,7 @@ extern "C" {
  */
 
 // all byte values must be no larger than 0xF4
-static inline void checkSmallerThan0xF4(__m128i current_bytes,
+static void checkSmallerThan0xF4(__m128i current_bytes,
                                         __m128i *has_error)
 {
     // unsigned, saturates to 0 below max
@@ -42,7 +42,7 @@ static inline void checkSmallerThan0xF4(__m128i current_bytes,
                                             _mm_set1_epi8(0xF4)));
 }
 
-static inline __m128i continuationLengths(__m128i high_nibbles)
+static __m128i continuationLengths(__m128i high_nibbles)
 {
     return _mm_shuffle_epi8(
         _mm_setr_epi8(1, 1, 1, 1, 1, 1, 1, 1, // 0xxx (ASCII)
@@ -53,7 +53,7 @@ static inline __m128i continuationLengths(__m128i high_nibbles)
         high_nibbles);
 }
 
-static inline __m128i carryContinuations(__m128i initial_lengths,
+static __m128i carryContinuations(__m128i initial_lengths,
                                          __m128i previous_carries)
 {
 
@@ -68,7 +68,7 @@ static inline __m128i carryContinuations(__m128i initial_lengths,
     return _mm_add_epi8(sum, right2);
 }
 
-static inline void checkContinuations(__m128i initial_lengths,
+static void checkContinuations(__m128i initial_lengths,
                                       __m128i carries,
                                       __m128i *has_error)
 {
@@ -86,7 +86,7 @@ static inline void checkContinuations(__m128i initial_lengths,
 // when 0xED is found, next byte must be no larger than 0x9F
 // when 0xF4 is found, next byte must be no larger than 0x8F
 // next byte must be continuation, ie sign bit is set, so signed < is ok
-static inline void checkFirstContinuationMax(__m128i current_bytes,
+static void checkFirstContinuationMax(__m128i current_bytes,
                                              __m128i off1_current_bytes,
                                              __m128i *has_error)
 {
@@ -110,7 +110,7 @@ static inline void checkFirstContinuationMax(__m128i current_bytes,
 // E       => < E1 && < A0
 // F       => < F1 && < 90
 // else      false && false
-static inline void checkOverlong(__m128i current_bytes,
+static void checkOverlong(__m128i current_bytes,
                                  __m128i off1_current_bytes,
                                  __m128i hibits,
                                  __m128i previous_hibits,
@@ -145,7 +145,7 @@ struct processed_utf_bytes {
     __m128i carried_continuations;
 };
 
-static inline void count_nibbles(__m128i bytes,
+static void count_nibbles(__m128i bytes,
                                  struct processed_utf_bytes *answer)
 {
     answer->rawbytes = bytes;
