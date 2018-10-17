@@ -557,6 +557,7 @@ bool logfile_sub_source::rebuild_index(bool force)
             if (ld.ld_lines_indexed > 0) {
                 force  = true;
                 retval = true;
+                new_order = true;
             }
         }
         else {
@@ -578,6 +579,7 @@ bool logfile_sub_source::rebuild_index(bool force)
                         if (last_indexed_line == nullptr ||
                             new_file_line < last_indexed_line->get_timeval()) {
                             force = true;
+                            new_order = true;
                         }
                     }
                     break;
