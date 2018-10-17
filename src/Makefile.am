@@ -96,7 +96,7 @@ time_fmts.cc: ptimec
 
 if HAVE_RE2C
 %.cc: %.re
-	$(RE2C_V)$(RE2C_CMD) -8 -o $@ $<
+	$(RE2C_V)$(RE2C_CMD) --tags -8 -o $@ $<
 	$(REC2_V)test $@ -ef $(srcdir)/$*.cc || cp $@ $(srcdir)/$*.cc
 endif
 
@@ -173,6 +173,7 @@ noinst_HEADERS = \
 	init.sql \
 	init-sql.hh \
 	intern_string.hh \
+	is_utf8.hh \
 	json_op.hh \
 	json_ptr.hh \
 	k_merge_tree.h \
@@ -189,6 +190,7 @@ noinst_HEADERS = \
 	log_format.hh \
 	log_format_loader.hh \
 	log_level.hh \
+	log_level_re.re \
 	log_search_table.hh \
 	logfile.hh \
 	logfile_sub_source.hh \
@@ -216,6 +218,7 @@ noinst_HEADERS = \
 	session_data.hh \
 	shared_buffer.hh \
 	shlex.hh \
+	simdutf8check.h \
 	spectro_source.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \
@@ -284,6 +287,7 @@ libdiag_a_SOURCES = \
 	hist_source.cc \
 	hotkeys.cc \
 	intern_string.cc \
+	is_utf8.cc \
 	json-extension-functions.cc \
 	json_op.cc \
 	json_ptr.cc \
@@ -297,6 +301,7 @@ libdiag_a_SOURCES = \
 	log_format.cc \
 	log_format_loader.cc \
 	log_level.cc \
+	log_level_re.cc \
 	logfile.cc \
 	logfile_sub_source.cc \
 	network-extension-functions.cc \
@@ -389,11 +394,12 @@ ptimec_LDADD =
 
 DISTCLEANFILES = \
 	data_scanner_re.cc \
+	default-config-json.c \
+	default-log-formats-json.c \
 	dump-pid-sh.c \
 	help.c \
 	init-sql.c \
-	default-log-formats-json.c \
-	default-config-json.c \
+	log_level_re.cc \
     time_fmts.cc \
     xterm-palette.c
 

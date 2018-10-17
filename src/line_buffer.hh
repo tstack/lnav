@@ -48,6 +48,7 @@ struct line_value {
     char *lv_start;
     size_t lv_len;
     bool lv_partial;
+    bool lv_valid_utf;
 
     void terminate() {
         this->lv_start[this->lv_len] = '\0';

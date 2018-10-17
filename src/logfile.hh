@@ -1,3 +1,5 @@
+#include <utility>
+
 /**
  * Copyright (c) 2007-2012, Timothy Stack
  *
@@ -109,8 +111,8 @@ public:
 
     class error {
 public:
-        error(const std::string &filename, int err)
-            : e_filename(filename),
+        error(std::string filename, int err)
+            : e_filename(std::move(filename)),
               e_err(err) { };
 
         std::string e_filename;
@@ -205,26 +207,24 @@ public:
         else {
             timeradd(&old_time, &tv, &this->lf_time_offset);
         }
-        for (iterator iter = this->begin();
-             iter != this->end();
-             ++iter) {
+        for (auto &iter : *this) {
             struct timeval curr, diff, new_time;
 
-            curr = iter->get_timeval();
+            curr = iter.get_timeval();
             timersub(&curr, &old_time, &diff);
             timeradd(&diff, &this->lf_time_offset, &new_time);
-            iter->set_time(new_time);
+            iter.set_time(new_time);
         }
         this->lf_sort_needed = true;
     };
 
-    void clear_time_offset(void) {
+    void clear_time_offset() {
         struct timeval tv = { 0, 0 };
 
         this->adjust_content_time(-1, tv);
     };
 
-    bool is_time_adjusted(void) const {
+    bool is_time_adjusted() const {
         return (this->lf_time_offset.tv_sec != 0 ||
                 this->lf_time_offset.tv_usec != 0);
     }
@@ -392,9 +392,9 @@ public:
     };
 
     /** Check the invariants for this object. */
-    bool invariant(void)
+    bool invariant()
     {
-        require(this->lf_filename.size() > 0);
+        require(!this->lf_filename.empty());
 
         return true;
     }
@@ -435,6 +435,7 @@ protected:
     logfile_observer *lf_logfile_observer{nullptr};
     size_t lf_longest_line{0};
     text_format_t lf_text_format{TF_UNKNOWN};
+    uint32_t lf_out_of_time_order_count{0};
 };
 
 class logline_observer {

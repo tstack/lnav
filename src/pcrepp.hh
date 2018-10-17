@@ -373,8 +373,12 @@ public:
         const char *errptr;
         int         eoff;
 
+        if (!(options & PCRE_NEVER_UTF)) {
+            options |= PCRE_UTF8;
+        }
+
         if ((this->p_code = pcre_compile(pattern,
-                                         options | PCRE_UTF8,
+                                         options,
                                          &errptr,
                                          &eoff,
                                          NULL)) == NULL) {
@@ -421,16 +425,15 @@ public:
     };
 
     pcre_named_capture::iterator named_begin() const {
-        return pcre_named_capture::iterator(this->p_named_entries,
-                                            this->p_name_len);
+        return {this->p_named_entries, static_cast<size_t>(this->p_name_len)};
     };
 
     pcre_named_capture::iterator named_end() const {
         char *ptr = (char *)this->p_named_entries;
 
         ptr += this->p_named_count * this->p_name_len;
-        return pcre_named_capture::iterator((pcre_named_capture *)ptr,
-                                            this->p_name_len);
+        return {(pcre_named_capture *)ptr,
+                static_cast<size_t>(this->p_name_len)};
     };
 
     const std::vector<pcre_context::capture> &captures() const {
@@ -565,6 +568,7 @@ public:
         return length;
     };
 
+// #undef PCRE_STUDY_JIT_COMPILE
 #ifdef PCRE_STUDY_JIT_COMPILE
     static pcre_jit_stack *jit_stack(void);
 

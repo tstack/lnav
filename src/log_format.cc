@@ -179,11 +179,11 @@ const char *log_format::log_scanf(const char *line,
         va_start(args, tv_out);
 
         pi.reset(line, 0, len);
-        if (!fmt[curr_fmt].pcre.match(pc, pi)) {
+        if (!fmt[curr_fmt].pcre.match(pc, pi, PCRE_NO_UTF8_CHECK)) {
             retval = NULL;
         }
         else {
-            pcre_context::capture_t *ts = pc["timestamp"];
+            pcre_context::capture_t *ts = pc[fmt[curr_fmt].pf_timestamp_index];
 
             for (auto &iter : pc) {
                 pcre_context::capture_t *cap = va_arg(

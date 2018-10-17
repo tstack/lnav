@@ -56,7 +56,7 @@ static const size_t INDEX_RESERVE_INCREMENT = 1024;
 logfile::logfile(const string &filename, logfile_open_options &loo)
     : lf_filename(filename)
 {
-    require(filename.size() > 0);
+    require(!filename.empty());
 
     memset(&this->lf_stat, 0, sizeof(this->lf_stat));
     if (loo.loo_fd == -1) {
@@ -107,7 +107,7 @@ logfile::~logfile()
 {
 }
 
-bool logfile::exists(void) const
+bool logfile::exists() const
 {
     struct stat st;
 
@@ -210,14 +210,7 @@ bool logfile::process_prefix(off_t offset, shared_buffer_ref &sbr)
 
                 if (latest < second_to_last) {
                     if (this->lf_format->lf_time_ordered) {
-                        log_debug(
-                            "%s:%d: out-of-time-order line detected %d.%03d < %d.%03d",
-                            this->lf_filename.c_str(),
-                            prescan_size,
-                            latest.get_time(),
-                            latest.get_millis(),
-                            second_to_last.get_time(),
-                            second_to_last.get_millis());
+                        this->lf_out_of_time_order_count += 1;
                         for (size_t lpc = prescan_size;
                              lpc < this->lf_index.size(); lpc++) {
                             logline &line_to_update = this->lf_index[lpc];
@@ -414,6 +407,13 @@ logfile::rebuild_result_t logfile::rebuild_index()
     this->lf_index_time = this->lf_line_buffer.get_file_time();
     if (!this->lf_index_time) {
         this->lf_index_time = st.st_mtime;
+    }
+
+    if (this->lf_out_of_time_order_count) {
+        log_info("Detected %d out-of-time-order lines in file: %s",
+                 this->lf_out_of_time_order_count,
+                 this->lf_filename.c_str());
+        this->lf_out_of_time_order_count = 0;
     }
 
     return retval;

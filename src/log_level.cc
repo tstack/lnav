@@ -50,36 +50,6 @@ const char *level_names[LEVEL__MAX + 1] = {
     NULL
 };
 
-static pcrepp LEVEL_RE(
-    "(?i)(TRACE|DEBUG\\d*|INFO|NOTICE|STATS|WARN(?:ING)?|ERR(?:OR)?|CRITICAL|SEVERE|FATAL)");
-
-log_level_t string2level(const char *levelstr, ssize_t len, bool exact)
-{
-    log_level_t retval = LEVEL_UNKNOWN;
-
-    if (len == (ssize_t)-1) {
-        len = strlen(levelstr);
-    }
-
-    if (((len == 1) || ((len > 1) && (levelstr[1] == ' '))) &&
-        (retval = abbrev2level(levelstr, 1)) != LEVEL_UNKNOWN) {
-        return retval;
-    }
-
-    pcre_input pi(levelstr, 0, len);
-    pcre_context_static<10> pc;
-
-    if (LEVEL_RE.match(pc, pi)) {
-        auto iter = pc.begin();
-        if (!exact || pc[0]->c_begin == 0) {
-            retval = abbrev2level(pi.get_substr_start(iter),
-                                  pi.get_substr_len(iter));
-        }
-    }
-
-    return retval;
-}
-
 log_level_t abbrev2level(const char *levelstr, ssize_t len)
 {
     if (len == 0 || levelstr[0] == '\0') {

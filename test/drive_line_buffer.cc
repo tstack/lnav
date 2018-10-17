@@ -52,136 +52,139 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    int c, rnd_iters = 5, retval = EXIT_SUCCESS;
-    vector<pair<int, int> > index;
-    auto_fd fd = STDIN_FILENO;
+	int c, rnd_iters = 5, retval = EXIT_SUCCESS;
+	vector<pair<int, int> > index;
+	auto_fd fd = STDIN_FILENO;
 	int offseti = 0;
 	off_t offset = 0;
-    struct stat st;
-    
-    while ((c = getopt(argc, argv, "o:i:n:")) != -1) {
-	switch (c) {
-	case 'o':
-	    if (sscanf(optarg, "%d", &offseti) != 1) {
-		fprintf(stderr,
-			"error: offset is not an integer -- %s\n",
-			optarg);
-		retval = EXIT_FAILURE;
-	    } else {
-			offset = offseti;
-		}
-	    break;
-	case 'n':
-	    if (sscanf(optarg, "%d", &rnd_iters) != 1) {
-		fprintf(stderr,
-			"error: offset is not an integer -- %s\n",
-			optarg);
-		retval = EXIT_FAILURE;
-	    }
-	    break;
-	case 'i':
-	    {
-		FILE *file;
+	int count = 1000;
+	struct stat st;
 
-		if ((file = fopen(optarg, "r")) == NULL) {
-		    perror("open");
-		    retval = EXIT_FAILURE;
+	while ((c = getopt(argc, argv, "o:i:n:c:")) != -1) {
+		switch (c) {
+			case 'o':
+				if (sscanf(optarg, "%d", &offseti) != 1) {
+					fprintf(stderr,
+							"error: offset is not an integer -- %s\n",
+							optarg);
+					retval = EXIT_FAILURE;
+				} else {
+					offset = offseti;
+				}
+				break;
+			case 'n':
+				if (sscanf(optarg, "%d", &rnd_iters) != 1) {
+					fprintf(stderr,
+							"error: offset is not an integer -- %s\n",
+							optarg);
+					retval = EXIT_FAILURE;
+				}
+				break;
+			case 'c':
+				if (sscanf(optarg, "%d", &count) != 1) {
+					fprintf(stderr,
+							"error: count is not an integer -- %s\n",
+							optarg);
+					retval = EXIT_FAILURE;
+				}
+				break;
+			case 'i': {
+				FILE *file;
+
+				if ((file = fopen(optarg, "r")) == NULL) {
+					perror("open");
+					retval = EXIT_FAILURE;
+				} else {
+					int line_number = 1, line_offset;
+
+					while (fscanf(file, "%d", &line_offset) == 1) {
+						index.push_back(
+							make_pair(line_number, line_offset));
+						line_number += 1;
+					}
+					fclose(file);
+					file = NULL;
+				}
+			}
+				break;
+			default:
+				retval = EXIT_FAILURE;
+				break;
 		}
-		else {
-		    int line_number = 1, line_offset;
-		    
-		    while (fscanf(file, "%d", &line_offset) == 1) {
-			index.push_back(
-				make_pair(line_number, line_offset));
-			line_number += 1;
-		    }
-		    fclose(file);
-		    file = NULL;
-		}
-	    }
-	    break;
-	default:
-	    retval = EXIT_FAILURE;
-	    break;
 	}
-    }
 
-    argc -= optind;
-    argv += optind;
+	argc -= optind;
+	argv += optind;
 
-    if (retval != EXIT_SUCCESS) {
-    }
-    else if ((argc == 0) && (index.size() > 0)) {
-	fprintf(stderr, "error: cannot randomize stdin\n");
-	retval = EXIT_FAILURE;
-    }
-    else if ((argc > 0) && (fd = open(argv[0], O_RDONLY)) == -1) {
-	perror("open");
-	retval = EXIT_FAILURE;
-    }
-    else if ((argc > 0) && (fstat(fd, &st) == -1)) {
-	perror("fstat");
-	retval = EXIT_FAILURE;
-    }
-    else {
-	try {
-	    off_t last_offset = offset;
-	    line_buffer lb;
-        line_value lv;
-	    char *maddr;
-
-	    lb.set_fd(fd);
-	    if (index.size() == 0) {
-		while (lb.read_line(offset, lv)) {
-            lv.terminate();
-		    printf("%s", lv.lv_start);
-		    if ((off_t)(last_offset + lv.lv_len) < offset)
-			printf("\n");
-		    last_offset = offset;
-		}
-	    }
-	    else if ((maddr = (char *)mmap(NULL,
-					   st.st_size,
-					   PROT_READ,
-					   MAP_FILE | MAP_PRIVATE,
-					   lb.get_fd(),
-					   0)) == MAP_FAILED) {
-		perror("mmap");
+	if (retval != EXIT_SUCCESS) {
+	} else if ((argc == 0) && (index.size() > 0)) {
+		fprintf(stderr, "error: cannot randomize stdin\n");
 		retval = EXIT_FAILURE;
-	    }
-	    else {
-                off_t seq_offset = 0;
+	} else if ((argc > 0) && (fd = open(argv[0], O_RDONLY)) == -1) {
+		perror("open");
+		retval = EXIT_FAILURE;
+	} else if ((argc > 0) && (fstat(fd, &st) == -1)) {
+		perror("fstat");
+		retval = EXIT_FAILURE;
+	} else {
+		try {
+			off_t last_offset = offset;
+			line_buffer lb;
+			line_value lv;
+			char *maddr;
 
-                while (lb.read_line(seq_offset, lv)) { }
-		do {
-            bool ret;
-		    size_t lpc;
+			lb.set_fd(fd);
+			if (index.size() == 0) {
+				shared_buffer_ref sbr;
 
-		    random_shuffle(index.begin(), index.end());
-		    for (lpc = 0; lpc < index.size(); lpc++) {
+				while (count && lb.read_line(offset, sbr, &lv)) {
+					printf("%.*s", (int) sbr.length(), sbr.get_data());
+					if ((off_t) (last_offset + lv.lv_len) < offset)
+						printf("\n");
+					last_offset = offset;
+					count -= 1;
+				}
+			} else if ((maddr = (char *) mmap(NULL,
+											  st.st_size,
+											  PROT_READ,
+											  MAP_FILE | MAP_PRIVATE,
+											  lb.get_fd(),
+											  0)) == MAP_FAILED) {
+				perror("mmap");
+				retval = EXIT_FAILURE;
+			} else {
+				off_t seq_offset = 0;
 
-			offset = index[lpc].second;
-			ret = lb.read_line(offset, lv);
+				while (lb.read_line(seq_offset, lv)) {}
+				do {
+					bool ret;
+					size_t lpc;
 
-                        assert(ret);
-			assert(offset >= 0);
-			assert(offset <= st.st_size);
-			assert(memcmp(lv.lv_start,
-				      &maddr[index[lpc].second],
-				      lv.lv_len) == 0);
-		    }
+					random_shuffle(index.begin(), index.end());
+					for (lpc = 0; lpc < index.size(); lpc++) {
 
-		    rnd_iters -= 1;
-		} while (rnd_iters);
+						offset = index[lpc].second;
+						ret = lb.read_line(offset, lv);
 
-		printf("All done\n");
-	    }
+						assert(ret);
+						assert(offset >= 0);
+						assert(offset <= st.st_size);
+						assert(memcmp(lv.lv_start,
+									  &maddr[index[lpc].second],
+									  lv.lv_len) == 0);
+					}
+
+					rnd_iters -= 1;
+				} while (rnd_iters);
+
+				printf("All done\n");
+			}
+		}
+		catch (line_buffer::error &e) {
+			fprintf(stderr, "error: %s\n", strerror(e.e_err));
+			retval = EXIT_FAILURE;
+		}
 	}
-	catch (line_buffer::error &e) {
-	    fprintf(stderr, "error: %s\n", strerror(e.e_err));
-	    retval = EXIT_FAILURE;
-	}
-    }
-    
-    return retval;
+
+	return retval;
 }

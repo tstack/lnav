@@ -56,23 +56,6 @@ AS_VAR_IF([enable_profiling], [yes],
 
 AC_ARG_VAR(SFTP_TEST_URL)
 
-AC_ARG_ENABLE([profiling],
-              AS_HELP_STRING([--enable-profiling],
-                             [Compile with gprof(1) profiling support]))
-
-AC_MSG_CHECKING(gprof(4) profiling support)
-
-AS_VAR_IF([enable_profiling], [yes],
-      [CFLAGS="$CFLAGS -pg -gstabs"
-       CXXFLAGS="$CXXFLAGS -pg -gstabs"
-       LDFLAGS="$LDFLAGS -pg"],
-      [enable_profiling=no]dnl
-)
-
-AC_MSG_RESULT($enable_profiling)
-
-AC_SUBST(CFLAGS_PG)
-
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 AM_PROG_AR
@@ -134,7 +117,7 @@ AS_CASE(["$host_os"],
     )
 )
 
-AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h)
+AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h x86intrin.h)
 
 LNAV_WITH_JEMALLOC
 

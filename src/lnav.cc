@@ -365,15 +365,15 @@ bool setup_logline_table(exec_context &ec)
         iter.second->get_foreign_keys(db_key_names);
     }
 
-    db_key_names.push_back("device");
-    db_key_names.push_back("inode");
-    db_key_names.push_back("rowid");
-    db_key_names.push_back("st_dev");
-    db_key_names.push_back("st_ino");
-    db_key_names.push_back("st_mode");
-    db_key_names.push_back("st_rdev");
-    db_key_names.push_back("st_uid");
-    db_key_names.push_back("st_gid");
+    db_key_names.emplace_back("device");
+    db_key_names.emplace_back("inode");
+    db_key_names.emplace_back("rowid");
+    db_key_names.emplace_back("st_dev");
+    db_key_names.emplace_back("st_ino");
+    db_key_names.emplace_back("st_mode");
+    db_key_names.emplace_back("st_rdev");
+    db_key_names.emplace_back("st_uid");
+    db_key_names.emplace_back("st_gid");
 
     stable_sort(db_key_names.begin(), db_key_names.end());
 
@@ -490,7 +490,7 @@ class textfile_callback {
 public:
     textfile_callback() : force(false), front_file(NULL), front_top(-1) { };
 
-    void closed_file(shared_ptr<logfile> lf) {
+    void closed_file(const shared_ptr<logfile> &lf) {
         log_info("closed text file: %s", lf->get_filename().c_str());
         if (!lf->is_valid_filename()) {
             lnav_data.ld_file_names.erase(lf->get_filename());
@@ -503,7 +503,7 @@ public:
         regenerate_unique_file_names();
     };
 
-    void promote_file(shared_ptr<logfile> lf) {
+    void promote_file(const shared_ptr<logfile> &lf) {
         if (lnav_data.ld_log_source.insert_file(lf)) {
             force = true;
 
@@ -523,7 +523,7 @@ public:
         }
     };
 
-    void scanned_file(shared_ptr<logfile> lf) {
+    void scanned_file(const shared_ptr<logfile> &lf) {
         if (!lnav_data.ld_files_to_front.empty() &&
                 lnav_data.ld_files_to_front.front().first ==
                         lf->get_filename()) {

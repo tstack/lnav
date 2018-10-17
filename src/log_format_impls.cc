@@ -165,7 +165,7 @@ class generic_log_format : public log_format {
                 this->check_for_new_year(dst, log_time, log_tv);
             }
 
-            dst.push_back(logline(offset, log_tv, level_val));
+            dst.emplace_back(offset, log_tv, level_val);
             return SCAN_MATCH;
         }
 

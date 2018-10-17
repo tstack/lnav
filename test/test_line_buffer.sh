@@ -42,6 +42,12 @@ check_output "Seeking in the line buffer doesn't work?" <<EOF
 5
 EOF
 
+run_test ./drive_line_buffer -o 4424 -c 1 ${srcdir}/UTF-8-test.txt
+
+check_output "Invalid UTF is not scrubbed?" <<EOF
+2.1.5  5 bytes (U-00200000):        "?????"                                       |
+EOF
+
 cat "${top_srcdir}/src/"*.hh "${top_srcdir}/src/"*.cc > lb-2.dat
 grep -b '$' lb-2.dat | cut -f 1 -d : > lb.index
 line_count=`wc -l lb-2.dat`

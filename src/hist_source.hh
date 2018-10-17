@@ -433,7 +433,7 @@ private:
         hist_value b_values[HT__MAX];
     };
 
-    static const unsigned int BLOCK_SIZE = 100;
+    static const int64_t BLOCK_SIZE = 100;
 
     struct bucket_block {
         bucket_block() : bb_used(0) {
@@ -445,7 +445,7 @@ private:
     };
 
     bucket_t &find_bucket(int64_t index) {
-        struct bucket_block &bb = this->hs_blocks[index / this->BLOCK_SIZE];
+        struct bucket_block &bb = this->hs_blocks[index / BLOCK_SIZE];
         unsigned int intra_block_index = index % BLOCK_SIZE;
         bb.bb_used = std::max(intra_block_index, bb.bb_used);
         this->hs_line_count = std::max(this->hs_line_count, index + 1);

@@ -541,7 +541,7 @@ bool logfile_sub_source::rebuild_index(bool force)
 {
     iterator iter;
     size_t total_lines = 0;
-    bool retval, full_sort = false;
+    bool retval, full_sort = false, new_order = false;
     int file_count = 0;
 
     force = force || this->lss_force_rebuild;
@@ -584,6 +584,7 @@ bool logfile_sub_source::rebuild_index(bool force)
                 case logfile::RR_NEW_ORDER:
                     retval = true;
                     force = true;
+                    new_order = true;
                     break;
             }
             file_count += 1;
@@ -644,7 +645,10 @@ bool logfile_sub_source::rebuild_index(bool force)
                 }
             }
 
-            sort(this->lss_index.begin(), this->lss_index.end(), line_cmper);
+            if (new_order || (this->lss_files.size() > 1)) {
+                sort(this->lss_index.begin(), this->lss_index.end(),
+                     line_cmper);
+            }
         } else {
             kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(
                 file_count);

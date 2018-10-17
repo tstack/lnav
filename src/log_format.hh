@@ -790,13 +790,14 @@ protected:
 
     struct pcre_format {
         pcre_format(const char *regex) : name(regex), pcre(regex) {
-
+            this->pf_timestamp_index = this->pcre.name_index("timestamp");
         };
 
         pcre_format() : name(NULL), pcre("") { };
 
         const char *name;
         pcrepp pcre;
+        int pf_timestamp_index{-1};
     };
 
     static bool next_format(pcre_format *fmt, int &index, int &locked_index);
@@ -1140,7 +1141,7 @@ public:
     log_level_t convert_level(const pcre_input &pi, pcre_context::capture_t *level_cap) const {
         log_level_t retval = LEVEL_INFO;
 
-        if (level_cap != NULL && level_cap->is_valid()) {
+        if (level_cap != nullptr && level_cap->is_valid()) {
             pcre_context_static<128> pc_level;
             pcre_input pi_level(pi.get_substr_start(level_cap),
                                 0,
@@ -1149,11 +1150,9 @@ public:
             if (this->elf_level_patterns.empty()) {
                 retval = string2level(pi_level.get_string(), level_cap->length());
             } else {
-                for (auto iter = this->elf_level_patterns.begin();
-                     iter != this->elf_level_patterns.end();
-                     ++iter) {
-                    if (iter->second.lp_pcre->match(pc_level, pi_level)) {
-                        retval = iter->first;
+                for (const auto &elf_level_pattern : this->elf_level_patterns) {
+                    if (elf_level_pattern.second.lp_pcre->match(pc_level, pi_level)) {
+                        retval = elf_level_pattern.first;
                         break;
                     }
                 }

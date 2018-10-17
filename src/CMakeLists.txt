@@ -19,6 +19,7 @@ set(diag_STAT_SRCS
     hist_source.cc
     hotkeys.cc
     intern_string.cc
+    is_utf8.cc
     json-extension-functions.cc
     json_op.cc
     json_ptr.cc
@@ -116,6 +117,7 @@ set(diag_STAT_SRCS
     hotkeys.hh
     init-sql.hh
     intern_string.hh
+    is_utf8.hh
     k_merge_tree.h
     log_data_helper.hh
     log_data_table.hh
@@ -136,6 +138,7 @@ set(diag_STAT_SRCS
     relative_time.hh
     sequence_sink.hh
     shlex.hh
+    simdutf8check.h
     spectro_source.hh
     strong_int.hh
     sysclip.hh

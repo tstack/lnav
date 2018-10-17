@@ -43,6 +43,11 @@
 
 #include <set>
 
+#ifdef HAVE_X86INTRIN_H
+#include "simdutf8check.h"
+#endif
+
+#include "is_utf8.hh"
 #include "lnav_util.hh"
 #include "line_buffer.hh"
 
@@ -497,6 +502,7 @@ bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
 
     lv.lv_len = 0;
     lv.lv_partial = false;
+    lv.lv_valid_utf = true;
     while (!retval) {
         char *line_start, *lf;
 
@@ -505,7 +511,30 @@ bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
         /* Find the data in the cache and */
         line_start = this->get_range(offset, lv.lv_len);
         /* ... look for the end-of-line or end-of-file. */
-        if (((lf = (char *)memchr(line_start, '\n', lv.lv_len)) != NULL) ||
+        ssize_t utf8_end = -1;
+
+#ifdef HAVE_X86INTRIN_H
+        if (!validate_utf8_fast(line_start, lv.lv_len, &utf8_end)) {
+            lv.lv_valid_utf = false;
+        }
+#else
+        {
+            const char *msg;
+            int faulty_bytes;
+
+            utf8_end = is_utf8(line_start, lv.lv_len, &msg, &faulty_bytes);
+            if (msg != nullptr) {
+                lv.lv_valid_utf = false;
+            }
+        }
+#endif
+        if (utf8_end >= 0) {
+            lf = line_start + utf8_end;
+        } else {
+            lf = nullptr;
+        }
+
+        if (lf != nullptr ||
             (lv.lv_len >= MAX_LINE_BUFFER_SIZE) ||
             (request_size == MAX_LINE_BUFFER_SIZE) ||
             ((request_size > lv.lv_len) && lv.lv_len > 0)) {
@@ -604,6 +633,22 @@ bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_va
     sbr.disown();
     if ((retval = this->read_line(offset_inout, *lv))) {
         sbr.share(this->lb_share_manager, lv->lv_start, lv->lv_len);
+        if (!lv->lv_valid_utf) {
+            auto *bits = (unsigned char *) sbr.get_writable_data();
+            const char *msg;
+            int faulty_bytes;
+
+            while (true) {
+                ssize_t utf8_end = is_utf8(bits, sbr.length(), &msg, &faulty_bytes);
+
+                if (msg == nullptr) {
+                    break;
+                }
+                for (int lpc = 0; lpc < faulty_bytes; lpc++) {
+                    bits[utf8_end + lpc] = '?';
+                }
+            }
+        }
     }
 
     return retval;

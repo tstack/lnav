@@ -85,7 +85,7 @@ void pcrepp::find_captures(const char *pattern)
                     in_class = true;
                     break;
                 case '(':
-                    cap_in_progress.push_back(pcre_context::capture(lpc, lpc));
+                    cap_in_progress.emplace_back(lpc, lpc);
                     break;
                 case ')': {
                     if (!cap_in_progress.empty()) {

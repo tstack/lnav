@@ -335,6 +335,7 @@ dist_noinst_DATA = \
 	textfile_json_one_line.0 \
 	textfile_quoted_json.0 \
 	toplevel.lnav \
+	UTF-8-test.txt \
 	view_colors_output.0 \
 	vt52_curses_input.0 \
 	vt52_curses_input.1 \
