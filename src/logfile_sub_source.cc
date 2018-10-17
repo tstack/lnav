@@ -541,7 +541,7 @@ bool logfile_sub_source::rebuild_index(bool force)
 {
     iterator iter;
     size_t total_lines = 0;
-    bool retval, full_sort = false, new_order = false;
+    bool retval, full_sort = false;
     int file_count = 0;
 
     force = force || this->lss_force_rebuild;
@@ -557,7 +557,6 @@ bool logfile_sub_source::rebuild_index(bool force)
             if (ld.ld_lines_indexed > 0) {
                 force  = true;
                 retval = true;
-                new_order = true;
             }
         }
         else {
@@ -579,14 +578,12 @@ bool logfile_sub_source::rebuild_index(bool force)
                         if (last_indexed_line == nullptr ||
                             new_file_line < last_indexed_line->get_timeval()) {
                             force = true;
-                            new_order = true;
                         }
                     }
                     break;
                 case logfile::RR_NEW_ORDER:
                     retval = true;
                     force = true;
-                    new_order = true;
                     break;
             }
             file_count += 1;
@@ -647,10 +644,9 @@ bool logfile_sub_source::rebuild_index(bool force)
                 }
             }
 
-            if (new_order || (this->lss_files.size() > 1)) {
-                sort(this->lss_index.begin(), this->lss_index.end(),
-                     line_cmper);
-            }
+            // XXX get rid of this full sort on the initial run, it's not
+            // needed unless the file is not in time-order
+            sort(this->lss_index.begin(), this->lss_index.end(), line_cmper);
         } else {
             kmerge_tree_c<logline, logfile_data, logfile::iterator> merge(
                 file_count);
