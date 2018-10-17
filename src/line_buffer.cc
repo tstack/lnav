@@ -513,6 +513,7 @@ bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
         /* ... look for the end-of-line or end-of-file. */
         ssize_t utf8_end = -1;
 
+#undef HAVE_X86INTRIN_H
 #ifdef HAVE_X86INTRIN_H
         if (!validate_utf8_fast(line_start, lv.lv_len, &utf8_end)) {
             lv.lv_valid_utf = false;
@@ -522,8 +523,10 @@ bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
             const char *msg;
             int faulty_bytes;
 
-            utf8_end = is_utf8(line_start, lv.lv_len, &msg, &faulty_bytes);
+            utf8_end = is_utf8((unsigned char *) line_start, lv.lv_len, &msg, &faulty_bytes);
             if (msg != nullptr) {
+                lf = (char *) memchr(line_start, '\n', lv.lv_len);
+                utf8_end = lf - line_start;
                 lv.lv_valid_utf = false;
             }
         }
