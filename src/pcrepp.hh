@@ -372,11 +372,7 @@ public:
     {
         const char *errptr;
         int         eoff;
-
-        if (!(options & PCRE_NEVER_UTF)) {
-            options |= PCRE_UTF8;
-        }
-
+        
         if ((this->p_code = pcre_compile(pattern,
                                          options,
                                          &errptr,
