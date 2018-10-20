@@ -2763,8 +2763,12 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
             bool have_max_time = lss.get_max_log_time(max_time);
             char min_time_str[32], max_time_str[32];
 
-            sql_strftime(min_time_str, sizeof(min_time_str), min_time);
-            sql_strftime(max_time_str, sizeof(max_time_str), max_time);
+            if (have_min_time) {
+                sql_strftime(min_time_str, sizeof(min_time_str), min_time);
+            }
+            if (have_max_time) {
+                sql_strftime(max_time_str, sizeof(max_time_str), max_time);
+            }
             if (have_min_time && have_max_time) {
                 retval = "info: hiding lines before " +
                         string(min_time_str) +
