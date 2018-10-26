@@ -189,6 +189,7 @@ noinst_HEADERS = \
     log_data_table.hh \
 	log_format.hh \
 	log_format_loader.hh \
+	log_gutter_source.hh \
 	log_level.hh \
 	log_level_re.re \
 	log_search_table.hh \
