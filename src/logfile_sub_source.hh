@@ -163,6 +163,10 @@ public:
         return this->lss_min_log_level;
     };
 
+    void set_force_rebuild() {
+        this->lss_force_rebuild = true;
+    }
+
     void set_min_log_level(log_level_t level) {
         if (this->lss_min_log_level != level) {
             this->lss_min_log_level = level;
@@ -334,6 +338,7 @@ public:
         else {
             (*existing)->set_file(lf);
         }
+        this->lss_force_rebuild = true;
 
         return true;
     };
@@ -370,10 +375,18 @@ public:
                     mark_iter->second.erase(bv_iter);
                 }
             }
+
+            this->lss_force_rebuild = true;
         }
     };
 
-    bool rebuild_index(bool force = false);
+    enum class rebuild_result {
+        rr_no_change,
+        rr_appended_lines,
+        rr_full_rebuild,
+    };
+
+    rebuild_result rebuild_index();
 
     void text_update_marks(vis_bookmarks &bm);
 

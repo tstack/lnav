@@ -537,16 +537,19 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     }
 }
 
-bool logfile_sub_source::rebuild_index(bool force)
+logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
 {
     iterator iter;
     size_t total_lines = 0;
-    bool retval, full_sort = false;
+    bool full_sort = false;
     int file_count = 0;
+    bool force = this->lss_force_rebuild;
+    rebuild_result retval = rebuild_result::rr_no_change;
 
-    force = force || this->lss_force_rebuild;
     this->lss_force_rebuild = false;
-    retval = force;
+    if (force) {
+        retval = rebuild_result::rr_full_rebuild;
+    }
 
     for (iter = this->lss_files.begin();
          iter != this->lss_files.end();
@@ -556,7 +559,7 @@ bool logfile_sub_source::rebuild_index(bool force)
         if (ld.get_file() == NULL) {
             if (ld.ld_lines_indexed > 0) {
                 force  = true;
-                retval = true;
+                retval = rebuild_result::rr_full_rebuild;
             }
         }
         else {
@@ -567,7 +570,9 @@ bool logfile_sub_source::rebuild_index(bool force)
                     // No changes
                     break;
                 case logfile::RR_NEW_LINES:
-                    retval = true;
+                    if (retval == rebuild_result::rr_no_change) {
+                        retval = rebuild_result::rr_appended_lines;
+                    }
                     if (!this->lss_index.empty()) {
                         logline &new_file_line = lf[ld.ld_lines_indexed];
                         content_line_t cl = this->lss_index.back();
@@ -578,11 +583,12 @@ bool logfile_sub_source::rebuild_index(bool force)
                         if (last_indexed_line == nullptr ||
                             new_file_line < last_indexed_line->get_timeval()) {
                             force = true;
+                            retval = rebuild_result::rr_full_rebuild;
                         }
                     }
                     break;
                 case logfile::RR_NEW_ORDER:
-                    retval = true;
+                    retval = rebuild_result::rr_full_rebuild;
                     force = true;
                     break;
             }
@@ -610,7 +616,7 @@ bool logfile_sub_source::rebuild_index(bool force)
         this->lss_filename_width = 0;
     }
 
-    if (retval || force) {
+    if (retval != rebuild_result::rr_no_change || force) {
         size_t index_size = 0, start_size = this->lss_index.size();
         logline_cmp line_cmper(*this);
 

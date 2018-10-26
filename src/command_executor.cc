@@ -559,9 +559,8 @@ string execute_from_file(exec_context &ec, const string &path, int line_number, 
             break;
     }
 
-    if (rescan_files()) {
-        rebuild_indexes(true);
-    }
+    rescan_files();
+    rebuild_indexes();
 
     log_info("%s:%d:execute result -- %s",
             path.c_str(),
@@ -602,9 +601,8 @@ string execute_any(exec_context &ec, const string &cmdline_with_mode)
             break;
     }
 
-    if (rescan_files()) {
-        rebuild_indexes(true);
-    }
+    rescan_files();
+    rebuild_indexes();
 
     return retval;
 }
@@ -647,9 +645,8 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
 
         msgs.emplace_back(msg, alt_msg);
 
-        if (rescan_files()) {
-            rebuild_indexes(true);
-        }
+        rescan_files();
+        rebuild_indexes();
 
         ec.ec_source.pop();
     }

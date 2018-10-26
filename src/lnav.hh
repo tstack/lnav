@@ -90,8 +90,6 @@ enum {
     LNB_UPDATE_FORMATS,
     LNB_VERBOSE,
     LNB_SECURE_MODE,
-    LNB_REINDEX,
-    LNB_FORCE_REINDEX,
 };
 
 /** Flags set on the lnav command-line. */
@@ -109,8 +107,6 @@ typedef enum {
     LNF_UPDATE_FORMATS = (1L << LNB_UPDATE_FORMATS),
     LNF_VERBOSE = (1L << LNB_VERBOSE),
     LNF_SECURE_MODE = (1L << LNB_SECURE_MODE),
-    LNF_REINDEX = (1L << LNB_REINDEX),
-    LNF_FORCE_REINDEX = (1L << LNB_FORCE_REINDEX),
 
     LNF__ALL      = (LNF_SYSLOG|LNF_HELP),
 } lnav_flags_t;
@@ -327,7 +323,7 @@ extern const ssize_t ZOOM_COUNT;
     "Press " ANSI_BOLD(#x) "/" ANSI_BOLD(#y) " " msg
 
 void rebuild_hist();
-void rebuild_indexes(bool force);
+void rebuild_indexes();
 
 bool ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);

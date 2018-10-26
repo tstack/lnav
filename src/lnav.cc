@@ -110,6 +110,7 @@
 #include "column_namer.hh"
 #include "log_data_table.hh"
 #include "log_format_loader.hh"
+#include "log_gutter_source.hh"
 #include "session_data.hh"
 #include "lnav_config.hh"
 #include "sql_util.hh"
@@ -204,49 +205,6 @@ static const char *view_titles[LNV__MAX] = {
     "SCHEMA",
     "PRETTY",
     "SPECTRO",
-};
-
-class log_gutter_source : public list_gutter_source {
-public:
-    void listview_gutter_value_for_range(
-        const listview_curses &lv, int start, int end, chtype &ch,
-        view_colors::role_t &role_out, view_colors::role_t &bar_role_out) {
-        textview_curses *tc = (textview_curses *)&lv;
-        vis_bookmarks &bm = tc->get_bookmarks();
-        vis_line_t next;
-        bool search_hit = false;
-
-        start -= 1;
-
-        next = bm[&textview_curses::BM_SEARCH].next(vis_line_t(start));
-        search_hit = (next != -1 && next <= end);
-
-        next = bm[&BM_QUERY].next(vis_line_t(start));
-        search_hit = search_hit || (next != -1 && next <= end);
-
-        next = bm[&textview_curses::BM_USER].next(vis_line_t(start));
-        if (next == -1) {
-            next = bm[&textview_curses::BM_META].next(vis_line_t(start));
-        }
-        if (next != -1 && next <= end) {
-            ch = search_hit ? ACS_PLUS : ACS_LTEE;
-        }
-        else {
-            ch = search_hit ? ACS_RTEE : ACS_VLINE;
-        }
-        next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
-        if (next != -1 && next <= end) {
-            role_out = view_colors::VCR_ERROR;
-            bar_role_out = view_colors::VCR_ALERT_STATUS;
-        }
-        else {
-            next = bm[&logfile_sub_source::BM_WARNINGS].next(vis_line_t(start));
-            if (next != -1 && next <= end) {
-                role_out = view_colors::VCR_WARNING;
-                bar_role_out = view_colors::VCR_WARN_STATUS;
-            }
-        }
-    };
 };
 
 static void regenerate_unique_file_names()
@@ -488,7 +446,7 @@ void rebuild_hist()
 
 class textfile_callback {
 public:
-    textfile_callback() : force(false), front_file(NULL), front_top(-1) { };
+    textfile_callback() : front_file(NULL), front_top(-1) { };
 
     void closed_file(const shared_ptr<logfile> &lf) {
         log_info("closed text file: %s", lf->get_filename().c_str());
@@ -505,8 +463,6 @@ public:
 
     void promote_file(const shared_ptr<logfile> &lf) {
         if (lnav_data.ld_log_source.insert_file(lf)) {
-            force = true;
-
             log_info("promoting text file to log file: %s",
                      lf->get_filename().c_str());
             log_format *format = lf->get_format();
@@ -534,24 +490,19 @@ public:
         }
     };
 
-    bool force;
     shared_ptr<logfile> front_file;
     int front_top;
 };
 
-void rebuild_indexes(bool force)
+void rebuild_indexes()
 {
-    logfile_sub_source &lss       = lnav_data.ld_log_source;
-    textview_curses &   log_view  = lnav_data.ld_views[LNV_LOG];
-    textview_curses &   text_view = lnav_data.ld_views[LNV_TEXT];
-    vis_line_t          old_bottoms[LNV__MAX];
-    content_line_t      top_content = content_line_t(-1);
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    textview_curses &log_view  = lnav_data.ld_views[LNV_LOG];
+    textview_curses &text_view = lnav_data.ld_views[LNV_TEXT];
+    vis_line_t old_bottoms[LNV__MAX];
 
-    bool          scroll_downs[LNV__MAX];
-    size_t        old_count;
+    bool scroll_downs[LNV__MAX];
     struct timeval old_time;
-
-    old_count = lss.text_line_count();
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         old_bottoms[lpc] = lnav_data.ld_views[lpc].get_top_for_last_row();
@@ -560,17 +511,12 @@ void rebuild_indexes(bool force)
             !(lnav_data.ld_flags & LNF_HEADLESS);
     }
 
-    if (old_count) {
-        top_content = lss.at(log_view.get_top());
-    }
-
     {
         textfile_sub_source *tss = &lnav_data.ld_text_source;
         textfile_callback cb;
         bool new_data;
 
         new_data = tss->rescan_files(cb);
-        force = force || cb.force;
 
         if (cb.front_file != nullptr) {
             ensure_view(&text_view);
@@ -602,9 +548,6 @@ void rebuild_indexes(bool force)
     }
 
     old_time = lnav_data.ld_top_time;
-    if (force) {
-        old_count = 0;
-    }
 
     for (auto file_iter = lnav_data.ld_files.begin();
          file_iter != lnav_data.ld_files.end(); ) {
@@ -620,20 +563,19 @@ void rebuild_indexes(bool force)
             file_iter = lnav_data.ld_files.erase(file_iter);
 
             regenerate_unique_file_names();
-
-            force = true;
         }
         else {
             ++file_iter;
         }
     }
 
-    if (lss.rebuild_index(force)) {
+    logfile_sub_source::rebuild_result result = lss.rebuild_index();
+    if (result != logfile_sub_source::rebuild_result::rr_no_change) {
         size_t new_count = lss.text_line_count();
         vis_line_t start_line;
+        bool force = result == logfile_sub_source::rebuild_result::rr_full_rebuild;
 
         if ((!scroll_downs[LNV_LOG] || log_view.get_top() > new_count) && force) {
-            log_view.set_top(lss.find_from_time(old_time));
             scroll_downs[LNV_LOG] = false;
         }
 
@@ -1964,7 +1906,7 @@ static void wait_for_pipers(void)
         }
         else {
             usleep(10000);
-            rebuild_indexes(false);
+            rebuild_indexes();
         }
         log_debug("%d pipers still active",
                 lnav_data.ld_pipers.size());
@@ -2302,14 +2244,8 @@ static void looper(void)
 
             layout_views();
 
-            if (rescan_files()) {
-                lnav_data.ld_flags |= LNF_FORCE_REINDEX;
-            }
-
-            if (lnav_data.ld_flags & (LNF_REINDEX | LNF_FORCE_REINDEX)) {
-                rebuild_indexes(lnav_data.ld_flags & LNF_FORCE_REINDEX);
-                lnav_data.ld_flags &= ~(LNF_REINDEX | LNF_FORCE_REINDEX);
-            }
+            rescan_files();
+            rebuild_indexes();
 
             if (!lnav_data.ld_view_stack.empty()) {
                 lnav_data.ld_view_stack.back()->do_update();
@@ -2457,7 +2393,7 @@ static void looper(void)
                 else {
                     timer.start_fade(index_counter, 3);
                 }
-                rebuild_indexes(false);
+                rebuild_indexes();
                 if (!initial_build &&
                         lnav_data.ld_log_source.text_line_count() == 0 &&
                         lnav_data.ld_text_source.text_line_count() > 0) {
@@ -3612,7 +3548,7 @@ int main(int argc, char *argv[])
                 lnav_data.ld_view_stack.push_back(log_tc);
                 // Read all of stdin
                 wait_for_pipers();
-                rebuild_indexes(true);
+                rebuild_indexes();
 
                 log_tc->set_top(vis_line_t(0));
                 text_tc = &lnav_data.ld_views[LNV_TEXT];
@@ -3627,7 +3563,7 @@ int main(int argc, char *argv[])
                 execute_init_commands(lnav_data.ld_exec_context, msgs);
                 wait_for_pipers();
                 lnav_data.ld_curl_looper.process_all();
-                rebuild_indexes(false);
+                rebuild_indexes();
 
                 for (msg_iter = msgs.begin();
                      msg_iter != msgs.end();

@@ -99,15 +99,13 @@ nonstd::optional<double> sql_timediff(const char *time1, const char *time2)
     struct relative_time::parse_error pe;
 
     if (rt1.parse(time1, -1, pe)) {
-        rt1.add_now()
-            .to_timeval(tv1);
+        tv1 = rt1.add_now().to_timeval();
     } else if (!dts1.convert_to_timeval(time1, -1, NULL, tv1)) {
         return nonstd::nullopt;
     }
 
     if (rt2.parse(time2, -1, pe)) {
-        rt2.add_now()
-            .to_timeval(tv2);
+        tv2 = rt2.add_now().to_timeval();
     } else if (!dts2.convert_to_timeval(time2, -1, NULL, tv2)) {
         return nonstd::nullopt;
     }

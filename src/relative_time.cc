@@ -102,11 +102,14 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
     bool number_set = false, number_was_set = false;
     bool next_set = false;
     token_t base_token = RTT_INVALID;
+    rt_field_type last_field_type = RTF__MAX;
 
     pe_out.pe_column = -1;
     pe_out.pe_msg.clear();
 
     while (true) {
+        rt_field_type curr_field_type = RTF__MAX;
+
         if (pi.pi_next_offset >= pi.pi_length) {
             if (number_set) {
                 pe_out.pe_msg = "Number given without a time unit";
@@ -130,7 +133,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                 if (!number_set) {
                     if (base_token != RTT_INVALID) {
                         base_token = RTT_INVALID;
-                        this->rt_is_absolute = true;
+                        this->rt_absolute_field_end = RTF__MAX;
                         continue;
                     }
                     if (!this->rt_next && !this->rt_previous) {
@@ -174,13 +177,14 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         default:
                             break;
                     }
-                    this->rt_is_absolute = true;
+                    this->rt_absolute_field_end = RTF__MAX;
                     break;
                 }
                 case RTT_INVALID:
                 case RTT_WHITE:
                 case RTT_AND:
                 case RTT_THE:
+                    curr_field_type = last_field_type;
                     break;
                 case RTT_AM:
                 case RTT_PM:
@@ -189,10 +193,10 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         this->rt_field[RTF_MINUTES] = 0;
                         this->rt_field[RTF_SECONDS] = 0;
                         this->rt_field[RTF_MICROSECONDS] = 0;
-                        this->rt_is_absolute = true;
+                        this->rt_absolute_field_end = RTF__MAX;
                         number_set = false;
                     }
-                    if (!this->rt_is_absolute) {
+                    if (!this->is_absolute(RTF_YEARS)) {
                         pe_out.pe_msg = "Expecting absolute time with A.M. or P.M.";
                         return false;
                     }
@@ -239,7 +243,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         this->rt_field[RTF_SECONDS] = 0;
                         this->rt_field[RTF_MICROSECONDS] = 0;
                     }
-                    this->rt_is_absolute = true;
+                    this->rt_absolute_field_end = RTF__MAX;
                     break;
                 }
                 case RTT_NUMBER: {
@@ -266,39 +270,43 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                 case RTT_SECONDS:
                     if (number_was_set) {
                         this->rt_field[RTF_SECONDS] = number;
+                        curr_field_type = RTF_SECONDS;
                     } else if (next_set) {
                         this->rt_field[RTF_MICROSECONDS] = 0;
-                        this->rt_is_absolute = true;
+                        this->rt_absolute_field_end = RTF__MAX;
                     }
                     break;
                 case RTT_MINUTES:
                     if (number_was_set) {
                         this->rt_field[RTF_MINUTES] = number;
+                        curr_field_type = RTF_MINUTES;
                     } else if (next_set) {
                         this->rt_field[RTF_MICROSECONDS] = 0;
                         this->rt_field[RTF_SECONDS] = 0;
-                        this->rt_is_absolute = true;
+                        this->rt_absolute_field_end = RTF__MAX;
                     }
                     break;
                 case RTT_HOURS:
                     if (number_was_set) {
                         this->rt_field[RTF_HOURS] = number;
+                        curr_field_type = RTF_HOURS;
                     } else if (next_set) {
                         this->rt_field[RTF_MICROSECONDS] = 0;
                         this->rt_field[RTF_SECONDS] = 0;
                         this->rt_field[RTF_MINUTES] = 0;
-                        this->rt_is_absolute = true;
+                        this->rt_absolute_field_end = RTF__MAX;
                     }
                     break;
                 case RTT_DAYS:
                     if (number_was_set) {
                         this->rt_field[RTF_DAYS] = number;
+                        curr_field_type = RTF_DAYS;
                     } else if (next_set) {
                         this->rt_field[RTF_MICROSECONDS] = 0;
                         this->rt_field[RTF_SECONDS] = 0;
                         this->rt_field[RTF_MINUTES] = 0;
                         this->rt_field[RTF_HOURS] = 0;
-                        this->rt_is_absolute = true;
+                        this->rt_absolute_field_end = RTF__MAX;
                     }
                     break;
                 case RTT_WEEKS:
@@ -307,18 +315,20 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                 case RTT_MONTHS:
                     if (number_was_set) {
                         this->rt_field[RTF_MONTHS] = number;
+                        curr_field_type = RTF_MONTHS;
                     } else if (next_set) {
                         this->rt_field[RTF_MICROSECONDS] = 0;
                         this->rt_field[RTF_SECONDS] = 0;
                         this->rt_field[RTF_MINUTES] = 0;
                         this->rt_field[RTF_HOURS] = 0;
                         this->rt_field[RTF_DAYS] = 0;
-                        this->rt_is_absolute = true;
+                        this->rt_absolute_field_end = RTF__MAX;
                     }
                     break;
                 case RTT_YEARS:
                     if (number_was_set) {
                         this->rt_field[RTF_YEARS] = number;
+                        curr_field_type = RTF_YEARS;
                     } else if (next_set) {
                         this->rt_field[RTF_MICROSECONDS] = 0;
                         this->rt_field[RTF_SECONDS] = 0;
@@ -326,7 +336,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         this->rt_field[RTF_HOURS] = 0;
                         this->rt_field[RTF_DAYS] = 0;
                         this->rt_field[RTF_MONTHS] = 0;
-                        this->rt_is_absolute = true;
+                        this->rt_absolute_field_end = RTF__MAX;
                     }
                     break;
                 case RTT_BEFORE:
@@ -339,6 +349,12 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                         if (this->rt_field[field].value > 0) {
                             this->rt_field[field] = -this->rt_field[field].value;
                         }
+                        if (last_field_type != RTF__MAX && field < last_field_type) {
+                            this->rt_field[field] = 0;
+                        }
+                    }
+                    if (last_field_type != RTF__MAX) {
+                        this->rt_absolute_field_end = last_field_type;
                     }
                     break;
                 case RTT_AFTER:
@@ -365,7 +381,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                     break;
                 case RTT_NOON:
                     this->rt_field[RTF_HOURS] = 12;
-                    this->rt_is_absolute = true;
+                    this->rt_absolute_field_end = RTF__MAX;
                     for (int lpc2 = RTF_MICROSECONDS;
                          lpc2 < RTF_HOURS;
                          lpc2++) {
@@ -391,6 +407,8 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
             pe_out.pe_msg = "Unrecognized input";
             return false;
         }
+
+        last_field_type = curr_field_type;
     }
 }
 

@@ -51,12 +51,12 @@ static struct {
     { "next 10 minutes after the hour", "next 0:10" },
     { "1h50m", "1h50m" },
     { "next hour", "next 0:00" },
-    { "a minute ago", "-1m" },
-    { "1m ago", "-1m" },
-    { "a min ago", "-1m" },
-    { "a m ago", "-1m" },
-    { "+1 minute ago", "-1m" },
-    { "-1 minute ago", "-1m" },
+    { "a minute ago", "0:-1" },
+    { "1m ago", "0:-1" },
+    { "a min ago", "0:-1" },
+    { "a m ago", "0:-1" },
+    { "+1 minute ago", "0:-1" },
+    { "-1 minute ago", "0:-1" },
     { "-1 minute", "-1m" },
     { "10 minutes after the hour", "0:10" },
     { "1:40", "1:40" },
@@ -90,7 +90,6 @@ TEST_CASE("reltime")
     time_t new_time;
 
     relative_time rt;
-
     for (int lpc = 0; TEST_DATA[lpc].reltime; lpc++) {
         bool rc;
 
@@ -140,7 +139,7 @@ TEST_CASE("reltime")
 
     CHECK(rt.rt_field[relative_time::RTF_HOURS].value == 1);
     CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == 23);
-    CHECK(rt.rt_is_absolute);
+    CHECK(rt.is_absolute());
 
     rt.clear();
     rt.parse("1:23:45", pe);
@@ -148,7 +147,7 @@ TEST_CASE("reltime")
     CHECK(rt.rt_field[relative_time::RTF_HOURS].value == 1);
     CHECK(rt.rt_field[relative_time::RTF_MINUTES].value == 23);
     CHECK(rt.rt_field[relative_time::RTF_SECONDS].value == 45);
-    CHECK(rt.rt_is_absolute);
+    CHECK(rt.is_absolute());
 
     tm = base_tm;
     rt.add(tm);
@@ -173,6 +172,7 @@ TEST_CASE("reltime")
     memset(&tm, 0, sizeof(tm));
     memset(&tm2, 0, sizeof(tm2));
     gettimeofday(&tv, NULL);
+    localtime_r(&tv.tv_sec, &tm.et_tm);
     localtime_r(&tv.tv_sec, &tm2.et_tm);
     tm2.et_tm.tm_hour = 16;
     tm2.et_tm.tm_min = 0;
@@ -196,6 +196,7 @@ TEST_CASE("reltime")
     rt.clear();
     rt.parse("yesterday at 4pm", pe);
     gettimeofday(&tv, NULL);
+    localtime_r(&tv.tv_sec, &tm.et_tm);
     localtime_r(&tv.tv_sec, &tm2.et_tm);
     tm2.et_tm.tm_mday -= 1;
     tm2.et_tm.tm_hour = 16;
@@ -216,4 +217,29 @@ TEST_CASE("reltime")
     CHECK(tm.et_tm.tm_hour == tm2.et_tm.tm_hour);
     CHECK(tm.et_tm.tm_min == tm2.et_tm.tm_min);
     CHECK(tm.et_tm.tm_sec == tm2.et_tm.tm_sec);
+
+    rt.clear();
+    rt.parse("2 days ago", pe);
+    gettimeofday(&tv, NULL);
+    localtime_r(&tv.tv_sec, &tm.et_tm);
+    localtime_r(&tv.tv_sec, &tm2.et_tm);
+    tm2.et_tm.tm_mday -= 2;
+    tm2.et_tm.tm_hour = 0;
+    tm2.et_tm.tm_min = 0;
+    tm2.et_tm.tm_sec = 0;
+    rt.add(tm);
+    tm.et_tm.tm_yday = 0;
+    tm2.et_tm.tm_yday = 0;
+    tm.et_tm.tm_wday = 0;
+    tm2.et_tm.tm_wday = 0;
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    tm2.et_tm.tm_gmtoff = 0;
+    tm2.et_tm.tm_zone = NULL;
+#endif
+        CHECK(tm.et_tm.tm_year == tm2.et_tm.tm_year);
+        CHECK(tm.et_tm.tm_mon == tm2.et_tm.tm_mon);
+        CHECK(tm.et_tm.tm_mday == tm2.et_tm.tm_mday);
+        CHECK(tm.et_tm.tm_hour == tm2.et_tm.tm_hour);
+        CHECK(tm.et_tm.tm_min == tm2.et_tm.tm_min);
+        CHECK(tm.et_tm.tm_sec == tm2.et_tm.tm_sec);
 }

@@ -161,7 +161,7 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
             } else {
                 lf->adjust_content_time(top_content, time_diff, false);
 
-                lnav_data.ld_flags |= LNF_FORCE_REINDEX;
+                lss.set_force_rebuild();
 
                 retval = "info: adjusted time";
             }
@@ -261,6 +261,7 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);
         textview_curses *tc = lnav_data.ld_view_stack.back();
+        auto ttt = dynamic_cast<text_time_translator *>(tc->get_sub_source());
         int   line_number, consumed;
         date_time_scanner dts;
         struct relative_time::parse_error pe;
@@ -270,31 +271,26 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
         float value;
 
         if (rt.parse(all_args, pe)) {
-            if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                content_line_t cl;
-                vis_line_t vl, new_vl;
-                logline *ll;
+            if (ttt != nullptr) {
+                struct timeval tv = ttt->time_for_row(tc->get_top());
+                vis_line_t vl = tc->get_top(), new_vl;
                 bool done = false;
 
                 if (rt.is_relative()) {
                     lnav_data.ld_last_relative_time = rt;
                 }
 
-                vl = tc->get_top();
-                cl = lnav_data.ld_log_source.at(vl);
-                ll = lnav_data.ld_log_source.find_line(cl);
-                ll->to_exttm(tm);
-
                 do {
-                    rt.add(tm);
+                    struct exttm tm = rt.add(tv);
 
-                    new_vl = lnav_data.ld_log_source.find_from_time(tm);
+                    new_vl = vis_line_t(ttt->row_for_time(tm.to_timeval()));
 
                     if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
                         vl = new_vl;
                         done = true;
                     }
                 } while (!done);
+
                 if (ec.ec_dry_run) {
                     retval = "info: will move to line " + to_string((int) vl);
                 } else {
@@ -307,15 +303,15 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                     }
                 }
             } else {
-                retval = "error: relative time values only work in the log view";
+                retval = "error: relative time values only work in a time-indexed view";
             }
         }
         else if (dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, tv) !=
             nullptr) {
-            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            if (ttt != nullptr) {
                 vis_line_t vl;
 
-                vl = lnav_data.ld_log_source.find_from_time(tv);
+                vl = vis_line_t(ttt->row_for_time(tv));
                 if (ec.ec_dry_run) {
                     retval = "info: will move to line " + to_string((int) vl);
                 } else {
@@ -324,7 +320,7 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                 }
             }
             else {
-                retval = "error: time values only work in the log view";
+                retval = "error: time values only work in a time-indexed view";
             }
         }
         else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
@@ -2657,7 +2653,6 @@ static string com_set_min_log_level(exec_context &ec, string cmdline, vector<str
         new_level = string2level(
             args[1].c_str(), args[1].size(), false);
         lss.set_min_log_level(new_level);
-        lnav_data.ld_flags |= LNF_FORCE_REINDEX;
 
         retval = ("info: minimum log level is now -- " +
             string(level_names[new_level]));
@@ -2845,7 +2840,6 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
                 lss.set_max_log_time(tv);
                 relation = "after";
             }
-            lnav_data.ld_flags |= LNF_FORCE_REINDEX;
 
             retval = "info: hiding lines " + relation + " " + time_text;
         }
@@ -2868,8 +2862,6 @@ static string com_show_lines(exec_context &ec, string cmdline, vector<string> &a
         if (tc == &lnav_data.ld_views[LNV_LOG]) {
             lss.clear_min_max_log_times();
         }
-
-        lnav_data.ld_flags |= LNF_FORCE_REINDEX;
     }
 
     return retval;
@@ -2917,7 +2909,7 @@ static string com_rebuild(exec_context &ec, string cmdline, vector<string> &args
 
     }
     else if (!ec.ec_dry_run) {
-        rebuild_indexes(false);
+        rebuild_indexes();
     }
 
     return "";
