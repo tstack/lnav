@@ -118,12 +118,11 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
         handle_foreign_key_list,
 };
 
-void add_text_possibilities(int context, const string &type, const std::string &str)
+static void add_text_possibilities(readline_curses *rlc, int context, const string &type, const std::string &str)
 {
     static pcrecpp::RE re_escape("([.\\^$*+?()\\[\\]{}\\\\|])");
     static pcrecpp::RE re_escape_no_dot("([\\^$*+?()\\[\\]{}\\\\|])");
 
-    readline_curses *rlc = lnav_data.ld_rl_view;
     pcre_context_static<30> pc;
     data_scanner ds(str);
     data_token_t dt;
@@ -143,21 +142,6 @@ void add_text_possibilities(int context, const string &type, const std::string &
         }
 
         switch (context) {
-            case LNM_SEARCH:
-            case LNM_COMMAND:
-            case LNM_EXEC: {
-                string token_value, token_value_no_dot;
-
-                token_value_no_dot = token_value =
-                        ds.get_input().get_substr(pc.all());
-                re_escape.GlobalReplace("\\\\\\1", &token_value);
-                re_escape_no_dot.GlobalReplace("\\\\\\1", &token_value_no_dot);
-                rlc->add_possibility(context, type, token_value);
-                if (token_value != token_value_no_dot) {
-                    rlc->add_possibility(context, type, token_value_no_dot);
-                }
-                break;
-            }
             case LNM_SQL: {
                 string token_value = ds.get_input().get_substr(pc.all());
                 auto_mem<char, sqlite3_free> quoted_token;
@@ -166,11 +150,24 @@ void add_text_possibilities(int context, const string &type, const std::string &
                 rlc->add_possibility(context, type, std::string(quoted_token));
                 break;
             }
+            default: {
+                string token_value, token_value_no_dot;
+
+                token_value_no_dot = token_value =
+                    ds.get_input().get_substr(pc.all());
+                re_escape.GlobalReplace(R"(\\\1)", &token_value);
+                re_escape_no_dot.GlobalReplace(R"(\\\1)", &token_value_no_dot);
+                rlc->add_possibility(context, type, token_value);
+                if (token_value != token_value_no_dot) {
+                    rlc->add_possibility(context, type, token_value_no_dot);
+                }
+                break;
+            }
         }
 
         switch (dt) {
             case DT_QUOTED_STRING:
-                add_text_possibilities(context, type, ds.get_input().get_substr(pc[0]));
+                add_text_possibilities(rlc, context, type, ds.get_input().get_substr(pc[0]));
                 break;
             default:
                 break;
@@ -178,10 +175,9 @@ void add_text_possibilities(int context, const string &type, const std::string &
     }
 }
 
-void add_view_text_possibilities(int context, const string &type, textview_curses *tc)
+void add_view_text_possibilities(readline_curses *rlc, int context, const string &type, textview_curses *tc)
 {
     text_sub_source *tss = tc->get_sub_source();
-    readline_curses *rlc = lnav_data.ld_rl_view;
 
     rlc->clear_possibilities(context, type);
 
@@ -212,7 +208,7 @@ void add_view_text_possibilities(int context, const string &type, textview_curse
 
         tss->text_value_for_line(*tc, curr_line, line, text_sub_source::RF_RAW);
 
-        add_text_possibilities(context, type, line);
+        add_text_possibilities(rlc, context, type, line);
     }
     
     rlc->add_possibility(context, type, bookmark_metadata::KNOWN_TAGS);
@@ -297,7 +293,7 @@ void add_tag_possibilities()
     rc->clear_possibilities(LNM_COMMAND, "tag");
     rc->clear_possibilities(LNM_COMMAND, "line-tags");
     rc->add_possibility(LNM_COMMAND, "tag", bookmark_metadata::KNOWN_TAGS);
-    if (lnav_data.ld_view_stack.back() == &lnav_data.ld_views[LNV_LOG]) {
+    if (lnav_data.ld_view_stack.top().value_or(nullptr) == &lnav_data.ld_views[LNV_LOG]) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
         if (lss.text_line_count() > 0) {
             content_line_t cl = lss.at(lnav_data.ld_views[LNV_LOG].get_top());

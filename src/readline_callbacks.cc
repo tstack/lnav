@@ -32,6 +32,7 @@
 #include "lnav.hh"
 #include "lnav_util.hh"
 #include "sysclip.hh"
+#include "vtab_module.hh"
 #include "plain_text_source.hh"
 #include "command_executor.hh"
 #include "readline_curses.hh"
@@ -48,7 +49,7 @@ static const char *LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
 
 void rl_change(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.back();
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
 
     tc->get_highlights().erase("$preview");
     tc->get_highlights().erase("$bodypreview");
@@ -59,7 +60,7 @@ void rl_change(void *dummy, readline_curses *rc)
         case LNM_COMMAND: {
             string line = rc->get_line_buffer();
             vector<string> args;
-            readline_context::command_map_t::iterator iter = lnav_commands.end();
+            auto iter = lnav_commands.end();
 
             split_ws(line, args);
 
@@ -155,7 +156,7 @@ void rl_change(void *dummy, readline_curses *rc)
 
 static void rl_search_internal(void *dummy, readline_curses *rc, bool complete = false)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.back();
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
     string term_val;
     string name;
 
@@ -200,7 +201,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
     case LNM_SQL: {
         term_val = trim(rc->get_value() + ";");
 
-        if (term_val.size() > 0 && term_val[0] == '.') {
+        if (!term_val.empty() && term_val[0] == '.') {
             lnav_data.ld_bottom_source.grep_error("");
         } else if (!sqlite3_complete(term_val.c_str())) {
             lnav_data.ld_bottom_source.
@@ -316,14 +317,16 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         auto ident_iter = find_string_attr_containing(sa, &SQL_IDENTIFIER_ATTR, x);
         if (ident_iter != sa.end()) {
             string ident = al.get_substring(ident_iter->sa_range);
+            intern_string_t intern_ident = intern_string::lookup(ident);
 
-            auto vtab = lnav_data.ld_vtab_manager->lookup_impl(
-                intern_string::lookup(ident));
+            auto vtab = lnav_data.ld_vtab_manager->lookup_impl(intern_ident);
+            auto vtab_module_iter = vtab_module_ddls.find(intern_ident);
             string ddl;
 
             if (vtab != nullptr) {
                 ddl = trim(vtab->get_table_statement());
-
+            } else if (vtab_module_iter != vtab_module_ddls.end()) {
+                ddl = vtab_module_iter->second;
             } else {
                 auto table_ddl_iter = lnav_data.ld_table_ddl.find(ident);
 
@@ -358,17 +361,15 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         break;
     }
 
-    lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
-
     if (!complete) {
         tc->set_top(lnav_data.ld_search_start_line);
     }
-    execute_search(index, rc->get_value());
+    tc->execute_search(rc->get_value());
 }
 
 void rl_search(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.back();
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
 
     rl_search_internal(dummy, rc);
     tc->set_follow_search_for(0);
@@ -376,8 +377,7 @@ void rl_search(void *dummy, readline_curses *rc)
 
 void rl_abort(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc    = lnav_data.ld_view_stack.back();
-    lnav_view_t      index = (lnav_view_t)(tc - lnav_data.ld_views);
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
 
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_example_source.clear();
@@ -391,7 +391,7 @@ void rl_abort(void *dummy, readline_curses *rc)
     switch (lnav_data.ld_mode) {
     case LNM_SEARCH:
         tc->set_top(lnav_data.ld_search_start_line);
-        execute_search(index, lnav_data.ld_previous_search);
+        tc->execute_search(lnav_data.ld_previous_search);
         break;
     case LNM_SQL:
         tc->reload_data();
@@ -405,7 +405,7 @@ void rl_abort(void *dummy, readline_curses *rc)
 
 void rl_callback(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.back();
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
     exec_context &ec = lnav_data.ld_exec_context;
     string alt_msg;
 
@@ -418,6 +418,7 @@ void rl_callback(void *dummy, readline_curses *rc)
     tc->get_highlights().erase("$bodypreview");
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
+    case LNM_FILTER:
         require(0);
         break;
 
@@ -431,13 +432,13 @@ void rl_callback(void *dummy, readline_curses *rc)
         rl_search_internal(dummy, rc, true);
         if (rc->get_value().size() > 0) {
             auto_mem<FILE> pfile(pclose);
-            textview_curses *tc = lnav_data.ld_view_stack.back();
+            textview_curses *tc = *lnav_data.ld_view_stack.top();
             vis_bookmarks &bm = tc->get_bookmarks();
             const auto &bv = bm[&textview_curses::BM_SEARCH];
             vis_line_t vl = bv.next(tc->get_top());
 
             pfile = open_clipboard(CT_FIND);
-            if (pfile.in() != NULL) {
+            if (pfile.in() != nullptr) {
                 fprintf(pfile, "%s", rc->get_value().c_str());
             }
             if (vl != -1_vl) {
@@ -544,7 +545,7 @@ void rl_display_matches(void *dummy, readline_curses *rc)
         attr_line_t al;
         bool add_nl = false;
 
-        for (auto match : matches) {
+        for (const auto &match : matches) {
             if (add_nl) {
                 al.append(1, '\n');
                 add_nl = false;

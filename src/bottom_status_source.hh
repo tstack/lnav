@@ -49,7 +49,6 @@ public:
         BSF_LINE_NUMBER,
         BSF_PERCENT,
         BSF_HITS,
-        BSF_FILTERED,
         BSF_LOADING,
         BSF_HELP,
 
@@ -63,16 +62,12 @@ public:
           bss_prompt(1024, view_colors::VCR_STATUS),
           bss_error(1024, view_colors::VCR_ALERT_STATUS),
           bss_hit_spinner(0),
-          bss_load_percent(0),
-          bss_last_filtered_count(0),
-          bss_filter_counter(0)
+          bss_load_percent(0)
     {
-        this->bss_fields[BSF_LINE_NUMBER].set_width(11);
+        this->bss_fields[BSF_LINE_NUMBER].set_width(14);
         this->bss_fields[BSF_PERCENT].set_width(4);
         this->bss_fields[BSF_PERCENT].set_left_pad(1);
         this->bss_fields[BSF_HITS].set_width(36);
-        this->bss_fields[BSF_FILTERED].set_width(20);
-        this->bss_fields[BSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
         this->bss_fields[BSF_LOADING].set_width(13);
         this->bss_fields[BSF_LOADING].set_cylon(true);
         this->bss_fields[BSF_LOADING].right_justify(true);
@@ -105,7 +100,7 @@ public:
         this->bss_error.set_value(msg);
     };
 
-    size_t statusview_fields(void)
+    size_t statusview_fields()
     {
         size_t retval;
 
@@ -234,40 +229,11 @@ public:
         }
     };
 
-    void update_filtered(text_sub_source *tss)
-    {
-        status_field &sf = this->bss_fields[BSF_FILTERED];
-
-        if (tss == NULL || tss->get_filtered_count() == 0) {
-            sf.clear();
-        }
-        else {
-            ui_periodic_timer &timer = ui_periodic_timer::singleton();
-
-            if (tss->get_filtered_count() == this->bss_last_filtered_count) {
-
-                if (timer.fade_diff(this->bss_filter_counter) == 0) {
-                    this->bss_fields[BSF_FILTERED].set_role(
-                        view_colors::VCR_BOLD_STATUS);
-                }
-            }
-            else {
-                this->bss_fields[BSF_FILTERED].set_role(
-                    view_colors::VCR_ALERT_STATUS);
-                this->bss_last_filtered_count = tss->get_filtered_count();
-                timer.start_fade(this->bss_filter_counter, 3);
-            }
-            sf.set_value("%'9d Not Shown", tss->get_filtered_count());
-        }
-    };
-
 private:
     status_field bss_prompt;
     status_field bss_error;
     status_field bss_fields[BSF__MAX];
     int          bss_hit_spinner;
     int          bss_load_percent;
-    int          bss_last_filtered_count;
-    sig_atomic_t bss_filter_counter;
 };
 #endif

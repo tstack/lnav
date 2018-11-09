@@ -52,7 +52,6 @@ listview_curses::listview_curses()
       lv_top(0),
       lv_left(0),
       lv_height(0),
-      lv_needs_update(true),
       lv_overlay_needs_update(true),
       lv_show_scrollbar(true),
       lv_show_bottom_border(false),
@@ -74,18 +73,23 @@ void listview_curses::reload_data(void)
         this->lv_top  = 0_vl;
         this->lv_left = 0;
     }
-    else if (this->lv_top >= this->get_inner_height()) {
-        this->lv_top = max(0_vl, vis_line_t(this->get_inner_height() - 1));
+    else {
+        if (this->lv_top >= this->get_inner_height()) {
+            this->lv_top = max(0_vl, vis_line_t(this->get_inner_height() - 1));
+        }
+        if (this->get_inner_height() == 0) {
+            this->lv_selection = 0_vl;
+        } else if (this->lv_selection >= this->get_inner_height()) {
+            this->lv_selection = this->get_inner_height() - 1_vl;
+        }
     }
-    this->lv_needs_update = true;
+    this->vc_needs_update = true;
 }
 
 bool listview_curses::handle_key(int ch)
 {
-    for (list<list_input_delegate *>::iterator iter = this->lv_input_delegates.begin();
-         iter != this->lv_input_delegates.end();
-         ++iter) {
-        if ((*iter)->list_input_handle_key(*this, ch)) {
+    for (auto &lv_input_delegate : this->lv_input_delegates) {
+        if (lv_input_delegate->list_input_handle_key(*this, ch)) {
             return true;
         }
     }
@@ -118,12 +122,20 @@ bool listview_curses::handle_key(int ch)
     case '\r':
     case 'j':
     case KEY_DOWN:
-        this->shift_top(1_vl);
+        if (this->is_selectable()) {
+            this->shift_selection(1);
+        } else {
+            this->shift_top(1_vl);
+        }
         break;
 
     case 'k':
     case KEY_UP:
-        this->shift_top(-1_vl);
+        if (this->is_selectable()) {
+            this->shift_selection(-1);
+        } else {
+            this->shift_top(-1_vl);
+        }
         break;
 
     case 'b':
@@ -181,22 +193,28 @@ bool listview_curses::handle_key(int ch)
     return retval;
 }
 
-void listview_curses::do_update(void)
+void listview_curses::do_update()
 {
-    if (this->lv_window == NULL || this->lv_height == 0) {
+    if (this->lv_window == nullptr || this->lv_height == 0) {
+        view_curses::do_update();
         return;
     }
 
-    if (this->lv_needs_update) {
+    if (this->vc_needs_update) {
+        view_colors &vc = view_colors::singleton();
         vis_line_t        height, row;
         attr_line_t       overlay_line;
-        vis_line_t        overlay_height(0);
         struct line_range lr;
         unsigned long     width, wrap_width;
         size_t            row_count;
         int y = this->lv_y, bottom;
+        attr_t role_attrs = vc.attrs_for_role(this->vc_default_role);
 
         this->get_dimensions(height, width);
+
+        if (this->vc_width > 0) {
+            width = std::min((unsigned long) this->vc_width, width);
+        }
 
         wrap_width = width - (this->lv_word_wrap ? 1 : this->lv_show_scrollbar ? 1 : 0);
 
@@ -214,7 +232,7 @@ void listview_curses::do_update(void)
                     y - this->lv_y, bottom - this->lv_y,
                     row,
                     overlay_line)) {
-                this->mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
+                mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
                 overlay_line.clear();
                 ++y;
             }
@@ -222,10 +240,10 @@ void listview_curses::do_update(void)
                 attr_line_t &al = rows[row - this->lv_top];
 
                 do {
-                    this->mvwattrline(this->lv_window, y, this->lv_x, al, lr);
+                    mvwattrline(this->lv_window, y, this->lv_x, al, lr,
+                                this->vc_default_role);
                     if (this->lv_word_wrap) {
-                        wmove(this->lv_window, y, wrap_width);
-                        wclrtoeol(this->lv_window);
+                        mvwhline(this->lv_window, y, this->lv_x + wrap_width, ' ', width - wrap_width);
                     }
                     lr.lr_start += wrap_width;
                     lr.lr_end += wrap_width;
@@ -234,14 +252,14 @@ void listview_curses::do_update(void)
                 ++row;
             }
             else {
-                wmove(this->lv_window, y, this->lv_x);
-                wclrtoeol(this->lv_window);
+                wattron(this->lv_window, role_attrs);
+                mvwhline(this->lv_window, y, this->lv_x, ' ', width);
+                wattroff(this->lv_window, role_attrs);
                 ++y;
             }
         }
 
         if (this->lv_show_scrollbar) {
-            view_colors &vc = view_colors::singleton();
             double progress = 1.0;
             double coverage = 1.0;
             double adjusted_height = (double)row_count / (double)height;
@@ -259,7 +277,7 @@ void listview_curses::do_update(void)
                  gutter_y < (this->lv_y + height);
                  gutter_y++) {
                 int range_start = 0, range_end;
-                view_colors::role_t role = view_colors::VCR_TEXT;
+                view_colors::role_t role = this->vc_default_role;
                 view_colors::role_t bar_role = view_colors::VCR_STATUS;
                 int attrs;
                 chtype ch = ACS_VLINE;
@@ -276,7 +294,7 @@ void listview_curses::do_update(void)
                 }
                 attrs = vc.attrs_for_role(role);
                 wattron(this->lv_window, attrs);
-                mvwaddch(this->lv_window, gutter_y, width - 1, ch);
+                mvwaddch(this->lv_window, gutter_y, this->lv_x + width - 1, ch);
                 wattroff(this->lv_window, attrs);
             }
             wmove(this->lv_window, this->lv_y + height - 1, this->lv_x);
@@ -293,8 +311,11 @@ void listview_curses::do_update(void)
             mvwadd_wchnstr(this->lv_window, y, this->lv_x, row_ch, width - 1);
         }
 
-        this->lv_needs_update = false;
+        this->vc_needs_update = false;
     }
+
+    view_curses::do_update();
+
 #if 0
     else if (this->lv_overlay_needs_update && this->lv_overlay_source != NULL) {
         vis_line_t y(this->lv_y), height, bottom;

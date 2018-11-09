@@ -47,9 +47,11 @@
 #include <sstream>
 #include <numeric>
 #include <algorithm>
+#include <type_traits>
 
 #include "ptimec.hh"
 #include "byte_array.hh"
+#include "optional.hpp"
 
 inline std::string trim(const std::string &str)
 {
@@ -490,5 +492,35 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
 }
 
 size_t abbreviate_str(char *str, size_t len, size_t max_len);
+
+namespace detail {
+
+    template <class T>
+    typename std::enable_if<std::is_void<T>::value, T>::type
+    void_or_nullopt()
+    {
+        return;
+    }
+
+    template <class T>
+    typename std::enable_if<not std::is_void<T>::value, T>::type
+    void_or_nullopt()
+    {
+        return nonstd::nullopt;
+    }
+
+    template <class T>
+    struct is_optional : std::false_type {};
+
+    template <class T>
+    struct is_optional<nonstd::optional<T>> : std::true_type {};
+}
+
+template <class T, class F, std::enable_if_t<detail::is_optional<std::decay_t<T>>::value, int> = 0>
+auto operator|(T&& t, F f) -> decltype(detail::void_or_nullopt<decltype(f(std::forward<T>(t).operator*()))>()) {
+    using return_type = decltype(f(std::forward<T>(t).operator*()));
+    if (t) return f(std::forward<T>(t).operator*());
+    else return detail::void_or_nullopt<return_type>();
+}
 
 #endif

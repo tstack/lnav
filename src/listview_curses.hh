@@ -96,8 +96,6 @@ public:
         view_colors::role_t &role_out,
         view_colors::role_t &bar_role_out) {
         ch_out = ACS_VLINE;
-        role_out = view_colors::VCR_TEXT;
-        bar_role_out = view_colors::VCR_STATUS;
     };
 };
 
@@ -129,7 +127,7 @@ public:
     /** Construct an empty list view. */
     listview_curses();
 
-    virtual ~listview_curses();
+    ~listview_curses();
 
     void set_title(const std::string &title) {
         this->lv_title = title;
@@ -196,6 +194,50 @@ public:
         }
     };
     bool get_show_bottom_border() const { return this->lv_show_bottom_border; };
+
+    void set_selectable(bool sel) {
+        this->lv_selectable = sel;
+    };
+
+    bool is_selectable() const {
+        return this->lv_selectable;
+    };
+
+    void set_selection(vis_line_t sel) {
+        if (this->lv_selection != sel) {
+            this->lv_selection = sel;
+            this->scroll_selection_into_view();
+            this->set_needs_update();
+        }
+    }
+
+    void scroll_selection_into_view() {
+        unsigned long width;
+        vis_line_t height;
+
+        this->get_dimensions(height, width);
+        if (this->lv_selection >= (this->lv_top + height - 1)) {
+            this->set_top(this->lv_selection - height + 2_vl, true);
+        } else if (this->lv_selection < this->lv_top) {
+            this->set_top(this->lv_selection, true);
+        }
+    }
+
+    void shift_selection(int offset) {
+        vis_line_t new_selection = this->lv_selection + vis_line_t(offset);
+
+        if (new_selection >= 0_vl &&
+            new_selection < this->get_inner_height()) {
+            this->set_selection(new_selection);
+            this->scroll_selection_into_view();
+        } else {
+            alerter::singleton().chime();
+        }
+    }
+
+    vis_line_t get_selection() const {
+        return this->lv_selection;
+    }
 
     listview_curses &set_word_wrap(bool ww) {
         bool scroll_down = this->lv_top >= this->get_top_for_last_row();
@@ -267,7 +309,7 @@ public:
     {
         if (y != this->lv_y) {
             this->lv_y            = y;
-            this->lv_needs_update = true;
+            this->set_needs_update();
         }
     };
     unsigned int get_y() const { return this->lv_y; };
@@ -276,7 +318,7 @@ public:
     {
         if (x != this->lv_x) {
             this->lv_x            = x;
-            this->lv_needs_update = true;
+            this->set_needs_update();
         }
     };
     unsigned int get_x() const { return this->lv_x; };
@@ -335,7 +377,7 @@ public:
     };
 
     /** @return True if the given line is visible. */
-    bool is_visible(vis_line_t line)
+    bool is_line_visible(vis_line_t line)
     {
         return this->get_top() <= line && line <= this->get_bottom();
     };
@@ -388,7 +430,7 @@ public:
 
         this->lv_left = left;
         this->invoke_scroll();
-        this->lv_needs_update = true;
+        this->set_needs_update();
     };
 
     /** @return The column number that is displayed at the left. */
@@ -426,7 +468,7 @@ public:
     {
         if (this->lv_height != height) {
             this->lv_height       = height;
-            this->lv_needs_update = true;
+            this->set_needs_update();
         }
     };
 
@@ -445,8 +487,6 @@ public:
                this->lv_source->listview_width(*this);
     };
 
-    void set_needs_update() { this->lv_needs_update = true; };
-
     void set_overlay_needs_update() { this->lv_overlay_needs_update = true; };
 
     /**
@@ -459,7 +499,7 @@ public:
     {
         unsigned long height;
 
-        if (this->lv_window == NULL) {
+        if (this->lv_window == nullptr) {
             height_out = std::max(this->lv_height, vis_line_t(1));
             if (this->lv_source) {
                 width_out = this->lv_source->listview_width(*this);
@@ -486,7 +526,7 @@ public:
     };
 
     /** This method should be called when the data source has changed. */
-    virtual void reload_data(void);
+    virtual void reload_data();
 
     /**
      * @param ch The input to be handled.
@@ -497,7 +537,7 @@ public:
     /**
      * Query the data source and draw the visible lines on the display.
      */
-    virtual void do_update(void);
+    void do_update();
 
     bool handle_mouse(mouse_event &me);
 
@@ -514,6 +554,10 @@ public:
         log_debug("  lv_top=%d", (int) this->lv_top);
     };
 
+    virtual void invoke_scroll() {
+        this->lv_scroll.invoke(this);
+    }
+
 protected:
     enum lv_mode_t {
         LV_MODE_NONE,
@@ -524,12 +568,8 @@ protected:
 
     static list_gutter_source DEFAULT_GUTTER_SOURCE;
 
-    virtual void invoke_scroll() {
-        this->lv_scroll.invoke(this);
-    }
-
     std::string lv_title;
-    list_data_source *   lv_source; /*< The data source delegate. */
+    list_data_source *lv_source; /*< The data source delegate. */
     std::list<list_input_delegate *> lv_input_delegates;
     list_overlay_source *lv_overlay_source;
     action       lv_scroll;         /*< The scroll action. */
@@ -539,14 +579,13 @@ protected:
     vis_line_t   lv_top;            /*< The line at the top of the view. */
     unsigned int lv_left;           /*< The column at the left of the view. */
     vis_line_t   lv_height;         /*< The abs/rel height of the view. */
-    bool         lv_needs_update;   /*< Flag to indicate if a display update
-                                     *  is needed.
-                                     */
     bool lv_overlay_needs_update;
     bool lv_show_scrollbar;         /*< Draw the scrollbar in the view. */
     bool lv_show_bottom_border;
     list_gutter_source *lv_gutter_source;
     bool lv_word_wrap;
+    bool lv_selectable{false};
+    vis_line_t lv_selection{0};
 
     struct timeval lv_mouse_time;
     int lv_scroll_accel;

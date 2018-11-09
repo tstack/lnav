@@ -109,10 +109,10 @@ public:
         return retval;
     };
 
-    std::shared_ptr<logfile> current_file(void) const
+    std::shared_ptr<logfile> current_file() const
     {
         if (this->tss_files.empty()) {
-            return NULL;
+            return nullptr;
         }
 
         return this->tss_files.front();
@@ -129,20 +129,29 @@ public:
     void to_front(std::shared_ptr<logfile> lf) {
         this->tss_files.remove(lf);
         this->tss_files.push_front(lf);
+        this->tss_view->reload_data();
     };
 
     void rotate_left() {
-        this->tss_files.push_back(this->tss_files.front());
-        this->tss_files.pop_front();
+        if (this->tss_files.size() > 1) {
+            this->tss_files.push_back(this->tss_files.front());
+            this->tss_files.pop_front();
+            this->tss_view->reload_data();
+            this->tss_view->redo_search();
+        }
     };
 
     void rotate_right() {
-        this->tss_files.push_front(this->tss_files.back());
-        this->tss_files.pop_back();
+        if (this->tss_files.size() > 1) {
+            this->tss_files.push_front(this->tss_files.back());
+            this->tss_files.pop_back();
+            this->tss_view->reload_data();
+            this->tss_view->redo_search();
+        }
     };
 
     void remove(std::shared_ptr<logfile> lf) {
-        file_iterator iter = std::find(this->tss_files.begin(),
+        auto iter = std::find(this->tss_files.begin(),
                 this->tss_files.end(), lf);
         if (iter != this->tss_files.end()) {
             detach_observer(lf);
@@ -207,13 +216,17 @@ public:
             ++iter;
         }
 
+        if (retval) {
+            this->tss_view->search_new_data();
+        }
+
         return retval;
     };
 
     virtual void text_filters_changed() {
         std::shared_ptr<logfile> lf = this->current_file();
 
-        if (lf == NULL) {
+        if (lf == nullptr) {
             return;
         }
 
@@ -231,6 +244,8 @@ public:
             }
             lfo->lfo_filter_state.tfs_index.push_back(lpc);
         }
+
+        this->tss_view->redo_search();
     };
 
     int get_filtered_count() const {

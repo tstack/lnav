@@ -82,6 +82,17 @@ struct from_sqlite {
 };
 
 template<>
+struct from_sqlite<bool> {
+    inline bool operator()(int argc, sqlite3_value **val, int argi) {
+        if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
+            throw from_sqlite_conversion_error("integer", argi);
+        }
+
+        return sqlite3_value_int64(val[argi]);
+    }
+};
+
+template<>
 struct from_sqlite<int64_t> {
     inline int64_t operator()(int argc, sqlite3_value **val, int argi) {
         if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
@@ -114,6 +125,13 @@ template<>
 struct from_sqlite<const char *> {
     inline const char *operator()(int argc, sqlite3_value **val, int argi) {
         return (const char *) sqlite3_value_text(val[argi]);
+    }
+};
+
+template<>
+struct from_sqlite<const std::string &> {
+    inline const std::string operator()(int argc, sqlite3_value **val, int argi) {
+        return std::string((const char *) sqlite3_value_text(val[argi]));
     }
 };
 
@@ -375,6 +393,7 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
 };
 
 extern std::string vtab_module_schemas;
+extern std::map<intern_string_t, std::string> vtab_module_ddls;
 
 class vtab_index_constraints {
 public:
@@ -507,12 +526,26 @@ struct vtab_module {
     {
         require(sizeof...(Args) == 0 || argc == sizeof...(Args));
 
-        return apply_impl(obj,
-                          func,
-                          tab,
-                          rowid,
-                          argv,
-                          std::make_index_sequence<sizeof...(Args)>{});
+        try {
+            return apply_impl(obj,
+                              func,
+                              tab,
+                              rowid,
+                              argv,
+                              std::make_index_sequence<sizeof...(Args)>{});
+        } catch (from_sqlite_conversion_error &e) {
+            tab->zErrMsg = sqlite3_mprintf(
+                "Expecting an %s for column number %d",
+                e.e_type,
+                e.e_argi);
+            return SQLITE_ERROR;
+        } catch (const std::exception &e) {
+            tab->zErrMsg = sqlite3_mprintf("%s", e.what());
+            return SQLITE_ERROR;
+        } catch (...) {
+            tab->zErrMsg = sqlite3_mprintf("Encountered an unexpected exception");
+            return SQLITE_ERROR;
+        }
     }
 
     static int tvt_destructor(sqlite3_vtab *p_svt)
@@ -522,9 +555,9 @@ struct vtab_module {
 
     static int tvt_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
     {
-        p_svt->zErrMsg = NULL;
+        p_svt->zErrMsg = nullptr;
 
-        typename T::cursor *p_cur = new (typename T::cursor)(p_svt);
+        auto *p_cur = new (typename T::cursor)(p_svt);
 
         if (p_cur == NULL) {
             return SQLITE_NOMEM;
@@ -537,21 +570,21 @@ struct vtab_module {
 
     static int tvt_next(sqlite3_vtab_cursor *cur)
     {
-        typename T::cursor *p_cur = (typename T::cursor *) cur;
+        auto *p_cur = (typename T::cursor *) cur;
 
         return p_cur->next();
     }
 
     static int tvt_eof(sqlite3_vtab_cursor *cur)
     {
-        typename T::cursor *p_cur = (typename T::cursor *) cur;
+        auto *p_cur = (typename T::cursor *) cur;
 
         return p_cur->eof();
     }
 
     static int tvt_close(sqlite3_vtab_cursor *cur)
     {
-        typename T::cursor *p_cur = (typename T::cursor *) cur;
+        auto *p_cur = (typename T::cursor *) cur;
 
         delete p_cur;
 
@@ -560,13 +593,13 @@ struct vtab_module {
 
 
     static int tvt_rowid(sqlite3_vtab_cursor *cur, sqlite_int64 *p_rowid) {
-        typename T::cursor *p_cur = (typename T::cursor *) cur;
+        auto *p_cur = (typename T::cursor *) cur;
 
         return p_cur->get_rowid(*p_rowid);
     };
 
     static int tvt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col) {
-        typename T::cursor *p_cur = (typename T::cursor *) cur;
+        auto *p_cur = (typename T::cursor *) cur;
         T handler;
 
         return handler.get_column(*p_cur, ctx, col);
@@ -640,6 +673,7 @@ struct vtab_module {
     int create(sqlite3 *db, const char *name) {
         std::string impl_name = name;
         vtab_module_schemas += T::CREATE_STMT;
+        vtab_module_ddls[intern_string::lookup(name)] = trim(T::CREATE_STMT);
 
         // XXX Eponymous tables don't seem to work in older sqlite versions
         impl_name += "_impl";
@@ -658,14 +692,16 @@ struct tvt_iterator_cursor {
         sqlite3_vtab_cursor base;
         typename T::iterator iter;
 
-        cursor(sqlite3_vtab *vt) {
+        cursor(sqlite3_vtab *vt)
+        {
             T handler;
 
             this->base.pVtab = vt;
             this->iter = handler.begin();
         };
 
-        int next() {
+        int next()
+        {
             T handler;
 
             if (this->iter != handler.end()) {
@@ -675,19 +711,37 @@ struct tvt_iterator_cursor {
             return SQLITE_OK;
         };
 
-        int eof() {
+        int eof()
+        {
             T handler;
 
             return this->iter == handler.end();
         };
 
-        int get_rowid(sqlite_int64 &rowid_out) {
+        template< bool cond, typename U >
+        using resolvedType  = typename std::enable_if< cond, U >::type;
+
+        template< typename U = int >
+        resolvedType< std::is_same<std::random_access_iterator_tag,
+            typename std::iterator_traits<typename T::iterator>::iterator_category>::value, U >
+        get_rowid(sqlite_int64 &rowid_out) {
             T handler;
 
             rowid_out = std::distance(handler.begin(), this->iter);
 
             return SQLITE_OK;
-        };
+        }
+
+        template< typename U = int >
+        resolvedType< !std::is_same<std::random_access_iterator_tag,
+            typename std::iterator_traits<typename T::iterator>::iterator_category>::value, U >
+        get_rowid(sqlite_int64 &rowid_out) {
+            T handler;
+
+            rowid_out = handler.get_rowid(this->iter);
+
+            return SQLITE_OK;
+        }
     };
 };
 

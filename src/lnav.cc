@@ -126,6 +126,7 @@
 #include "file_vtab.hh"
 #include "regexp_vtab.hh"
 #include "fstat_vtab.hh"
+#include "textfile_highlighters.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
@@ -142,14 +143,13 @@
 #include "url_loader.hh"
 #include "log_search_table.hh"
 #include "shlex.hh"
+#include "log_actions.hh"
 
 using namespace std;
 
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
 struct _lnav_data lnav_data;
-
-static void setup_highlights(textview_curses::highlight_map_t &hm);
 
 const int ZOOM_LEVELS[] = {
     1,
@@ -172,12 +172,11 @@ const char *lnav_view_strings[LNV__MAX + 1] = {
     "help",
     "histogram",
     "db",
-    "example",
     "schema",
     "pretty",
     "spectro",
 
-    NULL
+    nullptr
 };
 
 const char *lnav_zoom_strings[] = {
@@ -192,7 +191,7 @@ const char *lnav_zoom_strings[] = {
     "1-day",
     "1-week",
 
-    NULL
+    nullptr
 };
 
 static const char *view_titles[LNV__MAX] = {
@@ -201,7 +200,6 @@ static const char *view_titles[LNV__MAX] = {
     "HELP",
     "HIST",
     "DB",
-    "EXAMPLE",
     "SCHEMA",
     "PRETTY",
     "SPECTRO",
@@ -226,14 +224,14 @@ bool setup_logline_table(exec_context &ec)
         "log_text",
         "log_body",
 
-        NULL
+        nullptr
     };
 
     static const char *commands[] = {
         ".schema",
         ".msgformats",
 
-        NULL
+        nullptr
     };
 
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
@@ -244,7 +242,7 @@ bool setup_logline_table(exec_context &ec)
 
     if (update_possibilities) {
         lnav_data.ld_rl_view->clear_possibilities(LNM_SQL, "*");
-        add_view_text_possibilities(LNM_SQL, "*", &log_view);
+        add_view_text_possibilities(lnav_data.ld_rl_view, LNM_SQL, "*", &log_view);
     }
 
     if (log_view.get_inner_height()) {
@@ -375,7 +373,7 @@ public:
     };
 
 private:
-    void do_update(void)
+    void do_update()
     {
         lnav_data.ld_top_source.update_time();
         for (auto &sc : lnav_data.ld_status) {
@@ -446,7 +444,7 @@ void rebuild_hist()
 
 class textfile_callback {
 public:
-    textfile_callback() : front_file(NULL), front_top(-1) { };
+    textfile_callback() : front_file(nullptr), front_top(-1) { };
 
     void closed_file(const shared_ptr<logfile> &lf) {
         log_info("closed text file: %s", lf->get_filename().c_str());
@@ -502,7 +500,6 @@ void rebuild_indexes()
     vis_line_t old_bottoms[LNV__MAX];
 
     bool scroll_downs[LNV__MAX];
-    struct timeval old_time;
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         old_bottoms[lpc] = lnav_data.ld_views[lpc].get_top_for_last_row();
@@ -514,20 +511,15 @@ void rebuild_indexes()
     {
         textfile_sub_source *tss = &lnav_data.ld_text_source;
         textfile_callback cb;
-        bool new_data;
 
-        new_data = tss->rescan_files(cb);
+        tss->rescan_files(cb);
 
         if (cb.front_file != nullptr) {
             ensure_view(&text_view);
 
             if (tss->current_file() != cb.front_file) {
                 tss->to_front(cb.front_file);
-                redo_search(LNV_TEXT);
-                text_view.reload_data();
                 old_bottoms[LNV_TEXT] = vis_line_t(-1);
-
-                new_data = false;
             }
 
             if (cb.front_top < 0) {
@@ -538,16 +530,7 @@ void rebuild_indexes()
                 scroll_downs[LNV_TEXT] = false;
             }
         }
-
-        if (new_data && lnav_data.ld_search_child[LNV_TEXT]) {
-            lnav_data.ld_search_child[LNV_TEXT]->get_grep_proc()->
-                                                   queue_request(-1_vl)
-                                               .start();
-        }
-        text_view.reload_data();
     }
-
-    old_time = lnav_data.ld_top_time;
 
     for (auto file_iter = lnav_data.ld_files.begin();
          file_iter != lnav_data.ld_files.end(); ) {
@@ -572,29 +555,10 @@ void rebuild_indexes()
     logfile_sub_source::rebuild_result result = lss.rebuild_index();
     if (result != logfile_sub_source::rebuild_result::rr_no_change) {
         size_t new_count = lss.text_line_count();
-        vis_line_t start_line;
         bool force = result == logfile_sub_source::rebuild_result::rr_full_rebuild;
 
         if ((!scroll_downs[LNV_LOG] || log_view.get_top() > new_count) && force) {
             scroll_downs[LNV_LOG] = false;
-        }
-
-        start_line = force ? 0_vl : -1_vl;
-
-        if (force) {
-            if (lnav_data.ld_search_child[LNV_LOG]) {
-                lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->invalidate();
-            }
-            if (lnav_data.ld_meta_search) {
-                lnav_data.ld_meta_search->invalidate();
-            }
-            log_view.match_reset();
-        }
-
-        if (lnav_data.ld_search_child[LNV_LOG]) {
-            lnav_data.ld_search_child[LNV_LOG]->get_grep_proc()->
-                                                  queue_request(start_line)
-                                              .start();
         }
 
         log_view.reload_data();
@@ -608,11 +572,10 @@ void rebuild_indexes()
         }
     }
 
-    if (!lnav_data.ld_view_stack.empty()) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
-        lnav_data.ld_bottom_source.update_filtered(tc->get_sub_source());
+    lnav_data.ld_view_stack.top() | [] (auto tc) {
+        lnav_data.ld_filter_status_source.update_filtered(tc->get_sub_source());
         lnav_data.ld_scroll_broadcaster.invoke(tc);
-    }
+    };
 }
 
 static bool append_default_files(lnav_flags_t flag)
@@ -669,125 +632,6 @@ static void sigchld(int sig)
     lnav_data.ld_child_terminated = true;
 }
 
-static void open_schema_view(void)
-{
-    textview_curses *schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
-    string schema;
-
-    dump_sqlite_schema(lnav_data.ld_db, schema);
-
-    schema += "\n\n-- Virtual Table Definitions --\n\n";
-    schema += ENVIRON_CREATE_STMT;
-    schema += vtab_module_schemas;
-    for (auto vtab_iter = lnav_data.ld_vtab_manager->begin();
-         vtab_iter != lnav_data.ld_vtab_manager->end();
-         ++vtab_iter) {
-        schema += "\n" + vtab_iter->second->get_table_statement();
-    }
-
-    delete schema_tc->get_sub_source();
-
-    plain_text_source *pts = new plain_text_source(schema);
-    pts->set_text_format(TF_SQL);
-
-    schema_tc->set_sub_source(pts);
-}
-
-static void open_pretty_view(void)
-{
-    static const char *NOTHING_MSG =
-            "Nothing to pretty-print";
-
-    textview_curses *top_tc = lnav_data.ld_view_stack.back();
-    textview_curses *pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
-    textview_curses *log_tc = &lnav_data.ld_views[LNV_LOG];
-    textview_curses *text_tc = &lnav_data.ld_views[LNV_TEXT];
-    attr_line_t full_text;
-
-    delete pretty_tc->get_sub_source();
-    if (top_tc->get_inner_height() == 0) {
-        pretty_tc->set_sub_source(new plain_text_source(NOTHING_MSG));
-        return;
-    }
-
-    if (top_tc == log_tc) {
-        logfile_sub_source &lss = lnav_data.ld_log_source;
-        bool first_line = true;
-
-        for (vis_line_t vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
-            content_line_t cl = lss.at(vl);
-            shared_ptr<logfile> lf = lss.find(cl);
-            auto ll = lf->begin() + cl;
-            shared_buffer_ref sbr;
-
-            if (!first_line && ll->is_continued()) {
-                continue;
-            }
-            auto ll_start = lf->message_start(ll);
-            vector<logline_value> values;
-            attr_line_t al;
-
-            vl -= vis_line_t(distance(ll_start, ll));
-            lss.text_value_for_line(*log_tc, vl, al.get_string(),
-                                    text_sub_source::RF_FULL|
-                                    text_sub_source::RF_REWRITE);
-            lss.text_attrs_for_line(*log_tc, vl, al.get_attrs());
-
-            line_range orig_lr = find_string_attr_range(
-                al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
-            attr_line_t orig_al = al.subline(orig_lr.lr_start, orig_lr.length());
-            attr_line_t prefix_al = al.subline(0, orig_lr.lr_start);
-
-            data_scanner ds(orig_al.get_string());
-            pretty_printer pp(&ds, orig_al.get_attrs());
-            attr_line_t pretty_al;
-            vector<attr_line_t> pretty_lines;
-
-            // TODO: dump more details of the line in the output.
-            pp.append_to(pretty_al);
-            pretty_al.split_lines(pretty_lines);
-
-            for (auto &pretty_line : pretty_lines) {
-                if (pretty_line.empty() && &pretty_line == &pretty_lines.back()) {
-                    break;
-                }
-                pretty_line.insert(0, prefix_al);
-                pretty_line.append("\n");
-                full_text.append(pretty_line);
-            }
-
-            first_line = false;
-        }
-
-        if (!full_text.empty()) {
-            full_text.erase(full_text.length() - 1, 1);
-        }
-    }
-    else if (top_tc == text_tc) {
-        shared_ptr<logfile> lf = lnav_data.ld_text_source.current_file();
-
-        for (vis_line_t vl = text_tc->get_top(); vl <= text_tc->get_bottom(); ++vl) {
-            logfile::iterator ll = lf->begin() + vl;
-            shared_buffer_ref sbr;
-
-            lf->read_full_message(ll, sbr);
-            data_scanner ds(sbr);
-            string_attrs_t sa;
-            pretty_printer pp(&ds, sa);
-
-            pp.append_to(full_text);
-        }
-    }
-    plain_text_source *pts = new plain_text_source();
-    pts->replace_with(full_text);
-    pretty_tc->set_sub_source(pts);
-    if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
-        pretty_tc->set_top(vis_line_t(0));
-    }
-    lnav_data.ld_last_pretty_print_top = log_tc->get_top();
-    redo_search(LNV_PRETTY);
-}
-
 static int key_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 {
     if (!sqlite3_stmt_busy(stmt)) {
@@ -814,145 +658,12 @@ static int key_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
     return 0;
 }
 
-static void build_all_help_text()
-{
-    if (!lnav_data.ld_help_source.empty()) {
-        return;
-    }
-
-    attr_line_t all_help_text;
-    shlex lexer(help_txt, strlen(help_txt));
-    string sub_help_text;
-
-    lexer.with_ignore_quotes(true)
-         .eval(sub_help_text, lnav_data.ld_exec_context.ec_global_vars);
-    all_help_text.with_ansi_string(sub_help_text);
-
-    map<string, help_text *> sql_funcs;
-    map<string, help_text *> sql_keywords;
-
-    for (auto iter : sqlite_function_help) {
-        switch (iter.second->ht_context) {
-            case HC_SQL_FUNCTION:
-                sql_funcs[iter.second->ht_name] = iter.second;
-                break;
-            case HC_SQL_KEYWORD:
-                sql_keywords[iter.second->ht_name] = iter.second;
-                break;
-            default:
-                break;
-        }
-    }
-
-    for (auto iter : sql_funcs) {
-        all_help_text.append(2, '\n');
-        format_help_text_for_term(*iter.second, 79, all_help_text);
-        if (!iter.second->ht_example.empty()) {
-            all_help_text.append(1, '\n');
-            format_example_text_for_term(*iter.second, 79, all_help_text);
-        }
-    }
-
-    for (auto iter : sql_keywords) {
-        all_help_text.append(2, '\n');
-        format_help_text_for_term(*iter.second, 79, all_help_text);
-        if (!iter.second->ht_example.empty()) {
-            all_help_text.append(1, '\n');
-            format_example_text_for_term(*iter.second, 79, all_help_text);
-        }
-    }
-
-    lnav_data.ld_help_source.replace_with(all_help_text);
-}
-
-bool toggle_view(textview_curses *toggle_tc)
-{
-    textview_curses *tc     = lnav_data.ld_view_stack.empty() ? NULL : lnav_data.ld_view_stack.back();
-    bool             retval = false;
-
-    require(toggle_tc != NULL);
-    require(toggle_tc >= &lnav_data.ld_views[0]);
-    require(toggle_tc < &lnav_data.ld_views[LNV__MAX]);
-
-    if (tc == toggle_tc) {
-        if (lnav_data.ld_view_stack.size() == 1) {
-            return false;
-        }
-        lnav_data.ld_last_view = tc;
-        lnav_data.ld_view_stack.pop_back();
-    }
-    else {
-        if (toggle_tc == &lnav_data.ld_views[LNV_SCHEMA]) {
-            open_schema_view();
-        }
-        else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
-            open_pretty_view();
-        }
-        else if (toggle_tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
-            // Rebuild to reflect changes in marks.
-            rebuild_hist();
-        }
-        else if (toggle_tc == &lnav_data.ld_views[LNV_HELP]) {
-            build_all_help_text();
-        }
-        lnav_data.ld_last_view = nullptr;
-        lnav_data.ld_view_stack.push_back(toggle_tc);
-        retval = true;
-    }
-    tc = lnav_data.ld_view_stack.back();
-    tc->set_needs_update();
-    lnav_data.ld_view_stack_broadcaster.invoke(tc);
-
-    return retval;
-}
-
-void redo_search(lnav_view_t view_index)
-{
-    textview_curses *tc = &lnav_data.ld_views[view_index];
-
-    tc->reload_data();
-    if (lnav_data.ld_search_child[view_index] != NULL) {
-        grep_proc<vis_line_t> *gp = lnav_data.ld_search_child[view_index]->get_grep_proc();
-
-        gp->invalidate();
-        tc->match_reset();
-        gp->queue_request(0_vl);
-        gp->start();
-    }
-    if (view_index == LNV_LOG && lnav_data.ld_meta_search) {
-        lnav_data.ld_meta_search->invalidate()
-                 .queue_request(0_vl)
-                 .start();
-    }
-    if (!lnav_data.ld_view_stack.empty() && tc == lnav_data.ld_view_stack.back()) {
-        lnav_data.ld_scroll_broadcaster.invoke(tc);
-    }
-}
-
-/**
- * Ensure that the view is on the top of the view stack.
- *
- * @param expected_tc The text view that should be on top.
- * @return True if the view was already on the top of the stack.
- */
-bool ensure_view(textview_curses *expected_tc)
-{
-    textview_curses *tc = lnav_data.ld_view_stack.empty() ? nullptr : lnav_data.ld_view_stack.back();
-    bool retval = true;
-
-    if (tc != expected_tc) {
-        toggle_view(expected_tc);
-        retval = false;
-    }
-    return retval;
-}
-
 vis_line_t next_cluster(
     vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
     bookmark_type_t *bt,
     const vis_line_t top)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.back();
+    textview_curses *tc = *(lnav_data.ld_view_stack.top());
     vis_bookmarks &bm = tc->get_bookmarks();
     bookmark_vector<vis_line_t> &bv = bm[bt];
     bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
@@ -997,7 +708,7 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) con
                     bookmark_type_t *bt,
                     vis_line_t top)
 {
-    textview_curses *tc = lnav_data.ld_view_stack.back();
+    textview_curses *tc = *(lnav_data.ld_view_stack.top());
     vis_line_t new_top;
 
     new_top = next_cluster(f, bt, top);
@@ -1085,106 +796,6 @@ void rl_blur(void *dummy, readline_curses *rc)
 
 readline_context::command_map_t lnav_commands;
 
-void execute_search(lnav_view_t view, const std::string &regex_orig)
-{
-    unique_ptr<grep_highlighter> &gc = lnav_data.ld_search_child[view];
-    textview_curses &tc = lnav_data.ld_views[view];
-    std::string regex = regex_orig;
-    pcre *code = nullptr;
-
-    if ((gc.get() == nullptr) || (regex != lnav_data.ld_last_search[view])) {
-        const char *errptr;
-        int         eoff;
-        bool quoted = false;
-
-        tc.match_reset();
-
-        if (regex.empty() && gc != nullptr) {
-            tc.grep_begin(*(gc->get_grep_proc()), 0_vl, -1_vl);
-            tc.grep_end(*(gc->get_grep_proc()));
-        }
-        gc.reset();
-
-        log_debug("start search for: '%s'", regex.c_str());
-
-        if (regex.empty()) {
-            lnav_data.ld_bottom_source.grep_error("");
-        }
-        else if ((code = pcre_compile(regex.c_str(),
-                                      PCRE_CASELESS,
-                                      &errptr,
-                                      &eoff,
-                                      nullptr)) == nullptr) {
-            string errmsg = string(errptr);
-
-            quoted = true;
-            regex = pcrecpp::RE::QuoteMeta(regex);
-
-            log_info("invalid search regex, using quoted: %s", regex.c_str());
-            if ((code = pcre_compile(regex.c_str(),
-                                     PCRE_CASELESS,
-                                     &errptr,
-                                     &eoff,
-                                     nullptr)) == nullptr) {
-                log_error("Unable to compile quoted regex: %s", regex.c_str());
-            } else {
-                lnav_data.ld_bottom_source.grep_error(
-                    "regexp error: "
-                    + errmsg
-                    + "; falling back to non-regex search");
-            }
-        }
-
-        if (code != nullptr) {
-            highlighter hl(code);
-
-            hl.with_role(view_colors::VCR_SEARCH);
-
-            if (!quoted) {
-                lnav_data.ld_bottom_source.grep_error("");
-            }
-            lnav_data.ld_bottom_source.set_prompt("");
-
-            textview_curses::highlight_map_t &hm = tc.get_highlights();
-            hm["$search"] = hl;
-
-            unique_ptr<grep_proc<vis_line_t>> gp = make_unique<grep_proc<vis_line_t>>(code, tc);
-
-            gp->set_sink(&tc);
-            gp->queue_request(tc.get_top());
-            if (tc.get_top() > 0) {
-                gp->queue_request(0_vl, tc.get_top());
-            }
-            gp->start();
-
-            gc = std::make_unique<grep_highlighter>(gp, "$search", hm);
-
-            if (view == LNV_LOG) {
-                logfile_sub_source::meta_grepper &mg = lnav_data.ld_log_source.get_meta_grepper();
-                shared_ptr<grep_proc<vis_line_t>> mgp = make_shared<grep_proc<vis_line_t>>(code, mg);
-
-                mgp->set_sink(&mg);
-                mgp->queue_request(0_vl);
-                mgp->start();
-
-                lnav_data.ld_meta_search = mgp;
-            }
-        }
-
-        if (view == LNV_LOG) {
-            static intern_string_t log_search_name = intern_string::lookup("log_search");
-
-            lnav_data.ld_vtab_manager->unregister_vtab(log_search_name);
-            if (code != nullptr) {
-                lnav_data.ld_vtab_manager->register_vtab(new log_search_table(
-                        regex.c_str(), log_search_name));
-            }
-        }
-    }
-
-    lnav_data.ld_last_search[view] = regex;
-}
-
 static void usage()
 {
     const char *usage_msg =
@@ -1240,58 +851,11 @@ static void usage()
     fprintf(stderr, usage_msg, lnav_data.ld_program_name);
 }
 
-static pcre *xpcre_compile(const char *pattern, int options = 0)
-{
-    const char *errptr;
-    pcre *      retval;
-    int         eoff;
-
-    if ((retval = pcre_compile(pattern,
-                               options,
-                               &errptr,
-                               &eoff,
-                               NULL)) == NULL) {
-        fprintf(stderr, "internal error: failed to compile -- %s\n", pattern);
-        fprintf(stderr, "internal error: %s\n", errptr);
-
-        exit(1);
-    }
-
-    return retval;
-}
-
-/**
- * Callback used to keep track of the timestamps for the top and bottom lines
- * in the log view.  This function is intended to be used as the callback
- * function in a view_action.
- *
- * @param lv The listview object that contains the log
- */
-static void update_times(void *, listview_curses *lv)
-{
-    if (lv == &lnav_data.ld_views[LNV_LOG] && lv->get_inner_height() > 0) {
-        logfile_sub_source &lss = lnav_data.ld_log_source;
-        logline *ll;
-
-        ll = lss.find_line(lss.at(lv->get_top()));
-        lnav_data.ld_top_time = ll->get_timeval();
-        ll = lss.find_line(lss.at(lv->get_bottom()));
-        lnav_data.ld_bottom_time = ll->get_timeval();
-    }
-    if (lv == &lnav_data.ld_views[LNV_HISTOGRAM] &&
-        lv->get_inner_height() > 0) {
-        hist_source2 &hs = lnav_data.ld_hist_source2;
-
-        lnav_data.ld_top_time    = hs.time_for_row(lv->get_top());
-        lnav_data.ld_bottom_time = hs.time_for_row(lv->get_bottom());
-    }
-}
-
 static void clear_last_user_mark(void *, listview_curses *lv)
 {
     textview_curses *tc = (textview_curses *) lv;
     if (lnav_data.ld_select_start.find(tc) != lnav_data.ld_select_start.end() &&
-            !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
+        !tc->is_line_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
         lnav_data.ld_select_start.erase(tc);
         lnav_data.ld_last_user_mark.erase(tc);
     }
@@ -1494,220 +1058,8 @@ bool rescan_files(bool required)
     return retval;
 }
 
-static string execute_action(log_data_helper &ldh,
-                             int value_index,
-                             const string &action_name)
-{
-    std::map<string, log_format::action_def>::const_iterator iter;
-    logline_value &lv = ldh.ldh_line_values[value_index];
-    shared_ptr<logfile> lf = ldh.ldh_file;
-    const log_format *format = lf->get_format();
-    pid_t child_pid;
-    string retval;
-
-    iter = format->lf_action_defs.find(action_name);
-
-    const log_format::action_def &action = iter->second;
-
-    auto_pipe in_pipe(STDIN_FILENO);
-    auto_pipe out_pipe(STDOUT_FILENO);
-    auto_pipe err_pipe(STDERR_FILENO);
-
-    in_pipe.open();
-    if (action.ad_capture_output)
-        out_pipe.open();
-    err_pipe.open();
-
-    child_pid = fork();
-
-    in_pipe.after_fork(child_pid);
-    out_pipe.after_fork(child_pid);
-    err_pipe.after_fork(child_pid);
-
-    switch (child_pid) {
-    case -1:
-        retval = "error: unable to fork child process -- " + string(strerror(errno));
-        break;
-    case 0: {
-            const char *args[action.ad_cmdline.size() + 1];
-            set<std::string> path_set(format->get_source_path());
-            char env_buffer[64];
-            int value_line;
-            string path;
-
-            setenv("LNAV_ACTION_FILE", lf->get_filename().c_str(), 1);
-            snprintf(env_buffer, sizeof(env_buffer),
-                "%ld",
-                (ldh.ldh_line - lf->begin()) + 1);
-            setenv("LNAV_ACTION_FILE_LINE", env_buffer, 1);
-            snprintf(env_buffer, sizeof(env_buffer), "%d", ldh.ldh_y_offset + 1);
-            setenv("LNAV_ACTION_MSG_LINE", env_buffer, 1);
-            setenv("LNAV_ACTION_VALUE_NAME", lv.lv_name.get(), 1);
-            value_line = ldh.ldh_y_offset - ldh.get_value_line(lv) + 1;
-            snprintf(env_buffer, sizeof(env_buffer), "%d", value_line);
-            setenv("LNAV_ACTION_VALUE_LINE", env_buffer, 1);
-
-            for (set<string>::iterator path_iter = path_set.begin();
-                 path_iter != path_set.end();
-                 ++path_iter) {
-                if (!path.empty()) {
-                    path += ":";
-                }
-                path += *path_iter;
-            }
-            path += ":" + string(getenv("PATH"));
-            setenv("PATH", path.c_str(), 1);
-            for (size_t lpc = 0; lpc < action.ad_cmdline.size(); lpc++) {
-                args[lpc] = action.ad_cmdline[lpc].c_str();
-            }
-            args[action.ad_cmdline.size()] = NULL;
-            execvp(args[0], (char *const *) args);
-            fprintf(stderr,
-                "error: could not exec process -- %s:%s\n",
-                args[0],
-                strerror(errno));
-            _exit(0);
-        }
-        break;
-    default: {
-            static int exec_count = 0;
-
-            string value = lv.to_string();
-            line_buffer lb;
-            off_t off = 0;
-            line_value lv;
-
-            lnav_data.ld_children.push_back(child_pid);
-
-            if (write(in_pipe.write_end(), value.c_str(), value.size()) == -1) {
-                perror("execute_action write");
-            }
-            in_pipe.close();
-
-            lb.set_fd(err_pipe.read_end());
-
-            lb.read_line(off, lv);
-
-            if (out_pipe.read_end() != -1) {
-                auto pp = make_shared<piper_proc>(out_pipe.read_end(), false);
-                char desc[128];
-
-                lnav_data.ld_pipers.push_back(pp);
-                snprintf(desc,
-                    sizeof(desc), "[%d] Output of %s",
-                    exec_count++,
-                    action.ad_cmdline[0].c_str());
-                lnav_data.ld_file_names[desc]
-                    .with_fd(pp->get_fd());
-                lnav_data.ld_files_to_front.push_back({ desc, 0 });
-            }
-
-            retval = string(lv.lv_start, lv.lv_len);
-        }
-        break;
-    }
-
-    return retval;
-}
-
-class action_delegate : public text_delegate {
-public:
-    action_delegate(logfile_sub_source &lss)
-            : ad_log_helper(lss),
-              ad_press_line(-1),
-              ad_press_value(-1),
-              ad_line_index(0) {
-
-    };
-
-    virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me) {
-        bool retval = false;
-
-        if (me.me_button != BUTTON_LEFT) {
-            return false;
-        }
-
-        vis_line_t mouse_line = vis_line_t(tc.get_top() + me.me_y);
-        int mouse_left = tc.get_left() + me.me_x;
-
-        switch (me.me_state) {
-        case BUTTON_STATE_PRESSED:
-            if (mouse_line >= vis_line_t(0) && mouse_line <= tc.get_bottom()) {
-                size_t line_end_index = 0;
-                int x_offset;
-
-                this->ad_press_line = mouse_line;
-                this->ad_log_helper.parse_line(mouse_line, true);
-
-                this->ad_log_helper.get_line_bounds(this->ad_line_index, line_end_index);
-
-                struct line_range lr(this->ad_line_index, line_end_index);
-
-                this->ad_press_value = -1;
-
-                x_offset = this->ad_line_index + mouse_left;
-                if (lr.contains(x_offset)) {
-                    for (size_t lpc = 0;
-                         lpc < this->ad_log_helper.ldh_line_values.size();
-                         lpc++) {
-                        logline_value &lv = this->ad_log_helper.ldh_line_values[lpc];
-
-                        if (lv.lv_origin.contains(x_offset)) {
-                            this->ad_press_value = lpc;
-                            break;
-                        }
-                    }
-                }
-            }
-            break;
-        case BUTTON_STATE_DRAGGED:
-            if (mouse_line != this->ad_press_line) {
-                this->ad_press_value = -1;
-            }
-            if (this->ad_press_value != -1) {
-                retval = true;
-            }
-            break;
-        case BUTTON_STATE_RELEASED:
-            if (this->ad_press_value != -1 && this->ad_press_line == mouse_line) {
-                logline_value &lv = this->ad_log_helper.ldh_line_values[this->ad_press_value];
-                int x_offset = this->ad_line_index + mouse_left;
-
-                if (lv.lv_origin.contains(x_offset)) {
-                    shared_ptr<logfile> lf = this->ad_log_helper.ldh_file;
-                    const vector<string> *actions;
-
-                    actions = lf->get_format()->get_actions(lv);
-                    if (actions != NULL && !actions->empty()) {
-                        string rc = execute_action(
-                            this->ad_log_helper, this->ad_press_value, actions->at(0));
-
-                        lnav_data.ld_rl_view->set_value(rc);
-                    }
-                }
-                retval = true;
-            }
-            break;
-        }
-
-        return retval;
-    };
-
-    log_data_helper ad_log_helper;
-    vis_line_t ad_press_line;
-    int ad_press_value;
-    size_t ad_line_index;
-};
-
 class lnav_behavior : public mouse_behavior {
 public:
-    enum lb_mode_t {
-        LB_MODE_NONE,
-        LB_MODE_DOWN,
-        LB_MODE_UP,
-        LB_MODE_DRAG
-    };
-
     lnav_behavior() {};
 
     int scroll_polarity(int button)
@@ -1717,7 +1069,7 @@ public:
 
     void mouse_event(int button, bool release, int x, int y)
     {
-        textview_curses *   tc  = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *(lnav_data.ld_view_stack.top());
         struct mouse_event me;
 
         switch (button & xterm_mouse::XT_BUTTON__MASK) {
@@ -1762,12 +1114,10 @@ static void handle_key(int ch) {
     lnav_data.ld_input_state.push_back(ch);
 
     if (lnav_data.ld_mode == LNM_PAGING) {
-        if (!lnav_data.ld_view_stack.empty()) {
-            textview_curses *tc = lnav_data.ld_view_stack.back();
+        auto top_tc = lnav_data.ld_view_stack.top();
 
-            if (tc->handle_key(ch)) {
-                return;
-            }
+        if (top_tc && (*top_tc)->handle_key(ch)) {
+            return;
         }
 
         char keyseq[16];
@@ -1787,7 +1137,7 @@ static void handle_key(int ch) {
             var_stack.push(map<string, string>());
             auto &vars = var_stack.top();
             vars["keyseq"] = keyseq;
-            for (string cmd : iter->second) {
+            for (const string &cmd : iter->second) {
                 log_debug("executing key sequence x%02x: %s",
                           keyseq, cmd.c_str());
                 result = execute_any(ec, cmd);
@@ -1799,34 +1149,42 @@ static void handle_key(int ch) {
     }
 
     switch (ch) {
-    case CTRL('d'):
-    case KEY_RESIZE:
-        break;
-    default:
-        switch (lnav_data.ld_mode) {
-        case LNM_PAGING:
-            handle_paging_key(ch);
+        case CTRL('d'):
+        case KEY_RESIZE:
             break;
+        default: {
+            switch (lnav_data.ld_mode) {
+                case LNM_PAGING:
+                    handle_paging_key(ch);
+                    break;
 
-        case LNM_COMMAND:
-        case LNM_SEARCH:
-        case LNM_CAPTURE:
-        case LNM_SQL:
-        case LNM_EXEC:
-            handle_rl_key(ch);
-            break;
+                case LNM_FILTER:
+                    if (!lnav_data.ld_filter_view.handle_key(ch)) {
+                        handle_paging_key(ch);
+                    }
+                    break;
 
-        default:
-            require(0);
-            break;
+                case LNM_COMMAND:
+                case LNM_SEARCH:
+                case LNM_CAPTURE:
+                case LNM_SQL:
+                case LNM_EXEC:
+                    handle_rl_key(ch);
+                    break;
+
+                default:
+                    require(0);
+                    break;
+            }
         }
     }
 }
 
 void update_hits(void *dummy, textview_curses *tc)
 {
-    if (!lnav_data.ld_view_stack.empty() &&
-        tc == lnav_data.ld_view_stack.back()) {
+    auto top_tc = lnav_data.ld_view_stack.top();
+
+    if (top_tc && tc == *top_tc) {
         lnav_data.ld_bottom_source.update_hits(tc);
 
         if (lnav_data.ld_mode == LNM_SEARCH) {
@@ -1882,7 +1240,7 @@ void update_hits(void *dummy, textview_curses *tc)
     }
 }
 
-static void gather_pipers(void)
+static void gather_pipers()
 {
     for (auto iter = lnav_data.ld_pipers.begin();
          iter != lnav_data.ld_pipers.end(); ) {
@@ -1896,7 +1254,7 @@ static void gather_pipers(void)
     }
 }
 
-static void wait_for_pipers(void)
+static void wait_for_pipers()
 {
     for (;;) {
         gather_pipers();
@@ -1913,149 +1271,7 @@ static void wait_for_pipers(void)
     }
 }
 
-static void execute_examples()
-{
-    exec_context &ec = lnav_data.ld_exec_context;
-    db_label_source &dls = lnav_data.ld_db_row_source;
-    db_overlay_source &dos = lnav_data.ld_db_overlay;
-    textview_curses &db_tc = lnav_data.ld_views[LNV_DB];
-
-    for (auto &help_iter : sqlite_function_help) {
-        struct help_text &ht = *(help_iter.second);
-
-        for (auto &ex : ht.ht_example) {
-            string alt_msg;
-
-            switch (ht.ht_context) {
-                case HC_SQL_FUNCTION: {
-                    execute_sql(ec, ex.he_cmd, alt_msg);
-
-                    if (dls.dls_rows.size() == 1 &&
-                        dls.dls_rows[0].size() == 1) {
-                        ex.he_result.append(dls.dls_rows[0][0]);
-                    } else {
-                        attr_line_t al;
-                        dos.list_value_for_overlay(db_tc,
-                                                   0, 1,
-                                                   vis_line_t(0),
-                                                   al);
-                        ex.he_result.append(al);
-                        for (int lpc = 0;
-                             lpc < (int)dls.text_line_count(); lpc++) {
-                            al.clear();
-                            dls.text_value_for_line(db_tc, lpc,
-                                                    al.get_string(),
-                                                    false);
-                            dls.text_attrs_for_line(db_tc, lpc,
-                                                    al.get_attrs());
-                            ex.he_result.append("\n")
-                              .append(al);
-                        }
-                    }
-
-                    log_debug("example: %s", ex.he_cmd);
-                    log_debug("example result: %s",
-                              ex.he_result.get_string().c_str());
-                    break;
-                }
-                default:
-                    log_warning("Not executing example: %s", ex.he_cmd);
-                    break;
-            }
-        }
-    }
-
-    dls.clear();
-}
-
-static void layout_views()
-{
-    unsigned long width, height;
-
-    getmaxyx(lnav_data.ld_window, height, width);
-    int doc_height;
-    bool doc_side_by_side = width > (90 + 60);
-    bool preview_status_open = !lnav_data.ld_preview_status_source
-        .get_description().empty();
-
-    if (doc_side_by_side) {
-        doc_height = std::max(
-            lnav_data.ld_doc_source.text_line_count(),
-            lnav_data.ld_example_source.text_line_count());
-    } else {
-        doc_height =
-            lnav_data.ld_doc_source.text_line_count() +
-            lnav_data.ld_example_source.text_line_count();
-    }
-
-    int preview_height = lnav_data.ld_preview_hidden ? 0 :
-                         lnav_data.ld_preview_source.text_line_count();
-    int match_rows = lnav_data.ld_match_source.text_line_count();
-    int match_height = min((unsigned long)match_rows, (height - 4) / 2);
-
-    lnav_data.ld_match_view.set_height(vis_line_t(match_height));
-
-    if (doc_height + 14 > ((int) height - match_height - preview_height - 2)) {
-        doc_height = 0;
-        preview_height = 0;
-        preview_status_open = false;
-    }
-
-    bool doc_open = doc_height > 0;
-    int bottom_height =
-        (doc_open ? 1 : 0)
-        + doc_height
-        + (preview_status_open > 0 ? 1 : 0)
-        + preview_height
-        + 1
-        + match_height
-        + lnav_data.ld_rl_view->get_height();
-
-    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
-        textview_curses &tc = lnav_data.ld_views[lpc];
-
-        tc.set_height(vis_line_t(-bottom_height));
-    }
-    lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + 2));
-    lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
-    lnav_data.ld_status[LNS_DOC].set_enabled(doc_open);
-    lnav_data.ld_status[LNS_PREVIEW].set_top(height
-                                             - match_height
-                                             - 2
-                                             - preview_height
-                                             - lnav_data.ld_rl_view->get_height());
-    lnav_data.ld_status[LNS_PREVIEW].set_enabled(preview_status_open);
-
-    if (!doc_open || doc_side_by_side) {
-        lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
-    } else {
-        lnav_data.ld_doc_view.set_height(vis_line_t(lnav_data.ld_doc_source.text_line_count()));
-    }
-    lnav_data.ld_doc_view.set_y(height - bottom_height + 1);
-
-    if (!doc_open || doc_side_by_side) {
-        lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
-        lnav_data.ld_example_view.set_x(90);
-        lnav_data.ld_example_view.set_y(height - bottom_height + 1);
-    } else {
-        lnav_data.ld_example_view.set_height(vis_line_t(lnav_data.ld_example_source.text_line_count()));
-        lnav_data.ld_example_view.set_x(0);
-        lnav_data.ld_example_view.set_y(height - bottom_height + lnav_data.ld_doc_view.get_height() + 1);
-    }
-
-    lnav_data.ld_preview_view.set_height(vis_line_t(preview_height));
-    lnav_data.ld_preview_view.set_y(height
-                                    - match_height
-                                    - 1
-                                    - preview_height
-                                    - lnav_data.ld_rl_view->get_height());
-    lnav_data.ld_match_view.set_y(
-        height
-        - lnav_data.ld_rl_view->get_height()
-        - match_height);
-}
-
-static void looper(void)
+static void looper()
 {
     try {
         exec_context &ec = lnav_data.ld_exec_context;
@@ -2092,6 +1308,8 @@ static void looper(void)
         rlc.add_context(LNM_SQL, sql_context);
         rlc.add_context(LNM_EXEC, exec_context);
         rlc.start();
+
+        lnav_data.ld_filter_source.fss_editor.start();
 
         lnav_data.ld_rl_view = &rlc;
 
@@ -2169,7 +1387,7 @@ static void looper(void)
 
         (void)curs_set(0);
 
-        lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
+        lnav_data.ld_view_stack.vs_views.push_back(&lnav_data.ld_views[LNV_LOG]);
 
         for (lpc = 0; lpc < LNV__MAX; lpc++) {
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
@@ -2193,6 +1411,10 @@ static void looper(void)
         lnav_data.ld_preview_view.set_window(lnav_data.ld_window);
         lnav_data.ld_preview_view.set_show_scrollbar(false);
 
+        lnav_data.ld_filter_view.set_selectable(true);
+        lnav_data.ld_filter_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_filter_view.set_show_scrollbar(true);
+
         lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
         for (auto &sc : lnav_data.ld_status) {
@@ -2202,6 +1424,8 @@ static void looper(void)
             &lnav_data.ld_top_source);
         lnav_data.ld_status[LNS_BOTTOM].set_data_source(
             &lnav_data.ld_bottom_source);
+        lnav_data.ld_status[LNS_FILTER].set_data_source(
+            &lnav_data.ld_filter_status_source);
         lnav_data.ld_status[LNS_DOC].set_data_source(
             &lnav_data.ld_doc_status_source);
         lnav_data.ld_status[LNS_PREVIEW].set_data_source(
@@ -2209,7 +1433,6 @@ static void looper(void)
 
         vsb.push_back(sb.get_functor());
 
-        sb.push_back(view_action<listview_curses>(update_times));
         sb.push_back(view_action<listview_curses>(clear_last_user_mark));
         sb.push_back(&lnav_data.ld_top_source.filename_wire);
         vsb.push_back(&lnav_data.ld_top_source.view_name_wire);
@@ -2226,8 +1449,8 @@ static void looper(void)
 
         execute_file(ec, dotlnav_path("session"));
 
-        sb.invoke(lnav_data.ld_view_stack.back());
-        vsb.invoke(lnav_data.ld_view_stack.back());
+        sb.invoke(*lnav_data.ld_view_stack.top());
+        vsb.invoke(*lnav_data.ld_view_stack.top());
 
         bool session_loaded = false;
         ui_periodic_timer &timer = ui_periodic_timer::singleton();
@@ -2238,7 +1461,7 @@ static void looper(void)
             vector<struct pollfd> pollfds;
             struct timeval to = { 0, 333000 };
             int            rc;
-            size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
+            size_t starting_view_stack_size = lnav_data.ld_view_stack.vs_views.size();
 
             lnav_data.ld_top_source.update_time();
 
@@ -2247,9 +1470,7 @@ static void looper(void)
             rescan_files();
             rebuild_indexes();
 
-            if (!lnav_data.ld_view_stack.empty()) {
-                lnav_data.ld_view_stack.back()->do_update();
-            }
+            lnav_data.ld_view_stack.do_update();
             lnav_data.ld_doc_view.do_update();
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
@@ -2258,6 +1479,10 @@ static void looper(void)
                 sc.do_update();
             }
             rlc.do_update();
+            if (lnav_data.ld_filter_source.fss_editing) {
+                lnav_data.ld_filter_source.fss_match_view.set_needs_update();
+            }
+            lnav_data.ld_filter_view.do_update();
             refresh();
 
             if (session_loaded) {
@@ -2269,16 +1494,10 @@ static void looper(void)
                 });
             }
             rlc.update_poll_set(pollfds);
-            for (lpc = 0; lpc < LNV__MAX; lpc++) {
-                unique_ptr<grep_highlighter> &gc =
-                        lnav_data.ld_search_child[lpc];
+            lnav_data.ld_filter_source.fss_editor.update_poll_set(pollfds);
 
-                if (gc.get() != NULL) {
-                    gc->get_grep_proc()->update_poll_set(pollfds);
-                }
-            }
-            if (lnav_data.ld_meta_search) {
-                lnav_data.ld_meta_search->update_poll_set(pollfds);
+            for (auto &tc : lnav_data.ld_views) {
+                tc.update_poll_set(pollfds);
             }
 
             rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
@@ -2327,10 +1546,9 @@ static void looper(void)
                             continue;
                         }
 
-                        if (!lnav_data.ld_view_stack.empty()) {
-                            lnav_data.ld_key_repeat_history.update(
-                                ch, lnav_data.ld_view_stack.back()->get_top());
-                        }
+                        lnav_data.ld_view_stack.top() | [ch] (auto tc) {
+                            lnav_data.ld_key_repeat_history.update(ch, tc->get_top());
+                        };
 
                         switch (ch) {
                         case CTRL('d'):
@@ -2360,28 +1578,23 @@ static void looper(void)
                         }
                     }
                 }
-                for (lpc = 0; lpc < LNV__MAX; lpc++) {
-                    unique_ptr<grep_highlighter> &gc =
-                        lnav_data.ld_search_child[lpc];
 
-                    if (gc.get() != NULL) {
-                        gc->get_grep_proc()->check_poll_set(pollfds);
+                for (auto &tc : lnav_data.ld_views) {
+                    tc.check_poll_set(pollfds);
+                }
 
-                        if (!lnav_data.ld_view_stack.empty()) {
-                            lnav_data.ld_bottom_source.
-                            update_hits(lnav_data.ld_view_stack.back());
-                        }
-                    }
-                }
-                if (lnav_data.ld_meta_search) {
-                    lnav_data.ld_meta_search->check_poll_set(pollfds);
-                }
+                lnav_data.ld_view_stack.top() | [] (auto tc) {
+                    lnav_data.ld_bottom_source.update_hits(tc);
+                };
+
                 rlc.check_poll_set(pollfds);
+                lnav_data.ld_filter_source.fss_editor.check_poll_set(pollfds);
             }
 
-            if (timer.time_to_update(overlay_counter) &&
-                !lnav_data.ld_view_stack.empty()) {
-                lnav_data.ld_view_stack.back()->set_overlay_needs_update();
+            if (timer.time_to_update(overlay_counter)) {
+                lnav_data.ld_view_stack.top() | [] (auto tc) {
+                    tc->set_overlay_needs_update();
+                };
             }
 
             static bool initial_build = false;
@@ -2403,12 +1616,12 @@ static void looper(void)
                             HELP_MSG_2(f, F,
                                     "to switch to the next/previous file"));
                 }
-                if (!lnav_data.ld_view_stack.empty() &&
-                    lnav_data.ld_view_stack.back() == &lnav_data.ld_views[LNV_TEXT] &&
+                if (lnav_data.ld_view_stack.top().value_or(nullptr) ==
+                    &lnav_data.ld_views[LNV_TEXT] &&
                     lnav_data.ld_text_source.empty() &&
                     lnav_data.ld_log_source.text_line_count() > 0) {
                     textview_curses *tc_log = &lnav_data.ld_views[LNV_LOG];
-                    lnav_data.ld_view_stack.pop_back();
+                    lnav_data.ld_view_stack.vs_views.pop_back();
                     lnav_data.ld_views[LNV_LOG].set_top(tc_log->get_top_for_last_row());
                 }
                 if (!initial_build &&
@@ -2464,15 +1677,15 @@ static void looper(void)
                 }
                 rlc.do_update();
                 rlc.window_change();
+                lnav_data.ld_filter_source.fss_editor.window_change();
                 for (auto &sc : lnav_data.ld_status) {
                     sc.window_change();
                 }
-                if (!lnav_data.ld_view_stack.empty()) {
-                    lnav_data.ld_view_stack.back()->set_needs_update();
-                }
+                lnav_data.ld_view_stack.set_needs_update();
                 lnav_data.ld_doc_view.set_needs_update();
                 lnav_data.ld_example_view.set_needs_update();
                 lnav_data.ld_match_view.set_needs_update();
+                lnav_data.ld_filter_view.set_needs_update();
             }
 
             if (lnav_data.ld_child_terminated) {
@@ -2497,8 +1710,8 @@ static void looper(void)
                 lnav_data.ld_meta_search->start();
             }
 
-            if (lnav_data.ld_view_stack.empty() ||
-                (lnav_data.ld_view_stack.size() == 1 &&
+            if (lnav_data.ld_view_stack.vs_views.empty() ||
+                (lnav_data.ld_view_stack.vs_views.size() == 1 &&
                  starting_view_stack_size == 2 &&
                  lnav_data.ld_file_names.size() ==
                  lnav_data.ld_text_source.size())) {
@@ -2523,13 +1736,8 @@ void wait_for_children()
     do {
         pollfds.clear();
 
-        for (auto &gc : lnav_data.ld_search_child) {
-            if (gc.get() != NULL) {
-                gc->get_grep_proc()->update_poll_set(pollfds);
-            }
-        }
-        if (lnav_data.ld_meta_search) {
-            lnav_data.ld_meta_search->update_poll_set(pollfds);
+        for (auto &tc : lnav_data.ld_views) {
+            tc.update_poll_set(pollfds);
         }
 
         if (pollfds.empty()) {
@@ -2548,354 +1756,23 @@ void wait_for_children()
             }
         }
 
-        for (auto &gc : lnav_data.ld_search_child) {
-            if (gc.get() != NULL) {
-                gc->get_grep_proc()->check_poll_set(pollfds);
+        for (auto &tc : lnav_data.ld_views) {
+            tc.check_poll_set(pollfds);
 
-                if (!lnav_data.ld_view_stack.empty()) {
-                    lnav_data.ld_bottom_source.
-                        update_hits(lnav_data.ld_view_stack.back());
-                }
-            }
-        }
-        if (lnav_data.ld_meta_search) {
-            lnav_data.ld_meta_search->check_poll_set(pollfds);
+            lnav_data.ld_view_stack.top() | [] (auto tc) {
+                lnav_data.ld_bottom_source.update_hits(tc);
+            };
         }
     } while (true);
 }
 
-static highlighter static_highlighter(const string &regex) {
-    return highlighter(xpcre_compile(regex.c_str()))
-        .with_attrs(view_colors::singleton().attrs_for_ident(regex));
-}
-
-static void setup_highlights(textview_curses::highlight_map_t &hm)
-{
-    hm["$python"] = highlighter(xpcre_compile(
-        "(?:"
-            "\\bFalse\\b|"
-            "\\bNone\\b|"
-            "\\bTrue\\b|"
-            "\\band\\b|"
-            "\\bas\\b|"
-            "\\bassert\\b|"
-            "\\bbreak\\b|"
-            "\\bclass\\b|"
-            "\\bcontinue\\b|"
-            "\\bdef\\b|"
-            "\\bdel\\b|"
-            "\\belif\\b|"
-            "\\belse\\b|"
-            "\\bexcept\\b|"
-            "\\bfinally\\b|"
-            "\\bfor\\b|"
-            "\\bfrom\\b|"
-            "\\bglobal\\b|"
-            "\\bif\\b|"
-            "\\bimport\\b|"
-            "\\bin\\b|"
-            "\\bis\\b|"
-            "\\blambda\\b|"
-            "\\bnonlocal\\b|"
-            "\\bnot\\b|"
-            "\\bor\\b|"
-            "\\bpass\\b|"
-            "\\bprint\\b|"
-            "\\braise\\b|"
-            "\\breturn\\b|"
-            "\\btry\\b|"
-            "\\bwhile\\b|"
-            "\\bwith\\b|"
-            "\\byield\\b"
-            ")"))
-        .with_text_format(TF_PYTHON)
-        .with_role(view_colors::VCR_KEYWORD);
-
-    hm["$clike"] = highlighter(xpcre_compile(
-        "(?:"
-            "\\babstract\\b|"
-            "\\bassert\\b|"
-            "\\basm\\b|"
-            "\\bauto\\b|"
-            "\\bbool\\b|"
-            "\\bbooleanif\\b|"
-            "\\bbreak\\b|"
-            "\\bbyte\\b|"
-            "\\bcase\\b|"
-            "\\bcatch\\b|"
-            "\\bchar\\b|"
-            "\\bclass\\b|"
-            "\\bconst\\b|"
-            "\\bconst_cast\\b|"
-            "\\bcontinue\\b|"
-            "\\bdefault\\b|"
-            "\\bdelete\\b|"
-            "\\bdo\\b|"
-            "\\bdouble\\b|"
-            "\\bdynamic_cast\\b|"
-            "\\belse\\b|"
-            "\\benum\\b|"
-            "\\bextends\\b|"
-            "\\bextern\\b|"
-            "\\bfalse\\b|"
-            "\\bfinal\\b|"
-            "\\bfinally\\b|"
-            "\\bfloat\\b|"
-            "\\bfor\\b|"
-            "\\bfriend\\b|"
-            "\\bgoto\\b|"
-            "\\bif\\b|"
-            "\\bimplements\\b|"
-            "\\bimport\\b|"
-            "\\binline\\b|"
-            "\\binstanceof\\b|"
-            "\\bint\\b|"
-            "\\binterface\\b|"
-            "\\blong\\b|"
-            "\\bmutable\\b|"
-            "\\bnamespace\\b|"
-            "\\bnative\\b|"
-            "\\bnew\\b|"
-            "\\boperator\\b|"
-            "\\bpackage\\b|"
-            "\\bprivate\\b|"
-            "\\bprotected\\b|"
-            "\\bpublic\\b|"
-            "\\breinterpret_cast\\b|"
-            "\\bregister\\b|"
-            "\\breturn\\b|"
-            "\\bshort\\b|"
-            "\\bsigned\\b|"
-            "\\bsizeof\\b|"
-            "\\bstatic\\b|"
-            "\\bstatic_cast\\b|"
-            "\\bstrictfp\\b|"
-            "\\bstruct\\b|"
-            "\\bsuper\\b|"
-            "\\bswitch\\b|"
-            "\\bsynchronized\\b|"
-            "\\btemplate\\b|"
-            "\\bthis\\b|"
-            "\\bthrow\\b|"
-            "\\bthrows\\b|"
-            "\\btransient\\b|"
-            "\\btry\\b|"
-            "\\btrue\\b|"
-            "\\btypedef\\b|"
-            "\\btypeid\\b|"
-            "\\bunion\\b|"
-            "\\bunsigned\\b|"
-            "\\busing\\b|"
-            "\\bvirtual\\b|"
-            "\\bvoid\\b|"
-            "\\bvolatile\\b|"
-            "\\bwchar_t\\b|"
-            "\\bwhile\\b"
-            ")"))
-        .with_text_format(TF_C_LIKE)
-        .with_role(view_colors::VCR_KEYWORD);
-
-    hm["$sql"] = highlighter(xpcre_compile(
-        "(?:"
-            "\\bABORT\\b|"
-            "\\bACTION\\b|"
-            "\\bADD\\b|"
-            "\\bAFTER\\b|"
-            "\\bALL\\b|"
-            "\\bALTER\\b|"
-            "\\bANALYZE\\b|"
-            "\\bAND\\b|"
-            "\\bAS\\b|"
-            "\\bASC\\b|"
-            "\\bATTACH\\b|"
-            "\\bAUTOINCREMENT\\b|"
-            "\\bBEFORE\\b|"
-            "\\bBEGIN\\b|"
-            "\\bBETWEEN\\b|"
-            "\\bBOOLEAN\\b|"
-            "\\bBY\\b|"
-            "\\bCASCADE\\b|"
-            "\\bCASE\\b|"
-            "\\bCAST\\b|"
-            "\\bCHECK\\b|"
-            "\\bCOLLATE\\b|"
-            "\\bCOLUMN\\b|"
-            "\\bCOMMIT\\b|"
-            "\\bCONFLICT\\b|"
-            "\\bCONSTRAINT\\b|"
-            "\\bCREATE\\b|"
-            "\\bCROSS\\b|"
-            "\\bCURRENT_DATE\\b|"
-            "\\bCURRENT_TIME\\b|"
-            "\\bCURRENT_TIMESTAMP\\b|"
-            "\\bDATABASE\\b|"
-            "\\bDATETIME\\b|"
-            "\\bDEFAULT\\b|"
-            "\\bDEFERRABLE\\b|"
-            "\\bDEFERRED\\b|"
-            "\\bDELETE\\b|"
-            "\\bDESC\\b|"
-            "\\bDETACH\\b|"
-            "\\bDISTINCT\\b|"
-            "\\bDROP\\b|"
-            "\\bEACH\\b|"
-            "\\bELSE\\b|"
-            "\\bEND\\b|"
-            "\\bESCAPE\\b|"
-            "\\bEXCEPT\\b|"
-            "\\bEXCLUSIVE\\b|"
-            "\\bEXISTS\\b|"
-            "\\bEXPLAIN\\b|"
-            "\\bFAIL\\b|"
-            "\\bFLOAT\\b|"
-            "\\bFOR\\b|"
-            "\\bFOREIGN\\b|"
-            "\\bFROM\\b|"
-            "\\bFULL\\b|"
-            "\\bGLOB\\b|"
-            "\\bGROUP\\b|"
-            "\\bHAVING\\b|"
-            "\\bHIDDEN\\b|"
-            "\\bIF\\b|"
-            "\\bIGNORE\\b|"
-            "\\bIMMEDIATE\\b|"
-            "\\bIN\\b|"
-            "\\bINDEX\\b|"
-            "\\bINDEXED\\b|"
-            "\\bINITIALLY\\b|"
-            "\\bINNER\\b|"
-            "\\bINSERT\\b|"
-            "\\bINSTEAD\\b|"
-            "\\bINTEGER\\b|"
-            "\\bINTERSECT\\b|"
-            "\\bINTO\\b|"
-            "\\bIS\\b|"
-            "\\bISNULL\\b|"
-            "\\bJOIN\\b|"
-            "\\bKEY\\b|"
-            "\\bLEFT\\b|"
-            "\\bLIKE\\b|"
-            "\\bLIMIT\\b|"
-            "\\bMATCH\\b|"
-            "\\bNATURAL\\b|"
-            "\\bNO\\b|"
-            "\\bNOT\\b|"
-            "\\bNOTNULL\\b|"
-            "\\bNULL\\b|"
-            "\\bOF\\b|"
-            "\\bOFFSET\\b|"
-            "\\bON\\b|"
-            "\\bOR\\b|"
-            "\\bORDER\\b|"
-            "\\bOUTER\\b|"
-            "\\bPLAN\\b|"
-            "\\bPRAGMA\\b|"
-            "\\bPRIMARY\\b|"
-            "\\bQUERY\\b|"
-            "\\bRAISE\\b|"
-            "\\bRECURSIVE\\b|"
-            "\\bREFERENCES\\b|"
-            "\\bREGEXP\\b|"
-            "\\bREINDEX\\b|"
-            "\\bRELEASE\\b|"
-            "\\bRENAME\\b|"
-            "\\bREPLACE\\b|"
-            "\\bRESTRICT\\b|"
-            "\\bRIGHT\\b|"
-            "\\bROLLBACK\\b|"
-            "\\bROW\\b|"
-            "\\bSAVEPOINT\\b|"
-            "\\bSELECT\\b|"
-            "\\bSET\\b|"
-            "\\bTABLE\\b|"
-            "\\bTEMP\\b|"
-            "\\bTEMPORARY\\b|"
-            "\\bTEXT\\b|"
-            "\\bTHEN\\b|"
-            "\\bTO\\b|"
-            "\\bTRANSACTION\\b|"
-            "\\bTRIGGER\\b|"
-            "\\bUNION\\b|"
-            "\\bUNIQUE\\b|"
-            "\\bUPDATE\\b|"
-            "\\bUSING\\b|"
-            "\\bVACUUM\\b|"
-            "\\bVALUES\\b|"
-            "\\bVIEW\\b|"
-            "\\bVIRTUAL\\b|"
-            "\\bWHEN\\b|"
-            "\\bWHERE\\b|"
-            "\\bWITH\\b|"
-            "\\bWITHOUT\\b"
-            ")", PCRE_CASELESS))
-        .with_text_format(TF_SQL)
-        .with_role(view_colors::VCR_KEYWORD);
-
-    hm["$srcfile"] = static_highlighter(
-        "[\\w\\-_]+\\."
-            "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
-            "\\d+")
-        .with_role(view_colors::VCR_FILE);
-    hm["$xml"] = static_highlighter("<(/?[^ >=]+)[^>]*>");
-    hm["$stringd"] = highlighter(xpcre_compile(
-        "\"(?:\\\\.|[^\"])*\""))
-        .with_role(view_colors::VCR_STRING);
-    hm["$strings"] = highlighter(xpcre_compile(
-        "(?<![A-WY-Za-qstv-z])\'(?:\\\\.|[^'])*\'"))
-        .with_role(view_colors::VCR_STRING);
-    hm["$stringb"] = highlighter(xpcre_compile(
-        "`(?:\\\\.|[^`])*`"))
-        .with_role(view_colors::VCR_STRING);
-    hm["$diffp"] = highlighter(xpcre_compile(
-        "^\\+.*"))
-        .with_role(view_colors::VCR_DIFF_ADD);
-    hm["$diffm"] = highlighter(xpcre_compile(
-        "^(?:--- .*|-$|-[^-].*)"))
-        .with_role(view_colors::VCR_DIFF_DELETE);
-    hm["$diffs"] = highlighter(xpcre_compile(
-        "^\\@@ .*"))
-        .with_role(view_colors::VCR_DIFF_SECTION);
-    hm["$ip"] = static_highlighter("\\d+\\.\\d+\\.\\d+\\.\\d+");
-    hm["$comment"] = highlighter(xpcre_compile(
-        "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"))
-        .with_role(view_colors::VCR_COMMENT);
-    hm["$sqlcomment"] = highlighter(xpcre_compile(
-        "(?<=[\\s;])--.*"))
-        .with_text_format(TF_SQL)
-        .with_role(view_colors::VCR_COMMENT);
-    hm["$javadoc"] = static_highlighter(
-        "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");
-    hm["$var"] = highlighter(xpcre_compile(
-        "(?:"
-          "(?:var\\s+)?([\\-\\w]+)\\s*=|"
-          "(?<!\\$)\\$(\\w+)|"
-          "(?<!\\$)\\$\\((\\w+)\\)|"
-          "(?<!\\$)\\$\\{(\\w+)\\}"
-          ")"))
-        .with_role(view_colors::VCR_VARIABLE);
-}
-
 static void print_errors(vector<string> error_list)
 {
-    for (std::vector<std::string>::iterator iter = error_list.begin();
-         iter != error_list.end();
-         ++iter) {
-        fprintf(stderr, "%s%s", iter->c_str(),
-                (*iter)[iter->size() - 1] == '\n' ? "" : "\n");
+    for (auto &iter : error_list) {
+        fprintf(stderr, "%s%s", iter.c_str(),
+                iter[iter.size() - 1] == '\n' ? "" : "\n");
     }
 }
-
-class redraw_listener : public lnav_config_listener {
-    void reload_config() {
-        if (!lnav_data.ld_view_stack.empty()) {
-            textview_curses *tc = lnav_data.ld_view_stack.back();
-
-            tc->set_needs_update();
-        }
-    }
-};
-
-redraw_listener REDRAW_LISTENER;
 
 int main(int argc, char *argv[])
 {
@@ -2920,7 +1797,7 @@ int main(int argc, char *argv[])
     /* Disable Lnav from being able to execute external commands if
      * "LNAVSECURE" environment variable is set by the user.
      */
-    if (getenv("LNAVSECURE") != NULL) {
+    if (getenv("LNAVSECURE") != nullptr) {
         lnav_data.ld_flags |= LNF_SECURE_MODE;
     }
 
@@ -2978,7 +1855,7 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
                 break;
             }
-            lnav_data.ld_commands.push_back(optarg);
+            lnav_data.ld_commands.emplace_back(optarg);
             break;
 
         case 'f':
@@ -2995,7 +1872,7 @@ int main(int argc, char *argv[])
                 perror("invalid config path");
                 exit(EXIT_FAILURE);
             }
-            lnav_data.ld_config_paths.push_back(optarg);
+            lnav_data.ld_config_paths.emplace_back(optarg);
             break;
 
         case 'i':
@@ -3072,42 +1949,10 @@ int main(int argc, char *argv[])
     }
     add_global_vars(ec);
 
-    string formats_path = dotlnav_path("formats/");
-
     if (lnav_data.ld_flags & LNF_UPDATE_FORMATS) {
-        static_root_mem<glob_t, globfree> gl;
-        string git_formats = formats_path + "*/.git";
-        bool found = false;
-
-        if (glob(git_formats.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
-            for (lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
-                char *git_dir = dirname(gl->gl_pathv[lpc]);
-                char pull_cmd[1024];
-
-                printf("Updating formats in %s\n", git_dir);
-                snprintf(pull_cmd, sizeof(pull_cmd),
-                         "cd %s && git pull",
-                         git_dir);
-                int ret = system(pull_cmd);
-                if (ret == -1) {
-                    std::cerr << "Failed to spawn command "
-                              << "\"" << pull_cmd << "\": "
-                              << strerror(errno) << std::endl;
-                }
-                else if (ret > 0) {
-                    std::cerr << "Command "
-                              << "\"" << pull_cmd << "\" failed: "
-                              << strerror(errno) << std::endl;
-                }
-                found = true;
-            }
+        if (!update_git_formats()) {
+            return EXIT_FAILURE;
         }
-
-        if (!found) {
-            printf("No formats from git repositories found, "
-                           "use 'lnav -i extra' to install third-party foramts\n");
-        }
-
         return EXIT_SUCCESS;
     }
 
@@ -3225,8 +2070,8 @@ int main(int argc, char *argv[])
 
         if (sqlite3_exec(lnav_data.ld_db.in(),
                          init_sql,
-                         NULL,
-                         NULL,
+                         nullptr,
+                         nullptr,
                          errmsg.out()) != SQLITE_OK) {
             fprintf(stderr,
                     "error: unable to execute DB init -- %s\n",
@@ -3292,6 +2137,11 @@ int main(int argc, char *argv[])
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
     lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
     lnav_data.ld_preview_view.set_sub_source(&lnav_data.ld_preview_source);
+    lnav_data.ld_filter_view
+             .set_sub_source(&lnav_data.ld_filter_source)
+             .add_input_delegate(lnav_data.ld_filter_source)
+             .add_child_view(&lnav_data.ld_filter_source.fss_match_view)
+             .add_child_view(&lnav_data.ld_filter_source.fss_editor);
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
@@ -3545,7 +2395,7 @@ int main(int argc, char *argv[])
 
                 log_tc = &lnav_data.ld_views[LNV_LOG];
                 log_tc->set_height(vis_line_t(24));
-                lnav_data.ld_view_stack.push_back(log_tc);
+                lnav_data.ld_view_stack.vs_views.push_back(log_tc);
                 // Read all of stdin
                 wait_for_pipers();
                 rebuild_indexes();
@@ -3580,14 +2430,14 @@ int main(int argc, char *argv[])
 
                 if (!found_error &&
                     !(lnav_data.ld_flags & LNF_QUIET) &&
-                    !lnav_data.ld_view_stack.empty() &&
+                    !lnav_data.ld_view_stack.vs_views.empty() &&
                     !lnav_data.ld_stdout_used) {
                     bool suppress_empty_lines = false;
                     list_overlay_source *los;
                     unsigned long view_index;
                     vis_line_t y;
 
-                    tc = lnav_data.ld_view_stack.back();
+                    tc = *lnav_data.ld_view_stack.top();
                     view_index = tc - lnav_data.ld_views;
                     switch (view_index) {
                         case LNV_DB:

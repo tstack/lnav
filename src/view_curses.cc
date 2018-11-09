@@ -173,9 +173,10 @@ bool rgb_color::from_str(const string_fragment &color,
 
 string_attr_type view_curses::VC_STYLE("style");
 string_attr_type view_curses::VC_GRAPHIC("graphic");
+string_attr_type view_curses::VC_FOREGROUND("foreground");
+string_attr_type view_curses::VC_BACKGROUND("background");
 
-const struct itimerval ui_periodic_timer::INTERVAL = {
-    { 0, 350 * 1000 },
+const struct itimerval ui_periodic_timer::INTERVAL = {    { 0, 350 * 1000 },
     { 0, 350 * 1000 }
 };
 
@@ -412,6 +413,11 @@ void view_curses::mvwattrline(WINDOW *window,
     tab_count     = count(line.begin(), line.end(), '\t');
     expanded_line = (char *)alloca(line.size() + tab_count * 8 + 1);
 
+    unsigned char *fg_color = (unsigned char *) alloca(line_width);
+    bool has_fg = false;
+    unsigned char *bg_color = (unsigned char *) alloca(line_width);
+    bool has_bg = false;
+
     for (size_t lpc = 0; lpc < line.size(); lpc++) {
         int exp_start_index = exp_index;
         unsigned char ch = static_cast<unsigned char>(line[lpc]);
@@ -482,7 +488,10 @@ void view_curses::mvwattrline(WINDOW *window,
         require(attr_range.lr_start >= 0);
         require(attr_range.lr_end >= -1);
 
-        if (!(iter->sa_type == &VC_STYLE || iter->sa_type == &VC_GRAPHIC)) {
+        if (!(iter->sa_type == &VC_STYLE ||
+              iter->sa_type == &VC_GRAPHIC ||
+              iter->sa_type == &VC_FOREGROUND ||
+              iter->sa_type == &VC_BACKGROUND)) {
             continue;
         }
 
@@ -513,6 +522,24 @@ void view_curses::mvwattrline(WINDOW *window,
                 index++) {
                 mvwaddch(window, y, x + index, iter->sa_value.sav_int);
             }
+            continue;
+        }
+
+        if (iter->sa_type == &VC_FOREGROUND) {
+            if (!has_fg) {
+                memset(fg_color, COLOR_WHITE, line_width);
+            }
+            fill(fg_color + attr_range.lr_start, fg_color + attr_range.lr_end, iter->sa_value.sav_int);
+            has_fg = true;
+            continue;
+        }
+
+        if (iter->sa_type == &VC_BACKGROUND) {
+            if (!has_bg) {
+                memset(bg_color, COLOR_BLACK, line_width);
+            }
+            fill(bg_color + attr_range.lr_start, bg_color + attr_range.lr_end, iter->sa_value.sav_int);
+            has_bg = true;
             continue;
         }
 
@@ -548,13 +575,40 @@ void view_curses::mvwattrline(WINDOW *window,
                     }
                     if (clear_rev) {
                         row_ch[lpc].attr &= ~A_REVERSE;
-                        log_debug(" %c %d clear_rev", row_ch[lpc].chars[0], lpc);
                     }
                 }
                 mvwadd_wchnstr(window, y, x_pos, row_ch, ch_width);
             }
         }
     }
+
+#if 1
+    if (has_fg || has_bg) {
+        if (!has_fg) {
+            memset(fg_color, COLOR_WHITE, line_width);
+        }
+        if (!has_bg) {
+            memset(bg_color, COLOR_BLACK, line_width);
+        }
+
+        int x_pos = x + lr.lr_start;
+        int ch_width = lr.length();
+        cchar_t row_ch[ch_width + 1];
+
+        mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
+        for (int lpc = 0; lpc < ch_width; lpc++) {
+            int color_pair = view_colors::ansi_color_pair_index(fg_color[lpc], bg_color[lpc]);
+
+            row_ch[lpc].attr = row_ch[lpc].attr & ~A_COLOR;
+#ifdef NCURSES_EXT_COLORS
+            row_ch[lpc].ext_color = color_pair;
+#else
+            row_ch[lpc].attr |= COLOR_PAIR(color_pair);
+#endif
+        }
+        mvwadd_wchnstr(window, y, x_pos, row_ch, ch_width);
+    }
+#endif
 }
 
 class color_listener : public lnav_config_listener {
@@ -661,6 +715,9 @@ inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
 
 void view_colors::init_roles(int color_pair_base)
 {
+    rgb_color fg, bg;
+    string err;
+
     /* Setup the mappings from roles to actual colors. */
     this->vc_role_colors[VCR_TEXT] =
         attr_for_colors(color_pair_base, COLOR_WHITE, COLOR_BLACK);
@@ -691,6 +748,13 @@ void view_colors::init_roles(int color_pair_base)
         attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_VIEW_STATUS] =
         attr_for_colors(color_pair_base, COLOR_WHITE, COLOR_BLUE) | A_BOLD;
+
+    rgb_color::from_str(string_fragment("White"), fg, err);
+    rgb_color::from_str(string_fragment("Grey37"), bg, err);
+    this->vc_role_colors[VCR_INACTIVE_STATUS] = ensure_color_pair(fg, bg);
+
+    this->vc_role_colors[VCR_POPUP] =
+        attr_for_colors(color_pair_base, COLOR_WHITE, COLOR_CYAN) | A_BOLD;
 
     this->vc_role_colors[VCR_KEYWORD] = attr_for_colors(color_pair_base, COLOR_BLUE, COLOR_BLACK);
     this->vc_role_colors[VCR_STRING] = attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_BLACK) | A_BOLD;

@@ -69,6 +69,17 @@ this table:
 
   :name: The name of the view.
 
+lnav_view_filters
+-----------------
+
+The **lnav_view_filters** table allows you to manipulate the filters in the
+**lnav** views.  The following columns are available in this table:
+
+  :view_name: The name of the view.
+  :enabled: Indicates whether this filter is enabled or disabled.
+  :type: The type of filter, either 'in' or 'out'.
+  :pattern: The regular expression to filter on.
+
 all_logs
 --------
 

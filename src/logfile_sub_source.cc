@@ -735,6 +735,17 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         }
     }
 
+    switch (retval) {
+        case rebuild_result::rr_no_change:
+            break;
+        case rebuild_result::rr_full_rebuild:
+            this->tss_view->redo_search();
+            break;
+        case rebuild_result::rr_appended_lines:
+            this->tss_view->search_new_data();
+            break;
+    }
+
     return retval;
 }
 
@@ -861,6 +872,9 @@ void logfile_sub_source::text_filters_changed()
     if (this->lss_index_delegate != nullptr) {
         this->lss_index_delegate->index_complete(*this);
     }
+
+    this->tss_view->reload_data();
+    this->tss_view->redo_search();
 }
 
 bool logfile_sub_source::list_input_handle_key(listview_curses &lv, int ch)
@@ -887,4 +901,13 @@ bool logfile_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             break;
     }
     return false;
+}
+
+nonstd::optional<pair<grep_proc_source<vis_line_t> *, grep_proc_sink<vis_line_t> *>>
+logfile_sub_source::get_grepper()
+{
+    return make_pair(
+        (grep_proc_source<vis_line_t> *) &this->lss_meta_grepper,
+        (grep_proc_sink<vis_line_t> *) &this->lss_meta_grepper
+    );
 }

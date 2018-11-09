@@ -176,6 +176,8 @@ Views
                     leaving the spectrogram view with 'Q', the top time in that
                     view will be matched to the top time in the log view.
 
+  `                 Toggle focusing on the filter editor or the main view.
+
   a/A               Restore the view that was previously popped with 'q/Q'.
                     The 'A' hotkey will try to match the top times between the
                     two views.
@@ -424,6 +426,22 @@ Session
   CTRL-R            Reset the session state.  This will save the current
                     session state (filters, highlights) and then reset the
                     state to the factory default.
+
+Filter Editor
+-------------
+
+The following hotkeys are only available when the focus is on the filter
+editor.  You can change the focus by pressing backquote (`).
+
+  q                 Switch the focus back to the main view.
+  j/down-arrow      Select the next filter.
+  k/up-arrow        Select the previous filter.
+  o                 Create a new "out" filter.
+  i                 Create a new "in" filter .
+  SPACE             Toggle the enabled/disabled state of the currently
+                    selected filter.
+  ENTER             Edit the selected filter.
+  D                 Delete the selected filter.
 
 
 MOUSE SUPPORT (experimental)
@@ -2040,6 +2058,10 @@ Parameters
   column-name   The columns in the table to update.
   cond          The condition used to determine whether a row should be 
                 updated.
+
+Example
+#1 ;UPDATE syslog_log SET log_mark = 1 WHERE log_line = 40
+   
 
 
 Synopsis

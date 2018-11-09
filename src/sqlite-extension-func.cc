@@ -627,7 +627,8 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                 .one_or_more())
             .with_parameter(help_text("cond", "The condition used to determine whether a row should be updated.")
                                 .with_flag_name("WHERE")
-                                .optional()),
+                                .optional())
+            .with_example({"UPDATE syslog_log SET log_mark = 1 WHERE log_line = 40"}),
 
         help_text("CASE",
                   "Evaluate a series of expressions in order until one evaluates to true and then return it's result.  "

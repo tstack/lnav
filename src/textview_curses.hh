@@ -123,6 +123,9 @@ public:
     bool is_enabled() { return this->lf_enabled; };
     void enable() { this->lf_enabled = true; };
     void disable() { this->lf_enabled = false; };
+    void set_enabled(bool value) {
+        this->lf_enabled = value;
+    }
 
     void revert_to_last(logfile_filter_state &lfs) {
         this->lf_message_matched = this->lf_last_message_matched;
@@ -169,6 +172,7 @@ public:
         return this->lf_id == rhs;
     };
 
+    bool lf_deleted{false};
     bool lf_message_matched;
     size_t lf_lines_for_message;
     bool lf_last_message_matched;
@@ -179,6 +183,18 @@ protected:
     type_t      lf_type;
     std::string lf_id;
     size_t lf_index;
+};
+
+class empty_filter : public text_filter {
+public:
+    empty_filter(type_t type, size_t index)
+        : text_filter(type, "", index) {
+    }
+
+    bool matches(const logfile &lf, const logline &ll,
+                 shared_buffer_ref &line) override;
+
+    std::string to_command() override;
 };
 
 class filter_stack {
@@ -210,6 +226,10 @@ public:
 
         memset(used, 0, sizeof(used));
         for (auto &iter : *this) {
+            if (iter->lf_deleted) {
+                continue;
+            }
+
             size_t index = iter->get_index();
 
             require(used[index] == false);
@@ -276,8 +296,12 @@ public:
 
     void get_enabled_mask(uint32_t &filter_in_mask, uint32_t &filter_out_mask) {
         filter_in_mask = filter_out_mask = 0;
-        for (auto iter = this->begin(); iter != this->end(); ++iter) {
-            std::shared_ptr<text_filter> tf = (*iter);
+        for (auto &iter : *this) {
+            std::shared_ptr<text_filter> tf = iter;
+
+            if (tf->lf_deleted) {
+                continue;
+            }
             if (tf->is_enabled()) {
                 uint32_t bit = (1UL << tf->get_index());
 
@@ -427,6 +451,10 @@ public:
         return TF_UNKNOWN;
     };
 
+    virtual nonstd::optional<std::pair<grep_proc_source<vis_line_t> *, grep_proc_sink<vis_line_t> *>> get_grepper() {
+        return nonstd::nullopt;
+    }
+
 protected:
     textview_curses *tss_view;
     filter_stack tss_filters;
@@ -505,6 +533,8 @@ public:
                 this->tc_sub_source->text_mark(bm, curr_line, added);
             }
         }
+        this->search_range(start_line, end_line + 1_vl);
+        this->search_new_data();
     };
 
     void set_user_mark(bookmark_type_t *bm, vis_line_t vl, bool marked) {
@@ -523,6 +553,9 @@ public:
         if (this->tc_sub_source) {
             this->tc_sub_source->text_mark(bm, vl, marked);
         }
+
+        this->search_range(vl, vl + 1_vl);
+        this->search_new_data();
     };
 
     textview_curses &set_sub_source(text_sub_source *src) {
@@ -532,7 +565,7 @@ public:
         return *this;
     };
 
-    text_sub_source *get_sub_source(void) const { return this->tc_sub_source; };
+    text_sub_source *get_sub_source() const { return this->tc_sub_source; };
 
     textview_curses &set_delegate(text_delegate *del) {
         this->tc_delegate = del;
@@ -540,7 +573,7 @@ public:
         return *this;
     };
 
-    text_delegate *get_delegate(void) const { return this->tc_delegate; };
+    text_delegate *get_delegate() const { return this->tc_delegate; };
 
     void horiz_shift(vis_line_t start, vis_line_t end,
                      int off_start,
@@ -615,7 +648,7 @@ public:
         if (this->tc_follow_deadline.tv_sec) {
             struct timeval now;
 
-            gettimeofday(&now, NULL);
+            gettimeofday(&now, nullptr);
             if (this->tc_follow_deadline < now) {
                 this->tc_follow_deadline.tv_sec = 0;
                 this->tc_follow_deadline.tv_usec = 0;
@@ -697,7 +730,7 @@ public:
         timeradd(&now, &tv, &this->tc_follow_deadline);
     };
 
-    size_t get_match_count(void)
+    size_t get_match_count()
     {
         return this->tc_bookmarks[&BM_SEARCH].size();
     };
@@ -718,9 +751,9 @@ public:
 
     bool handle_mouse(mouse_event &me);
 
-    void reload_data(void);
+    void reload_data();
 
-    void do_update(void) {
+    void do_update() {
         this->listview_curses::do_update();
         if (this->tc_delegate != NULL) {
             this->tc_delegate->text_overlay(*this);
@@ -735,7 +768,66 @@ public:
         return retval;
     };
 
-protected:
+    void execute_search(const std::string &regex_orig);
+
+    void redo_search() {
+        if (this->tc_search_child) {
+            grep_proc<vis_line_t> *gp = this->tc_search_child->get_grep_proc();
+
+            gp->invalidate();
+            this->match_reset();
+            gp->queue_request(0_vl)
+              .start();
+
+            if (this->tc_source_search_child) {
+                this->tc_source_search_child->invalidate()
+                    .queue_request(0_vl)
+                    .start();
+            }
+        }
+    };
+
+    void search_range(vis_line_t start, vis_line_t stop = -1_vl) {
+        if (this->tc_search_child) {
+            this->tc_search_child->get_grep_proc()->queue_request(start, stop);
+        }
+        if (this->tc_source_search_child) {
+            this->tc_source_search_child->queue_request(start, stop);
+        }
+    }
+
+    void search_new_data() {
+        this->search_range(-1_vl);
+        if (this->tc_search_child) {
+            this->tc_search_child->get_grep_proc()->start();
+        }
+        if (this->tc_source_search_child) {
+            this->tc_source_search_child->start();
+        }
+    }
+
+    void update_poll_set(std::vector<struct pollfd> &pollfds) {
+        if (this->tc_search_child) {
+            this->tc_search_child->get_grep_proc()->update_poll_set(pollfds);
+        }
+        if (this->tc_source_search_child) {
+            this->tc_source_search_child->update_poll_set(pollfds);
+        }
+    }
+
+    void check_poll_set(const std::vector<struct pollfd> &pollfds) {
+        if (this->tc_search_child) {
+            this->tc_search_child->get_grep_proc()->check_poll_set(pollfds);
+        }
+        if (this->tc_source_search_child) {
+            this->tc_source_search_child->check_poll_set(pollfds);
+        }
+    }
+
+    std::string get_last_search() const {
+        return this->tc_last_search;
+    }
+
     void invoke_scroll() {
         if (this->tc_sub_source != nullptr) {
             auto ttt = dynamic_cast<text_time_translator *>(this->tc_sub_source);
@@ -747,6 +839,30 @@ protected:
 
         listview_curses::invoke_scroll();
     }
+
+protected:
+
+    class grep_highlighter {
+    public:
+        grep_highlighter(std::unique_ptr<grep_proc<vis_line_t>> &gp,
+                         std::string hl_name,
+                         textview_curses::highlight_map_t &hl_map)
+            : gh_grep_proc(std::move(gp)),
+              gh_hl_name(std::move(hl_name)),
+              gh_hl_map(hl_map) { };
+
+        ~grep_highlighter()
+        {
+            this->gh_hl_map.erase(this->gh_hl_map.find(this->gh_hl_name));
+        };
+
+        grep_proc<vis_line_t> *get_grep_proc() { return this->gh_grep_proc.get(); };
+
+    private:
+        std::unique_ptr<grep_proc<vis_line_t>> gh_grep_proc;
+        std::string gh_hl_name;
+        textview_curses::highlight_map_t &gh_hl_map;
+    };
 
     text_sub_source *tc_sub_source;
     text_delegate *tc_delegate;
@@ -763,6 +879,10 @@ protected:
     vis_line_t tc_selection_last;
     bool tc_selection_cleared;
     bool tc_hide_fields;
+
+    std::string tc_last_search;
+    std::unique_ptr<grep_highlighter> tc_search_child;
+    std::shared_ptr<grep_proc<vis_line_t>> tc_source_search_child;
 };
 
 #endif

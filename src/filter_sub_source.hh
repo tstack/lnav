@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2018, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,21 +27,58 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LNAV_READLINE_POSSIBILITIES_H
-#define LNAV_READLINE_POSSIBILITIES_H
+#ifndef filter_sub_source_hh
+#define filter_sub_source_hh
 
-#include <string>
-
-#include "textview_curses.hh"
 #include "readline_curses.hh"
+#include "textview_curses.hh"
+#include "plain_text_source.hh"
 
-void add_view_text_possibilities(readline_curses *rlc, int context, const std::string &type, textview_curses *tc);
-void add_env_possibilities(int context);
-void add_filter_possibilities(textview_curses *tc);
-void add_mark_possibilities();
-void add_config_possibilities();
-void add_tag_possibilities();
+class filter_sub_source
+    : public text_sub_source, public list_input_delegate {
+public:
+    using fss_functor_t = readline_curses::action::mem_functor_t<filter_sub_source>;
 
-extern struct sqlite_metadata_callbacks lnav_sql_meta_callbacks;
+    filter_sub_source();
 
-#endif //LNAV_READLINE_POSSIBILITIES_H
+    bool list_input_handle_key(listview_curses &lv, int ch) override;
+
+    size_t text_line_count() override;;
+
+    size_t text_line_width(textview_curses &curses) override;
+
+    void
+    text_value_for_line(textview_curses &tc, int line, std::string &value_out,
+                        line_flags_t flags) override;
+
+    void text_attrs_for_line(textview_curses &tc, int line,
+                             string_attrs_t &value_out) override;
+
+    size_t
+    text_size_for_line(textview_curses &tc, int line, line_flags_t raw) override;
+
+    void rl_change(readline_curses *rc);
+
+    void rl_perform(readline_curses *rc);
+
+    void rl_abort(readline_curses *rc);
+
+    void rl_display_matches(readline_curses *rc);
+
+    void rl_display_next(readline_curses *rc);
+
+    readline_context filter_context{"filter"};
+    readline_curses fss_editor;
+    plain_text_source fss_match_source;
+    textview_curses fss_match_view;
+
+    bool fss_editing{false};
+    fss_functor_t fss_change_wire;
+    fss_functor_t fss_perform_wire;
+    fss_functor_t fss_abort_wire;
+    fss_functor_t fss_display_match_wire;
+    fss_functor_t fss_display_next_wire;
+    bool fss_filter_state;
+};
+
+#endif

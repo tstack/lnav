@@ -11,6 +11,8 @@ set(diag_STAT_SRCS
     extension-functions.cc
     field_overlay_source.cc
     file_vtab.cc
+    filter_status_source.cc
+    filter_sub_source.cc
     fs-extension-functions.cc
     fstat_vtab.cc
     fts_fuzzy_match.cc
@@ -30,6 +32,7 @@ set(diag_STAT_SRCS
     lnav_log.cc
     lnav_util.cc
     log_accel.cc
+    log_actions.cc
     log_format.cc
     log_format_loader.cc
     log_level.cc
@@ -62,11 +65,13 @@ set(diag_STAT_SRCS
     state-extension-functions.cc
     strnatcmp.c
     text_format.cc
+    textfile_highlighters.cc
     textview_curses.cc
     time-extension-functions.cc
     timer.cc
     unique_path.hh
     view_curses.cc
+    view_helpers.cc
     views_vtab.cc
     vt52_curses.cc
     vtab_module.cc
@@ -107,6 +112,8 @@ set(diag_STAT_SRCS
     field_overlay_source.hh
     file_vtab.hh
     filter_observer.hh
+    filter_status_source.hh
+    filter_sub_source.hh
     format-text-files.hh
     fstat_vtab.hh
     fts_fuzzy_match.hh
@@ -119,6 +126,7 @@ set(diag_STAT_SRCS
     intern_string.hh
     is_utf8.hh
     k_merge_tree.h
+    log_actions.hh
     log_data_helper.hh
     log_data_table.hh
     log_format_impls.cc
@@ -146,6 +154,7 @@ set(diag_STAT_SRCS
     term_extra.hh
     termios_guard.hh
     text_format.hh
+    textfile_highlighters.hh
     textfile_sub_source.hh
     time_T.hh
     timer.hh

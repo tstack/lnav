@@ -80,7 +80,7 @@ public:
         this->lh_line_values.clear();
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
         std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
-        logfile::iterator ll = lf->begin() + cl;
+        auto ll = lf->begin() + cl;
         log_format *format = lf->get_format();
         lf->read_full_message(ll, this->lh_msg_buffer);
         format->annotate(this->lh_msg_buffer,
@@ -103,11 +103,11 @@ public:
 
 void handle_paging_key(int ch)
 {
-    if (lnav_data.ld_view_stack.empty()) {
+    if (lnav_data.ld_view_stack.vs_views.empty()) {
         return;
     }
 
-    textview_curses *   tc  = lnav_data.ld_view_stack.back();
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
     exec_context &ec = lnav_data.ld_exec_context;
     logfile_sub_source *lss = NULL;
     bookmarks<vis_line_t>::type &     bm  = tc->get_bookmarks();
@@ -122,6 +122,11 @@ void handle_paging_key(int ch)
     switch (ch) {
         case 0x7f:
         case KEY_BACKSPACE:
+            break;
+
+        case '`':
+            lnav_data.ld_mode = LNM_FILTER;
+            lnav_data.ld_filter_view.reload_data();
             break;
 
         case 'a':
@@ -142,9 +147,9 @@ void handle_paging_key(int ch)
             }
             else {
                 textview_curses *tc = lnav_data.ld_last_view;
-                textview_curses *top_tc = lnav_data.ld_view_stack.back();
-                text_time_translator *dst_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
-                text_time_translator *src_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
+                textview_curses *top_tc = *lnav_data.ld_view_stack.top();
+                auto *dst_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
+                auto *src_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
 
                 lnav_data.ld_last_view = NULL;
                 if (src_view != NULL && dst_view != NULL) {
@@ -236,7 +241,6 @@ void handle_paging_key(int ch)
 
                 if (!tss.empty()) {
                     tss.rotate_left();
-                    redo_search(LNV_TEXT);
                 }
             }
             break;
@@ -250,7 +254,6 @@ void handle_paging_key(int ch)
 
                 if (!tss.empty()) {
                     tss.rotate_right();
-                    redo_search(LNV_TEXT);
                 }
             }
             break;
@@ -323,7 +326,7 @@ void handle_paging_key(int ch)
         case 'J':
             if (lnav_data.ld_last_user_mark.find(tc) ==
                 lnav_data.ld_last_user_mark.end() ||
-                !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
+                !tc->is_line_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
                 lnav_data.ld_select_start[tc] = tc->get_top();
                 lnav_data.ld_last_user_mark[tc] = tc->get_top();
             }
@@ -357,7 +360,7 @@ void handle_paging_key(int ch)
 
             if (lnav_data.ld_last_user_mark.find(tc) ==
                 lnav_data.ld_last_user_mark.end() ||
-                !tc->is_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
+                !tc->is_line_visible(vis_line_t(lnav_data.ld_last_user_mark[tc]))) {
                 new_mark = tc->get_top();
             }
             else {
@@ -486,10 +489,10 @@ void handle_paging_key(int ch)
 
         case '0':
             if (lss) {
-                time_t     first_time = lnav_data.ld_top_time.tv_sec;
+                struct timeval first_time = lss->time_for_row(tc->get_top());
                 int        step       = 24 * 60 * 60;
                 vis_line_t line       =
-                        lss->find_from_time(roundup_size(first_time, step));
+                        lss->find_from_time(roundup_size(first_time.tv_sec, step));
 
                 tc->set_top(line);
             }
@@ -497,7 +500,8 @@ void handle_paging_key(int ch)
 
         case ')':
             if (lss) {
-                time_t     day  = rounddown(lnav_data.ld_top_time.tv_sec, 24 * 60 * 60);
+                struct timeval first_time = lss->time_for_row(tc->get_top());
+                time_t     day  = rounddown(first_time.tv_sec, 24 * 60 * 60);
                 vis_line_t line = lss->find_from_time(day);
 
                 --line;
@@ -510,8 +514,9 @@ void handle_paging_key(int ch)
                 alerter::singleton().chime();
             }
             else if (lss) {
+                struct timeval first_time = lss->time_for_row(tc->get_top());
                 int        step     = ch == 'D' ? (24 * 60 * 60) : (60 * 60);
-                time_t     top_time = lnav_data.ld_top_time.tv_sec;
+                time_t     top_time = first_time.tv_sec;
                 vis_line_t line     = lss->find_from_time(top_time - step);
 
                 if (line != 0) {
@@ -525,9 +530,10 @@ void handle_paging_key(int ch)
 
         case 'd':
             if (lss) {
+                struct timeval first_time = lss->time_for_row(tc->get_top());
                 int        step = ch == 'd' ? (24 * 60 * 60) : (60 * 60);
                 vis_line_t line =
-                        lss->find_from_time(lnav_data.ld_top_time.tv_sec + step);
+                        lss->find_from_time(first_time.tv_sec + step);
 
                 tc->set_top(line);
 
@@ -696,10 +702,8 @@ void handle_paging_key(int ch)
                 }
             }
 
-            add_view_text_possibilities(LNM_COMMAND, "filter", tc);
-            lnav_data.ld_rl_view->
-                    add_possibility(LNM_COMMAND, "filter",
-                                    lnav_data.ld_last_search[tc - lnav_data.ld_views]);
+            add_view_text_possibilities(lnav_data.ld_rl_view, LNM_COMMAND, "filter", tc);
+            lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "filter", tc->get_last_search());
             add_filter_possibilities(tc);
             add_mark_possibilities();
             add_config_possibilities();
@@ -711,9 +715,9 @@ void handle_paging_key(int ch)
 
         case '/':
             lnav_data.ld_mode = LNM_SEARCH;
-            lnav_data.ld_previous_search = lnav_data.ld_last_search[tc - lnav_data.ld_views];
+            lnav_data.ld_previous_search = tc->get_last_search();
             lnav_data.ld_search_start_line = tc->get_top();
-            add_view_text_possibilities(LNM_SEARCH, "*", tc);
+            add_view_text_possibilities(lnav_data.ld_rl_view, LNM_SEARCH, "*", tc);
             lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
             lnav_data.ld_bottom_source.set_prompt(
                     "Enter a regular expression to search for: "
@@ -758,7 +762,7 @@ void handle_paging_key(int ch)
             for (const auto &iter : scripts) {
                 lnav_data.ld_rl_view->add_possibility(LNM_EXEC, "__command", iter.first);
             }
-            add_view_text_possibilities(LNM_EXEC, "*", tc);
+            add_view_text_possibilities(lnav_data.ld_rl_view, LNM_EXEC, "*", tc);
             add_env_possibilities(LNM_EXEC);
             lnav_data.ld_rl_view->focus(LNM_EXEC, "|");
             lnav_data.ld_bottom_source.set_prompt(
@@ -806,11 +810,11 @@ void handle_paging_key(int ch)
 
         case 'I':
         {
-            struct timeval log_top = lnav_data.ld_top_time;
+            struct timeval log_top = lss->time_for_row(lnav_data.ld_views[LNV_LOG].get_top());
             hist_source2 &hs = lnav_data.ld_hist_source2;
 
             if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
-                tc = lnav_data.ld_view_stack.back();
+                tc = *lnav_data.ld_view_stack.top();
                 tc->set_top(vis_line_t(hs.row_for_time(log_top)));
             }
             else {
@@ -938,22 +942,6 @@ void handle_paging_key(int ch)
                 lnav_data.ld_rl_view->set_value("Hiding hidden fields");
             }
             tc->set_needs_update();
-            break;
-
-        case '\\':
-        {
-            string ex;
-
-            for (auto &iter : bm[&BM_EXAMPLE]) {
-                string line;
-
-                tc->get_sub_source()->text_value_for_line(*tc, iter, line);
-                ex += line + "\n";
-            }
-            lnav_data.ld_views[LNV_EXAMPLE].set_sub_source(new plain_text_source(
-                    ex));
-            ensure_view(&lnav_data.ld_views[LNV_EXAMPLE]);
-        }
             break;
 
         case 'r':

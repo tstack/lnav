@@ -32,3 +32,5 @@
 #include "vtab_module.hh"
 
 std::string vtab_module_schemas;
+
+std::map<intern_string_t, std::string> vtab_module_ddls;

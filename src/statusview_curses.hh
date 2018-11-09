@@ -90,14 +90,6 @@ public:
             }
         }
 
-        if (this->sf_right_justify) {
-            int padding = this->sf_width - value.size();
-
-            if (padding > 2) {
-                value.insert(0, padding, ' ');
-            }
-        }
-
         this->sf_value.with_string(value);
 
         if (this->sf_cylon) {
@@ -132,7 +124,7 @@ public:
 
     void set_stitch_value(int color_pair)
     {
-        string_attrs_t &  sa = this->sf_value.get_attrs();
+        string_attrs_t &sa = this->sf_value.get_attrs();
         struct line_range lr(0, 1);
 
         this->sf_value.get_string() = "::";
@@ -150,10 +142,10 @@ public:
     attr_line_t &get_value() { return this->sf_value; };
 
     void right_justify(bool yes) { this->sf_right_justify = yes; };
-    bool is_right_justified(void) const { return this->sf_right_justify; };
+    bool is_right_justified() const { return this->sf_right_justify; };
 
     void set_cylon(bool yes) { this->sf_cylon = yes; };
-    bool is_cylon(void) const { return this->sf_cylon; };
+    bool is_cylon() const { return this->sf_cylon; };
 
     /** @return True if this field's value is an empty string. */
     bool empty() { return this->sf_value.get_string().empty(); };
@@ -200,7 +192,7 @@ public:
     /**
      * @return The number of status_fields in this source.
      */
-    virtual size_t statusview_fields(void) = 0;
+    virtual size_t statusview_fields() = 0;
 
     /**
      * Callback used to get a particular field.
@@ -217,15 +209,6 @@ public:
 class statusview_curses
     : public view_curses {
 public:
-    statusview_curses()
-        : sc_source(NULL),
-          sc_window(NULL),
-          sc_top(0),
-          sc_last_width(0),
-          sc_enabled(true) {
-    };
-    virtual ~statusview_curses() { };
-
     void set_data_source(status_data_source *src) { this->sc_source = src; };
     status_data_source *get_data_source() { return this->sc_source; };
 
@@ -235,61 +218,28 @@ public:
     void set_window(WINDOW *win) { this->sc_window = win; };
     WINDOW *get_window() { return this->sc_window; };
 
+    void set_visible(bool value) {
+        this->sc_visible = value;
+    }
+
+    bool get_visible() const {
+        return this->sc_visible;
+    }
+
     void set_enabled(bool value) { this->sc_enabled = value; };
     bool get_enabled() const { return this->sc_enabled; };
 
-    void window_change(void) {
-        if (this->sc_source == NULL) {
-            return;
-        }
+    void window_change();
 
-        int           field_count = this->sc_source->statusview_fields();
-        int           remaining, total_shares = 0;
-        unsigned long width, height;
-
-        getmaxyx(this->sc_window, height, width);
-        // Silence the compiler. Remove this if height is used at a later stage.
-        (void)height;
-        remaining = width - 4;
-        for (int field = 0; field < field_count; field++) {
-            status_field &sf = this->sc_source->statusview_value_for_field(
-                field);
-
-            remaining -=
-                sf.get_share() ? sf.get_min_width() : sf.get_width();
-            remaining    -= 1;
-            total_shares += sf.get_share();
-        }
-
-        if (remaining < 2) {
-            remaining = 0;
-        }
-
-        for (int field = 0; field < field_count; field++) {
-            status_field &sf = this->sc_source->statusview_value_for_field(
-                field);
-
-            if (sf.get_share()) {
-                int actual_width;
-
-                actual_width = sf.get_min_width();
-                actual_width += remaining / (sf.get_share() / total_shares);
-
-                sf.set_width(actual_width);
-            }
-        }
-
-        this->sc_last_width = width;
-    };
-
-    void do_update(void);
+    void do_update() override;
 
 private:
-    status_data_source *sc_source;
-    WINDOW *            sc_window;
-    int sc_top;
-    unsigned long sc_last_width;
-    bool sc_enabled;
+    status_data_source *sc_source{nullptr};
+    WINDOW *            sc_window{nullptr};
+    int sc_top{0};
+    unsigned long sc_last_width{0};
+    bool sc_enabled{true};
+    bool sc_visible{true};
 };
 
 #endif

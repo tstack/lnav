@@ -194,12 +194,10 @@ const char *vt52_curses::map_input(int ch, int &len_out)
 
 void vt52_curses::map_output(const char *output, int len)
 {
-    int y, lpc;
+    int lpc;
 
-    require(this->vc_window != NULL);
+    require(this->vc_window != nullptr);
 
-    y = this->get_actual_y();
-    wmove(this->vc_window, y, this->vc_x);
     for (lpc = 0; lpc < len; lpc++) {
         if (this->vc_escape_len > 0) {
             const char *cap;
@@ -209,19 +207,17 @@ void vt52_curses::map_output(const char *output, int len)
             this->vc_escape[this->vc_escape_len] = '\0';
 
             if ((cap = vt52_escape_map::singleton()[this->vc_escape]) !=
-                NULL) {
+                nullptr) {
                 if (strcmp(cap, "ce") == 0) {
-                    wclrtoeol(this->vc_window);
+                    this->vc_line.erase(this->vc_x);
                     this->vc_escape_len = 0;
                 }
                 else if (strcmp(cap, "kl") == 0) {
                     this->vc_x -= 1;
-                    wmove(this->vc_window, y, this->vc_x);
                     this->vc_escape_len = 0;
                 }
                 else if (strcmp(cap, "kr") == 0) {
                     this->vc_x += 1;
-                    wmove(this->vc_window, y, this->vc_x);
                     this->vc_escape_len = 0;
                 }
                 else {
@@ -232,10 +228,8 @@ void vt52_curses::map_output(const char *output, int len)
         else {
             switch (output[lpc]) {
             case STX:
-                this->vc_past_lines.clear();
                 this->vc_x = 0;
-                wmove(this->vc_window, y, this->vc_x);
-                wclrtoeol(this->vc_window);
+                this->vc_line.clear();
                 break;
 
             case BELL:
@@ -244,45 +238,28 @@ void vt52_curses::map_output(const char *output, int len)
 
             case BACKSPACE:
                 this->vc_x -= 1;
-                wmove(this->vc_window, y, this->vc_x);
                 break;
 
             case ESCAPE:
-                this->vc_escape[0]  = ESCAPE;
+                this->vc_escape[0] = ESCAPE;
                 this->vc_escape_len = 1;
                 break;
 
             case '\n':
-            {
-                unsigned long width, height;
-                char *        buffer;
-
-                getmaxyx(this->vc_window, height, width);
-                (void)height; //suppress unused warnings.
-
-                buffer     = (char *)alloca(width);
                 this->vc_x = 0;
-                wmove(this->vc_window, y, this->vc_x);
-
-                /*
-                 * XXX Not sure why we need to subtract one from the width
-                 * here, but otherwise it seems to spill over and screw up
-                 * the next line when we're writing it back out in
-                 * do_update().
-                 */
-                winnstr(this->vc_window, buffer, width - 1);
-                this->vc_past_lines.push_back(buffer);
-                wclrtoeol(this->vc_window);
-            }
-            break;
+                this->vc_line.clear();
+                break;
 
             case '\r':
                 this->vc_x = 0;
-                wmove(this->vc_window, y, this->vc_x);
                 break;
 
             default:
-                mvwaddch(this->vc_window, y, this->vc_x, output[lpc]);
+                if (this->vc_x < this->vc_line.length()) {
+                    this->vc_line.get_string()[this->vc_x] = output[lpc];
+                } else {
+                    this->vc_line.append(1, output[lpc]);
+                }
                 this->vc_x += 1;
                 break;
             }
@@ -290,19 +267,10 @@ void vt52_curses::map_output(const char *output, int len)
     }
 }
 
-void vt52_curses::do_update(void)
+void vt52_curses::do_update()
 {
-    list<string>::iterator iter;
-    int y;
-
-    y = this->get_actual_y() - (int)this->vc_past_lines.size();
-    for (iter = this->vc_past_lines.begin();
-         iter != this->vc_past_lines.end();
-         ++iter, y++) {
-        if (y >= 0) {
-            mvwprintw(this->vc_window, y, 0, "%s", iter->c_str());
-            wclrtoeol(this->vc_window);
-        }
-    }
-    wmove(this->vc_window, y, this->vc_x);
+    view_curses::mvwattrline(this->vc_window,
+                             this->get_actual_y(), this->vc_left,
+                             this->vc_line,
+                             line_range{ 0, (int) this->vc_width });
 }

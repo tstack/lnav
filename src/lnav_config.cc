@@ -38,6 +38,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <libgen.h>
+
+#include <iostream>
 
 #include "pcrecpp.h"
 
@@ -164,6 +167,47 @@ void install_git_format(const char *repo)
     }
 
     git_cmd.wait_for_child();
+}
+
+bool update_git_formats()
+{
+    static_root_mem<glob_t, globfree> gl;
+    string formats_path = dotlnav_path("formats/");
+    string git_formats = formats_path + "*/.git";
+    bool found = false, retval = true;
+
+    if (glob(git_formats.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+        for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
+            char *git_dir = dirname(gl->gl_pathv[lpc]);
+            char pull_cmd[1024];
+
+            printf("Updating formats in %s\n", git_dir);
+            snprintf(pull_cmd, sizeof(pull_cmd),
+                     "cd %s && git pull",
+                     git_dir);
+            int ret = system(pull_cmd);
+            if (ret == -1) {
+                std::cerr << "Failed to spawn command "
+                          << "\"" << pull_cmd << "\": "
+                          << strerror(errno) << std::endl;
+                retval = false;
+            }
+            else if (ret > 0) {
+                std::cerr << "Command "
+                          << "\"" << pull_cmd << "\" failed: "
+                          << strerror(errno) << std::endl;
+                retval = false;
+            }
+            found = true;
+        }
+    }
+
+    if (!found) {
+        printf("No formats from git repositories found, "
+               "use 'lnav -i extra' to install third-party foramts\n");
+    }
+
+    return retval;
 }
 
 static int read_repo_path(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)

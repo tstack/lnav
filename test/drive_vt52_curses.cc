@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
 
     noecho();
     vt.set_window(sc.get_window());
+    vt.set_width(10);
     
     for (lpc = 0; CANNED_INPUT[lpc]; lpc++) {
       vt.map_output(CANNED_INPUT[lpc], strlen(CANNED_INPUT[lpc]));

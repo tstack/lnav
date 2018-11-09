@@ -63,6 +63,14 @@ public:
     /** @return The curses window this view is attached to. */
     WINDOW *get_window() { return this->vc_window; };
 
+    void set_left(int left) {
+        this->vc_left = left;
+    };
+
+    int get_left() const {
+        return this->vc_left;
+    }
+
     /**
      * Set the Y position of this view on the display.  A value greater than
      * zero is considered to be an absolute size.  A value less than zero makes
@@ -87,7 +95,7 @@ public:
      * position for this view.
      * @todo Kinda hardwired to the way readline works.
      */
-    int get_height() { return this->vc_past_lines.size() + 1; };
+    int get_height() { return 1; };
 
     void set_max_height(int mh) { this->vc_max_height = mh; };
     int get_max_height() const { return this->vc_max_height; };
@@ -112,7 +120,7 @@ public:
     /**
      * Paints any past lines and moves the cursor to the current X position.
      */
-    void do_update(void);
+    void do_update();
 
     const static char ESCAPE    = 27;   /*< VT52 Escape key value. */
     const static char BACKSPACE = 8;    /*< VT52 Backspace key value. */
@@ -140,6 +148,7 @@ protected:
     };
 
     WINDOW *vc_window;        /*< The window that contains this view. */
+    int     vc_left{0};
     int     vc_x;             /*< The X position of the cursor. */
     int     vc_y;             /*< The Y position of the cursor. */
     int     vc_max_height;
@@ -149,8 +158,7 @@ protected:
                                * Buffer returned by map_input for trivial
                                * translations (one-to-one).
                                */
-
-    /** Vector of past lines of output from the child. */
-    std::list<std::string> vc_past_lines;
+    attr_line_t vc_line;
 };
+
 #endif

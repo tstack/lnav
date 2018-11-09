@@ -260,7 +260,7 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
     }
     else if (args.size() > 1) {
         string all_args = remaining_args(cmdline, args);
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         auto ttt = dynamic_cast<text_time_translator *>(tc->get_sub_source());
         int   line_number, consumed;
         date_time_scanner dts;
@@ -283,7 +283,8 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                 do {
                     struct exttm tm = rt.add(tv);
 
-                    new_vl = vis_line_t(ttt->row_for_time(tm.to_timeval()));
+                    tv = tm.to_timeval();
+                    new_vl = vis_line_t(ttt->row_for_time(tv));
 
                     if (new_vl == 0_vl || new_vl != vl || !rt.is_relative()) {
                         vl = new_vl;
@@ -355,7 +356,7 @@ static string com_relative_goto(exec_context &ec, string cmdline, vector<string>
     if (args.empty()) {
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         int   line_offset, consumed;
         float value;
 
@@ -386,10 +387,10 @@ static string com_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
-    if (args.empty() || lnav_data.ld_view_stack.empty()) {
+    if (args.empty() || lnav_data.ld_view_stack.vs_views.empty()) {
 
     } else if (!ec.ec_dry_run) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         lnav_data.ld_last_user_mark[tc] = tc->get_top();
         tc->toggle_user_mark(&textview_curses::BM_USER,
                              vis_line_t(lnav_data.ld_last_user_mark[tc]));
@@ -407,7 +408,7 @@ static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &ar
         args.emplace_back("mark-type");
     }
     else {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         string type_name = "user";
 
         if (args.size() > 1) {
@@ -540,7 +541,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         mode = "w";
     }
 
-    textview_curses *            tc = lnav_data.ld_view_stack.back();
+    textview_curses *            tc = *lnav_data.ld_view_stack.top();
     bookmark_vector<vis_line_t> &bv =
         tc->get_bookmarks()[&textview_curses::BM_USER];
     db_label_source &dls = lnav_data.ld_db_row_source;
@@ -812,7 +813,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
         return "";
     }
 
-    textview_curses *            tc = lnav_data.ld_view_stack.back();
+    textview_curses *            tc = *lnav_data.ld_view_stack.top();
     bookmark_vector<vis_line_t> &bv =
             tc->get_bookmarks()[&textview_curses::BM_USER];
     bool pipe_line_to = (args[0] == "pipe-line-to");
@@ -997,7 +998,7 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
         args.emplace_back("filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         textview_curses::highlight_map_t &hm = tc->get_highlights();
         const char *errptr;
         auto_mem<pcre> code;
@@ -1056,7 +1057,7 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
         args.emplace_back("highlight");
     }
     else if (args.size() > 1 && args[1][0] != '$') {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         textview_curses::highlight_map_t &hm = tc->get_highlights();
         textview_curses::highlight_map_t::iterator hm_iter;
 
@@ -1096,32 +1097,6 @@ static string com_help(exec_context &ec, string cmdline, vector<string> &args)
     return retval;
 }
 
-class pcre_filter
-    : public text_filter {
-public:
-    pcre_filter(type_t type, const string id, size_t index, pcre *code)
-        : text_filter(type, id, index),
-          pf_pcre(code) { };
-
-    ~pcre_filter() override { };
-
-    bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) override {
-        pcre_context_static<30> pc;
-        pcre_input pi(line.get_data(), 0, line.length());
-
-        return this->pf_pcre.match(pc, pi);
-    };
-
-    std::string to_command() override {
-        return (this->lf_type == text_filter::INCLUDE ?
-                "filter-in " : "filter-out ") +
-               this->lf_id;
-    };
-
-protected:
-    pcrepp pf_pcre;
-};
-
 static string com_enable_filter(exec_context &ec, string cmdline, vector<string> &args);
 
 static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
@@ -1132,7 +1107,7 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
         args.emplace_back("filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
         const char *errptr;
@@ -1188,16 +1163,11 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
                                          text_filter::EXCLUDE :
                                          text_filter::INCLUDE;
             auto pf = make_shared<pcre_filter>(lt, args[1], fs.next_index(), code.release());
-            lnav_view_t view_index = lnav_view_t(tc - lnav_data.ld_views);
 
             log_debug("%s [%d] %s", args[0].c_str(), pf->get_index(), args[1].c_str());
             fs.add_filter(pf);
             tss->text_filters_changed();
-            redo_search(view_index);
-            if (lnav_data.ld_rl_view != nullptr) {
-                lnav_data.ld_rl_view->add_possibility(
-                    LNM_COMMAND, "enabled-filter", args[1]);
-            }
+            tc->reload_data();
 
             retval = "info: filter now active";
         }
@@ -1214,7 +1184,7 @@ static string com_delete_filter(exec_context &ec, string cmdline, vector<string>
         args.emplace_back("all-filters");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
 
@@ -1222,7 +1192,6 @@ static string com_delete_filter(exec_context &ec, string cmdline, vector<string>
         if (fs.delete_filter(args[1])) {
             retval = "info: deleted filter";
             tss->text_filters_changed();
-            redo_search(lnav_view_t(tc - lnav_data.ld_views));
         }
         else {
             retval = "error: unknown filter -- " + args[1];
@@ -1240,7 +1209,7 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
         args.emplace_back("disabled-filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
         shared_ptr<text_filter> lf;
@@ -1259,7 +1228,6 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
         else {
             fs.set_filter_enabled(lf, true);
             tss->text_filters_changed();
-            redo_search(lnav_view_t(tc - lnav_data.ld_views));
             retval = "info: filter enabled";
         }
     }
@@ -1275,7 +1243,7 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
         args.emplace_back("enabled-filter");
     }
     else if (args.size() > 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
         shared_ptr<text_filter> lf;
@@ -1294,7 +1262,6 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
         else {
             fs.set_filter_enabled(lf, false);
             tss->text_filters_changed();
-            redo_search(lnav_view_t(tc - lnav_data.ld_views));
             retval = "info: filter disabled";
         }
     }
@@ -1446,7 +1413,7 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
             regex = remaining_args(cmdline, args, 2);
         }
         else {
-            regex = lnav_data.ld_last_search[LNV_LOG];
+            regex = lnav_data.ld_views[LNV_LOG].get_last_search();
         }
 
         if ((code = pcre_compile(regex.c_str(),
@@ -1843,7 +1810,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
 
     }
     else {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         string fn;
 
         if (tc == &lnav_data.ld_views[LNV_TEXT]) {
@@ -1857,7 +1824,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
                 tss.current_file()->close();
 
                 if (tss.size() == 1) {
-                    lnav_data.ld_view_stack.pop_back();
+                    lnav_data.ld_view_stack.vs_views.pop_back();
                 }
             }
         }
@@ -1904,7 +1871,7 @@ static string com_comment(exec_context &ec, string cmdline, vector<string> &args
         if (ec.ec_dry_run) {
             return "";
         }
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return "error: The :comment command only works in the log view";
@@ -1936,7 +1903,7 @@ static string com_clear_comment(exec_context &ec, string cmdline, vector<string>
     else if (ec.ec_dry_run) {
         return "";
     } else {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return "error: The :clear-comment command only works in the log view";
@@ -1956,6 +1923,7 @@ static string com_clear_comment(exec_context &ec, string cmdline, vector<string>
 
             retval = "info: cleared comment";
         }
+        tc->search_new_data();
     }
 
     return retval;
@@ -1973,7 +1941,7 @@ static string com_tag(exec_context &ec, string cmdline, vector<string> &args)
         if (ec.ec_dry_run) {
             return "";
         }
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return "error: The :tag command only works in the log view";
@@ -1992,6 +1960,7 @@ static string com_tag(exec_context &ec, string cmdline, vector<string> &args)
             bookmark_metadata::KNOWN_TAGS.insert(tag);
             line_meta.add_tag(tag);
         }
+        tc->search_new_data();
 
         retval = "info: tag(s) added to line";
     }
@@ -2011,7 +1980,7 @@ static string com_untag(exec_context &ec, string cmdline, vector<string> &args)
         if (ec.ec_dry_run) {
             return "";
         }
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return "error: The :untag command only works in the log view";
@@ -2035,6 +2004,7 @@ static string com_untag(exec_context &ec, string cmdline, vector<string> &args)
                 tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), false);
             }
         }
+        tc->search_new_data();
 
         retval = "info: tag(s) removed from line";
     }
@@ -2054,7 +2024,7 @@ static string com_delete_tags(exec_context &ec, string cmdline, vector<string> &
         if (ec.ec_dry_run) {
             return "";
         }
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return "error: The :delete-tag command only works in the log view";
@@ -2475,7 +2445,7 @@ static string com_add_test(exec_context &ec, string cmdline, vector<string> &arg
 
     }
     else {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         bookmark_vector<vis_line_t> &bv =
             tc->get_bookmarks()[&textview_curses::BM_USER];
@@ -2581,9 +2551,7 @@ static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args
                             old_time)));
                 }
 
-                if (!lnav_data.ld_view_stack.empty()) {
-                    lnav_data.ld_view_stack.back()->set_needs_update();
-                }
+                lnav_data.ld_view_stack.set_needs_update();
 
                 found = true;
             }
@@ -2670,7 +2638,7 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
     } else if (args.size() < 2) {
         retval = "error: Expecting a log message field name";
     } else {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             retval = "error: hiding fields only works in the log view";
@@ -2749,7 +2717,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
         args.emplace_back("move-time");
     }
     else if (args.size() == 1) {
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         logfile_sub_source &lss = lnav_data.ld_log_source;
 
         if (tc == &lnav_data.ld_views[LNV_LOG]) {
@@ -2786,7 +2754,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
     }
     else if (args.size() >= 2) {
         string all_args = remaining_args(cmdline, args);
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
         logfile_sub_source &lss = lnav_data.ld_log_source;
         date_time_scanner dts;
         struct timeval tv;
@@ -2857,7 +2825,7 @@ static string com_show_lines(exec_context &ec, string cmdline, vector<string> &a
     }
     else if (!args.empty()) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
-        textview_curses *tc = lnav_data.ld_view_stack.back();
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc == &lnav_data.ld_views[LNV_LOG]) {
             lss.clear_min_max_log_times();
@@ -2876,7 +2844,7 @@ static string com_hide_unmarked(exec_context &ec, string cmdline, vector<string>
     } else if (ec.ec_dry_run) {
         retval = "";
     } else {
-        textview_curses *            tc = lnav_data.ld_view_stack.back();
+        textview_curses *            tc = *lnav_data.ld_view_stack.top();
         bookmark_vector<vis_line_t> &bv =
             tc->get_bookmarks()[&textview_curses::BM_USER];
 
@@ -3526,7 +3494,7 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
         }
         ss.invalidate();
 
-        if (lnav_data.ld_view_stack.back() == &lnav_data.ld_views[LNV_DB]) {
+        if (*lnav_data.ld_view_stack.top() == &lnav_data.ld_views[LNV_DB]) {
             unique_ptr<db_spectro_value_source> dsvs(
                 new db_spectro_value_source(colname));
 

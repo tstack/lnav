@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2018, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,57 +25,43 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file state-extension-functions.cc
  */
 
-#include "config.h"
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <stdint.h>
+#ifndef _filter_status_source_hh
+#define _filter_status_source_hh
 
 #include <string>
 
-#include "sqlite3.h"
+#include "textview_curses.hh"
+#include "statusview_curses.hh"
 
-#include "lnav.hh"
-#include "sql_util.hh"
-#include "vtab_module.hh"
+class filter_status_source
+    : public status_data_source {
+public:
+    typedef enum {
+        TSF_TITLE,
+        TSF_STITCH_TITLE,
+        TSF_COUNT,
+        TSF_FILTERED,
+        TSF_HELP,
 
-static int64_t sql_log_top_line()
-{
-    return (int64_t) lnav_data.ld_views[LNV_LOG].get_top();
-}
+        TSF__MAX
+    } field_t;
 
-static std::string sql_log_top_datetime()
-{
-    char buffer[64];
+    filter_status_source();
 
-    sql_strftime(buffer, sizeof(buffer), lnav_data.ld_log_source.time_for_row(lnav_data.ld_views[LNV_LOG].get_top()));
-    return buffer;
-}
+    size_t statusview_fields() override;
 
-int state_extension_functions(struct FuncDef **basic_funcs,
-                              struct FuncDefAgg **agg_funcs)
-{
-    static struct FuncDef datetime_funcs[] = {
-        sqlite_func_adapter<decltype(&sql_log_top_line), sql_log_top_line>::builder(
-            help_text("log_top_line",
-                      "Return the line number at the top of the log view.")
-                .sql_function()
-        ),
+    status_field &statusview_value_for_field(int field) override;
 
-        sqlite_func_adapter<decltype(&sql_log_top_datetime), sql_log_top_datetime>::builder(
-            help_text("log_top_datetime",
-                      "Return the timestamp of the line at the top of the log view.")
-                .sql_function()
-        ),
+    void update_filtered(text_sub_source *tss);
 
-        { NULL }
-    };
+    status_field tss_error{1024, view_colors::VCR_ALERT_STATUS};
+    status_field tss_prompt{1024, view_colors::VCR_STATUS};
+private:
+    status_field tss_fields[TSF__MAX];
+    int          bss_last_filtered_count{0};
+    sig_atomic_t bss_filter_counter{0};
+};
 
-    *basic_funcs = datetime_funcs;
-
-    return SQLITE_OK;
-}
+#endif

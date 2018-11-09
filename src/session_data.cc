@@ -777,7 +777,7 @@ static int read_last_search(yajlpp_parse_context *ypc, const unsigned char *str,
     view_index = view_name - lnav_view_strings;
 
     if (view_index < LNV__MAX && !regex.empty()) {
-        execute_search((lnav_view_t)view_index, regex);
+        lnav_data.ld_views[view_index].execute_search(regex);
         lnav_data.ld_views[view_index].set_follow_search_for(-1);
     }
 
@@ -838,7 +838,7 @@ static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, si
     bool active = ensure_view(&lnav_data.ld_views[view_index]);
     execute_command(lnav_data.ld_exec_context, cmdline);
     if (!active) {
-        lnav_data.ld_view_stack.pop_back();
+        lnav_data.ld_view_stack.vs_views.pop_back();
     }
 
     return 1;
@@ -1355,7 +1355,7 @@ void save_session(void)
                     }
 
                     view_map.gen("search");
-                    view_map.gen(lnav_data.ld_last_search[lpc]);
+                    view_map.gen(lnav_data.ld_views[lpc].get_last_search());
 
                     view_map.gen("word_wrap");
                     view_map.gen(tc.get_word_wrap());
@@ -1374,11 +1374,13 @@ void save_session(void)
                     for (filter_iter = fs.begin();
                          filter_iter != fs.end();
                          ++filter_iter) {
-                        if (!(*filter_iter)->is_enabled()) {
+                        string cmd = (*filter_iter)->to_command();
+
+                        if (!(*filter_iter)->is_enabled() || cmd.empty()) {
                             continue;
                         }
 
-                        cmd_array.gen((*filter_iter)->to_command());
+                        cmd_array.gen(cmd);
                     }
 
                     textview_curses::highlight_map_t &hmap =
@@ -1469,18 +1471,15 @@ void reset_session()
         }
     }
 
-    logfile_sub_source::iterator file_iter;
-
-    for (file_iter = lnav_data.ld_log_source.begin();
-         file_iter != lnav_data.ld_log_source.end();
-         ++file_iter) {
-        shared_ptr<logfile> lf             = (*file_iter)->get_file();
+    for (auto ld : lnav_data.ld_log_source) {
+        shared_ptr<logfile> lf = ld->get_file();
 
         lf->clear_time_offset();
     }
 
     lnav_data.ld_log_source.set_marked_only(false);
     lnav_data.ld_log_source.clear_min_max_log_times();
+    lnav_data.ld_log_source.set_min_log_level(LEVEL_UNKNOWN);
 
     lnav_data.ld_log_source.get_user_bookmark_metadata().clear();
 

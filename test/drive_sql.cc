@@ -35,15 +35,38 @@ static int sql_callback(void *ptr,
     return 0;
 }
 
-std::string execute_any(exec_context &ec, const std::string &cmdline_with_mode)
-{
-    return "";
-}
-
-void add_global_vars(exec_context &ec)
+void rebuild_hist()
 {
 }
 
+bool setup_logline_table(exec_context &ec)
+{
+    return false;
+}
+
+bool rescan_files(bool required)
+{
+    return false;
+}
+
+void wait_for_children()
+{
+
+}
+
+void rebuild_indexes()
+{
+}
+
+readline_context::command_map_t lnav_commands;
+
+extern "C" {
+const char *help_txt = "";
+}
+
+extern "C" {
+const char *default_log_formats_json = "";
+}
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;

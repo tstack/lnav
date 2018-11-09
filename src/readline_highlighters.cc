@@ -79,6 +79,10 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
     const string &line = al.get_string();
     int depth = 0;
 
+    if (x < 0 || x > line.length()) {
+        return;
+    }
+
     if (line[x] == right && is_bracket(line, x, is_lit)) {
         for (int lpc = x - 1; lpc > 0; lpc--) {
             if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
@@ -381,7 +385,7 @@ void readline_command_highlighter(attr_line_t &al, int x)
         readline_shlex_highlighter(al, x);
     }
     pi.reset(line);
-    if (IDENT_PREFIXES.match(pc, pi)) {
+    if (IDENT_PREFIXES.match(pc, pi) && ws_index != string::npos) {
         size_t start = ws_index, last;
 
         do {

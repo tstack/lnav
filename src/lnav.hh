@@ -64,11 +64,14 @@
 #include "spectro_source.hh"
 #include "command_executor.hh"
 #include "plain_text_source.hh"
+#include "filter_sub_source.hh"
+#include "filter_status_source.hh"
 #include "preview_status_source.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
     LNM_PAGING,
+    LNM_FILTER,
     LNM_COMMAND,
     LNM_SEARCH,
     LNM_CAPTURE,
@@ -118,7 +121,6 @@ typedef enum {
     LNV_HELP,
     LNV_HISTOGRAM,
     LNV_DB,
-    LNV_EXAMPLE,
     LNV_SCHEMA,
     LNV_PRETTY,
     LNV_SPECTRO,
@@ -134,6 +136,7 @@ extern const char *lnav_zoom_strings[];
 typedef enum {
     LNS_TOP,
     LNS_BOTTOM,
+    LNS_FILTER,
     LNS_DOC,
     LNS_PREVIEW,
 
@@ -238,19 +241,19 @@ struct _lnav_data {
     statusview_curses                       ld_status[LNS__MAX];
     top_status_source                       ld_top_source;
     bottom_status_source                    ld_bottom_source;
+    filter_status_source                    ld_filter_status_source;
     doc_status_source                       ld_doc_status_source;
     preview_status_source                   ld_preview_status_source;
     bool                                    ld_preview_hidden;
     listview_curses::action::broadcaster    ld_scroll_broadcaster;
     listview_curses::action::broadcaster    ld_view_stack_broadcaster;
 
-    struct timeval                          ld_top_time;
-    struct timeval                          ld_bottom_time;
-
     plain_text_source                       ld_help_source;
 
     plain_text_source                       ld_doc_source;
     textview_curses                         ld_doc_view;
+    filter_sub_source                       ld_filter_source;
+    textview_curses                         ld_filter_view;
     plain_text_source                       ld_example_source;
     textview_curses                         ld_example_view;
     plain_text_source                       ld_match_source;
@@ -258,10 +261,9 @@ struct _lnav_data {
     plain_text_source                       ld_preview_source;
     textview_curses                         ld_preview_view;
 
-    std::vector<textview_curses *>           ld_view_stack;
+    view_stack<textview_curses>             ld_view_stack;
     textview_curses *ld_last_view;
     textview_curses                         ld_views[LNV__MAX];
-    std::unique_ptr<grep_highlighter>       ld_search_child[LNV__MAX];
     std::shared_ptr<grep_proc<vis_line_t>> ld_meta_search;
     vis_line_t                              ld_search_start_line;
     readline_curses *                       ld_rl_view;
@@ -281,7 +283,6 @@ struct _lnav_data {
     std::vector<std::string>                ld_db_key_names;
 
     std::string                             ld_previous_search;
-    std::string                             ld_last_search[LNV__MAX];
 
     vis_line_t                              ld_last_pretty_print_top;
 
@@ -324,15 +325,13 @@ extern const ssize_t ZOOM_COUNT;
 
 void rebuild_hist();
 void rebuild_indexes();
+void execute_examples();
 
 bool ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);
+void layout_views();
 
 bool setup_logline_table(exec_context &ec);
-
-void execute_search(lnav_view_t view, const std::string &regex);
-
-void redo_search(lnav_view_t view_index);
 
 bool rescan_files(bool required = false);
 

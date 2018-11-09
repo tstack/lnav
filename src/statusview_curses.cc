@@ -35,13 +35,13 @@
 
 using namespace std;
 
-void statusview_curses::do_update(void)
+void statusview_curses::do_update()
 {
     int           top, attrs, field, field_count, left = 0, right;
     view_colors & vc = view_colors::singleton();
     unsigned long width, height;
 
-    if (!this->sc_enabled) {
+    if (!this->sc_visible) {
         return;
     }
 
@@ -52,7 +52,8 @@ void statusview_curses::do_update(void)
 
     top   = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
     right = width;
-    attrs = vc.attrs_for_role(view_colors::VCR_STATUS);
+    attrs = vc.attrs_for_role(this->sc_enabled ? view_colors::VCR_STATUS
+        : view_colors::VCR_INACTIVE_STATUS);
 
     wattron(this->sc_window, attrs);
     wmove(this->sc_window, top, 0);
@@ -60,7 +61,7 @@ void statusview_curses::do_update(void)
     whline(this->sc_window, ' ', width);
     wattroff(this->sc_window, attrs);
 
-    if (this->sc_source != NULL) {
+    if (this->sc_source != nullptr) {
         field_count = this->sc_source->statusview_fields();
         for (field = 0; field < field_count; field++) {
             status_field &sf = this->sc_source->statusview_value_for_field(
@@ -70,9 +71,18 @@ void statusview_curses::do_update(void)
             int x;
 
             val = sf.get_value();
+            if (!this->sc_enabled) {
+                for (auto &sa : val.get_attrs()) {
+                    if (sa.sa_type == &view_curses::VC_STYLE) {
+                        sa.sa_value.sav_int &= ~(A_REVERSE | A_COLOR);
+                    }
+                }
+            }
             left += sf.get_left_pad();
 
             if (sf.is_right_justified()) {
+                val.right_justify(sf.get_width());
+
                 right -= sf.get_width();
                 x = right;
             }
@@ -80,12 +90,57 @@ void statusview_curses::do_update(void)
                 x = left;
                 left += sf.get_width();
             }
-            this->mvwattrline(this->sc_window,
-                              top, x,
-                              val,
-                              lr,
-                              sf.get_role());
+            mvwattrline(this->sc_window,
+                        top, x,
+                        val,
+                        lr,
+                        this->sc_enabled ? sf.get_role() : view_colors::VCR_INACTIVE_STATUS);
         }
     }
     wmove(this->sc_window, top + 1, 0);
+}
+
+void statusview_curses::window_change()
+{
+    if (this->sc_source == nullptr) {
+        return;
+    }
+
+    int           field_count = this->sc_source->statusview_fields();
+    int           remaining, total_shares = 0;
+    unsigned long width, height;
+
+    getmaxyx(this->sc_window, height, width);
+    // Silence the compiler. Remove this if height is used at a later stage.
+    (void)height;
+    remaining = width - 4;
+    for (int field = 0; field < field_count; field++) {
+        status_field &sf = this->sc_source->statusview_value_for_field(
+            field);
+
+        remaining -=
+            sf.get_share() ? sf.get_min_width() : sf.get_width();
+        remaining    -= 1;
+        total_shares += sf.get_share();
+    }
+
+    if (remaining < 2) {
+        remaining = 0;
+    }
+
+    for (int field = 0; field < field_count; field++) {
+        status_field &sf = this->sc_source->statusview_value_for_field(
+            field);
+
+        if (sf.get_share()) {
+            int actual_width;
+
+            actual_width = sf.get_min_width();
+            actual_width += remaining / (sf.get_share() / total_shares);
+
+            sf.set_width(actual_width);
+        }
+    }
+
+    this->sc_last_width = width;
 }

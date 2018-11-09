@@ -159,6 +159,8 @@ noinst_HEADERS = \
 	field_overlay_source.hh \
 	file_vtab.hh \
 	filter_observer.hh \
+	filter_status_source.hh \
+	filter_sub_source.hh \
 	format-text-files.hh \
 	fstat_vtab.hh \
 	fts_fuzzy_match.hh \
@@ -185,6 +187,7 @@ noinst_HEADERS = \
 	lnav_log.hh \
 	lnav_util.hh \
 	log_accel.hh \
+	log_actions.hh \
     log_data_helper.hh \
     log_data_table.hh \
 	log_format.hh \
@@ -230,6 +233,7 @@ noinst_HEADERS = \
 	termios_guard.hh \
 	term_extra.hh \
 	text_format.hh \
+	textfile_highlighters.hh \
 	textfile_sub_source.hh \
 	textview_curses.hh \
 	time_T.hh \
@@ -280,6 +284,8 @@ libdiag_a_SOURCES = \
 	extension-functions.cc \
 	field_overlay_source.cc \
 	file_vtab.cc \
+	filter_status_source.cc \
+	filter_sub_source.cc \
 	fstat_vtab.cc \
     fs-extension-functions.cc \
     fts_fuzzy_match.cc \
@@ -299,6 +305,7 @@ libdiag_a_SOURCES = \
 	lnav_log.cc \
 	lnav_util.cc \
 	log_accel.cc \
+	log_actions.cc \
 	log_format.cc \
 	log_format_loader.cc \
 	log_level.cc \
@@ -333,10 +340,12 @@ libdiag_a_SOURCES = \
 	state-extension-functions.cc \
 	strnatcmp.c \
 	sysclip.cc \
+	textfile_highlighters.cc \
 	textview_curses.cc \
 	time-extension-functions.cc \
 	time_fmts.cc \
 	view_curses.cc \
+	view_helpers.cc \
 	views_vtab.cc \
 	vt52_curses.cc \
 	vtab_module.cc \

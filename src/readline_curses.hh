@@ -123,7 +123,7 @@ public:
 
     const std::string &get_name() const { return this->rc_name; };
 
-    void load(void)
+    void load()
     {
         char buffer[128];
 
@@ -145,13 +145,13 @@ public:
         }
     };
 
-    void save(void)
+    void save()
     {
         HISTORY_STATE *hs = history_get_history_state();
 
         this->rc_history = *hs;
         free(hs);
-        hs = NULL;
+        hs = nullptr;
     };
 
     void add_possibility(std::string type, std::string value)
@@ -169,7 +169,7 @@ public:
         this->rc_possibilities[type].clear();
     };
 
-    bool is_case_sensitive(void) const
+    bool is_case_sensitive() const
     {
         return this->rc_case_sensitive;
     };
@@ -192,7 +192,7 @@ public:
     };
 
     readline_context &with_readline_var(char **var, const char *val) {
-        this->rc_vars.push_back(readline_var(var, val));
+        this->rc_vars.emplace_back(var, val);
 
         return *this;
     };
@@ -310,7 +310,7 @@ public:
 
     void check_poll_set(const std::vector<struct pollfd> &pollfds);
 
-    void focus(int context, const char *prompt);
+    void focus(int context, const char *prompt, const char *initial = nullptr);
 
     readline_context *get_active_context() const {
         require(this->rc_active_context != -1);
@@ -322,11 +322,11 @@ public:
 
     void abort();
 
-    void start(void);
+    void start();
 
-    void do_update(void);
+    void do_update();
 
-    void window_change(void)
+    void window_change()
     {
         struct winsize ws;
 

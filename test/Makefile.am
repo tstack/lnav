@@ -179,7 +179,7 @@ drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB) \
 	$(CONFIG_OBJS)
 
 drive_vt52_curses_SOURCES = drive_vt52_curses.cc
-drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB)
+drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB) $(CONFIG_OBJS)
 
 drive_readline_curses_SOURCES = drive_readline_curses.cc
 drive_readline_curses_LDADD = ../src/libdiag.a $(READLINE_LIBS) $(CURSES_LIB) \
@@ -195,6 +195,7 @@ drive_sql_LDADD = \
 	$(CURSES_LIB) \
 	$(READLINE_LIBS) \
 	$(LIBCURL) \
+	$(TEXT2C_OBJS) \
 	-lpcrecpp
 
 drive_sql_anno_SOURCES = \
@@ -392,14 +393,14 @@ TESTS = \
 	test_sql_fs_func.sh \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
-	test_vt52_curses.sh \
 	test_top_status \
 	test_data_parser.sh \
 	test_yajlpp \
 	test_pretty_print.sh
 
 DISABLED_TESTS = \
-    test_view_colors.sh
+    test_view_colors.sh \
+    test_vt52_curses.sh
 
 if HAVE_LIBCURL
 TESTS += \

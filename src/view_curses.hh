@@ -62,6 +62,8 @@
 
 #include "lnav_log.hh"
 #include "attr_line.hh"
+#include "optional.hpp"
+#include "lnav_util.hh"
 
 #define KEY_CTRL_G    7
 #define KEY_CTRL_L    12
@@ -356,6 +358,8 @@ public:
         VCR_ACTIVE_STATUS2,     /*< */
         VCR_BOLD_STATUS,
         VCR_VIEW_STATUS,
+        VCR_INACTIVE_STATUS,
+        VCR_POPUP,
 
         VCR_KEYWORD,
         VCR_STRING,
@@ -504,12 +508,55 @@ public:
     /**
      * Update the curses display.
      */
-    virtual void do_update(void) = 0;
+    virtual void do_update() {
+        if (!this->vc_visible) {
+            return;
+        }
+
+        for (auto child : this->vc_children) {
+            child->do_update();
+        }
+    };
 
     virtual bool handle_mouse(mouse_event &me) { return false; };
 
+    void set_needs_update() {
+        this->vc_needs_update = true;
+        for (auto child : this->vc_children) {
+            child->set_needs_update();
+        }
+    };
+
+    view_curses &add_child_view(view_curses *child) {
+        this->vc_children.push_back(child);
+
+        return *this;
+    }
+
+    void set_default_role(view_colors::role_t role) {
+        this->vc_default_role = role;
+    }
+
+    void set_visible(bool value) {
+        this->vc_visible = value;
+    }
+
+    bool is_visible() {
+        return this->vc_visible;
+    }
+
+    void set_width(long width) {
+        this->vc_width = width;
+    }
+
+    long get_width() {
+        return this->vc_width;
+    }
+
     static string_attr_type VC_STYLE;
     static string_attr_type VC_GRAPHIC;
+    static string_attr_type VC_FOREGROUND;
+    static string_attr_type VC_BACKGROUND;
 
     static void mvwattrline(WINDOW *window,
                             int y,
@@ -518,5 +565,47 @@ public:
                             const struct line_range &lr,
                             view_colors::role_t base_role =
                                 view_colors::VCR_TEXT);
+
+protected:
+    bool vc_visible{true};
+    /** Flag to indicate if a display update is needed. */
+    bool vc_needs_update{true};
+    long vc_width;
+    std::vector<view_curses *> vc_children;
+    view_colors::role_t vc_default_role{view_colors::VCR_TEXT};
 };
+
+template<class T>
+class view_stack : public view_curses {
+public:
+    nonstd::optional<T *> top() {
+        if (this->vs_views.empty()) {
+            return nonstd::nullopt;
+        } else {
+            return this->vs_views.back();
+        }
+    }
+
+    void do_update() override
+    {
+        if (!this->vc_visible) {
+            return;
+        }
+
+        this->top() | [this] (T *vc) {
+            if (this->vc_needs_update) {
+                vc->set_needs_update();
+            }
+            vc->do_update();
+        };
+
+        view_curses::do_update();
+
+        this->vc_needs_update = false;
+    }
+
+    std::vector<T *> vs_views;
+
+};
+
 #endif

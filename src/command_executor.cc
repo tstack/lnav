@@ -271,7 +271,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
             }
         }
 
-        if (lnav_data.ld_rl_view != NULL) {
+        if (lnav_data.ld_rl_view != nullptr) {
             lnav_data.ld_rl_view->set_value("");
         }
     }
@@ -284,7 +284,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
         if (!ec.ec_accumulator.empty()) {
             retval = ec.ec_accumulator.get_string();
         }
-        else if (dls.dls_rows.size() > 0) {
+        else if (!dls.dls_rows.empty()) {
             vis_bookmarks &bm = lnav_data.ld_views[LNV_LOG].get_bookmarks();
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
@@ -355,7 +355,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
     if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
         lnav_data.ld_bottom_source.update_loading(0, 0);
         lnav_data.ld_status[LNS_BOTTOM].do_update();
-        redo_search(LNV_DB);
+        lnav_data.ld_views[LNV_DB].redo_search();
     }
 
     return retval;
@@ -540,12 +540,9 @@ string execute_from_file(exec_context &ec, const string &path, int line_number, 
             retval = execute_command(ec, cmdline);
             break;
         case '/':
-            if (!lnav_data.ld_view_stack.empty()) {
-                lnav_view_t index = lnav_view_t(lnav_data.ld_view_stack.back() - lnav_data.ld_views);
-
-                execute_search(index, cmdline.substr(1));
-                retval = "";
-            }
+            lnav_data.ld_view_stack.top() | [cmdline] (auto tc) {
+                tc->execute_search(cmdline.substr(1));
+            };
             break;
         case ';':
             setup_logline_table(ec);
@@ -581,12 +578,9 @@ string execute_any(exec_context &ec, const string &cmdline_with_mode)
             retval = execute_command(ec, cmdline);
             break;
         case '/':
-            if (!lnav_data.ld_view_stack.empty()) {
-                lnav_view_t index = lnav_view_t(lnav_data.ld_view_stack.back() - lnav_data.ld_views);
-
-                execute_search(index, cmdline.substr(1));
-                retval = "";
-            }
+            lnav_data.ld_view_stack.top() | [cmdline] (auto tc) {
+                tc->execute_search(cmdline.substr(1));
+            };
             break;
         case ';':
             setup_logline_table(ec);
@@ -628,11 +622,9 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
             msg = execute_command(ec, cmd.substr(1));
             break;
         case '/':
-            if (!lnav_data.ld_view_stack.empty()) {
-                lnav_view_t index = lnav_view_t(lnav_data.ld_view_stack.back() - lnav_data.ld_views);
-
-                execute_search(index, cmd.substr(1));
-            }
+            lnav_data.ld_view_stack.top() | [cmd] (auto tc) {
+                tc->execute_search(cmd.substr(1));
+            };
             break;
         case ';':
             setup_logline_table(ec);

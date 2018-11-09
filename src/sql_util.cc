@@ -289,7 +289,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
         return retval;
     }
 
-    for (db_table_map_t::iterator iter = smc.smc_db_list.begin();
+    for (auto iter = smc.smc_db_list.begin();
          iter != smc.smc_db_list.end();
          ++iter) {
         struct table_list_data       tld = { &smc, &iter };
@@ -309,7 +309,7 @@ int walk_sqlite_metadata(sqlite3 *db, struct sqlite_metadata_callbacks &smc)
             return retval;
         }
 
-        for (db_table_list_t::iterator table_iter = iter->second.begin();
+        for (auto table_iter = iter->second.begin();
              table_iter != iter->second.end();
              ++table_iter) {
             auto_mem<char, sqlite3_free> table_query;

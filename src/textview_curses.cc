@@ -32,6 +32,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <pcrecpp.h>
+
 #include "pcrepp.hh"
 #include "lnav_util.hh"
 #include "data_parser.hh"
@@ -361,8 +363,86 @@ void textview_curses::textview_value_for_row(vis_line_t row,
 #endif
 
     if (binary_search(user_marks.begin(), user_marks.end(), row)) {
-        sa.emplace_back(orig_line, &view_curses::VC_STYLE, A_REVERSE);
+        sa.emplace_back(line_range{orig_line.lr_start, -1},
+                        &view_curses::VC_STYLE,
+                        A_REVERSE);
     }
+}
+
+void textview_curses::execute_search(const std::string &regex_orig)
+{
+    std::string regex = regex_orig;
+    pcre *code = nullptr;
+
+    if ((this->tc_search_child == nullptr) || (regex != this->tc_last_search)) {
+        const char *errptr;
+        int         eoff;
+
+        this->match_reset();
+
+        if (regex.empty() && this->tc_search_child != nullptr) {
+            this->grep_begin(*(this->tc_search_child->get_grep_proc()), 0_vl, -1_vl);
+            this->grep_end(*(this->tc_search_child->get_grep_proc()));
+        }
+        this->tc_search_child.reset();
+
+        log_debug("start search for: '%s'", regex.c_str());
+
+        if (regex.empty()) {
+        }
+        else if ((code = pcre_compile(regex.c_str(),
+                                      PCRE_CASELESS,
+                                      &errptr,
+                                      &eoff,
+                                      nullptr)) == nullptr) {
+            string errmsg = string(errptr);
+
+            regex = pcrecpp::RE::QuoteMeta(regex);
+
+            log_info("invalid search regex, using quoted: %s", regex.c_str());
+            if ((code = pcre_compile(regex.c_str(),
+                                     PCRE_CASELESS,
+                                     &errptr,
+                                     &eoff,
+                                     nullptr)) == nullptr) {
+                log_error("Unable to compile quoted regex: %s", regex.c_str());
+            }
+        }
+
+        if (code != nullptr) {
+            highlighter hl(code);
+
+            hl.with_role(view_colors::VCR_SEARCH);
+
+            textview_curses::highlight_map_t &hm = this->get_highlights();
+            hm["$search"] = hl;
+
+            unique_ptr<grep_proc<vis_line_t>> gp = make_unique<grep_proc<vis_line_t>>(code, *this);
+
+            gp->set_sink(this);
+            gp->queue_request(this->get_top());
+            if (this->get_top() > 0) {
+                gp->queue_request(0_vl, this->get_top());
+            }
+            gp->start();
+
+            this->tc_search_child = std::make_unique<grep_highlighter>(gp, "$search", hm);
+
+            if (this->tc_sub_source != nullptr) {
+                this->tc_sub_source->get_grepper() | [this, code] (auto pair) {
+                    shared_ptr<grep_proc<vis_line_t>> sgp = make_shared<grep_proc<vis_line_t>>(code, *pair.first);
+
+                    sgp->set_sink(pair.second);
+                    sgp->queue_request(0_vl);
+                    sgp->start();
+
+                    this->tc_source_search_child = sgp;
+                };
+            }
+        }
+    }
+
+    this->tc_last_search = regex;
 }
 
 void text_time_translator::scroll_invoked(textview_curses *tc)
@@ -391,3 +471,14 @@ void text_time_translator::data_reloaded(textview_curses *tc)
 }
 
 template class bookmark_vector<vis_line_t>;
+
+bool empty_filter::matches(const logfile &lf, const logline &ll,
+                           shared_buffer_ref &line)
+{
+    return false;
+}
+
+string empty_filter::to_command()
+{
+    return "";
+}

@@ -59,6 +59,9 @@ public:
                 lf.get_format()->get_subline(*ll, sbr);
             }
             for (auto &filter : this->lfo_filter_stack) {
+                if (filter->lf_deleted) {
+                    continue;
+                }
                 if (offset >= this->lfo_filter_state.tfs_filter_count[filter->get_index()]) {
                     filter->add_line(this->lfo_filter_state, ll, sbr);
                 }
@@ -85,6 +88,9 @@ public:
         size_t retval = max;
 
         for (auto &filter : this->lfo_filter_stack) {
+            if (filter->lf_deleted) {
+                continue;
+            }
             retval = std::min(retval, this->lfo_filter_state.tfs_filter_count[filter->get_index()]);
         }
 
@@ -95,6 +101,10 @@ public:
         uint32_t used_mask = 0;
 
         for (auto &filter : this->lfo_filter_stack) {
+            if (filter->lf_deleted) {
+                log_debug("skipping deleted %d", filter->get_index());
+                continue;
+            }
             used_mask |= (1UL << filter->get_index());
         }
         this->lfo_filter_state.clear_deleted_filter_state(used_mask);

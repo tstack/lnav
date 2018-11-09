@@ -3,6 +3,59 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters VALUES ('log', 1, 'out', '')" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "inserted filter with an empty pattern?" <<EOF
+error:command-option:1:Expecting an non-empty pattern for column number 3
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters VALUES ('bad', 1, 'out', 'abc')" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "inserted filter with an empty pattern?" <<EOF
+error:command-option:1:Expecting an lnav view name for column number 0
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters VALUES ('log', 1, 'bad', 'abc')" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "inserted filter with an empty pattern?" <<EOF
+error:command-option:1:Expecting an filter type for column number 2
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters VALUES ('log', 1, 'out', 'vmk')" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "inserted filter did not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":filter-out vmk" \
+    -c ";DELETE FROM lnav_view_filters" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "inserted filter did not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":filter-out vmk" \
+    -c ";UPDATE lnav_view_filters SET pattern = 'vmkboot'" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "inserted filter did not work?" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+EOF
+
+run_test ${lnav_test} -n \
     -c ";SELECT * FROM access_log LIMIT 0" \
     ${test_dir}/logfile_access_log.0
 
@@ -527,7 +580,7 @@ run_test ${lnav_test} -n \
 
 check_output "delete from lnav_views table works?" <<EOF
 count(*)
-9
+8
 EOF
 
 
@@ -539,7 +592,7 @@ run_test ${lnav_test} -n \
 
 check_output "insert into lnav_views table works?" <<EOF
 count(*)
-9
+8
 EOF
 
 
@@ -601,7 +654,7 @@ EOF
 
 
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n13
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n14
 }
 
 run_test schema_dump
@@ -611,6 +664,7 @@ ATTACH DATABASE '' AS 'main';
 CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
 CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
 CREATE VIRTUAL TABLE lnav_view_stack USING lnav_view_stack_impl();
+CREATE VIRTUAL TABLE lnav_view_filters USING lnav_view_filters_impl();
 CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
 CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
 CREATE VIRTUAL TABLE fstat USING fstat_impl();

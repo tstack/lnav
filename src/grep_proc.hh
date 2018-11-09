@@ -214,8 +214,8 @@ public:
      * Queue a request to search the input between the given line numbers.
      *
      * @param start The line number to start the search at.
-     * @param stop The line number to stop the search at or -1 to read until
-     * the end-of-file.
+     * @param stop The line number to stop the search at (exclusive) or -1 to
+     * read until the end-of-file.
      */
     grep_proc &queue_request(LineType start = LineType(0),
                              LineType stop = LineType(-1))

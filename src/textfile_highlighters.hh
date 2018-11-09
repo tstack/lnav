@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2018, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,57 +25,13 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file state-extension-functions.cc
  */
 
-#include "config.h"
+#ifndef textfile_highlighters_hh
+#define textfile_highlighters_hh
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <stdint.h>
+#include "textview_curses.hh"
 
-#include <string>
+void setup_highlights(textview_curses::highlight_map_t &hm);
 
-#include "sqlite3.h"
-
-#include "lnav.hh"
-#include "sql_util.hh"
-#include "vtab_module.hh"
-
-static int64_t sql_log_top_line()
-{
-    return (int64_t) lnav_data.ld_views[LNV_LOG].get_top();
-}
-
-static std::string sql_log_top_datetime()
-{
-    char buffer[64];
-
-    sql_strftime(buffer, sizeof(buffer), lnav_data.ld_log_source.time_for_row(lnav_data.ld_views[LNV_LOG].get_top()));
-    return buffer;
-}
-
-int state_extension_functions(struct FuncDef **basic_funcs,
-                              struct FuncDefAgg **agg_funcs)
-{
-    static struct FuncDef datetime_funcs[] = {
-        sqlite_func_adapter<decltype(&sql_log_top_line), sql_log_top_line>::builder(
-            help_text("log_top_line",
-                      "Return the line number at the top of the log view.")
-                .sql_function()
-        ),
-
-        sqlite_func_adapter<decltype(&sql_log_top_datetime), sql_log_top_datetime>::builder(
-            help_text("log_top_datetime",
-                      "Return the timestamp of the line at the top of the log view.")
-                .sql_function()
-        ),
-
-        { NULL }
-    };
-
-    *basic_funcs = datetime_funcs;
-
-    return SQLITE_OK;
-}
+#endif

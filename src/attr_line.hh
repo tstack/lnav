@@ -459,8 +459,12 @@ public:
         if (padding > 0) {
             this->al_string.insert(0, padding, ' ');
             for (auto &al_attr : this->al_attrs) {
-                al_attr.sa_range.lr_start += padding;
-                al_attr.sa_range.lr_end += padding;
+                if (al_attr.sa_range.lr_start > 0) {
+                    al_attr.sa_range.lr_start += padding;
+                }
+                if (al_attr.sa_range.lr_end != -1) {
+                    al_attr.sa_range.lr_end += padding;
+                }
             }
         }
 

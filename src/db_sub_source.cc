@@ -187,14 +187,12 @@ void db_label_source::push_column(const char *colstr)
 
         if (jpw.parse(colstr, value_len) == yajl_status_ok &&
             jpw.complete_parse() == yajl_status_ok) {
-            for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
-                 iter != jpw.jpw_values.end();
-                 ++iter) {
-                if (iter->wt_type == yajl_t_number &&
-                    sscanf(iter->wt_value.c_str(), "%lf", &num_value) == 1) {
-                    this->dls_chart.add_value(iter->wt_ptr, num_value);
+            for (auto &jpw_value : jpw.jpw_values) {
+                if (jpw_value.wt_type == yajl_t_number &&
+                    sscanf(jpw_value.wt_value.c_str(), "%lf", &num_value) == 1) {
+                    this->dls_chart.add_value(jpw_value.wt_ptr, num_value);
                     this->dls_chart.with_attrs_for_ident(
-                        iter->wt_ptr, vc.attrs_for_ident(iter->wt_ptr));
+                        jpw_value.wt_ptr, vc.attrs_for_ident(jpw_value.wt_ptr));
                 }
             }
         }
@@ -289,7 +287,7 @@ size_t db_overlay_source::list_overlay_count(const listview_curses &lv)
             }
 
             int curr_line = start_line;
-            for (json_ptr_walk::walk_list_t::iterator iter = jpw.jpw_values.begin();
+            for (auto iter = jpw.jpw_values.begin();
                  iter != jpw.jpw_values.end();
                  ++iter, curr_line++) {
                 double num_value = 0.0;

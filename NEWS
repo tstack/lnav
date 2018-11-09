@@ -1,6 +1,12 @@
 
 lnav v0.8.5:
      Features:
+     * Added a visual filter editor to make it easier to update existing
+       filters.  The editor can be opened by pressing backquote (`).  Once
+       the editor is opened, you can create/delete, enable/disable, and edit
+       the patterns with hotkeys.
+     * Added an 'lnav_view_filters' SQL table that can be used to
+       programmatically manipulate filters.
      * The ":write-*" commands will now accept "/dev/clipboard" as a file name
        that writes to the system clipboard.
      * Added a ":redirect-to <path>" command to redirect command output to the

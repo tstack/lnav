@@ -47,6 +47,70 @@
 
 using namespace std;
 
+template<>
+struct from_sqlite<lnav_view_t> {
+    inline lnav_view_t operator()(int argc, sqlite3_value **val, int argi) {
+        const char *view_name = (const char *) sqlite3_value_text(val[argi]);
+
+        if (view_name == nullptr) {
+            throw from_sqlite_conversion_error("lnav view name", argi);
+        }
+
+        auto view_name_iter = find_if(
+            ::begin(lnav_view_strings), ::end(lnav_view_strings),
+            [&](const char *v) {
+                return v != nullptr && strcasecmp(v, view_name) == 0;
+            });
+
+        if (view_name_iter == ::end(lnav_view_strings)) {
+            throw from_sqlite_conversion_error("lnav view name", argi);
+        }
+
+        return lnav_view_t(view_name_iter - lnav_view_strings);
+    }
+};
+
+template<>
+struct from_sqlite<text_filter::type_t> {
+    inline text_filter::type_t operator()(int argc, sqlite3_value **val, int argi) {
+        const char *type_name = (const char *) sqlite3_value_text(val[argi]);
+
+        if (strcasecmp(type_name, "in") == 0) {
+            return text_filter::INCLUDE;
+        } else if (strcasecmp(type_name, "out") == 0) {
+            return text_filter::EXCLUDE;
+        }
+
+        throw from_sqlite_conversion_error("filter type", argi);
+    }
+};
+
+template<>
+struct from_sqlite<pair<string, pcre *>> {
+    inline pair<string, pcre *>operator()(int argc, sqlite3_value **val, int argi) {
+        const char *pattern = (const char *) sqlite3_value_text(val[argi]);
+        const char *errptr;
+        pcre *code;
+        int eoff;
+
+        if (pattern == nullptr || pattern[0] == '\0') {
+            throw from_sqlite_conversion_error("non-empty pattern", argi);
+        }
+
+        code = pcre_compile(pattern,
+                            PCRE_CASELESS,
+                            &errptr,
+                            &eoff,
+                            nullptr);
+
+        if (code == nullptr) {
+            throw from_sqlite_conversion_error(errptr, argi);
+        }
+
+        return make_pair(string(pattern), code);
+    }
+};
+
 struct lnav_views : public tvt_iterator_cursor<lnav_views> {
     struct vtab {
         sqlite3_vtab base;
@@ -126,7 +190,7 @@ CREATE TABLE lnav_views (
                 break;
             }
             case 6: {
-                const string &str = lnav_data.ld_last_search[view_index];
+                const string &str = tc.get_last_search();
 
                 sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
                 break;
@@ -180,10 +244,7 @@ CREATE TABLE lnav_views (
             }
         }
         tc.set_left(left);
-
-        if (search != lnav_data.ld_last_search[index]) {
-            execute_search((lnav_view_t) index, search);
-        }
+        tc.execute_search(search);
 
         return SQLITE_OK;
     };
@@ -208,11 +269,11 @@ CREATE TABLE lnav_view_stack (
     };
 
     iterator begin() {
-        return lnav_data.ld_view_stack.begin();
+        return lnav_data.ld_view_stack.vs_views.begin();
     }
 
     iterator end() {
-        return lnav_data.ld_view_stack.end();
+        return lnav_data.ld_view_stack.vs_views.end();
     }
 
     int get_column(cursor &vc, sqlite3_context *ctx, int col) {
@@ -231,16 +292,16 @@ CREATE TABLE lnav_view_stack (
     };
 
     int delete_row(sqlite3_vtab *tab, sqlite3_int64 rowid) {
-        if ((size_t)rowid != lnav_data.ld_view_stack.size() - 1) {
+        if ((size_t)rowid != lnav_data.ld_view_stack.vs_views.size() - 1) {
             tab->zErrMsg = sqlite3_mprintf(
                 "Only the top view in the stack can be deleted");
             return SQLITE_ERROR;
         }
 
-        lnav_data.ld_last_view = lnav_data.ld_view_stack.back();
-        lnav_data.ld_view_stack.pop_back();
-        if (!lnav_data.ld_view_stack.empty()) {
-            textview_curses *tc = lnav_data.ld_view_stack.back();
+        lnav_data.ld_last_view = *lnav_data.ld_view_stack.top();
+        lnav_data.ld_view_stack.vs_views.pop_back();
+        if (!lnav_data.ld_view_stack.vs_views.empty()) {
+            textview_curses *tc = *lnav_data.ld_view_stack.top();
 
             tc->set_needs_update();
             lnav_data.ld_view_stack_broadcaster.invoke(tc);
@@ -251,30 +312,11 @@ CREATE TABLE lnav_view_stack (
 
     int insert_row(sqlite3_vtab *tab,
                    sqlite3_int64 &rowid_out,
-                   const char *name) {
-        if (name == nullptr) {
-            tab->zErrMsg = sqlite3_mprintf("'name' cannot be null");
-            return SQLITE_ERROR;
-        }
-
-        auto view_name_iter = find_if(
-            ::begin(lnav_view_strings), ::end(lnav_view_strings),
-            [&](const char *v) {
-                return v != nullptr && strcmp(v, name) == 0;
-            });
-
-        if (view_name_iter == ::end(lnav_view_strings)) {
-            tab->zErrMsg = sqlite3_mprintf("Unknown view name: %s", name);
-            return SQLITE_ERROR;
-        }
-
-        lnav_view_t view_index = lnav_view_t(view_name_iter - lnav_view_strings);
+                   lnav_view_t view_index) {
         textview_curses *tc = &lnav_data.ld_views[view_index];
-        lnav_data.ld_view_stack.push_back(tc);
-        tc->set_needs_update();
-        lnav_data.ld_view_stack_broadcaster.invoke(tc);
 
-        rowid_out = lnav_data.ld_view_stack.size() - 1;
+        ensure_view(tc);
+        rowid_out = lnav_data.ld_view_stack.vs_views.size() - 1;
 
         return SQLITE_OK;
     };
@@ -286,10 +328,216 @@ CREATE TABLE lnav_view_stack (
     };
 };
 
+struct lnav_view_filters : public tvt_iterator_cursor<lnav_view_filters> {
+    struct vtab {
+        sqlite3_vtab base;
+
+        operator sqlite3_vtab *() {
+            return &this->base;
+        };
+    };
+
+    struct iterator {
+        using difference_type = int;
+        using value_type = text_filter;
+        using pointer = text_filter *;
+        using reference = text_filter &;
+        using iterator_category = forward_iterator_tag;
+
+        lnav_view_t i_view_index;
+        int i_filter_index;
+
+        iterator(lnav_view_t view = LNV_LOG, int filter = -1)
+            : i_view_index(view), i_filter_index(filter) {
+        }
+
+        iterator &operator++() {
+            while (this->i_view_index < LNV__MAX) {
+                textview_curses &tc = lnav_data.ld_views[this->i_view_index];
+                text_sub_source *tss = tc.get_sub_source();
+
+                if (tss == nullptr) {
+                    this->i_view_index = lnav_view_t(this->i_view_index + 1);
+                    continue;
+                }
+
+                filter_stack &fs = tss->get_filters();
+
+                this->i_filter_index += 1;
+                if (this->i_filter_index >= fs.size()) {
+                    this->i_filter_index = -1;
+                    this->i_view_index = lnav_view_t(this->i_view_index + 1);
+                } else {
+                    break;
+                }
+            }
+
+            return *this;
+        }
+
+        bool operator==(const iterator &other) const {
+            return this->i_view_index == other.i_view_index &&
+                   this->i_filter_index == other.i_filter_index;
+        }
+
+        bool operator!=(const iterator &other) const {
+            return !(*this == other);
+        }
+    };
+
+    static constexpr const char *CREATE_STMT = R"(
+-- Access lnav's filters through this table.
+CREATE TABLE lnav_view_filters (
+    view_name text,
+    enabled integer,
+    type text,
+    pattern text
+);
+)";
+
+    iterator begin() {
+        iterator retval = iterator();
+
+        return ++retval;
+    }
+
+    iterator end() {
+        return iterator(LNV__MAX, -1);
+    }
+
+    sqlite_int64 get_rowid(iterator iter) {
+        textview_curses &tc = lnav_data.ld_views[iter.i_view_index];
+        text_sub_source *tss = tc.get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        auto &tf = *(fs.begin() + iter.i_filter_index);
+
+        sqlite_int64 retval = iter.i_view_index;
+
+        retval = retval << 32;
+        retval = retval | tf->get_index();
+
+        return retval;
+    }
+
+    int get_column(cursor &vc, sqlite3_context *ctx, int col) {
+        textview_curses &tc = lnav_data.ld_views[vc.iter.i_view_index];
+        text_sub_source *tss = tc.get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        auto tf = *(fs.begin() + vc.iter.i_filter_index);
+
+        switch (col) {
+            case 0:
+                sqlite3_result_text(ctx,
+                                    lnav_view_strings[vc.iter.i_view_index], -1,
+                                    SQLITE_STATIC);
+                break;
+            case 1:
+                sqlite3_result_int(ctx, tf->is_enabled());
+                break;
+            case 2:
+                switch (tf->get_type()) {
+                    case text_filter::INCLUDE:
+                        sqlite3_result_text(ctx, "in", 2, SQLITE_STATIC);
+                        break;
+                    case text_filter::EXCLUDE:
+                        sqlite3_result_text(ctx, "out", 3, SQLITE_STATIC);
+                        break;
+                    default:
+                        ensure(0);
+                }
+                break;
+            case 3:
+                sqlite3_result_text(ctx,
+                                    tf->get_id().c_str(),
+                                    -1,
+                                    SQLITE_TRANSIENT);
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+
+    int insert_row(sqlite3_vtab *tab,
+                   sqlite3_int64 &rowid_out,
+                   lnav_view_t view_index,
+                   bool enabled,
+                   text_filter::type_t type,
+                   pair<string, pcre *> pattern) {
+        textview_curses &tc = lnav_data.ld_views[view_index];
+        text_sub_source *tss = tc.get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        auto pf = make_shared<pcre_filter>(type,
+                                           pattern.first,
+                                           fs.next_index(),
+                                           pattern.second);
+        fs.add_filter(pf);
+        tss->text_filters_changed();
+
+        return SQLITE_OK;
+    }
+
+    int delete_row(sqlite3_vtab *tab, sqlite3_int64 rowid) {
+        lnav_view_t view_index = lnav_view_t(rowid >> 32);
+        int filter_index = rowid & 0xffffffffLL;
+        textview_curses &tc = lnav_data.ld_views[view_index];
+        text_sub_source *tss = tc.get_sub_source();
+        filter_stack &fs = tss->get_filters();
+
+        for (const auto &iter : fs) {
+            if (iter->get_index() == filter_index) {
+                fs.delete_filter(iter->get_id());
+                tss->text_filters_changed();
+                break;
+            }
+        }
+
+        return SQLITE_OK;
+    }
+
+    int update_row(sqlite3_vtab *tab,
+                   sqlite3_int64 &rowid,
+                   lnav_view_t new_view_index,
+                   bool enabled,
+                   text_filter::type_t type,
+                   pair<string, pcre *> pattern) {
+        lnav_view_t view_index = lnav_view_t(rowid >> 32);
+        int filter_index = rowid & 0xffffffffLL;
+        textview_curses &tc = lnav_data.ld_views[view_index];
+        text_sub_source *tss = tc.get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        auto iter = fs.begin() + filter_index;
+        shared_ptr<text_filter> tf = *iter;
+
+        if (new_view_index != view_index) {
+            tab->zErrMsg = sqlite3_mprintf(
+                "The view for a filter cannot be changed");
+            return SQLITE_ERROR;
+        }
+
+        tf->lf_deleted = true;
+        tss->text_filters_changed();
+
+        auto pf = make_shared<pcre_filter>(type,
+                                           pattern.first,
+                                           tf->get_index(),
+                                           pattern.second);
+
+        if (!enabled) {
+            pf->disable();
+        }
+
+        *iter = pf;
+        tss->text_filters_changed();
+
+        return SQLITE_OK;
+    };
+};
+
 int register_views_vtab(sqlite3 *db)
 {
     static vtab_module<lnav_views> LNAV_VIEWS_MODULE;
     static vtab_module<lnav_view_stack> LNAV_VIEW_STACK_MODULE;
+    static vtab_module<lnav_view_filters> LNAV_VIEW_FILTERS_MODULE;
 
     int rc;
 
@@ -297,6 +545,9 @@ int register_views_vtab(sqlite3 *db)
     assert(rc == SQLITE_OK);
 
     rc = LNAV_VIEW_STACK_MODULE.create(db, "lnav_view_stack");
+    assert(rc == SQLITE_OK);
+
+    rc = LNAV_VIEW_FILTERS_MODULE.create(db, "lnav_view_filters");
     assert(rc == SQLITE_OK);
 
     return rc;

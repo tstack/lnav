@@ -71,6 +71,32 @@ public:
     };
 };
 
+class pcre_filter
+    : public text_filter {
+public:
+    pcre_filter(type_t type, const std::string id, size_t index, pcre *code)
+        : text_filter(type, id, index),
+          pf_pcre(code) { };
+
+    ~pcre_filter() override { };
+
+    bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) override {
+        pcre_context_static<30> pc;
+        pcre_input pi(line.get_data(), 0, line.length());
+
+        return this->pf_pcre.match(pc, pi);
+    };
+
+    std::string to_command() override {
+        return (this->lf_type == text_filter::INCLUDE ?
+                "filter-in " : "filter-out ") +
+               this->lf_id;
+    };
+
+protected:
+    pcrepp pf_pcre;
+};
+
 /**
  * Delegate class that merges the contents of multiple log files into a single
  * source of data for a text view.
@@ -295,7 +321,8 @@ public:
         }
         if (bm == &textview_curses::BM_META &&
             this->lss_meta_grepper.gps_proc != nullptr) {
-            this->lss_meta_grepper.gps_proc->queue_request(line, line + 1_vl);
+            this->tss_view->search_range(line, line + 1_vl);
+            this->tss_view->search_new_data();
         }
     };
 
@@ -478,7 +505,7 @@ public:
      * logfile have been indexed.
      */
     struct logfile_data {
-        logfile_data(size_t index, filter_stack &fs, std::shared_ptr<logfile> lf)
+        logfile_data(size_t index, filter_stack &fs, const std::shared_ptr<logfile> &lf)
             : ld_file_index(index),
               ld_filter_state(fs, lf),
               ld_lines_indexed(0),
@@ -644,9 +671,8 @@ public:
         bool lmg_done{false};
     };
 
-    meta_grepper &get_meta_grepper() {
-        return this->lss_meta_grepper;
-    }
+    nonstd::optional<std::pair<grep_proc_source<vis_line_t> *, grep_proc_sink<vis_line_t> *>>
+    get_grepper();
 
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
