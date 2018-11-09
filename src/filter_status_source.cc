@@ -32,7 +32,7 @@
 #include "lnav.hh"
 #include "filter_status_source.hh"
 
-static auto TOGGLE_MSG = "Press backquote (" ANSI_BOLD("`") ") to edit ";
+static auto TOGGLE_MSG = "Press(" ANSI_BOLD("TAB") ") to edit ";
 static auto HOTKEY_HELP =
     ANSI_BOLD("SPC") ": Enable/Disable | "
     ANSI_BOLD("ENTER") ": Edit | "

@@ -176,7 +176,7 @@ Views
                     leaving the spectrogram view with 'Q', the top time in that
                     view will be matched to the top time in the log view.
 
-  `                 Toggle focusing on the filter editor or the main view.
+  TAB               Toggle focusing on the filter editor or the main view.
 
   a/A               Restore the view that was previously popped with 'q/Q'.
                     The 'A' hotkey will try to match the top times between the
@@ -431,7 +431,7 @@ Filter Editor
 -------------
 
 The following hotkeys are only available when the focus is on the filter
-editor.  You can change the focus by pressing backquote (`).
+editor.  You can change the focus by pressing TAB.
 
   q                 Switch the focus back to the main view.
   j/down-arrow      Select the next filter.

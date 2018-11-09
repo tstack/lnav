@@ -72,7 +72,8 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
     }
 
     switch (ch) {
-        case '`':
+        case '\t':
+        case KEY_BTAB:
         case 'q':
             lnav_data.ld_mode = LNM_PAGING;
             lnav_data.ld_filter_view.reload_data();

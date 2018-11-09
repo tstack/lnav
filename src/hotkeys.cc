@@ -124,11 +124,6 @@ void handle_paging_key(int ch)
         case KEY_BACKSPACE:
             break;
 
-        case '`':
-            lnav_data.ld_mode = LNM_FILTER;
-            lnav_data.ld_filter_view.reload_data();
-            break;
-
         case 'a':
             if (lnav_data.ld_last_view == NULL) {
                 alerter::singleton().chime();
@@ -932,6 +927,9 @@ void handle_paging_key(int ch)
                 );
 
                 tc->reload_data();
+            } else {
+                lnav_data.ld_mode = LNM_FILTER;
+                lnav_data.ld_filter_view.reload_data();
             }
             break;
 
