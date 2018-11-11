@@ -32,7 +32,7 @@
 #include "lnav.hh"
 #include "filter_status_source.hh"
 
-static auto TOGGLE_MSG = "Press(" ANSI_BOLD("TAB") ") to edit ";
+static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
 static auto HOTKEY_HELP =
     ANSI_BOLD("SPC") ": Enable/Disable | "
     ANSI_BOLD("ENTER") ": Edit | "
@@ -49,7 +49,10 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
         view_colors::ansi_color_pair_index(COLOR_BLUE, COLOR_WHITE));
 
-    this->tss_fields[TSF_FILTERED].set_width(20);
+    this->tss_fields[TSF_COUNT].set_width(22);
+    this->tss_fields[TSF_COUNT].set_role(view_colors::VCR_STATUS);
+
+    this->tss_fields[TSF_FILTERED].set_width(30);
     this->tss_fields[TSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
 
     this->tss_fields[TSF_HELP].right_justify(true);
@@ -76,6 +79,31 @@ size_t filter_status_source::statusview_fields()
     }
 
     if (this->tss_prompt.empty() && this->tss_error.empty()) {
+        lnav_data.ld_view_stack.top() | [this] (auto tc) {
+            text_sub_source *tss = tc->get_sub_source();
+            if (tss == nullptr) {
+                return;
+            }
+
+            filter_stack &fs = tss->get_filters();
+            auto enabled_count = 0, filter_count = 0;
+
+            for (const auto &tf : fs) {
+                if (tf->is_enabled()) {
+                    enabled_count += 1;
+                }
+                filter_count += 1;
+            }
+            if (filter_count == 0) {
+                this->tss_fields[TSF_COUNT].set_value("");
+            } else {
+                this->tss_fields[TSF_COUNT].set_value(
+                    " " ANSI_BOLD("%d")
+                    " of " ANSI_BOLD("%d")
+                    " enabled ", enabled_count, filter_count);
+            }
+        };
+
         return TSF__MAX;
     }
 
@@ -122,6 +150,6 @@ void filter_status_source::update_filtered(text_sub_source *tss)
             this->bss_last_filtered_count = tss->get_filtered_count();
             timer.start_fade(this->bss_filter_counter, 3);
         }
-        sf.set_value("%'9d Not Shown", tss->get_filtered_count());
+        sf.set_value("%'9d Lines not shown", tss->get_filtered_count());
     }
 }

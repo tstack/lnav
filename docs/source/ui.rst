@@ -41,7 +41,16 @@ Above and below the main body are status lines that display:
 * the current view;
 * the line number for the top line in the display;
 * the current search hit and the total number of hits;
-* the number of lines that are **not** displayed because of filtering.
+
+If the view supports filtering, there will be a status line showing the
+following:
+
+  * the number of enabled filters and the total number of filters;
+  * the number of lines that are **not** displayed because of filtering.
+
+To edit the filters, you can press TAB to change the focus from the main
+view to the filter editor.  The editor allows you to create, enable/disable,
+and delete filters easily.
 
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a

@@ -40,7 +40,9 @@ class textfile_sub_source : public text_sub_source {
 public:
     typedef std::list<std::shared_ptr<logfile>>::iterator file_iterator;
 
-    textfile_sub_source() { };
+    textfile_sub_source() {
+        this->tss_supports_filtering = true;
+    };
 
     bool empty() const {
         return this->tss_files.empty();

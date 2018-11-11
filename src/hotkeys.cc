@@ -110,6 +110,7 @@ void handle_paging_key(int ch)
     textview_curses *tc = *lnav_data.ld_view_stack.top();
     exec_context &ec = lnav_data.ld_exec_context;
     logfile_sub_source *lss = NULL;
+    text_sub_source *tc_tss = tc->get_sub_source();
     bookmarks<vis_line_t>::type &     bm  = tc->get_bookmarks();
 
     if (tc->handle_key(ch)) {
@@ -927,9 +928,11 @@ void handle_paging_key(int ch)
                 );
 
                 tc->reload_data();
-            } else {
+            } else if (tc_tss != nullptr && tc_tss->tss_supports_filtering) {
                 lnav_data.ld_mode = LNM_FILTER;
                 lnav_data.ld_filter_view.reload_data();
+            } else {
+                alerter::singleton().chime();
             }
             break;
 

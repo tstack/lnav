@@ -455,6 +455,7 @@ public:
         return nonstd::nullopt;
     }
 
+    bool tss_supports_filtering{false};
 protected:
     textview_curses *tss_view;
     filter_stack tss_filters;

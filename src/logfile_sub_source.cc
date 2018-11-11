@@ -106,6 +106,7 @@ logfile_sub_source::logfile_sub_source()
       lss_longest_line(0),
       lss_meta_grepper(*this)
 {
+    this->tss_supports_filtering = true;
     this->clear_line_size_cache();
     this->clear_min_max_log_times();
 }

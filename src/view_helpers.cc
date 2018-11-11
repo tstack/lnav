@@ -215,6 +215,19 @@ void layout_views()
     bool doc_side_by_side = width > (90 + 60);
     bool preview_status_open = !lnav_data.ld_preview_status_source
                                          .get_description().empty();
+    bool filter_status_open = false;
+
+    lnav_data.ld_view_stack.top() | [&] (auto tc) {
+        text_sub_source *tss = tc->get_sub_source();
+
+        if (tss == nullptr) {
+            return;
+        }
+
+        if (tss->tss_supports_filtering) {
+            filter_status_open = true;
+        }
+    };
 
     if (doc_side_by_side) {
         doc_height = std::max(
@@ -255,9 +268,12 @@ void layout_views()
         + lnav_data.ld_rl_view->get_height();
 
     for (auto &tc : lnav_data.ld_views) {
-        tc.set_height(vis_line_t(-(bottom_height + filter_height)));
+        tc.set_height(vis_line_t(-(bottom_height
+                                   + (filter_status_open ? 1 : 0)
+                                   + filter_height)));
     }
     lnav_data.ld_status[LNS_TOP].set_enabled(!filters_open);
+    lnav_data.ld_status[LNS_FILTER].set_visible(filter_status_open);
     lnav_data.ld_status[LNS_FILTER].set_enabled(filters_open);
     lnav_data.ld_status[LNS_FILTER].set_top(-(bottom_height + filter_height + 1));
     lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + 2));
