@@ -624,13 +624,13 @@ attr_t view_colors::BASIC_HL_PAIRS[view_colors::BASIC_COLOR_COUNT] = {
     ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
     ansi_color_pair(COLOR_GREEN, COLOR_BLACK),
     ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK),
-    ansi_color_pair(COLOR_BLUE, COLOR_WHITE),
+    ansi_color_pair(COLOR_BLACK, COLOR_WHITE),
     ansi_color_pair(COLOR_CYAN, COLOR_BLACK),
-    ansi_color_pair(COLOR_GREEN, COLOR_WHITE),
-    ansi_color_pair(COLOR_MAGENTA, COLOR_WHITE),
+    ansi_color_pair(COLOR_YELLOW, COLOR_MAGENTA) | A_BOLD,
+    ansi_color_pair(COLOR_MAGENTA, COLOR_CYAN) | A_BOLD,
 };
 
-view_colors &view_colors::singleton(void)
+view_colors &view_colors::singleton()
 {
     static view_colors s_vc;
 
@@ -720,58 +720,58 @@ void view_colors::init_roles(int color_pair_base)
 
     /* Setup the mappings from roles to actual colors. */
     this->vc_role_colors[VCR_TEXT] =
-        attr_for_colors(color_pair_base, COLOR_WHITE, COLOR_BLACK);
+        ansi_color_pair(COLOR_WHITE, COLOR_BLACK);
     if (lnav_config.lc_ui_dim_text) {
         this->vc_role_colors[VCR_TEXT] |= A_DIM;
     }
     this->vc_role_colors[VCR_SEARCH] = A_REVERSE;
-    this->vc_role_colors[VCR_OK]      = attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_BLACK) | A_BOLD;
-    this->vc_role_colors[VCR_ERROR]   = attr_for_colors(color_pair_base, COLOR_RED, COLOR_BLACK) | A_BOLD;
-    this->vc_role_colors[VCR_WARNING] = attr_for_colors(color_pair_base, COLOR_YELLOW, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_OK]      = ansi_color_pair(COLOR_GREEN, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_ERROR]   = ansi_color_pair(COLOR_RED, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_WARNING] = ansi_color_pair(COLOR_YELLOW, COLOR_BLACK) | A_BOLD;
     this->vc_role_colors[VCR_ALT_ROW] = this->vc_role_colors[VCR_TEXT] | A_BOLD;
-    this->vc_role_colors[VCR_HIDDEN] = attr_for_colors(color_pair_base, COLOR_YELLOW, COLOR_BLACK);
-    this->vc_role_colors[VCR_ADJUSTED_TIME] = attr_for_colors(color_pair_base, COLOR_MAGENTA, COLOR_BLACK);
-    this->vc_role_colors[VCR_SKEWED_TIME] = attr_for_colors(color_pair_base, COLOR_YELLOW, COLOR_BLACK) | A_UNDERLINE;
-    this->vc_role_colors[VCR_OFFSET_TIME] = attr_for_colors(color_pair_base, COLOR_CYAN, COLOR_BLACK);
+    this->vc_role_colors[VCR_HIDDEN] = ansi_color_pair(COLOR_YELLOW, COLOR_BLACK);
+    this->vc_role_colors[VCR_ADJUSTED_TIME] = ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK);
+    this->vc_role_colors[VCR_SKEWED_TIME] = ansi_color_pair(COLOR_YELLOW, COLOR_BLACK) | A_UNDERLINE;
+    this->vc_role_colors[VCR_OFFSET_TIME] = ansi_color_pair(COLOR_CYAN, COLOR_BLACK);
 
     this->vc_role_colors[VCR_STATUS] =
-        attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_WHITE);
+        ansi_color_pair(COLOR_BLACK, COLOR_WHITE);
     this->vc_role_colors[VCR_WARN_STATUS] =
-        attr_for_colors(color_pair_base, COLOR_YELLOW, COLOR_WHITE) | A_BOLD;
+        ansi_color_pair(COLOR_YELLOW, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_ALERT_STATUS] =
-        attr_for_colors(color_pair_base, COLOR_RED, COLOR_WHITE) | A_BOLD;
+        ansi_color_pair(COLOR_RED, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_ACTIVE_STATUS] =
-        attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_WHITE);
+        ansi_color_pair(COLOR_GREEN, COLOR_WHITE);
     this->vc_role_colors[VCR_ACTIVE_STATUS2] =
-        attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_WHITE) | A_BOLD;
+        ansi_color_pair(COLOR_GREEN, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_BOLD_STATUS] =
-        attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_WHITE) | A_BOLD;
+        ansi_color_pair(COLOR_BLACK, COLOR_WHITE) | A_BOLD;
     this->vc_role_colors[VCR_VIEW_STATUS] =
-        attr_for_colors(color_pair_base, COLOR_WHITE, COLOR_BLUE) | A_BOLD;
+        ansi_color_pair(COLOR_WHITE, COLOR_BLUE) | A_BOLD;
 
     rgb_color::from_str(string_fragment("White"), fg, err);
     rgb_color::from_str(string_fragment("Grey37"), bg, err);
     this->vc_role_colors[VCR_INACTIVE_STATUS] = ensure_color_pair(fg, bg);
 
     this->vc_role_colors[VCR_POPUP] =
-        attr_for_colors(color_pair_base, COLOR_WHITE, COLOR_CYAN) | A_BOLD;
+        ansi_color_pair(COLOR_WHITE, COLOR_CYAN) | A_BOLD;
 
-    this->vc_role_colors[VCR_KEYWORD] = attr_for_colors(color_pair_base, COLOR_BLUE, COLOR_BLACK);
-    this->vc_role_colors[VCR_STRING] = attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_BLACK) | A_BOLD;
-    this->vc_role_colors[VCR_COMMENT] = attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_BLACK);
-    this->vc_role_colors[VCR_VARIABLE] = attr_for_colors(color_pair_base, COLOR_CYAN, COLOR_BLACK);
-    this->vc_role_colors[VCR_SYMBOL] = attr_for_colors(color_pair_base, COLOR_MAGENTA, COLOR_BLACK);
-    this->vc_role_colors[VCR_RE_SPECIAL] = attr_for_colors(color_pair_base, COLOR_CYAN, COLOR_BLACK);
-    this->vc_role_colors[VCR_RE_REPEAT] = attr_for_colors(color_pair_base, COLOR_YELLOW, COLOR_BLACK);
-    this->vc_role_colors[VCR_FILE] = attr_for_colors(color_pair_base, COLOR_BLUE, COLOR_BLACK);
+    this->vc_role_colors[VCR_KEYWORD] = ansi_color_pair(COLOR_BLUE, COLOR_BLACK);
+    this->vc_role_colors[VCR_STRING] = ansi_color_pair(COLOR_GREEN, COLOR_BLACK) | A_BOLD;
+    this->vc_role_colors[VCR_COMMENT] = ansi_color_pair(COLOR_GREEN, COLOR_BLACK);
+    this->vc_role_colors[VCR_VARIABLE] = ansi_color_pair(COLOR_CYAN, COLOR_BLACK);
+    this->vc_role_colors[VCR_SYMBOL] = ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK);
+    this->vc_role_colors[VCR_RE_SPECIAL] = ansi_color_pair(COLOR_CYAN, COLOR_BLACK);
+    this->vc_role_colors[VCR_RE_REPEAT] = ansi_color_pair(COLOR_YELLOW, COLOR_BLACK);
+    this->vc_role_colors[VCR_FILE] = ansi_color_pair(COLOR_BLUE, COLOR_BLACK);
 
-    this->vc_role_colors[VCR_DIFF_DELETE]  = attr_for_colors(color_pair_base, COLOR_RED, COLOR_BLACK);
-    this->vc_role_colors[VCR_DIFF_ADD]     = attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_BLACK);
-    this->vc_role_colors[VCR_DIFF_SECTION] = attr_for_colors(color_pair_base, COLOR_MAGENTA, COLOR_BLACK);
+    this->vc_role_colors[VCR_DIFF_DELETE]  = ansi_color_pair(COLOR_RED, COLOR_BLACK);
+    this->vc_role_colors[VCR_DIFF_ADD]     = ansi_color_pair(COLOR_GREEN, COLOR_BLACK);
+    this->vc_role_colors[VCR_DIFF_SECTION] = ansi_color_pair(COLOR_MAGENTA, COLOR_BLACK);
 
-    this->vc_role_colors[VCR_LOW_THRESHOLD] = attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_GREEN);
-    this->vc_role_colors[VCR_MED_THRESHOLD] = attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_YELLOW);
-    this->vc_role_colors[VCR_HIGH_THRESHOLD] = attr_for_colors(color_pair_base, COLOR_BLACK, COLOR_RED);
+    this->vc_role_colors[VCR_LOW_THRESHOLD] = ansi_color_pair(COLOR_BLACK, COLOR_GREEN);
+    this->vc_role_colors[VCR_MED_THRESHOLD] = ansi_color_pair(COLOR_BLACK, COLOR_YELLOW);
+    this->vc_role_colors[VCR_HIGH_THRESHOLD] = ansi_color_pair(COLOR_BLACK, COLOR_RED);
 
     this->vc_color_pair_end = color_pair_base + 1;
 }
