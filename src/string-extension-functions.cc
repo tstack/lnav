@@ -198,6 +198,64 @@ string regexp_replace(const char *str, const char *re, const char *repl)
     return dest;
 }
 
+static
+string spooky_hash(const vector<const char *> args)
+{
+    byte_array<2, uint64> hash;
+    SpookyHash context;
+
+    context.Init(0, 0);
+    for (const auto arg : args) {
+        int64_t len = arg != nullptr ? strlen(arg) : 0;
+
+        context.Update(&len, sizeof(len));
+        if (arg == nullptr) {
+            continue;
+        }
+        context.Update(arg, len);
+    }
+    context.Final(hash.out(0), hash.out(1));
+
+    return hash.to_string();
+}
+
+static void sql_spooky_hash_step(sqlite3_context *context,
+                                 int argc,
+                                 sqlite3_value **argv)
+{
+    auto *hasher = (SpookyHash *)sqlite3_aggregate_context(context,
+        sizeof(SpookyHash));
+
+    for (int lpc = 0; lpc < argc; lpc++) {
+        auto value = sqlite3_value_text(argv[lpc]);
+        int64_t len = value != nullptr ? strlen((const char *) value) : 0;
+
+        hasher->Update(&len, sizeof(len));
+        if (value == nullptr) {
+            continue;
+        }
+        hasher->Update(value, len);
+    }
+}
+
+static void sql_spooky_hash_final(sqlite3_context *context)
+{
+    auto *hasher = (SpookyHash *)sqlite3_aggregate_context(
+        context, sizeof(SpookyHash));
+
+    if (hasher == nullptr) {
+        sqlite3_result_null(context);
+    } else {
+        byte_array<2, uint64> hash;
+
+        hasher->Final(hash.out(0), hash.out(1));
+
+        string hex = hash.to_string();
+        sqlite3_result_text(context, hex.c_str(), hex.length(),
+                            SQLITE_TRANSIENT);
+    }
+}
+
 int string_extension_functions(struct FuncDef **basic_funcs,
                                struct FuncDefAgg **agg_funcs)
 {
@@ -270,10 +328,41 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_example({"SELECT endswith('notbad.png', '.jpg')"})
         ),
 
-        { NULL }
+        sqlite_func_adapter<decltype(&spooky_hash), spooky_hash>::builder(
+            help_text("spooky_hash",
+                      "Compute the hash value for the given arguments.")
+                .sql_function()
+                .with_parameter(help_text("str", "The string to hash")
+                                    .one_or_more())
+                .with_tags({"string"})
+                .with_example({"SELECT spooky_hash('Hello, World!')"})
+                .with_example({"SELECT spooky_hash('Hello, World!', NULL)"})
+                .with_example({"SELECT spooky_hash('Hello, World!', '')"})
+                .with_example({"SELECT spooky_hash('Hello, World!', 123)"})
+        ),
+
+        {nullptr}
+    };
+
+    static struct FuncDefAgg str_agg_funcs[] = {
+        {"group_spooky_hash", -1, 0,
+            sql_spooky_hash_step, sql_spooky_hash_final,
+            help_text("group_spooky_hash",
+                      "Compute the hash value for the given arguments")
+                .sql_function()
+                .with_parameter(help_text("str", "The string to hash")
+                                    .one_or_more())
+                .with_tags({"string"})
+                .with_example({"SELECT spooky_hash('abc', '123')"})
+                .with_example(
+                    {"SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))"})
+        },
+
+        {nullptr}
     };
 
     *basic_funcs = string_funcs;
+    *agg_funcs = str_agg_funcs;
 
     return SQLITE_OK;
 }

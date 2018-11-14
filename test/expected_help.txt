@@ -1047,9 +1047,10 @@ Synopsis
 Parameter
   X   The unicode code point values
 See Also
-  endswith(), extract(), group_concat(), instr(), leftstr(), length(), lower(), 
-  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  endswith(), extract(), group_concat(), group_spooky_hash(), instr(), leftstr(), 
+  length(), lower(), ltrim(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT char(0x48, 0x49)
    
@@ -1148,9 +1149,10 @@ Parameters
   str      The string to test
   suffix   The suffix to check in the string
 See Also
-  char(), extract(), group_concat(), instr(), leftstr(), length(), lower(), 
-  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), extract(), group_concat(), group_spooky_hash(), instr(), leftstr(), 
+  length(), lower(), ltrim(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT endswith('notbad.jpg', '.jpg')
    
@@ -1164,9 +1166,10 @@ Synopsis
 Parameter
   str   The string to parse
 See Also
-  char(), endswith(), group_concat(), instr(), leftstr(), length(), lower(), 
-  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), group_concat(), group_spooky_hash(), instr(), leftstr(), 
+  length(), lower(), ltrim(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT extract('foo=1 bar=2 name="Rolo Tomassi"')
    
@@ -1215,9 +1218,10 @@ Parameters
   X     The value to concatenate.
   sep   The separator to place between the values.
 See Also
-  char(), endswith(), extract(), instr(), leftstr(), length(), lower(), ltrim(), 
-  printf(), regexp_match(), regexp_replace(), replace(), replicate(), reverse(), 
-  rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_spooky_hash(), instr(), leftstr(), 
+  length(), lower(), ltrim(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT group_concat(ex_procname) FROM lnav_example_log
    
@@ -1226,6 +1230,24 @@ Examples
    
 
 #3 ;SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log
+   
+
+
+Synopsis
+  group_spooky_hash(str, ...) -- Compute the hash value for the given arguments
+    
+Parameter
+  str   The string to hash
+See Also
+  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
+  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
+  replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), startswith(), 
+  substr(), trim(), upper()
+Examples
+#1 ;SELECT spooky_hash('abc', '123')
+   
+
+#2 ;SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))
    
 
 
@@ -1260,9 +1282,10 @@ Parameters
   haystack   The string to search within
   needle     The string to look for in the haystack
 See Also
-  char(), endswith(), extract(), group_concat(), leftstr(), length(), lower(), 
-  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), leftstr(), 
+  length(), lower(), ltrim(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT instr('abc', 'b')
    
@@ -1351,9 +1374,10 @@ Parameters
   str   The string to return subset.
   N     The number of characters from the left side of the string to return.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), length(), lower(), 
-  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  length(), lower(), ltrim(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT leftstr('abc', 1)
    
@@ -1368,9 +1392,10 @@ Synopsis
 Parameter
   str   The string to determine the length of
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), lower(), 
-  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), lower(), ltrim(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT length('abc')
    
@@ -1430,9 +1455,10 @@ Synopsis
 Parameter
   str   The string to convert.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  ltrim(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), ltrim(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT lower('AbC')
    
@@ -1446,9 +1472,10 @@ Parameters
   str     The string to trim characters from the left side
   chars   The characters to trim.  Defaults to spaces.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), printf(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), printf(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT ltrim('   abc')
    
@@ -1512,9 +1539,10 @@ Parameters
   format   The format of the string to return.
   X        The argument to substitute at a given position in the format.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), regexp_match(), regexp_replace(), replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), regexp_match(), regexp_replace(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT printf('Hello, %s!', 'World')
    
@@ -1580,10 +1608,10 @@ Parameters
   re    The regular expression to use
   str   The string to test against the regular expression
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_replace(), regexp_replace(), replace(), 
-  replicate(), reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), 
-  upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_replace(), 
+  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
+  spooky_hash(), startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT regexp_match('(\d+)', '123')
    
@@ -1604,10 +1632,10 @@ Parameters
   repl   The replacement string.  You can reference capture groups with a 
          backslash followed by the number of the group, starting with 1.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_match(), replace(), 
-  replicate(), reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), 
-  upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), regexp_match(), 
+  replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT regexp_replace('Hello, World!', '^(\w+)', 'Goodbye')
    
@@ -1625,9 +1653,10 @@ Parameters
   old           The string to be replaced.
   replacement   The string to replace any occurrences of the old string with.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replicate(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT replace('abc', 'x', 'z')
    
@@ -1642,9 +1671,10 @@ Parameters
   str   The string to replicate.
   N     The number of times to replicate the string.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
-  reverse(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), reverse(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT replicate('abc', 3)
    
@@ -1655,9 +1685,10 @@ Synopsis
 Parameter
   str   The string to reverse.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
-  replicate(), rightstr(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), rightstr(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Example
 #1 ;SELECT reverse('abc')
    
@@ -1670,9 +1701,10 @@ Parameters
   str   The string to return subset.
   N     The number of characters from the right side of the string to return.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
-  replicate(), reverse(), rtrim(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), reverse(), rtrim(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT rightstr('abc', 1)
    
@@ -1708,14 +1740,38 @@ Parameters
   str     The string to trim characters from the right side
   chars   The characters to trim.  Defaults to spaces.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
-  replicate(), reverse(), rightstr(), startswith(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), reverse(), rightstr(), spooky_hash(), 
+  startswith(), substr(), trim(), upper()
 Examples
 #1 ;SELECT ltrim('abc   ')
    
 
 #2 ;SELECT ltrim('abbbbcccc', 'bc')
+   
+
+
+Synopsis
+  spooky_hash(str, ...) -- Compute the hash value for the given arguments.
+Parameter
+  str   The string to hash
+See Also
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
+  startswith(), substr(), trim(), upper()
+Examples
+#1 ;SELECT spooky_hash('Hello, World!')
+   
+
+#2 ;SELECT spooky_hash('Hello, World!', NULL)
+   
+
+#3 ;SELECT spooky_hash('Hello, World!', '')
+   
+
+#4 ;SELECT spooky_hash('Hello, World!', 123)
    
 
 
@@ -1753,9 +1809,10 @@ Parameters
   str      The string to test
   prefix   The prefix to check in the string
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
-  replicate(), reverse(), rightstr(), rtrim(), substr(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
+  spooky_hash(), substr(), trim(), upper()
 Examples
 #1 ;SELECT startswith('foobar', 'foo')
    
@@ -1797,9 +1854,10 @@ Parameters
           the end of the string are returned.  If the value is negative, then 
           the characters before the start are returned.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
-  replicate(), reverse(), rightstr(), rtrim(), startswith(), trim(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
+  spooky_hash(), startswith(), trim(), upper()
 Examples
 #1 ;SELECT substr('abc', 2)
    
@@ -1900,9 +1958,10 @@ Parameters
   str     The string to trim characters from the left and right sides.
   chars   The characters to trim.  Defaults to spaces.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
-  replicate(), reverse(), rightstr(), rtrim(), startswith(), substr(), upper()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
+  spooky_hash(), startswith(), substr(), upper()
 Examples
 #1 ;SELECT trim('    abc   ')
    
@@ -1948,9 +2007,10 @@ Synopsis
 Parameter
   str   The string to convert.
 See Also
-  char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
-  lower(), ltrim(), printf(), regexp_match(), regexp_replace(), replace(), 
-  replicate(), reverse(), rightstr(), rtrim(), startswith(), substr(), trim()
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
+  regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
+  spooky_hash(), startswith(), substr(), trim()
 Example
 #1 ;SELECT upper('aBc')
    

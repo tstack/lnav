@@ -128,6 +128,10 @@ Additional string comparison and manipulation functions:
 * extract(str) - Parse and extract values from a string using the same
   algorithm as the *logline* table (see :ref:`data-ext`).  The discovered
   data is returned as a JSON-object that you can do further processing on.
+* spooky_hash(str1, ...) - Compute the hash value for the given arguments using
+  the "spooky" hash algorithm.
+* group_spooky_hash(str1, ...) - An aggregate version of the "spooky_hash()"
+  function.
 
 File Paths
 ----------

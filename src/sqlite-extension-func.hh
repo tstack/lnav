@@ -55,6 +55,7 @@ struct FuncDefAgg {
     uint8_t needCollSeq;
     void (*xStep)(sqlite3_context*,int,sqlite3_value**);
     void (*xFinalize)(sqlite3_context*);
+    help_text fda_help;
 };
 
 typedef int (*sqlite_registration_func_t)(struct FuncDef **basic_funcs,

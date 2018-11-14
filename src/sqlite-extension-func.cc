@@ -92,6 +92,8 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
         }
 
         for (i = 0; agg_funcs && agg_funcs[i].zName; i++) {
+            struct FuncDefAgg &fda = agg_funcs[i];
+
             //sqlite3CreateFunc
             sqlite3_create_function(db,
                                     agg_funcs[i].zName,
@@ -101,6 +103,13 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                     0,
                                     agg_funcs[i].xStep,
                                     agg_funcs[i].xFinalize);
+
+            if (fda.fda_help.ht_context != HC_NONE) {
+                help_text &ht = fda.fda_help;
+
+                sqlite_function_help.insert(make_pair(ht.ht_name, &ht));
+                ht.index_tags();
+            }
         }
     }
 

@@ -13,6 +13,8 @@ lnav v0.8.5:
        given file.  This command is mostly useful in scripts where one might
        want to redirect all output from commands like ":echo" and ":write-to -"
        to a single file.
+     * Added 'spooky_hash()' and 'group_spooky_hash()' SQL functions to
+       generate a hash of their parameters.
 
      Interface Changes:
      * The auto-complete behavior in the prompt has been modified to fall back
