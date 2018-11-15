@@ -154,7 +154,7 @@ struct from_sqlite<nonstd::optional<T>> {
 };
 
 template<typename T>
-struct from_sqlite<std::vector<T>> {
+struct from_sqlite<const std::vector<T> &> {
     inline std::vector<T> operator()(int argc, sqlite3_value **val, int argi) {
         std::vector<T> retval;
 
@@ -299,7 +299,7 @@ struct variadic_counter {
 };
 
 template<typename T>
-struct variadic_counter<std::vector<T>> {
+struct variadic_counter<const std::vector<T> &> {
     constexpr static int value = 1;
 };
 

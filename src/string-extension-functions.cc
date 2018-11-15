@@ -199,7 +199,7 @@ string regexp_replace(const char *str, const char *re, const char *repl)
 }
 
 static
-string spooky_hash(const vector<const char *> args)
+string spooky_hash(const vector<const char *> &args)
 {
     byte_array<2, uint64> hash;
     SpookyHash context;

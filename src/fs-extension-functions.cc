@@ -103,7 +103,7 @@ sql_dirname(const char *path_in)
 }
 
 static
-nonstd::optional<string> sql_joinpath(const vector<const char *> paths)
+nonstd::optional<string> sql_joinpath(const vector<const char *> &paths)
 {
     std::string full_path;
 
