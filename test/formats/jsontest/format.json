@@ -24,6 +24,12 @@
             },
             "user" : {
                 "rewriter" : "|rewrite-user"
+            },
+            "obj" : {
+                "kind" : "json"
+            },
+            "arr" : {
+                "kind" : "json"
             }
         }
     }

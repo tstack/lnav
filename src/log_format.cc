@@ -1820,14 +1820,15 @@ public:
         cols.resize(elf.elf_column_count);
         for (const auto &elf_value_def : elf.elf_value_defs) {
             const auto &vd = *elf_value_def.second;
-            int type = log_vtab_impl::logline_value_to_sqlite_type(vd.vd_kind);
+            pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(vd.vd_kind);
 
             if (vd.vd_column == -1) {
                 continue;
             }
 
             cols[vd.vd_column].vc_name = vd.vd_name.get();
-            cols[vd.vd_column].vc_type = type;
+            cols[vd.vd_column].vc_type = type_pair.first;
+            cols[vd.vd_column].vc_subtype = type_pair.second;
             cols[vd.vd_column].vc_collator = vd.vd_collate.c_str();
             cols[vd.vd_column].vc_comment = vd.vd_description;
         }

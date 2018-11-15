@@ -702,9 +702,21 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt)
         }
     }
     for (lpc = 0; lpc < ncols; lpc++) {
-        const char *value     = (const char *)sqlite3_column_text(stmt, lpc);
+        const char *value = (const char *)sqlite3_column_text(stmt, lpc);
+        db_label_source::header_meta &hm = dls.dls_headers[lpc];
 
         dls.push_column(value);
+        if ((hm.hm_column_type == SQLITE_TEXT ||
+             hm.hm_column_type == SQLITE_NULL) && hm.hm_sub_type == 0) {
+            sqlite3_value *raw_value = sqlite3_column_value(stmt, lpc);
+
+            switch (sqlite3_value_type(raw_value)) {
+                case SQLITE_TEXT:
+                    hm.hm_column_type = SQLITE_TEXT;
+                    hm.hm_sub_type = sqlite3_value_subtype(raw_value);
+                    break;
+            }
+        }
         if (value != nullptr &&
             (dls.dls_headers[lpc].hm_name == "log_line" ||
              strstr(dls.dls_headers[lpc].hm_name.c_str(), "log_line"))) {

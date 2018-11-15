@@ -77,12 +77,14 @@ public:
                     int type = SQLITE3_TEXT,
                     const char *collator = NULL,
                     bool hidden = false,
-                    const std::string comment = "")
+                    const std::string comment = "",
+                    unsigned int subtype = 0)
             : vc_name(name),
               vc_type(type),
               vc_collator(collator),
               vc_hidden(hidden),
-              vc_comment(comment) {
+              vc_comment(comment),
+              vc_subtype(subtype) {
         };
 
         std::string vc_name;
@@ -90,9 +92,10 @@ public:
         const char *vc_collator;
         bool vc_hidden;
         std::string vc_comment;
+        int vc_subtype;
     };
 
-    static int logline_value_to_sqlite_type(logline_value::kind_t kind);
+    static std::pair<int, unsigned int> logline_value_to_sqlite_type(logline_value::kind_t kind);
 
     log_vtab_impl(const intern_string_t name) : vi_supports_indexes(true), vi_name(name) {
         this->vi_attrs.resize(128);

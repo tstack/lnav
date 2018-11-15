@@ -25,6 +25,10 @@ lnav v0.8.5:
        with ":dfil", readline's menu-complete behavior will be engaged and
        you can press TAB cycle through the options.
 
+     Fixes:
+     * The ":write-json-to" command will now pass through JSON cells as their
+       JSON values instead of a JSON-encoded string.
+
 lnav v0.8.4:
      Features:
      * Added the ':comment' command that can be used to attach a comment to a

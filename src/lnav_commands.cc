@@ -57,6 +57,7 @@
 #include "yajl/api/yajl_parse.h"
 #include "db_sub_source.hh"
 #include "papertrail_proc.hh"
+#include "json_op.hh"
 
 using namespace std;
 
@@ -484,11 +485,54 @@ static void json_write_row(yajl_gen handle, int row)
             continue;
         }
 
-        switch (dls.dls_headers[col].hm_column_type) {
+        db_label_source::header_meta &hm = dls.dls_headers[col];
+
+        switch (hm.hm_column_type) {
         case SQLITE_FLOAT:
         case SQLITE_INTEGER:
             yajl_gen_number(handle, dls.dls_rows[row][col],
                 strlen(dls.dls_rows[row][col]));
+            break;
+        case SQLITE_TEXT:
+            switch (hm.hm_sub_type) {
+                case 74: {
+                    auto_mem<yajl_handle_t> parse_handle(yajl_free);
+                    const unsigned char *err;
+                    json_ptr jp("");
+                    json_op jo(jp);
+
+                    jo.jo_ptr_callbacks = json_op::gen_callbacks;
+                    jo.jo_ptr_data = handle;
+                    parse_handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
+
+                    const unsigned char *json_in = (const unsigned char *) dls.dls_rows[row][col];
+                    switch (yajl_parse(parse_handle.in(), json_in, strlen((const char *) json_in))) {
+                        case yajl_status_error:
+                        case yajl_status_client_canceled:
+                            err = yajl_get_error(parse_handle.in(), 0, json_in, strlen((const char *) json_in));
+                            log_error("unable to parse JSON cell: %s", err);
+                            obj_map.gen(dls.dls_rows[row][col]);
+                            return;
+                        default:
+                            break;
+                    }
+
+                    switch (yajl_complete_parse(parse_handle.in())) {
+                        case yajl_status_error:
+                        case yajl_status_client_canceled:
+                            err = yajl_get_error(parse_handle.in(), 0, json_in, strlen((const char *) json_in));
+                            log_error("unable to parse JSON cell: %s", err);
+                            obj_map.gen(dls.dls_rows[row][col]);
+                            return;
+                        default:
+                            break;
+                    }
+                    break;
+                }
+                default:
+                    obj_map.gen(dls.dls_rows[row][col]);
+                    break;
+            }
             break;
         default:
             obj_map.gen(dls.dls_rows[row][col]);
@@ -690,6 +734,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
                     }
 
                     json_write_row(handle, row);
+                    line_count += 1;
                 }
             }
         }
@@ -782,7 +827,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         lnav_data.ld_preview_status_source.get_description()
                  .set_value("First lines of file: %s", fn.c_str());
     } else {
-        retval = "Wrote " + to_string(line_count) + " line to " + split_args[0];
+        retval = "Wrote " + to_string(line_count) + " rows to " + split_args[0];
     }
     if (toclose != nullptr) {
         closer(toclose);

@@ -676,9 +676,9 @@ public:
 
         void get_columns(vector<vtab_column> &cols) const {
             for (const auto &fd : this->blt_format.blf_field_defs) {
-                int type = log_vtab_impl::logline_value_to_sqlite_type(fd.fd_kind);
+                std::pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(fd.fd_kind);
 
-                cols.emplace_back(fd.fd_name.to_string(), type, fd.fd_collator);
+                cols.emplace_back(fd.fd_name.to_string(), type_pair.first, fd.fd_collator, false, "", type_pair.second);
             }
         };
 

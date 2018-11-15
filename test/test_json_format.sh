@@ -131,20 +131,209 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_json.json
 
 check_output "log levels not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,user
-0,<NULL>,2013-09-06 20:00:48.124,0,trace,0,<NULL>,<NULL>,<NULL>
-1,<NULL>,2013-09-06 20:00:49.124,1000,info,0,<NULL>,<NULL>,<NULL>
-2,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,steve@example.com
-4,<NULL>,2013-09-06 22:00:59.124,10000,debug5,0,<NULL>,<NULL>,<NULL>
-5,<NULL>,2013-09-06 22:00:59.124,0,debug4,0,<NULL>,<NULL>,<NULL>
-6,<NULL>,2013-09-06 22:00:59.124,0,debug3,0,<NULL>,<NULL>,<NULL>
-7,<NULL>,2013-09-06 22:00:59.124,0,debug2,0,<NULL>,<NULL>,<NULL>
-8,<NULL>,2013-09-06 22:00:59.124,0,debug,0,<NULL>,<NULL>,<NULL>
-9,<NULL>,2013-09-06 22:01:49.124,50000,stats,0,<NULL>,<NULL>,<NULL>
-10,<NULL>,2013-09-06 22:01:49.124,0,warning,0,<NULL>,<NULL>,<NULL>
-11,<NULL>,2013-09-06 22:01:49.124,0,error,0,<NULL>,<NULL>,<NULL>
-12,<NULL>,2013-09-06 22:01:49.124,0,critical,0,<NULL>,<NULL>,<NULL>
-13,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>,<NULL>,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,arr,obj,user
+0,<NULL>,2013-09-06 20:00:48.124,0,trace,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+1,<NULL>,2013-09-06 20:00:49.124,1000,info,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+2,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,<NULL>,<NULL>,steve@example.com
+4,<NULL>,2013-09-06 22:00:59.124,10000,debug5,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+5,<NULL>,2013-09-06 22:00:59.124,0,debug4,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+6,<NULL>,2013-09-06 22:00:59.124,0,debug3,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+7,<NULL>,2013-09-06 22:00:59.124,0,debug2,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+8,<NULL>,2013-09-06 22:00:59.124,0,debug,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+9,<NULL>,2013-09-06 22:01:49.124,50000,stats,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+10,<NULL>,2013-09-06 22:01:49.124,0,warning,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+11,<NULL>,2013-09-06 22:01:49.124,0,error,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+12,<NULL>,2013-09-06 22:01:49.124,0,critical,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
+13,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>,<NULL>,"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",<NULL>
+EOF
+
+
+run_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ';select * from test_log' \
+    -c ':write-json-to -' \
+    ${test_dir}/logfile_json.json
+
+check_output "json output not working" <<EOF
+[
+    {
+        "log_line": 0,
+        "log_part": null,
+        "log_time": "2013-09-06 20:00:48.124",
+        "log_idle_msecs": 0,
+        "log_level": "trace",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 1,
+        "log_part": null,
+        "log_time": "2013-09-06 20:00:49.124",
+        "log_idle_msecs": 1000,
+        "log_level": "info",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 2,
+        "log_part": null,
+        "log_time": "2013-09-06 22:00:49.124",
+        "log_idle_msecs": 7200000,
+        "log_level": "info",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": "steve@example.com"
+    },
+    {
+        "log_line": 4,
+        "log_part": null,
+        "log_time": "2013-09-06 22:00:59.124",
+        "log_idle_msecs": 10000,
+        "log_level": "debug5",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 5,
+        "log_part": null,
+        "log_time": "2013-09-06 22:00:59.124",
+        "log_idle_msecs": 0,
+        "log_level": "debug4",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 6,
+        "log_part": null,
+        "log_time": "2013-09-06 22:00:59.124",
+        "log_idle_msecs": 0,
+        "log_level": "debug3",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 7,
+        "log_part": null,
+        "log_time": "2013-09-06 22:00:59.124",
+        "log_idle_msecs": 0,
+        "log_level": "debug2",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 8,
+        "log_part": null,
+        "log_time": "2013-09-06 22:00:59.124",
+        "log_idle_msecs": 0,
+        "log_level": "debug",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 9,
+        "log_part": null,
+        "log_time": "2013-09-06 22:01:49.124",
+        "log_idle_msecs": 50000,
+        "log_level": "stats",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 10,
+        "log_part": null,
+        "log_time": "2013-09-06 22:01:49.124",
+        "log_idle_msecs": 0,
+        "log_level": "warning",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 11,
+        "log_part": null,
+        "log_time": "2013-09-06 22:01:49.124",
+        "log_idle_msecs": 0,
+        "log_level": "error",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 12,
+        "log_part": null,
+        "log_time": "2013-09-06 22:01:49.124",
+        "log_idle_msecs": 0,
+        "log_level": "critical",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": null,
+        "obj": null,
+        "user": null
+    },
+    {
+        "log_line": 13,
+        "log_part": null,
+        "log_time": "2013-09-06 22:01:49.124",
+        "log_idle_msecs": 0,
+        "log_level": "fatal",
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "arr": [
+            "hi",
+            {
+                "sub1": true
+            }
+        ],
+        "obj": {
+            "field1": "hi",
+            "field2": 2
+        },
+        "user": null
+    }
+]
 EOF
 
 

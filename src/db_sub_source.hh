@@ -135,6 +135,7 @@ public:
 
         std::string hm_name;
         int hm_column_type;
+        unsigned int hm_sub_type{0};
         bool hm_graphable;
         bool hm_log_time;
         size_t hm_column_size;

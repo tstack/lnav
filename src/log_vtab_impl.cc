@@ -118,14 +118,18 @@ std::string log_vtab_impl::get_table_statement()
     return oss.str();
 }
 
-int log_vtab_impl::logline_value_to_sqlite_type(logline_value::kind_t kind)
+pair<int, unsigned int> log_vtab_impl::logline_value_to_sqlite_type(logline_value::kind_t kind)
 {
     int type = 0;
+    unsigned int subtype = 0;
 
     switch (kind) {
+        case logline_value::VALUE_JSON:
+            type = SQLITE3_TEXT;
+            subtype = 74;
+            break;
         case logline_value::VALUE_NULL:
         case logline_value::VALUE_TEXT:
-        case logline_value::VALUE_JSON:
         case logline_value::VALUE_STRUCT:
         case logline_value::VALUE_QUOTED:
         case logline_value::VALUE_TIMESTAMP:
@@ -143,7 +147,7 @@ int log_vtab_impl::logline_value_to_sqlite_type(logline_value::kind_t kind)
             ensure(0);
             break;
     }
-    return type;
+    return make_pair(type, subtype);
 }
 
 struct vtab {
@@ -292,7 +296,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
 
     content_line_t    cl(vt->lss->at(vc->log_cursor.lc_curr_line));
     shared_ptr<logfile>         lf = vt->lss->find(cl);
-    logfile::iterator ll = lf->begin() + cl;
+    auto ll = lf->begin() + cl;
 
     require(col >= 0);
 
@@ -541,7 +545,14 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                 case logline_value::VALUE_NULL:
                     sqlite3_result_null(ctx);
                     break;
-                case logline_value::VALUE_JSON:
+                case logline_value::VALUE_JSON: {
+                    sqlite3_result_text(ctx,
+                                        lv_iter->text_value(),
+                                        lv_iter->text_length(),
+                                        SQLITE_TRANSIENT);
+                    sqlite3_result_subtype(ctx, 74);
+                    break;
+                }
                 case logline_value::VALUE_STRUCT:
                 case logline_value::VALUE_TEXT:
                 case logline_value::VALUE_TIMESTAMP: {
