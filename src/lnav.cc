@@ -776,6 +776,7 @@ static void handle_rl_key(int ch)
             handle_paging_key(ch);
             break;
 
+        case KEY_ESCAPE:
         case KEY_CTRL_RBRACKET:
             lnav_data.ld_rl_view->abort();
             break;
@@ -1454,7 +1455,13 @@ static void looper()
 
         bool session_loaded = false;
         ui_periodic_timer &timer = ui_periodic_timer::singleton();
+        struct timeval current_time;
+        size_t escape_index = 0;
+        char escape_buffer[32];
+        struct timeval escape_start_time;
+
         static sig_atomic_t index_counter;
+
 
         timer.start_fade(index_counter, 1);
         while (lnav_data.ld_looping) {
@@ -1463,7 +1470,9 @@ static void looper()
             int            rc;
             size_t starting_view_stack_size = lnav_data.ld_view_stack.vs_views.size();
 
-            lnav_data.ld_top_source.update_time();
+            gettimeofday(&current_time, nullptr);
+
+            lnav_data.ld_top_source.update_time(current_time);
 
             layout_views();
 
@@ -1500,7 +1509,22 @@ static void looper()
                 tc.update_poll_set(pollfds);
             }
 
+            if (escape_index > 0) {
+                to.tv_usec = 15000;
+            }
             rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
+
+            if (escape_index == 1) {
+                struct timeval diff;
+
+                gettimeofday(&current_time, nullptr);
+
+                timersub(&current_time, &escape_start_time, &diff);
+                if (diff.tv_sec > 0 || diff.tv_usec > (10000)) {
+                    handle_key(escape_buffer[0]);
+                    escape_index = 0;
+                }
+            }
 
             if (rc < 0) {
                 switch (errno) {
@@ -1516,9 +1540,6 @@ static void looper()
             }
             else {
                 if (pollfd_ready(pollfds, STDIN_FILENO)) {
-                    static size_t escape_index = 0;
-                    static char escape_buffer[32];
-
                     int ch;
 
                     while ((ch = getch()) != ERR) {
@@ -1555,10 +1576,11 @@ static void looper()
                         case KEY_RESIZE:
                             break;
 
-                        case '\x1b':
+                        case KEY_ESCAPE:
                             escape_index = 0;
                             escape_buffer[escape_index++] = ch;
                             escape_buffer[escape_index] = '\0';
+                            escape_start_time = current_time;
                             break;
 
                         case KEY_MOUSE:

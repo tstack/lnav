@@ -427,7 +427,7 @@ Query
                     referenced in the script using '$1', '$2', and so on, like
                     in a shell script.
 
-  CTRL+]            Abort command-line entry started with '/', ':', ';', or '|'.
+  CTRL+], ESCAPE    Abort command-line entry started with '/', ':', ';', or '|'.
 
 Session
 -------

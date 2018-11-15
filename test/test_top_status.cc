@@ -39,12 +39,12 @@ using namespace std;
 
 static time_t current_time = 1;
 
-time_t time(time_t *arg)
+int gettimeofday(struct timeval * tp, void * tzp)
 {
-    if (arg != NULL)
-	*arg = current_time;
-    
-    return current_time;
+    tp->tv_sec = current_time;
+    tp->tv_usec = 0;
+
+    return 0;
 }
 
 string execute_any(exec_context &ec, const string &cmdline_with_mode)

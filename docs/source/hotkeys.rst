@@ -255,4 +255,4 @@ Query
    * - |ks| \| |ke|
      - Execute an lnav script located in a format directory.
    * - |ks| Ctrl |ke| + |ks| ] |ke|
-     - Abort a 
+     - Abort the prompt

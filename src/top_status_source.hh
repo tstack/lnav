@@ -90,17 +90,23 @@ public:
         return this->tss_fields[field];
     };
 
-    void update_time(void)
+    void update_time(const struct timeval &current_time)
     {
         status_field &sf           = this->tss_fields[TSF_TIME];
-        time_t        current_time = time(NULL);
         char          buffer[32];
 
         buffer[0] = ' ';
         strftime(&buffer[1], sizeof(buffer) - 1,
                  lnav_config.lc_ui_clock_format.c_str(),
-                 localtime(&current_time));
+                 localtime(&current_time.tv_sec));
         sf.set_value(buffer);
+    };
+
+    void update_time() {
+        struct timeval tv;
+
+        gettimeofday(&tv, nullptr);
+        this->update_time(tv);
     };
 
     void update_filename(listview_curses *lc)
