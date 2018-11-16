@@ -1,16 +1,18 @@
 #! /bin/bash
 
-cp ${srcdir}/logfile_syslog_fr.0 logfile_syslog_fr.0
-touch -t 200711030923 logfile_syslog_fr.0
-run_test env LC_ALL=fr_FR.UTF-8 ${lnav_test} -n \
-    -c ";SELECT log_time FROM syslog_log" \
-    -c ":write-csv-to -" \
-    logfile_syslog_fr.0
+if locale -a | grep fr_FR; then
+    cp ${srcdir}/logfile_syslog_fr.0 logfile_syslog_fr.0
+    touch -t 200711030923 logfile_syslog_fr.0
+    run_test env LC_ALL=fr_FR.UTF-8 ${lnav_test} -n \
+        -c ";SELECT log_time FROM syslog_log" \
+        -c ":write-csv-to -" \
+        logfile_syslog_fr.0
 
-check_output "french locale is not recognized" <<EOF
+    check_output "french locale is not recognized" <<EOF
 log_time
 2007-08-19 11:08:37.000
 EOF
+fi
 
 touch unreadable.log
 chmod ugo-r unreadable.log
