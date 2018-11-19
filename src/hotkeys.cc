@@ -806,10 +806,11 @@ void handle_paging_key(int ch)
 
         case 'I':
         {
-            struct timeval log_top = lss->time_for_row(lnav_data.ld_views[LNV_LOG].get_top());
             hist_source2 &hs = lnav_data.ld_hist_source2;
 
             if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
+                struct timeval log_top = lss->time_for_row(lnav_data.ld_views[LNV_LOG].get_top());
+
                 tc = *lnav_data.ld_view_stack.top();
                 tc->set_top(vis_line_t(hs.row_for_time(log_top)));
             }
