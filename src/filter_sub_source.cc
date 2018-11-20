@@ -62,7 +62,6 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
 {
     if (this->fss_editing) {
         switch (ch) {
-            case KEY_ESCAPE:
             case KEY_CTRL_RBRACKET:
                 this->fss_editor.abort();
                 return true;

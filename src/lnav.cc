@@ -776,7 +776,6 @@ static void handle_rl_key(int ch)
             handle_paging_key(ch);
             break;
 
-        case KEY_ESCAPE:
         case KEY_CTRL_RBRACKET:
             lnav_data.ld_rl_view->abort();
             break;
@@ -1521,7 +1520,7 @@ static void looper()
 
                 timersub(&current_time, &escape_start_time, &diff);
                 if (diff.tv_sec > 0 || diff.tv_usec > (10000)) {
-                    handle_key(escape_buffer[0]);
+                    handle_key(KEY_CTRL_RBRACKET);
                     escape_index = 0;
                 }
             }
