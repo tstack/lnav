@@ -541,6 +541,35 @@ static void json_write_row(yajl_gen handle, int row)
     }
 }
 
+static void write_line_to(FILE *outfile, attr_line_t &al)
+{
+    auto al_attrs = al.get_attrs();
+    struct line_range lr = find_string_attr_range(
+        al_attrs, &textview_curses::SA_ORIGINAL_LINE);
+    auto line_meta = find_string_attr(
+        al_attrs, &logline::L_META);
+
+    fwrite(lr.substr(al.get_string()),
+           1,
+           lr.sublen(al.get_string()),
+           outfile);
+    fwrite("\n", 1, 1, outfile);
+
+    if (line_meta != al_attrs.end()) {
+        auto bm = static_cast<const bookmark_metadata *>(line_meta->sa_value.sav_ptr);
+
+        if (!bm->bm_comment.empty()) {
+            fprintf(outfile, "  // %s\n", bm->bm_comment.c_str());
+        }
+        if (!bm->bm_tags.empty()) {
+            fprintf(outfile, "  -- %s\n",
+                    join(bm->bm_tags.begin(),
+                         bm->bm_tags.end(),
+                         " ").c_str());
+        }
+    }
+}
+
 static string com_save_to(exec_context &ec, string cmdline, vector<string> &args)
 {
     FILE *outfile = nullptr, *toclose = nullptr;
@@ -773,13 +802,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
 
             tc->listview_value_for_rows(*tc, top, rows);
             for (auto &al : rows) {
-                struct line_range lr = find_string_attr_range(
-                    al.get_attrs(), &textview_curses::SA_ORIGINAL_LINE);
-                fwrite(lr.substr(al.get_string()),
-                       1,
-                       lr.sublen(al.get_string()),
-                       outfile);
-                fwrite("\n", 1, 1, outfile);
+                write_line_to(outfile, al);
 
                 line_count += 1;
             }
@@ -789,6 +812,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         }
     }
     else {
+        vector<attr_line_t> rows(1);
         bookmark_vector<vis_line_t>::iterator iter;
         size_t count = 0;
         string line;
@@ -797,8 +821,8 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
             if (ec.ec_dry_run && count > 10) {
                 break;
             }
-            tc->grep_value_for_line(*iter, line);
-            fprintf(outfile, "%s\n", line.c_str());
+            tc->listview_value_for_rows(*tc, *iter, rows);
+            write_line_to(outfile, rows[0]);
 
             line_count += 1;
         }
@@ -1936,6 +1960,25 @@ static string com_comment(exec_context &ec, string cmdline, vector<string> &args
     }
 
     return retval;
+}
+
+static string com_comment_prompt(exec_context &ec, const string &cmdline)
+{
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+
+    if (tc != &lnav_data.ld_views[LNV_LOG]) {
+        return "";
+    }
+    logfile_sub_source &lss = lnav_data.ld_log_source;
+    std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
+
+    auto line_meta = bm.find(lss.at(tc->get_top()));
+
+    if (line_meta != bm.end() && !line_meta->second.bm_comment.empty()) {
+        return trim(cmdline) + " " + trim(line_meta->second.bm_comment);
+    }
+
+    return "";
 }
 
 static string com_clear_comment(exec_context &ec, string cmdline, vector<string> &args)
@@ -4030,7 +4073,9 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_summary("Attach a comment to the top log line")
             .with_parameter(help_text("text", "The comment text"))
             .with_example({"This is where it all went wrong"})
-            .with_tags({"metadata"})
+            .with_tags({"metadata"}),
+
+        com_comment_prompt,
     },
     {
         "clear-comment",
@@ -4050,7 +4095,7 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text("tag", "The tags to attach")
                                 .one_or_more())
             .with_example({"#BUG123 #needs-review"})
-            .with_tags({"metadata"})
+            .with_tags({"metadata"}),
     },
     {
         "untag",

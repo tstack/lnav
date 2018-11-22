@@ -10,24 +10,27 @@ run_test ${lnav_test} -n \
     -c ":comment Hello, World!" \
     -c ":tag foo" \
     -c ":save-session" \
+    -c ":write-raw-to -" \
     ${test_dir}/logfile_access_log.0
 
 check_output ":tag did not work?" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
- + Hello, World!
- + #foo
+  // Hello, World!
+  -- #foo
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
 
 run_test ${lnav_test} -n \
     -c ":load-session" \
+    -c ";UPDATE access_log SET log_mark = 1" \
+    -c ":write-to -" \
     ${test_dir}/logfile_access_log.0
 
 check_output "tag was not saved in session?" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
- + Hello, World!
- + #foo
+  // Hello, World!
+  -- #foo
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF

@@ -66,6 +66,7 @@ string_attr_type logline::L_FILE("file");
 string_attr_type logline::L_PARTITION("partition");
 string_attr_type logline::L_MODULE("module");
 string_attr_type logline::L_OPID("opid");
+string_attr_type logline::L_META("meta");
 
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<external_log_format *> external_log_format::GRAPH_ORDERED_FORMATS;

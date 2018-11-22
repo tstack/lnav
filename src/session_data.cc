@@ -117,6 +117,8 @@ static bool bind_line(sqlite3 *db,
 
     char timestamp[64];
 
+    sqlite3_clear_bindings(stmt);
+
     sql_strftime(timestamp, sizeof(timestamp),
                  lf->original_line_time(line_iter), 'T');
     if (sqlite3_bind_text(stmt, 1,
@@ -499,9 +501,7 @@ static void load_time_bookmarks(void)
                     continue;
                 }
 
-                line_iter = lower_bound(lf->begin(),
-                                        lf->end(),
-                                        log_tv);
+                line_iter = lower_bound(lf->begin(), lf->end(), log_tv);
                 while (line_iter != lf->end()) {
                     struct timeval line_tv = line_iter->get_timeval();
 
@@ -523,12 +523,12 @@ static void load_time_bookmarks(void)
                             base_content_line + std::distance(lf->begin(), line_iter));
                         bool meta = false;
 
-                        if (part_name != NULL && part_name[0] != '\0') {
+                        if (part_name != nullptr && part_name[0] != '\0') {
                             lss.set_user_mark(&textview_curses::BM_META, line_cl);
                             bm_meta[line_cl].bm_name = part_name;
                             meta = true;
                         }
-                        if (comment != NULL && comment[0] != '\0') {
+                        if (comment != nullptr && comment[0] != '\0') {
                             lss.set_user_mark(&textview_curses::BM_META,
                                               line_cl);
                             bm_meta[line_cl].bm_comment = comment;

@@ -58,11 +58,23 @@ void rl_change(void *dummy, readline_curses *rc)
 
     switch (lnav_data.ld_mode) {
         case LNM_COMMAND: {
+            static string last_command;
+            static int generation = 0;
+
             string line = rc->get_line_buffer();
             vector<string> args;
             auto iter = lnav_commands.end();
 
             split_ws(line, args);
+
+            if (args.empty()) {
+                generation = 0;
+            } else if (args[0] != last_command) {
+                last_command = args[0];
+                generation = 0;
+            } else {
+                generation += 1;
+            }
 
             if (!args.empty()) {
                 iter = lnav_commands.find(args[0]);
@@ -118,6 +130,16 @@ void rl_change(void *dummy, readline_curses *rc)
                     etc.get_dimensions(height, width);
                     format_example_text_for_term(ht, width, al);
                     lnav_data.ld_example_source.replace_with(al);
+                }
+
+                if (cmd.c_prompt != nullptr && generation == 0 &&
+                    trim(line) == args[0]) {
+                    string new_prompt = cmd.c_prompt(
+                        lnav_data.ld_exec_context, line);
+
+                    if (!new_prompt.empty()) {
+                        rc->rewrite_line(line.length(), new_prompt);
+                    }
                 }
 
                 lnav_data.ld_bottom_source.grep_error("");

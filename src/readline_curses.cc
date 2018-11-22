@@ -176,7 +176,7 @@ static int recvall(int sock, char *buf, size_t len)
     off_t offset = 0;
 
     while (len > 0) {
-        int rc = recv(sock, &buf[offset], len, 0);
+        ssize_t rc = recv(sock, &buf[offset], len, 0);
 
         if (rc == -1) {
             switch (errno) {
@@ -600,12 +600,11 @@ void readline_curses::start()
                     char type[32];
 
                     msg[rc] = '\0';
-                    if (msg[0] == 'i') {
-                        const char *initial = &msg[2];
+                    if (sscanf(msg, "i:%d:%n", &rl_point, &prompt_start) == 1) {
+                        const char *initial = &msg[prompt_start];
 
                         rl_extend_line_buffer(strlen(initial) + 1);
                         strcpy(rl_line_buffer, initial);
-                        rl_point = 0;
                         rl_end = strlen(initial);
                         rl_redisplay();
                     }
@@ -923,12 +922,24 @@ void readline_curses::focus(int context, const char *prompt, const char *initial
     wmove(this->vc_window, this->get_actual_y(), this->vc_left);
     wclrtoeol(this->vc_window);
     if (initial != nullptr) {
-        snprintf(buffer, sizeof(buffer), "i:%s", initial);
+        snprintf(buffer, sizeof(buffer), "i:0:%s", initial);
         if (sendstring(this->rc_command_pipe[RCF_MASTER],
                        buffer,
                        strlen(buffer) + 1) == -1) {
             perror("focus: write failed");
         }
+    }
+}
+
+void readline_curses::rewrite_line(int pos, std::string value)
+{
+    char buffer[1024];
+
+    snprintf(buffer, sizeof(buffer), "i:%d:%s", pos, value.c_str());
+    if (sendstring(this->rc_command_pipe[RCF_MASTER],
+                   buffer,
+                   strlen(buffer) + 1) == -1) {
+        perror("focus: write failed");
     }
 }
 

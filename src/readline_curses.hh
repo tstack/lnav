@@ -71,11 +71,14 @@ class readline_context {
 public:
     typedef std::string (*command_func_t)(exec_context &ec,
             std::string cmdline, std::vector<std::string> &args);
+    typedef std::string (*prompt_func_t)(exec_context &ec,
+        const std::string &cmdline);
     typedef struct _command_t {
         const char *c_name;
         command_func_t c_func;
 
         struct help_text c_help;
+        prompt_func_t c_prompt{nullptr};
 
         void operator=(command_func_t func) {
             this->c_name = "anon";
@@ -311,6 +314,8 @@ public:
     void check_poll_set(const std::vector<struct pollfd> &pollfds);
 
     void focus(int context, const char *prompt, const char *initial = nullptr);
+
+    void rewrite_line(int pos, std::string value);
 
     readline_context *get_active_context() const {
         require(this->rc_active_context != -1);

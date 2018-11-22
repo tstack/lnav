@@ -9,6 +9,8 @@ lnav v0.8.5:
        programmatically manipulate filters.
      * The ":write-*" commands will now accept "/dev/clipboard" as a file name
        that writes to the system clipboard.
+     * The ":write-to" and ":write-raw-to" commands will now print out comments
+       and tags attached to the lines.
      * Added a ":redirect-to <path>" command to redirect command output to the
        given file.  This command is mostly useful in scripts where one might
        want to redirect all output from commands like ":echo" and ":write-to -"
@@ -24,6 +26,9 @@ lnav v0.8.5:
        strong fuzzy match.  If there are multiple matches, as would happen
        with ":dfil", readline's menu-complete behavior will be engaged and
        you can press TAB cycle through the options.
+     * When entering the ":comment" command for a line with a comment, the
+       command prompt will be filled in with the existing comment to make
+       editing easier.
 
      Fixes:
      * The ":write-json-to" command will now pass through JSON cells as their

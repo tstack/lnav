@@ -505,6 +505,14 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
                 value_out.emplace_back(lr, &logline::L_PARTITION, &bm_iter->second);
             }
         }
+
+        auto bm_iter = this->lss_user_mark_metadata.find(this->at(vis_line_t(row)));
+
+        if (bm_iter != this->lss_user_mark_metadata.end()) {
+            lr.lr_start = 0;
+            lr.lr_end = -1;
+            value_out.emplace_back(lr, &logline::L_META, &bm_iter->second);
+        }
     }
 
     if (this->lss_token_file->is_time_adjusted()) {

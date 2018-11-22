@@ -76,6 +76,7 @@ public:
     static string_attr_type L_PARTITION;
     static string_attr_type L_MODULE;
     static string_attr_type L_OPID;
+    static string_attr_type L_META;
 
     /**
      * Construct a logline object with the given values.
