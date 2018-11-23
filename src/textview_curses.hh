@@ -557,6 +557,7 @@ public:
 
         this->search_range(vl, vl + 1_vl);
         this->search_new_data();
+        this->set_needs_update();
     };
 
     textview_curses &set_sub_source(text_sub_source *src) {
