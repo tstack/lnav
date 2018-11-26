@@ -464,8 +464,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_json3.json
 
 check_output "json log3 format is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,client_ip,request/method,request/size,request/uri,response/status
-0,<NULL>,2017-03-24 20:06:26.240,0,info,0,<NULL>,<NULL>,1.1.1.1,GET,166,/example/uri/5,200
-1,<NULL>,2017-03-24 20:12:47.764,381524,critical,0,<NULL>,<NULL>,1.1.1.1,GET,166,/example/uri/5,500
-2,<NULL>,2017-03-24 20:15:31.694,163930,warning,0,<NULL>,<NULL>,1.1.1.1,GET,166,/example/uri/5,400
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,client_ip,details1,details2,details3,request/method,request/size,request/uri,response/status
+0,<NULL>,2017-03-24 20:06:26.240,0,info,0,<NULL>,<NULL>,1.1.1.1,<NULL>,<NULL>,<NULL>,GET,166,/example/uri/5,200
+1,<NULL>,2017-03-24 20:12:47.764,381524,critical,0,<NULL>,<NULL>,1.1.1.1,<NULL>,<NULL>,<NULL>,GET,166,/example/uri/5,500
+2,<NULL>,2017-03-24 20:15:31.694,163930,warning,0,<NULL>,<NULL>,1.1.1.1,"{""foo"": ""bar""}","{""foo"": ""bar""}","{""foo"": ""bar""}",GET,166,/example/uri/5,400
 EOF

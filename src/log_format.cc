@@ -367,20 +367,11 @@ static int json_array_start(void *ctx)
 {
     yajlpp_parse_context *ypc = (yajlpp_parse_context *)ctx;
     json_log_userdata *jlu = (json_log_userdata *)ypc->ypc_userdata;
-    vector<external_log_format::json_format_element> &line_format =
-        jlu->jlu_format->jlf_line_format;
 
     if (ypc->ypc_path_index_stack.size() == 2) {
         const intern_string_t field_name = ypc->get_path_fragment_i(0);
 
-        if (!jlu->jlu_format->jlf_hide_extra &&
-            find_if(line_format.begin(), line_format.end(),
-                    external_log_format::json_field_cmp(
-                        external_log_format::JLF_VARIABLE,
-                        field_name)) == line_format.end()) {
-            jlu->jlu_sub_line_count += 1;
-        }
-
+        jlu->jlu_sub_line_count += jlu->jlu_format->value_line_count(field_name, true);
         jlu->jlu_sub_start = yajl_get_bytes_consumed(jlu->jlu_handle) - 1;
     }
 

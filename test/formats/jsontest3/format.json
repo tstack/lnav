@@ -50,6 +50,15 @@
             },
             "response/status": {
                 "kind": "string"
+            },
+            "details1" : {
+                "hidden": true
+            },
+            "details2" : {
+                "hidden": true
+            },
+            "details3" : {
+                "hidden": true
             }
         },
         "timestamp-field" : "started_at",
