@@ -55,6 +55,8 @@
 #include <sys/wait.h>
 #include <sys/param.h>
 
+#include <thread>
+
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/termcap.h>
 #  include <ncursesw/curses.h>
@@ -118,7 +120,7 @@ static const char *LEVEL_NAMES[] = {
     "E",
 };
 
-static char *log_alloc(void)
+static char *log_alloc()
 {
     off_t data_end = log_ring.lr_length + MAX_LOG_LINE_SIZE;
 
@@ -161,7 +163,7 @@ void log_argv(int argc, char *argv[])
     }
 }
 
-void log_host_info(void)
+void log_host_info()
 {
     char cwd[MAXPATHLEN];
     struct utsname un;
@@ -387,6 +389,7 @@ static void sigabrt(int sig)
         }
 
         tcsetattr(STDOUT_FILENO, TCSAFLUSH, lnav_log_orig_termios);
+        dup2(STDOUT_FILENO, STDERR_FILENO);
     }
     fprintf(stderr, CRASH_MSG, crash_path);
 
@@ -438,7 +441,7 @@ static void sigabrt(int sig)
 }
 #pragma GCC diagnostic pop
 
-void log_install_handlers(void)
+void log_install_handlers()
 {
     signal(SIGABRT, sigabrt);
     signal(SIGSEGV, sigabrt);
@@ -447,8 +450,39 @@ void log_install_handlers(void)
     signal(SIGFPE, sigabrt);
 }
 
-void log_abort(void)
+void log_abort()
 {
     sigabrt(SIGABRT);
     _exit(1);
+}
+
+void log_pipe_err(int fd)
+{
+    std::thread reader([fd] () {
+        char buffer[1024];
+        bool done = false;
+
+        while (!done) {
+            int rc = read(fd, buffer, sizeof(buffer));
+
+            switch (rc) {
+                case -1:
+                case 0:
+                    done = true;
+                    break;
+                default:
+                    while (buffer[rc - 1] == '\n' ||
+                           buffer[rc - 1] == '\r') {
+                        rc -= 1;
+                    }
+
+                    log_error("%.*s", rc, buffer);
+                    break;
+            }
+        }
+
+        close(fd);
+    });
+
+    reader.detach();
 }

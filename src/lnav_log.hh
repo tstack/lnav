@@ -53,14 +53,15 @@ enum lnav_log_level_t {
 };
 
 void log_argv(int argc, char *argv[]);
-void log_host_info(void);
+void log_host_info();
 void log_rusage_raw(enum lnav_log_level_t level, const char *src_file, int line_number, const struct rusage &ru);
 void log_msg(enum lnav_log_level_t level, const char *src_file, int line_number,
     const char *fmt, ...);
 void log_msg_extra(const char *fmt, ...);
 void log_msg_extra_complete();
-void log_install_handlers(void);
-void log_abort(void) __dead2;
+void log_install_handlers();
+void log_abort() __dead2;
+void log_pipe_err(int fd);
 
 struct log_state_dumper {
 public:

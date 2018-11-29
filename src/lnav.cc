@@ -2520,6 +2520,7 @@ int main(int argc, char *argv[])
                 }
             }
             else {
+                auto_fd errpipe[2];
 
                 lnav_data.ld_curl_looper.start();
 
@@ -2530,10 +2531,17 @@ int main(int argc, char *argv[])
                 scan_sessions();
 
                 guard_termios gt(STDIN_FILENO);
+                auto_fd::pipe(errpipe);
+
+                dup2(errpipe[1], STDERR_FILENO);
+                errpipe[1].reset();
+                log_pipe_err(errpipe[0]);
 
                 lnav_log_orig_termios = gt.get_termios();
 
                 looper();
+
+                dup2(STDOUT_FILENO, STDERR_FILENO);
 
                 signal(SIGINT, SIG_DFL);
 
