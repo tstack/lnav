@@ -76,7 +76,7 @@ static string timeslice(const char *time_in, nonstd::optional<const char *> slic
         throw sqlite_func_error("unable to parse time value");
     }
 
-    int64_t us = tv.tv_sec * 1000 * 1000 + tv.tv_usec, remainder;
+    int64_t us = tv.tv_sec * 1000000LL + tv.tv_usec, remainder;
 
     remainder = us % rt.to_microseconds();
     us -= remainder;
