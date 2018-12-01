@@ -310,8 +310,6 @@ inline void remove_string_attr(string_attrs_t &sa, const struct line_range &lr)
 
 inline void remove_string_attr(string_attrs_t &sa, string_attr_type_t type)
 {
-    string_attrs_t::iterator iter;
-
     for (auto iter = sa.begin(); iter != sa.end();) {
         if (iter->sa_type == type) {
             iter = sa.erase(iter);

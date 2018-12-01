@@ -850,7 +850,7 @@ void external_log_format::rewrite(exec_context &ec,
                                   string_attrs_t &sa,
                                   string &value_out)
 {
-    vector<logline_value>::iterator iter, bind_iter, shift_iter;
+    vector<logline_value>::iterator iter, shift_iter;
     vector<logline_value> &values = *ec.ec_line_values;
 
     value_out.assign(line.get_data(), line.length());
@@ -1015,7 +1015,6 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         if (parse_status == yajl_status_ok &&
             yajl_complete_parse(handle) == yajl_status_ok) {
             std::vector<logline_value>::iterator lv_iter;
-            std::vector<json_format_element>::iterator iter;
             bool used_values[this->jlf_line_values.size()];
             struct line_range lr;
 

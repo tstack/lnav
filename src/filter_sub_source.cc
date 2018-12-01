@@ -416,7 +416,7 @@ void filter_sub_source::rl_display_matches(readline_curses *rc)
                 al.append(match);
             }
             al.append(1, '\n');
-            width = std::max(width, match.size());
+            width = std::max(width, (unsigned long) match.size());
             line += 1_vl;
         }
 
