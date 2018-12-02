@@ -86,7 +86,7 @@ static const char *RL_INIT[] = {
     "set show-all-if-unmodified on",
     "set menu-complete-display-prefix on",
     "TAB: menu-complete",
-    "\"\\x0b\": menu-complete-backward",
+    "\"\\e[Z\": menu-complete-backward",
 
     NULL
 };

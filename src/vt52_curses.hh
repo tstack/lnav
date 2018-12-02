@@ -126,7 +126,6 @@ public:
     const static char BACKSPACE = 8;    /*< VT52 Backspace key value. */
     const static char BELL      = 7;    /*< VT52 Bell value. */
     const static char STX       = 2;    /*< VT52 Start-of-text value. */
-    const static char BACKTAB   = 11;
 
 protected:
 

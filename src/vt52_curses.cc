@@ -140,6 +140,8 @@ private:
             this->vem_map[KEY_SRIGHT] = "\033f";
         }
 
+        this->vem_map[KEY_BTAB] = "\033[Z";
+
         this->vem_input_map[tgetstr((char *)"ce", &area)] = "ce";
         this->vem_input_map[tgetstr((char *)"kl", &area)] = "kl";
         this->vem_input_map[tgetstr((char *)"kr", &area)] = "kr";
@@ -176,9 +178,6 @@ const char *vt52_curses::map_input(int ch, int &len_out)
         switch (ch) {
             case 0x7f:
                 ch = BACKSPACE;
-                break;
-            case KEY_BTAB:
-                ch = BACKTAB;
                 break;
         }
         this->vc_map_buffer = (char)ch;
