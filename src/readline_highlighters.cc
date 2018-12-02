@@ -369,6 +369,8 @@ void readline_command_highlighter(attr_line_t &al, int x)
     pcre_input pi(line);
     size_t ws_index;
 
+
+
     ws_index = line.find(' ');
     string command = line.substr(0, ws_index);
     if (ws_index != string::npos) {

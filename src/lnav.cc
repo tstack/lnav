@@ -1342,6 +1342,14 @@ static void looper()
         (void)noecho();
         (void)nodelay(lnav_data.ld_window, 1);
 
+        {
+            struct termios tio;
+
+            tcgetattr(STDIN_FILENO, &tio);
+            tio.c_cc[VDSUSP] = 0;
+            tcsetattr(STDIN_FILENO, TCSANOW, &tio);
+        }
+
         define_key("\033Od", KEY_BEG);
         define_key("\033Oc", KEY_END);
 
@@ -1544,6 +1552,7 @@ static void looper()
                     while ((ch = getch()) != ERR) {
                         alerter::singleton().new_input(ch);
 
+                        log_debug("ch %d", ch);
                         /* Check to make sure there is enough space for a
                          * character and a string terminator.
                          */
