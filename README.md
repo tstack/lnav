@@ -122,3 +122,5 @@ The lnav website can be found at:
 
 > [http://lnav.org](http://lnav.org)
 
+[Angle-grinder](https://github.com/rcoh/angle-grinder) is a tool to slice and dice log files on the command-line.
+If you're familiar with the SumoLogic query language, you might find this tool more comfortable to work with.
