@@ -36,6 +36,7 @@ static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
 static auto HOTKEY_HELP =
     ANSI_BOLD("SPC") ": Enable/Disable | "
     ANSI_BOLD("ENTER") ": Edit | "
+    ANSI_BOLD("t") ": Toggle type | "
     ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out | "
     ANSI_BOLD("D") ": Delete ";
 
@@ -56,7 +57,7 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
 
     this->tss_fields[TSF_HELP].right_justify(true);
-    this->tss_fields[TSF_HELP].set_min_width(35);
+    this->tss_fields[TSF_HELP].set_min_width(80);
     this->tss_fields[TSF_HELP].set_width(1024);
     this->tss_fields[TSF_HELP].set_value(TOGGLE_MSG);
     this->tss_fields[TSF_HELP].set_left_pad(1);

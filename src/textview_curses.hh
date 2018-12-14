@@ -118,6 +118,7 @@ public:
     virtual ~text_filter() { };
 
     type_t get_type() const { return this->lf_type; };
+    void set_type(type_t t) { this->lf_type = t; };
     std::string get_id() const { return this->lf_id; };
     size_t get_index() const { return this->lf_index; };
 

@@ -113,7 +113,7 @@ public:
      */
     void set_value(const char *fmt, ...)
     {
-        char    buffer[128];
+        char    buffer[256];
         va_list args;
 
         va_start(args, fmt);

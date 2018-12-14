@@ -94,6 +94,27 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             lv.reload_data();
             return true;
         }
+        case 't': {
+            textview_curses *top_view = *lnav_data.ld_view_stack.top();
+            text_sub_source *tss = top_view->get_sub_source();
+            filter_stack &fs = tss->get_filters();
+
+            if (fs.empty()) {
+                return true;
+            }
+
+            shared_ptr<text_filter> tf = *(fs.begin() + lv.get_selection());
+
+            if (tf->get_type() == text_filter::INCLUDE) {
+                tf->set_type(text_filter::EXCLUDE);
+            } else {
+                tf->set_type(text_filter::INCLUDE);
+            }
+
+            tss->text_filters_changed();
+            lv.reload_data();
+            return true;
+        }
         case 'D': {
             textview_curses *top_view = *lnav_data.ld_view_stack.top();
             text_sub_source *tss = top_view->get_sub_source();

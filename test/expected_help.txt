@@ -455,6 +455,7 @@ editor.  You can change the focus by pressing TAB.
   i                 Create a new "in" filter .
   SPACE             Toggle the enabled/disabled state of the currently
                     selected filter.
+  t                 Toggle the type of filter between "in" and "out".
   ENTER             Edit the selected filter.
   D                 Delete the selected filter.
 

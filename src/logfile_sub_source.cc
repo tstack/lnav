@@ -924,6 +924,10 @@ logfile_sub_source::get_grepper()
 
 void log_location_history::loc_history_append(vis_line_t top)
 {
+    if (top >= this->llh_log_source.text_line_count()) {
+        return;
+    }
+
     content_line_t cl = this->llh_log_source.at(top);
 
     auto iter = this->llh_history.begin();
