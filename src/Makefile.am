@@ -218,6 +218,7 @@ noinst_HEADERS = \
 	readline_possibilities.hh \
 	regexp_vtab.hh \
 	relative_time.hh \
+	ring_span.hh \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	session_data.hh \
