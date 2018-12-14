@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <string.h>
 #include <sys/time.h>
 
 #if defined HAVE_NCURSESW_CURSES_H
