@@ -7,6 +7,10 @@ lnav v0.8.5:
        with hotkeys.
      * Added an 'lnav_view_filters' SQL table that can be used to
        programmatically manipulate filters.
+     * A history of locations in a view is now kept so that you can jump back
+       to where you were previously using the '{' and '}' keys.  The location
+       history can also be accessed through the ":prev-location" and
+       ":next-location" commands.
      * The ":write-*" commands will now accept "/dev/clipboard" as a file name
        that writes to the system clipboard.
      * The ":write-to" and ":write-raw-to" commands will now print out comments

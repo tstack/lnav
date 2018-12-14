@@ -632,32 +632,6 @@ static void sigchld(int sig)
     lnav_data.ld_child_terminated = true;
 }
 
-static int key_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
-{
-    if (!sqlite3_stmt_busy(stmt)) {
-        return 0;
-    }
-
-    int ncols = sqlite3_column_count(stmt);
-
-    auto &vars = ec.ec_local_vars.top();
-
-    for (int lpc = 0; lpc < ncols; lpc++) {
-        const char *column_name = sqlite3_column_name(stmt, lpc);
-
-        if (sql_ident_needs_quote(column_name)) {
-            continue;
-        }
-        if (sqlite3_column_type(stmt, lpc) == SQLITE_NULL) {
-            continue;
-        }
-
-        vars[column_name] = string((const char *) sqlite3_column_text(stmt, lpc));
-    }
-
-    return 0;
-}
-
 vis_line_t next_cluster(
     vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
     bookmark_type_t *bt,
@@ -716,6 +690,10 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) con
         new_top = next_cluster(f, bt, tc->get_top());
     }
     if (new_top != -1) {
+        tc->get_sub_source()->get_location_history() | [new_top] (auto lh) {
+            lh->loc_history_append(new_top);
+        };
+
         tc->set_top(new_top);
         return true;
     }
@@ -744,6 +722,10 @@ void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
     }
 
     if (new_top != -1) {
+        tc->get_sub_source()->get_location_history() | [new_top] (auto lh) {
+            lh->loc_history_append(new_top);
+        };
+
         tc->set_top(new_top);
     }
     else {
@@ -1100,7 +1082,7 @@ public:
             me.me_state = BUTTON_STATE_PRESSED;
         }
 
-        gettimeofday(&me.me_time, NULL);
+        gettimeofday(&me.me_time, nullptr);
         me.me_x = x - 1;
         me.me_y = y - tc->get_y() - 1;
 
@@ -1116,36 +1098,6 @@ static void handle_key(int ch) {
     if (lnav_data.ld_mode == LNM_PAGING) {
         auto top_tc = lnav_data.ld_view_stack.top();
 
-        if (top_tc && (*top_tc)->handle_key(ch)) {
-            return;
-        }
-
-        char keyseq[16];
-
-        snprintf(keyseq, sizeof(keyseq), "x%02x", ch);
-
-        key_map &km = lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap];
-
-        const auto &iter = km.km_seq_to_cmd.find(keyseq);
-        if (iter != km.km_seq_to_cmd.end()) {
-            vector<logline_value> values;
-            exec_context ec(&values, key_sql_callback, pipe_callback);
-            auto &var_stack = ec.ec_local_vars;
-            string result;
-
-            ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
-            var_stack.push(map<string, string>());
-            auto &vars = var_stack.top();
-            vars["keyseq"] = keyseq;
-            for (const string &cmd : iter->second) {
-                log_debug("executing key sequence x%02x: %s",
-                          keyseq, cmd.c_str());
-                result = execute_any(ec, cmd);
-            }
-
-            lnav_data.ld_rl_view->set_value(result);
-            return;
-        }
     }
 
     switch (ch) {
@@ -1178,6 +1130,57 @@ static void handle_key(int ch) {
             }
         }
     }
+}
+
+static input_dispatcher::escape_match_t match_escape_seq(const char *escape_buffer)
+{
+    if (lnav_data.ld_mode != LNM_PAGING) {
+        return input_dispatcher::escape_match_t::NONE;
+    }
+
+    char keyseq[32] = "";
+
+    for (size_t lpc = 0; escape_buffer[lpc]; lpc++) {
+        snprintf(keyseq + strlen(keyseq), sizeof(keyseq) - strlen(keyseq),
+                 "x%02x",
+                 escape_buffer[lpc]);
+    }
+
+    key_map &km = lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap];
+    auto iter = km.km_seq_to_cmd.find(keyseq);
+    if (iter != km.km_seq_to_cmd.end()) {
+        return input_dispatcher::escape_match_t::FULL;
+    }
+
+    auto lb = km.km_seq_to_cmd.lower_bound(keyseq);
+
+    if (lb == km.km_seq_to_cmd.end()) {
+        return input_dispatcher::escape_match_t::NONE;
+    }
+
+    auto ub = km.km_seq_to_cmd.upper_bound(keyseq);
+    auto longest = max_element(lb, ub, [] (auto l, auto r) {
+        return l.first.size() < r.first.size();
+    });
+
+    if (strlen(escape_buffer) < longest->first.size()) {
+        return input_dispatcher::escape_match_t::PARTIAL;
+    }
+
+    return input_dispatcher::escape_match_t::NONE;
+}
+
+static void handle_escape_seq(const char *escape_buffer)
+{
+    char keyseq[32] = "";
+
+    for (size_t lpc = 0; escape_buffer[lpc]; lpc++) {
+        snprintf(keyseq + strlen(keyseq), sizeof(keyseq) - strlen(keyseq),
+                 "x%02x",
+                 escape_buffer[lpc]);
+    }
+
+    handle_keyseq(keyseq);
 }
 
 void update_hits(void *dummy, textview_curses *tc)
@@ -1462,12 +1465,18 @@ static void looper()
         sb.invoke(*lnav_data.ld_view_stack.top());
         vsb.invoke(*lnav_data.ld_view_stack.top());
 
+        {
+            input_dispatcher &id = lnav_data.ld_input_dispatcher;
+
+            id.id_escape_matcher = match_escape_seq;
+            id.id_escape_handler = handle_escape_seq;
+            id.id_key_handler = handle_key;
+            id.id_mouse_handler = bind(&xterm_mouse::handle_mouse, &lnav_data.ld_mouse);
+        }
+
         bool session_loaded = false;
         ui_periodic_timer &timer = ui_periodic_timer::singleton();
         struct timeval current_time;
-        size_t escape_index = 0;
-        char escape_buffer[32];
-        struct timeval escape_start_time;
 
         static sig_atomic_t index_counter;
 
@@ -1518,22 +1527,13 @@ static void looper()
                 tc.update_poll_set(pollfds);
             }
 
-            if (escape_index > 0) {
+            if (lnav_data.ld_input_dispatcher.in_escape()) {
                 to.tv_usec = 15000;
             }
             rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
 
-            if (escape_index == 1) {
-                struct timeval diff;
-
-                gettimeofday(&current_time, nullptr);
-
-                timersub(&current_time, &escape_start_time, &diff);
-                if (diff.tv_sec > 0 || diff.tv_usec > (10000)) {
-                    handle_key(KEY_CTRL_RBRACKET);
-                    escape_index = 0;
-                }
-            }
+            gettimeofday(&current_time, nullptr);
+            lnav_data.ld_input_dispatcher.poll(current_time);
 
             if (rc < 0) {
                 switch (errno) {
@@ -1554,52 +1554,11 @@ static void looper()
                     while ((ch = getch()) != ERR) {
                         alerter::singleton().new_input(ch);
 
-                        /* Check to make sure there is enough space for a
-                         * character and a string terminator.
-                         */
-                        if (escape_index >= sizeof(escape_buffer) - 2) {
-                            escape_index = 0;
-                        }
-                        else if (escape_index > 0) {
-                            escape_buffer[escape_index++] = ch;
-                            escape_buffer[escape_index] = '\0';
-
-                            if (strcmp("\x1b[", escape_buffer) == 0) {
-                                lnav_data.ld_mouse.handle_mouse(ch);
-                            }
-                            else {
-                                for (size_t lpc = 0; lpc < escape_index; lpc++) {
-                                    handle_key(escape_buffer[lpc]);
-                                }
-                            }
-                            escape_index = 0;
-                            continue;
-                        }
+                        lnav_data.ld_input_dispatcher.new_input(current_time, ch);
 
                         lnav_data.ld_view_stack.top() | [ch] (auto tc) {
                             lnav_data.ld_key_repeat_history.update(ch, tc->get_top());
                         };
-
-                        switch (ch) {
-                        case CTRL('d'):
-                        case KEY_RESIZE:
-                            break;
-
-                        case KEY_ESCAPE:
-                            escape_index = 0;
-                            escape_buffer[escape_index++] = ch;
-                            escape_buffer[escape_index] = '\0';
-                            escape_start_time = current_time;
-                            break;
-
-                        case KEY_MOUSE:
-                            lnav_data.ld_mouse.handle_mouse(ch);
-                            break;
-
-                        default:
-                            handle_key(ch);
-                            break;
-                        }
 
                         if (!lnav_data.ld_looping) {
                             // No reason to keep processing input after the

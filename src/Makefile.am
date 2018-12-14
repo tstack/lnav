@@ -174,6 +174,7 @@ noinst_HEADERS = \
 	hotkeys.hh \
 	init.sql \
 	init-sql.hh \
+	input_dispatcher.hh \
 	intern_string.hh \
 	is_utf8.hh \
 	json_op.hh \
@@ -293,6 +294,7 @@ libdiag_a_SOURCES = \
 	help_text_formatter.cc \
 	hist_source.cc \
 	hotkeys.cc \
+	input_dispatcher.cc \
 	intern_string.cc \
 	is_utf8.cc \
 	json-extension-functions.cc \

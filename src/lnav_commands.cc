@@ -89,7 +89,7 @@ static string refresh_pt_search()
     }
 
 #ifdef HAVE_LIBCURL
-    for (auto lf : lnav_data.ld_files) {
+    for (const auto &lf : lnav_data.ld_files) {
         if (startswith(lf->get_filename(), "pt:")) {
             lf->close();
         }
@@ -270,6 +270,7 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
         struct timeval tv;
         struct exttm tm;
         float value;
+        nonstd::optional<vis_line_t> dst_vl;
 
         if (rt.parse(all_args, pe)) {
             if (ttt != nullptr) {
@@ -293,16 +294,12 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                     }
                 } while (!done);
 
-                if (ec.ec_dry_run) {
-                    retval = "info: will move to line " + to_string((int) vl);
-                } else {
-                    tc->set_top(vl);
-                    retval = "";
-                    if (!rt.is_absolute() && lnav_data.ld_rl_view != nullptr) {
-                        lnav_data.ld_rl_view->set_alt_value(
-                            HELP_MSG_2(r, R,
-                                       "to move forward/backward the same amount of time"));
-                    }
+                dst_vl = vl;
+
+                if (!ec.ec_dry_run && !rt.is_absolute() && lnav_data.ld_rl_view != nullptr) {
+                    lnav_data.ld_rl_view->set_alt_value(
+                        HELP_MSG_2(r, R,
+                                   "to move forward/backward the same amount of time"));
                 }
             } else {
                 retval = "error: relative time values only work in a time-indexed view";
@@ -311,15 +308,7 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
         else if (dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, tv) !=
             nullptr) {
             if (ttt != nullptr) {
-                vis_line_t vl;
-
-                vl = vis_line_t(ttt->row_for_time(tv));
-                if (ec.ec_dry_run) {
-                    retval = "info: will move to line " + to_string((int) vl);
-                } else {
-                    tc->set_top(vl);
-                    retval = "";
-                }
+                dst_vl = vis_line_t(ttt->row_for_time(tv));
             }
             else {
                 retval = "error: time values only work in a time-indexed view";
@@ -337,14 +326,22 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                     line_number = tc->get_inner_height() + line_number;
                 }
             }
+
+            dst_vl = vis_line_t(line_number);
+        }
+
+        dst_vl | [&ec, tc, &retval] (auto new_top) {
             if (ec.ec_dry_run) {
-                retval = "info: will move to line " + to_string(line_number);
+                retval = "info: will move to line " + to_string((int) new_top);
             } else {
-                tc->set_top(vis_line_t(line_number));
+                tc->get_sub_source()->get_location_history() | [new_top] (auto lh) {
+                    lh->loc_history_append(new_top);
+                };
+                tc->set_top(new_top);
 
                 retval = "";
             }
-        }
+        };
     }
 
     return retval;
@@ -430,6 +427,27 @@ static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &ar
             }
             lnav_data.ld_bottom_source.grep_error("");
         }
+    }
+
+    return retval;
+}
+
+static string com_goto_location(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+    }
+    else if (!ec.ec_dry_run) {
+        lnav_data.ld_view_stack.top() | [&args] (auto tc) {
+            tc->get_sub_source()->get_location_history() | [tc, &args] (auto lh) {
+                return args[0] == "prev-location" ?
+                       lh->loc_history_back(tc->get_top()) :
+                       lh->loc_history_forward(tc->get_top());
+            } | [tc] (auto new_top) {
+                tc->set_top(new_top);
+            };
+        };
     }
 
     return retval;
@@ -3719,6 +3737,22 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text("type", "The type of bookmark -- error, warning, search, user, file, meta"))
             .with_example({"error"})
             .with_tags({"bookmarks", "navigation"})
+    },
+    {
+        "next-location",
+        com_goto_location,
+
+        help_text(":next-location")
+            .with_summary("Move to the next position in the location history")
+            .with_tags({"navigation"})
+    },
+    {
+        "prev-location",
+            com_goto_location,
+
+            help_text(":prev-location")
+                .with_summary("Move to the previous position in the location history")
+                .with_tags({"navigation"})
     },
     {
         "help",

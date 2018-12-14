@@ -101,6 +101,60 @@ public:
     vector<logline_value> lh_line_values;
 };
 
+static int key_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
+{
+    if (!sqlite3_stmt_busy(stmt)) {
+        return 0;
+    }
+
+    int ncols = sqlite3_column_count(stmt);
+
+    auto &vars = ec.ec_local_vars.top();
+
+    for (int lpc = 0; lpc < ncols; lpc++) {
+        const char *column_name = sqlite3_column_name(stmt, lpc);
+
+        if (sql_ident_needs_quote(column_name)) {
+            continue;
+        }
+        if (sqlite3_column_type(stmt, lpc) == SQLITE_NULL) {
+            continue;
+        }
+
+        vars[column_name] = string((const char *) sqlite3_column_text(stmt, lpc));
+    }
+
+    return 0;
+}
+
+bool handle_keyseq(const char *keyseq)
+{
+    key_map &km = lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap];
+
+    const auto &iter = km.km_seq_to_cmd.find(keyseq);
+    if (iter != km.km_seq_to_cmd.end()) {
+        vector<logline_value> values;
+        exec_context ec(&values, key_sql_callback, pipe_callback);
+        auto &var_stack = ec.ec_local_vars;
+        string result;
+
+        ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
+        var_stack.push(map<string, string>());
+        auto &vars = var_stack.top();
+        vars["keyseq"] = keyseq;
+        for (const string &cmd : iter->second) {
+            log_debug("executing key sequence x%02x: %s",
+                      keyseq, cmd.c_str());
+            result = execute_any(ec, cmd);
+        }
+
+        lnav_data.ld_rl_view->set_value(result);
+        return true;
+    }
+
+    return false;
+}
+
 void handle_paging_key(int ch)
 {
     if (lnav_data.ld_view_stack.vs_views.empty()) {
@@ -112,6 +166,18 @@ void handle_paging_key(int ch)
     logfile_sub_source *lss = NULL;
     text_sub_source *tc_tss = tc->get_sub_source();
     bookmarks<vis_line_t>::type &     bm  = tc->get_bookmarks();
+
+    if (tc->handle_key(ch)) {
+        return;
+    }
+
+    char keyseq[16];
+
+    snprintf(keyseq, sizeof(keyseq), "x%02x", ch);
+
+    if (handle_keyseq(keyseq)) {
+        return;
+    }
 
     if (tc->handle_key(ch)) {
         return;

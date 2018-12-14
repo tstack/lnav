@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2018, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,12 +25,49 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file input_dispatcher.hh
  */
 
-#ifndef LNAV_HOTKEYS_H
-#define LNAV_HOTKEYS_H
+#ifndef INPUT_DISPATCHER_HH
+#define INPUT_DISPATCHER_HH
 
-bool handle_keyseq(const char *keyseq);
-void handle_paging_key(int ch);
+#include <sys/types.h>
 
-#endif //LNAV_HOTKEYS_H
+#include <functional>
+
+#define KEY_ESCAPE    0x1b
+#define KEY_CTRL_RBRACKET 0x1d
+
+class input_dispatcher {
+public:
+    void new_input(const struct timeval &current_time, int ch);
+
+    void poll(const struct timeval &current_time);
+
+    bool in_escape() const {
+        return this->id_escape_index > 0;
+    }
+
+    enum class escape_match_t {
+        NONE,
+        PARTIAL,
+        FULL,
+    };
+
+    std::function<escape_match_t(const char *)> id_escape_matcher;
+    std::function<void(int)> id_key_handler;
+    std::function<void(const char *)> id_escape_handler;
+    std::function<void()> id_mouse_handler;
+private:
+    void append_to_escape_buffer(int ch) {
+        this->id_escape_buffer[this->id_escape_index++] = static_cast<char>(ch);
+        this->id_escape_buffer[this->id_escape_index] = '\0';
+    }
+
+    char id_escape_buffer[32];
+    size_t id_escape_index{0};
+    struct timeval id_escape_start_time{0, 0};
+};
+
+#endif

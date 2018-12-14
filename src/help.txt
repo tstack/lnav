@@ -241,6 +241,12 @@ Spatial Navigation
                     five seconds later, the last message will be highlighted
                     as a slow down.
 
+  {/}               Move to the previous/next location in history.  Whenever
+                    you jump to a new location in the view, the location will
+                    be added to the history.  The history is not updated when
+                    using only the arrow keys.
+
+
 Chronological Navigation
 ------------------------
 

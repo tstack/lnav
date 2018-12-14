@@ -20,6 +20,7 @@ set(diag_STAT_SRCS
     help_text_formatter.cc
     hist_source.cc
     hotkeys.cc
+    input_dispatcher.cc
     intern_string.cc
     is_utf8.cc
     json-extension-functions.cc
@@ -123,6 +124,7 @@ set(diag_STAT_SRCS
     highlighter.hh
     hotkeys.hh
     init-sql.hh
+    input_dispatcher.hh
     intern_string.hh
     is_utf8.hh
     k_merge_tree.h
@@ -145,6 +147,7 @@ set(diag_STAT_SRCS
     readline_possibilities.hh
     regexp_vtab.hh
     relative_time.hh
+    ring_span.hh
     sequence_sink.hh
     shlex.hh
     simdutf8check.h

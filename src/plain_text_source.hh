@@ -37,7 +37,7 @@
 #include "textview_curses.hh"
 
 class plain_text_source
-        : public text_sub_source {
+        : public text_sub_source, public vis_location_history {
 public:
     plain_text_source()
         : tds_text_format(TF_UNKNOWN), tds_longest_line(0) {
@@ -132,6 +132,11 @@ public:
         this->tds_text_format = format;
         return *this;
     };
+
+    nonstd::optional<location_history *> get_location_history()
+    {
+        return this;
+    }
 
 private:
     size_t compute_longest_line() {

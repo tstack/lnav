@@ -97,6 +97,30 @@ protected:
     pcrepp pf_pcre;
 };
 
+class log_location_history : public location_history {
+public:
+    log_location_history(logfile_sub_source &lss)
+        : llh_history(std::begin(this->llh_backing),
+                      std::end(this->llh_backing)),
+          llh_log_source(lss) {
+    }
+
+    ~log_location_history() override = default;
+
+    void loc_history_append(vis_line_t top) override;
+
+    nonstd::optional<vis_line_t>
+    loc_history_back(vis_line_t current_top) override;
+
+    nonstd::optional<vis_line_t>
+    loc_history_forward(vis_line_t current_top) override;
+
+private:
+    nonstd::ring_span<content_line_t> llh_history;
+    logfile_sub_source &llh_log_source;
+    content_line_t llh_backing[MAX_SIZE];
+};
+
 /**
  * Delegate class that merges the contents of multiple log files into a single
  * source of data for a text view.
@@ -478,6 +502,35 @@ public:
         return this->find_from_time(tv);
     };
 
+    nonstd::optional<vis_line_t> find_from_content(content_line_t cl) {
+        content_line_t line = cl;
+        std::shared_ptr<logfile> lf = this->find(line);
+
+        if (lf != nullptr) {
+            auto ll_iter = lf->begin() + line;
+            auto &ll = *ll_iter;
+            vis_line_t vis_start = this->find_from_time(ll.get_timeval());
+
+            while (vis_start < this->text_line_count()) {
+                content_line_t guess_cl = this->at(vis_start);
+
+                if (cl == guess_cl) {
+                    return vis_start;
+                }
+
+                auto guess_line = this->find_line(guess_cl);
+
+                if (!guess_line || ll < *guess_line) {
+                    return nonstd::nullopt;
+                }
+
+                ++vis_start;
+            }
+        }
+
+        return nonstd::nullopt;
+    }
+
     struct timeval time_for_row(int row) {
         return this->find_line(this->at(vis_line_t(row)))->get_timeval();
     };
@@ -674,6 +727,10 @@ public:
     nonstd::optional<std::pair<grep_proc_source<vis_line_t> *, grep_proc_sink<vis_line_t> *>>
     get_grepper();
 
+    nonstd::optional<location_history *> get_location_history() {
+        return &this->lss_location_history;
+    };
+
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
     static const uint64_t MAX_FILES          = (
@@ -847,6 +904,7 @@ private:
     index_delegate    *lss_index_delegate;
     size_t            lss_longest_line;
     meta_grepper lss_meta_grepper;
+    log_location_history lss_location_history;
 };
 
 #endif

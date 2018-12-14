@@ -104,7 +104,8 @@ logfile_sub_source::logfile_sub_source()
       lss_marked_only(false),
       lss_index_delegate(NULL),
       lss_longest_line(0),
-      lss_meta_grepper(*this)
+      lss_meta_grepper(*this),
+      lss_location_history(*this)
 {
     this->tss_supports_filtering = true;
     this->clear_line_size_cache();
@@ -785,7 +786,7 @@ void logfile_sub_source::text_update_marks(vis_bookmarks &bm)
                 bm[lss_user_mark.first].insert_once(vl);
 
                 if (lss_user_mark.first == &textview_curses::BM_USER) {
-                    logfile::iterator ll = lf->begin() + cl;
+                    auto ll = lf->begin() + cl;
 
                     ll->set_mark(true);
                 }
@@ -919,4 +920,64 @@ logfile_sub_source::get_grepper()
         (grep_proc_source<vis_line_t> *) &this->lss_meta_grepper,
         (grep_proc_sink<vis_line_t> *) &this->lss_meta_grepper
     );
+}
+
+void log_location_history::loc_history_append(vis_line_t top)
+{
+    content_line_t cl = this->llh_log_source.at(top);
+
+    auto iter = this->llh_history.begin();
+    iter += this->llh_history.size() - this->lh_history_position;
+    this->llh_history.erase_from(iter);
+    this->lh_history_position = 0;
+    this->llh_history.push_back(cl);
+}
+
+nonstd::optional<vis_line_t> log_location_history::loc_history_back(vis_line_t current_top)
+{
+    while (this->lh_history_position < this->llh_history.size()) {
+        auto iter = this->llh_history.rbegin();
+
+        auto vis_for_pos = this->llh_log_source.find_from_content(*iter);
+
+        if (this->lh_history_position == 0 && vis_for_pos != current_top) {
+            return vis_for_pos;
+        }
+
+        if ((this->lh_history_position + 1) >= this->llh_history.size()) {
+            break;
+        }
+
+        this->lh_history_position += 1;
+
+        iter += this->lh_history_position;
+
+        vis_for_pos = this->llh_log_source.find_from_content(*iter);
+
+        if (vis_for_pos) {
+            return vis_for_pos;
+        }
+    }
+
+    return nonstd::nullopt;
+}
+
+nonstd::optional<vis_line_t>
+log_location_history::loc_history_forward(vis_line_t current_top)
+{
+    while (this->lh_history_position > 0) {
+        this->lh_history_position -= 1;
+
+        auto iter = this->llh_history.rbegin();
+
+        iter += this->lh_history_position;
+
+        auto vis_for_pos = this->llh_log_source.find_from_content(*iter);
+
+        if (vis_for_pos) {
+            return vis_for_pos;
+        }
+    }
+
+    return nonstd::nullopt;
 }

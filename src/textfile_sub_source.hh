@@ -36,7 +36,8 @@
 #include "textview_curses.hh"
 #include "filter_observer.hh"
 
-class textfile_sub_source : public text_sub_source {
+class textfile_sub_source
+    : public text_sub_source, public vis_location_history {
 public:
     typedef std::list<std::shared_ptr<logfile>>::iterator file_iterator;
 
@@ -267,6 +268,11 @@ public:
         }
 
         return this->tss_files.front()->get_text_format();
+    }
+
+    nonstd::optional<location_history *> get_location_history()
+    {
+        return this;
     }
 
 private:

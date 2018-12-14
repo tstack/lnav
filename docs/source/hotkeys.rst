@@ -129,6 +129,10 @@ Spatial Navigation
      - |ks| Shift |ke| + |ks| s |ke|
      -
      - Next/prevous slow down in the log message rate
+   * - |ks| { |ke|
+     - |ks| } |ke|
+     -
+     - Previous/next location in history
 
 Chronological Navigation
 ------------------------

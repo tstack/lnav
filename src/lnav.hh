@@ -64,6 +64,7 @@
 #include "spectro_source.hh"
 #include "command_executor.hh"
 #include "plain_text_source.hh"
+#include "input_dispatcher.hh"
 #include "filter_sub_source.hh"
 #include "filter_status_source.hh"
 #include "preview_status_source.hh"
@@ -297,6 +298,7 @@ struct _lnav_data {
     term_extra ld_term_extra;
 
     input_state_tracker ld_input_state;
+    input_dispatcher ld_input_dispatcher;
 
     curl_looper ld_curl_looper;
 

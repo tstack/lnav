@@ -35,6 +35,7 @@
 #include <utility>
 #include <vector>
 
+#include "ring_span.hh"
 #include "grep_proc.hh"
 #include "bookmarks.hh"
 #include "listview_curses.hh"
@@ -145,7 +146,7 @@ public:
         }
     }
 
-    void add_line(logfile_filter_state &lfs, const logfile::const_iterator ll, shared_buffer_ref &line);
+    void add_line(logfile_filter_state &lfs, logfile::const_iterator ll, shared_buffer_ref &line);
 
     void end_of_message(logfile_filter_state &lfs) {
         uint32_t mask = 0;
@@ -339,6 +340,23 @@ protected:
     struct timeval ttt_top_time{0, 0};
 };
 
+class location_history {
+public:
+    virtual ~location_history() = default;
+
+    virtual void loc_history_append(vis_line_t top) = 0;
+
+    virtual nonstd::optional<vis_line_t>
+    loc_history_back(vis_line_t current_top) = 0;
+
+    virtual nonstd::optional<vis_line_t>
+    loc_history_forward(vis_line_t current_top) = 0;
+
+    const static int MAX_SIZE = 100;
+protected:
+    int lh_history_position{0};
+};
+
 /**
  * Source for the text to be shown in a textview_curses view.
  */
@@ -455,10 +473,71 @@ public:
         return nonstd::nullopt;
     }
 
+    virtual nonstd::optional<location_history *> get_location_history() {
+        return nonstd::nullopt;
+    }
+
     bool tss_supports_filtering{false};
 protected:
-    textview_curses *tss_view;
+    textview_curses *tss_view{nullptr};
     filter_stack tss_filters;
+};
+
+class vis_location_history : public location_history {
+public:
+    vis_location_history()
+        : vlh_history(std::begin(this->vlh_backing), std::end(this->vlh_backing))
+    {
+    }
+
+    void loc_history_append(vis_line_t top) override {
+        auto iter = this->vlh_history.begin();
+        iter += this->vlh_history.size() - this->lh_history_position;
+        this->vlh_history.erase_from(iter);
+        this->lh_history_position = 0;
+        this->vlh_history.push_back(top);
+    }
+
+    nonstd::optional<vis_line_t>
+    loc_history_back(vis_line_t current_top) override {
+        if (this->lh_history_position == 0) {
+            vis_line_t history_top = this->current_position();
+            if (history_top != current_top) {
+                return history_top;
+            }
+        }
+
+        if (this->lh_history_position + 1 >= this->vlh_history.size()) {
+            return nonstd::nullopt;
+        }
+
+        this->lh_history_position += 1;
+
+        return this->current_position();
+    }
+
+    nonstd::optional<vis_line_t>
+    loc_history_forward(vis_line_t current_top) override {
+        if (this->lh_history_position == 0) {
+            return nonstd::nullopt;
+        }
+
+        this->lh_history_position -= 1;
+
+        return this->current_position();
+    }
+
+    nonstd::ring_span<vis_line_t> vlh_history;
+private:
+    vis_line_t current_position() {
+        auto iter = this->vlh_history.rbegin();
+
+        iter += this->lh_history_position;
+
+        return *iter;
+    }
+
+    vis_line_t vlh_backing[MAX_SIZE];
 };
 
 class text_delegate {

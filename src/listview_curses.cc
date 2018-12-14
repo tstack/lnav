@@ -44,32 +44,14 @@ using namespace std;
 list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
 listview_curses::listview_curses()
-    : lv_source(NULL),
-      lv_overlay_source(NULL),
-      lv_window(NULL),
-      lv_x(0),
-      lv_y(0),
-      lv_top(0),
-      lv_left(0),
-      lv_height(0),
-      lv_overlay_needs_update(true),
-      lv_show_scrollbar(true),
-      lv_show_bottom_border(false),
-      lv_gutter_source(&DEFAULT_GUTTER_SOURCE),
-      lv_word_wrap(false),
-      lv_scroll_accel(0),
-      lv_scroll_velo(0),
-      lv_mouse_y(-1),
-      lv_mouse_mode(LV_MODE_NONE),
-      lv_tail_space(1)
-{ }
+= default;
 
 listview_curses::~listview_curses()
-{ }
+= default;
 
-void listview_curses::reload_data(void)
+void listview_curses::reload_data()
 {
-    if (this->lv_source == NULL) {
+    if (this->lv_source == nullptr) {
         this->lv_top  = 0_vl;
         this->lv_left = 0;
     }

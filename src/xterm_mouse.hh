@@ -158,7 +158,7 @@ public:
      * Handle a KEY_MOUSE character from ncurses.
      * @param ch unused
      */
-    void handle_mouse(int ch_unused)
+    void handle_mouse()
     {
         bool release = false;
         int ch;

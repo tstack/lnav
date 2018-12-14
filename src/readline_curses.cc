@@ -900,9 +900,6 @@ void readline_curses::handle_key(int ch)
     if (write(this->rc_pty[RCF_MASTER], bch, len) == -1) {
         perror("handle_key: write failed");
     }
-    if (ch == '\t' || ch == '\r') {
-        // this->vc_past_lines.clear();
-    }
 }
 
 void readline_curses::focus(int context, const char *prompt, const char *initial)

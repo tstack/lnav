@@ -569,29 +569,30 @@ protected:
     static list_gutter_source DEFAULT_GUTTER_SOURCE;
 
     std::string lv_title;
-    list_data_source *lv_source; /*< The data source delegate. */
+    list_data_source *lv_source{nullptr}; /*< The data source delegate. */
     std::list<list_input_delegate *> lv_input_delegates;
-    list_overlay_source *lv_overlay_source;
+    list_overlay_source *lv_overlay_source{nullptr};
     action       lv_scroll;         /*< The scroll action. */
-    WINDOW *     lv_window;         /*< The window that contains this view. */
-    unsigned int lv_x;
-    unsigned int lv_y;              /*< The y offset of this view. */
-    vis_line_t   lv_top;            /*< The line at the top of the view. */
-    unsigned int lv_left;           /*< The column at the left of the view. */
-    vis_line_t   lv_height;         /*< The abs/rel height of the view. */
-    bool lv_overlay_needs_update;
-    bool lv_show_scrollbar;         /*< Draw the scrollbar in the view. */
-    bool lv_show_bottom_border;
-    list_gutter_source *lv_gutter_source;
-    bool lv_word_wrap;
+    WINDOW *     lv_window{nullptr};         /*< The window that contains this view. */
+    unsigned int lv_x{0};
+    unsigned int lv_y{0};              /*< The y offset of this view. */
+    vis_line_t   lv_top{0};            /*< The line at the top of the view. */
+    unsigned int lv_left{0};           /*< The column at the left of the view. */
+    vis_line_t   lv_height{0};         /*< The abs/rel height of the view. */
+    int lv_history_position{0};
+    bool lv_overlay_needs_update{true};
+    bool lv_show_scrollbar{true};         /*< Draw the scrollbar in the view. */
+    bool lv_show_bottom_border{false};
+    list_gutter_source *lv_gutter_source{&DEFAULT_GUTTER_SOURCE};
+    bool lv_word_wrap{false};
     bool lv_selectable{false};
     vis_line_t lv_selection{0};
 
     struct timeval lv_mouse_time;
     int lv_scroll_accel;
     int lv_scroll_velo;
-    int lv_mouse_y;
-    lv_mode_t lv_mouse_mode;
-    vis_line_t lv_tail_space;
+    int lv_mouse_y{-1};
+    lv_mode_t lv_mouse_mode{LV_MODE_NONE};
+    vis_line_t lv_tail_space{1};
 };
 #endif

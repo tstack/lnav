@@ -59,6 +59,8 @@ Navigation
   bookmark of the given type in the current view.
 * prev-mark error|warning|search|user|file|partition - Move to the previous
   bookmark of the given type in the current view.
+* prev-location - The previous location in the history.
+* next-location - The next location in the history.
 
 Time
 ----
