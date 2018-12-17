@@ -150,12 +150,12 @@ class generic_log_format : public log_format {
                 sbr.get_data(),
                 sbr.length(),
                 get_pcre_log_formats(),
-                NULL,
+                nullptr,
                 &log_time,
                 &log_tv,
 
                 &ts,
-                &level)) != NULL) {
+                &level)) != nullptr) {
             const char *level_str = &sbr.get_data()[level.c_begin];
             log_level_t level_val = string2level(level_str, level.length());
 

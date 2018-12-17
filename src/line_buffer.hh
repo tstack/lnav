@@ -45,10 +45,10 @@
 #include "shared_buffer.hh"
 
 struct line_value {
-    char *lv_start;
-    size_t lv_len;
-    bool lv_partial;
-    bool lv_valid_utf;
+    char *lv_start{nullptr};
+    size_t lv_len{0};
+    bool lv_partial{false};
+    bool lv_valid_utf{false};
 
     void terminate() {
         this->lv_start[this->lv_len] = '\0';

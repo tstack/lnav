@@ -322,9 +322,8 @@ public:
         do {
             ++next_line;
         } while ((next_line != this->end()) &&
-                 include_continues &&
                  ((ll->get_offset() == next_line->get_offset()) ||
-                  next_line->is_continued()));
+                     (include_continues && next_line->is_continued())));
 
         if (next_line == this->end()) {
             retval = this->lf_index_size - ll->get_offset();
@@ -410,7 +409,7 @@ protected:
      * @param prefix The contents of the line.
      * @param len The length of the 'prefix' string.
      */
-    bool process_prefix(off_t offset, shared_buffer_ref &sbr);
+    bool process_prefix(off_t offset, shared_buffer_ref &sbr, const line_value &lv);
 
     void set_format_base_time(log_format *lf);
 

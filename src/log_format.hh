@@ -97,6 +97,7 @@ public:
           ll_millis(millis),
           ll_opid(opid),
           ll_sub_offset(0),
+          ll_valid_utf(1),
           ll_level(l),
           ll_module_id(mod)
     {
@@ -111,6 +112,7 @@ public:
         : ll_offset(off),
           ll_opid(opid),
           ll_sub_offset(0),
+          ll_valid_utf(1),
           ll_level(l),
           ll_module_id(mod)
     {
@@ -178,6 +180,14 @@ public:
     bool is_time_skewed() const {
         return this->ll_level & LEVEL_TIME_SKEW;
     };
+
+    void set_valid_utf(bool v) {
+        this->ll_valid_utf = v;
+    }
+
+    bool is_valid_utf() const {
+        return this->ll_valid_utf;
+    }
 
     /** @param l The logging level. */
     void set_level(log_level_t l) { this->ll_level = l; };
@@ -286,7 +296,8 @@ private:
     time_t   ll_time;
     unsigned int ll_millis : 10;
     unsigned int ll_opid : 6;
-    uint16_t ll_sub_offset;
+    unsigned int ll_sub_offset : 15;
+    unsigned int ll_valid_utf : 1;
     uint8_t  ll_level;
     uint8_t  ll_module_id;
     char     ll_schema[2];
