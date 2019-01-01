@@ -155,17 +155,20 @@ struct highlighter {
     void annotate(attr_line_t &al, int start) const {
         const std::string &str = al.get_string();
         string_attrs_t &sa = al.get_attrs();
+        // The line we pass to pcre_exec will be treated as the start when the
+        // carat (^) operator is used.
+        const char *line_start = &(str.c_str()[start]);
         size_t re_end;
 
-        if (str.length() > 8192)
+        if ((str.length() - start) > 8192)
             re_end = 8192;
         else
-            re_end = str.length();
-        for (int off = start; off < (int)str.size(); ) {
+            re_end = str.length() - start;
+        for (int off = 0; off < (int)str.size() - start; ) {
             int rc, matches[60];
             rc = pcre_exec(this->h_code,
                            this->h_code_extra,
-                           str.c_str(),
+                           line_start,
                            re_end,
                            off,
                            0,
@@ -175,12 +178,12 @@ struct highlighter {
                 struct line_range lr;
 
                 if (rc == 2) {
-                    lr.lr_start = matches[2];
-                    lr.lr_end   = matches[3];
+                    lr.lr_start = start + matches[2];
+                    lr.lr_end   = start + matches[3];
                 }
                 else {
-                    lr.lr_start = matches[0];
-                    lr.lr_end   = matches[1];
+                    lr.lr_start = start + matches[0];
+                    lr.lr_end   = start + matches[1];
                 }
 
                 if (lr.lr_end > lr.lr_start) {
@@ -201,8 +204,8 @@ struct highlighter {
     std::string h_pattern;
     rgb_color h_fg;
     rgb_color h_bg;
-    pcre *                           h_code;
-    pcre_extra *                     h_code_extra;
+    pcre *h_code;
+    pcre_extra *h_code_extra;
     int h_attrs;
     text_format_t h_text_format;
     intern_string_t h_format_name;

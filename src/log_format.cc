@@ -744,6 +744,10 @@ void external_log_format::annotate(shared_buffer_ref &line,
     pattern &pat = *this->elf_pattern_order[this->lf_fmt_lock];
 
     if (!pat.p_pcre->match(pc, pi)) {
+        // A continued line still needs a body.
+        lr.lr_start = 0;
+        lr.lr_end = line.length();
+        sa.emplace_back(lr, &textview_curses::SA_BODY);
         return;
     }
 

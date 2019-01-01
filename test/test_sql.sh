@@ -844,9 +844,9 @@ cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
 
 check_output "querying against stdin is not working?" <<EOF
         log_time
-2018-11-03 09:23:38.000
-2018-11-03 09:23:38.000
-2018-11-03 09:23:38.000
+2019-11-03 09:23:38.000
+2019-11-03 09:23:38.000
+2019-11-03 09:23:38.000
 EOF
 
 
@@ -855,7 +855,7 @@ cat ${test_dir}/logfile_syslog.0 | run_test ${lnav_test} -n \
 
 check_output "single result is not working?" <<EOF
         log_time
-2018-11-03 09:47:02.000
+2019-11-03 09:47:02.000
 EOF
 
 # Create a dummy database for the next couple of tests to consume.

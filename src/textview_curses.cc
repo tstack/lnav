@@ -284,7 +284,13 @@ void textview_curses::textview_value_for_row(vis_line_t row,
             continue;
         }
 
-        tc_highlight.second.annotate(value_out, internal_hl ? body.lr_start : 0);
+        // Internal highlights should only apply to the log message body so
+        // that we don't start highlighting other fields.  User-provided
+        // highlights should apply only to the line itself and not any of the
+        // surrounding decorations that are added (for example, the file lines
+        // that are inserted at the beginning of the log view).
+        int start_pos = internal_hl ? body.lr_start : orig_line.lr_start;
+        tc_highlight.second.annotate(value_out, start_pos);
     }
 
     if (this->tc_hide_fields) {
