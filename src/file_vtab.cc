@@ -82,7 +82,7 @@ CREATE TABLE lnav_file (
 
         switch (col) {
             case 0:
-                to_sqlite(ctx, st.st_dev);
+                to_sqlite(ctx, (int64_t) st.st_dev);
                 break;
             case 1:
                 to_sqlite(ctx, (int64_t) st.st_ino);

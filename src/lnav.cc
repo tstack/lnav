@@ -333,10 +333,18 @@ bool setup_logline_table(exec_context &ec)
         }
 
         for (const auto &pair : sqlite_function_help) {
-            lnav_data.ld_rl_view->add_possibility(
-                LNM_SQL,
-                "*",
-                pair.first + (pair.second->ht_parameters.empty() ? "()" : ("(")));
+            switch (pair.second->ht_context) {
+                case HC_SQL_FUNCTION:
+                case HC_SQL_TABLE_VALUED_FUNCTION: {
+                    string poss = pair.first +
+                        (pair.second->ht_parameters.empty() ? "()" : ("("));
+
+                    lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", poss);
+                    break;
+                }
+                default:
+                    break;
+            }
         }
     }
 

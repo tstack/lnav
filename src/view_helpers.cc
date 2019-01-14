@@ -172,7 +172,7 @@ static void build_all_help_text()
     map<string, help_text *> sql_funcs;
     map<string, help_text *> sql_keywords;
 
-    for (auto iter : sqlite_function_help) {
+    for (const auto &iter : sqlite_function_help) {
         switch (iter.second->ht_context) {
             case HC_SQL_FUNCTION:
             case HC_SQL_TABLE_VALUED_FUNCTION:
@@ -186,7 +186,7 @@ static void build_all_help_text()
         }
     }
 
-    for (auto iter : sql_funcs) {
+    for (const auto &iter : sql_funcs) {
         all_help_text.append(2, '\n');
         format_help_text_for_term(*iter.second, 79, all_help_text);
         if (!iter.second->ht_example.empty()) {
@@ -195,7 +195,7 @@ static void build_all_help_text()
         }
     }
 
-    for (auto iter : sql_keywords) {
+    for (const auto &iter : sql_keywords) {
         all_help_text.append(2, '\n');
         format_help_text_for_term(*iter.second, 79, all_help_text);
         if (!iter.second->ht_example.empty()) {
