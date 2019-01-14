@@ -84,7 +84,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                 .append("\n");
             break;
         }
-        case HC_SQL_FUNCTION: {
+        case HC_SQL_FUNCTION:
+        case HC_SQL_TABLE_VALUED_FUNCTION: {
             bool needs_comma = false;
 
             out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
@@ -246,6 +247,35 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                 .append("\n");
         }
     }
+    if (!synopsis_only && !ht.ht_results.empty()) {
+        size_t max_result_name_width = 0;
+
+        for (auto &result : ht.ht_results) {
+            max_result_name_width = std::max(strlen(result.ht_name),
+                                            max_result_name_width);
+        }
+
+        out.append(ht.ht_results.size() == 1 ? "Result" : "Results",
+                   &view_curses::VC_STYLE,
+                   A_UNDERLINE)
+           .append("\n");
+
+        for (auto &result : ht.ht_results) {
+            if (!result.ht_summary) {
+                continue;
+            }
+
+            out.append(body_indent, ' ')
+               .append(result.ht_name,
+                       &view_curses::VC_STYLE,
+                       vc.attrs_for_role(view_colors::VCR_VARIABLE) | A_BOLD)
+               .append(max_result_name_width - strlen(result.ht_name), ' ')
+               .append("   ")
+               .append(attr_line_t::from_ansi_str(result.ht_summary),
+                       &(tws.with_indent(2 + max_result_name_width + 3)))
+               .append("\n");
+        }
+    }
     if (!synopsis_only && !ht.ht_tags.empty()) {
         vector<string> tags;
 
@@ -276,6 +306,7 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                         name = ":" + name;
                         break;
                     case HC_SQL_FUNCTION:
+                    case HC_SQL_TABLE_VALUED_FUNCTION:
                         name = name + "()";
                         break;
                     default:
@@ -346,6 +377,7 @@ void format_example_text_for_term(const help_text &ht, int width, attr_line_t &o
                     break;
                 case HC_SQL_KEYWORD:
                 case HC_SQL_FUNCTION:
+                case HC_SQL_TABLE_VALUED_FUNCTION:
                     readline_sqlite_highlighter(ex_line, 0);
                     prompt = ";";
                     break;

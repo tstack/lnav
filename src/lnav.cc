@@ -205,6 +205,24 @@ static const char *view_titles[LNV__MAX] = {
     "SPECTRO",
 };
 
+static std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
+    "match_index",
+    "capture_index",
+    "capture_count",
+    "range_start",
+    "range_stop",
+    "inode",
+    "device",
+    "inode",
+    "rowid",
+    "st_dev",
+    "st_ino",
+    "st_mode",
+    "st_rdev",
+    "st_uid",
+    "st_gid",
+};
+
 static void regenerate_unique_file_names()
 {
     unique_path_generator upg;
@@ -278,7 +296,7 @@ bool setup_logline_table(exec_context &ec)
 
     auto &db_key_names = lnav_data.ld_db_key_names;
 
-    db_key_names.clear();
+    db_key_names = DEFAULT_DB_KEY_NAMES;
 
     if (update_possibilities) {
         add_env_possibilities(LNM_SQL);
@@ -313,6 +331,13 @@ bool setup_logline_table(exec_context &ec)
                     string(func_def.zName) + (func_def.nArg ? "(" : "()"));
             }
         }
+
+        for (const auto &pair : sqlite_function_help) {
+            lnav_data.ld_rl_view->add_possibility(
+                LNM_SQL,
+                "*",
+                pair.first + (pair.second->ht_parameters.empty() ? "()" : ("(")));
+        }
     }
 
     walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
@@ -320,16 +345,6 @@ bool setup_logline_table(exec_context &ec)
     for (const auto &iter : *lnav_data.ld_vtab_manager) {
         iter.second->get_foreign_keys(db_key_names);
     }
-
-    db_key_names.emplace_back("device");
-    db_key_names.emplace_back("inode");
-    db_key_names.emplace_back("rowid");
-    db_key_names.emplace_back("st_dev");
-    db_key_names.emplace_back("st_ino");
-    db_key_names.emplace_back("st_mode");
-    db_key_names.emplace_back("st_rdev");
-    db_key_names.emplace_back("st_uid");
-    db_key_names.emplace_back("st_gid");
 
     stable_sort(db_key_names.begin(), db_key_names.end());
 
@@ -1798,6 +1813,10 @@ int main(int argc, char *argv[])
     add_ansi_vars(ec.ec_global_vars);
 
     rl_readline_name = "lnav";
+    lnav_data.ld_db_key_names = DEFAULT_DB_KEY_NAMES;
+
+    stable_sort(lnav_data.ld_db_key_names.begin(),
+                lnav_data.ld_db_key_names.end());
 
     ensure_dotlnav();
 

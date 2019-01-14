@@ -48,18 +48,18 @@ struct lnav_file : public tvt_iterator_cursor<lnav_file> {
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's open file list through this table.
 CREATE TABLE lnav_file (
-    device integer,
-    inode integer,
-    filepath text,
-    format text,
-    lines integer
+    device integer,    -- The device the file is stored on.
+    inode integer,     -- The inode for the file on the device.
+    filepath text,     -- The path to the file.
+    format text,       -- The log file format for the file.
+    lines integer      -- The number of lines in the file.
 );
 )";
 
     struct vtab {
         sqlite3_vtab base;
 
-        operator sqlite3_vtab *() {
+        explicit operator sqlite3_vtab *() {
             return &this->base;
         };
     };
@@ -82,24 +82,22 @@ CREATE TABLE lnav_file (
 
         switch (col) {
             case 0:
-                sqlite3_result_int(ctx, st.st_dev);
+                to_sqlite(ctx, st.st_dev);
                 break;
             case 1:
-                sqlite3_result_int(ctx, st.st_ino);
+                to_sqlite(ctx, (int64_t) st.st_ino);
                 break;
             case 2:
-                sqlite3_result_text(ctx, name.c_str(), name.size(),
-                                    SQLITE_TRANSIENT);
+                to_sqlite(ctx, name);
                 break;
             case 3:
-                if (format_name != nullptr) {
-                    sqlite3_result_text(ctx, format_name, -1, SQLITE_STATIC);
-                } else {
-                    sqlite3_result_null(ctx);
-                }
+                to_sqlite(ctx, format_name);
                 break;
             case 4:
-                sqlite3_result_int(ctx, lf->size());
+                to_sqlite(ctx, (int64_t) lf->size());
+                break;
+            default:
+                ensure(0);
                 break;
         }
 

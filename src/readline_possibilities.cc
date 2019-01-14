@@ -39,6 +39,7 @@
 #include "sysclip.hh"
 #include "yajlpp_def.hh"
 #include "lnav_config.hh"
+#include "sqlite-extension-func.hh"
 
 #include "readline_possibilities.hh"
 
@@ -74,7 +75,11 @@ static int handle_table_list(void *ptr,
                              char **colnames)
 {
     if (lnav_data.ld_rl_view != nullptr) {
-        lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[0]);
+        string table_name = colvalues[0];
+
+        if (sqlite_function_help.count(table_name) == 0) {
+            lnav_data.ld_rl_view->add_possibility(LNM_SQL, "*", colvalues[0]);
+        }
 
         lnav_data.ld_table_ddl[colvalues[0]] = colvalues[1];
     }

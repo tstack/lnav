@@ -175,6 +175,7 @@ static void build_all_help_text()
     for (auto iter : sqlite_function_help) {
         switch (iter.second->ht_context) {
             case HC_SQL_FUNCTION:
+            case HC_SQL_TABLE_VALUED_FUNCTION:
                 sql_funcs[iter.second->ht_name] = iter.second;
                 break;
             case HC_SQL_KEYWORD:
@@ -190,7 +191,7 @@ static void build_all_help_text()
         format_help_text_for_term(*iter.second, 79, all_help_text);
         if (!iter.second->ht_example.empty()) {
             all_help_text.append(1, '\n');
-            format_example_text_for_term(*iter.second, 79, all_help_text);
+            format_example_text_for_term(*iter.second, 90, all_help_text);
         }
     }
 
@@ -333,7 +334,8 @@ void execute_examples()
             string alt_msg;
 
             switch (ht.ht_context) {
-                case HC_SQL_FUNCTION: {
+                case HC_SQL_FUNCTION:
+                case HC_SQL_TABLE_VALUED_FUNCTION: {
                     execute_sql(ec, ex.he_cmd, alt_msg);
 
                     if (dls.dls_rows.size() == 1 &&

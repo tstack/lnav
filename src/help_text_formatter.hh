@@ -39,9 +39,11 @@
 enum help_context_t {
     HC_NONE,
     HC_PARAMETER,
+    HC_RESULT,
     HC_COMMAND,
     HC_SQL_KEYWORD,
     HC_SQL_FUNCTION,
+    HC_SQL_TABLE_VALUED_FUNCTION,
 };
 
 enum help_nargs_t {
@@ -72,6 +74,7 @@ struct help_text {
     const char *ht_flag_name{nullptr};
     const char *ht_description{nullptr};
     std::vector<struct help_text> ht_parameters;
+    std::vector<struct help_text> ht_results;
     std::vector<struct help_example> ht_example;
     help_nargs_t ht_nargs{HN_REQUIRED};
     help_parameter_format_t ht_format{HPF_STRING};
@@ -102,6 +105,11 @@ struct help_text {
         return *this;
     };
 
+    help_text &sql_table_valued_function() {
+        this->ht_context = HC_SQL_TABLE_VALUED_FUNCTION;
+        return *this;
+    };
+
     help_text &sql_keyword() {
         this->ht_context = HC_SQL_KEYWORD;
         return *this;
@@ -128,6 +136,12 @@ struct help_text {
     help_text &with_parameter(const help_text &ht) {
         this->ht_parameters.emplace_back(ht);
         this->ht_parameters.back().ht_context = HC_PARAMETER;
+        return *this;
+    };
+
+    help_text &with_result(const help_text &ht) {
+        this->ht_results.emplace_back(ht);
+        this->ht_results.back().ht_context = HC_RESULT;
         return *this;
     };
 

@@ -59,12 +59,12 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
 {
     int lpc;
 
-    assert(db != NULL);
-    assert(reg_funcs != NULL);
+    assert(db != nullptr);
+    assert(reg_funcs != nullptr);
     
     for (lpc = 0; reg_funcs[lpc]; lpc++) {
-        struct FuncDef *basic_funcs = NULL;
-        struct FuncDefAgg *agg_funcs = NULL;
+        struct FuncDef *basic_funcs = nullptr;
+        struct FuncDefAgg *agg_funcs = nullptr;
         int i;
 
         reg_funcs[lpc](&basic_funcs, &agg_funcs);

@@ -58,6 +58,8 @@ struct regexp_capture {
     using iterator = vector<logfile *>::iterator;
 
     static constexpr const char *CREATE_STMT = R"(
+-- The regexp_capture() table-valued function allows you to execute a regular-
+-- expression over a given string and get the captured data as rows in a table.
 CREATE TABLE regexp_capture (
     match_index integer,
     capture_index integer,
@@ -244,6 +246,34 @@ static int rcFilter(sqlite3_vtab_cursor *pVtabCursor,
 int register_regexp_vtab(sqlite3 *db)
 {
     static vtab_module<tvt_no_update<regexp_capture>> REGEXP_CAPTURE_MODULE;
+    static help_text regexp_capture_help = help_text("regexp_capture",
+        "A table-valued function that executes a regular-expression over a "
+        "string and returns the captured values.  If the regex only matches a "
+        "subset of the input string, it will be rerun on the remaining parts "
+        "of the string until no more matches are found.")
+        .sql_table_valued_function()
+        .with_parameter({"string",
+                         "The string to match against the given pattern."})
+        .with_parameter({"pattern",
+                         "The regular expression to match."})
+        .with_result({"match_index",
+                      "The match iteration.  This value will increase "
+                      "each time a new match is found in the input string."})
+        .with_result({"capture_index",
+                      "The index of the capture in the regex."})
+        .with_result({"capture_name",
+                      "The name of the capture in the regex."})
+        .with_result({"capture_count",
+                      "The total number of captures in the regex."})
+        .with_result({"range_start",
+                      "The start of the capture in the input string."})
+        .with_result({"range_stop",
+                      "The stop of the capture in the input string."})
+        .with_result({"content",
+                      "The captured value from the string."})
+        .with_tags({"string"})
+        .with_example({
+            "SELECT * FROM regexp_capture('a=1; b=2', '(\\w+)=(\\d+)')"});
 
     int rc;
 
@@ -251,6 +281,8 @@ int register_regexp_vtab(sqlite3 *db)
     REGEXP_CAPTURE_MODULE.vm_module.xFilter = rcFilter;
 
     rc = REGEXP_CAPTURE_MODULE.create(db, "regexp_capture");
+    sqlite_function_help.insert(make_pair("regexp_capture", &regexp_capture_help));
+    regexp_capture_help.index_tags();
 
     ensure(rc == SQLITE_OK);
 

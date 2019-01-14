@@ -505,7 +505,7 @@ struct vtab_module {
                           char **pzErr) {
         static typename T::vtab vt;
 
-        *pp_vt = vt;
+        *pp_vt = (sqlite3_vtab *) vt;
 
         return sqlite3_declare_vtab(db, T::CREATE_STMT);
     };
