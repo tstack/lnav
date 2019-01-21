@@ -67,7 +67,7 @@ public:
 
     void rl_display_next(readline_curses *rc);
 
-    readline_context filter_context{"filter"};
+    readline_context filter_context{"filter", nullptr, false};
     readline_curses fss_editor;
     plain_text_source fss_match_source;
     textview_curses fss_match_view;

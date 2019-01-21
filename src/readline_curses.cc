@@ -221,46 +221,40 @@ char *readline_context::completion_generator(const char *text, int state)
 {
     static vector<string> matches;
 
-    char *retval = NULL;
+    char *retval = nullptr;
 
     if (state == 0) {
-        int len = strlen(text);
+        auto len = strlen(text);
 
         matches.clear();
-        if (arg_possibilities != NULL) {
-            set<string>::iterator iter;
+        if (arg_possibilities != nullptr) {
+            for (const auto &poss : (*arg_possibilities)) {
+                auto cmpfunc = (loaded_context->is_case_sensitive() ?
+                                strncmp : strncasecmp);
+                auto poss_str = poss.c_str();
 
-            for (iter = arg_possibilities->begin();
-                 iter != arg_possibilities->end();
-                 ++iter) {
-                int (*cmpfunc)(const char *, const char *, size_t);
-                const char *poss_str = iter->c_str();
-
-                cmpfunc = (loaded_context->is_case_sensitive() ?
-                           strncmp : strncasecmp);
                 // Check for an exact match and for the quoted version.
                 if (cmpfunc(text, poss_str, len) == 0 ||
-                    ((strchr(loaded_context->rc_quote_chars, poss_str[0]) != NULL) &&
+                    ((strchr(loaded_context->rc_quote_chars, poss_str[0]) !=
+                        nullptr) &&
                      cmpfunc(text, &poss_str[1], len) == 0)) {
-                    matches.push_back(*iter);
+                    matches.push_back(poss);
                 }
             }
 
             if (matches.empty()) {
                 vector<pair<int, string>> fuzzy_matches;
 
-                for (iter = arg_possibilities->begin();
-                     iter != arg_possibilities->end();
-                     ++iter) {
-                    const char *poss_str = iter->c_str();
+                for (const auto &poss : (*arg_possibilities)) {
+                    string poss_str = tolower(poss);
                     int score;
 
-                    if (fts::fuzzy_match(text, poss_str, score) && score > 0) {
-                        log_debug("match score %d %s %s", score, text, poss_str);
+                    if (fts::fuzzy_match(text, poss_str.c_str(), score) && score > 0) {
+                        log_debug("match score %d %s %s", score, text, poss.c_str());
                         if (score <= 0) {
                             continue;
                         }
-                        fuzzy_matches.emplace_back(score, *iter);
+                        fuzzy_matches.emplace_back(score, poss);
                     }
                 }
 
@@ -270,7 +264,7 @@ char *readline_context::completion_generator(const char *text, int state)
 
                     int highest = fuzzy_matches[0].first;
 
-                    for (auto pair : fuzzy_matches) {
+                    for (const auto &pair : fuzzy_matches) {
                         if (highest - pair.first < FUZZY_PEER_THRESHOLD) {
                             matches.push_back(pair.second);
                         } else {
@@ -408,6 +402,7 @@ readline_curses::~readline_curses()
 void readline_curses::store_matches(
     char **matches, int num_matches, int max_len)
 {
+    static int match_index = 0;
     char msg[64];
     int rc;
 
@@ -417,11 +412,15 @@ void readline_curses::store_matches(
     }
 
     if (last_match_str_valid && strcmp(last_match_str.c_str(), matches[0]) == 0) {
-        if (sendstring(child_this->rc_command_pipe[RCF_SLAVE], "n", 1) == -1) {
+        match_index += 1;
+        rc = snprintf(msg, sizeof(msg), "n:%d", match_index);
+
+        if (sendstring(child_this->rc_command_pipe[RCF_SLAVE], msg, rc) == -1) {
             _exit(1);
         }
     }
     else {
+        match_index = 0;
         rc = snprintf(msg, sizeof(msg),
                       "m:%d:%d:%d",
                       completion_start, num_matches, max_len);
@@ -837,6 +836,13 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 if (this->rc_matches_remaining == 0) {
                     this->rc_display_match.invoke(this);
                 }
+                this->rc_match_index = 0;
+            }
+            else if (msg[0] == 'n') {
+                if (sscanf(msg, "n:%d", &this->rc_match_index) != 1) {
+                    require(0);
+                }
+                this->rc_display_next.invoke(this);
             }
             else {
                 switch (msg[0]) {
@@ -880,10 +886,6 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     this->rc_line_buffer = &msg[2];
                     this->rc_change.invoke(this);
                     this->rc_display_match.invoke(this);
-                    break;
-
-                case 'n':
-                    this->rc_display_next.invoke(this);
                     break;
                 }
             }
@@ -944,6 +946,7 @@ void readline_curses::abort()
 {
     char buffer[1024];
 
+    this->vc_x = 0;
     snprintf(buffer, sizeof(buffer), "a");
     if (sendstring(this->rc_command_pipe[RCF_MASTER],
                    buffer,

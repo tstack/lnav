@@ -57,30 +57,32 @@ using namespace std;
 
 static const char *LOG_METADATA_NAME = "log_metadata.db";
 
-static const char *BOOKMARK_TABLE_DEF =
-    "CREATE TABLE IF NOT EXISTS bookmarks (\n"
-    "    log_time datetime,\n"
-    "    log_format varchar(64),\n"
-    "    log_hash varchar(128),\n"
-    "    session_time integer,\n"
-    "    part_name text,\n"
-    "    access_time datetime DEFAULT CURRENT_TIMESTAMP,\n"
-    "    comment text DEFAULT '',\n"
-    "    tags text DEFAULT '',\n"
-    "\n"
-    "    PRIMARY KEY (log_time, log_format, log_hash, session_time)\n"
-    ");\n"
-    "CREATE TABLE IF NOT EXISTS time_offset (\n"
-    "    log_time datetime,\n"
-    "    log_format varchar(64),\n"
-    "    log_hash varchar(128),\n"
-    "    session_time integer,\n"
-    "    offset_sec integer,\n"
-    "    offset_usec integer,\n"
-    "    access_time datetime DEFAULT CURRENT_TIMESTAMP,\n"
-    "\n"
-    "    PRIMARY KEY (log_time, log_format, log_hash, session_time)\n"
-    ");\n";
+static const char *BOOKMARK_TABLE_DEF = R"(
+CREATE TABLE IF NOT EXISTS bookmarks (
+    log_time datetime,
+    log_format varchar(64),
+    log_hash varchar(128),
+    session_time integer,
+    part_name text,
+    access_time datetime DEFAULT CURRENT_TIMESTAMP,
+    comment text DEFAULT '',
+    tags text DEFAULT '',
+
+    PRIMARY KEY (log_time, log_format, log_hash, session_time)
+);
+
+CREATE TABLE IF NOT EXISTS time_offset (
+    log_time datetime,
+    log_format varchar(64),
+    log_hash varchar(128),
+    session_time integer,
+    offset_sec integer,
+    offset_usec integer,
+    access_time datetime DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (log_time, log_format, log_hash, session_time)
+);
+)";
 
 static const char *BOOKMARK_LRU_STMT =
     "DELETE FROM bookmarks WHERE access_time <= "
@@ -98,68 +100,84 @@ static const size_t MAX_SESSION_FILE_COUNT = 256;
 static std::vector<content_line_t> marked_session_lines;
 static std::vector<content_line_t> offset_session_lines;
 
+int bind_to_sqlite(sqlite3_stmt *stmt, int index, const struct timeval &tv)
+{
+    char timestamp[64];
+
+    sql_strftime(timestamp, sizeof(timestamp), tv, 'T');
+
+    return sqlite3_bind_text(stmt, index, timestamp, -1, SQLITE_TRANSIENT);
+}
+
+int bind_to_sqlite(sqlite3_stmt *stmt, int index, const char *str)
+{
+    return sqlite3_bind_text(stmt, index, str, -1, SQLITE_TRANSIENT);
+}
+
+int bind_to_sqlite(sqlite3_stmt *stmt, int index, intern_string_t ist)
+{
+    return sqlite3_bind_text(stmt, index, ist.get(), ist.size(), SQLITE_TRANSIENT);
+}
+
+int bind_to_sqlite(sqlite3_stmt *stmt, int index, const string &str)
+{
+    return sqlite3_bind_text(stmt, index, str.c_str(), str.size(), SQLITE_TRANSIENT);
+}
+
+int bind_to_sqlite(sqlite3_stmt *stmt, int index, int64_t i)
+{
+    return sqlite3_bind_int64(stmt, index, i);
+}
+
+template <typename... Args, std::size_t... Idx>
+int bind_values_helper(sqlite3_stmt *stmt, std::index_sequence<Idx...> idxs, Args ... args) {
+    int rcs[] = { bind_to_sqlite(stmt, Idx + 1, args)... };
+
+    for (int lpc = 0; lpc < idxs.size(); lpc++) {
+        if (rcs[lpc] != SQLITE_OK) {
+            log_error("Failed to bind column %d in statement: %s", lpc, sqlite3_sql(stmt));
+            return rcs[lpc];
+        }
+    }
+
+    return SQLITE_OK;
+}
+
+template <typename... Args>
+int bind_values(sqlite3_stmt *stmt, Args ... args) {
+    return bind_values_helper(stmt, std::make_index_sequence<sizeof...(Args)>(), args...);
+}
+
 static bool bind_line(sqlite3 *db,
                       sqlite3_stmt *stmt,
                       content_line_t cl,
                       time_t session_time)
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
-    logfile::iterator line_iter;
     shared_ptr<logfile> lf;
 
     lf = lss.find(cl);
 
-    if (lf == NULL) {
+    if (lf == nullptr) {
         return false;
     }
-
-    line_iter = lf->begin() + cl;
-
-    char timestamp[64];
 
     sqlite3_clear_bindings(stmt);
 
-    sql_strftime(timestamp, sizeof(timestamp),
-                 lf->original_line_time(line_iter), 'T');
-    if (sqlite3_bind_text(stmt, 1,
-                          timestamp, strlen(timestamp),
-                          SQLITE_TRANSIENT) != SQLITE_OK) {
-        log_error("could not bind log time -- %s\n",
-                sqlite3_errmsg(db));
-        return false;
-    }
-
-    intern_string_t format_name = lf->get_format()->get_name();
-
-    if (sqlite3_bind_text(stmt, 2,
-                          format_name.get(), format_name.size(),
-                          SQLITE_TRANSIENT) != SQLITE_OK) {
-        log_error("could not bind log format -- %s\n",
-                    sqlite3_errmsg(db));
-        return false;
-    }
-
+    auto line_iter = lf->begin() + cl;
     shared_buffer_ref sbr;
     lf->read_line(line_iter, sbr);
     std::string line_hash = hash_bytes(sbr.get_data(), sbr.length(),
                                        &cl, sizeof(cl),
                                        NULL);
 
-    if (sqlite3_bind_text(stmt, 3,
-                          line_hash.c_str(), line_hash.length(),
-                          SQLITE_TRANSIENT) != SQLITE_OK) {
-        log_error("could not bind log hash -- %s\n",
-                sqlite3_errmsg(db));
-        return false;
-    }
+    int rc = bind_values(stmt,
+                         lf->original_line_time(line_iter),
+                         lf->get_format()->get_name(),
+                         line_hash,
+                         session_time);
 
-    if (sqlite3_bind_int64(stmt, 4, session_time) != SQLITE_OK) {
-        log_error("could not bind session time -- %s\n",
-                sqlite3_errmsg(db));
-        return false;
-    }
-
-    return true;
+    return rc == SQLITE_OK;
 }
 
 struct session_file_info {
@@ -187,7 +205,7 @@ struct session_file_info {
     string sfi_path;
 };
 
-static void cleanup_session_data(void)
+static void cleanup_session_data()
 {
     static_root_mem<glob_t, globfree>   session_file_list;
     std::list<struct session_file_info> session_info_list;
@@ -198,7 +216,7 @@ static void cleanup_session_data(void)
 
     if (glob(session_file_pattern.c_str(),
              0,
-             NULL,
+             nullptr,
              session_file_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < session_file_list->gl_pathc; lpc++) {
             const char *path = session_file_list->gl_pathv[lpc];
@@ -214,8 +232,7 @@ static void cleanup_session_data(void)
             if (sscanf(base, "file-%63[^.].ts%d.json",
                        hash_id, &timestamp) == 2) {
                 session_count[hash_id] += 1;
-                session_info_list.push_back(session_file_info(
-                                                timestamp, hash_id, path));
+                session_info_list.emplace_back(timestamp, hash_id, path);
             }
             if (sscanf(base,
                        "view-info-%63[^.].ts%d.ppid%*d.json",
@@ -269,19 +286,17 @@ static void cleanup_session_data(void)
     }
 }
 
-void init_session(void)
+void init_session()
 {
     byte_array<2, uint64> hash;
     SpookyHash context;
 
-    lnav_data.ld_session_time = time(NULL);
+    lnav_data.ld_session_time = time(nullptr);
 
     context.Init(0, 0);
     hash_updater updater(&context);
-    for (auto iter = lnav_data.ld_file_names.begin();
-         iter != lnav_data.ld_file_names.end();
-         ++iter) {
-        updater(iter->first);
+    for (auto &ld_file_name : lnav_data.ld_file_names) {
+        updater(ld_file_name.first);
     }
     context.Final(hash.out(0), hash.out(1));
 
@@ -291,7 +306,7 @@ void init_session(void)
         lnav_data.ld_session_id.c_str());
 }
 
-void scan_sessions(void)
+void scan_sessions()
 {
     std::list<session_pair_t> &session_file_names =
         lnav_data.ld_session_file_names;
@@ -370,7 +385,7 @@ void scan_sessions(void)
     }
 }
 
-static void load_time_bookmarks(void)
+static void load_time_bookmarks()
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();
@@ -387,8 +402,8 @@ static void load_time_bookmarks(void)
         return;
     }
 
-    for (const char *stmt : UPGRADE_STMTS) {
-        if (sqlite3_exec(db.in(), stmt, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
+    for (const char *upgrade_stmt : UPGRADE_STMTS) {
+        if (sqlite3_exec(db.in(), upgrade_stmt, nullptr, nullptr, errmsg.out()) != SQLITE_OK) {
             log_error("unable to upgrade bookmark table -- %s\n", errmsg.in());
         }
     }
@@ -410,54 +425,25 @@ static void load_time_bookmarks(void)
     for (file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
-        char low_timestamp[64], high_timestamp[64];
         shared_ptr<logfile> lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
-        if (lf == NULL)
+        if (lf == nullptr) {
             continue;
+        }
 
         base_content_line = lss.get_file_base_content_line(file_iter);
 
-        auto line_iter = lf->begin();
+        auto low_line_iter = lf->begin();
+        auto high_line_iter = lf->end();
 
-        sql_strftime(low_timestamp, sizeof(low_timestamp),
-                     lf->original_line_time(line_iter), 'T');
+        --high_line_iter;
 
-        if (sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time) != SQLITE_OK) {
-            log_error("could not bind session time -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        if (sqlite3_bind_text(stmt.in(), 2,
-                              low_timestamp, strlen(low_timestamp),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind low log time -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        line_iter = lf->end();
-        --line_iter;
-        sql_strftime(high_timestamp, sizeof(high_timestamp),
-                     lf->original_line_time(line_iter), 'T');
-
-        if (sqlite3_bind_text(stmt.in(), 3,
-                              high_timestamp, strlen(high_timestamp),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind high log time -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        intern_string_t format_name = lf->get_format()->get_name();
-
-        if (sqlite3_bind_text(stmt.in(), 4,
-                              format_name.get(), format_name.size(),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind log format -- %s\n",
-                    sqlite3_errmsg(db.in()));
+        if (bind_values(stmt.in(),
+                        lnav_data.ld_session_load_time,
+                        lf->original_line_time(low_line_iter),
+                        lf->original_line_time(high_line_iter),
+                        lf->get_format()->get_name()) != SQLITE_OK) {
             return;
         }
 
@@ -493,7 +479,7 @@ static void load_time_bookmarks(void)
                     continue;
                 }
 
-                if (part_name == NULL) {
+                if (part_name == nullptr) {
                     continue;
                 }
 
@@ -501,7 +487,7 @@ static void load_time_bookmarks(void)
                     continue;
                 }
 
-                line_iter = lower_bound(lf->begin(), lf->end(), log_tv);
+                auto line_iter = lower_bound(lf->begin(), lf->end(), log_tv);
                 while (line_iter != lf->end()) {
                     struct timeval line_tv = line_iter->get_timeval();
 
@@ -603,55 +589,25 @@ static void load_time_bookmarks(void)
     for (file_iter = lnav_data.ld_log_source.begin();
          file_iter != lnav_data.ld_log_source.end();
          ++file_iter) {
-        char low_timestamp[64], high_timestamp[64];
         shared_ptr<logfile> lf = (*file_iter)->get_file();
         content_line_t base_content_line;
 
-        if (lf == NULL) {
+        if (lf == nullptr) {
             continue;
         }
 
         lss.find(lf->get_filename().c_str(), base_content_line);
 
-        logfile::iterator line_iter = lf->begin();
+        auto low_line_iter = lf->begin();
+        auto high_line_iter = lf->end();
 
-        sql_strftime(low_timestamp, sizeof(low_timestamp),
-                     lf->original_line_time(line_iter), 'T');
+        --high_line_iter;
 
-        if (sqlite3_bind_int64(stmt.in(), 1, lnav_data.ld_session_load_time) != SQLITE_OK) {
-            log_error("could not bind session time -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        if (sqlite3_bind_text(stmt.in(), 2,
-                              low_timestamp, strlen(low_timestamp),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind low log time -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        line_iter = lf->end();
-        --line_iter;
-        sql_strftime(high_timestamp, sizeof(high_timestamp),
-                     lf->original_line_time(line_iter), 'T');
-
-        if (sqlite3_bind_text(stmt.in(), 3,
-                              high_timestamp, strlen(high_timestamp),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind high log time -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        intern_string_t format_name = lf->get_format()->get_name();
-
-        if (sqlite3_bind_text(stmt.in(), 4,
-                              format_name.get(), format_name.size(),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind log format -- %s\n",
-                    sqlite3_errmsg(db.in()));
+        if (bind_values(stmt.in(),
+                        lnav_data.ld_session_load_time,
+                        lf->original_line_time(low_line_iter),
+                        lf->original_line_time(high_line_iter),
+                        lf->get_format()->get_name()) != SQLITE_OK) {
             return;
         }
 
@@ -688,13 +644,13 @@ static void load_time_bookmarks(void)
                     continue;
                 }
 
-                if (!dts.scan(log_time, strlen(log_time), NULL, &log_tm, log_tv)) {
+                if (!dts.scan(log_time, strlen(log_time), nullptr, &log_tm, log_tv)) {
                     continue;
                 }
 
-                line_iter = lower_bound(lf->begin(),
-                                        lf->end(),
-                                        log_tv);
+                auto line_iter = lower_bound(lf->begin(),
+                                             lf->end(),
+                                             log_tv);
                 while (line_iter != lf->end()) {
                     struct timeval line_tv = line_iter->get_timeval();
 
@@ -862,7 +818,7 @@ static struct json_path_handler view_info_handlers[] = {
     json_path_handler()
 };
 
-void load_session(void)
+void load_session()
 {
     std::list<session_pair_t>::iterator sess_iter;
     yajl_handle          handle;
@@ -998,7 +954,7 @@ static void save_user_bookmarks(
 
 }
 
-static void save_time_bookmarks(void)
+static void save_time_bookmarks()
 {
     auto_mem<sqlite3, sqlite_close_wrapper> db;
     string db_path = dotlnav_path(LOG_METADATA_NAME);
@@ -1076,7 +1032,7 @@ static void save_time_bookmarks(void)
             shared_ptr<logfile> lf = (*file_iter)->get_file();
             content_line_t base_content_line;
 
-            if (lf == NULL)
+            if (lf == nullptr)
                 continue;
 
             base_content_line = lss.get_file_base_content_line(file_iter);
@@ -1161,8 +1117,9 @@ static void save_time_bookmarks(void)
             shared_ptr<logfile> lf = (*file_iter)->get_file();
             content_line_t base_content_line;
 
-            if (lf == NULL)
+            if (lf == nullptr) {
                 continue;
+            }
 
             base_content_line = lss.get_file_base_content_line(file_iter);
 
@@ -1202,62 +1159,20 @@ static void save_time_bookmarks(void)
 
         shared_ptr<logfile> lf = ls->get_file();
 
-        if (!lf->is_time_adjusted())
+        if (!lf->is_time_adjusted()) {
             continue;
+        }
 
         line_iter = lf->begin() + lf->get_time_offset_line();
-
-        char timestamp[64];
-
-        sql_strftime(timestamp, sizeof(timestamp),
-                     lf->original_line_time(line_iter), 'T');
-        if (sqlite3_bind_text(stmt.in(), 1,
-                              timestamp, strlen(timestamp),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind log time -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        intern_string_t format_name = lf->get_format()->get_name();
-
-        if (sqlite3_bind_text(stmt.in(), 2,
-                              format_name.get(), format_name.size(),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind log format -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        std::string line_hash = hash_string(lf->read_line(line_iter));
-
-        if (sqlite3_bind_text(stmt.in(), 3,
-                              line_hash.c_str(), line_hash.length(),
-                              SQLITE_TRANSIENT) != SQLITE_OK) {
-            log_error("could not bind log hash -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        if (sqlite3_bind_int64(stmt.in(), 4, lnav_data.ld_session_time) != SQLITE_OK) {
-            log_error("could not bind session time -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
         struct timeval offset = lf->get_time_offset();
 
-        if (sqlite3_bind_int64(stmt.in(), 5, offset.tv_sec) != SQLITE_OK) {
-            log_error("could not bind offset_sec -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
-
-        if (sqlite3_bind_int64(stmt.in(), 6, offset.tv_usec) != SQLITE_OK) {
-            log_error("could not bind offset_usec -- %s\n",
-                    sqlite3_errmsg(db.in()));
-            return;
-        }
+        bind_values(stmt.in(),
+                    lf->original_line_time(line_iter),
+                    lf->get_format()->get_name(),
+                    hash_string(lf->read_line(line_iter)),
+                    lnav_data.ld_session_time,
+                    offset.tv_sec,
+                    offset.tv_usec);
 
         if (sqlite3_step(stmt.in()) != SQLITE_DONE) {
             log_error(
@@ -1280,13 +1195,13 @@ static void save_time_bookmarks(void)
     }
 }
 
-void save_session(void)
+void save_session()
 {
     string view_file_name, view_file_tmp_name;
 
     auto_mem<FILE> file(fclose);
     char           view_base_name[256];
-    yajl_gen       handle = NULL;
+    yajl_gen       handle = nullptr;
 
     save_time_bookmarks();
 
@@ -1301,10 +1216,10 @@ void save_session(void)
     view_file_name     = dotlnav_path(view_base_name);
     view_file_tmp_name = view_file_name + ".tmp";
 
-    if ((file = fopen(view_file_tmp_name.c_str(), "w")) == NULL) {
+    if ((file = fopen(view_file_tmp_name.c_str(), "w")) == nullptr) {
         perror("Unable to open session file");
     }
-    else if ((handle = yajl_gen_alloc(NULL)) == NULL) {
+    else if (nullptr == (handle = yajl_gen_alloc(nullptr))) {
         perror("Unable to create yajl_gen object");
     }
     else {
@@ -1315,7 +1230,7 @@ void save_session(void)
             yajlpp_map root_map(handle);
 
             root_map.gen("save-time");
-            root_map.gen((long long)time(NULL));
+            root_map.gen((long long) time(NULL));
 
             root_map.gen("time-offset");
             root_map.gen(lnav_data.ld_log_source.is_time_offset_enabled());
@@ -1361,7 +1276,7 @@ void save_session(void)
                     view_map.gen(tc.get_word_wrap());
 
                     text_sub_source *tss = tc.get_sub_source();
-                    if (tss == NULL) {
+                    if (tss == nullptr) {
                         continue;
                     }
 
@@ -1398,7 +1313,7 @@ void save_session(void)
 
                     if (lpc == LNV_LOG) {
                         for (auto format : log_format::get_root_formats()) {
-                            external_log_format *elf = dynamic_cast<external_log_format *>(format);
+                            auto *elf = dynamic_cast<external_log_format *>(format);
 
                             if (elf == nullptr) {
                                 continue;
@@ -1499,13 +1414,13 @@ void reset_session()
     }
 
     for (auto format : log_format::get_root_formats()) {
-        external_log_format *elf = dynamic_cast<external_log_format *>(format);
+        auto *elf = dynamic_cast<external_log_format *>(format);
 
         if (elf == nullptr) {
             continue;
         }
 
-        for (auto vd : elf->elf_value_defs) {
+        for (const auto &vd : elf->elf_value_defs) {
             vd.second->vd_user_hidden = false;
         }
     }

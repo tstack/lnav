@@ -158,7 +158,6 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.focus(LNM_FILTER, "", "");
             this->fss_filter_state = true;
             ef->disable();
-            tss->text_filters_changed();
             return true;
         }
         case 'o': {
@@ -188,7 +187,6 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.focus(LNM_FILTER, "", "");
             this->fss_filter_state = true;
             ef->disable();
-            tss->text_filters_changed();
             return true;
         }
         case '\r':
@@ -352,7 +350,7 @@ void filter_sub_source::rl_change(readline_curses *rc)
             view_colors::ansi_color_pair(COLOR_BLACK, color) | A_BLINK);
 
         hm["$preview"] = hl;
-        top_view->reload_data();
+        top_view->set_needs_update();
         lnav_data.ld_filter_status_source.tss_error.clear();
     }
 }

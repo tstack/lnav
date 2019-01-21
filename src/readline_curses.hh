@@ -392,12 +392,9 @@ public:
     }
 
     std::string get_match_string() const {
-        size_t space_index = this->rc_line_buffer.find(' ', this->rc_match_start);
+        auto len = this->vc_x - this->rc_match_start;
 
-        if (space_index > 0) {
-            space_index = space_index - this->rc_match_start;
-        }
-        return this->rc_line_buffer.substr(this->rc_match_start, space_index);
+        return this->rc_line_buffer.substr(this->rc_match_start, len);
     }
 
     int get_max_match_length() const {
@@ -428,6 +425,7 @@ private:
     int rc_match_start{0};
     int rc_matches_remaining;
     int rc_max_match_length;
+    int rc_match_index{0};
     std::vector<std::string> rc_matches;
 
     action rc_change;
