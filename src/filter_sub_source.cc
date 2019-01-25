@@ -464,3 +464,9 @@ void filter_sub_source::rl_display_next(readline_curses *rc)
         tc.shift_top(tc.get_height());
     }
 }
+
+void filter_sub_source::list_input_handle_scroll_out(listview_curses &lv)
+{
+    lnav_data.ld_mode = LNM_PAGING;
+    lnav_data.ld_filter_view.reload_data();
+}

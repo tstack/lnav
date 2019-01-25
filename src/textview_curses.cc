@@ -299,12 +299,11 @@ void textview_curses::textview_value_for_row(vis_line_t row,
                 sattr.sa_range.length() > 3) {
                 struct line_range &lr = sattr.sa_range;
 
-                str.replace(lr.lr_start, lr.length(), "...");
+                str.replace(lr.lr_start, lr.length(), "\xE2\x8B\xAE");
                 shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
-                sattr.sa_type = &VC_GRAPHIC;
+                sattr.sa_type = &VC_STYLE;
                 sattr.sa_value.sav_int =
-                    vc.attrs_for_role(view_colors::VCR_HIDDEN) |
-                    ACS_BULLET | A_UNDERLINE;
+                    vc.attrs_for_role(view_colors::VCR_HIDDEN);
                 lr.lr_end = lr.lr_start + 3;
 
                 for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {

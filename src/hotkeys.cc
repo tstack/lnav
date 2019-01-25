@@ -40,14 +40,14 @@
 #include "session_data.hh"
 #include "command_executor.hh"
 #include "termios_guard.hh"
+#include "readline_callbacks.hh"
 #include "readline_possibilities.hh"
+#include "readline_highlighters.hh"
 #include "field_overlay_source.hh"
 #include "hotkeys.hh"
 #include "log_format_loader.hh"
 
 using namespace std;
-
-static bookmark_type_t BM_EXAMPLE("");
 
 class logline_helper {
 
@@ -59,7 +59,7 @@ public:
     logline &move_to_msg_start() {
         content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
         std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
-        logfile::iterator ll = lf->begin() + cl;
+        auto ll = lf->begin() + cl;
         while (ll->is_continued()) {
             --ll;
             --this->lh_current_line;
@@ -683,7 +683,7 @@ void handle_paging_key(int ch)
                 textview_curses &   log_view = lnav_data.ld_views[LNV_LOG];
                 content_line_t      cl       = lss.at(log_view.get_top());
                 std::shared_ptr<logfile>           lf       = lss.find(cl);
-                logfile::iterator ll = lf->begin() + cl;
+                auto ll = lf->begin() + cl;
                 log_data_helper ldh(lss);
 
                 lnav_data.ld_exec_context.ec_top_line = tc->get_top();
@@ -764,6 +764,7 @@ void handle_paging_key(int ch)
                 }
             }
 
+            lnav_data.ld_doc_status_source.set_title("Command Help");
             add_view_text_possibilities(lnav_data.ld_rl_view, LNM_COMMAND, "filter", tc);
             lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "filter", tc->get_last_search());
             add_filter_possibilities(tc);
@@ -781,6 +782,8 @@ void handle_paging_key(int ch)
             lnav_data.ld_search_start_line = tc->get_top();
             add_view_text_possibilities(lnav_data.ld_rl_view, LNM_SEARCH, "*", tc);
             lnav_data.ld_rl_view->focus(LNM_SEARCH, "/");
+            lnav_data.ld_doc_status_source.set_title("Syntax Help");
+            rl_set_help();
             lnav_data.ld_bottom_source.set_prompt(
                     "Enter a regular expression to search for: "
                             "(Press " ANSI_BOLD("CTRL+]") " to abort)");
@@ -791,25 +794,28 @@ void handle_paging_key(int ch)
                 tc == &lnav_data.ld_views[LNV_DB] ||
                 tc == &lnav_data.ld_views[LNV_SCHEMA]) {
                 textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+
                 lnav_data.ld_exec_context.ec_top_line = tc->get_top();
 
                 lnav_data.ld_mode = LNM_SQL;
                 setup_logline_table(lnav_data.ld_exec_context);
                 lnav_data.ld_rl_view->focus(LNM_SQL, ";");
 
+                lnav_data.ld_doc_status_source.set_title("Query Help");
+                rl_set_help();
                 lnav_data.ld_bottom_source.update_loading(0, 0);
                 lnav_data.ld_status[LNS_BOTTOM].do_update();
 
                 field_overlay_source *fos;
 
-                fos = (field_overlay_source *)log_view.get_overlay_source();
+                fos = (field_overlay_source *) log_view.get_overlay_source();
                 fos->fos_active_prev = fos->fos_active;
                 if (!fos->fos_active) {
                     fos->fos_active = true;
                     tc->reload_data();
                 }
-                lnav_data.ld_bottom_source.set_prompt("Enter an SQL query: (Press "
-                ANSI_BOLD("CTRL+]") " to abort)");
+                lnav_data.ld_bottom_source.set_prompt(
+                    "Enter an SQL query: (Press " ANSI_BOLD("CTRL+]") " to abort)");
             }
             break;
 

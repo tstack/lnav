@@ -43,8 +43,11 @@
 #define ANSI_NORM             ANSI_CSI "0m"
 
 #define ANSI_BOLD(msg)  ANSI_BOLD_START msg ANSI_NORM
+#define ANSI_UNDERLINE(msg)  ANSI_UNDERLINE_START msg ANSI_NORM
 
 #define ANSI_ROLE(msg)  ANSI_CSI "%dO" msg ANSI_NORM
+#define XANSI_COLOR(col) ANSI_CSI "3" #col "m"
+#define ANSI_COLOR(col) XANSI_COLOR(col)
 
 /**
  * Check a string for ANSI escape sequences, process them, remove them, and add

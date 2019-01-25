@@ -36,6 +36,7 @@
 #include "plain_text_source.hh"
 #include "command_executor.hh"
 #include "readline_curses.hh"
+#include "readline_highlighters.hh"
 #include "log_search_table.hh"
 #include "log_format_loader.hh"
 #include "help_text_formatter.hh"
@@ -45,7 +46,97 @@ using namespace std;
 
 #define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+#define ANSI_RE(msg) ANSI_CSI "1;3" STR(COLOR_CYAN) "m" msg ANSI_NORM
+#define ANSI_CLS(msg) ANSI_CSI "1;3" STR(COLOR_MAGENTA) "m" msg ANSI_NORM
+#define ANSI_KW(msg) ANSI_CSI "3" STR(COLOR_BLUE) "m" msg ANSI_NORM
+#define ANSI_REV(msg) ANSI_CSI "7m" msg ANSI_NORM
+#define ANSI_STR(msg) ANSI_CSI "32m" msg ANSI_NORM
+
+const char *RE_HELP =
+    " "  ANSI_RE(".") "   Any character    "
+    " "     "a" ANSI_RE("|") "b  a or b        "
+    " "                 ANSI_RE("^") "       Start of string\n"
+
+    " " ANSI_CLS("\\w") "  Word character   "
+    " "     "a" ANSI_RE("?") "   0 or 1 a's    "
+    " "                 ANSI_RE("$") "       End of string\n"
+
+    " " ANSI_CLS("\\d") "  Digit            "
+    " "     "a" ANSI_RE("*") "   0 or more a's "
+    " " ANSI_RE("(") "..." ANSI_RE(")") "   Capture\n"
+
+    " " ANSI_RE("\\") "   Escape character "
+    " "     "a" ANSI_RE("+") "   1 or more a's "
+    " " ANSI_RE("[") "ab" ANSI_RE("-") "d" ANSI_RE("]") "  Any of a, b, c, or d"
+;
+
+const char *RE_EXAMPLE =
+    ANSI_UNDERLINE("Examples") "\n"
+    "  abc" ANSI_RE("*") " matches "
+    ANSI_STR("'ab'") ", " ANSI_STR("'abc'") ", " ANSI_STR("'abccc'") "\n"
+
+    "  key=" ANSI_RE("(\\w+)")
+    " matches key=" ANSI_REV("123") ", key=" ANSI_REV("abc") " and captures 123 and abc\n"
+
+    "  " ANSI_RE("\\") "[abc" ANSI_RE("\\") "] matches " ANSI_STR("'[abc]'")
+;
+
+const char *SQL_HELP =
+    " " ANSI_KW("SELECT") "  Select rows from a table     "
+    " " ANSI_KW("DELETE") "   Delete rows from a table\n"
+    " " ANSI_KW("INSERT") "  Insert rows into a table     "
+    " " ANSI_KW("UPDATE") "   Update rows in a table\n"
+    " " ANSI_KW("CREATE") "  Create a table/index         "
+    " " ANSI_KW("DROP") "     Drop a table/index\n"
+    " " ANSI_KW("ATTACH") "  Attach a SQLite database file  "
+    " " ANSI_KW("DETACH") "  Detach a SQLite database"
+;
+
+const char *SQL_EXAMPLE =
+    ANSI_UNDERLINE("Examples") "\n"
+    "  SELECT * FROM %s WHERE log_level >= 'warning' LIMIT 10\n"
+    "  UPDATE %s SET log_mark = 1 WHERE log_line = log_top_line()\n"
+    "  SELECT * FROM logline LIMIT 10"
+;
+
 static const char *LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
+
+void rl_set_help()
+{
+    switch (lnav_data.ld_mode) {
+        case LNM_SEARCH: {
+            lnav_data.ld_doc_source.replace_with(RE_HELP);
+            lnav_data.ld_example_source.replace_with(RE_EXAMPLE);
+            break;
+        }
+        case LNM_SQL: {
+            textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+            auto lss = (logfile_sub_source *) log_view.get_sub_source();
+            char example_txt[1024];
+            attr_line_t example_al;
+
+            if (log_view.get_inner_height() > 0) {
+                auto cl = lss->at(log_view.get_top());
+                auto lf = lss->find(cl);
+                auto format_name = lf->get_format()->get_name().get();
+
+                snprintf(example_txt, sizeof(example_txt),
+                         SQL_EXAMPLE,
+                         format_name,
+                         format_name);
+                example_al.with_ansi_string(example_txt);
+                readline_sqlite_highlighter(example_al, 0);
+            }
+
+            lnav_data.ld_doc_source.replace_with(SQL_HELP);
+            lnav_data.ld_example_source.replace_with(example_al);
+            break;
+        }
+    }
+}
 
 void rl_change(void *dummy, readline_curses *rc)
 {
@@ -368,8 +459,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         }
 
         if (!has_doc) {
-            lnav_data.ld_doc_source.clear();
-            lnav_data.ld_example_source.clear();
+            rl_set_help();
             lnav_data.ld_preview_source.clear();
         }
         return;
@@ -454,7 +544,6 @@ void rl_callback(void *dummy, readline_curses *rc)
         rl_search_internal(dummy, rc, true);
         if (rc->get_value().size() > 0) {
             auto_mem<FILE> pfile(pclose);
-            textview_curses *tc = *lnav_data.ld_view_stack.top();
             vis_bookmarks &bm = tc->get_bookmarks();
             const auto &bv = bm[&textview_curses::BM_SEARCH];
             vis_line_t vl = bv.next(tc->get_top());

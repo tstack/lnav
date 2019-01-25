@@ -764,7 +764,7 @@ void view_colors::init_roles(int color_pair_base)
     this->vc_role_colors[VCR_STRING] = attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_BLACK) | A_BOLD;
     this->vc_role_colors[VCR_COMMENT] = attr_for_colors(color_pair_base, COLOR_GREEN, COLOR_BLACK);
     this->vc_role_colors[VCR_VARIABLE] = attr_for_colors(color_pair_base, COLOR_CYAN, COLOR_BLACK);
-    this->vc_role_colors[VCR_SYMBOL] = attr_for_colors(color_pair_base, COLOR_MAGENTA, COLOR_BLACK);
+    this->vc_role_colors[VCR_SYMBOL] = attr_for_colors(color_pair_base, COLOR_MAGENTA, COLOR_BLACK) | A_BOLD;
     this->vc_role_colors[VCR_RE_SPECIAL] = attr_for_colors(color_pair_base, COLOR_CYAN, COLOR_BLACK);
     this->vc_role_colors[VCR_RE_REPEAT] = attr_for_colors(color_pair_base, COLOR_YELLOW, COLOR_BLACK);
     this->vc_role_colors[VCR_FILE] = attr_for_colors(color_pair_base, COLOR_BLUE, COLOR_BLACK);

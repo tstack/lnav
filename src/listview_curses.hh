@@ -114,6 +114,9 @@ public:
     virtual ~list_input_delegate() { };
 
     virtual bool list_input_handle_key(listview_curses &lv, int ch) = 0;
+
+    virtual void list_input_handle_scroll_out(listview_curses &lv) {
+    };
 };
 
 /**
@@ -230,8 +233,8 @@ public:
             new_selection < this->get_inner_height()) {
             this->set_selection(new_selection);
             this->scroll_selection_into_view();
-        } else {
-            alerter::singleton().chime();
+        } else if (!alerter::singleton().chime()) {
+            this->delegate_scroll_out();
         }
     }
 
@@ -559,6 +562,12 @@ public:
     }
 
 protected:
+    void delegate_scroll_out() {
+        for (auto &lv_input_delegate : this->lv_input_delegates) {
+            lv_input_delegate->list_input_handle_scroll_out(*this);
+        }
+    }
+
     enum lv_mode_t {
         LV_MODE_NONE,
         LV_MODE_DOWN,

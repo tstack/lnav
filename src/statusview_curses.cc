@@ -78,7 +78,9 @@ void statusview_curses::do_update()
                     }
                 }
             }
-            left += sf.get_left_pad();
+            if (sf.get_left_pad() > 0) {
+                val.insert(0, sf.get_left_pad(), ' ');
+            }
 
             if (sf.is_right_justified()) {
                 val.right_justify(sf.get_width());

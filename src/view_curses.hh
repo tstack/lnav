@@ -137,15 +137,17 @@ public:
 
     void enabled(bool enable) { this->a_enabled = enable; };
 
-    void chime(void) {
+    bool chime() {
         if (!this->a_enabled) {
-            return;
+            return true;
         }
 
+        bool retval = this->a_do_flash;
         if (this->a_do_flash) {
             ::flash();
         }
         this->a_do_flash = false;
+        return retval;
     };
 
     void new_input(int ch) {

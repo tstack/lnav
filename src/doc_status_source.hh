@@ -40,24 +40,37 @@ public:
     typedef enum {
         TSF_TITLE,
         TSF_STITCH_TITLE,
+        TSF_DESCRIPTION,
 
         TSF__MAX
     } field_t;
 
     doc_status_source() {
         this->tss_fields[TSF_TITLE].set_width(14);
+        this->tss_fields[TSF_TITLE].set_left_pad(1);
         this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_VIEW_STATUS);
-        this->tss_fields[TSF_TITLE].set_value(" Command Help ");
         this->tss_fields[TSF_STITCH_TITLE].set_width(2);
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
             view_colors::ansi_color_pair_index(COLOR_BLUE, COLOR_WHITE));
+        this->tss_fields[TSF_DESCRIPTION].set_share(1);
+        this->tss_fields[TSF_DESCRIPTION].set_role(view_colors::VCR_STATUS);
     };
 
-    size_t statusview_fields(void) { return TSF__MAX; };
+    size_t statusview_fields() override {
+        return TSF__MAX;
+    };
 
-    status_field &statusview_value_for_field(int field) {
+    status_field &statusview_value_for_field(int field) override {
         return this->tss_fields[field];
     };
+
+    void set_title(const std::string &title) {
+        this->tss_fields[TSF_TITLE].set_value(title);
+    }
+
+    void set_description(const std::string &description) {
+        this->tss_fields[TSF_DESCRIPTION].set_value(description);
+    }
 
 private:
     status_field tss_fields[TSF__MAX];

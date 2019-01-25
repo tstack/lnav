@@ -30,11 +30,17 @@
 #ifndef LNAV_READLINE_CALLBACKS_HH
 #define LNAV_READLINE_CALLBACKS_HH
 
+void rl_set_help();
 void rl_change(void *dummy, readline_curses *rc);
 void rl_search(void *dummy, readline_curses *rc);
 void rl_abort(void *dummy, readline_curses *rc);
 void rl_callback(void *dummy, readline_curses *rc);
 void rl_display_matches(void *dummy, readline_curses *rc);
 void rl_display_next(void *dummy, readline_curses *rc);
+
+extern const char *RE_HELP;
+extern const char *RE_EXAMPLE;
+extern const char *SQL_HELP;
+extern const char *SQL_EXAMPLE;
 
 #endif //LNAV_READLINE_CALLBACKS_HH

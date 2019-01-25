@@ -43,6 +43,8 @@ public:
 
     bool list_input_handle_key(listview_curses &lv, int ch) override;
 
+    void list_input_handle_scroll_out(listview_curses &lv) override;
+
     size_t text_line_count() override;;
 
     size_t text_line_width(textview_curses &curses) override;
