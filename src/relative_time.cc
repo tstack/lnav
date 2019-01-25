@@ -52,8 +52,8 @@ static struct {
     { "time",
         pcrepp("\\A(\\d{1,2}):(\\d{2})(?::(\\d{2})(?:\\.(\\d{3,6}))?)?") },
     { "num", pcrepp("\\A((?:-|\\+)?\\d+)") },
-    { "us", pcrepp("\\Amicros(?:econds?)?|us(?![a-zA-Z])") },
-    { "ms", pcrepp("\\Amillis(?:econds?)?|ms(?![a-zA-Z])") },
+    { "us", pcrepp("\\A(?:micros(?:econds?)?|us(?![a-zA-Z]))") },
+    { "ms", pcrepp("\\A(?:millis(?:econds?)?|ms(?![a-zA-Z]))") },
     { "sec", pcrepp("\\As(?:ec(?:onds?)?)?(?![a-zA-Z])") },
     { "min", pcrepp("\\Am(?:in(?:utes?)?)?(?![a-zA-Z])") },
     { "h", pcrepp("\\Ah(?:ours?)?(?![a-zA-Z])") },
@@ -74,7 +74,7 @@ static struct {
     { "now", pcrepp("\\Anow\\b") },
     { "here", pcrepp("\\Ahere\\b") },
     { "next", pcrepp("\\Anext\\b") },
-    { "previous", pcrepp("\\Aprevious|last\\b") },
+    { "previous", pcrepp("\\A(?:previous\\b|last\\b)") },
 };
 
 static int64_t TIME_SCALES[] = {

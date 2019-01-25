@@ -47,7 +47,7 @@ static struct {
     { "next day", "next day 0:00" },
     { "next month", "next month day 0 0:00" },
     { "next year", "next year month 0 day 0 0:00" },
-    { "last hour", "last 0:00" },
+    { "previous hour", "last 0:00" },
     { "next 10 minutes after the hour", "next 0:10" },
     { "1h50m", "1h50m" },
     { "next hour", "next 0:00" },

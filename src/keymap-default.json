@@ -88,6 +88,9 @@
             "x35": [":goto next 50 minutes after the hour"],
             "x36": [":goto next hour"],
 
+            "x37": [":goto previous minute"],
+            "x38": [":goto next minute"],
+
             "x21": [":goto last 10 minutes after the hour"],
             "x40": [":goto last 20 minutes after the hour"],
             "x23": [":goto last 30 minutes after the hour"],

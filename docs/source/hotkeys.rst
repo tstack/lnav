@@ -150,6 +150,9 @@ Chronological Navigation
    * - |ks| 1 |ke| - |ks| 6 |ke|
      - |ks| Shift |ke| + |ks| 1 |ke| - |ks| 6 |ke|
      - Next/previous n'th ten minute of the hour
+   * - |ks| 7 |ke|
+     - |ks| 8 |ke|
+     - Previous/next minute
    * - |ks| 0 |ke|
      - |ks| Shift |ke| + |ks| 0 |ke|
      - Next/previous day

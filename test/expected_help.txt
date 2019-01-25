@@ -259,6 +259,8 @@ Chronological Navigation
                     hour in the log.  And, '6' would move to the next
                     hour boundary.
 
+  7/8               Move to the previous/next minute.
+
   0/Shift 0         Move to the next/previous day boundary.
 
   r/R               Move forward/backward based on the relative time that

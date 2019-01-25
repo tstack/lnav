@@ -37,6 +37,7 @@ lnav v0.8.5:
        editing easier.
      * Hidden fields now show up as a unicode vertical ellipsis (⋮) instead of
        three-dot ellipsis to save space.
+     * Pressing 7/8 will now move to the previous/next minute.
 
      Fixes:
      * The ":write-json-to" command will now pass through JSON cells as their
