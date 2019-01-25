@@ -85,13 +85,13 @@ const char *RE_EXAMPLE =
 ;
 
 const char *SQL_HELP =
-    " " ANSI_KW("SELECT") "  Select rows from a table     "
-    " " ANSI_KW("DELETE") "   Delete rows from a table\n"
-    " " ANSI_KW("INSERT") "  Insert rows into a table     "
-    " " ANSI_KW("UPDATE") "   Update rows in a table\n"
-    " " ANSI_KW("CREATE") "  Create a table/index         "
-    " " ANSI_KW("DROP") "     Drop a table/index\n"
-    " " ANSI_KW("ATTACH") "  Attach a SQLite database file  "
+    " " ANSI_KW("SELECT") "  Select rows from a table      "
+    " " ANSI_KW("DELETE") "  Delete rows from a table\n"
+    " " ANSI_KW("INSERT") "  Insert rows into a table      "
+    " " ANSI_KW("UPDATE") "  Update rows in a table\n"
+    " " ANSI_KW("CREATE") "  Create a table/index          "
+    " " ANSI_KW("DROP") "    Drop a table/index\n"
+    " " ANSI_KW("ATTACH") "  Attach a SQLite database file "
     " " ANSI_KW("DETACH") "  Detach a SQLite database"
 ;
 
@@ -135,6 +135,8 @@ void rl_set_help()
             lnav_data.ld_example_source.replace_with(example_al);
             break;
         }
+        default:
+            break;
     }
 }
 
