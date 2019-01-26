@@ -155,4 +155,4 @@ while True:
         for i in range(random.randrange(0, 4)):
             with open(fname, "a+") as fp:
                 fp.write(gen.next())
-            time.sleep(random.uniform(0.25, 0.75))
+            time.sleep(random.uniform(0.00, 0.001))

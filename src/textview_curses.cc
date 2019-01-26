@@ -385,11 +385,8 @@ void textview_curses::execute_search(const std::string &regex_orig)
 
         this->match_reset();
 
-        if (regex.empty() && this->tc_search_child != nullptr) {
-            this->grep_begin(*(this->tc_search_child->get_grep_proc()), 0_vl, -1_vl);
-            this->grep_end(*(this->tc_search_child->get_grep_proc()));
-        }
         this->tc_search_child.reset();
+        this->tc_source_search_child.reset();
 
         log_debug("start search for: '%s'", regex.c_str());
 

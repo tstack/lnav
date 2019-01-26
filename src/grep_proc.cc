@@ -63,8 +63,7 @@ grep_proc<LineType>::grep_proc(pcre *code, grep_proc_source<LineType> &gps)
 template<typename LineType>
 grep_proc<LineType>::~grep_proc()
 {
-    this->gp_queue.clear();
-    this->cleanup();
+    this->invalidate();
 }
 
 template<typename LineType>
@@ -274,13 +273,9 @@ void grep_proc<LineType>::dispatch_line(char *line)
 {
     int start, end, capture_start;
 
-    require(line != NULL);
+    require(line != nullptr);
 
     if (sscanf(line, "h%d", this->gp_highest_line.out()) == 1) {
-        if (this->gp_sink) {
-            this->gp_sink->grep_end(*this);
-        }
-        this->gp_child_queue_size -= 1;
     } else if (sscanf(line, "%d", this->gp_last_line.out()) == 1) {
         /* Starting a new line with matches. */
         ensure(this->gp_last_line >= 0);
@@ -290,7 +285,7 @@ void grep_proc<LineType>::dispatch_line(char *line)
         require(end >= 0);
 
         /* Pass the match offsets to the sink delegate. */
-        if (this->gp_sink != NULL) {
+        if (this->gp_sink != nullptr) {
             this->gp_sink->grep_match(*this, this->gp_last_line, start, end);
         }
     }
@@ -299,17 +294,17 @@ void grep_proc<LineType>::dispatch_line(char *line)
         require(end >= 0);
 
         /* Pass the captured strings to the sink delegate. */
-        if (this->gp_sink != NULL) {
+        if (this->gp_sink != nullptr) {
             this->gp_sink->grep_capture(*this,
                                         this->gp_last_line,
                                         start,
                                         end,
                                         start < 0 ?
-                                        NULL : &line[capture_start]);
+                                        nullptr : &line[capture_start]);
         }
     }
     else if (line[0] == '/') {
-        if (this->gp_sink != NULL) {
+        if (this->gp_sink != nullptr) {
             this->gp_sink->grep_match_end(*this, this->gp_last_line);
         }
     }
@@ -378,6 +373,19 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
     }
 
     ensure(this->invariant());
+}
+
+template<typename LineType>
+grep_proc<LineType> &grep_proc<LineType>::invalidate()
+{
+    if (this->gp_sink) {
+        for (int lpc = 0; lpc < this->gp_queue.size(); lpc++) {
+            this->gp_sink->grep_end(*this);
+        }
+    }
+    this->gp_queue.clear();
+    this->cleanup();
+    return *this;
 }
 
 template class grep_proc<vis_line_t>;

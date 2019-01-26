@@ -196,10 +196,7 @@ public:
         this->gp_sink = gpd;
     };
 
-    grep_proc &invalidate() {
-        this->cleanup();
-        return *this;
-    };
+    grep_proc &invalidate();
 
     /** @param gpd The sink to send results to. */
     void set_control(grep_proc_control *gpc)
