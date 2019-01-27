@@ -65,7 +65,7 @@ public:
           bss_load_percent(0)
     {
         this->bss_fields[BSF_LINE_NUMBER].set_width(14);
-        this->bss_fields[BSF_PERCENT].set_width(4);
+        this->bss_fields[BSF_PERCENT].set_width(5);
         this->bss_fields[BSF_PERCENT].set_left_pad(1);
         this->bss_fields[BSF_HITS].set_width(36);
         this->bss_fields[BSF_LOADING].set_width(13);

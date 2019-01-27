@@ -228,6 +228,8 @@ Display
    * - |ks| Ctrl |ke| + |ks| p |ke|
      - Show/hide the data preview panel that may be opened when entering
        commands or SQL queries.
+   * - |ks| Ctrl |ke| + |ks| f |ke|
+     - Toggle the enabled/disabled state of all filters in the current view.
    * - |ks| x |ke|
      - Toggle the hiding of log message fields. The hidden fields will be
        replaced with three bullets and highlighted in yellow.

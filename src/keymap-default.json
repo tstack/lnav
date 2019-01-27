@@ -15,6 +15,10 @@
     },
     "keymap_def": {
         "default": {
+            "x06": [
+                ";UPDATE lnav_view_filters SET enabled = 1 - enabled WHERE view_name = (SELECT name FROM lnav_view_stack LIMIT 1)"
+            ],
+
             "x0c": [
                 ":write-raw-to -"
             ],

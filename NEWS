@@ -7,6 +7,8 @@ lnav v0.8.5:
        with hotkeys.
      * Added an 'lnav_view_filters' SQL table that can be used to
        programmatically manipulate filters.
+     * Added CTRL+F to toggle the enabled/disabled state of all filters for the
+       current view.
      * A history of locations in a view is now kept so that you can jump back
        to where you were previously using the '{' and '}' keys.  The location
        history can also be accessed through the ":prev-location" and

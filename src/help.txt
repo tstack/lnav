@@ -373,6 +373,9 @@ Display options
   CTRL-P            Show/hide the data preview panel that may be opened when
                     entering commands or SQL queries.
 
+  CTRL-F            Toggle the enabled/disabled state of all filters in the
+                    current view.
+
   x                 Toggle the hiding of log message fields.  The hidden fields
                     will be replaced with three bullets and highlighted in
                     yellow.

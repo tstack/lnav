@@ -278,6 +278,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
 
     gettimeofday(&end_tv, NULL);
     if (retcode == SQLITE_DONE) {
+        lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_views[LNV_DB].reload_data();
         lnav_data.ld_views[LNV_DB].set_left(0);
 
