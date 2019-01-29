@@ -1192,9 +1192,17 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
 
     if (args.empty()) {
         args.emplace_back("filter");
+
+        return "";
+    }
+
+    auto tc = *lnav_data.ld_view_stack.top();
+    auto tss = tc->get_sub_source();
+
+    if (!tss->tss_supports_filtering) {
+        retval = "error: view does not support filtering";
     }
     else if (args.size() > 1) {
-        textview_curses *tc = *lnav_data.ld_view_stack.top();
         text_sub_source *tss = tc->get_sub_source();
         filter_stack &fs = tss->get_filters();
         const char *errptr;

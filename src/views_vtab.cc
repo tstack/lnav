@@ -472,6 +472,7 @@ CREATE TABLE lnav_view_filters (
                                            pattern.second);
         fs.add_filter(pf);
         tss->text_filters_changed();
+        tc.set_needs_update();
 
         return SQLITE_OK;
     }
@@ -490,6 +491,7 @@ CREATE TABLE lnav_view_filters (
                 break;
             }
         }
+        tc.set_needs_update();
 
         return SQLITE_OK;
     }
@@ -528,6 +530,7 @@ CREATE TABLE lnav_view_filters (
 
         *iter = pf;
         tss->text_filters_changed();
+        tc.set_needs_update();
 
         return SQLITE_OK;
     };
