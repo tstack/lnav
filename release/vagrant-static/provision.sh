@@ -60,7 +60,7 @@ if test x"${OS}" != x"FreeBSD"; then
          && \
      make && make install)
 
-    (cd pcre-8.41 && \
+    (cd pcre-* && \
      ./configure --prefix=${FAKE_ROOT} \
          --enable-jit \
          --enable-utf \
@@ -97,7 +97,7 @@ else
          && \
      make && make install)
 
-    (cd pcre-8.40 && \
+    (cd pcre-* && \
      ./configure --prefix=${FAKE_ROOT} \
          --enable-jit \
          --enable-utf \
