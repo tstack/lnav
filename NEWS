@@ -40,6 +40,9 @@ lnav v0.8.5:
      * Hidden fields now show up as a unicode vertical ellipsis (⋮) instead of
        three-dot ellipsis to save space.
      * Pressing 7/8 will now move to the previous/next minute.
+     * The ":write-raw-to" command has been changed to write the entire
+       contents of the current view and a ":write-screen-to" command has been
+       added to write only the current screen contents.
 
      Fixes:
      * The ":write-json-to" command will now pass through JSON cells as their

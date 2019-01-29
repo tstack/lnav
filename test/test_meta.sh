@@ -10,7 +10,7 @@ run_test ${lnav_test} -n \
     -c ":comment Hello, World!" \
     -c ":tag foo" \
     -c ":save-session" \
-    -c ":write-raw-to -" \
+    -c ":write-screen-to -" \
     ${test_dir}/logfile_access_log.0
 
 check_output ":tag did not work?" <<EOF

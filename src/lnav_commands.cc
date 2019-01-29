@@ -645,7 +645,7 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
             return "error: no query result to write, use ';' to execute a query";
         }
     }
-    else if (args[0] != "write-raw-to") {
+    else if (args[0] != "write-raw-to" && args[0] != "write-screen-to") {
         if (bv.empty()) {
             return "error: no lines marked to write, use 'm' to mark lines";
         }
@@ -786,6 +786,26 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
             }
         }
     }
+    else if (args[0] == "write-screen-to") {
+        bool wrapped = tc->get_word_wrap();
+        vis_line_t orig_top = tc->get_top();
+
+        tc->set_word_wrap(to_term);
+
+        vis_line_t top = tc->get_top();
+        vis_line_t bottom = tc->get_bottom();
+        vector<attr_line_t> rows(bottom - top + 1);
+
+        tc->listview_value_for_rows(*tc, top, rows);
+        for (auto &al : rows) {
+            write_line_to(outfile, al);
+
+            line_count += 1;
+        }
+
+        tc->set_word_wrap(wrapped);
+        tc->set_top(orig_top);
+    }
     else if (args[0] == "write-raw-to") {
         if (tc == &lnav_data.ld_views[LNV_DB]) {
             std::vector<std::vector<const char *> >::iterator row_iter;
@@ -810,23 +830,20 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
             }
         } else {
             bool wrapped = tc->get_word_wrap();
-            vis_line_t orig_top = tc->get_top();
+            auto tss = tc->get_sub_source();
 
             tc->set_word_wrap(to_term);
 
-            vis_line_t top = tc->get_top();
-            vis_line_t bottom = tc->get_bottom();
-            vector<attr_line_t> rows(bottom - top + 1);
+            for (size_t lpc = 0; lpc < tss->text_line_count(); lpc++) {
+                string line;
 
-            tc->listview_value_for_rows(*tc, top, rows);
-            for (auto &al : rows) {
-                write_line_to(outfile, al);
+                tss->text_value_for_line(*tc, lpc, line, text_sub_source::RF_RAW);
+                fprintf(outfile, "%s\n", line.c_str());
 
                 line_count += 1;
             }
 
             tc->set_word_wrap(wrapped);
-            tc->set_top(orig_top);
         }
     }
     else {
@@ -3958,6 +3975,16 @@ readline_context::command_t STD_COMMANDS[] = {
         com_save_to,
 
         help_text(":write-raw-to")
+            .with_summary("Write the text in the top view to the given file without any formatting")
+            .with_parameter(help_text("path", "The path to the file to write"))
+            .with_tags({"io", "scripting", "sql"})
+            .with_example({"/tmp/table.txt"})
+    },
+    {
+        "write-screen-to",
+        com_save_to,
+
+        help_text(":write-screen-to")
             .with_summary("Write the displayed text or SQL results to the given file without any formatting")
             .with_parameter(help_text("path", "The path to the file to write"))
             .with_tags({"io", "scripting", "sql"})

@@ -135,6 +135,9 @@ Output
 * write-to <file> - Overwrite the given file with any bookmarked lines in
   the current view.  Use '-' to write the lines to the terminal and '/dev/clipboard'
   to write to the system clipboard.
+* write-raw-to <file> - Overwrite the given file with all the lines in the
+  current view.  Use '-' to write the lines to the terminal and '/dev/clipboard'
+  to write to the system clipboard.
 * write-csv-to <file> - Write SQL query results to the given file in CSV format.
   Use '-' to write the lines to the terminal and '/dev/clipboard' to write to
   the system clipboard.

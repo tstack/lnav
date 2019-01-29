@@ -20,7 +20,7 @@
             ],
 
             "x0c": [
-                ":write-raw-to -"
+                ":write-screen-to -"
             ],
 
             "x12": [

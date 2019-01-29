@@ -479,10 +479,10 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ":goto 1" \
-    -c ":write-raw-to -" \
+    -c ":write-screen-to -" \
     "${test_dir}/logfile_access_log.0"
 
-check_output "write-raw-to not working" <<EOF
+check_output "write-screen-to not working" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
