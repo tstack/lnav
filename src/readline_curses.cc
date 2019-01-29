@@ -1067,3 +1067,17 @@ void readline_curses::do_update()
         wmove(this->vc_window, this->get_actual_y(), this->vc_left + this->vc_x);
     }
 }
+
+std::string readline_curses::get_match_string() const
+{
+    auto len = this->vc_x - this->rc_match_start;
+    auto context = this->get_active_context();
+
+    if (context->get_append_character() != 0 &&
+        this->rc_line_buffer[this->rc_match_start + len - 2] ==
+        context->get_append_character()) {
+        len -= 2;
+    }
+
+    return this->rc_line_buffer.substr(this->rc_match_start, len);
+}

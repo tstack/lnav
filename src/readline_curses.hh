@@ -183,6 +183,10 @@ public:
         return *this;
     };
 
+    int get_append_character() const {
+        return this->rc_append_character;
+    }
+
     readline_context &set_highlighter(readline_highlighter_t hl) {
         this->rc_highlighter = hl;
         return *this;
@@ -391,11 +395,7 @@ public:
         return this->rc_match_start;
     }
 
-    std::string get_match_string() const {
-        auto len = this->vc_x - this->rc_match_start;
-
-        return this->rc_line_buffer.substr(this->rc_match_start, len);
-    }
+    std::string get_match_string() const;
 
     int get_max_match_length() const {
         return this->rc_max_match_length;
