@@ -129,7 +129,7 @@ public:
         this->lf_enabled = value;
     }
 
-    void revert_to_last(logfile_filter_state &lfs) {
+    void revert_to_last(logfile_filter_state &lfs, size_t rollback_size) {
         this->lf_message_matched = this->lf_last_message_matched;
         this->lf_lines_for_message = this->lf_last_lines_for_message;
 
@@ -140,7 +140,9 @@ public:
             lfs.tfs_mask[line_number] &= ~(((uint32_t) 1) << this->lf_index);
         }
         if (this->lf_lines_for_message > 0) {
-            this->lf_lines_for_message -= 1;
+            this->lf_lines_for_message -= rollback_size;
+
+            ensure(this->lf_lines_for_message >= 0);
         }
         if (this->lf_lines_for_message == 0) {
             this->lf_message_matched = false;

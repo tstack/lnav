@@ -300,6 +300,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
         size_t begin_size = this->lf_index.size();
         bool record_rusage = this->lf_index.size() == 1;
         off_t begin_index_size = this->lf_index_size;
+        size_t rollback_size = 0;
 
         if (record_rusage) {
             getrusage(RUSAGE_SELF, &begin_rusage);
@@ -314,8 +315,10 @@ logfile::rebuild_result_t logfile::rebuild_index()
              */
             while (this->lf_index.back().get_sub_offset() != 0) {
                 this->lf_index.pop_back();
+                rollback_size += 1;
             }
             this->lf_index.pop_back();
+            rollback_size += 1;
 
             this->lf_line_buffer.clear();
             if (!this->lf_index.empty()) {
@@ -335,7 +338,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
         }
         last_off = off;
         if (this->lf_logline_observer != NULL) {
-            this->lf_logline_observer->logline_restart(*this);
+            this->lf_logline_observer->logline_restart(*this, rollback_size);
         }
 
         bool sort_needed = this->lf_sort_needed;

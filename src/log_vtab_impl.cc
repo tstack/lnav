@@ -799,6 +799,32 @@ static int vt_update(sqlite3_vtab *tab,
         const unsigned char *part_name = sqlite3_value_text(argv[2 + VT_COL_PARTITION]);
         const unsigned char *log_comment = sqlite3_value_text(argv[2 + VT_COL_LOG_COMMENT]);
         const unsigned char *log_tags = sqlite3_value_text(argv[2 + VT_COL_LOG_TAGS]);
+        bookmark_metadata tmp_bm;
+
+        if (log_tags) {
+            vector<string> errors;
+            yajlpp_parse_context ypc(log_vtab_data.lvd_source, tags_handler);
+            auto_mem<yajl_handle_t> handle(yajl_free);
+
+            handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+            ypc.ypc_userdata = &errors;
+            ypc.ypc_line_number = log_vtab_data.lvd_line_number;
+            ypc.with_handle(handle)
+                .with_error_reporter([](const yajlpp_parse_context &ypc,
+                                        lnav_log_level_t level,
+                                        const char *msg) {
+                    vector<string> &errors = *((vector<string> *) ypc.ypc_userdata);
+                    errors.emplace_back(msg);
+                })
+                .with_obj(tmp_bm);
+            ypc.parse(log_tags, strlen((const char *) log_tags));
+            ypc.complete_parse();
+            if (!errors.empty()) {
+                tab->zErrMsg = sqlite3_mprintf("%s",
+                                               join(errors.begin(), errors.end(), "\n").c_str());
+                return SQLITE_ERROR;
+            }
+        }
 
         bookmark_vector<vis_line_t> &bv = vt->tc->get_bookmarks()[
                 &textview_curses::BM_META];
@@ -825,29 +851,11 @@ static int vt_update(sqlite3_vtab *tab,
                 line_meta.bm_comment.clear();
             }
             if (log_tags) {
-                vector<string> errors;
-                yajlpp_parse_context ypc(log_vtab_data.lvd_source, tags_handler);
-                auto_mem<yajl_handle_t> handle(yajl_free);
-
                 line_meta.bm_tags.clear();
-                handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
-                ypc.ypc_userdata = &errors;
-                ypc.ypc_line_number = log_vtab_data.lvd_line_number;
-                ypc.with_handle(handle)
-                   .with_error_reporter([](const yajlpp_parse_context &ypc,
-                                           lnav_log_level_t level,
-                                           const char *msg) {
-                       vector<string> &errors = *((vector<string> *) ypc.ypc_userdata);
-                       errors.emplace_back(msg);
-                   })
-                   .with_obj(line_meta);
-                ypc.parse(log_tags, strlen((const char *) log_tags));
-                ypc.complete_parse();
-                if (!errors.empty()) {
-                    tab->zErrMsg = sqlite3_mprintf("%s",
-                        join(errors.begin(), errors.end(), "\n").c_str());
-                    retval = SQLITE_ERROR;
+                for (const auto &tag : tmp_bm.bm_tags) {
+                    line_meta.add_tag(tag);
                 }
+
                 for (const auto &tag : line_meta.bm_tags) {
                     bookmark_metadata::KNOWN_TAGS.insert(tag);
                 }

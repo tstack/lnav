@@ -42,38 +42,15 @@ public:
 
     };
 
-    void logline_restart(const logfile &lf) {
+    void logline_restart(const logfile &lf, size_t rollback_size) {
         for (auto &filter : this->lfo_filter_stack) {
-            filter->revert_to_last(this->lfo_filter_state);
+            filter->revert_to_last(this->lfo_filter_state, rollback_size);
         }
     };
 
-    void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr) {
-        size_t offset = std::distance(lf.begin(), ll);
+    void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr);;
 
-        require(&lf == this->lfo_filter_state.tfs_logfile.get());
-
-        this->lfo_filter_state.resize(lf.size());
-        if (!this->lfo_filter_stack.empty()) {
-            if (lf.get_format() != nullptr) {
-                lf.get_format()->get_subline(*ll, sbr);
-            }
-            for (auto &filter : this->lfo_filter_stack) {
-                if (filter->lf_deleted) {
-                    continue;
-                }
-                if (offset >= this->lfo_filter_state.tfs_filter_count[filter->get_index()]) {
-                    filter->add_line(this->lfo_filter_state, ll, sbr);
-                }
-            }
-        }
-    };
-
-    void logline_eof(const logfile &lf) {
-        for (auto &iter : this->lfo_filter_stack) {
-            iter->end_of_message(this->lfo_filter_state);
-        }
-    };
+    void logline_eof(const logfile &lf);;
 
     bool excluded(uint32_t filter_in_mask, uint32_t filter_out_mask,
             size_t offset) const {

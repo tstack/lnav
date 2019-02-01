@@ -441,7 +441,7 @@ class logline_observer {
 public:
     virtual ~logline_observer() { };
 
-    virtual void logline_restart(const logfile &lf) = 0;
+    virtual void logline_restart(const logfile &lf, size_t rollback_size) = 0;
 
     virtual void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr) = 0;
 

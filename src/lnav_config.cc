@@ -456,8 +456,8 @@ void load_config(const vector<string> &extra_paths, vector<string> &errors)
                             errors);
     }
 
-    for (auto pair : lnav_config.lc_ui_keymaps) {
-        for (auto pair2 : pair.second.km_seq_to_cmd) {
+    for (const auto &pair : lnav_config.lc_ui_keymaps) {
+        for (const auto &pair2 : pair.second.km_seq_to_cmd) {
             log_debug("foo %s %d", pair2.first.c_str(), pair2.second.size());
         }
     }

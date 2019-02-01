@@ -85,7 +85,8 @@ log_line  log_comment  log_tags
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";UPDATE access_log SET log_tags = json_array('#foo') WHERE log_line = 1" \
+    -c ";UPDATE access_log SET log_tags = json_array('#foo', '#foo') WHERE log_line = 1" \
+    -c ":save-session" \
     ${test_dir}/logfile_access_log.0
 
 check_output "updating log_tags is not working?" <<EOF
@@ -115,6 +116,25 @@ error:command-option:1:command-option:line 1
   unexpected JSON value
   accepted paths --
     # <tag> -- A tag for the log line
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";UPDATE access_log SET log_tags = json_array('foo') WHERE log_line = 1" \
+    -c ":save-session" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "updating log_tags is not working?" <<EOF
+error:command-option:1:Value does not match pattern: ^#[^\s]+$
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ";SELECT log_tags FROM access_log WHERE log_line = 1" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "log_tags was updated?" <<EOF
+log_tags
+["#foo"]
 EOF
 
 run_test ${lnav_test} -n \

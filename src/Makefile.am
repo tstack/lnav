@@ -286,6 +286,7 @@ libdiag_a_SOURCES = \
 	extension-functions.cc \
 	field_overlay_source.cc \
 	file_vtab.cc \
+	filter_observer.cc \
 	filter_status_source.cc \
 	filter_sub_source.cc \
 	fstat_vtab.cc \

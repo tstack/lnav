@@ -47,7 +47,7 @@ yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen ha
         this->jph_path_provider(ygc.ygc_obj_stack.top(), local_paths);
     }
     else {
-        local_paths.push_back(this->jph_path);
+        local_paths.emplace_back(this->jph_path);
     }
 
     if (this->jph_children) {
@@ -125,7 +125,7 @@ void json_path_handler_base::possibilities(
         this->jph_path_provider(root, local_paths);
     }
     else {
-        local_paths.push_back(this->jph_path);
+        local_paths.emplace_back(this->jph_path);
     }
 
     if (this->jph_children) {
