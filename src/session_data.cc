@@ -1286,16 +1286,18 @@ void save_session()
                     view_map.gen("commands");
                     yajlpp_array cmd_array(handle);
 
-                    for (filter_iter = fs.begin();
-                         filter_iter != fs.end();
-                         ++filter_iter) {
-                        string cmd = (*filter_iter)->to_command();
+                    for (const auto filter : fs) {
+                        string cmd = filter->to_command();
 
-                        if (!(*filter_iter)->is_enabled() || cmd.empty()) {
+                        if (cmd.empty()) {
                             continue;
                         }
 
                         cmd_array.gen(cmd);
+
+                        if (!filter->is_enabled()) {
+                            cmd_array.gen("disable-filter " + filter->get_id());
+                        }
                     }
 
                     textview_curses::highlight_map_t &hmap =
