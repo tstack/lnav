@@ -4385,7 +4385,7 @@ readline_context::command_t STD_COMMANDS[] = {
 };
 
 unordered_map<char const *, vector<char const *>> aliases = {
-    { "quit", { "q" } },
+    { "quit", { "q", "q!" } },
 };
 
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
