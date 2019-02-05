@@ -49,38 +49,14 @@ public:
         BSF_LINE_NUMBER,
         BSF_PERCENT,
         BSF_HITS,
+        BSF_SEARCH_TERM,
         BSF_LOADING,
         BSF_HELP,
 
         BSF__MAX
     } field_t;
 
-    bottom_status_source()
-        : line_number_wire(*this, &bottom_status_source::update_line_number),
-          percent_wire(*this, &bottom_status_source::update_percent),
-          marks_wire(*this, &bottom_status_source::update_marks),
-          bss_prompt(1024, view_colors::VCR_STATUS),
-          bss_error(1024, view_colors::VCR_ALERT_STATUS),
-          bss_hit_spinner(0),
-          bss_load_percent(0)
-    {
-        this->bss_fields[BSF_LINE_NUMBER].set_width(14);
-        this->bss_fields[BSF_PERCENT].set_width(5);
-        this->bss_fields[BSF_PERCENT].set_left_pad(1);
-        this->bss_fields[BSF_HITS].set_width(36);
-        this->bss_fields[BSF_LOADING].set_width(13);
-        this->bss_fields[BSF_LOADING].set_cylon(true);
-        this->bss_fields[BSF_LOADING].right_justify(true);
-        this->bss_fields[BSF_HELP].set_width(14);
-        this->bss_fields[BSF_HELP].set_value("?:View Help");
-        this->bss_fields[BSF_HELP].right_justify(true);
-        this->bss_prompt.set_left_pad(1);
-        this->bss_prompt.set_min_width(35);
-        this->bss_prompt.set_share(1);
-        this->bss_error.set_left_pad(1);
-        this->bss_error.set_min_width(35);
-        this->bss_error.set_share(1);
-    };
+    bottom_status_source();
 
     virtual ~bottom_status_source() { };
 
@@ -127,113 +103,24 @@ public:
         }
     };
 
-    void update_line_number(listview_curses *lc)
-    {
-        status_field &sf = this->bss_fields[BSF_LINE_NUMBER];
+    void update_line_number(listview_curses *lc);
 
-        if (lc->get_inner_height() == 0) {
-            sf.set_value(" L0");
-        }
-        else {
-            sf.set_value(" L%'d", (int)lc->get_top());
-        }
-    };
+    void update_search_term(textview_curses &tc);
 
-    void update_percent(listview_curses *lc)
-    {
-        status_field &sf  = this->bss_fields[BSF_PERCENT];
-        vis_line_t    top = lc->get_top();
-        vis_line_t    bottom, height;
-        unsigned long width;
-        double        percent;
+    void update_percent(listview_curses *lc);
 
-        lc->get_dimensions(height, width);
+    void update_marks(listview_curses *lc);
 
-        if (lc->get_inner_height() > 0) {
-            bottom = std::min(top + height - vis_line_t(1),
-                              vis_line_t(lc->get_inner_height() - 1));
-            percent  = (double)(bottom + 1);
-            percent /= (double)lc->get_inner_height();
-            percent *= 100.0;
-        }
-        else {
-            percent = 0.0;
-        }
-        sf.set_value("%3d%%", (int)percent);
-    };
+    void update_hits(textview_curses *tc);
 
-    void update_marks(listview_curses *lc)
-    {
-        textview_curses *tc = static_cast<textview_curses *>(lc);
-        vis_bookmarks   &bm = tc->get_bookmarks();
-        status_field    &sf = this->bss_fields[BSF_HITS];
-
-        if (bm.find(&textview_curses::BM_SEARCH) != bm.end()) {
-            bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_SEARCH];
-            bookmark_vector<vis_line_t>::iterator lb;
-
-            lb = std::lower_bound(bv.begin(), bv.end(), tc->get_top());
-            if (lb != bv.end() && *lb == tc->get_top()) {
-                sf.set_value(" Hit %'d of %'d",
-                    std::distance(bv.begin(), lb) + 1, tc->get_match_count());
-            } else {
-                sf.set_value("%'9d hits", tc->get_match_count());
-            }
-        }
-        else {
-            sf.clear();
-        }
-    };
-
-    void update_hits(textview_curses *tc)
-    {
-        status_field &      sf = this->bss_fields[BSF_HITS];
-        view_colors::role_t new_role;
-
-        if (tc->is_searching()) {
-            this->bss_hit_spinner += 1;
-            if (this->bss_hit_spinner % 2) {
-                new_role = view_colors::VCR_ACTIVE_STATUS;
-            }
-            else{
-                new_role = view_colors::VCR_ACTIVE_STATUS2;
-            }
-            sf.set_cylon(true);
-        }
-        else {
-            new_role = view_colors::VCR_STATUS;
-            sf.set_cylon(false);
-        }
-        // this->bss_error.clear();
-        sf.set_role(new_role);
-        this->update_marks(tc);
-    };
-
-    void update_loading(off_t off, size_t total)
-    {
-        status_field &sf = this->bss_fields[BSF_LOADING];
-
-        if (total == 0 || (size_t)off == total) {
-            sf.set_role(view_colors::VCR_STATUS);
-            sf.clear();
-        }
-        else {
-            int pct = (int)(((double)off / (double)total) * 100.0);
-
-            if (this->bss_load_percent != pct) {
-                this->bss_load_percent = pct;
-
-                sf.set_role(view_colors::VCR_ACTIVE_STATUS2);
-                sf.set_value(" Loading %2d%% ", pct);
-            }
-        }
-    };
+    void update_loading(off_t off, size_t total);
 
 private:
     status_field bss_prompt;
     status_field bss_error;
     status_field bss_fields[BSF__MAX];
-    int          bss_hit_spinner;
-    int          bss_load_percent;
+    int          bss_hit_spinner{0};
+    int          bss_load_percent{0};
 };
+
 #endif

@@ -277,6 +277,7 @@ endif
 libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
 	bookmarks.cc \
+	bottom_status_source.cc \
 	collation-functions.cc \
 	command_executor.cc \
 	curl_looper.cc \

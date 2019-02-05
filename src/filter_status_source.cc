@@ -57,7 +57,7 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
 
     this->tss_fields[TSF_HELP].right_justify(true);
-    this->tss_fields[TSF_HELP].set_min_width(80);
+    this->tss_fields[TSF_HELP].set_min_width(40);
     this->tss_fields[TSF_HELP].set_width(1024);
     this->tss_fields[TSF_HELP].set_value(TOGGLE_MSG);
     this->tss_fields[TSF_HELP].set_left_pad(1);

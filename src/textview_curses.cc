@@ -445,6 +445,9 @@ void textview_curses::execute_search(const std::string &regex_orig)
     }
 
     this->tc_last_search = regex;
+    if (this->tc_search_event_handler) {
+        this->tc_search_event_handler(*this);
+    }
 }
 
 void text_time_translator::scroll_invoked(textview_curses *tc)

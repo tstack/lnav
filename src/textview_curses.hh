@@ -924,6 +924,8 @@ public:
         listview_curses::invoke_scroll();
     }
 
+    std::function<void(textview_curses &)> tc_search_event_handler;
+
 protected:
 
     class grep_highlighter {

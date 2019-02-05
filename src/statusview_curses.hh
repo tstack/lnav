@@ -51,59 +51,13 @@ public:
     status_field(int width = 1,
                  view_colors::role_t role = view_colors::VCR_STATUS)
         : sf_width(width),
-          sf_min_width(0),
-          sf_right_justify(false),
-          sf_cylon(false),
-          sf_cylon_pos(0),
-          sf_role(role),
-          sf_share(0),
-          sf_left_pad(0) { };
+          sf_role(role) {
+    };
 
     virtual ~status_field() { };
 
     /** @param value The new value for this field. */
-    void set_value(std::string value)
-    {
-        string_attrs_t &sa = this->sf_value.get_attrs();
-
-        sa.clear();
-
-        scrub_ansi_string(value, sa);
-
-        if (value.size() > this->get_width()) {
-            if (value.size() <= 11) {
-                value.resize(11);
-            }
-            else {
-                static const std::string MIDSUB = " .. ";
-
-                size_t half_width = this->get_width() / 2 -
-                                    MIDSUB.size() / 2;
-                std::string abbrev;
-
-                abbrev.append(value, 0, half_width);
-                abbrev.append(MIDSUB);
-                abbrev.append(value,
-                              value.size() - half_width,
-                              std::string::npos);
-                value = abbrev;
-            }
-        }
-
-        this->sf_value.with_string(value);
-
-        if (this->sf_cylon) {
-            struct line_range lr(this->sf_cylon_pos, this->sf_width);
-
-            sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
-                view_colors::ansi_color_pair(COLOR_WHITE, COLOR_GREEN) | A_BOLD));
-
-            this->sf_cylon_pos += 1;
-            if (this->sf_cylon_pos > this->sf_width) {
-                this->sf_cylon_pos = 0;
-            }
-        }
-    };
+    void set_value(std::string value);;
 
     /**
      * Set the new value for this field using a formatted string.
@@ -172,14 +126,14 @@ public:
 
 protected:
     size_t              sf_width;     /*< The maximum display width, in chars. */
-    size_t              sf_min_width; /*< The minimum display width, in chars. */
-    bool                sf_right_justify;
-    bool                sf_cylon;
-    size_t              sf_cylon_pos;
+    size_t              sf_min_width{0}; /*< The minimum display width, in chars. */
+    bool                sf_right_justify{false};
+    bool                sf_cylon{false};
+    size_t              sf_cylon_pos{0};
     attr_line_t         sf_value; /*< The value to display for this field. */
     view_colors::role_t sf_role;  /*< The color role for this field. */
-    int sf_share;
-    size_t sf_left_pad;
+    int sf_share{0};
+    size_t sf_left_pad{0};
 };
 
 /**

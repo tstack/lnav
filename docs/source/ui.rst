@@ -40,7 +40,7 @@ Above and below the main body are status lines that display:
 * the log format for the top line;
 * the current view;
 * the line number for the top line in the display;
-* the current search hit and the total number of hits;
+* the current search hit, the total number of hits, and the search term;
 
 If the view supports filtering, there will be a status line showing the
 following:

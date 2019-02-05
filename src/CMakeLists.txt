@@ -2,6 +2,7 @@
 set(diag_STAT_SRCS
     ansi_scrubber.cc
     bookmarks.cc
+    bottom_status_source.cc
     collation-functions.cc
     command_executor.cc
     curl_looper.cc

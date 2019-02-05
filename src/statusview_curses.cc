@@ -31,9 +31,34 @@
 
 #include "config.h"
 
+#include <vector>
+
 #include "statusview_curses.hh"
 
 using namespace std;
+
+void status_field::set_value(std::string value)
+{
+    string_attrs_t &sa = this->sf_value.get_attrs();
+
+    sa.clear();
+
+    scrub_ansi_string(value, sa);
+
+    this->sf_value.with_string(value);
+
+    if (this->sf_cylon) {
+        struct line_range lr(this->sf_cylon_pos, this->sf_width);
+
+        sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
+                                 view_colors::ansi_color_pair(COLOR_WHITE, COLOR_GREEN) | A_BOLD));
+
+        this->sf_cylon_pos += 1;
+        if (this->sf_cylon_pos > this->sf_width) {
+            this->sf_cylon_pos = 0;
+        }
+    }
+}
 
 void statusview_curses::do_update()
 {
@@ -46,9 +71,7 @@ void statusview_curses::do_update()
     }
 
     getmaxyx(this->sc_window, height, width);
-    if (width != this->sc_last_width) {
-        this->window_change();
-    }
+    this->window_change();
 
     top   = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
     right = width;
@@ -92,6 +115,16 @@ void statusview_curses::do_update()
                 x = left;
                 left += sf.get_width();
             }
+
+            if (val.length() > sf.get_width() && val.length() > 11) {
+                static const std::string MIDSUB = " .. ";
+
+                size_t half_width = sf.get_width() / 2 - MIDSUB.size() / 2;
+
+                val.erase(half_width, val.length() - (half_width * 2));
+                val.insert(half_width, MIDSUB);
+            }
+
             mvwattrline(this->sc_window,
                         top, x,
                         val,
@@ -109,39 +142,48 @@ void statusview_curses::window_change()
     }
 
     int           field_count = this->sc_source->statusview_fields();
-    int           remaining, total_shares = 0;
+    int           total_shares = 0;
     unsigned long width, height;
+    double remaining = 0;
+    vector<status_field *> resizable;
 
     getmaxyx(this->sc_window, height, width);
     // Silence the compiler. Remove this if height is used at a later stage.
     (void)height;
-    remaining = width - 4;
-    for (int field = 0; field < field_count; field++) {
-        status_field &sf = this->sc_source->statusview_value_for_field(
-            field);
+    remaining = width - 2;
 
-        remaining -=
-            sf.get_share() ? sf.get_min_width() : sf.get_width();
-        remaining    -= 1;
+    for (int field = 0; field < field_count; field++) {
+        auto &sf = this->sc_source->statusview_value_for_field(field);
+
+        remaining -= sf.get_share() ? sf.get_min_width() : sf.get_width();
         total_shares += sf.get_share();
+        if (sf.get_share()) {
+            resizable.emplace_back(&sf);
+        }
     }
 
     if (remaining < 2) {
         remaining = 0;
     }
 
-    for (int field = 0; field < field_count; field++) {
-        status_field &sf = this->sc_source->statusview_value_for_field(
-            field);
+    stable_sort(begin(resizable), end(resizable), [](auto l, auto r) {
+        return r->get_share() < l->get_share();
+    });
+    for (auto sf : resizable) {
+        double divisor = total_shares / sf->get_share();
+        int available = remaining / divisor;
+        int actual_width;
 
-        if (sf.get_share()) {
-            int actual_width;
-
-            actual_width = sf.get_min_width();
-            actual_width += remaining / (sf.get_share() / total_shares);
-
-            sf.set_width(actual_width);
+        if (sf->get_value().length() < (sf->get_min_width() + available)) {
+            actual_width = std::max((int) sf->get_min_width(),
+                                    (int) sf->get_value().length());
+        } else {
+            actual_width = sf->get_min_width() + available;
         }
+        remaining -= (actual_width - sf->get_min_width());
+        total_shares -= sf->get_share();
+
+        sf->set_width(actual_width);
     }
 
     this->sc_last_width = width;

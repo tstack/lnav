@@ -1434,6 +1434,10 @@ static void looper()
             set_scroll_action(sb.get_functor());
             lnav_data.ld_views[lpc].set_search_action(
                 textview_curses::action(update_hits));
+            using std::placeholders::_1;
+            lnav_data.ld_views[lpc].tc_search_event_handler =
+                std::bind(&bottom_status_source::update_search_term,
+                    &lnav_data.ld_bottom_source, _1);
         }
 
         lnav_data.ld_doc_view.set_window(lnav_data.ld_window);
