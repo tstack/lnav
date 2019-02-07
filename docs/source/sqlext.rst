@@ -186,6 +186,8 @@ The following functions can be used to access **lnav**'s internal state:
 * log_top_datetime() - Return the timestamp of the line at the top of the log
   view.
 
+.. _collators:
+
 Collators
 ---------
 

@@ -180,7 +180,9 @@ fields:
 
     :kind: The type of data that was captured **string**, **integer**,
       **float**, **json**, **quoted**.
-    :collate: The collation function for this value.
+    :collate: The name of the SQLite collation function for this value.
+      The standard SQLite collation functions can be used as well as the
+      ones defined by lnav, as described in :ref:`collators`.
     :identifier: A boolean that indicates whether or not this field represents
       an identifier and should be syntax colored.
     :foreign-key: A boolean that indicates that this field is a key and should
