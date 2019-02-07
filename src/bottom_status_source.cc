@@ -117,7 +117,7 @@ void bottom_status_source::update_marks(listview_curses *lc)
     if (bm.find(&textview_curses::BM_SEARCH) != bm.end()) {
         bookmark_vector<vis_line_t> &bv = bm[&textview_curses::BM_SEARCH];
 
-        if (!bv.empty()) {
+        if (!bv.empty() || !tc->get_last_search().empty()) {
             bookmark_vector<vis_line_t>::iterator lb;
 
             lb = std::lower_bound(bv.begin(), bv.end(), tc->get_top());
