@@ -271,12 +271,16 @@ void layout_views()
     for (auto &tc : lnav_data.ld_views) {
         tc.set_height(vis_line_t(-(bottom_height
                                    + (filter_status_open ? 1 : 0)
+                                   + (filters_open ? 1 : 0)
                                    + filter_height)));
     }
     lnav_data.ld_status[LNS_TOP].set_enabled(!filters_open);
     lnav_data.ld_status[LNS_FILTER].set_visible(filter_status_open);
     lnav_data.ld_status[LNS_FILTER].set_enabled(filters_open);
-    lnav_data.ld_status[LNS_FILTER].set_top(-(bottom_height + filter_height + 1));
+    lnav_data.ld_status[LNS_FILTER].set_top(
+        -(bottom_height + filter_height + 1 + (filters_open ? 1 : 0)));
+    lnav_data.ld_status[LNS_FILTER_HELP].set_visible(filters_open);
+    lnav_data.ld_status[LNS_FILTER_HELP].set_top(-(bottom_height + filter_height + 1));
     lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + 2));
     lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
     lnav_data.ld_status[LNS_DOC].set_visible(doc_open);

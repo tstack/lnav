@@ -138,6 +138,7 @@ typedef enum {
     LNS_TOP,
     LNS_BOTTOM,
     LNS_FILTER,
+    LNS_FILTER_HELP,
     LNS_DOC,
     LNS_PREVIEW,
 
@@ -243,6 +244,7 @@ struct _lnav_data {
     top_status_source                       ld_top_source;
     bottom_status_source                    ld_bottom_source;
     filter_status_source                    ld_filter_status_source;
+    filter_help_status_source               ld_filter_help_status_source;
     doc_status_source                       ld_doc_status_source;
     preview_status_source                   ld_preview_status_source;
     bool                                    ld_preview_hidden;

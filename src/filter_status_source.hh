@@ -64,4 +64,16 @@ private:
     sig_atomic_t bss_filter_counter{0};
 };
 
+class filter_help_status_source
+    : public status_data_source {
+public:
+    filter_help_status_source();
+
+    size_t statusview_fields() override;
+
+    status_field &statusview_value_for_field(int field) override;
+private:
+    status_field fss_help;
+};
+
 #endif

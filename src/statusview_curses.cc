@@ -117,7 +117,7 @@ void statusview_curses::do_update()
             }
 
             if (val.length() > sf.get_width() && val.length() > 11) {
-                static const std::string MIDSUB = " .. ";
+                static const string MIDSUB = " .. ";
 
                 size_t half_width = sf.get_width() / 2 - MIDSUB.size() / 2;
 
@@ -174,9 +174,11 @@ void statusview_curses::window_change()
         int available = remaining / divisor;
         int actual_width;
 
-        if (sf->get_value().length() < (sf->get_min_width() + available)) {
+        if ((sf->get_left_pad() + sf->get_value().length()) <
+            (sf->get_min_width() + available)) {
             actual_width = std::max((int) sf->get_min_width(),
-                                    (int) sf->get_value().length());
+                                    (int) (sf->get_left_pad() +
+                                           sf->get_value().length()));
         } else {
             actual_width = sf->get_min_width() + available;
         }

@@ -1466,6 +1466,8 @@ static void looper()
             &lnav_data.ld_bottom_source);
         lnav_data.ld_status[LNS_FILTER].set_data_source(
             &lnav_data.ld_filter_status_source);
+        lnav_data.ld_status[LNS_FILTER_HELP].set_data_source(
+            &lnav_data.ld_filter_help_status_source);
         lnav_data.ld_status[LNS_DOC].set_data_source(
             &lnav_data.ld_doc_status_source);
         lnav_data.ld_status[LNS_PREVIEW].set_data_source(

@@ -33,11 +33,13 @@
 #include "filter_status_source.hh"
 
 static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
-static auto HOTKEY_HELP =
-    ANSI_BOLD("SPC") ": Enable/Disable | "
-    ANSI_BOLD("ENTER") ": Edit | "
-    ANSI_BOLD("t") ": Toggle type | "
-    ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out | "
+static auto EXIT_MSG = "Press " ANSI_BOLD("TAB") " to exit ";
+
+static auto HOTKEY_HELP = " "
+    ANSI_BOLD("SPC") ": Enable/Disable  "
+    ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out  "
+    ANSI_BOLD("ENTER") ": Edit  "
+    ANSI_BOLD("t") ": Toggle type  "
     ANSI_BOLD("D") ": Delete ";
 
 filter_status_source::filter_status_source()
@@ -50,18 +52,18 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
         view_colors::ansi_color_pair_index(COLOR_BLUE, COLOR_WHITE));
 
-    this->tss_fields[TSF_COUNT].set_width(22);
+    this->tss_fields[TSF_COUNT].set_min_width(16);
+    this->tss_fields[TSF_COUNT].set_share(1);
     this->tss_fields[TSF_COUNT].set_role(view_colors::VCR_STATUS);
 
-    this->tss_fields[TSF_FILTERED].set_width(30);
+    this->tss_fields[TSF_FILTERED].set_min_width(20);
+    this->tss_fields[TSF_FILTERED].set_share(1);
     this->tss_fields[TSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
 
     this->tss_fields[TSF_HELP].right_justify(true);
-    this->tss_fields[TSF_HELP].set_min_width(40);
-    this->tss_fields[TSF_HELP].set_width(1024);
+    this->tss_fields[TSF_HELP].set_width(20);
     this->tss_fields[TSF_HELP].set_value(TOGGLE_MSG);
     this->tss_fields[TSF_HELP].set_left_pad(1);
-    this->tss_fields[TSF_HELP].set_share(1);
 
     this->tss_prompt.set_left_pad(1);
     this->tss_prompt.set_min_width(35);
@@ -74,7 +76,7 @@ filter_status_source::filter_status_source()
 size_t filter_status_source::statusview_fields()
 {
     if (lnav_data.ld_mode == LNM_FILTER) {
-        this->tss_fields[TSF_HELP].set_value(HOTKEY_HELP);
+        this->tss_fields[TSF_HELP].set_value(EXIT_MSG);
     } else {
         this->tss_fields[TSF_HELP].set_value(TOGGLE_MSG);
     }
@@ -153,4 +155,21 @@ void filter_status_source::update_filtered(text_sub_source *tss)
         }
         sf.set_value("%'9d Lines not shown", tss->get_filtered_count());
     }
+}
+
+filter_help_status_source::filter_help_status_source()
+{
+    this->fss_help.set_min_width(10);
+    this->fss_help.set_share(1);
+    this->fss_help.set_value(HOTKEY_HELP);
+}
+
+size_t filter_help_status_source::statusview_fields()
+{
+    return 1;
+}
+
+status_field &filter_help_status_source::statusview_value_for_field(int field)
+{
+    return this->fss_help;
 }
