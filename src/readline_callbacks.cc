@@ -572,10 +572,9 @@ void rl_callback(void *dummy, readline_curses *rc)
 
         if (!result.empty()) {
             result = "SQL Result: " + result;
-        }
-
-        if (dls.dls_rows.size() > 1) {
-            ensure_view(&lnav_data.ld_views[LNV_DB]);
+            if (dls.dls_rows.size() > 1) {
+                ensure_view(&lnav_data.ld_views[LNV_DB]);
+            }
         }
 
         rc->set_value(result);
