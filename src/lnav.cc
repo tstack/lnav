@@ -1538,6 +1538,7 @@ static void looper()
             if (lnav_data.ld_filter_source.fss_editing) {
                 lnav_data.ld_filter_source.fss_match_view.set_needs_update();
             }
+            lnav_data.ld_filter_view.set_needs_update();
             lnav_data.ld_filter_view.do_update();
             refresh();
 

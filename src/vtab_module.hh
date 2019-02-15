@@ -759,7 +759,7 @@ struct tvt_no_update : public T {
 
     int update_row(sqlite3_vtab *tab, sqlite3_int64 &rowid_out) {
         tab->zErrMsg = sqlite3_mprintf(
-            "Rows cannot be update in this table");
+            "Rows cannot be updated in this table");
         return SQLITE_ERROR;
     };
 

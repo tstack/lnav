@@ -123,20 +123,13 @@ struct lnav_views : public tvt_iterator_cursor<lnav_views> {
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's views through this table.
 CREATE TABLE lnav_views (
-    -- The name of the view.
-    name text PRIMARY KEY,
-    -- The number of the line at the top of the view, starting from zero.
-    top integer,
-    -- The left position of the viewport.
-    left integer,
-    -- The height of the viewport.
-    height integer,
-    -- The number of lines in the view.
-    inner_height integer,
-    -- The time of the top line in the view, if the content is time-based.
-    top_time datetime,
-    -- The text to search for in the view.
-    search text
+    name text PRIMARY KEY,  -- The name of the view.
+    top integer,            -- The number of the line at the top of the view, starting from zero.
+    left integer,           -- The left position of the viewport.
+    height integer,         -- The height of the viewport.
+    inner_height integer,   -- The number of lines in the view.
+    top_time datetime,      -- The time of the top line in the view, if the content is time-based.
+    search text             -- The text to search for in the view.
 );
 )";
 
@@ -328,7 +321,8 @@ CREATE TABLE lnav_view_stack (
     };
 };
 
-struct lnav_view_filters : public tvt_iterator_cursor<lnav_view_filters> {
+struct lnav_view_filter_base {
+
     struct vtab {
         sqlite3_vtab base;
 
@@ -385,17 +379,6 @@ struct lnav_view_filters : public tvt_iterator_cursor<lnav_view_filters> {
         }
     };
 
-    static constexpr const char *CREATE_STMT = R"(
--- Access lnav's filters through this table.
-CREATE TABLE lnav_view_filters (
-    view_name text,     -- The name of the view.
-    filter_id integer,  -- The filter identifier.
-    enabled integer,    -- Indicates if the filter is enabled/disabled.
-    type text,          -- The type of filter (i.e. in/out).
-    pattern text        -- The filter pattern.
-);
-)";
-
     iterator begin() {
         iterator retval = iterator();
 
@@ -419,6 +402,20 @@ CREATE TABLE lnav_view_filters (
 
         return retval;
     }
+};
+
+struct lnav_view_filters : public tvt_iterator_cursor<lnav_view_filters>,
+    public lnav_view_filter_base {
+    static constexpr const char *CREATE_STMT = R"(
+-- Access lnav's filters through this table.
+CREATE TABLE lnav_view_filters (
+    view_name text,     -- The name of the view.
+    filter_id integer,  -- The filter identifier.
+    enabled integer,    -- Indicates if the filter is enabled/disabled.
+    type text,          -- The type of filter (i.e. in/out).
+    pattern text        -- The filter pattern.
+);
+)";
 
     int get_column(cursor &vc, sqlite3_context *ctx, int col) {
         textview_curses &tc = lnav_data.ld_views[vc.iter.i_view_index];
@@ -542,11 +539,47 @@ CREATE TABLE lnav_view_filters (
     };
 };
 
+struct lnav_view_filter_stats : public tvt_iterator_cursor<lnav_view_filter_stats>,
+    public lnav_view_filter_base {
+    static constexpr const char *CREATE_STMT = R"(
+-- Access lnav's filters through this table.
+CREATE TABLE lnav_view_filters (
+    view_name TEXT,     -- The name of the view.
+    filter_id INTEGER,  -- The filter identifier.
+    hits      INTEGER   -- The number of lines that matched this filter.
+);
+)";
+
+    int get_column(cursor &vc, sqlite3_context *ctx, int col) {
+        textview_curses &tc = lnav_data.ld_views[vc.iter.i_view_index];
+        text_sub_source *tss = tc.get_sub_source();
+        filter_stack &fs = tss->get_filters();
+        auto tf = *(fs.begin() + vc.iter.i_filter_index);
+
+        switch (col) {
+            case 0:
+                sqlite3_result_text(ctx,
+                                    lnav_view_strings[vc.iter.i_view_index], -1,
+                                    SQLITE_STATIC);
+                break;
+            case 1:
+                to_sqlite(ctx, tf->get_index());
+                break;
+            case 2:
+                to_sqlite(ctx, tss->get_filtered_count_for(tf->get_index()));
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+};
+
 int register_views_vtab(sqlite3 *db)
 {
     static vtab_module<lnav_views> LNAV_VIEWS_MODULE;
     static vtab_module<lnav_view_stack> LNAV_VIEW_STACK_MODULE;
     static vtab_module<lnav_view_filters> LNAV_VIEW_FILTERS_MODULE;
+    static vtab_module<tvt_no_update<lnav_view_filter_stats>> LNAV_VIEW_FILTER_STATS_MODULE;
 
     int rc;
 
@@ -557,6 +590,9 @@ int register_views_vtab(sqlite3 *db)
     assert(rc == SQLITE_OK);
 
     rc = LNAV_VIEW_FILTERS_MODULE.create(db, "lnav_view_filters");
+    assert(rc == SQLITE_OK);
+
+    rc = LNAV_VIEW_FILTER_STATS_MODULE.create(db, "lnav_view_filter_stats");
     assert(rc == SQLITE_OK);
 
     return rc;

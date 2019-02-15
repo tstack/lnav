@@ -153,7 +153,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(8);
+            this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(LNM_FILTER, "", "");
             this->fss_filter_state = true;
@@ -182,7 +182,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(8);
+            this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(LNM_FILTER, "", "");
             this->fss_filter_state = true;
@@ -207,7 +207,7 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
-            this->fss_editor.set_left(8);
+            this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
             this->fss_editor.focus(LNM_FILTER, "", tf->get_id().c_str());
             this->fss_filter_state = tf->is_enabled();
@@ -255,6 +255,7 @@ void filter_sub_source::text_value_for_line(textview_curses &tc, int line,
     text_sub_source *tss = top_view->get_sub_source();
     filter_stack &fs = tss->get_filters();
     shared_ptr<text_filter> tf = *(fs.begin() + line);
+    char hits[32];
 
     value_out = "    ";
     switch (tf->get_type()) {
@@ -268,6 +269,13 @@ void filter_sub_source::text_value_for_line(textview_curses &tc, int line,
             ensure(0);
             break;
     }
+
+    if (this->fss_editing && line == tc.get_selection()) {
+        snprintf(hits, sizeof(hits), "%6s hits | ", "-");
+    } else {
+        snprintf(hits, sizeof(hits), "%6d hits | ", tss->get_filtered_count_for(tf->get_index()));
+    }
+    value_out.append(hits);
 
     value_out.append(tf->get_id());
 }
@@ -297,6 +305,10 @@ void filter_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     int fg = tf->get_type() == text_filter::INCLUDE ? COLOR_GREEN : COLOR_RED;
     value_out.emplace_back(line_range{4, 7}, &view_curses::VC_FOREGROUND, fg);
     value_out.emplace_back(line_range{4, 7}, &view_curses::VC_STYLE, A_BOLD);
+
+    value_out.emplace_back(line_range{8, 14}, &view_curses::VC_STYLE, A_BOLD);
+    value_out.emplace_back(line_range{20, 21}, &view_curses::VC_GRAPHIC, ACS_VLINE);
+
     fg = selected ? COLOR_BLACK : COLOR_WHITE;
     value_out.emplace_back(line_range{0, -1}, &view_curses::VC_FOREGROUND, fg);
     value_out.emplace_back(line_range{0, -1}, &view_curses::VC_BACKGROUND, bg);

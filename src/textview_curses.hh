@@ -54,12 +54,14 @@ public:
     logfile_filter_state(std::shared_ptr<logfile> lf = nullptr) : tfs_logfile(
         std::move(lf)) {
         memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
+        memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
         this->tfs_mask.reserve(64 * 1024);
     };
 
     void clear() {
         this->tfs_logfile = nullptr;
         memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
+        memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
         this->tfs_mask.clear();
         this->tfs_index.clear();
     };
@@ -68,6 +70,7 @@ public:
         for (int lpc = 0; lpc < MAX_FILTERS; lpc++) {
             if (!(used_mask & (1L << lpc))) {
                 this->tfs_filter_count[lpc] = 0;
+                this->tfs_filter_hits[lpc] = 0;
             }
         }
         for (size_t lpc = 0; lpc < this->tfs_mask.size(); lpc++) {
@@ -90,6 +93,7 @@ public:
 
     std::shared_ptr<logfile> tfs_logfile;
     size_t tfs_filter_count[MAX_FILTERS];
+    int tfs_filter_hits[MAX_FILTERS];
     std::vector<uint32_t> tfs_mask;
     std::vector<uint32_t> tfs_index;
 };
@@ -107,12 +111,7 @@ public:
     } type_t;
 
     text_filter(type_t type, const std::string id, size_t index)
-            : lf_message_matched(false),
-              lf_lines_for_message(0),
-              lf_last_message_matched(false),
-              lf_last_lines_for_message(0),
-              lf_enabled(true),
-              lf_type(type),
+            : lf_type(type),
               lf_id(id),
               lf_index(index) { };
     virtual ~text_filter() { };
@@ -134,6 +133,9 @@ public:
         this->lf_lines_for_message = this->lf_last_lines_for_message;
 
         for (size_t lpc = 0; lpc < this->lf_lines_for_message; lpc++) {
+            if (this->lf_message_matched) {
+                lfs.tfs_filter_hits[this->lf_index] -= 1;
+            }
             lfs.tfs_filter_count[this->lf_index] -= 1;
             size_t line_number = lfs.tfs_filter_count[this->lf_index];
 
@@ -161,6 +163,9 @@ public:
 
             lfs.tfs_mask[line_number] |= mask;
             lfs.tfs_filter_count[this->lf_index] += 1;
+            if (this->lf_message_matched) {
+                lfs.tfs_filter_hits[this->lf_index] += 1;
+            }
         }
         this->lf_last_message_matched = this->lf_message_matched;
         this->lf_last_lines_for_message = this->lf_lines_for_message;
@@ -177,13 +182,13 @@ public:
     };
 
     bool lf_deleted{false};
-    bool lf_message_matched;
-    size_t lf_lines_for_message;
-    bool lf_last_message_matched;
-    size_t lf_last_lines_for_message;
+    bool lf_message_matched{false};
+    size_t lf_lines_for_message{0};
+    bool lf_last_message_matched{false};
+    size_t lf_last_lines_for_message{0};
 
 protected:
-    bool        lf_enabled;
+    bool        lf_enabled{true};
     type_t      lf_type;
     std::string lf_id;
     size_t lf_index;
@@ -491,6 +496,10 @@ public:
     virtual int get_filtered_count() const {
         return 0;
     };
+
+    virtual int get_filtered_count_for(size_t filter_index) const {
+        return 0;
+    }
 
     virtual text_format_t get_text_format() const {
         return TF_UNKNOWN;

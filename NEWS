@@ -7,6 +7,8 @@ lnav v0.8.5:
        with hotkeys.
      * Added an 'lnav_view_filters' SQL table that can be used to
        programmatically manipulate filters.
+     * Added an 'lnav_view_filter_stats' SQL table that contains the number of
+       times a given filter matched a line in the view.
      * Added a 'log_filters' column to log tables that can be used to see what
        filters matched the log message.
      * A history of locations in a view is now kept so that you can jump back

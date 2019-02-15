@@ -262,6 +262,17 @@ public:
         return retval;
     }
 
+    int get_filtered_count_for(size_t filter_index) const {
+        std::shared_ptr<logfile> lf = this->current_file();
+
+        if (lf == nullptr) {
+            return 0;
+        }
+
+        line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+        return lfo->lfo_filter_state.tfs_filter_hits[filter_index];
+    }
+
     text_format_t get_text_format() const {
         if (this->tss_files.empty()) {
             return TF_UNKNOWN;

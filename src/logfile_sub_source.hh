@@ -459,6 +459,16 @@ public:
         return this->lss_index.size() - this->lss_filtered_index.size();
     };
 
+    int get_filtered_count_for(size_t filter_index) const {
+        int retval = 0;
+
+        for (auto ld : this->lss_files) {
+            retval += ld->ld_filter_state.lfo_filter_state.tfs_filter_hits[filter_index];
+        }
+
+        return retval;
+    }
+
     std::shared_ptr<logfile> find(const char *fn, content_line_t &line_base);
 
     std::shared_ptr<logfile> find(content_line_t &line)
