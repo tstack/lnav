@@ -196,22 +196,10 @@ inline void to_sqlite(sqlite3_context *ctx, bool val)
     sqlite3_result_int(ctx, val);
 }
 
-inline void to_sqlite(sqlite3_context *ctx, int64_t val)
-{
-    sqlite3_result_int64(ctx, val);
-}
-
-inline void to_sqlite(sqlite3_context *ctx, uint32_t val)
-{
-    sqlite3_result_int64(ctx, val);
-}
-
-inline void to_sqlite(sqlite3_context *ctx, size_t val)
-{
-    sqlite3_result_int64(ctx, val);
-}
-
-inline void to_sqlite(sqlite3_context *ctx, int val)
+template<typename T>
+inline void to_sqlite(sqlite3_context *ctx, T val,
+                      typename std::enable_if<std::is_integral<T>::value &&
+                                              !std::is_same<T, bool>::value>::type* dummy = 0)
 {
     sqlite3_result_int64(ctx, val);
 }
