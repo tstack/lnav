@@ -116,13 +116,18 @@ void statusview_curses::do_update()
                 left += sf.get_width();
             }
 
-            if (val.length() > sf.get_width() && val.length() > 11) {
-                static const string MIDSUB = " .. ";
+            if (val.length() > sf.get_width()) {
+                static const string ELLIPSIS = "\xE2\x8B\xAF";
 
-                size_t half_width = sf.get_width() / 2 - MIDSUB.size() / 2;
+                if (sf.get_width() > 11) {
+                    size_t half_width = sf.get_width() / 2 - 1;
 
-                val.erase(half_width, val.length() - (half_width * 2));
-                val.insert(half_width, MIDSUB);
+                    val.erase(half_width, val.length() - (half_width * 2));
+                    val.insert(half_width, ELLIPSIS);
+                } else {
+                    val = val.subline(0, sf.get_width() - 1);
+                    val.append(ELLIPSIS);
+                }
             }
 
             mvwattrline(this->sc_window,

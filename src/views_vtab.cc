@@ -388,10 +388,11 @@ struct lnav_view_filters : public tvt_iterator_cursor<lnav_view_filters> {
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's filters through this table.
 CREATE TABLE lnav_view_filters (
-    view_name text,
-    enabled integer,
-    type text,
-    pattern text
+    view_name text,     -- The name of the view.
+    filter_id integer,  -- The filter identifier.
+    enabled integer,    -- Indicates if the filter is enabled/disabled.
+    type text,          -- The type of filter (i.e. in/out).
+    pattern text        -- The filter pattern.
 );
 )";
 
@@ -432,9 +433,12 @@ CREATE TABLE lnav_view_filters (
                                     SQLITE_STATIC);
                 break;
             case 1:
-                sqlite3_result_int(ctx, tf->is_enabled());
+                to_sqlite(ctx, tf->get_index());
                 break;
             case 2:
+                sqlite3_result_int(ctx, tf->is_enabled());
+                break;
+            case 3:
                 switch (tf->get_type()) {
                     case text_filter::INCLUDE:
                         sqlite3_result_text(ctx, "in", 2, SQLITE_STATIC);
@@ -446,7 +450,7 @@ CREATE TABLE lnav_view_filters (
                         ensure(0);
                 }
                 break;
-            case 3:
+            case 4:
                 sqlite3_result_text(ctx,
                                     tf->get_id().c_str(),
                                     -1,
@@ -460,6 +464,7 @@ CREATE TABLE lnav_view_filters (
     int insert_row(sqlite3_vtab *tab,
                    sqlite3_int64 &rowid_out,
                    lnav_view_t view_index,
+                   int64_t _filter_id,
                    bool enabled,
                    text_filter::type_t type,
                    pair<string, pcre *> pattern) {
@@ -499,6 +504,7 @@ CREATE TABLE lnav_view_filters (
     int update_row(sqlite3_vtab *tab,
                    sqlite3_int64 &rowid,
                    lnav_view_t new_view_index,
+                   int64_t new_filter_id,
                    bool enabled,
                    text_filter::type_t type,
                    pair<string, pcre *> pattern) {

@@ -33,6 +33,7 @@
 #include "sql_util.hh"
 #include "log_vtab_impl.hh"
 #include "yajlpp_def.hh"
+#include "vtab_module.hh"
 
 #include "logfile_sub_source.hh"
 
@@ -41,6 +42,28 @@ using namespace std;
 static struct log_cursor log_cursor_latest;
 
 struct _log_vtab_data log_vtab_data;
+
+static const char *LOG_COLUMNS = R"(  (
+  log_line        INTEGER  PRIMARY KEY,            -- The line number for the log message
+  log_part        TEXT     COLLATE naturalnocase,  -- The partition the message is in
+  log_time        DATETIME,                        -- The adjusted timestamp for the log message
+  log_actual_time DATETIME HIDDEN,                 -- The timestamp from the original log file for this message
+  log_idle_msecs  INTEGER,                         -- The difference in time between this messages and the previous
+  log_level       TEXT     COLLATE loglevel,       -- The log message level
+  log_mark        BOOLEAN,                         -- True if the log message was marked
+  log_comment     TEXT,                            -- The comment for this message
+  log_tags        TEXT,                            -- A JSON list of tags for this message
+  log_filters     TEXT,                            -- A JSON list of filter IDs that matched this message
+  -- BEGIN Format-specific fields:
+)";
+
+static const char *LOG_FOOTER_COLUMNS = R"(
+  -- END Format-specific fields
+  log_path        TEXT HIDDEN COLLATE naturalnocase, -- The path to the log file this message is from
+  log_text        TEXT HIDDEN,                       -- The full text of the log message
+  log_body        TEXT HIDDEN                        -- The body of the log message
+);
+)";
 
 static const char *type_to_string(int type)
 {
@@ -57,7 +80,7 @@ static const char *type_to_string(int type)
 
     ensure("Invalid sqlite type");
 
-    return NULL;
+    return nullptr;
 }
 
 std::string log_vtab_impl::get_table_statement()
@@ -67,17 +90,7 @@ std::string log_vtab_impl::get_table_statement()
     std::ostringstream oss;
     size_t max_name_len = 15;
 
-    oss << "CREATE TABLE " << this->get_name().to_string() << " (\n"
-        << "  log_line        INTEGER  PRIMARY KEY,\n"
-        << "  log_part        TEXT     COLLATE naturalnocase,\n"
-        << "  log_time        DATETIME,\n"
-        << "  log_actual_time DATETIME HIDDEN,\n"
-        << "  log_idle_msecs  INTEGER,\n"
-        << "  log_level       TEXT     COLLATE loglevel,\n"
-        << "  log_mark        BOOLEAN,\n"
-        << "  log_comment     TEXT,\n"
-        << "  log_tags        TEXT,\n"
-        << "  -- BEGIN Format-specific fields:\n";
+    oss << "CREATE TABLE " << this->get_name().to_string() << LOG_COLUMNS;
     this->get_columns(cols);
     this->vi_column_count = cols.size();
     for (iter = cols.begin(); iter != cols.end(); iter++) {
@@ -107,11 +120,7 @@ std::string log_vtab_impl::get_table_statement()
                                   comment.c_str());
         oss << coldecl;
     }
-    oss << "  -- END Format-specific fields\n"
-        << "  log_path        TEXT HIDDEN COLLATE naturalnocase,\n"
-        << "  log_text        TEXT HIDDEN,\n"
-        << "  log_body        TEXT HIDDEN\n"
-        << ");\n";
+    oss << LOG_FOOTER_COLUMNS;
 
     log_debug("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
 
@@ -295,8 +304,10 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
     vtab *       vt = (vtab *)cur->pVtab;
 
     content_line_t    cl(vt->lss->at(vc->log_cursor.lc_curr_line));
-    shared_ptr<logfile>         lf = vt->lss->find(cl);
-    auto ll = lf->begin() + cl;
+    uint64_t line_number;
+    auto ld = vt->lss->find_data(cl, line_number);
+    shared_ptr<logfile> lf = ld->get_file();
+    auto ll = lf->begin() + line_number;
 
     require(col >= 0);
 
@@ -455,7 +466,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                 {
                     yajlpp_array arr(gen);
 
-                    for (auto str : meta.bm_tags) {
+                    for (const auto &str : meta.bm_tags) {
                         arr.gen(str);
                     }
                 }
@@ -468,6 +479,35 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                                     SQLITE_TRANSIENT);
                 sqlite3_result_subtype(ctx, 'J');
             }
+            break;
+        }
+
+        case VT_COL_FILTERS: {
+            auto &filters = vt->lss->get_filters();
+            auto &filter_state = ld->ld_filter_state;
+            yajlpp_gen gen;
+
+            yajl_gen_config(gen, yajl_gen_beautify, false);
+
+            {
+                yajlpp_array arr(gen);
+
+                for (auto &filter : filters) {
+                    if (filter->lf_deleted) {
+                        continue;
+                    }
+
+                    uint32_t mask = (1UL << filter->get_index());
+
+                    if (filter_state.lfo_filter_state.tfs_mask[line_number] &
+                        mask) {
+                        arr.gen(filter->get_index());
+                    }
+                }
+            }
+
+            to_sqlite(ctx, gen.to_string_fragment());
+            sqlite3_result_subtype(ctx, 'J');
             break;
         }
 
@@ -499,10 +539,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                 }
                 case 2: {
                     if (vc->line_values.empty()) {
-                        logfile::iterator line_iter;
-
-                        line_iter = lf->begin() + cl;
-                        lf->read_full_message(line_iter, vc->log_msg);
+                        lf->read_full_message(ll, vc->log_msg);
                         vt->vi->extract(lf, vc->log_msg, vc->line_values);
                     }
 
@@ -527,10 +564,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         }
         else {
             if (vc->line_values.empty()) {
-                logfile::iterator line_iter;
-
-                line_iter = lf->begin() + cl;
-                lf->read_full_message(line_iter, vc->log_msg);
+                lf->read_full_message(ll, vc->log_msg);
                 vt->vi->extract(lf, vc->log_msg, vc->line_values);
             }
 
@@ -885,7 +919,7 @@ static int vt_update(sqlite3_vtab *tab,
     return retval;
 }
 
-static sqlite3_module vtab_module = {
+static sqlite3_module generic_vtab_module = {
     0,              /* iVersion */
     vt_create,      /* xCreate       - create a vtable */
     vt_connect,     /* xConnect      - associate a vtable with a connection */
@@ -923,8 +957,8 @@ log_vtab_manager::log_vtab_manager(sqlite3 *memdb,
                                    logfile_sub_source &lss)
     : vm_db(memdb), vm_textview(tc), vm_source(lss)
 {
-    sqlite3_create_module(this->vm_db, "log_vtab_impl", &vtab_module, this);
-    sqlite3_progress_handler(memdb, 32, progress_callback, NULL);
+    sqlite3_create_module(this->vm_db, "log_vtab_impl", &generic_vtab_module, this);
+    sqlite3_progress_handler(memdb, 32, progress_callback, nullptr);
 }
 
 string log_vtab_manager::register_vtab(log_vtab_impl *vi)

@@ -49,6 +49,7 @@ enum {
     VT_COL_MARK,
     VT_COL_LOG_COMMENT,
     VT_COL_LOG_TAGS,
+    VT_COL_FILTERS,
     VT_COL_MAX
 };
 

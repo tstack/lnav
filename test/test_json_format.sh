@@ -131,20 +131,20 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_json.json
 
 check_output "log levels not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,arr,obj,user
-0,<NULL>,2013-09-06 20:00:48.124,0,trace,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-1,<NULL>,2013-09-06 20:00:49.124,1000,info,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-2,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,<NULL>,<NULL>,steve@example.com
-4,<NULL>,2013-09-06 22:00:59.124,10000,debug5,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-5,<NULL>,2013-09-06 22:00:59.124,0,debug4,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-6,<NULL>,2013-09-06 22:00:59.124,0,debug3,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-7,<NULL>,2013-09-06 22:00:59.124,0,debug2,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-8,<NULL>,2013-09-06 22:00:59.124,0,debug,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-9,<NULL>,2013-09-06 22:01:49.124,50000,stats,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-10,<NULL>,2013-09-06 22:01:49.124,0,warning,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-11,<NULL>,2013-09-06 22:01:49.124,0,error,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-12,<NULL>,2013-09-06 22:01:49.124,0,critical,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>
-13,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>,<NULL>,"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,arr,obj,user
+0,<NULL>,2013-09-06 20:00:48.124,0,trace,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+1,<NULL>,2013-09-06 20:00:49.124,1000,info,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+2,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,[],<NULL>,<NULL>,steve@example.com
+4,<NULL>,2013-09-06 22:00:59.124,10000,debug5,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+5,<NULL>,2013-09-06 22:00:59.124,0,debug4,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+6,<NULL>,2013-09-06 22:00:59.124,0,debug3,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+7,<NULL>,2013-09-06 22:00:59.124,0,debug2,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+8,<NULL>,2013-09-06 22:00:59.124,0,debug,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+9,<NULL>,2013-09-06 22:01:49.124,50000,stats,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+10,<NULL>,2013-09-06 22:01:49.124,0,warning,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+11,<NULL>,2013-09-06 22:01:49.124,0,error,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+12,<NULL>,2013-09-06 22:01:49.124,0,critical,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+13,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>,<NULL>,[],"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",<NULL>
 EOF
 
 
@@ -165,6 +165,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -178,6 +181,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -191,6 +197,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": "steve@example.com"
@@ -204,6 +213,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -217,6 +229,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -230,6 +245,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -243,6 +261,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -256,6 +277,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -269,6 +293,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -282,6 +309,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -295,6 +325,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -308,6 +341,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": null,
         "obj": null,
         "user": null
@@ -321,6 +357,9 @@ check_output "json output not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_filters": [
+
+        ],
         "arr": [
             "hi",
             {
@@ -355,10 +394,10 @@ run_test ${lnav_test} -n -d /tmp/lnav.err \
     ${test_dir}/logfile_json2.json
 
 check_output "log levels not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,cl,user
-0,<NULL>,2013-09-06 20:00:49.124,0,info,0,<NULL>,<NULL>,com.exmaple.foo,<NULL>
-1,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,com.exmaple.foo,steve@example.com
-3,<NULL>,2013-09-06 22:01:49.124,60000,error,0,<NULL>,<NULL>,com.exmaple.foo,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,cl,user
+0,<NULL>,2013-09-06 20:00:49.124,0,info,0,<NULL>,<NULL>,[],com.exmaple.foo,<NULL>
+1,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,[],com.exmaple.foo,steve@example.com
+3,<NULL>,2013-09-06 22:01:49.124,60000,error,0,<NULL>,<NULL>,[],com.exmaple.foo,<NULL>
 EOF
 
 
@@ -417,20 +456,20 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_nested_json.json
 
 check_output "log levels not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,@fields/user
-0,<NULL>,2013-09-06 20:00:48.124,0,trace,0,<NULL>,<NULL>,<NULL>
-2,<NULL>,2013-09-06 20:00:49.124,1000,info,0,<NULL>,<NULL>,<NULL>
-4,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,steve@example.com
-7,<NULL>,2013-09-06 22:00:59.124,10000,debug5,0,<NULL>,<NULL>,<NULL>
-9,<NULL>,2013-09-06 22:00:59.124,0,debug4,0,<NULL>,<NULL>,<NULL>
-11,<NULL>,2013-09-06 22:00:59.124,0,debug3,0,<NULL>,<NULL>,<NULL>
-13,<NULL>,2013-09-06 22:00:59.124,0,debug2,0,<NULL>,<NULL>,<NULL>
-15,<NULL>,2013-09-06 22:00:59.124,0,debug,0,<NULL>,<NULL>,<NULL>
-17,<NULL>,2013-09-06 22:01:49.124,50000,stats,0,<NULL>,<NULL>,<NULL>
-19,<NULL>,2013-09-06 22:01:49.124,0,warning,0,<NULL>,<NULL>,<NULL>
-21,<NULL>,2013-09-06 22:01:49.124,0,error,0,<NULL>,<NULL>,<NULL>
-23,<NULL>,2013-09-06 22:01:49.124,0,critical,0,<NULL>,<NULL>,<NULL>
-25,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>,<NULL>,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,@fields/user
+0,<NULL>,2013-09-06 20:00:48.124,0,trace,0,<NULL>,<NULL>,[],<NULL>
+2,<NULL>,2013-09-06 20:00:49.124,1000,info,0,<NULL>,<NULL>,[],<NULL>
+4,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,[],steve@example.com
+7,<NULL>,2013-09-06 22:00:59.124,10000,debug5,0,<NULL>,<NULL>,[],<NULL>
+9,<NULL>,2013-09-06 22:00:59.124,0,debug4,0,<NULL>,<NULL>,[],<NULL>
+11,<NULL>,2013-09-06 22:00:59.124,0,debug3,0,<NULL>,<NULL>,[],<NULL>
+13,<NULL>,2013-09-06 22:00:59.124,0,debug2,0,<NULL>,<NULL>,[],<NULL>
+15,<NULL>,2013-09-06 22:00:59.124,0,debug,0,<NULL>,<NULL>,[],<NULL>
+17,<NULL>,2013-09-06 22:01:49.124,50000,stats,0,<NULL>,<NULL>,[],<NULL>
+19,<NULL>,2013-09-06 22:01:49.124,0,warning,0,<NULL>,<NULL>,[],<NULL>
+21,<NULL>,2013-09-06 22:01:49.124,0,error,0,<NULL>,<NULL>,[],<NULL>
+23,<NULL>,2013-09-06 22:01:49.124,0,critical,0,<NULL>,<NULL>,[],<NULL>
+25,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>,<NULL>,[],<NULL>
 EOF
 
 
@@ -464,8 +503,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_json3.json
 
 check_output "json log3 format is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,client_ip,details1,details2,details3,request/method,request/size,request/uri,response/status
-0,<NULL>,2017-03-24 20:06:26.240,0,info,0,<NULL>,<NULL>,1.1.1.1,<NULL>,<NULL>,<NULL>,GET,166,/example/uri/5,200
-1,<NULL>,2017-03-24 20:12:47.764,381524,critical,0,<NULL>,<NULL>,1.1.1.1,<NULL>,<NULL>,<NULL>,GET,166,/example/uri/5,500
-2,<NULL>,2017-03-24 20:15:31.694,163930,warning,0,<NULL>,<NULL>,1.1.1.1,"{""foo"": ""bar""}","{""foo"": ""bar""}","{""foo"": ""bar""}",GET,166,/example/uri/5,400
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,client_ip,details1,details2,details3,request/method,request/size,request/uri,response/status
+0,<NULL>,2017-03-24 20:06:26.240,0,info,0,<NULL>,<NULL>,[],1.1.1.1,<NULL>,<NULL>,<NULL>,GET,166,/example/uri/5,200
+1,<NULL>,2017-03-24 20:12:47.764,381524,critical,0,<NULL>,<NULL>,[],1.1.1.1,<NULL>,<NULL>,<NULL>,GET,166,/example/uri/5,500
+2,<NULL>,2017-03-24 20:15:31.694,163930,warning,0,<NULL>,<NULL>,[],1.1.1.1,"{""foo"": ""bar""}","{""foo"": ""bar""}","{""foo"": ""bar""}",GET,166,/example/uri/5,400
 EOF

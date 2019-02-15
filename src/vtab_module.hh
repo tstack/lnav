@@ -201,6 +201,16 @@ inline void to_sqlite(sqlite3_context *ctx, int64_t val)
     sqlite3_result_int64(ctx, val);
 }
 
+inline void to_sqlite(sqlite3_context *ctx, uint32_t val)
+{
+    sqlite3_result_int64(ctx, val);
+}
+
+inline void to_sqlite(sqlite3_context *ctx, size_t val)
+{
+    sqlite3_result_int64(ctx, val);
+}
+
 inline void to_sqlite(sqlite3_context *ctx, int val)
 {
     sqlite3_result_int64(ctx, val);

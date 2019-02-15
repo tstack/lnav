@@ -7,8 +7,8 @@ lnav v0.8.5:
        with hotkeys.
      * Added an 'lnav_view_filters' SQL table that can be used to
        programmatically manipulate filters.
-     * Added CTRL+F to toggle the enabled/disabled state of all filters for the
-       current view.
+     * Added a 'log_filters' column to log tables that can be used to see what
+       filters matched the log message.
      * A history of locations in a view is now kept so that you can jump back
        to where you were previously using the '{' and '}' keys.  The location
        history can also be accessed through the ":prev-location" and
@@ -32,7 +32,9 @@ lnav v0.8.5:
        strong fuzzy match.  If there are multiple matches, as would happen
        with ":dfil", readline's menu-complete behavior will be engaged and
        you can press TAB cycle through the options.
-     * The current term is now shown in the bottom status bar.
+     * Added CTRL+F to toggle the enabled/disabled state of all filters for the
+       current view.
+     * The current search term is now shown in the bottom status bar.
      * Some initial help text is now shown for the search and SQL prompts to
        refresh the memory.
      * When entering the ":comment" command for a line with a comment, the

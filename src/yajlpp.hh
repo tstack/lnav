@@ -479,6 +479,11 @@ public:
         return yajl_gen_integer(this->yg_handle, value);
     };
 
+    yajl_gen_status operator()(unsigned long value)
+    {
+        return yajl_gen_integer(this->yg_handle, value);
+    };
+
     yajl_gen_status operator()(bool value)
     {
         return yajl_gen_bool(this->yg_handle, value);

@@ -298,6 +298,30 @@ public:
         return false;
     };
 
+    void get_mask(uint32_t &filter_mask) {
+        filter_mask = 0;
+        for (auto &iter : *this) {
+            std::shared_ptr<text_filter> tf = iter;
+
+            if (tf->lf_deleted) {
+                continue;
+            }
+            if (tf->is_enabled()) {
+                uint32_t bit = (1UL << tf->get_index());
+
+                switch (tf->get_type()) {
+                    case text_filter::EXCLUDE:
+                    case text_filter::INCLUDE:
+                        filter_mask |= bit;
+                        break;
+                    default:
+                        ensure(0);
+                        break;
+                }
+            }
+        }
+    }
+
     void get_enabled_mask(uint32_t &filter_in_mask, uint32_t &filter_out_mask) {
         filter_in_mask = filter_out_mask = 0;
         for (auto &iter : *this) {
