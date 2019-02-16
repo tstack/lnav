@@ -474,23 +474,22 @@ public:
         return yajl_gen_string(this->yg_handle, (const unsigned char *)str.get(), str.size());
     };
 
-    yajl_gen_status operator()(long long value)
-    {
-        return yajl_gen_integer(this->yg_handle, value);
-    };
-
-    yajl_gen_status operator()(unsigned long value)
-    {
-        return yajl_gen_integer(this->yg_handle, value);
-    };
-
     yajl_gen_status operator()(bool value)
     {
         return yajl_gen_bool(this->yg_handle, value);
     };
 
     template<typename T>
-    yajl_gen_status operator()(const T &container)
+    yajl_gen_status operator()(T value,
+                               typename std::enable_if<std::is_integral<T>::value &&
+                                                       !std::is_same<T, bool>::value>::type* dummy = 0)
+    {
+        return yajl_gen_integer(this->yg_handle, value);
+    };
+
+    template<typename T>
+    yajl_gen_status operator()(const T &container,
+                               typename std::enable_if<!std::is_integral<T>::value>::type* dummy = 0)
     {
         yajl_gen_array_open(this->yg_handle);
         for (auto elem : container) {
