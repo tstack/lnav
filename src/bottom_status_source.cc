@@ -41,7 +41,7 @@ bottom_status_source::bottom_status_source()
 {
     this->bss_fields[BSF_LINE_NUMBER].set_min_width(10);
     this->bss_fields[BSF_LINE_NUMBER].set_share(1000);
-    this->bss_fields[BSF_PERCENT].set_width(5);
+    this->bss_fields[BSF_PERCENT].set_width(6);
     this->bss_fields[BSF_PERCENT].set_left_pad(1);
     this->bss_fields[BSF_HITS].set_min_width(10);
     this->bss_fields[BSF_HITS].set_share(5);
