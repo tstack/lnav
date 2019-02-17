@@ -2,4 +2,4 @@ freebsd_instance:
   image: freebsd-11-2-release-amd64
 task:
   install_script: pkg install -y wget git m4 bash autoconf automake sqlite3 gmake
-  build_script: ./autogen.sh && ./configure LDFLAGS="-static-libstdc++ -static-libgcc" && gmake check -j3
+  build_script: ./autogen.sh && ./configure && gmake -j3
