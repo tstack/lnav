@@ -1,0 +1,4 @@
+container:
+  image: gcc:latest
+task:
+  build_script: ./autogen.sh && ./configure LDFLAGS="-static-libstdc++ -static-libgcc" && make distcheck -j3
