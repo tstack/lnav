@@ -513,8 +513,11 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
         }
 
         const unsigned char *line_data = (const unsigned char *) sbr.get_data();
-        size_t line_end = sbr.length() - 1;
+        size_t line_end = sbr.length();
 
+        if (line_end > 0) {
+            line_end -= 1;
+        }
         while (line_end > 0 && isspace(line_data[line_end])) {
             line_end -= 1;
         }

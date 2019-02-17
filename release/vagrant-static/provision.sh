@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 
+OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
     source scl_source enable devtoolset-4
 fi

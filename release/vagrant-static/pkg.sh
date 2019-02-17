@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#! /bin/sh
 
 OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
@@ -16,5 +16,5 @@ if test x"${OS}" != x"FreeBSD"; then
         perl-Data-Dumper
     sudo yum install -y "devtoolset-4-gcc*"
 else
-    pkg install -y wget git gcc m4
+    pkg install -y wget git m4 bash autoconf automake sqlite3 gmake
 fi

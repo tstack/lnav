@@ -19,10 +19,14 @@ Vagrant.configure(2) do |config|
 
   config.vm.define :freebsd do |freebsd|
       config.vm.synced_folder ".", "/vagrant", type: "nfs"
-      config.vm.network :private_network, ip: "10.11.12.13"
+      freebsd.vm.network "private_network", :type => 'dhcp'
       config.vm.provision "shell", path:"pkg.sh"
       config.vm.provision "shell", path:"provision.sh"
-      freebsd.vm.box = "arkadi/freebsd-10.1-amd64"
+      freebsd.vm.box = "freebsd/FreeBSD-11.2-RELEASE"
+      freebsd.vm.box_version = "2018.06.22"
+      freebsd.vm.synced_folder ".", "/vagrant", type: "nfs"
+      freebsd.ssh.shell = "sh"
+      freebsd.vm.base_mac = "080027D14C66"
   end
 
   config.vm.define :linux do |linux|

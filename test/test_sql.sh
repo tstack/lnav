@@ -68,6 +68,7 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ";SELECT * FROM access_log LIMIT 0" \
+    -c ':switch-to-view db' \
     ${test_dir}/logfile_access_log.0
 
 check_output "output generated for empty result set?" <<EOF
@@ -553,7 +554,7 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ';UPDATE environ SET name="NEW_ENV_VALUE" WHERE name="SQL_ENV_VALUE"' \
-    -c ';SELECT * FROM environ WHERE name like "%ENV_VALUE"' \
+    -c ";SELECT * FROM environ WHERE name like '%ENV_VALUE'" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
 

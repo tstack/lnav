@@ -220,7 +220,7 @@ public:
     void set_min_log_level(log_level_t level) {
         if (this->lss_min_log_level != level) {
             this->lss_min_log_level = level;
-            this->lss_force_rebuild = true;
+            this->text_filters_changed();
         }
     };
 
@@ -233,7 +233,7 @@ public:
     void set_min_log_time(const struct timeval &tv) {
         if (this->lss_min_log_time != tv) {
             this->lss_min_log_time = tv;
-            this->lss_force_rebuild = true;
+            this->text_filters_changed();
         }
     };
 
@@ -246,15 +246,20 @@ public:
     void set_max_log_time(struct timeval &tv) {
         if (this->lss_max_log_time != tv) {
             this->lss_max_log_time = tv;
-            this->lss_force_rebuild = true;
+            this->text_filters_changed();
         }
     };
 
     void clear_min_max_log_times() {
-        memset(&this->lss_min_log_time, 0, sizeof(this->lss_min_log_time));
-        this->lss_max_log_time.tv_sec = std::numeric_limits<time_t>::max();
-        this->lss_max_log_time.tv_usec = 0;
-        this->lss_force_rebuild = true;
+        if (this->lss_min_log_time.tv_sec != 0 ||
+            this->lss_min_log_time.tv_usec != 0 ||
+            this->lss_max_log_time.tv_sec != std::numeric_limits<time_t>::max() ||
+            this->lss_max_log_time.tv_usec != 0) {
+            memset(&this->lss_min_log_time, 0, sizeof(this->lss_min_log_time));
+            this->lss_max_log_time.tv_sec = std::numeric_limits<time_t>::max();
+            this->lss_max_log_time.tv_usec = 0;
+            this->text_filters_changed();
+        }
     };
 
     bool list_input_handle_key(listview_curses &lv, int ch);
@@ -262,7 +267,7 @@ public:
     void set_marked_only(bool val) {
         if (this->lss_marked_only != val) {
             this->lss_marked_only = val;
-            this->lss_force_rebuild = true;
+            this->text_filters_changed();
         }
     };
 

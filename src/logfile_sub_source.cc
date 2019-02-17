@@ -878,8 +878,10 @@ void logfile_sub_source::text_filters_changed()
         this->lss_index_delegate->index_complete(*this);
     }
 
-    this->tss_view->reload_data();
-    this->tss_view->redo_search();
+    if (this->tss_view != nullptr) {
+        this->tss_view->reload_data();
+        this->tss_view->redo_search();
+    }
 }
 
 bool logfile_sub_source::list_input_handle_key(listview_curses &lv, int ch)
