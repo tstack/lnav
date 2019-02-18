@@ -103,6 +103,10 @@ CREATE TABLE regexp_capture (
             this->c_context.set_count(0);
         };
 
+        int reset() {
+            return SQLITE_OK;
+        };
+
         int next() {
             if (this->c_index >= (this->c_context.get_count() - 1)) {
                 this->c_input->pi_offset = this->c_input->pi_next_offset;

@@ -610,7 +610,9 @@ struct vtab_module {
     static int vt_filter(sqlite3_vtab_cursor *p_vtc,
                          int idxNum, const char *idxStr,
                          int argc, sqlite3_value **argv) {
-        return SQLITE_OK;
+        auto *p_cur = (typename T::cursor *) p_vtc;
+
+        return p_cur->reset();
     }
 
     static int tvt_update(sqlite3_vtab *tab,
@@ -696,6 +698,14 @@ struct tvt_iterator_cursor {
 
             this->base.pVtab = vt;
             this->iter = handler.begin();
+        };
+
+        int reset() {
+            T handler;
+
+            this->iter = handler.begin();
+
+            return SQLITE_OK;
         };
 
         int next()

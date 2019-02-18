@@ -666,7 +666,7 @@ EOF
 
 
 schema_dump() {
-    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n15
+    ${lnav_test} -n -c ';.schema' ${test_dir}/logfile_access_log.0 | head -n17
 }
 
 run_test schema_dump
@@ -678,6 +678,8 @@ CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
 CREATE VIRTUAL TABLE lnav_view_stack USING lnav_view_stack_impl();
 CREATE VIRTUAL TABLE lnav_view_filters USING lnav_view_filters_impl();
 CREATE VIRTUAL TABLE lnav_view_filter_stats USING lnav_view_filter_stats_impl();
+CREATE VIEW lnav_view_filters_and_stats AS
+  SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats;
 CREATE VIRTUAL TABLE lnav_file USING lnav_file_impl();
 CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
 CREATE VIRTUAL TABLE fstat USING fstat_impl();

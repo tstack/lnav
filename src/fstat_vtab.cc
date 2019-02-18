@@ -104,11 +104,10 @@ CREATE TABLE fstat (
         sqlite3_vtab_cursor base;
         string c_pattern;
         static_root_mem<glob_t, globfree> c_glob;
-        size_t c_path_index;
+        size_t c_path_index{0};
         struct stat c_stat;
 
-        cursor(sqlite3_vtab *vt)
-                : base({vt}), c_path_index(0) {
+        cursor(sqlite3_vtab *vt) : base({vt}) {
             memset(&this->c_stat, 0, sizeof(this->c_stat));
         };
 
@@ -128,6 +127,10 @@ CREATE TABLE fstat (
 
             return SQLITE_OK;
         };
+
+        int reset() {
+            return SQLITE_OK;
+        }
 
         int eof() {
             return this->c_path_index >= this->c_glob->gl_pathc;

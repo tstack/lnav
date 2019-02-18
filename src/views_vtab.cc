@@ -542,8 +542,8 @@ CREATE TABLE lnav_view_filters (
 struct lnav_view_filter_stats : public tvt_iterator_cursor<lnav_view_filter_stats>,
     public lnav_view_filter_base {
     static constexpr const char *CREATE_STMT = R"(
--- Access lnav's filters through this table.
-CREATE TABLE lnav_view_filters (
+-- Access statistics for filters through this table.
+CREATE TABLE lnav_view_filter_stats (
     view_name TEXT,     -- The name of the view.
     filter_id INTEGER,  -- The filter identifier.
     hits      INTEGER   -- The number of lines that matched this filter.
@@ -574,6 +574,11 @@ CREATE TABLE lnav_view_filters (
     }
 };
 
+static const char *CREATE_FILTER_VIEW = R"(
+CREATE VIEW lnav_view_filters_and_stats AS
+  SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats
+)";
+
 int register_views_vtab(sqlite3 *db)
 {
     static vtab_module<lnav_views> LNAV_VIEWS_MODULE;
@@ -594,6 +599,12 @@ int register_views_vtab(sqlite3 *db)
 
     rc = LNAV_VIEW_FILTER_STATS_MODULE.create(db, "lnav_view_filter_stats");
     assert(rc == SQLITE_OK);
+
+    char *errmsg;
+    if (sqlite3_exec(db, CREATE_FILTER_VIEW, nullptr, nullptr, &errmsg) != SQLITE_OK) {
+        log_error("Unable to create filter view: %s", errmsg);
+
+    }
 
     return rc;
 }
