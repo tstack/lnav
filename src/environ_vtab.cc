@@ -133,8 +133,6 @@ static int vt_open(sqlite3_vtab *p_svt, sqlite3_vtab_cursor **pp_cursor)
 
         p_cur->base.pVtab = p_svt;
         p_cur->env_cursor = environ;
-
-        vt_next((sqlite3_vtab_cursor *)p_cur);
     }
 
     return SQLITE_OK;
