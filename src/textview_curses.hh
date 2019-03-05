@@ -55,6 +55,10 @@ public:
         std::move(lf)) {
         memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
         memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
+        memset(this->tfs_message_matched, 0, sizeof(this->tfs_message_matched));
+        memset(this->tfs_lines_for_message, 0, sizeof(this->tfs_lines_for_message));
+        memset(this->tfs_last_message_matched, 0, sizeof(this->tfs_last_message_matched));
+        memset(this->tfs_last_lines_for_message, 0, sizeof(this->tfs_last_lines_for_message));
         this->tfs_mask.reserve(64 * 1024);
     };
 
@@ -62,6 +66,10 @@ public:
         this->tfs_logfile = nullptr;
         memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));
         memset(this->tfs_filter_hits, 0, sizeof(this->tfs_filter_hits));
+        memset(this->tfs_message_matched, 0, sizeof(this->tfs_message_matched));
+        memset(this->tfs_lines_for_message, 0, sizeof(this->tfs_lines_for_message));
+        memset(this->tfs_last_message_matched, 0, sizeof(this->tfs_last_message_matched));
+        memset(this->tfs_last_lines_for_message, 0, sizeof(this->tfs_last_lines_for_message));
         this->tfs_mask.clear();
         this->tfs_index.clear();
     };
@@ -71,6 +79,10 @@ public:
             if (!(used_mask & (1L << lpc))) {
                 this->tfs_filter_count[lpc] = 0;
                 this->tfs_filter_hits[lpc] = 0;
+                this->tfs_message_matched[lpc] = false;
+                this->tfs_lines_for_message[lpc] = 0;
+                this->tfs_last_message_matched[lpc] = false;
+                this->tfs_last_lines_for_message[lpc] = 0;
             }
         }
         for (size_t lpc = 0; lpc < this->tfs_mask.size(); lpc++) {
@@ -94,6 +106,10 @@ public:
     std::shared_ptr<logfile> tfs_logfile;
     size_t tfs_filter_count[MAX_FILTERS];
     int tfs_filter_hits[MAX_FILTERS];
+    bool tfs_message_matched[MAX_FILTERS];
+    size_t tfs_lines_for_message[MAX_FILTERS];
+    bool tfs_last_message_matched[MAX_FILTERS];
+    size_t tfs_last_lines_for_message[MAX_FILTERS];
     std::vector<uint32_t> tfs_mask;
     std::vector<uint32_t> tfs_index;
 };
@@ -128,50 +144,11 @@ public:
         this->lf_enabled = value;
     }
 
-    void revert_to_last(logfile_filter_state &lfs, size_t rollback_size) {
-        this->lf_message_matched = this->lf_last_message_matched;
-        this->lf_lines_for_message = this->lf_last_lines_for_message;
-
-        for (size_t lpc = 0; lpc < this->lf_lines_for_message; lpc++) {
-            if (this->lf_message_matched) {
-                lfs.tfs_filter_hits[this->lf_index] -= 1;
-            }
-            lfs.tfs_filter_count[this->lf_index] -= 1;
-            size_t line_number = lfs.tfs_filter_count[this->lf_index];
-
-            lfs.tfs_mask[line_number] &= ~(((uint32_t) 1) << this->lf_index);
-        }
-        if (this->lf_lines_for_message > 0) {
-            this->lf_lines_for_message -= rollback_size;
-
-            ensure(this->lf_lines_for_message >= 0);
-        }
-        if (this->lf_lines_for_message == 0) {
-            this->lf_message_matched = false;
-        }
-    }
+    void revert_to_last(logfile_filter_state &lfs, size_t rollback_size);
 
     void add_line(logfile_filter_state &lfs, logfile::const_iterator ll, shared_buffer_ref &line);
 
-    void end_of_message(logfile_filter_state &lfs) {
-        uint32_t mask = 0;
-
-        mask = ((uint32_t) this->lf_message_matched ? 1U : 0) << this->lf_index;
-
-        for (size_t lpc = 0; lpc < this->lf_lines_for_message; lpc++) {
-            size_t line_number = lfs.tfs_filter_count[this->lf_index];
-
-            lfs.tfs_mask[line_number] |= mask;
-            lfs.tfs_filter_count[this->lf_index] += 1;
-            if (this->lf_message_matched) {
-                lfs.tfs_filter_hits[this->lf_index] += 1;
-            }
-        }
-        this->lf_last_message_matched = this->lf_message_matched;
-        this->lf_last_lines_for_message = this->lf_lines_for_message;
-        this->lf_message_matched = false;
-        this->lf_lines_for_message = 0;
-    };
+    void end_of_message(logfile_filter_state &lfs);
 
     virtual bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) = 0;
 
@@ -182,10 +159,6 @@ public:
     };
 
     bool lf_deleted{false};
-    bool lf_message_matched{false};
-    size_t lf_lines_for_message{0};
-    bool lf_last_message_matched{false};
-    size_t lf_last_lines_for_message{0};
 
 protected:
     bool        lf_enabled{true};

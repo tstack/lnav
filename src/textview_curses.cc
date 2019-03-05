@@ -44,6 +44,33 @@
 
 using namespace std;
 
+void
+text_filter::revert_to_last(logfile_filter_state &lfs, size_t rollback_size)
+{
+    require(lfs.tfs_lines_for_message[this->lf_index] == 0);
+
+    lfs.tfs_message_matched[this->lf_index] = lfs.tfs_last_message_matched[this->lf_index];
+    lfs.tfs_lines_for_message[this->lf_index] = lfs.tfs_last_lines_for_message[this->lf_index];
+
+    for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++) {
+        if (lfs.tfs_message_matched[this->lf_index]) {
+            lfs.tfs_filter_hits[this->lf_index] -= 1;
+        }
+        lfs.tfs_filter_count[this->lf_index] -= 1;
+        size_t line_number = lfs.tfs_filter_count[this->lf_index];
+
+        lfs.tfs_mask[line_number] &= ~(((uint32_t) 1) << this->lf_index);
+    }
+    if (lfs.tfs_lines_for_message[this->lf_index] > 0) {
+        require(lfs.tfs_lines_for_message[this->lf_index] >= rollback_size);
+
+        lfs.tfs_lines_for_message[this->lf_index] -= rollback_size;
+    }
+    if (lfs.tfs_lines_for_message[this->lf_index] == 0) {
+        lfs.tfs_message_matched[this->lf_index] = false;
+    }
+}
+
 void text_filter::add_line(
         logfile_filter_state &lfs, logfile::const_iterator ll, shared_buffer_ref &line) {
     bool match_state = this->matches(*lfs.tfs_logfile, *ll, line);
@@ -52,8 +79,32 @@ void text_filter::add_line(
         this->end_of_message(lfs);
     }
 
-    this->lf_message_matched = this->lf_message_matched || match_state;
-    this->lf_lines_for_message += 1;
+    lfs.tfs_message_matched[this->lf_index] = lfs.tfs_message_matched[this->lf_index] || match_state;
+    lfs.tfs_lines_for_message[this->lf_index] += 1;
+}
+
+void text_filter::end_of_message(logfile_filter_state &lfs)
+{
+    uint32_t mask = 0;
+
+    mask = ((uint32_t) lfs.tfs_message_matched[this->lf_index] ? 1U : 0) << this->lf_index;
+
+    for (size_t lpc = 0; lpc < lfs.tfs_lines_for_message[this->lf_index]; lpc++) {
+        require(lfs.tfs_filter_count[this->lf_index] <=
+                lfs.tfs_logfile->size());
+
+        size_t line_number = lfs.tfs_filter_count[this->lf_index];
+
+        lfs.tfs_mask[line_number] |= mask;
+        lfs.tfs_filter_count[this->lf_index] += 1;
+        if (lfs.tfs_message_matched[this->lf_index]) {
+            lfs.tfs_filter_hits[this->lf_index] += 1;
+        }
+    }
+    lfs.tfs_last_message_matched[this->lf_index] = lfs.tfs_message_matched[this->lf_index];
+    lfs.tfs_last_lines_for_message[this->lf_index] = lfs.tfs_lines_for_message[this->lf_index];
+    lfs.tfs_message_matched[this->lf_index] = false;
+    lfs.tfs_lines_for_message[this->lf_index] = 0;
 }
 
 bookmark_type_t textview_curses::BM_USER("user");

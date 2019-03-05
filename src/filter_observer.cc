@@ -60,6 +60,9 @@ void line_filter_observer::logline_new_line(const logfile &lf,
 void line_filter_observer::logline_eof(const logfile &lf)
 {
     for (auto &iter : this->lfo_filter_stack) {
+        if (iter->lf_deleted) {
+            continue;
+        }
         iter->end_of_message(this->lfo_filter_state);
     }
 }

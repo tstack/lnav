@@ -48,7 +48,7 @@ public:
         }
     };
 
-    void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr);;
+    void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr);
 
     void logline_eof(const logfile &lf);;
 
