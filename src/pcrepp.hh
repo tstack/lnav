@@ -473,72 +473,7 @@ public:
         return this->p_capture_count;
     };
 
-    bool match(pcre_context &pc, pcre_input &pi, int options = 0) const
-    {
-        int         length, startoffset, filtered_options = options;
-        int         count = pc.get_max_count();
-        const char *str;
-        int         rc;
-
-        pc.set_pcrepp(this);
-        pi.pi_offset = pi.pi_next_offset;
-
-        str = pi.get_string();
-        if (filtered_options & PCRE_ANCHORED) {
-            filtered_options &= ~PCRE_ANCHORED;
-            str         = &str[pi.pi_offset];
-            startoffset = 0;
-            length      = pi.pi_length - pi.pi_offset;
-        }
-        else {
-            startoffset = pi.pi_offset;
-            length      = pi.pi_length;
-        }
-        rc = pcre_exec(this->p_code,
-                       this->p_code_extra.in(),
-                       str,
-                       length,
-                       startoffset,
-                       filtered_options,
-                       (int *)pc.all(),
-                       count * 2);
-
-        if (rc < 0) {
-            switch (rc) {
-            case PCRE_ERROR_NOMATCH:
-                break;
-            case PCRE_ERROR_PARTIAL:
-                pc.set_count(1);
-                return true;
-
-            default:
-                log_error("pcre err %d", rc);
-                break;
-            }
-        }
-        else if (rc == 0) {
-            rc = 0;
-        }
-        else if (pc.all()->c_begin == pc.all()->c_end) {
-            rc = 0;
-        }
-        else {
-            if (options & PCRE_ANCHORED) {
-                for (int lpc = 0; lpc < rc; lpc++) {
-                    if (pc.all()[lpc].c_begin == -1) {
-                        continue;
-                    }
-                    pc.all()[lpc].c_begin += pi.pi_offset;
-                    pc.all()[lpc].c_end   += pi.pi_offset;
-                }
-            }
-            pi.pi_next_offset = pc.all()->c_end;
-        }
-
-        pc.set_count(rc);
-
-        return rc > 0;
-    };
+    bool match(pcre_context &pc, pcre_input &pi, int options = 0) const;
 
     size_t match_partial(pcre_input &pi) const {
         size_t length = pi.pi_length;
@@ -572,50 +507,7 @@ public:
     static void pcre_free_study(pcre_extra *);
 #endif
 
-private:
-
-    void study(void)
-    {
-        const char *errptr;
-
-        this->p_code_extra = pcre_study(this->p_code,
-#ifdef PCRE_STUDY_JIT_COMPILE
-                                        PCRE_STUDY_JIT_COMPILE,
-#else
-                                        0,
-#endif
-                                        &errptr);
-        if (!this->p_code_extra && errptr) {
-            log_error("pcre_study error: %s", errptr);
-        }
-        if (this->p_code_extra != NULL) {
-            pcre_extra *extra = this->p_code_extra;
-
-            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
-                             PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-            extra->match_limit           = 10000;
-            extra->match_limit_recursion = 500;
-#ifdef PCRE_STUDY_JIT_COMPILE
-            pcre_assign_jit_stack(extra, NULL, jit_stack());
-#endif
-        }
-        pcre_fullinfo(this->p_code,
-                      this->p_code_extra,
-                      PCRE_INFO_CAPTURECOUNT,
-                      &this->p_capture_count);
-        pcre_fullinfo(this->p_code,
-                      this->p_code_extra,
-                      PCRE_INFO_NAMECOUNT,
-                      &this->p_named_count);
-        pcre_fullinfo(this->p_code,
-                      this->p_code_extra,
-                      PCRE_INFO_NAMEENTRYSIZE,
-                      &this->p_name_len);
-        pcre_fullinfo(this->p_code,
-                      this->p_code_extra,
-                      PCRE_INFO_NAMETABLE,
-                      &this->p_named_entries);
-    };
+    void study(void);
 
     void find_captures(const char *pattern);
 

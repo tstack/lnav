@@ -52,7 +52,6 @@ using namespace std;
 template<typename LineType>
 grep_proc<LineType>::grep_proc(pcre *code, grep_proc_source<LineType> &gps)
     : gp_pcre(code),
-      gp_code(code),
       gp_source(gps)
 {
     require(this->invariant());

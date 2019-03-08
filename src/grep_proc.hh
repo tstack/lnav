@@ -187,9 +187,6 @@ public:
 
     virtual ~grep_proc();
 
-    /** @return The code passed in to the constructor. */
-    pcre *get_code() { return this->gp_code; };
-
     /** @param gpd The sink to send resuls to. */
     void set_sink(grep_proc_sink<LineType> *gpd)
     {
@@ -261,7 +258,6 @@ public:
     /** Check the invariants for this object. */
     bool invariant()
     {
-        require(this->gp_code != NULL);
         if (this->gp_child_started) {
             require(this->gp_child > 0);
             require(this->gp_line_buffer.get_fd() != -1);
@@ -303,7 +299,6 @@ protected:
                               int count);
 
     pcrepp             gp_pcre;
-    pcre *             gp_code;          /*< The compiled pattern. */
     grep_proc_source<LineType> &gp_source;        /*< The data source delegate. */
 
     auto_fd     gp_err_pipe;             /*< Standard error from the child. */
