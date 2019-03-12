@@ -65,7 +65,7 @@ Navigation
 Time
 ----
 
-* adjust-log-time <date> - Change the timestamps for a log file.
+* adjust-log-time <date|relative-time> - Change the timestamps for a log file.
 * unix-time <secs-or-date> - Convert a unix-timestamp in seconds to a
   human-readable form or vice-versa.
 * current-time - Print the current time in human-readable form and as

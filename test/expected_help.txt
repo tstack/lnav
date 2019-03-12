@@ -480,12 +480,13 @@ COMMANDS
 
   help              Switch to this help text view.
 
-  adjust-log-time <date>
-                    Change the time of the top log line to the given time.
-                    All other log lines in the same file will also be
-                    adjusted using the same offset.  After the adjustment,
-                    the displayed timestamp will be rewritten to the new
-                    time and highlighted with a magenta color.
+  adjust-log-time <date|relative-time>
+                    Change the time of the top log line to the given time or
+                    adjusted by the relative time.  All other log lines in the
+                    same file will also be adjusted using the same offset.
+                    After the adjustment, the displayed timestamp will be
+                    rewritten to the new time and highlighted with a magenta
+                    color.
 
                     This command is useful for lining up log files that
                     have timestamps from different machines.

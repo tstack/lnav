@@ -3,6 +3,30 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
+    -c ";SELECT basename(filepath),format,lines,base_time FROM lnav_file" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_access_log.0 \
+    ${test_dir}/logfile_access_log.1
+
+check_output "lnav_file table is not working?" <<EOF
+basename(filepath),format,lines,base_time
+logfile_access_log.0,access_log,3,0
+logfile_access_log.1,access_log,1,0
+EOF
+
+run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_file SET base_time = 60 * 1000" \
+    ${test_dir}/logfile_access_log.0 \
+    ${test_dir}/logfile_access_log.1
+
+check_output "time_offset in lnav_file table is not working?" <<EOF
+192.168.202.254 - - [20/Jul/2009:23:00:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:23:00:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:23:00:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+10.112.81.15 - - [15/Feb/2013:06:01:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+run_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', '')" \
     ${test_dir}/logfile_access_log.0
 

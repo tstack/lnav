@@ -25,6 +25,8 @@ lnav v0.8.5:
        to a single file.
      * Added 'spooky_hash()' and 'group_spooky_hash()' SQL functions to
        generate a hash of their parameters.
+     * Added 'time_offset' to the 'lnav_file' table so that the timestamps in
+       a file can be adjusted programmatically.
 
      Interface Changes:
      * The auto-complete behavior in the prompt has been modified to fall back
@@ -49,6 +51,7 @@ lnav v0.8.5:
        contents of the current view and a ":write-screen-to" command has been
        added to write only the current screen contents.
      * Disabled filters are now saved in sessions.
+     * The ":adjust-log-time" command now accepts relative times as input.
 
      Fixes:
      * The ":write-json-to" command will now pass through JSON cells as their

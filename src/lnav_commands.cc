@@ -137,6 +137,8 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
         vis_line_t top_line;
         struct exttm tm;
         std::shared_ptr<logfile> lf;
+        relative_time rt;
+        struct relative_time::parse_error pe;
 
         top_line = lnav_data.ld_views[LNV_LOG].get_top();
         top_content = lss.at(top_line);
@@ -148,26 +150,31 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
 
         dts.set_base_time(top_time.tv_sec);
         args[1] = remaining_args(cmdline, args);
-        if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
-            timersub(&new_time, &top_time, &time_diff);
 
-            if (ec.ec_dry_run) {
-                char buffer[1024];
-
-                snprintf(buffer, sizeof(buffer),
-                         "info: log timestamps will be adjusted by %ld.%06ld seconds",
-                         time_diff.tv_sec, time_diff.tv_usec);
-
-                retval = buffer;
-            } else {
-                lf->adjust_content_time(top_content, time_diff, false);
-
-                lss.set_force_rebuild();
-
-                retval = "info: adjusted time";
-            }
+        if (rt.parse(args[1], pe)) {
+            new_time = rt.add(top_time).to_timeval();
+        }
+        else if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
+            // nothing to do
         } else {
-            retval = "error: could not parse timestamp";
+            return "error: could not parse timestamp";
+        }
+
+        timersub(&new_time, &top_time, &time_diff);
+        if (ec.ec_dry_run) {
+            char buffer[1024];
+
+            snprintf(buffer, sizeof(buffer),
+                     "info: log timestamps will be adjusted by %ld.%06ld seconds",
+                     time_diff.tv_sec, time_diff.tv_usec);
+
+            retval = buffer;
+        } else {
+            lf->adjust_content_time(top_content, time_diff, false);
+
+            lss.set_force_rebuild();
+
+            retval = "info: adjusted time";
         }
     }
 

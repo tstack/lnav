@@ -48,11 +48,12 @@ struct lnav_file : public tvt_iterator_cursor<lnav_file> {
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's open file list through this table.
 CREATE TABLE lnav_file (
-    device integer,    -- The device the file is stored on.
-    inode integer,     -- The inode for the file on the device.
-    filepath text,     -- The path to the file.
-    format text,       -- The log file format for the file.
-    lines integer      -- The number of lines in the file.
+    device integer,     -- The device the file is stored on.
+    inode integer,      -- The inode for the file on the device.
+    filepath text,      -- The path to the file.
+    format text,        -- The log file format for the file.
+    lines integer,      -- The number of lines in the file.
+    base_time integer   -- The millisecond offset for timestamps.
 );
 )";
 
@@ -96,6 +97,13 @@ CREATE TABLE lnav_file (
             case 4:
                 to_sqlite(ctx, (int64_t) lf->size());
                 break;
+            case 5: {
+                auto tv = lf->get_time_offset();
+                int64_t ms = (tv.tv_sec * 1000LL) + tv.tv_usec / 1000LL;
+
+                to_sqlite(ctx, ms);
+                break;
+            }
             default:
                 ensure(0);
                 break;
@@ -103,6 +111,37 @@ CREATE TABLE lnav_file (
 
         return SQLITE_OK;
     }
+
+    int delete_row(sqlite3_vtab *vt, sqlite3_int64 rowid) {
+        vt->zErrMsg = sqlite3_mprintf(
+            "Rows cannot be deleted from this table");
+        return SQLITE_ERROR;
+    };
+
+    int insert_row(sqlite3_vtab *tab, sqlite3_int64 &rowid_out) {
+        tab->zErrMsg = sqlite3_mprintf(
+            "Rows cannot be inserted into this table");
+        return SQLITE_ERROR;
+    };
+
+    int update_row(sqlite3_vtab *tab,
+                   sqlite3_int64 &rowid,
+                   sqlite3_int64 device,
+                   sqlite3_int64 inode,
+                   const char *path,
+                   const char *format,
+                   sqlite3_int64 lines,
+                   sqlite3_int64 time_offset) {
+        auto lf = lnav_data.ld_files[rowid];
+        struct timeval tv = {
+            (int) (time_offset / 1000LL),
+            (int) (time_offset / (1000LL * 1000LL)),
+        };
+
+        lf->adjust_content_time(0, tv, true);
+
+        return SQLITE_OK;
+    };
 };
 
 
