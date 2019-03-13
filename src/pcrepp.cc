@@ -197,7 +197,6 @@ void pcrepp::study(void)
 {
     const char *errptr;
 
-    log_debug("cod %p", this->p_code);
     this->p_code_extra = pcre_study(this->p_code,
 #ifdef PCRE_STUDY_JIT_COMPILE
                                     PCRE_STUDY_JIT_COMPILE,

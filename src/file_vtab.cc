@@ -126,12 +126,12 @@ CREATE TABLE lnav_file (
 
     int update_row(sqlite3_vtab *tab,
                    sqlite3_int64 &rowid,
-                   sqlite3_int64 device,
-                   sqlite3_int64 inode,
+                   int64_t device,
+                   int64_t inode,
                    const char *path,
                    const char *format,
-                   sqlite3_int64 lines,
-                   sqlite3_int64 time_offset) {
+                   int64_t lines,
+                   int64_t time_offset) {
         auto lf = lnav_data.ld_files[rowid];
         struct timeval tv = {
             (int) (time_offset / 1000LL),
