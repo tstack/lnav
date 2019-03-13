@@ -3,19 +3,19 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
-    -c ";SELECT basename(filepath),format,lines,base_time FROM lnav_file" \
+    -c ";SELECT basename(filepath),format,lines,time_offset FROM lnav_file" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_access_log.0 \
     ${test_dir}/logfile_access_log.1
 
 check_output "lnav_file table is not working?" <<EOF
-basename(filepath),format,lines,base_time
+basename(filepath),format,lines,time_offset
 logfile_access_log.0,access_log,3,0
 logfile_access_log.1,access_log,1,0
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";UPDATE lnav_file SET base_time = 60 * 1000" \
+    -c ";UPDATE lnav_file SET time_offset = 60 * 1000" \
     ${test_dir}/logfile_access_log.0 \
     ${test_dir}/logfile_access_log.1
 

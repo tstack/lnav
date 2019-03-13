@@ -48,12 +48,12 @@ struct lnav_file : public tvt_iterator_cursor<lnav_file> {
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's open file list through this table.
 CREATE TABLE lnav_file (
-    device integer,     -- The device the file is stored on.
-    inode integer,      -- The inode for the file on the device.
-    filepath text,      -- The path to the file.
-    format text,        -- The log file format for the file.
-    lines integer,      -- The number of lines in the file.
-    base_time integer   -- The millisecond offset for timestamps.
+    device integer,       -- The device the file is stored on.
+    inode integer,        -- The inode for the file on the device.
+    filepath text,        -- The path to the file.
+    format text,          -- The log file format for the file.
+    lines integer,        -- The number of lines in the file.
+    time_offset integer   -- The millisecond offset for timestamps.
 );
 )";
 
