@@ -2321,7 +2321,7 @@ int main(int argc, char *argv[])
                     fprintf(stderr,
                             "error:%s:%ld:line did not match format %s\n",
                             lf->get_filename().c_str(), line_number,
-                            fmt->get_pattern_name().c_str());
+                            fmt->get_pattern_name(line_number).c_str());
                     fprintf(stderr,
                             "error:%s:%ld:         line -- %s\n",
                             lf->get_filename().c_str(), line_number,

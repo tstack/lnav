@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
                 string_attrs_t sa;
 
                 if (format.get() != NULL) {
-                    format->annotate(sbr, sa, ll_values);
+                    format->annotate(0, sbr, sa, ll_values);
                     body = find_string_attr_range(sa, &textview_curses::SA_BODY);
                 }
 

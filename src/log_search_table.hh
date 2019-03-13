@@ -116,7 +116,7 @@ public:
 
         cl = lss.at(lc.lc_curr_line);
         std::shared_ptr<logfile> lf = lss.find(cl);
-        logfile::iterator lf_iter = lf->begin() + cl;
+        auto lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {
             return false;
@@ -126,7 +126,8 @@ public:
         std::vector<logline_value> line_values;
 
         lf->read_full_message(lf_iter, this->lst_current_line);
-        lf->get_format()->annotate(this->lst_current_line, sa, line_values);
+        lf->get_format()->annotate(cl, this->lst_current_line, sa, line_values,
+                                   false);
         pcre_input pi(this->lst_current_line.get_data(),
                       0,
                       this->lst_current_line.length());
@@ -141,6 +142,7 @@ public:
     };
 
     void extract(std::shared_ptr<logfile> lf,
+                 uint64_t line_number,
                  shared_buffer_ref &line,
                  std::vector<logline_value> &values)
     {
@@ -152,16 +154,14 @@ public:
                       this->lst_current_line.length());
         int next_column = 0;
 
-        values.push_back(logline_value(instance_name, this->lst_instance));
+        values.emplace_back(instance_name, this->lst_instance);
         values.back().lv_column = next_column++;
         for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
             pcre_context::capture_t *cap = this->lst_match_context[lpc];
             shared_buffer_ref value_sbr;
 
             value_sbr.subset(line, cap->c_begin, cap->length());
-            values.push_back(logline_value(empty,
-                                           this->lst_column_types[lpc],
-                                           value_sbr));
+            values.emplace_back(empty, this->lst_column_types[lpc], value_sbr);
             values.back().lv_column = next_column++;
         }
     };

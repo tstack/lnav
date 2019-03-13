@@ -169,14 +169,15 @@ const char *log_format::log_scanf(const char *line,
                                   struct timeval *tv_out,
                                   ...)
 {
-    int     curr_fmt = -1;
-    const char *  retval   = NULL;
+    int curr_fmt = -1;
+    const char *retval = NULL;
     bool done = false;
     pcre_input pi(line, 0, len);
     pcre_context_static<128> pc;
     va_list args;
+    int pat_index = this->last_pattern_index();
 
-    while (!done && next_format(fmt, curr_fmt, this->lf_fmt_lock)) {
+    while (!done && next_format(fmt, curr_fmt, pat_index)) {
         va_start(args, tv_out);
 
         pi.reset(line, 0, len);
@@ -197,7 +198,9 @@ const char *log_format::log_scanf(const char *line,
                     pi.get_substr_start(ts), ts->length(), NULL, tm_out, *tv_out);
 
             if (retval) {
-                this->lf_fmt_lock = curr_fmt;
+                if (curr_fmt != pat_index) {
+                    this->lf_pattern_locks.emplace_back(0, curr_fmt);
+                }
                 this->lf_timestamp_flags = tm_out->et_flags;
                 done = true;
             }
@@ -480,7 +483,7 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
         return false;
     }
 
-    auto pat = this->elf_pattern_order[this->lf_fmt_lock];
+    auto pat = this->elf_pattern_order[this->last_pattern_index()];
     pcre_input pi(sbr.get_data(), 0, sbr.length());
 
     if (!this->elf_multiline) {
@@ -512,7 +515,7 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
             return log_format::SCAN_INCOMPLETE;
         }
 
-        const unsigned char *line_data = (const unsigned char *) sbr.get_data();
+        const auto *line_data = (const unsigned char *) sbr.get_data();
         size_t line_end = sbr.length();
 
         if (line_end > 0) {
@@ -570,9 +573,10 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
 
     pcre_input pi(sbr.get_data(), 0, sbr.length());
     pcre_context_static<128> pc;
-    int curr_fmt = -1;
+    int curr_fmt = -1, orig_lock = this->last_pattern_index();
+    int pat_index = orig_lock;
 
-    while (::next_format(this->elf_pattern_order, curr_fmt, this->lf_fmt_lock)) {
+    while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
         auto fpat = this->elf_pattern_order[curr_fmt];
         pcrepp *pat = fpat->p_pcre;
 
@@ -581,6 +585,11 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
         }
 
         if (!pat->match(pc, pi)) {
+            if (!this->lf_pattern_locks.empty() && pat_index != -1) {
+                log_debug("no match on pattern %d", pat_index);
+                curr_fmt = -1;
+                pat_index = -1;
+            }
             continue;
         }
 
@@ -620,11 +629,11 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
             this->check_for_new_year(dst, log_time_tm, log_tv);
         }
 
-        if (opid_cap != NULL) {
+        if (opid_cap != nullptr) {
             opid = hash_str(pi.get_substr_start(opid_cap), opid_cap->length());
         }
 
-        if (mod_cap != NULL) {
+        if (mod_cap != nullptr) {
             intern_string_t mod_name = intern_string::lookup(
                     pi.get_substr_start(mod_cap), mod_cap->length());
             auto mod_iter = MODULE_FORMATS.find(mod_name);
@@ -642,13 +651,13 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
             const value_def &vd = *ivd.ivd_value_def;
             pcre_context::capture_t *num_cap = pc[ivd.ivd_index];
 
-            if (num_cap != NULL && num_cap->is_valid()) {
-                const struct scaling_factor *scaling = NULL;
+            if (num_cap != nullptr && num_cap->is_valid()) {
+                const struct scaling_factor *scaling = nullptr;
 
                 if (ivd.ivd_unit_field_index >= 0) {
                     pcre_context::iterator unit_cap = pc[ivd.ivd_unit_field_index];
 
-                    if (unit_cap != NULL && unit_cap->is_valid()) {
+                    if (unit_cap != nullptr && unit_cap->is_valid()) {
                         intern_string_t unit_val = intern_string::lookup(
                             pi.get_substr_start(unit_cap), unit_cap->length());
                         std::map<const intern_string_t, scaling_factor>::const_iterator unit_iter;
@@ -677,7 +686,10 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
 
         dst.emplace_back(offset, log_tv, level, mod_index, opid);
 
-        this->lf_fmt_lock = curr_fmt;
+        if (orig_lock != curr_fmt) {
+            log_debug("changing pattern lock %d -> %d", orig_lock, curr_fmt);
+            this->lf_pattern_locks.emplace_back(dst.size() - 1, curr_fmt);
+        }
         return log_format::SCAN_MATCH;
     }
 
@@ -728,10 +740,8 @@ uint8_t external_log_format::module_scan(const pcre_input &pi,
     return 0;
 }
 
-void external_log_format::annotate(shared_buffer_ref &line,
-                                   string_attrs_t &sa,
-                                   std::vector<logline_value> &values,
-                                   bool annotate_module) const
+void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line, string_attrs_t &sa,
+                                   std::vector<logline_value> &values, bool annotate_module) const
 {
     pcre_context_static<128> pc;
     pcre_input pi(line.get_data(), 0, line.length());
@@ -744,7 +754,8 @@ void external_log_format::annotate(shared_buffer_ref &line,
         return;
     }
 
-    pattern &pat = *this->elf_pattern_order[this->lf_fmt_lock];
+    int pat_index = this->pattern_index_for_line(line_number);
+    pattern &pat = *this->elf_pattern_order[pat_index];
 
     if (!pat.p_pcre->match(pc, pi)) {
         // A continued line still needs a body.
@@ -840,7 +851,7 @@ void external_log_format::annotate(shared_buffer_ref &line,
 
             body_cap->ltrim(line.get_data());
             body_ref.subset(line, body_cap->c_begin, body_cap->length());
-            mf.mf_mod_format->annotate(body_ref, sa, values, false);
+            mf.mf_mod_format->annotate(line_number, body_ref, sa, values, false);
             for (auto &value : values) {
                 if (!value.lv_from_module) {
                     continue;
@@ -1875,7 +1886,7 @@ public:
 
             lf->read_line(lf_iter, line);
             this->vi_attrs.clear();
-            format->annotate(line, this->vi_attrs, values, false);
+            format->annotate(cl, line, this->vi_attrs, values, false);
             this->elt_container_body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
             if (!this->elt_container_body.is_valid()) {
                 return false;
@@ -1905,23 +1916,28 @@ public:
     };
 
     virtual void extract(shared_ptr<logfile> lf,
+                         uint64_t line_number,
                          shared_buffer_ref &line,
                          std::vector<logline_value> &values)
     {
         log_format *format = lf->get_format();
 
-        if (this->elt_module_format.mf_mod_format != NULL) {
+        if (this->elt_module_format.mf_mod_format != nullptr) {
             shared_buffer_ref body_ref;
 
             body_ref.subset(line, this->elt_container_body.lr_start,
                             this->elt_container_body.length());
             this->vi_attrs.clear();
             values.clear();
-            this->elt_module_format.mf_mod_format->annotate(body_ref, this->vi_attrs, values);
+            this->elt_module_format.mf_mod_format->annotate(line_number,
+                                                            body_ref,
+                                                            this->vi_attrs,
+                                                            values,
+                                                            false);
         }
         else {
             this->vi_attrs.clear();
-            format->annotate(line, this->vi_attrs, values, false);
+            format->annotate(line_number, line, this->vi_attrs, values, false);
         }
     };
 
@@ -1930,9 +1946,32 @@ public:
     struct line_range elt_container_body;
 };
 
-log_vtab_impl *external_log_format::get_vtab_impl(void) const
+log_vtab_impl *external_log_format::get_vtab_impl() const
 {
     return new external_log_table(*this);
+}
+
+int log_format::pattern_index_for_line(uint64_t line_number) const
+{
+    auto iter = lower_bound(this->lf_pattern_locks.cbegin(),
+                            this->lf_pattern_locks.cend(),
+                            line_number,
+                            [](const pattern_for_lines &pfl, uint32_t line) {
+        return pfl.pfl_line < line;
+    });
+
+    if (iter == this->lf_pattern_locks.end() ||
+        iter->pfl_line != line_number) {
+        --iter;
+    }
+
+    return iter->pfl_pat_index;
+}
+
+log_format::pattern_for_lines::pattern_for_lines(
+    uint32_t pfl_line, uint32_t pfl_pat_index) :
+    pfl_line(pfl_line), pfl_pat_index(pfl_pat_index)
+{
 }
 
 /* XXX */

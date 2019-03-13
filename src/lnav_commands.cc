@@ -3421,7 +3421,7 @@ public:
             lf->read_full_message(ll, sbr);
             sa.clear();
             values.clear();
-            format->annotate(sbr, sa, values);
+            format->annotate(cl, sbr, sa, values, false);
 
             vector<logline_value>::iterator lv_iter;
 
@@ -3474,7 +3474,7 @@ public:
             lf->read_full_message(ll, sbr);
             sa.clear();
             values.clear();
-            format->annotate(sbr, sa, values);
+            format->annotate(cl, sbr, sa, values, false);
 
             vector<logline_value>::iterator lv_iter;
 

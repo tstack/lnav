@@ -99,7 +99,7 @@ public:
             this->ldh_line_attrs.clear();
             this->ldh_line_values.clear();
             this->ldh_file->read_full_message(ll, this->ldh_msg);
-            format->annotate(this->ldh_msg, sa, this->ldh_line_values);
+            format->annotate(this->ldh_line_index, this->ldh_msg, sa, this->ldh_line_values, false);
 
             body = find_string_attr_range(sa, &textview_curses::SA_BODY);
             if (body.lr_start == -1) {

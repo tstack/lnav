@@ -358,12 +358,12 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     }
 
     log_format *lf = this->fos_log_helper.ldh_file->get_format();
-    if (!lf->get_pattern_regex().empty()) {
+    if (!lf->get_pattern_regex(cl).empty()) {
         attr_line_t pattern_al;
         std::string &pattern_str = pattern_al.get_string();
-        pattern_str = " Pattern: " + lf->get_pattern_name() + " = ";
+        pattern_str = " Pattern: " + lf->get_pattern_name(cl) + " = ";
         int skip = pattern_str.length();
-        pattern_str += lf->get_pattern_regex();
+        pattern_str += lf->get_pattern_regex(cl);
         readline_regex_highlighter(pattern_al, skip);
         this->fos_lines.emplace_back(pattern_al);
     }

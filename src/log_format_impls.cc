@@ -111,8 +111,9 @@ class generic_log_format : public log_format {
         return log_fmt;
     };
 
-    std::string get_pattern_regex() const {
-        return get_pcre_log_formats()[this->lf_fmt_lock].name;
+    std::string get_pattern_regex(uint64_t line_number) const {
+        int pat_index = this->pattern_index_for_line(line_number);
+        return get_pcre_log_formats()[pat_index].name;
     }
 
     intern_string_t get_name() const {
@@ -172,12 +173,11 @@ class generic_log_format : public log_format {
         return SCAN_NO_MATCH;
     };
 
-    void annotate(shared_buffer_ref &line,
-                  string_attrs_t &sa,
-                  std::vector<logline_value> &values,
-                  bool annotate_module) const
+    void annotate(uint64_t line_number, shared_buffer_ref &line, string_attrs_t &sa,
+                      std::vector<logline_value> &values, bool annotate_module) const
     {
-        pcre_format &fmt = get_pcre_log_formats()[this->lf_fmt_lock];
+        int pat_index = this->pattern_index_for_line(line_number);
+        pcre_format &fmt = get_pcre_log_formats()[pat_index];
         struct line_range lr;
         int prefix_len = 0;
         pcre_input pi(line.get_data(), 0, line.length());
@@ -602,9 +602,8 @@ public:
         return SCAN_NO_MATCH;
     };
 
-    void annotate(shared_buffer_ref &sbr, string_attrs_t &sa,
-                  std::vector<logline_value> &values,
-                  bool annotate_module) const {
+    void annotate(uint64_t line_number, shared_buffer_ref &sbr, string_attrs_t &sa,
+                      std::vector<logline_value> &values, bool annotate_module) const {
         static const intern_string_t TS = intern_string::lookup("bro_ts");
         static const intern_string_t UID = intern_string::lookup("bro_uid");
 

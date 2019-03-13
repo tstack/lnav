@@ -644,8 +644,171 @@
         },
         "sample" : [
             {
-                "line" : "E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19",
+                "line": "E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19"
+            },
+            {
                 "line" : "E0517 15:04:22.619632      52992 logging_unittest.cc:253] Log every 3, iteration 19"
+            }
+        ]
+    },
+    "haproxy_log" : {
+        "title" : "HAProxy HTTP Log Format",
+        "description" : "The HAProxy log format",
+        "url" : "http://www.haproxy.org/download/1.4/doc/configuration.txt",
+        "regex" : {
+            "event_started" : {
+                "pattern" : "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Proxy (?<frontend_name>[^ ]+) started."
+            },
+            "event_stopping": {
+                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Stopping frontend (?<frontend_name>[^ ]+) in (?<stopping_timeout>\\d+) ms."
+            },
+            "event_stopped": {
+                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Proxy (?<frontend_name>[^ ]+) stopped \\(FE: (?<frontend_connections>\\d+) conns, BE: (?<backend_connections>\\d+) conns\\)."
+            },
+            "tcp": {
+                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<frontend_name>[^ ]+) (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+) (?<tw>\\d+)\\/(?<tc>\\d+)\\/(?<tt>\\d+) (?<bytes_read>\\d+) (?<termination_state>..) (?<actconn>\\d+)\\/(?<feconn>\\d+)\\/(?<beconn>\\d+)\\/(?<srv_conn>\\d+)\\/(?<retries>\\d+) (?<srv_queue>\\d+)\\/(?<backend_queue>\\d+)"
+            },
+            "http": {
+                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<frontend_name>[^ ]+)(?<ssl>~)? (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+) (?<tq>-?\\d+)\\/(?<tw>-?\\d+)\\/(?<tc>-?\\d+)\\/(?<tr>-?\\d+)\\/(?<tt>\\d+) (?<status_code>\\d{3}|-1) (?<bytes_read>\\d+) (?<captured_request_cookie>.*) (?<captured_response_cookie>.*) (?<termination_state>....) (?<actconn>\\d+)\\/(?<feconn>\\d+)\\/(?<beconn>\\d+)\\/(?<srv_conn>\\d+)\\/(?<retries>\\d+) (?<srv_queue>\\d+)\\/(?<backend_queue>\\d+) (?:\\{(?<captured_request_headers>.*)\\} \\{(?<captured_response_headers>.*)\\} )?\"(?<http_method>[A-Z<>]+)(?: (?<http_url>.*?))?(?: (?<http_version>HTTP\\/\\d+.\\d+))?\"?$"
+            },
+            "ssl": {
+                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+): (?<ssl_error>.+)$"
+            }
+        },
+        "json": false,
+        "value" : {
+            "stopping_timeout" : {
+                "kind" : "integer"
+            },
+            "frontend_connections" : {
+                "kind" : "integer"
+            },
+            "backend_connections" : {
+                "kind" : "integer"
+            },
+            "logging_host" : {
+                "kind" : "string"
+            },
+            "process_name" : {
+                "kind" : "string"
+            },
+            "pid" : {
+                "kind" : "integer"
+            },
+            "client_ip" : {
+                "kind" : "string"
+            },
+            "client_port" : {
+                "kind" : "integer"
+            },
+            "accept_date" : {
+                "kind" : "string"
+            },
+            "frontend_name" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "ssl" : {
+                "kind" : "string"
+            },
+            "ssl_error" : {
+                "kind" : "string"
+            },
+            "backend_name" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "server_name" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "tq" : {
+                "kind" : "integer"
+            },
+            "tw" : {
+                "kind" : "integer"
+            },
+            "tc" : {
+                "kind" : "integer"
+            },
+            "tr" : {
+                "kind" : "integer"
+            },
+            "tt" : {
+                "kind" : "integer"
+            },
+            "status_code": {
+                "kind" : "integer",
+                "identifier" : true
+            },
+            "bytes_read": {
+                "kind" : "integer"
+            },
+            "captured_request_cookie": {
+                "kind" : "string"
+            },
+            "captured_response_cookie": {
+                "kind" : "string"
+            },
+            "termination_state": {
+                "kind" : "string"
+            },
+            "actconn" : {
+                "kind" : "integer"
+            },
+            "feconn" : {
+                "kind" : "integer"
+            },
+            "beconn": {
+                "kind" : "integer"
+            },
+            "srv_conn": {
+                "kind" : "integer"
+            },
+            "retries": {
+                "kind" : "integer"
+            },
+            "srv_queue": {
+                "kind" : "integer"
+            },
+            "backend_queue": {
+                "kind" : "integer"
+            },
+            "captured_request_headers": {
+                "kind" : "string"
+            },
+            "captured_response_headers": {
+                "kind" : "string"
+            },
+            "http_method": {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "http_url": {
+                "kind" : "string"
+            },
+            "http_version": {
+                "kind" : "string"
+            }
+        },
+        "sample" : [
+            {
+                "line" : "Feb 26 10:07:24 192.168.8.2 haproxy[1]: Proxy prod_http_in started."
+            },
+            {
+                "line" : "Feb 26 10:00:47 192.168.8.2 haproxy[7]: Stopping frontend prod_http_in in 0 ms."
+            },
+            {
+                "line" : "Feb 26 10:00:47 192.168.8.2 haproxy[7]: Proxy prod_http_in stopped (FE: 847876 conns, BE: 0 conns)."
+            },
+            {
+                "line" : "Feb 26 23:08:47 192.168.8.2 haproxy[7]: 178.203.144.192:50210 [26/Feb/2019:23:08:47.266] prod_http_in/slsp: Connection closed during SSL handshake"
+            },
+            {
+                "line" : "Feb 26 23:16:16 192.168.8.2 haproxy[7]: 178.203.144.192:50210 [26/Feb/2019:23:16:15.321] prod_ssh_in prod_ssh_out/ssh1 1/1/861 1485 -- 2/1/0/0/0 0/0"
+            },
+            {
+                "line" : "Feb 26 00:29:44 192.168.8.2 haproxy[7]: 178.203.144.192:50210 [26/Feb/2019:00:29:44.326] prod_http_in~ prod_http_out/nginx1 0/0/1/48/49 200 3313 - - ---- 3/2/0/0/0 0/0 {Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:65.0) Gecko/20100101 Firefox/65.0} {} \"POST /schulportal/?Script=934&lehrer=126537&anm=3235&onlinetest=admin HTTP/1.1\""
             }
         ]
     },

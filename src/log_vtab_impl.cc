@@ -369,7 +369,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
             if (ll->is_time_skewed()) {
                 if (vc->line_values.empty()) {
                     lf->read_full_message(ll, vc->log_msg);
-                    vt->vi->extract(lf, vc->log_msg, vc->line_values);
+                    vt->vi->extract(lf, line_number, vc->log_msg, vc->line_values);
                 }
 
                 struct line_range time_range;
@@ -540,7 +540,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
                 case 2: {
                     if (vc->line_values.empty()) {
                         lf->read_full_message(ll, vc->log_msg);
-                        vt->vi->extract(lf, vc->log_msg, vc->line_values);
+                        vt->vi->extract(lf, line_number, vc->log_msg, vc->line_values);
                     }
 
                     struct line_range body_range;
@@ -565,7 +565,7 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         else {
             if (vc->line_values.empty()) {
                 lf->read_full_message(ll, vc->log_msg);
-                vt->vi->extract(lf, vc->log_msg, vc->line_values);
+                vt->vi->extract(lf, line_number, vc->log_msg, vc->line_values);
             }
 
             size_t sub_col = col - VT_COL_MAX;

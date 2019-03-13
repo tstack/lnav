@@ -369,6 +369,15 @@ check_output "CR-LF line-endings not handled?" <<EOF
 2014-10-08 16:56:38,344:WARN:foo bar baz
 EOF
 
+run_test ${lnav_test} -n -I ${test_dir} \
+    -c ';SELECT count(*) FROM haproxy_log' \
+    ${srcdir}/logfile_haproxy.0
+
+check_output "multi-pattern logs don't work?" <<EOF
+count(*)
+      17
+EOF
+
 # XXX get this working...
 # run_test ${lnav_test} -n -I ${test_dir} <(cat ${srcdir}/logfile_access_log.0)
 #

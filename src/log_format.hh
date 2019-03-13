@@ -665,7 +665,6 @@ public:
     };
 
     log_format() : lf_mod_index(0),
-                   lf_fmt_lock(-1),
                    lf_timestamp_field(intern_string::lookup("timestamp", -1)),
                    lf_timestamp_flags(0),
                    lf_is_self_describing(false),
@@ -674,9 +673,9 @@ public:
 
     virtual ~log_format() { };
 
-    virtual void clear(void)
+    virtual void clear()
     {
-        this->lf_fmt_lock      = -1;
+        this->lf_pattern_locks.clear();
         this->lf_date_time.clear();
     };
 
@@ -723,10 +722,9 @@ public:
      */
     virtual void scrub(std::string &line) { };
 
-    virtual void annotate(shared_buffer_ref &sbr,
-                          string_attrs_t &sa,
-                          std::vector<logline_value> &values,
-                          bool annotate_module = true) const
+    virtual void
+    annotate(uint64_t line_number, shared_buffer_ref &sbr, string_attrs_t &sa,
+                 std::vector<logline_value> &values, bool annotate_module = true) const
     { };
 
     virtual void rewrite(exec_context &ec,
@@ -776,19 +774,37 @@ public:
     void check_for_new_year(std::vector<logline> &dst, exttm log_tv,
                             timeval timeval1);
 
-    virtual std::string get_pattern_name() const {
+    virtual std::string get_pattern_name(uint64_t line_number) const {
+        int pat_index = this->pattern_index_for_line(line_number);
         char name[32];
-        snprintf(name, sizeof(name), "builtin (%d)", this->lf_fmt_lock);
+        snprintf(name, sizeof(name), "builtin (%d)", pat_index);
         return name;
     };
 
-    virtual std::string get_pattern_regex() const {
+    virtual std::string get_pattern_regex(uint64_t line_number) const {
         return "";
     };
 
+    struct pattern_for_lines {
+        pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index);
+
+        uint32_t pfl_line;
+        int pfl_pat_index;
+    };
+
+    int last_pattern_index() const {
+        if (this->lf_pattern_locks.empty()) {
+            return -1;
+        }
+
+        return this->lf_pattern_locks.back().pfl_pat_index;
+    }
+
+    int pattern_index_for_line(uint64_t line_number) const;
+
     uint8_t lf_mod_index;
     date_time_scanner lf_date_time;
-    int lf_fmt_lock;
+    std::vector<pattern_for_lines> lf_pattern_locks;
     intern_string_t lf_timestamp_field;
     std::vector<const char *> lf_timestamp_format;
     int lf_timestamp_flags;
@@ -951,10 +967,8 @@ public:
 
     bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out);
 
-    void annotate(shared_buffer_ref &line,
-                  string_attrs_t &sa,
-                  std::vector<logline_value> &values,
-                  bool annotate_module = true) const;
+    void annotate(uint64_t line_number, shared_buffer_ref &line, string_attrs_t &sa,
+                      std::vector<logline_value> &values, bool annotate_module = true) const;
 
     void rewrite(exec_context &ec,
                  shared_buffer_ref &line,
@@ -983,8 +997,9 @@ public:
         external_log_format *elf = new external_log_format(*this);
         std::unique_ptr<log_format> retval(elf);
 
+        this->lf_pattern_locks.clear();
         if (fmt_lock != -1) {
-            elf->lf_fmt_lock = fmt_lock;
+            elf->lf_pattern_locks.emplace_back(0, fmt_lock);
         }
 
         if (this->elf_type == ELF_TYPE_JSON) {
@@ -1136,18 +1151,20 @@ public:
         return iter != this->elf_value_defs.end();
     };
 
-    std::string get_pattern_name() const {
+    std::string get_pattern_name(uint64_t line_number) const {
         if (this->elf_type != ELF_TYPE_TEXT) {
             return "structured";
         }
-        return this->elf_pattern_order[this->lf_fmt_lock]->p_config_path;
+        int pat_index = this->pattern_index_for_line(line_number);
+        return this->elf_pattern_order[pat_index]->p_config_path;
     }
 
-    std::string get_pattern_regex() const {
+    std::string get_pattern_regex(uint64_t line_number) const {
         if (this->elf_type != ELF_TYPE_TEXT) {
             return "";
         }
-        return this->elf_pattern_order[this->lf_fmt_lock]->p_string;
+        int pat_index = this->pattern_index_for_line(line_number);
+        return this->elf_pattern_order[pat_index]->p_string;
     }
 
     log_level_t convert_level(const pcre_input &pi, pcre_context::capture_t *level_cap) const {

@@ -303,6 +303,7 @@ dist_noinst_DATA = \
 	logfile_generic.1 \
 	logfile_generic.2 \
 	logfile_glog.0 \
+	logfile_haproxy.0 \
 	logfile_journald.json \
 	logfile_json.json \
 	logfile_json2.json \

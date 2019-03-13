@@ -48,7 +48,9 @@ public:
         cols.emplace_back(this->alv_schema_name.get(), SQLITE3_TEXT, nullptr, true);
     };
 
-    void extract(std::shared_ptr<logfile> lf, shared_buffer_ref &line,
+    void extract(std::shared_ptr<logfile> lf,
+                 uint64_t line_number,
+                 shared_buffer_ref &line,
                  std::vector<logline_value> &values) {
         log_format *format = lf->get_format();
         values.emplace_back(this->alv_value_name, format->get_name(), 0);
@@ -57,7 +59,7 @@ public:
         struct line_range body;
         string_attrs_t sa;
 
-        format->annotate(line, sa, sub_values);
+        format->annotate(line_number, line, sa, sub_values, false);
 
         body = find_string_attr_range(sa, &textview_curses::SA_BODY);
         if (body.lr_start == -1) {

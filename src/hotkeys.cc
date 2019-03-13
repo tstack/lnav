@@ -83,9 +83,11 @@ public:
         auto ll = lf->begin() + cl;
         log_format *format = lf->get_format();
         lf->read_full_message(ll, this->lh_msg_buffer);
-        format->annotate(this->lh_msg_buffer,
+        format->annotate(cl,
+                         this->lh_msg_buffer,
                          this->lh_string_attrs,
-                         this->lh_line_values);
+                         this->lh_line_values,
+                         false);
     };
 
     std::string to_string(const struct line_range &lr) {

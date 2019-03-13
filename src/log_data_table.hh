@@ -76,7 +76,7 @@ public:
         }
         this->ldt_parent_column_count = cols.size();
         lf->read_full_message(lf->begin() + cl_copy, line);
-        format->annotate(line, sa, line_values);
+        format->annotate(cl_copy, line, sa, line_values, false);
         body = find_string_attr_range(sa, &textview_curses::SA_BODY);
         if (body.lr_end == -1) {
             this->ldt_schema_id.clear();
@@ -161,7 +161,11 @@ public:
         std::vector<logline_value> line_values;
 
         lf->read_full_message(lf_iter, this->ldt_current_line);
-        lf->get_format()->annotate(this->ldt_current_line, sa, line_values);
+        lf->get_format()->annotate(cl,
+                                   this->ldt_current_line,
+                                   sa,
+                                   line_values,
+                                   false);
         body = find_string_attr_range(sa, &textview_curses::SA_BODY);
         if (body.lr_end == -1) {
             return false;
@@ -187,6 +191,7 @@ public:
     };
 
     void extract(std::shared_ptr<logfile> lf,
+                 uint64_t line_number,
                  shared_buffer_ref &line,
                  std::vector<logline_value> &values)
     {
@@ -194,7 +199,7 @@ public:
 
         int next_column = this->ldt_parent_column_count;
 
-        this->ldt_format_impl->extract(lf, line, values);
+        this->ldt_format_impl->extract(lf, line_number, line, values);
         values.emplace_back(instance_name, this->ldt_instance);
         logline_value &lv = values.back();
         lv.lv_column = next_column++;
