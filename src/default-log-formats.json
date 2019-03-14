@@ -693,13 +693,16 @@
                 "kind" : "string"
             },
             "pid" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key": true
             },
             "client_ip" : {
-                "kind" : "string"
+                "kind" : "string",
+                "collate": "ipaddress"
             },
             "client_port" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key": true
             },
             "accept_date" : {
                 "kind" : "string"
@@ -754,25 +757,31 @@
                 "kind" : "string"
             },
             "actconn" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key": true
             },
             "feconn" : {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key": true
             },
             "beconn": {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key": true
             },
             "srv_conn": {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key": true
             },
             "retries": {
                 "kind" : "integer"
             },
             "srv_queue": {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key": true
             },
             "backend_queue": {
-                "kind" : "integer"
+                "kind" : "integer",
+                "foreign-key": true
             },
             "captured_request_headers": {
                 "kind" : "string"
