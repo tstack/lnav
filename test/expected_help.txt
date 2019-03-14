@@ -2136,6 +2136,18 @@ Parameters
 
 
 Synopsis
+  INSERT INTO [schema-name.] table-name [( column-name1 [, ... column-nameN] )]
+         VALUES ( expr1 [, ... exprN] )
+
+  Insert rows into a table
+Parameters
+
+Example
+#1 ;INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')
+   
+
+
+Synopsis
   SELECT result-column1 [, ... result-columnN] [FROM table1 [, ... tableN]]
          [WHERE cond]
          [GROUP BY grouping-expr1 [, ... grouping-exprN]]

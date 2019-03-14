@@ -592,6 +592,22 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                 .optional())
             .with_parameter(help_text("trigger-name")),
 
+        help_text("INSERT", "Insert rows into a table")
+            .sql_keyword()
+            .with_parameter(help_text("")
+                                .with_flag_name("INTO"))
+            .with_parameter(help_text("schema-name.")
+                                .optional())
+            .with_parameter(help_text("table-name"))
+            .with_parameter(help_text("column-name")
+                                .with_grouping("(", ")")
+                                .zero_or_more())
+            .with_parameter(help_text("expr")
+                                .with_flag_name("VALUES")
+                                .with_grouping("(", ")")
+                                .one_or_more())
+            .with_example({"INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')"}),
+
         help_text("SELECT",
                   "Query the database and return zero or more rows of data.")
             .sql_keyword()

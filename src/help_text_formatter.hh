@@ -72,6 +72,8 @@ struct help_text {
     const char *ht_name;
     const char *ht_summary;
     const char *ht_flag_name{nullptr};
+    const char *ht_group_start{nullptr};
+    const char *ht_group_end{nullptr};
     const char *ht_description{nullptr};
     std::vector<struct help_text> ht_parameters;
     std::vector<struct help_text> ht_results;
@@ -122,6 +124,12 @@ struct help_text {
 
     help_text &with_flag_name(const char *flag) {
         this->ht_flag_name = flag;
+        return *this;
+    }
+
+    help_text &with_grouping(const char *group_start, const char *group_end) {
+        this->ht_group_start = group_start;
+        this->ht_group_end = group_end;
         return *this;
     }
 

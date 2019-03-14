@@ -3694,6 +3694,7 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text("timestamp", "The new timestamp for the top line in the view")
                                 .with_format(HPF_DATETIME))
             .with_example({"2017-01-02T05:33:00", ""})
+            .with_example({"-1h"})
     },
 
     {

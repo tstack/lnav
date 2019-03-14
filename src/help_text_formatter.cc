@@ -145,6 +145,11 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                         .append(param.ht_flag_name, &view_curses::VC_STYLE,
                                 A_BOLD);
                 }
+                if (param.ht_group_start) {
+                    out.ensure_space()
+                       .append(param.ht_group_start, &view_curses::VC_STYLE,
+                               A_BOLD);
+                }
                 if (param.ht_name[0]) {
                     out.ensure_space()
                         .append(param.ht_name, &view_curses::VC_STYLE,
@@ -198,6 +203,11 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                             .append("N", &view_curses::VC_STYLE, A_UNDERLINE);
                     }
                     out.append("]");
+                }
+                if (param.ht_group_end) {
+                    out.ensure_space()
+                       .append(param.ht_group_end, &view_curses::VC_STYLE,
+                               A_BOLD);
                 }
                 if (param.ht_nargs == HN_ZERO_OR_MORE ||
                     param.ht_nargs == HN_OPTIONAL) {
