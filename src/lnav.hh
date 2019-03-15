@@ -89,6 +89,7 @@ enum {
     LNB_HEADLESS,
     LNB_QUIET,
     LNB_ROTATED,
+    LNB_RECURSIVE,
     LNB_CHECK_CONFIG,
     LNB_INSTALL,
     LNB_UPDATE_FORMATS,
@@ -101,6 +102,7 @@ typedef enum {
     LNF_SYSLOG    = (1L << LNB_SYSLOG),
 
     LNF_ROTATED   = (1L << LNB_ROTATED),
+    LNF_RECURSIVE = (1L << LNB_RECURSIVE),
 
     LNF_TIMESTAMP = (1L << LNB_TIMESTAMP),
     LNF_HELP      = (1L << LNB_HELP),

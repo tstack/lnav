@@ -825,7 +825,8 @@ static void usage()
         "  -V         Print version information.\n"
         "\n"
         "  -a         Load all of the most recent log file types.\n"
-        "  -r         Load older rotated log files as well.\n"
+        "  -r         Recursively load files from the given directory hierarchies.\n"
+        "  -R         Load older rotated log files as well.\n"
         "  -t         Prepend timestamps to the lines of data being read in\n"
         "             on the standard input.\n"
         "  -w file    Write the contents of the standard input to this file.\n"
@@ -915,6 +916,17 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
     }
 
     if (rc == 0) {
+        if (S_ISDIR(st.st_mode) && lnav_data.ld_flags & LNF_RECURSIVE) {
+            string wilddir = filename + "/*";
+
+            if (lnav_data.ld_file_names.find(wilddir) ==
+                lnav_data.ld_file_names.end()) {
+                logfile_open_options default_loo;
+
+                lnav_data.ld_file_names[wilddir] = default_loo;
+            }
+            return retval;
+        }
         if (!S_ISREG(st.st_mode)) {
             if (required) {
                 rc    = -1;
@@ -1843,7 +1855,7 @@ int main(int argc, char *argv[])
 #endif
 
     lnav_data.ld_debug_log_name = "/dev/null";
-    while ((c = getopt(argc, argv, "hHarCc:I:iuf:d:nqtw:vVW")) != -1) {
+    while ((c = getopt(argc, argv, "hHarRCc:I:iuf:d:nqtw:vVW")) != -1) {
         switch (c) {
         case 'h':
             usage();
@@ -1924,8 +1936,12 @@ int main(int argc, char *argv[])
             lnav_data.ld_flags |= LNF_QUIET;
             break;
 
-        case 'r':
+        case 'R':
             lnav_data.ld_flags |= LNF_ROTATED;
+            break;
+
+        case 'r':
+            lnav_data.ld_flags |= LNF_RECURSIVE;
             break;
 
         case 't':

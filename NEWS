@@ -42,6 +42,8 @@ lnav v0.8.5:
        you can press TAB cycle through the options.
      * Added CTRL+F to toggle the enabled/disabled state of all filters for the
        current view.
+     * The '-r' flag is now for recursively loading files.  The functionality
+       for loading rotated files is now under the '-R' flag.
      * The current search term is now shown in the bottom status bar.
      * Some initial help text is now shown for the search and SQL prompts to
        refresh the memory.

@@ -16,7 +16,7 @@ PACKAGE_URLS = \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	http://www.zlib.net/zlib-1.2.11.tar.gz \
 	http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz \
-	https://sqlite.org/2018/sqlite-autoconf-3260000.tar.gz \
+	https://sqlite.org/2019/sqlite-autoconf-3270200.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.8.0.tar.gz \
 	https://curl.haxx.se/download/curl-7.63.0.tar.gz

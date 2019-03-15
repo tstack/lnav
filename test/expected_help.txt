@@ -36,7 +36,8 @@ arguments to load well-known log files, such as the syslog or apache
 log files.  The flag arguments are:
 
   -a         Load all of the most recent log file types.
-  -r         Load older rotated log files as well.
+  -r         Recursively load files from the given directory hierarchies.
+  -R         Load older rotated log files as well.
 
 When using the flag arguments, lnav will look for the files relative
 to the current directory and its parent directories.  In other words,
