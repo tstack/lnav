@@ -3,7 +3,7 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
-    -c ";SELECT basename(filepath),format,lines,time_offset FROM lnav_file" \
+    -c ";SELECT basename(filepath),format,lines,time_offset FROM lnav_file LIMIT 2" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_access_log.0 \
     ${test_dir}/logfile_access_log.1
