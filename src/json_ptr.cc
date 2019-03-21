@@ -173,3 +173,258 @@ const yajl_callbacks json_ptr_walk::callbacks = {
     handle_start_array,
     handle_end_array
 };
+
+size_t
+json_ptr::encode(char *dst, size_t dst_len, const char *src, size_t src_len)
+{
+    size_t retval = 0;
+
+    if (src_len == (size_t)-1) {
+        src_len = strlen(src);
+    }
+
+    for (size_t lpc = 0; lpc < src_len; lpc++) {
+        switch (src[lpc]) {
+            case '/':
+            case '~':
+                if (retval < dst_len) {
+                    dst[retval] = '~';
+                    retval += 1;
+                    if (src[lpc] == '~') {
+                        dst[retval] = '0';
+                    }
+                    else {
+                        dst[retval] = '1';
+                    }
+                }
+                else {
+                    retval += 1;
+                }
+                break;
+            default:
+                if (retval < dst_len) {
+                    dst[retval] = src[lpc];
+                }
+                break;
+        }
+        retval += 1;
+    }
+
+    return retval;
+}
+
+size_t json_ptr::decode(char *dst, const char *src, ssize_t src_len)
+{
+    size_t retval = 0;
+
+    if (src_len == -1) {
+        src_len = strlen(src);
+    }
+
+    for (int lpc = 0; lpc < src_len; lpc++) {
+        switch (src[lpc]) {
+            case '~':
+                if ((lpc + 1) < src_len) {
+                    switch (src[lpc + 1]) {
+                        case '0':
+                            dst[retval++] = '~';
+                            lpc += 1;
+                            break;
+                        case '1':
+                            dst[retval++] = '/';
+                            lpc += 1;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                break;
+            default:
+                dst[retval++] = src[lpc];
+                break;
+        }
+    }
+
+    dst[retval] = '\0';
+
+    return retval;
+}
+
+bool json_ptr::expect_map(int32_t &depth, int32_t &index)
+{
+    bool retval;
+
+    if (this->jp_state == MS_DONE) {
+        retval = true;
+    }
+    else if (depth != this->jp_depth) {
+        retval = true;
+    }
+    else if (this->reached_end()) {
+        retval = true;
+    }
+    else if (this->jp_state == MS_VALUE &&
+             (this->jp_array_index == -1 ||
+                 ((index - 1) == this->jp_array_index))) {
+        if (this->jp_pos[0] == '/') {
+            this->jp_pos += 1;
+            this->jp_depth += 1;
+            this->jp_state = MS_VALUE;
+            this->jp_array_index = -1;
+            index = -1;
+        }
+        retval = true;
+    }
+    else {
+        retval = true;
+    }
+    depth += 1;
+
+    return retval;
+}
+
+bool json_ptr::at_key(int32_t depth, const char *component, ssize_t len)
+{
+    const char *component_end;
+    int lpc;
+
+    if (this->jp_state == MS_DONE || depth != this->jp_depth) {
+        return true;
+    }
+
+    if (len == -1) {
+        len = strlen(component);
+    }
+    component_end = component + len;
+
+    for (lpc = 0; component < component_end; lpc++, component++) {
+        char ch = this->jp_pos[lpc];
+
+        if (this->jp_pos[lpc] == '~') {
+            switch (this->jp_pos[lpc + 1]) {
+                case '0':
+                    ch = '~';
+                    break;
+                case '1':
+                    ch = '/';
+                    break;
+                default:
+                    this->jp_state = MS_ERR_INVALID_ESCAPE;
+                    return false;
+            }
+            lpc += 1;
+        }
+        else if (this->jp_pos[lpc] == '/') {
+            ch = '\0';
+        }
+
+        if (ch != *component) {
+            return true;
+        }
+    }
+
+    this->jp_pos += lpc;
+    this->jp_state = MS_VALUE;
+
+    return true;
+}
+
+void json_ptr::exit_container(int32_t &depth, int32_t &index)
+{
+    depth -= 1;
+    if (this->jp_state == MS_VALUE &&
+        depth == this->jp_depth &&
+        (index == -1 || (index - 1 == this->jp_array_index)) &&
+        this->reached_end()) {
+        this->jp_state = MS_DONE;
+        index = -1;
+    }
+}
+
+bool json_ptr::expect_array(int32_t &depth, int32_t &index)
+{
+    bool retval;
+
+    if (this->jp_state == MS_DONE) {
+        retval = true;
+    }
+    else if (depth != this->jp_depth) {
+        retval = true;
+    }
+    else if (this->reached_end()) {
+        retval = true;
+    }
+    else if (this->jp_pos[0] == '/') {
+        int offset;
+
+        this->jp_depth += 1;
+
+        if (sscanf(this->jp_pos, "/%d%n", &this->jp_array_index, &offset) != 1) {
+            this->jp_state = MS_ERR_INVALID_INDEX;
+            retval = true;
+        }
+        else if (this->jp_pos[offset] != '\0' && this->jp_pos[offset] != '/') {
+            this->jp_state = MS_ERR_INVALID_INDEX;
+            retval = true;
+        }
+        else {
+            index = 0;
+            this->jp_pos += offset;
+            this->jp_state = MS_VALUE;
+            retval = true;
+        }
+    }
+    else {
+        this->jp_state = MS_ERR_NO_SLASH;
+        retval = true;
+    }
+
+    depth += 1;
+
+    return retval;
+}
+
+bool json_ptr::at_index(int32_t &depth, int32_t &index, bool primitive)
+{
+    bool retval;
+
+    if (this->jp_state == MS_DONE) {
+        retval = false;
+    }
+    else if (depth < this->jp_depth) {
+        retval = false;
+    }
+    else if (depth == this->jp_depth) {
+        if (index == -1) {
+            if (this->jp_array_index == -1) {
+                retval = this->reached_end();
+                if (primitive && retval) {
+                    this->jp_state = MS_DONE;
+                }
+            }
+            else {
+                retval = false;
+            }
+        }
+        else if (index == this->jp_array_index) {
+            retval = this->reached_end();
+            this->jp_array_index = -1;
+            index = -1;
+            if (primitive && retval) {
+                this->jp_state = MS_DONE;
+            }
+        }
+        else {
+            index += 1;
+            retval = false;
+        }
+    }
+    else if (index == -1) {
+        retval = this->reached_end();
+    }
+    else {
+        retval = false;
+    }
+
+    return retval;
+}

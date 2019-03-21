@@ -1264,6 +1264,7 @@ public:
     std::vector<logline_value> jlf_line_values;
 
     off_t jlf_cached_offset;
+    bool jlf_cached_full{false};
     std::vector<off_t> jlf_line_offsets;
     shared_buffer jlf_share_manager;
     std::vector<char> jlf_cached_line;

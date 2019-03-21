@@ -152,8 +152,8 @@ int main(int argc, char *argv[])
         yajl_gen gen;
         ssize_t rc;
 
-        gen = yajl_gen_alloc(NULL);
-        yajl_gen_config(gen, yajl_gen_print_callback, printer, NULL);
+        gen = yajl_gen_alloc(nullptr);
+        yajl_gen_config(gen, yajl_gen_print_callback, printer, nullptr);
         yajl_gen_config(gen, yajl_gen_beautify, true);
 
         jo.jo_ptr_callbacks.yajl_start_map = handle_start_map;
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
         jo.jo_ptr_callbacks.yajl_string = handle_string;
         jo.jo_ptr_data = gen;
 
-        handle = yajl_alloc(&json_op::ptr_callbacks, NULL, &jo);
+        handle = yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo);
         while ((rc = read(STDIN_FILENO, buffer, sizeof(buffer))) > 0) {
             status = yajl_parse(handle, buffer, rc);
             if (status == yajl_status_error) {

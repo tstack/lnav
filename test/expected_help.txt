@@ -1305,10 +1305,12 @@ Example
 
 
 Synopsis
-  jget(json, ptr) -- Get the value from a JSON object using a JSON-Pointer.
+  jget(json, ptr, default) -- Get the value from a JSON object using a JSON-
+    Pointer.
 Parameters
-  json   The JSON object to query.
-  ptr    The JSON-Pointer to lookup in the object.
+  json      The JSON object to query.
+  ptr       The JSON-Pointer to lookup in the object.
+  default   The default value if the value was not found
 See Also
   json_contains()
 Examples
@@ -1316,6 +1318,9 @@ Examples
    
 
 #2 ;SELECT jget('{ "a": 1, "b": 2 }', '/b')
+   
+
+#3 ;SELECT jget(null, '/msg', 'Hello')
    
 
 

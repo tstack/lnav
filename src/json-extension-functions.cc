@@ -473,9 +473,12 @@ int json_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"json", "The JSON object to query."})
                 .with_parameter({"ptr", "The JSON-Pointer to lookup in the object."})
+                .with_parameter(help_text("default", "The default value if the value was not found")
+                                    .optional())
                 .with_tags({"json"})
                 .with_example({"SELECT jget('1', '')"})
                 .with_example({"SELECT jget('{ \"a\": 1, \"b\": 2 }', '/b')"})
+                .with_example({"SELECT jget(null, '/msg', 'Hello')"})
         },
 
         { NULL }

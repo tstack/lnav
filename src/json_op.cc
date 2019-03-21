@@ -221,7 +221,7 @@ int json_op::handle_start_map(void *ctx)
         }
     }
 
-    if (!jo->jo_ptr.expect_map(jo->jo_depth)) {
+    if (!jo->jo_ptr.expect_map(jo->jo_depth, jo->jo_array_index)) {
         retval = 0;
     }
 

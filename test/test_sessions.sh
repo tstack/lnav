@@ -6,6 +6,7 @@ export HOME="./sessions"
 mkdir -p $HOME
 
 run_test ${lnav_test} -nq \
+    -c ":reset-session" \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
     -c ":goto 1" \
     -c ":partition-name middle" \

@@ -1004,7 +1004,8 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         return;
     }
 
-    if (this->jlf_cached_offset != ll.get_offset()) {
+    if (this->jlf_cached_offset != ll.get_offset() ||
+        this->jlf_cached_full != full_message) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
         yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
@@ -1109,10 +1110,9 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             this->json_append(jfe, str.c_str(), str.size());
                         }
 
-                        if (nl_pos == string::npos) {
+                        if (nl_pos == string::npos || full_message) {
                             lr.lr_end = this->jlf_cached_line.size();
-                        }
-                        else {
+                        } else {
                             lr.lr_end = lr.lr_start + nl_pos;
                         }
 
@@ -1243,6 +1243,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         }
 
         this->jlf_cached_offset = ll.get_offset();
+        this->jlf_cached_full = full_message;
     }
 
     off_t this_off = 0, next_off = 0;

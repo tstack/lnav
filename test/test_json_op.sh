@@ -100,3 +100,15 @@ EOF
 run_test ./drive_json_op get "/ID" <<EOF
 {"ID":"P1","ProcessID":"P1","Name":"VxWorks","CanSuspend":true,"CanResume":1,"IsContainer":true,"WordSize":4,"CanTerminate":true,"CanDetach":true,"RCGroup":"P1","SymbolsGroup":"P1","CPUGroup":"P1","DiagnosticTestProcess":true}
 EOF
+
+check_output "cannot read key value" <<EOF
+"P1"
+EOF
+
+run_test ./drive_json_op get "/arr/1/id" <<EOF
+{"arr": [{"id": 1}, {"id": 2}]}
+EOF
+
+check_output "cannot read key value" <<EOF
+2
+EOF

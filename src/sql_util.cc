@@ -925,7 +925,7 @@ void annotate_sql_statement(attr_line_t &al)
             if (piter == sa.end()) {
                 func_range.lr_end = line.length();
             } else {
-                func_range.lr_end = piter->sa_range.lr_end;
+                func_range.lr_end = piter->sa_range.lr_end - 1;
             }
             sa.emplace_back(func_range, &SQL_FUNCTION_ATTR);
         }

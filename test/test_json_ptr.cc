@@ -55,7 +55,7 @@ int main(int argc, const char *argv[])
         depth = 0;
         index = -1;
         assert(!jptr.at_index(depth, index));
-        assert(jptr.expect_map(depth));
+        assert(jptr.expect_map(depth, index));
         assert(jptr.at_index(depth, index));
     }
 
@@ -64,9 +64,9 @@ int main(int argc, const char *argv[])
 
         depth = 0;
         index = -1;
-        assert(jptr.expect_map(depth));
+        assert(jptr.expect_map(depth, index));
         assert(jptr.at_key(depth, "foo"));
-        assert(jptr.expect_map(depth));
+        assert(jptr.expect_map(depth, index));
         assert(jptr.at_key(depth, "bar"));
         assert(jptr.at_index(depth, index));
     }

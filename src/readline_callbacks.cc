@@ -356,7 +356,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
         }
 
         vector<string> kw;
-        auto iter = rfind_string_attr_if(sa, x, [&al, &name, &kw](auto sa) {
+        auto iter = rfind_string_attr_if(sa, x, [&al, &name, &kw, x](auto sa) {
             if (sa.sa_type != &SQL_FUNCTION_ATTR &&
                 sa.sa_type != &SQL_KEYWORD_ATTR) {
                 return false;
@@ -365,6 +365,12 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
             const string &str = al.get_string();
             const line_range &lr = sa.sa_range;
             int lpc;
+
+            if (sa.sa_type == &SQL_FUNCTION_ATTR) {
+                if (!sa.sa_range.contains(x)) {
+                    return false;
+                }
+            }
 
             for (lpc = lr.lr_start; lpc < lr.lr_end; lpc++) {
                 if (!isalnum(str[lpc]) && str[lpc] != '_') {
