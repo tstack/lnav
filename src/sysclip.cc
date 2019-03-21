@@ -48,6 +48,11 @@ static clip_command *get_commands()
             { { "pbcopy -pboard find > /dev/null 2>&1",
                     "pbpaste -pboard find -Prefer txt 2>/dev/null" } },
     };
+    static clip_command WINDOWS_CMDS[] = {
+            { { "clip.exe > /dev/null 2>&1",
+                    nullptr } },
+            { { nullptr, nullptr } },
+    };
     static clip_command X_CMDS[] = {
             { { "xclip -i > /dev/null 2>&1",
                     "xclip -o < /dev/null 2>/dev/null" } },
@@ -58,6 +63,12 @@ static clip_command *get_commands()
     }
     if (system("which xclip > /dev/null 2>&1") == 0) {
         return X_CMDS;
+    }
+    /*
+     * xclip and clip.exe may coexist on Windows Subsystem for Linux
+     */
+    if (system("which clip.exe > /dev/null 2>&1") == 0) {
+        return WINDOWS_CMDS;
     }
     return nullptr;
 }
