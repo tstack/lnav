@@ -1,5 +1,5 @@
 
-VERSION=0.8.5-rc1
+VERSION=0.8.5
 
 SRC_VERSION=master
 
