@@ -10,4 +10,4 @@
 {"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "WARNING", "msg": "not looking good"}}
 {"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "ERROR", "msg": "looking bad"}}
 {"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "CRITICAL", "msg": "sooo bad"}}
-{"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "FATAL", "msg": "shoot"}}
+{"ts": "2013-09-06T22:01:49.124817Z", "@fields": { "lvl": "FATAL", "msg": "shoot", "trace": ["line:1", "line:2"]}}

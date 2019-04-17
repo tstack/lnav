@@ -18,6 +18,9 @@
             "@fields/user" : {
                 "kind" : "string",
                 "identifier" : true
+            },
+            "@fields/trace#" : {
+                "kind" : "string"
             }
         }
     }

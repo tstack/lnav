@@ -208,6 +208,10 @@ int yajlpp_parse_context::map_key(void *ctx,
                     ypc->ypc_path.push_back('~');
                     ypc->ypc_path.push_back('1');
                     break;
+                case '#':
+                    ypc->ypc_path.push_back('~');
+                    ypc->ypc_path.push_back('2');
+                    break;
                 default:
                     ypc->ypc_path.push_back(key[lpc]);
                     break;

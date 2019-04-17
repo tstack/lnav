@@ -190,6 +190,10 @@ set(diag_STAT_SRCS
 
 set(lnav_SRCS lnav.cc)
 
-include_directories(../../lbuild-debug/src /opt/local/include)
+include_directories(
+        ../../lbuild-debug/src
+        /opt/local/include
+        /usr/local/opt/sqlite3/include
+)
 include_directories(SYSTEM .)
 add_executable(lnav ${lnav_SRCS} ${diag_STAT_SRCS})

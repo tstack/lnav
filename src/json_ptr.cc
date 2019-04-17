@@ -187,11 +187,15 @@ json_ptr::encode(char *dst, size_t dst_len, const char *src, size_t src_len)
         switch (src[lpc]) {
             case '/':
             case '~':
+            case '#':
                 if (retval < dst_len) {
                     dst[retval] = '~';
                     retval += 1;
                     if (src[lpc] == '~') {
                         dst[retval] = '0';
+                    }
+                    else if (src[lpc] == '#') {
+                        dst[retval] = '2';
                     }
                     else {
                         dst[retval] = '1';
@@ -232,6 +236,10 @@ size_t json_ptr::decode(char *dst, const char *src, ssize_t src_len)
                             break;
                         case '1':
                             dst[retval++] = '/';
+                            lpc += 1;
+                            break;
+                        case '2':
+                            dst[retval++] = '#';
                             lpc += 1;
                             break;
                         default:
