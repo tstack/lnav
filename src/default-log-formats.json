@@ -1282,7 +1282,8 @@
         "value" : {
             "syscall" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "rewriter" : ":pipe-line-to explain-syscall.sh ${syscall}"
             },
             "args" : {
                 "kind" : "string"

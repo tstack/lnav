@@ -36,8 +36,10 @@ check_output "json log format is not working" <<EOF
 EOF
 
 
-run_test ${lnav_test} -n \
-    -I ${test_dir} -c ':switch-to-view pretty' \
+run_test ${lnav_test} -n -I ${test_dir} \
+    -c ':switch-to-view pretty' \
+    -c ':switch-to-view log' \
+    -c ':switch-to-view pretty' \
     ${test_dir}/logfile_json.json
 
 check_output "json log format is not working" <<EOF

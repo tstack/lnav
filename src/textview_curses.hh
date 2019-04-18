@@ -650,7 +650,9 @@ public:
 
     textview_curses &set_sub_source(text_sub_source *src) {
         this->tc_sub_source = src;
-        src->register_view(this);
+        if (src) {
+            src->register_view(this);
+        }
         this->reload_data();
         return *this;
     };

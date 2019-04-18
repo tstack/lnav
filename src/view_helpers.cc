@@ -73,6 +73,7 @@ static void open_pretty_view(void)
     attr_line_t full_text;
 
     delete pretty_tc->get_sub_source();
+    pretty_tc->set_sub_source(nullptr);
     if (top_tc->get_inner_height() == 0) {
         pretty_tc->set_sub_source(new plain_text_source(NOTHING_MSG));
         return;
