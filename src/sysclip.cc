@@ -42,32 +42,69 @@ struct clip_command {
 
 static clip_command *get_commands()
 {
+    static clip_command NEOVIM_CMDS[] = {
+            { { "win32yank.exe -i --crlf > /dev/null 2>&1",
+                    "win32yank.exe -o --lf < /dev/null 2>/dev/null" } },
+            { { nullptr, nullptr } },
+    };
     static clip_command OSX_CMDS[] = {
             { { "pbcopy > /dev/null 2>&1",
                     "pbpaste -Prefer txt 2>/dev/null", } },
             { { "pbcopy -pboard find > /dev/null 2>&1",
                     "pbpaste -pboard find -Prefer txt 2>/dev/null" } },
     };
+    static clip_command TMUX_CMDS[] = {
+            { { "tmux load-buffer - > /dev/null 2>&1",
+                    "tmux save-buffer - < /dev/null 2>/dev/null" } },
+            { { nullptr, nullptr } },
+    };
+    static clip_command WAYLAND_CMDS[] = {
+            { { "wl-copy --foreground --type text/plain > /dev/null 2>&1",
+                    "wl-paste --no-newline < /dev/null 2>/dev/null" } },
+            { { nullptr, nullptr } },
+    };
     static clip_command WINDOWS_CMDS[] = {
             { { "clip.exe > /dev/null 2>&1",
                     nullptr } },
             { { nullptr, nullptr } },
     };
-    static clip_command X_CMDS[] = {
+    static clip_command XCLIP_CMDS[] = {
             { { "xclip -i > /dev/null 2>&1",
                     "xclip -o < /dev/null 2>/dev/null" } },
             { { nullptr, nullptr } },
     };
-    if (system("which pbcopy > /dev/null 2>&1") == 0) {
+    static clip_command XSEL_CMDS[] = {
+            { { "xsel --nodetach -i -b > /dev/null 2>&1",
+                    "xclip -o -b < /dev/null 2>/dev/null" } },
+            { { nullptr, nullptr } },
+    };
+    if (system("command -v pbcopy > /dev/null 2>&1") == 0) {
         return OSX_CMDS;
     }
-    if (system("which xclip > /dev/null 2>&1") == 0) {
-        return X_CMDS;
+    if (getenv("WAYLAND_DISPLAY") != nullptr) {
+	return WAYLAND_CMDS;
     }
+    if (getenv("DISPLAY") != nullptr) {
+	    if (system("command -v xclip > /dev/null 2>&1") == 0) {
+		return XCLIP_CMDS;
+	    }
+	    if (system("command -v xsel > /dev/null 2>&1") == 0) {
+		return XSEL_CMDS;
+	    }
+    }
+    if (getenv("TMUX") != nullptr) {
+	    return TMUX_CMDS;
+    }
+
     /*
+     * NeoVim's win32yank command is bidirectional, whereas the system-supplied
+     * clip.exe is copy-only.
      * xclip and clip.exe may coexist on Windows Subsystem for Linux
      */
-    if (system("which clip.exe > /dev/null 2>&1") == 0) {
+    if (system("command -v win32yank.exe > /dev/null 2>&1") == 0) {
+        return NEOVIM_CMDS;
+    }
+    if (system("command -v clip.exe > /dev/null 2>&1") == 0) {
         return WINDOWS_CMDS;
     }
     return nullptr;
