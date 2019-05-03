@@ -600,7 +600,7 @@ struct json_path_handler format_handlers[] = {
         .with_description("Indicates that the order of messages in the file is time-based.")
         .FOR_FIELD(log_format, lf_time_ordered),
     json_path_handler("level/"
-                      "(trace|debug\\d*|info|stats|warning|error|critical|fatal)")
+                      "(trace|debug\\d*|info|stats|notice|warning|error|critical|fatal)")
         .add_cb(read_levels)
         .add_cb(read_level_int)
         .with_synopsis("<pattern|integer>")
