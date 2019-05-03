@@ -38,6 +38,7 @@
 #include <unordered_map>
 
 #include <pcrecpp.h>
+#include <yajl/api/yajl_tree.h>
 
 #include "lnav.hh"
 #include "lnav_config.hh"
@@ -3208,64 +3209,126 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
         yajlpp_parse_context ypc("input", lnav_config_handlers);
         string option = args[1];
 
+        lnav_config = rollback_lnav_config;
         ypc.set_path(option)
            .with_obj(lnav_config);
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
-        if (ypc.ypc_current_handler != NULL) {
-            if (args.size() == 2) {
-                auto_mem<yajl_gen_t> handle(yajl_gen_free);
+        const json_path_handler_base *jph = ypc.ypc_current_handler;
 
-                handle = yajl_gen_alloc(NULL);
+        if (jph == nullptr && !ypc.ypc_handler_stack.empty()) {
+            jph = ypc.ypc_handler_stack.back();
+        }
 
-                const json_path_handler_base *jph = ypc.ypc_current_handler;
-                yajlpp_gen_context ygc(handle, lnav_config_handlers);
-                ygc.with_context(ypc);
+        if (jph != nullptr) {
+            auto_mem<yajl_gen_t> handle(yajl_gen_free);
 
+            handle = yajl_gen_alloc(nullptr);
+
+            yajlpp_gen_context ygc(handle, lnav_config_handlers);
+            yajl_gen_config(handle, yajl_gen_beautify, 1);
+            ygc.with_context(ypc);
+
+            if (ypc.ypc_current_handler == nullptr) {
+                ygc.gen();
+            } else {
                 jph->gen(ygc, handle);
+            }
 
-                const unsigned char *buffer;
-                size_t len;
+            const unsigned char *buffer;
+            size_t len;
 
-                yajl_gen_get_buf(handle, &buffer, &len);
+            yajl_gen_get_buf(handle, &buffer, &len);
 
-                retval = "info: " + option + " = " + string((char *) buffer, len);
+            string old_value((char *) buffer, len);
+
+            if (args.size() == 2 || ypc.ypc_current_handler == nullptr) {
+                vector<string> errors;
+
+                lnav_config = rollback_lnav_config;
+                reload_config(errors);
+
+                if (ec.ec_dry_run) {
+                    attr_line_t al(old_value);
+
+                    lnav_data.ld_preview_source
+                        .replace_with(al)
+                        .set_text_format(detect_text_format(old_value.c_str(),
+                                                            old_value.size()))
+                        .truncate_to(10);
+                    lnav_data.ld_preview_status_source.get_description()
+                        .set_value("Value of option: %s", option.c_str());
+
+                    char help_text[1024];
+
+                    snprintf(help_text, sizeof(help_text),
+                             ANSI_BOLD("%s") " " ANSI_UNDERLINE("%s") " -- %s",
+                             jph->jph_path,
+                             jph->jph_synopsis,
+                             jph->jph_description);
+
+                    retval = help_text;
+                } else {
+                    retval = "info: " + option + " = " + trim(old_value);
+                }
             }
             else {
                 string value = remaining_args(cmdline, args, 2);
+                vector<string> errors;
+                bool changed = false;
+
+                if (ec.ec_dry_run) {
+                    char help_text[1024];
+
+                    snprintf(help_text, sizeof(help_text),
+                             ANSI_BOLD("%s %s") " -- %s",
+                             jph->jph_path,
+                             jph->jph_synopsis,
+                             jph->jph_description);
+
+                    retval = help_text;
+                }
 
                 if (ypc.ypc_current_handler->jph_callbacks.yajl_string) {
-                    if (ec.ec_dry_run) {
-                        retval = "";
-                    } else {
-                        ypc.ypc_callbacks.yajl_string(
-                            &ypc, (const unsigned char *) value.c_str(),
-                            value.size());
-                        retval = "info: changed config option -- " + option;
-                    }
+                    ypc.ypc_callbacks.yajl_string(
+                        &ypc, (const unsigned char *) value.c_str(),
+                        value.size());
+                    changed = true;
                 }
                 else if (ypc.ypc_current_handler->jph_callbacks.yajl_boolean) {
-                    if (ec.ec_dry_run) {
-                        retval = "";
-                    } else {
-                        bool bvalue = false;
+                    bool bvalue = false;
 
-                        if (strcasecmp(value.c_str(), "true") == 0) {
-                            bvalue = true;
-                        }
-                        ypc.ypc_callbacks.yajl_boolean(&ypc, bvalue);
-                        retval = "info: changed config option -- " + option;
+                    if (strcasecmp(value.c_str(), "true") == 0) {
+                        bvalue = true;
                     }
+                    ypc.ypc_callbacks.yajl_boolean(&ypc, bvalue);
+                    changed = true;
                 }
                 else {
                     retval = "error: unhandled type";
                 }
 
-                reload_config();
+                if (changed) {
+                    intern_string_t path = intern_string::lookup(option);
+
+                    lnav_config_locations[path] = {
+                        intern_string::lookup(ec.ec_source.top().first),
+                        ec.ec_source.top().second
+                    };
+                    reload_config(errors);
+
+                    if (!errors.empty()) {
+                        lnav_config = rollback_lnav_config;
+                        retval = "error:" + errors[0];
+                        reload_config(errors);
+                    } else if (!ec.ec_dry_run) {
+                        retval = "info: changed config option -- " + option;
+                        rollback_lnav_config = lnav_config;
+                    }
+                }
             }
-        }
-        else {
+        } else {
             retval = "error: unknown configuration option -- " + option;
         }
     }
@@ -3293,22 +3356,27 @@ static string com_reset_config(exec_context &ec, string cmdline, vector<string> 
     if (args.empty()) {
         args.emplace_back("config-option");
     }
-    else if (!ec.ec_dry_run) {
+    else {
         yajlpp_parse_context ypc("input", lnav_config_handlers);
         string option = args[1];
 
+        lnav_config = rollback_lnav_config;
         ypc.set_path(option)
            .with_obj(lnav_config);
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
-        if (option == "*" || ypc.ypc_current_handler != NULL) {
-            reset_config(option);
+        if (option == "*" || (ypc.ypc_current_handler != NULL ||
+                              !ypc.ypc_handler_stack.empty())) {
+            if (!ec.ec_dry_run) {
+                reset_config(option);
+                rollback_lnav_config = lnav_config;
+            }
             if (option == "*") {
                 retval = "info: reset all options";
             }
             else {
-                retval = "info: reset option";
+                retval = "info: reset option -- " + option;
             }
         }
         else {
@@ -4348,7 +4416,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":config")
             .with_summary("Read or write a configuration option")
-            .with_parameter(help_text("option", "The path to the option to read or write"))
+            .with_parameter({"option", "The path to the option to read or write"})
             .with_parameter(help_text("value", "The value to write.  If not given, the current value is returned")
                                 .optional())
             .with_example({"/ui/clock-format"})

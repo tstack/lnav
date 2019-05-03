@@ -56,6 +56,7 @@
 #include <string>
 
 #include "pcrepp.hh"
+#include "shlex.hh"
 #include "auto_mem.hh"
 #include "lnav_log.hh"
 #include "lnav_util.hh"
@@ -312,31 +313,50 @@ char **readline_context::attempted_completion(const char *text,
     else {
         char * space;
         string cmd;
-
-        rl_completion_append_character = 0;
-        space = strchr(rl_line_buffer, ' ');
-        if (space == nullptr) {
-            space = rl_line_buffer + strlen(rl_line_buffer);
+        vector<string> prefix;
+        int point = rl_point;
+        while (point > 0 && rl_line_buffer[point] != ' ') {
+            point -= 1;
         }
-        cmd = string(rl_line_buffer, space - rl_line_buffer);
+        shlex lexer(rl_line_buffer, point);
+        map<string, string> scope;
 
-        auto iter = loaded_context->rc_prototypes.find(cmd);
+        arg_possibilities = nullptr;
+        rl_completion_append_character = 0;
+        if (lexer.split(prefix, scope)) {
+            string prefix2 = join(prefix.begin(), prefix.end(), "\x1f");
+            auto prefix_iter = loaded_context->rc_prefixes.find(prefix2);
 
-        if (iter == loaded_context->rc_prototypes.end()) {
-            if (loaded_context->rc_possibilities.find("*") !=
-                loaded_context->rc_possibilities.end()) {
-                arg_possibilities = &loaded_context->rc_possibilities["*"];
-                rl_completion_append_character = loaded_context->rc_append_character;
+            if (prefix_iter != loaded_context->rc_prefixes.end()) {
+                arg_possibilities = &(loaded_context->rc_possibilities[prefix_iter->second]);
             }
-        } else {
-            vector<string> &proto = loaded_context->rc_prototypes[cmd];
+        }
 
-            if (proto.empty()) {
-                arg_possibilities = NULL;
-            } else if (proto[0] == "filename") {
-                return NULL; /* XXX */
+        if (arg_possibilities == nullptr) {
+            space = strchr(rl_line_buffer, ' ');
+            if (space == nullptr) {
+                space = rl_line_buffer + strlen(rl_line_buffer);
+            }
+            cmd = string(rl_line_buffer, space - rl_line_buffer);
+
+            auto iter = loaded_context->rc_prototypes.find(cmd);
+
+            if (iter == loaded_context->rc_prototypes.end()) {
+                if (loaded_context->rc_possibilities.find("*") !=
+                    loaded_context->rc_possibilities.end()) {
+                    arg_possibilities = &loaded_context->rc_possibilities["*"];
+                    rl_completion_append_character = loaded_context->rc_append_character;
+                }
             } else {
-                arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);
+                vector<string> &proto = loaded_context->rc_prototypes[cmd];
+
+                if (proto.empty()) {
+                    arg_possibilities = nullptr;
+                } else if (proto[0] == "filename") {
+                    return nullptr; /* XXX */
+                } else {
+                    arg_possibilities = &(loaded_context->rc_possibilities[proto[0]]);
+                }
             }
         }
     }
@@ -596,7 +616,7 @@ void readline_curses::start()
                 }
                 else {
                     int  context, prompt_start = 0;
-                    char type[32];
+                    char type[1024];
 
                     msg[rc] = '\0';
                     if (sscanf(msg, "i:%d:%n", &rl_point, &prompt_start) == 1) {
@@ -641,6 +661,16 @@ void readline_curses::start()
                         }
                     }
                     else if (sscanf(msg,
+                                    "apre:%d:%1023[^\x1d]\x1d%n",
+                                    &context,
+                                    type,
+                                    &prompt_start) == 2) {
+                        require(this->rc_contexts[context] != NULL);
+
+                        this->rc_contexts[context]->rc_prefixes[string(type)] =
+                            string(&msg[prompt_start]);
+                    }
+                    else if (sscanf(msg,
                                     "ap:%d:%31[^:]:%n",
                                     &context,
                                     type,
@@ -661,6 +691,9 @@ void readline_curses::start()
                         this->rc_contexts[context]->
                                                       rem_possibility(string(type),
                                                                       string(&msg[prompt_start]));
+                    }
+                    else if (sscanf(msg, "cpre:%d", &context) == 1) {
+                        this->rc_contexts[context]->rc_prefixes.clear();
                     }
                     else if (sscanf(msg, "cp:%d:%s", &context, type)) {
                         this->rc_contexts[context]->clear_possibilities(type);
@@ -955,6 +988,37 @@ void readline_curses::abort()
     }
 }
 
+void readline_curses::add_prefix(int context,
+                                 const vector<string> &prefix,
+                                 const string &value)
+{
+    char buffer[1024];
+    string prefix_wire = join(prefix.begin(), prefix.end(), "\x1f");
+
+    snprintf(buffer, sizeof(buffer),
+             "apre:%d:%s\x1d%s",
+             context,
+             prefix_wire.c_str(),
+             value.c_str());
+    if (sendstring(this->rc_command_pipe[RCF_MASTER],
+                   buffer,
+                   strlen(buffer) + 1) == -1) {
+        perror("add_possibility: write failed");
+    }
+}
+
+void readline_curses::clear_prefixes(int context)
+{
+    char buffer[1024];
+
+    snprintf(buffer, sizeof(buffer), "cpre:%d", context);
+    if (sendstring(this->rc_command_pipe[RCF_MASTER],
+                   buffer,
+                   strlen(buffer) + 1) == -1) {
+        perror("add_possibility: write failed");
+    }
+}
+
 void readline_curses::add_possibility(int context,
                                       const string &type,
                                       const string &value)
@@ -1015,9 +1079,11 @@ void readline_curses::do_update()
         int alt_start        = -1;
         struct line_range lr(0, 0);
         attr_line_t       al, alt_al;
+        view_colors &vc = view_colors::singleton();
 
         wmove(this->vc_window, this->get_actual_y(), this->vc_left);
-        wclrtoeol(this->vc_window);
+        wattron(this->vc_window, vc.attrs_for_role(view_colors::VCR_TEXT));
+        whline(this->vc_window, ' ', this->vc_width);
 
         if (time(nullptr) > this->rc_value_expiration) {
             this->rc_value.clear();
@@ -1070,7 +1136,7 @@ void readline_curses::do_update()
 
 std::string readline_curses::get_match_string() const
 {
-    auto len = this->vc_x - this->rc_match_start;
+    auto len = ::min((size_t) this->vc_x, this->rc_line_buffer.size()) - this->rc_match_start;
     auto context = this->get_active_context();
 
     if (context->get_append_character() != 0 &&

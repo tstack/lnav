@@ -37,10 +37,17 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <functional>
 #include <unordered_map>
+
+#include "yajlpp.hh"
+#include "log_level.hh"
+#include "styling.hh"
 
 class lnav_config_listener {
 public:
+    using error_reporter = const std::function<void(const void *, const std::string msg)>;
+
     lnav_config_listener() {
         this->lcl_next = LISTENER_LIST;
         LISTENER_LIST = this;
@@ -49,7 +56,7 @@ public:
     virtual ~lnav_config_listener() {
     };
 
-    virtual void reload_config() {
+    virtual void reload_config(error_reporter &reporter) {
 
     };
 
@@ -97,12 +104,16 @@ struct _lnav_config {
     bool lc_ui_dim_text;
     bool lc_ui_default_colors;
     std::string lc_ui_keymap;
+    std::string lc_ui_theme;
     std::unordered_map<std::string, key_map> lc_ui_keymaps;
     std::map<std::string, std::string> lc_ui_key_overrides;
     std::map<std::string, std::string> lc_global_vars;
+    std::map<std::string, lnav_theme> lc_ui_theme_defs;
 };
 
 extern struct _lnav_config lnav_config;
+extern struct _lnav_config rollback_lnav_config;
+extern std::map<intern_string_t, source_location> lnav_config_locations;
 
 extern struct json_path_handler lnav_config_handlers[];
 
@@ -111,7 +122,7 @@ void load_config(const std::vector<std::string> &extra_paths,
 
 void reset_config(const std::string &path);
 
-void reload_config();
+void reload_config(std::vector<std::string> &errors);
 
 std::string save_config();
 

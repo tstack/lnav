@@ -1280,7 +1280,6 @@ void save_session()
                         continue;
                     }
 
-                    filter_stack::iterator filter_iter;
                     filter_stack &fs = tss->get_filters();
 
                     view_map.gen("commands");

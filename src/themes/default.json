@@ -1,0 +1,127 @@
+{
+    "ui": {
+        "theme-defs": {
+            "default": {
+                "styles": {
+                    "text": {
+                        "color": "Silver"
+                    },
+                    "alt-text": {
+                        "color": "Silver",
+                        "bold": true
+                    },
+                    "ok": {
+                        "color": "Green",
+                        "bold": true
+                    },
+                    "error": {
+                        "color": "Red",
+                        "bold": true
+                    },
+                    "warning": {
+                        "color": "Yellow",
+                        "bold": true
+                    },
+                    "hidden": {
+                        "color": "Yellow",
+                        "bold": true
+                    },
+                    "adjusted-time": {
+                        "color": "Maroon"
+                    },
+                    "skewed-time": {
+                        "color": "Yellow"
+                    },
+                    "offset-time": {
+                        "color": "Teal"
+                    },
+                    "popup": {
+                        "color": "Silver",
+                        "background-color": "Teal"
+                    }
+                },
+                "syntax-styles": {
+                    "keyword": {
+                        "color": "Blue"
+                    },
+                    "string": {
+                        "color": "Green",
+                        "bold": true
+                    },
+                    "comment": {
+                        "color": "Green"
+                    },
+                    "variable": {
+                        "color": "Teal"
+                    },
+                    "symbol": {
+                        "color": "Blue"
+                    },
+                    "re-special": {
+                        "color": "Teal"
+                    },
+                    "re-repeat": {
+                        "color": "Yellow"
+                    },
+                    "diff-delete": {
+                        "color": "Red"
+                    },
+                    "diff-add": {
+                        "color": "Green"
+                    },
+                    "diff-section": {
+                        "color": "Maroon"
+                    },
+                    "file": {
+                        "color": "Blue"
+                    }
+                },
+                "status-styles": {
+                    "title": {
+                        "color": "Silver",
+                        "background-color": "Blue",
+                        "bold": true
+                    },
+                    "subtitle": {
+                        "color": "Black",
+                        "background-color": "Teal"
+                    },
+                    "text": {
+                        "color": "Black",
+                        "background-color": "Silver"
+                    },
+                    "warn": {
+                        "color": "Yellow",
+                        "background-color": "Silver"
+                    },
+                    "alert": {
+                        "color": "Red",
+                        "background-color": "Silver"
+                    },
+                    "active": {
+                        "color": "Green",
+                        "background-color": "Silver"
+                    },
+                    "inactive": {
+                        "color": "Silver",
+                        "background-color": "Grey37"
+                    }
+                },
+                "log-level-styles": {
+                    "warning": {
+                        "color": "Yellow"
+                    },
+                    "error": {
+                        "color": "Red"
+                    },
+                    "critical": {
+                        "color": "Red"
+                    },
+                    "fatal": {
+                        "color": "Red"
+                    }
+                }
+            }
+        }
+    }
+}

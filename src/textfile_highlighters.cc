@@ -322,10 +322,10 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_text_format(TF_SQL)
         .with_role(view_colors::VCR_KEYWORD);
 
-    hm["$srcfile"] = static_highlighter(
+    hm["$srcfile"] = highlighter(xpcre_compile(
         "[\\w\\-_]+\\."
         "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
-        "\\d+")
+        "\\d+"))
         .with_role(view_colors::VCR_FILE);
     hm["$xml"] = static_highlighter("<(/?[^ >=]+)[^>]*>");
     hm["$stringd"] = highlighter(xpcre_compile(
@@ -358,10 +358,18 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");
     hm["$var"] = highlighter(xpcre_compile(
         "(?:"
-        "(?:var\\s+)?([\\-\\w]+)\\s*=|"
+        "(?:var\\s+)?([\\-\\w]+)\\s*[!=+\\-*/|&^]?=|"
         "(?<!\\$)\\$(\\w+)|"
         "(?<!\\$)\\$\\((\\w+)\\)|"
         "(?<!\\$)\\$\\{(\\w+)\\}"
         ")"))
         .with_role(view_colors::VCR_VARIABLE);
+    hm["$sym"] = highlighter(xpcre_compile(
+        "\\b[A-Z_][A-Z0-9_]+\\b"))
+        .with_text_format(TF_C_LIKE)
+        .with_role(view_colors::VCR_SYMBOL);
+    hm["$num"] = highlighter(xpcre_compile(
+        "\\b-?(?:\\d+|0x[a-zA-Z0-9]+)\\b"))
+        .with_text_format(TF_C_LIKE)
+        .with_role(view_colors::VCR_NUMBER);
 }

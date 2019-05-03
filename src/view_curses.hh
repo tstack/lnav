@@ -64,6 +64,9 @@
 #include "attr_line.hh"
 #include "optional.hpp"
 #include "lnav_util.hh"
+#include "styling.hh"
+#include "log_level.hh"
+#include "lnav_config.hh"
 
 #define KEY_CTRL_G    7
 #define KEY_CTRL_L    12
@@ -289,24 +292,6 @@ private:
     void (*va_invoker)(void *functor, _Sender *sender);
 };
 
-struct rgb_color {
-    static bool from_str(const string_fragment &color,
-                         rgb_color &rgb_out,
-                         std::string &errmsg);
-
-    explicit rgb_color(short r = -1, short g = -1, short b = -1)
-        : rc_r(r), rc_g(g), rc_b(b) {
-    }
-
-    bool empty() const {
-        return this->rc_r == -1 && this->rc_g == -1 && this->rc_b == -1;
-    }
-
-    short rc_r;
-    short rc_g;
-    short rc_b;
-};
-
 struct lab_color {
     lab_color() : lc_l(0), lc_a(0), lc_b(0) {
     };
@@ -357,16 +342,24 @@ public:
         VCR_ALERT_STATUS,       /*< Alert status line text. */
         VCR_ACTIVE_STATUS,      /*< */
         VCR_ACTIVE_STATUS2,     /*< */
-        VCR_BOLD_STATUS,
-        VCR_VIEW_STATUS,
+        VCR_STATUS_TITLE,
+        VCR_STATUS_SUBTITLE,
+        VCR_STATUS_STITCH_TITLE_TO_SUB,
+        VCR_STATUS_STITCH_SUB_TO_TITLE,
+        VCR_STATUS_STITCH_SUB_TO_NORMAL,
+        VCR_STATUS_STITCH_NORMAL_TO_SUB,
+        VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+        VCR_STATUS_STITCH_NORMAL_TO_TITLE,
         VCR_INACTIVE_STATUS,
         VCR_POPUP,
+        VCR_COLOR_HINT,
 
         VCR_KEYWORD,
         VCR_STRING,
         VCR_COMMENT,
         VCR_VARIABLE,
         VCR_SYMBOL,
+        VCR_NUMBER,
         VCR_RE_SPECIAL,
         VCR_RE_REPEAT,
         VCR_FILE,
@@ -392,18 +385,23 @@ public:
      */
     static void init(void);
 
-    void init_roles(int color_pair_base);
+    void init_roles(const lnav_theme &lt, lnav_config_listener::error_reporter &reporter);
 
     /**
      * @param role The role to retrieve character attributes for.
      * @return The attributes to use for the given role.
      */
-    attr_t attrs_for_role(role_t role) const
+    attr_t attrs_for_role(role_t role, bool selected = false) const
     {
+        if (role == VCR_NONE) {
+            return 0;
+        }
+
         require(role >= 0);
         require(role < VCR__MAX);
 
-        return this->vc_role_colors[role];
+        return selected ? this->vc_role_colors[role].second :
+               this->vc_role_colors[role].first;
     };
 
     attr_t reverse_attrs_for_role(role_t role) const
@@ -414,26 +412,17 @@ public:
         return this->vc_role_reverse_colors[role];
     };
 
-    attr_t attrs_for_ident(const char *str, size_t len) const {
-        unsigned long index = crc32(1, (const Bytef*)str, len);
-        attr_t retval;
-
-        if (COLORS >= 256) {
-            unsigned long offset = index % HI_COLOR_COUNT;
-            retval = COLOR_PAIR(VC_ANSI_END + offset);
-        }
-        else {
-            retval = BASIC_HL_PAIRS[index % BASIC_COLOR_COUNT];
-        }
-
-        return retval;
-    };
+    attr_t attrs_for_ident(const char *str, size_t len) const;;
 
     attr_t attrs_for_ident(const std::string &str) const {
         return this->attrs_for_ident(str.c_str(), str.length());
     };
 
-    int ensure_color_pair(const rgb_color &fg, const rgb_color &bg);
+    int ensure_color_pair(int &pair_base, const rgb_color &fg, const rgb_color &bg);
+
+    int ensure_color_pair(const rgb_color &fg, const rgb_color &bg) {
+        return this->ensure_color_pair(this->vc_color_pair_end, fg, bg);
+    }
 
     static inline int ansi_color_pair_index(int fg, int bg)
     {
@@ -445,20 +434,24 @@ public:
         return COLOR_PAIR(ansi_color_pair_index(fg, bg));
     };
 
-    enum {
-        VC_ANSI_START = 0,
-        VC_ANSI_END = VC_ANSI_START + (8 * 8),
-    };
+    static const int VC_ANSI_START = 0;
+    static const int VC_ANSI_END = VC_ANSI_START + (8 * 8);
+
+    std::pair<attr_t, attr_t> to_attrs(int &pair_base,
+        const lnav_theme &lt, const style_config &sc,
+                    lnav_config_listener::error_reporter &reporter);
+
+    std::pair<attr_t, attr_t> vc_level_attrs[LEVEL__MAX];
+
+    static bool initialized;
 
 private:
 
     /** Private constructor that initializes the member fields. */
     view_colors();
 
-    static bool initialized;
-
     /** Map of role IDs to attribute values. */
-    attr_t vc_role_colors[VCR__MAX];
+    std::pair<attr_t, attr_t> vc_role_colors[VCR__MAX];
     /** Map of role IDs to reverse-video attribute values. */
     attr_t vc_role_reverse_colors[VCR__MAX];
     int vc_color_pair_end;
@@ -554,8 +547,10 @@ public:
         return this->vc_width;
     }
 
+    static string_attr_type VC_ROLE;
     static string_attr_type VC_STYLE;
     static string_attr_type VC_GRAPHIC;
+    static string_attr_type VC_SELECTED;
     static string_attr_type VC_FOREGROUND;
     static string_attr_type VC_BACKGROUND;
 

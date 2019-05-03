@@ -76,17 +76,16 @@ public:
         va_end(args);
     };
 
-    void set_stitch_value(int color_pair)
+    void set_stitch_value(view_colors::role_t left, view_colors::role_t right)
     {
         string_attrs_t &sa = this->sf_value.get_attrs();
         struct line_range lr(0, 1);
 
         this->sf_value.get_string() = "::";
-        sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
-            A_REVERSE | COLOR_PAIR(color_pair)));
+        sa.emplace_back(lr, &view_curses::VC_ROLE, left);
         lr.lr_start = 1;
         lr.lr_end   = 2;
-        sa.push_back(string_attr(lr, &view_curses::VC_STYLE, COLOR_PAIR(color_pair)));
+        sa.emplace_back(lr, &view_curses::VC_ROLE, right);
     };
 
     void set_left_pad(size_t val) { this->sf_left_pad = val; };

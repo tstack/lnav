@@ -58,7 +58,7 @@ struct exec_context {
           ec_pipe_callback(pipe_callback) {
         this->ec_local_vars.push(std::map<std::string, std::string>());
         this->ec_path_stack.emplace_back(".");
-        this->ec_source.emplace("unknown", 0);
+        this->ec_source.emplace("command", 1);
         this->ec_output_stack.emplace_back(nonstd::nullopt);
     }
 

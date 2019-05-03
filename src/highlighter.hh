@@ -55,6 +55,7 @@ struct highlighter {
         this->h_pattern = other.h_pattern;
         this->h_fg = other.h_fg;
         this->h_bg = other.h_bg;
+        this->h_role = other.h_role;
         this->h_code = other.h_code;
         pcre_refcount(this->h_code, 1);
         this->study();
@@ -73,6 +74,7 @@ struct highlighter {
         this->h_pattern = other.h_pattern;
         this->h_fg = other.h_fg;
         this->h_bg = other.h_bg;
+        this->h_role = other.h_role;
         this->h_code = other.h_code;
         pcre_refcount(this->h_code, 1);
         this->study();
@@ -115,7 +117,7 @@ struct highlighter {
     }
 
     highlighter &with_role(view_colors::role_t role) {
-        this->h_attrs = view_colors::singleton().attrs_for_role(role);
+        this->h_role = role;
 
         return *this;
     };
@@ -187,7 +189,16 @@ struct highlighter {
                 }
 
                 if (lr.lr_end > lr.lr_start) {
-                    sa.emplace_back(lr, &view_curses::VC_STYLE, this->h_attrs);
+                    int attrs = 0;
+
+                    if (this->h_attrs != -1) {
+                        attrs = this->h_attrs;
+                    }
+                    if (this->h_role != view_colors::VCR_NONE) {
+                        attrs |= view_colors::singleton().attrs_for_role(
+                            this->h_role);
+                    }
+                    sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
 
                     off = matches[1];
                 }
@@ -202,6 +213,7 @@ struct highlighter {
     };
 
     std::string h_pattern;
+    view_colors::role_t h_role{view_colors::VCR_NONE};
     rgb_color h_fg;
     rgb_color h_bg;
     pcre *h_code;

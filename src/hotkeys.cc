@@ -766,6 +766,7 @@ void handle_paging_key(int ch)
                 }
             }
 
+            rollback_lnav_config = lnav_config;
             lnav_data.ld_doc_status_source.set_title("Command Help");
             add_view_text_possibilities(lnav_data.ld_rl_view, LNM_COMMAND, "filter", tc);
             lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "filter", tc->get_last_search());

@@ -280,7 +280,7 @@ public:
         }
         while (this->tokenize(cap, token)) {
             if (start_new) {
-                result.push_back("");
+                result.emplace_back("");
                 start_new = false;
             }
             result.back().append(&this->s_str[last_index], cap.c_begin - last_index);

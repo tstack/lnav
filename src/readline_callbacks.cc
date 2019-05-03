@@ -507,6 +507,10 @@ void rl_abort(void *dummy, readline_curses *rc)
     tc->get_highlights().erase("$preview");
     tc->get_highlights().erase("$bodypreview");
 
+    vector<string> errors;
+    lnav_config = rollback_lnav_config;
+    reload_config(errors);
+
     lnav_data.ld_bottom_source.grep_error("");
     switch (lnav_data.ld_mode) {
     case LNM_SEARCH:

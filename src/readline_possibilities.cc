@@ -281,14 +281,35 @@ void add_mark_possibilities()
 void add_config_possibilities()
 {
     readline_curses *rc = lnav_data.ld_rl_view;
-    vector<string> config_options;
+    set<string> visited;
+    auto cb = [rc, &visited](const json_path_handler_base &jph,
+                             const string &path,
+                             void *mem) {
+        if (jph.jph_children) {
+            for (auto named_iter = jph.jph_regex.named_begin();
+                 named_iter != jph.jph_regex.named_end();
+                 ++named_iter) {
+                if (visited.count(named_iter->pnc_name) == 0) {
+                    rc->clear_possibilities(LNM_COMMAND, named_iter->pnc_name);
+                    visited.insert(named_iter->pnc_name);
+                }
+
+                rc->add_possibility(LNM_COMMAND, named_iter->pnc_name, path);
+            }
+        } else {
+            rc->add_possibility(LNM_COMMAND, "config-option", path);
+            if (jph.jph_synopsis) {
+                rc->add_prefix(LNM_COMMAND,
+                               vector<string>{"config", path},
+                               jph.jph_synopsis);
+            }
+        }
+    };
 
     rc->clear_possibilities(LNM_COMMAND, "config-option");
-
     for (int lpc = 0; lnav_config_handlers[lpc].jph_path[0]; lpc++) {
-        lnav_config_handlers[lpc].possibilities(config_options, &lnav_config);
+        lnav_config_handlers[lpc].walk(cb, &lnav_config);
     }
-    rc->add_possibility(LNM_COMMAND, "config-option", config_options);
 }
 
 void add_tag_possibilities()

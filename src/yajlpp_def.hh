@@ -153,6 +153,11 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     };
 
+    json_path_handler &with_string_validator(std::function<void(const string_fragment &)> val) {
+        this->jph_string_validator = val;
+        return *this;
+    };
+
     json_path_handler &with_min_value(long long val) {
         this->jph_min_value = val;
         return *this;
@@ -170,9 +175,24 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
+    template<typename T, typename MEM_T, MEM_T T::*MEM>
+    static void *get_field_lvalue_cb(void *root, nonstd::optional<std::string> name) {
+        auto obj = (T *) root;
+        auto &mem = obj->*MEM;
+
+        return &mem;
+    };
+
     template<typename T, typename STR_T, STR_T T::*STR>
     static int string_field_cb(yajlpp_parse_context *ypc, const unsigned char *str, size_t len) {
         auto handler = ypc->ypc_current_handler;
+
+        if (ypc->ypc_locations) {
+            intern_string_t src = intern_string::lookup(ypc->ypc_source);
+
+            (*ypc->ypc_locations)[ypc->get_full_path()] = {
+                src, ypc->get_line_number() };
+        }
 
         assign(ypc->get_lvalue(ypc->get_obj_member<T, STR_T, STR>()), string_fragment(str, 0, len));
         handler->jph_validator(*ypc, *handler);
@@ -248,13 +268,23 @@ struct json_path_handler : public json_path_handler_base {
         auto &field_ptr = ypc.get_rvalue(ypc.get_obj_member<T, STR_T, STR>());
 
         if (jph.jph_pattern) {
-            pcre_input pi(to_string_fragment(field_ptr));
+            string_fragment sf = to_string_fragment(field_ptr);
+            pcre_input pi(sf);
             pcre_context_static<30> pc;
 
             if (!jph.jph_pattern->match(pc, pi)) {
                 ypc.report_error(LOG_LEVEL_ERROR,
                                  "Value does not match pattern: %s",
                                  jph.jph_pattern_re);
+            }
+        }
+        if (jph.jph_string_validator) {
+            try {
+                jph.jph_string_validator(to_string_fragment(field_ptr));
+            } catch (const std::exception &e) {
+                ypc.report_error(LOG_LEVEL_ERROR,
+                                 "%s",
+                                 e.what());
             }
         }
         if (field_ptr.empty() && jph.jph_min_length > 0) {
@@ -296,11 +326,44 @@ struct json_path_handler : public json_path_handler_base {
         return gen(obj->*FIELD);
     };
 
+    static yajl_gen_status map_field_gen(yajlpp_gen_context &ygc,
+                                         const json_path_handler_base &jph,
+                                         yajl_gen handle)
+    {
+        const auto def_obj = (std::map<std::string, std::string> *) (
+            ygc.ygc_default_stack.empty() ? nullptr
+                                          : ygc.ygc_default_stack.top());
+        auto obj = (std::map<std::string, std::string> *) ygc.ygc_obj_stack.top();
+        yajl_gen_status rc;
+
+        for (auto &pair : *obj) {
+            if (def_obj != nullptr) {
+                auto iter = def_obj->find(pair.first);
+
+                if (iter != def_obj->end() && iter->second == pair.second) {
+                    continue;
+                }
+            }
+
+            if ((rc = yajl_gen_string(handle, pair.first)) !=
+                yajl_gen_status_ok) {
+                return rc;
+            }
+            if ((rc = yajl_gen_string(handle, pair.second)) !=
+                yajl_gen_status_ok) {
+                return rc;
+            }
+        }
+
+        return yajl_gen_status_ok;
+    };
+
     template<typename T, typename STR_T, std::string T::*STR>
     json_path_handler &for_field() {
         this->add_cb(string_field_cb<T, STR_T, STR>);
         this->jph_gen_callback = field_gen<T, STR_T, STR>;
         this->jph_validator = string_field_validator<T, STR_T, STR>;
+        this->jph_field_getter = get_field_lvalue_cb<T, STR_T, STR>;
 
         return *this;
     };
@@ -308,6 +371,7 @@ struct json_path_handler : public json_path_handler_base {
     template<typename T, typename STR_T, std::map<std::string, std::string> T::*STR>
     json_path_handler &for_field() {
         this->add_cb(string_field_cb<T, STR_T, STR>);
+        this->jph_gen_callback = map_field_gen;
         this->jph_validator = string_field_validator<T, STR_T, STR>;
 
         return *this;

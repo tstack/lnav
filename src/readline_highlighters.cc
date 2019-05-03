@@ -359,6 +359,8 @@ void readline_command_highlighter(attr_line_t &al, int x)
         R"(^:(filter-in|filter-out|delete-filter|enable-filter|disable-filter|highlight|clear-highlight|create-search-table\s+[^\s]+\s+))");
     static const pcrepp SH_PREFIXES("^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
     static const pcrepp IDENT_PREFIXES("^:(tag|untag|delete-tags)");
+    static const pcrepp COLOR_PREFIXES("^:(config)");
+    static const pcrepp COLOR_RE("(#(?:[a-fA-F0-9]{3}|[a-fA-F0-9]{6}))");
 
     view_colors &vc = view_colors::singleton();
     int keyword_attrs = (
@@ -368,7 +370,6 @@ void readline_command_highlighter(attr_line_t &al, int x)
     pcre_context_static<30> pc;
     pcre_input pi(line);
     size_t ws_index;
-
 
 
     ws_index = line.find(' ');
@@ -385,6 +386,28 @@ void readline_command_highlighter(attr_line_t &al, int x)
     pi.reset(line);
     if (SH_PREFIXES.match(pc, pi)) {
         readline_shlex_highlighter(al, x);
+    }
+    pi.reset(line);
+    if (COLOR_PREFIXES.match(pc, pi)) {
+        pi.reset(line);
+        if (COLOR_RE.match(pc, pi)) {
+            pcre_context::capture_t *cap = pc[0];
+            string hash_color = pi.get_substr(cap);
+            string errmsg;
+            rgb_color rgb_fg, rgb_bg;
+            attr_t color_hint_attrs = vc.attrs_for_role(view_colors::VCR_COLOR_HINT);
+            int pnum = PAIR_NUMBER(color_hint_attrs);
+
+            if (rgb_color::from_str(hash_color, rgb_bg, errmsg)) {
+                pnum -= 1;
+                vc.ensure_color_pair(pnum, rgb_fg, rgb_bg);
+
+                al.get_attrs().emplace_back(
+                    line_range{cap->c_begin, cap->c_begin + 1},
+                    &view_curses::VC_ROLE,
+                    view_colors::VCR_COLOR_HINT);
+            }
+        }
     }
     pi.reset(line);
     if (IDENT_PREFIXES.match(pc, pi) && ws_index != string::npos) {

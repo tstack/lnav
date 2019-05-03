@@ -40,6 +40,7 @@
 #include "logfile_sub_source.hh"
 #include "command_executor.hh"
 #include "ansi_scrubber.hh"
+#include "lnav_config.hh"
 
 using namespace std;
 
@@ -326,21 +327,8 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
     int attrs           = 0;
 
     value_out = this->lss_token_attrs;
-    switch (this->lss_token_line->get_msg_level()) {
-    case LEVEL_FATAL:
-    case LEVEL_CRITICAL:
-    case LEVEL_ERROR:
-        attrs = vc.attrs_for_role(view_colors::VCR_ERROR);
-        break;
 
-    case LEVEL_WARNING:
-        attrs = vc.attrs_for_role(view_colors::VCR_WARNING);
-        break;
-
-    default:
-        attrs = vc.attrs_for_role(view_colors::VCR_TEXT);
-        break;
-    }
+    attrs = vc.vc_level_attrs[this->lss_token_line->get_msg_level()].first;
 
     if ((row + 1) < (int)this->lss_filtered_index.size()) {
         next_line = this->find_line(this->at(vis_line_t(row + 1)));

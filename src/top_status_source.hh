@@ -63,17 +63,20 @@ public:
         this->tss_fields[TSF_PARTITION_NAME].set_width(34);
         this->tss_fields[TSF_PARTITION_NAME].set_left_pad(1);
         this->tss_fields[TSF_VIEW_NAME].set_width(8);
-        this->tss_fields[TSF_VIEW_NAME].set_role(view_colors::VCR_VIEW_STATUS);
+        this->tss_fields[TSF_VIEW_NAME].set_role(view_colors::VCR_STATUS_TITLE);
         this->tss_fields[TSF_VIEW_NAME].right_justify(true);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_width(2);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].set_stitch_value(
-            view_colors::ansi_color_pair_index(COLOR_CYAN, COLOR_BLUE));
+            view_colors::VCR_STATUS_STITCH_SUB_TO_TITLE,
+            view_colors::VCR_STATUS_STITCH_TITLE_TO_SUB);
         this->tss_fields[TSF_STITCH_VIEW_FORMAT].right_justify(true);
         this->tss_fields[TSF_FORMAT].set_width(20);
+        this->tss_fields[TSF_FORMAT].set_role(view_colors::VCR_STATUS_SUBTITLE);
         this->tss_fields[TSF_FORMAT].right_justify(true);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_width(2);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].set_stitch_value(
-            view_colors::ansi_color_pair_index(COLOR_WHITE, COLOR_CYAN));
+            view_colors::VCR_STATUS_STITCH_NORMAL_TO_SUB,
+            view_colors::VCR_STATUS_STITCH_SUB_TO_NORMAL);
         this->tss_fields[TSF_STITCH_FORMAT_FILENAME].right_justify(true);
         this->tss_fields[TSF_FILENAME].set_min_width(35); /* XXX */
         this->tss_fields[TSF_FILENAME].set_share(1);
@@ -165,9 +168,6 @@ public:
                 sf_filename.set_value(lc->get_data_source()->listview_source_name(*lc));
             }
         }
-        sf_format.get_value().get_attrs().push_back(
-            string_attr(lr, &view_curses::VC_STYLE,
-                A_REVERSE | view_colors::ansi_color_pair(COLOR_CYAN, COLOR_BLACK)));
     };
 
     void update_view_name(listview_curses *lc) {

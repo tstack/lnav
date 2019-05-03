@@ -26,8 +26,19 @@ dump-pid-sh.c: $(srcdir)/dump-pid.sh bin2c
 default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/default-log-formats.json $@
 
-default-config-json.c: $(srcdir)/default-config.json bin2c
-	$(BIN2C_V)./bin2c -z -c $(srcdir)/default-config.json $@
+CONFIG_FILES = \
+    $(srcdir)/root-config.json \
+    $(srcdir)/themes/default.json \
+    $(srcdir)/themes/night-owl.json \
+    $(srcdir)/themes/solarized-dark.json \
+    $(srcdir)/themes/solarized-light.json \
+    $()
+
+default-config.json: $(CONFIG_FILES)
+	cat $(CONFIG_FILES) > $@
+
+default-config-json.c: default-config.json bin2c
+	$(BIN2C_V)./bin2c -z -c default-config.json $@
 
 init-sql.c: bin2c init.sql
 	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
@@ -125,13 +136,17 @@ LDADD = \
 dist_noinst_DATA = \
 	alpha-release.sh \
 	default-log-formats.json \
-	default-config.json \
 	dhclient-summary.lnav \
 	dump-pid.sh \
 	lnav-pop-view.lnav \
 	keymap-default.json \
 	partition-by-boot.lnav \
-	search-for.lnav
+	root-config.json \
+	search-for.lnav \
+	themes/default.json \
+    themes/night-owl.json \
+	themes/solarized-dark.json \
+	themes/solarized-light.json
 
 noinst_HEADERS = \
 	all_logs_vtab.hh \
@@ -226,6 +241,7 @@ noinst_HEADERS = \
 	shlex.hh \
 	simdutf8check.h \
 	spectro_source.hh \
+	styling.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \
 	statusview_curses.hh \
@@ -275,6 +291,7 @@ endif
 
 
 libdiag_a_SOURCES = \
+	ansi-palette.c \
 	ansi_scrubber.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \
@@ -379,6 +396,7 @@ libdiag_a_SOURCES += yajl/yajl.c \
 endif
 
 TEXT2C_FILES = \
+	ansi-palette.o \
 	dump-pid-sh.o \
 	help.o \
 	init-sql.o \
@@ -408,7 +426,9 @@ ptimec_SOURCES = ptimec.cc
 ptimec_LDADD =
 
 DISTCLEANFILES = \
+    ansi-palette.c \
 	data_scanner_re.cc \
+	default-config.json \
 	default-config-json.c \
 	default-log-formats-json.c \
 	dump-pid-sh.c \

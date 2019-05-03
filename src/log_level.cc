@@ -42,6 +42,7 @@ const char *level_names[LEVEL__MAX + 1] = {
     "debug",
     "info",
     "stats",
+    "notice",
     "warning",
     "error",
     "critical",
@@ -75,10 +76,11 @@ log_level_t abbrev2level(const char *levelstr, ssize_t len)
             }
             return LEVEL_DEBUG;
         case 'I':
-        case 'N': // NOTICE
             return LEVEL_INFO;
         case 'S':
             return LEVEL_STATS;
+        case 'N':
+            return LEVEL_NOTICE;
         case 'W':
             return LEVEL_WARNING;
         case 'E':

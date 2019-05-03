@@ -220,6 +220,7 @@ dist_noinst_SCRIPTS = \
 	parser_debugger.py \
 	test_cli.sh \
 	test_cmds.sh \
+	test_config.sh \
 	test_curl.sh \
 	test_data_parser.sh \
 	test_format_installer.sh \
@@ -372,6 +373,7 @@ TESTS = \
 	test_format_loader.sh \
 	test_cli.sh \
 	test_cmds.sh \
+	test_config.sh \
 	test_line_buffer2 \
 	test_line_buffer.sh \
 	test_listview.sh \

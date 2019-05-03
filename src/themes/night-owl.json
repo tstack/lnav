@@ -1,0 +1,143 @@
+{
+    "ui": {
+        "theme-defs": {
+            "night-owl": {
+                "vars": {
+                    "red": "#ff6868",
+                    "green": "#007f00",
+                    "yellow": "#cdcd00",
+                    "blue": "#5394ec",
+                    "magenta": "#ff70ff",
+                    "cyan": "#33cccc"
+                },
+                "styles": {
+                    "identifier": {
+                        "background-color": "#011627"
+                    },
+                    "text": {
+                        "color": "#d6deeb",
+                        "background-color": "#011627"
+                    },
+                    "alt-text": {
+                        "color": "#d6deeb",
+                        "background-color": "#011627",
+                        "bold": true
+                    },
+                    "ok": {
+                        "color": "$green",
+                        "bold": true
+                    },
+                    "error": {
+                        "color": "#ef5350",
+                        "bold": true
+                    },
+                    "warning": {
+                        "color": "#b39554",
+                        "bold": true
+                    },
+                    "hidden": {
+                        "color": "$yellow",
+                        "bold": true
+                    },
+                    "adjusted-time": {
+                        "color": "$magenta"
+                    },
+                    "skewed-time": {
+                        "color": "$yellow"
+                    },
+                    "offset-time": {
+                        "color": "$cyan"
+                    },
+                    "popup": {
+                        "color": "$base00",
+                        "background-color": "$base3"
+                    }
+                },
+                "syntax-styles": {
+                    "keyword": {
+                        "color": "#c792ea"
+                    },
+                    "string": {
+                        "color": "#ecc48d",
+                        "bold": true
+                    },
+                    "comment": {
+                        "color": "#676e95"
+                    },
+                    "variable": {
+                        "color": "#addb67"
+                    },
+                    "symbol": {
+                        "color": "#82aaff"
+                    },
+                    "number": {
+                        "color": "#f78c6c"
+                    },
+                    "re-special": {
+                        "color": "$cyan"
+                    },
+                    "re-repeat": {
+                        "color": "$yellow"
+                    },
+                    "diff-delete": {
+                        "color": "#b03435"
+                    },
+                    "diff-add": {
+                        "color": "#264b33"
+                    },
+                    "diff-section": {
+                        "color": "$magenta"
+                    },
+                    "file": {
+                        "color": "#82aaff"
+                    }
+                },
+                "status-styles": {
+                    "title": {
+                        "color": "#f8f0f0",
+                        "background-color": "#2d5a80",
+                        "bold": true
+                    },
+                    "subtitle": {
+                        "color": "#f8f8f0",
+                        "background-color": "#005f5f"
+                    },
+                    "text": {
+                        "color": "#f8f8f0",
+                        "background-color": "#162d40"
+                    },
+                    "warn": {
+                        "color": "#b39554",
+                        "background-color": "#162d40"
+                    },
+                    "alert": {
+                        "color": "#ef5350",
+                        "background-color": "#162d40"
+                    },
+                    "active": {
+                        "color": "#264b33",
+                        "background-color": "#162d40"
+                    },
+                    "inactive": {
+                        "color": "#f0f0f0",
+                        "background-color": "#0F1F2B"
+                    }
+                },
+                "log-level-styles": {
+                    "warning": {
+                        "color": "#b39554"
+                    },
+                    "error": {
+                        "color": "#ef5350"
+                    },
+                    "critical": {
+                        "color": "#ef5350"
+                    },
+                    "fatal": {
+                        "color": "#ef5350"
+                    }
+                }
+            }
+        }
+    }
+}

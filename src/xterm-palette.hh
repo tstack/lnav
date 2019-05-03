@@ -37,6 +37,8 @@ extern "C" {
  * The help message text.  The value for this comes from the "init.sql" file,
  * which gets linked into the executable by the Makefile.
  */
-extern const char xterm_palette_json[];
+extern const unsigned char xterm_palette_json[];
+
+extern const unsigned char ansi_palette_json[];
 }
 #endif

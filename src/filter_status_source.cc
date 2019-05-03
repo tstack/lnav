@@ -45,12 +45,13 @@ static auto HOTKEY_HELP = " "
 filter_status_source::filter_status_source()
 {
     this->tss_fields[TSF_TITLE].set_width(9);
-    this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_VIEW_STATUS);
+    this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_STATUS_TITLE);
     this->tss_fields[TSF_TITLE].set_value(" Filters ");
 
     this->tss_fields[TSF_STITCH_TITLE].set_width(2);
     this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
-        view_colors::ansi_color_pair_index(COLOR_BLUE, COLOR_WHITE));
+        view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+        view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
 
     this->tss_fields[TSF_COUNT].set_min_width(16);
     this->tss_fields[TSF_COUNT].set_share(1);
@@ -58,7 +59,7 @@ filter_status_source::filter_status_source()
 
     this->tss_fields[TSF_FILTERED].set_min_width(20);
     this->tss_fields[TSF_FILTERED].set_share(1);
-    this->tss_fields[TSF_FILTERED].set_role(view_colors::VCR_BOLD_STATUS);
+    this->tss_fields[TSF_FILTERED].set_role(view_colors::VCR_STATUS);
 
     this->tss_fields[TSF_HELP].right_justify(true);
     this->tss_fields[TSF_HELP].set_width(20);
@@ -139,12 +140,13 @@ void filter_status_source::update_filtered(text_sub_source *tss)
     }
     else {
         ui_periodic_timer &timer = ui_periodic_timer::singleton();
+        attr_line_t &al = sf.get_value();
 
         if (tss->get_filtered_count() == this->bss_last_filtered_count) {
-
             if (timer.fade_diff(this->bss_filter_counter) == 0) {
                 this->tss_fields[TSF_FILTERED].set_role(
-                    view_colors::VCR_BOLD_STATUS);
+                    view_colors::VCR_STATUS);
+                al.with_attr(string_attr(line_range{0, -1}, &view_curses::VC_STYLE, A_BOLD));
             }
         }
         else {

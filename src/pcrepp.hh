@@ -221,11 +221,15 @@ public:
           pi_length(s.length()),
           pi_string(s.data()) {};
 
+    pcre_input(const string_fragment &&) = delete;
+
     pcre_input(const std::string &str, size_t off = 0)
         : pi_offset(off),
           pi_next_offset(off),
           pi_length(str.length()),
           pi_string(str.c_str()) {};
+
+    pcre_input(const std::string &&, size_t off = 0) = delete;
 
     const char *get_string() const { return this->pi_string; };
 

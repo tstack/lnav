@@ -71,6 +71,11 @@ yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen ha
                     start = lpc + 1;
                 }
             }
+            if (this->jph_path_provider) {
+                yajl_gen_pstring(handle, &lpath[start], -1);
+                yajl_gen_map_open(handle);
+                ygc.ygc_depth += 1;
+            }
 
             if (this->jph_obj_provider) {
                 pcre_context_static<30> pc;
@@ -116,13 +121,20 @@ yajl_gen_status json_path_handler_base::gen(yajlpp_gen_context &ygc, yajl_gen ha
     return yajl_gen_status_ok;
 }
 
-void json_path_handler_base::possibilities(
-    std::vector<std::string> &dst, void *root, const string &base) const
+void json_path_handler_base::walk(
+    const std::function<void(const json_path_handler_base &,
+                             const std::string &,
+                             void *)> &cb,
+    void *root, const string &base) const
 {
     vector<string> local_paths;
 
     if (this->jph_path_provider) {
         this->jph_path_provider(root, local_paths);
+
+        for (auto &lpath : local_paths) {
+            cb(*this, lpath, nullptr);
+        }
     }
     else {
         local_paths.emplace_back(this->jph_path);
@@ -149,7 +161,8 @@ void json_path_handler_base::possibilities(
                     .with_obj(root)
                     .update_callbacks();
                 if (this->jph_obj_provider) {
-                    pcre_input pi(lpath + "/");
+                    string full_path = lpath + "/";
+                    pcre_input pi(full_path);
 
                     if (!this->jph_regex.match(ypc.ypc_pcre_context, pi)) {
                         ensure(false);
@@ -158,13 +171,18 @@ void json_path_handler_base::possibilities(
                         {{ypc.ypc_pcre_context, pi}, -1}, root);
                 }
 
-                this->jph_children[lpc].possibilities(dst, child_root, full_path);
+                this->jph_children[lpc].walk(cb, child_root, full_path);
             }
         }
     }
     else {
-        for (const auto &lpath : local_paths) {
-            dst.push_back(base + lpath);
+        for (auto &lpath : local_paths) {
+            void *field = nullptr;
+
+            if (this->jph_field_getter) {
+                field = this->jph_field_getter(root, lpath);
+            }
+            cb(*this, base + lpath, field);
         }
     }
 }
@@ -253,6 +271,7 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
 
     if (handlers == NULL) {
         handlers = this->ypc_handlers;
+        this->ypc_handler_stack.clear();
     }
 
     if (!this->ypc_active_paths.empty()) {
@@ -286,11 +305,18 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
             }
 
             if (jph.jph_children) {
-                if (this->ypc_path[child_start + cap->c_end - 1] != '/') {
+                char last = this->ypc_path[child_start + cap->c_end - 1];
+
+                if (last != '/') {
                     continue;
                 }
 
-                this->update_callbacks(jph.jph_children, child_start + cap->c_end);
+                this->ypc_handler_stack.emplace_back(&jph);
+
+                if (child_start + cap->c_end != (int)this->ypc_path.size() - 1) {
+                    this->update_callbacks(jph.jph_children,
+                                           child_start + cap->c_end);
+                }
             }
             else {
                 if (child_start + cap->c_end != (int)this->ypc_path.size() - 1) {
@@ -300,18 +326,22 @@ void yajlpp_parse_context::update_callbacks(const json_path_handler_base *orig_h
                 this->ypc_current_handler = &jph;
             }
 
-            if (jph.jph_callbacks.yajl_null != NULL)
+            if (jph.jph_callbacks.yajl_null != nullptr)
                 this->ypc_callbacks.yajl_null = jph.jph_callbacks.yajl_null;
-            if (jph.jph_callbacks.yajl_boolean != NULL)
+            if (jph.jph_callbacks.yajl_boolean != nullptr)
                 this->ypc_callbacks.yajl_boolean = jph.jph_callbacks.yajl_boolean;
-            if (jph.jph_callbacks.yajl_integer != NULL)
+            if (jph.jph_callbacks.yajl_integer != nullptr)
                 this->ypc_callbacks.yajl_integer = jph.jph_callbacks.yajl_integer;
-            if (jph.jph_callbacks.yajl_double != NULL)
+            if (jph.jph_callbacks.yajl_double != nullptr)
                 this->ypc_callbacks.yajl_double = jph.jph_callbacks.yajl_double;
-            if (jph.jph_callbacks.yajl_string != NULL)
+            if (jph.jph_callbacks.yajl_string != nullptr)
                 this->ypc_callbacks.yajl_string = jph.jph_callbacks.yajl_string;
+
+            return;
         }
     }
+
+    this->ypc_handler_stack.emplace_back(nullptr);
 }
 
 int yajlpp_parse_context::map_end(void *ctx)
@@ -477,4 +507,17 @@ void yajlpp_gen_context::gen()
 
         jph.gen(*this, this->ygc_handle);
     }
+}
+
+yajlpp_gen_context &yajlpp_gen_context::with_context(yajlpp_parse_context &ypc)
+{
+    this->ygc_obj_stack = ypc.ypc_obj_stack;
+    this->ygc_base_name = ypc.get_path_fragment(-1);
+    if (ypc.ypc_current_handler == nullptr &&
+        !ypc.ypc_handler_stack.empty() &&
+        ypc.ypc_handler_stack.back() != nullptr) {
+        this->ygc_handlers = static_cast<json_path_handler *>(ypc.ypc_handler_stack.back()->jph_children);
+        this->ygc_depth += 1;
+    }
+    return *this;
 }

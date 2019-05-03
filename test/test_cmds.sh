@@ -126,7 +126,7 @@ EOF
 
 check_output "config clock-format" <<EOF
 info: changed config option -- /ui/clock-format
-info: reset option
+info: reset option -- /ui/clock-format
 info: /ui/clock-format = "%a %b %d %H:%M:%S %Z"
 EOF
 

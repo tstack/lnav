@@ -48,10 +48,11 @@ public:
     doc_status_source() {
         this->tss_fields[TSF_TITLE].set_width(14);
         this->tss_fields[TSF_TITLE].set_left_pad(1);
-        this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_VIEW_STATUS);
+        this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_STATUS_TITLE);
         this->tss_fields[TSF_STITCH_TITLE].set_width(2);
         this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
-            view_colors::ansi_color_pair_index(COLOR_BLUE, COLOR_WHITE));
+            view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+            view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
         this->tss_fields[TSF_DESCRIPTION].set_share(1);
         this->tss_fields[TSF_DESCRIPTION].set_role(view_colors::VCR_STATUS);
     };

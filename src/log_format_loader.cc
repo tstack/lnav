@@ -52,10 +52,6 @@
 
 #include "log_format_loader.hh"
 
-#ifndef SYSCONFDIR
-#define SYSCONFDIR "/usr/etc"
-#endif
-
 using namespace std;
 
 static void extract_metadata(const char *contents, size_t len, struct script_metadata &meta_out);
@@ -552,6 +548,7 @@ static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
     { level_names[LEVEL_DEBUG], LEVEL_DEBUG },
     { level_names[LEVEL_INFO], LEVEL_INFO },
     { level_names[LEVEL_STATS], LEVEL_STATS },
+    { level_names[LEVEL_NOTICE], LEVEL_NOTICE },
     { level_names[LEVEL_WARNING], LEVEL_WARNING },
     { level_names[LEVEL_ERROR], LEVEL_ERROR },
     { level_names[LEVEL_CRITICAL], LEVEL_CRITICAL },
@@ -741,7 +738,7 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
                  "error:unable to open format file '%s' -- %s",
                  filename.c_str(),
                  strerror(errno));
-        errors.push_back(errmsg);
+        errors.emplace_back(errmsg);
     }
     else {
         auto_mem<yajl_handle_t> handle(yajl_free);
@@ -807,6 +804,12 @@ static void load_from_path(const string &path, std::vector<string> &errors)
     log_info("loading formats from path: %s", format_path.c_str());
     if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
+            const char *base = basename(gl->gl_pathv[lpc]);
+
+            if (startswith(base, "config.")) {
+                continue;
+            }
+
             string filename(gl->gl_pathv[lpc]);
             vector<intern_string_t> format_list;
 
@@ -815,9 +818,9 @@ static void load_from_path(const string &path, std::vector<string> &errors)
                 log_warning("Empty format file: %s", filename.c_str());
             }
             else {
-                for (vector<intern_string_t>::iterator iter = format_list.begin();
-                        iter != format_list.end();
-                        ++iter) {
+                for (auto iter = format_list.begin();
+                     iter != format_list.end();
+                     ++iter) {
                     log_info("  found format: %s", iter->get());
                 }
             }
@@ -854,14 +857,8 @@ void load_formats(const std::vector<std::string> &extra_paths,
     ypc_builtin.complete_parse();
     yajl_free(handle);
 
-    load_from_path("/etc/lnav", errors);
-    load_from_path(SYSCONFDIR "/lnav", errors);
-    load_from_path(dotlnav_path(""), errors);
-
-    for (vector<string>::const_iterator path_iter = extra_paths.begin();
-         path_iter != extra_paths.end();
-         ++path_iter) {
-        load_from_path(*path_iter, errors);
+    for (const auto & extra_path : extra_paths) {
+        load_from_path(extra_path, errors);
     }
 
     if (!errors.empty()) {

@@ -145,6 +145,10 @@
 #include "shlex.hh"
 #include "log_actions.hh"
 
+#ifndef SYSCONFDIR
+#define SYSCONFDIR "/usr/etc"
+#endif
+
 using namespace std;
 
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
@@ -1855,6 +1859,9 @@ int main(int argc, char *argv[])
 #endif
 
     lnav_data.ld_debug_log_name = "/dev/null";
+    lnav_data.ld_config_paths.emplace_back("/etc/lnav");
+    lnav_data.ld_config_paths.emplace_back(SYSCONFDIR "/lnav");
+    lnav_data.ld_config_paths.emplace_back(dotlnav_path(""));
     while ((c = getopt(argc, argv, "hHarRCc:I:iuf:d:nqtw:vVW")) != -1) {
         switch (c) {
         case 'h':

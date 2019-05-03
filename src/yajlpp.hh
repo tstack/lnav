@@ -44,6 +44,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <functional>
 
 #include "optional.hpp"
 #include "pcrepp.hh"
@@ -135,6 +136,7 @@ struct json_path_handler_base {
             : jph_path(path),
               jph_regex(path, PCRE_ANCHORED),
               jph_gen_callback(NULL),
+              jph_field_getter(nullptr),
               jph_obj_provider(NULL),
               jph_path_provider(NULL),
               jph_synopsis(""),
@@ -163,9 +165,12 @@ struct json_path_handler_base {
     };
 
     virtual yajl_gen_status gen(yajlpp_gen_context &ygc, yajl_gen handle) const;
-    virtual void possibilities(std::vector<std::string> &dst,
-                               void *root = NULL,
-                               const std::string &base = "") const;
+    virtual void walk(
+        const std::function<void(const json_path_handler_base &,
+                                 const std::string &,
+                                 void *)> &cb,
+        void *root = nullptr,
+        const std::string &base = "") const;
 
     const char *   jph_path;
     pcrepp         jph_regex;
@@ -173,6 +178,7 @@ struct json_path_handler_base {
     yajl_gen_status (*jph_gen_callback)(yajlpp_gen_context &, const json_path_handler_base &, yajl_gen);
     void           (*jph_validator)(yajlpp_parse_context &ypc,
                                     const json_path_handler_base &jph);
+    void *(*jph_field_getter)(void *root, nonstd::optional<std::string> name);
     void *(*jph_obj_provider)(const yajlpp_provider_context &pe, void *root);
     void (*jph_path_provider)(void *root, std::vector<std::string> &paths_out);
     const char *   jph_synopsis;
@@ -181,6 +187,7 @@ struct json_path_handler_base {
     bool           jph_kv_pair;
     std::shared_ptr<pcrepp> jph_pattern;
     const char * jph_pattern_re{nullptr};
+    std::function<void(const string_fragment &)> jph_string_validator;
     size_t         jph_min_length;
     size_t         jph_max_length;
     const enum_value_t  *jph_enum_values;
@@ -189,6 +196,19 @@ struct json_path_handler_base {
 };
 
 struct json_path_handler;
+
+struct source_location {
+    source_location()
+        : sl_source(intern_string::lookup("unknown")),
+          sl_line_number(-1) {
+    }
+
+    source_location(intern_string_t source, int line)
+        : sl_source(source), sl_line_number(line) {};
+
+    intern_string_t sl_source;
+    int sl_line_number;
+};
 
 class yajlpp_parse_context {
 public:
@@ -254,6 +274,11 @@ public:
     const intern_string_t get_path() const {
         return intern_string::lookup(&this->ypc_path[1],
                                      this->ypc_path.size() - 2);
+    };
+
+    const intern_string_t get_full_path() const {
+        return intern_string::lookup(&this->ypc_path[0],
+                                     this->ypc_path.size() - 1);
     };
 
     bool is_level(size_t level) const {
@@ -426,12 +451,14 @@ public:
     std::vector<char>       ypc_path;
     std::vector<size_t>     ypc_path_index_stack;
     std::vector<int>        ypc_array_index;
+    std::vector<const json_path_handler_base *> ypc_handler_stack;
     pcre_context_static<30> ypc_pcre_context;
     bool                    ypc_ignore_unused{false};
     const struct json_path_handler_base *ypc_sibling_handlers{nullptr};
     const struct json_path_handler_base *ypc_current_handler{nullptr};
     std::set<std::string>   ypc_active_paths;
     error_reporter_t ypc_error_reporter{nullptr};
+    std::map<intern_string_t, source_location> *ypc_locations{nullptr};
 
     void update_callbacks(const json_path_handler_base *handlers = NULL,
                           int child_start = 0);
@@ -565,11 +592,7 @@ public:
         return *this;
     };
 
-    yajlpp_gen_context &with_context(yajlpp_parse_context &ypc) {
-        this->ygc_obj_stack = ypc.ypc_obj_stack;
-        this->ygc_base_name = ypc.get_path_fragment(-1);
-        return *this;
-    }
+    yajlpp_gen_context &with_context(yajlpp_parse_context &ypc);
 
     void gen();
 

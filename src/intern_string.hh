@@ -37,6 +37,8 @@
 
 #include <string>
 
+#include "strnatcmp.h"
+
 struct string_fragment {
     explicit string_fragment(const char *str, int begin = 0, int end = -1)
         : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end) {
@@ -89,6 +91,15 @@ struct string_fragment {
         }
 
         return memcmp(this->data(), sf.data(), sf.length()) == 0;
+    };
+
+    bool iequal(const string_fragment &sf) const {
+        if (this->length() != sf.length()) {
+            return false;
+        }
+
+        return strnatcasecmp(this->length(), this->data(),
+            sf.length(), sf.data()) == 0;
     };
 
     bool operator==(const char *str) const {

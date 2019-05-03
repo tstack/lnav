@@ -149,6 +149,7 @@ set(diag_STAT_SRCS
     readline_possibilities.hh
     regexp_vtab.hh
     relative_time.hh
+        styling.hh
     ring_span.hh
     sequence_sink.hh
     shlex.hh

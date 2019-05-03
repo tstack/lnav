@@ -209,6 +209,8 @@ public:
     };
 
     static int command_complete(int, int);
+
+    std::map<std::string, std::string> rc_prefixes;
 private:
     static char **attempted_completion(const char *text, int start, int end);
     static char *completion_generator(const char *text, int state);
@@ -348,6 +350,12 @@ public:
     };
 
     void line_ready(const char *line);
+
+    void add_prefix(int context,
+                    const std::vector<std::string> &prefix,
+                    const std::string &value);
+
+    void clear_prefixes(int context);
 
     void add_possibility(int context,
                          const std::string &type,

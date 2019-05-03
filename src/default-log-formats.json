@@ -577,7 +577,7 @@
             },
             {
                 "line": "[Tue Apr 04 06:18:29.712806 2017] [mpm_prefork:notice] [pid 17725] AH00163: Apache/2.4.23 (Unix) configured -- resuming normal operations",
-                "level" : "info"
+                "level" : "notice"
             },
             {
                 "line": "[Tue Apr 04 06:28:08.605341 2017] [core:error] [pid 17962] [client 127.0.0.1:60444] AH00135: Invalid method in request FOO /",
@@ -585,7 +585,7 @@
             },
             {
                 "line": "[Thu Jan 17 02:42:49 2013] [notice] Digest: generating secret for digest authentication ...",
-                "level" : "info"
+                "level" : "notice"
             }
         ]
     },

@@ -35,7 +35,7 @@
 /**
  * The logging level identifiers for a line(s).
  */
-typedef enum {
+enum log_level_t : int {
     LEVEL_UNKNOWN,
     LEVEL_TRACE,
     LEVEL_DEBUG5,
@@ -45,6 +45,7 @@ typedef enum {
     LEVEL_DEBUG,
     LEVEL_INFO,
     LEVEL_STATS,
+    LEVEL_NOTICE,
     LEVEL_WARNING,
     LEVEL_ERROR,
     LEVEL_CRITICAL,
@@ -62,7 +63,7 @@ typedef enum {
         LEVEL_MARK |
         LEVEL_CONTINUED
     )
-} log_level_t;
+};
 
 extern const char *level_names[LEVEL__MAX + 1];
 
