@@ -869,7 +869,8 @@ void view_colors::init_roles(const lnav_theme &lt,
                     reporter(&fg_str->second, errmsg);
                     return;
                 }
-                if (!rgb_color::from_str(bg_str->second, rgb_bg, errmsg)) {
+                if (bg_str != lt.lt_vars.end() &&
+                    !rgb_color::from_str(bg_str->second, rgb_bg, errmsg)) {
                     reporter(&bg_str->second, errmsg);
                     return;
                 }
