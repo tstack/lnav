@@ -352,18 +352,7 @@ public:
         return *this;
     }
 
-    yajl_status parse(const unsigned char *jsonText, size_t jsonTextLen) {
-        this->ypc_json_text = jsonText;
-
-        yajl_status retval = yajl_parse(this->ypc_handle, jsonText, jsonTextLen);
-
-        size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
-
-        this->ypc_line_number += std::count(&jsonText[0], &jsonText[consumed], '\n');
-
-        this->ypc_json_text = NULL;
-        return retval;
-    };
+    yajl_status parse(const unsigned char *jsonText, size_t jsonTextLen);;
 
     int get_line_number() const {
         if (this->ypc_handle != NULL && this->ypc_json_text) {
@@ -379,9 +368,7 @@ public:
         }
     };
 
-    yajl_status complete_parse() {
-        return yajl_complete_parse(this->ypc_handle);
-    };
+    yajl_status complete_parse();;
 
     void report_error(lnav_log_level_t level, const char *format, ...) {
         va_list args;

@@ -769,27 +769,12 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
                 buffer[0] = buffer[1] = '/';
             }
             if (ypc.parse((const unsigned char *)buffer, rc) != yajl_status_ok) {
-                errors.push_back(
-                    "error:" +
-                    filename +
-                    ":" +
-                    to_string(ypc.get_line_number()) +
-                    ":invalid json -- " +
-                    string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
                 break;
             }
             offset += rc;
         }
         if (rc == 0) {
-            if (ypc.complete_parse() != yajl_status_ok) {
-                errors.push_back(
-                    "error:" +
-                    filename +
-                    ":" +
-                    to_string(ypc.get_line_number()) +
-                    ":invalid json -- " +
-                    string((char *)yajl_get_error(handle, 0, NULL, 0)));
-            }
+            ypc.complete_parse();
         }
     }
 

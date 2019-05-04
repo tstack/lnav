@@ -695,6 +695,7 @@ static void load_config_from(const string &path, vector<string> &errors)
     ypc.ypc_locations = &lnav_config_locations;
     ypc.with_obj(lnav_config);
     ypc.ypc_userdata = &ud;
+    ypc.with_error_reporter(config_error_reporter);
     if ((fd = open(path.c_str(), O_RDONLY)) == -1) {
         if (errno != ENOENT) {
             char errmsg[1024];
@@ -727,19 +728,12 @@ static void load_config_from(const string &path, vector<string> &errors)
                 break;
             }
             if (ypc.parse((const unsigned char *)buffer, rc) != yajl_status_ok) {
-                errors.push_back(path +
-                                 ": invalid json -- " +
-                                 string((char *)yajl_get_error(handle, 1, (unsigned char *)buffer, rc)));
                 break;
             }
             offset += rc;
         }
         if (rc == 0) {
-            if (ypc.complete_parse() != yajl_status_ok) {
-                errors.push_back(path +
-                                 ": invalid json -- " +
-                                 string((char *)yajl_get_error(handle, 0, NULL, 0)));
-            }
+            ypc.complete_parse();
         }
     }
 }
@@ -760,10 +754,8 @@ static void load_default_config(yajlpp_parse_context &ypc_builtin,
     yajl_config(handle, yajl_allow_comments, 1);
     yajl_config(handle, yajl_allow_multiple_values, 1);
     if (ypc_builtin.parse((const unsigned char *) config_json,
-                          strlen(config_json)) != yajl_status_ok ||
-        ypc_builtin.complete_parse() != yajl_status_ok) {
-        errors.push_back("builtin: invalid json -- " +
-                         string((char *)yajl_get_error(handle, 1, (unsigned char *) config_json, strlen(config_json))));
+                          strlen(config_json)) == yajl_status_ok) {
+        ypc_builtin.complete_parse();
     }
 }
 

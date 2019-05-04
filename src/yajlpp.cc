@@ -31,6 +31,8 @@
 
 #include "config.h"
 
+#include "fmt/format.h"
+
 #include "yajlpp.hh"
 #include "yajlpp_def.hh"
 #include "yajl/api/yajl_parse.h"
@@ -497,6 +499,48 @@ const yajl_callbacks yajlpp_parse_context::DEFAULT_CALLBACKS = {
     yajlpp_parse_context::array_start,
     yajlpp_parse_context::array_end,
 };
+
+yajl_status
+yajlpp_parse_context::parse(const unsigned char *jsonText, size_t jsonTextLen)
+{
+    this->ypc_json_text = jsonText;
+
+    yajl_status retval = yajl_parse(this->ypc_handle, jsonText, jsonTextLen);
+
+    size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
+
+    this->ypc_line_number += std::count(&jsonText[0], &jsonText[consumed], '\n');
+
+    this->ypc_json_text = NULL;
+
+    if (retval != yajl_status_ok && this->ypc_error_reporter) {
+        this->ypc_error_reporter(
+            *this, LOG_LEVEL_ERROR,
+            fmt::format("error:{}:{}:invalid json -- {}",
+                        this->ypc_source,
+                        this->get_line_number(),
+                        yajl_get_error(this->ypc_handle, 1,
+                                       jsonText, jsonTextLen)).c_str());
+    }
+
+    return retval;
+}
+
+yajl_status yajlpp_parse_context::complete_parse()
+{
+    yajl_status retval = yajl_complete_parse(this->ypc_handle);
+
+    if (retval != yajl_status_ok && this->ypc_error_reporter) {
+        this->ypc_error_reporter(
+            *this, LOG_LEVEL_ERROR,
+            fmt::format("error:{}:invalid json -- {}",
+                        this->ypc_source,
+                        yajl_get_error(this->ypc_handle, 0,
+                                       nullptr, 0)).c_str());
+    }
+
+    return retval;
+}
 
 void yajlpp_gen_context::gen()
 {

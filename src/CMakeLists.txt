@@ -186,7 +186,21 @@ set(diag_STAT_SRCS
     filesystem/path.h
     filesystem/resolver.h
 
-    ../../lbuild-debug/src/config.h
+        fmtlib/posix.cc
+        fmtlib/fmt/time.h
+        fmtlib/fmt/ostream.h
+        fmtlib/fmt/format-inl.h
+        fmtlib/fmt/ranges.h
+        fmtlib/fmt/core.h
+        fmtlib/fmt/locale.h
+        fmtlib/fmt/chrono.h
+        fmtlib/fmt/color.h
+        fmtlib/fmt/printf.h
+        fmtlib/fmt/posix.h
+        fmtlib/fmt/format.h
+        fmtlib/format.cc
+
+        ../../lbuild-debug/src/config.h
     )
 
 set(lnav_SRCS lnav.cc)
@@ -195,6 +209,7 @@ include_directories(
         ../../lbuild-debug/src
         /opt/local/include
         /usr/local/opt/sqlite3/include
+        fmtlib
 )
 include_directories(SYSTEM .)
 add_executable(lnav ${lnav_SRCS} ${diag_STAT_SRCS})

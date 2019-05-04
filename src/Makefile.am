@@ -120,6 +120,7 @@ AM_LDFLAGS = \
 
 AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \
+	-I$(srcdir)/fmtlib \
 	-Wall \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
@@ -272,7 +273,18 @@ noinst_HEADERS = \
 	spookyhash/SpookyV2.h \
 	filesystem/fwd.h \
 	filesystem/path.h \
-	filesystem/resolver.h
+	filesystem/resolver.h \
+    fmtlib/fmt/time.h \
+    fmtlib/fmt/ostream.h \
+    fmtlib/fmt/format-inl.h \
+    fmtlib/fmt/ranges.h \
+    fmtlib/fmt/core.h \
+    fmtlib/fmt/locale.h \
+    fmtlib/fmt/chrono.h \
+    fmtlib/fmt/color.h \
+    fmtlib/fmt/printf.h \
+    fmtlib/fmt/posix.h \
+    fmtlib/fmt/format.h
 
 if USE_INCLUDED_YAJL
 noinst_HEADERS += yajl/api/yajl_common.h \
@@ -375,7 +387,9 @@ libdiag_a_SOURCES = \
 	xterm_mouse.cc \
 	xterm-palette.c \
 	yajlpp.cc \
-	spookyhash/SpookyV2.cpp
+	spookyhash/SpookyV2.cpp \
+	fmtlib/posix.cc \
+    fmtlib/format.cc
 
 if USE_INCLUDED_YAJL
 libdiag_a_SOURCES += yajl/yajl.c \
