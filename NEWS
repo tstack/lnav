@@ -1,8 +1,8 @@
 lnav v0.8.6:
      Features:
      * Added support for themes and included a few as well: default,
-       night-owl, solarized-light, and solarized-dark.  The theme can
-       be changed using the ':config' command, like so:
+       monocai, night-owl, solarized-light, and solarized-dark.  The theme
+       can be changed using the ':config' command, like so:
          :config /ui/theme night-owl
        Consult the online documentation for defining a new theme.
 

@@ -29,6 +29,7 @@ default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
 CONFIG_FILES = \
     $(srcdir)/root-config.json \
     $(srcdir)/themes/default.json \
+    $(srcdir)/themes/monocai.json \
     $(srcdir)/themes/night-owl.json \
     $(srcdir)/themes/solarized-dark.json \
     $(srcdir)/themes/solarized-light.json \
@@ -145,6 +146,7 @@ dist_noinst_DATA = \
 	root-config.json \
 	search-for.lnav \
 	themes/default.json \
+    themes/monocai.json \
     themes/night-owl.json \
 	themes/solarized-dark.json \
 	themes/solarized-light.json

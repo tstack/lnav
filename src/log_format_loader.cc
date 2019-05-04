@@ -982,14 +982,8 @@ void load_format_extra(sqlite3 *db,
                        const std::vector<std::string> &extra_paths,
                        std::vector<std::string> &errors)
 {
-    exec_sql_in_path(db, "/etc/lnav", errors);
-    exec_sql_in_path(db, SYSCONFDIR "/lnav", errors);
-    exec_sql_in_path(db, dotlnav_path(""), errors);
-
-    for (vector<string>::const_iterator path_iter = extra_paths.begin();
-         path_iter != extra_paths.end();
-         ++path_iter) {
-        exec_sql_in_path(db, *path_iter, errors);
+    for (const auto & extra_path : extra_paths) {
+        exec_sql_in_path(db, extra_path, errors);
     }
 }
 
@@ -1064,14 +1058,8 @@ static void find_format_in_path(const string &path,
 void find_format_scripts(const vector<string> &extra_paths,
                          map<string, vector<script_metadata> > &scripts)
 {
-    find_format_in_path("/etc/lnav", scripts);
-    find_format_in_path(SYSCONFDIR "/lnav", scripts);
-    find_format_in_path(dotlnav_path(""), scripts);
-
-    for (vector<string>::const_iterator path_iter = extra_paths.begin();
-         path_iter != extra_paths.end();
-         ++path_iter) {
-        find_format_in_path(*path_iter, scripts);
+    for (const auto &extra_path : extra_paths) {
+        find_format_in_path(extra_path, scripts);
     }
 }
 
@@ -1080,9 +1068,7 @@ void load_format_vtabs(log_vtab_manager *vtab_manager,
 {
     map<intern_string_t, external_log_format *> &root_formats = LOG_FORMATS;
 
-    for (map<intern_string_t, external_log_format *>::iterator iter = root_formats.begin();
-         iter != root_formats.end();
-         ++iter) {
-        iter->second->register_vtabs(vtab_manager, errors);
+    for (auto & root_format : root_formats) {
+        root_format.second->register_vtabs(vtab_manager, errors);
     }
 }

@@ -254,6 +254,8 @@ dist_noinst_DATA = \
 	bad-config/formats/invalid-sql/init.sql \
 	bad-config/formats/no-samples/format.json \
 	bad-config2/formats/invalid-config/config.json \
+	bad-config2/formats/invalid-config/config.malformed.json \
+	bad-config2/formats/invalid-config/config.truncated.json \
 	bad-config-json/formats/invalid-json/format.json \
 	bad-config-json/formats/invalid-key/format.json \
 	datafile_simple.0 \
