@@ -7,6 +7,8 @@ AM_CPPFLAGS = \
     -I$(top_srcdir)/src/ \
     -I$(top_srcdir)/src/fmtlib
 
+AM_LDFLAGS = -pthread
+
 noinst_LIBRARIES = libyajlpp.a
 
 noinst_HEADERS = \
