@@ -37,11 +37,11 @@ test_json_ptr_SOURCES = test_json_ptr.cc
 test_yajlpp_SOURCES = test_yajlpp.cc
 
 LDADD = \
+    libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \
-    $(top_builddir)/src/yajl/libyajl.a \
-    libyajlpp.a
+    $(top_builddir)/src/yajl/libyajl.a
 
 dist_noinst_SCRIPTS = \
 	test_json_op.sh \
