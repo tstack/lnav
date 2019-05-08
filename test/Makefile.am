@@ -67,19 +67,19 @@ TEXT2C_OBJS = \
 
 LDADD = \
     -lz \
-    $(CURSES_LIB) \
     $(CONFIG_OBJS) \
     $(TEXT2C_OBJS) \
-    $(top_builddir)/src/base/libbase.a \
+    $(top_builddir)/src/libdiag.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \
     $(top_builddir)/src/yajl/libyajl.a \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
-    $(top_builddir)/src/libdiag.a \
-	$(SQLITE3_LIBS) \
-	$(PCRE_LIBS) \
-	$(READLINE_LIBS) \
-	$(LIBCURL) \
+    $(top_builddir)/src/base/libbase.a \
+    $(CURSES_LIB) \
+    $(SQLITE3_LIBS) \
+    $(PCRE_LIBS) \
+    $(READLINE_LIBS) \
+    $(LIBCURL) \
 	-lpcrecpp
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
