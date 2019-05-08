@@ -1,0 +1,146 @@
+{
+    "ui": {
+        "theme-defs": {
+            "eldar": {
+                "vars": {
+                    "black": "#000000",
+                    "yellow": "#fce94f",
+                    "red": "#ef2929",
+                    "magenta": "#ad7fa8",
+                    "blue": "#729fcf",
+                    "cyan": "#34e2e2",
+                    "green": "#8ae234",
+                    "white": "#ffffff"
+                },
+                "styles": {
+                    "identifier": {
+                        "background-color": "$black"
+                    },
+                    "text": {
+                        "color": "$white",
+                        "background-color": "$black"
+                    },
+                    "alt-text": {
+                        "color": "$white",
+                        "background-color": "$black",
+                        "bold": true
+                    },
+                    "ok": {
+                        "color": "$green",
+                        "bold": true
+                    },
+                    "error": {
+                        "color": "$red",
+                        "bold": true
+                    },
+                    "warning": {
+                        "color": "$yellow",
+                        "bold": true
+                    },
+                    "hidden": {
+                        "color": "$yellow",
+                        "bold": true
+                    },
+                    "adjusted-time": {
+                        "color": "$magenta"
+                    },
+                    "skewed-time": {
+                        "color": "$yellow"
+                    },
+                    "offset-time": {
+                        "color": "$cyan"
+                    },
+                    "popup": {
+                        "color": "$black",
+                        "background-color": "Grey37"
+                    }
+                },
+                "syntax-styles": {
+                    "keyword": {
+                        "color": "$yellow"
+                    },
+                    "string": {
+                        "color": "$magenta",
+                        "bold": true
+                    },
+                    "comment": {
+                        "color": "$cyan"
+                    },
+                    "number": {
+                        "color": "$red"
+                    },
+                    "variable": {
+                        "color": "$green"
+                    },
+                    "symbol": {
+                        "color": "$green"
+                    },
+                    "re-special": {
+                        "color": "$cyan"
+                    },
+                    "re-repeat": {
+                        "color": "$yellow"
+                    },
+                    "diff-delete": {
+                        "color": "$red"
+                    },
+                    "diff-add": {
+                        "color": "$green"
+                    },
+                    "diff-section": {
+                        "color": "$magenta"
+                    },
+                    "file": {
+                        "color": "$blue"
+                    }
+                },
+                "status-styles": {
+                    "title": {
+                        "color": "$black",
+                        "background-color": "$blue",
+                        "bold": true
+                    },
+                    "subtitle": {
+                        "color": "$black",
+                        "background-color": "$cyan",
+                        "bold": true
+                    },
+                    "text": {
+                        "color": "$black",
+                        "background-color": "$white"
+                    },
+                    "warn": {
+                        "color": "$yellow",
+                        "background-color": "$white"
+                    },
+                    "alert": {
+                        "color": "$red",
+                        "background-color": "$white"
+                    },
+                    "active": {
+                        "color": "$green",
+                        "background-color": "$white"
+                    },
+                    "inactive": {
+                        "color": "$black",
+                        "background-color": "Grey"
+                    }
+                },
+                "log-level-styles": {
+                    "warning": {
+                        "color": "$yellow"
+                    },
+                    "error": {
+                        "color": "$red"
+                    },
+                    "critical": {
+                        "color": "$red"
+                    },
+                    "fatal": {
+                        "color": "$red"
+                    }
+                }
+            }
+        }
+    }
+}
