@@ -175,11 +175,11 @@ static void build_all_help_text()
 
     for (const auto &iter : sqlite_function_help) {
         switch (iter.second->ht_context) {
-            case HC_SQL_FUNCTION:
-            case HC_SQL_TABLE_VALUED_FUNCTION:
+            case help_context_t::HC_SQL_FUNCTION:
+            case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
                 sql_funcs[iter.second->ht_name] = iter.second;
                 break;
-            case HC_SQL_KEYWORD:
+            case help_context_t::HC_SQL_KEYWORD:
                 sql_keywords[iter.second->ht_name] = iter.second;
                 break;
             default:
@@ -192,7 +192,7 @@ static void build_all_help_text()
         format_help_text_for_term(*iter.second, 79, all_help_text);
         if (!iter.second->ht_example.empty()) {
             all_help_text.append(1, '\n');
-            format_example_text_for_term(*iter.second, 90, all_help_text);
+            format_example_text_for_term(*iter.second, eval_example, 90, all_help_text);
         }
     }
 
@@ -201,7 +201,7 @@ static void build_all_help_text()
         format_help_text_for_term(*iter.second, 79, all_help_text);
         if (!iter.second->ht_example.empty()) {
             all_help_text.append(1, '\n');
-            format_example_text_for_term(*iter.second, 79, all_help_text);
+            format_example_text_for_term(*iter.second, eval_example, 79, all_help_text);
         }
     }
 
@@ -325,6 +325,8 @@ void layout_views()
     lnav_data.ld_rl_view->set_width(width);
 }
 
+static unordered_map<string, attr_line_t> EXAMPLE_RESULTS;
+
 void execute_examples()
 {
     exec_context &ec = lnav_data.ld_exec_context;
@@ -337,22 +339,23 @@ void execute_examples()
 
         for (auto &ex : ht.ht_example) {
             string alt_msg;
+            attr_line_t result;
 
             switch (ht.ht_context) {
-                case HC_SQL_FUNCTION:
-                case HC_SQL_TABLE_VALUED_FUNCTION: {
+                case help_context_t::HC_SQL_FUNCTION:
+                case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
                     execute_sql(ec, ex.he_cmd, alt_msg);
 
                     if (dls.dls_rows.size() == 1 &&
                         dls.dls_rows[0].size() == 1) {
-                        ex.he_result.append(dls.dls_rows[0][0]);
+                        result.append(dls.dls_rows[0][0]);
                     } else {
                         attr_line_t al;
                         dos.list_value_for_overlay(db_tc,
                                                    0, 1,
                                                    vis_line_t(0),
                                                    al);
-                        ex.he_result.append(al);
+                        result.append(al);
                         for (int lpc = 0;
                              lpc < (int)dls.text_line_count(); lpc++) {
                             al.clear();
@@ -361,14 +364,16 @@ void execute_examples()
                                                     false);
                             dls.text_attrs_for_line(db_tc, lpc,
                                                     al.get_attrs());
-                            ex.he_result.append("\n")
+                            result.append("\n")
                                 .append(al);
                         }
                     }
 
+                    EXAMPLE_RESULTS[ex.he_cmd] = result;
+
                     log_debug("example: %s", ex.he_cmd);
                     log_debug("example result: %s",
-                              ex.he_result.get_string().c_str());
+                              result.get_string().c_str());
                     break;
                 }
                 default:
@@ -379,6 +384,17 @@ void execute_examples()
     }
 
     dls.clear();
+}
+
+attr_line_t eval_example(const help_text &ht, const help_example &ex)
+{
+    auto iter = EXAMPLE_RESULTS.find(ex.he_cmd);
+
+    if (iter != EXAMPLE_RESULTS.end()) {
+        return iter->second;
+    }
+
+    return "";
 }
 
 bool toggle_view(textview_curses *toggle_tc)

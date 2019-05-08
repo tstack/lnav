@@ -35,7 +35,7 @@
 
 #include <string>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 template<size_t COUNT, typename T = unsigned char>
 struct byte_array {

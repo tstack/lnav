@@ -41,7 +41,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "log_accel.hh"
 #include "strong_int.hh"
 #include "logfile.hh"

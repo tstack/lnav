@@ -35,7 +35,7 @@
 #include <assert.h>
 
 #include "lnav_util.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 #include "sqlite-extension-func.hh"
 
@@ -83,7 +83,7 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                     nullptr,
                                     nullptr);
 
-            if (fd.fd_help.ht_context != HC_NONE) {
+            if (fd.fd_help.ht_context != help_context_t::HC_NONE) {
                 help_text &ht = fd.fd_help;
 
                 sqlite_function_help.insert(make_pair(ht.ht_name, &ht));
@@ -104,7 +104,7 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                     agg_funcs[i].xStep,
                                     agg_funcs[i].xFinalize);
 
-            if (fda.fda_help.ht_context != HC_NONE) {
+            if (fda.fda_help.ht_context != help_context_t::HC_NONE) {
                 help_text &ht = fda.fda_help;
 
                 sqlite_function_help.insert(make_pair(ht.ht_name, &ht));

@@ -38,7 +38,7 @@
 #include <pwd.h>
 
 #include "auto_mem.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "fstat_vtab.hh"

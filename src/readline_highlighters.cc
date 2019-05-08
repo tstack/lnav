@@ -31,7 +31,7 @@
 
 #include "config.h"
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
 #include "shlex.hh"
 #include "lnav_util.hh"

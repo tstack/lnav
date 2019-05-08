@@ -43,7 +43,7 @@ std::multimap<std::string, help_text *> help_text::TAGGED;
 
 void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out, bool synopsis_only)
 {
-    static size_t body_indent = 2;
+    static const size_t body_indent = 2;
 
     view_colors &vc = view_colors::singleton();
     text_wrap_settings tws;
@@ -52,7 +52,7 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
     tws.with_width(width);
 
     switch (ht.ht_context) {
-        case HC_COMMAND: {
+        case help_context_t::HC_COMMAND: {
             out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
                 .append("\n")
                 .append(body_indent, ' ')
@@ -60,14 +60,14 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD);
             for (auto &param : ht.ht_parameters) {
                 out.append(" ");
-                if (param.ht_nargs == HN_OPTIONAL) {
+                if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("[");
                 }
                 out.append(param.ht_name, &view_curses::VC_STYLE, A_UNDERLINE);
-                if (param.ht_nargs == HN_OPTIONAL) {
+                if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("]");
                 }
-                if (param.ht_nargs == HN_ONE_OR_MORE) {
+                if (param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
                     out.append("1", &view_curses::VC_STYLE, A_UNDERLINE);
                     out.append(" [");
                     out.append("...", &view_curses::VC_STYLE, A_UNDERLINE);
@@ -84,8 +84,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                 .append("\n");
             break;
         }
-        case HC_SQL_FUNCTION:
-        case HC_SQL_TABLE_VALUED_FUNCTION: {
+        case help_context_t::HC_SQL_FUNCTION:
+        case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
             bool needs_comma = false;
 
             out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
@@ -102,8 +102,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                     out.append(", ");
                 }
                 out.append(param.ht_name, &view_curses::VC_STYLE, A_UNDERLINE);
-                if (param.ht_nargs == HN_ZERO_OR_MORE ||
-                    param.ht_nargs == HN_ONE_OR_MORE) {
+                if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE ||
+                    param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
                     out.append(", ...");
                 }
                 needs_comma = true;
@@ -114,7 +114,7 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                 .append("\n");
             break;
         }
-        case HC_SQL_KEYWORD: {
+        case help_context_t::HC_SQL_KEYWORD: {
             size_t line_start = body_indent;
             bool break_all = false;
 
@@ -133,8 +133,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                     out.append(body_indent + strlen(ht.ht_name) + 1, ' ');
                     break_all = true;
                 }
-                if (param.ht_nargs == HN_ZERO_OR_MORE ||
-                    param.ht_nargs == HN_OPTIONAL) {
+                if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE ||
+                    param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     if (!break_all) {
                         out.append(" ");
                     }
@@ -155,8 +155,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                         .append(param.ht_name, &view_curses::VC_STYLE,
                                 A_UNDERLINE);
                     if (!param.ht_parameters.empty()) {
-                        if (param.ht_nargs == HN_ZERO_OR_MORE ||
-                            param.ht_nargs == HN_ONE_OR_MORE) {
+                        if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE ||
+                            param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
                             out.append("1", &view_curses::VC_STYLE, A_UNDERLINE);
                         }
                         if (param.ht_parameters[0].ht_flag_name) {
@@ -171,8 +171,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                                    A_UNDERLINE);
                     }
                 }
-                if (param.ht_nargs == HN_ZERO_OR_MORE ||
-                    param.ht_nargs == HN_ONE_OR_MORE) {
+                if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE ||
+                    param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
                     bool needs_comma = param.ht_parameters.empty() ||
                                        !param.ht_flag_name;
 
@@ -209,8 +209,8 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                        .append(param.ht_group_end, &view_curses::VC_STYLE,
                                A_BOLD);
                 }
-                if (param.ht_nargs == HN_ZERO_OR_MORE ||
-                    param.ht_nargs == HN_OPTIONAL) {
+                if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE ||
+                    param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("]");
                 }
             }
@@ -312,11 +312,11 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
 
                 string name = related.ht_name;
                 switch (related.ht_context) {
-                    case HC_COMMAND:
+                    case help_context_t::HC_COMMAND:
                         name = ":" + name;
                         break;
-                    case HC_SQL_FUNCTION:
-                    case HC_SQL_TABLE_VALUED_FUNCTION:
+                    case help_context_t::HC_SQL_FUNCTION:
+                    case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
                         name = name + "()";
                         break;
                     default:
@@ -349,18 +349,16 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
     }
 }
 
-void format_example_text_for_term(const help_text &ht, int width, attr_line_t &out)
+void format_example_text_for_term(const help_text &ht,
+                                  const help_example_to_attr_line_fun_t eval,
+                                  int width, attr_line_t &out)
 {
     text_wrap_settings tws;
 
     tws.with_width(width);
 
     if (!ht.ht_example.empty()) {
-        map<string, string> vars;
         int count = 1;
-
-        vars["name"] = ht.ht_name;
-        add_ansi_vars(vars);
 
         out.append(ht.ht_example.size() == 1 ? "Example" : "Examples",
                    &view_curses::VC_STYLE,
@@ -379,15 +377,15 @@ void format_example_text_for_term(const help_text &ht, int width, attr_line_t &o
                 out.append("\n");
             }
             switch (ht.ht_context) {
-                case HC_COMMAND:
+                case help_context_t::HC_COMMAND:
                     ex_line.insert(0, 1, ' ');
                     ex_line.insert(0, 1, ':');
                     ex_line.insert(1, ht.ht_name);
                     readline_command_highlighter(ex_line, 0);
                     break;
-                case HC_SQL_KEYWORD:
-                case HC_SQL_FUNCTION:
-                case HC_SQL_TABLE_VALUED_FUNCTION:
+                case help_context_t::HC_SQL_KEYWORD:
+                case help_context_t::HC_SQL_FUNCTION:
+                case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
                     readline_sqlite_highlighter(ex_line, 0);
                     prompt = ";";
                     break;
@@ -402,7 +400,7 @@ void format_example_text_for_term(const help_text &ht, int width, attr_line_t &o
                .append(ex_line, &tws.with_indent(3 + keyword_offset + 1))
                .append("\n")
                .append(3, ' ')
-               .append(ex.he_result, &tws.with_indent(3))
+               .append(eval(ht, ex), &tws.with_indent(3))
                .append("\n");
 
             count += 1;

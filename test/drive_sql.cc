@@ -64,9 +64,6 @@ extern "C" {
 const char *help_txt = "";
 }
 
-extern "C" {
-const char *default_log_formats_json = "";
-}
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;

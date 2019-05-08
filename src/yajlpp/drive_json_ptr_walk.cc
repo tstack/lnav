@@ -31,40 +31,43 @@
 
 #include "config.h"
 
+#include <iostream>
 #include <stdlib.h>
 
+#include "yajlpp.hh"
+#include "json_op.hh"
 #include "json_ptr.hh"
-#include "lnav_log.hh"
+#include "yajl/api/yajl_gen.h"
+#include "base/lnav_log.hh"
+
+using namespace std;
 
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;
-
-    char buffer[1024];
     yajl_status status;
     json_ptr_walk jpw;
-    ssize_t rc;
 
     log_argv(argc, argv);
 
-    while ((rc = read(STDIN_FILENO, buffer, sizeof(buffer))) > 0) {
-        status = jpw.parse(buffer, rc);
-        if (status == yajl_status_error) {
-            fprintf(stderr, "error:cannot parse JSON input -- %s\n",
+    std::string json_input(std::istreambuf_iterator<char>(cin), {});
+
+    status = jpw.parse(json_input.c_str(), json_input.size());
+    if (status == yajl_status_error) {
+        fprintf(stderr, "error:cannot parse JSON input -- %s\n",
                 jpw.jpw_error_msg.c_str());
-            retval = EXIT_FAILURE;
-            break;
-        }
-        else if (status == yajl_status_client_canceled) {
-            fprintf(stderr, "client cancel\n");
-            break;
-        }
+        return EXIT_FAILURE;
     }
+
+    if (status == yajl_status_client_canceled) {
+        fprintf(stderr, "client cancel\n");
+    }
+
     status = jpw.complete_parse();
     if (status == yajl_status_error) {
         fprintf(stderr, "error:cannot parse JSON input -- %s\n",
             jpw.jpw_error_msg.c_str());
-        retval = EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
     else if (status == yajl_status_client_canceled) {
         fprintf(stderr, "client cancel\n");
@@ -74,6 +77,24 @@ int main(int argc, char *argv[])
          iter != jpw.jpw_values.end();
          ++iter) {
         printf("%s = %s\n", iter->wt_ptr.c_str(), iter->wt_value.c_str());
+
+        {
+            auto_mem<yajl_handle_t> parse_handle(yajl_free);
+            json_ptr jp(iter->wt_ptr.c_str());
+            json_op jo(jp);
+            yajlpp_gen gen;
+
+            jo.jo_ptr_callbacks = json_op::gen_callbacks;
+            jo.jo_ptr_data = gen.get_handle();
+            parse_handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
+
+            yajl_parse(parse_handle.in(),
+                       (const unsigned char *) json_input.c_str(),
+                       json_input.size());
+            yajl_complete_parse(parse_handle.in());
+
+            assert(iter->wt_value == gen.to_string_fragment().to_string());
+        }
     }
 
     return retval;

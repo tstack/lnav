@@ -58,7 +58,7 @@
 #include "yajl/api/yajl_parse.h"
 #include "db_sub_source.hh"
 #include "papertrail_proc.hh"
-#include "json_op.hh"
+#include "yajlpp/json_op.hh"
 
 using namespace std;
 
@@ -767,30 +767,22 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         }
     }
     else if (args[0] == "write-json-to") {
-        yajl_gen handle = NULL;
+        yajlpp_gen gen;
 
-        if ((handle = yajl_gen_alloc(NULL)) == NULL) {
-            if (outfile != stdout) {
-                closer(outfile);
-            }
-            return "error: unable to allocate memory";
-        }
-        else {
-            yajl_gen_config(handle, yajl_gen_beautify, 1);
-            yajl_gen_config(handle,
-                yajl_gen_print_callback, yajl_writer, outfile);
+        yajl_gen_config(gen, yajl_gen_beautify, 1);
+        yajl_gen_config(gen,
+                        yajl_gen_print_callback, yajl_writer, outfile);
 
-            {
-                yajlpp_array root_array(handle);
+        {
+            yajlpp_array root_array(gen);
 
-                for (size_t row = 0; row < dls.dls_rows.size(); row++) {
-                    if (ec.ec_dry_run && row > 10) {
-                        break;
-                    }
-
-                    json_write_row(handle, row);
-                    line_count += 1;
+            for (size_t row = 0; row < dls.dls_rows.size(); row++) {
+                if (ec.ec_dry_run && row > 10) {
+                    break;
                 }
+
+                json_write_row(gen, row);
+                line_count += 1;
             }
         }
     }
@@ -3222,26 +3214,18 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
         }
 
         if (jph != nullptr) {
-            auto_mem<yajl_gen_t> handle(yajl_gen_free);
-
-            handle = yajl_gen_alloc(nullptr);
-
-            yajlpp_gen_context ygc(handle, lnav_config_handlers);
-            yajl_gen_config(handle, yajl_gen_beautify, 1);
+            yajlpp_gen gen;
+            yajlpp_gen_context ygc(gen, lnav_config_handlers);
+            yajl_gen_config(gen, yajl_gen_beautify, 1);
             ygc.with_context(ypc);
 
             if (ypc.ypc_current_handler == nullptr) {
                 ygc.gen();
             } else {
-                jph->gen(ygc, handle);
+                jph->gen(ygc, gen);
             }
 
-            const unsigned char *buffer;
-            size_t len;
-
-            yajl_gen_get_buf(handle, &buffer, &len);
-
-            string old_value((char *) buffer, len);
+            string old_value = gen.to_string_fragment().to_string();
 
             if (args.size() == 2 || ypc.ypc_current_handler == nullptr) {
                 vector<string> errors;
@@ -3760,7 +3744,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":adjust-log-time")
             .with_summary("Change the timestamps of the top file to be relative to the given date")
             .with_parameter(help_text("timestamp", "The new timestamp for the top line in the view")
-                                .with_format(HPF_DATETIME))
+                                .with_format(help_parameter_format_t::HPF_DATETIME))
             .with_example({"2017-01-02T05:33:00", ""})
             .with_example({"-1h"})
     },
@@ -3772,7 +3756,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":unix-time")
             .with_summary("Convert epoch time to a human-readable form")
             .with_parameter(help_text("seconds", "The epoch timestamp to convert")
-                                .with_format(HPF_INTEGER))
+                                .with_format(help_parameter_format_t::HPF_INTEGER))
             .with_example({"1490191111", "Wed Mar 22 06:58:31 2017  -0700 PDT -- 1490191111"})
     },
     {

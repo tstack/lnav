@@ -40,8 +40,8 @@
 
 #include "sqlite3.h"
 
-#include "yajlpp.hh"
-#include "json_op.hh"
+#include "yajlpp/yajlpp.hh"
+#include "yajlpp/json_op.hh"
 #include "mapbox/variant.hpp"
 #include "vtab_module.hh"
 
@@ -197,18 +197,17 @@ static void sql_jget(sqlite3_context *context,
     const char *ptr_in = (const char *)sqlite3_value_text(argv[1]);
     json_ptr jp(ptr_in);
     sql_json_op jo(jp);
-    auto_mem<yajl_gen_t> gen(yajl_gen_free);
     auto_mem<yajl_handle_t> handle(yajl_free);
     const unsigned char *err;
+    yajlpp_gen gen;
 
-    gen = yajl_gen_alloc(nullptr);
-    yajl_gen_config(gen.in(), yajl_gen_beautify, false);
+    yajl_gen_config(gen, yajl_gen_beautify, false);
 
     jo.jo_ptr_callbacks = json_op::gen_callbacks;
     jo.jo_ptr_callbacks.yajl_null = gen_handle_null;
     jo.jo_ptr_callbacks.yajl_boolean = gen_handle_boolean;
     jo.jo_ptr_callbacks.yajl_string = gen_handle_string;
-    jo.jo_ptr_data = gen.in();
+    jo.jo_ptr_data = gen.get_handle();
 
     handle.reset(yajl_alloc(&json_op::ptr_callbacks, nullptr, &jo));
     switch (yajl_parse(handle.in(), (const unsigned char *)json_in, strlen(json_in))) {
@@ -257,17 +256,14 @@ static void sql_jget(sqlite3_context *context,
         return;
     }
 
-    const unsigned char *buf;
-    size_t len;
+    string_fragment result = gen.to_string_fragment();
 
-    yajl_gen_get_buf(gen, &buf, &len);
-
-    if (len == 0) {
+    if (result.empty()) {
         null_or_default(context, argc, argv);
         return;
     }
 
-    sqlite3_result_text(context, (const char *) buf, len, SQLITE_TRANSIENT);
+    sqlite3_result_text(context, result.data(), result.length(), SQLITE_TRANSIENT);
 }
 
 struct json_agg_context {

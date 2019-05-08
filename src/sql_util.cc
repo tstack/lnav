@@ -40,9 +40,9 @@
 
 #include "auto_mem.hh"
 #include "sql_util.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "lnav_util.hh"
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 
 using namespace std;
 

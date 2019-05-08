@@ -34,7 +34,7 @@
 #include "yajl/api/yajl_gen.h"
 
 #include "json_op.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 static int gen_handle_start_map(void *ctx)
 {
@@ -129,8 +129,8 @@ static int gen_handle_end_array(void *ctx)
 const yajl_callbacks json_op::gen_callbacks = {
     gen_handle_null,
     gen_handle_boolean,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
     gen_handle_number,
     gen_handle_string,
     gen_handle_start_map,
@@ -143,8 +143,8 @@ const yajl_callbacks json_op::gen_callbacks = {
 const yajl_callbacks json_op::ptr_callbacks = {
     handle_null,
     handle_boolean,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
     handle_number,
     handle_string,
     handle_start_map,
@@ -160,7 +160,7 @@ int json_op::handle_null(void *ctx)
     int retval = 1;
 
     if (jo->check_index()) {
-        if (jo->jo_ptr_callbacks.yajl_null != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_null != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_null(ctx);
         }
     }
@@ -174,7 +174,7 @@ int json_op::handle_boolean(void *ctx, int boolVal)
     int retval = 1;
 
     if (jo->check_index()) {
-        if (jo->jo_ptr_callbacks.yajl_boolean != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_boolean != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_boolean(ctx, boolVal);
         }
     }
@@ -188,7 +188,7 @@ int json_op::handle_number(void *ctx, const char *numberVal, size_t numberLen)
     int retval = 1;
 
     if (jo->check_index()) {
-        if (jo->jo_ptr_callbacks.yajl_number != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_number != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_number(ctx, numberVal, numberLen);
         }
     }
@@ -202,7 +202,7 @@ int json_op::handle_string(void *ctx, const unsigned char *stringVal, size_t str
     int retval = 1;
 
     if (jo->check_index()) {
-        if (jo->jo_ptr_callbacks.yajl_string != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_string != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_string(ctx, stringVal, stringLen);
         }
     }
@@ -216,7 +216,7 @@ int json_op::handle_start_map(void *ctx)
     int retval = 1;
 
     if (jo->check_index(false)) {
-        if (jo->jo_ptr_callbacks.yajl_start_map != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_start_map != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_start_map(ctx);
         }
     }
@@ -234,7 +234,7 @@ int json_op::handle_map_key(void *ctx, const unsigned char * key, size_t len)
     int retval = 1;
 
     if (jo->check_index(false)) {
-        if (jo->jo_ptr_callbacks.yajl_map_key != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_map_key != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_map_key(ctx, key, len);
         }
     }
@@ -252,7 +252,7 @@ int json_op::handle_end_map(void *ctx)
     int retval = 1;
 
     if (jo->check_index()) {
-        if (jo->jo_ptr_callbacks.yajl_end_map != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_end_map != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_end_map(ctx);
         }
     }
@@ -268,7 +268,7 @@ int json_op::handle_start_array(void *ctx)
     int retval = 1;
 
     if (jo->check_index(false)) {
-        if (jo->jo_ptr_callbacks.yajl_start_array != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_start_array != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_start_array(ctx);
         }
     }
@@ -284,7 +284,7 @@ int json_op::handle_end_array(void *ctx)
     int retval = 1;
 
     if (jo->check_index()) {
-        if (jo->jo_ptr_callbacks.yajl_end_array != NULL) {
+        if (jo->jo_ptr_callbacks.yajl_end_array != nullptr) {
             retval = jo->jo_ptr_callbacks.yajl_end_array(ctx);
         }
     }

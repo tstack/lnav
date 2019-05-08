@@ -33,7 +33,7 @@
 
 #include <cstdlib>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "lnav_util.hh"
 #include "relative_time.hh"
 

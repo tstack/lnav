@@ -19,8 +19,6 @@ check_PROGRAMS = \
 	drive_data_scanner \
 	drive_line_buffer \
 	drive_grep_proc \
-	drive_json_op \
-	drive_json_ptr_walk \
 	drive_listview \
 	drive_logfile \
 	drive_mvwattrline \
@@ -41,14 +39,12 @@ check_PROGRAMS = \
 	test_bookmarks \
 	test_date_time_scanner \
 	test_grep_proc2 \
-	test_json_ptr \
 	test_line_buffer2 \
 	test_log_accel \
 	test_ncurses_unicode \
 	test_pcrepp \
 	test_reltime \
-	test_top_status \
-	test_yajlpp
+	test_top_status
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
@@ -62,159 +58,88 @@ CONFIG_OBJS = \
 	../src/keymap-default.o
 
 TEXT2C_OBJS = \
+	../src/default-log-formats-json.o \
 	../src/dhclient-summary.o \
 	../src/dump-pid-sh.o \
 	../src/lnav-pop-view.o \
 	../src/partition-by-boot.o \
 	../src/search-for.o
 
-LDADD = -lz $(CURSES_LIB)
+LDADD = \
+    -lz \
+    $(CURSES_LIB) \
+    $(CONFIG_OBJS) \
+    $(TEXT2C_OBJS) \
+    $(top_builddir)/src/base/libbase.a \
+    $(top_builddir)/src/fmtlib/libcppfmt.a \
+    $(top_builddir)/src/pcrepp/libpcrepp.a \
+    $(top_builddir)/src/yajl/libyajl.a \
+    $(top_builddir)/src/yajlpp/libyajlpp.a \
+    $(top_builddir)/src/libdiag.a \
+	$(SQLITE3_LIBS) \
+	$(PCRE_LIBS) \
+	$(READLINE_LIBS) \
+	$(LIBCURL) \
+	-lpcrecpp
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
-test_ansi_scrubber_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	$(CONFIG_OBJS)
 
 test_auto_fd_SOURCES = test_auto_fd.cc
-test_auto_fd_LDADD = ../src/libdiag.a
 
 test_auto_mem_SOURCES = test_auto_mem.cc
 
 test_bookmarks_SOURCES = test_bookmarks.cc
-test_bookmarks_LDADD = ../src/libdiag.a
 
 test_date_time_scanner_SOURCES = test_date_time_scanner.cc
-test_date_time_scanner_LDADD = ../src/libdiag.a $(SQLITE3_LIBS)
 
 test_grep_proc2_SOURCES = test_grep_proc2.cc
-test_grep_proc2_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_line_buffer2_SOURCES = test_line_buffer2.cc
-test_line_buffer2_LDADD = ../src/libdiag.a
 
 test_log_accel_SOURCES = test_log_accel.cc
-test_log_accel_LDADD = ../src/libdiag.a
 
 test_pcrepp_SOURCES = test_pcrepp.cc
-test_pcrepp_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz
 
 test_top_status_SOURCES = test_top_status.cc
-test_top_status_LDADD = \
-	../src/libdiag.a \
-	$(CONFIG_OBJS) \
-	$(CURSES_LIB) \
-	$(PCRE_LIBS) \
-	$(SQLITE3_LIBS) \
-	$(LIBCURL) \
-	-lz
-
-test_yajlpp_SOURCES = test_yajlpp.cc
-test_yajlpp_LDADD = ../src/libdiag.a
 
 test_abbrev_SOURCES = test_abbrev.cc
-test_abbrev_LDADD = ../src/libdiag.a
-
-test_json_ptr_SOURCES = test_json_ptr.cc
-test_json_ptr_LDADD = ../src/libdiag.a
 
 test_reltime_SOURCES = test_reltime.cc
-test_reltime_LDADD = ../src/libdiag.a
 
 test_ncurses_unicode_SOURCES = test_ncurses_unicode.cc
 
 lnav_doctests_SOURCES = lnav_doctests.cc
-lnav_doctests_LDADD = ../src/libdiag.a $(CONFIG_OBJS) $(CURSES_LIB)
 
 drive_line_buffer_SOURCES = drive_line_buffer.cc
-drive_line_buffer_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz $(CURSES_LIB)
 
 drive_grep_proc_SOURCES = drive_grep_proc.cc
-drive_grep_proc_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz $(CURSES_LIB)
-
-drive_json_op_SOURCES = drive_json_op.cc
-drive_json_op_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz $(CURSES_LIB)
-
-drive_json_ptr_walk_SOURCES = drive_json_ptr_walk.cc
-drive_json_ptr_walk_LDADD = ../src/libdiag.a $(PCRE_LIBS) -lz $(CURSES_LIB)
 
 drive_listview_SOURCES = drive_listview.cc
-drive_listview_LDADD = ../src/libdiag.a $(CURSES_LIB) -lz $(CURSES_LIB) \
-	$(CONFIG_OBJS)
 
 drive_logfile_SOURCES = drive_logfile.cc
-drive_logfile_LDADD = \
-	../src/libdiag.a \
-	../src/default-log-formats-json.o \
-	$(CONFIG_OBJS) \
-	$(TEXT2C_OBJS) \
-	$(CURSES_LIB) \
-	$(SQLITE3_LIBS) \
-	$(PCRE_LIBS) \
-	-lpcrecpp
 
 drive_sequencer_SOURCES = drive_sequencer.cc
-drive_sequencer_LDADD = ../src/libdiag.a $(CURSES_LIB) $(SQLITE3_LIBS)
 
 drive_shlexer_SOURCES = drive_shlexer.cc
-drive_shlexer_LDADD = ../src/libdiag.a
 
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
-drive_data_scanner_LDADD = \
-	../src/libdiag.a \
-	../src/default-log-formats-json.o \
-	$(CONFIG_OBJS) \
-	$(TEXT2C_OBJS) \
-	$(LIBCURL) \
-	$(PCRE_LIBS) \
-	$(SQLITE3_LIBS) \
-	-lpcrecpp \
-	$(CURSES_LIB)
 
 drive_mvwattrline_SOURCES = drive_mvwattrline.cc
-drive_mvwattrline_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	$(CONFIG_OBJS)
 
 drive_view_colors_SOURCES = drive_view_colors.cc
-drive_view_colors_LDADD = ../src/libdiag.a $(CURSES_LIB) \
-	$(CONFIG_OBJS)
 
 drive_vt52_curses_SOURCES = drive_vt52_curses.cc
-drive_vt52_curses_LDADD = ../src/libdiag.a $(CURSES_LIB) $(CONFIG_OBJS)
 
 drive_readline_curses_SOURCES = drive_readline_curses.cc
-drive_readline_curses_LDADD = ../src/libdiag.a $(READLINE_LIBS) $(CURSES_LIB) \
-	$(CONFIG_OBJS)
 
-drive_sql_SOURCES = \
-	drive_sql.cc
-drive_sql_LDADD = \
-	../src/libdiag.a \
-	$(CONFIG_OBJS) \
-	$(SQLITE3_LIBS) \
-	$(PCRE_LIBS) \
-	$(CURSES_LIB) \
-	$(READLINE_LIBS) \
-	$(LIBCURL) \
-	$(TEXT2C_OBJS) \
-	-lpcrecpp
+drive_sql_SOURCES = drive_sql.cc
 
-drive_sql_anno_SOURCES = \
-	drive_sql_anno.cc
-drive_sql_anno_LDADD = \
-	../src/libdiag.a \
-	$(CONFIG_OBJS) \
-	$(SQLITE3_LIBS) \
-	$(PCRE_LIBS) \
-	$(CURSES_LIB) \
-	$(READLINE_LIBS) \
-	$(LIBCURL) \
-	-lpcrecpp
+drive_sql_anno_SOURCES = drive_sql_anno.cc
 
 slicer_SOURCES = slicer.cc
-slicer_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 scripty_SOURCES = scripty.cc
-scripty_LDADD = ../src/libdiag.a $(CURSES_LIB)
 
 dist_noinst_SCRIPTS = \
 	parser_debugger.py \
@@ -227,8 +152,6 @@ dist_noinst_SCRIPTS = \
 	test_format_loader.sh \
 	test_grep_proc.sh \
 	test_json_format.sh \
-	test_json_op.sh \
-	test_json_ptr_walk.sh \
 	test_line_buffer.sh \
 	test_listview.sh \
 	test_logfile.sh \
@@ -384,8 +307,6 @@ TESTS = \
 	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_json_format.sh \
-	test_json_op.sh \
-	test_json_ptr_walk.sh \
 	test_log_accel \
 	test_logfile.sh \
 	test_pcrepp \
@@ -400,7 +321,6 @@ TESTS = \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
 	test_data_parser.sh \
-	test_yajlpp \
 	test_pretty_print.sh
 
 DISABLED_TESTS = \

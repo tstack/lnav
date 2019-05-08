@@ -246,6 +246,11 @@ AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([TESTS_ENVIRONMENT])
 AC_CONFIG_FILES([src/Makefile])
+AC_CONFIG_FILES([src/base/Makefile])
+AC_CONFIG_FILES([src/fmtlib/Makefile])
+AC_CONFIG_FILES([src/pcrepp/Makefile])
+AC_CONFIG_FILES([src/yajl/Makefile])
+AC_CONFIG_FILES([src/yajlpp/Makefile])
 AC_CONFIG_FILES([test/Makefile])
 
 AC_OUTPUT

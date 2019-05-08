@@ -33,7 +33,7 @@
 #define __highlighter_hh
 
 #include "optional.hpp"
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "text_format.hh"
 #include "view_curses.hh"
 

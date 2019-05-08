@@ -45,7 +45,7 @@
 
 #include "auto_fd.hh"
 #include "auto_mem.hh"
-#include "yajlpp.hh"
+#include "yajlpp/yajlpp.hh"
 #include "curl_looper.hh"
 #include "line_buffer.hh"
 

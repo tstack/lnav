@@ -45,7 +45,7 @@
 #include <stdlib.h>
 #include <poll.h>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "piper_proc.hh"
 #include "line_buffer.hh"
 

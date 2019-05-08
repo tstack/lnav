@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <x86intrin.h>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 #ifdef __cplusplus
 extern "C" {

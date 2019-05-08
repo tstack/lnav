@@ -17,9 +17,9 @@
 
 #include <unordered_map>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 
-#include "yajlpp.hh"
+#include "yajlpp/yajlpp.hh"
 #include "column_namer.hh"
 #include "yajl/api/yajl_gen.h"
 #include "sqlite-extension-func.hh"
@@ -89,10 +89,8 @@ regexp_match(const char *re, const char *str)
         return static_cast<const char *>(nullptr);
     }
 
-    auto_mem<yajl_gen_t> gen(yajl_gen_free);
-
-    gen = yajl_gen_alloc(nullptr);
-    yajl_gen_config(gen.in(), yajl_gen_beautify, false);
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
 
     if (extractor.get_capture_count() == 1) {
         pcre_context::capture_t *cap = pc[0];
@@ -178,10 +176,8 @@ json_string extract(const char *str)
     dp.parse();
     // dp.print(stderr, dp.dp_pairs);
 
-    auto_mem<yajl_gen_t> gen(yajl_gen_free);
-
-    gen = yajl_gen_alloc(NULL);
-    yajl_gen_config(gen.in(), yajl_gen_beautify, false);
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
 
     elements_to_json(gen, dp, &dp.dp_pairs);
 

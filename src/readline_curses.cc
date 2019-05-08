@@ -55,10 +55,10 @@
 
 #include <string>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "shlex.hh"
 #include "auto_mem.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "readline_curses.hh"

@@ -556,7 +556,6 @@ void yajlpp_gen_context::gen()
 yajlpp_gen_context &yajlpp_gen_context::with_context(yajlpp_parse_context &ypc)
 {
     this->ygc_obj_stack = ypc.ypc_obj_stack;
-    this->ygc_base_name = ypc.get_path_fragment(-1);
     if (ypc.ypc_current_handler == nullptr &&
         !ypc.ypc_handler_stack.empty() &&
         ypc.ypc_handler_stack.back() != nullptr) {

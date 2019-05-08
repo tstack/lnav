@@ -30,7 +30,7 @@
 #include "config.h"
 
 #include "timer.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 static const struct itimerval DISABLE_TV = {
     { 0, 0 },

@@ -40,9 +40,9 @@
 #include <iterator>
 #include <algorithm>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "lnav_util.hh"
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "byte_array.hh"
 #include "data_scanner.hh"
 

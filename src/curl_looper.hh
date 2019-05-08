@@ -59,9 +59,9 @@ public:
 #include <curl/curl.h>
 
 #include "auto_mem.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "lnav_util.hh"
-#include "pthreadpp.hh"
+#include "base/pthreadpp.hh"
 
 class curl_request {
 public:

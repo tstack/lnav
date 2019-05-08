@@ -52,7 +52,7 @@
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 /**
  * Base class for delegates of the xterm_mouse class.
@@ -102,39 +102,20 @@ public:
     /**
      * @return True if the user's terminal supports xterm-mouse events.
      */
-    static bool is_available()
-    {
-        const char *termname = getenv("TERM");
-        bool retval = false;
-
-        if (termname and strstr(termname, "xterm") != NULL) {
-            retval = isatty(STDOUT_FILENO);
-        }
-        return retval;
-    };
-
-    xterm_mouse() : xm_enabled(false), xm_behavior(NULL) {};
+    static bool is_available();
 
     ~xterm_mouse()
     {
-        if (this->is_enabled())
+        if (this->is_enabled()) {
             set_enabled(false);
+        }
     };
 
     /**
      * @param enabled True if xterm mouse support should be enabled in the
      *   terminal.
      */
-    void set_enabled(bool enabled)
-    {
-        if (is_available()) {
-            putp(tparm((char *)XT_TERMCAP, enabled ? 1 : 0));
-            putp(tparm((char *)XT_TERMCAP_TRACKING, enabled ? 1 : 0));
-            putp(tparm((char *)XT_TERMCAP_SGR, enabled ? 1 : 0));
-            fflush(stdout);
-            this->xm_enabled = enabled;
-        }
-    };
+    void set_enabled(bool enabled);
 
     /**
      * @return True if xterm mouse support is enabled, false otherwise.
@@ -158,47 +139,10 @@ public:
      * Handle a KEY_MOUSE character from ncurses.
      * @param ch unused
      */
-    void handle_mouse()
-    {
-        bool release = false;
-        int ch;
-        size_t index = 0;
-        int bstate, x, y;
-        char buffer[64];
-        bool done = false;
-
-        while (!done) {
-            if (index >= sizeof(buffer) - 1) {
-                break;
-            }
-            ch = getch();
-            switch (ch) {
-            case 'm':
-                release = true;
-                done = true;
-                break;
-            case 'M':
-                done = true;
-                break;
-            default:
-                buffer[index++] = (char)ch;
-                break;
-            }
-        }
-        buffer[index] = '\0';
-
-        if (sscanf(buffer, "<%d;%d;%d", &bstate, &x, &y) == 3) {
-            if (this->xm_behavior) {
-                this->xm_behavior->mouse_event(bstate, release, x, y);
-            }
-        }
-        else {
-            log_error("bad mouse escape sequence: %s", buffer);
-        }
-    };
+    void handle_mouse();
 
 private:
-    bool            xm_enabled;
-    mouse_behavior *xm_behavior;
+    bool            xm_enabled{false};
+    mouse_behavior *xm_behavior{nullptr};
 };
 #endif

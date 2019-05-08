@@ -83,7 +83,7 @@
 #include "help.hh"
 #include "init-sql.hh"
 #include "logfile.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "log_accel.hh"
 #include "lnav_util.hh"
 #include "ansi_scrubber.hh"
@@ -133,7 +133,7 @@
 #endif
 
 #include "papertrail_proc.hh"
-#include "yajlpp.hh"
+#include "yajlpp/yajlpp.hh"
 #include "readline_callbacks.hh"
 #include "command_executor.hh"
 #include "plain_text_source.hh"
@@ -338,8 +338,8 @@ bool setup_logline_table(exec_context &ec)
 
         for (const auto &pair : sqlite_function_help) {
             switch (pair.second->ht_context) {
-                case HC_SQL_FUNCTION:
-                case HC_SQL_TABLE_VALUED_FUNCTION: {
+                case help_context_t::HC_SQL_FUNCTION:
+                case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
                     string poss = pair.first +
                         (pair.second->ht_parameters.empty() ? "()" : ("("));
 

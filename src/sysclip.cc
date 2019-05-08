@@ -33,7 +33,7 @@
 
 #include <stdio.h>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "sysclip.hh"
 
 struct clip_command {

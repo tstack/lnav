@@ -33,7 +33,7 @@
 
 #include "yajl/api/yajl_gen.h"
 
-#include "json_ptr.hh"
+#include "yajlpp/json_ptr.hh"
 
 using namespace std;
 
@@ -114,14 +114,14 @@ static int handle_map_key(void *ctx, const unsigned char * key, size_t len)
     required_len = json_ptr::encode(partially_encoded_key, sizeof(partially_encoded_key),
         (const char *)key, len);
     if (required_len < sizeof(partially_encoded_key)) {
-        jpw->jpw_keys.push_back(string(partially_encoded_key, required_len));
+        jpw->jpw_keys.emplace_back(&partially_encoded_key[0], required_len);
     }
     else {
         char fully_encoded_key[required_len];
 
         json_ptr::encode(fully_encoded_key, sizeof(fully_encoded_key),
             (const char *)key, len);
-        jpw->jpw_keys.push_back(string(fully_encoded_key, required_len));
+        jpw->jpw_keys.emplace_back(&fully_encoded_key[0], required_len);
     }
 
     return 1;
@@ -163,8 +163,8 @@ static int handle_end_array(void *ctx)
 const yajl_callbacks json_ptr_walk::callbacks = {
     handle_null,
     handle_boolean,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
     handle_number,
     handle_string,
     handle_start_map,
@@ -362,7 +362,7 @@ bool json_ptr::expect_array(int32_t &depth, int32_t &index)
     else if (this->reached_end()) {
         retval = true;
     }
-    else if (this->jp_pos[0] == '/') {
+    else if (this->jp_pos[0] == '/' && index == this->jp_array_index) {
         int offset;
 
         this->jp_depth += 1;
@@ -433,6 +433,28 @@ bool json_ptr::at_index(int32_t &depth, int32_t &index, bool primitive)
     else {
         retval = false;
     }
+
+    return retval;
+}
+
+std::string json_ptr_walk::current_ptr()
+{
+    std::string retval;
+
+    for (size_t lpc = 0; lpc < this->jpw_array_indexes.size(); lpc++) {
+        retval.append("/");
+        if (this->jpw_array_indexes[lpc] == -1) {
+            retval.append(this->jpw_keys[lpc]);
+        }
+        else {
+            char num[64];
+
+            snprintf(num, sizeof(num), "%d", this->jpw_array_indexes[lpc]);
+            retval.append(num);
+        }
+    }
+
+    this->jpw_max_ptr_len = std::max(this->jpw_max_ptr_len, retval.size());
 
     return retval;
 }

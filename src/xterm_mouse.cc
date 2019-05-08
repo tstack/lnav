@@ -34,3 +34,66 @@
 const char *xterm_mouse::XT_TERMCAP          = "\033[?1000%?%p1%{1}%=%th%el%;";
 const char *xterm_mouse::XT_TERMCAP_TRACKING = "\033[?1002%?%p1%{1}%=%th%el%;";
 const char *xterm_mouse::XT_TERMCAP_SGR      = "\033[?1006%?%p1%{1}%=%th%el%;";
+
+void xterm_mouse::handle_mouse()
+{
+    bool release = false;
+    int ch;
+    size_t index = 0;
+    int bstate, x, y;
+    char buffer[64];
+    bool done = false;
+
+    while (!done) {
+        if (index >= sizeof(buffer) - 1) {
+            break;
+        }
+        ch = getch();
+        switch (ch) {
+            case 'm':
+                release = true;
+                done = true;
+                break;
+            case 'M':
+                done = true;
+                break;
+            default:
+                buffer[index++] = (char)ch;
+                break;
+        }
+    }
+    buffer[index] = '\0';
+
+    if (sscanf(buffer, "<%d;%d;%d", &bstate, &x, &y) == 3) {
+        if (this->xm_behavior) {
+            this->xm_behavior->mouse_event(bstate, release, x, y);
+        }
+    }
+    else {
+        log_error("bad mouse escape sequence: %s", buffer);
+    }
+}
+
+void xterm_mouse::set_enabled(bool enabled)
+{
+    if (is_available()) {
+        putp(tparm((char *)XT_TERMCAP, enabled ? 1 : 0));
+        putp(tparm((char *)XT_TERMCAP_TRACKING, enabled ? 1 : 0));
+        putp(tparm((char *)XT_TERMCAP_SGR, enabled ? 1 : 0));
+        fflush(stdout);
+        this->xm_enabled = enabled;
+    } else {
+        log_warning("mouse support is not available");
+    }
+}
+
+bool xterm_mouse::is_available()
+{
+    const char *termname = getenv("TERM");
+    bool retval = false;
+
+    if (termname and strstr(termname, "xterm") != NULL) {
+        retval = isatty(STDOUT_FILENO);
+    }
+    return retval;
+}

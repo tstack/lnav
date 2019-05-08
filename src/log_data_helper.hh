@@ -41,8 +41,8 @@
 #include "logfile_sub_source.hh"
 #include "data_parser.hh"
 #include "column_namer.hh"
-#include "json_ptr.hh"
-#include "lnav_log.hh"
+#include "yajlpp/json_ptr.hh"
+#include "base/lnav_log.hh"
 #include "sql_util.hh"
 
 class log_data_helper

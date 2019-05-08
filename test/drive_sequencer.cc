@@ -43,7 +43,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "logfile.hh"
 #include "sequence_sink.hh"
 #include "sequence_matcher.hh"

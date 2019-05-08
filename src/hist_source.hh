@@ -40,7 +40,7 @@
 
 #include "mapbox/variant.hpp"
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "strong_int.hh"
 #include "textview_curses.hh"
 

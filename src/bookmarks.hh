@@ -40,7 +40,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 struct bookmark_metadata {
     static std::set<std::string> KNOWN_TAGS;

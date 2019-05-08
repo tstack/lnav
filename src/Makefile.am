@@ -1,4 +1,6 @@
 
+SUBDIRS = base fmtlib pcrepp yajl yajlpp .
+
 bin_PROGRAMS = lnav
 
 noinst_PROGRAMS = bin2c ptimec lnav-test
@@ -129,6 +131,11 @@ AM_CPPFLAGS = \
 
 LDADD = \
 	libdiag.a \
+	base/libbase.a \
+	fmtlib/libcppfmt.a \
+	pcrepp/libpcrepp.a \
+	yajl/libyajl.a \
+	yajlpp/libyajlpp.a \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
@@ -186,6 +193,7 @@ noinst_HEADERS = \
 	grep_proc.hh \
 	help.hh \
 	help.txt \
+	help_text.hh \
 	help_text_formatter.hh \
 	highlighter.hh \
 	hist_source.hh \
@@ -195,15 +203,12 @@ noinst_HEADERS = \
 	input_dispatcher.hh \
 	intern_string.hh \
 	is_utf8.hh \
-	json_op.hh \
-	json_ptr.hh \
 	k_merge_tree.h \
 	line_buffer.hh \
 	listview_curses.hh \
 	lnav.hh \
 	lnav_commands.hh \
 	lnav_config.hh \
-	lnav_log.hh \
 	lnav_util.hh \
 	log_accel.hh \
 	log_actions.hh \
@@ -223,12 +228,10 @@ noinst_HEADERS = \
 	mapbox/variant_visitor.hpp \
 	optional.hpp \
 	papertrail_proc.hh \
-	pcrepp.hh \
 	piper_proc.hh \
 	plain_text_source.hh \
 	pretty_printer.hh \
 	preview_status_source.hh \
-	pthreadpp.hh \
 	ptimec.hh \
 	readline_callbacks.hh \
 	readline_curses.hh \
@@ -270,8 +273,6 @@ noinst_HEADERS = \
 	log_format_impls.cc \
 	xterm_mouse.hh \
 	xterm-palette.hh \
-	yajlpp.hh \
-	yajlpp_def.hh \
 	spookyhash/SpookyV2.h \
 	filesystem/fwd.h \
 	filesystem/path.h \
@@ -287,22 +288,6 @@ noinst_HEADERS = \
     fmtlib/fmt/printf.h \
     fmtlib/fmt/posix.h \
     fmtlib/fmt/format.h
-
-if USE_INCLUDED_YAJL
-noinst_HEADERS += yajl/api/yajl_common.h \
-	yajl/api/yajl_gen.h \
-	yajl/api/yajl_parse.h \
-	yajl/api/yajl_tree.h \
-	yajl/yajl_alloc.h \
-	yajl/yajl_buf.h \
-	yajl/yajl_bytestack.h \
-	yajl/yajl_common.h \
-	yajl/yajl_encode.h \
-	yajl/yajl_lex.h \
-	yajl/yajl_parser.h \
-	yajl/yajl_version.h
-endif
-
 
 libdiag_a_SOURCES = \
 	ansi-palette.c \
@@ -332,13 +317,10 @@ libdiag_a_SOURCES = \
 	intern_string.cc \
 	is_utf8.cc \
 	json-extension-functions.cc \
-	json_op.cc \
-	json_ptr.cc \
 	line_buffer.cc \
 	listview_curses.cc \
 	lnav_commands.cc \
 	lnav_config.cc \
-	lnav_log.cc \
 	lnav_util.cc \
 	log_accel.cc \
 	log_actions.cc \
@@ -370,7 +352,6 @@ libdiag_a_SOURCES = \
 	string-extension-functions.cc \
 	text_format.cc \
 	timer.cc \
-	pcrepp.cc \
 	piper_proc.cc \
 	sql_util.cc \
 	state-extension-functions.cc \
@@ -388,28 +369,7 @@ libdiag_a_SOURCES = \
 	log_vtab_impl.cc \
 	xterm_mouse.cc \
 	xterm-palette.c \
-	yajlpp.cc \
-	spookyhash/SpookyV2.cpp \
-	fmtlib/posix.cc \
-    fmtlib/format.cc
-
-if USE_INCLUDED_YAJL
-libdiag_a_SOURCES += yajl/yajl.c \
-	yajl/yajl_alloc.c \
-	yajl/yajl_alloc.h \
-	yajl/yajl_buf.c \
-	yajl/yajl_buf.h \
-	yajl/yajl_bytestack.h \
-	yajl/yajl_encode.c \
-	yajl/yajl_encode.h \
-	yajl/yajl_gen.c \
-	yajl/yajl_lex.c \
-	yajl/yajl_lex.h \
-	yajl/yajl_parser.c \
-	yajl/yajl_parser.h \
-	yajl/yajl_tree.c \
-	yajl/yajl_version.c
-endif
+	spookyhash/SpookyV2.cpp
 
 TEXT2C_FILES = \
 	ansi-palette.o \

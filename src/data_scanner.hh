@@ -32,7 +32,7 @@
 
 #include <string>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "shared_buffer.hh"
 
 enum data_token_t {

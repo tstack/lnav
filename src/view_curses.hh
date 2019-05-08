@@ -60,7 +60,7 @@
 #include <functional>
 #include <algorithm>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "attr_line.hh"
 #include "optional.hpp"
 #include "lnav_util.hh"

@@ -40,7 +40,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "lnav_util.hh"
 #include "grep_proc.hh"
 #include "listview_curses.hh"

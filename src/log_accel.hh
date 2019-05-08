@@ -37,7 +37,7 @@
 #include <cmath>
 #include <algorithm>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 /**
  * Helper class for figuring out changes in the log message rate.

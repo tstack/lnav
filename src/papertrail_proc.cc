@@ -35,7 +35,7 @@
 #include <curl/curl.h>
 
 #include "papertrail_proc.hh"
-#include "yajlpp_def.hh"
+#include "yajlpp/yajlpp_def.hh"
 #include "yajl/api/yajl_parse.h"
 
 const char *papertrail_proc::PT_SEARCH_URL =

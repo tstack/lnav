@@ -30,7 +30,7 @@
 #include "config.h"
 
 #include "elem_to_json.hh"
-#include "yajlpp.hh"
+#include "yajlpp/yajlpp.hh"
 
 using namespace std;
 

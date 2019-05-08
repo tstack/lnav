@@ -34,7 +34,7 @@
 #include <vector>
 
 #include "view_curses.hh"
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "ansi_scrubber.hh"
 
 using namespace std;

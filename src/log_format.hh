@@ -48,9 +48,9 @@
 #include <sstream>
 
 #include "optional.hpp"
-#include "pcrepp.hh"
-#include "yajlpp.hh"
-#include "lnav_log.hh"
+#include "pcrepp/pcrepp.hh"
+#include "yajlpp/yajlpp.hh"
+#include "base/lnav_log.hh"
 #include "lnav_util.hh"
 #include "byte_array.hh"
 #include "view_curses.hh"

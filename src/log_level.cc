@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "log_level.hh"
 
 const char *level_names[LEVEL__MAX + 1] = {

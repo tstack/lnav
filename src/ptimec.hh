@@ -448,7 +448,7 @@ inline void ftime_i(char *dst, off_t &off_inout, ssize_t len, const struct exttm
     off_inout = strlen(dst);
 }
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 inline bool ptime_6(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {

@@ -1,7 +1,5 @@
-#include <utility>
-
 /**
- * Copyright (c) 2014, Timothy Stack
+ * Copyright (c) 2014-2019, Timothy Stack
  *
  * All rights reserved.
  *
@@ -95,26 +93,7 @@ public:
         }
     };
 
-    std::string current_ptr() {
-        std::string retval;
-
-        for (size_t lpc = 0; lpc < this->jpw_array_indexes.size(); lpc++) {
-            retval.append("/");
-            if (this->jpw_array_indexes[lpc] == -1) {
-                retval.append(this->jpw_keys[lpc]);
-            }
-            else {
-                char num[64];
-
-                snprintf(num, sizeof(num), "%d", this->jpw_array_indexes[lpc]);
-                retval.append(num);
-            }
-        }
-
-        this->jpw_max_ptr_len = std::max(this->jpw_max_ptr_len, retval.size());
-
-        return retval;
-    };
+    std::string current_ptr();
 
     struct walk_triple {
         walk_triple(std::string ptr, yajl_type type, std::string value)

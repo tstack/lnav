@@ -31,7 +31,7 @@
 
 #include "config.h"
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 
 #include "text_format.hh"
 

@@ -36,7 +36,7 @@
 
 #include <map>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "vt52_curses.hh"
 
 #if defined HAVE_NCURSESW_CURSES_H

@@ -48,6 +48,7 @@
 #  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
+#include "base/lnav_log.hh"
 #include "input_dispatcher.hh"
 
 void input_dispatcher::new_input(const struct timeval &current_time, int ch)
@@ -63,12 +64,12 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
             break;
         default:
             if (this->id_escape_index > 0) {
+                this->append_to_escape_buffer(ch);
+
                 if (strcmp("\x1b[", this->id_escape_buffer) == 0) {
                     this->id_mouse_handler();
                     this->id_escape_index = 0;
                 } else {
-                    this->append_to_escape_buffer(ch);
-
                     switch (this->id_escape_matcher(this->id_escape_buffer)) {
                         case escape_match_t::NONE:
                             for (int lpc = 0; this->id_escape_buffer[lpc]; lpc++) {

@@ -36,7 +36,7 @@
 
 #include <string>
 
-#include "json_ptr.hh"
+#include "yajlpp/json_ptr.hh"
 #include "yajl/api/yajl_parse.h"
 
 class json_op {
@@ -55,27 +55,23 @@ public:
     const static yajl_callbacks gen_callbacks;
     const static yajl_callbacks ptr_callbacks;
 
-    json_op(json_ptr &ptr)
-        : jo_depth(0),
-          jo_array_index(-1),
-          jo_ptr(ptr),
-          jo_ptr_data(NULL),
-          jo_ptr_error_code(0) {
-        memset(&this->jo_ptr_callbacks, 0, sizeof(this->jo_ptr_callbacks));
+    explicit json_op(const json_ptr &ptr)
+        : jo_ptr(ptr),
+          jo_ptr_callbacks(gen_callbacks) {
     };
 
     bool check_index(bool primitive = true) {
         return this->jo_ptr.at_index(this->jo_depth, this->jo_array_index, primitive);
     };
 
-    int jo_depth;
-    int jo_array_index;
+    int jo_depth{0};
+    int jo_array_index{-1};
 
     json_ptr jo_ptr;
     yajl_callbacks jo_ptr_callbacks;
-    void *jo_ptr_data;
+    void *jo_ptr_data{nullptr};
     std::string jo_ptr_error;
-    int jo_ptr_error_code;
+    int jo_ptr_error_code{0};
 };
 
 #endif

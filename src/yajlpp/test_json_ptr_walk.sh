@@ -35,7 +35,7 @@ check_output "array" <<EOF
 EOF
 
 run_test ./drive_json_ptr_walk <<EOF
-[1, 2, 3, [4, 5, 6]]
+[1, 2, 3, [4, 5, 6], 7, 8, 9, [10, 11, [12, 13, 14], 15], 16]
 EOF
 
 check_output "nested array" <<EOF
@@ -45,6 +45,16 @@ check_output "nested array" <<EOF
 /3/0 = 4
 /3/1 = 5
 /3/2 = 6
+/4 = 7
+/5 = 8
+/6 = 9
+/7/0 = 10
+/7/1 = 11
+/7/2/0 = 12
+/7/2/1 = 13
+/7/2/2 = 14
+/7/3 = 15
+/8 = 16
 EOF
 
 run_test ./drive_json_ptr_walk <<EOF

@@ -34,8 +34,8 @@
 #include <string.h>
 #include <strings.h>
 
-#include "yajlpp.hh"
-#include "yajlpp_def.hh"
+#include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 #include "sql_util.hh"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"

@@ -332,6 +332,7 @@ extern const ssize_t ZOOM_COUNT;
 void rebuild_hist();
 void rebuild_indexes();
 void execute_examples();
+attr_line_t eval_example(const help_text &ht, const help_example &ex);
 
 bool ensure_view(textview_curses *expected_tc);
 bool toggle_view(textview_curses *toggle_tc);

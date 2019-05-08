@@ -33,7 +33,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "data_scanner.hh"
 
 using namespace std;

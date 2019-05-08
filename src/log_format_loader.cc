@@ -41,8 +41,8 @@
 #include <string>
 #include <fstream>
 
-#include "yajlpp.hh"
-#include "yajlpp_def.hh"
+#include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 #include "lnav_config.hh"
 #include "log_format.hh"
 #include "auto_fd.hh"

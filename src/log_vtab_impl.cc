@@ -29,10 +29,10 @@
 
 #include "config.h"
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "sql_util.hh"
 #include "log_vtab_impl.hh"
-#include "yajlpp_def.hh"
+#include "yajlpp/yajlpp_def.hh"
 #include "vtab_module.hh"
 
 #include "logfile_sub_source.hh"

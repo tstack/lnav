@@ -38,7 +38,7 @@
 #include <sys/queue.h>
 
 #include "auto_mem.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 class shared_buffer;
 

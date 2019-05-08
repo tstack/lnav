@@ -42,7 +42,7 @@
 
 #include "auto_fd.hh"
 #include "lnav_util.hh"
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "lnav_config.hh"
 
 using namespace std;

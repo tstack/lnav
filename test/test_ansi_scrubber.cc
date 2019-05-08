@@ -46,7 +46,6 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     view_colors &vc = view_colors::singleton();
-    string_attrs_t::iterator iter;
     string_attrs_t sa;
     string str_cp;
 

@@ -39,7 +39,7 @@
 
 #include <exception>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
 #include "shared_buffer.hh"

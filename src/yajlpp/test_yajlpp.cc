@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, Timothy Stack
+ * Copyright (c) 2013, Timothy Stack
  *
  * All rights reserved.
  *
@@ -15,7 +15,7 @@
  * may be used to endorse or promote products derived from this software
  * without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY TIMOTHY STACK AND CONTRIBUTORS ''AS IS'' AND ANY
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -26,48 +26,47 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file test_json_ptr.cc
+ * @file test_yajlpp.cc
  */
 
 #include "config.h"
 
-#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <assert.h>
 
-#include "json_ptr.hh"
+#include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
-int main(int argc, const char *argv[])
+const char *TEST_DATA =
+    "[{ \"foo\": 0 }, { \"foo\": 1 }]";
+
+static int FOO_COUNT = 0;
+
+static int read_foo(yajlpp_parse_context *ypc, long long value)
 {
-    int32_t depth, index;
+    assert(value == FOO_COUNT);
+    assert(ypc->ypc_array_index.back() == FOO_COUNT);
 
-    {
-        json_ptr jptr("");
+    FOO_COUNT += 1;
 
-        depth = 0;
-        index = -1;
-        assert(jptr.at_index(depth, index));
-    }
+    return 1;
+}
 
-    {
-        json_ptr jptr("/");
+int main(int argc, char *argv[])
+{
+    struct json_path_handler test_handlers[] = {
+        json_path_handler("#/foo", read_foo),
 
-        depth = 0;
-        index = -1;
-        assert(!jptr.at_index(depth, index));
-        assert(jptr.expect_map(depth, index));
-        assert(jptr.at_index(depth, index));
-    }
+        json_path_handler()
+    };
 
-    {
-        json_ptr jptr("/foo/bar");
+    yajlpp_parse_context ypc("test_data", test_handlers);
+    yajl_handle handle;
 
-        depth = 0;
-        index = -1;
-        assert(jptr.expect_map(depth, index));
-        assert(jptr.at_key(depth, "foo"));
-        assert(jptr.expect_map(depth, index));
-        assert(jptr.at_key(depth, "bar"));
-        assert(jptr.at_index(depth, index));
-    }
+    handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+    yajl_parse(handle, (const unsigned char *)TEST_DATA, strlen(TEST_DATA));
+    yajl_complete_parse(handle);
+    yajl_free(handle);
+
+    assert(FOO_COUNT == 2);
 }

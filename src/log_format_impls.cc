@@ -33,7 +33,7 @@
 
 #include <stdio.h>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
 #include "log_format.hh"
 #include "log_vtab_impl.hh"

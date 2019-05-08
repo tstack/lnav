@@ -35,7 +35,7 @@
 
 #include <string>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 
 int main(int argc, char *argv[])
 {

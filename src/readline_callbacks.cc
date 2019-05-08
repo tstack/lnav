@@ -221,7 +221,7 @@ void rl_change(void *dummy, readline_curses *rc)
 
                     al.clear();
                     etc.get_dimensions(height, width);
-                    format_example_text_for_term(ht, width, al);
+                    format_example_text_for_term(ht, eval_example, width, al);
                     lnav_data.ld_example_source.replace_with(al);
                 }
 
@@ -418,7 +418,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
                 format_help_text_for_term(ht, min(70UL, doc_width), doc_al,
                                           help_count > 1);
                 if (help_count == 1) {
-                    format_example_text_for_term(ht, ex_width, ex_al);
+                    format_example_text_for_term(ht, eval_example, ex_width, ex_al);
                 }
             }
 

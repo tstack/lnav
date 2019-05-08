@@ -40,7 +40,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include "yajlpp.hh"
+#include "yajlpp/yajlpp.hh"
 #include "log_level.hh"
 #include "styling.hh"
 

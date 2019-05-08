@@ -35,12 +35,12 @@
 #include <string>
 
 #include "auto_mem.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "view_curses.hh"
 #include "ansi_scrubber.hh"
 #include "lnav_config.hh"
-#include "yajlpp.hh"
-#include "yajlpp_def.hh"
+#include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 #include "xterm-palette.hh"
 #include "attr_line.hh"
 #include "shlex.hh"

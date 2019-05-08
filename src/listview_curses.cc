@@ -36,7 +36,7 @@
 
 #include <cmath>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "listview_curses.hh"
 
 using namespace std;

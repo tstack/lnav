@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "json_ptr.hh"
+#include "yajlpp/json_ptr.hh"
 #include "db_sub_source.hh"
 
 const char *db_label_source::NULL_STR = "<NULL>";

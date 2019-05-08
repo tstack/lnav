@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2007-2019, Timothy Stack
  *
  * All rights reserved.
  *
@@ -29,8 +29,8 @@
  * @file auto_mem.hh
  */
 
-#ifndef __auto_mem_hh
-#define __auto_mem_hh
+#ifndef lnav_auto_mem_hh
+#define lnav_auto_mem_hh
 
 #include <string.h>
 #include <unistd.h>
@@ -49,23 +49,24 @@ typedef void (*free_func_t)(void *);
 template<class T, free_func_t default_free = free>
 class auto_mem {
 public:
-    auto_mem(T *ptr = NULL) : am_ptr(ptr), am_free_func(default_free) { };
+    explicit auto_mem(T *ptr = nullptr)
+        : am_ptr(ptr), am_free_func(default_free) {
+    };
 
-    auto_mem(auto_mem & am)
+    auto_mem(auto_mem &am)
         : am_ptr(am.release()), am_free_func(am.am_free_func)
     {};
 
     template<typename F>
-    auto_mem(F free_func)
-        : am_ptr(NULL), am_free_func((free_func_t)free_func) { };
+    explicit auto_mem(F free_func)
+        : am_ptr(nullptr), am_free_func((free_func_t)free_func) { };
 
-    auto_mem(auto_mem &&other) : am_ptr(nullptr) {
-        this->reset(other.release());
-        this->am_free_func = other.am_free_func;
+    auto_mem(auto_mem &&other) noexcept
+        : am_ptr(other.release()),
+          am_free_func(other.am_free_func) {
     };
 
-    ~auto_mem()
-    {
+    ~auto_mem() {
         this->reset();
     };
 
@@ -88,7 +89,7 @@ public:
     {
         T *retval = this->am_ptr;
 
-        this->am_ptr = NULL;
+        this->am_ptr = nullptr;
         return retval;
     };
 
@@ -103,10 +104,10 @@ public:
         return &this->am_ptr;
     };
 
-    void reset(T *ptr = NULL)
+    void reset(T *ptr = nullptr)
     {
         if (this->am_ptr != ptr) {
-            if (this->am_ptr != NULL) {
+            if (this->am_ptr != nullptr) {
                 this->am_free_func((void *)this->am_ptr);
             }
             this->am_ptr = ptr;
@@ -121,18 +122,17 @@ private:
 template<typename T, void(*free_func) (T *)>
 class static_root_mem {
 public:
-    static_root_mem()
-    {
+    static_root_mem() {
         memset(&this->srm_value, 0, sizeof(T));
     };
 
     ~static_root_mem() { free_func(&this->srm_value); };
 
-    const T *operator->(void) const { return &this->srm_value; };
+    const T *operator->() const { return &this->srm_value; };
 
-    const T &in(void) const { return this->srm_value; };
+    const T &in() const { return this->srm_value; };
 
-    T *inout(void) {
+    T *inout() {
         free_func(&this->srm_value);
         memset(&this->srm_value, 0, sizeof(T));
         return &this->srm_value;
@@ -145,4 +145,5 @@ private:
 
     T srm_value;
 };
+
 #endif

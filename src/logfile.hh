@@ -44,7 +44,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "byte_array.hh"
 #include "line_buffer.hh"
 #include "log_format.hh"

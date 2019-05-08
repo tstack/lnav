@@ -50,10 +50,10 @@
 #include <vector>
 #include <exception>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "strong_int.hh"
 #include "line_buffer.hh"
 

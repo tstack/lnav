@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2013-2019, Timothy Stack
  *
  * All rights reserved.
  *
@@ -47,7 +47,7 @@
 #include <functional>
 
 #include "optional.hpp"
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 #include "json_ptr.hh"
 #include "intern_string.hh"
 
@@ -135,17 +135,16 @@ struct json_path_handler_base {
     json_path_handler_base(const char *path)
             : jph_path(path),
               jph_regex(path, PCRE_ANCHORED),
-              jph_gen_callback(NULL),
+              jph_gen_callback(nullptr),
               jph_field_getter(nullptr),
-              jph_obj_provider(NULL),
-              jph_path_provider(NULL),
+              jph_obj_provider(nullptr),
+              jph_path_provider(nullptr),
               jph_synopsis(""),
               jph_description(""),
-              jph_children(NULL),
-              jph_kv_pair(false),
+              jph_children(nullptr),
               jph_min_length(0),
               jph_max_length(INT_MAX),
-              jph_enum_values(NULL),
+              jph_enum_values(nullptr),
               jph_min_value(LLONG_MIN),
               jph_optional_wrapper(false)
     {
@@ -184,7 +183,6 @@ struct json_path_handler_base {
     const char *   jph_synopsis;
     const char *   jph_description;
     json_path_handler_base *jph_children;
-    bool           jph_kv_pair;
     std::shared_ptr<pcrepp> jph_pattern;
     const char * jph_pattern_re{nullptr};
     std::function<void(const string_fragment &)> jph_string_validator;
@@ -368,7 +366,7 @@ public:
         }
     };
 
-    yajl_status complete_parse();;
+    yajl_status complete_parse();
 
     void report_error(lnav_log_level_t level, const char *format, ...) {
         va_list args;
@@ -587,17 +585,20 @@ public:
     int ygc_depth;
     std::stack<void *> ygc_default_stack;
     std::stack<void *> ygc_obj_stack;
-    std::string ygc_base_name;
     json_path_handler *ygc_handlers;
 };
 
 class yajlpp_gen {
 public:
     yajlpp_gen() : yg_handle(yajl_gen_free) {
-        this->yg_handle = yajl_gen_alloc(NULL);
+        this->yg_handle = yajl_gen_alloc(nullptr);
     };
 
-    operator yajl_gen_t *() {
+    yajl_gen get_handle() const {
+        return this->yg_handle.in();
+    };
+
+    operator yajl_gen () {
         return this->yg_handle.in();
     };
 

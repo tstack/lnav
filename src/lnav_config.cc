@@ -42,17 +42,18 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <fmt/format.h>
 
 #include "pcrecpp.h"
 
 #include "auto_fd.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "lnav_util.hh"
 #include "auto_mem.hh"
 #include "auto_pid.hh"
 #include "lnav_config.hh"
-#include "yajlpp.hh"
-#include "yajlpp_def.hh"
+#include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 #include "shlex.hh"
 #include "styling.hh"
 
@@ -830,48 +831,34 @@ void reset_config(const std::string &path)
 
 string save_config()
 {
-    auto_mem<yajl_gen_t> handle(yajl_gen_free);
+    yajlpp_gen gen;
+    string filename = fmt::format("config.json.{}.tmp", getpid());
+    string user_config_tmp = dotlnav_path(filename.c_str());
+    string user_config = dotlnav_path("config.json");
 
-    if ((handle = yajl_gen_alloc(NULL)) == NULL) {
-        return "error: Unable to create yajl_gen_object";
-    }
-    else {
-        char filename[128];
+    yajl_gen_config(gen, yajl_gen_beautify, true);
+    yajlpp_gen_context ygc(gen, lnav_config_handlers);
+    vector<string> errors;
 
-        snprintf(filename, sizeof(filename), "config.json.%d.tmp", getpid());
+    ygc.with_default_obj(lnav_default_config)
+       .with_obj(lnav_config);
+    ygc.gen();
 
-        string user_config_tmp = dotlnav_path(filename);
-        string user_config = dotlnav_path("config.json");
+    {
+        auto_fd fd;
 
-        yajl_gen_config(handle, yajl_gen_beautify, true);
+        if ((fd = open(user_config_tmp.c_str(),
+                       O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
+            return "error: unable to save configuration -- " +
+                   string(strerror(errno));
+        } else {
+            string_fragment bits = gen.to_string_fragment();
 
-        yajlpp_gen_context ygc(handle, lnav_config_handlers);
-        vector<string> errors;
-
-        ygc.with_default_obj(lnav_default_config)
-           .with_obj(lnav_config);
-        ygc.gen();
-
-        const unsigned char *buffer;
-        size_t len;
-
-        yajl_gen_get_buf(handle, &buffer, &len);
-
-        {
-            auto_fd fd;
-
-            if ((fd = open(user_config_tmp.c_str(),
-                           O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1) {
-                return "error: unable to save configuration -- " +
-                       string(strerror(errno));
-            }
-            else {
-                log_perror(write(fd, buffer, len));
-            }
+            log_perror(write(fd, bits.data(), bits.length()));
         }
-
-        rename(user_config_tmp.c_str(), user_config.c_str());
     }
+
+    rename(user_config_tmp.c_str(), user_config.c_str());
 
     return "info: configuration saved";
 }

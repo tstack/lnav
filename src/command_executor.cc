@@ -31,7 +31,7 @@
 
 #include <vector>
 
-#include "json_ptr.hh"
+#include "yajlpp/json_ptr.hh"
 #include "pcrecpp.h"
 #include "lnav.hh"
 #include "log_format_loader.hh"

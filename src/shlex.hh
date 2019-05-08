@@ -36,7 +36,7 @@
 #include <vector>
 #include <string>
 
-#include "pcrepp.hh"
+#include "pcrepp/pcrepp.hh"
 
 enum shlex_token_t {
     ST_ERROR,

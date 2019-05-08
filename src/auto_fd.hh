@@ -39,7 +39,7 @@
 #include <new>
 #include <exception>
 
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 
 /**
  * Resource management class for file descriptors.

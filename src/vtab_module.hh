@@ -37,7 +37,7 @@
 #include <utility>
 
 #include "optional.hpp"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "lnav_util.hh"
 #include "auto_mem.hh"
 #include "yajl/api/yajl_gen.h"

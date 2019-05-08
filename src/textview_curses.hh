@@ -39,7 +39,7 @@
 #include "grep_proc.hh"
 #include "bookmarks.hh"
 #include "listview_curses.hh"
-#include "lnav_log.hh"
+#include "base/lnav_log.hh"
 #include "text_format.hh"
 #include "logfile.hh"
 #include "highlighter.hh"
