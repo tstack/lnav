@@ -52,3 +52,14 @@ TESTS = \
     test_json_ptr \
 	test_json_ptr_walk.sh \
     test_yajlpp
+
+DISTCLEANFILES = \
+	*.dat \
+	*.err \
+	*.db \
+	*.dpt \
+	*.diff \
+	*.index \
+	*.tmp \
+	*.gz \
+	*.bz2
