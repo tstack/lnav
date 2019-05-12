@@ -450,6 +450,12 @@ static struct json_path_handler theme_styles_handlers[] = {
             return &root->lt_style_popup;
         })
         .with_children(style_config_handlers),
+    json_path_handler("scrollbar/")
+        .with_description("Styling for scrollbars")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_scrollbar;
+        })
+        .with_children(style_config_handlers),
 
     json_path_handler()
 };

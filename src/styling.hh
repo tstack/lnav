@@ -71,6 +71,7 @@ struct lnav_theme {
     style_config lt_style_error;
     style_config lt_style_warning;
     style_config lt_style_popup;
+    style_config lt_style_scrollbar;
     style_config lt_style_hidden;
     style_config lt_style_adjusted_time;
     style_config lt_style_skewed_time;

@@ -351,6 +351,9 @@ public:
         VCR_STATUS_STITCH_TITLE_TO_NORMAL,
         VCR_STATUS_STITCH_NORMAL_TO_TITLE,
         VCR_INACTIVE_STATUS,
+        VCR_SCROLLBAR,
+        VCR_SCROLLBAR_ERROR,
+        VCR_SCROLLBAR_WARNING,
         VCR_POPUP,
         VCR_COLOR_HINT,
 
@@ -437,9 +440,10 @@ public:
     static const int VC_ANSI_START = 0;
     static const int VC_ANSI_END = VC_ANSI_START + (8 * 8);
 
-    std::pair<attr_t, attr_t> to_attrs(int &pair_base,
-        const lnav_theme &lt, const style_config &sc,
-                    lnav_config_listener::error_reporter &reporter);
+    std::pair<attr_t, attr_t> to_attrs(
+        int &pair_base,
+        const lnav_theme &lt, const style_config &sc, const style_config &fallback_sc,
+        lnav_config_listener::error_reporter &reporter);
 
     std::pair<attr_t, attr_t> vc_level_attrs[LEVEL__MAX];
 

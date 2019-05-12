@@ -51,8 +51,12 @@
                         "color": "$cyan"
                     },
                     "popup": {
-                        "color": "$base00",
-                        "background-color": "$base3"
+                        "color": "$white",
+                        "background-color": "$cyan"
+                    },
+                    "scrollbar": {
+                        "color": "$black",
+                        "background-color": "#888"
                     }
                 },
                 "syntax-styles": {

@@ -64,13 +64,13 @@ public:
         next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
         if (next != -1 && next <= end) {
             role_out = view_colors::VCR_ERROR;
-            bar_role_out = view_colors::VCR_ALERT_STATUS;
+            bar_role_out = view_colors::VCR_SCROLLBAR_ERROR;
         }
         else {
             next = bm[&logfile_sub_source::BM_WARNINGS].next(vis_line_t(start));
             if (next != -1 && next <= end) {
                 role_out = view_colors::VCR_WARNING;
-                bar_role_out = view_colors::VCR_WARN_STATUS;
+                bar_role_out = view_colors::VCR_SCROLLBAR_WARNING;
             }
         }
     };

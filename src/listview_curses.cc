@@ -260,7 +260,7 @@ void listview_curses::do_update()
                  gutter_y++) {
                 int range_start = 0, range_end;
                 view_colors::role_t role = this->vc_default_role;
-                view_colors::role_t bar_role = view_colors::VCR_STATUS;
+                view_colors::role_t bar_role = view_colors::VCR_SCROLLBAR;
                 int attrs;
                 chtype ch = ACS_VLINE;
 
