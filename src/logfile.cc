@@ -498,7 +498,7 @@ void logfile::read_full_message(logfile::iterator ll,
                 stream.write("\n", 1);
             }
             if (this->lf_line_buffer.read_line(off, sbr)) {
-                this->lf_format->get_subline(*ll, sbr);
+                this->lf_format->get_subline(*ll, sbr, true);
                 stream.write(sbr.get_data(), sbr.length());
             }
             else {
@@ -512,7 +512,7 @@ void logfile::read_full_message(logfile::iterator ll,
         if (max_lines != -1) {
             max_lines -= 1;
         }
-    } while (ll != this->end() && ll->is_continued() &&
+    } while (ll != this->end() && ll->is_continued() && ll->get_sub_offset() == 0 &&
              (max_lines == -1 || max_lines > 0));
 
     msg_out = stream.str();

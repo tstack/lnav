@@ -5,8 +5,9 @@
         "file-pattern" : "logfile_json\\.json",
         "description" : "Test config",
         "line-format" : [
+            "\n[",
             { "field" : "ts" },
-            " ",
+            "] ",
             { "field" : "lvl" },
             " ",
             { "field" : "msg" }

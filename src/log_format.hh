@@ -1261,6 +1261,7 @@ public:
 
     bool jlf_hide_extra;
     std::vector<json_format_element> jlf_line_format;
+    int jlf_line_format_init_count{0};
     std::vector<logline_value> jlf_line_values;
 
     off_t jlf_cached_offset;

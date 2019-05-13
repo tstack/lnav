@@ -45,21 +45,6 @@
 
 using namespace std;
 
-/*
- * Supported formats:
- *   generic
- *   syslog
- *   apache
- *   tcpdump
- *   strace
- *   vstrace
- *   csv (?)
- *   file system (?)
- *   plugins
- *   vmstat
- *   iostat
- */
-
 string_attr_type logline::L_PREFIX("prefix");
 string_attr_type logline::L_TIMESTAMP("timestamp");
 string_attr_type logline::L_FILE("file");
@@ -393,8 +378,7 @@ static int json_array_end(void *ctx)
 
         sbr.subset(jlu->jlu_shared_buffer, jlu->jlu_sub_start,
             sub_end - jlu->jlu_sub_start);
-        jlu->jlu_format->jlf_line_values.push_back(
-            logline_value(field_name, sbr));
+        jlu->jlu_format->jlf_line_values.emplace_back(field_name, sbr);
         jlu->jlu_format->jlf_line_values.back().lv_kind = logline_value::VALUE_JSON;
     }
 
@@ -548,6 +532,7 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
                 return log_format::SCAN_NO_MATCH;
             }
 
+            jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
                 if (lpc > 0) {
@@ -797,7 +782,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         lr.lr_start = line.length();
         lr.lr_end = line.length();
     }
-    sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
+    sa.emplace_back(lr, &textview_curses::SA_BODY);
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const indexed_value_def &ivd = pat.p_value_by_index[lpc];
@@ -1196,7 +1181,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                 }
             }
             this->json_append_to_cache("\n", 1);
-            int sub_offset = 1;
+            int sub_offset = 1 + this->jlf_line_format_init_count;
 
             for (size_t lpc = 0; lpc < this->jlf_line_values.size(); lpc++) {
                 static const intern_string_t body_name = intern_string::lookup(
@@ -1236,7 +1221,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
             this->jlf_line_offsets.push_back(0);
             for (size_t lpc = 0; lpc < this->jlf_cached_line.size(); lpc++) {
                 if (this->jlf_cached_line[lpc] == '\n') {
-                    this->jlf_line_offsets.push_back(lpc);
+                    this->jlf_line_offsets.push_back(lpc + 1);
                 }
             }
             this->jlf_line_offsets.push_back(this->jlf_cached_line.size());
@@ -1252,14 +1237,14 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         require(ll.get_sub_offset() < this->jlf_line_offsets.size());
 
         this_off = this->jlf_line_offsets[ll.get_sub_offset()];
-        if (this->jlf_cached_line[this_off] == '\n') {
-            this_off += 1;
-        }
         if ((ll.get_sub_offset() + 1) < (int)this->jlf_line_offsets.size()) {
             next_off = this->jlf_line_offsets[ll.get_sub_offset() + 1];
         }
         else {
-            next_off = this_off;
+            next_off = this->jlf_cached_line.size();
+        }
+        if (next_off > 0 && this->jlf_cached_line[next_off - 1] == '\n') {
+            next_off -= 1;
         }
     }
 
@@ -1680,6 +1665,12 @@ void external_log_format::build(std::vector<std::string> &errors) {
                 }
                 break;
             }
+            case JLF_CONSTANT:
+                this->jlf_line_format_init_count +=
+                    std::count(jfe.jfe_default_value.begin(),
+                               jfe.jfe_default_value.end(),
+                               '\n');
+                break;
             default:
                 break;
         }

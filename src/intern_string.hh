@@ -193,6 +193,8 @@ private:
 
 class intern_string_t {
 public:
+    using iterator = const char *;
+
     intern_string_t(const intern_string *is = nullptr) : ist_interned_string(is) {
 
     }
@@ -214,6 +216,14 @@ public:
             return "";
         }
         return this->ist_interned_string->get();
+    }
+
+    iterator begin() const {
+        return this->get();
+    }
+
+    iterator end() const {
+        return this->get() + this->size();
     }
 
     size_t size() const {

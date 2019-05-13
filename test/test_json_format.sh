@@ -17,20 +17,33 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_json.json
 
 check_output "json log format is not working" <<EOF
-2013-09-06T20:00:48.124 TRACE trace test
-2013-09-06T20:00:49.124 INFO Starting up service
-2013-09-06T22:00:49.124 INFO Shutting down service
+
+[2013-09-06T20:00:48.124] TRACE trace test
+
+[2013-09-06T20:00:49.124] INFO Starting up service
+
+[2013-09-06T22:00:49.124] INFO Shutting down service
   user: steve@example.com
-2013-09-06T22:00:59.124 DEBUG5 Details...
-2013-09-06T22:00:59.124 DEBUG4 Details...
-2013-09-06T22:00:59.124 DEBUG3 Details...
-2013-09-06T22:00:59.124 DEBUG2 Details...
-2013-09-06T22:00:59.124 DEBUG Details...
-2013-09-06T22:01:49.124 STATS 1 beat per second
-2013-09-06T22:01:49.124 WARNING not looking good
-2013-09-06T22:01:49.124 ERROR looking bad
-2013-09-06T22:01:49.124 CRITICAL sooo bad
-2013-09-06T22:01:49.124 FATAL shoot
+
+[2013-09-06T22:00:59.124] DEBUG5 Details...
+
+[2013-09-06T22:00:59.124] DEBUG4 Details...
+
+[2013-09-06T22:00:59.124] DEBUG3 Details...
+
+[2013-09-06T22:00:59.124] DEBUG2 Details...
+
+[2013-09-06T22:00:59.124] DEBUG Details...
+
+[2013-09-06T22:01:49.124] STATS 1 beat per second
+
+[2013-09-06T22:01:49.124] WARNING not looking good
+
+[2013-09-06T22:01:49.124] ERROR looking bad
+
+[2013-09-06T22:01:49.124] CRITICAL sooo bad
+
+[2013-09-06T22:01:49.124] FATAL shoot
   obj: { "field1" : "hi", "field2": 2 }
   arr: ["hi", {"sub1": true}]
 EOF
@@ -43,28 +56,19 @@ run_test ${lnav_test} -n -I ${test_dir} \
     ${test_dir}/logfile_json.json
 
 check_output "json log format is not working" <<EOF
-2013-09-06T20:00:48.124 TRACE trace testbork bork bork
-2013-09-06T20:00:49.124 INFO Starting up servicebork bork bork
-2013-09-06T22:00:49.124 INFO Shutting down servicebork bork bork
+[2013-09-06T20:00:48.124] TRACE trace testbork bork bork
+[2013-09-06T20:00:49.124] INFO Starting up servicebork bork bork
+[2013-09-06T22:00:49.124] INFO Shutting down servicebork bork bork
 user: mailto:steve@example.com
-2013-09-06T22:00:59.124 DEBUG5 Details...bork bork bork
-2013-09-06T22:00:59.124 DEBUG4 Details...bork bork bork
-2013-09-06T22:00:59.124 DEBUG3 Details...bork bork bork
-2013-09-06T22:00:59.124 DEBUG2 Details...bork bork bork
-2013-09-06T22:00:59.124 DEBUG Details...bork bork bork
-2013-09-06T22:01:49.124 STATS 1 beat per secondbork bork bork
-2013-09-06T22:01:49.124 WARNING not looking goodbork bork bork
-2013-09-06T22:01:49.124 ERROR looking badbork bork bork
-2013-09-06T22:01:49.124 CRITICAL sooo badbork bork bork
-2013-09-06T22:01:49.124 FATAL shootbork bork bork
-obj: {
-    "field1" : "hi",
-    "field2": 2
-}
-arr: [
-    "hi",
-        {"sub1": true}
-]
+[2013-09-06T22:00:59.124] DEBUG5 Details...bork bork bork
+[2013-09-06T22:00:59.124] DEBUG4 Details...bork bork bork
+[2013-09-06T22:00:59.124] DEBUG3 Details...bork bork bork
+[2013-09-06T22:00:59.124] DEBUG2 Details...bork bork bork
+[2013-09-06T22:00:59.124] DEBUG Details...bork bork bork
+[2013-09-06T22:01:49.124] STATS 1 beat per secondbork bork bork
+[2013-09-06T22:01:49.124] WARNING not looking goodbork bork bork
+[2013-09-06T22:01:49.124] ERROR looking badbork bork bork
+[2013-09-06T22:01:49.124] CRITICAL sooo badbork bork bor
 EOF
 
 
@@ -135,18 +139,18 @@ run_test ${lnav_test} -n \
 check_output "log levels not working" <<EOF
 log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,arr,obj,user
 0,<NULL>,2013-09-06 20:00:48.124,0,trace,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-1,<NULL>,2013-09-06 20:00:49.124,1000,info,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-2,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,[],<NULL>,<NULL>,steve@example.com
-4,<NULL>,2013-09-06 22:00:59.124,10000,debug5,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-5,<NULL>,2013-09-06 22:00:59.124,0,debug4,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-6,<NULL>,2013-09-06 22:00:59.124,0,debug3,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-7,<NULL>,2013-09-06 22:00:59.124,0,debug2,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-8,<NULL>,2013-09-06 22:00:59.124,0,debug,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-9,<NULL>,2013-09-06 22:01:49.124,50000,stats,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-10,<NULL>,2013-09-06 22:01:49.124,0,warning,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-11,<NULL>,2013-09-06 22:01:49.124,0,error,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-12,<NULL>,2013-09-06 22:01:49.124,0,critical,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
-13,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>,<NULL>,[],"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",<NULL>
+2,<NULL>,2013-09-06 20:00:49.124,1000,info,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+4,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,[],<NULL>,<NULL>,steve@example.com
+7,<NULL>,2013-09-06 22:00:59.124,10000,debug5,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+9,<NULL>,2013-09-06 22:00:59.124,0,debug4,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+11,<NULL>,2013-09-06 22:00:59.124,0,debug3,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+13,<NULL>,2013-09-06 22:00:59.124,0,debug2,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+15,<NULL>,2013-09-06 22:00:59.124,0,debug,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+17,<NULL>,2013-09-06 22:01:49.124,50000,stats,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+19,<NULL>,2013-09-06 22:01:49.124,0,warning,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+21,<NULL>,2013-09-06 22:01:49.124,0,error,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+23,<NULL>,2013-09-06 22:01:49.124,0,critical,0,<NULL>,<NULL>,[],<NULL>,<NULL>,<NULL>
+25,<NULL>,2013-09-06 22:01:49.124,0,fatal,0,<NULL>,<NULL>,[],"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",<NULL>
 EOF
 
 
@@ -175,7 +179,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 1,
+        "log_line": 2,
         "log_part": null,
         "log_time": "2013-09-06 20:00:49.124",
         "log_idle_msecs": 1000,
@@ -191,7 +195,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 2,
+        "log_line": 4,
         "log_part": null,
         "log_time": "2013-09-06 22:00:49.124",
         "log_idle_msecs": 7200000,
@@ -207,7 +211,7 @@ check_output "json output not working" <<EOF
         "user": "steve@example.com"
     },
     {
-        "log_line": 4,
+        "log_line": 7,
         "log_part": null,
         "log_time": "2013-09-06 22:00:59.124",
         "log_idle_msecs": 10000,
@@ -223,7 +227,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 5,
+        "log_line": 9,
         "log_part": null,
         "log_time": "2013-09-06 22:00:59.124",
         "log_idle_msecs": 0,
@@ -239,7 +243,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 6,
+        "log_line": 11,
         "log_part": null,
         "log_time": "2013-09-06 22:00:59.124",
         "log_idle_msecs": 0,
@@ -255,7 +259,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 7,
+        "log_line": 13,
         "log_part": null,
         "log_time": "2013-09-06 22:00:59.124",
         "log_idle_msecs": 0,
@@ -271,7 +275,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 8,
+        "log_line": 15,
         "log_part": null,
         "log_time": "2013-09-06 22:00:59.124",
         "log_idle_msecs": 0,
@@ -287,7 +291,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 9,
+        "log_line": 17,
         "log_part": null,
         "log_time": "2013-09-06 22:01:49.124",
         "log_idle_msecs": 50000,
@@ -303,7 +307,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 10,
+        "log_line": 19,
         "log_part": null,
         "log_time": "2013-09-06 22:01:49.124",
         "log_idle_msecs": 0,
@@ -319,7 +323,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 11,
+        "log_line": 21,
         "log_part": null,
         "log_time": "2013-09-06 22:01:49.124",
         "log_idle_msecs": 0,
@@ -335,7 +339,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 12,
+        "log_line": 23,
         "log_part": null,
         "log_time": "2013-09-06 22:01:49.124",
         "log_idle_msecs": 0,
@@ -351,7 +355,7 @@ check_output "json output not working" <<EOF
         "user": null
     },
     {
-        "log_line": 13,
+        "log_line": 25,
         "log_part": null,
         "log_time": "2013-09-06 22:01:49.124",
         "log_idle_msecs": 0,
@@ -405,12 +409,13 @@ EOF
 
 run_test ${lnav_test} -n \
     -I ${test_dir} \
-    -c ":goto 2" \
+    -c ":goto 4" \
     -c ":pipe-line-to sed -e 's/2013//g'" \
     -c ":switch-to-view text" \
     ${test_dir}/logfile_json.json
 check_output "pipe-line-to is not working" <<EOF
--09-06T22:00:49.124 INFO Shutting down service
+
+[-09-06T22:00:49.124] INFO Shutting down service
   user: steve@example.com
 
 EOF
