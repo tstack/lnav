@@ -28,11 +28,13 @@ warning:  unexpected path --
 warning:    /ui
 warning:  accepted paths --
 warning:    /ui/  -- User-interface settings
+warning:    /global/  -- Global variable definitions
 warning:formats/invalid-config/config.truncated.json:line 2
 warning:  unexpected path --
 warning:    /ui
 warning:  accepted paths --
 warning:    /ui/  -- User-interface settings
+warning:    /global/  -- Global variable definitions
 error:formats/invalid-config/config.malformed.json:3:invalid json -- parse error: object key and value must be separated by a colon (':')
                "ui": "theme",     "abc",     "def": "" }
                      (right here) ------^

@@ -41,16 +41,20 @@
 #include <string>
 #include <fstream>
 
+#include "fmt/format.h"
+
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 #include "lnav_config.hh"
 #include "log_format.hh"
 #include "auto_fd.hh"
 #include "sql_util.hh"
-#include "format-text-files.hh"
-#include "default-log-formats-json.hh"
+#include "builtin-scripts.h"
+#include "builtin-sh-scripts.h"
+#include "default-log-formats-json.h"
 
 #include "log_format_loader.hh"
+#include "bin2c.h"
 
 using namespace std;
 
@@ -660,30 +664,26 @@ static void write_sample_file(void)
                           O_WRONLY|O_TRUNC|O_CREAT,
                           0644)) == -1 ||
         (write(sample_fd.get(),
-               default_log_formats_json,
-               strlen(default_log_formats_json)) == -1)) {
+               default_log_formats_json.bsf_data,
+               default_log_formats_json.bsf_size) == -1)) {
         perror("error: unable to write default format file");
     }
 
-    string sh_path = dotlnav_path("formats/default/dump-pid.sh");
-    auto_fd sh_fd;
+    for (int lpc = 0; lnav_sh_scripts[lpc].bsf_name; lpc++) {
+        struct bin_src_file &bsf = lnav_sh_scripts[lpc];
+        string sh_path = dotlnav_path(fmt::format("formats/default/{}", bsf.bsf_name).c_str());
+        auto_fd sh_fd;
 
-    if ((sh_fd = open(sh_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
-        write(sh_fd.get(), dump_pid_sh, strlen(dump_pid_sh)) == -1) {
-        perror("error: unable to write default text file");
+        if ((sh_fd = open(sh_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
+            write(sh_fd.get(), bsf.bsf_data, strlen((const char *) bsf.bsf_data)) == -1) {
+            perror("error: unable to write default text file");
+        }
     }
 
-    static const char *SCRIPTS[] = {
-            partition_by_boot_lnav,
-            dhclient_summary_lnav,
-            lnav_pop_view_lnav,
-            search_for_lnav,
-            NULL
-    };
-
-    for (int lpc = 0; SCRIPTS[lpc]; lpc++) {
+    for (int lpc = 0; lnav_scripts[lpc].bsf_name; lpc++) {
         struct script_metadata meta;
-        const char *script_content = SCRIPTS[lpc];
+        struct bin_src_file &bsf = lnav_scripts[lpc];
+        const char *script_content = reinterpret_cast<const char *>(bsf.bsf_data);
         string script_path;
         auto_fd script_fd;
         char path[2048];
@@ -834,10 +834,10 @@ void load_formats(const std::vector<std::string> &extra_paths,
         .with_error_reporter(format_error_reporter)
         .ypc_userdata = &ud;
     yajl_config(handle, yajl_allow_comments, 1);
-    if (ypc_builtin.parse((const unsigned char *)default_log_formats_json,
-                          strlen(default_log_formats_json)) != yajl_status_ok) {
+    if (ypc_builtin.parse(default_log_formats_json.bsf_data,
+                          default_log_formats_json.bsf_size) != yajl_status_ok) {
         errors.push_back("builtin: invalid json -- " +
-            string((char *)yajl_get_error(handle, 1, (unsigned char *)default_log_formats_json, strlen(default_log_formats_json))));
+            string((char *)yajl_get_error(handle, 1, default_log_formats_json.bsf_data, default_log_formats_json.bsf_size)));
     }
     ypc_builtin.complete_parse();
     yajl_free(handle);

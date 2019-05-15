@@ -80,8 +80,8 @@
 #endif
 
 #include "lnav.hh"
-#include "help.hh"
-#include "init-sql.hh"
+#include "help-txt.h"
+#include "init-sql.h"
 #include "logfile.hh"
 #include "base/lnav_log.hh"
 #include "log_accel.hh"
@@ -2116,7 +2116,7 @@ int main(int argc, char *argv[])
         auto_mem<char, sqlite3_free> errmsg;
 
         if (sqlite3_exec(lnav_data.ld_db.in(),
-                         init_sql,
+                         (const char *) init_sql.bsf_data,
                          nullptr,
                          nullptr,
                          errmsg.out()) != SQLITE_OK) {

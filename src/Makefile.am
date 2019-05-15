@@ -19,18 +19,10 @@ RE2C_V = $(RE2C_V_@AM_V@)
 RE2C_V_ = $(RE2C_V_@AM_DEFAULT_V@)
 RE2C_V_0 = @echo "  RE2C   " $@;
 
-help.c: $(srcdir)/help.txt bin2c
-	$(BIN2C_V)./bin2c -z -c $(srcdir)/help.txt $@
-
-dump-pid-sh.c: $(srcdir)/dump-pid.sh bin2c
-	$(BIN2C_V)./bin2c -z -c $(srcdir)/dump-pid.sh $@
-
-default-log-formats-json.c: $(srcdir)/default-log-formats.json bin2c
-	$(BIN2C_V)./bin2c -z -c $(srcdir)/default-log-formats.json $@
-
 CONFIG_FILES = \
     $(srcdir)/root-config.json \
-    $(srcdir)/themes/default.json \
+    $(srcdir)/keymaps/default-keymap.json \
+    $(srcdir)/themes/default-theme.json \
     $(srcdir)/themes/eldar.json \
     $(srcdir)/themes/monocai.json \
     $(srcdir)/themes/night-owl.json \
@@ -38,20 +30,40 @@ CONFIG_FILES = \
     $(srcdir)/themes/solarized-light.json \
     $()
 
-default-config.json: $(CONFIG_FILES)
-	cat $(CONFIG_FILES) > $@
+default-config.h default-config.c: bin2c $(CONFIG_FILES)
+	$(BIN2C_V)./bin2c -n lnav_config_json default-config $(CONFIG_FILES)
 
-default-config-json.c: default-config.json bin2c
-	$(BIN2C_V)./bin2c -z -c default-config.json $@
+BUILTIN_LNAVSCRIPTS = \
+    $(srcdir)/scripts/dhclient-summary.lnav \
+    $(srcdir)/scripts/lnav-pop-view.lnav \
+    $(srcdir)/scripts/partition-by-boot.lnav \
+    $(srcdir)/scripts/search-for.lnav \
+    $()
 
-init-sql.c: bin2c init.sql
-	$(BIN2C_V)./bin2c -z -c $(srcdir)/init.sql $@
+builtin-scripts.h builtin-scripts.c: bin2c $(BUILTIN_LNAVSCRIPTS)
+	$(BIN2C_V)./bin2c -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
 
-%.c: $(srcdir)/%.lnav bin2c
-	$(BIN2C_V)./bin2c -z -c $< $@
+BUILTIN_SHSCRIPTS = \
+    $(srcdir)/scripts/dump-pid.sh \
+    $()
 
-%.c: $(srcdir)/%.json bin2c
-	$(BIN2C_V)./bin2c -z -c $< $@
+builtin-sh-scripts.h builtin-sh-scripts.c: bin2c $(BUILTIN_SHSCRIPTS)
+	$(BIN2C_V)./bin2c -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
+
+%-sh.c: $(srcdir)/%.sh bin2c
+	$(BIN2C_V)./bin2c $(*)-sh $<
+
+%-txt.c %-txt.h: $(srcdir)/%.txt bin2c
+	$(BIN2C_V)./bin2c $(*)-txt $<
+
+%-sql.c %-sql.h: $(srcdir)/%.sql bin2c
+	$(BIN2C_V)./bin2c $(*)-sql $<
+
+%-lnav.c %-lnav.h: $(srcdir)/%.lnav bin2c
+	$(BIN2C_V)./bin2c $(*)-lnav $<
+
+%-json.c %-json.h: $(srcdir)/%.json bin2c
+	$(BIN2C_V)./bin2c $(*)-json $<
 
 TIME_FORMATS = \
     "@%@" \
@@ -145,20 +157,40 @@ LDADD = \
 
 dist_noinst_DATA = \
 	alpha-release.sh \
+	ansi-palette.json \
 	default-log-formats.json \
-	dhclient-summary.lnav \
-	dump-pid.sh \
-	lnav-pop-view.lnav \
-	keymap-default.json \
-	partition-by-boot.lnav \
+	keymaps/default-keymap.json \
 	root-config.json \
-	search-for.lnav \
-	themes/default.json \
+	scripts/dhclient-summary.lnav \
+	scripts/dump-pid.sh \
+	scripts/lnav-pop-view.lnav \
+	scripts/partition-by-boot.lnav \
+	scripts/search-for.lnav \
+	themes/default-theme.json \
 	themes/eldar.json \
     themes/monocai.json \
     themes/night-owl.json \
 	themes/solarized-dark.json \
-	themes/solarized-light.json
+	themes/solarized-light.json \
+	xterm-palette.json
+
+BUILT_SOURCES = \
+    ansi-palette-json.h \
+    ansi-palette-json.c \
+    builtin-scripts.h \
+    builtin-scripts.c \
+    builtin-sh-scripts.h \
+    builtin-sh-scripts.c \
+    default-config.h \
+    default-config.c \
+    default-log-formats-json.h \
+    default-log-formats-json.c \
+    help-txt.h \
+    help-txt.c \
+    init-sql.h \
+    init-sql.c \
+    xterm-palette-json.h \
+    xterm-palette-json.c
 
 noinst_HEADERS = \
 	all_logs_vtab.hh \
@@ -168,8 +200,10 @@ noinst_HEADERS = \
 	auto_mem.hh \
 	auto_pid.hh \
 	big_array.hh \
+	bin2c.h \
 	bookmarks.hh \
 	bottom_status_source.hh \
+	builtin-scripts.h \
 	byte_array.hh \
 	column_namer.hh \
 	command_executor.hh \
@@ -177,7 +211,6 @@ noinst_HEADERS = \
 	data_scanner.hh \
 	data_scanner_re.re \
 	data_parser.hh \
-	default-log-formats-json.hh \
 	db_sub_source.hh \
 	doc_status_source.hh \
 	doctest.hh \
@@ -188,12 +221,10 @@ noinst_HEADERS = \
 	filter_observer.hh \
 	filter_status_source.hh \
 	filter_sub_source.hh \
-	format-text-files.hh \
 	fstat_vtab.hh \
 	fts_fuzzy_match.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
-	help.hh \
 	help.txt \
 	help_text.hh \
 	help_text_formatter.hh \
@@ -201,7 +232,7 @@ noinst_HEADERS = \
 	hist_source.hh \
 	hotkeys.hh \
 	init.sql \
-	init-sql.hh \
+	init-sql.h \
 	input_dispatcher.hh \
 	intern_string.hh \
 	is_utf8.hh \
@@ -274,7 +305,6 @@ noinst_HEADERS = \
 	log_vtab_impl.hh \
 	log_format_impls.cc \
 	xterm_mouse.hh \
-	xterm-palette.hh \
 	spookyhash/SpookyV2.h \
 	filesystem/fwd.h \
 	filesystem/path.h \
@@ -292,7 +322,7 @@ noinst_HEADERS = \
     fmtlib/fmt/format.h
 
 libdiag_a_SOURCES = \
-	ansi-palette.c \
+    $(BUILT_SOURCES) \
 	ansi_scrubber.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \
@@ -370,29 +400,24 @@ libdiag_a_SOURCES = \
 	vtab_module.cc \
 	log_vtab_impl.cc \
 	xterm_mouse.cc \
-	xterm-palette.c \
 	spookyhash/SpookyV2.cpp
 
 TEXT2C_FILES = \
-	ansi-palette.o \
-	dump-pid-sh.o \
-	help.o \
+	ansi-palette-json.o \
+	builtin-scripts.o \
+	builtin-sh-scripts.o \
+	help-txt.o \
 	init-sql.o \
 	default-log-formats-json.o \
-	default-config-json.o \
-	dhclient-summary.o \
-	keymap-default.o \
-	lnav-pop-view.o \
-	partition-by-boot.o \
-	search-for.o \
-	xterm-palette.o
+	default-config.o \
+	xterm-palette-json.o
 
-lnav_SOURCES = lnav.cc $(HELP_SRC)
+lnav_SOURCES = lnav.cc
 lnav_LDADD = \
 	$(TEXT2C_FILES) \
 	$(LDADD)
 
-lnav_test_SOURCES = lnav.cc $(HELP_SRC) test_override.c
+lnav_test_SOURCES = lnav.cc test_override.c
 lnav_test_LDADD = \
 	$(TEXT2C_FILES) \
 	$(LDADD)
@@ -404,17 +429,15 @@ ptimec_SOURCES = ptimec.cc
 ptimec_LDADD =
 
 DISTCLEANFILES = \
-    ansi-palette.c \
+    $(BUILT_SOURCES) \
 	data_scanner_re.cc \
 	default-config.json \
-	default-config-json.c \
+	default-config.c \
 	default-log-formats-json.c \
-	dump-pid-sh.c \
-	help.c \
+	help-txt.c \
 	init-sql.c \
 	log_level_re.cc \
-    time_fmts.cc \
-    xterm-palette.c
+    time_fmts.cc
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \

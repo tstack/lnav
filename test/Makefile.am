@@ -54,16 +54,14 @@ AM_LDFLAGS = \
 	-pthread
 
 CONFIG_OBJS = \
-	../src/default-config-json.o \
-	../src/keymap-default.o
+	../src/ansi-palette-json.o \
+	../src/default-config.o \
+	../src/xterm-palette-json.o
 
 TEXT2C_OBJS = \
 	../src/default-log-formats-json.o \
-	../src/dhclient-summary.o \
-	../src/dump-pid-sh.o \
-	../src/lnav-pop-view.o \
-	../src/partition-by-boot.o \
-	../src/search-for.o
+	../src/builtin-scripts.o \
+	../src/builtin-sh-scripts.o
 
 LDADD = \
     -lz \

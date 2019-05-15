@@ -41,7 +41,8 @@
 #include "lnav_config.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
-#include "xterm-palette.hh"
+#include "ansi-palette-json.h"
+#include "xterm-palette-json.h"
 #include "attr_line.hh"
 #include "shlex.hh"
 
@@ -135,8 +136,8 @@ struct term_color_palette {
     vector<term_color> tc_palette;
 };
 
-term_color_palette xterm_colors(xterm_palette_json);
-term_color_palette ansi_colors(ansi_palette_json);
+term_color_palette xterm_colors(xterm_palette_json.bsf_data);
+term_color_palette ansi_colors(ansi_palette_json.bsf_data);
 
 term_color_palette *ACTIVE_PALETTE = &ansi_colors;
 

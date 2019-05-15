@@ -109,7 +109,6 @@ set(diag_STAT_SRCS
         command_executor.hh
         column_namer.hh
         curl_looper.hh
-        default-log-formats-json.hh
         doc_status_source.hh
         elem_to_json.hh
         field_overlay_source.hh
@@ -117,16 +116,13 @@ set(diag_STAT_SRCS
         filter_observer.hh
         filter_status_source.hh
         filter_sub_source.hh
-        format-text-files.hh
         fstat_vtab.hh
         fts_fuzzy_match.hh
         grep_highlighter.hh
-        help.hh
         help_text.hh
         help_text_formatter.hh
         highlighter.hh
         hotkeys.hh
-        init-sql.hh
         input_dispatcher.hh
         intern_string.hh
         is_utf8.hh
@@ -169,7 +165,6 @@ set(diag_STAT_SRCS
         url_loader.hh
         views_vtab.hh
         vtab_module.hh
-        xterm-palette.hh
         yajlpp/yajlpp.hh
         yajlpp/yajlpp_def.hh
 
@@ -214,3 +209,5 @@ include_directories(
 )
 include_directories(SYSTEM .)
 add_executable(lnav ${lnav_SRCS} ${diag_STAT_SRCS})
+
+add_executable(bin2c bin2c.c)

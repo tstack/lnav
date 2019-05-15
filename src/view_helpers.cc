@@ -35,7 +35,7 @@
 #include "environ_vtab.hh"
 #include "vtab_module.hh"
 #include "shlex.hh"
-#include "help.hh"
+#include "help-txt.h"
 
 using namespace std;
 
@@ -163,7 +163,7 @@ static void build_all_help_text()
     }
 
     attr_line_t all_help_text;
-    shlex lexer(help_txt, strlen(help_txt));
+    shlex lexer((const char *) help_txt.bsf_data, help_txt.bsf_size);
     string sub_help_text;
 
     lexer.with_ignore_quotes(true)
