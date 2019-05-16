@@ -1039,6 +1039,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                 }
             }
 
+            int sub_offset = 1 + this->jlf_line_format_init_count;
             for (const auto &jfe : this->jlf_line_format) {
                 static const intern_string_t ts_field = intern_string::lookup("__timestamp__", -1);
                 static const intern_string_t level_field = intern_string::lookup("__level__");
@@ -1092,6 +1093,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                             }
                         }
                         else {
+                            sub_offset += count(str.begin(), str.end(), '\n');
                             this->json_append(jfe, str.c_str(), str.size());
                         }
 
@@ -1181,7 +1183,6 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                 }
             }
             this->json_append_to_cache("\n", 1);
-            int sub_offset = 1 + this->jlf_line_format_init_count;
 
             for (size_t lpc = 0; lpc < this->jlf_line_values.size(); lpc++) {
                 static const intern_string_t body_name = intern_string::lookup(
