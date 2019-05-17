@@ -148,6 +148,7 @@ class generic_log_format : public log_format {
         const char *last_pos;
 
         if ((last_pos = this->log_scanf(
+                dst.size(),
                 sbr.get_data(),
                 sbr.length(),
                 get_pcre_log_formats(),

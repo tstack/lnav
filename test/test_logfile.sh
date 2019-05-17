@@ -378,6 +378,28 @@ count(*)
       17
 EOF
 
+run_test ${lnav_test} -n \
+    ${srcdir}/logfile_syslog_with_header.0
+
+check_output "multi-pattern logs don't work?" <<EOF
+Header1: abc
+Header2: def
+Nov  3 09:23:38 veridian automount[7998]: lookup(file): lookup for foobar failed
+Nov  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
+Nov  3 09:23:38 veridian automount[7999]: lookup(file): lookup for opt failed
+Nov  3 09:47:02 veridian sudo: timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
+EOF
+
+run_test ${lnav_test} -n \
+    ${srcdir}/logfile_generic_with_header.0
+
+check_output "multi-pattern logs don't work?" <<EOF
+Header1: abc
+Header2: def
+2012-07-02 10:22:40,672:DEBUG:foo bar baz
+2014-10-08 16:56:38,344:WARN:foo bar baz
+EOF
+
 # XXX get this working...
 # run_test ${lnav_test} -n -I ${test_dir} <(cat ${srcdir}/logfile_access_log.0)
 #

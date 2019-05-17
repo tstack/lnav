@@ -146,7 +146,8 @@ bool log_format::next_format(pcre_format *fmt, int &index, int &locked_index)
     return retval;
 }
 
-const char *log_format::log_scanf(const char *line,
+const char *log_format::log_scanf(uint32_t line_number,
+                                  const char *line,
                                   size_t len,
                                   pcre_format *fmt,
                                   const char *time_fmt[],
@@ -184,7 +185,15 @@ const char *log_format::log_scanf(const char *line,
 
             if (retval) {
                 if (curr_fmt != pat_index) {
-                    this->lf_pattern_locks.emplace_back(0, curr_fmt);
+                    uint32_t lock_line;
+
+                    if (this->lf_pattern_locks.empty()) {
+                        lock_line = 0;
+                    } else {
+                        lock_line = line_number;
+                    }
+
+                    this->lf_pattern_locks.emplace_back(lock_line, curr_fmt);
                 }
                 this->lf_timestamp_flags = tm_out->et_flags;
                 done = true;
@@ -672,8 +681,15 @@ log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> 
         dst.emplace_back(offset, log_tv, level, mod_index, opid);
 
         if (orig_lock != curr_fmt) {
+            uint32_t lock_line;
+
             log_debug("changing pattern lock %d -> %d", orig_lock, curr_fmt);
-            this->lf_pattern_locks.emplace_back(dst.size() - 1, curr_fmt);
+            if (this->lf_pattern_locks.empty()) {
+                lock_line = 0;
+            } else {
+                lock_line = dst.size() - 1;
+            }
+            this->lf_pattern_locks.emplace_back(lock_line, curr_fmt);
         }
         return log_format::SCAN_MATCH;
     }

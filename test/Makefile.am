@@ -227,6 +227,7 @@ dist_noinst_DATA = \
 	logfile_generic.0 \
 	logfile_generic.1 \
 	logfile_generic.2 \
+	logfile_generic_with_header.0 \
 	logfile_glog.0 \
 	logfile_haproxy.0 \
 	logfile_journald.json \
@@ -247,6 +248,7 @@ dist_noinst_DATA = \
 	logfile_syslog.2 \
 	logfile_syslog_fr.0 \
 	logfile_syslog_with_access_log.0 \
+	logfile_syslog_with_header.0 \
 	logfile_syslog_with_mixed_times.0 \
 	logfile_tai64n.0 \
 	logfile_tcf.0 \

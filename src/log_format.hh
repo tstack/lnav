@@ -830,7 +830,8 @@ protected:
 
     static bool next_format(pcre_format *fmt, int &index, int &locked_index);
 
-    const char *log_scanf(const char *line,
+    const char *log_scanf(uint32_t line_number,
+                          const char *line,
                           size_t len,
                           pcre_format *fmt,
                           const char *time_fmt[],
