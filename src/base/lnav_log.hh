@@ -29,8 +29,8 @@
  * @file lnav_log.hh
  */
 
-#ifndef __lnav_log_hh
-#define __lnav_log_hh
+#ifndef lnav_log_hh
+#define lnav_log_hh
 
 #include <errno.h>
 #include <stdio.h>
@@ -44,12 +44,14 @@
 #define __dead2 __attribute__((noreturn))
 #endif
 
-enum lnav_log_level_t {
-    LOG_LEVEL_TRACE,
-    LOG_LEVEL_DEBUG,
-    LOG_LEVEL_INFO,
-    LOG_LEVEL_WARNING,
-    LOG_LEVEL_ERROR,
+#include "opt_util.hh"
+
+enum class lnav_log_level_t : uint32_t {
+    TRACE,
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR,
 };
 
 void log_argv(int argc, char *argv[]);
@@ -115,9 +117,9 @@ public:
     LIST_ENTRY(log_crash_recoverer) lcr_link;
 };
 
-extern FILE *lnav_log_file;
+extern nonstd::optional<FILE *> lnav_log_file;
 extern const char *lnav_log_crash_dir;
-extern const struct termios *lnav_log_orig_termios;
+extern nonstd::optional<const struct termios *> lnav_log_orig_termios;
 extern enum lnav_log_level_t lnav_log_level;
 
 #define log_msg_wrapper(level, fmt...) \
@@ -132,33 +134,33 @@ extern enum lnav_log_level_t lnav_log_level;
     log_rusage_raw(level, __FILE__, __LINE__, ru);
 
 #define log_error(fmt...) \
-    log_msg_wrapper(LOG_LEVEL_ERROR, fmt);
+    log_msg_wrapper(lnav_log_level_t::ERROR, fmt);
 
 #define log_warning(fmt...) \
-    log_msg_wrapper(LOG_LEVEL_WARNING, fmt);
+    log_msg_wrapper(lnav_log_level_t::WARNING, fmt);
 
 #define log_info(fmt...) \
-    log_msg_wrapper(LOG_LEVEL_INFO, fmt);
+    log_msg_wrapper(lnav_log_level_t::INFO, fmt);
 
 #define log_debug(fmt...) \
-    log_msg_wrapper(LOG_LEVEL_DEBUG, fmt);
+    log_msg_wrapper(lnav_log_level_t::DEBUG, fmt);
 
 #define log_trace(fmt...) \
-    log_msg_wrapper(LOG_LEVEL_TRACE, fmt);
+    log_msg_wrapper(lnav_log_level_t::TRACE, fmt);
 
 #define require(e)  \
     ((void) ((e) ? 0 : __require (#e, __FILE__, __LINE__)))
 #define __require(e, file, line) \
-    (log_msg(LOG_LEVEL_ERROR, file, line, "failed precondition `%s'", e), log_abort(), 1)
+    (log_msg(lnav_log_level_t::ERROR, file, line, "failed precondition `%s'", e), log_abort(), 1)
 
 #define ensure(e)  \
     ((void) ((e) ? 0 : __ensure (#e, __FILE__, __LINE__)))
 #define __ensure(e, file, line) \
-    (log_msg(LOG_LEVEL_ERROR, file, line, "failed postcondition `%s'", e), log_abort(), 1)
+    (log_msg(lnav_log_level_t::ERROR, file, line, "failed postcondition `%s'", e), log_abort(), 1)
 
 #define log_perror(e)  \
     ((void) ((e != -1) ? 0 : __log_perror (#e, __FILE__, __LINE__)))
 #define __log_perror(e, file, line) \
-    (log_msg(LOG_LEVEL_ERROR, file, line, "syscall failed `%s' -- %s", e, strerror(errno)), 1)
+    (log_msg(lnav_log_level_t::ERROR, file, line, "syscall failed `%s' -- %s", e, strerror(errno)), 1)
 
 #endif

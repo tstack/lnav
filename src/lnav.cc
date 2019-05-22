@@ -1134,11 +1134,6 @@ private:
 static void handle_key(int ch) {
     lnav_data.ld_input_state.push_back(ch);
 
-    if (lnav_data.ld_mode == LNM_PAGING) {
-        auto top_tc = lnav_data.ld_view_stack.top();
-
-    }
-
     switch (ch) {
         case CTRL('d'):
         case KEY_RESIZE:
@@ -1177,7 +1172,7 @@ static input_dispatcher::escape_match_t match_escape_seq(const char *escape_buff
         return input_dispatcher::escape_match_t::NONE;
     }
 
-    char keyseq[32] = "";
+    char keyseq[32 * 3 + 1] = "";
 
     for (size_t lpc = 0; escape_buffer[lpc]; lpc++) {
         snprintf(keyseq + strlen(keyseq), sizeof(keyseq) - strlen(keyseq),
@@ -1185,7 +1180,7 @@ static input_dispatcher::escape_match_t match_escape_seq(const char *escape_buff
                  escape_buffer[lpc]);
     }
 
-    key_map &km = lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap];
+    auto &km = lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap];
     auto iter = km.km_seq_to_cmd.find(keyseq);
     if (iter != km.km_seq_to_cmd.end()) {
         return input_dispatcher::escape_match_t::FULL;
@@ -1211,7 +1206,7 @@ static input_dispatcher::escape_match_t match_escape_seq(const char *escape_buff
 
 static void handle_escape_seq(const char *escape_buffer)
 {
-    char keyseq[32] = "";
+    char keyseq[32 * 3 + 1] = "";
 
     for (size_t lpc = 0; escape_buffer[lpc]; lpc++) {
         snprintf(keyseq + strlen(keyseq), sizeof(keyseq) - strlen(keyseq),
@@ -1928,7 +1923,7 @@ int main(int argc, char *argv[])
 
         case 'd':
             lnav_data.ld_debug_log_name = optarg;
-            lnav_log_level = LOG_LEVEL_TRACE;
+            lnav_log_level = lnav_log_level_t::TRACE;
             break;
 
         case 'a':

@@ -78,6 +78,7 @@
 
 #include "lnav_log.hh"
 #include "pthreadpp.hh"
+#include "enum_util.hh"
 
 static const size_t BUFFER_SIZE = 256 * 1024;
 static const size_t MAX_LOG_LINE_SIZE = 2048;
@@ -92,10 +93,10 @@ static const char *CRASH_MSG =
     "  %s\n"
     "=========================\n";
 
-FILE *lnav_log_file;
-lnav_log_level_t lnav_log_level = LOG_LEVEL_DEBUG;
+nonstd::optional<FILE *> lnav_log_file;
+lnav_log_level_t lnav_log_level = lnav_log_level_t::DEBUG;
 const char *lnav_log_crash_dir;
-const struct termios *lnav_log_orig_termios;
+nonstd::optional<const struct termios *> lnav_log_orig_termios;
 static pthread_mutex_t lnav_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 log_state_dumper::log_state_list log_state_dumper::DUMPER_LIST;
@@ -140,7 +141,7 @@ static char *log_alloc()
 
         new_start = (const char *)memchr(
             new_start, '\n', log_ring.lr_frag_end - log_ring.lr_frag_start);
-        assert(new_start != NULL);
+        assert(new_start != nullptr);
         log_ring.lr_frag_start = new_start - log_ring.lr_data;
         assert(log_ring.lr_frag_start >= 0);
         assert(log_ring.lr_frag_start <= (off_t)BUFFER_SIZE);
@@ -153,7 +154,7 @@ void log_argv(int argc, char *argv[])
 {
     const char *log_path = getenv("LNAV_LOG_PATH");
 
-    if (log_path != NULL) {
+    if (log_path != nullptr) {
         lnav_log_file = fopen(log_path, "a");
     }
 
@@ -190,7 +191,7 @@ void log_host_info()
     log_info("  gid=%d", getgid());
     log_info("  euid=%d", geteuid());
     log_info("  egid=%d", getegid());
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
         log_info("  ERROR: getcwd failed");
     }
     else {
@@ -200,7 +201,7 @@ void log_host_info()
     log_info("  version=%s", VCS_PACKAGE_STRING);
 
     getrusage(RUSAGE_SELF, &ru);
-    log_rusage(LOG_LEVEL_INFO, ru);
+    log_rusage(lnav_log_level_t::INFO, ru);
 }
 
 void log_rusage_raw(enum lnav_log_level_t level, const char *src_file, int line_number, const struct rusage &ru)
@@ -233,7 +234,6 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     struct tm localtm;
     ssize_t prefix_size;
     va_list args;
-    char *line;
     ssize_t rc;
 
     if (level < lnav_log_level) {
@@ -243,9 +243,9 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     mutex_guard mg(lnav_log_mutex);
 
     va_start(args, fmt);
-    gettimeofday(&curr_time, NULL);
+    gettimeofday(&curr_time, nullptr);
     localtime_r(&curr_time.tv_sec, &localtm);
-    line = log_alloc();
+    auto line = log_alloc();
     prefix_size = snprintf(
         line, MAX_LOG_LINE_SIZE,
         "%4d-%02d-%02dT%02d:%02d:%02d.%03d %s %s:%d ",
@@ -256,7 +256,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         localtm.tm_min,
         localtm.tm_sec,
         (int)(curr_time.tv_usec / 1000),
-        LEVEL_NAMES[level],
+        LEVEL_NAMES[to_underlying(level)],
         basename((char *)src_file),
         line_number);
     rc = vsnprintf(&line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,
@@ -266,45 +266,39 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     }
     line[prefix_size + rc] = '\n';
     log_ring.lr_length += prefix_size + rc + 1;
-    if (lnav_log_file != nullptr) {
-        fwrite(line, 1, prefix_size + rc + 1, lnav_log_file);
-        fflush(lnav_log_file);
-    }
+    lnav_log_file | [&](auto file) {
+        fwrite(line, 1, prefix_size + rc + 1, file);
+        fflush(file);
+    };
     va_end(args);
 }
 
 void log_msg_extra(const char *fmt, ...)
 {
-    va_list args;
-    ssize_t rc;
-    char *line;
-
     mutex_guard mg(lnav_log_mutex);
+    va_list args;
 
     va_start(args, fmt);
-    line = log_alloc();
-    rc = vsnprintf(line, MAX_LOG_LINE_SIZE - 1, fmt, args);
+    auto line = log_alloc();
+    auto rc = vsnprintf(line, MAX_LOG_LINE_SIZE - 1, fmt, args);
     log_ring.lr_length += rc;
-    if (lnav_log_file != nullptr) {
-        fwrite(line, 1, rc, lnav_log_file);
-        fflush(lnav_log_file);
-    }
+    lnav_log_file | [&](auto file) {
+        fwrite(line, 1, rc, file);
+        fflush(file);
+    };
     va_end(args);
 }
 
 void log_msg_extra_complete()
 {
-    char *line;
-
     mutex_guard mg(lnav_log_mutex);
-
-    line = log_alloc();
+    auto line = log_alloc();
     line[0] = '\n';
     log_ring.lr_length += 1;
-    if (lnav_log_file != nullptr) {
-        fwrite(line, 1, 1, lnav_log_file);
-        fflush(lnav_log_file);
-    }
+    lnav_log_file | [&](auto file) {
+        fwrite(line, 1, 1, file);
+        fflush(file);
+    };
 }
 
 #pragma GCC diagnostic push
@@ -360,7 +354,7 @@ static void sigabrt(int sig)
             log_state_dumper *lsd;
 
             for (lsd = LIST_FIRST(&log_state_dumper::DUMPER_LIST.lsl_list);
-                 lsd != NULL;
+                 lsd != nullptr;
                  lsd = LIST_NEXT(lsd, lsd_link)) {
                 lsd->log_state();
             }
@@ -377,20 +371,20 @@ static void sigabrt(int sig)
         symlink(crash_path, latest_crash_path);
     }
 
-    if (lnav_log_orig_termios != NULL) {
+    lnav_log_orig_termios | [](auto termios) {
         {
             log_crash_recoverer *lcr;
 
             for (lcr = LIST_FIRST(&log_crash_recoverer::CRASH_LIST.lcl_list);
-                 lcr != NULL;
+                 lcr != nullptr;
                  lcr = LIST_NEXT(lcr, lcr_link)) {
                 lcr->log_crash_recover();
             }
         }
 
-        tcsetattr(STDOUT_FILENO, TCSAFLUSH, lnav_log_orig_termios);
+        tcsetattr(STDOUT_FILENO, TCSAFLUSH, termios);
         dup2(STDOUT_FILENO, STDERR_FILENO);
-    }
+    };
     fprintf(stderr, CRASH_MSG, crash_path);
 
 #ifndef ATTACH_ON_SIGNAL
@@ -409,11 +403,11 @@ static void sigabrt(int sig)
                     char pid_str[32];
 
                     snprintf(pid_str, sizeof(pid_str), "--pid=%d", lnav_pid);
-                    execlp("gdb", "gdb", pid_str, NULL);
+                    execlp("gdb", "gdb", pid_str, nullptr);
 
                     snprintf(pid_str, sizeof(pid_str),
                         "--attach-pid=%d", lnav_pid);
-                    execlp("lldb", "lldb", pid_str, NULL);
+                    execlp("lldb", "lldb", pid_str, nullptr);
 
                     fprintf(stderr, "Could not attach gdb or lldb, exiting.\n");
                     _exit(1);

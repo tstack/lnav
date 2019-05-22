@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Timothy Stack
+ * Copyright (c) 2019, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,46 +25,41 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file input_dispatcher.hh
  */
 
-#ifndef INPUT_DISPATCHER_HH
-#define INPUT_DISPATCHER_HH
+#ifndef lnav_opt_util_hh
+#define lnav_opt_util_hh
 
-#include <sys/types.h>
+#include "optional.hpp"
 
-#include <functional>
+namespace detail {
 
-#define KEY_ESCAPE    0x1b
-#define KEY_CTRL_RBRACKET 0x1d
-
-class input_dispatcher {
-public:
-    void new_input(const struct timeval &current_time, int ch);
-
-    void poll(const struct timeval &current_time);
-
-    bool in_escape() const {
-        return this->id_escape_index > 0;
+    template <class T>
+    typename std::enable_if<std::is_void<T>::value, T>::type
+    void_or_nullopt()
+    {
+        return;
     }
 
-    enum class escape_match_t {
-        NONE,
-        PARTIAL,
-        FULL,
-    };
+    template <class T>
+    typename std::enable_if<not std::is_void<T>::value, T>::type
+    void_or_nullopt()
+    {
+        return nonstd::nullopt;
+    }
 
-    std::function<escape_match_t(const char *)> id_escape_matcher;
-    std::function<void(int)> id_key_handler;
-    std::function<void(const char *)> id_escape_handler;
-    std::function<void()> id_mouse_handler;
-private:
-    void append_to_escape_buffer(int ch);
+    template <class T>
+    struct is_optional : std::false_type {};
 
-    char id_escape_buffer[32];
-    size_t id_escape_index{0};
-    struct timeval id_escape_start_time{0, 0};
-};
+    template <class T>
+    struct is_optional<nonstd::optional<T>> : std::true_type {};
+}
+
+template <class T, class F, std::enable_if_t<detail::is_optional<std::decay_t<T>>::value, int> = 0>
+auto operator|(T&& t, F f) -> decltype(detail::void_or_nullopt<decltype(f(std::forward<T>(t).operator*()))>()) {
+    using return_type = decltype(f(std::forward<T>(t).operator*()));
+    if (t) return f(std::forward<T>(t).operator*());
+    else return detail::void_or_nullopt<return_type>();
+}
 
 #endif

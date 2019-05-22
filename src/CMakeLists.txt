@@ -111,6 +111,7 @@ set(diag_STAT_SRCS
         curl_looper.hh
         doc_status_source.hh
         elem_to_json.hh
+        base/enum_util.hh
         field_overlay_source.hh
         file_vtab.hh
         filter_observer.hh

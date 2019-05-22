@@ -69,7 +69,7 @@ int curl_request::debug_cb(CURL *handle,
             break;
         case CURLINFO_HEADER_IN:
         case CURLINFO_HEADER_OUT:
-            if (lnav_log_level == LOG_LEVEL_TRACE) {
+            if (lnav_log_level == lnav_log_level_t::TRACE) {
                 write_to_log = true;
             }
             else {

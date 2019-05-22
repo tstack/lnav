@@ -209,7 +209,7 @@ struct json_path_handler : public json_path_handler_base {
         if (res) {
             obj->*ENUM = (ENUM_T) res.value();
         } else {
-            ypc->report_error(LOG_LEVEL_ERROR,
+            ypc->report_error(lnav_log_level_t::ERROR,
                               "error:%s:line %d\n  "
                               "Invalid value, '%.*s', for option:",
                               ypc->ypc_source.c_str(),
@@ -217,17 +217,17 @@ struct json_path_handler : public json_path_handler_base {
                               len,
                               str);
 
-            ypc->report_error(LOG_LEVEL_ERROR,
+            ypc->report_error(lnav_log_level_t::ERROR,
                               "    %s %s -- %s\n",
                               &ypc->ypc_path[0],
                               handler->jph_synopsis,
                               handler->jph_description);
-            ypc->report_error(LOG_LEVEL_ERROR,
+            ypc->report_error(lnav_log_level_t::ERROR,
                               "  Allowed values: ");
             for (int lpc = 0; handler->jph_enum_values[lpc].first; lpc++) {
                 const json_path_handler::enum_value_t &ev = handler->jph_enum_values[lpc];
 
-                ypc->report_error(LOG_LEVEL_ERROR, "    %s\n", ev.first);
+                ypc->report_error(lnav_log_level_t::ERROR, "    %s\n", ev.first);
             }
         }
 
@@ -273,7 +273,7 @@ struct json_path_handler : public json_path_handler_base {
             pcre_context_static<30> pc;
 
             if (!jph.jph_pattern->match(pc, pi)) {
-                ypc.report_error(LOG_LEVEL_ERROR,
+                ypc.report_error(lnav_log_level_t::ERROR,
                                  "Value does not match pattern: %s",
                                  jph.jph_pattern_re);
             }
@@ -282,15 +282,15 @@ struct json_path_handler : public json_path_handler_base {
             try {
                 jph.jph_string_validator(to_string_fragment(field_ptr));
             } catch (const std::exception &e) {
-                ypc.report_error(LOG_LEVEL_ERROR,
+                ypc.report_error(lnav_log_level_t::ERROR,
                                  "%s",
                                  e.what());
             }
         }
         if (field_ptr.empty() && jph.jph_min_length > 0) {
-            ypc.report_error(LOG_LEVEL_ERROR, "value must not be empty");
+            ypc.report_error(lnav_log_level_t::ERROR, "value must not be empty");
         } else if (field_ptr.size() < jph.jph_min_length) {
-            ypc.report_error(LOG_LEVEL_ERROR, "value must be at least %lu characters long",
+            ypc.report_error(lnav_log_level_t::ERROR, "value must be at least %lu characters long",
                              jph.jph_min_length);
         }
     };
@@ -300,7 +300,7 @@ struct json_path_handler : public json_path_handler_base {
         auto &field_ptr = ypc.get_rvalue(ypc.get_obj_member<T, NUM_T, NUM>());
 
         if (field_ptr < jph.jph_min_value) {
-            ypc.report_error(LOG_LEVEL_ERROR,
+            ypc.report_error(lnav_log_level_t::ERROR,
                              "value must be greater than %lld",
                              jph.jph_min_value);
         }

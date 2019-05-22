@@ -50,6 +50,7 @@
 
 #include "base/lnav_log.hh"
 #include "input_dispatcher.hh"
+#include "lnav_util.hh"
 
 void input_dispatcher::new_input(const struct timeval &current_time, int ch)
 {
@@ -95,14 +96,21 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
 void input_dispatcher::poll(const struct timeval &current_time)
 {
     if (this->id_escape_index == 1) {
+        static const struct timeval escape_threshold = { 0, 10000 };
         struct timeval diff;
 
-        gettimeofday((struct timeval *) &current_time, nullptr);
-
         timersub(&current_time, &this->id_escape_start_time, &diff);
-        if (diff.tv_sec > 0 || diff.tv_usec > (10000)) {
+        if (escape_threshold < diff) {
             this->id_key_handler(KEY_CTRL_RBRACKET);
             this->id_escape_index = 0;
         }
+    }
+}
+
+void input_dispatcher::append_to_escape_buffer(int ch)
+{
+    if (this->id_escape_index < (sizeof(this->id_escape_buffer) - 1)) {
+        this->id_escape_buffer[this->id_escape_index++] = static_cast<char>(ch);
+        this->id_escape_buffer[this->id_escape_index] = '\0';
     }
 }

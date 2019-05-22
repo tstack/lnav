@@ -521,20 +521,20 @@ static void sqlite_logger(void *dummy, int code, const char *msg)
 
     switch (code) {
     case SQLITE_OK:
-        level = LOG_LEVEL_DEBUG;
+        level = lnav_log_level_t::DEBUG;
         break;
 #ifdef SQLITE_NOTICE
     case SQLITE_NOTICE:
-        level = LOG_LEVEL_INFO;
+        level = lnav_log_level_t::INFO;
         break;
 #endif
 #ifdef SQLITE_WARNING
     case SQLITE_WARNING:
-        level = LOG_LEVEL_WARNING;
+        level = lnav_log_level_t::WARNING;
         break;
 #endif
     default:
-        level = LOG_LEVEL_ERROR;
+        level = lnav_log_level_t::ERROR;
         break;
     }
 

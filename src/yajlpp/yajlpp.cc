@@ -417,28 +417,28 @@ int yajlpp_parse_context::handle_unused(void *ctx)
         strlen(handler->jph_description) > 0) {
 
         ypc->report_error(
-            LOG_LEVEL_WARNING,
+            lnav_log_level_t::WARNING,
             "%s:line %d",
             ypc->ypc_source.c_str(),
             line_number);
-        ypc->report_error(LOG_LEVEL_WARNING, "  unexpected data for path");
+        ypc->report_error(lnav_log_level_t::WARNING, "  unexpected data for path");
 
-        ypc->report_error(LOG_LEVEL_WARNING,
+        ypc->report_error(lnav_log_level_t::WARNING,
                           "    %s %s -- %s",
                           &ypc->ypc_path[0],
                           handler->jph_synopsis,
                           handler->jph_description);
     }
     else if (ypc->ypc_path[0]) {
-        ypc->report_error(LOG_LEVEL_WARNING,
+        ypc->report_error(lnav_log_level_t::WARNING,
                           "%s:line %d",
                           ypc->ypc_source.c_str(),
                           line_number);
-        ypc->report_error(LOG_LEVEL_WARNING, "  unexpected path --");
+        ypc->report_error(lnav_log_level_t::WARNING, "  unexpected path --");
 
-        ypc->report_error(LOG_LEVEL_WARNING, "    %s", &ypc->ypc_path[0]);
+        ypc->report_error(lnav_log_level_t::WARNING, "    %s", &ypc->ypc_path[0]);
     } else {
-        ypc->report_error(LOG_LEVEL_WARNING,
+        ypc->report_error(lnav_log_level_t::WARNING,
                           "%s:line %d\n  unexpected JSON value",
                           ypc->ypc_source.c_str(),
                           line_number);
@@ -448,20 +448,20 @@ int yajlpp_parse_context::handle_unused(void *ctx)
         ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused ||
         ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused ||
         ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
-        ypc->report_error(LOG_LEVEL_WARNING, "  expecting one of the following data types --");
+        ypc->report_error(lnav_log_level_t::WARNING, "  expecting one of the following data types --");
     }
 
     if (ypc->ypc_callbacks.yajl_boolean != (int (*)(void *, int))yajlpp_parse_context::handle_unused) {
-        ypc->report_error(LOG_LEVEL_WARNING, "    boolean");
+        ypc->report_error(lnav_log_level_t::WARNING, "    boolean");
     }
     if (ypc->ypc_callbacks.yajl_integer != (int (*)(void *, long long))yajlpp_parse_context::handle_unused) {
-        ypc->report_error(LOG_LEVEL_WARNING, "    integer");
+        ypc->report_error(lnav_log_level_t::WARNING, "    integer");
     }
     if (ypc->ypc_callbacks.yajl_double != (int (*)(void *, double))yajlpp_parse_context::handle_unused) {
-        ypc->report_error(LOG_LEVEL_WARNING, "    float");
+        ypc->report_error(lnav_log_level_t::WARNING, "    float");
     }
     if (ypc->ypc_callbacks.yajl_string != (int (*)(void *, const unsigned char *, size_t))yajlpp_parse_context::handle_unused) {
-        ypc->report_error(LOG_LEVEL_WARNING, "    string");
+        ypc->report_error(lnav_log_level_t::WARNING, "    string");
     }
 
     if (handler == nullptr) {
@@ -473,9 +473,9 @@ int yajlpp_parse_context::handle_unused(void *ctx)
             accepted_handlers = ypc->ypc_handlers;
         }
 
-        ypc->report_error(LOG_LEVEL_WARNING, "  accepted paths --");
+        ypc->report_error(lnav_log_level_t::WARNING, "  accepted paths --");
         for (int lpc = 0; accepted_handlers[lpc].jph_path[0]; lpc++) {
-            ypc->report_error(LOG_LEVEL_WARNING, "    %s %s -- %s",
+            ypc->report_error(lnav_log_level_t::WARNING, "    %s %s -- %s",
                     accepted_handlers[lpc].jph_path,
                     accepted_handlers[lpc].jph_synopsis,
                     accepted_handlers[lpc].jph_description);
@@ -515,7 +515,7 @@ yajlpp_parse_context::parse(const unsigned char *jsonText, size_t jsonTextLen)
 
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
         this->ypc_error_reporter(
-            *this, LOG_LEVEL_ERROR,
+            *this, lnav_log_level_t::ERROR,
             fmt::format("error:{}:{}:invalid json -- {}",
                         this->ypc_source,
                         this->get_line_number(),
@@ -532,7 +532,7 @@ yajl_status yajlpp_parse_context::complete_parse()
 
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
         this->ypc_error_reporter(
-            *this, LOG_LEVEL_ERROR,
+            *this, lnav_log_level_t::ERROR,
             fmt::format("error:{}:invalid json -- {}",
                         this->ypc_source,
                         yajl_get_error(this->ypc_handle, 0,

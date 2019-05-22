@@ -398,7 +398,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
                      this->lf_filename.c_str(),
                      begin_size,
                      this->lf_index.size());
-            log_rusage(LOG_LEVEL_INFO, this->lf_activity.la_initial_index_rusage);
+            log_rusage(lnav_log_level_t::INFO, this->lf_activity.la_initial_index_rusage);
         }
 
         /*

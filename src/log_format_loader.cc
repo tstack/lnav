@@ -709,7 +709,7 @@ static void format_error_reporter(const yajlpp_parse_context &ypc,
                                   lnav_log_level_t level,
                                   const char *msg)
 {
-    if (level >= LOG_LEVEL_ERROR) {
+    if (level >= lnav_log_level_t::ERROR) {
         struct userdata *ud = (userdata *) ypc.ypc_userdata;
 
         ud->ud_errors->push_back(msg);

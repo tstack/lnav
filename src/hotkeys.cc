@@ -46,6 +46,7 @@
 #include "field_overlay_source.hh"
 #include "hotkeys.hh"
 #include "log_format_loader.hh"
+#include "base/opt_util.hh"
 
 using namespace std;
 
@@ -881,25 +882,32 @@ void handle_paging_key(int ch)
 
         case 'I':
         {
-            hist_source2 &hs = lnav_data.ld_hist_source2;
+            auto &hs = lnav_data.ld_hist_source2;
+            auto &hist_tc = lnav_data.ld_views[LNV_HISTOGRAM];
 
-            if (toggle_view(&lnav_data.ld_views[LNV_HISTOGRAM])) {
-                struct timeval log_top = lss->time_for_row(lnav_data.ld_views[LNV_LOG].get_top());
+            if (toggle_view(&hist_tc)) {
+                auto *src_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
 
-                tc = *lnav_data.ld_view_stack.top();
-                tc->set_top(vis_line_t(hs.row_for_time(log_top)));
+                if (src_view != nullptr) {
+                    struct timeval log_top = src_view->time_for_row(tc->get_top());
+
+                    hist_tc.set_top(vis_line_t(hs.row_for_time(log_top)));
+                }
             }
             else {
-                textview_curses &hist_tc = lnav_data.ld_views[LNV_HISTOGRAM];
-                textview_curses &log_tc = lnav_data.ld_views[LNV_LOG];
-                lss = &lnav_data.ld_log_source;
-                struct timeval hist_top_time = hs.time_for_row(hist_tc.get_top());
-                struct timeval curr_top_time = lss->time_for_row(log_tc.get_top());
-                if (hs.row_for_time(hist_top_time) != hs.row_for_time(curr_top_time)) {
-                    vis_line_t new_top = lss->find_from_time(hist_top_time);
-                    log_tc.set_top(new_top);
-                    log_tc.set_needs_update();
-                }
+                lnav_data.ld_view_stack.top() | [](auto top_tc) {
+                    auto *dst_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
+
+                    if (dst_view != nullptr) {
+                        struct timeval hist_top_time = hs.time_for_row(hist_tc.get_top());
+                        struct timeval curr_top_time = dst_view->time_for_row(top_tc->get_top());
+                        if (hs.row_for_time(hist_top_time) != hs.row_for_time(curr_top_time)) {
+                            vis_line_t new_top = vis_line_t(dst_view->row_for_time(hist_top_time));
+                            top_tc->set_top(new_top);
+                            top_tc->set_needs_update();
+                        }
+                    }
+                };
             }
         }
             break;
