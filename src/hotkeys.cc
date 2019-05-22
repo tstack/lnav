@@ -895,7 +895,7 @@ void handle_paging_key(int ch)
                 }
             }
             else {
-                lnav_data.ld_view_stack.top() | [](auto top_tc) {
+                lnav_data.ld_view_stack.top() | [&](auto top_tc) {
                     auto *dst_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
 
                     if (dst_view != nullptr) {
