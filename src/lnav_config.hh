@@ -95,8 +95,13 @@ bool update_git_formats();
 
 void install_extra_formats();
 
+struct key_command {
+    std::string kc_cmd;
+    std::string kc_alt_msg;
+};
+
 struct key_map {
-    std::map<std::string, std::vector<std::string>> km_seq_to_cmd;
+    std::map<std::string, key_command> km_seq_to_cmd;
 };
 
 struct _lnav_config {

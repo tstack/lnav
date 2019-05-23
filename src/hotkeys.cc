@@ -47,6 +47,7 @@
 #include "hotkeys.hh"
 #include "log_format_loader.hh"
 #include "base/opt_util.hh"
+#include "shlex.hh"
 
 using namespace std;
 
@@ -145,13 +146,24 @@ bool handle_keyseq(const char *keyseq)
         var_stack.push(map<string, string>());
         auto &vars = var_stack.top();
         vars["keyseq"] = keyseq;
-        for (const string &cmd : iter->second) {
-            log_debug("executing key sequence x%02x: %s",
-                      keyseq, cmd.c_str());
-            result = execute_any(ec, cmd);
+        const auto &kc = iter->second;
+
+        log_debug("executing key sequence x%02x: %s", keyseq, kc.kc_cmd.c_str());
+        result = execute_any(ec, kc.kc_cmd);
+        lnav_data.ld_rl_view->set_value(result);
+
+        if (!kc.kc_alt_msg.empty()) {
+            shlex lexer(kc.kc_alt_msg);
+            string expanded_msg;
+
+            if (lexer.eval(expanded_msg, {
+                &ec.ec_local_vars.top(),
+                &ec.ec_global_vars,
+            })) {
+                lnav_data.ld_rl_view->set_alt_value(expanded_msg);
+            }
         }
 
-        lnav_data.ld_rl_view->set_value(result);
         return true;
     }
 

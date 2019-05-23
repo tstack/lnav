@@ -300,17 +300,33 @@ static void config_error_reporter(const yajlpp_parse_context &ypc,
     }
 }
 
-static struct json_path_handler keymap_def_handlers[] = {
-    json_path_handler("(?<key_seq>(x[0-9a-f]{2})+)#")
+static struct json_path_handler key_command_handlers[] = {
+    json_path_handler("command")
         .with_synopsis("<command>")
         .with_description("The command to execute for the given key sequence")
         .with_pattern("[:|;].*")
+        .FOR_FIELD(key_command, kc_cmd),
+    json_path_handler("alt-msg")
+        .with_synopsis("<msg>")
+        .with_description("The help message to display after the key is pressed")
+        .FOR_FIELD(key_command, kc_alt_msg),
+
+    json_path_handler()
+};
+
+static struct json_path_handler keymap_def_handlers[] = {
+    json_path_handler("(?<key_seq>(x[0-9a-f]{2})+)/")
+        .with_obj_provider<key_command, key_map>([](const yajlpp_provider_context &ypc, key_map *km) {
+            key_command &retval = km->km_seq_to_cmd[ypc.ypc_extractor.get_substr("key_seq")];
+
+            return &retval;
+        })
         .with_path_provider<key_map>([](key_map *km, vector<string> &paths_out) {
             for (const auto &iter : km->km_seq_to_cmd) {
                 paths_out.emplace_back(iter.first);
             }
         })
-        .FOR_FIELD(key_map, km_seq_to_cmd),
+        .with_children(key_command_handlers),
 
     json_path_handler()
 };

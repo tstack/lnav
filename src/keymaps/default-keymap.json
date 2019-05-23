@@ -16,129 +16,129 @@
     "ui": {
         "keymap_def": {
             "default": {
-                "x06": [
-                    ";UPDATE lnav_view_filters SET enabled = 1 - enabled WHERE view_name = (SELECT name FROM lnav_view_stack WHERE name in ('log', 'text') ORDER BY rowid DESC LIMIT 1)"
-                ],
-                "x0c": [
-                    ":write-screen-to -"
-                ],
-                "x12": [
-                    ":reset-session"
-                ],
-                "x58": [
-                    ":close"
-                ],
-                "x45": [
-                    ":prev-mark error",
-                    ":eval :alt-msg ${keymap_def_alt_warning}"
-                ],
-                "x65": [
-                    ":next-mark error",
-                    ":eval :alt-msg ${keymap_def_alt_warning}"
-                ],
-                "x57": [
-                    ":prev-mark warning",
-                    ":eval :alt-msg ${keymap_def_alt_hour_boundary}"
-                ],
-                "x77": [
-                    ":next-mark warning",
-                    ":eval :alt-msg ${keymap_def_alt_hour_boundary}"
-                ],
-                "x59": [
-                    ":prev-mark query"
-                ],
-                "x79": [
-                    ":next-mark query"
-                ],
-                "x63": [
-                    ":eval :alt-msg ${keymap_def_clear}",
-                    ":write-to /dev/clipboard"
-                ],
-                "x67": [
-                    ":goto 0"
-                ],
-                "x6d": [
-                    ":mark",
-                    ":eval :alt-msg ${keymap_def_next_user_mark}"
-                ],
-                "x4e": [
-                    ":prev-mark search",
-                    ":eval :alt-msg ${keymap_def_scroll_horiz}"
-                ],
-                "x6e": [
-                    ":next-mark search",
-                    ":eval :alt-msg ${keymap_def_scroll_horiz}"
-                ],
-                "x7d": [
-                    ":next-location",
-                    ":eval :alt-msg ${keymap_def_prev_location}"
-                ],
-                "x7b": [
-                    ":prev-location",
-                    ":eval :alt-msg ${keymap_def_next_location}"
-                ],
-                "x31": [
-                    ":goto next 10 minutes after the hour"
-                ],
-                "x32": [
-                    ":goto next 20 minutes after the hour"
-                ],
-                "x33": [
-                    ":goto next 30 minutes after the hour"
-                ],
-                "x34": [
-                    ":goto next 40 minutes after the hour"
-                ],
-                "x35": [
-                    ":goto next 50 minutes after the hour"
-                ],
-                "x36": [
-                    ":goto next hour"
-                ],
-                "x37": [
-                    ":goto previous minute"
-                ],
-                "x38": [
-                    ":goto next minute"
-                ],
-                "x21": [
-                    ":goto last 10 minutes after the hour"
-                ],
-                "x40": [
-                    ":goto last 20 minutes after the hour"
-                ],
-                "x23": [
-                    ":goto last 30 minutes after the hour"
-                ],
-                "x24": [
-                    ":goto last 40 minutes after the hour"
-                ],
-                "x25": [
-                    ":goto last 50 minutes after the hour"
-                ],
-                "x5e": [
-                    ":goto last hour"
-                ],
-                "x3f": [
-                    ":toggle-view help"
-                ],
-                "x69": [
-                    ":toggle-view histogram",
-                    ":eval :alt-msg ${keymap_def_zoom}"
-                ],
-                "x50": [
-                    ":toggle-view pretty",
-                    ":eval :alt-msg ${keymap_def_pop_view}"
-                ],
-                "x76": [
-                    ":toggle-view db"
-                ],
-                "x71": [
-                    "|lnav-pop-view ${keyseq}"
-                ],
-                "x51": [
-                    "|lnav-pop-view ${keyseq}"
-                ]
+                "x06": {
+                    "command": ";UPDATE lnav_view_filters SET enabled = 1 - enabled WHERE view_name = (SELECT name FROM lnav_view_stack WHERE name in ('log', 'text') ORDER BY rowid DESC LIMIT 1)"
+                },
+                "x0c": {
+                    "command": ":write-screen-to -"
+                },
+                "x12": {
+                    "command": ":reset-session"
+                },
+                "x58": {
+                    "command": ":close"
+                },
+                "x45": {
+                    "command": ":prev-mark error",
+                    "alt-msg": "${keymap_def_alt_warning}"
+                },
+                "x65": {
+                    "command": ":next-mark error",
+                    "alt-msg": "${keymap_def_alt_warning}"
+                },
+                "x57": {
+                    "command": ":prev-mark warning",
+                    "alt-msg": "${keymap_def_alt_hour_boundary}"
+                },
+                "x77": {
+                    "command": ":next-mark warning",
+                    "alt-msg": "${keymap_def_alt_hour_boundary}"
+                },
+                "x59": {
+                    "command": ":prev-mark query"
+                },
+                "x79": {
+                    "command": ":next-mark query"
+                },
+                "x63": {
+                    "command": ":write-to /dev/clipboard",
+                    "alt-msg": "${keymap_def_clear}"
+                },
+                "x67": {
+                    "command": ":goto 0"
+                },
+                "x6d": {
+                    "command": ":mark",
+                    "alt-msg": "${keymap_def_next_user_mark}"
+                },
+                "x4e": {
+                    "command": ":prev-mark search",
+                    "alt-msg": "${keymap_def_scroll_horiz}"
+                },
+                "x6e": {
+                    "command": ":next-mark search",
+                    "alt-msg": "${keymap_def_scroll_horiz}"
+                },
+                "x7d": {
+                    "command": ":next-location",
+                    "alt-msg": "${keymap_def_prev_location}"
+                },
+                "x7b": {
+                    "command": ":prev-location",
+                    "alt-msg": "${keymap_def_next_location}"
+                },
+                "x31": {
+                    "command": ":goto next 10 minutes after the hour"
+                },
+                "x32": {
+                    "command": ":goto next 20 minutes after the hour"
+                },
+                "x33": {
+                    "command": ":goto next 30 minutes after the hour"
+                },
+                "x34": {
+                    "command": ":goto next 40 minutes after the hour"
+                },
+                "x35": {
+                    "command": ":goto next 50 minutes after the hour"
+                },
+                "x36": {
+                    "command": ":goto next hour"
+                },
+                "x37": {
+                    "command": ":goto previous minute"
+                },
+                "x38": {
+                    "command": ":goto next minute"
+                },
+                "x21": {
+                    "command": ":goto last 10 minutes after the hour"
+                },
+                "x40": {
+                    "command": ":goto last 20 minutes after the hour"
+                },
+                "x23": {
+                    "command": ":goto last 30 minutes after the hour"
+                },
+                "x24": {
+                    "command": ":goto last 40 minutes after the hour"
+                },
+                "x25": {
+                    "command": ":goto last 50 minutes after the hour"
+                },
+                "x5e": {
+                    "command": ":goto last hour"
+                },
+                "x3f": {
+                    "command": ":toggle-view help"
+                },
+                "x69": {
+                    "command": ":toggle-view histogram",
+                    "alt-msg": "${keymap_def_zoom}"
+                },
+                "x50": {
+                    "command": ":toggle-view pretty",
+                    "alt-msg": "${keymap_def_pop_view}"
+                },
+                "x76": {
+                    "command": ":toggle-view db"
+                },
+                "x71": {
+                    "command": "|lnav-pop-view ${keyseq}"
+                },
+                "x51": {
+                    "command": "|lnav-pop-view ${keyseq}"
+                }
             }
         }
     }
