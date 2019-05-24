@@ -157,8 +157,8 @@ public:
         auto iter = std::find(this->tss_files.begin(),
                 this->tss_files.end(), lf);
         if (iter != this->tss_files.end()) {
-            detach_observer(lf);
             this->tss_files.erase(iter);
+            detach_observer(lf);
         }
     };
 

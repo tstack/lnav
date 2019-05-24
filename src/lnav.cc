@@ -557,6 +557,16 @@ void rebuild_indexes()
                 scroll_downs[LNV_TEXT] = false;
             }
         }
+
+        if (!tss->empty()) {
+            if (text_view.get_top() >= text_view.get_inner_height()) {
+                if (text_view.get_inner_height() > 0_vl) {
+                    text_view.set_top(text_view.get_inner_height() - 1_vl);
+                } else {
+                    text_view.set_top(0_vl);
+                }
+            }
+        }
     }
 
     for (auto file_iter = lnav_data.ld_files.begin();
