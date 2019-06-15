@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
         char fn_template[] = "test_line_buffer.XXXXXX";
 
         auto fd = auto_fd(mkstemp(fn_template));
+        remove(fn_template);
         auto lb = line_buffer();
 
         write(fd, TEST_DATA, strlen(TEST_DATA));
