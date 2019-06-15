@@ -78,7 +78,10 @@ public:
         if (!this->tss_files.empty()) {
             std::shared_ptr<logfile> lf = this->current_file();
             line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
-            lf->read_line(lf->begin() + lfo->lfo_filter_state.tfs_index[line], value_out);
+            auto read_result = lf->read_line(lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
+            if (read_result.isOk()) {
+                value_out = to_string(read_result.unwrap());
+            }
         }
         else {
             value_out.clear();
@@ -275,7 +278,7 @@ public:
 
     text_format_t get_text_format() const {
         if (this->tss_files.empty()) {
-            return TF_UNKNOWN;
+            return text_format_t::TF_UNKNOWN;
         }
 
         return this->tss_files.front()->get_text_format();

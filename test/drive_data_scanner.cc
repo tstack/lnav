@@ -153,8 +153,10 @@ int main(int argc, char *argv[])
                     for (iter = root_formats.begin();
                        iter != root_formats.end() && !found;
                        ++iter) {
+                        logfile *lf = nullptr; // XXX
+
                         (*iter)->clear();
-                        if ((*iter)->scan(nonstd::nullopt, index, 13, sbr) == log_format::SCAN_MATCH) {
+                        if ((*iter)->scan(*lf, index, 13, sbr) == log_format::SCAN_MATCH) {
                             format = (*iter)->specialized();
                             found = true;
                         }

@@ -475,7 +475,7 @@ public:
     }
 
     virtual text_format_t get_text_format() const {
-        return TF_UNKNOWN;
+        return text_format_t::TF_UNKNOWN;
     };
 
     virtual nonstd::optional<std::pair<grep_proc_source<vis_line_t> *, grep_proc_sink<vis_line_t> *>> get_grepper() {

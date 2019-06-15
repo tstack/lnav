@@ -47,59 +47,74 @@ using namespace std;
 class my_source : public grep_proc_source<vis_line_t> {
 
 public:
-    my_source(auto_fd &fd) : ms_offset(0) {
-	this->ms_buffer.set_fd(fd);
+    my_source(auto_fd &fd)
+    {
+        this->ms_buffer.set_fd(fd);
     };
 
-    bool grep_value_for_line(vis_line_t line_number, string &value_out) {
-	bool retval = false;
+    bool grep_value_for_line(vis_line_t line_number, string &value_out)
+    {
+        bool retval = false;
 
-	try {
-        line_value lv;
-	    
-	    if (this->ms_buffer.read_line(this->ms_offset, lv)) {
-		value_out = string(lv.lv_start, lv.lv_len);
-		retval = true;
-	    }
-	}
-	catch (line_buffer::error &e) {
-	    fprintf(stderr,
-		    "error: source buffer error %d %s\n",
-		    this->ms_buffer.get_fd(),
-		    strerror(e.e_err));
-	}
-	
-	return retval;
+        try {
+            auto load_result = this->ms_buffer.load_next_line(this->ms_range);
+
+            if (load_result.isOk()) {
+                auto li = load_result.unwrap();
+
+                this->ms_range = li.li_file_range;
+                if (!li.li_file_range.empty()) {
+                    auto read_result = this->ms_buffer.read_range(li.li_file_range)
+                                           .then([&value_out](auto sbr) {
+                                               value_out = to_string(sbr);
+                                           });
+
+                    retval = read_result.isOk();
+                }
+            }
+        }
+        catch (line_buffer::error &e) {
+            fprintf(stderr,
+                    "error: source buffer error %d %s\n",
+                    this->ms_buffer.get_fd(),
+                    strerror(e.e_err));
+        }
+
+        return retval;
     };
-    
+
 private:
     line_buffer ms_buffer;
-    off_t ms_offset;
-    
+    file_range ms_range;
+
 };
 
 class my_sink : public grep_proc_sink<vis_line_t> {
 
 public:
-    my_sink() : ms_finished(false) { };
-    
+    my_sink() : ms_finished(false)
+    {};
+
     void grep_match(grep_proc<vis_line_t> &gp,
-		    vis_line_t line,
-		    int start,
-		    int end) {
-	printf("%d:%d:%d\n", (int)line, start, end);
+                    vis_line_t line,
+                    int start,
+                    int end)
+    {
+        printf("%d:%d:%d\n", (int) line, start, end);
     };
 
     void grep_capture(grep_proc<vis_line_t> &gp,
-		      vis_line_t line,
-		      int start,
-		      int end,
-		      char *capture) {
-	fprintf(stderr, "%d(%d:%d)%s\n", (int)line, start, end, capture);
+                      vis_line_t line,
+                      int start,
+                      int end,
+                      char *capture)
+    {
+        fprintf(stderr, "%d(%d:%d)%s\n", (int) line, start, end, capture);
     };
 
-    void grep_end(grep_proc<vis_line_t> &gp) {
-	this->ms_finished = true;
+    void grep_end(grep_proc<vis_line_t> &gp)
+    {
+        this->ms_finished = true;
     };
 
     bool ms_finished;
@@ -112,41 +127,38 @@ int main(int argc, char *argv[])
     auto_fd fd;
     pcre *code;
     int eoff;
-    
+
     if (argc < 3) {
-	fprintf(stderr, "error: expecting pattern and file arguments\n");
-	retval = EXIT_FAILURE;
+        fprintf(stderr, "error: expecting pattern and file arguments\n");
+        retval = EXIT_FAILURE;
+    } else if ((fd = open(argv[2], O_RDONLY)) == -1) {
+        perror("open");
+        retval = EXIT_FAILURE;
+    } else if ((code = pcre_compile(argv[1],
+                                    PCRE_CASELESS,
+                                    &errptr,
+                                    &eoff,
+                                    NULL)) == NULL) {
+        fprintf(stderr, "error: invalid pattern -- %s\n", errptr);
+    } else {
+        my_source ms(fd);
+        my_sink msink;
+
+        grep_proc<vis_line_t> gp(code, ms);
+
+        gp.set_sink(&msink);
+        gp.queue_request();
+        gp.start();
+
+        while (!msink.ms_finished) {
+            vector<struct pollfd> pollfds;
+
+            gp.update_poll_set(pollfds);
+            poll(&pollfds[0], pollfds.size(), -1);
+
+            gp.check_poll_set(pollfds);
+        }
     }
-    else if ((fd = open(argv[2], O_RDONLY)) == -1) {
-	perror("open");
-	retval = EXIT_FAILURE;
-    }
-    else if ((code = pcre_compile(argv[1],
-				  PCRE_CASELESS,
-				  &errptr,
-				  &eoff,
-				  NULL)) == NULL) {
-      fprintf(stderr, "error: invalid pattern -- %s\n", errptr);
-    }
-    else {
-	my_source ms(fd);
-	my_sink msink;
 
-	grep_proc<vis_line_t> gp(code, ms);
-
-	gp.set_sink(&msink);
-	gp.queue_request();
-	gp.start();
-
-	while (!msink.ms_finished) {
-		vector<struct pollfd> pollfds;
-
-		gp.update_poll_set(pollfds);
-		poll(&pollfds[0], pollfds.size(), -1);
-
-	    gp.check_poll_set(pollfds);
-	}
-    }
-    
     return retval;
 }

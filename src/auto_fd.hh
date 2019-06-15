@@ -89,7 +89,7 @@ public:
      *
      * @param af The source of the file descriptor.
      */
-    auto_fd(auto_fd & af)
+    auto_fd(auto_fd && af)
         : af_fd(af.release()) { };
 
     /**

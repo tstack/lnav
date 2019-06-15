@@ -370,10 +370,6 @@ static struct json_path_handler style_config_handlers[] = {
         .with_synopsis("#hex|color_name")
         .with_description("Background color")
         .FOR_FIELD(style_config, sc_background_color),
-    json_path_handler("selected-color")
-        .with_synopsis("#hex|color_name")
-        .with_description("Background color when selected")
-        .FOR_FIELD(style_config, sc_selected_color),
     json_path_handler("underline")
         .with_description("Underline")
         .FOR_FIELD(style_config, sc_underline),

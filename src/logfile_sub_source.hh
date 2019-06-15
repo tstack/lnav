@@ -489,7 +489,7 @@ public:
     logline *find_line(content_line_t line)
     {
         logline *retval = nullptr;
-        std::shared_ptr<logfile> lf     = this->find(line);
+        std::shared_ptr<logfile> lf = this->find(line);
 
         if (lf != nullptr) {
             auto ll_iter = lf->begin() + line;

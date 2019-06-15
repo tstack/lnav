@@ -37,6 +37,8 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 
+#include <string>
+
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
 
@@ -44,8 +46,8 @@ class shared_buffer;
 
 struct shared_buffer_ref {
 public:
-    shared_buffer_ref(char *data = NULL, size_t len = 0)
-        : sb_owner(NULL), sb_data(data), sb_length(len) {
+    shared_buffer_ref(char *data = nullptr, size_t len = 0)
+        : sb_owner(nullptr), sb_data(data), sb_length(len) {
         memset(&this->sb_link, 0, sizeof(this->sb_link));
     };
 
@@ -54,12 +56,14 @@ public:
     };
 
     shared_buffer_ref(const shared_buffer_ref &other) {
-        this->sb_owner = NULL;
-        this->sb_data = NULL;
+        this->sb_owner = nullptr;
+        this->sb_data = nullptr;
         this->sb_length = 0;
 
         this->copy_ref(other);
     };
+
+    shared_buffer_ref(shared_buffer_ref &&other);
 
     shared_buffer_ref &operator=(const shared_buffer_ref &other) {
         if (this != &other) {
@@ -70,7 +74,7 @@ public:
         return *this;
     };
 
-    bool empty() const { return this->sb_data == NULL; };
+    bool empty() const { return this->sb_data == nullptr; };
 
     const char *get_data() const { return this->sb_data; };
 
@@ -79,6 +83,14 @@ public:
     };
 
     size_t length() const { return this->sb_length; };
+
+    shared_buffer_ref &rtrim(bool pred(char)) {
+        while (this->sb_length > 0 && pred(this->sb_data[this->sb_length - 1])) {
+            this->sb_length -= 1;
+        }
+
+        return *this;
+    }
 
     bool contains(const char *ptr) const {
         const char *buffer_end = this->sb_data + this->sb_length;
@@ -91,7 +103,7 @@ public:
             return this->sb_data;
         }
 
-        return NULL;
+        return nullptr;
     };
 
     void share(shared_buffer &sb, char *data, size_t len);
@@ -99,46 +111,46 @@ public:
     bool subset(shared_buffer_ref &other, off_t offset, size_t len);
 
     bool take_ownership() {
-        if (this->sb_owner != NULL && this->sb_data != NULL) {
+        if (this->sb_owner != nullptr && this->sb_data != nullptr) {
             char *new_data;
         
-            if ((new_data = (char *)malloc(this->sb_length)) == NULL) {
+            if ((new_data = (char *)malloc(this->sb_length)) == nullptr) {
                 return false;
             }
 
             memcpy(new_data, this->sb_data, this->sb_length);
             this->sb_data = new_data;
             LIST_REMOVE(this, sb_link);
-            this->sb_owner = NULL;
+            this->sb_owner = nullptr;
         }
         return true;
     };
 
     void disown() {
-        if (this->sb_owner == NULL) {
-            if (this->sb_data != NULL) {
+        if (this->sb_owner == nullptr) {
+            if (this->sb_data != nullptr) {
                 free(this->sb_data);
             }
         } else {
             LIST_REMOVE(this, sb_link);
         }
-        this->sb_owner = NULL;
-        this->sb_data = NULL;
+        this->sb_owner = nullptr;
+        this->sb_data = nullptr;
         this->sb_length = 0;
     };
 
     LIST_ENTRY(shared_buffer_ref) sb_link;
 private:
     void copy_ref(const shared_buffer_ref &other) {
-        if (other.sb_data == NULL) {
-            this->sb_owner = NULL;
-            this->sb_data = NULL;
+        if (other.sb_data == nullptr) {
+            this->sb_owner = nullptr;
+            this->sb_data = nullptr;
             this->sb_length = 0;
         }
-        else if (other.sb_owner != NULL) {
+        else if (other.sb_owner != nullptr) {
             this->share(*other.sb_owner, other.sb_data, other.sb_length);
         } else {
-            this->sb_owner = NULL;
+            this->sb_owner = nullptr;
             this->sb_data = (char *)malloc(other.sb_length);
             memcpy(this->sb_data, other.sb_data, other.sb_length);
             this->sb_length = other.sb_length;
@@ -170,7 +182,7 @@ public:
         bool retval = true;
 
         for (ref = LIST_FIRST(&this->sb_refs);
-             ref != NULL;
+             ref != nullptr;
              ref = LIST_FIRST(&this->sb_refs)) {
             retval = retval && ref->take_ownership();
         }
@@ -193,5 +205,10 @@ struct tmp_shared_buffer {
     shared_buffer tsb_manager;
     shared_buffer_ref tsb_ref;
 };
+
+inline std::string to_string(const shared_buffer_ref &sbr)
+{
+    return {sbr.get_data(), sbr.length()};
+}
 
 #endif

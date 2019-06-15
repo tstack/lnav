@@ -766,8 +766,8 @@ pair<attr_t, attr_t> view_colors::to_attrs(
     const lnav_theme &lt, const style_config &sc, const style_config &fallback_sc,
     lnav_config_listener::error_reporter &reporter)
 {
-    rgb_color fg, bg, sbg;
-    string fg1, bg1, sbg1, fg_color, bg_color, sbg_color, errmsg;
+    rgb_color fg, bg;
+    string fg1, bg1, fg_color, bg_color, errmsg;
 
     fg1 = sc.sc_color;
     if (fg1.empty()) {
@@ -777,13 +777,8 @@ pair<attr_t, attr_t> view_colors::to_attrs(
     if (bg1.empty()) {
         bg1 = fallback_sc.sc_background_color;
     }
-    sbg1 = sc.sc_selected_color;
-    if (sbg1.empty()) {
-        sbg1 = fallback_sc.sc_selected_color;
-    }
     shlex(fg1).eval(fg_color, lt.lt_vars);
     shlex(bg1).eval(bg_color, lt.lt_vars);
-    shlex(sbg1).eval(sbg_color, lt.lt_vars);
 
     if (!rgb_color::from_str(fg_color, fg, errmsg)) {
         reporter(&sc.sc_color, errmsg);
@@ -791,12 +786,9 @@ pair<attr_t, attr_t> view_colors::to_attrs(
     if (!rgb_color::from_str(bg_color, bg, errmsg)) {
         reporter(&sc.sc_background_color, errmsg);
     }
-    if (!rgb_color::from_str(sbg_color, sbg, errmsg)) {
-        reporter(&sc.sc_selected_color, errmsg);
-    }
 
     attr_t retval1 = this->ensure_color_pair(pair_base, fg, bg);
-    attr_t retval2 = this->ensure_color_pair(pair_base, fg, sbg);
+    attr_t retval2 = 0;
 
     if (sc.sc_underline) {
         retval1 |= A_UNDERLINE;

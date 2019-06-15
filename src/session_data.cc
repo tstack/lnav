@@ -165,19 +165,23 @@ static bool bind_line(sqlite3 *db,
     sqlite3_clear_bindings(stmt);
 
     auto line_iter = lf->begin() + cl;
-    shared_buffer_ref sbr;
-    lf->read_line(line_iter, sbr);
-    std::string line_hash = hash_bytes(sbr.get_data(), sbr.length(),
-                                       &cl, sizeof(cl),
-                                       NULL);
+    auto read_result = lf->read_line(line_iter);
 
-    int rc = bind_values(stmt,
-                         lf->original_line_time(line_iter),
-                         lf->get_format()->get_name(),
-                         line_hash,
-                         session_time);
+    if (read_result.isErr()) {
+        return false;
+    }
 
-    return rc == SQLITE_OK;
+    auto line_hash = read_result.map([cl](auto sbr) {
+        return hash_bytes(sbr.get_data(), sbr.length(),
+                          &cl, sizeof(cl),
+                          nullptr);
+    }).unwrap();
+
+    return bind_values(stmt,
+                       lf->original_line_time(line_iter),
+                       lf->get_format()->get_name(),
+                       line_hash,
+                       session_time) == SQLITE_OK;
 }
 
 struct session_file_info {
@@ -496,13 +500,18 @@ static void load_time_bookmarks()
                         break;
                     }
 
-                    shared_buffer_ref sbr;
                     content_line_t cl = content_line_t(std::distance(lf->begin(), line_iter));
-                    lf->read_line(line_iter, sbr);
+                    auto read_result = lf->read_line(line_iter);
+
+                    if(read_result.isErr()) {
+                        break;
+                    }
+
+                    auto sbr = read_result.unwrap();
 
                     string line_hash = hash_bytes(sbr.get_data(), sbr.length(),
                                                   &cl, sizeof(cl),
-                                                  NULL);
+                                                  nullptr);
 
                     if (line_hash == log_hash) {
                         content_line_t line_cl = content_line_t(
@@ -659,9 +668,15 @@ static void load_time_bookmarks()
                         break;
                     }
 
-                    lf->read_line(line_iter, line);
+                    auto read_result = lf->read_line(line_iter);
 
-                    string line_hash = hash_string(line);
+                    if (read_result.isErr()) {
+                        break;
+                    }
+
+                    auto sbr = read_result.unwrap();
+
+                    string line_hash = hash_bytes(sbr.get_data(), sbr.length(), nullptr);
                     if (line_hash == log_hash) {
                         int file_line = std::distance(lf->begin(), line_iter);
                         content_line_t line_cl = content_line_t(
@@ -1166,10 +1181,18 @@ static void save_time_bookmarks()
         line_iter = lf->begin() + lf->get_time_offset_line();
         struct timeval offset = lf->get_time_offset();
 
+        auto read_result = lf->read_line(line_iter);
+
+        if (read_result.isErr()) {
+            return;
+        }
+
         bind_values(stmt.in(),
                     lf->original_line_time(line_iter),
                     lf->get_format()->get_name(),
-                    hash_string(lf->read_line(line_iter)),
+                    read_result.map([](auto sbr) {
+                        return hash_bytes(sbr.get_data(), sbr.length(), nullptr);
+                    }).unwrap(),
                     lnav_data.ld_session_time,
                     offset.tv_sec,
                     offset.tv_usec);

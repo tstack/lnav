@@ -81,3 +81,24 @@ bool shared_buffer_ref::subset(shared_buffer_ref &other, off_t offset, size_t le
     }
     return true;
 }
+
+shared_buffer_ref::shared_buffer_ref(shared_buffer_ref &&other)
+{
+    if (other.sb_data == nullptr) {
+        this->sb_owner = nullptr;
+        this->sb_data = nullptr;
+        this->sb_length = 0;
+    } else if (other.sb_owner != nullptr) {
+        other.sb_owner->add_ref(*this);
+        this->sb_owner = other.sb_owner;
+        this->sb_data = other.sb_data;
+        this->sb_length = other.sb_length;
+        other.disown();
+    } else {
+        this->sb_owner = nullptr;
+        this->sb_data = other.sb_data;
+        this->sb_length = other.sb_length;
+        other.sb_data = nullptr;
+        other.sb_length = 0;
+    }
+}

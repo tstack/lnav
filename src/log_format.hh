@@ -703,7 +703,7 @@ public:
      * @param prefix The contents of the line.
      * @param len The length of the prefix string.
      */
-    virtual scan_result_t scan(nonstd::optional<logfile *> lf,
+    virtual scan_result_t scan(logfile &lf,
                                std::vector<logline> &dst,
                                off_t offset,
                                shared_buffer_ref &sbr) = 0;
@@ -961,7 +961,7 @@ public:
         return this->elf_filename_pcre->match(pc, pi);
     };
 
-    scan_result_t scan(nonstd::optional<logfile *> lf,
+    scan_result_t scan(logfile &lf,
                        std::vector<logline> &dst,
                        off_t offset,
                        shared_buffer_ref &sbr);

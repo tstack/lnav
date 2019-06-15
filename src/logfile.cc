@@ -45,6 +45,7 @@
 
 #include <time.h>
 
+#include "base/string_util.hh"
 #include "logfile.hh"
 #include "lnav_util.hh"
 
@@ -134,9 +135,7 @@ void logfile::set_format_base_time(log_format *lf)
     lf->lf_date_time.set_base_time(file_time);
 }
 
-bool logfile::process_prefix(off_t offset,
-                             shared_buffer_ref &sbr,
-                             const line_value &lv)
+bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
 {
     log_format::scan_result_t found = log_format::SCAN_NO_MATCH;
     size_t prescan_size = this->lf_index.size();
@@ -148,7 +147,7 @@ bool logfile::process_prefix(off_t offset,
             prescan_time = this->lf_index[0].get_time();
         }
         /* We've locked onto a format, just use that scanner. */
-        found = this->lf_format->scan(this, this->lf_index, offset, sbr);
+        found = this->lf_format->scan(*this, this->lf_index, li.li_file_range.fr_offset, sbr);
     }
     else if (this->lf_options.loo_detect_format &&
              this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
@@ -169,7 +168,7 @@ bool logfile::process_prefix(off_t offset,
 
             (*iter)->clear();
             this->set_format_base_time(*iter);
-            found = (*iter)->scan(this, this->lf_index, offset, sbr);
+            found = (*iter)->scan(*this, this->lf_index, li.li_file_range.fr_offset, sbr);
             if (found == log_format::SCAN_MATCH) {
 #if 0
                 require(this->lf_index.size() == 1 ||
@@ -204,7 +203,7 @@ bool logfile::process_prefix(off_t offset,
     switch (found) {
         case log_format::SCAN_MATCH:
             if (!this->lf_index.empty()) {
-                this->lf_index.back().set_valid_utf(lv.lv_valid_utf);
+                this->lf_index.back().set_valid_utf(li.li_valid_utf);
             }
             if (!this->lf_index.empty() && prescan_time != this->lf_index[0].get_time()) {
                 retval = true;
@@ -253,13 +252,13 @@ bool logfile::process_prefix(off_t offset,
                 last_mod = ll.get_module_id();
                 last_opid = ll.get_opid();
             }
-            this->lf_index.emplace_back(offset,
+            this->lf_index.emplace_back(li.li_file_range.fr_offset,
                                         last_time,
                                         last_millis,
                                         last_level,
                                         last_mod,
                                         last_opid);
-            this->lf_index.back().set_valid_utf(lv.lv_valid_utf);
+            this->lf_index.back().set_valid_utf(li.li_valid_utf);
             break;
         }
         case log_format::SCAN_INCOMPLETE:
@@ -294,9 +293,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
         // line buffer's notion of the file size since it may be compressed.
         bool has_format = this->lf_format.get() != nullptr;
         struct rusage begin_rusage;
-        shared_buffer_ref sbr;
-        off_t  last_off, off;
-        line_value lv;
+        off_t off;
         size_t begin_size = this->lf_index.size();
         bool record_rusage = this->lf_index.size() == 1;
         off_t begin_index_size = this->lf_index_size;
@@ -324,19 +321,22 @@ logfile::rebuild_result_t logfile::rebuild_index()
             if (!this->lf_index.empty()) {
                 off_t check_line_off = this->lf_index.back().get_offset();
 
-                if (!this->lf_line_buffer.read_line(check_line_off, sbr, &lv) ||
-                        off != check_line_off) {
-                    log_info("overwritten file detected, closing -- %s",
-                             this->lf_filename.c_str());
+                auto read_result = this->lf_line_buffer.read_range({
+                    check_line_off, this->lf_index_size - check_line_off
+                });
+
+                if (read_result.isErr()) {
+                    log_info("overwritten file detected, closing -- %s (%s)",
+                             this->lf_filename.c_str(),
+                             read_result.unwrapErr().c_str());
                     this->close();
-                    return RR_NO_NEW_LINES;
+                    return RR_INVALID;
                 }
             }
         }
         else {
             off = 0;
         }
-        last_off = off;
         if (this->lf_logline_observer != NULL) {
             this->lf_logline_observer->logline_restart(*this, rollback_size);
         }
@@ -344,23 +344,48 @@ logfile::rebuild_result_t logfile::rebuild_index()
         bool sort_needed = this->lf_sort_needed;
         this->lf_sort_needed = false;
 
-        while (this->lf_line_buffer.read_line(off, sbr, &lv)) {
+        auto prev_range = file_range{off};
+        while (true) {
+            auto load_result = this->lf_line_buffer.load_next_line(prev_range);
+
+            if (load_result.isErr()) {
+                this->close();
+                return RR_INVALID;
+            }
+
+            auto li = load_result.unwrap();
+
+            if (li.li_file_range.empty()) {
+                break;
+            }
+            prev_range = li.li_file_range;
+
             size_t old_size = this->lf_index.size();
 
             // Update this early so that line_length() works
-            this->lf_index_size = off;
+            this->lf_index_size = li.li_file_range.next_offset();
             if (old_size == 0) {
-                shared_buffer_ref avail_sbr;
+                file_range fr = this->lf_line_buffer.get_available();
+                auto avail_data = this->lf_line_buffer.read_range(fr);
 
-                this->lf_line_buffer.read_available(avail_sbr);
-                this->lf_text_format = detect_text_format(
-                    avail_sbr.get_data(), avail_sbr.length());
+                this->lf_text_format = avail_data.map(
+                    [](const shared_buffer_ref &avail_sbr) -> text_format_t {
+                        return detect_text_format(
+                            avail_sbr.get_data(), avail_sbr.length());
+                    })
+                    .unwrapOr(text_format_t::TF_UNKNOWN);
             }
 
+            auto read_result = this->lf_line_buffer.read_range(li.li_file_range);
+            if (read_result.isErr()) {
+                this->close();
+                return RR_INVALID;
+            }
+
+            auto sbr = read_result.unwrap().rtrim(is_line_ending);
             this->lf_longest_line = std::max(this->lf_longest_line, sbr.length());
-            this->lf_partial_line = lv.lv_partial;
-            sort_needed = this->process_prefix(last_off, sbr, lv) || sort_needed;
-            last_off = off;
+            this->lf_partial_line = li.li_partial;
+            sort_needed = this->process_prefix(sbr, li) || sort_needed;
 
             if (old_size > this->lf_index.size()) {
                 old_size = 0;
@@ -376,7 +401,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
             if (this->lf_logfile_observer != nullptr) {
                 this->lf_logfile_observer->logfile_indexing(
                     *this,
-                    this->lf_line_buffer.get_read_offset(off),
+                    this->lf_line_buffer.get_read_offset(li.li_file_range.fr_offset),
                     st.st_size);
             }
 
@@ -389,7 +414,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
             this->lf_logline_observer->logline_eof(*this);
         }
 
-        if (record_rusage && (off - begin_index_size) > (500 * 1024)) {
+        if (record_rusage && (prev_range.fr_offset - begin_index_size) > (500 * 1024)) {
             struct rusage end_rusage;
 
             getrusage(RUSAGE_SELF, &end_rusage);
@@ -406,7 +431,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
          * doing the scanning, so use the line buffer's notion of the file
          * size.
          */
-        this->lf_index_size = off;
+        this->lf_index_size = prev_range.next_offset();
         this->lf_stat = st;
 
         if (sort_needed) {
@@ -431,91 +456,26 @@ logfile::rebuild_result_t logfile::rebuild_index()
     return retval;
 }
 
-void logfile::read_line(logfile::iterator ll, string &line_out)
+Result<shared_buffer_ref, std::string> logfile::read_line(logfile::iterator ll)
 {
     try {
-        off_t       off = ll->get_offset();
-        shared_buffer_ref sbr;
+        return this->lf_line_buffer.read_range(this->get_file_range(ll, false))
+            .map([&ll, this](auto sbr) {
+                sbr.rtrim(is_line_ending);
+                if (!ll->is_valid_utf()) {
+                    scrub_to_utf8(sbr.get_writable_data(), sbr.length());
+                }
 
-        line_out.clear();
+                if (this->lf_format != nullptr) {
+                    this->lf_format->get_subline(*ll, sbr);
+                }
 
-        size_t line_len = this->line_length(ll, false);
-
-        if (ll->is_valid_utf()) {
-            if (!this->lf_line_buffer.read_range(off, line_len, sbr)) {
-                return;
-            }
-        } else if (!this->lf_line_buffer.read_line(off, sbr)) {
-            return;
-        }
-
-        if (this->lf_format != nullptr) {
-            this->lf_format->get_subline(*ll, sbr);
-        }
-        line_out.append(sbr.get_data(), sbr.length());
+                return sbr;
+            });
     }
     catch (line_buffer::error & e) {
-        /* ... */
+        return Err(string(strerror(e.e_err)));
     }
-}
-
-bool logfile::read_line(logfile::iterator ll, shared_buffer_ref &sbr)
-{
-    try {
-        off_t       off = ll->get_offset();
-        size_t line_len = this->line_length(ll, false);
-
-        if (ll->is_valid_utf()) {
-            if (!this->lf_line_buffer.read_range(off, line_len, sbr)) {
-                return false;
-            }
-        } else if (!this->lf_line_buffer.read_line(off, sbr)) {
-            return false;
-        }
-
-        if (this->lf_format != nullptr) {
-            this->lf_format->get_subline(*ll, sbr);
-        }
-        return true;
-    }
-    catch (line_buffer::error & e) {
-    }
-    return false;
-}
-
-void logfile::read_full_message(logfile::iterator ll,
-                                string &msg_out,
-                                int max_lines)
-{
-    ostringstream stream;
-
-    do {
-        try {
-            off_t off = ll->get_offset();
-            shared_buffer_ref sbr;
-
-            if (stream.tellp() > 0) {
-                stream.write("\n", 1);
-            }
-            if (this->lf_line_buffer.read_line(off, sbr)) {
-                this->lf_format->get_subline(*ll, sbr, true);
-                stream.write(sbr.get_data(), sbr.length());
-            }
-            else {
-                /* XXX */
-            }
-        }
-        catch (line_buffer::error & e) {
-            /* ... */
-        }
-        ++ll;
-        if (max_lines != -1) {
-            max_lines -= 1;
-        }
-    } while (ll != this->end() && ll->is_continued() && ll->get_sub_offset() == 0 &&
-             (max_lines == -1 || max_lines > 0));
-
-    msg_out = stream.str();
 }
 
 void logfile::read_full_message(logfile::iterator ll,
@@ -527,15 +487,17 @@ void logfile::read_full_message(logfile::iterator ll,
     size_t line_len = this->line_length(ll);
 
     try {
-        off_t       off = ll->get_offset();
+        off_t off = ll->get_offset();
 
-        if (this->lf_line_buffer.read_range(off, line_len, msg_out)) {
-            if (this->lf_format.get() != nullptr) {
-                this->lf_format->get_subline(*ll, msg_out, true);
-            }
+        auto read_result = this->lf_line_buffer.read_range({
+            off, static_cast<ssize_t>(line_len)});
+
+        if (read_result.isErr()) {
+            return;
         }
-        else {
-                /* XXX */
+        msg_out = read_result.unwrap();
+        if (this->lf_format.get() != nullptr) {
+            this->lf_format->get_subline(*ll, msg_out, true);
         }
     }
     catch (line_buffer::error & e) {
@@ -556,15 +518,15 @@ void logfile::reobserve_from(iterator iter)
     if (this->lf_logline_observer != NULL) {
         for (; iter != this->end(); ++iter) {
             off_t offset = std::distance(this->begin(), iter);
-            shared_buffer_ref sbr;
 
             if (this->lf_logfile_observer != NULL) {
                 this->lf_logfile_observer->logfile_indexing(
                         *this, offset, this->size());
             }
 
-            this->read_line(iter, sbr);
-            this->lf_logline_observer->logline_new_line(*this, iter, sbr);
+            this->read_line(iter).then([this, iter](auto sbr) {
+                this->lf_logline_observer->logline_new_line(*this, iter, sbr);
+            });
         }
         if (this->lf_logfile_observer != NULL) {
             this->lf_logfile_observer->logfile_indexing(

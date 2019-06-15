@@ -42,10 +42,10 @@ struct highlighter {
         : h_code(nullptr),
           h_code_extra(nullptr),
           h_attrs(-1),
-          h_text_format(TF_UNKNOWN) { };
+          h_text_format(text_format_t::TF_UNKNOWN) { };
 
     highlighter(pcre *code)
-        : h_code(code), h_attrs(-1), h_text_format(TF_UNKNOWN)
+        : h_code(code), h_attrs(-1), h_text_format(text_format_t::TF_UNKNOWN)
     {
         pcre_refcount(this->h_code, 1);
         this->study();

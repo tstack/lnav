@@ -171,7 +171,9 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
 
     if (flags & RF_RAW) {
         shared_ptr<logfile> lf = this->find(line);
-        lf->read_line(lf->begin() + line, value_out);
+        value_out = lf->read_line(lf->begin() + line)
+            .map([](auto sbr) { return to_string(sbr); })
+            .unwrapOr({});
         return;
     }
 
@@ -183,11 +185,15 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     this->lss_token_values.clear();
     this->lss_share_manager.invalidate_refs();
     if (flags & text_sub_source::RF_FULL) {
-        this->lss_token_file->read_full_message(this->lss_token_line,
-                                                this->lss_token_value);
+        shared_buffer_ref sbr;
+
+        this->lss_token_file->read_full_message(this->lss_token_line, sbr);
+        this->lss_token_value = to_string(sbr);
     } else {
         this->lss_token_value =
-            this->lss_token_file->read_line(this->lss_token_line);
+            this->lss_token_file->read_line(this->lss_token_line).map([](auto sbr) {
+                return to_string(sbr);
+            }).unwrapOr({});
     }
     this->lss_token_shift_start = 0;
     this->lss_token_shift_size = 0;
@@ -581,6 +587,7 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                         }
                     }
                     break;
+                case logfile::RR_INVALID:
                 case logfile::RR_NEW_ORDER:
                     retval = rebuild_result::rr_full_rebuild;
                     force = true;

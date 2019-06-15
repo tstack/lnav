@@ -45,6 +45,7 @@
 #include <algorithm>
 
 #include "base/lnav_log.hh"
+#include "base/result.h"
 #include "byte_array.hh"
 #include "line_buffer.hh"
 #include "log_format.hh"
@@ -269,30 +270,7 @@ public:
         return ll->get_timeval();
     };
 
-    /**
-     * Read a line from the file.
-     *
-     * @param ll The line to read.
-     * @param line_out Storage to hold the line itself.
-     */
-    void read_line(iterator ll, std::string &line_out);
-
-    bool read_line(iterator ll, shared_buffer_ref &sbr);
-
-    /**
-     * Read a line from the file.
-     *
-     * @param ll The line to read.
-     * @return The contents of the line as a string.
-     */
-    std::string read_line(iterator ll)
-    {
-        std::string retval;
-
-        this->read_line(ll, retval);
-
-        return retval;
-    };
+    Result<shared_buffer_ref, std::string> read_line(iterator ll);
 
     iterator line_base(iterator ll) {
         iterator retval = ll;
@@ -315,7 +293,7 @@ public:
         return retval;
     }
 
-    size_t line_length(iterator ll, bool include_continues = true) {
+    size_t line_length(iterator ll, bool include_continues = true) const {
         iterator next_line = ll;
         size_t retval;
 
@@ -342,11 +320,15 @@ public:
         return retval;
     };
 
-    void read_full_message(iterator ll, std::string &msg_out, int max_lines=50);
+    file_range get_file_range(iterator ll, bool include_continues = true) const {
+        return {ll->get_offset(),
+                (ssize_t) this->line_length(ll, include_continues)};
+    }
 
     void read_full_message(iterator ll, shared_buffer_ref &msg_out, int max_lines=50);
 
     enum rebuild_result_t {
+        RR_INVALID,
         RR_NO_NEW_LINES,
         RR_NEW_LINES,
         RR_NEW_ORDER,
@@ -409,7 +391,7 @@ protected:
      * @param prefix The contents of the line.
      * @param len The length of the 'prefix' string.
      */
-    bool process_prefix(off_t offset, shared_buffer_ref &sbr, const line_value &lv);
+    bool process_prefix(shared_buffer_ref &sbr, const line_info &li);
 
     void set_format_base_time(log_format *lf);
 
@@ -433,7 +415,7 @@ protected:
     logline_observer *lf_logline_observer{nullptr};
     logfile_observer *lf_logfile_observer{nullptr};
     size_t lf_longest_line{0};
-    text_format_t lf_text_format{TF_UNKNOWN};
+    text_format_t lf_text_format{text_format_t::TF_UNKNOWN};
     uint32_t lf_out_of_time_order_count{0};
 };
 

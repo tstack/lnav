@@ -40,10 +40,10 @@ class plain_text_source
         : public text_sub_source, public vis_location_history {
 public:
     plain_text_source()
-        : tds_text_format(TF_UNKNOWN), tds_longest_line(0) {
+        : tds_text_format(text_format_t::TF_UNKNOWN), tds_longest_line(0) {
     };
 
-    plain_text_source(const std::string &text) : tds_text_format(TF_UNKNOWN) {
+    plain_text_source(const std::string &text) : tds_text_format(text_format_t::TF_UNKNOWN) {
         size_t start = 0, end;
 
         while ((end = text.find('\n', start)) != std::string::npos) {
@@ -58,12 +58,12 @@ public:
     };
 
     plain_text_source(const std::vector<std::string> &text_lines)
-        : tds_text_format(TF_UNKNOWN) {
+        : tds_text_format(text_format_t::TF_UNKNOWN) {
         this->replace_with(text_lines);
     };
 
     plain_text_source(const std::vector<attr_line_t> &text_lines)
-        : tds_text_format(TF_UNKNOWN) {
+        : tds_text_format(text_format_t::TF_UNKNOWN) {
         this->tds_lines = text_lines;
         this->tds_longest_line = this->compute_longest_line();
     };
@@ -86,7 +86,7 @@ public:
     void clear() {
         this->tds_lines.clear();
         this->tds_longest_line = 0;
-        this->tds_text_format = TF_UNKNOWN;
+        this->tds_text_format = text_format_t::TF_UNKNOWN;
     };
 
     plain_text_source &truncate_to(size_t max_lines) {

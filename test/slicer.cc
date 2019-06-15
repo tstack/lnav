@@ -43,45 +43,57 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;
-    vector<off_t> index;
+    vector<file_range> index;
     auto_fd fd;
-    
+
     if (argc < 2) {
-	fprintf(stderr, "error: expecting file argument\n");
-	retval = EXIT_FAILURE;
-    }
-    else if ((fd = open(argv[1], O_RDONLY)) == -1) {
-	perror("open");
-	retval = EXIT_FAILURE;
-    }
-    else {
-	int line_number, start, end;
-	off_t offset = 0;
-	line_buffer lb;
-    line_value lv;
-	
-	lb.set_fd(fd);
-	index.push_back(offset);
-	while (lb.read_line(offset, lv)) {
-	    index.push_back(offset);
-	}
-	index.pop_back();
+        fprintf(stderr, "error: expecting file argument\n");
+        retval = EXIT_FAILURE;
+    } else if ((fd = open(argv[1], O_RDONLY)) == -1) {
+        perror("open");
+        retval = EXIT_FAILURE;
+    } else {
+        int line_number, start, end;
+        line_buffer lb;
+        file_range range;
 
-	try {
-	    while (scanf("%d:%d:%d", &line_number, &start, &end) == 3) {
-		string str;
-		
-		offset = index[line_number];
-		lb.read_line(offset, lv);
-		str = string(lv.lv_start, lv.lv_len);
-		str = str.substr(start, end);
-		printf("%s\n", str.c_str());
-	    }
-	}
-	catch (line_buffer::error &e) {
-	    fprintf(stderr, "error: line buffer %s\n", strerror(e.e_err));
-	}
-    }
+        lb.set_fd(fd);
+        while (true) {
+            auto load_result = lb.load_next_line(range);
 
+            if (load_result.isErr()) {
+                return EXIT_FAILURE;
+            }
+
+            auto li = load_result.unwrap();
+
+            if (li.li_file_range.empty()) {
+                break;
+            }
+
+            index.emplace_back(li.li_file_range);
+
+            range = li.li_file_range;
+        }
+
+        try {
+            while (scanf("%d:%d:%d", &line_number, &start, &end) == 3) {
+                range = index[line_number];
+                auto read_result = lb.read_range(range);
+
+                if (read_result.isErr()) {
+                    return EXIT_FAILURE;
+                }
+
+                auto str = to_string(read_result.unwrap());
+
+                str = str.substr(start, end - start);
+                printf("%s\n", str.c_str());
+            }
+        }
+        catch (line_buffer::error &e) {
+            fprintf(stderr, "error: line buffer %s\n", strerror(e.e_err));
+        }
+    }
     return retval;
 }

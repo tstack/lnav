@@ -40,10 +40,12 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
+#include <tuple>
 #include <string>
 #include <vector>
 #include <algorithm>
 
+#include "base/string_util.hh"
 #include "lnav_util.hh"
 #include "auto_fd.hh"
 #include "line_buffer.hh"
@@ -53,7 +55,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 	int c, rnd_iters = 5, retval = EXIT_SUCCESS;
-	vector<pair<int, int> > index;
+	vector<tuple<int, off_t, ssize_t> > index;
 	auto_fd fd = STDIN_FILENO;
 	int offseti = 0;
 	off_t offset = 0;
@@ -96,10 +98,17 @@ int main(int argc, char *argv[])
 					retval = EXIT_FAILURE;
 				} else {
 					int line_number = 1, line_offset;
+					off_t last_offset;
+					ssize_t line_size;
 
 					while (fscanf(file, "%d", &line_offset) == 1) {
-						index.push_back(
-							make_pair(line_number, line_offset));
+					    if (line_number > 1) {
+					        line_size = line_offset - last_offset;
+                            index.emplace_back(line_number - 1,
+                                               last_offset,
+                                               line_size);
+                        }
+					    last_offset = line_offset;
 						line_number += 1;
 					}
 					fclose(file);
@@ -128,20 +137,42 @@ int main(int argc, char *argv[])
 		retval = EXIT_FAILURE;
 	} else {
 		try {
-			off_t last_offset = offset;
+		    file_range last_range{offset};
 			line_buffer lb;
-			line_value lv;
 			char *maddr;
 
 			lb.set_fd(fd);
 			if (index.size() == 0) {
-				shared_buffer_ref sbr;
+				while (count) {
+                    auto load_result = lb.load_next_line(last_range);
 
-				while (count && lb.read_line(offset, sbr, &lv)) {
+                    if (load_result.isErr()) {
+                        break;
+                    }
+
+                    auto li = load_result.unwrap();
+
+                    if (li.li_file_range.empty()) {
+                        break;
+                    }
+
+                    auto read_result = lb.read_range(li.li_file_range);
+
+                    if (read_result.isErr()) {
+                        break;
+                    }
+
+                    auto sbr = read_result.unwrap();
+
+                    if (!li.li_valid_utf) {
+                        scrub_to_utf8(sbr.get_writable_data(), sbr.length());
+                    }
+
 					printf("%.*s", (int) sbr.length(), sbr.get_data());
-					if ((off_t) (last_offset + lv.lv_len) < offset)
-						printf("\n");
-					last_offset = offset;
+					if ((off_t) (li.li_file_range.fr_offset + li.li_file_range.fr_size) < offset) {
+                        printf("\n");
+                    }
+					last_range = li.li_file_range;
 					count -= 1;
 				}
 			} else if ((maddr = (char *) mmap(NULL,
@@ -153,25 +184,40 @@ int main(int argc, char *argv[])
 				perror("mmap");
 				retval = EXIT_FAILURE;
 			} else {
-				off_t seq_offset = 0;
+				file_range range;
 
-				while (lb.read_line(seq_offset, lv)) {}
+				while (true) {
+                    auto load_result = lb.load_next_line(range);
+
+                    if (load_result.isErr()) {
+                        return EXIT_FAILURE;
+                    }
+
+                    auto li = load_result.unwrap();
+
+                    range = li.li_file_range;
+
+                    if (range.empty()) {
+                        break;
+                    }
+				}
 				do {
-					bool ret;
 					size_t lpc;
 
 					random_shuffle(index.begin(), index.end());
 					for (lpc = 0; lpc < index.size(); lpc++) {
+					    const auto &index_tuple = index[lpc];
 
-						offset = index[lpc].second;
-						ret = lb.read_line(offset, lv);
+						auto read_result = lb.read_range(
+						    {get<1>(index_tuple), get<2>(index_tuple)});
 
-						assert(ret);
-						assert(offset >= 0);
-						assert(offset <= st.st_size);
-						assert(memcmp(lv.lv_start,
-									  &maddr[index[lpc].second],
-									  lv.lv_len) == 0);
+						assert(read_result.isOk());
+
+						auto sbr = read_result.unwrap();
+
+						assert(memcmp(sbr.get_data(),
+									  &maddr[get<1>(index_tuple)],
+									  sbr.length()) == 0);
 					}
 
 					rnd_iters -= 1;

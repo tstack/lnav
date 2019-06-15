@@ -51,18 +51,16 @@ static string execute_action(log_data_helper &ldh,
 
     auto_pipe in_pipe(STDIN_FILENO);
     auto_pipe out_pipe(STDOUT_FILENO);
-    auto_pipe err_pipe(STDERR_FILENO);
 
     in_pipe.open();
-    if (action.ad_capture_output)
+    if (action.ad_capture_output) {
         out_pipe.open();
-    err_pipe.open();
+    }
 
     child_pid = fork();
 
     in_pipe.after_fork(child_pid);
     out_pipe.after_fork(child_pid);
-    err_pipe.after_fork(child_pid);
 
     switch (child_pid) {
         case -1:
@@ -75,6 +73,7 @@ static string execute_action(log_data_helper &ldh,
             int value_line;
             string path;
 
+            dup2(STDOUT_FILENO, STDERR_FILENO);
             setenv("LNAV_ACTION_FILE", lf->get_filename().c_str(), 1);
             snprintf(env_buffer, sizeof(env_buffer),
                      "%ld",
@@ -111,9 +110,6 @@ static string execute_action(log_data_helper &ldh,
             static int exec_count = 0;
 
             string value = lv.to_string();
-            line_buffer lb;
-            off_t off = 0;
-            line_value lv;
 
             lnav_data.ld_children.push_back(child_pid);
 
@@ -121,10 +117,6 @@ static string execute_action(log_data_helper &ldh,
                 perror("execute_action write");
             }
             in_pipe.close();
-
-            lb.set_fd(err_pipe.read_end());
-
-            lb.read_line(off, lv);
 
             if (out_pipe.read_end() != -1) {
                 auto pp = make_shared<piper_proc>(out_pipe.read_end(), false);
@@ -140,7 +132,7 @@ static string execute_action(log_data_helper &ldh,
                 lnav_data.ld_files_to_front.push_back({ desc, 0 });
             }
 
-            retval = string(lv.lv_start, lv.lv_len);
+            return "";
         }
             break;
     }

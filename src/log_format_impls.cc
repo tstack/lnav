@@ -137,7 +137,7 @@ class generic_log_format : public log_format {
         }
     };
 
-    scan_result_t scan(nonstd::optional<logfile *> lf,
+    scan_result_t scan(logfile &lf,
                        vector<logline> &dst,
                        off_t offset,
                        shared_buffer_ref &sbr)
@@ -471,7 +471,7 @@ public:
         }
     }
 
-    scan_result_t scan(nonstd::optional<logfile *> lf,
+    scan_result_t scan(logfile &lf,
                        std::vector<logline> &dst,
                        off_t offset,
                        shared_buffer_ref &sbr) {
@@ -481,14 +481,20 @@ public:
             return this->scan_int(dst, offset, sbr);
         }
 
-        if (dst.empty() || dst.size() > 20 || sbr.empty() || sbr.get_data()[0] == '#' || !lf) {
+        if (dst.empty() || dst.size() > 20 || sbr.empty() || sbr.get_data()[0] == '#') {
             return SCAN_NO_MATCH;
         }
 
         pcre_context_static<20> pc;
         auto line_iter = dst.begin();
-        string line = lf.value()->read_line(line_iter);
-        pcre_input pi(line);
+        auto read_result = lf.read_line(line_iter);
+
+        if (read_result.isErr()) {
+            return SCAN_NO_MATCH;
+        }
+
+        auto line = read_result.unwrap();
+        pcre_input pi(line.get_data(), 0, line.length());
 
         if (!SEP_RE.match(pc, pi)) {
             return SCAN_NO_MATCH;
@@ -500,8 +506,14 @@ public:
         this->blf_separator = intern_string::lookup(sep);
 
         for (++line_iter; line_iter != dst.end(); ++line_iter) {
-            string line = lf.value()->read_line(line_iter);
-            separated_string ss(line.c_str(), line.length());
+            auto next_read_result = lf.read_line(line_iter);
+
+            if (next_read_result.isErr()) {
+                return SCAN_NO_MATCH;
+            }
+
+            line = next_read_result.unwrap();
+            separated_string ss(line.get_data(), line.length());
 
             ss.with_separator(this->blf_separator.get());
             auto iter = ss.begin();

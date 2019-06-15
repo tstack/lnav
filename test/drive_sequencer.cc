@@ -62,12 +62,14 @@ public:
 	bool retval = false;
 
 	try {
+#if 0
         line_value lv;
 	    
 	    if (this->ms_buffer.read_line(this->ms_offset, lv)) {
 		value_out = string(lv.lv_start, lv.lv_len);
 		retval = true;
 	    }
+#endif
 	}
 	catch (line_buffer::error &e) {
 	    fprintf(stderr,

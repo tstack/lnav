@@ -56,7 +56,7 @@ static void open_schema_view()
     delete schema_tc->get_sub_source();
 
     auto *pts = new plain_text_source(schema);
-    pts->set_text_format(TF_SQL);
+    pts->set_text_format(text_format_t::TF_SQL);
 
     schema_tc->set_sub_source(pts);
 }

@@ -40,19 +40,16 @@
 #include <exception>
 
 #include "base/lnav_log.hh"
+#include "base/file_range.hh"
+#include "base/result.h"
 #include "auto_fd.hh"
 #include "auto_mem.hh"
 #include "shared_buffer.hh"
 
-struct line_value {
-    char *lv_start{nullptr};
-    size_t lv_len{0};
-    bool lv_partial{false};
-    bool lv_valid_utf{false};
-
-    void terminate() {
-        this->lv_start[this->lv_len] = '\0';
-    };
+struct line_info {
+    file_range li_file_range;
+    bool li_partial{false};
+    bool li_valid_utf{true};
 };
 
 /**
@@ -66,8 +63,8 @@ struct line_value {
  */
 class line_buffer {
 public:
-    static const size_t DEFAULT_LINE_BUFFER_SIZE   = 256 * 1024;
-    static const size_t MAX_LINE_BUFFER_SIZE       = 4 * 4 * DEFAULT_LINE_BUFFER_SIZE;
+    static const ssize_t DEFAULT_LINE_BUFFER_SIZE   = 256 * 1024;
+    static const ssize_t MAX_LINE_BUFFER_SIZE       = 4 * 4 * DEFAULT_LINE_BUFFER_SIZE;
     class error
         : public std::exception {
 public:
@@ -79,6 +76,8 @@ public:
 
     /** Construct an empty line_buffer. */
     line_buffer();
+
+    line_buffer(line_buffer &&other) = default;
 
     virtual ~line_buffer();
 
@@ -140,14 +139,11 @@ public:
      * NULL termination, the invalidate() must be called before re-reading the
      * line to refresh the buffer.
      */
-    bool read_line(off_t &offset_inout, line_value &lv,
-        bool include_delim = false);
+    Result<line_info, std::string> load_next_line(file_range prev_line = {});
 
-    bool read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_value *lv = NULL);
+    Result<shared_buffer_ref, std::string> read_range(file_range fr);
 
-    bool read_range(off_t offset, size_t len, shared_buffer_ref &sbr);
-
-    void read_available(shared_buffer_ref &sbr);
+    file_range get_available();
 
     void clear()
     {
@@ -160,7 +156,7 @@ public:
         this->lb_fd.reset();
 
         this->lb_file_offset      = 0;
-        this->lb_file_size        = (size_t)-1;
+        this->lb_file_size        = (ssize_t)-1;
         this->lb_buffer_size      = 0;
         this->lb_last_line_offset = -1;
     };
@@ -200,7 +196,7 @@ private:
      * @param start The file offset of the start of the line.
      * @param max_length The amount of data to be cached in the buffer.
      */
-    void ensure_available(off_t start, size_t max_length);
+    void ensure_available(off_t start, ssize_t max_length);
 
     /**
      * Fill the buffer with the given range of data from the file.
@@ -210,7 +206,7 @@ private:
      * @param max_length The maximum amount of data to read from the file.
      * @return True if any data was read from the file.
      */
-    bool fill_range(off_t start, size_t max_length);
+    bool fill_range(off_t start, ssize_t max_length);
 
     /**
      * After a successful fill, the cached data can be retrieved with this
@@ -222,7 +218,7 @@ private:
      * @return A pointer to the start of the cached data in the internal
      * buffer.
      */
-    char *get_range(off_t start, size_t &avail_out) const
+    char *get_range(off_t start, ssize_t &avail_out) const
     {
         off_t buffer_offset = start - this->lb_file_offset;
         char *retval;

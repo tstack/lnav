@@ -325,7 +325,7 @@ void textview_curses::textview_value_for_row(vis_line_t row,
                            && tc_highlight.first != "$search"
                            && tc_highlight.first != "$preview";
 
-        if (tc_highlight.second.h_text_format != TF_UNKNOWN &&
+        if (tc_highlight.second.h_text_format != text_format_t::TF_UNKNOWN &&
             source_format != tc_highlight.second.h_text_format) {
             continue;
         }

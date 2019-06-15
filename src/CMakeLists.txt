@@ -24,7 +24,7 @@ set(diag_STAT_SRCS
         hotkeys.cc
         input_dispatcher.cc
         intern_string.cc
-        is_utf8.cc
+        base/is_utf8.cc
         json-extension-functions.cc
         yajlpp/json_op.cc
         yajlpp/json_ptr.cc
@@ -66,6 +66,7 @@ set(diag_STAT_SRCS
         ptimec.cc
         sql_util.cc
         state-extension-functions.cc
+        base/string_util.cc
         strnatcmp.c
         text_format.cc
         textfile_highlighters.cc
@@ -126,7 +127,7 @@ set(diag_STAT_SRCS
         hotkeys.hh
         input_dispatcher.hh
         intern_string.hh
-        is_utf8.hh
+        base/is_utf8.hh
         k_merge_tree.h
         log_actions.hh
         log_data_helper.hh
@@ -147,6 +148,7 @@ set(diag_STAT_SRCS
         readline_possibilities.hh
         regexp_vtab.hh
         relative_time.hh
+        base/result.h
         styling.hh
         ring_span.hh
         sequence_sink.hh
@@ -206,9 +208,21 @@ include_directories(
         ../../lbuild-debug/src
         /opt/local/include
         /usr/local/opt/sqlite3/include
+        /usr/local/opt/pcre/include
+        /usr/local/opt/readline/include
         fmtlib
 )
 include_directories(SYSTEM .)
 add_executable(lnav ${lnav_SRCS} ${diag_STAT_SRCS})
+
+target_link_libraries(lnav
+        /usr/lib/libz.dylib
+        /usr/lib/libbz2.dylib
+        /usr/local/opt/curl/lib/libcurl.dylib
+        /usr/local/opt/sqlite/lib/libsqlite3.a
+        /usr/local/opt/pcre/lib/libpcre.a
+        /usr/local/opt/pcre/lib/libpcrecpp.a
+        /usr/local/opt/readline/lib/libreadline.a
+        /usr/local/opt/ncurses/lib/libncurses.a)
 
 add_executable(bin2c bin2c.c)

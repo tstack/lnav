@@ -108,7 +108,7 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         auto_fd     infd(pipefd);
         line_buffer lb;
         off_t       woff = 0, last_woff = 0;
-        off_t       off  = 0, last_off = 0;
+        file_range last_range;
         int nullfd;
 
         nullfd = open("/dev/null", O_RDWR);
@@ -132,7 +132,6 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
         log_perror(fcntl(infd.get(), F_SETFL, O_NONBLOCK));
         lb.set_fd(infd);
         do {
-            line_value lv;
             struct pollfd pfd = {
                     lb.get_fd(),
                     POLLIN,
@@ -140,8 +139,31 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
             };
 
             poll(&pfd, 1, -1);
-            last_off = off;
-            while (lb.read_line(off, lv, true)) {
+            while (true) {
+                auto load_result = lb.load_next_line(last_range);
+
+                if (load_result.isErr()) {
+                    break;
+                }
+
+                auto li = load_result.unwrap();
+
+                if (li.li_partial && !lb.is_pipe_closed()) {
+                    break;
+                }
+
+                if (li.li_file_range.empty()) {
+                    break;
+                }
+
+                auto read_result = lb.read_range(li.li_file_range);
+
+                if (read_result.isErr()) {
+                    break;
+                }
+
+                auto sbr = read_result.unwrap();
+
                 ssize_t wrc;
 
                 last_woff = woff;
@@ -157,19 +179,18 @@ piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
                 /* Need to do pwrite here since the fd is used by the main
                  * lnav process as well.
                  */
-                wrc = pwrite(this->pp_fd, lv.lv_start, lv.lv_len, woff);
+                wrc = pwrite(this->pp_fd, sbr.get_data(), sbr.length(), woff);
                 if (wrc == -1) {
                     perror("Unable to write to output file for stdin");
                     break;
                 }
                 woff += wrc;
 
-                if (lv.lv_start[lv.lv_len - 1] != '\n' &&
-                        (off != lb.get_file_size())) {
-                    off = last_off;
+                last_range = li.li_file_range;
+                if (sbr.get_data()[sbr.length() - 1] != '\n' &&
+                        (last_range.next_offset() != lb.get_file_size())) {
                     woff = last_woff;
                 }
-                last_off = off;
             }
         } while (lb.is_pipe() && !lb.is_pipe_closed());
 

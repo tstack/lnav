@@ -9,6 +9,18 @@ add_executable(lnav_doctests
         ../src/pcrepp/pcrepp.cc
         ../src/base/lnav_log.cc)
 add_executable(test_pcrepp test_pcrepp.cc ../src/base/lnav_log.cc ../src/pcrepp/pcrepp.cc)
+add_executable(test_line_buffer2
+        test_line_buffer2.cc
+        ../src/base/lnav_log.cc
+        ../src/base/is_utf8.cc
+        ../src/fmtlib/format.cc
+        ../src/fmtlib/posix.cc
+        ../src/shared_buffer.cc
+        ../src/line_buffer.hh
+        ../src/line_buffer.cc)
+target_link_libraries(test_line_buffer2
+        bz2
+        z)
 add_executable(test_reltime test_reltime.cc
         ../src/relative_time.cc
         ../src/pcrepp/pcrepp.cc

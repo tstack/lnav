@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -41,6 +42,7 @@
 #include <sys/wait.h>
 
 #include "base/lnav_log.hh"
+#include "base/string_util.hh"
 #include "lnav_util.hh"
 #include "grep_proc.hh"
 #include "listview_curses.hh"
@@ -257,7 +259,7 @@ void grep_proc<LineType>::cleanup()
         this->gp_err_pipe.reset();
     }
 
-    this->gp_pipe_offset = 0;
+    this->gp_pipe_range.clear();
     this->gp_line_buffer.reset();
 
     ensure(this->invariant());
@@ -348,12 +350,31 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
             static const int MAX_LOOPS = 100;
 
             int    loop_count = 0;
-            line_value lv;
 
-            while ((loop_count < MAX_LOOPS) &&
-                   (this->gp_line_buffer.read_line(this->gp_pipe_offset, lv))) {
-                lv.terminate();
-                this->dispatch_line(lv.lv_start);
+            while (loop_count < MAX_LOOPS) {
+                auto load_result = this->gp_line_buffer
+                    .load_next_line(this->gp_pipe_range);
+
+                if (load_result.isErr()) {
+                    break;
+                }
+
+                auto li = load_result.unwrap();
+
+                if (li.li_file_range.empty()) {
+                    break;
+                }
+
+                this->gp_pipe_range = li.li_file_range;
+                this->gp_line_buffer.read_range(li.li_file_range).then([this](auto sbr) {
+                    char buf[1024];
+
+                    sbr.rtrim(is_line_ending);
+                    memcpy(buf, sbr.get_data(), sbr.length());
+                    buf[sbr.length()] = '\0';
+                    this->dispatch_line(buf);
+                });
+
                 loop_count += 1;
             }
 
@@ -361,8 +382,7 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
                 this->gp_sink->grep_end_batch(*this);
             }
 
-            if ((off_t) this->gp_line_buffer.get_file_size() ==
-                this->gp_pipe_offset) {
+            if (this->gp_line_buffer.is_pipe_closed()) {
                 this->cleanup();
             }
         }

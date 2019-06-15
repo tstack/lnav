@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Timothy Stack
+ * Copyright (c) 2019, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,29 +25,27 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file text_format.hh
  */
 
-#ifndef __text_format_hh
-#define __text_format_hh
+#include "config.h"
 
-#include <sys/types.h>
+#include "is_utf8.hh"
+#include "string_util.hh"
 
-enum class text_format_t {
-    TF_UNKNOWN,
-    TF_PYTHON,
-    TF_C_LIKE,
-    TF_SQL,
-};
+void scrub_to_utf8(char *buffer, size_t length)
+{
+    const char *msg;
+    int faulty_bytes;
 
-/**
- * Try to detect the format of the given text file fragment.
- *
- * @param str The text to scan.
- * @param len The length of the 'str' buffer.
- * @return The detected format.
- */
-text_format_t detect_text_format(const char *str, size_t len);
+    while (true) {
+        ssize_t utf8_end = is_utf8(
+            (unsigned char *) buffer, length, &msg, &faulty_bytes);
 
-#endif
+        if (msg == nullptr) {
+            break;
+        }
+        for (int lpc = 0; lpc < faulty_bytes; lpc++) {
+            buffer[utf8_end + lpc] = '?';
+        }
+    }
+}

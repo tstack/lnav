@@ -47,14 +47,15 @@
 #include "simdutf8check.h"
 #endif
 
-#include "is_utf8.hh"
+#include "base/is_utf8.hh"
 #include "lnav_util.hh"
 #include "line_buffer.hh"
+#include "fmtlib/fmt/format.h"
 
 using namespace std;
 
-static const size_t DEFAULT_INCREMENT          = 128 * 1024;
-static const size_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
+static const ssize_t DEFAULT_INCREMENT          = 128 * 1024;
+static const ssize_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
 
 /*
  * XXX REMOVE ME
@@ -119,7 +120,7 @@ line_buffer::line_buffer()
     : lb_gz_file(NULL),
       lb_bz_file(false),
       lb_compressed_offset(0),
-      lb_file_size((size_t)-1),
+      lb_file_size(-1),
       lb_file_offset(0),
       lb_file_time(0),
       lb_buffer_size(0),
@@ -228,7 +229,7 @@ void line_buffer::resize_buffer(size_t new_max)
     require(this->lb_bz_file || this->lb_gz_file ||
         new_max <= MAX_LINE_BUFFER_SIZE);
 
-    if  (new_max > (size_t)this->lb_buffer_max) {
+    if (new_max > (size_t)this->lb_buffer_max) {
         char *tmp, *old;
 
         /* Still need more space, try a realloc. */
@@ -246,9 +247,9 @@ void line_buffer::resize_buffer(size_t new_max)
     }
 }
 
-void line_buffer::ensure_available(off_t start, size_t max_length)
+void line_buffer::ensure_available(off_t start, ssize_t max_length)
 {
-    size_t prefill, available;
+    ssize_t prefill, available;
 
     require(max_length <= MAX_LINE_BUFFER_SIZE);
 
@@ -318,7 +319,7 @@ void line_buffer::ensure_available(off_t start, size_t max_length)
     }
 }
 
-bool line_buffer::fill_range(off_t start, size_t max_length)
+bool line_buffer::fill_range(off_t start, ssize_t max_length)
 {
     bool retval = false;
 
@@ -484,50 +485,50 @@ bool line_buffer::fill_range(off_t start, size_t max_length)
     return retval;
 }
 
-bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
+Result<line_info, string> line_buffer::load_next_line(file_range prev_line)
 {
-    size_t request_size = DEFAULT_INCREMENT;
-    bool retval = false;
+    ssize_t request_size = DEFAULT_INCREMENT;
+    bool done = false;
+    line_info retval;
 
     require(this->lb_fd != -1);
 
+    auto offset = prev_line.next_offset();
+    retval.li_file_range.fr_offset = offset;
     if (this->lb_last_line_offset != -1 && offset >
         this->lb_last_line_offset) {
         /*
          * Don't return anything past the last known line.  The caller needs
          * to try reading at the offset of the last line again.
          */
-        return false;
+        return Ok(retval);
     }
 
-    lv.lv_len = 0;
-    lv.lv_partial = false;
-    lv.lv_valid_utf = true;
-    while (!retval) {
+    while (!done) {
         char *line_start, *lf;
 
         this->fill_range(offset, request_size);
 
         /* Find the data in the cache and */
-        line_start = this->get_range(offset, lv.lv_len);
+        line_start = this->get_range(offset, retval.li_file_range.fr_size);
         /* ... look for the end-of-line or end-of-file. */
         ssize_t utf8_end = -1;
 
 #undef HAVE_X86INTRIN_H
 #ifdef HAVE_X86INTRIN_H
-        if (!validate_utf8_fast(line_start, lv.lv_len, &utf8_end)) {
-            lv.lv_valid_utf = false;
+        if (!validate_utf8_fast(line_start, retval.li_file_range.fr_size, &utf8_end)) {
+            retval.li_valid_utf = false;
         }
 #else
         {
             const char *msg;
             int faulty_bytes;
 
-            utf8_end = is_utf8((unsigned char *) line_start, lv.lv_len, &msg, &faulty_bytes);
+            utf8_end = is_utf8((unsigned char *) line_start, retval.li_file_range.fr_size, &msg, &faulty_bytes);
             if (msg != nullptr) {
-                lf = (char *) memchr(line_start, '\n', lv.lv_len);
+                lf = (char *) memchr(line_start, '\n', retval.li_file_range.fr_size);
                 utf8_end = lf - line_start;
-                lv.lv_valid_utf = false;
+                retval.li_valid_utf = false;
             }
         }
 #endif
@@ -538,51 +539,41 @@ bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
         }
 
         if (lf != nullptr ||
-            (lv.lv_len >= MAX_LINE_BUFFER_SIZE) ||
+            (retval.li_file_range.fr_size >= MAX_LINE_BUFFER_SIZE) ||
             (request_size == MAX_LINE_BUFFER_SIZE) ||
-            ((request_size > lv.lv_len) && lv.lv_len > 0)) {
+            ((request_size > retval.li_file_range.fr_size) &&
+             (retval.li_file_range.fr_size > 0) &&
+             (!this->is_pipe() || request_size > DEFAULT_INCREMENT))) {
             if ((lf != NULL) &&
                 ((size_t) (lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1)) {
                 lf = NULL;
             }
             if (lf != NULL) {
-                lv.lv_partial = false;
-                lv.lv_len = lf - line_start;
-                if (include_delim) {
-                    lv.lv_len += 1;
-                }
-                else {
-                    if (lv.lv_len > 1 && line_start[lv.lv_len - 1] == '\r') {
-                        lv.lv_len -= 1;
-                        offset += 1;
-                    }
-                    offset += 1; /* Skip the delimiter. */
-                }
+                retval.li_partial = false;
+                retval.li_file_range.fr_size = lf - line_start;
+                // delim
+                retval.li_file_range.fr_size += 1;
                 if (offset >= this->lb_last_line_offset) {
-                    this->lb_last_line_offset = offset + lv.lv_len;
+                    this->lb_last_line_offset = offset + retval.li_file_range.fr_size;
                 }
             }
             else {
-                if (lv.lv_len >= MAX_LINE_BUFFER_SIZE) {
+                if (retval.li_file_range.fr_size >= MAX_LINE_BUFFER_SIZE) {
                     log_warning("Line exceeded max size: offset=%d",
                                 offset);
-                    lv.lv_len = MAX_LINE_BUFFER_SIZE - 1;
-                    lv.lv_partial = false;
+                    retval.li_file_range.fr_size = MAX_LINE_BUFFER_SIZE - 1;
+                    retval.li_partial = false;
                 }
                 else {
-                    lv.lv_partial = true;
+                    retval.li_partial = true;
                 }
-                /*
-                 * Be nice and make sure there is room for the caller to
-                 * add a NULL-terminator.
-                 */
-                this->ensure_available(offset, lv.lv_len + 1);
-                line_start = this->get_range(offset, lv.lv_len);
+                this->ensure_available(offset, retval.li_file_range.fr_size);
+                line_start = this->get_range(offset, retval.li_file_range.fr_size);
 
-                if (lv.lv_len >= MAX_LINE_BUFFER_SIZE) {
-                    lv.lv_len = MAX_LINE_BUFFER_SIZE - 1;
+                if (retval.li_file_range.fr_size >= MAX_LINE_BUFFER_SIZE) {
+                    retval.li_file_range.fr_size = MAX_LINE_BUFFER_SIZE - 1;
                 }
-                if (lv.lv_partial) {
+                if (retval.li_partial) {
                     /*
                      * Since no delimiter was seen, we need to remember the offset
                      * of the last line in the file so we don't mistakenly return
@@ -595,100 +586,57 @@ bool line_buffer::read_line(off_t &offset, line_value &lv, bool include_delim)
                     this->lb_last_line_offset = offset;
                 }
                 else if (offset >= this->lb_last_line_offset) {
-                    this->lb_last_line_offset = offset + lv.lv_len;
+                    this->lb_last_line_offset = offset + retval.li_file_range.fr_size;
                 }
             }
 
-            lv.lv_start = line_start;
-            offset += lv.lv_len;
+            offset += retval.li_file_range.fr_size;
 
-            retval = true;
+            done = true;
         }
         else {
             request_size += DEFAULT_INCREMENT;
         }
 
-        if (!retval && !this->fill_range(offset, request_size)) {
+        if (!done && !this->fill_range(offset, request_size)) {
             break;
         }
     }
 
-    ensure(lv.lv_len <= (size_t)this->lb_buffer_size);
-    ensure(!retval ||
-           (lv.lv_start >= this->lb_buffer &&
-            (lv.lv_start + lv.lv_len) <= (this->lb_buffer + this->lb_buffer_size)));
+    ensure(retval.li_file_range.fr_size <= (size_t)this->lb_buffer_size);
     ensure(this->invariant());
 
-    return retval;
+    return Ok(retval);
 }
 
-bool line_buffer::read_line(off_t &offset_inout, shared_buffer_ref &sbr, line_value *lv)
+Result<shared_buffer_ref, std::string> line_buffer::read_range(const file_range fr)
 {
-    line_value lv_tmp;
-    bool retval;
-
-    if (lv == NULL) {
-        lv = &lv_tmp;
-    }
-
-    // Clear the incoming ref right away so that an invalidate
-    // does not cause a wasted malloc/copy.
-    sbr.disown();
-    if ((retval = this->read_line(offset_inout, *lv))) {
-        sbr.share(this->lb_share_manager, lv->lv_start, lv->lv_len);
-        if (!lv->lv_valid_utf) {
-            auto *bits = (unsigned char *) sbr.get_writable_data();
-            const char *msg;
-            int faulty_bytes;
-
-            while (true) {
-                ssize_t utf8_end = is_utf8(bits, sbr.length(), &msg, &faulty_bytes);
-
-                if (msg == nullptr) {
-                    break;
-                }
-                for (int lpc = 0; lpc < faulty_bytes; lpc++) {
-                    bits[utf8_end + lpc] = '?';
-                }
-            }
-        }
-    }
-
-    return retval;
-}
-
-bool line_buffer::read_range(off_t offset, size_t len, shared_buffer_ref &sbr)
-{
+    shared_buffer_ref retval;
     char *line_start;
-    size_t avail;
+    ssize_t avail;
 
-    sbr.disown();
-
-    if (this->lb_last_line_offset != -1 && offset > this->lb_last_line_offset) {
+    if (this->lb_last_line_offset != -1 &&
+        fr.fr_offset > this->lb_last_line_offset) {
         /*
          * Don't return anything past the last known line.  The caller needs
          * to try reading at the offset of the last line again.
          */
-        return false;
+        return Err(string("out-of-bounds"));
     }
 
-    this->fill_range(offset, len);
-    line_start = this->get_range(offset, avail);
+    this->fill_range(fr.fr_offset, fr.fr_size);
+    line_start = this->get_range(fr.fr_offset, avail);
 
-    ensure(len <= avail);
-    sbr.share(this->lb_share_manager, line_start, len);
+    if (fr.fr_size > avail) {
+        return Err(fmt::format("short-read (need: {}; avail: {})",
+            fr.fr_size, avail));
+    }
+    retval.share(this->lb_share_manager, line_start, fr.fr_size);
 
-    return true;
+    return Ok(retval);
 }
 
-void line_buffer::read_available(shared_buffer_ref &sbr)
+file_range line_buffer::get_available()
 {
-    sbr.disown();
-
-    size_t len = this->lb_buffer_size;
-
-    char *line_start = this->get_range(this->lb_file_offset, len);
-
-    sbr.share(this->lb_share_manager, line_start,
-              std::min(len, (size_t) MAX_LINE_BUFFER_SIZE));
+    return {this->lb_file_offset, this->lb_buffer_size};
 }

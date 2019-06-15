@@ -1441,7 +1441,7 @@ static string com_create_logline_table(exec_context &ec, string cmdline, vector<
                 lnav_data.ld_preview_status_source.get_description()
                     .set_value("The following table will be created:");
                 lnav_data.ld_preview_source.replace_with(al)
-                         .set_text_format(TF_SQL);
+                         .set_text_format(text_format_t::TF_SQL);
 
                 delete ldt;
 
@@ -1561,7 +1561,7 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
                      .set_value("The following table will be created:");
 
             lnav_data.ld_preview_source.replace_with(al)
-                .set_text_format(TF_SQL);
+                .set_text_format(text_format_t::TF_SQL);
 
             return "";
         }

@@ -539,7 +539,9 @@ void rebuild_indexes()
         textfile_sub_source *tss = &lnav_data.ld_text_source;
         textfile_callback cb;
 
-        tss->rescan_files(cb);
+        if (tss->rescan_files(cb)) {
+            text_view.reload_data();
+        }
 
         if (cb.front_file != nullptr) {
             ensure_view(&text_view);
@@ -555,16 +557,6 @@ void rebuild_indexes()
             if (cb.front_top < text_view.get_inner_height()) {
                 text_view.set_top(vis_line_t(cb.front_top));
                 scroll_downs[LNV_TEXT] = false;
-            }
-        }
-
-        if (!tss->empty()) {
-            if (text_view.get_top() >= text_view.get_inner_height()) {
-                if (text_view.get_inner_height() > 0_vl) {
-                    text_view.set_top(text_view.get_inner_height() - 1_vl);
-                } else {
-                    text_view.set_top(0_vl);
-                }
             }
         }
     }
@@ -1281,7 +1273,7 @@ void update_hits(void *dummy, textview_curses *tc)
                          .set_value("Matching lines for search");
                 lnav_data.ld_preview_source
                          .replace_with(all_matches)
-                         .set_text_format(TF_UNKNOWN);
+                         .set_text_format(text_format_t::TF_UNKNOWN);
             }
         }
     }
@@ -2330,17 +2322,18 @@ int main(int argc, char *argv[])
                 retval = EXIT_FAILURE;
                 continue;
             }
-            for (auto line_iter = lf->begin();
-                    line_iter != lf->end();
-                    ++line_iter) {
+            for (auto line_iter = lf->begin(); line_iter != lf->end(); ++line_iter) {
                 if (!line_iter->is_continued()) {
                     continue;
                 }
 
-                shared_buffer_ref sbr;
                 size_t partial_len;
 
-                lf->read_line(line_iter, sbr);
+                auto read_result = lf->read_line(line_iter);
+                if (read_result.isErr()) {
+                    continue;
+                }
+                shared_buffer_ref sbr = read_result.unwrap();
                 if (fmt->scan_for_partial(sbr, partial_len)) {
                     long line_number = distance(lf->begin(), line_iter);
                     string full_line(sbr.get_data(), sbr.length());
@@ -2610,12 +2603,13 @@ int main(int argc, char *argv[])
                 for (line_iter = lf->begin();
                      line_iter != lf->end();
                      ++line_iter) {
-                    lf->read_line(line_iter, str);
 
-                    if (write(STDOUT_FILENO, str.c_str(), str.size()) == -1 ||
-                        write(STDOUT_FILENO, "\n", 1) == -1) {
-                        perror("3 write to STDOUT");
-                    }
+                    lf->read_line(line_iter).then([](const auto &sbr) {
+                        if (write(STDOUT_FILENO, sbr.get_data(), sbr.length()) == -1 ||
+                            write(STDOUT_FILENO, "\n", 1) == -1) {
+                            perror("3 write to STDOUT");
+                        }
+                    });
                 }
             }
         }

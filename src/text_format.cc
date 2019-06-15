@@ -61,20 +61,20 @@ text_format_t detect_text_format(const char *str, size_t len)
             ")",
         PCRE_MULTILINE|PCRE_CASELESS);
 
-    text_format_t retval = TF_UNKNOWN;
+    text_format_t retval = text_format_t::TF_UNKNOWN;
     pcre_input pi(str, 0, len);
     pcre_context_static<30> pc;
 
     if (PYTHON_MATCHERS.match(pc, pi)) {
-        return TF_PYTHON;
+        return text_format_t::TF_PYTHON;
     }
 
     if (C_LIKE_MATCHERS.match(pc, pi)) {
-        return TF_C_LIKE;
+        return text_format_t::TF_C_LIKE;
     }
 
     if (SQL_MATCHERS.match(pc, pi)) {
-        return TF_SQL;
+        return text_format_t::TF_SQL;
     }
 
     return retval;

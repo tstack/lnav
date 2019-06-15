@@ -458,7 +458,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
             if (!ddl.empty()) {
                 lnav_data.ld_preview_source.replace_with(ddl)
-                    .set_text_format(TF_SQL)
+                    .set_text_format(text_format_t::TF_SQL)
                     .truncate_to(30);
                 lnav_data.ld_preview_status_source.get_description()
                          .set_value("Definition for table -- %s",

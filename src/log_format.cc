@@ -493,7 +493,7 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
     return (int)len_out > pat->p_timestamp_end;
 }
 
-log_format::scan_result_t external_log_format::scan(nonstd::optional<logfile *> lf,
+log_format::scan_result_t external_log_format::scan(logfile &lf,
                                                     std::vector<logline> &dst,
                                                     off_t offset,
                                                     shared_buffer_ref &sbr)
@@ -1872,7 +1872,7 @@ public:
             return true;
         }
 
-        content_line_t    cl(lss.at(lc.lc_curr_line));
+        content_line_t cl(lss.at(lc.lc_curr_line));
         shared_ptr<logfile> lf = lss.find(cl);
         auto lf_iter = lf->begin() + cl;
         uint8_t mod_id = lf_iter->get_module_id();
@@ -1887,38 +1887,38 @@ public:
         if (format->get_name() == this->lfvi_format.get_name()) {
             return true;
         } else if (mod_id && mod_id == this->lfvi_format.lf_mod_index) {
-            std::vector<logline_value> values;
-            shared_buffer_ref body_ref;
-            struct line_range mod_name_range;
-            intern_string_t mod_name;
-            shared_buffer_ref line;
+            return lf->read_line(lf_iter).map([this, format, cl](auto line) {
+                std::vector<logline_value> values;
+                shared_buffer_ref body_ref;
+                struct line_range mod_name_range;
+                intern_string_t mod_name;
 
-            lf->read_line(lf_iter, line);
-            this->vi_attrs.clear();
-            format->annotate(cl, line, this->vi_attrs, values, false);
-            this->elt_container_body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
-            if (!this->elt_container_body.is_valid()) {
-                return false;
-            }
-            this->elt_container_body.ltrim(line.get_data());
-            body_ref.subset(line,
-                            this->elt_container_body.lr_start,
-                            this->elt_container_body.length());
-            mod_name_range = find_string_attr_range(this->vi_attrs,
-                                                    &logline::L_MODULE);
-            if (!mod_name_range.is_valid()) {
-                return false;
-            }
-            mod_name = intern_string::lookup(
+                this->vi_attrs.clear();
+                format->annotate(cl, line, this->vi_attrs, values, false);
+                this->elt_container_body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
+                if (!this->elt_container_body.is_valid()) {
+                    return false;
+                }
+                this->elt_container_body.ltrim(line.get_data());
+                body_ref.subset(line,
+                                this->elt_container_body.lr_start,
+                                this->elt_container_body.length());
+                mod_name_range = find_string_attr_range(this->vi_attrs,
+                                                        &logline::L_MODULE);
+                if (!mod_name_range.is_valid()) {
+                    return false;
+                }
+                mod_name = intern_string::lookup(
                     &line.get_data()[mod_name_range.lr_start],
                     mod_name_range.length());
-            this->vi_attrs.clear();
-            this->elt_module_format = external_log_format::MODULE_FORMATS[mod_name];
-            if (!this->elt_module_format.mf_mod_format) {
-                return false;
-            }
-            return this->elt_module_format.mf_mod_format->get_name() ==
-                    this->lfvi_format.get_name();
+                this->vi_attrs.clear();
+                this->elt_module_format = external_log_format::MODULE_FORMATS[mod_name];
+                if (!this->elt_module_format.mf_mod_format) {
+                    return false;
+                }
+                return this->elt_module_format.mf_mod_format->get_name() ==
+                       this->lfvi_format.get_name();
+            }).unwrapOr(false);
         }
 
         return false;

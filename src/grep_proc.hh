@@ -66,7 +66,7 @@ class grep_proc;
 template<typename LineType>
 class grep_proc_source {
 public:
-    virtual ~grep_proc_source() { };
+    virtual ~grep_proc_source() = default;
 
     virtual void register_proc(grep_proc<LineType> *proc) {
         this->gps_proc = proc;
@@ -201,7 +201,7 @@ public:
         this->gp_control = gpc;
     };
 
-    /** @return The sink to send resuls to. */
+    /** @return The sink to send results to. */
     grep_proc_sink<LineType> *get_sink() { return this->gp_sink; };
 
     /**
@@ -263,7 +263,6 @@ public:
             require(this->gp_line_buffer.get_fd() != -1);
         }
         else {
-            require(this->gp_pipe_offset == 0);
             /* require(this->gp_child == -1); XXX doesnt work with static destr */
             require(this->gp_line_buffer.get_fd() == -1);
         }
@@ -303,7 +302,7 @@ protected:
 
     auto_fd     gp_err_pipe;             /*< Standard error from the child. */
     line_buffer gp_line_buffer;          /*< Standard out from the child. */
-    off_t       gp_pipe_offset{0};
+    file_range  gp_pipe_range;
 
     pid_t gp_child{-1};                     /*<
                                          * The child's pid or zero in the

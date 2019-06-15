@@ -99,7 +99,7 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "\\bwith\\b|"
         "\\byield\\b"
         ")"))
-        .with_text_format(TF_PYTHON)
+        .with_text_format(text_format_t::TF_PYTHON)
         .with_role(view_colors::VCR_KEYWORD);
 
     hm["$clike"] = highlighter(xpcre_compile(
@@ -183,7 +183,7 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "\\bwchar_t\\b|"
         "\\bwhile\\b"
         ")"))
-        .with_text_format(TF_C_LIKE)
+        .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_KEYWORD);
 
     hm["$sql"] = highlighter(xpcre_compile(
@@ -319,7 +319,7 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "\\bWITH\\b|"
         "\\bWITHOUT\\b"
         ")", PCRE_CASELESS))
-        .with_text_format(TF_SQL)
+        .with_text_format(text_format_t::TF_SQL)
         .with_role(view_colors::VCR_KEYWORD);
 
     hm["$srcfile"] = highlighter(xpcre_compile(
@@ -352,7 +352,7 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_role(view_colors::VCR_COMMENT);
     hm["$sqlcomment"] = highlighter(xpcre_compile(
         "(?<=[\\s;])--.*"))
-        .with_text_format(TF_SQL)
+        .with_text_format(text_format_t::TF_SQL)
         .with_role(view_colors::VCR_COMMENT);
     hm["$javadoc"] = static_highlighter(
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");
@@ -366,10 +366,10 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_role(view_colors::VCR_VARIABLE);
     hm["$sym"] = highlighter(xpcre_compile(
         "\\b[A-Z_][A-Z0-9_]+\\b"))
-        .with_text_format(TF_C_LIKE)
+        .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_SYMBOL);
     hm["$num"] = highlighter(xpcre_compile(
         "\\b-?(?:\\d+|0x[a-zA-Z0-9]+)\\b"))
-        .with_text_format(TF_C_LIKE)
+        .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_NUMBER);
 }

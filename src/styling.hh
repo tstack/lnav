@@ -57,7 +57,6 @@ struct rgb_color {
 struct style_config {
     std::string sc_color;
     std::string sc_background_color;
-    std::string sc_selected_color;
     bool sc_underline{false};
     bool sc_bold{false};
 };
