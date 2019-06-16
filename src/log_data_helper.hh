@@ -1,3 +1,5 @@
+#include <memory>
+
 /**
  * Copyright (c) 2013, Timothy Stack
  *
@@ -106,30 +108,27 @@ public:
                 body.lr_start = this->ldh_msg.length();
                 body.lr_end = this->ldh_msg.length();
             }
-            this->ldh_scanner.reset(new data_scanner(
-                this->ldh_msg, body.lr_start, body.lr_end));
-            this->ldh_parser.reset(new data_parser(this->ldh_scanner.get()));
+            this->ldh_scanner = std::make_unique<data_scanner>(
+                this->ldh_msg, body.lr_start, body.lr_end);
+            this->ldh_parser = std::make_unique<data_parser>(this->ldh_scanner.get());
             this->ldh_msg_format.clear();
             this->ldh_parser->dp_msg_format = &this->ldh_msg_format;
             this->ldh_parser->parse();
-            this->ldh_namer.reset(new column_namer());
+            this->ldh_namer = std::make_unique<column_namer>();
             this->ldh_json_pairs.clear();
 
             for (auto lv : this->ldh_line_values) {
-                this->ldh_namer->cn_builtin_names.push_back(lv.lv_name.get());
+                this->ldh_namer->cn_builtin_names.emplace_back(lv.lv_name.get());
             }
 
-            for (std::vector<logline_value>::iterator iter =
-                 this->ldh_line_values.begin();
-                 iter != this->ldh_line_values.end();
-                 ++iter) {
-                switch (iter->lv_kind) {
+            for (auto & ldh_line_value : this->ldh_line_values) {
+                switch (ldh_line_value.lv_kind) {
                 case logline_value::VALUE_JSON: {
                     json_ptr_walk jpw;
 
-                    if (jpw.parse(iter->lv_sbr.get_data(), iter->lv_sbr.length()) == yajl_status_ok &&
+                    if (jpw.parse(ldh_line_value.lv_sbr.get_data(), ldh_line_value.lv_sbr.length()) == yajl_status_ok &&
                         jpw.complete_parse() == yajl_status_ok) {
-                        this->ldh_json_pairs[iter->lv_name] = jpw.jpw_values;
+                        this->ldh_json_pairs[ldh_line_value.lv_name] = jpw.jpw_values;
                     }
                     break;
                 }

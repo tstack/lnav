@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 
 #include "sql_util.hh"
 #include "lnav_util.hh"
@@ -44,57 +45,16 @@ class column_namer {
 public:
     column_namer()
     {
-        this->cn_builtin_names.push_back("col");
+        this->cn_builtin_names.emplace_back("col");
     };
 
-    bool existing_name(const std::string &in_name) const
-    {
-        if (std::binary_search(std::begin(sql_keywords),
-                               std::end(sql_keywords),
-                               toupper(in_name))) {
-            return true;
-        }
+    bool existing_name(const std::string &in_name) const;
 
-        if (find(this->cn_builtin_names.begin(),
-                 this->cn_builtin_names.end(),
-                 in_name) != this->cn_builtin_names.end()) {
-            return true;
-        }
-
-        if (find(this->cn_names.begin(),
-                 this->cn_names.end(),
-                 in_name) != this->cn_names.end()) {
-            return true;
-        }
-
-        return false;
-    };
-
-    std::string add_column(const std::string &in_name)
-    {
-        std::string base_name = in_name, retval;
-        size_t      buf_size;
-        int         num = 0;
-
-        buf_size = in_name.length() + 64;
-        char buffer[buf_size];
-        if (in_name == "") {
-            base_name = "col";
-        }
-
-        retval = base_name;
-        while (this->existing_name(retval)) {
-            snprintf(buffer, buf_size, "%s_%d", base_name.c_str(), num);
-            retval = buffer;
-            num   += 1;
-        }
-
-        this->cn_names.push_back(retval);
-
-        return retval;
-    };
+    std::string add_column(const std::string &in_name);
 
     std::vector<std::string> cn_builtin_names;
     std::vector<std::string> cn_names;
+    std::unordered_map<std::string, int> cn_name_counters;
 };
+
 #endif

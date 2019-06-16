@@ -326,6 +326,7 @@ libdiag_a_SOURCES = \
 	bookmarks.cc \
 	bottom_status_source.cc \
 	collation-functions.cc \
+	column_namer.cc \
 	command_executor.cc \
 	curl_looper.cc \
 	db_sub_source.cc \

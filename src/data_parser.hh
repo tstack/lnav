@@ -942,6 +942,10 @@ private:
                 *(this->dp_msg_format) += pi.get_substr(&last);
             }
         }
+
+        if (pairs_out.size() > 1000) {
+            pairs_out.resize(1000);
+        }
     };
 
     void discover_format(void)

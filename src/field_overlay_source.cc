@@ -332,21 +332,17 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
     this->fos_known_key_size = 0;
     this->fos_unknown_key_size = 0;
 
-    for (std::vector<logline_value>::iterator iter =
-            this->fos_log_helper.ldh_line_values.begin();
-         iter != this->fos_log_helper.ldh_line_values.end();
-         ++iter) {
-        int this_key_size = iter->lv_name.size();
+    for (auto & ldh_line_value : this->fos_log_helper.ldh_line_values) {
+        int this_key_size = ldh_line_value.lv_name.size();
 
-        if (iter->lv_kind == logline_value::VALUE_STRUCT) {
+        if (ldh_line_value.lv_kind == logline_value::VALUE_STRUCT) {
             this_key_size += 9;
         }
         this->fos_known_key_size = max(
             this->fos_known_key_size, this_key_size);
     }
 
-    for (data_parser::element_list_t::iterator iter =
-            this->fos_log_helper.ldh_parser->dp_pairs.begin();
+    for (auto iter = this->fos_log_helper.ldh_parser->dp_pairs.begin();
          iter != this->fos_log_helper.ldh_parser->dp_pairs.end();
          ++iter) {
         std::string colname = this->fos_log_helper.ldh_parser->get_element_string(
