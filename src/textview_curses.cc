@@ -124,8 +124,6 @@ textview_curses::textview_curses()
       tc_selection_cleared(false),
       tc_hide_fields(true)
 {
-    this->tc_follow_deadline.tv_sec = 0;
-    this->tc_follow_deadline.tv_usec = 0;
     this->set_data_source(this);
 }
 

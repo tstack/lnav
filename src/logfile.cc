@@ -401,7 +401,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
             if (this->lf_logfile_observer != nullptr) {
                 this->lf_logfile_observer->logfile_indexing(
                     *this,
-                    this->lf_line_buffer.get_read_offset(li.li_file_range.fr_offset),
+                    this->lf_line_buffer.get_read_offset(li.li_file_range.next_offset()),
                     st.st_size);
             }
 

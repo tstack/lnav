@@ -964,7 +964,7 @@ protected:
     vis_bookmarks tc_bookmarks;
 
     int tc_searching{0};
-    struct timeval tc_follow_deadline;
+    struct timeval tc_follow_deadline{0, 0};
     action tc_search_action;
 
     highlight_map_t           tc_highlights;

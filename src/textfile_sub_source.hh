@@ -188,7 +188,7 @@ public:
 
             try {
                 uint32_t old_size = lf->size();
-                bool new_text_data = lf->rebuild_index();
+                logfile::rebuild_result_t new_text_data = lf->rebuild_index();
 
                 if (lf->get_format() != NULL) {
                     iter = this->tss_files.erase(iter);
@@ -197,7 +197,14 @@ public:
                     continue;
                 }
 
-                retval = retval || new_text_data;
+                switch (new_text_data) {
+                    case logfile::RR_NEW_LINES:
+                    case logfile::RR_NEW_ORDER:
+                        retval = true;
+                        break;
+                    default:
+                        break;
+                }
                 callback.scanned_file(lf);
 
                 uint32_t filter_in_mask, filter_out_mask;
