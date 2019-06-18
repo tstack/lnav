@@ -349,7 +349,8 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
         try {
             static const int MAX_LOOPS = 100;
 
-            int    loop_count = 0;
+            int loop_count = 0;
+            bool drained = false;
 
             while (loop_count < MAX_LOOPS) {
                 auto load_result = this->gp_line_buffer
@@ -362,6 +363,7 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
                 auto li = load_result.unwrap();
 
                 if (li.li_file_range.empty()) {
+                    drained = true;
                     break;
                 }
 
@@ -382,7 +384,7 @@ void grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd> &pollf
                 this->gp_sink->grep_end_batch(*this);
             }
 
-            if (this->gp_line_buffer.is_pipe_closed()) {
+            if (drained && this->gp_line_buffer.is_pipe_closed()) {
                 this->cleanup();
             }
         }
