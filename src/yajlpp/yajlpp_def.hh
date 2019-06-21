@@ -326,21 +326,23 @@ struct json_path_handler : public json_path_handler_base {
         return gen(obj->*FIELD);
     };
 
+    template<typename T, typename R, R T::*FIELD>
     static yajl_gen_status map_field_gen(yajlpp_gen_context &ygc,
                                          const json_path_handler_base &jph,
                                          yajl_gen handle)
     {
-        const auto def_obj = (std::map<std::string, std::string> *) (
-            ygc.ygc_default_stack.empty() ? nullptr
-                                          : ygc.ygc_default_stack.top());
-        auto obj = (std::map<std::string, std::string> *) ygc.ygc_obj_stack.top();
+        const auto def_container = (T *) (ygc.ygc_default_stack.empty() ?
+            nullptr : ygc.ygc_default_stack.top());
+        auto container = (T *) ygc.ygc_obj_stack.top();
+        auto &obj = container->*FIELD;
         yajl_gen_status rc;
 
-        for (auto &pair : *obj) {
-            if (def_obj != nullptr) {
-                auto iter = def_obj->find(pair.first);
+        for (const auto &pair : obj) {
+            if (def_container != nullptr) {
+                auto &def_obj = def_container->*FIELD;
+                auto iter = def_obj.find(pair.first);
 
-                if (iter != def_obj->end() && iter->second == pair.second) {
+                if (iter != def_obj.end() && iter->second == pair.second) {
                     continue;
                 }
             }
@@ -371,7 +373,7 @@ struct json_path_handler : public json_path_handler_base {
     template<typename T, typename STR_T, std::map<std::string, std::string> T::*STR>
     json_path_handler &for_field() {
         this->add_cb(string_field_cb<T, STR_T, STR>);
-        this->jph_gen_callback = map_field_gen;
+        this->jph_gen_callback = map_field_gen<T, STR_T, STR>;
         this->jph_validator = string_field_validator<T, STR_T, STR>;
 
         return *this;

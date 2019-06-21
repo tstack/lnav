@@ -106,9 +106,7 @@ public:
         this->msg = (const char *) yajl_msg.in();
     }
 
-    ~yajlpp_error() override {
-
-    }
+    ~yajlpp_error() override = default;
 
     const char *what() const noexcept override {
         return this->msg.c_str();
@@ -135,10 +133,6 @@ struct json_path_handler_base {
     json_path_handler_base(const char *path)
             : jph_path(path),
               jph_regex(path, PCRE_ANCHORED),
-              jph_gen_callback(nullptr),
-              jph_field_getter(nullptr),
-              jph_obj_provider(nullptr),
-              jph_path_provider(nullptr),
               jph_synopsis(""),
               jph_description(""),
               jph_children(nullptr),
@@ -174,12 +168,11 @@ struct json_path_handler_base {
     const char *   jph_path;
     pcrepp         jph_regex;
     yajl_callbacks jph_callbacks;
-    yajl_gen_status (*jph_gen_callback)(yajlpp_gen_context &, const json_path_handler_base &, yajl_gen);
-    void           (*jph_validator)(yajlpp_parse_context &ypc,
-                                    const json_path_handler_base &jph);
-    void *(*jph_field_getter)(void *root, nonstd::optional<std::string> name);
-    void *(*jph_obj_provider)(const yajlpp_provider_context &pe, void *root);
-    void (*jph_path_provider)(void *root, std::vector<std::string> &paths_out);
+    std::function<yajl_gen_status (yajlpp_gen_context &, const json_path_handler_base &, yajl_gen)> jph_gen_callback;
+    std::function<void (yajlpp_parse_context &ypc, const json_path_handler_base &jph)> jph_validator;
+    std::function<void *(void *root, nonstd::optional<std::string> name)> jph_field_getter;
+    std::function<void *(const yajlpp_provider_context &pe, void *root)> jph_obj_provider;
+    std::function<void (void *root, std::vector<std::string> &paths_out)> jph_path_provider;
     const char *   jph_synopsis;
     const char *   jph_description;
     json_path_handler_base *jph_children;
