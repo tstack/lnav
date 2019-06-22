@@ -105,7 +105,7 @@ std::ostream& operator<< (std::ostream& os, const exttm& value);
     off_inout += 1;
 
 #define ABR_TO_INT(a, b, c) \
-    ((a << 24) | (b << 16) | (c << 8))
+    (((a) << 24) | ((b) << 16) | ((c) << 8))
 
 inline
 bool ptime_upto(char ch, const char *str, off_t &off_inout, ssize_t len)
@@ -132,10 +132,14 @@ bool ptime_b_slow(struct exttm *dst, const char *str, off_t &off_inout, ssize_t 
 inline bool ptime_b(struct exttm *dst, const char *str, off_t &off_inout, ssize_t len)
 {
     if (off_inout + 3 < len) {
-        uint32_t *iptr = (uint32_t *)(&str[off_inout]);
+        auto month_start = (unsigned char *) &str[off_inout];
+        uint32_t month_int =
+            ABR_TO_INT(month_start[0] & ~0x20UL,
+                       month_start[1] & ~0x20UL,
+                       month_start[2] & ~0x20UL);
         int val;
 
-        switch (htonl(*iptr) & 0xdfdfdf00) {
+        switch (month_int) {
         case ABR_TO_INT('J', 'A', 'N'):
             val = 0;
             break;

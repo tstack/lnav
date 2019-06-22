@@ -1,5 +1,12 @@
 
-include_directories(../../lbuild-debug/src ../src/ /opt/local/include)
+include_directories(
+        ../../lbuild-debug/src
+        ../src/
+        /opt/local/include
+        /usr/local/opt/sqlite3/include
+        /usr/local/opt/pcre/include
+        /usr/local/opt/readline/include
+)
 
 add_executable(lnav_doctests
         lnav_doctests.cc

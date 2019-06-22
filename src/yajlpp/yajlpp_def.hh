@@ -165,13 +165,17 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename R, typename T>
     json_path_handler &with_obj_provider(R *(*provider)(const yajlpp_provider_context &pc, T *root)) {
-        this->jph_obj_provider = (void *(*)(const yajlpp_provider_context &, void *)) provider;
+        this->jph_obj_provider = [provider](const yajlpp_provider_context &ypc, void *root) {
+            return (R *) provider(ypc, (T *) root);
+        };
         return *this;
     };
 
     template<typename T>
     json_path_handler &with_path_provider(void (*provider)(T *root, std::vector<std::string> &paths_out)) {
-        this->jph_path_provider = (void (*)(void *, std::vector<std::string> &)) provider;
+        this->jph_path_provider = [provider](void *root, std::vector<std::string> &paths_out) {
+            provider((T *) root, paths_out);
+        };
         return *this;
     }
 
