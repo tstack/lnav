@@ -292,27 +292,6 @@ private:
     void (*va_invoker)(void *functor, _Sender *sender);
 };
 
-struct lab_color {
-    lab_color() : lc_l(0), lc_a(0), lc_b(0) {
-    };
-
-    lab_color(const rgb_color &rgb);
-
-    double deltaE(const lab_color &other) const;
-
-    lab_color& operator=(const lab_color &other) {
-        this->lc_l = other.lc_l;
-        this->lc_a = other.lc_a;
-        this->lc_b = other.lc_b;
-
-        return *this;
-    };
-
-    double lc_l;
-    double lc_a;
-    double lc_b;
-};
-
 /**
  * Singleton used to manage the colorspace.
  */

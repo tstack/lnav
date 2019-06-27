@@ -505,7 +505,7 @@ std::string relative_time::to_string()
     return dst;
 }
 
-size_t str2reltime(int64_t millis, std::string &value_out)
+size_t duration2str(int64_t millis, std::string &value_out)
 {
     /* 24h22m33s111 */
 
@@ -523,7 +523,15 @@ size_t str2reltime(int64_t millis, std::string &value_out)
     };
 
     struct rel_interval *curr_interval = intervals;
-    size_t in_len = value_out.length(), retval = 0;
+    size_t retval = 0;
+
+    if (millis < 0) {
+        value_out.append(1, '-');
+        millis = -millis;
+        retval += 1;
+    }
+
+    size_t in_len = value_out.length();
 
     if (millis >= (10 * 60 * 1000)) {
         millis /= 1000;

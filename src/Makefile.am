@@ -381,6 +381,7 @@ libdiag_a_SOURCES = \
 	sqlite-extension-func.cc \
 	statusview_curses.cc \
 	string-extension-functions.cc \
+	styling.cc \
 	text_format.cc \
 	timer.cc \
 	piper_proc.cc \

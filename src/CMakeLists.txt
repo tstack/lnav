@@ -1,5 +1,5 @@
 
-set(diag_STAT_SRCS
+add_library(diag STATIC
         ansi_scrubber.cc
         bookmarks.cc
         bottom_status_source.cc
@@ -67,6 +67,7 @@ set(diag_STAT_SRCS
         ptimec.cc
         sql_util.cc
         state-extension-functions.cc
+        styling.cc
         base/string_util.cc
         strnatcmp.c
         text_format.cc
@@ -200,7 +201,13 @@ set(diag_STAT_SRCS
         fmtlib/fmt/format.h
         fmtlib/format.cc
 
+        log_level_re.cc
+
         ../../lbuild-debug/src/config.h
+        ../../lbuild-debug/src/time_fmts.cc
+        ../../lbuild-debug/src/default-config.c
+        ../../lbuild-debug/src/ansi-palette-json.c
+        ../../lbuild-debug/src/xterm-palette-json.c
         )
 
 set(lnav_SRCS lnav.cc)
@@ -214,16 +221,10 @@ include_directories(
         fmtlib
 )
 include_directories(SYSTEM .)
-add_executable(lnav ${lnav_SRCS} ${diag_STAT_SRCS})
+add_executable(lnav ${lnav_SRCS})
 
 target_link_libraries(lnav
-        /usr/lib/libz.dylib
-        /usr/lib/libbz2.dylib
-        /usr/local/opt/curl/lib/libcurl.dylib
-        /usr/local/opt/sqlite/lib/libsqlite3.a
-        /usr/local/opt/pcre/lib/libpcre.a
-        /usr/local/opt/pcre/lib/libpcrecpp.a
-        /usr/local/opt/readline/lib/libreadline.a
-        /usr/local/opt/ncurses/lib/libncurses.a)
+        diag
+        ${lnav_LIBS})
 
 add_executable(bin2c bin2c.c)

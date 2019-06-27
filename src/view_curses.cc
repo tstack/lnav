@@ -41,147 +41,10 @@
 #include "lnav_config.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
-#include "ansi-palette-json.h"
-#include "xterm-palette-json.h"
 #include "attr_line.hh"
 #include "shlex.hh"
 
 using namespace std;
-
-struct term_color {
-    short xc_id;
-    string xc_name;
-    rgb_color xc_color;
-    lab_color xc_lab_color;
-};
-
-static struct json_path_handler term_color_rgb_handler[] = {
-    json_path_handler("r")
-        .FOR_FIELD(rgb_color, rc_r),
-    json_path_handler("g")
-        .FOR_FIELD(rgb_color, rc_g),
-    json_path_handler("b")
-        .FOR_FIELD(rgb_color, rc_b),
-
-    json_path_handler()
-};
-
-static struct json_path_handler term_color_handler[] = {
-    json_path_handler("colorId")
-        .FOR_FIELD(term_color, xc_id),
-    json_path_handler("name")
-        .FOR_FIELD(term_color, xc_name),
-    json_path_handler("rgb/")
-        .with_obj_provider<rgb_color, term_color>([](const auto &pc, term_color *xc) { return &xc->xc_color; })
-        .with_children(term_color_rgb_handler),
-
-    json_path_handler()
-};
-
-static struct json_path_handler root_color_handler[] = {
-    json_path_handler("#/")
-        .with_obj_provider<term_color, vector<term_color>>(
-            [](const yajlpp_provider_context &ypc, vector<term_color> *palette) {
-                palette->resize(ypc.ypc_index + 1);
-                return &((*palette)[ypc.ypc_index]);
-            })
-        .with_children(term_color_handler),
-
-    json_path_handler()
-};
-
-struct term_color_palette {
-    term_color_palette(const unsigned char *json) {
-        yajlpp_parse_context ypc_xterm("palette.json", root_color_handler);
-        yajl_handle handle;
-
-        handle = yajl_alloc(&ypc_xterm.ypc_callbacks, nullptr, &ypc_xterm);
-        ypc_xterm
-            .with_ignore_unused(true)
-            .with_obj(this->tc_palette)
-            .with_handle(handle);
-        yajl_status st = ypc_xterm.parse(json, strlen((const char *) json));
-        ensure(st == yajl_status_ok);
-        st = ypc_xterm.complete_parse();
-        ensure(st == yajl_status_ok);
-        yajl_free(handle);
-
-        for (auto &xc : this->tc_palette) {
-            xc.xc_lab_color = lab_color(xc.xc_color);
-        }
-    };
-
-    short match_color(const lab_color &to_match) {
-        double lowest = 1000.0;
-        short lowest_id = -1;
-
-        for (auto &xc : this->tc_palette) {
-            double xc_delta = xc.xc_lab_color.deltaE(to_match);
-
-            if (lowest_id == -1) {
-                lowest = xc_delta;
-                lowest_id = xc.xc_id;
-                continue;
-            }
-
-            if (xc_delta < lowest) {
-                lowest = xc_delta;
-                lowest_id = xc.xc_id;
-            }
-        }
-
-        return lowest_id;
-    };
-
-    vector<term_color> tc_palette;
-};
-
-term_color_palette xterm_colors(xterm_palette_json.bsf_data);
-term_color_palette ansi_colors(ansi_palette_json.bsf_data);
-
-term_color_palette *ACTIVE_PALETTE = &ansi_colors;
-
-bool rgb_color::from_str(const string_fragment &color,
-                         rgb_color &rgb_out,
-                         std::string &errmsg)
-{
-    if (color.empty()) {
-        return true;
-    }
-
-    if (color[0] == '#') {
-        switch (color.length()) {
-            case 4:
-                if (sscanf(color.data(), "#%1hx%1hx%1hx",
-                           &rgb_out.rc_r, &rgb_out.rc_g, &rgb_out.rc_b) == 3) {
-                    rgb_out.rc_r |= rgb_out.rc_r << 4;
-                    rgb_out.rc_g |= rgb_out.rc_g << 4;
-                    rgb_out.rc_b |= rgb_out.rc_b << 4;
-                    return true;
-                }
-                break;
-            case 7:
-                if (sscanf(color.data(), "#%2hx%2hx%2hx",
-                           &rgb_out.rc_r, &rgb_out.rc_g, &rgb_out.rc_b) == 3) {
-                    return true;
-                }
-                break;
-        }
-        errmsg = "Could not parse color: " + color.to_string();
-        return false;
-    }
-
-    for (const auto &xc : xterm_colors.tc_palette) {
-        if (color.iequal(xc.xc_name)) {
-            rgb_out = xc.xc_color;
-            return true;
-        }
-    }
-
-    errmsg = "Unknown color: '" + color.to_string() +
-        "'.  See https://jonasjacek.github.io/colors/ for a list of supported color names";
-    return false;
-}
 
 string_attr_type view_curses::VC_ROLE("role");
 string_attr_type view_curses::VC_STYLE("style");
@@ -190,7 +53,8 @@ string_attr_type view_curses::VC_SELECTED("selected");
 string_attr_type view_curses::VC_FOREGROUND("foreground");
 string_attr_type view_curses::VC_BACKGROUND("background");
 
-const struct itimerval ui_periodic_timer::INTERVAL = {    { 0, 350 * 1000 },
+const struct itimerval ui_periodic_timer::INTERVAL = {
+    { 0, 350 * 1000 },
     { 0, 350 * 1000 }
 };
 
@@ -821,7 +685,7 @@ void view_colors::init_roles(const lnav_theme &lt,
             if (!rgb_color::from_str(bg_color, rgb_bg, errmsg)) {
                 reporter(&ident_sc.sc_background_color, errmsg);
             }
-            ident_bg = ACTIVE_PALETTE->match_color(rgb_bg);
+            ident_bg = ACTIVE_PALETTE->match_color(lab_color(rgb_bg));
         }
         for (int z = 0; z < 6; z++) {
             for (int x = 1; x < 6; x += 2) {
@@ -868,8 +732,8 @@ void view_colors::init_roles(const lnav_theme &lt,
                     return;
                 }
 
-                short fg = ACTIVE_PALETTE->match_color(rgb_fg);
-                short bg = ACTIVE_PALETTE->match_color(rgb_bg);
+                short fg = ACTIVE_PALETTE->match_color(lab_color(rgb_fg));
+                short bg = ACTIVE_PALETTE->match_color(lab_color(rgb_bg));
 
                 if (rgb_fg.empty()) {
                     fg = ansi_fg;
@@ -1072,8 +936,8 @@ int view_colors::ensure_color_pair(int &pair_base, const rgb_color &rgb_fg, cons
 {
     return attr_for_colors(
         pair_base,
-        rgb_fg.empty() ? (short) COLOR_WHITE : ACTIVE_PALETTE->match_color(rgb_fg),
-        rgb_bg.empty() ? (short) COLOR_BLACK : ACTIVE_PALETTE->match_color(rgb_bg));
+        rgb_fg.empty() ? (short) COLOR_WHITE : ACTIVE_PALETTE->match_color(lab_color(rgb_fg)),
+        rgb_bg.empty() ? (short) COLOR_BLACK : ACTIVE_PALETTE->match_color(lab_color(rgb_bg)));
 }
 
 attr_t view_colors::attrs_for_ident(const char *str, size_t len) const

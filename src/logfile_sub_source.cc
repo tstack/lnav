@@ -299,22 +299,31 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
     }
 
     if (this->lss_flags & F_TIME_OFFSET) {
-        int64_t start_millis, curr_millis;
+        int64_t curr_millis, diff;
+
+        curr_millis = this->lss_token_line->get_time_in_millis();
 
         vis_line_t prev_mark =
             tc.get_bookmarks()[&textview_curses::BM_USER].prev(vis_line_t(row));
-        if (prev_mark == -1) {
-            prev_mark = vis_line_t(0);
-        }
+        vis_line_t next_mark =
+            tc.get_bookmarks()[&textview_curses::BM_USER].next(vis_line_t(row));
+        if (prev_mark == -1 && next_mark != -1) {
+            auto next_line = this->find_line(this->at(next_mark));
 
-        logline *first_line = this->find_line(this->at(prev_mark));
-        start_millis = first_line->get_time_in_millis();
-        curr_millis = this->lss_token_line->get_time_in_millis();
-        int64_t diff = curr_millis - start_millis;
+            diff = curr_millis - next_line->get_time_in_millis();
+        } else {
+            if (prev_mark == -1) {
+                prev_mark = 0_vl;
+            }
+
+            auto first_line = this->find_line(this->at(prev_mark));
+            auto start_millis = first_line->get_time_in_millis();
+            diff = curr_millis - start_millis;
+        }
 
         value_out = "|" + value_out;
         string relstr;
-        size_t rel_length = str2reltime(diff, relstr);
+        size_t rel_length = duration2str(diff, relstr);
         value_out.insert(0, relstr);
         if (rel_length < 12) {
             value_out.insert(0, 12 - rel_length, ' ');

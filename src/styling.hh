@@ -32,6 +32,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "log_level.hh"
 #include "intern_string.hh"
@@ -52,6 +53,42 @@ struct rgb_color {
     short rc_r;
     short rc_g;
     short rc_b;
+};
+
+struct lab_color {
+    lab_color() : lc_l(0), lc_a(0), lc_b(0) {
+    };
+
+    explicit lab_color(const rgb_color &rgb);
+
+    double deltaE(const lab_color &other) const;
+
+    lab_color& operator=(const lab_color &other) {
+        this->lc_l = other.lc_l;
+        this->lc_a = other.lc_a;
+        this->lc_b = other.lc_b;
+
+        return *this;
+    };
+
+    double lc_l;
+    double lc_a;
+    double lc_b;
+};
+
+struct term_color {
+    short xc_id;
+    std::string xc_name;
+    rgb_color xc_color;
+    lab_color xc_lab_color;
+};
+
+struct term_color_palette {
+    explicit term_color_palette(const unsigned char *json);
+
+    short match_color(const lab_color &to_match);
+
+    std::vector<term_color> tc_palette;
 };
 
 struct style_config {
@@ -99,5 +136,10 @@ struct lnav_theme {
     style_config lt_style_file;
     std::map<log_level_t, style_config> lt_level_styles;
 };
+
+extern term_color_palette xterm_colors;
+extern term_color_palette ansi_colors;
+
+extern term_color_palette *ACTIVE_PALETTE;
 
 #endif

@@ -74,9 +74,9 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                 last_line = lss.find_line(lss.at(lv.get_bottom()));
                 last_time = "Last message: " ANSI_BOLD_START + precise_time_ago(
                     last_line->get_timeval(), true) + ANSI_NORM;
-                str2reltime(last_line->get_time_in_millis() -
-                            first_line->get_time_in_millis(),
-                            time_span);
+                duration2str(last_line->get_time_in_millis() -
+                             first_line->get_time_in_millis(),
+                             time_span);
 
                 time_t local_now = convert_log_time_to_local(now);
                 time_t five_minutes_ago = local_now - (5 * 60 * 60);

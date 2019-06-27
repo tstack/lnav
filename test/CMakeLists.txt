@@ -9,12 +9,8 @@ include_directories(
 )
 
 add_executable(lnav_doctests
-        lnav_doctests.cc
-        ../src/relative_time.cc
-        ../../lbuild-debug/src/time_fmts.cc
-        ../src/ptimec_rt.cc
-        ../src/pcrepp/pcrepp.cc
-        ../src/base/lnav_log.cc)
+        lnav_doctests.cc)
+target_link_libraries(lnav_doctests diag ${lnav_LIBS})
 add_executable(test_pcrepp test_pcrepp.cc ../src/base/lnav_log.cc ../src/pcrepp/pcrepp.cc)
 add_executable(test_line_buffer2
         test_line_buffer2.cc

@@ -39,23 +39,29 @@
 
 using namespace std;
 
-TEST_CASE("str2reltime") {
+TEST_CASE("duration2str") {
     string val;
 
-    str2reltime(25 * 60 * 60 * 1000 + 123, val);
+    duration2str(25 * 60 * 60 * 1000 + 123, val);
     CHECK(val == "1d1h0m0s");
     val.clear();
-    str2reltime(10 * 1000 + 123, val);
+    duration2str(10 * 1000 + 123, val);
     CHECK(val == "10s123");
     val.clear();
-    str2reltime(10 * 1000, val);
+    duration2str(10 * 1000, val);
     CHECK(val == "10s000");
     val.clear();
-    str2reltime(100, val);
+    duration2str(100, val);
     CHECK(val == "100");
     val.clear();
-    str2reltime(0, val);
+    duration2str(0, val);
     CHECK(val == "");
+    val.clear();
+    duration2str(-10, val);
+    CHECK(val == "-010");
+    val.clear();
+    duration2str(-10 * 1000, val);
+    CHECK(val == "-10s000");
 }
 
 TEST_CASE("ptime_fmt") {
