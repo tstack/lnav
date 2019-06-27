@@ -37,6 +37,8 @@
 #include "auto_fd.hh"
 #include "line_buffer.hh"
 
+using namespace std;
+
 static const char *TEST_DATA =
     "Hello, World!\n"
     "Goodbye, World!\n";
@@ -88,6 +90,67 @@ int main(int argc, char *argv[])
         auto result = lb.read_range({0, 1024});
 
         assert(result.isErr());
+    }
+
+    {
+        static string first = "Hello";
+        static string second = ", World!";
+        static string third = "Goodbye, World!";
+        static string last = "\n";
+
+        line_buffer lb;
+        auto_fd pi[2];
+        off_t off = 0;
+
+        assert(auto_fd::pipe(pi) == 0);
+        log_perror(write(pi[1], first.c_str(), first.size()));
+        fcntl(pi[0], F_SETFL, O_NONBLOCK);
+
+        lb.set_fd(pi[0]);
+        auto load_result = lb.load_next_line({off});
+        auto li = load_result.unwrap();
+        assert(li.li_partial);
+        assert(li.li_file_range.fr_size == 5);
+        log_perror(write(pi[1], second.c_str(), second.size()));
+        auto load_result2 = lb.load_next_line({off});
+        li = load_result2.unwrap();
+        assert(li.li_partial);
+        assert(li.li_file_range.fr_size == 13);
+        log_perror(write(pi[1], last.c_str(), last.size()));
+        auto load_result3 = lb.load_next_line({off});
+        li = load_result3.unwrap();
+        assert(!li.li_partial);
+        assert(li.li_file_range.fr_size == 14);
+        auto load_result4 = lb.load_next_line(li.li_file_range);
+        li = load_result4.unwrap();
+        auto last_range = li.li_file_range;
+        assert(li.li_partial);
+        assert(li.li_file_range.empty());
+        log_perror(write(pi[1], third.c_str(), third.size()));
+        auto load_result5 = lb.load_next_line(last_range);
+        li = load_result5.unwrap();
+        assert(li.li_partial);
+        assert(li.li_file_range.fr_size == 15);
+        log_perror(write(pi[1], last.c_str(), last.size()));
+        auto load_result6 = lb.load_next_line(last_range);
+        li = load_result6.unwrap();
+        assert(!li.li_partial);
+        assert(li.li_file_range.fr_size == 16);
+
+        auto load_result7 = lb.load_next_line(li.li_file_range);
+        li = load_result7.unwrap();
+        assert(li.li_partial);
+        assert(li.li_file_range.empty());
+        assert(!lb.is_pipe_closed());
+
+        pi[1].reset();
+
+        auto load_result8 = lb.load_next_line(li.li_file_range);
+        li = load_result8.unwrap();
+        assert(!li.li_partial);
+        assert(li.li_file_range.empty());
+        assert(lb.is_pipe_closed());
+
     }
 
     return retval;

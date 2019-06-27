@@ -495,15 +495,6 @@ Result<line_info, string> line_buffer::load_next_line(file_range prev_line)
 
     auto offset = prev_line.next_offset();
     retval.li_file_range.fr_offset = offset;
-    if (this->lb_last_line_offset != -1 && offset >
-        this->lb_last_line_offset) {
-        /*
-         * Don't return anything past the last known line.  The caller needs
-         * to try reading at the offset of the last line again.
-         */
-        return Ok(retval);
-    }
-
     while (!done) {
         char *line_start, *lf;
 
@@ -544,11 +535,11 @@ Result<line_info, string> line_buffer::load_next_line(file_range prev_line)
             ((request_size > retval.li_file_range.fr_size) &&
              (retval.li_file_range.fr_size > 0) &&
              (!this->is_pipe() || request_size > DEFAULT_INCREMENT))) {
-            if ((lf != NULL) &&
+            if ((lf != nullptr) &&
                 ((size_t) (lf - line_start) >= MAX_LINE_BUFFER_SIZE - 1)) {
-                lf = NULL;
+                lf = nullptr;
             }
-            if (lf != NULL) {
+            if (lf != nullptr) {
                 retval.li_partial = false;
                 retval.li_file_range.fr_size = lf - line_start;
                 // delim
@@ -595,6 +586,9 @@ Result<line_info, string> line_buffer::load_next_line(file_range prev_line)
             done = true;
         }
         else {
+            if (!this->is_pipe() || !this->is_pipe_closed()) {
+                retval.li_partial = true;
+            }
             request_size += DEFAULT_INCREMENT;
         }
 
