@@ -1,4 +1,6 @@
 
+enable_testing()
+
 include_directories(
         ../../lbuild-debug/src
         ../src/
@@ -10,8 +12,11 @@ include_directories(
 
 add_executable(lnav_doctests
         lnav_doctests.cc)
+add_test(NAME lnav_doctests COMMAND lnav_doctests)
+
 target_link_libraries(lnav_doctests diag ${lnav_LIBS})
 add_executable(test_pcrepp test_pcrepp.cc ../src/base/lnav_log.cc ../src/pcrepp/pcrepp.cc)
+add_test(NAME test_pcrepp COMMAND test_pcrepp)
 add_executable(test_line_buffer2
         test_line_buffer2.cc
         ../src/base/lnav_log.cc
@@ -22,31 +27,19 @@ add_executable(test_line_buffer2
         ../src/line_buffer.hh
         ../src/line_buffer.cc)
 target_link_libraries(test_line_buffer2
-        bz2
-        z)
-add_executable(test_reltime test_reltime.cc
-        ../src/relative_time.cc
-        ../src/pcrepp/pcrepp.cc
-        ../src/base/lnav_log.cc)
-add_executable(test_date_time_scanner test_date_time_scanner.cc
-        ../src/lnav_util.cc
-        ../../lbuild-debug/src/time_fmts.cc
-        ../src/ptimec_rt.cc
-        ../src/pcrepp/pcrepp.cc
-        ../src/base/lnav_log.cc
-        ../src/spookyhash/SpookyV2.cpp)
-add_executable(test_abbrev test_abbrev.cc
-        ../src/lnav_util.cc
-        ../../lbuild-debug/src/time_fmts.cc
-        ../src/ptimec_rt.cc
-        ../src/pcrepp/pcrepp.cc
-        ../src/base/lnav_log.cc
-        ../src/spookyhash/SpookyV2.cpp)
-add_executable(drive_sql_anno drive_sql_anno.cc ../src/base/lnav_log.cc ../src/pcrepp/pcrepp.cc)
+        BZip2::bz2
+        ZLIB::zlib)
+add_executable(test_reltime test_reltime.cc)
+target_link_libraries(test_reltime diag)
+add_executable(test_date_time_scanner test_date_time_scanner.cc)
+target_link_libraries(test_date_time_scanner diag)
+add_executable(test_abbrev test_abbrev.cc)
+target_link_libraries(test_abbrev diag)
+add_executable(drive_sql_anno drive_sql_anno.cc)
 link_directories(/opt/local/lib)
-target_link_libraries(test_pcrepp /usr/local/lib/libpcre.a)
-target_link_libraries(test_reltime /usr/local/lib/libpcre.a)
-target_link_libraries(lnav_doctests /usr/local/lib/libpcre.a)
-target_link_libraries(test_date_time_scanner /usr/local/lib/libpcre.a)
-target_link_libraries(test_abbrev /usr/local/lib/libpcre.a)
-target_link_libraries(drive_sql_anno /usr/local/lib/libpcre.a)
+target_link_libraries(test_pcrepp PkgConfig::libpcre)
+target_link_libraries(test_reltime PkgConfig::libpcre)
+target_link_libraries(lnav_doctests PkgConfig::libpcre)
+target_link_libraries(test_date_time_scanner PkgConfig::libpcre)
+target_link_libraries(test_abbrev PkgConfig::libpcre)
+target_link_libraries(drive_sql_anno PkgConfig::libpcre diag)

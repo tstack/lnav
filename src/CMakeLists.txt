@@ -1,6 +1,168 @@
 
+add_executable(bin2c bin2c.h bin2c.c)
+
+add_executable(ptimec ptimec.hh ptimec.cc)
+
+set(TIME_FORMATS
+        "@%@"
+        "%Y-%m-%d %H:%M:%S"
+        "%Y-%m-%d %H:%M:%S%z"
+        "%Y-%m-%d %H:%M:%S %z"
+        "%Y-%m-%d %H:%M"
+        "%Y-%m-%dT%H:%M:%S.%f%z"
+        "%y-%m-%dT%H:%M:%S.%f%z"
+        "%Y-%m-%dT%H:%M:%SZ"
+        "%Y-%m-%dT%H:%M:%S%z"
+        "%Y-%m-%dT%H:%M:%S"
+        "%Y-%m-%dT%H:%M:%S%z"
+        "%Y/%m/%d %H:%M:%S"
+        "%Y/%m/%d %H:%M:%S %z"
+        "%Y/%m/%d %H:%M:%S%z"
+        "%Y/%m/%d %H:%M"
+        "%Y %b %d %a %H:%M:%S.%L"
+        "%Y %b %d %H:%M:%S.%L"
+        "%Y %b %d %H:%M:%S"
+        "%a %b %d %H:%M:%S %Y"
+        "%a %b %d %H:%M:%S.%f %Y"
+        "%a %b %d %H:%M:%S %Z %Y"
+        "%a %b %d %H:%M:%S "
+        "%a %b %d %H:%M:%S.%L "
+        "%d/%b/%Y:%H:%M:%S +0000"
+        "%d/%b/%Y:%H:%M:%S %z"
+        "%d-%b-%Y %H:%M:%S %z"
+        "%d-%b-%Y %H:%M:%S %Z"
+        "%d %b %Y %H:%M:%S"
+        "%d %b %Y %H:%M:%S.%L"
+        "%d %b %Y %H:%M:%S,%L"
+        "%b %d %H:%M:%S"
+        "%b %d %k:%M:%S"
+        "%b %d %l:%M:%S"
+        "%b %e, %Y %l:%M:%S %p"
+        "%m/%d/%y %H:%M:%S"
+        "%m/%d/%Y %I:%M:%S:%L %p %Z"
+        "%m/%d/%Y %I:%M:%S %p %Z"
+        "%m/%d/%Y %l:%M:%S %p %Z"
+        "%m/%e/%Y %I:%M:%S %p"
+        "%m/%e/%Y %l:%M:%S %p"
+        "%d/%b/%y %H:%M:%S"
+        "%m%d %H:%M:%S"
+        "%H:%M:%S"
+        "%M:%S"
+        "%m/%d %H:%M:%S"
+        "%Y-%m-%d"
+        "%Y-%m"
+        "%Y/%m/%d"
+        "%Y/%m"
+        "%s.%f"
+        )
+
+set(GEN_SRCS "")
+
+add_custom_command(
+        OUTPUT time_fmts.cc
+        COMMAND ptimec ${TIME_FORMATS} > time_fmts.cc
+)
+list(APPEND GEN_SRCS time_fmts.cc)
+
+function(bin2c)
+    cmake_parse_arguments(
+            BIN2C_
+            ""
+            "VARNAME"
+            ""
+            ${ARGN}
+    )
+
+    list(TRANSFORM BIN2C_UNPARSED_ARGUMENTS "\\." "-")
+    add_custom_command(
+            OUTPUT "${DST_FILE}.h" "${DST_FILE}.c"
+            COMMAND bin2c "${DST_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/${FILE_TO_LINK}"
+            DEPENDS bin2c "${FILE_TO_LINK}"
+    )
+endfunction(bin2c)
+
+foreach(FILE_TO_LINK
+        ansi-palette.json
+        xterm-palette.json
+        default-log-formats.json
+        help.txt
+        init.sql)
+    string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
+    add_custom_command(
+            OUTPUT "${DST_FILE}.h" "${DST_FILE}.c"
+            COMMAND bin2c "${DST_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/${FILE_TO_LINK}"
+            DEPENDS bin2c "${FILE_TO_LINK}"
+    )
+    list(
+            APPEND GEN_SRCS
+            "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.h"
+            "${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE}.c"
+    )
+endforeach(FILE_TO_LINK)
+
+
+set(CONFIG_FILES
+        root-config.json
+        keymaps/default-keymap.json
+        themes/default-theme.json
+        themes/eldar.json
+        themes/monocai.json
+        themes/night-owl.json
+        themes/solarized-dark.json
+        themes/solarized-light.json
+        )
+
+set(CONFIG_FILE_PATHS ${CONFIG_FILES})
+
+list(TRANSFORM CONFIG_FILE_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+add_custom_command(
+        OUTPUT default-config.h default-config.c
+        COMMAND bin2c -n lnav_config_json default-config ${CONFIG_FILE_PATHS}
+        DEPENDS bin2c ${CONFIG_FILES}
+)
+list(APPEND GEN_SRCS default-config.h default-config.c)
+
+
+set(BUILTIN_LNAV_SCRIPTS
+        scripts/dhclient-summary.lnav
+        scripts/lnav-pop-view.lnav
+        scripts/partition-by-boot.lnav
+        scripts/search-for.lnav)
+
+set(BUILTIN_LNAV_SCRIPT_PATHS ${BUILTIN_LNAV_SCRIPTS})
+
+list(TRANSFORM BUILTIN_LNAV_SCRIPT_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+add_custom_command(
+        OUTPUT builtin-scripts.h builtin-scripts.c
+        COMMAND bin2c -n lnav_scripts builtin-scripts ${BUILTIN_LNAV_SCRIPT_PATHS}
+        DEPENDS bin2c ${BUILTIN_LNAV_SCRIPTS}
+)
+list(APPEND GEN_SRCS builtin-scripts.h builtin-scripts.c)
+
+set(BUILTIN_SH_SCRIPTS
+        scripts/dhclient-summary.lnav
+        scripts/lnav-pop-view.lnav
+        scripts/partition-by-boot.lnav
+        scripts/search-for.lnav)
+
+set(BUILTIN_SH_SCRIPT_PATHS ${BUILTIN_SH_SCRIPTS})
+
+list(TRANSFORM BUILTIN_SH_SCRIPT_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+add_custom_command(
+        OUTPUT builtin-sh-scripts.h builtin-sh-scripts.c
+        COMMAND bin2c -n lnav_sh_scripts builtin-sh-scripts ${BUILTIN_SH_SCRIPT_PATHS}
+        DEPENDS bin2c ${BUILTIN_SH_SCRIPTS}
+)
+list(APPEND GEN_SRCS builtin-sh-scripts.h builtin-sh-scripts.c)
+
 add_library(diag STATIC
+        ${GEN_SRCS}
+
         ansi_scrubber.cc
+        bin2c.h
         bookmarks.cc
         bottom_status_source.cc
         collation-functions.cc
@@ -44,6 +206,7 @@ add_library(diag STATIC
         logfile_sub_source.cc
         network-extension-functions.cc
         data_scanner.cc
+        data_scanner_re.cc
         data_parser.cc
         papertrail_proc.cc
         ptimec_rt.cc
@@ -204,27 +367,21 @@ add_library(diag STATIC
         log_level_re.cc
 
         ../../lbuild-debug/src/config.h
-        ../../lbuild-debug/src/time_fmts.cc
-        ../../lbuild-debug/src/default-config.c
-        ../../lbuild-debug/src/ansi-palette-json.c
-        ../../lbuild-debug/src/xterm-palette-json.c
         )
 
 set(lnav_SRCS lnav.cc)
 
-include_directories(
+target_include_directories(
+        diag
+        PUBLIC
         ../../lbuild-debug/src
-        /opt/local/include
-        /usr/local/opt/sqlite3/include
-        /usr/local/opt/pcre/include
         /usr/local/opt/readline/include
+        /usr/local/opt/ncurses/include
+        .
         fmtlib
 )
-include_directories(SYSTEM .)
+
+target_link_libraries(diag ${lnav_LIBS})
+
 add_executable(lnav ${lnav_SRCS})
-
-target_link_libraries(lnav
-        diag
-        ${lnav_LIBS})
-
-add_executable(bin2c bin2c.c)
+target_link_libraries(lnav diag)

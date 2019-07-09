@@ -44,7 +44,8 @@
 #elif HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
 #else
-#error "pcre.h not found?"
+#include <pcre.h>
+// #error "pcre.h not found?"
 #endif
 
 #include <string.h>
