@@ -72,9 +72,9 @@ static struct {
     const char *reltime;
     const char *expected_error;
 } BAD_TEST_DATA[] = {
-        { "ago", "" },
-        { "minute", "" },
-        { "1 2", "" },
+        { "ago", "Expecting a time unit" },
+        { "minute", "Expecting a number before time unit" },
+        { "1 2", "No time unit given for the previous number" },
 
         { NULL, NULL }
 };
@@ -104,6 +104,7 @@ TEST_CASE("reltime")
         rt.clear();
         rc = rt.parse(BAD_TEST_DATA[lpc].reltime, pe);
         CHECK(!rc);
+        CHECK(pe.pe_msg == string(BAD_TEST_DATA[lpc].expected_error));
     }
 
     rt.clear();

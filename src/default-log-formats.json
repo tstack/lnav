@@ -1653,7 +1653,9 @@
         },
         "sample": [
             {
-                "line": "Thread-1950::INFO::2011-12-07 12:14:15,018::dispatcher::94::Storage.Dispatcher.Protect::(run) Run and protect: getDeviceList, args: ( storageType=2)",
+                "line": "Thread-1950::INFO::2011-12-07 12:14:15,018::dispatcher::94::Storage.Dispatcher.Protect::(run) Run and protect: getDeviceList, args: ( storageType=2)"
+            },
+            {
 		"line": "2017-03-06 14:49:05,167+0200 INFO  (vm/9e5dd42e) [virt.vm] (vmId='9e5dd42e-5177-4da3-a6ce-87fa2052d315') (vm:2104)"
             }
         ]

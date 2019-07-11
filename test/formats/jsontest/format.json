@@ -18,13 +18,11 @@
         "value" : {
             "user" : {
                 "kind" : "string",
-                "identifier" : true
+                "identifier" : true,
+                "rewriter" : "|rewrite-user"
             },
             "msg" : {
                 "rewriter" : ";SELECT :msg || 'bork bork bork'"
-            },
-            "user" : {
-                "rewriter" : "|rewrite-user"
             },
             "obj" : {
                 "kind" : "json"
