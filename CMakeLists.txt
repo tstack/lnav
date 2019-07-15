@@ -9,8 +9,7 @@ HunterGate(
 
 set(CMAKE_CXX_STANDARD 14)
 project(lnav
-        VERSION 0.8.6
-        HOMEPAGE_URL https://lnav.org)
+        VERSION 0.8.6)
 
 include(CTest)
 
