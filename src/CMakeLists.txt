@@ -1,4 +1,16 @@
 
+include(CheckTypeSize)
+check_type_size(off_t SIZEOF_OFF_T)
+
+include(CheckIncludeFile)
+check_include_file("pty.h" HAVE_PTY_H)
+check_include_file("util.h" HAVE_UTIL_H)
+
+set(VCS_PACKAGE_STRING "test")
+
+
+configure_file(config.cmake.h.in config.h)
+
 add_executable(bin2c bin2c.h bin2c.c)
 
 add_executable(ptimec ptimec.hh ptimec.cc)
@@ -160,6 +172,8 @@ list(APPEND GEN_SRCS builtin-sh-scripts.h builtin-sh-scripts.c)
 
 add_library(diag STATIC
         ${GEN_SRCS}
+
+        config.h
 
         ansi_scrubber.cc
         bin2c.h
@@ -365,8 +379,6 @@ add_library(diag STATIC
         fmtlib/format.cc
 
         log_level_re.cc
-
-        ../../lbuild-debug/src/config.h
         )
 
 set(lnav_SRCS lnav.cc)
@@ -374,11 +386,9 @@ set(lnav_SRCS lnav.cc)
 target_include_directories(
         diag
         PUBLIC
-        ../../lbuild-debug/src
-        /usr/local/opt/readline/include
-        /usr/local/opt/ncurses/include
         .
         fmtlib
+        ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 target_link_libraries(diag ${lnav_LIBS})

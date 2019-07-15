@@ -1,0 +1,15 @@
+
+#define HAVE_PCRE_H
+#define HAVE_NCURSESW_CURSES_H
+
+#cmakedefine SIZEOF_OFF_T @SIZEOF_OFF_T@
+
+#cmakedefine VCS_PACKAGE_STRING "@VCS_PACKAGE_STRING@"
+
+#cmakedefine HAVE_PTY_H
+
+#cmakedefine HAVE_UTIL_H
+
+#define _XOPEN_SOURCE_EXTENDED
+
+#define PACKAGE_BUGREPORT "lnav@googlegroups.com"
