@@ -1,13 +1,15 @@
 
 include(CheckTypeSize)
+include(CheckIncludeFile)
+include(CheckLibraryExists)
+include(CheckFunctionExists)
+
 check_type_size(off_t SIZEOF_OFF_T)
 
-include(CheckIncludeFile)
 check_include_file("pty.h" HAVE_PTY_H)
 check_include_file("util.h" HAVE_UTIL_H)
 
 set(VCS_PACKAGE_STRING "test")
-
 
 configure_file(config.cmake.h.in config.h)
 
@@ -392,6 +394,12 @@ target_include_directories(
 )
 
 target_link_libraries(diag ${lnav_LIBS})
+
+check_library_exists(util openpty "" HAVE_LIBUTIL)
+
+if(HAVE_LIBUTIL)
+    target_link_libraries(diag util)
+endif()
 
 add_executable(lnav ${lnav_SRCS})
 target_link_libraries(lnav diag)
