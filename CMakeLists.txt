@@ -3,8 +3,9 @@ cmake_minimum_required(VERSION 3.2)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.23.202.tar.gz"
-        SHA1 "931b1cb6b36a7a96948d2cfc8ec5e553bf3160f3"
+    URL "https://github.com/ruslo/hunter/archive/v0.23.204.tar.gz"
+    SHA1 "32cfed254da901f6f184027d530d8da47e035b85"
+    LOCAL
 )
 
 set(CMAKE_CXX_STANDARD 14)
@@ -39,8 +40,8 @@ set(lnav_LIBS
         ZLIB::zlib
         BZip2::bz2
         sqlite3::sqlite3
-        PkgConfig::libpcre
         PkgConfig::libpcrecpp
+        PkgConfig::libpcre
         CURL::libcurl
         readline::readline
         readline::history

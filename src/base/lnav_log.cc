@@ -57,6 +57,14 @@
 
 #include <thread>
 
+#ifdef HAVE_PCRE_H
+#include <pcre.h>
+#elif HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#error "pcre.h not found?"
+#endif
+
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/termcap.h>
 #  include <ncursesw/curses.h>
@@ -167,16 +175,24 @@ void log_argv(int argc, char *argv[])
 void log_host_info()
 {
     char cwd[MAXPATHLEN];
+    const char *jittarget;
     struct utsname un;
     struct rusage ru;
+    int pcre_jit;
 
     uname(&un);
+    pcre_config(PCRE_CONFIG_JIT, &pcre_jit);
+    pcre_config(PCRE_CONFIG_JITTARGET, &jittarget);
+
     log_info("uname:");
     log_info("  sysname=%s", un.sysname);
     log_info("  nodename=%s", un.nodename);
     log_info("  machine=%s", un.machine);
     log_info("  release=%s", un.release);
     log_info("  version=%s", un.version);
+    log_info("PCRE:");
+    log_info("  jit=%d", pcre_jit);
+    log_info("  jittarget=%s", jittarget);
     log_info("Environment:");
     log_info("  HOME=%s", getenv("HOME"));
     log_info("  LANG=%s", getenv("LANG"));
