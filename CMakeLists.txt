@@ -13,6 +13,7 @@ project(lnav
         VERSION 0.8.6)
 
 include(CTest)
+include(GNUInstallDirs)
 
 hunter_add_package(libpcre)
 find_package(libpcre CONFIG REQUIRED)

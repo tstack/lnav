@@ -403,3 +403,5 @@ endif()
 
 add_executable(lnav ${lnav_SRCS})
 target_link_libraries(lnav diag)
+
+install(TARGETS lnav DESTINATION bin)
