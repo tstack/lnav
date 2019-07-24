@@ -318,9 +318,8 @@ void textview_curses::textview_value_for_row(vis_line_t row,
     }
 
     for (auto &tc_highlight : this->tc_highlights) {
-        // XXX testing for '$search' here sucks
         bool internal_hl =
-            tc_highlight.first.first != highlight_source_t::INTERNAL;
+            tc_highlight.first.first == highlight_source_t::INTERNAL;
 
         if (tc_highlight.second.h_text_format != text_format_t::TF_UNKNOWN &&
             source_format != tc_highlight.second.h_text_format) {
