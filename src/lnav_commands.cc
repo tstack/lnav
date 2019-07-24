@@ -1109,7 +1109,7 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
         int         eoff;
 
         args[1] = remaining_args(cmdline, args);
-        if (hm.find(args[1]) != hm.end()) {
+        if (hm.find({highlight_source_t::INTERACTIVE, args[1]}) != hm.end()) {
             retval = "error: highlight already exists";
         }
         else if ((code = pcre_compile(args[1].c_str(),
@@ -1130,14 +1130,14 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
             hl.with_attrs(hl_attrs);
 
             if (ec.ec_dry_run) {
-                hm["$preview"] = hl;
+                hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
 
                 lnav_data.ld_preview_status_source.get_description()
                          .set_value("Matches are highlighted in the view");
 
                 retval = "";
             } else {
-                hm[args[1]] = hl;
+                hm[{highlight_source_t::INTERACTIVE, args[1]}] = hl;
 
                 if (lnav_data.ld_rl_view != NULL) {
                     lnav_data.ld_rl_view->add_possibility(
@@ -1166,7 +1166,7 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
         textview_curses::highlight_map_t::iterator hm_iter;
 
         args[1] = remaining_args(cmdline, args);
-        hm_iter = hm.find(args[1]);
+        hm_iter = hm.find({highlight_source_t::INTERACTIVE, args[1]});
         if (hm_iter == hm.end()) {
             retval = "error: highlight does not exist";
         }
@@ -1259,7 +1259,7 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
                 hl.with_attrs(
                     view_colors::ansi_color_pair(COLOR_BLACK, color) | A_BLINK);
 
-                hm["$preview"] = hl;
+                hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                 tc->reload_data();
 
                 lnav_data.ld_preview_status_source.get_description()
@@ -1552,7 +1552,7 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
             hl.with_attrs(
                 vc.ansi_color_pair(COLOR_BLACK, COLOR_CYAN) | A_BLINK);
 
-            hm["$preview"] = hl;
+            hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
             tc->reload_data();
 
             attr_line_t al(lst->get_table_statement());

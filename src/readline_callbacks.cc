@@ -144,8 +144,8 @@ void rl_change(void *dummy, readline_curses *rc)
 {
     textview_curses *tc = *lnav_data.ld_view_stack.top();
 
-    tc->get_highlights().erase("$preview");
-    tc->get_highlights().erase("$bodypreview");
+    tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
+    tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_preview_source.clear();
     lnav_data.ld_preview_status_source.get_description().clear();
 
@@ -275,8 +275,8 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
     string term_val;
     string name;
 
-    tc->get_highlights().erase("$preview");
-    tc->get_highlights().erase("$bodypreview");
+    tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
+    tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     tc->reload_data();
 
     switch (lnav_data.ld_mode) {
@@ -504,8 +504,8 @@ void rl_abort(void *dummy, readline_curses *rc)
     lnav_data.ld_doc_source.clear();
     lnav_data.ld_preview_status_source.get_description().clear();
     lnav_data.ld_preview_source.clear();
-    tc->get_highlights().erase("$preview");
-    tc->get_highlights().erase("$bodypreview");
+    tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
+    tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
 
     vector<string> errors;
     lnav_config = rollback_lnav_config;
@@ -538,8 +538,8 @@ void rl_callback(void *dummy, readline_curses *rc)
     lnav_data.ld_example_source.clear();
     lnav_data.ld_preview_status_source.get_description().clear();
     lnav_data.ld_preview_source.clear();
-    tc->get_highlights().erase("$preview");
-    tc->get_highlights().erase("$bodypreview");
+    tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
+    tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     switch (lnav_data.ld_mode) {
     case LNM_PAGING:
     case LNM_FILTER:

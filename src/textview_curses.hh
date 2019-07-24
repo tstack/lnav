@@ -560,6 +560,13 @@ public:
     };
 };
 
+enum class highlight_source_t {
+    INTERNAL,
+    PREVIEW,
+    CONFIGURATION,
+    INTERACTIVE,
+};
+
 /**
  * The textview_curses class adds user bookmarks and searching to the standard
  * list view interface.
@@ -669,10 +676,9 @@ public:
 
     void horiz_shift(vis_line_t start, vis_line_t end,
                      int off_start,
-                     const std::string &highlight_name,
                      std::pair<int, int> &range_out)
     {
-        highlighter &hl       = this->tc_highlights[highlight_name];
+        highlighter &hl = this->tc_highlights[{highlight_source_t::PREVIEW, "search"}];
         int          prev_hit = -1, next_hit = INT_MAX;
 
         for (; start < end; ++start) {
@@ -835,7 +841,8 @@ public:
         }
     };
 
-    typedef std::map<std::string, highlighter> highlight_map_t;
+    using highlight_map_t =
+        std::map<std::pair<highlight_source_t, std::string>, highlighter>;
 
     highlight_map_t &get_highlights() { return this->tc_highlights; };
 
@@ -939,21 +946,25 @@ protected:
     class grep_highlighter {
     public:
         grep_highlighter(std::unique_ptr<grep_proc<vis_line_t>> &gp,
+                         highlight_source_t source,
                          std::string hl_name,
                          textview_curses::highlight_map_t &hl_map)
             : gh_grep_proc(std::move(gp)),
+              gh_hl_source(source),
               gh_hl_name(std::move(hl_name)),
               gh_hl_map(hl_map) { };
 
         ~grep_highlighter()
         {
-            this->gh_hl_map.erase(this->gh_hl_map.find(this->gh_hl_name));
+            this->gh_hl_map.erase(this->gh_hl_map.find(
+                {this->gh_hl_source, this->gh_hl_name}));
         };
 
         grep_proc<vis_line_t> *get_grep_proc() { return this->gh_grep_proc.get(); };
 
     private:
         std::unique_ptr<grep_proc<vis_line_t>> gh_grep_proc;
+        highlight_source_t gh_hl_source;
         std::string gh_hl_name;
         textview_curses::highlight_map_t &gh_hl_map;
     };

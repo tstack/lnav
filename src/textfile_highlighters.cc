@@ -62,7 +62,7 @@ static highlighter static_highlighter(const string &regex) {
 
 void setup_highlights(textview_curses::highlight_map_t &hm)
 {
-    hm["$python"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "python"}] = highlighter(xpcre_compile(
         "(?:"
         "\\bFalse\\b|"
         "\\bNone\\b|"
@@ -102,7 +102,7 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_text_format(text_format_t::TF_PYTHON)
         .with_role(view_colors::VCR_KEYWORD);
 
-    hm["$clike"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "clike"}] = highlighter(xpcre_compile(
         "(?:"
         "\\babstract\\b|"
         "\\bassert\\b|"
@@ -186,7 +186,7 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_KEYWORD);
 
-    hm["$sql"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "sql"}] = highlighter(xpcre_compile(
         "(?:"
         "\\bABORT\\b|"
         "\\bACTION\\b|"
@@ -322,41 +322,41 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_text_format(text_format_t::TF_SQL)
         .with_role(view_colors::VCR_KEYWORD);
 
-    hm["$srcfile"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "srcfile"}] = highlighter(xpcre_compile(
         "[\\w\\-_]+\\."
         "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
         "\\d+"))
         .with_role(view_colors::VCR_FILE);
-    hm["$xml"] = static_highlighter("<(/?[^ >=]+)[^>]*>");
-    hm["$stringd"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "xml"}] = static_highlighter("<(/?[^ >=]+)[^>]*>");
+    hm[{highlight_source_t::INTERNAL, "stringd"}] = highlighter(xpcre_compile(
         "\"(?:\\\\.|[^\"])*\""))
         .with_role(view_colors::VCR_STRING);
-    hm["$strings"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "strings"}] = highlighter(xpcre_compile(
         "(?<![A-WY-Za-qstv-z])\'(?:\\\\.|[^'])*\'"))
         .with_role(view_colors::VCR_STRING);
-    hm["$stringb"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "stringb"}] = highlighter(xpcre_compile(
         "`(?:\\\\.|[^`])*`"))
         .with_role(view_colors::VCR_STRING);
-    hm["$diffp"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "diffp"}] = highlighter(xpcre_compile(
         "^\\+.*"))
         .with_role(view_colors::VCR_DIFF_ADD);
-    hm["$diffm"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "diffm"}] = highlighter(xpcre_compile(
         "^(?:--- .*|-$|-[^-].*)"))
         .with_role(view_colors::VCR_DIFF_DELETE);
-    hm["$diffs"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "diffs"}] = highlighter(xpcre_compile(
         "^\\@@ .*"))
         .with_role(view_colors::VCR_DIFF_SECTION);
-    hm["$ip"] = static_highlighter("\\d+\\.\\d+\\.\\d+\\.\\d+");
-    hm["$comment"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "ip"}] = static_highlighter("\\d+\\.\\d+\\.\\d+\\.\\d+");
+    hm[{highlight_source_t::INTERNAL, "comment"}] = highlighter(xpcre_compile(
         "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"))
         .with_role(view_colors::VCR_COMMENT);
-    hm["$sqlcomment"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "sqlcomment"}] = highlighter(xpcre_compile(
         "(?<=[\\s;])--.*"))
         .with_text_format(text_format_t::TF_SQL)
         .with_role(view_colors::VCR_COMMENT);
-    hm["$javadoc"] = static_highlighter(
+    hm[{highlight_source_t::INTERNAL, "javadoc"}] = static_highlighter(
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");
-    hm["$var"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "var"}] = highlighter(xpcre_compile(
         "(?:"
         "(?:var\\s+)?([\\-\\w]+)\\s*[!=+\\-*/|&^]?=|"
         "(?<!\\$)\\$(\\w+)|"
@@ -364,11 +364,11 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "(?<!\\$)\\$\\{(\\w+)\\}"
         ")"))
         .with_role(view_colors::VCR_VARIABLE);
-    hm["$sym"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "sym"}] = highlighter(xpcre_compile(
         "\\b[A-Z_][A-Z0-9_]+\\b"))
         .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_SYMBOL);
-    hm["$num"] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "num"}] = highlighter(xpcre_compile(
         "\\b-?(?:\\d+|0x[a-zA-Z0-9]+)\\b"))
         .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_NUMBER);

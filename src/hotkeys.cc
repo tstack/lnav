@@ -273,7 +273,6 @@ void handle_paging_key(int ch)
             tc->horiz_shift(tc->get_top(),
                             tc->get_bottom(),
                             tc->get_left(),
-                            "$search",
                             range);
             if (range.second != INT_MAX) {
                 tc->set_left(range.second);
@@ -296,7 +295,6 @@ void handle_paging_key(int ch)
                 tc->horiz_shift(tc->get_top(),
                                 tc->get_bottom(),
                                 tc->get_left(),
-                                "$search",
                                 range);
                 if (range.first != -1) {
                     tc->set_left(range.first);

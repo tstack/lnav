@@ -319,9 +319,8 @@ void textview_curses::textview_value_for_row(vis_line_t row,
 
     for (auto &tc_highlight : this->tc_highlights) {
         // XXX testing for '$search' here sucks
-        bool internal_hl = tc_highlight.first[0] == '$'
-                           && tc_highlight.first != "$search"
-                           && tc_highlight.first != "$preview";
+        bool internal_hl =
+            tc_highlight.first.first != highlight_source_t::INTERNAL;
 
         if (tc_highlight.second.h_text_format != text_format_t::TF_UNKNOWN &&
             source_format != tc_highlight.second.h_text_format) {
@@ -466,7 +465,7 @@ void textview_curses::execute_search(const std::string &regex_orig)
             hl.with_role(view_colors::VCR_SEARCH);
 
             textview_curses::highlight_map_t &hm = this->get_highlights();
-            hm["$search"] = hl;
+            hm[{highlight_source_t::PREVIEW, "search"}] = hl;
 
             unique_ptr<grep_proc<vis_line_t>> gp = make_unique<grep_proc<vis_line_t>>(code, *this);
 
@@ -477,7 +476,8 @@ void textview_curses::execute_search(const std::string &regex_orig)
             }
             gp->start();
 
-            this->tc_search_child = std::make_unique<grep_highlighter>(gp, "$search", hm);
+            this->tc_search_child = std::make_unique<grep_highlighter>(
+                gp, highlight_source_t::PREVIEW, "search", hm);
 
             if (this->tc_sub_source != nullptr) {
                 this->tc_sub_source->get_grepper() | [this, code] (auto pair) {

@@ -1412,8 +1412,10 @@ static void looper()
                         hl.with_attrs(hl.h_attrs | vc.ensure_color_pair(hl.h_fg, hl.h_bg));
                     }
 
-                    lnav_data.ld_views[LNV_LOG].get_highlights()[
-                        "$" + format->get_name().to_string() + "-" + hl.h_pattern] = hl;
+                    lnav_data.ld_views[LNV_LOG].get_highlights()[{
+                        highlight_source_t::CONFIGURATION,
+                        format->get_name().to_string() + "-" + hl.h_pattern
+                    }] = hl;
                 }
             }
         }

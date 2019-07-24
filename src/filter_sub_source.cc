@@ -361,7 +361,7 @@ void filter_sub_source::rl_change(readline_curses *rc)
         hl.with_attrs(
             view_colors::ansi_color_pair(COLOR_BLACK, color) | A_BLINK);
 
-        hm["$preview"] = hl;
+        hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
         top_view->set_needs_update();
         lnav_data.ld_filter_status_source.tss_error.clear();
     }
@@ -414,7 +414,7 @@ void filter_sub_source::rl_abort(readline_curses *rc)
 
     lnav_data.ld_filter_status_source.tss_prompt.clear();
     lnav_data.ld_filter_status_source.tss_error.clear();
-    top_view->get_highlights().erase("$preview");
+    top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     top_view->reload_data();
     fs.delete_filter("");
     this->fss_editor.set_visible(false);

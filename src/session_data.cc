@@ -1329,10 +1329,10 @@ void save_session()
                     for (hl_iter = hmap.begin();
                          hl_iter != hmap.end();
                          ++hl_iter) {
-                        if (hl_iter->first[0] == '$') {
+                        if (hl_iter->first.first != highlight_source_t::INTERACTIVE) {
                             continue;
                         }
-                        cmd_array.gen("highlight " + hl_iter->first);
+                        cmd_array.gen("highlight " + hl_iter->first.second);
                     }
 
                     if (lpc == LNV_LOG) {
@@ -1402,7 +1402,7 @@ void reset_session()
     lnav_data.ld_session_time = time(nullptr);
 
     while (hl_iter != hmap.end()) {
-        if (hl_iter->first[0] == '$') {
+        if (hl_iter->first.first != highlight_source_t::INTERACTIVE) {
             ++hl_iter;
         }
         else {

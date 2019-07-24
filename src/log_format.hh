@@ -1234,7 +1234,7 @@ public:
             len = strlen(value);
         }
         this->jlf_cached_line.resize(old_size + len);
-        memcpy(&(this->jlf_cached_line.data()[old_size]), value, len);
+        memcpy(&(this->jlf_cached_line[old_size]), value, len);
     };
 
     void json_append_to_cache(ssize_t len) {
