@@ -345,6 +345,7 @@ DISTCLEANFILES = \
 	*.bz2 \
 	hw.txt \
 	hw2.txt \
+	reload_test.0 \
 	truncfile.0 \
 	logfile_append.0 \
 	logfile_changed.0 \

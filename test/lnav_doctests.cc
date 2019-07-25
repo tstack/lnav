@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include <fstream>
+
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.hh"
 
@@ -36,8 +38,34 @@
 #include "view_curses.hh"
 #include "relative_time.hh"
 #include "unique_path.hh"
+#include "logfile.hh"
 
 using namespace std;
+
+std::vector<log_format *>& log_format::get_root_formats()
+{
+    static std::vector<log_format *> retval;
+
+    return retval;
+}
+
+TEST_CASE("overwritten-logfile") {
+    string fname = "reload_test.0";
+
+    ofstream(fname) << "test 1\n";
+
+    logfile_open_options loo;
+    logfile lf(fname, loo);
+    auto build_result = lf.rebuild_index();
+    CHECK(build_result == logfile::RR_NEW_LINES);
+    CHECK(lf.size() == 1);
+
+    sleep(1);
+    ofstream(fname) << "test 2\n";
+    auto rebuild_result = lf.rebuild_index();
+    CHECK(rebuild_result == logfile::RR_NO_NEW_LINES);
+    CHECK(lf.is_closed());
+}
 
 TEST_CASE("duration2str") {
     string val;

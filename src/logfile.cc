@@ -280,8 +280,10 @@ logfile::rebuild_result_t logfile::rebuild_index()
     }
 
     // Check the previous stat against the last to see if things are wonky.
-    if (this->lf_stat.st_size > st.st_size) {
-        log_info("truncated file detected, closing -- %s",
+    if (st.st_size < this->lf_stat.st_size ||
+        (this->lf_stat.st_size == st.st_size &&
+         this->lf_stat.st_mtime != st.st_mtime)) {
+        log_info("overwritten file detected, closing -- %s",
                  this->lf_filename.c_str());
         this->close();
         return RR_NO_NEW_LINES;

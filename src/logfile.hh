@@ -64,7 +64,7 @@ class logline_observer;
  */
 class logfile_observer {
 public:
-    virtual ~logfile_observer() { };
+    virtual ~logfile_observer() = default;
 
     /**
      * @param lf The logfile object that is doing the indexing.
@@ -421,7 +421,7 @@ protected:
 
 class logline_observer {
 public:
-    virtual ~logline_observer() { };
+    virtual ~logline_observer() = default;
 
     virtual void logline_restart(const logfile &lf, size_t rollback_size) = 0;
 

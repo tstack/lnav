@@ -10,6 +10,8 @@
 *.pyc
 *.tmp
 *.trs
+*~
+.idea/
 Makefile
 Makefile.in
 TESTS_ENVIRONMENT
@@ -34,6 +36,7 @@ release/osx-pkg/
 release/outbox/
 release/vagrant-static-linux/.vagrant
 release/vagrant-static-linux/lnav
+cmake-build-debug/
 src/bin2c
 src/config.h
 src/config.h.in
