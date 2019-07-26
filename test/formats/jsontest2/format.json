@@ -7,7 +7,7 @@
         "line-format" : [
             { "field" : "ts" },
             " ",
-            { "timestamp-format" : "abc %S def" },
+            { "field" : "ts", "timestamp-format" : "abc %S def" },
             " ",
             { "field" : "lvl", "min-width": 5 },
             " ",

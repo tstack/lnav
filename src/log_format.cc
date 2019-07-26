@@ -1658,7 +1658,13 @@ void external_log_format::build(std::vector<std::string> &errors) {
         static const intern_string_t level_field = intern_string::lookup("__level__");
         json_format_element &jfe = *iter;
 
-        if (jfe.jfe_value.empty() && !jfe.jfe_ts_format.empty()) {
+        if (!jfe.jfe_ts_format.empty()) {
+            if (!jfe.jfe_value.empty() && jfe.jfe_value != ts) {
+                log_warning("%s:line-format[%d]:ignoring field '%s' since "
+                            "timestamp-format was used",
+                            this->elf_name.get(), format_index,
+                            jfe.jfe_value.get());
+            }
             jfe.jfe_value = ts;
         }
 
@@ -1675,7 +1681,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
                     snprintf(index_str, sizeof(index_str), "%d", format_index);
                     errors.push_back("error:" +
                                      this->elf_name.to_string() +
-                                     ":line_format[" +
+                                     ":line-format[" +
                                      index_str +
                                      "]:line format variable is not defined -- " +
                                      jfe.jfe_value.to_string());
