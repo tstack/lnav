@@ -1055,7 +1055,7 @@
             "info" : "INFO",
             "warning" : "WARNING",
 	    "trace" : "TRACE",
-	    "debug" : "AUDIT"
+	    "debug" : "DEBUG"
         },
         "value" : {
             "tid" : {
