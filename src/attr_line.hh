@@ -369,6 +369,8 @@ public:
     /** @return The string itself. */
     std::string &get_string() { return this->al_string; };
 
+    const std::string &get_string() const { return this->al_string; };
+
     /** @return The attributes for the string. */
     string_attrs_t &get_attrs() { return this->al_attrs; };
 

@@ -233,6 +233,8 @@ Display
    * - |ks| x |ke|
      - Toggle the hiding of log message fields. The hidden fields will be
        replaced with three bullets and highlighted in yellow.
+   * - |ks| = |ke|
+     - Pause/unpause loading of new file data.
 
 Session
 -------

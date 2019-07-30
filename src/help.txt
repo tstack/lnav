@@ -304,6 +304,8 @@ Display options
   t                 Switch to/from the text file view.  The text file view is
                     for any files that are not recognized as log files.
 
+  =                 Pause/unpause loading of new file data.
+
   Ctrl-L            (Lo-fi mode) Exit screen-mode and write the
                     displayed log lines in plain text to the terminal
                     until a key is pressed.  Useful for copying long lines

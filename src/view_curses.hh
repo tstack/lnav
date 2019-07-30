@@ -480,7 +480,7 @@ struct mouse_event {
  */
 class view_curses {
 public:
-    virtual ~view_curses() { };
+    virtual ~view_curses() = default;
 
     /**
      * Update the curses display.

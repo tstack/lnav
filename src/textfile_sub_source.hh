@@ -176,6 +176,10 @@ public:
         file_iterator iter;
         bool retval = false;
 
+        if (this->tss_view->is_paused()) {
+            return retval;
+        }
+
         for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
             std::shared_ptr<logfile> lf = (*iter);
 

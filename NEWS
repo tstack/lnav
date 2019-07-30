@@ -5,9 +5,22 @@ lnav v0.8.6:
        can be changed using the ':config' command, like so:
          :config /ui/theme night-owl
        Consult the online documentation for defining a new theme.
+     * Indexing of new data in log files can now be paused by pressing '='
+       and unpaused by pressing it again.  The bottom status bar will display
+       'Paused' in the right corner while paused.
+     * CMake is now a supported way to build.
+
+     Interface Changes:
+     * Data piped into lnav is no longer dumped to the console after exit.
+       Instead a file containing the data is left in .lnav/stdin-captures
+       and a message is printed to the console indicating the file name.
+     * In time-offset mode, the deltas for messages before the first mark
+       are now negative instead of relative to the start of the log.
 
      Fixes:
      * Added 'notice' log level.
+     * If a "timestamp-format" is used in an element of a "line-format", the
+       field name is ignored and a formatted timestamp is always used.
 
 lnav v0.8.5:
      Features:

@@ -83,6 +83,9 @@ void bottom_status_source::update_search_term(textview_curses &tc)
     } else {
         sf.set_value("\"%s\"", search_term.c_str());
     }
+
+    this->bss_paused = tc.is_paused();
+    this->update_loading(0, 0);
 }
 
 void bottom_status_source::update_percent(listview_curses *lc)
@@ -166,8 +169,13 @@ void bottom_status_source::update_loading(off_t off, size_t total)
     status_field &sf = this->bss_fields[BSF_LOADING];
 
     if (total == 0 || (size_t)off == total) {
+        sf.set_cylon(false);
         sf.set_role(view_colors::VCR_STATUS);
-        sf.clear();
+        if (this->bss_paused) {
+            sf.set_value("\xE2\x80\x96 Paused");
+        } else {
+            sf.clear();
+        }
     }
     else {
         int pct = (int)(((double)off / (double)total) * 100.0);
@@ -175,6 +183,7 @@ void bottom_status_source::update_loading(off_t off, size_t total)
         if (this->bss_load_percent != pct) {
             this->bss_load_percent = pct;
 
+            sf.set_cylon(true);
             sf.set_role(view_colors::VCR_ACTIVE_STATUS2);
             sf.set_value(" Loading %2d%% ", pct);
         }

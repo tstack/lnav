@@ -574,33 +574,36 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
         else {
             logfile &lf = *ld.get_file();
 
-            switch (lf.rebuild_index()) {
-                case logfile::RR_NO_NEW_LINES:
-                    // No changes
-                    break;
-                case logfile::RR_NEW_LINES:
-                    if (retval == rebuild_result::rr_no_change) {
-                        retval = rebuild_result::rr_appended_lines;
-                    }
-                    if (!this->lss_index.empty()) {
-                        logline &new_file_line = lf[ld.ld_lines_indexed];
-                        content_line_t cl = this->lss_index.back();
-                        logline *last_indexed_line = this->find_line(cl);
-
-                        // If there are new lines that are older than what we
-                        // have in the index, we need to resort.
-                        if (last_indexed_line == nullptr ||
-                            new_file_line < last_indexed_line->get_timeval()) {
-                            force = true;
-                            retval = rebuild_result::rr_full_rebuild;
+            if (!this->tss_view->is_paused()) {
+                switch (lf.rebuild_index()) {
+                    case logfile::RR_NO_NEW_LINES:
+                        // No changes
+                        break;
+                    case logfile::RR_NEW_LINES:
+                        if (retval == rebuild_result::rr_no_change) {
+                            retval = rebuild_result::rr_appended_lines;
                         }
-                    }
-                    break;
-                case logfile::RR_INVALID:
-                case logfile::RR_NEW_ORDER:
-                    retval = rebuild_result::rr_full_rebuild;
-                    force = true;
-                    break;
+                        if (!this->lss_index.empty()) {
+                            logline &new_file_line = lf[ld.ld_lines_indexed];
+                            content_line_t cl = this->lss_index.back();
+                            logline *last_indexed_line = this->find_line(cl);
+
+                            // If there are new lines that are older than what we
+                            // have in the index, we need to resort.
+                            if (last_indexed_line == nullptr ||
+                                new_file_line <
+                                last_indexed_line->get_timeval()) {
+                                force = true;
+                                retval = rebuild_result::rr_full_rebuild;
+                            }
+                        }
+                        break;
+                    case logfile::RR_INVALID:
+                    case logfile::RR_NEW_ORDER:
+                        retval = rebuild_result::rr_full_rebuild;
+                        force = true;
+                        break;
+                }
             }
             file_count += 1;
             total_lines += (*iter)->get_file()->size();

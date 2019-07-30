@@ -592,6 +592,17 @@ public:
     textview_curses();
     virtual ~textview_curses();
 
+    void set_paused(bool paused) {
+        this->tc_paused = paused;
+        if (this->tc_state_event_handler) {
+            this->tc_state_event_handler(*this);
+        }
+    }
+
+    bool is_paused() const {
+        return this->tc_paused;
+    }
+
     vis_bookmarks &get_bookmarks(void) { return this->tc_bookmarks; };
 
     void toggle_user_mark(bookmark_type_t *bm,
@@ -939,7 +950,7 @@ public:
         listview_curses::invoke_scroll();
     }
 
-    std::function<void(textview_curses &)> tc_search_event_handler;
+    std::function<void(textview_curses &)> tc_state_event_handler;
 
 protected:
 
@@ -984,6 +995,7 @@ protected:
     vis_line_t tc_selection_last;
     bool tc_selection_cleared;
     bool tc_hide_fields;
+    bool tc_paused{false};
 
     std::string tc_last_search;
     std::unique_ptr<grep_highlighter> tc_search_child;

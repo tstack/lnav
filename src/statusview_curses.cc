@@ -67,7 +67,7 @@ void statusview_curses::do_update()
     view_colors & vc = view_colors::singleton();
     unsigned long width, height;
 
-    if (!this->sc_visible) {
+    if (!this->vc_visible) {
         return;
     }
 

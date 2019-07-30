@@ -57,7 +57,7 @@ public:
     virtual ~status_field() { };
 
     /** @param value The new value for this field. */
-    void set_value(std::string value);;
+    void set_value(std::string value);
 
     /**
      * Set the new value for this field using a formatted string.
@@ -101,7 +101,7 @@ public:
     bool is_cylon() const { return this->sf_cylon; };
 
     /** @return True if this field's value is an empty string. */
-    bool empty() { return this->sf_value.get_string().empty(); };
+    bool empty() const { return this->sf_value.get_string().empty(); };
 
     void clear() { this->sf_value.clear(); };
 
@@ -171,14 +171,6 @@ public:
     void set_window(WINDOW *win) { this->sc_window = win; };
     WINDOW *get_window() { return this->sc_window; };
 
-    void set_visible(bool value) {
-        this->sc_visible = value;
-    }
-
-    bool get_visible() const {
-        return this->sc_visible;
-    }
-
     void set_enabled(bool value) { this->sc_enabled = value; };
     bool get_enabled() const { return this->sc_enabled; };
 
@@ -192,7 +184,6 @@ private:
     int sc_top{0};
     unsigned long sc_last_width{0};
     bool sc_enabled{true};
-    bool sc_visible{true};
 };
 
 #endif

@@ -567,7 +567,7 @@ void rebuild_indexes()
          file_iter != lnav_data.ld_files.end(); ) {
         auto lf = *file_iter;
 
-        if (!lf->exists() || lf->is_closed()) {
+        if ((!lf->exists() || lf->is_closed())) {
             log_info("closed log file: %s", lf->get_filename().c_str());
             if (!lf->is_valid_filename()) {
                 lnav_data.ld_file_names.erase(lf->get_filename());
@@ -586,9 +586,11 @@ void rebuild_indexes()
     logfile_sub_source::rebuild_result result = lss.rebuild_index();
     if (result != logfile_sub_source::rebuild_result::rr_no_change) {
         size_t new_count = lss.text_line_count();
-        bool force = result == logfile_sub_source::rebuild_result::rr_full_rebuild;
+        bool force =
+            result == logfile_sub_source::rebuild_result::rr_full_rebuild;
 
-        if ((!scroll_downs[LNV_LOG] || log_view.get_top() > new_count) && force) {
+        if ((!scroll_downs[LNV_LOG] || log_view.get_top() > new_count) &&
+            force) {
             scroll_downs[LNV_LOG] = false;
         }
 
@@ -1060,9 +1062,9 @@ bool rescan_files(bool required)
 
                 expand_filename(path, false);
             }
-        }
-        else {
-            retval = retval || watch_logfile(iter->first, iter->second, required);
+        } else {
+            retval = retval ||
+                     watch_logfile(iter->first, iter->second, required);
         }
     }
 
@@ -1070,7 +1072,7 @@ bool rescan_files(bool required)
          file_iter != lnav_data.ld_files.end(); ) {
         auto lf = *file_iter;
 
-        if (!lf->exists() || lf->is_closed()) {
+        if ((!lf->exists() || lf->is_closed())) {
             log_info("Log file no longer exists or is closed: %s",
                      lf->get_filename().c_str());
             return true;
@@ -1086,11 +1088,6 @@ bool rescan_files(bool required)
 class lnav_behavior : public mouse_behavior {
 public:
     lnav_behavior() {};
-
-    int scroll_polarity(int button)
-    {
-        return button == xterm_mouse::XT_SCROLL_UP ? -1 : 1;
-    };
 
     void mouse_event(int button, bool release, int x, int y)
     {
@@ -1452,7 +1449,7 @@ static void looper()
             lnav_data.ld_views[lpc].set_search_action(
                 textview_curses::action(update_hits));
             using std::placeholders::_1;
-            lnav_data.ld_views[lpc].tc_search_event_handler =
+            lnav_data.ld_views[lpc].tc_state_event_handler =
                 std::bind(&bottom_status_source::update_search_term,
                     &lnav_data.ld_bottom_source, _1);
         }

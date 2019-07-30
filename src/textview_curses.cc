@@ -493,8 +493,8 @@ void textview_curses::execute_search(const std::string &regex_orig)
     }
 
     this->tc_last_search = regex;
-    if (this->tc_search_event_handler) {
-        this->tc_search_event_handler(*this);
+    if (this->tc_state_event_handler) {
+        this->tc_state_event_handler(*this);
     }
 }
 

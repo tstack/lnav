@@ -121,6 +121,7 @@ private:
     status_field bss_fields[BSF__MAX];
     int          bss_hit_spinner{0};
     int          bss_load_percent{0};
+    bool         bss_paused{false};
 };
 
 #endif

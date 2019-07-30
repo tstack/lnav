@@ -155,6 +155,6 @@ while True:
         for i in range(random.randrange(0, 4)):
             with open(fname, "a+") as fp:
                 fp.write(gen.next())
-            time.sleep(random.uniform(0.00, 0.001))
+            time.sleep(random.uniform(0.00, 0.01))
             if random.uniform(0.0, 1.0) < 0.001:
                 os.remove(fname)

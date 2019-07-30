@@ -129,6 +129,7 @@ CREATE TABLE lnav_views (
     height integer,         -- The height of the viewport.
     inner_height integer,   -- The number of lines in the view.
     top_time datetime,      -- The time of the top line in the view, if the content is time-based.
+    paused integer,         -- Indicates if the view is paused and will not load new data.
     search text             -- The text to search for in the view.
 );
 )";
@@ -182,7 +183,10 @@ CREATE TABLE lnav_views (
                 }
                 break;
             }
-            case 6: {
+            case 6:
+                sqlite3_result_int(ctx, tc.is_paused());
+                break;
+            case 7: {
                 const string &str = tc.get_last_search();
 
                 sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
@@ -213,6 +217,7 @@ CREATE TABLE lnav_views (
                    int64_t height,
                    int64_t inner_height,
                    const char *top_time,
+                   bool is_paused,
                    const char *search) {
         textview_curses &tc = lnav_data.ld_views[index];
         text_time_translator *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
@@ -237,6 +242,7 @@ CREATE TABLE lnav_views (
             }
         }
         tc.set_left(left);
+        tc.set_paused(is_paused);
         tc.execute_search(search);
 
         return SQLITE_OK;
