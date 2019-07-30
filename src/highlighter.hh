@@ -44,46 +44,16 @@ struct highlighter {
           h_attrs(-1),
           h_text_format(text_format_t::TF_UNKNOWN) { };
 
-    highlighter(pcre *code)
+    explicit highlighter(pcre *code)
         : h_code(code), h_attrs(-1), h_text_format(text_format_t::TF_UNKNOWN)
     {
         pcre_refcount(this->h_code, 1);
         this->study();
     };
 
-    highlighter(const highlighter &other) {
-        this->h_pattern = other.h_pattern;
-        this->h_fg = other.h_fg;
-        this->h_bg = other.h_bg;
-        this->h_role = other.h_role;
-        this->h_code = other.h_code;
-        pcre_refcount(this->h_code, 1);
-        this->study();
-        this->h_attrs = other.h_attrs;
-        this->h_text_format = other.h_text_format;
-        this->h_format_name = other.h_format_name;
-    };
+    highlighter(const highlighter &other);
 
-    highlighter &operator=(const highlighter &other) {
-        if (this->h_code != nullptr && pcre_refcount(this->h_code, -1) == 0) {
-            free(this->h_code);
-            this->h_code = nullptr;
-        }
-        free(this->h_code_extra);
-
-        this->h_pattern = other.h_pattern;
-        this->h_fg = other.h_fg;
-        this->h_bg = other.h_bg;
-        this->h_role = other.h_role;
-        this->h_code = other.h_code;
-        pcre_refcount(this->h_code, 1);
-        this->study();
-        this->h_format_name = other.h_format_name;
-        this->h_attrs = other.h_attrs;
-        this->h_text_format = other.h_text_format;
-
-        return *this;
-    };
+    highlighter &operator=(const highlighter &other);
 
     virtual ~highlighter() {
         if (this->h_code != nullptr && pcre_refcount(this->h_code, -1) == 0) {
@@ -93,22 +63,7 @@ struct highlighter {
         free(this->h_code_extra);
     };
 
-    void study() {
-        const char *errptr;
-
-        this->h_code_extra = pcre_study(this->h_code, 0, &errptr);
-        if (!this->h_code_extra && errptr) {
-            log_error("pcre_study error: %s", errptr);
-        }
-        if (this->h_code_extra != NULL) {
-            pcre_extra *extra = this->h_code_extra;
-
-            extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
-                             PCRE_EXTRA_MATCH_LIMIT_RECURSION);
-            extra->match_limit           = 10000;
-            extra->match_limit_recursion = 500;
-        }
-    };
+    void study();
 
     highlighter &with_pattern(const std::string &pattern) {
         this->h_pattern = pattern;
@@ -147,6 +102,11 @@ struct highlighter {
         return *this;
     };
 
+    highlighter &with_nestable(bool val) {
+        this->h_nestable = val;
+        return *this;
+    }
+
     int get_attrs() const
     {
         ensure(this->h_attrs != -1);
@@ -154,63 +114,7 @@ struct highlighter {
         return this->h_attrs;
     };
 
-    void annotate(attr_line_t &al, int start) const {
-        const std::string &str = al.get_string();
-        string_attrs_t &sa = al.get_attrs();
-        // The line we pass to pcre_exec will be treated as the start when the
-        // carat (^) operator is used.
-        const char *line_start = &(str.c_str()[start]);
-        size_t re_end;
-
-        if ((str.length() - start) > 8192)
-            re_end = 8192;
-        else
-            re_end = str.length() - start;
-        for (int off = 0; off < (int)str.size() - start; ) {
-            int rc, matches[60];
-            rc = pcre_exec(this->h_code,
-                           this->h_code_extra,
-                           line_start,
-                           re_end,
-                           off,
-                           0,
-                           matches,
-                           60);
-            if (rc > 0) {
-                struct line_range lr;
-
-                if (rc == 2) {
-                    lr.lr_start = start + matches[2];
-                    lr.lr_end   = start + matches[3];
-                }
-                else {
-                    lr.lr_start = start + matches[0];
-                    lr.lr_end   = start + matches[1];
-                }
-
-                if (lr.lr_end > lr.lr_start) {
-                    int attrs = 0;
-
-                    if (this->h_attrs != -1) {
-                        attrs = this->h_attrs;
-                    }
-                    if (this->h_role != view_colors::VCR_NONE) {
-                        attrs |= view_colors::singleton().attrs_for_role(
-                            this->h_role);
-                    }
-                    sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
-
-                    off = matches[1];
-                }
-                else {
-                    off += 1;
-                }
-            }
-            else {
-                off = str.size();
-            }
-        }
-    };
+    void annotate(attr_line_t &al, int start) const;
 
     std::string h_pattern;
     view_colors::role_t h_role{view_colors::VCR_NONE};
@@ -221,6 +125,7 @@ struct highlighter {
     int h_attrs;
     text_format_t h_text_format;
     intern_string_t h_format_name;
+    bool h_nestable{true};
 };
 
 #endif

@@ -1386,10 +1386,6 @@ void save_session()
 
 void reset_session()
 {
-    textview_curses::highlight_map_t &hmap =
-        lnav_data.ld_views[LNV_LOG].get_highlights();
-    auto hl_iter = hmap.begin();
-
     log_info("reset session: time=%d", lnav_data.ld_session_time);
 
     save_session();
@@ -1397,12 +1393,16 @@ void reset_session()
 
     lnav_data.ld_session_time = time(nullptr);
 
-    while (hl_iter != hmap.end()) {
-        if (hl_iter->first.first != highlight_source_t::INTERACTIVE) {
-            ++hl_iter;
-        }
-        else {
-            hmap.erase(hl_iter++);
+    for (auto &tc : lnav_data.ld_views) {
+        auto &hmap = tc.get_highlights();
+        auto hl_iter = hmap.begin();
+
+        while (hl_iter != hmap.end()) {
+            if (hl_iter->first.first != highlight_source_t::INTERACTIVE) {
+                ++hl_iter;
+            } else {
+                hmap.erase(hl_iter++);
+            }
         }
     }
 

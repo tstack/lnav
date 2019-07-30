@@ -99,6 +99,7 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "\\bwith\\b|"
         "\\byield\\b"
         ")"))
+        .with_nestable(false)
         .with_text_format(text_format_t::TF_PYTHON)
         .with_role(view_colors::VCR_KEYWORD);
 
@@ -183,10 +184,15 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "\\bwchar_t\\b|"
         "\\bwhile\\b"
         ")"))
+        .with_nestable(false)
         .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_KEYWORD);
 
-    hm[{highlight_source_t::INTERNAL, "sql"}] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "sql.0.comment"}] = highlighter(xpcre_compile(
+        "(?:(?<=[\\s;])|^)--.*"))
+        .with_text_format(text_format_t::TF_SQL)
+        .with_role(view_colors::VCR_COMMENT);
+    hm[{highlight_source_t::INTERNAL, "sql.9.keyword"}] = highlighter(xpcre_compile(
         "(?:"
         "\\bABORT\\b|"
         "\\bACTION\\b|"
@@ -319,6 +325,7 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "\\bWITH\\b|"
         "\\bWITHOUT\\b"
         ")", PCRE_CASELESS))
+        .with_nestable(false)
         .with_text_format(text_format_t::TF_SQL)
         .with_role(view_colors::VCR_KEYWORD);
 
@@ -328,13 +335,13 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "\\d+"))
         .with_role(view_colors::VCR_FILE);
     hm[{highlight_source_t::INTERNAL, "xml"}] = static_highlighter("<(/?[^ >=]+)[^>]*>");
-    hm[{highlight_source_t::INTERNAL, "stringd"}] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "1.stringd"}] = highlighter(xpcre_compile(
         "\"(?:\\\\.|[^\"])*\""))
         .with_role(view_colors::VCR_STRING);
-    hm[{highlight_source_t::INTERNAL, "strings"}] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "1.strings"}] = highlighter(xpcre_compile(
         "(?<![A-WY-Za-qstv-z])\'(?:\\\\.|[^'])*\'"))
         .with_role(view_colors::VCR_STRING);
-    hm[{highlight_source_t::INTERNAL, "stringb"}] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "1.stringb"}] = highlighter(xpcre_compile(
         "`(?:\\\\.|[^`])*`"))
         .with_role(view_colors::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "diffp"}] = highlighter(xpcre_compile(
@@ -347,12 +354,8 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "^\\@@ .*"))
         .with_role(view_colors::VCR_DIFF_SECTION);
     hm[{highlight_source_t::INTERNAL, "ip"}] = static_highlighter("\\d+\\.\\d+\\.\\d+\\.\\d+");
-    hm[{highlight_source_t::INTERNAL, "comment"}] = highlighter(xpcre_compile(
+    hm[{highlight_source_t::INTERNAL, "0.comment"}] = highlighter(xpcre_compile(
         "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"))
-        .with_role(view_colors::VCR_COMMENT);
-    hm[{highlight_source_t::INTERNAL, "sqlcomment"}] = highlighter(xpcre_compile(
-        "(?<=[\\s;])--.*"))
-        .with_text_format(text_format_t::TF_SQL)
         .with_role(view_colors::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "javadoc"}] = static_highlighter(
         "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");
@@ -366,10 +369,12 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_role(view_colors::VCR_VARIABLE);
     hm[{highlight_source_t::INTERNAL, "sym"}] = highlighter(xpcre_compile(
         "\\b[A-Z_][A-Z0-9_]+\\b"))
+        .with_nestable(false)
         .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_SYMBOL);
     hm[{highlight_source_t::INTERNAL, "num"}] = highlighter(xpcre_compile(
-        "\\b-?(?:\\d+|0x[a-zA-Z0-9]+)\\b"))
+        R"(\b-?(?:\d+|0x[a-zA-Z0-9]+)\b)"))
+        .with_nestable(false)
         .with_text_format(text_format_t::TF_C_LIKE)
         .with_role(view_colors::VCR_NUMBER);
 }

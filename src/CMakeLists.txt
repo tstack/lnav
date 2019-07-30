@@ -199,6 +199,7 @@ add_library(diag STATIC
         fts_fuzzy_match.cc
         grep_proc.cc
         help_text_formatter.cc
+        highlighter.cc
         hist_source.cc
         hotkeys.cc
         input_dispatcher.cc

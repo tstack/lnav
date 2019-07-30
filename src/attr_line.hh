@@ -208,8 +208,9 @@ find_string_attr(const string_attrs_t &sa, string_attr_type_t type, int start = 
     return iter;
 }
 
+template<typename T>
 inline string_attrs_t::const_iterator
-find_string_attr_containing(const string_attrs_t &sa, string_attr_type_t type, int x)
+find_string_attr_containing(const string_attrs_t &sa, string_attr_type_t type, T x)
 {
     string_attrs_t::const_iterator iter;
 
