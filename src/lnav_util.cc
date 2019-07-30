@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <paths.h>
 
 #include <fstream>
 
@@ -44,6 +45,7 @@
 #include "lnav_util.hh"
 #include "pcrepp/pcrepp.hh"
 #include "lnav_config.hh"
+#include "base/result.h"
 
 using namespace std;
 
@@ -661,20 +663,18 @@ size_t strtonum<long>(long &num_out, const char *string, size_t len);
 template
 size_t strtonum<int>(int &num_out, const char *string, size_t len);
 
-string build_path(const vector<string> &paths)
+string build_path(const vector<filesystem::path> &paths)
 {
     string retval;
 
-    for (vector<string>::const_iterator path_iter = paths.begin();
-         path_iter != paths.end();
-         ++path_iter) {
-        if (path_iter->empty()) {
+    for (const auto &path : paths) {
+        if (path.empty()) {
             continue;
         }
         if (!retval.empty()) {
             retval += ":";
         }
-        retval += *path_iter;
+        retval += path.str();
     }
     retval += ":" + string(getenv("PATH"));
     return retval;
@@ -720,4 +720,30 @@ size_t abbreviate_str(char *str, size_t len, size_t max_len)
     }
 
     return len;
+}
+
+filesystem::path system_tmpdir()
+{
+    const char *tmpdir;
+
+    if ((tmpdir = getenv("TMPDIR")) == nullptr) {
+        tmpdir = _PATH_VARTMP;
+    }
+
+    return filesystem::path(tmpdir);
+}
+
+Result<std::pair<filesystem::path, int>, std::string>
+open_temp_file(const filesystem::path &pattern)
+{
+    auto pattern_str = pattern.str();
+    char pattern_copy[pattern_str.size() + 1];
+    int fd;
+
+    strcpy(pattern_copy, pattern_str.c_str());
+    if ((fd = mkstemp(pattern_copy)) == -1) {
+        throw Err(strerror(errno));
+    }
+
+    return Ok(make_pair(filesystem::path(pattern_copy), fd));
 }

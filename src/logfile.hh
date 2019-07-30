@@ -248,7 +248,7 @@ public:
     };
 
     /** @return True if this log file still exists. */
-    bool exists(void) const;
+    bool exists() const;
 
     void close() {
         this->lf_is_closed = true;

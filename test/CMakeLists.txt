@@ -3,6 +3,7 @@ enable_testing()
 
 include_directories(
         .
+        ${CMAKE_CURRENT_BINARY_DIR}/../src
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -35,3 +36,6 @@ add_test(NAME test_abbrev COMMAND test_abbrev)
 
 add_executable(drive_sql_anno drive_sql_anno.cc)
 target_link_libraries(drive_sql_anno diag PkgConfig::libpcre)
+
+add_executable(scripty scripty.cc)
+target_link_libraries(scripty diag PkgConfig::ncursesw)

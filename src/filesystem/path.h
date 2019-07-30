@@ -220,6 +220,14 @@ public:
         return *this;
     }
 
+    bool operator==(const path &other) const {
+        return this->m_path == other.m_path;
+    }
+
+    path operator+(const char *fragment) const {
+        return path(this->str() + fragment);
+    }
+
 /*    path &operator=(path &&path) {
         if (this != &path) {
             m_type = path.m_type;

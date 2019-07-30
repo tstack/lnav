@@ -66,7 +66,8 @@ int main(int argc, char *argv[])
     bool prompt = false, is_log = false, pretty_print = false;
 
     {
-        std::vector<std::string> paths, errors;
+        std::vector<filesystem::path> paths;
+        vector<string> errors;
 
         load_formats(paths, errors);
     }

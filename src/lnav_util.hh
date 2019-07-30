@@ -38,6 +38,7 @@
 #include <sys/time.h>
 #include <poll.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <sys/resource.h>
 
 #include "spookyhash/SpookyV2.h"
@@ -52,6 +53,8 @@
 #include "ptimec.hh"
 #include "byte_array.hh"
 #include "optional.hpp"
+#include "base/result.h"
+#include "filesystem/path.h"
 
 inline std::string trim(const std::string &str)
 {
@@ -256,7 +259,7 @@ inline bool startswith(const char *str, const char *prefix)
     return strncmp(str, prefix, strlen(prefix)) == 0;
 }
 
-inline bool startswith(std::string str, const char *prefix)
+inline bool startswith(const std::string &str, const char *prefix)
 {
     return startswith(str.c_str(), prefix);
 }
@@ -272,7 +275,7 @@ inline bool endswith(const char *str, const char *suffix)
     return strcmp(&str[len - suffix_len], suffix) == 0;
 }
 
-std::string build_path(const std::vector<std::string> &paths);
+std::string build_path(const std::vector<filesystem::path> &paths);
 
 bool read_file(const char *filename, std::string &out);
 
@@ -492,5 +495,22 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
 }
 
 size_t abbreviate_str(char *str, size_t len, size_t max_len);
+
+filesystem::path system_tmpdir();
+
+inline int statp(const filesystem::path &path, struct stat *buf) {
+    return stat(path.str().c_str(), buf);
+}
+
+inline int openp(const filesystem::path &path, int flags) {
+    return open(path.str().c_str(), flags);
+}
+
+inline int openp(const filesystem::path &path, int flags, mode_t mode) {
+    return open(path.str().c_str(), flags, mode);
+}
+
+Result<std::pair<filesystem::path, int>, std::string>
+open_temp_file(const filesystem::path &pattern);
 
 #endif

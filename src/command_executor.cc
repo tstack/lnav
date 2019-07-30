@@ -78,7 +78,7 @@ int sql_progress(const struct log_cursor &lc)
     return 0;
 }
 
-string execute_from_file(exec_context &ec, const string &path, int line_number, char mode, const string &cmdline);
+string execute_from_file(exec_context &ec, const filesystem::path &path, int line_number, char mode, const string &cmdline);
 
 string execute_command(exec_context &ec, const string &cmdline)
 {
@@ -362,18 +362,21 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
     return retval;
 }
 
-static string execute_file_contents(exec_context &ec, const string &path, bool multiline)
+static string execute_file_contents(exec_context &ec, const filesystem::path &path, bool multiline)
 {
+    static filesystem::path stdin_path("-");
+    static filesystem::path dev_stdin_path("/dev/stdin");
+
     string retval;
     FILE *file;
 
-    if (path == "-" || path == "/dev/stdin") {
+    if (path == stdin_path || path == dev_stdin_path) {
         if (isatty(STDIN_FILENO)) {
             return "error: stdin has already been consumed";
         }
         file = stdin;
     }
-    else if ((file = fopen(path.c_str(), "r")) == nullptr) {
+    else if ((file = fopen(path.str().c_str(), "r")) == nullptr) {
         return ec.get_error_prefix() + "unable to open file";
     }
 
@@ -383,9 +386,8 @@ static string execute_file_contents(exec_context &ec, const string &path, bool m
     ssize_t line_size;
     string cmdline;
     char mode = '\0';
-    pair<string, string> dir_and_base = split_path(path);
 
-    ec.ec_path_stack.push_back(dir_and_base.first);
+    ec.ec_path_stack.emplace_back(path.parent_path());
     ec.ec_output_stack.emplace_back(nonstd::nullopt);
     while ((line_size = getline(&line, &line_max_size, file)) != -1) {
         line_number += 1;
@@ -458,7 +460,7 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
     else {
         ec.ec_local_vars.push(map<string, string>());
 
-        string script_name = split_args[0];
+        auto script_name = split_args[0];
         map<string, string> &vars = ec.ec_local_vars.top();
         char env_arg_name[32];
         string star, result, open_error = "file not found";
@@ -501,12 +503,16 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
             open_error = strerror(errno);
         }
         else {
-            string local_path = ec.ec_path_stack.back() + "/" + script_name;
+            auto script_path = filesystem::path(script_name);
 
-            if (access(local_path.c_str(), R_OK) == 0) {
+            if (!script_path.is_absolute()) {
+                script_path = ec.ec_path_stack.back() / script_path;
+            }
+
+            if (script_path.is_file()) {
                 struct script_metadata meta;
 
-                meta.sm_path = local_path;
+                meta.sm_path = script_path;
                 extract_metadata_from_file(meta);
                 paths_to_exec.push_back(meta);
             }
@@ -531,11 +537,11 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
     return retval;
 }
 
-string execute_from_file(exec_context &ec, const string &path, int line_number, char mode, const string &cmdline)
+string execute_from_file(exec_context &ec, const filesystem::path &path, int line_number, char mode, const string &cmdline)
 {
     string retval, alt_msg;
 
-    ec.ec_source.emplace(path, line_number);
+    ec.ec_source.emplace(path.str(), line_number);
     switch (mode) {
         case ':':
             retval = execute_command(ec, cmdline);
@@ -561,9 +567,9 @@ string execute_from_file(exec_context &ec, const string &path, int line_number, 
     rebuild_indexes();
 
     log_info("%s:%d:execute result -- %s",
-            path.c_str(),
-            line_number,
-            retval.c_str());
+             path.str().c_str(),
+             line_number,
+             retval.c_str());
 
     ec.ec_source.pop();
 
@@ -755,7 +761,11 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
             return string();
         });
     } else {
-        auto pp = make_shared<piper_proc>(fd, false);
+        auto pp = make_shared<piper_proc>(
+            fd, false, open_temp_file(system_tmpdir() / "lnav.out.XXXXXX")
+                .then([](auto pair) { pair.first.remove_file(); })
+                .expect("Cannot create temporary file for callback")
+                .second);
         static int exec_count = 0;
         char desc[128];
 
@@ -769,8 +779,8 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
             .with_detect_format(false);
         lnav_data.ld_files_to_front.emplace_back(desc, 0);
         if (lnav_data.ld_rl_view != nullptr) {
-            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
-                                                    X, "to close the file"));
+            lnav_data.ld_rl_view->set_alt_value(
+                HELP_MSG_1(X, "to close the file"));
         }
 
         packaged_task<string()> task([]() { return ""; });

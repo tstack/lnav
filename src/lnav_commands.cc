@@ -942,11 +942,11 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
             const char *args[] = {
                     "sh", "-c", cmd.c_str(), NULL,
             };
-            vector<std::string> path_v = ec.ec_path_stack;
+            auto path_v = ec.ec_path_stack;
             string path;
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
-            path_v.push_back(dotlnav_path("formats/default"));
+            path_v.emplace_back(dotlnav_path() / "formats/default");
 
             if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
                 logfile_sub_source &lss = lnav_data.ld_log_source;
@@ -1646,16 +1646,12 @@ static string com_session(exec_context &ec, string cmdline, vector<string> &args
             retval = "error: the HOME environment variable is not set";
         }
         else {
-            string            old_file_name, new_file_name;
-            string            saved_cmd;
+            auto saved_cmd = trim(remaining_args(cmdline, args));
+            auto old_file_name = dotlnav_path() / "session";
+            auto new_file_name = dotlnav_path() / "session.tmp";
 
-            saved_cmd = trim(remaining_args(cmdline, args));
-
-            old_file_name = dotlnav_path("session");
-            new_file_name = dotlnav_path("session.tmp");
-
-            ifstream session_file(old_file_name.c_str());
-            ofstream new_session_file(new_file_name.c_str());
+            ifstream session_file(old_file_name.str());
+            ofstream new_session_file(new_file_name.str());
 
             if (!new_session_file) {
                 retval = "error: cannot write to session file";
@@ -1676,11 +1672,11 @@ static string com_session(exec_context &ec, string cmdline, vector<string> &args
                 if (!added) {
                     new_session_file << saved_cmd << endl;
 
-                    log_perror(rename(new_file_name.c_str(),
-                                      old_file_name.c_str()));
+                    log_perror(rename(new_file_name.str().c_str(),
+                                      old_file_name.str().c_str()));
                 }
                 else {
-                    log_perror(remove(new_file_name.c_str()));
+                    log_perror(remove(new_file_name.str().c_str()));
                 }
 
                 retval = "info: session file saved";
@@ -1803,7 +1799,12 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                     retval = "";
                 } else {
                     auto fifo_piper = make_shared<piper_proc>(
-                        fifo_fd.release(), false);
+                        fifo_fd.release(),
+                        false,
+                        open_temp_file(system_tmpdir() / "lnav.fifo.XXXXXX")
+                            .then([](auto pair) { pair.first.remove_file(); })
+                            .expect("Cannot create temporary file for FIFO")
+                            .second);
                     int fifo_out_fd = fifo_piper->get_fd();
                     char desc[128];
 

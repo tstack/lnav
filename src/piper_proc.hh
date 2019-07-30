@@ -60,10 +60,9 @@ public:
      * @param pipefd The file descriptor to read the file contents from.
      * @param timestamp True if an ISO 8601 timestamp should be prepended onto
      *   the lines read from pipefd.
-     * @param filename The name of the file to save the input to, otherwise a
-     *   temporary file will be created.
+     * @param filefd The descriptor for the backing file.
      */
-    piper_proc(int pipefd, bool timestamp, const char *filename = NULL);
+    piper_proc(int pipefd, bool timestamp, int filefd);
 
     bool has_exited();
 

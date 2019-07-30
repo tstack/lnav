@@ -59,7 +59,7 @@ static ssize_t write_timestamp(int fd, off_t woff)
     struct timeval tv;
     char           ms_str[8];
 
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     strftime(time_str, sizeof(time_str), "%FT%T", localtime(&tv.tv_sec));
     snprintf(ms_str, sizeof(ms_str), ".%03d", (int)(tv.tv_usec / 1000));
     strcat(time_str, ms_str);
@@ -67,34 +67,10 @@ static ssize_t write_timestamp(int fd, off_t woff)
     return pwrite(fd, time_str, strlen(time_str), woff);
 }
 
-piper_proc::piper_proc(int pipefd, bool timestamp, const char *filename)
-    : pp_fd(-1), pp_child(-1)
+piper_proc::piper_proc(int pipefd, bool timestamp, int filefd)
+    : pp_fd(filefd), pp_child(-1)
 {
     require(pipefd >= 0);
-
-    if (filename) {
-        if ((this->pp_fd =
-                 open(filename, O_RDWR | O_CREAT | O_TRUNC, 0600)) == -1) {
-            perror("Unable to open output file for stdin");
-            throw error(errno);
-        }
-    }
-    else {
-        char piper_tmpname[PATH_MAX];
-        const char *tmpdir;
-
-        if ((tmpdir = getenv("TMPDIR")) == NULL) {
-            tmpdir = _PATH_VARTMP;
-        }
-        snprintf(piper_tmpname, sizeof(piper_tmpname),
-                "%s/lnav.piper.XXXXXX",
-                tmpdir);
-        if ((this->pp_fd = mkstemp(piper_tmpname)) == -1) {
-            throw error(errno);
-        }
-
-        unlink(piper_tmpname);
-    }
 
     log_perror(fcntl(this->pp_fd.get(), F_SETFD, FD_CLOEXEC));
 

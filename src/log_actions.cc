@@ -119,7 +119,13 @@ static string execute_action(log_data_helper &ldh,
             in_pipe.close();
 
             if (out_pipe.read_end() != -1) {
-                auto pp = make_shared<piper_proc>(out_pipe.read_end(), false);
+                auto pp = make_shared<piper_proc>(
+                    out_pipe.read_end(),
+                    false,
+                    open_temp_file(system_tmpdir() / "lnav.action.XXXXXX")
+                        .then([](auto pair) { pair.first.remove_file(); })
+                        .expect("Cannot create temporary file for action")
+                        .second);
                 char desc[128];
 
                 lnav_data.ld_pipers.push_back(pp);

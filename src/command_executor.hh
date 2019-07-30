@@ -91,7 +91,7 @@ struct exec_context {
     std::vector<logline_value> *ec_line_values;
     std::stack<std::map<std::string, std::string> > ec_local_vars;
     std::map<std::string, std::string> ec_global_vars;
-    std::vector<std::string> ec_path_stack;
+    std::vector<filesystem::path> ec_path_stack;
     std::stack<std::pair<std::string, int>> ec_source;
     std::vector<nonstd::optional<FILE *>> ec_output_stack;
 

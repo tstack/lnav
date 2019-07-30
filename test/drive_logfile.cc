@@ -74,7 +74,8 @@ int main(int argc, char *argv[])
     string expected_format;
 
     {
-        std::vector<std::string> paths, errors;
+        std::vector<std::string> errors;
+        vector<filesystem::path> paths;
 
         if (getenv("test_dir") != NULL) {
             paths.push_back(getenv("test_dir"));

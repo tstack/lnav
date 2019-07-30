@@ -43,6 +43,7 @@
 #include "yajlpp/yajlpp.hh"
 #include "log_level.hh"
 #include "styling.hh"
+#include "filesystem/path.h"
 
 class lnav_config_listener {
 public:
@@ -53,8 +54,7 @@ public:
         LISTENER_LIST = this;
     }
 
-    virtual ~lnav_config_listener() {
-    };
+    virtual ~lnav_config_listener() = default;
 
     virtual void reload_config(error_reporter &reporter) {
 
@@ -71,7 +71,7 @@ public:
  * @param  sub The path to the file in the '.lnav' directory.
  * @return     The full path
  */
-std::string dotlnav_path(const char *sub);
+filesystem::path dotlnav_path();
 
 /**
  * Check if an experimental feature should be enabled by
@@ -122,7 +122,7 @@ extern std::map<intern_string_t, source_location> lnav_config_locations;
 
 extern struct json_path_handler lnav_config_handlers[];
 
-void load_config(const std::vector<std::string> &extra_paths,
+void load_config(const std::vector<filesystem::path> &extra_paths,
                  std::vector<std::string> &errors);
 
 void reset_config(const std::string &path);

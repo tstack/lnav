@@ -657,12 +657,12 @@ struct json_path_handler root_format_handler[] = {
 
 static void write_sample_file(void)
 {
-    string sample_path = dotlnav_path("formats/default/default-formats.json.sample");
+    auto sample_path = dotlnav_path() / "formats/default/default-formats.json.sample";
     auto_fd sample_fd;
 
-    if ((sample_fd = open(sample_path.c_str(),
-                          O_WRONLY|O_TRUNC|O_CREAT,
-                          0644)) == -1 ||
+    if ((sample_fd = openp(sample_path,
+                           O_WRONLY|O_TRUNC|O_CREAT,
+                           0644)) == -1 ||
         (write(sample_fd.get(),
                default_log_formats_json.bsf_data,
                default_log_formats_json.bsf_size) == -1)) {
@@ -671,10 +671,10 @@ static void write_sample_file(void)
 
     for (int lpc = 0; lnav_sh_scripts[lpc].bsf_name; lpc++) {
         struct bin_src_file &bsf = lnav_sh_scripts[lpc];
-        string sh_path = dotlnav_path(fmt::format("formats/default/{}", bsf.bsf_name).c_str());
+        auto sh_path = dotlnav_path() / fmt::format("formats/default/{}", bsf.bsf_name);
         auto_fd sh_fd;
 
-        if ((sh_fd = open(sh_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
+        if ((sh_fd = openp(sh_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
             write(sh_fd.get(), bsf.bsf_data, strlen((const char *) bsf.bsf_data)) == -1) {
             perror("error: unable to write default text file");
         }
@@ -684,7 +684,6 @@ static void write_sample_file(void)
         struct script_metadata meta;
         struct bin_src_file &bsf = lnav_scripts[lpc];
         const char *script_content = reinterpret_cast<const char *>(bsf.bsf_data);
-        string script_path;
         auto_fd script_fd;
         char path[2048];
         size_t script_len;
@@ -693,12 +692,12 @@ static void write_sample_file(void)
         script_len = strlen(script_content);
         extract_metadata(script_content, script_len, meta);
         snprintf(path, sizeof(path), "formats/default/%s.lnav", meta.sm_name.c_str());
-        script_path = dotlnav_path(path);
-        if (stat(script_path.c_str(), &st) == 0 && (size_t) st.st_size == script_len) {
+        auto script_path = dotlnav_path() / path;
+        if (statp(script_path, &st) == 0 && (size_t) st.st_size == script_len) {
             // Assume it's the right contents and move on...
             continue;
         }
-        if ((script_fd = open(script_path.c_str(), O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
+        if ((script_fd = openp(script_path, O_WRONLY|O_TRUNC|O_CREAT, 0755)) == -1 ||
             write(script_fd.get(), script_content, script_len) == -1) {
             perror("error: unable to write default text file");
         }
@@ -781,13 +780,13 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
     return retval;
 }
 
-static void load_from_path(const string &path, std::vector<string> &errors)
+static void load_from_path(const filesystem::path &path, std::vector<string> &errors)
 {
-    string format_path = path + "/formats/*/*.json";
+    auto format_path = path / "formats/*/*.json";
     static_root_mem<glob_t, globfree> gl;
 
-    log_info("loading formats from path: %s", format_path.c_str());
-    if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
+    log_info("loading formats from path: %s", format_path.str().c_str());
+    if (glob(format_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             const char *base = basename(gl->gl_pathv[lpc]);
 
@@ -813,11 +812,11 @@ static void load_from_path(const string &path, std::vector<string> &errors)
     }
 }
 
-void load_formats(const std::vector<std::string> &extra_paths,
+void load_formats(const std::vector<filesystem::path> &extra_paths,
                   std::vector<std::string> &errors)
 {
-    string default_source = string(dotlnav_path("formats") + "/default/");
-    yajlpp_parse_context ypc_builtin(default_source, root_format_handler);
+    auto default_source = dotlnav_path() / "default";
+    yajlpp_parse_context ypc_builtin(default_source.str(), root_format_handler);
     std::vector<intern_string_t> retval;
     struct userdata ud;
     yajl_handle handle;
@@ -825,7 +824,7 @@ void load_formats(const std::vector<std::string> &extra_paths,
     write_sample_file();
 
     log_debug("Loading default formats");
-    handle = yajl_alloc(&ypc_builtin.ypc_callbacks, NULL, &ypc_builtin);
+    handle = yajl_alloc(&ypc_builtin.ypc_callbacks, nullptr, &ypc_builtin);
     ud.ud_format_names = &retval;
     ud.ud_errors = &errors;
     ypc_builtin
@@ -952,13 +951,13 @@ void load_formats(const std::vector<std::string> &extra_paths,
     roots.insert(roots.begin(), graph_ordered_formats.begin(), graph_ordered_formats.end());
 }
 
-static void exec_sql_in_path(sqlite3 *db, const string &path, std::vector<string> &errors)
+static void exec_sql_in_path(sqlite3 *db, const filesystem::path &path, std::vector<string> &errors)
 {
-    string format_path = path + "/formats/*/*.sql";
+    auto format_path = path / "formats/*/*.sql";
     static_root_mem<glob_t, globfree> gl;
 
-    log_info("executing SQL files in path: %s", format_path.c_str());
-    if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
+    log_info("executing SQL files in path: %s", format_path.str().c_str());
+    if (glob(format_path.str().c_str(), 0, NULL, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             string filename(gl->gl_pathv[lpc]);
             string content;
@@ -979,7 +978,7 @@ static void exec_sql_in_path(sqlite3 *db, const string &path, std::vector<string
 }
 
 void load_format_extra(sqlite3 *db,
-                       const std::vector<std::string> &extra_paths,
+                       const std::vector<filesystem::path> &extra_paths,
                        std::vector<std::string> &errors)
 {
     for (const auto & extra_path : extra_paths) {
@@ -1020,11 +1019,11 @@ void extract_metadata_from_file(struct script_metadata &meta_inout)
     auto_mem<FILE> fp(fclose);
     struct stat st;
 
-    if (stat(meta_inout.sm_path.c_str(), &st) == -1) {
-        log_warning("unable to open script -- %s", meta_inout.sm_path.c_str());
+    if (statp(meta_inout.sm_path, &st) == -1) {
+        log_warning("unable to open script -- %s", meta_inout.sm_path.str().c_str());
     } else if (!S_ISREG(st.st_mode)) {
-        log_warning("not a regular file -- %s", meta_inout.sm_path.c_str());
-    } else if ((fp = fopen(meta_inout.sm_path.c_str(), "r")) != NULL) {
+        log_warning("not a regular file -- %s", meta_inout.sm_path.str().c_str());
+    } else if ((fp = fopen(meta_inout.sm_path.str().c_str(), "r")) != NULL) {
         size_t len;
 
         len = fread(buffer, 1, sizeof(buffer), fp.in());
@@ -1032,14 +1031,14 @@ void extract_metadata_from_file(struct script_metadata &meta_inout)
     }
 }
 
-static void find_format_in_path(const string &path,
+static void find_format_in_path(const filesystem::path &path,
                                 map<string, vector<script_metadata> > &scripts)
 {
-    string format_path = path + "/formats/*/*.lnav";
+    auto format_path = path / "formats/*/*.lnav";
     static_root_mem<glob_t, globfree> gl;
 
-    log_debug("Searching for script in path: %s", format_path.c_str());
-    if (glob(format_path.c_str(), 0, NULL, gl.inout()) == 0) {
+    log_debug("Searching for script in path: %s", format_path.str().c_str());
+    if (glob(format_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             const char *filename = basename(gl->gl_pathv[lpc]);
             string script_name = string(filename, strlen(filename) - 5);
@@ -1050,12 +1049,12 @@ static void find_format_in_path(const string &path,
             extract_metadata_from_file(meta);
             scripts[script_name].push_back(meta);
 
-            log_debug("  found script: %s", meta.sm_path.c_str());
+            log_debug("  found script: %s", meta.sm_path.str().c_str());
         }
     }
 }
 
-void find_format_scripts(const vector<string> &extra_paths,
+void find_format_scripts(const vector<filesystem::path> &extra_paths,
                          map<string, vector<script_metadata> > &scripts)
 {
     for (const auto &extra_path : extra_paths) {

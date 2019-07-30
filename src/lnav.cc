@@ -227,6 +227,8 @@ static std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
     "st_gid",
 };
 
+const static size_t MAX_STDIN_CAPTURE_SIZE = 100 * 1024 * 1024;
+
 static void regenerate_unique_file_names()
 {
     unique_path_generator upg;
@@ -841,7 +843,7 @@ static void usage()
         "  -f path    Execute the commands in the given file.\n"
         "  -n         Run without the curses UI. (headless mode)\n"
         "  -q         Do not print the log messages after executing all\n"
-        "             of the commands or when lnav is reading from stdin.\n"
+        "             of the commands.\n"
         "\n"
         "Optional arguments:\n"
         "  logfile1          The log files or directories to view.  If a\n"
@@ -1504,7 +1506,8 @@ static void looper()
             sc.window_change();
         }
 
-        execute_file(ec, dotlnav_path("session"));
+        auto session_path = dotlnav_path() / "session";
+        execute_file(ec, session_path.str());
 
         sb.invoke(*lnav_data.ld_view_stack.top());
         vsb.invoke(*lnav_data.ld_view_stack.top());
@@ -1816,10 +1819,11 @@ int main(int argc, char *argv[])
     int lpc, c, retval = EXIT_SUCCESS;
 
     shared_ptr<piper_proc> stdin_reader;
-    const char *         stdin_out = NULL;
+    const char *         stdin_out = nullptr;
     int                  stdin_out_fd = -1;
     bool exec_stdin = false;
     const char *LANG = getenv("LANG");
+    filesystem::path stdin_tmp_path;
 
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
         setenv("LANG", "en_US.utf-8", 1);
@@ -1860,7 +1864,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_debug_log_name = "/dev/null";
     lnav_data.ld_config_paths.emplace_back("/etc/lnav");
     lnav_data.ld_config_paths.emplace_back(SYSCONFDIR "/lnav");
-    lnav_data.ld_config_paths.emplace_back(dotlnav_path(""));
+    lnav_data.ld_config_paths.emplace_back(dotlnav_path());
     while ((c = getopt(argc, argv, "hHarRCc:I:iuf:d:nqtw:vVW")) != -1) {
         switch (c) {
         case 'h':
@@ -2003,7 +2007,7 @@ int main(int argc, char *argv[])
     }
 
     if (lnav_data.ld_flags & LNF_INSTALL) {
-        string installed_path = dotlnav_path("formats/installed/");
+        auto installed_path = dotlnav_path() / "formats/installed";
 
         if (argc == 0) {
             fprintf(stderr, "error: expecting file format paths\n");
@@ -2033,16 +2037,17 @@ int main(int argc, char *argv[])
             }
 
             string dst_name = format_list[0].to_string() + ".json";
-            string dst_path = installed_path + dst_name;
+            auto dst_path = installed_path / dst_name;
             auto_fd in_fd, out_fd;
 
             if ((in_fd = open(argv[lpc], O_RDONLY)) == -1) {
                 perror("unable to open file to install");
             }
-            else if ((out_fd = open(dst_path.c_str(),
-                    O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
+            else if ((out_fd = openp(dst_path,
+                                     O_WRONLY | O_CREAT | O_TRUNC,
+                                     0644)) == -1) {
                 fprintf(stderr, "error: unable to open destination: %s -- %s\n",
-                        dst_path.c_str(), strerror(errno));
+                        dst_path.str().c_str(), strerror(errno));
             }
             else {
                 char buffer[2048];
@@ -2064,7 +2069,7 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                fprintf(stderr, "info: installed: %s\n", dst_path.c_str());
+                fprintf(stderr, "info: installed: %s\n", dst_path.str().c_str());
             }
         }
         return EXIT_SUCCESS;
@@ -2278,9 +2283,15 @@ int main(int argc, char *argv[])
                         "Cannot open fifo: %s -- %s\n",
                         argv[lpc],
                         strerror(errno));
+                retval = EXIT_FAILURE;
             } else {
                 auto fifo_piper = make_shared<piper_proc>(
-                    fifo_fd.release(), false);
+                    fifo_fd.release(),
+                    false,
+                    open_temp_file(system_tmpdir() / "lnav.fifo.XXXXXX")
+                        .then([](auto pair) { pair.first.remove_file(); })
+                        .expect("Cannot create temporary file for FIFO")
+                        .second);
                 int fifo_out_fd = fifo_piper->get_fd();
                 char desc[128];
 
@@ -2292,7 +2303,7 @@ int main(int argc, char *argv[])
                 lnav_data.ld_pipers.push_back(fifo_piper);
             }
         }
-        else if ((abspath = realpath(argv[lpc], NULL)) == NULL) {
+        else if ((abspath = realpath(argv[lpc], nullptr)) == nullptr) {
             perror("Cannot find file");
             retval = EXIT_FAILURE;
         }
@@ -2373,9 +2384,29 @@ int main(int argc, char *argv[])
     }
 
     if (!isatty(STDIN_FILENO) && !exec_stdin) {
+        if (stdin_out == nullptr) {
+            auto pattern = dotlnav_path() / "stdin-captures/stdin.XXXXXX";
+
+            auto open_result = open_temp_file(pattern);
+            if (open_result.isErr()) {
+                fprintf(stderr,
+                        "Unable to open temporary file for stdin: %s",
+                        open_result.unwrapErr().c_str());
+                return EXIT_FAILURE;
+            }
+
+            auto temp_pair = open_result.unwrap();
+            stdin_tmp_path = temp_pair.first;
+            stdin_out_fd = temp_pair.second;
+        } else {
+            if ((stdin_out_fd = open(stdin_out, O_RDWR | O_CREAT | O_TRUNC, 0600)) == -1) {
+                perror("Unable to open output file for stdin");
+                return EXIT_FAILURE;
+            }
+        }
+
         stdin_reader = make_shared<piper_proc>(
-            STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out);
-        stdin_out_fd = stdin_reader->get_fd();
+            STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out_fd);
         lnav_data.ld_file_names["stdin"]
             .with_fd(stdin_out_fd);
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
@@ -2586,33 +2617,32 @@ int main(int argc, char *argv[])
             }
         }
 
-        // When reading from stdin, dump out the last couple hundred lines so
-        // the user can have the text in their terminal history.
+        // When reading from stdin, tell the user where the capture file is
+        // stored so they can look at it later.
         if (stdin_out_fd != -1 &&
-                !(lnav_data.ld_flags & LNF_QUIET) &&
-                !(lnav_data.ld_flags & LNF_HEADLESS)) {
-            struct stat st;
+            stdin_out == nullptr &&
+            !(lnav_data.ld_flags & LNF_QUIET) &&
+            !(lnav_data.ld_flags & LNF_HEADLESS)) {
+            if (stdin_tmp_path.file_size() > MAX_STDIN_CAPTURE_SIZE) {
+                log_info("not saving large stdin capture -- %s",
+                         stdin_tmp_path.str().c_str());
+                stdin_tmp_path.remove_file();
+            } else {
+                auto home = getenv("HOME");
+                auto path_str = stdin_tmp_path.str();
 
-            fstat(stdin_out_fd, &st);
-            auto file_iter = find_if(lnav_data.ld_files.begin(),
-                                     lnav_data.ld_files.end(),
-                                     same_file(st));
-            if (file_iter != lnav_data.ld_files.end()) {
-                logfile::iterator line_iter;
-                auto lf = *file_iter;
-                string str;
-
-                for (line_iter = lf->begin();
-                     line_iter != lf->end();
-                     ++line_iter) {
-
-                    lf->read_line(line_iter).then([](const auto &sbr) {
-                        if (write(STDOUT_FILENO, sbr.get_data(), sbr.length()) == -1 ||
-                            write(STDOUT_FILENO, "\n", 1) == -1) {
-                            perror("3 write to STDOUT");
-                        }
-                    });
+                if (startswith(path_str, home)) {
+                    path_str = path_str.substr(strlen(home));
+                    if (path_str[0] != '/') {
+                        path_str.insert(0, 1, '/');
+                    }
+                    path_str.insert(0, 1, '~');
                 }
+
+                fprintf(stderr,
+                        "info: stdin was captured, you can reopen it using -- "
+                        "lnav %s\n",
+                        path_str.c_str());
             }
         }
     }
