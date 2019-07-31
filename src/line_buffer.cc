@@ -60,9 +60,9 @@ static const ssize_t MAX_COMPRESSED_BUFFER_SIZE = 32 * 1024 * 1024;
 /*
  * XXX REMOVE ME
  *
- * The stock gzipped file code does not use pread, so we need to use a lock to
+ * The stock bzipped file code does not use pread, so we need to use a lock to
  * get exclusive access to the file.  In the future, we should just rewrite
- * the gzipped file code to use pread.
+ * the bzipped file code to use pread.
  */
 class lock_hack {
 public:
@@ -116,9 +116,173 @@ private:
 };
 /* XXX END */
 
+
+#define Z_BUFSIZE 65536U
+#define SYNCPOINT_SIZE (1024 * 1024)
+line_buffer::gz_indexed::gz_indexed()
+{
+    if ((this->inbuf = (Bytef *)malloc(Z_BUFSIZE)) == NULL) {
+        throw bad_alloc();
+    }
+}
+
+void line_buffer::gz_indexed::close()
+{
+    // Release old stream, if we were open
+    if (*this) {
+        inflateEnd(&this->strm);
+        ::close(this->gz_fd);
+        this->syncpoints.clear();
+        this->gz_fd = -1;
+    }
+}
+
+void line_buffer::gz_indexed::init_stream()
+{
+    if (*this) {
+        inflateEnd(&this->strm);
+    }
+
+    // initialize inflate struct
+    this->strm.zalloc = Z_NULL;
+    this->strm.zfree = Z_NULL;
+    this->strm.opaque = Z_NULL;
+    this->strm.avail_in = 0;
+    this->strm.next_in = Z_NULL;
+    this->strm.avail_out = 0;
+    int rc = inflateInit2(&strm, GZ_HEADER_MODE);
+    if (rc != Z_OK) {
+        throw(rc);  // FIXME: exception wrapper
+    }
+}
+
+void line_buffer::gz_indexed::continue_stream()
+{
+    // Save our position and output buffer
+    auto total_in = this->strm.total_in;
+    auto total_out = this->strm.total_out;
+    auto avail_out = this->strm.avail_out;
+    auto next_out = this->strm.next_out;
+
+    init_stream();
+
+    // Restore position and output buffer
+    this->strm.total_in = total_in;
+    this->strm.total_out = total_out;
+    this->strm.avail_out = avail_out;
+    this->strm.next_out = next_out;
+}
+
+void line_buffer::gz_indexed::open(int fd)
+{
+    this->close();
+    this->init_stream();
+    this->gz_fd = fd;
+}
+
+int line_buffer::gz_indexed::stream_data(void * buf, size_t size)
+{
+    this->strm.avail_out = size;
+    this->strm.next_out = (unsigned char *) buf;
+
+    int last = this->syncpoints.empty() ? 0 :
+                    this->syncpoints.back().in;
+    while (this->strm.avail_out) {
+        if (!this->strm.avail_in) {
+            int rc = ::pread(this->gz_fd,
+                        &this->inbuf[0],
+                        Z_BUFSIZE,
+                        this->strm.total_in);
+            if (rc < 0) {
+                return rc;
+            }
+            this->strm.next_in = this->inbuf;
+            this->strm.avail_in = rc;
+        }
+        if (this->strm.avail_in) {
+            int flush = last > this->strm.total_in
+                          ? Z_SYNC_FLUSH : Z_BLOCK;
+            auto err = inflate(&this->strm, flush);
+            if (err == Z_STREAM_END) {
+                // Reached end of stream; re-init for a possible subsequent stream
+                continue_stream();
+            } else if (err != Z_OK) {
+                log_error(" inflate-error: %d", (int)err);
+                throw error(err);  // FIXME: exception wrapper
+            }
+
+            if (this->strm.total_in >= last + SYNCPOINT_SIZE &&
+                size > this->strm.avail_out + GZ_WINSIZE &&
+                (this->strm.data_type & GZ_END_OF_BLOCK_MASK) &&
+                !(this->strm.data_type & GZ_END_OF_FILE_MASK))
+            {
+                this->syncpoints.emplace_back(this->strm, size);
+                last = this->strm.total_out;
+            }
+        } else if (this->strm.avail_out) {
+            // Processed all the gz file data but didn't fill
+            // the output buffer.  We're done, even though we
+            // produced fewer bytes than requested.
+            break;
+        }
+    }
+    return size - this->strm.avail_out;
+}
+
+void line_buffer::gz_indexed::seek(size_t offset)
+{
+    if (offset == this->strm.total_out) {
+        return;
+    }
+
+    indexDict * dict = NULL;
+    // Find highest syncpoint not past offset
+    // FIXME: Make this a binary-tree search
+    for (auto &d : this->syncpoints) {
+        if (d.out <= offset) {
+            dict = &d;
+        } else {
+            break;
+        }
+    }
+
+    // Choose highest available syncpoint, or keep current offset if it's ok
+    if (offset < this->strm.total_out ||
+        (dict && this->strm.total_out < dict->out)) {
+        // Release the old z_stream
+        inflateEnd(&this->strm);
+        if (dict) {
+            dict->apply(&this->strm);
+        } else {
+            init_stream();
+        }
+    }
+
+    // Stream from compressed file until we reach our offset
+    unsigned char dummy[Z_BUFSIZE];
+    while ( offset > this->strm.total_out) {
+        size_t to_copy = std::min(static_cast<size_t>(Z_BUFSIZE),
+                                    offset - this->strm.total_out);
+        auto bytes = stream_data(dummy, to_copy);
+        if (bytes <= 0) {
+            break;
+        }
+    }
+}
+
+int line_buffer::gz_indexed::read(void * buf, size_t offset, size_t size)
+{
+    if (offset != this->strm.total_out) {
+        this->seek(offset);
+    }
+
+    int bytes = stream_data(buf, size);
+
+    return bytes;
+}
+
 line_buffer::line_buffer()
-    : lb_gz_file(NULL),
-      lb_bz_file(false),
+    : lb_bz_file(false),
       lb_compressed_offset(0),
       lb_file_size(-1),
       lb_file_offset(0),
@@ -149,8 +313,7 @@ void line_buffer::set_fd(auto_fd &fd)
     off_t newoff = 0;
 
     if (this->lb_gz_file) {
-        gzclose(this->lb_gz_file);
-        this->lb_gz_file = NULL;
+        this->lb_gz_file.close();
     }
 
     if (this->lb_bz_file) {
@@ -181,15 +344,7 @@ void line_buffer::set_fd(auto_fd &fd)
                         close(gzfd);
                         throw error(errno);
                     }
-                    if ((this->lb_gz_file = gzdopen(gzfd, "r")) == NULL) {
-                        close(gzfd);
-                        if (errno == 0) {
-                            throw bad_alloc();
-                        }
-                        else{
-                            throw error(errno);
-                        }
-                    }
+                    lb_gz_file.open(gzfd);
                     this->lb_file_time = read_le32(
                         (const unsigned char *)&gz_id[4]);
                     if (this->lb_file_time < 0) {
@@ -343,16 +498,10 @@ bool line_buffer::fill_range(off_t start, ssize_t max_length)
                 rc = 0;
             }
             else {
-                lock_hack::guard guard;
-
-                lseek(this->lb_fd, this->lb_compressed_offset, SEEK_SET);
-                gzseek(this->lb_gz_file,
-                       this->lb_file_offset + this->lb_buffer_size,
-                       SEEK_SET);
-                rc = gzread(this->lb_gz_file,
-                            &this->lb_buffer[this->lb_buffer_size],
-                            this->lb_buffer_max - this->lb_buffer_size);
-                this->lb_compressed_offset = lseek(this->lb_fd, 0, SEEK_CUR);
+                rc = this->lb_gz_file.read(&this->lb_buffer[this->lb_buffer_size],
+                                     this->lb_file_offset + this->lb_buffer_size,
+                                     this->lb_buffer_max - this->lb_buffer_size);
+                this->lb_compressed_offset = this->lb_gz_file.get_source_offset();
                 if (rc != -1 && (
                         rc < (this->lb_buffer_max - this->lb_buffer_size))) {
                     this->lb_file_size = (

@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 {
 	int c, rnd_iters = 5, retval = EXIT_SUCCESS;
 	vector<tuple<int, off_t, ssize_t> > index;
-	auto_fd fd = STDIN_FILENO;
+	auto_fd fd = STDIN_FILENO, fd_cmp;
 	int offseti = 0;
 	off_t offset = 0;
 	int count = 1000;
@@ -135,12 +135,20 @@ int main(int argc, char *argv[])
 	} else if ((argc > 0) && (fstat(fd, &st) == -1)) {
 		perror("fstat");
 		retval = EXIT_FAILURE;
+	} else if ((argc > 1) && (fd_cmp = open(argv[1], O_RDONLY)) == -1) {
+		perror("open-cmp");
+		retval = EXIT_FAILURE;
+	} else if ((argc > 1) && (fstat(fd_cmp, &st) == -1)) {
+		perror("fstat-cmp");
+		retval = EXIT_FAILURE;
 	} else {
 		try {
 		    file_range last_range{offset};
 			line_buffer lb;
 			char *maddr;
 
+			int fd2 = (argc > 1) ? fd_cmp.get() : fd.get();
+			assert(fd2 >= 0);
 			lb.set_fd(fd);
 			if (index.size() == 0) {
 				while (count) {
@@ -179,7 +187,7 @@ int main(int argc, char *argv[])
 											  st.st_size,
 											  PROT_READ,
 											  MAP_FILE | MAP_PRIVATE,
-											  lb.get_fd(),
+											  fd2,
 											  0)) == MAP_FAILED) {
 				perror("mmap");
 				retval = EXIT_FAILURE;
