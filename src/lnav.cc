@@ -227,7 +227,7 @@ static std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
     "st_gid",
 };
 
-const static size_t MAX_STDIN_CAPTURE_SIZE = 100 * 1024 * 1024;
+const static size_t MAX_STDIN_CAPTURE_SIZE = 10 * 1024 * 1024;
 
 static void regenerate_unique_file_names()
 {
