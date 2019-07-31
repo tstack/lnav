@@ -182,10 +182,6 @@ void handle_paging_key(int ch)
     text_sub_source *tc_tss = tc->get_sub_source();
     bookmarks<vis_line_t>::type &     bm  = tc->get_bookmarks();
 
-    if (tc->handle_key(ch)) {
-        return;
-    }
-
     char keyseq[16];
 
     snprintf(keyseq, sizeof(keyseq), "x%02x", ch);
