@@ -123,8 +123,6 @@ void curl_looper::loop_body()
 
             ts.tv_sec = deadline / 1000ULL;
             ts.tv_nsec = (deadline % 1000ULL) * 1000 * 1000;
-            log_trace("no requests in progress, waiting %d ms for new ones",
-                      timeout);
             pthread_cond_timedwait(&this->cl_cond, &this->cl_mutex, &ts);
         }
     }
