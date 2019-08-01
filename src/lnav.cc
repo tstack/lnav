@@ -2628,7 +2628,7 @@ int main(int argc, char *argv[])
                 auto home = getenv("HOME");
                 auto path_str = stdin_tmp_path.str();
 
-                if (startswith(path_str, home)) {
+                if (home != nullptr && startswith(path_str, home)) {
                     path_str = path_str.substr(strlen(home));
                     if (path_str[0] != '/') {
                         path_str.insert(0, 1, '/');

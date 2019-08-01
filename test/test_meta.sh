@@ -4,7 +4,7 @@ lnav_test="${top_builddir}/src/lnav-test"
 
 export HOME="./meta-sessions"
 rm -rf "./meta-sessions"
-mkdir -p $HOME
+mkdir -p $HOME/.config
 
 run_test ${lnav_test} -n \
     -c ":comment Hello, World!" \
@@ -20,6 +20,16 @@ check_output ":tag did not work?" <<EOF
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
 192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
 EOF
+
+if test ! -d meta-sessions/.config/lnav; then
+    echo "error: configuration not stored in .config/lnav?"
+    exit 1
+fi
+
+if test -d meta-sessions/.lnav; then
+    echo "error: configuration stored in .lnav?"
+    exit 1
+fi
 
 run_test ${lnav_test} -n \
     -c ":load-session" \

@@ -195,6 +195,7 @@ void log_host_info()
     log_info("  jittarget=%s", jittarget);
     log_info("Environment:");
     log_info("  HOME=%s", getenv("HOME"));
+    log_info("  XDG_CONFIG_HOME=%s", getenv("XDG_CONFIG_HOME"));
     log_info("  LANG=%s", getenv("LANG"));
     log_info("  PATH=%s", getenv("PATH"));
     log_info("  TERM=%s", getenv("TERM"));

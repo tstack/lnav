@@ -88,41 +88,8 @@ public:
     typedef std::map<std::string, command_t *> command_map_t;
 
     readline_context(const std::string &name,
-                     command_map_t *commands = NULL,
-                     bool case_sensitive = true)
-        : rc_name(name),
-          rc_case_sensitive(case_sensitive),
-          rc_quote_chars("\"'"),
-          rc_highlighter(nullptr)
-    {
-        char *home;
-
-        if (commands != nullptr) {
-            command_map_t::iterator iter;
-
-            for (iter = commands->begin(); iter != commands->end(); ++iter) {
-                std::string cmd = iter->first;
-
-                this->rc_possibilities["__command"].insert(cmd);
-                iter->second->c_func(INIT_EXEC_CONTEXT, cmd, this->rc_prototypes[cmd]);
-            }
-        }
-
-        memset(&this->rc_history, 0, sizeof(this->rc_history));
-        history_set_history_state(&this->rc_history);
-        home = getenv("HOME");
-        if (home) {
-            char hpath[2048];
-
-            snprintf(hpath, sizeof(hpath),
-                     "%s/.lnav/%s.history",
-                     home, this->rc_name.c_str());
-            read_history(hpath);
-            this->save();
-        }
-
-        this->rc_append_character = ' ';
-    };
+                     command_map_t *commands = nullptr,
+                     bool case_sensitive = true);
 
     const std::string &get_name() const { return this->rc_name; };
 

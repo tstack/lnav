@@ -76,12 +76,31 @@ lnav_config_listener *lnav_config_listener::LISTENER_LIST;
 filesystem::path dotlnav_path()
 {
     auto home_env = getenv("HOME");
+    auto xdg_config_home = getenv("XDG_CONFIG_HOME");
 
-    if (home_env) {
+    if (home_env != nullptr) {
         auto home_path = filesystem::path(home_env);
 
         if (home_path.is_directory()) {
-            return home_path / ".lnav";
+            auto home_lnav = home_path / ".lnav";
+
+            if (home_lnav.is_directory()) {
+                return home_lnav;
+            }
+
+            if (xdg_config_home != nullptr) {
+                auto xdg_path = filesystem::path(xdg_config_home);
+
+                return xdg_path / "lnav";
+            }
+
+            auto home_config = home_path / ".config";
+
+            if (home_config.is_directory()) {
+                return home_config / "lnav";
+            }
+
+            return home_lnav;
         }
     }
 

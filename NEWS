@@ -16,6 +16,10 @@ lnav v0.8.6:
        and a message is printed to the console indicating the file name.
      * In time-offset mode, the deltas for messages before the first mark
        are now negative instead of relative to the start of the log.
+     * The $XDG_CONFIG_HOME environment variable (or ~/.config directory) are
+       now respected for storing lnav's configuration.  If you have an existing
+       ~/.lnav directory, that will continue to be used until you move it to
+       $XDG_CONFIG_HOME/lnav or ~/.config/lnav.
 
      Fixes:
      * Added 'notice' log level.

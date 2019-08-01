@@ -55,6 +55,7 @@
 
 #include <string>
 
+#include "lnav_config.hh"
 #include "pcrepp/pcrepp.hh"
 #include "shlex.hh"
 #include "auto_mem.hh"
@@ -390,6 +391,38 @@ int readline_context::command_complete(int count, int key)
         }
     }
     return rl_insert(count, key);
+}
+
+readline_context::readline_context(const std::string &name,
+                                   readline_context::command_map_t *commands,
+                                   bool case_sensitive)
+    : rc_name(name),
+      rc_case_sensitive(case_sensitive),
+      rc_quote_chars("\"'"),
+      rc_highlighter(nullptr)
+{
+    char *home;
+
+    if (commands != nullptr) {
+        command_map_t::iterator iter;
+
+        for (iter = commands->begin(); iter != commands->end(); ++iter) {
+            std::string cmd = iter->first;
+
+            this->rc_possibilities["__command"].insert(cmd);
+            iter->second->c_func(INIT_EXEC_CONTEXT, cmd, this->rc_prototypes[cmd]);
+        }
+    }
+
+    memset(&this->rc_history, 0, sizeof(this->rc_history));
+    history_set_history_state(&this->rc_history);
+
+    auto config_dir = dotlnav_path();
+    auto hpath = (config_dir / this->rc_name) + ".history";
+    read_history(hpath.str().c_str());
+    this->save();
+
+    this->rc_append_character = ' ';
 }
 
 readline_curses::readline_curses()
@@ -739,22 +772,15 @@ void readline_curses::start()
         }
     }
 
+    auto config_dir = dotlnav_path();
     std::map<int, readline_context *>::iterator citer;
     for (citer = this->rc_contexts.begin();
          citer != this->rc_contexts.end();
          ++citer) {
-        char *home;
-
         citer->second->load();
-        home = getenv("HOME");
-        if (home) {
-            char hpath[2048];
 
-            snprintf(hpath, sizeof(hpath),
-                     "%s/.lnav/%s.history",
-                     home, citer->second->get_name().c_str());
-            write_history(hpath);
-        }
+        auto hpath = (config_dir / citer->second->get_name()) + ".history";
+        write_history(hpath.str().c_str());
         citer->second->save();
     }
 
