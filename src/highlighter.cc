@@ -61,6 +61,7 @@ void highlighter::study()
 
 void highlighter::annotate(attr_line_t &al, int start) const
 {
+    auto &vc = view_colors::singleton();
     const std::string &str = al.get_string();
     string_attrs_t &sa = al.get_attrs();
     // The line we pass to pcre_exec will be treated as the start when the
@@ -103,9 +104,18 @@ void highlighter::annotate(attr_line_t &al, int start) const
                 if (this->h_attrs != -1) {
                     attrs = this->h_attrs;
                 }
+                if (!this->h_fg.empty()) {
+                    sa.emplace_back(lr,
+                                    &view_curses::VC_FOREGROUND,
+                                    vc.match_color(this->h_fg));
+                }
+                if (!this->h_bg.empty()) {
+                    sa.emplace_back(lr,
+                                    &view_curses::VC_BACKGROUND,
+                                    vc.match_color(this->h_bg));
+                }
                 if (this->h_role != view_colors::VCR_NONE) {
-                    attrs |= view_colors::singleton().attrs_for_role(
-                        this->h_role);
+                    attrs |= vc.attrs_for_role(this->h_role);
                 }
                 sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
 

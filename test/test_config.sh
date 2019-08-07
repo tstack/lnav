@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+export HOME="./test-config"
+rm -rf ./test-config
+mkdir -p $HOME/.config
+
 run_test ${lnav_test} -n \
     -c ":config /ui/theme-defs/default/styles/text/color #f" \
     ${test_dir}/logfile_access_log.0

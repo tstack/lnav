@@ -50,6 +50,18 @@ struct rgb_color {
         return this->rc_r == -1 && this->rc_g == -1 && this->rc_b == -1;
     }
 
+    bool operator==(const rgb_color &rhs) const;
+
+    bool operator!=(const rgb_color &rhs) const;
+
+    bool operator<(const rgb_color &rhs) const;
+
+    bool operator>(const rgb_color &rhs) const;
+
+    bool operator<=(const rgb_color &rhs) const;
+
+    bool operator>=(const rgb_color &rhs) const;
+
     short rc_r;
     short rc_g;
     short rc_b;
@@ -70,6 +82,18 @@ struct lab_color {
 
         return *this;
     };
+
+    bool operator==(const lab_color &rhs) const;
+
+    bool operator!=(const lab_color &rhs) const;
+
+    bool operator<(const lab_color &rhs) const;
+
+    bool operator>(const lab_color &rhs) const;
+
+    bool operator<=(const lab_color &rhs) const;
+
+    bool operator>=(const lab_color &rhs) const;
 
     double lc_l;
     double lc_a;

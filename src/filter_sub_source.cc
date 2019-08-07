@@ -283,6 +283,7 @@ void filter_sub_source::text_value_for_line(textview_curses &tc, int line,
 void filter_sub_source::text_attrs_for_line(textview_curses &tc, int line,
                                             string_attrs_t &value_out)
 {
+    auto &vcolors = view_colors::singleton();
     textview_curses *top_view = *lnav_data.ld_view_stack.top();
     text_sub_source *tss = top_view->get_sub_source();
     filter_stack &fs = tss->get_filters();
@@ -299,19 +300,23 @@ void filter_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     line_range lr{2, 3};
     value_out.emplace_back(lr, &view_curses::VC_GRAPHIC, enabled);
     if (tf->is_enabled()) {
-        value_out.emplace_back(lr, &view_curses::VC_FOREGROUND, COLOR_GREEN);
+        value_out.emplace_back(lr, &view_curses::VC_FOREGROUND,
+                               vcolors.ansi_to_theme_color(COLOR_GREEN));
     }
 
     int fg = tf->get_type() == text_filter::INCLUDE ? COLOR_GREEN : COLOR_RED;
-    value_out.emplace_back(line_range{4, 7}, &view_curses::VC_FOREGROUND, fg);
+    value_out.emplace_back(line_range{4, 7}, &view_curses::VC_FOREGROUND,
+                           vcolors.ansi_to_theme_color(fg));
     value_out.emplace_back(line_range{4, 7}, &view_curses::VC_STYLE, A_BOLD);
 
     value_out.emplace_back(line_range{8, 14}, &view_curses::VC_STYLE, A_BOLD);
     value_out.emplace_back(line_range{20, 21}, &view_curses::VC_GRAPHIC, ACS_VLINE);
 
     fg = selected ? COLOR_BLACK : COLOR_WHITE;
-    value_out.emplace_back(line_range{0, -1}, &view_curses::VC_FOREGROUND, fg);
-    value_out.emplace_back(line_range{0, -1}, &view_curses::VC_BACKGROUND, bg);
+    value_out.emplace_back(line_range{0, -1}, &view_curses::VC_FOREGROUND,
+                           vcolors.ansi_to_theme_color(fg));
+    value_out.emplace_back(line_range{0, -1}, &view_curses::VC_BACKGROUND,
+                           vcolors.ansi_to_theme_color(bg));
 }
 
 size_t filter_sub_source::text_size_for_line(textview_curses &tc, int line,

@@ -400,11 +400,19 @@ public:
         return this->attrs_for_ident(str.c_str(), str.length());
     };
 
+    int ensure_color_pair(int &pair_base, short fg, short bg);
+
+    int ensure_color_pair(short fg, short bg) {
+        return this->ensure_color_pair(this->vc_color_pair_end, fg, bg);
+    }
+
     int ensure_color_pair(int &pair_base, const rgb_color &fg, const rgb_color &bg);
 
     int ensure_color_pair(const rgb_color &fg, const rgb_color &bg) {
         return this->ensure_color_pair(this->vc_color_pair_end, fg, bg);
     }
+
+    int match_color(const rgb_color &color);
 
     static inline int ansi_color_pair_index(int fg, int bg)
     {
@@ -426,6 +434,10 @@ public:
 
     std::pair<attr_t, attr_t> vc_level_attrs[LEVEL__MAX];
 
+    short ansi_to_theme_color(short ansi_fg) const {
+        return this->vc_ansi_to_theme[ansi_fg];
+    }
+
     static bool initialized;
 
 private:
@@ -437,8 +449,9 @@ private:
     std::pair<attr_t, attr_t> vc_role_colors[VCR__MAX];
     /** Map of role IDs to reverse-video attribute values. */
     attr_t vc_role_reverse_colors[VCR__MAX];
+    short vc_ansi_to_theme[8];
     int vc_color_pair_end;
-
+    std::map<std::pair<short, short>, int> vc_dyn_pairs;
 };
 
 enum mouse_button_t {

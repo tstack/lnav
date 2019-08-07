@@ -291,9 +291,9 @@ void view_curses::mvwattrline(WINDOW *window,
     tab_count     = count(line.begin(), line.end(), '\t');
     expanded_line = (char *)alloca(line.size() + tab_count * 8 + 1);
 
-    unsigned char *fg_color = (unsigned char *) alloca(line_width);
+    short *fg_color = (short *) alloca(line_width * sizeof(short));
     bool has_fg = false;
-    unsigned char *bg_color = (unsigned char *) alloca(line_width);
+    short *bg_color = (short *) alloca(line_width * sizeof(short));
     bool has_bg = false;
 
     for (size_t lpc = 0; lpc < line.size(); lpc++) {
@@ -407,18 +407,18 @@ void view_curses::mvwattrline(WINDOW *window,
 
         if (iter->sa_type == &VC_FOREGROUND) {
             if (!has_fg) {
-                memset(fg_color, COLOR_WHITE, line_width);
+                memset(fg_color, -1, line_width * sizeof(short));
             }
-            fill(fg_color + attr_range.lr_start, fg_color + attr_range.lr_end, iter->sa_value.sav_int);
+            fill(&fg_color[attr_range.lr_start], &fg_color[attr_range.lr_end], (short) iter->sa_value.sav_int);
             has_fg = true;
             continue;
         }
 
         if (iter->sa_type == &VC_BACKGROUND) {
             if (!has_bg) {
-                memset(bg_color, COLOR_BLACK, line_width);
+                memset(bg_color, -1, line_width * sizeof(short));
             }
-            fill(bg_color + attr_range.lr_start, bg_color + attr_range.lr_end, iter->sa_value.sav_int);
+            fill(bg_color + attr_range.lr_start, bg_color + attr_range.lr_end, (short) iter->sa_value.sav_int);
             has_bg = true;
             continue;
         }
@@ -471,10 +471,10 @@ void view_curses::mvwattrline(WINDOW *window,
 #if 1
     if (has_fg || has_bg) {
         if (!has_fg) {
-            memset(fg_color, COLOR_WHITE, line_width);
+            memset(fg_color, -1, line_width * sizeof(short));
         }
         if (!has_bg) {
-            memset(bg_color, COLOR_BLACK, line_width);
+            memset(bg_color, -1, line_width * sizeof(short));
         }
 
         int x_pos = x + lr.lr_start;
@@ -483,7 +483,11 @@ void view_curses::mvwattrline(WINDOW *window,
 
         mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
         for (int lpc = 0; lpc < ch_width; lpc++) {
-            int color_pair = view_colors::ansi_color_pair_index(fg_color[lpc], bg_color[lpc]);
+            if (fg_color[lpc] == -1 && bg_color[lpc] == -1) {
+                continue;
+            }
+
+            int color_pair = vc.ensure_color_pair(fg_color[lpc], bg_color[lpc]);
 
             row_ch[lpc].attr = row_ch[lpc].attr & ~A_COLOR;
 #ifdef NCURSES_EXT_COLORS
@@ -535,7 +539,7 @@ static string COLOR_NAMES[] = {
 class color_listener : public lnav_config_listener {
 public:
     void reload_config(error_reporter &reporter) {
-        view_colors &vc = view_colors::singleton();
+        auto &vc = view_colors::singleton();
 
         for (const auto &pair : lnav_config.lc_ui_theme_defs) {
             vc.init_roles(pair.second, reporter);
@@ -546,6 +550,8 @@ public:
         if (iter == lnav_config.lc_ui_theme_defs.end()) {
             reporter(&lnav_config.lc_ui_theme,
                      "unknown theme -- " + lnav_config.lc_ui_theme);
+
+            vc.init_roles(lnav_config.lc_ui_theme_defs["default"], reporter);
             return;
         }
 
@@ -616,6 +622,8 @@ inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
         }
     }
 
+    require(pair_base < COLOR_PAIRS);
+
     int pair = ++pair_base;
 
     if (view_colors::initialized) {
@@ -651,7 +659,9 @@ pair<attr_t, attr_t> view_colors::to_attrs(
         reporter(&sc.sc_background_color, errmsg);
     }
 
-    attr_t retval1 = this->ensure_color_pair(pair_base, fg, bg);
+    attr_t retval1 = attr_for_colors(pair_base,
+                                     this->match_color(fg),
+                                     this->match_color(bg));
     attr_t retval2 = 0;
 
     if (sc.sc_underline) {
@@ -742,6 +752,7 @@ void view_colors::init_roles(const lnav_theme &lt,
                     bg = ansi_bg;
                 }
 
+                this->vc_ansi_to_theme[ansi_fg] = fg;
                 init_pair(ansi_color_pair_index(ansi_fg, ansi_bg), fg, bg);
             }
         }
@@ -930,14 +941,53 @@ void view_colors::init_roles(const lnav_theme &lt,
     if (initialized && this->vc_color_pair_end == 0) {
         this->vc_color_pair_end = color_pair_base + 1;
     }
+    this->vc_dyn_pairs.clear();
+}
+
+int view_colors::ensure_color_pair(int &pair_base, short fg, short bg)
+{
+    require(fg >= -1);
+    require(bg >= -1);
+
+    auto index_pair = make_pair(fg, bg);
+    auto existing = this->vc_dyn_pairs.find(index_pair);
+
+    if (existing != this->vc_dyn_pairs.end()) {
+        return existing->second;
+    }
+
+    short def_pair = PAIR_NUMBER(this->attrs_for_role(VCR_TEXT));
+    short def_fg, def_bg;
+
+    pair_content(def_pair, &def_fg, &def_bg);
+
+    int retval = PAIR_NUMBER(attr_for_colors(
+        pair_base,
+        fg == -1 ? def_fg : fg,
+        bg == -1 ? def_bg : bg));
+
+    if (this->initialized) {
+        this->vc_dyn_pairs[index_pair] = retval;
+    }
+
+    return retval;
 }
 
 int view_colors::ensure_color_pair(int &pair_base, const rgb_color &rgb_fg, const rgb_color &rgb_bg)
 {
-    return attr_for_colors(
-        pair_base,
-        rgb_fg.empty() ? (short) COLOR_WHITE : ACTIVE_PALETTE->match_color(lab_color(rgb_fg)),
-        rgb_bg.empty() ? (short) COLOR_BLACK : ACTIVE_PALETTE->match_color(lab_color(rgb_bg)));
+    int fg = this->match_color(rgb_fg);
+    int bg = this->match_color(rgb_bg);
+
+    return this->ensure_color_pair(pair_base, fg, bg);
+}
+
+int view_colors::match_color(const rgb_color &color)
+{
+    if (color.empty()) {
+        return -1;
+    }
+
+    return ACTIVE_PALETTE->match_color(lab_color(color));
 }
 
 attr_t view_colors::attrs_for_ident(const char *str, size_t len) const
@@ -1001,4 +1051,44 @@ double lab_color::deltaE(const lab_color &other) const
     double deltaHkhsh = deltaH / (sh);
     double i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc + deltaHkhsh * deltaHkhsh;
     return i < 0.0 ? 0.0 : sqrt(i);
+}
+
+bool lab_color::operator<(const lab_color &rhs) const
+{
+    if (lc_l < rhs.lc_l)
+        return true;
+    if (rhs.lc_l < lc_l)
+        return false;
+    if (lc_a < rhs.lc_a)
+        return true;
+    if (rhs.lc_a < lc_a)
+        return false;
+    return lc_b < rhs.lc_b;
+}
+
+bool lab_color::operator>(const lab_color &rhs) const
+{
+    return rhs < *this;
+}
+
+bool lab_color::operator<=(const lab_color &rhs) const
+{
+    return !(rhs < *this);
+}
+
+bool lab_color::operator>=(const lab_color &rhs) const
+{
+    return !(*this < rhs);
+}
+
+bool lab_color::operator==(const lab_color &rhs) const
+{
+    return lc_l == rhs.lc_l &&
+           lc_a == rhs.lc_a &&
+           lc_b == rhs.lc_b;
+}
+
+bool lab_color::operator!=(const lab_color &rhs) const
+{
+    return !(rhs == *this);
 }

@@ -124,6 +124,46 @@ bool rgb_color::from_str(const string_fragment &color,
     return false;
 }
 
+bool rgb_color::operator<(const rgb_color &rhs) const
+{
+    if (rc_r < rhs.rc_r)
+        return true;
+    if (rhs.rc_r < rc_r)
+        return false;
+    if (rc_g < rhs.rc_g)
+        return true;
+    if (rhs.rc_g < rc_g)
+        return false;
+    return rc_b < rhs.rc_b;
+}
+
+bool rgb_color::operator>(const rgb_color &rhs) const
+{
+    return rhs < *this;
+}
+
+bool rgb_color::operator<=(const rgb_color &rhs) const
+{
+    return !(rhs < *this);
+}
+
+bool rgb_color::operator>=(const rgb_color &rhs) const
+{
+    return !(*this < rhs);
+}
+
+bool rgb_color::operator==(const rgb_color &rhs) const
+{
+    return rc_r == rhs.rc_r &&
+           rc_g == rhs.rc_g &&
+           rc_b == rhs.rc_b;
+}
+
+bool rgb_color::operator!=(const rgb_color &rhs) const
+{
+    return !(rhs == *this);
+}
+
 term_color_palette::term_color_palette(const unsigned char *json)
 {
     yajlpp_parse_context ypc_xterm("palette.json", root_color_handler);

@@ -1737,7 +1737,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
         }
 
         pcre *code = pcre_compile(pattern.c_str(),
-                                  0,
+                                  PCRE_CASELESS,
                                   &errptr,
                                   &eoff,
                                   nullptr);

@@ -401,8 +401,6 @@ readline_context::readline_context(const std::string &name,
       rc_quote_chars("\"'"),
       rc_highlighter(nullptr)
 {
-    char *home;
-
     if (commands != nullptr) {
         command_map_t::iterator iter;
 

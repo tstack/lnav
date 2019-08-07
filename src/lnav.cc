@@ -1407,8 +1407,6 @@ static void looper()
                 for (auto &hl : format->lf_highlighters) {
                     if (hl.h_fg.empty()) {
                         hl.with_attrs(hl.h_attrs | vc.attrs_for_ident(hl.h_pattern));
-                    } else {
-                        hl.with_attrs(hl.h_attrs | vc.ensure_color_pair(hl.h_fg, hl.h_bg));
                     }
 
                     lnav_data.ld_views[LNV_LOG].get_highlights()[{
