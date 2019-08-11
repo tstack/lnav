@@ -1705,7 +1705,7 @@
         "url" : "http://kb.vmware.com/kb/2004201",
         "regex" : {
             "6.0+" : {
-                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:Section for VMware VirtualCenter,.*|(?<level>\\w+) (?<prc>\\w+)\\[(?<tid>\\w+)\\] \\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>[^ \\]]+))?(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)(?:\\n(?:.|\\n)*)?)$"
+                "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:Section for VMware VirtualCenter,.*|(?<level>\\w+) (?<prc>\\w+)\\[(?<tid>\\w+)\\] \\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>[^ \\]]+))?(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-:]+))?\\]\\s*(?<body>.*)(?:\\n(?:.|\\n)*)?)$"
             },
             "5.0+" : {
                 "pattern" : "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)(?:\\n(?:.|\\n)*)?$"
