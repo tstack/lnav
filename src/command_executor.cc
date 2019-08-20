@@ -458,7 +458,7 @@ string execute_file(exec_context &ec, const string &path_and_args, bool multilin
         retval = ec.get_error_prefix() + "no script specified";
     }
     else {
-        ec.ec_local_vars.push(map<string, string>());
+        ec.ec_local_vars.push({});
 
         auto script_name = split_args[0];
         map<string, string> &vars = ec.ec_local_vars.top();

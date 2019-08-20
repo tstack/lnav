@@ -16,6 +16,7 @@ Contents:
 
    intro
    ui
+   cli
    formats
    data
    sessions
