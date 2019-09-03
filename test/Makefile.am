@@ -230,6 +230,7 @@ dist_noinst_DATA = \
 	logfile_generic_with_header.0 \
 	logfile_glog.0 \
 	logfile_haproxy.0 \
+	logfile_invalid_json.json
 	logfile_journald.json \
 	logfile_json.json \
 	logfile_json2.json \
