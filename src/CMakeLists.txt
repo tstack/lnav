@@ -203,7 +203,7 @@ add_library(diag STATIC
         hist_source.cc
         hotkeys.cc
         input_dispatcher.cc
-        intern_string.cc
+        base/intern_string.cc
         base/is_utf8.cc
         json-extension-functions.cc
         yajlpp/json_op.cc
@@ -308,7 +308,7 @@ add_library(diag STATIC
         highlighter.hh
         hotkeys.hh
         input_dispatcher.hh
-        intern_string.hh
+        base/intern_string.hh
         base/is_utf8.hh
         k_merge_tree.h
         log_actions.hh

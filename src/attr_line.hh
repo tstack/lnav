@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 
-#include "intern_string.hh"
+#include "base/intern_string.hh"
 
 /**
  * Encapsulates a range in a string.

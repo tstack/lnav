@@ -31,7 +31,7 @@
 
 #include <sys/time.h>
 
-#include "intern_string.hh"
+#include "base/intern_string.hh"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.hh"

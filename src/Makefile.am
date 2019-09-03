@@ -234,7 +234,6 @@ noinst_HEADERS = \
 	init.sql \
 	init-sql.h \
 	input_dispatcher.hh \
-	intern_string.hh \
 	k_merge_tree.h \
 	line_buffer.hh \
 	listview_curses.hh \
@@ -347,7 +346,6 @@ libdiag_a_SOURCES = \
 	hist_source.cc \
 	hotkeys.cc \
 	input_dispatcher.cc \
-	intern_string.cc \
 	json-extension-functions.cc \
 	line_buffer.cc \
 	listview_curses.cc \

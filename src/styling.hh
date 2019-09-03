@@ -35,7 +35,7 @@
 #include <vector>
 
 #include "log_level.hh"
-#include "intern_string.hh"
+#include "base/intern_string.hh"
 
 struct rgb_color {
     static bool from_str(const string_fragment &color,

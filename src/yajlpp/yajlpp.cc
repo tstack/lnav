@@ -542,6 +542,26 @@ yajl_status yajlpp_parse_context::complete_parse()
     return retval;
 }
 
+const intern_string_t yajlpp_parse_context::get_path() const
+{
+    if (this->ypc_path.size() <= 1) {
+        return intern_string_t();
+    }
+    return intern_string::lookup(&this->ypc_path[1],
+                                 this->ypc_path.size() - 2);
+}
+
+const intern_string_t yajlpp_parse_context::get_full_path() const
+{
+    if (this->ypc_path.size() <= 1) {
+        static intern_string_t SLASH = intern_string::lookup("/");
+
+        return SLASH;
+    }
+    return intern_string::lookup(&this->ypc_path[0],
+                                 this->ypc_path.size() - 1);
+}
+
 void yajlpp_gen_context::gen()
 {
     yajlpp_map root(this->ygc_handle);
@@ -559,7 +579,7 @@ yajlpp_gen_context &yajlpp_gen_context::with_context(yajlpp_parse_context &ypc)
     if (ypc.ypc_current_handler == nullptr &&
         !ypc.ypc_handler_stack.empty() &&
         ypc.ypc_handler_stack.back() != nullptr) {
-        this->ygc_handlers = static_cast<json_path_handler *>(ypc.ypc_handler_stack.back()->jph_children);
+        this->ygc_handlers = dynamic_cast<json_path_handler *>(ypc.ypc_handler_stack.back()->jph_children);
         this->ygc_depth += 1;
     }
     return *this;

@@ -57,7 +57,7 @@
 
 #include "base/lnav_log.hh"
 #include "auto_mem.hh"
-#include "intern_string.hh"
+#include "base/intern_string.hh"
 
 #include <stdio.h>
 

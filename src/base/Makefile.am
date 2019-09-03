@@ -8,6 +8,7 @@ noinst_LIBRARIES = libbase.a
 noinst_HEADERS = \
     enum_util.hh \
     file_range.hh \
+	intern_string.hh \
     is_utf8.hh \
     lnav_log.hh \
     opt_util.hh \
@@ -16,6 +17,7 @@ noinst_HEADERS = \
     string_util.hh
 
 libbase_a_SOURCES = \
+	intern_string.cc \
     is_utf8.cc \
     lnav_log.cc \
     string_util.cc

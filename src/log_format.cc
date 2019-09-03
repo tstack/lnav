@@ -34,6 +34,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "fmt/format.h"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 #include "sql_util.hh"
@@ -495,32 +496,21 @@ bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_o
 
 log_format::scan_result_t external_log_format::scan(logfile &lf,
                                                     std::vector<logline> &dst,
-                                                    off_t offset,
+                                                    const line_info &li,
                                                     shared_buffer_ref &sbr)
 {
     if (this->elf_type == ELF_TYPE_JSON) {
         yajlpp_parse_context &ypc = *(this->jlf_parse_context);
-        logline ll(offset, 0, 0, LEVEL_INFO);
+        logline ll(li.li_file_range.fr_offset, 0, 0, LEVEL_INFO);
         yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
 
-        if (sbr.empty()) {
+        if (li.li_partial) {
+            log_debug("skipping partial line at offset %d", li.li_file_range.fr_offset);
             return log_format::SCAN_INCOMPLETE;
         }
 
         const auto *line_data = (const unsigned char *) sbr.get_data();
-        size_t line_end = sbr.length();
-
-        if (line_end > 0) {
-            line_end -= 1;
-        }
-        while (line_end > 0 && isspace(line_data[line_end])) {
-            line_end -= 1;
-        }
-
-        if (line_end == 0 || line_data[line_end] != '}') {
-            return log_format::SCAN_INCOMPLETE;
-        }
 
         yajl_reset(handle);
         ypc.set_static_handler(json_log_handlers[0]);
@@ -528,8 +518,8 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
         ypc.ypc_ignore_unused = true;
         ypc.ypc_alt_callbacks.yajl_start_array = json_array_start;
         ypc.ypc_alt_callbacks.yajl_start_map = json_array_start;
-        ypc.ypc_alt_callbacks.yajl_end_array = NULL;
-        ypc.ypc_alt_callbacks.yajl_end_map = NULL;
+        ypc.ypc_alt_callbacks.yajl_end_array = nullptr;
+        ypc.ypc_alt_callbacks.yajl_end_map = nullptr;
         jlu.jlu_format = this;
         jlu.jlu_base_line = &ll;
         jlu.jlu_line_value = sbr.get_data();
@@ -548,18 +538,28 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
                     ll.set_level((log_level_t) (ll.get_level_and_flags() |
                         LEVEL_CONTINUED));
                 }
-                dst.push_back(ll);
+                dst.emplace_back(ll);
             }
         }
         else {
             unsigned char *msg;
+            int line_count = 1;
 
             msg = yajl_get_error(handle, 1, (const unsigned char *)sbr.get_data(), sbr.length());
-            if (msg != NULL) {
-                log_debug("Unable to parse line at offset %d: %s", offset, msg);
+            if (msg != nullptr) {
+                log_debug("Unable to parse line at offset %d: %s", li.li_file_range.fr_offset, msg);
+                line_count = count(msg, msg + strlen((char *) msg), '\n');
                 yajl_free_error(handle, msg);
             }
-            return log_format::SCAN_INCOMPLETE;
+            if (!this->lf_specialized) {
+                return log_format::SCAN_NO_MATCH;
+            }
+            for (int lpc = 0; lpc < line_count; lpc++) {
+                ll.set_time(dst.back().get_time());
+                ll.set_level(log_level_t::LEVEL_ERROR);
+                ll.set_sub_offset(lpc);
+                dst.emplace_back(ll);
+            }
         }
 
         return log_format::SCAN_MATCH;
@@ -678,7 +678,7 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
             }
         }
 
-        dst.emplace_back(offset, log_tv, level, mod_index, opid);
+        dst.emplace_back(li.li_file_range.fr_offset, log_tv, level, mod_index, opid);
 
         if (orig_lock != curr_fmt) {
             uint32_t lock_line;
@@ -1032,8 +1032,20 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
         yajl_status parse_status = yajl_parse(handle,
             (const unsigned char *)sbr.get_data(), sbr.length());
-        if (parse_status == yajl_status_ok &&
-            yajl_complete_parse(handle) == yajl_status_ok) {
+        if (parse_status != yajl_status_ok ||
+            yajl_complete_parse(handle) != yajl_status_ok) {
+            unsigned char *msg;
+            string full_msg;
+
+            msg = yajl_get_error(handle, 1, (const unsigned char *)sbr.get_data(), sbr.length());
+            if (msg != nullptr) {
+                full_msg = fmt::format("lnav: unable to parse line at offset {}: {}", ll.get_offset(), msg);
+                yajl_free_error(handle, msg);
+            }
+
+            this->jlf_cached_line.resize(full_msg.size());
+            memcpy(this->jlf_cached_line.data(), full_msg.data(), full_msg.size());
+        } else {
             std::vector<logline_value>::iterator lv_iter;
             bool used_values[this->jlf_line_values.size()];
             struct line_range lr;
@@ -1235,15 +1247,15 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                          nl_pos < str.size());
             }
 
-            this->jlf_line_offsets.push_back(0);
-            for (size_t lpc = 0; lpc < this->jlf_cached_line.size(); lpc++) {
-                if (this->jlf_cached_line[lpc] == '\n') {
-                    this->jlf_line_offsets.push_back(lpc + 1);
-                }
-            }
-            this->jlf_line_offsets.push_back(this->jlf_cached_line.size());
         }
 
+        this->jlf_line_offsets.push_back(0);
+        for (size_t lpc = 0; lpc < this->jlf_cached_line.size(); lpc++) {
+            if (this->jlf_cached_line[lpc] == '\n') {
+                this->jlf_line_offsets.push_back(lpc + 1);
+            }
+        }
+        this->jlf_line_offsets.push_back(this->jlf_cached_line.size());
         this->jlf_cached_offset = ll.get_offset();
         this->jlf_cached_full = full_message;
     }
@@ -1272,7 +1284,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
     }
     else {
         sbr.share(this->jlf_share_manager,
-                  &this->jlf_cached_line[0] + this_off,
+                  this->jlf_cached_line.data() + this_off,
                   next_off - this_off);
     }
 }

@@ -139,7 +139,7 @@ class generic_log_format : public log_format {
 
     scan_result_t scan(logfile &lf,
                        vector<logline> &dst,
-                       off_t offset,
+                       const line_info &li,
                        shared_buffer_ref &sbr)
     {
         struct exttm log_time;
@@ -167,7 +167,7 @@ class generic_log_format : public log_format {
                 this->check_for_new_year(dst, log_time, log_tv);
             }
 
-            dst.emplace_back(offset, log_tv, level_val);
+            dst.emplace_back(li.li_file_range.fr_offset, log_tv, level_val);
             return SCAN_MATCH;
         }
 
@@ -399,7 +399,7 @@ public:
     };
 
     scan_result_t scan_int(std::vector<logline> &dst,
-                           off_t offset,
+                           const line_info &li,
                            shared_buffer_ref &sbr) {
         static const intern_string_t STATUS_CODE = intern_string::lookup("bro_status_code");
         static const intern_string_t TS = intern_string::lookup("bro_ts");
@@ -464,7 +464,7 @@ public:
         }
 
         if (found_ts) {
-            dst.emplace_back(offset, tv, level, 0, opid);
+            dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);
             return SCAN_MATCH;
         } else {
             return SCAN_NO_MATCH;
@@ -473,12 +473,12 @@ public:
 
     scan_result_t scan(logfile &lf,
                        std::vector<logline> &dst,
-                       off_t offset,
+                       const line_info &li,
                        shared_buffer_ref &sbr) {
         static pcrepp SEP_RE(R"(^#separator\s+(.+))");
 
         if (!this->blf_format_name.empty()) {
-            return this->scan_int(dst, offset, sbr);
+            return this->scan_int(dst, li, sbr);
         }
 
         if (dst.empty() || dst.size() > 20 || sbr.empty() || sbr.get_data()[0] == '#') {
@@ -606,7 +606,7 @@ public:
             !this->blf_field_defs.empty()) {
             this->blf_header_size = dst.size() - 1;
             dst.clear();
-            return this->scan_int(dst, offset, sbr);
+            return this->scan_int(dst, li, sbr);
         }
 
         this->blf_format_name.clear();

@@ -54,10 +54,11 @@
 #include "lnav_util.hh"
 #include "byte_array.hh"
 #include "view_curses.hh"
-#include "intern_string.hh"
+#include "base/intern_string.hh"
 #include "shared_buffer.hh"
 #include "highlighter.hh"
 #include "log_level.hh"
+#include "line_buffer.hh"
 
 struct sqlite3;
 class logfile;
@@ -640,10 +641,7 @@ public:
 
     static log_format *find_root_format(const char *name) {
         std::vector<log_format *> &fmts = get_root_formats();
-        for (std::vector<log_format *>::iterator iter = fmts.begin();
-             iter != fmts.end();
-             ++iter) {
-            log_format *lf = *iter;
+        for (auto lf : fmts) {
             if (lf->get_name() == name) {
                 return lf;
             }
@@ -705,7 +703,7 @@ public:
      */
     virtual scan_result_t scan(logfile &lf,
                                std::vector<logline> &dst,
-                               off_t offset,
+                               const line_info &li,
                                shared_buffer_ref &sbr) = 0;
 
     virtual bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out) {
@@ -813,6 +811,7 @@ public:
     std::vector<highlighter> lf_highlighters;
     bool lf_is_self_describing;
     bool lf_time_ordered;
+    bool lf_specialized{false};
 protected:
     static std::vector<log_format *> lf_root_formats;
 
@@ -963,7 +962,7 @@ public:
 
     scan_result_t scan(logfile &lf,
                        std::vector<logline> &dst,
-                       off_t offset,
+                       const line_info &offset,
                        shared_buffer_ref &sbr);
 
     bool scan_for_partial(shared_buffer_ref &sbr, size_t &len_out);
@@ -998,6 +997,7 @@ public:
         external_log_format *elf = new external_log_format(*this);
         std::unique_ptr<log_format> retval(elf);
 
+        elf->lf_specialized = true;
         this->lf_pattern_locks.clear();
         if (fmt_lock != -1) {
             elf->lf_pattern_locks.emplace_back(0, fmt_lock);

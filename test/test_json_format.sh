@@ -517,3 +517,22 @@ log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tag
 1,<NULL>,2017-03-24 20:12:47.764,381524,critical,0,<NULL>,<NULL>,[],1.1.1.1,<NULL>,<NULL>,<NULL>,GET,166,/example/uri/5,500
 2,<NULL>,2017-03-24 20:15:31.694,163930,warning,0,<NULL>,<NULL>,[],1.1.1.1,"{""foo"": ""bar""}","{""foo"": ""bar""}","{""foo"": ""bar""}",GET,166,/example/uri/5,400
 EOF
+
+run_test ${lnav_test} -n \
+    -d /tmp/lnav.err \
+    -I ${test_dir} \
+    ${test_dir}/logfile_invalid_json.json
+
+check_output "json log format is not working" <<EOF
+2013-09-06T20:00:48.124 TRACE trace test
+  @fields: { "lvl": "TRACE", "msg": "trace test"}
+2013-09-06T20:00:49.124 INFO Starting up service
+  @fields: { "lvl": "INFO", "msg": "Starting up service"}
+lnav: unable to parse line at offset 186: lexical error: invalid char in json text.
+           "@fields": { "lvl": "INFO", ..."msg": "Shutting down servic
+                     (right here) ------^
+2013-09-06T22:00:59.124 DEBUG5 Details...
+  @fields: { "lvl": "DEBUG5", "msg": "Details..."}
+2013-09-06T22:00:59.124 DEBUG4 Details...
+  @fields: { "lvl": "DEBUG4", "msg": "Details..."}
+EOF

@@ -147,7 +147,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
             prescan_time = this->lf_index[0].get_time();
         }
         /* We've locked onto a format, just use that scanner. */
-        found = this->lf_format->scan(*this, this->lf_index, li.li_file_range.fr_offset, sbr);
+        found = this->lf_format->scan(*this, this->lf_index, li, sbr);
     }
     else if (this->lf_options.loo_detect_format &&
              this->lf_index.size() < MAX_UNRECOGNIZED_LINES) {
@@ -168,7 +168,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
 
             (*iter)->clear();
             this->set_format_base_time(*iter);
-            found = (*iter)->scan(*this, this->lf_index, li.li_file_range.fr_offset, sbr);
+            found = (*iter)->scan(*this, this->lf_index, li, sbr);
             if (found == log_format::SCAN_MATCH) {
 #if 0
                 require(this->lf_index.size() == 1 ||

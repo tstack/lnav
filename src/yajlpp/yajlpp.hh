@@ -49,7 +49,7 @@
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"
 #include "json_ptr.hh"
-#include "intern_string.hh"
+#include "base/intern_string.hh"
 
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_gen.h"
@@ -262,15 +262,9 @@ public:
         return std::string(frag, len);
     };
 
-    const intern_string_t get_path() const {
-        return intern_string::lookup(&this->ypc_path[1],
-                                     this->ypc_path.size() - 2);
-    };
+    const intern_string_t get_path() const;
 
-    const intern_string_t get_full_path() const {
-        return intern_string::lookup(&this->ypc_path[0],
-                                     this->ypc_path.size() - 1);
-    };
+    const intern_string_t get_full_path() const;
 
     bool is_level(size_t level) const {
         return this->ypc_path_index_stack.size() == level;
