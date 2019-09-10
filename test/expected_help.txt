@@ -558,6 +558,12 @@ COMMANDS
   show-lines-before-and-after
                     Show lines that were hidden by the 'hide-lines' commands.
 
+  hide-unmarked-lines
+                    Hide lines that have not been bookmarked.
+
+  show-unmarked-lines
+                    Show lines that have not been bookmarked.
+
   hide-fields <field-name> [<field-name2> ... <field-nameN>]
                     Hide large log message fields by replacing them with an
                     ellipsis.  You can quickly switching between showing and
