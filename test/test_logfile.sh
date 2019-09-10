@@ -19,8 +19,10 @@ chmod ugo-r unreadable.log
 
 run_test ${lnav_test} -n unreadable.log
 
-sed -i "" -e "s|/.*/unreadable.log|unreadable.log|g" `test_err_filename`
+sed -e "s|/.*/unreadable.log|unreadable.log|g" `test_err_filename` \
+    > test_logfile.unreadable.out
 
+mv test_logfile.unreadable.out `test_err_filename`
 check_error_output "able to read an unreadable log file?" <<EOF
 error: Permission denied -- 'unreadable.log'
 EOF
