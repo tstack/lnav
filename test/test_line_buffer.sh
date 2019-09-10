@@ -65,7 +65,7 @@ gzip -dc lb-double.gz | \
     check_output "concatenated gzip files don't parse correctly"
 
 > lb-3.gz
-while test $(stat -c"%s" lb-3.gz) -le 5000000 ; do
+while test $(wc -c < lb-3.gz) -le 5000000 ; do
     cat lb-2.dat
 done | gzip -c -1 > lb-3.gz
 gzip -dc lb-3.gz > lb-3.dat
