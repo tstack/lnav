@@ -56,3 +56,23 @@ run_test ./drive_line_buffer -i lb.index -n 10 lb-2.dat
 check_output "Random reads don't match input?" <<EOF
 All done
 EOF
+
+gzip -c ${test_dir}/logfile_access_log.1 > lb-double.gz
+gzip -c ${test_dir}/logfile_access_log.1 >> lb-double.gz
+run_test ${lnav_test} -n lb-double.gz
+
+gzip -dc lb-double.gz | \
+    check_output "concatenated gzip files don't parse correctly"
+
+> lb-3.gz
+while test $(stat -c"%s" lb-3.gz) -le 5000000 ; do
+    cat lb-2.dat
+done | gzip -c -1 > lb-3.gz
+gzip -dc lb-3.gz > lb-3.dat
+grep -b '$' lb-3.dat | cut -f 1 -d : > lb-3.index
+
+run_test ./drive_line_buffer -i lb-3.index -n 10 lb-3.gz lb-3.dat
+
+check_output "Random gzipped reads don't match input" <<EOF
+All done
+EOF
