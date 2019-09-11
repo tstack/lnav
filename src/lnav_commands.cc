@@ -1753,7 +1753,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                     break;
                 }
                 else {
-                    files_to_front.push_back(make_pair(fn, top));
+                    files_to_front.emplace_back(fn, top);
                     retval = "";
                     break;
                 }
@@ -1886,17 +1886,34 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                          strerror(errno);
             }
             else {
-                char buffer[32 * 1024];
-                ssize_t rc;
+                line_buffer lb;
+                attr_line_t al;
+                file_range range;
+                string lines;
 
-                rc = read(preview_fd, buffer, sizeof(buffer));
+                lb.set_fd(preview_fd);
+                for (int lpc = 0; lpc < 10; lpc++) {
+                    auto load_result = lb.load_next_line(range);
 
-                attr_line_t al(string(buffer, rc));
+                    if (load_result.isErr()) {
+                        break;
+                    }
+
+                    auto li = load_result.unwrap();
+
+                    range = li.li_file_range;
+                    auto read_result = lb.read_range(range);
+                    if (read_result.isErr()) {
+                        break;
+                    }
+
+                    auto sbr = read_result.unwrap();
+                    lines.append(sbr.get_data(), sbr.length());
+                }
 
                 lnav_data.ld_preview_source
-                         .replace_with(al)
-                         .set_text_format(detect_text_format(buffer, rc))
-                         .truncate_to(10);
+                         .replace_with(al.with_string(lines))
+                         .set_text_format(detect_text_format(al.get_string()));
                 lnav_data.ld_preview_status_source.get_description()
                     .set_value("For file: %s", fn.c_str());
             }

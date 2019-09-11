@@ -34,6 +34,8 @@
 
 #include <sys/types.h>
 
+#include <string>
+
 enum class text_format_t {
     TF_UNKNOWN,
     TF_PYTHON,
@@ -49,5 +51,9 @@ enum class text_format_t {
  * @return The detected format.
  */
 text_format_t detect_text_format(const char *str, size_t len);
+
+inline text_format_t detect_text_format(const std::string &str) {
+    return detect_text_format(str.c_str(), str.length());
+}
 
 #endif
