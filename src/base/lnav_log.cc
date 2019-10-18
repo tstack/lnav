@@ -422,9 +422,8 @@ static void sigabrt(int sig)
                     snprintf(pid_str, sizeof(pid_str), "--pid=%d", lnav_pid);
                     execlp("gdb", "gdb", pid_str, nullptr);
 
-                    snprintf(pid_str, sizeof(pid_str),
-                        "--attach-pid=%d", lnav_pid);
-                    execlp("lldb", "lldb", pid_str, nullptr);
+                    snprintf(pid_str, sizeof(pid_str), "%d", lnav_pid);
+                    execlp("lldb", "lldb", "--attach-pid", pid_str, nullptr);
 
                     fprintf(stderr, "Could not attach gdb or lldb, exiting.\n");
                     _exit(1);
