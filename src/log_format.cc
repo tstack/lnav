@@ -555,8 +555,13 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
                 return log_format::SCAN_NO_MATCH;
             }
             for (int lpc = 0; lpc < line_count; lpc++) {
+                log_level_t level = LEVEL_ERROR;
+
                 ll.set_time(dst.back().get_time());
-                ll.set_level(log_level_t::LEVEL_ERROR);
+                if (lpc > 0) {
+                    level = (log_level_t) (level | LEVEL_CONTINUED);
+                }
+                ll.set_level(level);
                 ll.set_sub_offset(lpc);
                 dst.emplace_back(ll);
             }
@@ -1262,7 +1267,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
 
     off_t this_off = 0, next_off = 0;
 
-    if (!this->jlf_line_offsets.empty()) {
+    if (!this->jlf_line_offsets.empty() && ll.get_sub_offset() < this->jlf_line_offsets.size()) {
         require(ll.get_sub_offset() < this->jlf_line_offsets.size());
 
         this_off = this->jlf_line_offsets[ll.get_sub_offset()];
@@ -1272,7 +1277,8 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         else {
             next_off = this->jlf_cached_line.size();
         }
-        if (next_off > 0 && this->jlf_cached_line[next_off - 1] == '\n') {
+        if (next_off > 0 && this->jlf_cached_line[next_off - 1] == '\n' &&
+            this_off != next_off) {
             next_off -= 1;
         }
     }

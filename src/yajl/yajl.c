@@ -106,6 +106,13 @@ void
 yajl_reset(yajl_handle handle)
 {
     handle->bytesConsumed = 0;
+    if (handle->stateStack.used != 0) {
+        handle->stateStack.used = 0;
+        if (handle->lexer != NULL) {
+            yajl_lex_free(handle->lexer);
+            handle->lexer = NULL;
+        }
+    }
     yajl_bs_push(handle->stateStack, yajl_state_start);
 }
 
