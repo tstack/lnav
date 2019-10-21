@@ -16,6 +16,7 @@ time, and providing hotkeys for navigating through the file.  It is
 hoped that these features will allow the user to quickly and
 efficiently zero in on problems.
 
+[Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
 
 ## Prerequisites
 
