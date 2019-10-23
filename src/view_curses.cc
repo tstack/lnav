@@ -619,6 +619,13 @@ inline attr_t attr_for_colors(int &pair_base, short fg, short bg)
             if (bg == COLOR_BLACK) {
                 bg = -1;
             }
+        } else {
+            if (fg == -1) {
+                fg = COLOR_WHITE;
+            }
+            if (bg == -1) {
+                bg = COLOR_BLACK;
+            }
         }
     }
 
