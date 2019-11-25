@@ -1301,7 +1301,10 @@ static string com_delete_filter(exec_context &ec, string cmdline, vector<string>
         filter_stack &fs = tss->get_filters();
 
         args[1] = remaining_args(cmdline, args);
-        if (fs.delete_filter(args[1])) {
+        if (ec.ec_dry_run) {
+            retval = "";
+        }
+        else if (fs.delete_filter(args[1])) {
             retval = "info: deleted filter";
             tss->text_filters_changed();
         }
