@@ -34,6 +34,7 @@ INSTALLATION
 
 Lnav follows the usual GNU style for configuring and installing software:
 
+  $ ./autogen.sh
   $ ./configure
   $ make
   $ sudo make install
