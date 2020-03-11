@@ -293,30 +293,9 @@ public:
         return retval;
     }
 
-    size_t line_length(iterator ll, bool include_continues = true) const {
-        iterator next_line = ll;
-        size_t retval;
+    size_t line_length(iterator ll, bool include_continues = true);
 
-        do {
-            ++next_line;
-        } while ((next_line != this->end()) &&
-                 ((ll->get_offset() == next_line->get_offset()) ||
-                     (include_continues && next_line->is_continued())));
-
-        if (next_line == this->end()) {
-            retval = this->lf_index_size - ll->get_offset();
-            if (retval > 0 && !this->lf_partial_line) {
-                retval -= 1;
-            }
-        }
-        else {
-            retval = next_line->get_offset() - ll->get_offset() - 1;
-        }
-
-        return retval;
-    };
-
-    file_range get_file_range(iterator ll, bool include_continues = true) const {
+    file_range get_file_range(iterator ll, bool include_continues = true) {
         return {ll->get_offset(),
                 (ssize_t) this->line_length(ll, include_continues)};
     }
@@ -413,6 +392,8 @@ protected:
     size_t lf_longest_line{0};
     text_format_t lf_text_format{text_format_t::TF_UNKNOWN};
     uint32_t lf_out_of_time_order_count{0};
+
+    nonstd::optional<std::pair<off_t, size_t>> lf_next_line_cache;
 };
 
 class logline_observer {

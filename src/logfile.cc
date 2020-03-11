@@ -543,3 +543,37 @@ filesystem::path logfile::get_path() const
 {
     return this->lf_filename;
 }
+
+size_t logfile::line_length(logfile::iterator ll, bool include_continues)
+{
+    iterator next_line = ll;
+    size_t retval;
+
+    if (!include_continues && this->lf_next_line_cache) {
+        if (ll->get_offset() == (*this->lf_next_line_cache).first) {
+            return this->lf_next_line_cache->second;
+        }
+    }
+
+    do {
+        ++next_line;
+    } while ((next_line != this->end()) &&
+             ((ll->get_offset() == next_line->get_offset()) ||
+              (include_continues && next_line->is_continued())));
+
+    if (next_line == this->end()) {
+        retval = this->lf_index_size - ll->get_offset();
+        if (retval > 0 && !this->lf_partial_line) {
+            retval -= 1;
+        }
+    }
+    else {
+        retval = next_line->get_offset() - ll->get_offset() - 1;
+        if (!include_continues) {
+            this->lf_next_line_cache = nonstd::make_optional(
+                std::make_pair(ll->get_offset(), retval));
+        }
+    }
+
+    return retval;
+}
