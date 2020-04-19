@@ -390,6 +390,9 @@ void view_curses::mvwattrline(WINDOW *window,
         }
 
         attr_range.lr_start = max(0, attr_range.lr_start - lr.lr_start);
+        if (attr_range.lr_start > line_width) {
+            continue;
+        }
         if (attr_range.lr_end == -1) {
             attr_range.lr_end = lr.lr_start + line_width;
         }
@@ -477,11 +480,10 @@ void view_curses::mvwattrline(WINDOW *window,
             memset(bg_color, -1, line_width * sizeof(short));
         }
 
-        int x_pos = x + lr.lr_start;
         int ch_width = lr.length();
         cchar_t row_ch[ch_width + 1];
 
-        mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
+        mvwin_wchnstr(window, y, x, row_ch, ch_width);
         for (int lpc = 0; lpc < ch_width; lpc++) {
             if (fg_color[lpc] == -1 && bg_color[lpc] == -1) {
                 continue;
@@ -496,7 +498,7 @@ void view_curses::mvwattrline(WINDOW *window,
             row_ch[lpc].attr |= COLOR_PAIR(color_pair);
 #endif
         }
-        mvwadd_wchnstr(window, y, x_pos, row_ch, ch_width);
+        mvwadd_wchnstr(window, y, x, row_ch, ch_width);
     }
 #endif
 }
