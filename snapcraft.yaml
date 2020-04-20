@@ -1,5 +1,5 @@
 name: lnav
-version: '0.8.4'
+version: '0.8.5'
 summary: Log file navigator
 description: |
   The log file navigator, lnav, is an enhanced log file viewer 
@@ -21,7 +21,7 @@ parts:
   lnav:
     plugin: autotools
     source: https://github.com/tstack/lnav.git
-    source-tag: v0.8.4
+    source-tag: v0.8.5
     build-packages: 
       - build-essential
       - libpcre3-dev
