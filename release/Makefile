@@ -1,5 +1,5 @@
 
-VERSION=0.8.5
+VERSION=0.8.6
 
 SRC_VERSION=master
 
@@ -11,15 +11,15 @@ clean-outbox: outbox
 
 PACKAGE_URLS = \
 	https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz \
-	ftp://ftp.gnu.org/gnu/ncurses//ncurses-5.9.tar.gz \
-	ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.42.tar.gz \
+	ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz \
+	https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	http://www.zlib.net/zlib-1.2.11.tar.gz \
-	http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz \
-	https://sqlite.org/2019/sqlite-autoconf-3270200.tar.gz \
+	http://www.bzip.org/1.0.8/bzip2-1.0.8.tar.gz \
+	https://www.sqlite.org/2020/sqlite-autoconf-3310100.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
-	https://www.libssh2.org/download/libssh2-1.8.0.tar.gz \
-	https://curl.haxx.se/download/curl-7.63.0.tar.gz
+	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
+	https://curl.haxx.se/download/curl-7.69.1.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs
 
@@ -51,7 +51,7 @@ osx-build:
 	rm -rf osx-build-dir
 	mkdir -p osx-build-dir
 	cd ../ && ./autogen.sh
-	cd osx-build-dir && ../../configure --with-readline=/usr/local/opt/readline && make -j8 && make dist -j8 && make dist-bzip2
+	cd osx-build-dir && ../../configure --with-readline=/usr/local/opt/readline CXXFLAGS=-I/usr/local/opt/ncurses/include LDFLAGS=-L/usr/local/opt/ncurses/lib && make -j8 && make dist -j8 && make dist-bzip2
 
 osx-package: clean-outbox osx-build
 	mkdir -p osx-pkg/lnav-${VERSION}
@@ -66,7 +66,7 @@ release: linux-ospkg osx-package
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
-	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.8.5-1.x86_64.rpm
+	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.8.6-1.x86_64.rpm
 
 clean:
 	cd vagrant-static && vagrant destroy -f

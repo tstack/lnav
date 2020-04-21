@@ -37,7 +37,7 @@ OS=$(uname -s)
 
 (cd readline-6.3 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
-(cd bzip2-1.0.6 && make install PREFIX=${FAKE_ROOT})
+(cd bzip2-1.0.8 && make install PREFIX=${FAKE_ROOT})
 
 (cd sqlite-* &&
  ./configure --disable-editline --prefix=${FAKE_ROOT} \
