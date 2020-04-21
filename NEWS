@@ -9,6 +9,8 @@ lnav v0.8.6:
        and unpaused by pressing it again.  The bottom status bar will display
        'Paused' in the right corner while paused.
      * CMake is now a supported way to build.
+     * The size of the terminal can be accessed in SQL using the $LINES and
+       $COLS variables.
 
      Interface Changes:
      * Data piped into lnav is no longer dumped to the console after exit.

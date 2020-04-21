@@ -175,6 +175,24 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
                 map<string, string>::iterator local_var, global_var;
                 const char *env_value;
 
+                if (lnav_data.ld_window) {
+                    char buf[32];
+                    int lines, cols;
+
+                    getmaxyx(lnav_data.ld_window, lines, cols);
+                    if (strcmp(name, "$LINES") == 0) {
+                        snprintf(buf, sizeof(buf), "%d", lines);
+                        sqlite3_bind_text(stmt.in(), lpc + 1,
+                                          buf, -1,
+                                          SQLITE_TRANSIENT);
+                    } else if (strcmp(name, "$COLS") == 0) {
+                        snprintf(buf, sizeof(buf), "%d", cols);
+                        sqlite3_bind_text(stmt.in(), lpc + 1,
+                                          buf, -1,
+                                          SQLITE_TRANSIENT);
+                    }
+                }
+
                 if ((local_var = lvars.find(&name[1])) != lvars.end()) {
                     sqlite3_bind_text(stmt.in(), lpc + 1,
                                       local_var->second.c_str(), -1,

@@ -239,6 +239,11 @@ void add_env_possibilities(int context)
     for (const auto &iter : ec.ec_global_vars) {
         rlc->add_possibility(context, "*", "$" + iter.first);
     }
+
+    if (lnav_data.ld_window) {
+        rlc->add_possibility(context, "*", "$LINES");
+        rlc->add_possibility(context, "*", "$COLS");
+    }
 }
 
 void add_filter_possibilities(textview_curses *tc)

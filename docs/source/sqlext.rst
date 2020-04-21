@@ -23,6 +23,14 @@ A SQL command is an internal macro implemented by lnav.
 * .schema - Open the schema view.  This view contains a dump of the schema
   for the internal tables and any tables in attached databases.
 
+Variables
+---------
+
+The following variables are available in SQL statements:
+
+* $LINES - The number of lines in the terminal window.
+* $COLS - The number of columns in the terminal window.
+
 Environment
 -----------
 
