@@ -90,3 +90,4 @@ test/test_pcrepp
 test/test_top_status
 test/test_yajlpp
 test/truncfile.0
+cmake-build/
