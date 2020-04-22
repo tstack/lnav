@@ -123,14 +123,14 @@ struct lnav_views : public tvt_iterator_cursor<lnav_views> {
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's views through this table.
 CREATE TABLE lnav_views (
-    name text PRIMARY KEY,  -- The name of the view.
-    top integer,            -- The number of the line at the top of the view, starting from zero.
-    left integer,           -- The left position of the viewport.
-    height integer,         -- The height of the viewport.
-    inner_height integer,   -- The number of lines in the view.
-    top_time datetime,      -- The time of the top line in the view, if the content is time-based.
-    paused integer,         -- Indicates if the view is paused and will not load new data.
-    search text             -- The text to search for in the view.
+    name TEXT PRIMARY KEY,  -- The name of the view.
+    top INTEGER,            -- The number of the line at the top of the view, starting from zero.
+    left INTEGER,           -- The left position of the viewport.
+    height INTEGER,         -- The height of the viewport.
+    inner_height INTEGER,   -- The number of lines in the view.
+    top_time DATETIME,      -- The time of the top line in the view, if the content is time-based.
+    paused INTEGER,         -- Indicates if the view is paused and will not load new data.
+    search TEXT             -- The text to search for in the view.
 );
 )";
 
@@ -255,7 +255,7 @@ struct lnav_view_stack : public tvt_iterator_cursor<lnav_view_stack> {
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's view stack through this table.
 CREATE TABLE lnav_view_stack (
-    name text
+    name TEXT
 );
 )";
 
@@ -415,11 +415,11 @@ struct lnav_view_filters : public tvt_iterator_cursor<lnav_view_filters>,
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's filters through this table.
 CREATE TABLE lnav_view_filters (
-    view_name text,     -- The name of the view.
-    filter_id integer,  -- The filter identifier.
-    enabled integer,    -- Indicates if the filter is enabled/disabled.
-    type text,          -- The type of filter (i.e. in/out).
-    pattern text        -- The filter pattern.
+    view_name TEXT,                   -- The name of the view.
+    filter_id INTEGER DEFAULT 0,      -- The filter identifier.
+    enabled   INTEGER DEFAULT 1,      -- Indicates if the filter is enabled/disabled.
+    type      TEXT    DEFAULT 'out',  -- The type of filter (i.e. in/out).
+    pattern   TEXT                    -- The filter pattern.
 );
 )";
 
@@ -467,18 +467,22 @@ CREATE TABLE lnav_view_filters (
     int insert_row(sqlite3_vtab *tab,
                    sqlite3_int64 &rowid_out,
                    lnav_view_t view_index,
-                   int64_t _filter_id,
-                   bool enabled,
-                   text_filter::type_t type,
+                   nonstd::optional<int64_t> _filter_id,
+                   nonstd::optional<bool> enabled,
+                   nonstd::optional<text_filter::type_t> type,
                    pair<string, pcre *> pattern) {
         textview_curses &tc = lnav_data.ld_views[view_index];
         text_sub_source *tss = tc.get_sub_source();
         filter_stack &fs = tss->get_filters();
-        auto pf = make_shared<pcre_filter>(type,
-                                           pattern.first,
-                                           fs.next_index(),
-                                           pattern.second);
+        auto pf = make_shared<pcre_filter>(
+            type.value_or(text_filter::type_t::EXCLUDE),
+            pattern.first,
+            fs.next_index(),
+            pattern.second);
         fs.add_filter(pf);
+        if (!enabled.value_or(true)) {
+            pf->disable();
+        }
         tss->text_filters_changed();
         tc.set_needs_update();
 

@@ -46,12 +46,12 @@ run_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('log', 0 , 1, 'bad', 'abc')" \
     ${test_dir}/logfile_access_log.0
 
-check_error_output "inserted filter with an empty pattern?" <<EOF
+check_error_output "inserted filter with an invalid filter type?" <<EOF
 error:command-option:1:Expecting an filter type for column number 3
 EOF
 
 run_test ${lnav_test} -n \
-    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'vmk')" \
+    -c ";INSERT INTO lnav_view_filters (view_name, pattern) VALUES ('log', 'vmk')" \
     ${test_dir}/logfile_access_log.0
 
 check_output "inserted filter did not work?" <<EOF

@@ -5,10 +5,15 @@ SQLite Tables Reference
 =======================
 
 In addition to the tables generated for each log format, **lnav** includes
-the following tables:
+the following tables/views:
 
 * environ
+* lnav_file
 * lnav_views
+* lnav_view_stack
+* lnav_view_filters
+* lnav_view_filter_stats
+* lnav_view_filters_and_stats
 * all_logs
 * http_status_codes
 
@@ -39,6 +44,22 @@ named "FILENAME" and then open it in **lnav** by referencing it with
 
     ;INSERT INTO environ VALUES ('FILENAME', '/path/to/file')
     :open $FILENAME
+
+
+lnav_file
+---------
+
+The **lnav_file** table allows you to examine and perform limited updates to
+the metadata for the files that are currently loaded into **lnav**.  The
+following columns are available in this table:
+
+  :device: The device the file is stored on.
+  :inode: The inode for the file on the device.
+  :filepath: The absolute path to the file.
+  :format: The log file format for the file.
+  :lines: The number of lines in the file.
+  :time_offset: The millisecond offset for timestamps.  This column can be
+    UPDATEd to change the offset of timestamps in the file.
 
 lnav_views
 ----------
@@ -76,10 +97,33 @@ lnav_view_filters
 The **lnav_view_filters** table allows you to manipulate the filters in the
 **lnav** views.  The following columns are available in this table:
 
-  :view_name: The name of the view.
+  :view_name: The name of the view the filter is applied to.
+  :filter_id: The filter identifier.  This will be assigned on insertion.
   :enabled: Indicates whether this filter is enabled or disabled.
   :type: The type of filter, either 'in' or 'out'.
   :pattern: The regular expression to filter on.
+
+This table supports SELECT, INSERT, UPDATE, and DELETE on the table rows to
+read, create, update, and delete filters for the views.
+
+lnav_view_filter_stats
+----------------------
+
+The **lnav_view_filter_stats** table allows you to get information about how
+many lines matched a given filter.  The following columns are available in
+this table:
+
+  :view_name: The name of the view.
+  :filter_id: The filter identifier.
+  :hits: The number of lines that matched this filter.
+
+This table is read-only.
+
+lnav_view_filters_and_stats
+---------------------------
+
+The **lnav_view_filters_and_stats** view joins the **lnav_view_filters** table
+with the **lnav_view_filter_stats** table into a single view for ease of use.
 
 all_logs
 --------
