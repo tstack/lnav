@@ -516,9 +516,7 @@ check_output "write-json-to is not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
-        "log_filters": [
-
-        ],
+        "log_filters": null,
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",
@@ -539,9 +537,7 @@ check_output "write-json-to is not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
-        "log_filters": [
-
-        ],
+        "log_filters": null,
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",
@@ -562,9 +558,7 @@ check_output "write-json-to is not working" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
-        "log_filters": [
-
-        ],
+        "log_filters": null,
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",

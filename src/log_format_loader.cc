@@ -114,13 +114,17 @@ static external_log_format::value_def *value_def_provider(const yajlpp_provider_
 {
     const intern_string_t value_name = ypc.get_substr_i(0);
 
-    auto &retval = elf->elf_value_defs[value_name];
+    auto iter = elf->elf_value_defs.find(value_name);
+    shared_ptr<external_log_format::value_def> retval;
 
-    if (retval.get() == nullptr) {
+    if (iter == elf->elf_value_defs.end()) {
         retval = make_shared<external_log_format::value_def>();
+        retval->vd_name = value_name;
+        elf->elf_value_defs[value_name] = retval;
+        elf->elf_value_def_order.emplace_back(retval);
+    } else {
+        retval = iter->second;
     }
-
-    retval->vd_name = value_name;
 
     return retval.get();
 }

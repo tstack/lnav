@@ -483,31 +483,35 @@ static int vt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col)
         }
 
         case VT_COL_FILTERS: {
-            auto &filters = vt->lss->get_filters();
-            auto &filter_state = ld->ld_filter_state;
-            yajlpp_gen gen;
+            auto &filter_mask = ld->ld_filter_state.lfo_filter_state.tfs_mask;
 
-            yajl_gen_config(gen, yajl_gen_beautify, false);
+            if (!filter_mask[line_number]) {
+                sqlite3_result_null(ctx);
+            } else {
+                auto &filters = vt->lss->get_filters();
+                yajlpp_gen gen;
 
-            {
-                yajlpp_array arr(gen);
+                yajl_gen_config(gen, yajl_gen_beautify, false);
 
-                for (auto &filter : filters) {
-                    if (filter->lf_deleted) {
-                        continue;
-                    }
+                {
+                    yajlpp_array arr(gen);
 
-                    uint32_t mask = (1UL << filter->get_index());
+                    for (auto &filter : filters) {
+                        if (filter->lf_deleted) {
+                            continue;
+                        }
 
-                    if (filter_state.lfo_filter_state.tfs_mask[line_number] &
-                        mask) {
-                        arr.gen(filter->get_index());
+                        uint32_t mask = (1UL << filter->get_index());
+
+                        if (filter_mask[line_number] & mask) {
+                            arr.gen(filter->get_index());
+                        }
                     }
                 }
-            }
 
-            to_sqlite(ctx, gen.to_string_fragment());
-            sqlite3_result_subtype(ctx, 'J');
+                to_sqlite(ctx, gen.to_string_fragment());
+                sqlite3_result_subtype(ctx, 'J');
+            }
             break;
         }
 

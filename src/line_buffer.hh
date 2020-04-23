@@ -210,20 +210,11 @@ public:
     };
 
     /**
-     * Read up to the end of file or a given delimiter.
+     * Attempt to load the next line into the buffer.
      *
-     * @param offset_inout The offset in the file to start reading from.  On
-     * return, it contains the offset where the next line should start or one
-     * past the size of the file.
-     * @param len_out On return, contains the length of the line, not including
-     * the delimiter.
-     * @param delim The character that splits lines in the input, defaults to a
-     * line feed.
-     * @return The address in the internal buffer where the line starts.  The
-     * line is not NULL-terminated, but this method ensures there is room to NULL
-     * terminate the line.  If any modifications are made to the line, such as
-     * NULL termination, the invalidate() must be called before re-reading the
-     * line to refresh the buffer.
+     * @param prev_line The range of the previous line.
+     * @return If the read was successful, information about the line.
+     *   Otherwise, an error message.
      */
     Result<line_info, std::string> load_next_line(file_range prev_line = {});
 
@@ -338,7 +329,8 @@ private:
                                  */
     time_t lb_file_time;
     ssize_t lb_buffer_size;     /*< The amount of cached data in the buffer. */
-    ssize_t lb_buffer_max;      /*< The size of the buffer memory. */
+    ssize_t lb_buffer_max;      /*< The amount of allocated memory for the
+                                 *  buffer. */
     bool   lb_seekable;         /*< Flag set for seekable file descriptors. */
     off_t  lb_last_line_offset; /*< */
 };

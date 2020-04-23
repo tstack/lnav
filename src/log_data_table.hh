@@ -223,12 +223,9 @@ public:
             break;
 
             default: {
-                shared_buffer_ref value_sbr;
-
-                value_sbr.subset(line,
-                    pvalue.e_capture.c_begin, pvalue.e_capture.length());
                 values.emplace_back(intern_string::lookup("", 0),
-                    logline_value::VALUE_TEXT, value_sbr);
+                    logline_value::VALUE_TEXT, line, false, nullptr,
+                    -1, pvalue.e_capture.c_begin, pvalue.e_capture.c_end);
                 break;
             }
 

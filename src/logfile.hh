@@ -402,7 +402,11 @@ public:
 
     virtual void logline_restart(const logfile &lf, size_t rollback_size) = 0;
 
-    virtual void logline_new_line(const logfile &lf, logfile::const_iterator ll, shared_buffer_ref &sbr) = 0;
+    virtual void logline_new_lines(
+        const logfile &lf,
+        logfile::const_iterator ll_begin,
+        logfile::const_iterator ll_end,
+        shared_buffer_ref &sbr) = 0;
 
     virtual void logline_eof(const logfile &lf) = 0;
 };

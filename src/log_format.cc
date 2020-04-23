@@ -583,7 +583,7 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
             continue;
         }
 
-        if (!pat->match(pc, pi)) {
+        if (!pat->match(pc, pi, PCRE_NO_UTF8_CHECK)) {
             if (!this->lf_pattern_locks.empty() && pat_index != -1) {
                 log_debug("no match on pattern %d", pat_index);
                 curr_fmt = -1;
@@ -763,7 +763,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
     int pat_index = this->pattern_index_for_line(line_number);
     pattern &pat = *this->elf_pattern_order[pat_index];
 
-    if (!pat.p_pcre->match(pc, pi)) {
+    if (!pat.p_pcre->match(pc, pi, PCRE_NO_UTF8_CHECK)) {
         // A continued line still needs a body.
         lr.lr_start = 0;
         lr.lr_end = line.length();
@@ -775,14 +775,14 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         cap = pc[pat.p_timestamp_field_index];
         lr.lr_start = cap->c_begin;
         lr.lr_end = cap->c_end;
-        sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
+        sa.emplace_back(lr, &logline::L_TIMESTAMP);
 
         if (pat.p_module_field_index != -1) {
             module_cap = pc[pat.p_module_field_index];
             if (module_cap != NULL && module_cap->is_valid()) {
                 lr.lr_start = module_cap->c_begin;
                 lr.lr_end = module_cap->c_end;
-                sa.push_back(string_attr(lr, &logline::L_MODULE));
+                sa.emplace_back(lr, &logline::L_MODULE);
             }
         }
 
@@ -790,7 +790,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         if (cap != NULL && cap->is_valid()) {
             lr.lr_start = cap->c_begin;
             lr.lr_end = cap->c_end;
-            sa.push_back(string_attr(lr, &logline::L_OPID));
+            sa.emplace_back(lr, &logline::L_OPID);
         }
     }
 
@@ -810,7 +810,6 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
         const struct scaling_factor *scaling = NULL;
         pcre_context::capture_t *cap = pc[ivd.ivd_index];
         const value_def &vd = *ivd.ivd_value_def;
-        shared_buffer_ref field;
 
         if (ivd.ivd_unit_field_index >= 0) {
             pcre_context::iterator unit_cap = pc[ivd.ivd_unit_field_index];
@@ -829,18 +828,20 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
             }
         }
 
-        field.subset(line, cap->c_begin, cap->length());
-
-        values.emplace_back(vd.vd_name,
-                            vd.vd_kind,
-                            field,
-                            vd.vd_identifier,
-                            scaling,
-                            vd.vd_column,
-                            cap->c_begin,
-                            cap->c_end,
-                            pat.p_module_format,
-                            this);
+        if (cap->is_valid()) {
+            values.emplace_back(vd.vd_name,
+                                vd.vd_kind,
+                                line,
+                                vd.vd_identifier,
+                                scaling,
+                                vd.vd_column,
+                                cap->c_begin,
+                                cap->c_end,
+                                pat.p_module_format,
+                                this);
+        } else {
+            values.emplace_back(vd.vd_name);
+        }
         values.back().lv_hidden = vd.vd_hidden || vd.vd_user_hidden;
     }
 
@@ -1137,16 +1138,16 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
                         }
 
                         if (lv_iter->lv_name == this->lf_timestamp_field) {
-                            this->jlf_line_attrs.push_back(
-                                string_attr(lr, &logline::L_TIMESTAMP));
+                            this->jlf_line_attrs.emplace_back(
+                                lr, &logline::L_TIMESTAMP);
                         }
                         else if (lv_iter->lv_name == this->elf_body_field) {
-                            this->jlf_line_attrs.push_back(
-                                string_attr(lr, &textview_curses::SA_BODY));
+                            this->jlf_line_attrs.emplace_back(
+                                lr, &textview_curses::SA_BODY);
                         }
                         else if (lv_iter->lv_name == this->elf_opid_field) {
-                            this->jlf_line_attrs.push_back(
-                                    string_attr(lr, &logline::L_OPID));
+                            this->jlf_line_attrs.emplace_back(
+                                    lr, &logline::L_OPID);
                         }
                         lv_iter->lv_origin = lr;
                         used_values[distance(this->jlf_line_values.begin(),
@@ -1485,26 +1486,26 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
     stable_sort(this->elf_level_pairs.begin(), this->elf_level_pairs.end());
 
-    for (auto &elf_value_def : this->elf_value_defs) {
+    for (auto vd : this->elf_value_def_order) {
         std::vector<std::string>::iterator act_iter;
 
-        if (!elf_value_def.second->vd_internal &&
-            elf_value_def.second->vd_column == -1) {
-            elf_value_def.second->vd_column = this->elf_column_count++;
+        if (!vd->vd_internal &&
+            vd->vd_column == -1) {
+            vd->vd_column = this->elf_column_count++;
         }
 
-        if (elf_value_def.second->vd_kind == logline_value::VALUE_UNKNOWN) {
-            elf_value_def.second->vd_kind = logline_value::VALUE_TEXT;
+        if (vd->vd_kind == logline_value::VALUE_UNKNOWN) {
+            vd->vd_kind = logline_value::VALUE_TEXT;
         }
 
-        for (act_iter = elf_value_def.second->vd_action_list.begin();
-             act_iter != elf_value_def.second->vd_action_list.end();
+        for (act_iter = vd->vd_action_list.begin();
+             act_iter != vd->vd_action_list.end();
              ++act_iter) {
             if (this->lf_action_defs.find(*act_iter) ==
                 this->lf_action_defs.end()) {
                 errors.push_back("error:" +
                                  this->elf_name.to_string() + ":" +
-                                     elf_value_def.first.get() +
+                                     vd->vd_name.get() +
                                  ": cannot find action -- " + (*act_iter));
             }
         }
@@ -1860,19 +1861,18 @@ public:
         const external_log_format &elf = this->elt_format;
 
         cols.resize(elf.elf_column_count);
-        for (const auto &elf_value_def : elf.elf_value_defs) {
-            const auto &vd = *elf_value_def.second;
-            pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(vd.vd_kind);
+        for (const auto &vd : elf.elf_value_def_order) {
+            pair<int, unsigned int> type_pair = log_vtab_impl::logline_value_to_sqlite_type(vd->vd_kind);
 
-            if (vd.vd_column == -1) {
+            if (vd->vd_column == -1) {
                 continue;
             }
 
-            cols[vd.vd_column].vc_name = vd.vd_name.get();
-            cols[vd.vd_column].vc_type = type_pair.first;
-            cols[vd.vd_column].vc_subtype = type_pair.second;
-            cols[vd.vd_column].vc_collator = vd.vd_collate.c_str();
-            cols[vd.vd_column].vc_comment = vd.vd_description;
+            cols[vd->vd_column].vc_name = vd->vd_name.get();
+            cols[vd->vd_column].vc_type = type_pair.first;
+            cols[vd->vd_column].vc_subtype = type_pair.second;
+            cols[vd->vd_column].vc_collator = vd->vd_collate.c_str();
+            cols[vd->vd_column].vc_comment = vd->vd_description;
         }
     };
 
@@ -1882,7 +1882,7 @@ public:
 
         for (const auto &elf_value_def : this->elt_format.elf_value_defs) {
             if (elf_value_def.second->vd_foreign_key) {
-                keys_inout.push_back(elf_value_def.first.to_string());
+                keys_inout.emplace_back(elf_value_def.first.to_string());
             }
         }
     };

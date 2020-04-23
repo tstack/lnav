@@ -116,7 +116,7 @@ class generic_log_format : public log_format {
         return get_pcre_log_formats()[pat_index].name;
     }
 
-    intern_string_t get_name() const {
+    const intern_string_t get_name() const {
         return intern_string::lookup("generic_log");
     };
 
@@ -386,8 +386,8 @@ public:
         this->lf_time_ordered = false;
     };
 
-    intern_string_t get_name(void) const {
-        static intern_string_t name = intern_string::lookup("bro");
+    const intern_string_t get_name(void) const {
+        static const intern_string_t name(intern_string::lookup("bro"));
 
         return this->blf_format_name.empty() ? name : this->blf_format_name;
     };
@@ -633,8 +633,6 @@ public:
             string_fragment sf = *iter;
             logline_value::kind_t kind = fd.fd_kind;
 
-            struct line_range lr(sf.sf_begin, sf.sf_end);
-
             if (sf == this->blf_empty_field) {
                 sf.clear();
             } else if (sf == this->blf_unset_field) {
@@ -642,18 +640,28 @@ public:
                 kind = logline_value::VALUE_NULL;
             }
 
+            auto lr = line_range(sf.sf_begin, sf.sf_end);
+
             if (fd.fd_name == TS) {
                 sa.emplace_back(lr, &logline::L_TIMESTAMP);
             } else if (fd.fd_name == UID) {
                 sa.emplace_back(lr, &logline::L_OPID);
             }
 
-            shared_buffer_ref value_ref;
-            value_ref.subset(sbr, sf.sf_begin, sf.length());
-            values.emplace_back(fd.fd_name, kind, value_ref,
-                                fd.fd_identifier, nullptr, iter.index(),
-                                lr.lr_start, lr.lr_end, false,
-                                this);
+            if (lr.is_valid()) {
+                values.emplace_back(fd.fd_name,
+                                    kind,
+                                    sbr,
+                                    fd.fd_identifier,
+                                    nullptr,
+                                    iter.index(),
+                                    lr.lr_start,
+                                    lr.lr_end,
+                                    false,
+                                    this);
+            } else {
+                values.emplace_back(fd.fd_name);
+            }
         }
     };
 

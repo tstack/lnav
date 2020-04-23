@@ -68,8 +68,8 @@ bool shared_buffer_ref::subset(shared_buffer_ref &other, off_t offset, size_t le
     if (offset != -1) {
         this->sb_owner = other.sb_owner;
         this->sb_length = len;
-        if (this->sb_owner == NULL) {
-            if ((this->sb_data = (char *)malloc(this->sb_length)) == NULL) {
+        if (this->sb_owner == nullptr) {
+            if ((this->sb_data = (char *)malloc(this->sb_length)) == nullptr) {
                 return false;
             }
 

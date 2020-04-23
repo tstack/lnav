@@ -393,11 +393,9 @@ logfile::rebuild_result_t logfile::rebuild_index()
                 old_size = 0;
             }
 
-            for (auto iter = this->begin() + old_size;
-                    iter != this->end(); ++iter) {
-                if (this->lf_logline_observer != nullptr) {
-                    this->lf_logline_observer->logline_new_line(*this, iter, sbr);
-                }
+            if (this->lf_logline_observer != nullptr) {
+                this->lf_logline_observer->logline_new_lines(
+                    *this, this->begin() + old_size, this->end(), sbr);
             }
 
             if (this->lf_logfile_observer != nullptr) {
@@ -517,24 +515,31 @@ void logfile::set_logline_observer(logline_observer *llo)
 
 void logfile::reobserve_from(iterator iter)
 {
-    if (this->lf_logline_observer != NULL) {
-        for (; iter != this->end(); ++iter) {
-            off_t offset = std::distance(this->begin(), iter);
+    for (; iter != this->end(); ++iter) {
+        off_t offset = std::distance(this->begin(), iter);
 
-            if (this->lf_logfile_observer != NULL) {
-                this->lf_logfile_observer->logfile_indexing(
-                        *this, offset, this->size());
-            }
-
-            this->read_line(iter).then([this, iter](auto sbr) {
-                this->lf_logline_observer->logline_new_line(*this, iter, sbr);
-            });
+        if (iter->get_sub_offset() > 0) {
+            continue;
         }
-        if (this->lf_logfile_observer != NULL) {
+
+        if (this->lf_logfile_observer != nullptr) {
             this->lf_logfile_observer->logfile_indexing(
-                    *this, this->size(), this->size());
+                *this, offset, this->size());
         }
 
+        this->read_line(iter).then([this, iter](auto sbr) {
+            auto iter_end = iter + 1;
+
+            while (iter_end != this->end() && iter_end->get_sub_offset() != 0) {
+                ++iter_end;
+            }
+            this->lf_logline_observer->logline_new_lines(
+                *this, iter, iter_end, sbr);
+        });
+    }
+    if (this->lf_logfile_observer != nullptr) {
+        this->lf_logfile_observer->logfile_indexing(
+            *this, this->size(), this->size());
         this->lf_logline_observer->logline_eof(*this);
     }
 }

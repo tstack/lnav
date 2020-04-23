@@ -233,6 +233,12 @@ public:
         return this->ist_interned_string->size();
     }
 
+    size_t hash() const {
+        uintptr_t ptr = (uintptr_t) this->ist_interned_string;
+
+        return ptr;
+    }
+
     std::string to_string() const {
         if (this->ist_interned_string == nullptr) {
             return "";
@@ -266,6 +272,15 @@ private:
 };
 
 unsigned long hash_str(const char *str, size_t len);
+
+namespace std {
+    template <>
+    struct hash<const intern_string_t> {
+        std::size_t operator()(const intern_string_t &ist) const {
+            return ist.hash();
+        }
+    };
+}
 
 inline bool operator<(const char *left, const intern_string_t &right) {
     int rc = strncmp(left, right.get(), right.size());

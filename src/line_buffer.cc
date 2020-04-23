@@ -708,7 +708,6 @@ Result<line_info, string> line_buffer::load_next_line(file_range prev_line)
                     retval.li_partial = true;
                 }
                 this->ensure_available(offset, retval.li_file_range.fr_size);
-                line_start = this->get_range(offset, retval.li_file_range.fr_size);
 
                 if (retval.li_file_range.fr_size >= MAX_LINE_BUFFER_SIZE) {
                     retval.li_file_range.fr_size = MAX_LINE_BUFFER_SIZE - 1;

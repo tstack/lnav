@@ -157,11 +157,9 @@ public:
         values.emplace_back(instance_name, this->lst_instance);
         values.back().lv_column = next_column++;
         for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
-            pcre_context::capture_t *cap = this->lst_match_context[lpc];
-            shared_buffer_ref value_sbr;
-
-            value_sbr.subset(line, cap->c_begin, cap->length());
-            values.emplace_back(empty, this->lst_column_types[lpc], value_sbr);
+            auto cap = this->lst_match_context[lpc];
+            values.emplace_back(empty, this->lst_column_types[lpc], line,
+                false, nullptr, -1, cap->c_begin, cap->c_end);
             values.back().lv_column = next_column++;
         }
     };

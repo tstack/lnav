@@ -376,8 +376,8 @@ public:
 
     };
     logline_value(const intern_string_t name, kind_t kind, shared_buffer_ref &sbr,
-                  bool ident=false, const scaling_factor *scaling=NULL,
-                  int col=-1, int start=-1, int end=-1, bool from_module=false,
+                  bool ident, const scaling_factor *scaling,
+                  int col, int start, int end, bool from_module=false,
                   const log_format *format=NULL)
         : lv_name(name), lv_kind(kind),
           lv_identifier(ident), lv_column(col), lv_hidden(false), lv_sub_offset(0),
@@ -385,7 +385,7 @@ public:
           lv_from_module(from_module),
           lv_format(format)
     {
-        if (sbr.get_data() == NULL) {
+        if (sbr.get_data() == nullptr) {
             this->lv_kind = kind = VALUE_NULL;
         }
 
@@ -395,24 +395,25 @@ public:
         case VALUE_TEXT:
         case VALUE_QUOTED:
         case VALUE_TIMESTAMP:
-            this->lv_sbr = sbr;
+            this->lv_sbr.subset(sbr, start, end - start);
             break;
 
         case VALUE_NULL:
             break;
 
         case VALUE_INTEGER:
-            strtonum(this->lv_value.i, sbr.get_data(), sbr.length());
+            strtonum(this->lv_value.i, sbr.get_data_at(start), end - start);
             if (scaling != NULL) {
                 scaling->scale(this->lv_value.i);
             }
             break;
 
         case VALUE_FLOAT: {
-            char scan_value[sbr.length() + 1];
+            ssize_t len = end - start;
+            char scan_value[len + 1];
 
-            memcpy(scan_value, sbr.get_data(), sbr.length());
-            scan_value[sbr.length()] = '\0';
+            memcpy(scan_value, sbr.get_data_at(start), len);
+            scan_value[len] = '\0';
             this->lv_value.d = strtod(scan_value, NULL);
             if (scaling != NULL) {
                 scaling->scale(this->lv_value.d);
@@ -421,8 +422,8 @@ public:
         }
 
         case VALUE_BOOLEAN:
-            if (strncmp(sbr.get_data(), "true", sbr.length()) == 0 ||
-                strncmp(sbr.get_data(), "yes", sbr.length()) == 0) {
+            if (strncmp(sbr.get_data_at(start), "true", end - start) == 0 ||
+                strncmp(sbr.get_data_at(start), "yes", end - start) == 0) {
                 this->lv_value.i = 1;
             }
             else {
@@ -682,7 +683,7 @@ public:
      *
      * @return The log format name.
      */
-    virtual intern_string_t get_name(void) const = 0;
+    virtual const intern_string_t get_name() const = 0;
 
     virtual bool match_name(const std::string &filename) { return true; };
 
@@ -949,7 +950,7 @@ public:
             this->jlf_line_offsets.reserve(128);
         };
 
-    intern_string_t get_name(void) const {
+    const intern_string_t get_name(void) const {
         return this->elf_name;
     };
 
@@ -1203,7 +1204,9 @@ public:
     std::map<std::string, std::shared_ptr<pattern>> elf_patterns;
     std::vector<std::shared_ptr<pattern>> elf_pattern_order;
     std::vector<sample> elf_samples;
-    std::map<const intern_string_t, std::shared_ptr<value_def>> elf_value_defs;
+    std::unordered_map<const intern_string_t, std::shared_ptr<value_def>>
+        elf_value_defs;
+    std::vector<std::shared_ptr<value_def>> elf_value_def_order;
     std::vector<std::shared_ptr<value_def>> elf_numeric_value_defs;
     int elf_column_count;
     double elf_timestamp_divisor;

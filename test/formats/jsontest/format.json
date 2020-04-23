@@ -16,19 +16,19 @@
         "timestamp-field": "ts",
         "body-field" : "msg",
         "value" : {
-            "user" : {
-                "kind" : "string",
-                "identifier" : true,
-                "rewriter" : "|rewrite-user"
-            },
             "msg" : {
                 "rewriter" : ";SELECT :msg || 'bork bork bork'"
+            },
+            "arr" : {
+                "kind" : "json"
             },
             "obj" : {
                 "kind" : "json"
             },
-            "arr" : {
-                "kind" : "json"
+            "user" : {
+                "kind" : "string",
+                "identifier" : true,
+                "rewriter" : "|rewrite-user"
             }
         }
     }

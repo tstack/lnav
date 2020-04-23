@@ -362,7 +362,6 @@ time_t tm2sec(const struct tm *t)
     }                          /* must be a valid time */
 }
 
-static const int MONSPERYEAR = 12;
 static const int SECSPERMIN = 60;
 static const int SECSPERHOUR = 60 * SECSPERMIN;
 static const int SECSPERDAY = 24 * SECSPERHOUR;
@@ -373,15 +372,17 @@ static const int EPOCH_YEAR = 1970;
 
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
-static const int mon_lengths[2][MONSPERYEAR] = {
-        {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
-        {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
-} ;
-
 static const int year_lengths[2] = {
         365,
         366
-} ;
+};
+
+const unsigned short int mon_yday[2][13] = {
+    /* Normal years.  */
+    { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
+    /* Leap years.  */
+    { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
+};
 
 static void secs2wday(const struct timeval &tv, struct tm *res)
 {
@@ -409,7 +410,7 @@ struct tm *secs2tm(time_t *tim_p, struct tm *res)
     time_t lcltime;
     int y;
     int yleap;
-    const int *ip;
+    const unsigned short int *ip;
 
     /* base decision about std/dst time on current time */
     lcltime = *tim_p;
@@ -457,9 +458,11 @@ struct tm *secs2tm(time_t *tim_p, struct tm *res)
 
     res->tm_year = y - YEAR_BASE;
     res->tm_yday = days;
-    ip = mon_lengths[yleap];
-    for (res->tm_mon = 0; days >= ip[res->tm_mon]; ++res->tm_mon)
-        days -= ip[res->tm_mon];
+    ip = mon_yday[isleap(y)];
+    for (y = 11; days < (long int) ip[y]; --y)
+        continue;
+    days -= ip[y];
+    res->tm_mon = y;
     res->tm_mday = days + 1;
 
     res->tm_isdst = 0;
