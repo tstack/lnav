@@ -513,6 +513,9 @@ inline int openp(const filesystem::path &path, int flags, mode_t mode) {
 Result<std::pair<filesystem::path, int>, std::string>
 open_temp_file(const filesystem::path &pattern);
 
+bool is_dev_null(const struct stat &st);
+bool is_dev_null(int fd);
+
 template<typename A>
 struct final_action {   // slightly simplified
     A act;

@@ -2211,7 +2211,7 @@ int main(int argc, char *argv[])
     lnav_data.ld_looping        = true;
     lnav_data.ld_mode           = LNM_PAGING;
 
-    if (isatty(STDIN_FILENO) && argc == 0 &&
+    if ((isatty(STDIN_FILENO) || is_dev_null(STDIN_FILENO)) && argc == 0 &&
         !(lnav_data.ld_flags & LNF__ALL)) {
         lnav_data.ld_flags |= LNF_SYSLOG;
     }
@@ -2321,8 +2321,6 @@ int main(int argc, char *argv[])
             auto lf = ld_file;
 
             lf->rebuild_index();
-
-            lf->rebuild_index();
             log_format *fmt = lf->get_format();
             if (fmt == NULL) {
                 fprintf(stderr, "error:%s:no format found for file\n",
@@ -2378,7 +2376,7 @@ int main(int argc, char *argv[])
         retval = EXIT_FAILURE;
     }
 
-    if (!isatty(STDIN_FILENO) && !exec_stdin) {
+    if (!isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO) && !exec_stdin) {
         if (stdin_out == nullptr) {
             auto pattern = dotlnav_path() / "stdin-captures/stdin.XXXXXX";
 
@@ -2405,10 +2403,13 @@ int main(int argc, char *argv[])
         lnav_data.ld_file_names["stdin"]
             .with_fd(stdin_out_fd)
             .with_include_in_session(false);
+        lnav_data.ld_pipers.push_back(stdin_reader);
+    }
+
+    if (!isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
             perror("cannot dup stdout to stdin");
         }
-        lnav_data.ld_pipers.push_back(stdin_reader);
     }
 
     if (lnav_data.ld_file_names.empty() &&

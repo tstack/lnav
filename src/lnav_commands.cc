@@ -1826,6 +1826,9 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                 return ec.make_error("cannot stat file: {} -- {}", fn,
                                      strerror(errno));
             }
+            else if (is_dev_null(st)) {
+                return ec.make_error("cannot open /dev/null");
+            }
             else if (S_ISFIFO(st.st_mode)) {
                 auto_fd fifo_fd;
 

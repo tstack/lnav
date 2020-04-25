@@ -37,6 +37,7 @@ lnav v0.8.6:
      * Added 'notice' log level.
      * If a "timestamp-format" is used in an element of a "line-format", the
        field name is ignored and a formatted timestamp is always used.
+     * Ignore stdin when it is connected to /dev/null.
 
 lnav v0.8.5:
      Features:

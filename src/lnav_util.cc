@@ -750,3 +750,21 @@ open_temp_file(const filesystem::path &pattern)
 
     return Ok(make_pair(filesystem::path(pattern_copy), fd));
 }
+
+bool is_dev_null(const struct stat &st)
+{
+    struct stat null_stat;
+
+    stat("/dev/null", &null_stat);
+
+    return st.st_dev == null_stat.st_dev &&
+           st.st_ino == null_stat.st_ino;
+}
+
+bool is_dev_null(int fd)
+{
+    struct stat fd_stat;
+
+    fstat(fd, &fd_stat);
+    return is_dev_null(fd_stat);
+}
