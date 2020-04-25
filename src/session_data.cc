@@ -290,56 +290,58 @@ static void cleanup_session_data()
 
 void init_session()
 {
+    lnav_data.ld_session_time = time(nullptr);
+    lnav_data.ld_session_id.clear();
+}
+
+static nonstd::optional<std::string> compute_session_id()
+{
     byte_array<2, uint64> hash;
     SpookyHash context;
-
-    lnav_data.ld_session_time = time(nullptr);
+    bool has_files = false;
 
     context.Init(0, 0);
     hash_updater updater(&context);
     for (auto &ld_file_name : lnav_data.ld_file_names) {
+        if (!ld_file_name.second.loo_include_in_session) {
+            continue;
+        }
+        has_files = true;
         updater(ld_file_name.first);
+    }
+    if (!has_files) {
+        return nonstd::nullopt;
     }
     context.Final(hash.out(0), hash.out(1));
 
-    lnav_data.ld_session_id = hash.to_string();
-
-    log_info("init_session: time=%d; id=%s", lnav_data.ld_session_time,
-        lnav_data.ld_session_id.c_str());
+    return hash.to_string();
 }
 
-void scan_sessions()
+nonstd::optional<session_pair_t> scan_sessions()
 {
-    std::list<session_pair_t> &session_file_names =
-        lnav_data.ld_session_file_names;
-
-    static_root_mem<glob_t, globfree>   view_info_list;
-    std::list<session_pair_t>::iterator iter;
-    char   view_info_pattern_base[128];
-    string old_session_name;
-    int    index;
+    static_root_mem<glob_t, globfree> view_info_list;
+    char view_info_pattern_base[128];
 
     cleanup_session_data();
 
-    if (lnav_data.ld_session_file_index >= 0 &&
-        lnav_data.ld_session_file_index < (int)session_file_names.size()) {
-        iter = session_file_names.begin();
-
-        advance(iter, lnav_data.ld_session_file_index);
-        old_session_name = iter->second;
+    const auto session_id = compute_session_id();
+    if (!session_id) {
+        return nonstd::nullopt;
     }
+    std::list<session_pair_t> &session_file_names =
+        lnav_data.ld_session_id[session_id.value()];
 
     session_file_names.clear();
 
     snprintf(view_info_pattern_base, sizeof(view_info_pattern_base),
              "view-info-%s.*.json",
-             lnav_data.ld_session_id.c_str());
+             session_id.value().c_str());
     auto view_info_pattern = dotlnav_path() / view_info_pattern_base;
     if (glob(view_info_pattern.str().c_str(), 0, nullptr,
              view_info_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < view_info_list->gl_pathc; lpc++) {
             const char *path = view_info_list->gl_pathv[lpc];
-            int         timestamp, ppid, rc;
+            int timestamp, ppid, rc;
             const char *base;
 
             base = strrchr(path, '/');
@@ -374,16 +376,11 @@ void scan_sessions()
         session_file_names.pop_front();
     }
 
-    lnav_data.ld_session_file_index = ((int)session_file_names.size()) - 1;
-
-    for (index = 0, iter = session_file_names.begin();
-         iter != session_file_names.end();
-         index++, ++iter) {
-        if (iter->second == old_session_name) {
-            lnav_data.ld_session_file_index = index;
-            break;
-        }
+    if (session_file_names.empty()) {
+        return nonstd::nullopt;
     }
+
+    return nonstd::make_optional(session_file_names.back());
 }
 
 static void load_time_bookmarks()
@@ -832,40 +829,35 @@ static struct json_path_handler view_info_handlers[] = {
 
 void load_session()
 {
-    std::list<session_pair_t>::iterator sess_iter;
-    yajl_handle          handle;
-    auto_fd fd;
-
-    if (lnav_data.ld_session_file_names.empty()) {
-        load_time_bookmarks();
-        return;
-    }
-
-    sess_iter = lnav_data.ld_session_file_names.begin();
-    advance(sess_iter, lnav_data.ld_session_file_index);
-    lnav_data.ld_session_load_time = sess_iter->first.second;
-    lnav_data.ld_session_save_time = sess_iter->first.second;
-    string &view_info_name = sess_iter->second;
-
-    yajlpp_parse_context ypc(view_info_name, view_info_handlers);
-    handle    = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
-
     load_time_bookmarks();
+    scan_sessions() | [](const auto pair) {
+        yajl_handle handle;
+        auto_fd fd;
 
-    if ((fd = open(view_info_name.c_str(), O_RDONLY)) < 0) {
-        perror("cannot open session file");
-    }
-    else {
-        unsigned char buffer[1024];
-        ssize_t        rc;
+        lnav_data.ld_session_load_time = pair.first.second;
+        lnav_data.ld_session_save_time = pair.first.second;
+        const string &view_info_name = pair.second;
 
-        log_info("loading session file: %s", view_info_name.c_str());
-        while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
-            yajl_parse(handle, buffer, rc);
+        yajlpp_parse_context ypc(view_info_name, view_info_handlers);
+        handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+
+        load_time_bookmarks();
+
+        if ((fd = open(view_info_name.c_str(), O_RDONLY)) < 0) {
+            perror("cannot open session file");
         }
-        yajl_complete_parse(handle);
-    }
-    yajl_free(handle);
+        else {
+            unsigned char buffer[1024];
+            ssize_t        rc;
+
+            log_info("loading session file: %s", view_info_name.c_str());
+            while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+                yajl_parse(handle, buffer, rc);
+            }
+            yajl_complete_parse(handle);
+        }
+        yajl_free(handle);
+    };
 }
 
 static void yajl_writer(void *context, const char *str, size_t len)
@@ -1215,19 +1207,19 @@ static void save_time_bookmarks()
     }
 }
 
-void save_session()
+static void save_session_with_id(const std::string session_id)
 {
     auto_mem<FILE> file(fclose);
-    yajl_gen       handle = nullptr;
-
-    save_time_bookmarks();
+    yajl_gen handle = nullptr;
 
     /* TODO: save the last search query */
+
+    log_info("saving session with id: %s", session_id.c_str());
 
     char view_base_name[256];
     snprintf(view_base_name, sizeof(view_base_name),
              "view-info-%s.ts%ld.ppid%d.json",
-             lnav_data.ld_session_id.c_str(),
+             session_id.c_str(),
              lnav_data.ld_session_time,
              getppid());
 
@@ -1384,12 +1376,27 @@ void save_session()
     }
 }
 
+void save_session()
+{
+    save_time_bookmarks();
+
+    const auto opt_session_id = compute_session_id();
+    opt_session_id | [](auto &session_id) {
+        save_session_with_id(session_id);
+    };
+    for (const auto pair : lnav_data.ld_session_id) {
+        if (opt_session_id && pair.first == opt_session_id.value()) {
+            continue;
+        }
+        save_session_with_id(pair.first);
+    }
+}
+
 void reset_session()
 {
     log_info("reset session: time=%d", lnav_data.ld_session_time);
 
     save_session();
-    scan_sessions();
 
     lnav_data.ld_session_time = time(nullptr);
 

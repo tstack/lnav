@@ -9,8 +9,18 @@ lnav v0.8.6:
        and unpaused by pressing it again.  The bottom status bar will display
        'Paused' in the right corner while paused.
      * CMake is now a supported way to build.
+     * When viewing data from the standard-input, a symbolic name can now be
+       assigned to the view by doing an UPDATE to the filepath column of the
+       lnav_file table.  For example, to assign the name "journald", the
+       following SQL statement can be executed in lnav:
+         ;UPDATE lnav_file SET filepath='journald' WHERE filepath='stdin'
+       The symbolic name will be used when saving and loading session
+       information.  A "rename-stdin" lnav script has also been added as a
+       convenience to perform this operation.
      * The size of the terminal can be accessed in SQL using the $LINES and
        $COLS variables.
+     * The raise_error(msg) SQL function has been added to make it easier to
+       raise an error in an lnav script to stop execution and notify the user.
 
      Interface Changes:
      * Data piped into lnav is no longer dumped to the console after exit.

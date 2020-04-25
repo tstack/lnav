@@ -3,6 +3,7 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 export HOME="./sessions"
+rm -rf "./sessions"
 mkdir -p $HOME
 
 run_test ${lnav_test} -nq \
@@ -71,7 +72,7 @@ EOF
 
 rm -rf ./sessions
 mkdir -p $HOME
-run_test ${lnav_test} -nq \
+run_test ${lnav_test} -nq -d /tmp/lnav.err \
     -c ":hide-fields c_ip" \
     -c ":save-session" \
     ${test_dir}/logfile_access_log.0

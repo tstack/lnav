@@ -9,6 +9,7 @@ RM_V_0 = @echo "  RM      " $@;
 AM_CPPFLAGS = \
 	-Wall \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/fmtlib \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
 

@@ -35,6 +35,7 @@
 #include <future>
 #include <string>
 
+#include "fmt/format.h"
 #include "optional.hpp"
 #include "auto_fd.hh"
 #include "attr_line.hh"
@@ -69,7 +70,14 @@ struct exec_context {
 
         std::pair<std::string, int> source = this->ec_source.top();
 
-        return "error:" + source.first + ":" + std::to_string(source.second) + ":";
+        return fmt::format("{}:{}: error: ", source.first, source.second);
+    }
+
+    template<typename ...Args>
+    Result<std::string, std::string> make_error(
+        fmt::string_view format_str, const Args& ...args) {
+        return Err(this->get_error_prefix() +
+               fmt::vformat(format_str, fmt::make_format_args(args...)));
     }
 
     nonstd::optional<FILE *> get_output() {
@@ -82,6 +90,23 @@ struct exec_context {
         }
 
         return nonstd::nullopt;
+    }
+
+    struct source_guard {
+        source_guard(exec_context &context) : sg_context(context) {
+
+        }
+
+        ~source_guard() {
+            this->sg_context.ec_source.pop();
+        }
+
+        exec_context &sg_context;
+    };
+
+    source_guard enter_source(const std::string path, int line_number) {
+        this->ec_source.emplace(path, line_number);
+        return source_guard(*this);
     }
 
     vis_line_t ec_top_line;
@@ -101,18 +126,23 @@ struct exec_context {
     pipe_callback_t ec_pipe_callback;
 };
 
-std::string execute_command(exec_context &ec, const std::string &cmdline);
+Result<std::string, std::string> execute_command(exec_context &ec, const std::string &cmdline);
 
-std::string execute_sql(exec_context &ec, const std::string &sql, std::string &alt_msg);
-std::string execute_file(exec_context &ec, const std::string &path_and_args, bool multiline = true);
-std::string execute_any(exec_context &ec, const std::string &cmdline);
-void execute_init_commands(exec_context &ec, std::vector<std::pair<std::string, std::string> > &msgs);
+Result<std::string, std::string> execute_sql(exec_context &ec, const std::string &sql, std::string &alt_msg);
+Result<std::string, std::string> execute_file(exec_context &ec, const std::string &path_and_args, bool multiline = true);
+Result<std::string, std::string> execute_any(exec_context &ec, const std::string &cmdline);
+void execute_init_commands(exec_context &ec, std::vector<std::pair<Result<std::string, std::string>, std::string> > &msgs);
 
 int sql_callback(exec_context &ec, sqlite3_stmt *stmt);
 std::future<std::string> pipe_callback(
     exec_context &ec, const std::string &cmdline, auto_fd &fd);
 
+inline Result<std::string, std::string> err_to_ok(const std::string msg) {
+    return Ok(msg);
+}
+
 int sql_progress(const struct log_cursor &lc);
+void sql_progress_finished();
 
 void add_global_vars(exec_context &ec);
 

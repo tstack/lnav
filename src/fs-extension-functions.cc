@@ -136,7 +136,7 @@ string sql_readlink(const char *path)
     struct stat st;
 
     if (lstat(path, &st) == -1) {
-        throw sqlite_func_error("unable to stat path: %s -- %s", path, strerror(errno));
+        throw sqlite_func_error("unable to stat path: {} -- {}", path, strerror(errno));
     }
 
     char buf[st.st_size];
@@ -147,7 +147,7 @@ string sql_readlink(const char *path)
         if (errno == EINVAL) {
             return path;
         }
-        throw sqlite_func_error("unable to read link: %s -- %s", path, strerror(errno));
+        throw sqlite_func_error("unable to read link: {} -- {}", path, strerror(errno));
     }
 
     return string(buf, rc);
@@ -159,7 +159,7 @@ string sql_realpath(const char *path)
     char resolved_path[PATH_MAX];
 
     if (realpath(path, resolved_path) == NULL) {
-        throw sqlite_func_error("Could not get real path for %s -- %s",
+        throw sqlite_func_error("Could not get real path for {} -- {}",
                                 path, strerror(errno));
     }
 

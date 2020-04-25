@@ -132,7 +132,6 @@
 #include <curl/curl.h>
 #endif
 
-#include "papertrail_proc.hh"
 #include "yajlpp/yajlpp.hh"
 #include "readline_callbacks.hh"
 #include "command_executor.hh"
@@ -1675,7 +1674,7 @@ static void looper()
 
                 if (!session_loaded) {
                     load_session();
-                    if (!lnav_data.ld_session_file_names.empty()) {
+                    if (lnav_data.ld_session_save_time) {
                         std::string ago;
 
                         ago = time_ago(lnav_data.ld_session_save_time);
@@ -1685,15 +1684,16 @@ static void looper()
                                         (ANSI_NORM "; press Ctrl-R to reset session"));
                     }
 
-                    vector<pair<string, string> > msgs;
+                    vector<pair<Result<string, string>, string>> cmd_results;
 
-                    execute_init_commands(ec, msgs);
+                    execute_init_commands(ec, cmd_results);
 
-                    if (!msgs.empty()) {
-                        pair<string, string> last_msg = msgs.back();
+                    if (!cmd_results.empty()) {
+                        auto last_cmd_result = cmd_results.back();
 
-                        lnav_data.ld_rl_view->set_value(last_msg.first);
-                        lnav_data.ld_rl_view->set_alt_value(last_msg.second);
+                        lnav_data.ld_rl_view->set_value(
+                            last_cmd_result.first.orElse(err_to_ok).unwrap());
+                        lnav_data.ld_rl_view->set_alt_value(last_cmd_result.second);
                     }
 
                     session_loaded = true;
@@ -2403,7 +2403,8 @@ int main(int argc, char *argv[])
         stdin_reader = make_shared<piper_proc>(
             STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out_fd);
         lnav_data.ld_file_names["stdin"]
-            .with_fd(stdin_out_fd);
+            .with_fd(stdin_out_fd)
+            .with_include_in_session(false);
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
             perror("cannot dup stdout to stdin");
         }
@@ -2457,8 +2458,7 @@ int main(int argc, char *argv[])
             }
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
-                std::vector<pair<string, string> > msgs;
-                std::vector<pair<string, string> >::iterator msg_iter;
+                std::vector<pair<Result<string, string>, string>> cmd_results;
                 textview_curses *log_tc, *text_tc, *tc;
                 bool found_error = false;
 
@@ -2483,21 +2483,19 @@ int main(int argc, char *argv[])
                 }
 
                 log_info("Executing initial commands");
-                execute_init_commands(lnav_data.ld_exec_context, msgs);
+                execute_init_commands(lnav_data.ld_exec_context, cmd_results);
                 wait_for_pipers();
                 lnav_data.ld_curl_looper.process_all();
                 rebuild_indexes();
 
-                for (msg_iter = msgs.begin();
-                     msg_iter != msgs.end();
-                     ++msg_iter) {
-                    if (strncmp("error:", msg_iter->first.c_str(), 6) == 0) {
-                        fprintf(stderr, "%s\n", msg_iter->first.c_str());
+                for (auto &pair : cmd_results) {
+                    if (pair.first.isErr()) {
+                        fprintf(stderr, "%s\n", pair.first.unwrapErr().c_str());
                         found_error = true;
                     }
-                    else if (startswith(msg_iter->first, "info:") &&
+                    else if (startswith(pair.first.unwrap(), "info:") &&
                              lnav_data.ld_flags & LNF_VERBOSE) {
-                        printf("%s\n", msg_iter->first.c_str());
+                        printf("%s\n", pair.first.unwrap().c_str());
                     }
                 }
 
@@ -2577,10 +2575,6 @@ int main(int argc, char *argv[])
                 lnav_data.ld_curl_looper.start();
 
                 init_session();
-
-                log_info("  session_id=%s", lnav_data.ld_session_id.c_str());
-
-                scan_sessions();
 
                 guard_termios gt(STDIN_FILENO);
                 auto_fd::pipe(errpipe);

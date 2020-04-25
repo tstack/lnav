@@ -194,6 +194,15 @@ The following functions can be used to access **lnav**'s internal state:
 * log_top_datetime() - Return the timestamp of the line at the top of the log
   view.
 
+Miscellaneous
+---------------
+
+Miscellaneous functions:
+
+* raise_error(msg) - Raises an error with the given message when executed.
+  This function can be useful to raise errors in **lnav** scripts, for example,
+  when checking arguments.
+
 .. _collators:
 
 Collators

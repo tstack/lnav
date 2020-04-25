@@ -51,6 +51,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "base/result.h"
 #include "auto_fd.hh"
 #include "vt52_curses.hh"
 #include "log_format.hh"
@@ -69,7 +70,7 @@ extern exec_context INIT_EXEC_CONTEXT;
  */
 class readline_context {
 public:
-    typedef std::string (*command_func_t)(exec_context &ec,
+    typedef Result<std::string, std::string> (*command_func_t)(exec_context &ec,
             std::string cmdline, std::vector<std::string> &args);
     typedef std::string (*prompt_func_t)(exec_context &ec,
         const std::string &cmdline);

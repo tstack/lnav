@@ -513,4 +513,17 @@ inline int openp(const filesystem::path &path, int flags, mode_t mode) {
 Result<std::pair<filesystem::path, int>, std::string>
 open_temp_file(const filesystem::path &pattern);
 
+template<typename A>
+struct final_action {   // slightly simplified
+    A act;
+    final_action(A a) :act{a} {}
+    ~final_action() { act(); }
+};
+
+template<typename A>
+final_action<A> finally(A act)   // deduce action type
+{
+    return final_action<A>{act};
+}
+
 #endif

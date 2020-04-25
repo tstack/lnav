@@ -58,7 +58,7 @@ static string timeslice(const char *time_in, nonstd::optional<const char *> slic
     dts.set_base_time(now);
 
     if (!rt.parse(slice_in, strlen(slice_in), pe)) {
-        throw sqlite_func_error("unable to parse time slice value");
+        throw sqlite_func_error("unable to parse time slice value -- {}", slice_in);
     }
 
     if (rt.empty()) {
@@ -73,7 +73,7 @@ static string timeslice(const char *time_in, nonstd::optional<const char *> slic
     struct timeval tv;
 
     if (dts.scan(time_in, strlen(time_in), NULL, &tm, tv) == NULL) {
-        throw sqlite_func_error("unable to parse time value");
+        throw sqlite_func_error("unable to parse time value -- {}", time_in);
     }
 
     int64_t us = tv.tv_sec * 1000000LL + tv.tv_usec, remainder;

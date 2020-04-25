@@ -119,15 +119,15 @@ static string refresh_pt_search()
     return retval;
 }
 
-static string com_adjust_log_time(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_adjust_log_time(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting new time value";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("line-time");
     }
     else if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
-        retval = "error: no log messages";
+        return ec.make_error("no log messages");
     }
     else if (args.size() >= 2) {
         logfile_sub_source &lss = lnav_data.ld_log_source;
@@ -158,7 +158,7 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
         else if (dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time) != NULL) {
             // nothing to do
         } else {
-            return "error: could not parse timestamp";
+            return ec.make_error("could not parse timestamp -- {}", args[1]);
         }
 
         timersub(&new_time, &top_time, &time_diff);
@@ -177,14 +177,16 @@ static string com_adjust_log_time(exec_context &ec, string cmdline, vector<strin
 
             retval = "info: adjusted time";
         }
+    } else {
+        return ec.make_error("expecting new time value");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_unix_time(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_unix_time(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a unix time value";
+    string retval = "error: ";
 
     if (args.empty()) { }
     else if (args.size() >= 2) {
@@ -233,12 +235,14 @@ static string com_unix_time(exec_context &ec, string cmdline, vector<string> &ar
                      u_time);
             retval = string(ftime);
         }
+    } else {
+        return ec.make_error("expecting a unix time value");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_current_time(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_current_time(exec_context &ec, string cmdline, vector<string> &args)
 {
     char      ftime[128];
     struct tm localtm;
@@ -257,12 +261,12 @@ static string com_current_time(exec_context &ec, string cmdline, vector<string> 
              u_time);
     retval = string(ftime);
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_goto(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting line number/percentage, timestamp, or relative time";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("move-time");
@@ -310,7 +314,7 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                                    "to move forward/backward the same amount of time"));
                 }
             } else {
-                retval = "error: relative time values only work in a time-indexed view";
+                return ec.make_error("relative time values only work in a time-indexed view");
             }
         }
         else if (dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, tv) !=
@@ -319,7 +323,7 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
                 dst_vl = vis_line_t(ttt->row_for_time(tv));
             }
             else {
-                retval = "error: time values only work in a time-indexed view";
+                return ec.make_error("time values only work in a time-indexed view");
             }
         }
         else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
@@ -336,6 +340,8 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
             }
 
             dst_vl = vis_line_t(line_number);
+        } else {
+            return ec.make_error("expecting line number/percentage, timestamp, or relative time");
         }
 
         dst_vl | [&ec, tc, &retval] (auto new_top) {
@@ -352,12 +358,12 @@ static string com_goto(exec_context &ec, string cmdline, vector<string> &args)
         };
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_relative_goto(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_relative_goto(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting line number/percentage";
+    string retval = "error: ";
 
     if (args.empty()) {
     }
@@ -383,13 +389,17 @@ static string com_relative_goto(exec_context &ec, string cmdline, vector<string>
 
                 retval = "";
             }
+        } else {
+            return ec.make_error("invalid line number -- {}", args[1]);
         }
+    } else {
+        return ec.make_error("expecting line number/percentage");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_mark(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -403,10 +413,10 @@ static string com_mark(exec_context &ec, string cmdline, vector<string> &args)
         tc->reload_data();
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_goto_mark(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -423,7 +433,7 @@ static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &ar
 
         bookmark_type_t *bt = bookmark_type_t::find_type(type_name);
         if (bt == nullptr) {
-            retval = "error: unknown bookmark type";
+            return ec.make_error("unknown bookmark type");
         }
         else if (!ec.ec_dry_run) {
             if (args[0] == "next-mark") {
@@ -437,10 +447,10 @@ static string com_goto_mark(exec_context &ec, string cmdline, vector<string> &ar
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_goto_location(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_goto_location(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -458,7 +468,7 @@ static string com_goto_location(exec_context &ec, string cmdline, vector<string>
         };
     }
 
-    return retval;
+    return Ok(retval);
 }
 
 static bool csv_needs_quoting(const string &str)
@@ -596,7 +606,7 @@ static void write_line_to(FILE *outfile, attr_line_t &al)
     }
 }
 
-static string com_save_to(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_save_to(exec_context &ec, string cmdline, vector<string> &args)
 {
     FILE *outfile = nullptr, *toclose = nullptr;
     const char *mode    = "";
@@ -606,15 +616,15 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
 
     if (args.empty()) {
         args.emplace_back("filename");
-        return "";
+        return Ok(string());
     }
 
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
-        return "error: " + args[0] + " -- unavailable in secure mode";
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
     if (args.size() < 2) {
-        return "error: expecting file name or '-' to write to the terminal";
+        return ec.make_error("expecting file name or '-' to write to the terminal");
     }
 
     fn = trim(remaining_args(cmdline, args));
@@ -627,10 +637,10 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
     };
 
     if (!lexer.split(split_args, scopes)) {
-        return "error: unable to parse arguments";
+        return ec.make_error("unable to parse arguments");
     }
     if (split_args.size() > 1) {
-        return "error: more than one file name was matched";
+        return ec.make_error("more than one file name was matched");
     }
 
     if (args[0] == "append-to") {
@@ -650,12 +660,12 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         args[0] == "write-json-to" ||
         args[0] == "write-cols-to") {
         if (dls.dls_headers.empty()) {
-            return "error: no query result to write, use ';' to execute a query";
+            return ec.make_error("no query result to write, use ';' to execute a query");
         }
     }
     else if (args[0] != "write-raw-to" && args[0] != "write-screen-to") {
         if (bv.empty()) {
-            return "error: no lines marked to write, use 'm' to mark lines";
+            return ec.make_error("no lines marked to write, use 'm' to mark lines");
         }
     }
 
@@ -692,12 +702,12 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
         closer = pclose;
         if (!outfile) {
             alerter::singleton().chime();
-            return "error: Unable to copy to clipboard.  "
-                   "Make sure xclip or pbcopy is installed.";
+            return ec.make_error("Unable to copy to clipboard.  "
+                                 "Make sure xclip or pbcopy is installed.");
         }
     }
     else if ((outfile = fopen(split_args[0].c_str(), mode)) == nullptr) {
-        return "error: unable to open file -- " + split_args[0];
+        return ec.make_error("unable to open file -- {}", split_args[0]);
     }
     else {
         toclose = outfile;
@@ -893,28 +903,28 @@ static string com_save_to(exec_context &ec, string cmdline, vector<string> &args
     }
     outfile = nullptr;
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_pipe_to(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting command to execute";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("filename");
-        return "";
+        return Ok(string());
     }
 
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
-        return "error: " + args[0] + " -- unavailable in secure mode";
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
     if (args.size() < 2) {
-        return retval;
+        return ec.make_error("expecting command to execute");
     }
 
     if (ec.ec_dry_run) {
-        return "";
+        return Ok(string());
     }
 
     textview_curses *            tc = *lnav_data.ld_view_stack.top();
@@ -936,7 +946,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
 
     switch (child_pid) {
         case -1:
-            return "error: unable to fork child process -- " + string(strerror(errno));
+            return ec.make_error("unable to fork child process -- {}", strerror(errno));
 
         case 0: {
             const char *args[] = {
@@ -1012,14 +1022,14 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                     shared_buffer_ref sbr;
                     lf->read_full_message(lf->message_start(lf->begin() + cl), sbr);
                     if (write(in_pipe.write_end(), sbr.get_data(), sbr.length()) == -1) {
-                        return "warning: Unable to write to pipe -- " + string(strerror(errno));
+                        return ec.make_error("Unable to write to pipe -- {}", strerror(errno));
                     }
                     log_perror(write(in_pipe.write_end(), "\n", 1));
                 }
                 else {
                     tc->grep_value_for_line(tc->get_top(), line);
                     if (write(in_pipe.write_end(), line.c_str(), line.size()) == -1) {
-                        return "warning: Unable to write to pipe -- " + string(strerror(errno));
+                        return ec.make_error("Unable to write to pipe -- {}", strerror(errno));
                     }
                     log_perror(write(in_pipe.write_end(), "\n", 1));
                 }
@@ -1028,7 +1038,7 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
                 for (iter = bv.begin(); iter != bv.end(); iter++) {
                     tc->grep_value_for_line(*iter, line);
                     if (write(in_pipe.write_end(), line.c_str(), line.size()) == -1) {
-                        return "warning: Unable to write to pipe -- " + string(strerror(errno));
+                        return ec.make_error("Unable to write to pipe -- {}", strerror(errno));
                     }
                     log_perror(write(in_pipe.write_end(), "\n", 1));
                 }
@@ -1045,23 +1055,23 @@ static string com_pipe_to(exec_context &ec, string cmdline, vector<string> &args
             break;
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_redirect_to(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_redirect_to(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
         args.emplace_back("filename");
-        return "";
+        return Ok(string());
     }
 
     if (args.size() == 1) {
         if (ec.ec_dry_run) {
-            return "info: redirect will be cleared";
+            return Ok(string("info: redirect will be cleared"));
         }
 
         ec.ec_output_stack.back() = nonstd::nullopt;
-        return "info: cleared redirect";
+        return Ok(string("info: cleared redirect"));
     }
 
     string fn = trim(remaining_args(cmdline, args));
@@ -1073,30 +1083,30 @@ static string com_redirect_to(exec_context &ec, string cmdline, vector<string> &
     };
 
     if (!lexer.split(split_args, scopes)) {
-        return "error: unable to parse arguments";
+        return ec.make_error("unable to parse arguments");
     }
     if (split_args.size() > 1) {
-        return "error: more than one file name was matched";
+        return ec.make_error("more than one file name was matched");
     }
 
     if (ec.ec_dry_run) {
-        return "info: output will be redirected to -- " + split_args[0];
+        return Ok("info: output will be redirected to -- " + split_args[0]);
     }
 
     FILE *file = fopen(split_args[0].c_str(), "w");
 
     if (file == nullptr) {
-        return "error: unable to open file -- " + split_args[0];
+        return ec.make_error("unable to open file -- %s", split_args[0]);
     }
 
     ec.ec_output_stack.back() = file;
 
-    return "info: redirecting output to file -- " + split_args[0];
+    return Ok("info: redirecting output to file -- " + split_args[0]);
 }
 
-static string com_highlight(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_highlight(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting regular expression to highlight";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("filter");
@@ -1110,14 +1120,15 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
 
         args[1] = remaining_args(cmdline, args);
         if (hm.find({highlight_source_t::INTERACTIVE, args[1]}) != hm.end()) {
-            retval = "error: highlight already exists";
+            return ec.make_error("highlight already exists -- {}",
+                args[1]);
         }
         else if ((code = pcre_compile(args[1].c_str(),
                                       PCRE_CASELESS,
                                       &errptr,
                                       &eoff,
                                       NULL)) == NULL) {
-            retval = "error: " + string(errptr);
+            return ec.make_error("{}", errptr);
         }
         else {
             highlighter hl(code.release());
@@ -1148,14 +1159,16 @@ static string com_highlight(exec_context &ec, string cmdline, vector<string> &ar
             }
             tc->reload_data();
         }
+    } else {
+        return ec.make_error("expecting a regular expression to highlight");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_clear_highlight(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_clear_highlight(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting highlight expression to clear";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("highlight");
@@ -1168,7 +1181,7 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
         args[1] = remaining_args(cmdline, args);
         hm_iter = hm.find({highlight_source_t::INTERACTIVE, args[1]});
         if (hm_iter == hm.end()) {
-            retval = "error: highlight does not exist";
+            return ec.make_error("highlight does not exist -- {}", args[1]);
         }
         else if (ec.ec_dry_run) {
             retval = "";
@@ -1184,12 +1197,14 @@ static string com_clear_highlight(exec_context &ec, string cmdline, vector<strin
             }
 
         }
+    } else {
+        return ec.make_error("expecting highlight expression to clear");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_help(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_help(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -1198,26 +1213,27 @@ static string com_help(exec_context &ec, string cmdline, vector<string> &args)
         ensure_view(&lnav_data.ld_views[LNV_HELP]);
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_enable_filter(exec_context &ec, string cmdline, vector<string> &args);
+static Result<string, string> com_enable_filter(exec_context &ec, string cmdline, vector<string> &args);
 
-static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting regular expression to filter";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("filter");
 
-        return "";
+        return Ok(string());
     }
 
     auto tc = *lnav_data.ld_view_stack.top();
     auto tss = tc->get_sub_source();
 
     if (!tss->tss_supports_filtering) {
-        retval = "error: view does not support filtering";
+        return ec.make_error("{} view does not support filtering",
+            lnav_view_strings[tc - lnav_data.ld_views]);
     }
     else if (args.size() > 1) {
         text_sub_source *tss = tc->get_sub_source();
@@ -1228,18 +1244,18 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
 
         args[1] = remaining_args(cmdline, args);
         if (fs.get_filter(args[1]) != NULL) {
-            retval = com_enable_filter(ec, cmdline, args);
+            return com_enable_filter(ec, cmdline, args);
         }
         else if (fs.full()) {
-            retval = "error: filter limit reached, try combining "
-                    "filters with a pipe symbol (e.g. foo|bar)";
+            return ec.make_error("filter limit reached, try combining "
+                                 "filters with a pipe symbol (e.g. foo|bar)");
         }
         else if ((code = pcre_compile(args[1].c_str(),
                                       PCRE_CASELESS,
                                       &errptr,
                                       &eoff,
                                       nullptr)) == NULL) {
-            retval = "error: " + string(errptr);
+            return ec.make_error("{}", errptr);
         }
         else if (ec.ec_dry_run) {
             if (args[0] == "filter-in" && !fs.empty()) {
@@ -1283,14 +1299,16 @@ static string com_filter(exec_context &ec, string cmdline, vector<string> &args)
 
             retval = "info: filter now active";
         }
+    } else {
+        return ec.make_error("expecting a regular expression to filter");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_delete_filter(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_delete_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a filter to delete";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("all-filters");
@@ -1309,16 +1327,18 @@ static string com_delete_filter(exec_context &ec, string cmdline, vector<string>
             tss->text_filters_changed();
         }
         else {
-            retval = "error: unknown filter -- " + args[1];
+            return ec.make_error("unknown filter -- {}", args[1]);
         }
+    } else {
+        return ec.make_error("expecting a filter to delete");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_enable_filter(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_enable_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting disabled filter to enable";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("disabled-filter");
@@ -1332,7 +1352,7 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
         args[1] = remaining_args(cmdline, args);
         lf      = fs.get_filter(args[1]);
         if (lf == NULL) {
-            retval = "error: no such filter -- " + args[1];
+            return ec.make_error("no such filter -- {}", args[1]);
         }
         else if (lf->is_enabled()) {
             retval = "info: filter already enabled";
@@ -1345,14 +1365,16 @@ static string com_enable_filter(exec_context &ec, string cmdline, vector<string>
             tss->text_filters_changed();
             retval = "info: filter enabled";
         }
+    } else {
+        return ec.make_error("expecting disabled filter to enable");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_disable_filter(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_disable_filter(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting enabled filter to disable";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("enabled-filter");
@@ -1366,7 +1388,7 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
         args[1] = remaining_args(cmdline, args);
         lf      = fs.get_filter(args[1]);
         if (lf == nullptr) {
-            retval = "error: no such filter -- " + args[1];
+            return ec.make_error("no such filter -- {}", args[1]);
         }
         else if (!lf->is_enabled()) {
             retval = "info: filter already disabled";
@@ -1379,12 +1401,14 @@ static string com_disable_filter(exec_context &ec, string cmdline, vector<string
             tss->text_filters_changed();
             retval = "info: filter disabled";
         }
+    } else {
+        return ec.make_error("expecting enabled filter to disable");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_enable_word_wrap(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_enable_word_wrap(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -1397,10 +1421,10 @@ static string com_enable_word_wrap(exec_context &ec, string cmdline, vector<stri
         lnav_data.ld_views[LNV_PRETTY].set_word_wrap(true);
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_disable_word_wrap(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_disable_word_wrap(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -1413,21 +1437,21 @@ static string com_disable_word_wrap(exec_context &ec, string cmdline, vector<str
         lnav_data.ld_views[LNV_PRETTY].set_word_wrap(false);
     }
 
-    return retval;
+    return Ok(retval);
 }
 
 static std::set<string> custom_logline_tables;
 
-static string com_create_logline_table(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_create_logline_table(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a table name";
+    string retval;
 
     if (args.empty()) {}
     else if (args.size() == 2) {
         textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
 
         if (log_view.get_inner_height() == 0) {
-            retval = "error: no log data available";
+            return ec.make_error("no log data available");
         }
         else {
             vis_line_t      vl  = log_view.get_top();
@@ -1448,7 +1472,7 @@ static string com_create_logline_table(exec_context &ec, string cmdline, vector<
 
                 delete ldt;
 
-                return "";
+                return Ok(string());
             }
             else {
                 string errmsg;
@@ -1464,29 +1488,31 @@ static string com_create_logline_table(exec_context &ec, string cmdline, vector<
                     retval = "info: created new log table -- " + args[1];
                 } else {
                     delete ldt;
-                    retval = "error: unable to create table -- " + errmsg;
+                    return ec.make_error("unable to create table -- {}", errmsg);
                 }
             }
         }
+    } else {
+        return ec.make_error("expecting a table name");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_delete_logline_table(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_delete_logline_table(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a table name";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("custom-table");
     }
     else if (args.size() == 2) {
         if (custom_logline_tables.find(args[1]) == custom_logline_tables.end()) {
-            return "error: unknown logline table -- " + args[1];
+            return ec.make_error("unknown logline table -- %s", args[1]);
         }
 
         if (ec.ec_dry_run) {
-            return "";
+            return Ok(string());
         }
 
         string rc = lnav_data.ld_vtab_manager->unregister_vtab(
@@ -1501,18 +1527,20 @@ static string com_delete_logline_table(exec_context &ec, string cmdline, vector<
             retval = "info: deleted logline table";
         }
         else {
-            retval = "error: " + rc;
+            return ec.make_error("{}", rc);
         }
+    } else {
+        return ec.make_error("expecting a table name");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
 static std::set<string> custom_search_tables;
 
-static string com_create_search_table(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_create_search_table(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a table name";
+    string retval;
 
     if (args.empty()) {
 
@@ -1536,14 +1564,14 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
                                  &errptr,
                                  &eoff,
                                  NULL)) == NULL) {
-            return "error: " + string(errptr);
+            return ec.make_error("{}", errptr);
         }
 
         try {
             lst = new log_search_table(regex.c_str(),
                                        intern_string::lookup(args[1]));
         } catch (pcrepp::error &e) {
-            return "error: unable to compile regex -- " + regex;
+            return ec.make_error("unable to compile regex -- %s", regex);
         }
 
         if (ec.ec_dry_run) {
@@ -1566,7 +1594,7 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
             lnav_data.ld_preview_source.replace_with(al)
                 .set_text_format(text_format_t::TF_SQL);
 
-            return "";
+            return Ok(string());
         }
 
         string errmsg;
@@ -1583,27 +1611,29 @@ static string com_create_search_table(exec_context &ec, string cmdline, vector<s
         }
         else {
             delete lst;
-            retval = "error: unable to create table -- " + errmsg;
+            return ec.make_error("unable to create table -- {}", errmsg);
         }
+    } else {
+        return ec.make_error("expecting a table name");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_delete_search_table(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_delete_search_table(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a table name";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("search-table");
     }
     else if (args.size() == 2) {
         if (custom_search_tables.find(args[1]) == custom_search_tables.end()) {
-            return "error: unknown search table -- " + args[1];
+            return ec.make_error("unknown search table -- {}", args[1]);
         }
 
         if (ec.ec_dry_run) {
-            return "";
+            return Ok(string());
         }
 
         string rc = lnav_data.ld_vtab_manager->unregister_vtab(
@@ -1618,16 +1648,18 @@ static string com_delete_search_table(exec_context &ec, string cmdline, vector<s
             retval = "info: deleted search table";
         }
         else {
-            retval = "error: " + rc;
+            return ec.make_error("{}", rc);
         }
+    } else {
+        return ec.make_error("expecting a table name");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_session(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_session(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a command to save to the session file";
+    string retval;
 
     if (args.empty()) {}
     else if (ec.ec_dry_run) {
@@ -1642,11 +1674,11 @@ static string com_session(exec_context &ec, string cmdline, vector<string> &args
             args[1] != "filter-out" &&
             args[1] != "enable-filter" &&
             args[1] != "disable-filter") {
-            retval = "error: only the highlight, filter, and word-wrap commands are "
-                     "supported";
+            return ec.make_error(
+                "only the highlight, filter, and word-wrap commands are supported");
         }
         else if (getenv("HOME") == NULL) {
-            retval = "error: the HOME environment variable is not set";
+            return ec.make_error("the HOME environment variable is not set");
         }
         else {
             auto saved_cmd = trim(remaining_args(cmdline, args));
@@ -1657,7 +1689,7 @@ static string com_session(exec_context &ec, string cmdline, vector<string> &args
             ofstream new_session_file(new_file_name.str());
 
             if (!new_session_file) {
-                retval = "error: cannot write to session file";
+                return ec.make_error("cannot write to session file");
             }
             else {
                 bool   added = false;
@@ -1685,24 +1717,26 @@ static string com_session(exec_context &ec, string cmdline, vector<string> &args
                 retval = "info: session file saved";
             }
         }
+    } else {
+        return ec.make_error("expecting a command to save to the session file");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_open(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_open(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting file name to open";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("filename");
-        return "";
+        return Ok(string());
     }
     else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
-        return "error: " + args[0] + " -- unavailable in secure mode";
+        return ec.make_error("%s -- unavailable in secure mode", args[0]);
     }
     else if (args.size() < 2) {
-        return retval;
+        return ec.make_error("expecting file name to open");
     }
 
     vector<string> word_exp;
@@ -1719,7 +1753,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
     };
 
     if (!lexer.split(split_args, scopes)) {
-        return "error: unable to parse arguments";
+        return ec.make_error("unable to parse arguments");
     }
 
     map<string, logfile_open_options> file_names;
@@ -1789,15 +1823,15 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                 retval = "info: watching -- " + fn;
             }
             else if (stat(fn.c_str(), &st) == -1) {
-                retval = ("error: cannot stat file: " + fn + " -- "
-                    + strerror(errno));
+                return ec.make_error("cannot stat file: {} -- {}", fn,
+                                     strerror(errno));
             }
             else if (S_ISFIFO(st.st_mode)) {
                 auto_fd fifo_fd;
 
                 if ((fifo_fd = open(fn.c_str(), O_RDONLY)) == -1) {
-                    retval = "error: cannot open FIFO: " + fn + " -- "
-                        + strerror(errno);
+                    return ec.make_error("cannot open FIFO: {} -- {}", fn,
+                                         strerror(errno));
                 } else if (ec.ec_dry_run) {
                     retval = "";
                 } else {
@@ -1820,7 +1854,7 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                 }
             }
             else if ((abspath = realpath(fn.c_str(), NULL)) == NULL) {
-                retval = "error: cannot find file";
+                return ec.make_error("cannot find file -- {}", fn);
             }
             else if (S_ISDIR(st.st_mode)) {
                 string dir_wild(abspath.in());
@@ -1832,10 +1866,11 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                 retval = "info: watching -- " + dir_wild;
             }
             else if (!S_ISREG(st.st_mode)) {
-                retval = "error: not a regular file or directory";
+                return ec.make_error("not a regular file or directory -- {}",
+                                     fn);
             }
             else if (access(fn.c_str(), R_OK) == -1) {
-                retval = (string("error: cannot read file -- ") +
+                return ec.make_error("error: cannot read file {} -- {}", fn,
                     strerror(errno));
             }
             else {
@@ -1881,12 +1916,12 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
                         .set_value("The following files will be loaded:");
                     lnav_data.ld_preview_source.replace_with(al);
                 } else {
-                    retval = "error: failed to evaluate glob -- " + fn;
+                    return ec.make_error("failed to evaluate glob -- {}", fn);
                 }
             }
             else if ((preview_fd = open(fn.c_str(), O_RDONLY)) == -1) {
-                retval = "error: unable to open file: " + fn + " -- " +
-                         strerror(errno);
+                return ec.make_error("unable to open file: {} -- {}", fn,
+                                     strerror(errno));
             }
             else {
                 line_buffer lb;
@@ -1932,12 +1967,12 @@ static string com_open(exec_context &ec, string cmdline, vector<string> &args)
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_close(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_close(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: close must be run in the log or text file views";
+    string retval;
 
     if (args.empty()) {
 
@@ -1950,7 +1985,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
             textfile_sub_source &tss = lnav_data.ld_text_source;
 
             if (tss.empty()) {
-                retval = "error: no text files are opened";
+                return ec.make_error("no text files are opened");
             }
             else {
                 fn = tss.current_file()->get_filename();
@@ -1963,7 +1998,7 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
         }
         else if (tc == &lnav_data.ld_views[LNV_LOG]) {
             if (tc->get_inner_height() == 0) {
-                retval = "error: no log files loaded";
+                return ec.make_error("no log files loaded");
             }
             else {
                 logfile_sub_source &lss = lnav_data.ld_log_source;
@@ -1974,6 +2009,8 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
                 fn = lf->get_filename();
                 lf->close();
             }
+        } else {
+            return ec.make_error("close must be run in the log or text file views");
         }
         if (!fn.empty()) {
             if (ec.ec_dry_run) {
@@ -1990,24 +2027,24 @@ static string com_close(exec_context &ec, string cmdline, vector<string> &args)
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_comment(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_comment(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting some comment text";
+    string retval;
 
     if (args.empty()) {
-        return "";
+        return Ok(string());
     }
     else if (args.size() > 1) {
         if (ec.ec_dry_run) {
-            return "";
+            return Ok(string());
         }
         textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
-            return "error: The :comment command only works in the log view";
+            return ec.make_error("The :comment command only works in the log view");
         }
         logfile_sub_source &lss = lnav_data.ld_log_source;
         std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
@@ -2021,9 +2058,11 @@ static string com_comment(exec_context &ec, string cmdline, vector<string> &args
         line_meta.bm_comment = args[1];
 
         retval = "info: comment added to line";
+    } else {
+        return ec.make_error("expecting some comment text");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
 static string com_comment_prompt(exec_context &ec, const string &cmdline)
@@ -2045,20 +2084,20 @@ static string com_comment_prompt(exec_context &ec, const string &cmdline)
     return "";
 }
 
-static string com_clear_comment(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_clear_comment(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
     if (args.empty()) {
-        return "";
+        return Ok(string());
     }
     else if (ec.ec_dry_run) {
-        return "";
+        return Ok(string());
     } else {
         textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
-            return "error: The :clear-comment command only works in the log view";
+            return ec.make_error("The :clear-comment command only works in the log view");
         }
         logfile_sub_source &lss = lnav_data.ld_log_source;
         std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
@@ -2078,25 +2117,25 @@ static string com_clear_comment(exec_context &ec, string cmdline, vector<string>
         tc->search_new_data();
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_tag(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_tag(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting one or more tags";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("tag");
-        return "";
+        return Ok(string());
     }
     else if (args.size() > 1) {
         if (ec.ec_dry_run) {
-            return "";
+            return Ok(string());
         }
         textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
-            return "error: The :tag command only works in the log view";
+            return ec.make_error("The :tag command only works in the log view");
         }
         logfile_sub_source &lss = lnav_data.ld_log_source;
         std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
@@ -2115,27 +2154,29 @@ static string com_tag(exec_context &ec, string cmdline, vector<string> &args)
         tc->search_new_data();
 
         retval = "info: tag(s) added to line";
+    } else {
+        return ec.make_error("expecting one or more tags");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_untag(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_untag(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting one or more tags";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("line-tags");
-        return "";
+        return Ok(string());
     }
     else if (args.size() > 1) {
         if (ec.ec_dry_run) {
-            return "";
+            return Ok(string());
         }
         textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
-            return "error: The :untag command only works in the log view";
+            return ec.make_error("The :untag command only works in the log view");
         }
         logfile_sub_source &lss = lnav_data.ld_log_source;
         std::map<content_line_t, bookmark_metadata> &bm = lss.get_user_bookmark_metadata();
@@ -2159,27 +2200,29 @@ static string com_untag(exec_context &ec, string cmdline, vector<string> &args)
         tc->search_new_data();
 
         retval = "info: tag(s) removed from line";
+    } else {
+        return ec.make_error("expecting one or more tags");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_delete_tags(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_delete_tags(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting one or more tags";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("tag");
-        return "";
+        return Ok(string());
     }
     else if (args.size() > 1) {
         if (ec.ec_dry_run) {
-            return "";
+            return Ok(string());
         }
         textview_curses *tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
-            return "error: The :delete-tag command only works in the log view";
+            return ec.make_error("The :delete-tag command only works in the log view");
         }
 
         set<string> &known_tags = bookmark_metadata::KNOWN_TAGS;
@@ -2192,7 +2235,7 @@ static string com_delete_tags(exec_context &ec, string cmdline, vector<string> &
                 tag = "#" + tag;
             }
             if (known_tags.find(tag) == known_tags.end()) {
-                return "error: Unknown tag -- " + tag;
+                return ec.make_error("Unknown tag -- %s", tag);
             }
 
             tags.emplace_back(tag);
@@ -2227,17 +2270,19 @@ static string com_delete_tags(exec_context &ec, string cmdline, vector<string> &
         }
 
         retval = "info: deleted tag(s)";
+    } else {
+        return ec.make_error("expecting one or more tags");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_partition_name(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_partition_name(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting partition name";
+    string retval;
 
     if (args.empty()) {
-        return "";
+        return Ok(string());
     }
     else if (args.size() > 1) {
         if (ec.ec_dry_run) {
@@ -2257,17 +2302,19 @@ static string com_partition_name(exec_context &ec, string cmdline, vector<string
             line_meta.bm_name = args[1];
             retval = "info: name set for partition";
         }
+    } else {
+        return ec.make_error("expecting partition name");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_clear_partition(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_clear_partition(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
     if (args.empty()) {
-        return "";
+        return Ok(string());
     }
     else if (args.size() == 1) {
         textview_curses &tc = lnav_data.ld_views[LNV_LOG];
@@ -2284,7 +2331,7 @@ static string com_clear_partition(exec_context &ec, string cmdline, vector<strin
             part_start = bv.prev(tc.get_top());
         }
         if (part_start == -1) {
-            retval = "error: top line is not in a partition";
+            return ec.make_error("top line is not in a partition");
         }
         else if (!ec.ec_dry_run) {
             content_line_t cl = lss.at(part_start);
@@ -2299,12 +2346,12 @@ static string com_clear_partition(exec_context &ec, string cmdline, vector<strin
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_pt_time(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_pt_time(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a time value";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("move-time");
@@ -2365,30 +2412,33 @@ static string com_pt_time(exec_context &ec, string cmdline, vector<string> &args
                 retval = refresh_pt_search();
             }
         }
+    } else {
+        return ec.make_error("expecting a time value");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_summarize(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_summarize(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
     if (args.empty()) {
         args.emplace_back("colname");
-        return retval;
+        return Ok(retval);
     }
     else if (!setup_logline_table(ec)) {
-        retval = "error: no log data available";
+        return ec.make_error("no log data available");
     }
     else if (args.size() == 1) {
-        retval = "error: no columns specified";
+        return ec.make_error("no columns specified");
     }
     else {
         auto_mem<char, sqlite3_free> query_frag;
         std::vector<string>          other_columns;
         std::vector<string>          num_columns;
         sql_progress_guard progress_guard(sql_progress,
+                                          sql_progress_finished,
                                           ec.ec_source.top().first,
                                           ec.ec_source.top().second);
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -2411,14 +2461,14 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
         if (retcode != SQLITE_OK) {
             const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
-            return "error: " + string(errmsg);
+            return ec.make_error("{}", errmsg);
         }
 
         switch (sqlite3_step(stmt.in())) {
             case SQLITE_OK:
             case SQLITE_DONE:
             {
-                return "error: no data";
+                return ec.make_error("no data");
             }
             break;
             case SQLITE_ROW:
@@ -2428,13 +2478,13 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
                 const char *errmsg;
 
                 errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                return "error: " + string(errmsg);
+                return ec.make_error("{}", errmsg);
             }
             break;
         }
 
         if (ec.ec_dry_run) {
-            return "";
+            return Ok(string());
         }
 
         for (int lpc = 0; lpc < sqlite3_column_count(stmt.in()); lpc++) {
@@ -2534,7 +2584,7 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
         if (retcode != SQLITE_OK) {
             const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
-            retval = "error: " + string(errmsg);
+            return ec.make_error("{}", errmsg);
         }
         else if (stmt == NULL) {
             retval = "";
@@ -2546,24 +2596,21 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
                 retcode = sqlite3_step(stmt.in());
 
                 switch (retcode) {
-                case SQLITE_OK:
-                case SQLITE_DONE:
-                    done = true;
-                    break;
+                    case SQLITE_OK:
+                    case SQLITE_DONE:
+                        done = true;
+                        break;
 
-                case SQLITE_ROW:
-                    ec.ec_sql_callback(ec, stmt.in());
-                    break;
+                    case SQLITE_ROW:
+                        ec.ec_sql_callback(ec, stmt.in());
+                        break;
 
-                default:
-                {
-                    const char *errmsg;
+                    default: {
+                        const char *errmsg;
 
-                    errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                    retval = "error: " + string(errmsg);
-                    done   = true;
-                }
-                break;
+                        errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                        return ec.make_error("{}", errmsg);
+                    }
                 }
             }
 
@@ -2582,16 +2629,16 @@ static string com_summarize(exec_context &ec, string cmdline, vector<string> &ar
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_add_test(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_add_test(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
     if (args.empty()) {}
     else if (args.size() > 1) {
-        retval = "error: not expecting any arguments";
+        return ec.make_error("not expecting any arguments");
     }
     else if (ec.ec_dry_run) {
 
@@ -2626,10 +2673,10 @@ static string com_add_test(exec_context &ec, string cmdline, vector<string> &arg
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_switch_to_view(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_switch_to_view(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -2653,14 +2700,14 @@ static string com_switch_to_view(exec_context &ec, string cmdline, vector<string
         }
 
         if (!found) {
-            retval = "error: invalid view name -- " + args[1];
+            return ec.make_error("invalid view name -- {}", args[1]);
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_zoom_to(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -2710,14 +2757,14 @@ static string com_zoom_to(exec_context &ec, string cmdline, vector<string> &args
         }
 
         if (!found) {
-            retval = "error: invalid zoom level -- " + args[1];
+            return ec.make_error("invalid zoom level -- {}", args[1]);
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_reset_session(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_reset_session(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -2727,24 +2774,23 @@ static string com_reset_session(exec_context &ec, string cmdline, vector<string>
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
 
-    return "";
+    return Ok(string());
 }
 
-static string com_load_session(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_load_session(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
     }
     else if (!ec.ec_dry_run) {
-        scan_sessions();
         load_session();
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
 
-    return "";
+    return Ok(string());
 }
 
-static string com_save_session(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_save_session(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -2753,12 +2799,12 @@ static string com_save_session(exec_context &ec, string cmdline, vector<string> 
         save_session();
     }
 
-    return "";
+    return Ok(string());
 }
 
-static string com_set_min_log_level(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_set_min_log_level(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting log level name";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("levelname");
@@ -2776,19 +2822,21 @@ static string com_set_min_log_level(exec_context &ec, string cmdline, vector<str
 
         retval = ("info: minimum log level is now -- " +
             string(level_names[new_level]));
+    } else {
+        return ec.make_error("expecting a log level name");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_toggle_field(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_toggle_field(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
     if (args.empty()) {
         args.emplace_back("colname");
     } else if (args.size() < 2) {
-        retval = "error: Expecting a log message field name";
+        return ec.make_error("Expecting a log message field name");
     } else {
         textview_curses *tc = *lnav_data.ld_view_stack.top();
 
@@ -2812,11 +2860,11 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
 
                     format = log_format::find_root_format(format_name.get());
                     if (!format) {
-                        return "error: unknown format -- " + format_name.to_string();
+                        return ec.make_error("unknown format -- %s", format_name.to_string());
                     }
                     name = intern_string::lookup(&(args[lpc].c_str()[dot + 1]), args[lpc].length() - dot - 1);
                 } else if (tc->get_inner_height() == 0) {
-                    return "error: no log messages to hide";
+                    return ec.make_error("no log messages to hide");
                 } else {
                     content_line_t cl = lss.at(tc->get_top());
                     std::shared_ptr<logfile> lf = lss.find(cl);
@@ -2853,15 +2901,15 @@ static string com_toggle_field(exec_context &ec, string cmdline, vector<string> 
                                          missing_fields.end(),
                                          ", ");
 
-                retval = "error: unknown field(s) -- " + all_fields;
+                return ec.make_error("unknown field(s) -- {}", all_fields);
             }
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_hide_line(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_hide_line(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -2901,7 +2949,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
             }
         }
         else {
-            retval = "error: hiding lines by time only works in the log view";
+            return ec.make_error("hiding lines by time only works in the log view");
         }
     }
     else if (args.size() >= 2) {
@@ -2935,7 +2983,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
                 }
             }
             else {
-                retval = "error: relative time values only work in the log view";
+                return ec.make_error("relative time values only work in the log view");
             }
         }
         else if (dts.convert_to_timeval(all_args, tv)) {
@@ -2943,7 +2991,7 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
                 tv_set = true;
             }
             else {
-                retval = "error: time values only work in the log view";
+                return ec.make_error("time values only work in the log view");
             }
         }
 
@@ -2965,10 +3013,10 @@ static string com_hide_line(exec_context &ec, string cmdline, vector<string> &ar
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_show_lines(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_show_lines(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "info: showing lines";
 
@@ -2984,10 +3032,10 @@ static string com_show_lines(exec_context &ec, string cmdline, vector<string> &a
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_hide_unmarked(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_hide_unmarked(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "info: hid unmarked lines";
 
@@ -3001,16 +3049,16 @@ static string com_hide_unmarked(exec_context &ec, string cmdline, vector<string>
             tc->get_bookmarks()[&textview_curses::BM_USER];
 
         if (bv.empty()) {
-            retval = "error: no lines have been marked";
+            return ec.make_error("no lines have been marked");
         } else {
             lnav_data.ld_log_source.set_marked_only(true);
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_show_unmarked(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_show_unmarked(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "info: showing unmarked lines";
 
@@ -3020,10 +3068,10 @@ static string com_show_unmarked(exec_context &ec, string cmdline, vector<string>
         lnav_data.ld_log_source.set_marked_only(false);
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_rebuild(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_rebuild(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -3032,10 +3080,10 @@ static string com_rebuild(exec_context &ec, string cmdline, vector<string> &args
         rebuild_indexes();
     }
 
-    return "";
+    return Ok(string());
 }
 
-static string com_shexec(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_shexec(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -3044,10 +3092,10 @@ static string com_shexec(exec_context &ec, string cmdline, vector<string> &args)
         log_perror(system(cmdline.substr(args[0].size()).c_str()));
     }
 
-    return "";
+    return Ok(string());
 }
 
-static string com_poll_now(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_poll_now(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -3056,10 +3104,10 @@ static string com_poll_now(exec_context &ec, string cmdline, vector<string> &arg
         lnav_data.ld_curl_looper.process_all();
     }
 
-    return "";
+    return Ok(string());
 }
 
-static string com_redraw(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_redraw(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -3071,10 +3119,10 @@ static string com_redraw(exec_context &ec, string cmdline, vector<string> &args)
         redrawwin(lnav_data.ld_window);
     }
 
-    return "";
+    return Ok(string());
 }
 
-static string com_echo(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_echo(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval = "error: expecting a message";
 
@@ -3121,12 +3169,12 @@ static string com_echo(exec_context &ec, string cmdline, vector<string> &args)
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_alt_msg(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_alt_msg(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a message";
+    string retval;
 
     if (args.empty()) {
 
@@ -3150,12 +3198,12 @@ static string com_alt_msg(exec_context &ec, string cmdline, vector<string> &args
         retval = "";
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_eval(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a command or query to evaluate";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("*");
@@ -3170,12 +3218,12 @@ static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
             &ec.ec_local_vars.top(),
             &ec.ec_global_vars,
         })) {
-            return "error: invalid arguments";
+            return ec.make_error("invalid arguments");
         }
         log_debug("Expanded command to evaluate: %s", expanded_cmd.c_str());
 
         if (expanded_cmd.empty()) {
-            return "error: empty result after evaluation";
+            return ec.make_error("empty result after evaluation");
         }
 
         if (ec.ec_dry_run) {
@@ -3186,34 +3234,35 @@ static string com_eval(exec_context &ec, string cmdline, vector<string> &args)
 
             lnav_data.ld_preview_source.replace_with(al);
 
-            return "";
+            return Ok(string());
         }
 
         string alt_msg;
         switch (expanded_cmd[0]) {
             case ':':
-                retval = execute_command(ec, expanded_cmd.substr(1));
-                break;
+                return execute_command(ec, expanded_cmd.substr(1));
             case ';':
-                retval = execute_sql(ec, expanded_cmd.substr(1), alt_msg);
-                break;
+                return execute_sql(ec, expanded_cmd.substr(1), alt_msg);
             case '|':
                 retval = "info: executed file -- " + expanded_cmd.substr(1) +
-                        " -- " + execute_file(ec, expanded_cmd.substr(1));
+                        " -- " + execute_file(ec, expanded_cmd.substr(1))
+                        .orElse(err_to_ok).unwrap();
                 break;
             default:
-                retval = "error: expecting argument to start with ':', ';', "
-                         "or '|' to signify a command, SQL query, or script to execute";
-                break;
+                return ec.make_error(
+                    "expecting argument to start with ':', ';', "
+                    "or '|' to signify a command, SQL query, or script to execute");
         }
+    } else {
+        return ec.make_error("expecting a command or query to evaluate");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_config(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_config(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a configuration option to read or write";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("config-option");
@@ -3311,7 +3360,7 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
                     changed = true;
                 }
                 else {
-                    retval = "error: unhandled type";
+                    return ec.make_error("unhandled type");
                 }
 
                 if (changed) {
@@ -3325,8 +3374,8 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
 
                     if (!errors.empty()) {
                         lnav_config = rollback_lnav_config;
-                        retval = "error:" + errors[0];
                         reload_config(errors);
+                        return Err("error: " +errors[0]);
                     } else if (!ec.ec_dry_run) {
                         retval = "info: changed config option -- " + option;
                         rollback_lnav_config = lnav_config;
@@ -3334,14 +3383,16 @@ static string com_config(exec_context &ec, string cmdline, vector<string> &args)
                 }
             }
         } else {
-            retval = "error: unknown configuration option -- " + option;
+            return ec.make_error("unknown configuration option -- {}", option);
         }
+    } else {
+        return ec.make_error("expecting a configuration option to read or write");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_save_config(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_save_config(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
 
@@ -3351,15 +3402,18 @@ static string com_save_config(exec_context &ec, string cmdline, vector<string> &
         retval = save_config();
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_reset_config(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_reset_config(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a configuration option to reset";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("config-option");
+    }
+    else if (args.size() == 1) {
+        return ec.make_error("expecting a configuration option to reset");
     }
     else {
         yajlpp_parse_context ypc("input", lnav_config_handlers);
@@ -3385,11 +3439,11 @@ static string com_reset_config(exec_context &ec, string cmdline, vector<string> 
             }
         }
         else {
-            retval = "error: unknown configuration option -- " + option;
+            return ec.make_error("unknown configuration option -- {}", option);
         }
     }
 
-    return retval;
+    return Ok(retval);
 }
 
 class log_spectro_value_source : public spectrogram_value_source {
@@ -3683,9 +3737,9 @@ public:
     string dsvs_error_msg;
 };
 
-static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_spectrogram(exec_context &ec, string cmdline, vector<string> &args)
 {
-    string retval = "error: expecting a message field name";
+    string retval;
 
     if (args.empty()) {
         args.emplace_back("numeric-colname");
@@ -3710,7 +3764,7 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
                 new db_spectro_value_source(colname));
 
             if (!dsvs->dsvs_error_msg.empty()) {
-                retval = "error: " + dsvs->dsvs_error_msg;
+                return ec.make_error("{}", dsvs->dsvs_error_msg);
             }
             else {
                 ss.ss_value_source = dsvs.release();
@@ -3723,7 +3777,7 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
                 new log_spectro_value_source(intern_string::lookup(colname)));
 
             if (!lsvs->lsvs_found) {
-                retval = "error: unknown numeric message field -- " + colname;
+                return ec.make_error("unknown numeric message field -- {}", colname);
             }
             else {
                 ss.ss_value_source = lsvs.release();
@@ -3741,12 +3795,14 @@ static string com_spectrogram(exec_context &ec, string cmdline, vector<string> &
 
             retval = "info: visualizing field -- " + colname;
         }
+    } else {
+        return ec.make_error("expecting a message field name");
     }
 
-    return retval;
+    return Ok(retval);
 }
 
-static string com_quit(exec_context &ec, string cmdline, vector<string> &args)
+static Result<string, string> com_quit(exec_context &ec, string cmdline, vector<string> &args)
 {
     if (args.empty()) {
 
@@ -3754,7 +3810,7 @@ static string com_quit(exec_context &ec, string cmdline, vector<string> &args)
     else if (!ec.ec_dry_run) {
         lnav_data.ld_looping = false;
     }
-    return "";
+    return Ok(string());
 }
 
 readline_context::command_t STD_COMMANDS[] = {

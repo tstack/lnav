@@ -38,6 +38,7 @@
 #include "base/lnav_log.hh"
 #include "sql_util.hh"
 #include "file_vtab.hh"
+#include "session_data.hh"
 #include "vtab_module.hh"
 
 using namespace std;
@@ -128,7 +129,7 @@ CREATE TABLE lnav_file (
                    sqlite3_int64 &rowid,
                    int64_t device,
                    int64_t inode,
-                   const char *path,
+                   std::string path,
                    const char *format,
                    int64_t lines,
                    int64_t time_offset) {
@@ -139,6 +140,29 @@ CREATE TABLE lnav_file (
         };
 
         lf->adjust_content_time(0, tv, true);
+
+        if (path != lf->get_filename()) {
+            if (lf->is_valid_filename()) {
+                throw sqlite_func_error(
+                    "real file paths cannot be updated, only symbolic ones");
+            }
+
+            auto iter = lnav_data.ld_file_names.find(lf->get_filename());
+
+            if (iter != lnav_data.ld_file_names.end()) {
+                auto loo = iter->second;
+
+                lnav_data.ld_file_names.erase(iter);
+
+                loo.loo_include_in_session = true;
+                lnav_data.ld_file_names[path] = loo;
+                lf->set_filename(path);
+
+                init_session();
+                load_session();
+            }
+        }
+
 
         return SQLITE_OK;
     };

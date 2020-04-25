@@ -36,6 +36,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <exception>
 
 #include "sqlite3.h"
 
@@ -56,10 +57,15 @@ static std::string sql_log_top_datetime()
     return buffer;
 }
 
+static int64_t sql_error(const std::string str)
+{
+    throw sqlite_func_error("{}", str);
+}
+
 int state_extension_functions(struct FuncDef **basic_funcs,
                               struct FuncDefAgg **agg_funcs)
 {
-    static struct FuncDef datetime_funcs[] = {
+    static struct FuncDef state_funcs[] = {
         sqlite_func_adapter<decltype(&sql_log_top_line), sql_log_top_line>::builder(
             help_text("log_top_line",
                       "Return the line number at the top of the log view.")
@@ -72,10 +78,17 @@ int state_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
         ),
 
+        sqlite_func_adapter<decltype(&sql_error), sql_error>::builder(
+            help_text("raise_error",
+                      "Raises an error with the given message when executed")
+                .sql_function()
+                .with_parameter({"msg", "The error message"})
+        ).with_flags(SQLITE_UTF8),
+
         { NULL }
     };
 
-    *basic_funcs = datetime_funcs;
+    *basic_funcs = state_funcs;
 
     return SQLITE_OK;
 }

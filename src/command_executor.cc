@@ -59,7 +59,7 @@ int sql_progress(const struct log_cursor &lc)
     size_t total = lnav_data.ld_log_source.text_line_count();
     off_t  off   = lc.lc_curr_line;
 
-    if (lnav_data.ld_window == NULL) {
+    if (lnav_data.ld_window == nullptr) {
         return 0;
     }
 
@@ -78,33 +78,44 @@ int sql_progress(const struct log_cursor &lc)
     return 0;
 }
 
-string execute_from_file(exec_context &ec, const filesystem::path &path, int line_number, char mode, const string &cmdline);
+void sql_progress_finished()
+{
+    if (lnav_data.ld_window == nullptr) {
+        return;
+    }
 
-string execute_command(exec_context &ec, const string &cmdline)
+    lnav_data.ld_bottom_source.update_loading(0, 0);
+    lnav_data.ld_top_source.update_time();
+    lnav_data.ld_status[LNS_TOP].do_update();
+    lnav_data.ld_status[LNS_BOTTOM].do_update();
+    lnav_data.ld_views[LNV_DB].redo_search();
+}
+
+Result<string, string> execute_from_file(exec_context &ec, const filesystem::path &path, int line_number, char mode, const string &cmdline);
+
+Result<string, string> execute_command(exec_context &ec, const string &cmdline)
 {
     vector<string> args;
-    string         msg;
 
     log_info("Executing: %s", cmdline.c_str());
 
     split_ws(cmdline, args);
 
-    if (args.size() > 0) {
+    if (!args.empty()) {
         readline_context::command_map_t::iterator iter;
 
-        if ((iter = lnav_commands.find(args[0])) ==
-            lnav_commands.end()) {
-            msg = ec.get_error_prefix() + "unknown command - " + args[0];
+        if ((iter = lnav_commands.find(args[0])) == lnav_commands.end()) {
+            return ec.make_error("unknown command - {}", args[0]);
         }
         else {
-            msg = iter->second->c_func(ec, cmdline, args);
+            return iter->second->c_func(ec, cmdline, args);
         }
     }
 
-    return msg;
+    return ec.make_error("no command to execute");
 }
 
-string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
+Result<string, string> execute_sql(exec_context &ec, const string &sql, string &alt_msg)
 {
     db_label_source &dls = lnav_data.ld_db_row_source;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -123,7 +134,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
         ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
 
         lnav_data.ld_mode = LNM_PAGING;
-        return "";
+        return Ok(string());
     }
     else if (stmt_str == ".msgformats") {
         stmt_str = MSG_FORMAT_STMT;
@@ -133,6 +144,7 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
 
     pair<string, int> source = ec.ec_source.top();
     sql_progress_guard progress_guard(sql_progress,
+                                      sql_progress_finished,
                                       source.first,
                                       source.second);
     gettimeofday(&start_tv, NULL);
@@ -144,12 +156,12 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
     if (retcode != SQLITE_OK) {
         const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
-        retval = ec.get_error_prefix() + string(errmsg);
         alt_msg = "";
+        return ec.make_error("{}", errmsg);
     }
     else if (stmt == NULL) {
-        retval = "";
         alt_msg = "";
+        return ec.make_error("No statement given");
     }
     else {
         bool done = false;
@@ -253,24 +265,23 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
             retcode = sqlite3_step(stmt.in());
 
             switch (retcode) {
-            case SQLITE_OK:
-            case SQLITE_DONE:
-                done = true;
-                break;
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    done = true;
+                    break;
 
-            case SQLITE_ROW:
-                ec.ec_sql_callback(ec, stmt.in());
-                break;
+                case SQLITE_ROW:
+                    ec.ec_sql_callback(ec, stmt.in());
+                    break;
 
-            default: {
-                const char *errmsg;
+                default: {
+                    const char *errmsg;
 
-                log_error("sqlite3_step error code: %d", retcode);
-                errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                retval = ec.get_error_prefix() + string(errmsg);
-                done = true;
-            }
-                break;
+                    log_error("sqlite3_step error code: %d", retcode);
+                    errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                    return ec.make_error("{}", errmsg);
+                    break;
+                }
             }
         }
 
@@ -371,16 +382,10 @@ string execute_sql(exec_context &ec, const string &sql, string &alt_msg)
 #endif
     }
 
-    if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
-        lnav_data.ld_bottom_source.update_loading(0, 0);
-        lnav_data.ld_status[LNS_BOTTOM].do_update();
-        lnav_data.ld_views[LNV_DB].redo_search();
-    }
-
-    return retval;
+    return Ok(retval);
 }
 
-static string execute_file_contents(exec_context &ec, const filesystem::path &path, bool multiline)
+static Result<string, string> execute_file_contents(exec_context &ec, const filesystem::path &path, bool multiline)
 {
     static filesystem::path stdin_path("-");
     static filesystem::path dev_stdin_path("/dev/stdin");
@@ -390,12 +395,12 @@ static string execute_file_contents(exec_context &ec, const filesystem::path &pa
 
     if (path == stdin_path || path == dev_stdin_path) {
         if (isatty(STDIN_FILENO)) {
-            return "error: stdin has already been consumed";
+            return ec.make_error("stdin has already been consumed");
         }
         file = stdin;
     }
     else if ((file = fopen(path.str().c_str(), "r")) == nullptr) {
-        return ec.get_error_prefix() + "unable to open file";
+        return ec.make_error("unable to open file");
     }
 
     int    line_number = 0, starting_line_number = 0;
@@ -423,7 +428,7 @@ static string execute_file_contents(exec_context &ec, const filesystem::path &pa
             case ';':
             case '|':
                 if (mode) {
-                    retval = execute_from_file(ec, path, starting_line_number, mode, trim(cmdline));
+                    retval = TRY(execute_from_file(ec, path, starting_line_number, mode, trim(cmdline)));
                 }
 
                 starting_line_number = line_number;
@@ -435,7 +440,7 @@ static string execute_file_contents(exec_context &ec, const filesystem::path &pa
                     cmdline += line;
                 }
                 else {
-                    retval = execute_from_file(ec, path, line_number, ':', line);
+                    retval = TRY(execute_from_file(ec, path, line_number, ':', line));
                 }
                 break;
         }
@@ -443,7 +448,7 @@ static string execute_file_contents(exec_context &ec, const filesystem::path &pa
     }
 
     if (mode) {
-        retval = execute_from_file(ec, path, starting_line_number, mode, trim(cmdline));
+        retval = TRY(execute_from_file(ec, path, starting_line_number, mode, trim(cmdline)));
     }
 
     if (file == stdin) {
@@ -456,113 +461,110 @@ static string execute_file_contents(exec_context &ec, const filesystem::path &pa
     ec.ec_output_stack.pop_back();
     ec.ec_path_stack.pop_back();
 
-    return retval;
+    return Ok(retval);
 }
 
-string execute_file(exec_context &ec, const string &path_and_args, bool multiline)
+Result<string, string> execute_file(exec_context &ec, const string &path_and_args, bool multiline)
 {
     map<string, vector<script_metadata> > scripts;
     map<string, vector<script_metadata> >::iterator iter;
     vector<string> split_args;
-    string msg, retval;
+    string retval, msg;
     shlex lexer(path_and_args);
 
     log_info("Executing file: %s", path_and_args.c_str());
 
     if (!lexer.split(split_args, ec.ec_local_vars.top())) {
-        retval = ec.get_error_prefix() + "unable to parse path";
+        return ec.make_error("unable to parse path");
     }
-    else if (split_args.empty()) {
-        retval = ec.get_error_prefix() + "no script specified";
+    if (split_args.empty()) {
+        return ec.make_error("no script specified");
     }
-    else {
-        ec.ec_local_vars.push({});
 
-        auto script_name = split_args[0];
-        map<string, string> &vars = ec.ec_local_vars.top();
-        char env_arg_name[32];
-        string star, result, open_error = "file not found";
+    ec.ec_local_vars.push({});
 
-        add_ansi_vars(vars);
+    auto script_name = split_args[0];
+    map<string, string> &vars = ec.ec_local_vars.top();
+    char env_arg_name[32];
+    string star, open_error = "file not found";
 
-        snprintf(env_arg_name, sizeof(env_arg_name), "%d", (int) split_args.size() - 1);
+    add_ansi_vars(vars);
 
-        vars["#"] = env_arg_name;
-        for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
-            snprintf(env_arg_name, sizeof(env_arg_name), "%lu", lpc);
-            vars[env_arg_name] = split_args[lpc];
+    snprintf(env_arg_name, sizeof(env_arg_name), "%d",
+             (int) split_args.size() - 1);
+
+    vars["#"] = env_arg_name;
+    for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
+        snprintf(env_arg_name, sizeof(env_arg_name), "%lu", lpc);
+        vars[env_arg_name] = split_args[lpc];
+    }
+    for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
+        if (lpc > 1) {
+            star.append(" ");
         }
-        for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
-            if (lpc > 1) {
-                star.append(" ");
-            }
-            star.append(split_args[lpc]);
-        }
-        vars["__all__"] = star;
+        star.append(split_args[lpc]);
+    }
+    vars["__all__"] = star;
 
-        vector<script_metadata> paths_to_exec;
-        map<string, const char *>::iterator internal_iter;
+    vector<script_metadata> paths_to_exec;
+    map<string, const char *>::iterator internal_iter;
 
-        find_format_scripts(lnav_data.ld_config_paths, scripts);
-        if ((iter = scripts.find(script_name)) != scripts.end()) {
-            paths_to_exec = iter->second;
+    find_format_scripts(lnav_data.ld_config_paths, scripts);
+    if ((iter = scripts.find(script_name)) != scripts.end()) {
+        paths_to_exec = iter->second;
+    }
+    if (script_name == "-" || script_name == "/dev/stdin") {
+        paths_to_exec.push_back({script_name});
+    } else if (access(script_name.c_str(), R_OK) == 0) {
+        struct script_metadata meta;
+
+        meta.sm_path = script_name;
+        extract_metadata_from_file(meta);
+        paths_to_exec.push_back(meta);
+    } else if (errno != ENOENT) {
+        open_error = strerror(errno);
+    } else {
+        auto script_path = filesystem::path(script_name);
+
+        if (!script_path.is_absolute()) {
+            script_path = ec.ec_path_stack.back() / script_path;
         }
-        if (script_name == "-" || script_name == "/dev/stdin") {
-            paths_to_exec.push_back({script_name});
-        }
-        else if (access(script_name.c_str(), R_OK) == 0) {
+
+        if (script_path.is_file()) {
             struct script_metadata meta;
 
-            meta.sm_path = script_name;
+            meta.sm_path = script_path;
             extract_metadata_from_file(meta);
             paths_to_exec.push_back(meta);
-        }
-        else if (errno != ENOENT) {
+        } else if (errno != ENOENT) {
             open_error = strerror(errno);
         }
-        else {
-            auto script_path = filesystem::path(script_name);
-
-            if (!script_path.is_absolute()) {
-                script_path = ec.ec_path_stack.back() / script_path;
-            }
-
-            if (script_path.is_file()) {
-                struct script_metadata meta;
-
-                meta.sm_path = script_path;
-                extract_metadata_from_file(meta);
-                paths_to_exec.push_back(meta);
-            }
-            else if (errno != ENOENT) {
-                open_error = strerror(errno);
-            }
-        }
-
-        if (!paths_to_exec.empty()) {
-            for (auto &path_iter : paths_to_exec) {
-                result = execute_file_contents(ec, path_iter.sm_path, multiline);
-            }
-            retval = result;
-        }
-        else {
-            retval = ec.get_error_prefix()
-                + "unknown script -- " + script_name + " -- " + open_error;
-        }
-        ec.ec_local_vars.pop();
     }
 
-    return retval;
+    if (!paths_to_exec.empty()) {
+        for (auto &path_iter : paths_to_exec) {
+            retval = TRY(
+                execute_file_contents(ec, path_iter.sm_path, multiline));
+        }
+    }
+    ec.ec_local_vars.pop();
+
+    if (paths_to_exec.empty()) {
+        return ec.make_error("unknown script -- {} -- {}",
+                             script_name, open_error);
+    }
+
+    return Ok(retval);
 }
 
-string execute_from_file(exec_context &ec, const filesystem::path &path, int line_number, char mode, const string &cmdline)
+Result<string, string> execute_from_file(exec_context &ec, const filesystem::path &path, int line_number, char mode, const string &cmdline)
 {
     string retval, alt_msg;
+    auto _sg = ec.enter_source(path.str(), line_number);
 
-    ec.ec_source.emplace(path.str(), line_number);
     switch (mode) {
         case ':':
-            retval = execute_command(ec, cmdline);
+            retval = TRY(execute_command(ec, cmdline));
             break;
         case '/':
             lnav_data.ld_view_stack.top() | [cmdline] (auto tc) {
@@ -571,36 +573,35 @@ string execute_from_file(exec_context &ec, const filesystem::path &path, int lin
             break;
         case ';':
             setup_logline_table(ec);
-            retval = execute_sql(ec, cmdline, alt_msg);
+            retval = TRY(execute_sql(ec, cmdline, alt_msg));
             break;
         case '|':
-            retval = execute_file(ec, cmdline);
+            retval = TRY(execute_file(ec, cmdline));
             break;
         default:
-            retval = execute_command(ec, cmdline);
+            retval = TRY(execute_command(ec, cmdline));
             break;
     }
-
-    rescan_files();
-    rebuild_indexes();
 
     log_info("%s:%d:execute result -- %s",
              path.str().c_str(),
              line_number,
              retval.c_str());
 
-    ec.ec_source.pop();
-
-    return retval;
+    return Ok(retval);
 }
 
-string execute_any(exec_context &ec, const string &cmdline_with_mode)
+Result<string, string> execute_any(exec_context &ec, const string &cmdline_with_mode)
 {
     string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
+    auto _cleanup = finally([] {
+        rescan_files();
+        rebuild_indexes();
+    });
 
     switch (cmdline_with_mode[0]) {
         case ':':
-            retval = execute_command(ec, cmdline);
+            retval = TRY(execute_command(ec, cmdline));
             break;
         case '/':
             lnav_data.ld_view_stack.top() | [cmdline] (auto tc) {
@@ -609,24 +610,21 @@ string execute_any(exec_context &ec, const string &cmdline_with_mode)
             break;
         case ';':
             setup_logline_table(ec);
-            retval = execute_sql(ec, cmdline, alt_msg);
+            retval = TRY(execute_sql(ec, cmdline, alt_msg));
             break;
         case '|': {
-            retval = execute_file(ec, cmdline);
+            retval = TRY(execute_file(ec, cmdline));
             break;
         }
         default:
-            retval = execute_command(ec, cmdline);
+            retval = TRY(execute_command(ec, cmdline));
             break;
     }
 
-    rescan_files();
-    rebuild_indexes();
-
-    return retval;
+    return Ok(retval);
 }
 
-void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs)
+void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>, string> > &msgs)
 {
     if (lnav_data.ld_cmd_init_done) {
         return;
@@ -637,14 +635,14 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
 
     log_info("Executing initial commands");
     for (auto &cmd : lnav_data.ld_commands) {
-        string msg, alt_msg;
+        string alt_msg;
 
         wait_for_children();
 
         ec.ec_source.emplace("command-option", option_index++);
         switch (cmd.at(0)) {
         case ':':
-            msg = execute_command(ec, cmd.substr(1));
+            msgs.emplace_back(execute_command(ec, cmd.substr(1)), alt_msg);
             break;
         case '/':
             lnav_data.ld_view_stack.top() | [cmd] (auto tc) {
@@ -653,14 +651,12 @@ void execute_init_commands(exec_context &ec, vector<pair<string, string> > &msgs
             break;
         case ';':
             setup_logline_table(ec);
-            msg = execute_sql(ec, cmd.substr(1), alt_msg);
+            msgs.emplace_back(execute_sql(ec, cmd.substr(1), alt_msg), alt_msg);
             break;
         case '|':
-            msg = execute_file(ec, cmd.substr(1));
+            msgs.emplace_back(execute_file(ec, cmd.substr(1)), alt_msg);
             break;
         }
-
-        msgs.emplace_back(msg, alt_msg);
 
         rescan_files();
         rebuild_indexes();
@@ -794,6 +790,7 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
                  cmdline.c_str());
         lnav_data.ld_file_names[desc]
             .with_fd(pp->get_fd())
+            .with_include_in_session(false)
             .with_detect_format(false);
         lnav_data.ld_files_to_front.emplace_back(desc, 0);
         if (lnav_data.ld_rl_view != nullptr) {

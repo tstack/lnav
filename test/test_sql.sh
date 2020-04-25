@@ -3,6 +3,39 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_file SET filepath='foo' WHERE endswith(filepath, '_log.0')" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "able to change a real file's path?" <<EOF
+command-option:1: error: real file paths cannot be updated, only symbolic ones
+EOF
+
+run_test ${lnav_test} -n \
+    -c "|rename-stdin" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "rename-stdin works without an argument?" <<EOF
+../test/.lnav/formats/default/rename-stdin.lnav:6: error: expecting the new name for stdin as the first argument
+EOF
+
+run_test ${lnav_test} -n \
+    -c "|rename-stdin foo" \
+    ${test_dir}/logfile_access_log.0
+
+check_error_output "rename-stdin when there is no stdin file?" <<EOF
+../test/.lnav/formats/default/rename-stdin.lnav:7: error: no data was redirected to lnav's standard-input
+EOF
+
+echo 'Hello, World!' | run_test ${lnav_test} -n \
+    -c "|rename-stdin foo" \
+    -c ";SELECT filepath FROM lnav_file"
+
+check_output "rename of stdin did not work?" <<EOF
+filepath
+foo
+EOF
+
+run_test ${lnav_test} -n \
     -c ";SELECT basename(filepath),format,lines,time_offset FROM lnav_file LIMIT 2" \
     -c ":write-csv-to -" \
     ${test_dir}/logfile_access_log.0 \
@@ -31,7 +64,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an empty pattern?" <<EOF
-error:command-option:1:Expecting an non-empty pattern for column number 4
+command-option:1: error: Expecting an non-empty pattern for column number 4
 EOF
 
 run_test ${lnav_test} -n \
@@ -39,7 +72,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an empty pattern?" <<EOF
-error:command-option:1:Expecting an lnav view name for column number 0
+command-option:1: error: Expecting an lnav view name for column number 0
 EOF
 
 run_test ${lnav_test} -n \
@@ -47,7 +80,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "inserted filter with an invalid filter type?" <<EOF
-error:command-option:1:Expecting an filter type for column number 3
+command-option:1: error: Expecting an filter type for column number 3
 EOF
 
 run_test ${lnav_test} -n \
@@ -216,7 +249,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked without log_time?" <<EOF
-error: no 'log_time' column found or not in ascending order, unable to create spectrogram
+command-option:2: error: no 'log_time' column found or not in ascending order, unable to create spectrogram
 EOF
 
 run_test ${lnav_test} -n \
@@ -225,7 +258,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked with bad column?" <<EOF
-error: unknown column -- sc_byes
+command-option:2: error: unknown column -- sc_byes
 EOF
 
 run_test ${lnav_test} -n \
@@ -234,7 +267,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked with non-numeric column?" <<EOF
-error: column is not numeric -- c_ip
+command-option:2: error: column is not numeric -- c_ip
 EOF
 
 run_test ${lnav_test} -n \
@@ -243,7 +276,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "spectrogram worked with unordered log_time?" <<EOF
-error: no 'log_time' column found or not in ascending order, unable to create spectrogram
+command-option:2: error: no 'log_time' column found or not in ascending order, unable to create spectrogram
 EOF
 
 cp ${srcdir}/logfile_syslog_with_mixed_times.0 logfile_syslog_with_mixed_times.0
@@ -485,7 +518,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-error:command-option:1:A non-empty name and value must be provided when inserting an environment variable
+command-option:1: error: A non-empty name and value must be provided when inserting an environment variable
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -497,7 +530,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-error:command-option:1:A non-empty name and value must be provided when inserting an environment variable
+command-option:1: error: A non-empty name and value must be provided when inserting an environment variable
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -509,7 +542,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-error:command-option:1:A non-empty name and value must be provided when inserting an environment variable
+command-option:1: error: A non-empty name and value must be provided when inserting an environment variable
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -521,7 +554,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-error:command-option:1:Environment variable names cannot contain an equals sign (=)
+command-option:1: error: Environment variable names cannot contain an equals sign (=)
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -533,7 +566,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "insert into environ table works" <<EOF
-error:command-option:1:An environment variable with the name 'SQL_ENV_VALUE' already exists
+command-option:1: error: An environment variable with the name 'SQL_ENV_VALUE' already exists
 EOF
 
 check_output "insert into environ table works" <<EOF
@@ -656,7 +689,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "updating lnav_views.top_time with a bad time works?" <<EOF
-error:command-option:1:Invalid time: bad-time
+command-option:1: error: Invalid time: bad-time
 EOF
 
 
@@ -721,7 +754,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "errors are not reported" <<EOF
-error:command-option:1:no such table: nonexistent_table
+command-option:1: error: no such table: nonexistent_table
 EOF
 
 check_output "errors are not reported" <<EOF
@@ -733,7 +766,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "errors are not reported" <<EOF
-error:command-option:1:attempt to write a readonly database
+command-option:1: error: attempt to write a readonly database
 EOF
 
 check_output "errors are not reported" <<EOF
@@ -945,7 +978,7 @@ run_test ${lnav_test} -n \
     empty
 
 check_error_output "LNAVSECURE mode bypassed" <<EOF
-error:command-option:1:not authorized
+command-option:1: error: not authorized
 EOF
 
 run_test ${lnav_test} -n \
@@ -953,7 +986,7 @@ run_test ${lnav_test} -n \
     empty
 
 check_error_output "LNAVSECURE mode bypassed (':' adorned)" <<EOF
-error:command-option:1:not authorized
+command-option:1: error: not authorized
 EOF
 
 run_test ${lnav_test} -n \
@@ -961,7 +994,7 @@ run_test ${lnav_test} -n \
     empty
 
 check_error_output "LNAVSECURE mode bypassed (filepath)" <<EOF
-error:command-option:1:not authorized
+command-option:1: error: not authorized
 EOF
 
 run_test ${lnav_test} -n \
@@ -969,7 +1002,7 @@ run_test ${lnav_test} -n \
     empty
 
 check_error_output "LNAVSECURE mode bypassed (URI)" <<EOF
-error:command-option:1:not authorized
+command-option:1: error: not authorized
 EOF
 
 unset LNAVSECURE
@@ -1065,7 +1098,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 check_error_output "able to delete unknown table?" <<EOF
-error: unknown search table -- search_test1
+command-option:1: error: unknown search table -- search_test1
 EOF
 
 run_test ${lnav_test} -n \
@@ -1074,7 +1107,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 check_error_output "able to delete logline table?" <<EOF
-error: unknown search table -- search_test1
+command-option:2: error: unknown search table -- search_test1
 EOF
 
 run_test ${lnav_test} -n \
@@ -1082,7 +1115,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 check_error_output "able to create table with a bad regex?" <<EOF
-error: missing )
+command-option:1: error: missing )
 EOF
 
 NULL_GRAPH_SELECT_1=$(cat <<EOF

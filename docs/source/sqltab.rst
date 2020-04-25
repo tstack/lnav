@@ -55,7 +55,9 @@ following columns are available in this table:
 
   :device: The device the file is stored on.
   :inode: The inode for the file on the device.
-  :filepath: The absolute path to the file.
+  :filepath: If this is a real file, it will be the absolute path.  Otherwise,
+    it is a symbolic name.  If it is a symbolic name, it can be UPDATEd so that
+    this file will be considered when saving and loading session information.
   :format: The log file format for the file.
   :lines: The number of lines in the file.
   :time_offset: The millisecond offset for timestamps.  This column can be

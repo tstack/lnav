@@ -62,4 +62,14 @@ auto operator|(T&& t, F f) -> decltype(detail::void_or_nullopt<decltype(f(std::f
     else return detail::void_or_nullopt<return_type>();
 }
 
+template< class T >
+optional_constexpr nonstd::optional< typename std::decay<T>::type > make_optional_from_nullable( T && v )
+{
+    if (v != nullptr) {
+        return nonstd::optional<typename std::decay<T>::type>(
+            std::forward<T>(v));
+    }
+    return nonstd::nullopt;
+}
+
 #endif

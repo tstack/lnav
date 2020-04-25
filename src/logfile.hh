@@ -90,8 +90,15 @@ struct logfile_open_options {
         return *this;
     };
 
+    logfile_open_options &with_include_in_session(bool val) {
+        this->loo_include_in_session = val;
+
+        return *this;
+    };
+
     auto_fd loo_fd;
     bool loo_detect_format;
+    bool loo_include_in_session{true};
 };
 
 struct logfile_activity {

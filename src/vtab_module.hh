@@ -42,6 +42,7 @@
 #include "auto_mem.hh"
 #include "yajl/api/yajl_gen.h"
 #include "mapbox/variant.hpp"
+#include "fmt/format.h"
 
 #include "sqlite-extension-func.hh"
 
@@ -56,22 +57,17 @@ struct from_sqlite_conversion_error : std::exception {
 };
 
 struct sqlite_func_error : std::exception {
-    sqlite_func_error(const char *fmt, ...) {
-        char buffer[1024];
-        va_list args;
-
-        va_start(args, fmt);
-        vsnprintf(buffer, sizeof(buffer), fmt, args);
-        va_end(args);
-
-        this->e_what = buffer;
-    };
+    template<typename ...Args>
+    sqlite_func_error(
+        fmt::string_view format_str, const Args& ...args) :
+        e_what(fmt::vformat(format_str, fmt::make_format_args(args...))) {
+    }
 
     const char *what() const noexcept {
         return this->e_what.c_str();
     }
 
-    std::string e_what;
+    const std::string e_what;
 };
 
 template<typename T>
@@ -129,8 +125,8 @@ struct from_sqlite<const char *> {
 };
 
 template<>
-struct from_sqlite<const std::string &> {
-    inline const std::string operator()(int argc, sqlite3_value **val, int argi) {
+struct from_sqlite<std::string> {
+    inline std::string operator()(int argc, sqlite3_value **val, int argi) {
         return std::string((const char *) sqlite3_value_text(val[argi]));
     }
 };

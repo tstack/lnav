@@ -48,7 +48,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "hide-fields with unknown" <<EOF
-error: unknown field(s) -- foobar
+command-option:1: error: unknown field(s) -- foobar
 EOF
 
 run_test ${lnav_test} -n \
@@ -83,7 +83,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "config bad option" <<EOF
-error: unknown configuration option -- /bad/option
+command-option:1: error: unknown configuration option -- /bad/option
 EOF
 
 check_output "config bad option" <<EOF
@@ -149,7 +149,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "include nonexistent" <<EOF
-error:command-option:1:unknown script -- nonexistent.lnav -- file not found
+command-option:1: error: unknown script -- nonexistent.lnav -- file not found
 EOF
 
 
@@ -231,7 +231,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "goto invalid is working" <<EOF
-error: expecting line number/percentage, timestamp, or relative time
+command-option:1: error: expecting line number/percentage, timestamp, or relative time
 EOF
 
 check_output "goto invalid is not working" <<EOF
@@ -276,7 +276,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "goto invalid is not working" <<EOF
-error: unknown bookmark type
+command-option:2: error: unknown bookmark type
 EOF
 
 check_output "invalid mark-type is working" <<EOF
@@ -426,7 +426,7 @@ run_test eval ${lnav_test} -d /tmp/lnav.err -n \
     $TOO_MANY_FILTERS \
     ${test_dir}/logfile_filter.0
 check_error_output "able to create too many filters?" <<EOF
-error: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
+command-option:33: error: filter limit reached, try combining filters with a pipe symbol (e.g. foo|bar)
 EOF
 
 
@@ -444,7 +444,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "double close works" <<EOF
-error: no log files loaded
+command-option:2: error: no log files loaded
 EOF
 
 check_output "double close is working" <<EOF
@@ -469,7 +469,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "open non-existent is working" <<EOF
-error: cannot stat file: /non-existent -- No such file or directory
+command-option:2: error: cannot stat file: /non-existent -- No such file or directory
 EOF
 
 check_output "open non-existent is not working" <<EOF
@@ -584,7 +584,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "We managed to bypass LNAVSECURE mode" <<EOF
-error: write-json-to -- unavailable in secure mode
+command-option:2: error: write-json-to -- unavailable in secure mode
 EOF
 unset LNAVSECURE
 
@@ -783,7 +783,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "clear-highlight did not report an error?" <<EOF
-error: highlight does not exist
+command-option:1: error: highlight does not exist -- foobar
 EOF
 
 run_test ${lnav_test} -n \
@@ -878,7 +878,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "bad zoom level is not rejected?" <<EOF
-error: invalid zoom level -- bad
+command-option:1: error: invalid zoom level -- bad
 EOF
 
 

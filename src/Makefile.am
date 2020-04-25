@@ -37,6 +37,7 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/dhclient-summary.lnav \
     $(srcdir)/scripts/lnav-pop-view.lnav \
     $(srcdir)/scripts/partition-by-boot.lnav \
+    $(srcdir)/scripts/rename-stdin.lnav \
     $(srcdir)/scripts/search-for.lnav \
     $()
 
@@ -165,6 +166,7 @@ dist_noinst_DATA = \
 	scripts/dump-pid.sh \
 	scripts/lnav-pop-view.lnav \
 	scripts/partition-by-boot.lnav \
+	scripts/rename-stdin.lnav \
 	scripts/search-for.lnav \
 	themes/default-theme.json \
 	themes/eldar.json \

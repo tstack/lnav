@@ -140,7 +140,6 @@ bool handle_keyseq(const char *keyseq)
         vector<logline_value> values;
         exec_context ec(&values, key_sql_callback, pipe_callback);
         auto &var_stack = ec.ec_local_vars;
-        string result;
 
         ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
         var_stack.push(map<string, string>());
@@ -149,8 +148,8 @@ bool handle_keyseq(const char *keyseq)
         const auto &kc = iter->second;
 
         log_debug("executing key sequence x%02x: %s", keyseq, kc.kc_cmd.c_str());
-        result = execute_any(ec, kc.kc_cmd);
-        lnav_data.ld_rl_view->set_value(result);
+        auto result = execute_any(ec, kc.kc_cmd);
+        lnav_data.ld_rl_view->set_value(result.orElse(err_to_ok).unwrap());
 
         if (!kc.kc_alt_msg.empty()) {
             shlex lexer(kc.kc_alt_msg);

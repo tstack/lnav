@@ -1,0 +1,12 @@
+#
+# @synopsis: rename-stdin <name>
+# @description: Give a symbolic name to the standard-input file
+#
+
+;SELECT raise_error('expecting the new name for stdin as the first argument') WHERE $1 IS NULL
+;SELECT raise_error('no data was redirected to lnav''s standard-input')
+        WHERE (SELECT count(1) FROM lnav_file WHERE filepath='stdin') = 0
+
+;UPDATE lnav_file SET filepath=$1 WHERE filepath='stdin'
+
+;SELECT 'info: renamed stdin to ' || $1 AS msg

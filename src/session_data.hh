@@ -32,10 +32,9 @@
 #ifndef _session_data_hh
 #define _session_data_hh
 
-void init_session(void);
-void load_session(void);
-void save_session(void);
-void reset_session(void);
-void scan_sessions(void);
+void init_session();
+void load_session();
+void save_session();
+void reset_session();
 
 #endif

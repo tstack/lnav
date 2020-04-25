@@ -122,7 +122,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "updating log_tags is not working?" <<EOF
-error:command-option:1:command-option:line 1
+command-option:1: error: command-option:line 1
   unexpected JSON value
   accepted paths --
     # <tag> -- A tag for the log line
@@ -134,7 +134,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_error_output "updating log_tags is not working?" <<EOF
-error:command-option:1:Value does not match pattern: ^#[^\s]+$
+command-option:1: error: Value does not match pattern: ^#[^\s]+$
 EOF
 
 run_test ${lnav_test} -n \

@@ -47,6 +47,11 @@ struct FuncDef {
     uint8_t needCollSeq;
     void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
     help_text fd_help;
+
+    FuncDef &with_flags(int flags) {
+        this->eTextRep = flags;
+        return *this;
+    };
 };
 
 struct FuncDefAgg {

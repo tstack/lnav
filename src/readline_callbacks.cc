@@ -294,7 +294,8 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
         lnav_data.ld_preview_status_source.get_description().clear();
         lnav_data.ld_preview_source.clear();
-        string result = execute_command(lnav_data.ld_exec_context, rc->get_value());
+        string result = execute_command(lnav_data.ld_exec_context, rc->get_value())
+            .orElse(err_to_ok).unwrap();
 
         if (result.empty()) {
             lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
@@ -548,7 +549,8 @@ void rl_callback(void *dummy, readline_curses *rc)
 
     case LNM_COMMAND:
         rc->set_alt_value("");
-        rc->set_value(execute_command(ec, rc->get_value()));
+        rc->set_value(execute_command(ec, rc->get_value())
+                          .orElse(err_to_ok).unwrap());
         break;
 
     case LNM_SEARCH:
@@ -577,7 +579,8 @@ void rl_callback(void *dummy, readline_curses *rc)
         break;
 
     case LNM_SQL: {
-        string result = execute_sql(ec, rc->get_value(), alt_msg);
+        string result = execute_sql(ec, rc->get_value(), alt_msg)
+            .orElse(err_to_ok).unwrap();
         db_label_source &dls = lnav_data.ld_db_row_source;
 
         if (!result.empty()) {
@@ -608,7 +611,8 @@ void rl_callback(void *dummy, readline_curses *rc)
             string path_and_args = rc->get_value();
 
             ec.ec_output_stack.back() = tmpout.in();
-            string result = execute_file(ec, path_and_args);
+            string result = execute_file(ec, path_and_args)
+                .orElse(err_to_ok).unwrap();
             string::size_type lf_index = result.find('\n');
             if (lf_index != string::npos) {
                 result = result.substr(0, lf_index);
@@ -628,6 +632,7 @@ void rl_callback(void *dummy, readline_curses *rc)
                          timestamp);
                 lnav_data.ld_file_names[desc]
                     .with_fd(fd_copy)
+                    .with_include_in_session(false)
                     .with_detect_format(false);
                 lnav_data.ld_files_to_front.emplace_back(desc, 0);
 
