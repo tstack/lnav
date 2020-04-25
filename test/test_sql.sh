@@ -12,7 +12,7 @@ EOF
 
 run_test ${lnav_test} -n \
     -c "|rename-stdin" \
-    ${test_dir}/logfile_access_log.0
+    ${test_dir}/logfile_access_log.0 < /dev/null
 
 check_error_output "rename-stdin works without an argument?" <<EOF
 ../test/.lnav/formats/default/rename-stdin.lnav:6: error: expecting the new name for stdin as the first argument

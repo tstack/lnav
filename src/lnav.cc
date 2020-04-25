@@ -2321,6 +2321,7 @@ int main(int argc, char *argv[])
             auto lf = ld_file;
 
             lf->rebuild_index();
+            lf->rebuild_index();
             log_format *fmt = lf->get_format();
             if (fmt == NULL) {
                 fprintf(stderr, "error:%s:no format found for file\n",
