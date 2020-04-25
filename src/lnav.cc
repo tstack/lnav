@@ -2319,9 +2319,12 @@ int main(int argc, char *argv[])
         rescan_files(true);
         for (auto &ld_file : lnav_data.ld_files) {
             auto lf = ld_file;
+            logfile::rebuild_result_t rebuild_result;
 
-            lf->rebuild_index();
-            lf->rebuild_index();
+            do {
+                rebuild_result = lf->rebuild_index();
+            } while (rebuild_result == logfile::RR_NEW_LINES ||
+                     rebuild_result == logfile::RR_NEW_ORDER);
             log_format *fmt = lf->get_format();
             if (fmt == NULL) {
                 fprintf(stderr, "error:%s:no format found for file\n",
