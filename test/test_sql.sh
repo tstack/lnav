@@ -20,7 +20,7 @@ EOF
 
 run_test ${lnav_test} -n \
     -c "|rename-stdin foo" \
-    ${test_dir}/logfile_access_log.0
+    ${test_dir}/logfile_access_log.0 < /dev/null
 
 check_error_output "rename-stdin when there is no stdin file?" <<EOF
 ../test/.lnav/formats/default/rename-stdin.lnav:7: error: no data was redirected to lnav's standard-input
