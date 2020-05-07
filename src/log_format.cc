@@ -395,15 +395,13 @@ static int json_array_end(void *ctx)
     return 1;
 }
 
-static struct json_path_handler json_log_handlers[] = {
-    json_path_handler("^/\\w+$").
-    add_cb(read_json_null).
-    add_cb(read_json_bool).
-    add_cb(read_json_int).
-    add_cb(read_json_double).
-    add_cb(read_json_field),
-
-    json_path_handler()
+static struct json_path_container json_log_handlers = {
+    json_path_handler(pcrepp("\\w+"))
+        .add_cb(read_json_null)
+        .add_cb(read_json_bool)
+        .add_cb(read_json_int)
+        .add_cb(read_json_double)
+        .add_cb(read_json_field)
 };
 
 static int rewrite_json_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len);
@@ -460,15 +458,13 @@ static int rewrite_json_double(yajlpp_parse_context *ypc, double val)
     return 1;
 }
 
-static struct json_path_handler json_log_rewrite_handlers[] = {
-    json_path_handler("^/\\w+$")
+static struct json_path_container json_log_rewrite_handlers = {
+    json_path_handler(pcrepp("\\w+"))
         .add_cb(rewrite_json_null)
         .add_cb(rewrite_json_bool)
         .add_cb(rewrite_json_int)
         .add_cb(rewrite_json_double)
-        .add_cb(rewrite_json_field),
-
-    json_path_handler()
+        .add_cb(rewrite_json_field)
 };
 
 bool external_log_format::scan_for_partial(shared_buffer_ref &sbr, size_t &len_out)
@@ -513,7 +509,7 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
         const auto *line_data = (const unsigned char *) sbr.get_data();
 
         yajl_reset(handle);
-        ypc.set_static_handler(json_log_handlers[0]);
+        ypc.set_static_handler(json_log_handlers.jpc_children[0]);
         ypc.ypc_userdata = &jlu;
         ypc.ypc_ignore_unused = true;
         ypc.ypc_alt_callbacks.yajl_start_array = json_array_start;
@@ -841,6 +837,7 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
                                 this);
         } else {
             values.emplace_back(vd.vd_name);
+            values.back().lv_format = this;
         }
         values.back().lv_hidden = vd.vd_hidden || vd.vd_user_hidden;
     }
@@ -1025,7 +1022,7 @@ void external_log_format::get_subline(const logline &ll, shared_buffer_ref &sbr,
         this->jlf_line_attrs.clear();
 
         yajl_reset(handle);
-        ypc.set_static_handler(json_log_rewrite_handlers[0]);
+        ypc.set_static_handler(json_log_rewrite_handlers.jpc_children[0]);
         ypc.ypc_userdata = &jlu;
         ypc.ypc_ignore_unused = true;
         ypc.ypc_alt_callbacks.yajl_start_array = json_array_start;

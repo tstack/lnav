@@ -12,7 +12,7 @@ at.  The log parser built into **lnav** is able to extract data as described by
 :ref:`log-formats` as well as discovering data in plain text messages. This data
 can then be queried and processed using the SQLite front-end that is also
 incorporated into **lnav**.  As an example, the following Syslog message from
-:cmd:`sudo` can be processed to extract several key/value pairs::
+:code:`sudo` can be processed to extract several key/value pairs::
 
     Jul 31 11:42:26 Example-MacBook-Pro.local sudo[87024]:  testuser : TTY=ttys004 ; PWD=/Users/testuser/github/lbuild ; USER=root ; COMMAND=/usr/bin/make install
 
@@ -72,9 +72,11 @@ analysis easier, **lnav** includes many extra functions for processing strings,
 paths, and IP addresses.  See :ref:`sql-ext` for more information.
 
 As an example, the simplest query to perform initially would be a "select all",
-like so::
+like so:
 
-    select * from logline
+.. code-block:: sql
+
+    SELECT * FROM logline
 
 When this query is run against the second example log message given above, the
 following results are received::
@@ -113,7 +115,9 @@ format is "Registering new address record for <IP> on <symbol>", which
 corresponds to the parts of the message that were not recognized as data.
 
 More sophisticated queries can be done, of course.  For example, to find out the
-frequency of IP addresses mentioned in these messages, you can run::
+frequency of IP addresses mentioned in these messages, you can run:
+
+.. code-block:: sql
 
     SELECT col_0,count(*) FROM logline GROUP BY col_0
 
@@ -134,7 +138,7 @@ Since this type of query is fairly common, **lnav** includes a "summarize"
 command that will compute the frequencies of identifiers as well as min, max,
 average, median, and standard deviation for number columns.  In this case, you
 can run the following to compute the frequencies and return an ordered set of
-results.
+results::
 
     :summarize col_0
 

@@ -44,4 +44,8 @@ void format_example_text_for_term(
     const help_example_to_attr_line_fun_t eval,
     int width, attr_line_t &out);
 
+void format_help_text_for_rst(const help_text &ht,
+                              const help_example_to_attr_line_fun_t eval,
+                              FILE *rst_file);
+
 #endif //LNAV_HELP_TEXT_FORMATTER_HH

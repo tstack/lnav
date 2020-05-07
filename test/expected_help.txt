@@ -1006,7 +1006,8 @@ Parameters
   type-name   The name of the type to convert to.
 
 Example
-#1 ;SELECT CAST(1.23 AS INTEGER)
+#1 To cast the value 1.23 as an integer:
+   ;SELECT CAST(1.23 AS INTEGER)
    
 
 
@@ -1017,7 +1018,8 @@ Parameter
 See Also
   avg(), max(), min(), round(), sum(), total()
 Example
-#1 ;SELECT abs(-1)
+#1 To get the absolute value of -1:
+   ;SELECT abs(-1)
    
 
 
@@ -1028,10 +1030,12 @@ Parameter
 See Also
   abs(), max(), min(), round(), sum(), total()
 Examples
-#1 ;SELECT avg(ex_duration) FROM lnav_example_log
+#1 To get the average of the column 'ex_duration' from the table 'lnav_example_log':
+   ;SELECT avg(ex_duration) FROM lnav_example_log
    
 
-#2 ;SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY ex_procname
+#2 To get the average of the column 'ex_duration' from the table 'lnav_example_log' when grouped by 'ex_procname':
+   ;SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY ex_procname
    
 
 
@@ -1042,25 +1046,28 @@ Parameter
 See Also
   dirname(), joinpath(), readlink(), realpath()
 Examples
-#1 ;SELECT basename('foobar')
+#1 To get the base of a plain file name:
+   ;SELECT basename('foobar')
    
 
-#2 ;SELECT basename('foo/bar')
+#2 To get the base of a path:
+   ;SELECT basename('foo/bar')
    
 
-#3 ;SELECT basename('foo/bar/')
+#3 To get the base of a directory:
+   ;SELECT basename('foo/bar/')
    
 
-#4 ;SELECT basename('')
+#4 To get the base of an empty string:
+   ;SELECT basename('')
    
 
-#5 ;SELECT basename('foo\bar')
+#5 To get the base of a Windows path:
+   ;SELECT basename('foo\bar')
    
 
-#6 ;SELECT basename('foobar')
-   
-
-#7 ;SELECT basename('/')
+#6 To get the base of the root directory:
+   ;SELECT basename('/')
    
 
 
@@ -1078,9 +1085,10 @@ See Also
   endswith(), extract(), group_concat(), group_spooky_hash(), instr(), leftstr(), 
   length(), lower(), ltrim(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Example
-#1 ;SELECT char(0x48, 0x49)
+#1 To get a string with the code points 0x48 and 0x49:
+   ;SELECT char(0x48, 0x49)
    
 
 
@@ -1092,7 +1100,8 @@ Parameters
   Y   A value to check for NULL-ness
 
 Example
-#1 ;SELECT coalesce(null, 0, null)
+#1 To get the first non-null value from three parameters:
+   ;SELECT coalesce(null, 0, null)
    
 
 
@@ -1103,10 +1112,12 @@ Parameter
   X   The value to count.
 
 Examples
-#1 ;SELECT count(*) FROM lnav_example_log
+#1 To get the count of the non-NULL rows of 'lnav_example_log':
+   ;SELECT count(*) FROM lnav_example_log
    
 
-#2 ;SELECT count(log_part) FROM lnav_example_log
+#2 To get the count of the non-NULL values of 'log_part' from 'lnav_example_log':
+   ;SELECT count(log_part) FROM lnav_example_log
    
 
 
@@ -1119,13 +1130,16 @@ Parameters
 See Also
   datetime(), julianday(), strftime(), time(), timediff(), timeslice()
 Examples
-#1 ;SELECT date('2017-01-02T03:04:05')
+#1 To get the date portion of the timestamp '2017-01-02T03:04:05':
+   ;SELECT date('2017-01-02T03:04:05')
    
 
-#2 ;SELECT date('2017-01-02T03:04:05', '+1 day')
+#2 To get the date portion of the timestamp '2017-01-02T03:04:05' plus one day:
+   ;SELECT date('2017-01-02T03:04:05', '+1 day')
    
 
-#3 ;SELECT date(1491341842, 'unixepoch')
+#3 To get the date portion of the epoch timestamp 1491341842:
+   ;SELECT date(1491341842, 'unixepoch')
    
 
 
@@ -1138,13 +1152,16 @@ Parameters
 See Also
   date(), julianday(), strftime(), time(), timediff(), timeslice()
 Examples
-#1 ;SELECT datetime('2017-01-02T03:04:05')
+#1 To get the date and time portion of the timestamp '2017-01-02T03:04:05':
+   ;SELECT datetime('2017-01-02T03:04:05')
    
 
-#2 ;SELECT datetime('2017-01-02T03:04:05', '+1 minute')
+#2 To get the date and time portion of the timestamp '2017-01-02T03:04:05' plus one minute:
+   ;SELECT datetime('2017-01-02T03:04:05', '+1 minute')
    
 
-#3 ;SELECT datetime(1491341842, 'unixepoch')
+#3 To get the date and time portion of the epoch timestamp 1491341842:
+   ;SELECT datetime(1491341842, 'unixepoch')
    
 
 
@@ -1155,19 +1172,24 @@ Parameter
 See Also
   basename(), joinpath(), readlink(), realpath()
 Examples
-#1 ;SELECT dirname('foo/bar')
+#1 To get the directory of a relative file path:
+   ;SELECT dirname('foo/bar')
    
 
-#2 ;SELECT dirname('/foo/bar')
+#2 To get the directory of an absolute file path:
+   ;SELECT dirname('/foo/bar')
    
 
-#3 ;SELECT dirname('/bar')
+#3 To get the directory of a file in the root directory:
+   ;SELECT dirname('/bar')
    
 
-#4 ;SELECT dirname('foo\bar')
+#4 To get the directory of a Windows path:
+   ;SELECT dirname('foo\bar')
    
 
-#5 ;SELECT dirname('')
+#5 To get the directory of an empty path:
+   ;SELECT dirname('')
    
 
 
@@ -1180,12 +1202,14 @@ See Also
   char(), extract(), group_concat(), group_spooky_hash(), instr(), leftstr(), 
   length(), lower(), ltrim(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT endswith('notbad.jpg', '.jpg')
+#1 To test if the string 'notbad.jpg' ends with '.jpg':
+   ;SELECT endswith('notbad.jpg', '.jpg')
    
 
-#2 ;SELECT endswith('notbad.png', '.jpg')
+#2 To test if the string 'notbad.png' starts with '.jpg':
+   ;SELECT endswith('notbad.png', '.jpg')
    
 
 
@@ -1197,23 +1221,26 @@ See Also
   char(), endswith(), group_concat(), group_spooky_hash(), instr(), leftstr(), 
   length(), lower(), ltrim(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT extract('foo=1 bar=2 name="Rolo Tomassi"')
+#1 To extract key/value pairs from a string:
+   ;SELECT extract('foo=1 bar=2 name="Rolo Tomassi"')
    
 
-#2 ;SELECT extract('1.0 abc 2.0')
+#2 To extract columnar data from a string:
+   ;SELECT extract('1.0 abc 2.0')
    
 
 
 Synopsis
-  gethostbyaddr(hostname) -- Get the IP address for the given hostname
+  gethostbyaddr(hostname) -- Get the hostname for the given IP address
 Parameter
-  hostname   The DNS hostname to lookup.
+  hostname   The IP address to lookup.
 See Also
   gethostbyname()
 Example
-#1 ;SELECT gethostbyaddr('127.0.0.1')
+#1 To get the hostname for the IP '127.0.0.1':
+   ;SELECT gethostbyaddr('127.0.0.1')
    
 
 
@@ -1224,7 +1251,8 @@ Parameter
 See Also
   gethostbyaddr()
 Example
-#1 ;SELECT gethostbyname('localhost')
+#1 To get the IP address for 'localhost':
+   ;SELECT gethostbyname('localhost')
    
 
 
@@ -1235,7 +1263,8 @@ Parameters
   str       The string to match
 
 Example
-#1 ;SELECT glob('a*', 'abc')
+#1 To test if the string 'abc' matches the glob 'a*':
+   ;SELECT glob('a*', 'abc')
    
 
 
@@ -1249,15 +1278,18 @@ See Also
   char(), endswith(), extract(), group_spooky_hash(), instr(), leftstr(), 
   length(), lower(), ltrim(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT group_concat(ex_procname) FROM lnav_example_log
+#1 To concatenate the values of the column 'ex_procname' from the table 'lnav_example_log':
+   ;SELECT group_concat(ex_procname) FROM lnav_example_log
    
 
-#2 ;SELECT group_concat(ex_procname, ', ') FROM lnav_example_log
+#2 To join the values of the column 'ex_procname' using the string ', ':
+   ;SELECT group_concat(ex_procname, ', ') FROM lnav_example_log
    
 
-#3 ;SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log
+#3 To concatenate the distinct values of the column 'ex_procname' from the table 'lnav_example_log':
+   ;SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log
    
 
 
@@ -1270,12 +1302,10 @@ See Also
   char(), endswith(), extract(), group_concat(), instr(), leftstr(), length(), 
   lower(), ltrim(), printf(), regexp_capture(), regexp_match(), regexp_replace(), 
   replace(), replicate(), reverse(), rightstr(), rtrim(), spooky_hash(), 
-  startswith(), substr(), trim(), upper()
-Examples
-#1 ;SELECT spooky_hash('abc', '123')
-   
-
-#2 ;SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))
+  startswith(), substr(), trim(), unicode(), upper()
+Example
+#1 To produce a hash of all of the values of 'column1':
+   ;SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))
    
 
 
@@ -1286,7 +1316,8 @@ Parameter
   X   The blob to convert to hexadecimal
 
 Example
-#1 ;SELECT hex('abc')
+#1 To get the hexadecimal rendering of the string 'abc':
+   ;SELECT hex('abc')
    
 
 
@@ -1298,7 +1329,8 @@ Parameters
   Y   A value to check for NULL-ness
 
 Example
-#1 ;SELECT ifnull(null, 0)
+#1 To get the first non-null value between null and zero:
+   ;SELECT ifnull(null, 0)
    
 
 
@@ -1313,9 +1345,10 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), leftstr(), 
   length(), lower(), ltrim(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Example
-#1 ;SELECT instr('abc', 'b')
+#1 To test get the position of 'b' in the string 'abc':
+   ;SELECT instr('abc', 'b')
    
 
 
@@ -1329,13 +1362,16 @@ Parameters
 See Also
   json_contains()
 Examples
-#1 ;SELECT jget('1', '')
+#1 To get the root of a JSON value:
+   ;SELECT jget('1', '')
    
 
-#2 ;SELECT jget('{ "a": 1, "b": 2 }', '/b')
+#2 To get the property named 'b' in a JSON object:
+   ;SELECT jget('{ "a": 1, "b": 2 }', '/b')
    
 
-#3 ;SELECT jget(null, '/msg', 'Hello')
+#3 To get the 'msg' property and return a default if it does not exist:
+   ;SELECT jget(null, '/msg', 'Hello')
    
 
 
@@ -1348,16 +1384,20 @@ Parameter
 See Also
   basename(), dirname(), readlink(), realpath()
 Examples
-#1 ;SELECT joinpath('foo', 'bar')
+#1 To join a directory and file name into a relative path:
+   ;SELECT joinpath('foo', 'bar')
    
 
-#2 ;SELECT joinpath('', 'foo', 'bar')
+#2 To join an empty component with other names into a relative path:
+   ;SELECT joinpath('', 'foo', 'bar')
    
 
-#3 ;SELECT joinpath('/', 'foo', 'bar')
+#3 To create an absolute path with two path components:
+   ;SELECT joinpath('/', 'foo', 'bar')
    
 
-#4 ;SELECT joinpath('/', 'foo', '/bar')
+#4 To create an absolute path from a path component that starts with a forward slash:
+   ;SELECT joinpath('/', 'foo', '/bar')
    
 
 
@@ -1369,10 +1409,12 @@ Parameters
 See Also
   jget()
 Examples
-#1 ;SELECT json_contains('[1, 2, 3]', 4)
+#1 To test if a JSON array contains the number 4:
+   ;SELECT json_contains('[1, 2, 3]', 4)
    
 
-#2 ;SELECT json_contains('["abc", "def"]', 'def')
+#2 To test if a JSON array contains the string 'def':
+   ;SELECT json_contains('["abc", "def"]', 'def')
    
 
 
@@ -1385,13 +1427,16 @@ Parameters
 See Also
   date(), datetime(), strftime(), time(), timediff(), timeslice()
 Examples
-#1 ;SELECT julianday('2017-01-02T03:04:05')
+#1 To get the julian day from the timestamp '2017-01-02T03:04:05':
+   ;SELECT julianday('2017-01-02T03:04:05')
    
 
-#2 ;SELECT julianday('2017-01-02T03:04:05', '+1 minute')
+#2 To get the julian day from the timestamp '2017-01-02T03:04:05' plus one minute:
+   ;SELECT julianday('2017-01-02T03:04:05', '+1 minute')
    
 
-#3 ;SELECT julianday(1491341842, 'unixepoch')
+#3 To get the julian day from the timestamp 1491341842:
+   ;SELECT julianday(1491341842, 'unixepoch')
    
 
 
@@ -1410,12 +1455,14 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   length(), lower(), ltrim(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT leftstr('abc', 1)
+#1 To get the first character of the string 'abc':
+   ;SELECT leftstr('abc', 1)
    
 
-#2 ;SELECT leftstr('abc', 10)
+#2 To get the first ten characters of a string, regardless of size:
+   ;SELECT leftstr('abc', 10)
    
 
 
@@ -1428,9 +1475,10 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), lower(), ltrim(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Example
-#1 ;SELECT length('abc')
+#1 To get the length of the string 'abc':
+   ;SELECT length('abc')
    
 
 
@@ -1444,10 +1492,12 @@ Parameters
             or underscore in the pattern.
 
 Examples
-#1 ;SELECT like('%b%', 'aabcc')
+#1 To test if the string 'aabcc' contains the letter 'b':
+   ;SELECT like('%b%', 'aabcc')
    
 
-#2 ;SELECT like('%b:%', 'aab%', ':')
+#2 To test if the string 'aab%' ends with 'b%':
+   ;SELECT like('%b:%', 'aab%', ':')
    
 
 
@@ -1491,9 +1541,10 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), ltrim(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Example
-#1 ;SELECT lower('AbC')
+#1 To lowercase the string 'AbC':
+   ;SELECT lower('AbC')
    
 
 
@@ -1508,12 +1559,14 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), printf(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT ltrim('   abc')
+#1 To trim the leading whitespace from the string '   abc':
+   ;SELECT ltrim('   abc')
    
 
-#2 ;SELECT ltrim('aaaabbbc', 'ab')
+#2 To trim the characters 'a' or 'b' from the left side of the string 'aaaabbbc':
+   ;SELECT ltrim('aaaabbbc', 'ab')
    
 
 
@@ -1526,10 +1579,12 @@ Parameter
 See Also
   abs(), avg(), min(), round(), sum(), total()
 Examples
-#1 ;SELECT max(2, 1, 3)
+#1 To get the largest value from the parameters:
+   ;SELECT max(2, 1, 3)
    
 
-#2 ;SELECT max(status) FROM http_status_codes
+#2 To get the largest value from an aggregate:
+   ;SELECT max(status) FROM http_status_codes
    
 
 
@@ -1542,10 +1597,12 @@ Parameter
 See Also
   abs(), avg(), max(), round(), sum(), total()
 Examples
-#1 ;SELECT min(2, 1, 3)
+#1 To get the smallest value from the parameters:
+   ;SELECT min(2, 1, 3)
    
 
-#2 ;SELECT min(status) FROM http_status_codes
+#2 To get the smallest value from an aggregate:
+   ;SELECT min(status) FROM http_status_codes
    
 
 
@@ -1557,10 +1614,12 @@ Parameters
   Y   The argument to compare against the first.
 
 Examples
-#1 ;SELECT nullif(1, 1)
+#1 To test if 1 is different from 1:
+   ;SELECT nullif(1, 1)
    
 
-#2 ;SELECT nullif(1, 2)
+#2 To test if 1 is different from 2:
+   ;SELECT nullif(1, 2)
    
 
 
@@ -1575,15 +1634,18 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), regexp_capture(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT printf('Hello, %s!', 'World')
+#1 To substitute 'World' into the string 'Hello, %s!':
+   ;SELECT printf('Hello, %s!', 'World')
    
 
-#2 ;SELECT printf('align: % 10s', 'small')
+#2 To right-align 'small' in the string 'align:' with a column width of 10:
+   ;SELECT printf('align: % 10s', 'small')
    
 
-#3 ;SELECT printf('value: %05d', 11)
+#3 To format 11 with a width of five characters and leading zeroes:
+   ;SELECT printf('value: %05d', 11)
    
 
 
@@ -1594,10 +1656,12 @@ Parameter
   X   The string to quote.
 
 Examples
-#1 ;SELECT quote('abc')
+#1 To quote the string 'abc':
+   ;SELECT quote('abc')
    
 
-#2 ;SELECT quote('abc''123')
+#2 To quote the string 'abc'123':
+   ;SELECT quote('abc''123')
    
 
 
@@ -1661,9 +1725,10 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_match(), 
   regexp_replace(), replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Example
-#1 ;SELECT * FROM regexp_capture('a=1; b=2', '(\w+)=(\d+)')
+#1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
+   ;SELECT * FROM regexp_capture('a=1; b=2', '(\w+)=(\d+)')
    
 
 
@@ -1677,15 +1742,19 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_replace(), regexp_replace(), replace(), replicate(), reverse(), 
-  rightstr(), rtrim(), spooky_hash(), startswith(), substr(), trim(), upper()
+  rightstr(), rtrim(), spooky_hash(), startswith(), substr(), trim(), unicode(), 
+  upper()
 Examples
-#1 ;SELECT regexp_match('(\d+)', '123')
+#1 To capture the digits from the string '123':
+   ;SELECT regexp_match('(\d+)', '123')
    
 
-#2 ;SELECT regexp_match('(\d+) (\w+)', '123 four')
+#2 To capture a number and word into a JSON object with the properties 'col_0' and 'col_1':
+   ;SELECT regexp_match('(\d+) (\w+)', '123 four')
    
 
-#3 ;SELECT regexp_match('(?<num>\d+) (?<str>\w+)', '123 four')
+#3 To capture a number and word into a JSON object with the named properties 'num' and 'str':
+   ;SELECT regexp_match('(?<num>\d+) (?<str>\w+)', '123 four')
    
 
 
@@ -1701,12 +1770,14 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_match(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), spooky_hash(), startswith(), substr(), trim(), upper()
+  rtrim(), spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT regexp_replace('Hello, World!', '^(\w+)', 'Goodbye')
+#1 To replace the word at the start of the string 'Hello, World!' with 'Goodbye':
+   ;SELECT regexp_replace('Hello, World!', '^(\w+)', 'Goodbye')
    
 
-#2 ;SELECT regexp_replace('123 abc', '(\w+)', '<\1>')
+#2 To wrap alphanumeric words with angle brackets:
+   ;SELECT regexp_replace('123 abc', '(\w+)', '<\1>')
    
 
 
@@ -1722,12 +1793,14 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replicate(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT replace('abc', 'x', 'z')
+#1 To replace the string 'x' with 'z' in 'abc':
+   ;SELECT replace('abc', 'x', 'z')
    
 
-#2 ;SELECT replace('abc', 'a', 'z')
+#2 To replace the string 'a' with 'z' in 'abc':
+   ;SELECT replace('abc', 'a', 'z')
    
 
 
@@ -1740,9 +1813,10 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), reverse(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Example
-#1 ;SELECT replicate('abc', 3)
+#1 To repeat the string 'abc' three times:
+   ;SELECT replicate('abc', 3)
    
 
 
@@ -1754,9 +1828,10 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), rightstr(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Example
-#1 ;SELECT reverse('abc')
+#1 To reverse the string 'abc':
+   ;SELECT reverse('abc')
    
 
 
@@ -1770,12 +1845,14 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rtrim(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT rightstr('abc', 1)
+#1 To get the last character of the string 'abc':
+   ;SELECT rightstr('abc', 1)
    
 
-#2 ;SELECT rightstr('abc', 10)
+#2 To get the last ten characters of a string, regardless of size:
+   ;SELECT rightstr('abc', 10)
    
 
 
@@ -1788,13 +1865,16 @@ Parameters
 See Also
   abs(), avg(), max(), min(), sum(), total()
 Examples
-#1 ;SELECT round(123.456)
+#1 To round the number 123.456 to an integer:
+   ;SELECT round(123.456)
    
 
-#2 ;SELECT round(123.456, 1)
+#2 To round the number 123.456 to a precision of 1:
+   ;SELECT round(123.456, 1)
    
 
-#3 ;SELECT round(123.456, 5)
+#3 To round the number 123.456 to a precision of 5:
+   ;SELECT round(123.456, 5)
    
 
 
@@ -1809,12 +1889,14 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  spooky_hash(), startswith(), substr(), trim(), upper()
+  spooky_hash(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT ltrim('abc   ')
+#1 To trim the whitespace from the end of the string 'abc   ':
+   ;SELECT rtrim('abc   ')
    
 
-#2 ;SELECT ltrim('abbbbcccc', 'bc')
+#2 To trim the characters 'b' and 'c' from the string 'abbbbcccc':
+   ;SELECT rtrim('abbbbcccc', 'bc')
    
 
 
@@ -1826,18 +1908,22 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), startswith(), substr(), trim(), upper()
+  rtrim(), startswith(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT spooky_hash('Hello, World!')
+#1 To produce a hash for the string 'Hello, World!':
+   ;SELECT spooky_hash('Hello, World!')
    
 
-#2 ;SELECT spooky_hash('Hello, World!', NULL)
+#2 To produce a hash for the parameters where one is NULL:
+   ;SELECT spooky_hash('Hello, World!', NULL)
    
 
-#3 ;SELECT spooky_hash('Hello, World!', '')
+#3 To produce a hash for the parameters where one is an empty string:
+   ;SELECT spooky_hash('Hello, World!', '')
    
 
-#4 ;SELECT spooky_hash('Hello, World!', 123)
+#4 To produce a hash for the parameters where one is a number:
+   ;SELECT spooky_hash('Hello, World!', 123)
    
 
 
@@ -1855,7 +1941,8 @@ Parameter
   option   The name of the compile-time option.
 
 Example
-#1 ;SELECT sqlite_compileoption_used('ENABLE_FTS3')
+#1 To check if the SQLite library was compiled with ENABLE_FTS3:
+   ;SELECT sqlite_compileoption_used('ENABLE_FTS3')
    
 
 
@@ -1878,12 +1965,14 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), spooky_hash(), substr(), trim(), upper()
+  rtrim(), spooky_hash(), substr(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT startswith('foobar', 'foo')
+#1 To test if the string 'foobar' starts with 'foo':
+   ;SELECT startswith('foobar', 'foo')
    
 
-#2 ;SELECT startswith('foobar', 'bar')
+#2 To test if the string 'foobar' starts with 'bar':
+   ;SELECT startswith('foobar', 'bar')
    
 
 
@@ -1898,13 +1987,16 @@ Parameters
 See Also
   date(), datetime(), julianday(), time(), timediff(), timeslice()
 Examples
-#1 ;SELECT strftime('%Y', '2017-01-02T03:04:05')
+#1 To get the year from the timestamp '2017-01-02T03:04:05':
+   ;SELECT strftime('%Y', '2017-01-02T03:04:05')
    
 
-#2 ;SELECT strftime('The time is: %H%M%S', '2017-01-02T03:04:05', '+1 minute')
+#2 To create a string with the time from the timestamp '2017-01-02T03:04:05' plus one minute:
+   ;SELECT strftime('The time is: %H:%M:%S', '2017-01-02T03:04:05', '+1 minute')
    
 
-#3 ;SELECT strftime('Julian day: %J', 1491341842, 'unixepoch')
+#3 To create a string with the Julian day from the epoch timestamp 1491341842:
+   ;SELECT strftime('Julian day: %J', 1491341842, 'unixepoch')
    
 
 
@@ -1923,18 +2015,22 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), spooky_hash(), startswith(), trim(), upper()
+  rtrim(), spooky_hash(), startswith(), trim(), unicode(), upper()
 Examples
-#1 ;SELECT substr('abc', 2)
+#1 To get the substring starting at the second character until the end of the string 'abc':
+   ;SELECT substr('abc', 2)
    
 
-#2 ;SELECT substr('abc', 2, 1)
+#2 To get the substring of size one starting at the second character of the string 'abc':
+   ;SELECT substr('abc', 2, 1)
    
 
-#3 ;SELECT substr('abc', -1)
+#3 To get the substring starting at the last character until the end of the string 'abc':
+   ;SELECT substr('abc', -1)
    
 
-#4 ;SELECT substr('abc', -1, -1)
+#4 To get the substring starting at the last character and going backwards one step of the string 'abc':
+   ;SELECT substr('abc', -1, -1)
    
 
 
@@ -1945,7 +2041,8 @@ Parameter
 See Also
   abs(), avg(), max(), min(), round(), total()
 Example
-#1 ;SELECT sum(ex_duration) FROM lnav_example_log
+#1 To sum all of the values in the column 'ex_duration' from the table 'lnav_example_log':
+   ;SELECT sum(ex_duration) FROM lnav_example_log
    
 
 
@@ -1958,28 +2055,34 @@ Parameters
 See Also
   date(), datetime(), julianday(), strftime(), timediff(), timeslice()
 Examples
-#1 ;SELECT time('2017-01-02T03:04:05')
+#1 To get the time portion of the timestamp '2017-01-02T03:04:05':
+   ;SELECT time('2017-01-02T03:04:05')
    
 
-#2 ;SELECT time('2017-01-02T03:04:05', '+1 minute')
+#2 To get the time portion of the timestamp '2017-01-02T03:04:05' plus one minute:
+   ;SELECT time('2017-01-02T03:04:05', '+1 minute')
    
 
-#3 ;SELECT time(1491341842, 'unixepoch')
+#3 To get the time portion of the epoch timestamp 1491341842:
+   ;SELECT time(1491341842, 'unixepoch')
    
 
 
 Synopsis
-  timediff(time1, time2) -- Compute the difference between two timestamps
+  timediff(time1, time2) -- Compute the difference between two timestamps in 
+    seconds
 Parameters
   time1   The first timestamp
   time2   The timestamp to subtract from the first
 See Also
   date(), datetime(), julianday(), strftime(), time(), timeslice()
 Examples
-#1 ;SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')
+#1 To get the difference between two timestamps:
+   ;SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')
    
 
-#2 ;SELECT timediff('today', 'yesterday')
+#2 To get the difference between relative timestamps:
+   ;SELECT timediff('today', 'yesterday')
    
 
 
@@ -1992,10 +2095,12 @@ Parameters
 See Also
   date(), datetime(), julianday(), strftime(), time(), timediff()
 Examples
-#1 ;SELECT timeslice('2017-01-01T05:05:00', '10m')
+#1 To get the timestamp rounded down to the start of the ten minute slice:
+   ;SELECT timeslice('2017-01-01T05:05:00', '10m')
    
 
-#2 ;SELECT timeslice(log_time, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY 
+#2 To group log messages into five minute buckets and count them:
+   ;SELECT timeslice(log_time, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY 
           slice
    
 
@@ -2007,7 +2112,8 @@ Parameter
 See Also
   abs(), avg(), max(), min(), round(), sum()
 Example
-#1 ;SELECT total(ex_duration) FROM lnav_example_log
+#1 To total all of the values in the column 'ex_duration' from the table 'lnav_example_log':
+   ;SELECT total(ex_duration) FROM lnav_example_log
    
 
 
@@ -2027,12 +2133,14 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), spooky_hash(), startswith(), substr(), upper()
+  rtrim(), spooky_hash(), startswith(), substr(), unicode(), upper()
 Examples
-#1 ;SELECT trim('    abc   ')
+#1 To trim whitespace from the start and end of the string '    abc   ':
+   ;SELECT trim('    abc   ')
    
 
-#2 ;SELECT trim('-+abc+-', '-+')
+#2 To trim the characters '-' and '+' from the string '-+abc+-':
+   ;SELECT trim('-+abc+-', '-+')
    
 
 
@@ -2043,10 +2151,12 @@ Parameter
   X   The expression to check.
 
 Examples
-#1 ;SELECT typeof(1)
+#1 To get the type of the number 1:
+   ;SELECT typeof(1)
    
 
-#2 ;SELECT typeof('abc')
+#2 To get the type of the string 'abc':
+   ;SELECT typeof('abc')
    
 
 
@@ -2055,9 +2165,14 @@ Synopsis
     first character of the string X.
 Parameter
   X   The string to examine.
-
+See Also
+  char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
+  leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
+  regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
+  rtrim(), spooky_hash(), startswith(), substr(), trim(), upper()
 Example
-#1 ;SELECT unicode('abc')
+#1 To get the unicode code point for the first character of 'abc':
+   ;SELECT unicode('abc')
    
 
 
@@ -2076,9 +2191,10 @@ See Also
   char(), endswith(), extract(), group_concat(), group_spooky_hash(), instr(), 
   leftstr(), length(), lower(), ltrim(), printf(), regexp_capture(), 
   regexp_match(), regexp_replace(), replace(), replicate(), reverse(), rightstr(), 
-  rtrim(), spooky_hash(), startswith(), substr(), trim()
+  rtrim(), spooky_hash(), startswith(), substr(), trim(), unicode()
 Example
-#1 ;SELECT upper('aBc')
+#1 To uppercase the string 'aBc':
+   ;SELECT upper('aBc')
    
 
 
@@ -2097,7 +2213,8 @@ Parameters
   schema-name   The prefix for tables in this database.
 
 Example
-#1 ;ATTACH DATABASE '/tmp/customers.db' AS customers
+#1 To attach the database file '/tmp/customers.db' with the name customers:
+   ;ATTACH DATABASE '/tmp/customers.db' AS customers
    
 
 
@@ -2115,7 +2232,8 @@ Parameters
   else-expr   The result of this CASE if no branches matched.
 
 Example
-#1 ;SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END
+#1 To evaluate the number one and return the string 'one':
+   ;SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END
    
 
 
@@ -2138,10 +2256,6 @@ Parameters
   table-name   The name of the table
   cond         The conditions used to delete the rows.
 
-Example
-#1 ;SELECT * FROM syslog_log
-   
-
 
 Synopsis
   DETACH DATABASE schema-name
@@ -2151,7 +2265,8 @@ Parameter
   schema-name   The prefix for tables in this database.
 
 Example
-#1 ;DETACH DATABASE customers
+#1 To detach the database named 'customers':
+   ;DETACH DATABASE customers
    
 
 
@@ -2170,7 +2285,8 @@ Synopsis
 Parameters
 
 Example
-#1 ;INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')
+#1 To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the 'environ' table:
+   ;INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')
    
 
 
@@ -2191,7 +2307,8 @@ Parameters
   limit-expr      The maximum number of rows to return
 
 Example
-#1 ;SELECT * FROM syslog_log
+#1 To select all of the columns from the table 'syslog_log':
+   ;SELECT * FROM syslog_log
    
 
 
@@ -2207,7 +2324,8 @@ Parameters
                 updated.
 
 Example
-#1 ;UPDATE syslog_log SET log_mark = 1 WHERE log_line = 40
+#1 To mark the syslog message at line 40:
+   ;UPDATE syslog_log SET log_mark = 1 WHERE log_line = 40
    
 
 
@@ -2217,7 +2335,6 @@ Synopsis
   Create a temporary view that exists only for the duration of a SQL statement.
   
 Parameters
-                   
   cte-table-name   The name for the temporary table.
   select-stmt      The SELECT statement used to populate the temporary table.
 

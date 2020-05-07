@@ -311,7 +311,7 @@ int register_environ_vtab(sqlite3 *db)
     if ((rc = sqlite3_exec(db,
              "CREATE VIRTUAL TABLE environ USING environ_vtab_impl()",
              NULL, NULL, errmsg.out())) != SQLITE_OK) {
-        fprintf(stderr, "wtf %s\n", errmsg.in());
+        fprintf(stderr, "unable to create environ table %s\n", errmsg.in());
     }
     return rc;
 }

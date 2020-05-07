@@ -75,9 +75,11 @@ fields:
     the final message string and or a string constant that should be
     inserted.  For example, the following configuration will tranform each
     log message object into a string that contains the timestamp, followed
-    by a space, and then the message body::
+    by a space, and then the message body:
 
-    [ { "field": "ts" }, " ", { "field": "msg" } ]
+    .. code-block:: json
+
+        [ { "field": "ts" }, " ", { "field": "msg" } ]
 
     :field: The name of the message field that should be inserted at this
       point in the message.  The special "__timestamp__" field name can be
@@ -200,9 +202,11 @@ fields:
       using the ':' prefix.  The text value of this field will then be replaced
       with the result of the command when pretty-printing.  For example, the
       HTTP access log format will rewrite the status code field to include the
-      textual version (e.g. 200 (OK)) using the following SQL query::
+      textual version (e.g. 200 (OK)) using the following SQL query:
 
-         ;SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '
+      .. code-block:: sql
+
+          ;SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '
 
   :sample: A list of objects that contain sample log messages.  All formats
     must include at least one sample and it must be matched by one of the
@@ -215,6 +219,7 @@ fields:
   :highlights: This object contains the definitions for patterns to be
       highlighted in a log message.  Each entry should have a name and a
       definition with the following fields:
+
     :pattern: The regular expression to match in the log message body.
     :color: The foreground color to use when highlighting the part of the
       message that matched the pattern.  If no color is specified, one will be
@@ -229,7 +234,9 @@ fields:
       pattern.
     :blink: If true, blink the part of the message that matched the pattern.
 
-Example format::
+Example format:
+
+.. code-block:: json
 
     {
         "example_log" : {
@@ -267,7 +274,9 @@ When loading log formats from files, **lnav** will overlay any new data over
 previously loaded data.  This feature allows you to override existing value or
 append new ones to the format configurations.  For example, you can separately
 add a new regex to the example log format given above by creating another file
-with the following contents::
+with the following contents:
+
+.. code-block:: json
 
     {
         "example_log" : {
@@ -320,7 +329,9 @@ Installing Formats
 File formats are loaded from subdirectories in :file:`/etc/lnav/formats` and
 :file:`~/.lnav/formats/`.  You can manually create these subdirectories and
 copy the format files into there.  Or, you can pass the '-i' option to **lnav**
-to automatically install formats from the command-line.  For example::
+to automatically install formats from the command-line.  For example:
+
+.. code-block:: bash
 
     $ lnav -i myformat.json
     info: installed: /home/example/.lnav/formats/installed/myformat_log.json
@@ -333,7 +344,9 @@ clone URL.  A standard set of repositories is maintained at
 (https://github.com/tstack/lnav-config) and can be installed by passing 'extra'
 on the command line, like so:
 
-    $ lnav -i extra
+.. prompt:: bash
+
+    lnav -i extra
 
 These repositories can be updated by running **lnav** with the '-u' flag.
 
@@ -345,7 +358,9 @@ top of the file, like so::
         "myformat_log" : ...
     }
 
-Executing the format file should then install it automatically::
+Executing the format file should then install it automatically:
+
+.. code-block:: bash
 
     $ chmod ugo+rx myformat.json
     $ ./myformat.json
@@ -366,6 +381,8 @@ format that matches certain syslog messages will match its own sample lines,
 but not the ones in the syslog samples.  On the other hand, the syslog format
 will match its own samples and those in the more specific format.  You can
 see the order of the format by enabling debugging and checking the **lnav**
-log file for the "Format order" message::
+log file for the "Format order" message:
 
-    $ lnav -d /tmp/lnav.log
+.. prompt:: bash
+
+    lnav -d /tmp/lnav.log

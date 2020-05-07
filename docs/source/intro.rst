@@ -1,15 +1,18 @@
 
+
 Introduction
 ============
 
-The Log File Navigator, **lnav**, is an enhanced log file viewer that
-takes advantage of any semantic information that can be gleaned from
-the files being viewed, such as timestamps and log levels.  Using this
-extra semantic information, lnav can do things like interleaving
-messages from different files, generate histograms of messages over
-time, and providing hotkeys for navigating through the file.  It is
-hoped that these features will allow the user to quickly and
-efficiently zero in on problems.
+The Log File Navigator, **lnav**, is an advanced log file viewer for the
+terminal.  It provides an :ref:`easy-to-use interface<ui>` for monitoring and
+analyzing your log files with little to no setup.  Simply point **lnav** at
+your log files and it will automatically detect the :ref:`log-formats`, index
+their contents, and display a combined view of all log messages.  A variety of
+:ref:`hotkeys<hotkeys>` allow you to quickly navigate through the logs by
+message level or time.  :ref:`Commands<commands>` give you additional
+control over **lnav**'s behavior for doing things like applying filters,
+tagging messages, and much more.  And, the :ref:`sql-ext` allows you to analyze
+your log messages by executing queries over the log messages.
 
 Dependencies
 ------------
@@ -29,25 +32,31 @@ Installation
 
 Check the `downloads page <http://lnav.org/downloads>`_ to see if there are
 packages for your operating system.  Compiling from source is just a matter of
-doing::
+doing:
 
-   $ ./configure
-   $ make
-   $ sudo make install
+.. prompt:: bash
+
+   ./configure
+   make
+   sudo make install
 
 Viewing Logs
 ------------
 
 The arguments to **lnav** are the log files, directories, or URLs to be viewed.
-For example, to view all of the CUPS logs on your system::
+For example, to view all of the CUPS logs on your system:
 
-   $ lnav /var/log/cups
+.. prompt:: bash
+
+   lnav /var/log/cups
 
 The formats of the logs are determined automatically and indexed on-the-fly.
 See :ref:`log-formats` for a listing of the predefined formats and how to
 define your own.
 
 If no arguments are given, **lnav** will try to open the syslog file on your
-system::
+system:
 
-   $ lnav
+.. prompt:: bash
+
+   lnav

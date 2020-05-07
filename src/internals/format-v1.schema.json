@@ -1,0 +1,466 @@
+{
+    "$id": "https://lnav.org/schemas/format-v1.schema.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "$schema": {
+            "title": "/$schema",
+            "description": "Specifies the type of this file",
+            "type": "string"
+        }
+    },
+    "patternProperties": {
+        "\\w+": {
+            "description": "The definition of a log file format.",
+            "title": "/<format_name>",
+            "type": "object",
+            "properties": {
+                "regex": {
+                    "description": "The set of regular expressions used to match log messages",
+                    "title": "/<format_name>/regex",
+                    "type": "object",
+                    "patternProperties": {
+                        "[^/]+": {
+                            "description": "The set of patterns used to match log messages",
+                            "title": "/<format_name>/regex/<pattern_name>",
+                            "type": "object",
+                            "properties": {
+                                "pattern": {
+                                    "title": "/<format_name>/regex/<pattern_name>/pattern",
+                                    "description": "The regular expression to match a log message and capture fields.",
+                                    "type": "string",
+                                    "minLength": 1
+                                },
+                                "module-format": {
+                                    "title": "/<format_name>/regex/<pattern_name>/module-format",
+                                    "description": "If true, this pattern will only be used to parse message bodies of container formats, like syslog",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "json": {
+                    "title": "/<format_name>/json",
+                    "description": "Indicates that log files are JSON-encoded (deprecated, use \"file-type\": \"json\")",
+                    "type": "boolean"
+                },
+                "convert-to-local-time": {
+                    "title": "/<format_name>/convert-to-local-time",
+                    "description": "Indicates that displayed timestamps should automatically be converted to local time",
+                    "type": "boolean"
+                },
+                "hide-extra": {
+                    "title": "/<format_name>/hide-extra",
+                    "description": "Specifies whether extra values in JSON logs should be displayed",
+                    "type": "boolean"
+                },
+                "multiline": {
+                    "title": "/<format_name>/multiline",
+                    "description": "Indicates that log messages can span multiple lines",
+                    "type": "boolean"
+                },
+                "timestamp-divisor": {
+                    "title": "/<format_name>/timestamp-divisor",
+                    "description": "The value to divide a numeric timestamp by in a JSON log.",
+                    "type": [
+                        "integer",
+                        "number"
+                    ]
+                },
+                "file-pattern": {
+                    "title": "/<format_name>/file-pattern",
+                    "description": "A regular expression that restricts this format to log files with a matching name",
+                    "type": "string"
+                },
+                "level-field": {
+                    "title": "/<format_name>/level-field",
+                    "description": "The name of the level field in the log message pattern",
+                    "type": "string"
+                },
+                "timestamp-field": {
+                    "title": "/<format_name>/timestamp-field",
+                    "description": "The name of the timestamp field in the log message pattern",
+                    "type": "string"
+                },
+                "body-field": {
+                    "title": "/<format_name>/body-field",
+                    "description": "The name of the body field in the log message pattern",
+                    "type": "string"
+                },
+                "url": {
+                    "title": "/<format_name>/url",
+                    "description": "A URL with more information about this log format",
+                    "type": [
+                        "array",
+                        "string"
+                    ],
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "title": "/<format_name>/title",
+                    "description": "The human-readable name for this log format",
+                    "type": "string"
+                },
+                "description": {
+                    "title": "/<format_name>/description",
+                    "description": "A longer description of this log format",
+                    "type": "string"
+                },
+                "timestamp-format": {
+                    "title": "/<format_name>/timestamp-format",
+                    "description": "An array of strptime(3)-like timestamp formats",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "module-field": {
+                    "title": "/<format_name>/module-field",
+                    "description": "The name of the module field in the log message pattern",
+                    "type": "string"
+                },
+                "opid-field": {
+                    "title": "/<format_name>/opid-field",
+                    "description": "The name of the operation-id field in the log message pattern",
+                    "type": "string"
+                },
+                "ordered-by-time": {
+                    "title": "/<format_name>/ordered-by-time",
+                    "description": "Indicates that the order of messages in the file is time-based.",
+                    "type": "boolean"
+                },
+                "level": {
+                    "description": "The map of level names to patterns or integer values",
+                    "title": "/<format_name>/level",
+                    "type": "object",
+                    "patternProperties": {
+                        "trace|debug[2345]?|info|stats|notice|warning|error|critical|fatal": {
+                            "title": "/<format_name>/level/<level>",
+                            "description": "The regular expression used to match the log text for this level.  For JSON logs with numeric levels, this should be the number for the corresponding level.",
+                            "type": [
+                                "integer",
+                                "string"
+                            ]
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "value": {
+                    "description": "The set of value definitions",
+                    "title": "/<format_name>/value",
+                    "type": "object",
+                    "patternProperties": {
+                        "[^/]+": {
+                            "description": "The set of values captured by the log message patterns",
+                            "title": "/<format_name>/value/<value_name>",
+                            "type": "object",
+                            "properties": {
+                                "kind": {
+                                    "title": "/<format_name>/value/<value_name>/kind",
+                                    "description": "The type of data in the field",
+                                    "type": "string",
+                                    "enum": [
+                                        "string",
+                                        "integer",
+                                        "float",
+                                        "boolean",
+                                        "json",
+                                        "struct",
+                                        "quoted"
+                                    ]
+                                },
+                                "collate": {
+                                    "title": "/<format_name>/value/<value_name>/collate",
+                                    "description": "The collating function to use for this column",
+                                    "type": "string"
+                                },
+                                "unit": {
+                                    "description": "Unit definitions for this field",
+                                    "title": "/<format_name>/value/<value_name>/unit",
+                                    "type": "object",
+                                    "properties": {
+                                        "field": {
+                                            "title": "/<format_name>/value/<value_name>/unit/field",
+                                            "description": "The name of the field that contains the units for this field",
+                                            "type": "string"
+                                        },
+                                        "scaling-factor": {
+                                            "description": "Transforms the numeric value by the given factor",
+                                            "title": "/<format_name>/value/<value_name>/unit/scaling-factor",
+                                            "type": "object",
+                                            "patternProperties": {
+                                                ".*": {
+                                                    "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>",
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "identifier": {
+                                    "title": "/<format_name>/value/<value_name>/identifier",
+                                    "description": "Indicates whether or not this field contains an identifier that should be highlighted",
+                                    "type": "boolean"
+                                },
+                                "foreign-key": {
+                                    "title": "/<format_name>/value/<value_name>/foreign-key",
+                                    "description": "Indicates whether or not this field should be treated as a foreign key for row in another table",
+                                    "type": "boolean"
+                                },
+                                "hidden": {
+                                    "title": "/<format_name>/value/<value_name>/hidden",
+                                    "description": "Indicates whether or not this field should be hidden",
+                                    "type": "boolean"
+                                },
+                                "action-list": {
+                                    "title": "/<format_name>/value/<value_name>/action-list",
+                                    "description": "Actions to execute when this field is clicked on",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "rewriter": {
+                                    "title": "/<format_name>/value/<value_name>/rewriter",
+                                    "description": "A command that will rewrite this field when pretty-printing",
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "title": "/<format_name>/value/<value_name>/description",
+                                    "description": "A description of the field",
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "action": {
+                    "title": "/<format_name>/action",
+                    "type": "object",
+                    "patternProperties": {
+                        "\\w+": {
+                            "title": "/<format_name>/action/<action_name>",
+                            "type": [
+                                "string",
+                                "object"
+                            ],
+                            "properties": {
+                                "label": {
+                                    "title": "/<format_name>/action/<action_name>/label",
+                                    "type": "string"
+                                },
+                                "capture-output": {
+                                    "title": "/<format_name>/action/<action_name>/capture-output",
+                                    "type": "boolean"
+                                },
+                                "cmd": {
+                                    "title": "/<format_name>/action/<action_name>/cmd",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "sample": {
+                    "description": "An array of sample log messages to be tested against the log message patterns",
+                    "title": "/<format_name>/sample",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "line": {
+                                "title": "/<format_name>/sample/line",
+                                "description": "A sample log line that should match a pattern in this format.",
+                                "type": "string"
+                            },
+                            "level": {
+                                "title": "/<format_name>/sample/level",
+                                "description": "The expected level for this sample log line.",
+                                "type": "string",
+                                "enum": [
+                                    "trace",
+                                    "debug5",
+                                    "debug4",
+                                    "debug3",
+                                    "debug2",
+                                    "debug",
+                                    "info",
+                                    "stats",
+                                    "notice",
+                                    "warning",
+                                    "error",
+                                    "critical",
+                                    "fatal"
+                                ]
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "line-format": {
+                    "description": "The display format for JSON-encoded log messages",
+                    "title": "/<format_name>/line-format",
+                    "type": "array",
+                    "items": {
+                        "type": [
+                            "string",
+                            "object"
+                        ],
+                        "properties": {
+                            "field": {
+                                "title": "/<format_name>/line-format/field",
+                                "description": "The name of the field to substitute at this position",
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "default-value": {
+                                "title": "/<format_name>/line-format/default-value",
+                                "description": "The default value for this position if the field is null",
+                                "type": "string"
+                            },
+                            "timestamp-format": {
+                                "title": "/<format_name>/line-format/timestamp-format",
+                                "description": "The strftime(3) format for this field",
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "min-width": {
+                                "title": "/<format_name>/line-format/min-width",
+                                "description": "The minimum width of the field",
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "max-width": {
+                                "title": "/<format_name>/line-format/max-width",
+                                "description": "The maximum width of the field",
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "align": {
+                                "title": "/<format_name>/line-format/align",
+                                "description": "Align the text in the column to the left or right side",
+                                "type": "string",
+                                "enum": [
+                                    "left",
+                                    "right"
+                                ]
+                            },
+                            "overflow": {
+                                "title": "/<format_name>/line-format/overflow",
+                                "description": "Overflow style",
+                                "type": "string",
+                                "enum": [
+                                    "abbrev",
+                                    "truncate",
+                                    "dot-dot"
+                                ]
+                            },
+                            "text-transform": {
+                                "title": "/<format_name>/line-format/text-transform",
+                                "description": "Text transformation",
+                                "type": "string",
+                                "enum": [
+                                    "none",
+                                    "uppercase",
+                                    "lowercase",
+                                    "capitalize"
+                                ]
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "search-table": {
+                    "description": "Search tables to automatically define for this log format",
+                    "title": "/<format_name>/search-table",
+                    "type": [
+                        "string",
+                        "object"
+                    ],
+                    "patternProperties": {
+                        "\\w+": {
+                            "description": "The set of search tables to be automatically defined",
+                            "title": "/<format_name>/search-table/<>",
+                            "type": "object",
+                            "properties": {
+                                "pattern": {
+                                    "title": "/<format_name>/search-table/<>/pattern",
+                                    "description": "The regular expression for this search table.",
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "highlights": {
+                    "description": "The set of highlight definitions",
+                    "title": "/<format_name>/highlights",
+                    "type": "object",
+                    "patternProperties": {
+                        "[^/]+": {
+                            "description": "The definition of a highlight",
+                            "title": "/<format_name>/highlights/<highlight_name>",
+                            "type": "object",
+                            "properties": {
+                                "pattern": {
+                                    "title": "/<format_name>/highlights/<highlight_name>/pattern",
+                                    "description": "A regular expression to highlight in logs of this format.",
+                                    "type": "string"
+                                },
+                                "color": {
+                                    "title": "/<format_name>/highlights/<highlight_name>/color",
+                                    "description": "The color to use when highlighting this pattern.",
+                                    "type": "string"
+                                },
+                                "background-color": {
+                                    "title": "/<format_name>/highlights/<highlight_name>/background-color",
+                                    "description": "The background color to use when highlighting this pattern.",
+                                    "type": "string"
+                                },
+                                "underline": {
+                                    "title": "/<format_name>/highlights/<highlight_name>/underline",
+                                    "description": "Highlight this pattern with an underline.",
+                                    "type": "boolean"
+                                },
+                                "blink": {
+                                    "title": "/<format_name>/highlights/<highlight_name>/blink",
+                                    "description": "Highlight this pattern by blinking.",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "file-type": {
+                    "title": "/<format_name>/file-type",
+                    "description": "The type of file that contains the log messages",
+                    "type": "string",
+                    "enum": [
+                        "text",
+                        "json",
+                        "csv"
+                    ]
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false
+}

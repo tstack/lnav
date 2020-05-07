@@ -50,7 +50,7 @@ sqlite_registration_func_t sqlite_registration_funcs[] = {
     json_extension_functions,
     time_extension_functions,
 
-    NULL
+    nullptr
 };
 
 multimap<std::string, help_text *> sqlite_function_help;
@@ -119,7 +119,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .sql_function()
             .with_parameter({"x", "The number to convert"})
             .with_tags({"math"})
-            .with_example({"SELECT abs(-1)"}),
+            .with_example({
+                "To get the absolute value of -1",
+                "SELECT abs(-1)"
+            }),
 
         help_text("changes",
                   "The number of database rows that were changed, inserted, or deleted by the most recent statement.")
@@ -131,7 +134,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("X", "The unicode code point values")
                                 .zero_or_more())
             .with_tags({"string"})
-            .with_example({"SELECT char(0x48, 0x49)"}),
+            .with_example({
+                "To get a string with the code points 0x48 and 0x49",
+                "SELECT char(0x48, 0x49)"
+            }),
 
         help_text("coalesce",
                   "Returns a copy of its first non-NULL argument, or NULL if all arguments are NULL")
@@ -139,27 +145,39 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter({"X", "A value to check for NULL-ness"})
             .with_parameter(help_text("Y", "A value to check for NULL-ness")
                                 .one_or_more())
-            .with_example({"SELECT coalesce(null, 0, null)"}),
+            .with_example({
+                "To get the first non-null value from three parameters",
+                "SELECT coalesce(null, 0, null)"
+            }),
 
         help_text("glob",
                   "Match a string against Unix glob pattern")
             .sql_function()
             .with_parameter({"pattern", "The glob pattern"})
             .with_parameter({"str", "The string to match"})
-            .with_example({"SELECT glob('a*', 'abc')"}),
+            .with_example({
+                "To test if the string 'abc' matches the glob 'a*'",
+                "SELECT glob('a*', 'abc')"
+            }),
 
         help_text("hex",
                   "Returns a string which is the upper-case hexadecimal rendering of the content of its argument.")
             .sql_function()
             .with_parameter({"X", "The blob to convert to hexadecimal"})
-            .with_example({"SELECT hex('abc')"}),
+            .with_example({
+                "To get the hexadecimal rendering of the string 'abc'",
+                "SELECT hex('abc')"
+            }),
 
         help_text("ifnull",
                   "Returns a copy of its first non-NULL argument, or NULL if both arguments are NULL")
             .sql_function()
             .with_parameter({"X", "A value to check for NULL-ness"})
             .with_parameter({"Y", "A value to check for NULL-ness"})
-            .with_example({"SELECT ifnull(null, 0)"}),
+            .with_example({
+                "To get the first non-null value between null and zero",
+                "SELECT ifnull(null, 0)"
+            }),
 
         help_text("instr",
                   "Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if Y is nowhere found within X")
@@ -167,7 +185,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter({"haystack", "The string to search within"})
             .with_parameter({"needle", "The string to look for in the haystack"})
             .with_tags({"string"})
-            .with_example({"SELECT instr('abc', 'b')"}),
+            .with_example({
+                "To test get the position of 'b' in the string 'abc'",
+                "SELECT instr('abc', 'b')"
+            }),
 
         help_text("last_insert_rowid",
                   "Returns the ROWID of the last row insert from the database connection which invoked the function")
@@ -178,7 +199,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .sql_function()
             .with_parameter({"str", "The string to determine the length of"})
             .with_tags({"string"})
-            .with_example({"SELECT length('abc')"}),
+            .with_example({
+                "To get the length of the string 'abc'",
+                "SELECT length('abc')"
+            }),
 
         help_text("like",
                   "Match a string against a pattern")
@@ -191,8 +215,14 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("escape",
                                       "The escape character that can be used to prefix a literal percent or underscore in the pattern.")
                                 .optional())
-            .with_example({"SELECT like('%b%', 'aabcc')"})
-            .with_example({"SELECT like('%b:%', 'aab%', ':')"}),
+            .with_example({
+                "To test if the string 'aabcc' contains the letter 'b'",
+                "SELECT like('%b%', 'aabcc')"
+            })
+            .with_example({
+                "To test if the string 'aab%' ends with 'b%'",
+                "SELECT like('%b:%', 'aab%', ':')"
+            }),
 
         help_text("likelihood",
                   "Provides a hint to the query planner that the first argument is a boolean that is true with the given probability")
@@ -217,7 +247,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .sql_function()
             .with_parameter({"str", "The string to convert."})
             .with_tags({"string"})
-            .with_example({"SELECT lower('AbC')"}),
+            .with_example({
+                "To lowercase the string 'AbC'",
+                "SELECT lower('AbC')"
+            }),
 
         help_text("ltrim",
                   "Returns a string formed by removing any and all characters that appear in the second argument from the left side of the first.")
@@ -226,8 +259,13 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("chars", "The characters to trim.  Defaults to spaces.")
                                 .optional())
             .with_tags({"string"})
-            .with_example({"SELECT ltrim('   abc')"})
-            .with_example({"SELECT ltrim('aaaabbbc', 'ab')"}),
+            .with_example({
+                "To trim the leading whitespace from the string '   abc'",
+                "SELECT ltrim('   abc')"})
+            .with_example({
+                "To trim the characters 'a' or 'b' from the left side of the string 'aaaabbbc'",
+                "SELECT ltrim('aaaabbbc', 'ab')"
+            }),
 
         help_text("max",
                   "Returns the argument with the maximum value, or return NULL if any argument is NULL.")
@@ -236,8 +274,13 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                 "If only one argument is given, this function operates as an aggregate.")
                                 .one_or_more())
             .with_tags({"math"})
-            .with_example({"SELECT max(2, 1, 3)"})
-            .with_example({"SELECT max(status) FROM http_status_codes"}),
+            .with_example({
+                "To get the largest value from the parameters",
+                "SELECT max(2, 1, 3)"})
+            .with_example({
+                "To get the largest value from an aggregate",
+                "SELECT max(status) FROM http_status_codes"
+            }),
 
         help_text("min",
                   "Returns the argument with the minimum value, or return NULL if any argument is NULL.")
@@ -246,16 +289,26 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                 "If only one argument is given, this function operates as an aggregate.")
                                 .one_or_more())
             .with_tags({"math"})
-            .with_example({"SELECT min(2, 1, 3)"})
-            .with_example({"SELECT min(status) FROM http_status_codes"}),
+            .with_example({
+                "To get the smallest value from the parameters",
+                "SELECT min(2, 1, 3)"})
+            .with_example({
+                "To get the smallest value from an aggregate",
+                "SELECT min(status) FROM http_status_codes"
+            }),
 
         help_text("nullif",
                   "Returns its first argument if the arguments are different and NULL if the arguments are the same.")
             .sql_function()
             .with_parameter({"X", "The first argument to compare."})
             .with_parameter({"Y", "The argument to compare against the first."})
-            .with_example({"SELECT nullif(1, 1)"})
-            .with_example({"SELECT nullif(1, 2)"}),
+            .with_example({
+                "To test if 1 is different from 1",
+                "SELECT nullif(1, 1)"})
+            .with_example({
+                "To test if 1 is different from 2",
+                "SELECT nullif(1, 2)"
+            }),
 
         help_text("printf",
                   "Returns a string with this functions arguments substituted into the given format.  "
@@ -264,16 +317,28 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter({"format", "The format of the string to return."})
             .with_parameter(help_text("X", "The argument to substitute at a given position in the format."))
             .with_tags({"string"})
-            .with_example({"SELECT printf('Hello, %s!', 'World')"})
-            .with_example({"SELECT printf('align: % 10s', 'small')"})
-            .with_example({"SELECT printf('value: %05d', 11)"}),
+            .with_example({
+                "To substitute 'World' into the string 'Hello, %s!'",
+                "SELECT printf('Hello, %s!', 'World')"})
+            .with_example({
+                "To right-align 'small' in the string 'align:' with a column width of 10",
+                "SELECT printf('align: % 10s', 'small')"})
+            .with_example({
+                "To format 11 with a width of five characters and leading zeroes",
+                "SELECT printf('value: %05d', 11)"
+            }),
 
         help_text("quote",
                   "Returns the text of an SQL literal which is the value of its argument suitable for inclusion into an SQL statement.")
             .sql_function()
             .with_parameter({"X", "The string to quote."})
-            .with_example({"SELECT quote('abc')"})
-            .with_example({"SELECT quote('abc''123')"}),
+            .with_example({
+                "To quote the string 'abc'",
+                "SELECT quote('abc')"})
+            .with_example({
+                "To quote the string 'abc'123'",
+                "SELECT quote('abc''123')"
+            }),
 
         help_text("random",
                   "Returns a pseudo-random integer between -9223372036854775808 and +9223372036854775807.")
@@ -291,8 +356,13 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter({"old", "The string to be replaced."})
             .with_parameter({"replacement", "The string to replace any occurrences of the old string with."})
             .with_tags({"string"})
-            .with_example({"SELECT replace('abc', 'x', 'z')"})
-            .with_example({"SELECT replace('abc', 'a', 'z')"}),
+            .with_example({
+                "To replace the string 'x' with 'z' in 'abc'",
+                "SELECT replace('abc', 'x', 'z')"})
+            .with_example({
+                "To replace the string 'a' with 'z' in 'abc'",
+                "SELECT replace('abc', 'a', 'z')"
+            }),
 
         help_text("round",
                   "Returns a floating-point value rounded to the given number of digits to the right of the decimal point.")
@@ -301,9 +371,16 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("digits", "The number of digits to the right of the decimal to round to.")
                                 .optional())
             .with_tags({"math"})
-            .with_example({"SELECT round(123.456)"})
-            .with_example({"SELECT round(123.456, 1)"})
-            .with_example({"SELECT round(123.456, 5)"}),
+            .with_example({
+                "To round the number 123.456 to an integer",
+                "SELECT round(123.456)"})
+            .with_example({
+                "To round the number 123.456 to a precision of 1",
+                "SELECT round(123.456, 1)"})
+            .with_example({
+                "To round the number 123.456 to a precision of 5",
+                "SELECT round(123.456, 5)"
+            }),
 
         help_text("rtrim",
                   "Returns a string formed by removing any and all characters that appear in the second argument from the right side of the first.")
@@ -312,8 +389,14 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("chars", "The characters to trim.  Defaults to spaces.")
                                 .optional())
             .with_tags({"string"})
-            .with_example({"SELECT ltrim('abc   ')"})
-            .with_example({"SELECT ltrim('abbbbcccc', 'bc')"}),
+            .with_example({
+                "To trim the whitespace from the end of the string 'abc   '",
+                "SELECT rtrim('abc   ')"
+            })
+            .with_example({
+                "To trim the characters 'b' and 'c' from the string 'abbbbcccc'",
+                "SELECT rtrim('abbbbcccc', 'bc')"
+            }),
 
         help_text("sqlite_compileoption_get",
                   "Returns the N-th compile-time option used to build SQLite or NULL if N is out of range.")
@@ -324,7 +407,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                   "Returns true (1) or false (0) depending on whether or not that compile-time option was used during the build.")
             .sql_function()
             .with_parameter({"option", "The name of the compile-time option."})
-            .with_example({"SELECT sqlite_compileoption_used('ENABLE_FTS3')"}),
+            .with_example({
+                "To check if the SQLite library was compiled with ENABLE_FTS3",
+                "SELECT sqlite_compileoption_used('ENABLE_FTS3')"
+            }),
 
         help_text("sqlite_source_id",
                   "Returns a string that identifies the specific version of the source code that was used to build the SQLite library.")
@@ -346,10 +432,22 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                 "If the value is negative, then the characters before the start are returned.")
                                 .optional())
             .with_tags({"string"})
-            .with_example({"SELECT substr('abc', 2)"})
-            .with_example({"SELECT substr('abc', 2, 1)"})
-            .with_example({"SELECT substr('abc', -1)"})
-            .with_example({"SELECT substr('abc', -1, -1)"}),
+            .with_example({
+                "To get the substring starting at the second character until the end of the string 'abc'",
+                "SELECT substr('abc', 2)"
+            })
+            .with_example({
+                "To get the substring of size one starting at the second character of the string 'abc'",
+                "SELECT substr('abc', 2, 1)"
+            })
+            .with_example({
+                "To get the substring starting at the last character until the end of the string 'abc'",
+                "SELECT substr('abc', -1)"
+            })
+            .with_example({
+                "To get the substring starting at the last character and going backwards one step of the string 'abc'",
+                "SELECT substr('abc', -1, -1)"
+            }),
 
         help_text("total_changes",
                   "Returns the number of row changes caused by INSERT, UPDATE or DELETE statements since the current database connection was opened.")
@@ -362,21 +460,37 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("chars", "The characters to trim.  Defaults to spaces.")
                                 .optional())
             .with_tags({"string"})
-            .with_example({"SELECT trim('    abc   ')"})
-            .with_example({"SELECT trim('-+abc+-', '-+')"}),
+            .with_example({
+                "To trim whitespace from the start and end of the string '    abc   '",
+                "SELECT trim('    abc   ')"
+            })
+            .with_example({
+                "To trim the characters '-' and '+' from the string '-+abc+-'",
+                "SELECT trim('-+abc+-', '-+')"
+            }),
 
         help_text("typeof",
                   "Returns a string that indicates the datatype of the expression X: \"null\", \"integer\", \"real\", \"text\", or \"blob\".")
             .sql_function()
             .with_parameter({"X", "The expression to check."})
-            .with_example({"SELECT typeof(1)"})
-            .with_example({"SELECT typeof('abc')"}),
+            .with_example({
+                "To get the type of the number 1",
+                "SELECT typeof(1)"
+            })
+            .with_example({
+                "To get the type of the string 'abc'",
+                "SELECT typeof('abc')"
+            }),
 
         help_text("unicode",
                   "Returns the numeric unicode code point corresponding to the first character of the string X.")
             .sql_function()
             .with_parameter({"X", "The string to examine."})
-            .with_example({"SELECT unicode('abc')"}),
+            .with_tags({"string"})
+            .with_example({
+                "To get the unicode code point for the first character of 'abc'",
+                "SELECT unicode('abc')"
+            }),
 
         help_text("unlikely",
                   "Short-hand for likelihood(X, 0.0625)")
@@ -388,7 +502,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .sql_function()
             .with_parameter({"str", "The string to convert."})
             .with_tags({"string"})
-            .with_example({"SELECT upper('aBc')"}),
+            .with_example({
+                "To uppercase the string 'aBc'",
+                "SELECT upper('aBc')"
+            }),
 
         help_text("zeroblob",
                   "Returns a BLOB consisting of N bytes of 0x00.")
@@ -402,9 +519,18 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
                                 .zero_or_more())
             .with_tags({"datetime"})
-            .with_example({"SELECT date('2017-01-02T03:04:05')"})
-            .with_example({"SELECT date('2017-01-02T03:04:05', '+1 day')"})
-            .with_example({"SELECT date(1491341842, 'unixepoch')"}),
+            .with_example({
+                "To get the date portion of the timestamp '2017-01-02T03:04:05'",
+                "SELECT date('2017-01-02T03:04:05')"
+            })
+            .with_example({
+                "To get the date portion of the timestamp '2017-01-02T03:04:05' plus one day",
+                "SELECT date('2017-01-02T03:04:05', '+1 day')"
+            })
+            .with_example({
+                "To get the date portion of the epoch timestamp 1491341842",
+                "SELECT date(1491341842, 'unixepoch')"
+            }),
 
         help_text("time",
                   "Returns the time in this format: HH:MM:SS.")
@@ -413,9 +539,18 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
                                 .zero_or_more())
             .with_tags({"datetime"})
-            .with_example({"SELECT time('2017-01-02T03:04:05')"})
-            .with_example({"SELECT time('2017-01-02T03:04:05', '+1 minute')"})
-            .with_example({"SELECT time(1491341842, 'unixepoch')"}),
+            .with_example({
+                "To get the time portion of the timestamp '2017-01-02T03:04:05'",
+                "SELECT time('2017-01-02T03:04:05')"
+            })
+            .with_example({
+                "To get the time portion of the timestamp '2017-01-02T03:04:05' plus one minute",
+                "SELECT time('2017-01-02T03:04:05', '+1 minute')"
+            })
+            .with_example({
+                "To get the time portion of the epoch timestamp 1491341842",
+                "SELECT time(1491341842, 'unixepoch')"
+            }),
 
         help_text("datetime",
                   "Returns the date and time in this format: YYYY-MM-DD HH:MM:SS.")
@@ -424,9 +559,18 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
                                 .zero_or_more())
             .with_tags({"datetime"})
-            .with_example({"SELECT datetime('2017-01-02T03:04:05')"})
-            .with_example({"SELECT datetime('2017-01-02T03:04:05', '+1 minute')"})
-            .with_example({"SELECT datetime(1491341842, 'unixepoch')"}),
+            .with_example({
+                "To get the date and time portion of the timestamp '2017-01-02T03:04:05'",
+                "SELECT datetime('2017-01-02T03:04:05')"
+            })
+            .with_example({
+                "To get the date and time portion of the timestamp '2017-01-02T03:04:05' plus one minute",
+                "SELECT datetime('2017-01-02T03:04:05', '+1 minute')"
+            })
+            .with_example({
+                "To get the date and time portion of the epoch timestamp 1491341842",
+                "SELECT datetime(1491341842, 'unixepoch')"
+            }),
 
         help_text("julianday",
                   "Returns the number of days since noon in Greenwich on November 24, 4714 B.C.")
@@ -435,9 +579,18 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
                                 .zero_or_more())
             .with_tags({"datetime"})
-            .with_example({"SELECT julianday('2017-01-02T03:04:05')"})
-            .with_example({"SELECT julianday('2017-01-02T03:04:05', '+1 minute')"})
-            .with_example({"SELECT julianday(1491341842, 'unixepoch')"}),
+            .with_example({
+                "To get the julian day from the timestamp '2017-01-02T03:04:05'",
+                "SELECT julianday('2017-01-02T03:04:05')"
+            })
+            .with_example({
+                "To get the julian day from the timestamp '2017-01-02T03:04:05' plus one minute",
+                "SELECT julianday('2017-01-02T03:04:05', '+1 minute')"
+            })
+            .with_example({
+                "To get the julian day from the timestamp 1491341842",
+                "SELECT julianday(1491341842, 'unixepoch')"
+            }),
 
         help_text("strftime",
                   "Returns the date formatted according to the format string specified as the first argument.")
@@ -447,25 +600,46 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("modifier", "A transformation that is applied to the value to the left.")
                                 .zero_or_more())
             .with_tags({"datetime"})
-            .with_example({"SELECT strftime('%Y', '2017-01-02T03:04:05')"})
-            .with_example({"SELECT strftime('The time is: %H%M%S', '2017-01-02T03:04:05', '+1 minute')"})
-            .with_example({"SELECT strftime('Julian day: %J', 1491341842, 'unixepoch')"}),
+            .with_example({
+                "To get the year from the timestamp '2017-01-02T03:04:05'",
+                "SELECT strftime('%Y', '2017-01-02T03:04:05')"
+            })
+            .with_example({
+                "To create a string with the time from the timestamp '2017-01-02T03:04:05' plus one minute",
+                "SELECT strftime('The time is: %H:%M:%S', '2017-01-02T03:04:05', '+1 minute')"
+            })
+            .with_example({
+                "To create a string with the Julian day from the epoch timestamp 1491341842",
+                "SELECT strftime('Julian day: %J', 1491341842, 'unixepoch')"
+            }),
 
         help_text("avg",
                   "Returns the average value of all non-NULL numbers within a group.")
             .sql_function()
             .with_parameter({"X", "The value to compute the average of."})
             .with_tags({"math"})
-            .with_example({"SELECT avg(ex_duration) FROM lnav_example_log"})
-            .with_example({"SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY ex_procname"}),
+            .with_example({
+                "To get the average of the column 'ex_duration' from the table 'lnav_example_log'",
+                "SELECT avg(ex_duration) FROM lnav_example_log"
+            })
+            .with_example({
+                "To get the average of the column 'ex_duration' from the table 'lnav_example_log' when grouped by 'ex_procname'",
+                "SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY ex_procname"
+            }),
 
         help_text("count",
                   "If the argument is '*', the total number of rows in the group is returned.  "
                       "Otherwise, the number of times the argument is non-NULL.")
             .sql_function()
             .with_parameter({"X", "The value to count."})
-            .with_example({"SELECT count(*) FROM lnav_example_log"})
-            .with_example({"SELECT count(log_part) FROM lnav_example_log"}),
+            .with_example({
+                "To get the count of the non-NULL rows of 'lnav_example_log'",
+                "SELECT count(*) FROM lnav_example_log"
+            })
+            .with_example({
+                "To get the count of the non-NULL values of 'log_part' from 'lnav_example_log'",
+                "SELECT count(log_part) FROM lnav_example_log"
+            }),
 
         help_text("group_concat",
                   "Returns a string which is the concatenation of all non-NULL values of X.")
@@ -474,23 +648,38 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("sep", "The separator to place between the values.")
                                 .optional())
             .with_tags({"string"})
-            .with_example({"SELECT group_concat(ex_procname) FROM lnav_example_log"})
-            .with_example({"SELECT group_concat(ex_procname, ', ') FROM lnav_example_log"})
-            .with_example({"SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log"}),
+            .with_example({
+                "To concatenate the values of the column 'ex_procname' from the table 'lnav_example_log'",
+                "SELECT group_concat(ex_procname) FROM lnav_example_log"
+            })
+            .with_example({
+                "To join the values of the column 'ex_procname' using the string ', '",
+                "SELECT group_concat(ex_procname, ', ') FROM lnav_example_log"
+            })
+            .with_example({
+                "To concatenate the distinct values of the column 'ex_procname' from the table 'lnav_example_log'",
+                "SELECT group_concat(DISTINCT ex_procname) FROM lnav_example_log"
+            }),
 
         help_text("sum",
                   "Returns the sum of the values in the group as an integer.")
             .sql_function()
             .with_parameter({"X", "The values to add."})
             .with_tags({"math"})
-            .with_example({"SELECT sum(ex_duration) FROM lnav_example_log"}),
+            .with_example({
+                "To sum all of the values in the column 'ex_duration' from the table 'lnav_example_log'",
+                "SELECT sum(ex_duration) FROM lnav_example_log"
+            }),
 
         help_text("total",
                   "Returns the sum of the values in the group as a floating-point.")
             .sql_function()
             .with_parameter({"X", "The values to add."})
             .with_tags({"math"})
-            .with_example({"SELECT total(ex_duration) FROM lnav_example_log"}),
+            .with_example({
+                "To total all of the values in the column 'ex_duration' from the table 'lnav_example_log'",
+                "SELECT total(ex_duration) FROM lnav_example_log"
+            }),
 
     };
 
@@ -507,14 +696,20 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                 .with_flag_name("DATABASE"))
             .with_parameter(help_text("schema-name", "The prefix for tables in this database.")
                                 .with_flag_name("AS"))
-            .with_example({"ATTACH DATABASE '/tmp/customers.db' AS customers"}),
+            .with_example({
+                "To attach the database file '/tmp/customers.db' with the name customers",
+                "ATTACH DATABASE '/tmp/customers.db' AS customers"
+            }),
 
         help_text("DETACH",
                   "Detach a database from the current connection.")
             .sql_keyword()
             .with_parameter(help_text("schema-name", "The prefix for tables in this database.")
                                 .with_flag_name("DATABASE"))
-            .with_example({"DETACH DATABASE customers"}),
+            .with_example({
+                "To detach the database named 'customers'",
+                "DETACH DATABASE customers"
+            }),
 
         help_text("CREATE", "Assign a name to a SELECT statement")
             .sql_keyword()
@@ -549,8 +744,7 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                 .with_flag_name("FROM"))
             .with_parameter(help_text("cond", "The conditions used to delete the rows.")
                                 .with_flag_name("WHERE")
-                                .optional())
-            .with_example({"SELECT * FROM syslog_log"}),
+                                .optional()),
 
         help_text("DROP", "Drop an index")
             .sql_keyword()
@@ -606,7 +800,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                 .with_flag_name("VALUES")
                                 .with_grouping("(", ")")
                                 .one_or_more())
-            .with_example({"INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')"}),
+            .with_example({
+                "To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the 'environ' table",
+                "INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')"
+            }),
 
         help_text("SELECT",
                   "Query the database and return zero or more rows of data.")
@@ -628,12 +825,15 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("limit-expr", "The maximum number of rows to return")
                                 .with_flag_name("LIMIT")
                                 .zero_or_more())
-            .with_example({"SELECT * FROM syslog_log"}),
+            .with_example({
+                "To select all of the columns from the table 'syslog_log'",
+                "SELECT * FROM syslog_log"
+            }),
 
         help_text("WITH",
                   "Create a temporary view that exists only for the duration of a SQL statement.")
             .sql_keyword()
-            .with_parameter(help_text("", "")
+            .with_parameter(help_text("")
                                 .with_flag_name("RECURSIVE")
                                 .optional())
             .with_parameter({"cte-table-name", "The name for the temporary table."})
@@ -653,7 +853,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter(help_text("cond", "The condition used to determine whether a row should be updated.")
                                 .with_flag_name("WHERE")
                                 .optional())
-            .with_example({"UPDATE syslog_log SET log_mark = 1 WHERE log_line = 40"}),
+            .with_example({
+                "To mark the syslog message at line 40",
+                "UPDATE syslog_log SET log_mark = 1 WHERE log_line = 40"
+            }),
 
         help_text("CASE",
                   "Evaluate a series of expressions in order until one evaluates to true and then return it's result.  "
@@ -671,7 +874,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                                 .optional())
             .with_parameter(help_text("")
                                 .with_flag_name("END"))
-            .with_example({"SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END"}),
+            .with_example({
+                "To evaluate the number one and return the string 'one'",
+                "SELECT CASE 1 WHEN 0 THEN 'zero' WHEN 1 THEN 'one' END"
+            }),
 
         help_text("CAST",
                   "Convert the value of the given expression to a different storage class specified by type-name.")
@@ -679,7 +885,10 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             .with_parameter({"expr", "The value to convert."})
             .with_parameter(help_text("type-name", "The name of the type to convert to.")
                                 .with_flag_name("AS"))
-            .with_example({"SELECT CAST(1.23 AS INTEGER)"}),
+            .with_example({
+                "To cast the value 1.23 as an integer",
+                "SELECT CAST(1.23 AS INTEGER)"
+            }),
 
     };
 
@@ -691,10 +900,6 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             }
             sqlite_function_help.insert(make_pair(toupper(param.ht_flag_name), &ht));
         }
-    }
-
-    for (const auto &iter : sqlite_function_help) {
-        log_debug("help %s", iter.first.c_str());
     }
 
     return 0;

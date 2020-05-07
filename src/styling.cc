@@ -41,40 +41,34 @@
 
 using namespace std;
 
-static struct json_path_handler term_color_rgb_handler[] = {
+static struct json_path_container term_color_rgb_handler = {
     json_path_handler("r")
         .FOR_FIELD(rgb_color, rc_r),
     json_path_handler("g")
         .FOR_FIELD(rgb_color, rc_g),
     json_path_handler("b")
-        .FOR_FIELD(rgb_color, rc_b),
-
-    json_path_handler()
+        .FOR_FIELD(rgb_color, rc_b)
 };
 
-static struct json_path_handler term_color_handler[] = {
+static struct json_path_container term_color_handler = {
     json_path_handler("colorId")
         .FOR_FIELD(term_color, xc_id),
     json_path_handler("name")
         .FOR_FIELD(term_color, xc_name),
-    json_path_handler("rgb/")
+    json_path_handler("rgb")
         .with_obj_provider<rgb_color, term_color>(
             [](const auto &pc, term_color *xc) { return &xc->xc_color; })
-        .with_children(term_color_rgb_handler),
-
-    json_path_handler()
+        .with_children(term_color_rgb_handler)
 };
 
-static struct json_path_handler root_color_handler[] = {
-    json_path_handler("#/")
+static struct json_path_container root_color_handler = {
+    json_path_handler("#")
         .with_obj_provider<term_color, vector<term_color>>(
         [](const yajlpp_provider_context &ypc, vector<term_color> *palette) {
             palette->resize(ypc.ypc_index + 1);
             return &((*palette)[ypc.ypc_index]);
         })
-        .with_children(term_color_handler),
-
-    json_path_handler()
+        .with_children(term_color_handler)
 };
 
 term_color_palette xterm_colors(xterm_palette_json.bsf_data);
@@ -166,7 +160,7 @@ bool rgb_color::operator!=(const rgb_color &rhs) const
 
 term_color_palette::term_color_palette(const unsigned char *json)
 {
-    yajlpp_parse_context ypc_xterm("palette.json", root_color_handler);
+    yajlpp_parse_context ypc_xterm("palette.json", &root_color_handler);
     yajl_handle handle;
 
     handle = yajl_alloc(&ypc_xterm.ypc_callbacks, nullptr, &ypc_xterm);

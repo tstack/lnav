@@ -830,7 +830,7 @@ static void usage()
         "             to install the default set of third-party formats.\n"
         "  -u         Update formats installed from git repositories.\n"
         "  -C         Check configuration and then exit.\n"
-        "  -d file    Write debug messages to the given file.\n"
+        "  -d path    Write debug messages to the given file.\n"
         "  -V         Print version information.\n"
         "\n"
         "  -a         Load all of the most recent log file types.\n"
@@ -1995,14 +1995,15 @@ int main(int argc, char *argv[])
     add_global_vars(ec);
 
     if (lnav_data.ld_flags & LNF_UPDATE_FORMATS) {
-        if (!update_git_formats()) {
+        if (!update_installs_from_git()) {
             return EXIT_FAILURE;
         }
         return EXIT_SUCCESS;
     }
 
     if (lnav_data.ld_flags & LNF_INSTALL) {
-        auto installed_path = dotlnav_path() / "formats/installed";
+        auto formats_installed_path = dotlnav_path() / "formats/installed";
+        auto configs_installed_path = dotlnav_path() / "configs/installed";
 
         if (argc == 0) {
             fprintf(stderr, "error: expecting file format paths\n");
@@ -2011,7 +2012,9 @@ int main(int argc, char *argv[])
 
         for (lpc = 0; lpc < argc; lpc++) {
             if (endswith(argv[lpc], ".git")) {
-                install_git_format(argv[lpc]);
+                if (!install_from_git(argv[lpc])) {
+                    return EXIT_FAILURE;
+                }
                 continue;
             }
 
@@ -2020,19 +2023,36 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            vector<intern_string_t> format_list = load_format_file(argv[lpc], loader_errors);
-
-            if (!loader_errors.empty()) {
-                print_errors(loader_errors);
+            auto file_type_result = detect_config_file_type(argv[lpc]);
+            if (file_type_result.isErr()) {
+                fprintf(stderr, "error: %s\n", file_type_result.unwrapErr().c_str());
                 return EXIT_FAILURE;
             }
-            if (format_list.empty()) {
-                fprintf(stderr, "error: format file is empty: %s\n", argv[lpc]);
-                return EXIT_FAILURE;
-            }
+            auto file_type = file_type_result.unwrap();
 
-            string dst_name = format_list[0].to_string() + ".json";
-            auto dst_path = installed_path / dst_name;
+            string dst_name;
+            if (file_type == config_file_type::CONFIG) {
+                dst_name = basename(argv[lpc]);
+            } else {
+                vector<intern_string_t> format_list = load_format_file(
+                    argv[lpc], loader_errors);
+
+                if (!loader_errors.empty()) {
+                    print_errors(loader_errors);
+                    return EXIT_FAILURE;
+                }
+                if (format_list.empty()) {
+                    fprintf(stderr, "error: format file is empty: %s\n",
+                            argv[lpc]);
+                    return EXIT_FAILURE;
+                }
+
+                dst_name = format_list[0].to_string() + ".json";
+            }
+            auto dst_path = (file_type == config_file_type::CONFIG ?
+                             configs_installed_path :
+                             formats_installed_path) /
+                            dst_name;
             auto_fd in_fd, out_fd;
 
             if ((in_fd = open(argv[lpc], O_RDONLY)) == -1) {
@@ -2055,7 +2075,7 @@ int main(int argc, char *argv[])
                         written = write(out_fd, buffer, rc);
                         if (written == -1) {
                             fprintf(stderr,
-                                    "error: unable to install format file -- %s\n",
+                                    "error: unable to install file -- %s\n",
                                     strerror(errno));
                             exit(EXIT_FAILURE);
                         }
@@ -2215,7 +2235,6 @@ int main(int argc, char *argv[])
         !(lnav_data.ld_flags & LNF__ALL)) {
         lnav_data.ld_flags |= LNF_SYSLOG;
     }
-
     if (lnav_data.ld_flags != 0) {
         char start_dir[FILENAME_MAX];
 
@@ -2235,6 +2254,43 @@ int main(int argc, char *argv[])
             if (chdir(start_dir) == -1) {
                 perror("chdir(start_dir)");
             }
+        }
+    }
+
+    {
+        const auto internals_dir = getenv("DUMP_INTERNALS_DIR");
+
+        if (internals_dir) {
+            dump_schema_to(lnav_config_handlers, internals_dir, "config-v1.schema.json");
+            dump_schema_to(root_format_handler, internals_dir, "format-v1.schema.json");
+
+            execute_examples();
+
+            auto cmd_ref_path = filesystem::path(internals_dir) / "cmd-ref.rst";
+            auto cmd_file = unique_ptr<FILE, decltype(&fclose)>(fopen(cmd_ref_path.str().c_str(), "w+"), fclose);
+            set<readline_context::command_t *> unique_cmds;
+
+            for (auto &cmd : lnav_commands) {
+                if (unique_cmds.find(cmd.second) != unique_cmds.end()) {
+                    continue;
+                }
+                unique_cmds.insert(cmd.second);
+                format_help_text_for_rst(cmd.second->c_help, eval_example, cmd_file.get());
+            }
+
+            auto sql_ref_path = filesystem::path(internals_dir) / "sql-ref.rst";
+            auto sql_file = unique_ptr<FILE, decltype(&fclose)>(fopen(sql_ref_path.str().c_str(), "w+"), fclose);
+            set<help_text *> unique_sql_help;
+
+            for (auto &sql : sqlite_function_help) {
+                if (unique_sql_help.find(sql.second) != unique_sql_help.end()) {
+                    continue;
+                }
+                unique_sql_help.insert(sql.second);
+                format_help_text_for_rst(*sql.second, eval_example, sql_file.get());
+            }
+
+            return EXIT_SUCCESS;
         }
     }
 

@@ -341,6 +341,10 @@ void execute_examples()
             string alt_msg;
             attr_line_t result;
 
+            if (!ex.he_cmd) {
+                continue;
+            }
+
             switch (ht.ht_context) {
                 case help_context_t::HC_SQL_FUNCTION:
                 case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {

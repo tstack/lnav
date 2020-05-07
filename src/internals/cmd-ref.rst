@@ -1,0 +1,1536 @@
+
+.. _adjust_log_time:
+
+:adjust-log-time *timestamp*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Change the timestamps of the top file to be relative to the given date
+
+  **Parameters:**
+
+    * **timestamp** --- The new timestamp for the top line in the view
+
+  **Examples:**
+
+    To set the top timestamp to a given date:
+
+    .. code-block::  
+
+      :adjust-log-time 2017-01-02T05:33:00
+
+    To set the top timestamp back an hour:
+
+    .. code-block::  
+
+      :adjust-log-time -1h
+
+
+----
+
+
+.. _alt_msg:
+
+:alt-msg *msg*
+^^^^^^^^^^^^^^
+
+  Display a message in the alternate command position
+
+  **Parameters:**
+
+    * **msg** --- The message to display
+
+  **Examples:**
+
+    To display 'Press t to switch to the text view' on the bottom right:
+
+    .. code-block::  
+
+      :alt-msg Press t to switch to the text view
+
+  **See Also:**
+
+    :ref:`echo`, :ref:`eval`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
+
+----
+
+
+.. _append_to:
+
+:append-to *path*
+^^^^^^^^^^^^^^^^^
+
+  Append marked lines in the current view to the given file
+
+  **Parameters:**
+
+    * **path** --- The path to the file to append to
+
+  **Examples:**
+
+    To append marked lines to the file /tmp/interesting-lines.txt:
+
+    .. code-block::  
+
+      :append-to /tmp/interesting-lines.txt
+
+  **See Also:**
+
+    :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
+
+----
+
+
+.. _clear_comment:
+
+:clear-comment
+^^^^^^^^^^^^^^
+
+  Clear the comment attached to the top log line
+
+  **See Also:**
+
+    :ref:`comment`, :ref:`tag`
+
+----
+
+
+.. _clear_highlight:
+
+:clear-highlight *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Remove a previously set highlight regular expression
+
+  **Parameters:**
+
+    * **pattern** --- The regular expression previously used with :highlight
+
+  **Examples:**
+
+    To clear the highlight with the pattern 'foobar':
+
+    .. code-block::  
+
+      :clear-highlight foobar
+
+  **See Also:**
+
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`
+
+----
+
+
+.. _clear_partition:
+
+:clear-partition
+^^^^^^^^^^^^^^^^
+
+  Clear the partition the top line is a part of
+
+
+----
+
+
+.. _close:
+
+:close
+^^^^^^
+
+  Close the top file in the view
+
+
+----
+
+
+.. _comment:
+
+:comment *text*
+^^^^^^^^^^^^^^^
+
+  Attach a comment to the top log line
+
+  **Parameters:**
+
+    * **text** --- The comment text
+
+  **Examples:**
+
+    To add the comment 'This is where it all went wrong' to the top line:
+
+    .. code-block::  
+
+      :comment This is where it all went wrong
+
+  **See Also:**
+
+    :ref:`clear_comment`, :ref:`tag`
+
+----
+
+
+.. _config:
+
+:config *option* *value*
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Read or write a configuration option
+
+  **Parameters:**
+
+    * **option** --- The path to the option to read or write
+    * **value** --- The value to write.  If not given, the current value is returned
+
+  **Examples:**
+
+    To read the configuration of the '/ui/clock-format' option:
+
+    .. code-block::  
+
+      :config /ui/clock-format
+
+    To set the '/ui/dim-text' option to 'false':
+
+    .. code-block::  
+
+      :config /ui/dim-text false
+
+  **See Also:**
+
+    :ref:`reset_config`, :ref:`save_config`
+
+----
+
+
+.. _create_logline_table:
+
+:create-logline-table *table-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Create an SQL table using the top line of the log view as a template
+
+  **Parameters:**
+
+    * **table-name** --- The name for the new table
+
+  **Examples:**
+
+    To create a logline-style table named 'task_durations':
+
+    .. code-block::  
+
+      :create-logline-table task_durations
+
+  **See Also:**
+
+    :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`
+
+----
+
+
+.. _create_search_table:
+
+:create-search-table *table-name* *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Create an SQL table based on a regex search
+
+  **Parameters:**
+
+    * **table-name** --- The name of the table to create
+    * **pattern** --- The regular expression used to capture the table columns.  If not given, the current search pattern is used.
+
+  **Examples:**
+
+    To create a table named 'task_durations' that matches log messages with the pattern 'duration=(?<duration>\d+)':
+
+    .. code-block::  
+
+      :create-search-table task_durations duration=(?<duration>\d+)
+
+  **See Also:**
+
+    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`delete_search_table`, :ref:`delete_search_table`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`
+
+----
+
+
+.. _current_time:
+
+:current-time
+^^^^^^^^^^^^^
+
+  Print the current time in human-readable form and seconds since the epoch
+
+
+----
+
+
+.. _delete_filter:
+
+:delete-filter *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Delete the filter created with [1m:filter-in[0m or [1m:filter-out[0m
+
+  **Parameters:**
+
+    * **pattern** --- The regular expression to match
+
+  **Examples:**
+
+    To delete the filter with the pattern 'last message repeated':
+
+    .. code-block::  
+
+      :delete-filter last message repeated
+
+  **See Also:**
+
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+
+----
+
+
+.. _delete_logline_table:
+
+:delete-logline-table *table-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Delete a table created with create-logline-table
+
+  **Parameters:**
+
+    * **table-name** --- The name of the table to delete
+
+  **Examples:**
+
+    To delete the logline-style table named 'task_durations':
+
+    .. code-block::  
+
+      :delete-logline-table task_durations
+
+  **See Also:**
+
+    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`
+
+----
+
+
+.. _delete_search_table:
+
+:delete-search-table *table-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Create an SQL table based on a regex search
+
+  **Parameters:**
+
+    * **table-name** --- The name of the table to create
+
+  **Examples:**
+
+    To delete the search table named 'task_durations':
+
+    .. code-block::  
+
+      :delete-search-table task_durations
+
+  **See Also:**
+
+    :ref:`create_logline_table`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`create_search_table`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`
+
+----
+
+
+.. _delete_tags:
+
+:delete-tags *tag*
+^^^^^^^^^^^^^^^^^^
+
+  Remove the given tags from all log lines
+
+  **Parameters:**
+
+    * **tag** --- The tags to delete
+
+  **Examples:**
+
+    To remove the tags '#BUG123' and '#needs-review' from all log lines:
+
+    .. code-block::  
+
+      :delete-tags #BUG123 #needs-review
+
+  **See Also:**
+
+    :ref:`comment`, :ref:`tag`
+
+----
+
+
+.. _disable_filter:
+
+:disable-filter *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Disable a filter created with filter-in/filter-out
+
+  **Parameters:**
+
+    * **pattern** --- The regular expression used in the filter command
+
+  **Examples:**
+
+    To disable the filter with the pattern 'last message repeated':
+
+    .. code-block::  
+
+      :disable-filter last message repeated
+
+  **See Also:**
+
+    :ref:`enable_filter`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+
+----
+
+
+.. _disable_word_wrap:
+
+:disable-word-wrap
+^^^^^^^^^^^^^^^^^^
+
+  Disable word-wrapping for the current view
+
+  **See Also:**
+
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`
+
+----
+
+
+.. _echo:
+
+:echo *msg*
+^^^^^^^^^^^
+
+  Echo the given message
+
+  **Parameters:**
+
+    * **msg** --- The message to display
+
+  **Examples:**
+
+    To output 'Hello, World!':
+
+    .. code-block::  
+
+      :echo Hello, World!
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`eval`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
+
+----
+
+
+.. _enable_filter:
+
+:enable-filter *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Enable a previously created and disabled filter
+
+  **Parameters:**
+
+    * **pattern** --- The regular expression used in the filter command
+
+  **Examples:**
+
+    To enable the disabled filter with the pattern 'last message repeated':
+
+    .. code-block::  
+
+      :enable-filter last message repeated
+
+  **See Also:**
+
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+
+----
+
+
+.. _enable_word_wrap:
+
+:enable-word-wrap
+^^^^^^^^^^^^^^^^^
+
+  Enable word-wrapping for the current view
+
+  **See Also:**
+
+    :ref:`disable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`
+
+----
+
+
+.. _eval:
+
+:eval *command*
+^^^^^^^^^^^^^^^
+
+  Evaluate the given command/query after doing environment variable substitution
+
+  **Parameters:**
+
+    * **command** --- The command or query to perform substitution on.
+
+  **Examples:**
+
+    To output the user's home directory:
+
+    .. code-block::  
+
+      :eval :echo $HOME
+
+    To substitute the table name from a variable:
+
+    .. code-block::  
+
+      :eval ;SELECT * FROM ${table}
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`echo`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
+
+----
+
+
+.. _filter_in:
+
+:filter-in *pattern*
+^^^^^^^^^^^^^^^^^^^^
+
+  Only show lines that match the given regular expression in the current view
+
+  **Parameters:**
+
+    * **pattern** --- The regular expression to match
+
+  **Examples:**
+
+    To filter out log messages that do not have the string 'dhclient':
+
+    .. code-block::  
+
+      :filter-in dhclient
+
+  **See Also:**
+
+    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+
+----
+
+
+.. _filter_out:
+
+:filter-out *pattern*
+^^^^^^^^^^^^^^^^^^^^^
+
+  Remove lines that match the given regular expression in the current view
+
+  **Parameters:**
+
+    * **pattern** --- The regular expression to match
+
+  **Examples:**
+
+    To filter out log messages that contain the string 'last message repeated':
+
+    .. code-block::  
+
+      :filter-out last message repeated
+
+  **See Also:**
+
+    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_in`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+
+----
+
+
+.. _goto:
+
+:goto *line#|N%|date*
+^^^^^^^^^^^^^^^^^^^^^
+
+  Go to the given location in the top view
+
+  **Parameters:**
+
+    * **line#|N%|date** --- A line number, percent into the file, or a timestamp
+
+  **Examples:**
+
+    To go to line 22:
+
+    .. code-block::  
+
+      :goto 22
+
+    To go to the line 75% of the way into the view:
+
+    .. code-block::  
+
+      :goto 75%
+
+    To go to the first message on the first day of 2017:
+
+    .. code-block::  
+
+      :goto 2017-01-01
+
+  **See Also:**
+
+    :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
+
+----
+
+
+.. _help:
+
+:help
+^^^^^
+
+  Open the help text view
+
+
+----
+
+
+.. _hide_fields:
+
+:hide-fields *field-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Hide log message fields by replacing them with an ellipsis
+
+  **Parameters:**
+
+    * **field-name** --- The name of the field to hide in the format for the top log line.  A qualified name can be used where the field name is prefixed by the format name and a dot to hide any field.
+
+  **Examples:**
+
+    To hide the log_procname fields in all formats:
+
+    .. code-block::  
+
+      :hide-fields log_procname
+
+    To hide only the log_procname field in the syslog format:
+
+    .. code-block::  
+
+      :hide-fields syslog_log.log_procname
+
+  **See Also:**
+
+    :ref:`enable_word_wrap`, :ref:`highlight`, :ref:`show_fields`
+
+----
+
+
+.. _hide_lines_after:
+
+:hide-lines-after *date*
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Hide lines that come after the given date
+
+  **Parameters:**
+
+    * **date** --- An absolute or relative date
+
+  **Examples:**
+
+    To hide the lines after the top line in the view:
+
+    .. code-block::  
+
+      :hide-lines-after here
+
+    To hide the lines after 6 AM today:
+
+    .. code-block::  
+
+      :hide-lines-after 6am
+
+  **See Also:**
+
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`
+
+----
+
+
+.. _hide_lines_before:
+
+:hide-lines-before *date*
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Hide lines that come before the given date
+
+  **Parameters:**
+
+    * **date** --- An absolute or relative date
+
+  **Examples:**
+
+    To hide the lines before the top line in the view:
+
+    .. code-block::  
+
+      :hide-lines-before here
+
+    To hide the log messages before 6 AM today:
+
+    .. code-block::  
+
+      :hide-lines-before 6am
+
+  **See Also:**
+
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`
+
+----
+
+
+.. _hide_unmarked_lines:
+
+:hide-unmarked-lines
+^^^^^^^^^^^^^^^^^^^^
+
+  Hide lines that have not been bookmarked
+
+  **See Also:**
+
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`
+
+----
+
+
+.. _highlight:
+
+:highlight *pattern*
+^^^^^^^^^^^^^^^^^^^^
+
+  Add coloring to log messages fragments that match the given regular expression
+
+  **Parameters:**
+
+    * **pattern** --- The regular expression to match
+
+  **Examples:**
+
+    To highlight numbers with three or more digits:
+
+    .. code-block::  
+
+      :highlight \d{3,}
+
+  **See Also:**
+
+    :ref:`clear_highlight`, :ref:`enable_word_wrap`, :ref:`hide_fields`
+
+----
+
+
+.. _load_session:
+
+:load-session
+^^^^^^^^^^^^^
+
+  Load the latest session state
+
+
+----
+
+
+.. _mark:
+
+:mark
+^^^^^
+
+  Toggle the bookmark state for the top line in the current view
+
+  **See Also:**
+
+    :ref:`hide_unmarked_lines`, :ref:`next_mark`, :ref:`prev_mark`
+
+----
+
+
+.. _next_location:
+
+:next-location
+^^^^^^^^^^^^^^
+
+  Move to the next position in the location history
+
+  **See Also:**
+
+    :ref:`goto`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
+
+----
+
+
+.. _next_mark:
+
+:next-mark *type*
+^^^^^^^^^^^^^^^^^
+
+  Move to the next bookmark of the given type in the current view
+
+  **Parameters:**
+
+    * **type** --- The type of bookmark -- error, warning, search, user, file, meta
+
+  **Examples:**
+
+    To go to the next error:
+
+    .. code-block::  
+
+      :next-mark error
+
+  **See Also:**
+
+    :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_mark`, :ref:`relative_goto`
+
+----
+
+
+.. _open:
+
+:open *path*
+^^^^^^^^^^^^
+
+  Open the given file(s) in lnav
+
+  **Parameters:**
+
+    * **path** --- The path to the file to open
+
+  **Examples:**
+
+    To open the file '/path/to/file':
+
+    .. code-block::  
+
+      :open /path/to/file
+
+
+----
+
+
+.. _partition_name:
+
+:partition-name *name*
+^^^^^^^^^^^^^^^^^^^^^^
+
+  Mark the top line in the log view as the start of a new partition with the given name
+
+  **Parameters:**
+
+    * **name** --- The name for the new partition
+
+  **Examples:**
+
+    To mark the top line as the start of the partition named 'boot #1':
+
+    .. code-block::  
+
+      :partition-name boot #1
+
+
+----
+
+
+.. _pipe_line_to:
+
+:pipe-line-to *shell-cmd*
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Pipe the top line to the given shell command
+
+  **Parameters:**
+
+    * **shell-cmd** --- The shell command-line to execute
+
+  **Examples:**
+
+    To write the top line to 'sed' for processing:
+
+    .. code-block::  
+
+      :pipe-line-to sed -e 's/foo/bar/g'
+
+  **See Also:**
+
+    :ref:`append_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
+
+----
+
+
+.. _pipe_to:
+
+:pipe-to *shell-cmd*
+^^^^^^^^^^^^^^^^^^^^
+
+  Pipe the marked lines to the given shell command
+
+  **Parameters:**
+
+    * **shell-cmd** --- The shell command-line to execute
+
+  **Examples:**
+
+    To write marked lines to 'sed' for processing:
+
+    .. code-block::  
+
+      :pipe-to sed -e s/foo/bar/g
+
+  **See Also:**
+
+    :ref:`append_to`, :ref:`pipe_line_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_to`
+
+----
+
+
+.. _prev_location:
+
+:prev-location
+^^^^^^^^^^^^^^
+
+  Move to the previous position in the location history
+
+  **See Also:**
+
+    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`relative_goto`
+
+----
+
+
+.. _prev_mark:
+
+:prev-mark *type*
+^^^^^^^^^^^^^^^^^
+
+  Move to the previous bookmark of the given type in the current view
+
+  **Parameters:**
+
+    * **type** --- The type of bookmark -- error, warning, search, user, file, meta
+
+  **Examples:**
+
+    To go to the previous error:
+
+    .. code-block::  
+
+      :prev-mark error
+
+  **See Also:**
+
+    :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_mark`, :ref:`prev_location`, :ref:`relative_goto`
+
+----
+
+
+.. _quit:
+
+:quit
+^^^^^
+
+  Quit lnav
+
+
+----
+
+
+.. _redirect_to:
+
+:redirect-to *path*
+^^^^^^^^^^^^^^^^^^^
+
+  Redirect the output of commands to the given file
+
+  **Parameters:**
+
+    * **path** --- The path to the file to write.  If not specified, the current redirect will be cleared
+
+  **Examples:**
+
+    To write the output of lnav commands to the file /tmp/script-output.txt:
+
+    .. code-block::  
+
+      :redirect-to /tmp/script-output.txt
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
+
+----
+
+
+.. _redraw:
+
+:redraw
+^^^^^^^
+
+  Do a full redraw of the screen
+
+
+----
+
+
+.. _relative_goto:
+
+:relative-goto *line-count|N%*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Move the current view up or down by the given amount
+
+  **Parameters:**
+
+    * **line-count|N%** --- The amount to move the view by.
+
+  **Examples:**
+
+    To move 22 lines down in the view:
+
+    .. code-block::  
+
+      :relative-goto +22
+
+    To move 10 percent back in the view:
+
+    .. code-block::  
+
+      :relative-goto -10%
+
+  **See Also:**
+
+    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`
+
+----
+
+
+.. _reset_config:
+
+:reset-config *option*
+^^^^^^^^^^^^^^^^^^^^^^
+
+  Reset the configuration option to its default value
+
+  **Parameters:**
+
+    * **option** --- The path to the option to reset
+
+  **Examples:**
+
+    To reset the '/ui/clock-format' option back to the builtin default:
+
+    .. code-block::  
+
+      :reset-config /ui/clock-format
+
+  **See Also:**
+
+    :ref:`config`, :ref:`save_config`
+
+----
+
+
+.. _reset_session:
+
+:reset-session
+^^^^^^^^^^^^^^
+
+  Reset the session state, clearing all filters, highlights, and bookmarks
+
+
+----
+
+
+.. _save_config:
+
+:save-config
+^^^^^^^^^^^^
+
+  Save the current configuration state
+
+  **See Also:**
+
+    :ref:`config`, :ref:`reset_config`
+
+----
+
+
+.. _save_session:
+
+:save-session
+^^^^^^^^^^^^^
+
+  Save the current state as a session
+
+
+----
+
+
+.. _session:
+
+:session *lnav-command*
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  Add the given command to the session file (~/.lnav/session)
+
+  **Parameters:**
+
+    * **lnav-command** --- The lnav command to save.
+
+  **Examples:**
+
+    To add the command ':highlight foobar' to the session file:
+
+    .. code-block::  
+
+      :session :highlight foobar
+
+
+----
+
+
+.. _set_min_log_level:
+
+:set-min-log-level *log-level*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Set the minimum log level to display in the log view
+
+  **Parameters:**
+
+    * **log-level** --- The new minimum log level
+
+  **Examples:**
+
+    To set the minimum log level displayed to error:
+
+    .. code-block::  
+
+      :set-min-log-level error
+
+
+----
+
+
+.. _show_fields:
+
+:show-fields *field-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Show log message fields that were previously hidden
+
+  **Parameters:**
+
+    * **field-name** --- The name of the field to show
+
+  **Examples:**
+
+    To show all the log_procname fields in all formats:
+
+    .. code-block::  
+
+      :show-fields log_procname
+
+  **See Also:**
+
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`
+
+----
+
+
+.. _show_lines_before_and_after:
+
+:show-lines-before-and-after
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Show lines that were hidden by the 'hide-lines' commands
+
+  **See Also:**
+
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+
+----
+
+
+.. _show_unmarked_lines:
+
+:show-unmarked-lines
+^^^^^^^^^^^^^^^^^^^^
+
+  Show lines that have not been bookmarked
+
+  **See Also:**
+
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`
+
+----
+
+
+.. _spectrogram:
+
+:spectrogram *field-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Visualize the given message field using a spectrogram
+
+  **Parameters:**
+
+    * **field-name** --- The name of the numeric field to visualize.
+
+  **Examples:**
+
+    To visualize the sc_bytes field in the access_log format:
+
+    .. code-block::  
+
+      :spectrogram sc_bytes
+
+
+----
+
+
+.. _summarize:
+
+:summarize *column-name*
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Execute a SQL query that computes the characteristics of the values in the given column
+
+  **Parameters:**
+
+    * **column-name** --- The name of the column to analyze.
+
+  **Examples:**
+
+    To get a summary of the sc_bytes column in the access_log table:
+
+    .. code-block::  
+
+      :summarize sc_bytes
+
+
+----
+
+
+.. _switch_to_view:
+
+:switch-to-view *view-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Switch to the given view
+
+  **Parameters:**
+
+    * **view-name** --- The name of the view to switch to.
+
+  **Examples:**
+
+    To switch to the 'schema' view:
+
+    .. code-block::  
+
+      :switch-to-view schema
+
+
+----
+
+
+.. _tag:
+
+:tag *tag*
+^^^^^^^^^^
+
+  Attach tags to the top log line
+
+  **Parameters:**
+
+    * **tag** --- The tags to attach
+
+  **Examples:**
+
+    To add the tags '#BUG123' and '#needs-review' to the top line:
+
+    .. code-block::  
+
+      :tag #BUG123 #needs-review
+
+  **See Also:**
+
+    :ref:`comment`, :ref:`delete_tags`, :ref:`untag`
+
+----
+
+
+.. _toggle_view:
+
+:toggle-view *view-name*
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Switch to the given view or, if it is already displayed, switch to the previous view
+
+  **Parameters:**
+
+    * **view-name** --- The name of the view to toggle the display of.
+
+  **Examples:**
+
+    To switch to the 'schema' view if it is not displayed or switch back to the previous view:
+
+    .. code-block::  
+
+      :toggle-view schema
+
+
+----
+
+
+.. _unix_time:
+
+:unix-time *seconds*
+^^^^^^^^^^^^^^^^^^^^
+
+  Convert epoch time to a human-readable form
+
+  **Parameters:**
+
+    * **seconds** --- The epoch timestamp to convert
+
+  **Examples:**
+
+    To convert the epoch time 1490191111:
+
+    .. code-block::  
+
+      :unix-time 1490191111
+
+
+----
+
+
+.. _untag:
+
+:untag *tag*
+^^^^^^^^^^^^
+
+  Detach tags from the top log line
+
+  **Parameters:**
+
+    * **tag** --- The tags to detach
+
+  **Examples:**
+
+    To remove the tags '#BUG123' and '#needs-review' from the top line:
+
+    .. code-block::  
+
+      :untag #BUG123 #needs-review
+
+  **See Also:**
+
+    :ref:`comment`, :ref:`tag`
+
+----
+
+
+.. _write_cols_to:
+
+:write-cols-to *path*
+^^^^^^^^^^^^^^^^^^^^^
+
+  Write SQL results to the given file in a columnar format
+
+  **Parameters:**
+
+    * **path** --- The path to the file to write
+
+  **Examples:**
+
+    To write SQL results as text to /tmp/table.txt:
+
+    .. code-block::  
+
+      :write-cols-to /tmp/table.txt
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
+
+----
+
+
+.. _write_csv_to:
+
+:write-csv-to *path*
+^^^^^^^^^^^^^^^^^^^^
+
+  Write SQL results to the given file in CSV format
+
+  **Parameters:**
+
+    * **path** --- The path to the file to write
+
+  **Examples:**
+
+    To write SQL results as CSV to /tmp/table.csv:
+
+    .. code-block::  
+
+      :write-csv-to /tmp/table.csv
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
+
+----
+
+
+.. _write_json_to:
+
+:write-json-to *path*
+^^^^^^^^^^^^^^^^^^^^^
+
+  Write SQL results to the given file in JSON format
+
+  **Parameters:**
+
+    * **path** --- The path to the file to write
+
+  **Examples:**
+
+    To write SQL results as JSON to /tmp/table.json:
+
+    .. code-block::  
+
+      :write-json-to /tmp/table.json
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
+
+----
+
+
+.. _write_raw_to:
+
+:write-raw-to *path*
+^^^^^^^^^^^^^^^^^^^^
+
+  Write the text in the top view to the given file without any formatting
+
+  **Parameters:**
+
+    * **path** --- The path to the file to write
+
+  **Examples:**
+
+    To write the top view to /tmp/table.txt:
+
+    .. code-block::  
+
+      :write-raw-to /tmp/table.txt
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_to`, :ref:`write_to`
+
+----
+
+
+.. _write_screen_to:
+
+:write-screen-to *path*
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  Write the displayed text or SQL results to the given file without any formatting
+
+  **Parameters:**
+
+    * **path** --- The path to the file to write
+
+  **Examples:**
+
+    To write only the displayed text to /tmp/table.txt:
+
+    .. code-block::  
+
+      :write-screen-to /tmp/table.txt
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_to`, :ref:`write_to`
+
+----
+
+
+.. _write_to:
+
+:write-to *path*
+^^^^^^^^^^^^^^^^
+
+  Overwrite the given file with any marked lines in the current view
+
+  **Parameters:**
+
+    * **path** --- The path to the file to write
+
+  **Examples:**
+
+    To write marked lines to the file /tmp/interesting-lines.txt:
+
+    .. code-block::  
+
+      :write-to /tmp/interesting-lines.txt
+
+  **See Also:**
+
+    :ref:`alt_msg`, :ref:`append_to`, :ref:`echo`, :ref:`eval`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`write_cols_to`, :ref:`write_cols_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`
+
+----
+
+
+.. _zoom_to:
+
+:zoom-to *zoom-level*
+^^^^^^^^^^^^^^^^^^^^^
+
+  Zoom the histogram view to the given level
+
+  **Parameters:**
+
+    * **zoom-level** --- The zoom level
+
+  **Examples:**
+
+    To set the zoom level to '1-week':
+
+    .. code-block::  
+
+      :zoom-to 1-week
+
+
+----
+

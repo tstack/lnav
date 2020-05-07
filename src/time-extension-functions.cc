@@ -72,7 +72,7 @@ static string timeslice(const char *time_in, nonstd::optional<const char *> slic
     struct exttm tm;
     struct timeval tv;
 
-    if (dts.scan(time_in, strlen(time_in), NULL, &tm, tv) == NULL) {
+    if (dts.scan(time_in, strlen(time_in), nullptr, &tm, tv) == nullptr) {
         throw sqlite_func_error("unable to parse time value -- {}", time_in);
     }
 
@@ -100,13 +100,13 @@ nonstd::optional<double> sql_timediff(const char *time1, const char *time2)
 
     if (rt1.parse(time1, -1, pe)) {
         tv1 = rt1.add_now().to_timeval();
-    } else if (!dts1.convert_to_timeval(time1, -1, NULL, tv1)) {
+    } else if (!dts1.convert_to_timeval(time1, -1, nullptr, tv1)) {
         return nonstd::nullopt;
     }
 
     if (rt2.parse(time2, -1, pe)) {
         tv2 = rt2.add_now().to_timeval();
-    } else if (!dts2.convert_to_timeval(time2, -1, NULL, tv2)) {
+    } else if (!dts2.convert_to_timeval(time2, -1, nullptr, tv2)) {
         return nonstd::nullopt;
     }
 
@@ -126,26 +126,38 @@ int time_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter({"time", "The timestamp to get the time slice for."})
                 .with_parameter({"slice", "The size of the time slices"})
                 .with_tags({"datetime"})
-                .with_example({"SELECT timeslice('2017-01-01T05:05:00', '10m')"})
-                .with_example({"SELECT timeslice(log_time, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY slice"})
+                .with_example({
+                    "To get the timestamp rounded down to the start of the ten minute slice",
+                    "SELECT timeslice('2017-01-01T05:05:00', '10m')"
+                })
+                .with_example({
+                    "To group log messages into five minute buckets and count them",
+                    "SELECT timeslice(log_time, '5m') AS slice, count(*) FROM lnav_example_log GROUP BY slice"
+                })
         ),
 
         sqlite_func_adapter<decltype(&sql_timediff), sql_timediff>::builder(
             help_text("timediff",
-                      "Compute the difference between two timestamps")
+                      "Compute the difference between two timestamps in seconds")
                 .sql_function()
                 .with_parameter({"time1", "The first timestamp"})
                 .with_parameter({"time2", "The timestamp to subtract from the first"})
                 .with_tags({"datetime"})
-                .with_example({"SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')"})
-                .with_example({"SELECT timediff('today', 'yesterday')"})
+                .with_example({
+                    "To get the difference between two timestamps",
+                    "SELECT timediff('2017-02-03T04:05:06', '2017-02-03T04:05:00')"
+                })
+                .with_example({
+                    "To get the difference between relative timestamps",
+                    "SELECT timediff('today', 'yesterday')"
+                })
         ),
 
-        { NULL }
+        { nullptr }
     };
 
     *basic_funcs = time_funcs;
-    *agg_funcs   = NULL;
+    *agg_funcs   = nullptr;
 
     return SQLITE_OK;
 }

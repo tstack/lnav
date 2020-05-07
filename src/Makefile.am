@@ -168,6 +168,8 @@ dist_noinst_DATA = \
 	scripts/partition-by-boot.lnav \
 	scripts/rename-stdin.lnav \
 	scripts/search-for.lnav \
+	internals/config-v1.schema.json \
+	internals/format-v1.schema.json \
 	themes/default-theme.json \
 	themes/eldar.json \
     themes/monocai.json \
@@ -443,6 +445,9 @@ DISTCLEANFILES = \
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
 		$(HEADERS))
+
+all-local: lnav
+	env DUMP_INTERNALS_DIR=$(srcdir)/internals ./lnav
 
 install-exec-hook:
 	bash $(srcdir)/alpha-release.sh

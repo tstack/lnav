@@ -89,7 +89,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                     bm[&logfile_sub_source::BM_ERRORS];
 
                 if (now > last_line->get_time() && from_five_min_ago != -1) {
-                    bookmark_vector<vis_line_t>::iterator five_min_lower =
+                    auto five_min_lower =
                         lower_bound(error_bookmarks.begin(),
                                     error_bookmarks.end(),
                                     from_five_min_ago);
@@ -105,7 +105,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                         error_rate = error_count / time_diff;
 
                         if (from_ten_secs_ago != -1) {
-                            bookmark_vector<vis_line_t>::iterator ten_sec_lower =
+                            auto ten_sec_lower =
                                 lower_bound(error_bookmarks.begin(),
                                             error_bookmarks.end(),
                                             from_ten_secs_ago);
@@ -207,7 +207,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
 
     content_line_t cl = lss.at(lv.get_top());
     std::shared_ptr<logfile> file = lss.find(cl);
-    logfile::iterator ll = file->begin() + cl;
+    auto ll = file->begin() + cl;
     log_format *format = file->get_format();
     bool display = false;
 
@@ -371,8 +371,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
 
     const log_format *last_format = NULL;
 
-    for (size_t lpc = 0; lpc < this->fos_log_helper.ldh_line_values.size(); lpc++) {
-        logline_value &lv = this->fos_log_helper.ldh_line_values[lpc];
+    for (auto & lv : this->fos_log_helper.ldh_line_values) {
         string format_name = lv.lv_format->get_name().to_string();
         attr_line_t al;
         string str, value_str = lv.to_string();

@@ -271,9 +271,18 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter({"re", "The regular expression to use"})
                 .with_parameter({"str", "The string to test against the regular expression"})
                 .with_tags({"string", "regex"})
-                .with_example({"SELECT regexp_match('(\\d+)', '123')"})
-                .with_example({"SELECT regexp_match('(\\d+) (\\w+)', '123 four')"})
-                .with_example({"SELECT regexp_match('(?<num>\\d+) (?<str>\\w+)', '123 four')"})
+                .with_example({
+                    "To capture the digits from the string '123'",
+                    "SELECT regexp_match('(\\d+)', '123')"
+                })
+                .with_example({
+                    "To capture a number and word into a JSON object with the properties 'col_0' and 'col_1'",
+                    "SELECT regexp_match('(\\d+) (\\w+)', '123 four')"
+                })
+                .with_example({
+                    "To capture a number and word into a JSON object with the named properties 'num' and 'str'",
+                    "SELECT regexp_match('(?<num>\\d+) (?<str>\\w+)', '123 four')"
+                })
         ),
 
         sqlite_func_adapter<decltype(&regexp_replace), regexp_replace>::builder(
@@ -286,8 +295,14 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                     "You can reference capture groups with a backslash followed by the number of the "
                     "group, starting with 1."})
                 .with_tags({"string", "regex"})
-                .with_example({"SELECT regexp_replace('Hello, World!', '^(\\w+)', 'Goodbye')"})
-                .with_example({"SELECT regexp_replace('123 abc', '(\\w+)', '<\\1>')"})
+                .with_example({
+                    "To replace the word at the start of the string 'Hello, World!' with 'Goodbye'",
+                    "SELECT regexp_replace('Hello, World!', '^(\\w+)', 'Goodbye')"
+                })
+                .with_example({
+                    "To wrap alphanumeric words with angle brackets",
+                    "SELECT regexp_replace('123 abc', '(\\w+)', '<\\1>')"
+                })
         ),
 
         sqlite_func_adapter<decltype(&extract), extract>::builder(
@@ -296,8 +311,14 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"str", "The string to parse"})
                 .with_tags({"string"})
-                .with_example({"SELECT extract('foo=1 bar=2 name=\"Rolo Tomassi\"')"})
-                .with_example({"SELECT extract('1.0 abc 2.0')"})
+                .with_example({
+                    "To extract key/value pairs from a string",
+                    "SELECT extract('foo=1 bar=2 name=\"Rolo Tomassi\"')"
+                })
+                .with_example({
+                    "To extract columnar data from a string",
+                    "SELECT extract('1.0 abc 2.0')"
+                })
         ),
 
         sqlite_func_adapter<decltype(
@@ -309,8 +330,14 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter({"str", "The string to test"})
                 .with_parameter({"prefix", "The prefix to check in the string"})
                 .with_tags({"string"})
-                .with_example({"SELECT startswith('foobar', 'foo')"})
-                .with_example({"SELECT startswith('foobar', 'bar')"})
+                .with_example({
+                    "To test if the string 'foobar' starts with 'foo'",
+                    "SELECT startswith('foobar', 'foo')"
+                })
+                .with_example({
+                    "To test if the string 'foobar' starts with 'bar'",
+                    "SELECT startswith('foobar', 'bar')"
+                })
         ),
 
         sqlite_func_adapter<decltype(&endswith), endswith>::builder(
@@ -320,8 +347,14 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter({"str", "The string to test"})
                 .with_parameter({"suffix", "The suffix to check in the string"})
                 .with_tags({"string"})
-                .with_example({"SELECT endswith('notbad.jpg', '.jpg')"})
-                .with_example({"SELECT endswith('notbad.png', '.jpg')"})
+                .with_example({
+                    "To test if the string 'notbad.jpg' ends with '.jpg'",
+                    "SELECT endswith('notbad.jpg', '.jpg')"
+                })
+                .with_example({
+                    "To test if the string 'notbad.png' starts with '.jpg'",
+                    "SELECT endswith('notbad.png', '.jpg')"
+                })
         ),
 
         sqlite_func_adapter<decltype(&spooky_hash), spooky_hash>::builder(
@@ -331,10 +364,22 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter(help_text("str", "The string to hash")
                                     .one_or_more())
                 .with_tags({"string"})
-                .with_example({"SELECT spooky_hash('Hello, World!')"})
-                .with_example({"SELECT spooky_hash('Hello, World!', NULL)"})
-                .with_example({"SELECT spooky_hash('Hello, World!', '')"})
-                .with_example({"SELECT spooky_hash('Hello, World!', 123)"})
+                .with_example({
+                    "To produce a hash for the string 'Hello, World!'",
+                    "SELECT spooky_hash('Hello, World!')"
+                })
+                .with_example({
+                    "To produce a hash for the parameters where one is NULL",
+                    "SELECT spooky_hash('Hello, World!', NULL)"
+                })
+                .with_example({
+                    "To produce a hash for the parameters where one is an empty string",
+                    "SELECT spooky_hash('Hello, World!', '')"
+                })
+                .with_example({
+                    "To produce a hash for the parameters where one is a number",
+                    "SELECT spooky_hash('Hello, World!', 123)"
+                })
         ),
 
         {nullptr}
@@ -349,9 +394,10 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter(help_text("str", "The string to hash")
                                     .one_or_more())
                 .with_tags({"string"})
-                .with_example({"SELECT spooky_hash('abc', '123')"})
-                .with_example(
-                    {"SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))"})
+                .with_example({
+                    "To produce a hash of all of the values of 'column1'",
+                    "SELECT group_spooky_hash(column1) FROM (VALUES ('abc'), ('123'))"
+                })
         },
 
         {nullptr}

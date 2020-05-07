@@ -181,7 +181,7 @@ void rl_change(void *dummy, readline_curses *rc)
                 lnav_data.ld_bottom_source.grep_error("");
             }
             else if (args[0] == "config" && args.size() > 1) {
-                yajlpp_parse_context ypc("input", lnav_config_handlers);
+                yajlpp_parse_context ypc("input", &lnav_config_handlers);
 
                 ypc.set_path(args[1])
                     .with_obj(lnav_config);
@@ -193,7 +193,7 @@ void rl_change(void *dummy, readline_curses *rc)
 
                     snprintf(help_text, sizeof(help_text),
                              ANSI_BOLD("%s %s") " -- %s    " ABORT_MSG,
-                             jph->jph_path,
+                             jph->jph_property.c_str(),
                              jph->jph_synopsis,
                              jph->jph_description);
                     lnav_data.ld_bottom_source.set_prompt(help_text);

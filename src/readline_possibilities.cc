@@ -312,8 +312,8 @@ void add_config_possibilities()
     };
 
     rc->clear_possibilities(LNM_COMMAND, "config-option");
-    for (int lpc = 0; lnav_config_handlers[lpc].jph_path[0]; lpc++) {
-        lnav_config_handlers[lpc].walk(cb, &lnav_config);
+    for (auto &jph : lnav_config_handlers.jpc_children) {
+        jph.walk(cb, &lnav_config);
     }
 }
 

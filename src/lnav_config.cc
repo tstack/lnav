@@ -124,9 +124,13 @@ void ensure_dotlnav()
 {
     static const char *subdirs[] = {
         "",
+        "configs",
+        "configs/default",
+        "configs/installed",
         "formats",
         "formats/default",
         "formats/installed",
+        "staging",
         "stdin-captures",
         "crash",
     };
@@ -180,33 +184,89 @@ void ensure_dotlnav()
     }
 }
 
-void install_git_format(const char *repo)
+bool install_from_git(const char *repo)
 {
     static pcrecpp::RE repo_name_converter("[^\\w]");
+
+    auto formats_path = dotlnav_path() / "formats";
+    auto configs_path = dotlnav_path() / "configs";
+    auto staging_path = dotlnav_path() / "staging";
+    string local_name = repo;
+
+    repo_name_converter.GlobalReplace("_", &local_name);
+
+    auto local_formats_path = formats_path / local_name;
+    auto local_configs_path = configs_path / local_name;
+    auto local_staging_path = staging_path / local_name;
 
     auto_pid git_cmd(fork());
 
     if (git_cmd.in_child()) {
-        auto formats_path = dotlnav_path() / "formats";
-        string local_name = repo;
-
-        repo_name_converter.GlobalReplace("_", &local_name);
-        auto local_path = formats_path / local_name;
-        if (local_path.is_directory()) {
+        if (local_formats_path.is_directory()) {
             printf("Updating format repo: %s\n", repo);
-            log_perror(chdir(local_path.str().c_str()));
+            log_perror(chdir(local_formats_path.str().c_str()));
+            execlp("git", "git", "pull", nullptr);
+        }
+        else if (local_configs_path.is_directory()) {
+            printf("Updating config repo: %s\n", repo);
+            log_perror(chdir(local_configs_path.str().c_str()));
             execlp("git", "git", "pull", nullptr);
         }
         else {
-            execlp("git", "git", "clone", repo, local_path.str().c_str(), nullptr);
+            execlp("git", "git", "clone", repo, local_staging_path.str().c_str(), nullptr);
         }
         _exit(1);
     }
 
     git_cmd.wait_for_child();
+
+    if (!git_cmd.was_normal_exit() || git_cmd.exit_status() != 0) {
+        return false;
+    }
+
+    if (local_staging_path.is_directory()) {
+        auto config_path = local_staging_path / "*.json";
+        static_root_mem<glob_t, globfree> gl;
+        bool found_config_file = false, found_format_file = false;
+
+        if (glob(config_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+            for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
+                auto json_file_path = gl->gl_pathv[lpc];
+                auto file_type_result = detect_config_file_type(json_file_path);
+
+                if (file_type_result.isErr()) {
+                    fprintf(stderr, "error: %s\n",
+                            file_type_result.unwrapErr().c_str());
+                    return false;
+                }
+                if (file_type_result.unwrap() == config_file_type::CONFIG) {
+                    found_config_file = true;
+                } else {
+                    found_format_file = true;
+                }
+            }
+        }
+
+        if (found_config_file) {
+            rename(local_staging_path.str().c_str(),
+                   local_configs_path.str().c_str());
+            fprintf(stderr, "info: installed configuration repo -- %s\n",
+                    local_configs_path.str().c_str());
+        } else if (found_format_file) {
+            rename(local_staging_path.str().c_str(),
+                   local_formats_path.str().c_str());
+            fprintf(stderr, "info: installed format repo -- %s\n",
+                    local_formats_path.str().c_str());
+        } else {
+            fprintf(stderr, "error: cannot find a valid lnav configuration or format file\n");
+            return false;
+        }
+    }
+
+    return true;
 }
 
-bool update_git_formats()
+bool update_installs_from_git()
 {
     static_root_mem<glob_t, globfree> gl;
     auto git_formats = dotlnav_path() / "formats/*/.git";
@@ -250,15 +310,13 @@ static int read_repo_path(yajlpp_parse_context *ypc, const unsigned char *str, s
 {
     string path = string((const char *)str, len);
 
-    install_git_format(path.c_str());
+    install_from_git(path.c_str());
 
     return 1;
 }
 
-static struct json_path_handler format_handlers[] = {
-    json_path_handler("/format-repos#", read_repo_path),
-
-    json_path_handler()
+static struct json_path_container format_handlers = {
+    json_path_handler("format-repos#", read_repo_path)
 };
 
 void install_extra_formats()
@@ -290,7 +348,7 @@ void install_extra_formats()
         perror("Unable to open remote-config.json");
     }
     else {
-        yajlpp_parse_context ypc_config(config_root.str(), format_handlers);
+        yajlpp_parse_context ypc_config(config_root.str(), &format_handlers);
         auto_mem<yajl_handle_t> jhandle(yajl_free);
         unsigned char buffer[4096];
         ssize_t rc;
@@ -332,22 +390,21 @@ static void config_error_reporter(const yajlpp_parse_context &ypc,
     }
 }
 
-static struct json_path_handler key_command_handlers[] = {
+static struct json_path_container key_command_handlers = {
     json_path_handler("command")
         .with_synopsis("<command>")
-        .with_description("The command to execute for the given key sequence")
+        .with_description("The command to execute for the given key sequence.")
         .with_pattern("[:|;].*")
         .FOR_FIELD(key_command, kc_cmd),
     json_path_handler("alt-msg")
         .with_synopsis("<msg>")
-        .with_description("The help message to display after the key is pressed")
-        .FOR_FIELD(key_command, kc_alt_msg),
-
-    json_path_handler()
+        .with_description("The help message to display after the key is pressed.")
+        .FOR_FIELD(key_command, kc_alt_msg)
 };
 
-static struct json_path_handler keymap_def_handlers[] = {
-    json_path_handler("(?<key_seq>(x[0-9a-f]{2})+)/")
+static struct json_path_container keymap_def_handlers = {
+    json_path_handler(pcrepp("(?<key_seq>(?:x[0-9a-f]{2})+)"))
+        .with_description("The hexadecimal encoding of key codes to map to a command.")
         .with_obj_provider<key_command, key_map>([](const yajlpp_provider_context &ypc, key_map *km) {
             key_command &retval = km->km_seq_to_cmd[ypc.ypc_extractor.get_substr("key_seq")];
 
@@ -358,13 +415,12 @@ static struct json_path_handler keymap_def_handlers[] = {
                 paths_out.emplace_back(iter.first);
             }
         })
-        .with_children(key_command_handlers),
-
-    json_path_handler()
+        .with_children(key_command_handlers)
 };
 
-static struct json_path_handler keymap_defs_handlers[] = {
-    json_path_handler("(?<keymap_name>[^/]+)/")
+static struct json_path_container keymap_defs_handlers = {
+    json_path_handler(pcrepp("(?<keymap_name>[\\w\\-]+)"))
+        .with_description("The keymap definitions")
         .with_obj_provider<key_map, _lnav_config>([](const yajlpp_provider_context &ypc, _lnav_config *root) {
             key_map &retval = root->lc_ui_keymaps[ypc.ypc_extractor.get_substr("keymap_name")];
             return &retval;
@@ -374,249 +430,251 @@ static struct json_path_handler keymap_defs_handlers[] = {
                 paths_out.emplace_back(iter.first);
             }
         })
-        .with_children(keymap_def_handlers),
-
-    json_path_handler()
+        .with_children(keymap_def_handlers)
 };
 
-static struct json_path_handler global_var_handlers[] = {
-    json_path_handler("(?<var_name>\\w+)")
+static struct json_path_container global_var_handlers = {
+    json_path_handler(pcrepp("(?<var_name>\\w+)"))
         .with_synopsis("<name>")
-        .with_description("A global variable definition")
-        .with_path_provider<_lnav_config>([](struct _lnav_config *cfg, vector<string> &paths_out) {
-            for (const auto &iter : cfg->lc_global_vars) {
+        .with_description(
+            "A global variable definition.  Global variables can be referenced "
+            "in scripts, SQL statements, or commands.")
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config *cfg, vector<string> &paths_out) {
+              for (const auto &iter : cfg->lc_global_vars) {
                 paths_out.emplace_back(iter.first);
-            }
-        })
-        .FOR_FIELD(_lnav_config, lc_global_vars),
+              }
+            })
+        .FOR_FIELD(_lnav_config, lc_global_vars)};
 
-    json_path_handler()
-};
+static struct json_path_container style_config_handlers =
+    json_path_container{
+        json_path_handler("color")
+            .with_synopsis("#hex|color_name")
+            .with_description(
+                "The foreground color value for this style. The value can be "
+                "the name of an xterm color, the hexadecimal value, or a theme "
+                "variable reference.")
+            .with_example("#fff")
+            .with_example("Green")
+            .with_example("$black")
+            .FOR_FIELD(style_config, sc_color),
+        json_path_handler("background-color")
+            .with_synopsis("#hex|color_name")
+            .with_description(
+                "The foreground color value for this style. The value can be "
+                "the name of an xterm color, the hexadecimal value, or a theme "
+                "variable reference.")
+            .with_example("#2d2a2e")
+            .with_example("Green")
+            .FOR_FIELD(style_config, sc_background_color),
+        json_path_handler("underline")
+            .with_description("Indicates that the text should be underlined.")
+            .FOR_FIELD(style_config, sc_underline),
+        json_path_handler("bold")
+            .with_description("Indicates that the text should be bolded.")
+            .FOR_FIELD(style_config, sc_bold),
+    }
+        .with_definition_id("style");
 
-static struct json_path_handler style_config_handlers[] = {
-    json_path_handler("color")
-        .with_synopsis("#hex|color_name")
-        .with_description("Foreground color")
-        .FOR_FIELD(style_config, sc_color),
-    json_path_handler("background-color")
-        .with_synopsis("#hex|color_name")
-        .with_description("Background color")
-        .FOR_FIELD(style_config, sc_background_color),
-    json_path_handler("underline")
-        .with_description("Underline")
-        .FOR_FIELD(style_config, sc_underline),
-    json_path_handler("bold")
-        .with_description("Bold")
-        .FOR_FIELD(style_config, sc_bold),
-
-    json_path_handler()
-};
-
-static struct json_path_handler theme_styles_handlers[] = {
-    json_path_handler("identifier/")
+static struct json_path_container theme_styles_handlers = {
+    json_path_handler("identifier")
         .with_description("Styling for identifiers in logs")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_identifier;
         })
         .with_children(style_config_handlers),
-    json_path_handler("text/")
+    json_path_handler("text")
         .with_description("Styling for plain text")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_text;
         })
         .with_children(style_config_handlers),
-    json_path_handler("alt-text/")
+    json_path_handler("alt-text")
         .with_description("Styling for plain text when alternating")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_alt_text;
         })
         .with_children(style_config_handlers),
-    json_path_handler("error/")
+    json_path_handler("error")
         .with_description("Styling for error messages")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_error;
         })
         .with_children(style_config_handlers),
-    json_path_handler("ok/")
+    json_path_handler("ok")
         .with_description("Styling for success messages")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_ok;
         })
         .with_children(style_config_handlers),
-    json_path_handler("warning/")
+    json_path_handler("warning")
         .with_description("Styling for warning messages")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_warning;
         })
         .with_children(style_config_handlers),
-    json_path_handler("hidden/")
+    json_path_handler("hidden")
         .with_description("Styling for hidden fields in logs")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_hidden;
         })
         .with_children(style_config_handlers),
-    json_path_handler("adjusted-time/")
+    json_path_handler("adjusted-time")
         .with_description("Styling for timestamps that have been adjusted")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_adjusted_time;
         })
         .with_children(style_config_handlers),
-    json_path_handler("skewed-time/")
+    json_path_handler("skewed-time")
         .with_description("Styling for timestamps ")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_skewed_time;
         })
         .with_children(style_config_handlers),
-    json_path_handler("offset-time/")
+    json_path_handler("offset-time")
         .with_description("Styling for hidden fields")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_offset_time;
         })
         .with_children(style_config_handlers),
-    json_path_handler("popup/")
+    json_path_handler("popup")
         .with_description("Styling for popup windows")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_popup;
         })
         .with_children(style_config_handlers),
-    json_path_handler("scrollbar/")
+    json_path_handler("scrollbar")
         .with_description("Styling for scrollbars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_scrollbar;
         })
-        .with_children(style_config_handlers),
-
-    json_path_handler()
+        .with_children(style_config_handlers)
 };
 
-static struct json_path_handler theme_syntax_styles_handlers[] = {
-    json_path_handler("keyword/")
+static struct json_path_container theme_syntax_styles_handlers = {
+    json_path_handler("keyword")
         .with_description("Styling for keywords in source files")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_keyword;
         })
         .with_children(style_config_handlers),
-    json_path_handler("string/")
+    json_path_handler("string")
         .with_description("Styling for single/double-quoted strings in text")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_string;
         })
         .with_children(style_config_handlers),
-    json_path_handler("comment/")
+    json_path_handler("comment")
         .with_description("Styling for comments in source files")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_comment;
         })
         .with_children(style_config_handlers),
-    json_path_handler("variable/")
+    json_path_handler("variable")
         .with_description("Styling for variables in text")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_variable;
         })
         .with_children(style_config_handlers),
-    json_path_handler("symbol/")
+    json_path_handler("symbol")
         .with_description("Styling for symbols in source files")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_symbol;
         })
         .with_children(style_config_handlers),
-    json_path_handler("number/")
+    json_path_handler("number")
         .with_description("Styling for numbers in source files")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_number;
         })
         .with_children(style_config_handlers),
-    json_path_handler("re-special/")
+    json_path_handler("re-special")
         .with_description("Styling for special characters in regular expressions")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_re_special;
         })
         .with_children(style_config_handlers),
-    json_path_handler("re-repeat/")
+    json_path_handler("re-repeat")
         .with_description("Styling for repeats in regular expressions")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_re_repeat;
         })
         .with_children(style_config_handlers),
 
-    json_path_handler("diff-delete/")
+    json_path_handler("diff-delete")
         .with_description("Styling for deleted lines in diffs")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_diff_delete;
         })
         .with_children(style_config_handlers),
-    json_path_handler("diff-add/")
+    json_path_handler("diff-add")
         .with_description("Styling for added lines in diffs")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_diff_add;
         })
         .with_children(style_config_handlers),
-    json_path_handler("diff-section/")
+    json_path_handler("diff-section")
         .with_description("Styling for diffs")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_diff_section;
         })
         .with_children(style_config_handlers),
-    json_path_handler("file/")
+    json_path_handler("file")
         .with_description("Styling for file names in source files")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_file;
         })
-        .with_children(style_config_handlers),
-
-    json_path_handler()
+        .with_children(style_config_handlers)
 };
 
-static struct json_path_handler theme_status_styles_handlers[] = {
-    json_path_handler("text/")
+static struct json_path_container theme_status_styles_handlers = {
+    json_path_handler("text")
         .with_description("Styling for status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_status;
         })
         .with_children(style_config_handlers),
-    json_path_handler("warn/")
+    json_path_handler("warn")
         .with_description("Styling for warnings in status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_warn_status;
         })
         .with_children(style_config_handlers),
-    json_path_handler("alert/")
+    json_path_handler("alert")
         .with_description("Styling for alerts in status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_alert_status;
         })
         .with_children(style_config_handlers),
-    json_path_handler("active/")
+    json_path_handler("active")
         .with_description("Styling for activity in status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_active_status;
         })
         .with_children(style_config_handlers),
-    json_path_handler("inactive/")
+    json_path_handler("inactive")
         .with_description("Styling for inactive status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_inactive_status;
         })
         .with_children(style_config_handlers),
-    json_path_handler("title/")
+    json_path_handler("title")
         .with_description("Styling for title sections of status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_status_title;
         })
         .with_children(style_config_handlers),
-    json_path_handler("subtitle/")
+    json_path_handler("subtitle")
         .with_description("Styling for subtitle sections of status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_status_subtitle;
         })
-        .with_children(style_config_handlers),
-
-    json_path_handler()
+        .with_children(style_config_handlers)
 };
 
-static struct json_path_handler theme_log_level_styles_handlers[] = {
-    json_path_handler("(?<level>trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal)"
-                      "/")
+static struct json_path_container theme_log_level_styles_handlers = {
+    json_path_handler(pcrepp("(?<level>trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal)"))
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             style_config &sc = root->lt_level_styles[
                 string2level(ypc.ypc_extractor.get_substr_i("level").get())];
@@ -628,13 +686,11 @@ static struct json_path_handler theme_log_level_styles_handlers[] = {
                 paths_out.emplace_back(level_names[lpc]);
             }
         })
-        .with_children(style_config_handlers),
-
-    json_path_handler()
+        .with_children(style_config_handlers)
 };
 
-static struct json_path_handler theme_vars_handlers[] = {
-    json_path_handler("(?<var_name>\\w+)")
+static struct json_path_container theme_vars_handlers = {
+    json_path_handler(pcrepp("(?<var_name>\\w+)"))
         .with_synopsis("name")
         .with_description("A theme variable definition")
         .with_path_provider<lnav_theme>([](struct lnav_theme *lt, vector<string> &paths_out) {
@@ -642,33 +698,33 @@ static struct json_path_handler theme_vars_handlers[] = {
                 paths_out.emplace_back(iter.first);
             }
         })
-        .FOR_FIELD(lnav_theme, lt_vars),
-
-    json_path_handler()
+        .FOR_FIELD(lnav_theme, lt_vars)
 };
 
-static struct json_path_handler theme_def_handlers[] = {
-    json_path_handler("vars/")
-        .with_description("Variables definitions that are used in this theme")
+static struct json_path_container theme_def_handlers = {
+    json_path_handler("vars")
+        .with_description("Variables definitions that are used in this theme.")
         .with_children(theme_vars_handlers),
 
-    json_path_handler("styles/")
+    json_path_handler("styles")
+        .with_description("Styles for log messages.")
         .with_children(theme_styles_handlers),
 
-    json_path_handler("syntax-styles/")
+    json_path_handler("syntax-styles")
+        .with_description("Styles for syntax highlighting in text files.")
         .with_children(theme_syntax_styles_handlers),
 
-    json_path_handler("status-styles/")
+    json_path_handler("status-styles")
+        .with_description("Styles for the user-interface components.")
         .with_children(theme_status_styles_handlers),
 
-    json_path_handler("log-level-styles/")
-        .with_children(theme_log_level_styles_handlers),
-
-    json_path_handler()
+    json_path_handler("log-level-styles")
+        .with_description("Styles for each log message level.")
+        .with_children(theme_log_level_styles_handlers)
 };
 
-static struct json_path_handler theme_defs_handlers[] = {
-    json_path_handler("(?<theme_name>[^/]+)/")
+static struct json_path_container theme_defs_handlers = {
+    json_path_handler(pcrepp("(?<theme_name>[\\w\\-]+)"))
         .with_obj_provider<lnav_theme, _lnav_config>([](const yajlpp_provider_context &ypc, _lnav_config *root) {
             lnav_theme &lt = root->lc_ui_theme_defs[ypc.ypc_extractor.get_substr("theme_name")];
 
@@ -679,59 +735,119 @@ static struct json_path_handler theme_defs_handlers[] = {
                 paths_out.emplace_back(iter.first);
             }
         })
-        .with_children(theme_def_handlers),
-
-    json_path_handler()
+        .with_children(theme_def_handlers)
 };
 
-static struct json_path_handler ui_handlers[] = {
-        json_path_handler("clock-format")
-            .with_synopsis("format")
-            .with_description(
-                "The format for the clock displayed in "
-                "the top-left corner using strftime(3) conversions")
-            .FOR_FIELD(_lnav_config, lc_ui_clock_format),
-        json_path_handler("dim-text")
-            .with_synopsis("bool")
-            .with_description("Reduce the brightness of text (useful for xterms)")
-            .FOR_FIELD(_lnav_config, lc_ui_dim_text),
-        json_path_handler("default-colors")
-            .with_synopsis("bool")
-            .with_description("Use default terminal fg/bg colors")
-            .FOR_FIELD(_lnav_config, lc_ui_default_colors),
-        json_path_handler("keymap")
-            .with_synopsis("keymap_name")
-            .with_description("The name of the keymap to use")
-            .FOR_FIELD(_lnav_config, lc_ui_keymap),
-        json_path_handler("theme")
-            .with_synopsis("theme_name")
-            .with_description("The name of the theme to use")
-            .FOR_FIELD(_lnav_config, lc_ui_theme),
-        json_path_handler("theme-defs/")
-            .with_description("Theme definitions")
-            .with_children(theme_defs_handlers),
-        json_path_handler("keymap_def/")
-            .with_description("Keymap definitions")
-            .with_children(keymap_defs_handlers),
+static struct json_path_container ui_handlers = {
+    json_path_handler("clock-format")
+        .with_synopsis("format")
+        .with_description("The format for the clock displayed in "
+                          "the top-left corner using strftime(3) conversions")
+        .with_example("%a %b %d %H:%M:%S %Z")
+        .FOR_FIELD(_lnav_config, lc_ui_clock_format),
+    json_path_handler("dim-text")
+        .with_synopsis("bool")
+        .with_description("Reduce the brightness of text (useful for xterms). "
+                          "This setting can be useful when running in an xterm "
+                          "where the white color is very bright.")
+        .FOR_FIELD(_lnav_config, lc_ui_dim_text),
+    json_path_handler("default-colors")
+        .with_synopsis("bool")
+        .with_description(
+            "Use default terminal background and foreground colors "
+            "instead of black and white for all text coloring.  This setting "
+            "can be useful when transparent background or alternate color "
+            "theme terminal is used.")
+        .FOR_FIELD(_lnav_config, lc_ui_default_colors),
+    json_path_handler("keymap")
+        .with_synopsis("keymap_name")
+        .with_description("The name of the keymap to use.")
+        .FOR_FIELD(_lnav_config, lc_ui_keymap),
+    json_path_handler("theme")
+        .with_synopsis("theme_name")
+        .with_description("The name of the theme to use.")
+        .FOR_FIELD(_lnav_config, lc_ui_theme),
+    json_path_handler("theme-defs")
+        .with_description("Theme definitions.")
+        .with_children(theme_defs_handlers),
+    json_path_handler("keymap-defs")
+        .with_description("Keymap definitions.")
+        .with_children(keymap_defs_handlers)};
 
-        json_path_handler()
+static vector<string> SUPPORTED_CONFIG_SCHEMAS = {
+    "https://lnav.org/schemas/config-v1.schema.json",
 };
 
-struct json_path_handler lnav_config_handlers[] = {
-        json_path_handler("/ui/")
-            .with_description("User-interface settings")
-            .with_children(ui_handlers),
+static int read_id(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    auto file_id = string((const char *) str, len);
 
-        json_path_handler("/global/")
-            .with_description("Global variable definitions")
-            .with_children(global_var_handlers),
+    if (find(SUPPORTED_CONFIG_SCHEMAS.begin(),
+             SUPPORTED_CONFIG_SCHEMAS.end(),
+             file_id) == SUPPORTED_CONFIG_SCHEMAS.end()) {
+        fprintf(stderr, "%s:%d: error: unsupported configuration $schema -- %s\n",
+            ypc->ypc_source.c_str(), ypc->get_line_number(), file_id.c_str());
+        return 0;
+    }
 
-        json_path_handler()
-};
+    return 1;
+}
+
+struct json_path_container lnav_config_handlers = json_path_container {
+    json_path_handler("$schema", read_id)
+        .with_synopsis("The URI of the schema for this file")
+        .with_description("Specifies the type of this file"),
+
+    json_path_handler("ui")
+        .with_description("User-interface settings")
+        .with_children(ui_handlers),
+
+    json_path_handler("global")
+        .with_description("Global variable definitions")
+        .with_children(global_var_handlers)
+}
+    .with_schema_id(SUPPORTED_CONFIG_SCHEMAS.back());
+
+Result<config_file_type, std::string>
+detect_config_file_type(const filesystem::path &path)
+{
+    static const char *id_path[] = {"$schema", nullptr};
+    string content;
+
+    if (!read_file(path.str(), content)) {
+        return Err(fmt::format("unable to open file: {}", path.str()));
+    }
+    if (startswith(content, "#")) {
+        content.insert(0, "//");
+    }
+
+    char error_buffer[1024];
+    auto content_tree = unique_ptr<yajl_val_s, decltype(&yajl_tree_free)>(
+        yajl_tree_parse(content.c_str(), error_buffer, sizeof(error_buffer)),
+        yajl_tree_free);
+    if (content_tree == nullptr) {
+        return Err(fmt::format("unable to parse file: {} -- {}",
+            path.str(), error_buffer));
+    }
+
+    auto id_val = yajl_tree_get(content_tree.get(), id_path, yajl_t_string);
+    if (id_val != nullptr) {
+        if (find(SUPPORTED_CONFIG_SCHEMAS.begin(),
+                 SUPPORTED_CONFIG_SCHEMAS.end(),
+                 id_val->u.string) != SUPPORTED_CONFIG_SCHEMAS.end()) {
+            return Ok(config_file_type::CONFIG);
+        } else {
+            return Err(fmt::format("unsupported configuration version in file: {} -- {}",
+                path.str(), id_val->u.string));
+        }
+    } else {
+        return Ok(config_file_type::FORMAT);
+    }
+}
 
 static void load_config_from(const filesystem::path &path, vector<string> &errors)
 {
-    yajlpp_parse_context ypc(path.str(), lnav_config_handlers);
+    yajlpp_parse_context ypc(path.str(), &lnav_config_handlers);
     struct userdata ud(errors);
     auto_fd fd;
 
@@ -786,7 +902,7 @@ static void load_default_config(struct _lnav_config &config_obj,
                                 struct bin_src_file &bsf,
                                 vector<string> &errors)
 {
-    yajlpp_parse_context ypc_builtin(bsf.bsf_name, lnav_config_handlers);
+    yajlpp_parse_context ypc_builtin(bsf.bsf_name, &lnav_config_handlers);
     auto_mem<yajl_handle_t> handle(yajl_free);
     struct userdata ud(errors);
 
@@ -823,25 +939,40 @@ void load_config(const vector<filesystem::path> &extra_paths, vector<string> &er
 {
     auto user_config = dotlnav_path() / "config.json";
 
+    for (int lpc = 0; lnav_config_json[lpc].bsf_name; lpc++) {
+        auto &bsf = lnav_config_json[lpc];
+        auto sample_path = dotlnav_path() /
+                           "configs" /
+                           "default" /
+                           fmt::format("{}.sample", bsf.bsf_name);
+
+        auto fd = auto_fd(openp(sample_path, O_WRONLY|O_TRUNC|O_CREAT, 0644));
+        if (fd == -1 || write(fd.get(), bsf.bsf_data, bsf.bsf_size) == -1) {
+            perror("error: unable to write default config file");
+        }
+    }
+
     {
         load_default_configs(lnav_default_config, "*", lnav_config_json, errors);
         load_default_configs(lnav_config, "*", lnav_config_json, errors);
 
         for (const auto &extra_path : extra_paths) {
-            auto format_path = extra_path / "formats/*/*.json";
+            auto config_path = extra_path / "configs/*/*.json";
             static_root_mem<glob_t, globfree> gl;
 
-            if (glob(format_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
-                for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
-                    const char *base = basename(gl->gl_pathv[lpc]);
+            if (glob(config_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+                for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
+                    load_config_from(gl->gl_pathv[lpc], errors);
+                }
+            }
+        }
+        for (const auto &extra_path : extra_paths) {
+            auto config_path = extra_path / "formats/*/config.*.json";
+            static_root_mem<glob_t, globfree> gl;
 
-                    if (!startswith(base, "config.")) {
-                        continue;
-                    }
-
-                    string filename(gl->gl_pathv[lpc]);
-
-                    load_config_from(filename, errors);
+            if (glob(config_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+                for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
+                    load_config_from(gl->gl_pathv[lpc], errors);
                 }
             }
         }
@@ -861,6 +992,10 @@ void reset_config(const std::string &path)
     load_default_configs(lnav_config, path, lnav_config_json, errors);
 
     reload_config(errors);
+
+    for (auto &err: errors) {
+        log_debug("reset %s", err.c_str());
+    }
 }
 
 string save_config()
@@ -927,8 +1062,8 @@ void reload_config(vector<string> &errors)
                 errors.emplace_back(msg);
             };
 
-            for (int lpc = 0; lnav_config_handlers[lpc].jph_path[0]; lpc++) {
-                lnav_config_handlers[lpc].walk(cb, &lnav_config);
+            for (auto &jph : lnav_config_handlers.jpc_children) {
+                jph.walk(cb, &lnav_config);
             }
         };
 

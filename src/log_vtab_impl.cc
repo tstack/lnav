@@ -809,14 +809,12 @@ static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info)
     return SQLITE_OK;
 }
 
-static struct json_path_handler tags_handler[] = {
+static struct json_path_container tags_handler = {
     json_path_handler("#")
         .with_synopsis("<tag>")
         .with_description("A tag for the log line")
         .with_pattern(R"(^#[^\s]+$)")
-        .FOR_FIELD(bookmark_metadata, bm_tags),
-
-    json_path_handler()
+        .FOR_FIELD(bookmark_metadata, bm_tags)
 };
 
 static int vt_update(sqlite3_vtab *tab,
@@ -841,7 +839,7 @@ static int vt_update(sqlite3_vtab *tab,
 
         if (log_tags) {
             vector<string> errors;
-            yajlpp_parse_context ypc(log_vtab_data.lvd_source, tags_handler);
+            yajlpp_parse_context ypc(log_vtab_data.lvd_source, &tags_handler);
             auto_mem<yajl_handle_t> handle(yajl_free);
 
             handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);

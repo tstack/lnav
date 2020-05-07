@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
     "global": {
         "keymap_def_alt_warning": "Press ${ansi_bold}w${ansi_norm}/${ansi_bold}W${ansi_norm} to move forward/backward through ${ansi_yellow}warning${ansi_norm} messages",
         "keymap_def_alt_hour_boundary": "Press ${ansi_bold}6${ansi_bold}/${ansi_bold}^${ansi_norm} to move to the next/previous hour boundary",
@@ -14,7 +15,7 @@
         "keymap_def_next_location": "Press ${ansi_bold}}${ansi_norm} to move to the next location in history"
     },
     "ui": {
-        "keymap_def": {
+        "keymap-defs": {
             "default": {
                 "x06": {
                     "command": ";UPDATE lnav_view_filters SET enabled = 1 - enabled WHERE view_name = (SELECT name FROM lnav_view_stack WHERE name in ('log', 'text') ORDER BY rowid DESC LIMIT 1)"

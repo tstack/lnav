@@ -178,13 +178,30 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"path", "The path"})
                 .with_tags({"filename"})
-                .with_example({"SELECT basename('foobar')"})
-                .with_example({"SELECT basename('foo/bar')"})
-                .with_example({"SELECT basename('foo/bar/')"})
-                .with_example({"SELECT basename('')"})
-                .with_example({"SELECT basename('foo\\bar')"})
-                .with_example({"SELECT basename('foobar')"})
-                .with_example({"SELECT basename('/')"})
+                .with_example({
+                    "To get the base of a plain file name",
+                    "SELECT basename('foobar')"
+                })
+                .with_example({
+                    "To get the base of a path",
+                    "SELECT basename('foo/bar')"
+                })
+                .with_example({
+                    "To get the base of a directory",
+                    "SELECT basename('foo/bar/')"
+                })
+                .with_example({
+                    "To get the base of an empty string",
+                    "SELECT basename('')"
+                })
+                .with_example({
+                    "To get the base of a Windows path",
+                    "SELECT basename('foo\\bar')"
+                })
+                .with_example({
+                    "To get the base of the root directory",
+                    "SELECT basename('/')"
+                })
         ),
 
         sqlite_func_adapter<decltype(&sql_dirname), sql_dirname>::builder(
@@ -193,11 +210,26 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"path", "The path"})
                 .with_tags({"filename"})
-                .with_example({"SELECT dirname('foo/bar')"})
-                .with_example({"SELECT dirname('/foo/bar')"})
-                .with_example({"SELECT dirname('/bar')"})
-                .with_example({"SELECT dirname('foo\\bar')"})
-                .with_example({"SELECT dirname('')"})
+                .with_example({
+                    "To get the directory of a relative file path",
+                    "SELECT dirname('foo/bar')"
+                })
+                .with_example({
+                    "To get the directory of an absolute file path",
+                    "SELECT dirname('/foo/bar')"
+                })
+                .with_example({
+                    "To get the directory of a file in the root directory",
+                    "SELECT dirname('/bar')"
+                })
+                .with_example({
+                    "To get the directory of a Windows path",
+                    "SELECT dirname('foo\\bar')"
+                })
+                .with_example({
+                    "To get the directory of an empty path",
+                    "SELECT dirname('')"
+                })
         ),
 
         sqlite_func_adapter<decltype(&sql_joinpath), sql_joinpath>::builder(
@@ -209,10 +241,22 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
                     "an absolute path and any preceding elements will be ignored.")
                                     .one_or_more())
                 .with_tags({"filename"})
-                .with_example({"SELECT joinpath('foo', 'bar')"})
-                .with_example({"SELECT joinpath('', 'foo', 'bar')"})
-                .with_example({"SELECT joinpath('/', 'foo', 'bar')"})
-                .with_example({"SELECT joinpath('/', 'foo', '/bar')"})
+                .with_example({
+                    "To join a directory and file name into a relative path",
+                    "SELECT joinpath('foo', 'bar')"
+                })
+                .with_example({
+                    "To join an empty component with other names into a relative path",
+                    "SELECT joinpath('', 'foo', 'bar')"
+                })
+                .with_example({
+                    "To create an absolute path with two path components",
+                    "SELECT joinpath('/', 'foo', 'bar')"
+                })
+                .with_example({
+                    "To create an absolute path from a path component that starts with a forward slash",
+                    "SELECT joinpath('/', 'foo', '/bar')"
+                })
         ),
 
         sqlite_func_adapter<decltype(&sql_readlink), sql_readlink>::builder(

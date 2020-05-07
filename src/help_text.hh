@@ -61,8 +61,8 @@ enum class help_parameter_format_t {
 };
 
 struct help_example {
+    const char *he_description{nullptr};
     const char *he_cmd{nullptr};
-    const char *he_result{nullptr};
 };
 
 struct help_text {

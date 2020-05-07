@@ -111,7 +111,7 @@ public:
         this->pc_count = count;
     };
 
-    int get_count(void) const
+    int get_count() const
     {
         return this->pc_count;
     };
@@ -130,7 +130,7 @@ public:
 
     capture_t *operator[](int offset) const {
         if (offset < 0) {
-            return NULL;
+            return nullptr;
         }
         return &this->pc_captures[offset + 1];
     };
@@ -141,19 +141,19 @@ public:
         return (*this)[name.c_str()];
     };
 
-    capture_t *first_valid(void) const {
+    capture_t *first_valid() const {
         for (int lpc = 1; lpc < this->pc_count; lpc++) {
             if (this->pc_captures[lpc].is_valid()) {
                 return &this->pc_captures[lpc];
             }
         }
 
-        return NULL;
+        return nullptr;
     };
 
 protected:
     pcre_context(capture_t *captures, int max_count)
-        : pc_pcre(NULL), pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
+        : pc_pcre(nullptr), pc_captures(captures), pc_max_count(max_count), pc_count(0) { };
 
     const pcrepp *pc_pcre;
     capture_t *pc_captures;
@@ -298,13 +298,13 @@ struct pcre_named_capture {
         {
         };
 
-        iterator() : i_named_capture(NULL), i_name_len(0) { };
+        iterator() : i_named_capture(nullptr), i_name_len(0) { };
 
-        const pcre_named_capture &operator*(void) const {
+        const pcre_named_capture &operator*() const {
             return *this->i_named_capture;
         };
 
-        const pcre_named_capture *operator->(void) const {
+        const pcre_named_capture *operator->() const {
             return this->i_named_capture;
         };
 
@@ -357,7 +357,7 @@ public:
             : e_msg(std::move(msg)), e_offset(offset) { };
         virtual ~error() { };
 
-        virtual const char *what() const noexcept {
+        const char *what() const noexcept {
             return this->e_msg.c_str();
         };
 
@@ -371,17 +371,17 @@ public:
         this->study();
     };
 
-    pcrepp(const char *pattern, int options = 0)
-            : p_code_extra(pcre_free_study)
+    explicit pcrepp(const char *pattern, int options = 0)
+            : p_pattern(pattern), p_code_extra(pcre_free_study)
     {
         const char *errptr;
         int         eoff;
-        
+
         if ((this->p_code = pcre_compile(pattern,
                                          options,
                                          &errptr,
                                          &eoff,
-                                         NULL)) == NULL) {
+                                         nullptr)) == nullptr) {
             throw error(errptr, eoff);
         }
 
@@ -390,8 +390,8 @@ public:
         this->find_captures(pattern);
     };
 
-    pcrepp(const std::string &pattern, int options = 0)
-            : p_code_extra(pcre_free_study)
+    explicit pcrepp(const std::string &pattern, int options = 0)
+            : p_pattern(pattern), p_code_extra(pcre_free_study)
     {
         const char *errptr;
         int         eoff;
@@ -400,7 +400,7 @@ public:
                                          options | PCRE_UTF8,
                                          &errptr,
                                          &eoff,
-                                         NULL)) == NULL) {
+                                         nullptr)) == nullptr) {
             throw error(errptr, eoff);
         }
 
@@ -410,8 +410,8 @@ public:
     };
 
     pcrepp(const pcrepp &other)
+        : p_code(other.p_code), p_pattern(other.p_pattern)
     {
-        this->p_code = other.p_code;
         pcre_refcount(this->p_code, 1);
         this->study();
     };
@@ -462,7 +462,7 @@ public:
         return retval - 1;
     };
 
-    const char *name_for_capture(int index) {
+    const char *name_for_capture(int index) const {
         for (pcre_named_capture::iterator iter = this->named_begin();
              iter != this->named_end();
              ++iter) {
@@ -490,7 +490,7 @@ public:
                            length,
                            pi.pi_offset,
                            PCRE_PARTIAL,
-                           NULL,
+                           nullptr,
                            0);
             switch (rc) {
                 case 0:
@@ -505,17 +505,18 @@ public:
 
 // #undef PCRE_STUDY_JIT_COMPILE
 #ifdef PCRE_STUDY_JIT_COMPILE
-    static pcre_jit_stack *jit_stack(void);
+    static pcre_jit_stack *jit_stack();
 
 #else
     static void pcre_free_study(pcre_extra *);
 #endif
 
-    void study(void);
+    void study();
 
     void find_captures(const char *pattern);
 
     pcre *p_code;
+    const std::string p_pattern;
     auto_mem<pcre_extra> p_code_extra;
     int p_capture_count;
     int p_named_count;

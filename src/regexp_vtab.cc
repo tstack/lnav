@@ -277,7 +277,9 @@ int register_regexp_vtab(sqlite3 *db)
                       "The captured value from the string."})
         .with_tags({"string"})
         .with_example({
-            "SELECT * FROM regexp_capture('a=1; b=2', '(\\w+)=(\\d+)')"});
+            "To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2'",
+            "SELECT * FROM regexp_capture('a=1; b=2', '(\\w+)=(\\d+)')"
+        });
 
     int rc;
 

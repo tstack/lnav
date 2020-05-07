@@ -683,9 +683,9 @@ string build_path(const vector<filesystem::path> &paths)
     return retval;
 }
 
-bool read_file(const char *filename, string &out)
+bool read_file(const filesystem::path &filename, string &out)
 {
-    std::ifstream sql_file(filename);
+    std::ifstream sql_file(filename.str());
 
     if (sql_file) {
         out.assign((std::istreambuf_iterator<char>(sql_file)),

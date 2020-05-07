@@ -45,8 +45,8 @@ Above and below the main body are status lines that display:
 If the view supports filtering, there will be a status line showing the
 following:
 
-  * the number of enabled filters and the total number of filters;
-  * the number of lines that are **not** displayed because of filtering.
+* the number of enabled filters and the total number of filters;
+* the number of lines that are **not** displayed because of filtering.
 
 To edit the filters, you can press TAB to change the focus from the main
 view to the filter editor.  The editor allows you to create, enable/disable,

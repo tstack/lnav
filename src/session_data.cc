@@ -809,22 +809,24 @@ static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, si
     return 1;
 }
 
-static struct json_path_handler view_handlers[] = {
-        json_path_handler("top_line"),
-
-        json_path_handler()
+static struct json_path_container view_def_handlers = {
+    json_path_handler("top_line",  read_top_line),
+    json_path_handler("search",    read_last_search),
+    json_path_handler("word_wrap", read_word_wrap),
+    json_path_handler("commands#", read_commands)
 };
 
-static struct json_path_handler view_info_handlers[] = {
-    json_path_handler("/save-time",               read_save_time),
-    json_path_handler("/time-offset",             read_time_offset),
-    json_path_handler("/files#",                  read_files),
-    json_path_handler("/views/([^/]+)/top_line",  read_top_line),
-    json_path_handler("/views/([^/]+)/search",    read_last_search),
-    json_path_handler("/views/([^/]+)/word_wrap", read_word_wrap),
-    json_path_handler("/views/([^/]+)/commands#", read_commands),
+static struct json_path_container view_handlers = {
+    json_path_handler(pcrepp("([^/]+)"))
+        .with_children(view_def_handlers)
+};
 
-    json_path_handler()
+static struct json_path_container view_info_handlers = {
+    json_path_handler("save-time",               read_save_time),
+    json_path_handler("time-offset",             read_time_offset),
+    json_path_handler("files#",                  read_files),
+    json_path_handler("views")
+        .with_children(view_handlers)
 };
 
 void load_session()
@@ -838,7 +840,7 @@ void load_session()
         lnav_data.ld_session_save_time = pair.first.second;
         const string &view_info_name = pair.second;
 
-        yajlpp_parse_context ypc(view_info_name, view_info_handlers);
+        yajlpp_parse_context ypc(view_info_name, &view_info_handlers);
         handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
 
         load_time_bookmarks();

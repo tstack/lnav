@@ -7,15 +7,16 @@ SQLite Tables Reference
 In addition to the tables generated for each log format, **lnav** includes
 the following tables/views:
 
-* environ
-* lnav_file
-* lnav_views
-* lnav_view_stack
-* lnav_view_filters
-* lnav_view_filter_stats
-* lnav_view_filters_and_stats
-* all_logs
-* http_status_codes
+* `environ`_
+* `lnav_file`_
+* `lnav_views`_
+* `lnav_view_stack`_
+* `lnav_view_filters`_
+* `lnav_view_filter_stats`_
+* `lnav_view_filters_and_stats`_
+* `all_logs`_
+* `http_status_codes`_
+* `regexp_capture(<string>, <regex>)`_
 
 These extra tables provide useful information and can let you manipulate
 **lnav**'s internal state.  You can get a dump of the entire database schema
@@ -28,7 +29,9 @@ environ
 
 The **environ** table gives you access to the **lnav** process' environment
 variables.  You can SELECT, INSERT, and UPDATE environment variables, like
-so::
+so:
+
+.. code-block:: sql
 
     ;SELECT * FROM environ WHERE name = 'SHELL'
      name   value
@@ -40,7 +43,9 @@ Environment variables can be used to store simple values or pass values
 from **lnav**'s SQL environment to **lnav**'s commands.  For example, the
 "open" command will do variable substitution, so you can insert a variable
 named "FILENAME" and then open it in **lnav** by referencing it with
-"$FILENAME"::
+"$FILENAME":
+
+.. code-block:: sql
 
     ;INSERT INTO environ VALUES ('FILENAME', '/path/to/file')
     :open $FILENAME

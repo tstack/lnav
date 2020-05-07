@@ -400,11 +400,11 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int row,
                              std::string &value_out,
-                             line_flags_t flags);;
+                             line_flags_t flags);
 
     void text_attrs_for_line(textview_curses &tc,
                              int row,
-                             string_attrs_t &value_out);;
+                             string_attrs_t &value_out);
 
     size_t text_size_for_line(textview_curses &tc, int row, line_flags_t flags) {
         return 0;
@@ -419,7 +419,7 @@ public:
         return { bucket.b_time, 0 };
     };
 
-    int row_for_time(struct timeval tv_bucket);;
+    int row_for_time(struct timeval tv_bucket);
 
 private:
     static const char *LINE_FORMAT;

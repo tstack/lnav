@@ -277,7 +277,7 @@ inline bool endswith(const char *str, const char *suffix)
 
 std::string build_path(const std::vector<filesystem::path> &paths);
 
-bool read_file(const char *filename, std::string &out);
+bool read_file(const filesystem::path &path, std::string &out);
 
 /**
  * Convert the time stored in a 'tm' struct into epoch time.

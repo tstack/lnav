@@ -125,7 +125,7 @@ check_error_output "updating log_tags is not working?" <<EOF
 command-option:1: error: command-option:line 1
   unexpected JSON value
   accepted paths --
-    # <tag> -- A tag for the log line
+     <tag> -- A tag for the log line
 EOF
 
 run_test ${lnav_test} -n \

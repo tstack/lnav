@@ -66,6 +66,14 @@ public:
         return this->ap_status;
     };
 
+    bool was_normal_exit() const {
+        return WIFEXITED(this->ap_status);
+    }
+
+    int exit_status() const {
+        return WEXITSTATUS(this->ap_status);
+    }
+
     bool wait_for_child(int options = 0) {
         if (this->ap_child != -1) {
             int rc;

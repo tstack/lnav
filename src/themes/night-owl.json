@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
     "ui": {
         "theme-defs": {
             "night-owl": {

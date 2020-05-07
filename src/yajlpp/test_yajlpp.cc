@@ -37,36 +37,65 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-const char *TEST_DATA =
-    "[{ \"foo\": 0 }, { \"foo\": 1 }]";
+const char *TEST_DATA = R"([{ "foo": 0 }, 2, { "foo": 1 }])";
+
+const char *TEST_OBJ_DATA = "{ \"foo\": 0 }";
 
 static int FOO_COUNT = 0;
+static int CONST_COUNT = 0;
 
 static int read_foo(yajlpp_parse_context *ypc, long long value)
 {
     assert(value == FOO_COUNT);
-    assert(ypc->ypc_array_index.back() == FOO_COUNT);
+    assert(ypc->ypc_array_index.empty() ||
+           ypc->ypc_array_index.back() == FOO_COUNT);
 
     FOO_COUNT += 1;
 
     return 1;
 }
 
+static int read_const(yajlpp_parse_context *ypc, long long value)
+{
+    CONST_COUNT += 1;
+
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
-    struct json_path_handler test_handlers[] = {
-        json_path_handler("#/foo", read_foo),
-
-        json_path_handler()
+    struct json_path_container test_obj_handler = {
+        json_path_handler("foo", read_foo)
     };
 
-    yajlpp_parse_context ypc("test_data", test_handlers);
-    yajl_handle handle;
+    {
+        struct json_path_container test_array_handlers = {
+            json_path_handler("#")
+                .add_cb(read_const)
+                .with_children(test_obj_handler)
+        };
 
-    handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
-    yajl_parse(handle, (const unsigned char *)TEST_DATA, strlen(TEST_DATA));
-    yajl_complete_parse(handle);
-    yajl_free(handle);
+        yajlpp_parse_context ypc("test_data", &test_array_handlers);
+        auto handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+        ypc.with_handle(handle);
+        ypc.parse((const unsigned char *) TEST_DATA, strlen(TEST_DATA));
+        yajl_free(handle);
 
-    assert(FOO_COUNT == 2);
+        assert(FOO_COUNT == 2);
+        assert(CONST_COUNT == 1);
+    }
+
+    {
+        FOO_COUNT = 0;
+
+        yajlpp_parse_context ypc("test_data", &test_obj_handler);
+        auto handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+        ypc.with_handle(handle);
+
+        ypc.parse(reinterpret_cast<const unsigned char *>(TEST_OBJ_DATA),
+                  strlen(TEST_OBJ_DATA));
+        yajl_free(handle);
+
+        assert(FOO_COUNT == 1);
+    }
 }

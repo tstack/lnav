@@ -40,6 +40,7 @@
 #include <functional>
 #include <unordered_map>
 
+#include "base/result.h"
 #include "yajlpp/yajlpp.hh"
 #include "log_level.hh"
 #include "styling.hh"
@@ -90,8 +91,8 @@ bool check_experimental(const char *feature_name);
  */
 void ensure_dotlnav();
 
-void install_git_format(const char *repo);
-bool update_git_formats();
+bool install_from_git(const char *repo);
+bool update_installs_from_git();
 
 void install_extra_formats();
 
@@ -120,7 +121,14 @@ extern struct _lnav_config lnav_config;
 extern struct _lnav_config rollback_lnav_config;
 extern std::map<intern_string_t, source_location> lnav_config_locations;
 
-extern struct json_path_handler lnav_config_handlers[];
+extern struct json_path_container lnav_config_handlers;
+
+enum class config_file_type {
+    FORMAT,
+    CONFIG,
+};
+
+Result<config_file_type, std::string> detect_config_file_type(const filesystem::path &path);
 
 void load_config(const std::vector<filesystem::path> &extra_paths,
                  std::vector<std::string> &errors);

@@ -1757,7 +1757,10 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .with_parameter({"str", "The string to replicate."})
           .with_parameter({"N", "The number of times to replicate the string."})
           .with_tags({"string"})
-          .with_example({"SELECT replicate('abc', 3)"})
+          .with_example({
+              "To repeat the string 'abc' three times",
+              "SELECT replicate('abc', 3)"
+          })
     },
     { "charindex",          2, SQLITE_UTF8,    0, charindexFunc },
     { "charindex",          3, SQLITE_UTF8,    0, charindexFunc },
@@ -1768,8 +1771,14 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .with_parameter({"str", "The string to return subset."})
           .with_parameter({"N", "The number of characters from the left side of the string to return."})
           .with_tags({"string"})
-          .with_example({"SELECT leftstr('abc', 1)"})
-          .with_example({"SELECT leftstr('abc', 10)"})
+          .with_example({
+              "To get the first character of the string 'abc'",
+              "SELECT leftstr('abc', 1)"
+          })
+          .with_example({
+              "To get the first ten characters of a string, regardless of size",
+              "SELECT leftstr('abc', 10)"
+          })
     },
     { "rightstr",           2, SQLITE_UTF8,    0, rightFunc,
       help_text("rightstr")
@@ -1778,8 +1787,14 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .with_parameter({"str", "The string to return subset."})
           .with_parameter({"N", "The number of characters from the right side of the string to return."})
           .with_tags({"string"})
-          .with_example({"SELECT rightstr('abc', 1)"})
-          .with_example({"SELECT rightstr('abc', 10)"})
+          .with_example({
+              "To get the last character of the string 'abc'",
+              "SELECT rightstr('abc', 1)"
+          })
+          .with_example({
+              "To get the last ten characters of a string, regardless of size",
+              "SELECT rightstr('abc', 10)"
+          })
     },
 #ifndef HAVE_TRIM
     { "ltrim",              1, SQLITE_UTF8,    0, ltrimFunc },
@@ -1793,7 +1808,10 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .with_summary("Returns the reverse of the given string.")
           .with_parameter({"str", "The string to reverse."})
           .with_tags({"string"})
-          .with_example({"SELECT reverse('abc')"})
+          .with_example({
+              "To reverse the string 'abc'",
+              "SELECT reverse('abc')"
+          })
     },
     { "proper",             1, SQLITE_UTF8,    0, properFunc },
     { "padl",               2, SQLITE_UTF8,    0, padlFunc },

@@ -45,7 +45,7 @@ Spatial Navigation
 
 .. list-table::
    :header-rows: 1
-   :widths: 5 5 5 20
+   :widths: 6 6 6 20
 
    * - Keypress
      -

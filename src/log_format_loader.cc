@@ -66,8 +66,8 @@ static log_formats_map_t LOG_FORMATS;
 
 struct userdata {
     std::string ud_format_path;
-    vector<intern_string_t> *ud_format_names;
-    std::vector<std::string> *ud_errors;
+    vector<intern_string_t> *ud_format_names{nullptr};
+    std::vector<std::string> *ud_errors{nullptr};
 };
 
 static external_log_format *ensure_format(const yajlpp_provider_context &ypc, userdata *ud)
@@ -77,7 +77,7 @@ static external_log_format *ensure_format(const yajlpp_provider_context &ypc, us
     external_log_format *retval;
 
     retval = LOG_FORMATS[name];
-    if (retval == NULL) {
+    if (retval == nullptr) {
         LOG_FORMATS[name] = retval = new external_log_format(name);
         log_debug("Loading format -- %s", name.get());
     }
@@ -157,8 +157,7 @@ ensure_json_format_element(external_log_format *elf, int index)
 static external_log_format::json_format_element *line_format_provider(
     const yajlpp_provider_context &ypc, external_log_format *elf)
 {
-    int index = ypc.ypc_index;
-    external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
+    auto &jfe = ensure_json_format_element(elf, ypc.ypc_index);
 
     jfe.jfe_type = external_log_format::JLF_VARIABLE;
 
@@ -167,7 +166,7 @@ static external_log_format::json_format_element *line_format_provider(
 
 static int read_format_bool(yajlpp_parse_context *ypc, int val)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string field_name = ypc->get_path_fragment(1);
 
     if (field_name == "convert-to-local-time")
@@ -187,7 +186,7 @@ static int read_format_bool(yajlpp_parse_context *ypc, int val)
 
 static int read_format_double(yajlpp_parse_context *ypc, double val)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string field_name = ypc->get_path_fragment(1);
 
     if (field_name == "timestamp-divisor") {
@@ -205,7 +204,7 @@ static int read_format_double(yajlpp_parse_context *ypc, double val)
 
 static int read_format_int(yajlpp_parse_context *ypc, long long val)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string field_name = ypc->get_path_fragment(1);
 
     if (field_name == "timestamp-divisor") {
@@ -223,20 +222,25 @@ static int read_format_int(yajlpp_parse_context *ypc, long long val)
 
 static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string value = string((const char *)str, len);
     string field_name = ypc->get_path_fragment(1);
 
-    if (field_name == "file-pattern")
+    if (field_name == "file-pattern") {
         elf->elf_file_pattern = value;
-    else if (field_name == "level-field")
+    }
+    else if (field_name == "level-field") {
         elf->elf_level_field = intern_string::lookup(value);
-    else if (field_name == "timestamp-field")
+    }
+    else if (field_name == "timestamp-field") {
         elf->lf_timestamp_field = intern_string::lookup(value);
-    else if (field_name == "body-field")
+    }
+    else if (field_name == "body-field") {
         elf->elf_body_field = intern_string::lookup(value);
-    else if (field_name == "timestamp-format")
+    }
+    else if (field_name == "timestamp-format") {
         elf->lf_timestamp_format.push_back(intern_string::lookup(value)->get());
+    }
     else if (field_name == "module-field") {
         elf->elf_module_id_field = intern_string::lookup(value);
         elf->elf_container = true;
@@ -250,7 +254,7 @@ static int read_format_field(yajlpp_parse_context *ypc, const unsigned char *str
 
 static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string regex = string((const char *)str, len);
     string level_name_or_number = ypc->get_path_fragment(2);
     log_level_t level = string2level(level_name_or_number.c_str());
@@ -261,18 +265,18 @@ static int read_levels(yajlpp_parse_context *ypc, const unsigned char *str, size
 
 static int read_level_int(yajlpp_parse_context *ypc, long long val)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string level_name_or_number = ypc->get_path_fragment(2);
     log_level_t level = string2level(level_name_or_number.c_str());
 
-    elf->elf_level_pairs.push_back(make_pair(val, level));
+    elf->elf_level_pairs.emplace_back(val, level);
 
     return 1;
 }
 
 static int read_action_def(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string action_name = ypc->get_path_fragment(2);
     string field_name = ypc->get_path_fragment(3);
     string val = string((const char *)str, len);
@@ -286,7 +290,7 @@ static int read_action_def(yajlpp_parse_context *ypc, const unsigned char *str, 
 
 static int read_action_bool(yajlpp_parse_context *ypc, int val)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string action_name = ypc->get_path_fragment(2);
     string field_name = ypc->get_path_fragment(3);
 
@@ -297,7 +301,7 @@ static int read_action_bool(yajlpp_parse_context *ypc, int val)
 
 static int read_action_cmd(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     string action_name = ypc->get_path_fragment(2);
     string field_name = ypc->get_path_fragment(3);
     string val = string((const char *)str, len);
@@ -325,14 +329,11 @@ static external_log_format::sample *sample_provider(const yajlpp_provider_contex
 
 static int read_json_constant(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
-    string val = string((const char *)str, len);
+    auto val = string((const char *) str, len);
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
 
     ypc->ypc_array_index.back() += 1;
-
-    int index = ypc->ypc_array_index.back();
-    external_log_format::json_format_element &jfe = ensure_json_format_element(elf, index);
-
+    auto &jfe = ensure_json_format_element(elf, ypc->ypc_array_index.back());
     jfe.jfe_type = external_log_format::JLF_CONSTANT;
     jfe.jfe_default_value = val;
 
@@ -341,17 +342,17 @@ static int read_json_constant(yajlpp_parse_context *ypc, const unsigned char *st
 
 static int create_search_table(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
-    external_log_format *elf = (external_log_format *)ypc->ypc_obj_stack.top();
+    auto elf = (external_log_format *) ypc->ypc_obj_stack.top();
     const intern_string_t table_name = ypc->get_path_fragment_i(2);
     string regex = string((const char *) str, len);
 
-    elf->elf_search_tables.push_back(make_pair(table_name, regex));
+    elf->elf_search_tables.emplace_back(table_name, regex);
 
     return 1;
 }
 
 
-static struct json_path_handler pattern_handlers[] = {
+static struct json_path_container pattern_handlers = {
     json_path_handler("pattern")
         .with_synopsis("<message-regex>")
         .with_description(
@@ -363,9 +364,7 @@ static struct json_path_handler pattern_handlers[] = {
         .with_description(
             "If true, this pattern will only be used to parse message bodies "
                 "of container formats, like syslog")
-        .FOR_FIELD(external_log_format::pattern, p_module_format),
-
-    json_path_handler()
+        .FOR_FIELD(external_log_format::pattern, p_module_format)
 };
 
 static const json_path_handler_base::enum_value_t ALIGN_ENUM[] = {
@@ -392,7 +391,7 @@ static const json_path_handler_base::enum_value_t TRANSFORM_ENUM[] = {
     json_path_handler_base::ENUM_TERMINATOR
 };
 
-static struct json_path_handler line_format_handlers[] = {
+static struct json_path_container line_format_handlers = {
     json_path_handler("field")
         .with_synopsis("<field-name>")
         .with_description("The name of the field to substitute at this position")
@@ -438,9 +437,7 @@ static struct json_path_handler line_format_handlers[] = {
         .with_synopsis("none|uppercase|lowercase|capitalize")
         .with_description("Text transformation")
         .with_enum_values(TRANSFORM_ENUM)
-        .FOR_FIELD(external_log_format::json_format_element, jfe_text_transform),
-
-    json_path_handler()
+        .FOR_FIELD(external_log_format::json_format_element, jfe_text_transform)
 };
 
 static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
@@ -455,21 +452,25 @@ static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
     json_path_handler_base::ENUM_TERMINATOR
 };
 
-static struct json_path_handler unit_handlers[] = {
+static struct json_path_container scale_handlers = {
+    json_path_handler(pcrepp("(?<scale>.*)"))
+        .with_synopsis("[*,/]<unit>")
+        .with_obj_provider(scaling_factor_provider)
+        .FOR_FIELD(scaling_factor, sf_value)
+};
+
+static struct json_path_container unit_handlers = {
     json_path_handler("field")
         .with_synopsis("<field-name>")
         .with_description("The name of the field that contains the units for this field")
         .FOR_FIELD(external_log_format::value_def, vd_unit_field),
 
-    json_path_handler("scaling-factor/(?<scale>.*)$")
-        .with_synopsis("[*,/]<unit>")
-        .with_obj_provider(scaling_factor_provider)
-        .FOR_FIELD(scaling_factor, sf_value),
-
-    json_path_handler()
+    json_path_handler("scaling-factor")
+        .with_description("Transforms the numeric value by the given factor")
+        .with_children(scale_handlers),
 };
 
-static struct json_path_handler value_def_handlers[] = {
+static struct json_path_container value_def_handlers = {
     json_path_handler("kind")
         .with_synopsis("string|integer|float|boolean|json|quoted")
         .with_description("The type of data in the field")
@@ -481,7 +482,7 @@ static struct json_path_handler value_def_handlers[] = {
         .with_description("The collating function to use for this column")
         .FOR_FIELD(external_log_format::value_def, vd_collate),
 
-    json_path_handler("unit/")
+    json_path_handler("unit")
         .with_description("Unit definitions for this field")
         .with_children(unit_handlers),
 
@@ -513,12 +514,10 @@ static struct json_path_handler value_def_handlers[] = {
     json_path_handler("description")
         .with_synopsis("<string>")
         .with_description("A description of the field")
-        .FOR_FIELD(external_log_format::value_def, vd_description),
-
-    json_path_handler()
+        .FOR_FIELD(external_log_format::value_def, vd_description)
 };
 
-static struct json_path_handler highlighter_def_handlers[] = {
+static struct json_path_container highlighter_def_handlers = {
     json_path_handler("pattern")
         .with_synopsis("<regex>")
         .with_description("A regular expression to highlight in logs of this format.")
@@ -542,9 +541,7 @@ static struct json_path_handler highlighter_def_handlers[] = {
     json_path_handler("blink")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern by blinking.")
-        .FOR_FIELD(external_log_format::highlighter_def, hd_blink),
-
-    json_path_handler()
+        .FOR_FIELD(external_log_format::highlighter_def, hd_blink)
 };
 
 static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
@@ -565,7 +562,7 @@ static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
     json_path_handler_base::ENUM_TERMINATOR
 };
 
-struct json_path_handler sample_handlers[] = {
+static struct json_path_container sample_handlers = {
     json_path_handler("line")
         .with_synopsis("<log-line>")
         .with_description("A sample log line that should match a pattern in this format.")
@@ -574,9 +571,7 @@ struct json_path_handler sample_handlers[] = {
     json_path_handler("level")
         .with_enum_values(LEVEL_ENUM)
         .with_description("The expected level for this sample log line.")
-        .FOR_FIELD(external_log_format::sample, s_level),
-
-    json_path_handler()
+        .FOR_FIELD(external_log_format::sample, s_level)
 };
 
 static const json_path_handler_base::enum_value_t TYPE_ENUM[] = {
@@ -587,77 +582,169 @@ static const json_path_handler_base::enum_value_t TYPE_ENUM[] = {
     json_path_handler_base::ENUM_TERMINATOR
 };
 
-struct json_path_handler format_handlers[] = {
-    json_path_handler("regex/(?<pattern_name>[^/]+)/")
+static struct json_path_container regex_handlers = {
+    json_path_handler(pcrepp(R"((?<pattern_name>[^/]+))"))
+        .with_description("The set of patterns used to match log messages")
         .with_obj_provider(pattern_provider)
         .with_children(pattern_handlers),
+};
 
-    // TODO convert the rest of these
-    json_path_handler("(json|convert-to-local-time|"
-        "hide-extra|multiline)", read_format_bool),
-    json_path_handler("timestamp-divisor", read_format_double)
-        .add_cb(read_format_int)
-        .with_synopsis("<number>")
-        .with_description("The value to divide a numeric timestamp by in a JSON log."),
-    json_path_handler("(file-pattern|level-field|timestamp-field|"
-                              "body-field|url|url#|title|description|"
-                              "timestamp-format#|module-field|opid-field)$",
-                      read_format_field),
-    json_path_handler("ordered-by-time")
-        .with_synopsis("<bool>")
-        .with_description("Indicates that the order of messages in the file is time-based.")
-        .FOR_FIELD(log_format, lf_time_ordered),
-    json_path_handler("level/"
-                      "(trace|debug\\d*|info|stats|notice|warning|error|critical|fatal)")
+static struct json_path_container level_handlers = {
+    json_path_handler(
+        pcrepp("(?<level>trace|debug[2345]?|info|stats|notice|warning|error|critical|fatal)"))
         .add_cb(read_levels)
         .add_cb(read_level_int)
         .with_synopsis("<pattern|integer>")
         .with_description("The regular expression used to match the log text for this level.  "
-                              "For JSON logs with numeric levels, this should be the number for the corresponding level."),
+                          "For JSON logs with numeric levels, this should be the number for the corresponding level.")
+};
 
-    json_path_handler("value/(?<value_name>[^/]+)/")
+static struct json_path_container value_handlers = {
+    json_path_handler(pcrepp("(?<value_name>[^/]+)"))
+        .with_description("The set of values captured by the log message patterns")
         .with_obj_provider(value_def_provider)
-        .with_children(value_def_handlers),
+        .with_children(value_def_handlers)
+};
 
-    json_path_handler("action/(?<action_name>[^/]+)/label", read_action_def),
-    json_path_handler("action/(?<action_name>[^/]+)/capture-output", read_action_bool),
-    json_path_handler("action/(?<action_name>[^/]+)/cmd#", read_action_cmd),
-    json_path_handler("sample#/")
-        .with_obj_provider(sample_provider)
-        .with_children(sample_handlers),
-
-    json_path_handler("line-format#/")
-        .with_obj_provider(line_format_provider)
-        .with_children(line_format_handlers),
-    json_path_handler("line-format#", read_json_constant),
-
-    json_path_handler("search-table/.+/pattern", create_search_table)
-        .with_synopsis("<regex>")
-        .with_description("The regular expression for this search table."),
-
-    json_path_handler("highlights/(?<highlight_name>[^/]+)/")
-        .with_description("Highlight definitions")
+static struct json_path_container highlight_handlers = {
+    json_path_handler(pcrepp(R"((?<highlight_name>[^/]+))"))
+        .with_description("The definition of a highlight")
         .with_obj_provider<external_log_format::highlighter_def, external_log_format>([](const yajlpp_provider_context &ypc, external_log_format *root) {
             return &(root->elf_highlighter_patterns[ypc.get_substr_i(0)]);
         })
-        .with_children(highlighter_def_handlers),
+        .with_children(highlighter_def_handlers)
+};
+
+static struct json_path_container action_def_handlers = {
+    json_path_handler("label", read_action_def),
+    json_path_handler("capture-output", read_action_bool),
+    json_path_handler("cmd#", read_action_cmd)
+};
+
+static struct json_path_container action_handlers = {
+    json_path_handler(pcrepp("(?<action_name>\\w+)"), read_action_def)
+        .with_children(action_def_handlers)
+};
+
+static struct json_path_container search_table_def_handlers = {
+    json_path_handler("pattern", create_search_table)
+        .with_synopsis("<regex>")
+        .with_description("The regular expression for this search table."),
+};
+
+static struct json_path_container search_table_handlers = {
+    json_path_handler(pcrepp("\\w+"))
+        .with_description("The set of search tables to be automatically defined")
+        .with_children(search_table_def_handlers)
+};
+
+struct json_path_container format_handlers = {
+    json_path_handler("regex")
+        .with_description("The set of regular expressions used to match log messages")
+        .with_children(regex_handlers),
+
+    json_path_handler("json", read_format_bool)
+        .with_description(R"(Indicates that log files are JSON-encoded (deprecated, use "file-type": "json"))"),
+    json_path_handler("convert-to-local-time", read_format_bool)
+        .with_description("Indicates that displayed timestamps should automatically be converted to local time"),
+    json_path_handler("hide-extra", read_format_bool)
+        .with_description("Specifies whether extra values in JSON logs should be displayed"),
+    json_path_handler("multiline", read_format_bool)
+        .with_description("Indicates that log messages can span multiple lines"),
+    json_path_handler("timestamp-divisor", read_format_double)
+        .add_cb(read_format_int)
+        .with_synopsis("<number>")
+        .with_description("The value to divide a numeric timestamp by in a JSON log."),
+    json_path_handler("file-pattern", read_format_field)
+        .with_description("A regular expression that restricts this format to log files with a matching name"),
+    json_path_handler("level-field", read_format_field)
+        .with_description("The name of the level field in the log message pattern"),
+    json_path_handler("timestamp-field", read_format_field)
+        .with_description("The name of the timestamp field in the log message pattern"),
+    json_path_handler("body-field", read_format_field)
+        .with_description("The name of the body field in the log message pattern"),
+    json_path_handler("url", pcrepp("url#?"))
+        .add_cb(read_format_field)
+        .with_description("A URL with more information about this log format"),
+    json_path_handler("title", read_format_field)
+        .with_description("The human-readable name for this log format"),
+    json_path_handler("description", read_format_field)
+        .with_description("A longer description of this log format"),
+    json_path_handler("timestamp-format#", read_format_field)
+        .with_description("An array of strptime(3)-like timestamp formats"),
+    json_path_handler("module-field", read_format_field)
+        .with_description("The name of the module field in the log message pattern"),
+    json_path_handler("opid-field", read_format_field)
+        .with_description("The name of the operation-id field in the log message pattern"),
+    json_path_handler("ordered-by-time")
+        .with_synopsis("<bool>")
+        .with_description("Indicates that the order of messages in the file is time-based.")
+        .FOR_FIELD(log_format, lf_time_ordered),
+    json_path_handler("level")
+        .with_description("The map of level names to patterns or integer values")
+        .with_children(level_handlers),
+
+    json_path_handler("value")
+        .with_description("The set of value definitions")
+        .with_children(value_handlers),
+
+    json_path_handler("action")
+        .with_children(action_handlers),
+    json_path_handler("sample#")
+        .with_description("An array of sample log messages to be tested against the log message patterns")
+        .with_obj_provider(sample_provider)
+        .with_children(sample_handlers),
+
+    json_path_handler("line-format#")
+        .with_description("The display format for JSON-encoded log messages")
+        .with_obj_provider(line_format_provider)
+        .add_cb(read_json_constant)
+        .with_children(line_format_handlers),
+    json_path_handler("search-table", create_search_table)
+        .with_description("Search tables to automatically define for this log format")
+        .with_children(search_table_handlers),
+
+    json_path_handler("highlights")
+        .with_description("The set of highlight definitions")
+        .with_children(highlight_handlers),
 
     json_path_handler("file-type")
-        .with_synopsis("The type of file that contains the log messages")
+        .with_synopsis("text|json|csv")
+        .with_description("The type of file that contains the log messages")
         .with_enum_values(TYPE_ENUM)
-        .FOR_FIELD(external_log_format, elf_type),
-
-    json_path_handler()
+        .FOR_FIELD(external_log_format, elf_type)
 };
 
-struct json_path_handler root_format_handler[] = {
-    json_path_handler("/(?<format_name>\\w+)/")
+static vector<string> SUPPORTED_FORMAT_SCHEMAS = {
+    "https://lnav.org/schemas/format-v1.schema.json",
+};
+
+static int read_id(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
+{
+    auto file_id = string((const char *) str, len);
+
+    if (find(SUPPORTED_FORMAT_SCHEMAS.begin(),
+             SUPPORTED_FORMAT_SCHEMAS.end(),
+             file_id) == SUPPORTED_FORMAT_SCHEMAS.end()) {
+        fprintf(stderr, "%s:%d: error: unsupported format $schema -- %s\n",
+                ypc->ypc_source.c_str(), ypc->get_line_number(), file_id.c_str());
+        return 0;
+    }
+
+    return 1;
+}
+
+struct json_path_container root_format_handler = json_path_container {
+    json_path_handler("$schema", read_id)
+        .with_synopsis("The URI of the schema for this file")
+        .with_description("Specifies the type of this file"),
+
+    json_path_handler(pcrepp("(?<format_name>\\w+)"))
         .with_description("The definition of a log file format.")
         .with_obj_provider(ensure_format)
-        .with_children(format_handlers),
-
-    json_path_handler()
-};
+        .with_children(format_handlers)
+}
+    .with_schema_id(SUPPORTED_FORMAT_SCHEMAS.back());
 
 static void write_sample_file(void)
 {
@@ -731,7 +818,7 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
     ud.ud_format_path = filename;
     ud.ud_format_names = &retval;
     ud.ud_errors = &errors;
-    yajlpp_parse_context ypc(filename, root_format_handler);
+    yajlpp_parse_context ypc(filename, &root_format_handler);
     ypc.ypc_userdata = &ud;
     ypc.with_obj(ud);
     if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
@@ -820,7 +907,7 @@ void load_formats(const std::vector<filesystem::path> &extra_paths,
                   std::vector<std::string> &errors)
 {
     auto default_source = dotlnav_path() / "default";
-    yajlpp_parse_context ypc_builtin(default_source.str(), root_format_handler);
+    yajlpp_parse_context ypc_builtin(default_source.str(), &root_format_handler);
     std::vector<intern_string_t> retval;
     struct userdata ud;
     yajl_handle handle;
@@ -856,9 +943,7 @@ void load_formats(const std::vector<filesystem::path> &extra_paths,
     uint8_t mod_counter = 0;
 
     vector<external_log_format *> alpha_ordered_formats;
-    for (map<intern_string_t, external_log_format *>::iterator iter = LOG_FORMATS.begin();
-         iter != LOG_FORMATS.end();
-         ++iter) {
+    for (auto iter = LOG_FORMATS.begin(); iter != LOG_FORMATS.end(); ++iter) {
         external_log_format *elf = iter->second;
         elf->build(errors);
 
@@ -867,14 +952,12 @@ void load_formats(const std::vector<filesystem::path> &extra_paths,
             elf->lf_mod_index = mod_counter;
         }
 
-        for (map<intern_string_t, external_log_format *>::iterator check_iter = LOG_FORMATS.begin();
-             check_iter != LOG_FORMATS.end();
-             ++check_iter) {
-            if (iter->first == check_iter->first) {
+        for (auto & check_iter : LOG_FORMATS) {
+            if (iter->first == check_iter.first) {
                 continue;
             }
 
-            external_log_format *check_elf = check_iter->second;
+            external_log_format *check_elf = check_iter.second;
             if (elf->match_samples(check_elf->elf_samples)) {
                 log_warning("Format collision, format '%s' matches sample from '%s'",
                         elf->get_name().get(),
@@ -894,7 +977,7 @@ void load_formats(const std::vector<filesystem::path> &extra_paths,
     while (!alpha_ordered_formats.empty()) {
         vector<intern_string_t> popped_formats;
 
-        for (vector<external_log_format *>::iterator iter = alpha_ordered_formats.begin();
+        for (auto iter = alpha_ordered_formats.begin();
              iter != alpha_ordered_formats.end();) {
             external_log_format *elf = *iter;
             if (elf->elf_collision.empty()) {
@@ -911,11 +994,7 @@ void load_formats(const std::vector<filesystem::path> &extra_paths,
             bool broke_cycle = false;
 
             log_warning("Detected a cycle...");
-            for (vector<external_log_format *>::iterator iter = alpha_ordered_formats.begin();
-                 iter != alpha_ordered_formats.end();
-                 ++iter) {
-                external_log_format *elf = *iter;
-
+            for (auto elf : alpha_ordered_formats) {
                 if (elf->elf_builtin_format) {
                     log_warning("  Skipping builtin format -- %s",
                                 elf->get_name().get());
@@ -932,23 +1011,16 @@ void load_formats(const std::vector<filesystem::path> &extra_paths,
             }
         }
 
-        for (vector<external_log_format *>::iterator iter = alpha_ordered_formats.begin();
-             iter != alpha_ordered_formats.end();
-             ++iter) {
-            external_log_format *elf = *iter;
-            for (vector<intern_string_t>::iterator pop_iter = popped_formats.begin();
-                    pop_iter != popped_formats.end();
-                    ++pop_iter) {
-                elf->elf_collision.remove(*pop_iter);
+        for (auto elf : alpha_ordered_formats) {
+            for (auto & popped_format : popped_formats) {
+                elf->elf_collision.remove(popped_format);
             }
         }
     }
 
     log_info("Format order:")
-    for (vector<external_log_format *>::iterator iter = graph_ordered_formats.begin();
-            iter != graph_ordered_formats.end();
-            ++iter) {
-        log_info("  %s", (*iter)->get_name().get());
+    for (auto & graph_ordered_format : graph_ordered_formats) {
+        log_info("  %s", graph_ordered_format->get_name().get());
     }
 
     vector<log_format *> &roots = log_format::get_root_formats();
@@ -961,12 +1033,12 @@ static void exec_sql_in_path(sqlite3 *db, const filesystem::path &path, std::vec
     static_root_mem<glob_t, globfree> gl;
 
     log_info("executing SQL files in path: %s", format_path.str().c_str());
-    if (glob(format_path.str().c_str(), 0, NULL, gl.inout()) == 0) {
+    if (glob(format_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             string filename(gl->gl_pathv[lpc]);
             string content;
 
-            if (read_file(filename.c_str(), content)) {
+            if (read_file(filename, content)) {
                 log_info("Executing SQL file: %s", filename.c_str());
                 sql_execute_script(db, filename.c_str(), content.c_str(), errors);
             }

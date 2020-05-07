@@ -860,12 +860,12 @@ void annotate_sql_statement(attr_line_t &al)
         pcrepp re;
         string_attr_type_t type;
     } PATTERNS[] = {
-        { {keyword_re_str.c_str(), PCRE_CASELESS}, &SQL_KEYWORD_ATTR },
-        { {R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR },
-        { {R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])", PCRE_CASELESS}, &SQL_IDENTIFIER_ATTR },
-        { {R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR },
-        { {R"(\A\(|\))"}, &SQL_PAREN_ATTR },
-        { {R"(\A.)"}, &SQL_GARBAGE_ATTR },
+        { pcrepp{keyword_re_str.c_str(), PCRE_CASELESS}, &SQL_KEYWORD_ATTR },
+        { pcrepp{R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR },
+        { pcrepp{R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])", PCRE_CASELESS}, &SQL_IDENTIFIER_ATTR },
+        { pcrepp{R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR },
+        { pcrepp{R"(\A\(|\))"}, &SQL_PAREN_ATTR },
+        { pcrepp{R"(\A.)"}, &SQL_GARBAGE_ATTR },
     };
 
     static pcrepp ws_pattern(R"(\A\s+)");

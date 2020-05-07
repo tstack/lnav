@@ -134,19 +134,25 @@ int network_extension_functions(struct FuncDef **basic_funcs,
                 .sql_function()
                 .with_parameter({"hostname", "The DNS hostname to lookup."})
                 .with_tags({"net"})
-                .with_example({"SELECT gethostbyname('localhost')"})
+                .with_example({
+                    "To get the IP address for 'localhost'",
+                    "SELECT gethostbyname('localhost')"
+                })
         ),
 
         sqlite_func_adapter<decltype(&sql_gethostbyaddr), sql_gethostbyaddr>::builder(
             help_text("gethostbyaddr",
-                      "Get the IP address for the given hostname")
+                      "Get the hostname for the given IP address")
                 .sql_function()
-                .with_parameter({"hostname", "The DNS hostname to lookup."})
+                .with_parameter({"hostname", "The IP address to lookup."})
                 .with_tags({"net"})
-                .with_example({"SELECT gethostbyaddr('127.0.0.1')"})
+                .with_example({
+                    "To get the hostname for the IP '127.0.0.1'",
+                    "SELECT gethostbyaddr('127.0.0.1')"
+                })
         ),
 
-        { NULL }
+        { nullptr }
     };
 
     *basic_funcs = network_funcs;

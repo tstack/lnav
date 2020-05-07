@@ -15,15 +15,16 @@ Contents:
    :maxdepth: 2
 
    intro
-   ui
    cli
-   formats
-   data
-   sessions
+   ui
    hotkeys
+   config
+   formats
+   sessions
    commands
    sqlext
    sqltab
+   data
 
 
 Indices and tables

@@ -32,6 +32,10 @@
 #include <numeric>
 #include <algorithm>
 
+#include <pcrecpp.h>
+
+#include "fmt/format.h"
+#include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "help_text_formatter.hh"
 #include "readline_highlighters.hh"
@@ -40,6 +44,39 @@ using namespace std;
 
 
 std::multimap<std::string, help_text *> help_text::TAGGED;
+
+static vector<help_text *> get_related(const help_text &ht)
+{
+    vector<help_text *> retval;
+
+    for (const auto &tag : ht.ht_tags) {
+        auto tagged = help_text::TAGGED.equal_range(tag);
+
+        for (auto tag_iter = tagged.first;
+             tag_iter != tagged.second;
+             ++tag_iter) {
+            if (tag_iter->second == &ht) {
+                continue;
+            }
+
+            help_text &related = *tag_iter->second;
+
+            if (!related.ht_opposites.empty() &&
+                find_if(related.ht_opposites.begin(),
+                        related.ht_opposites.end(),
+                        [&ht](const char *x) {
+                            return strcmp(x, ht.ht_name) == 0;
+                        }) == related.ht_opposites.end()) {
+                continue;
+            }
+
+            retval.push_back(&related);
+
+        }
+    }
+
+    return retval;
+}
 
 void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out, bool synopsis_only)
 {
@@ -287,46 +324,25 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
         }
     }
     if (!synopsis_only && !ht.ht_tags.empty()) {
-        vector<string> tags;
+        auto related_help = get_related(ht);
+        auto related_refs = vector<string>();
 
-        for (const auto &tag : ht.ht_tags) {
-            auto tagged = help_text::TAGGED.equal_range(tag);
-
-            for (auto tag_iter = tagged.first;
-                 tag_iter != tagged.second;
-                 ++tag_iter) {
-                if (tag_iter->second == &ht) {
-                    continue;
-                }
-
-                help_text &related = *tag_iter->second;
-
-                if (!related.ht_opposites.empty() &&
-                    find_if(related.ht_opposites.begin(),
-                            related.ht_opposites.end(),
-                            [&ht](const char *x) {
-                                return strcmp(x, ht.ht_name) == 0;
-                            }) == related.ht_opposites.end()) {
-                    continue;
-                }
-
-                string name = related.ht_name;
-                switch (related.ht_context) {
-                    case help_context_t::HC_COMMAND:
-                        name = ":" + name;
-                        break;
-                    case help_context_t::HC_SQL_FUNCTION:
-                    case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
-                        name = name + "()";
-                        break;
-                    default:
-                        break;
-                }
-                tags.push_back(name);
+        for (auto related : related_help) {
+            string name = related->ht_name;
+            switch (related->ht_context) {
+                case help_context_t::HC_COMMAND:
+                    name = ":" + name;
+                    break;
+                case help_context_t::HC_SQL_FUNCTION:
+                case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
+                    name = name + "()";
+                    break;
+                default:
+                    break;
             }
+            related_refs.push_back(name);
         }
-
-        stable_sort(tags.begin(), tags.end());
+        stable_sort(related_refs.begin(), related_refs.end());
 
         out.append("See Also", &view_curses::VC_STYLE, A_UNDERLINE)
            .append("\n")
@@ -334,16 +350,16 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
 
         bool first = true;
         size_t line_start = out.length();
-        for (const auto &tag : tags) {
+        for (const auto &ref : related_refs) {
             if (!first) {
                 out.append(", ");
             }
-            if ((out.length() - line_start + tag.length()) > width) {
+            if ((out.length() - line_start + ref.length()) > width) {
                 out.append("\n")
                    .append(body_indent, ' ');
                 line_start = out.length();
             }
-            out.append(tag, &view_curses::VC_STYLE, A_BOLD);
+            out.append(ref, &view_curses::VC_STYLE, A_BOLD);
             first = false;
         }
     }
@@ -396,6 +412,8 @@ void format_example_text_for_term(const help_text &ht,
             out.append("#")
                .append(to_string(count))
                .append(" ")
+               .append(ex.he_description)
+               .append(":\n   ")
                .append(prompt)
                .append(ex_line, &tws.with_indent(3 + keyword_offset + 1))
                .append("\n")
@@ -406,4 +424,153 @@ void format_example_text_for_term(const help_text &ht,
             count += 1;
         }
     }
+}
+
+static std::string link_name(const help_text &ht)
+{
+    const static pcrecpp::RE SCRUBBER("[^\\w_]");
+
+    auto scrubbed_name = string(ht.ht_name);
+    for (auto &param : ht.ht_parameters) {
+        if (param.ht_name[0]) {
+            continue;
+        }
+
+        scrubbed_name += "_";
+        scrubbed_name += param.ht_flag_name;
+    }
+    SCRUBBER.GlobalReplace("_", &scrubbed_name);
+
+    return tolower(scrubbed_name);
+}
+
+void format_help_text_for_rst(const help_text &ht,
+                              const help_example_to_attr_line_fun_t eval,
+                              FILE *rst_file)
+{
+    const char *prefix;
+    int out_count = 0;
+
+    if (!ht.ht_name || !ht.ht_name[0]) {
+        return;
+    }
+
+    bool is_sql_func = false, is_sql = false;
+    switch (ht.ht_context) {
+        case help_context_t::HC_COMMAND:
+            prefix = ":";
+            break;
+        case help_context_t::HC_SQL_FUNCTION:
+        case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
+            is_sql = is_sql_func = true;
+            prefix = "";
+            break;
+        case help_context_t::HC_SQL_KEYWORD:
+            is_sql = true;
+            prefix = "";
+            break;
+        default:
+            prefix = "";
+            break;
+    }
+
+    fprintf(rst_file, "\n.. _%s:\n\n", link_name(ht).c_str());
+    out_count += fprintf(rst_file, "%s%s", prefix, ht.ht_name);
+    if (is_sql_func) {
+        out_count += fprintf(rst_file, "(");
+    }
+    bool needs_comma = false;
+    for (auto &param: ht.ht_parameters) {
+        if (needs_comma) {
+            if (param.ht_flag_name) {
+                out_count += fprintf(rst_file, " ");
+            } else {
+                out_count += fprintf(rst_file, ", ");
+            }
+        }
+        if (!is_sql_func) {
+            out_count += fprintf(rst_file, " ");
+        }
+
+        if (param.ht_flag_name) {
+            out_count += fprintf(rst_file, "%s ", param.ht_flag_name);
+        }
+        if (param.ht_name[0]) {
+            out_count += fprintf(rst_file, "*%s*", param.ht_name);
+        }
+        if (is_sql_func) {
+            needs_comma = true;
+        }
+    }
+    if (is_sql_func) {
+        out_count += fprintf(rst_file, ")");
+    }
+    fprintf(rst_file, "\n");
+    fprintf(rst_file, "%s\n\n", string(out_count, '^').c_str());
+
+    fprintf(rst_file, "  %s\n", ht.ht_summary);
+    fprintf(rst_file, "\n");
+    if (ht.ht_description) {
+        fprintf(rst_file, "  %s\n", ht.ht_description);
+    }
+
+    int param_count = 0;
+    for (auto &param: ht.ht_parameters) {
+        if (param.ht_summary && param.ht_summary[0]) {
+            param_count += 1;
+        }
+    }
+
+    if (param_count > 0) {
+        fprintf(rst_file, "  **Parameters:**\n\n");
+        for (auto &param: ht.ht_parameters) {
+            if (param.ht_summary && param.ht_summary[0]) {
+                fprintf(rst_file, "    * **%s** --- %s\n",
+                        param.ht_name,
+                        param.ht_summary);
+            }
+        }
+        fprintf(rst_file, "\n");
+    }
+    if (is_sql) {
+        prefix = ";";
+    }
+    if (!ht.ht_example.empty()) {
+        fprintf(rst_file, "  **Examples:**\n\n");
+        for (auto &example: ht.ht_example) {
+            fprintf(rst_file, "    %s:\n\n", example.he_description);
+            fprintf(rst_file, "    .. code-block::  %s\n\n",
+                is_sql ? "sql" : "");
+            if (ht.ht_context == help_context_t::HC_COMMAND) {
+                fprintf(rst_file, "      %s%s %s\n", prefix, ht.ht_name,
+                        example.he_cmd);
+            } else {
+                fprintf(rst_file, "      %s%s\n", prefix, example.he_cmd);
+            }
+            auto result = eval(ht, example);
+            if (!result.empty()) {
+                vector<attr_line_t> lines;
+
+                result.split_lines(lines);
+                for (auto &line : lines) {
+                    fprintf(rst_file, "      %s\n", line.get_string().c_str());
+                }
+            }
+            fprintf(rst_file, "\n");
+        }
+    }
+
+    if (!ht.ht_tags.empty()) {
+        auto related_refs = vector<string>();
+
+        for (auto related : get_related(ht)) {
+            related_refs.emplace_back(fmt::format(":ref:`{}`", link_name(*related)));
+        }
+        stable_sort(related_refs.begin(), related_refs.end());
+
+        fprintf(rst_file, "  **See Also:**\n\n    %s\n",
+            join(related_refs.begin(), related_refs.end(), ", ").c_str());
+    }
+
+    fprintf(rst_file, "\n----\n\n");
 }

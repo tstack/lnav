@@ -458,8 +458,14 @@ int json_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter({"json", "The JSON value to query."})
                 .with_parameter({"value", "The value to look for in the first argument"})
                 .with_tags({"json"})
-                .with_example({"SELECT json_contains('[1, 2, 3]', 4)"})
-                .with_example({"SELECT json_contains('[\"abc\", \"def\"]', 'def')"})
+                .with_example({
+                    "To test if a JSON array contains the number 4",
+                    "SELECT json_contains('[1, 2, 3]', 4)"
+                })
+                .with_example({
+                    "To test if a JSON array contains the string 'def'",
+                    "SELECT json_contains('[\"abc\", \"def\"]', 'def')"
+                })
         ),
 
         {
@@ -472,12 +478,21 @@ int json_extension_functions(struct FuncDef **basic_funcs,
                 .with_parameter(help_text("default", "The default value if the value was not found")
                                     .optional())
                 .with_tags({"json"})
-                .with_example({"SELECT jget('1', '')"})
-                .with_example({"SELECT jget('{ \"a\": 1, \"b\": 2 }', '/b')"})
-                .with_example({"SELECT jget(null, '/msg', 'Hello')"})
+                .with_example({
+                    "To get the root of a JSON value",
+                    "SELECT jget('1', '')"
+                })
+                .with_example({
+                    "To get the property named 'b' in a JSON object",
+                    "SELECT jget('{ \"a\": 1, \"b\": 2 }', '/b')"
+                })
+                .with_example({
+                    "To get the 'msg' property and return a default if it does not exist",
+                    "SELECT jget(null, '/msg', 'Hello')"
+                })
         },
 
-        { NULL }
+        { nullptr }
     };
 
     static struct FuncDefAgg json_agg_funcs[] = {
@@ -486,7 +501,7 @@ int json_extension_functions(struct FuncDef **basic_funcs,
             { "json_group_array", -1, 0,
                     sql_json_group_array_step, sql_json_group_array_final, },
 
-            { NULL }
+            { nullptr }
     };
 
     *basic_funcs = json_funcs;

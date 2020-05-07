@@ -15,11 +15,11 @@ warning:    /invalid_key_log/value/test/identifiers
 warning:  accepted paths --
 warning:    kind string|integer|float|boolean|json|quoted -- The type of data in the field
 warning:    collate <function> -- The collating function to use for this column
-warning:    unit/  -- Unit definitions for this field
+warning:    unit  -- Unit definitions for this field
 warning:    identifier <bool> -- Indicates whether or not this field contains an identifier that should be highlighted
 warning:    foreign-key <bool> -- Indicates whether or not this field should be treated as a foreign key for row in another table
 warning:    hidden <bool> -- Indicates whether or not this field should be hidden
-warning:    action-list# <string> -- Actions to execute when this field is clicked on
+warning:    action-list <string> -- Actions to execute when this field is clicked on
 warning:    rewriter <command> -- A command that will rewrite this field when pretty-printing
 warning:    description <string> -- A description of the field
 error:format.json:4:invalid json -- parse error: object key and value must be separated by a colon (':')

@@ -402,6 +402,10 @@ if(HAVE_LIBUTIL)
     target_link_libraries(diag util)
 endif()
 
+add_executable(test_yajlpp yajlpp/test_yajlpp.cc)
+target_link_libraries(test_yajlpp diag ${lnav_LIBS})
+add_test(NAME test_yajlpp COMMAND test_yajlpp)
+
 add_executable(lnav ${lnav_SRCS})
 target_link_libraries(lnav diag)
 

@@ -43,7 +43,7 @@ public:
 
     };
 
-    virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me);;
+    virtual bool text_handle_mouse(textview_curses &tc, mouse_event &me);
 
     log_data_helper ad_log_helper;
     vis_line_t ad_press_line;

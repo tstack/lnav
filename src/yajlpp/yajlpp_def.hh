@@ -56,41 +56,51 @@ inline Container<std::string> &assign(Container<std::string> &lhs, const string_
     return lhs;
 }
 
+struct json_path_container;
+
 struct json_path_handler : public json_path_handler_base {
-    json_path_handler(const char *path, int(*null_func)(yajlpp_parse_context *))
+    template<typename P>
+    json_path_handler(P path, int(*null_func)(yajlpp_parse_context *))
         : json_path_handler_base(path)
     {
         this->jph_callbacks.yajl_null = (int (*)(void *))null_func;
     };
 
-    json_path_handler(const char *path, int(*bool_func)(yajlpp_parse_context *, int))
+    template<typename P>
+    json_path_handler(P path, int(*bool_func)(yajlpp_parse_context *, int))
         : json_path_handler_base(path)
     {
         this->jph_callbacks.yajl_boolean = (int (*)(void *, int))bool_func;
     }
 
-    json_path_handler(const char *path, int(*int_func)(yajlpp_parse_context *, long long))
+    template<typename P>
+    json_path_handler(P path, int(*int_func)(yajlpp_parse_context *, long long))
         : json_path_handler_base(path)
     {
         this->jph_callbacks.yajl_integer = (int (*)(void *, long long))int_func;
     }
 
-    json_path_handler(const char *path, int(*double_func)(yajlpp_parse_context *, double))
+    template<typename P>
+    json_path_handler(P path, int(*double_func)(yajlpp_parse_context *, double))
         : json_path_handler_base(path)
     {
         this->jph_callbacks.yajl_double = (int (*)(void *, double))double_func;
     }
 
-    json_path_handler(const char *path,
+    template<typename P>
+    json_path_handler(P path,
                       int(*str_func)(yajlpp_parse_context *, const unsigned char *, size_t))
         : json_path_handler_base(path)
     {
         this->jph_callbacks.yajl_string = (int (*)(void *, const unsigned char *, size_t))str_func;
     }
 
-    json_path_handler(const char *path) : json_path_handler_base(path) { };
+    template<typename P>
+    json_path_handler(P path) : json_path_handler_base(path) { };
 
-    json_path_handler() : json_path_handler_base("") {};
+    json_path_handler(const std::string &path, const pcrepp &re)
+        : json_path_handler_base(path, re) {
+    };
 
     json_path_handler &add_cb(int(*null_func)(yajlpp_parse_context *)) {
         this->jph_callbacks.yajl_null = (int (*)(void *))null_func;
@@ -322,7 +332,7 @@ struct json_path_handler : public json_path_handler_base {
         }
 
         if (ygc.ygc_depth) {
-            yajl_gen_string(handle, jph.jph_path);
+            yajl_gen_string(handle, jph.jph_property);
         }
 
         yajlpp_generator gen(handle);
@@ -417,6 +427,7 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     };
 
+
     template<typename T, typename NUM_T, NUM_T T::*NUM>
     json_path_handler &for_field(typename std::enable_if<std::is_integral<NUM_T>::value &&
                                                          !std::is_same<NUM_T, bool>::value>::type* dummy = 0) {
@@ -438,12 +449,36 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     };
 
-    json_path_handler &with_children(json_path_handler *children) {
-        require(this->jph_path[strlen(this->jph_path) - 1] == '/');
+    json_path_handler &with_children(const json_path_container &container);
 
-        this->jph_children = children;
+    json_path_handler &with_example(const std::string &example) {
+        this->jph_examples.emplace_back(example);
         return *this;
-    };
+    }
+};
+
+struct json_path_container {
+    json_path_container(std::initializer_list<json_path_handler> children)
+        : jpc_children(children) {
+    }
+
+    json_path_container &with_definition_id(const std::string id) {
+        this->jpc_definition_id = id;
+        return *this;
+    }
+
+    json_path_container &with_schema_id(const std::string id) {
+        this->jpc_schema_id = id;
+        return *this;
+    }
+
+    void gen_schema(yajlpp_gen_context &ygc) const;
+
+    void gen_properties(yajlpp_gen_context &ygc) const;
+
+    std::string jpc_schema_id;
+    std::string jpc_definition_id;
+    std::vector<json_path_handler> jpc_children;
 };
 
 #endif
