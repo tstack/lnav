@@ -447,7 +447,7 @@ uncrusty:
 		$(HEADERS))
 
 all-local: lnav
-	env DUMP_INTERNALS_DIR=$(srcdir)/internals ./lnav
+	env DUMP_INTERNALS_DIR=$(srcdir)/internals ./lnav Makefile
 
 install-exec-hook:
 	bash $(srcdir)/alpha-release.sh
