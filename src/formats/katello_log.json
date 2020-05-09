@@ -1,0 +1,47 @@
+{
+    "katello_log": {
+        "title": "Katello log format", 
+        "description": "Log format used by katello and foreman as used in Satellite 6.", 
+        "url": "http://theforeman.org/", 
+        "regex": {
+            "log": {
+                "pattern": "^\\[\\s?(?<alert_level>\\w+)\\s(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\s(?<module>\\w+)\\]\\s+(?<message>\\S.*)$"
+            }
+        }, 
+        "level-field": "alert_level", 
+        "level": {
+            "error": "ERROR", 
+            "warning": "WARN", 
+            "debug": "DEBUG"
+        }, 
+        "value": {
+            "alert_level": {
+                "kind": "string"
+            }, 
+            "module": {
+                "kind": "string"
+            }, 
+            "message": {
+                "kind": "string"
+            }
+        }, 
+        "sample": [
+            {
+                "line": "[DEBUG 2015-05-20 12:22:19 main]  /Stage[main]/Certs::Candlepin/Exec[create candlepin qpid exchange]/unless: Failed: ConnectError: [Errno 1] _ssl.c:504: error:14094418:SSL routines:SSL3_READ_BYTES:tlsv1 alert unknown ca", 
+                "level": "debug"
+            }, 
+            {
+                "line": "[DEBUG 2015-05-20 12:22:19 main]  Exec[create candlepin qpid exchange](provider=posix): Executing 'qpid-config --ssl-certificate /etc/pki/katello/certs/java-client.crt --ssl-key /etc/pki/katello/private/java-client.key -b 'amqps://avl248.bcc.qld.gov.au:5671' add exchange topic event --durable'", 
+                "level": "debug"
+            }, 
+            {
+                "line": "[ERROR 2015-05-20 12:22:19 main]  qpid-config --ssl-certificate /etc/pki/katello/certs/java-client.crt --ssl-key /etc/pki/katello/private/java-client.key -b 'amqps://avl248.bcc.qld.gov.au:5671' add exchange topic event --durable returned 1 instead of one of [0]", 
+                "level": "error"
+            }, 
+            {
+                "line": "[ INFO 2015-05-20 12:22:19 main] /usr/share/ruby/vendor_ruby/puppet/util/errors.rb:104:in `fail'", 
+                "level": "info"
+            }
+        ]
+    }
+}

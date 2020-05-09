@@ -1,0 +1,66 @@
+{
+    "vdsm_log": {
+        "title": "Vdsm Logs", 
+        "description": "Vdsm log format", 
+        "url": "http://www.ovirt.org/develop/developer-guide/vdsm/log-files/", 
+        "regex": {
+            "v4.1": {
+                "pattern": "(?s)^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}(?:\\+\\d{4})?) (?<level>\\w+)\\s+\\((?<thread>.+?)\\) \\[(?<logger>.+?)\\]\\s+?(?<body>(?:.|[\\r\\n])*?)\\s+?\\((?<src_file>\\w+?):(?<src_line>\\d+)\\)(\\n(?<traceback>Traceback.*?)(?=\\n(?P=timestamp)|$))?"
+            }, 
+            "v4": {
+                "pattern": "^(?<tid>.+)::(?<level>.+)::(?<timestamp>.+)::(?<module>.+)::(?<src_line>.+)::(?<logger>.+)::\\((?<func>[^\\)]+)\\)(?<body>(?:.|\\n)*)"
+            }
+        }, 
+        "level-field": "level", 
+        "level": {
+            "error": "ERROR", 
+            "debug": "DEBUG", 
+            "info": "INFO", 
+            "warning": "WARNING|WARN", 
+            "critical": "CRIT", 
+            "trace": "TRACE"
+        }, 
+        "value": {
+            "tid": {
+                "kind": "string", 
+                "identifier": true
+            }, 
+            "module": {
+                "kind": "string", 
+                "identifier": true
+            }, 
+            "src_line": {
+                "kind": "integer", 
+                "foreign-key": true
+            }, 
+            "logger": {
+                "kind": "string", 
+                "identifier": true
+            }, 
+            "func": {
+                "kind": "string", 
+                "identifier": true
+            }, 
+            "thread": {
+                "kind": "string", 
+                "identifier": true
+            }, 
+            "src_file": {
+                "kind": "string", 
+                "identifier": true
+            }, 
+            "traceback": {
+                "kind": "string", 
+                "identifier": true
+            }
+        }, 
+        "sample": [
+            {
+                "line": "Thread-1950::INFO::2011-12-07 12:14:15,018::dispatcher::94::Storage.Dispatcher.Protect::(run) Run and protect: getDeviceList, args: ( storageType=2)"
+            }, 
+            {
+                "line": "2017-03-06 14:49:05,167+0200 INFO  (vm/9e5dd42e) [virt.vm] (vmId='9e5dd42e-5177-4da3-a6ce-87fa2052d315') (vm:2104)"
+            }
+        ]
+    }
+}

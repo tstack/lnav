@@ -1,0 +1,42 @@
+{
+    "cups_log": {
+        "title": "CUPS log format", 
+        "description": "Log format used by the Common Unix Printing System", 
+        "regex": {
+            "system": {
+                "pattern": "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\S{3,8}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<section>\\w+): (?<body>.*)$"
+            }, 
+            "default": {
+                "pattern": "^(?<level>[IEW]) \\[(?<timestamp>\\d{2}/\\S{3,8}/\\d{4}:\\d{2}:\\d{2}:\\d{2} [+-]\\d{2,4})\\] (?<body>.*)$"
+            }
+        }, 
+        "level": {
+            "error": "E", 
+            "warning": "W"
+        }, 
+        "value": {
+            "level": {
+                "kind": "string", 
+                "identifier": true
+            }, 
+            "section": {
+                "kind": "string", 
+                "identifier": true
+            }, 
+            "body": {
+                "kind": "string"
+            }
+        }, 
+        "sample": [
+            {
+                "line": "I [04/Nov/2010:17:37:40 -0400] Allowing up to 100 client connections per host."
+            }, 
+            {
+                "line": "I [04/Nov/2010:17:37:40 -0400] LoadPPDs: Wrote \"/etc/cups/ppds.dat\", 14 PPDs..."
+            }, 
+            {
+                "line": "E [04/Nov/2010:17:37:40 -0400] StartListening: Unable to find IP address for server name \"localhost.localdomain\" - Host name lookup failure"
+            }
+        ]
+    }
+}

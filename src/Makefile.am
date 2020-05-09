@@ -19,6 +19,46 @@ RE2C_V = $(RE2C_V_@AM_V@)
 RE2C_V_ = $(RE2C_V_@AM_DEFAULT_V@)
 RE2C_V_0 = @echo "  RE2C   " $@;
 
+FORMAT_FILES = \
+    $(srcdir)/formats/access_log.json \
+    $(srcdir)/formats/alb_log.json \
+    $(srcdir)/formats/autodeploy_log.json \
+    $(srcdir)/formats/block_log.json \
+    $(srcdir)/formats/candlepin_log.json \
+    $(srcdir)/formats/choose_repo_log.json \
+    $(srcdir)/formats/cups_log.json \
+    $(srcdir)/formats/dpkg_log.json \
+    $(srcdir)/formats/elb_log.json \
+    $(srcdir)/formats/engine_log.json \
+    $(srcdir)/formats/error_log.json \
+    $(srcdir)/formats/fsck_hfs_log.json \
+    $(srcdir)/formats/glog_log.json \
+    $(srcdir)/formats/haproxy_log.json \
+    $(srcdir)/formats/java_log.json \
+    $(srcdir)/formats/journald_json_log.json \
+    $(srcdir)/formats/katello_log.json \
+    $(srcdir)/formats/openam_log.json \
+    $(srcdir)/formats/openamdb_log.json \
+    $(srcdir)/formats/openstack_log.json \
+    $(srcdir)/formats/page_log.json \
+    $(srcdir)/formats/papertrail_log.json \
+    $(srcdir)/formats/snaplogic_log.json \
+    $(srcdir)/formats/sssd_log.json \
+    $(srcdir)/formats/strace_log.json \
+    $(srcdir)/formats/sudo_log.json \
+    $(srcdir)/formats/syslog_log.json \
+    $(srcdir)/formats/tcf_log.json \
+    $(srcdir)/formats/tcsh_history.json \
+    $(srcdir)/formats/uwsgi_log.json \
+    $(srcdir)/formats/vdsm_log.json \
+    $(srcdir)/formats/vmk_log.json \
+    $(srcdir)/formats/vmw_log.json \
+    $(srcdir)/formats/xmlrpc_log.json \
+    $()
+
+default-formats.h default-formats.c: bin2c $(FORMAT_FILES)
+	$(BIN2C_V)./bin2c -n lnav_format_json default-formats $(FORMAT_FILES)
+
 CONFIG_FILES = \
     $(srcdir)/root-config.json \
     $(srcdir)/keymaps/default-keymap.json \
@@ -159,7 +199,6 @@ LDADD = \
 dist_noinst_DATA = \
 	alpha-release.sh \
 	ansi-palette.json \
-	default-log-formats.json \
 	keymaps/default-keymap.json \
 	root-config.json \
 	scripts/dhclient-summary.lnav \
@@ -187,8 +226,8 @@ BUILT_SOURCES = \
     builtin-sh-scripts.c \
     default-config.h \
     default-config.c \
-    default-log-formats-json.h \
-    default-log-formats-json.c \
+    default-formats.h \
+    default-formats.c \
     help-txt.h \
     help-txt.c \
     init-sql.h \
@@ -434,9 +473,6 @@ ptimec_LDADD =
 DISTCLEANFILES = \
     $(BUILT_SOURCES) \
 	data_scanner_re.cc \
-	default-config.json \
-	default-config.c \
-	default-log-formats-json.c \
 	help-txt.c \
 	init-sql.c \
 	log_level_re.cc \

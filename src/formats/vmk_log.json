@@ -1,0 +1,41 @@
+{
+    "vmk_log": {
+        "title": "VMKernel Logs", 
+        "description": "The VMKernel's log format", 
+        "url": "", 
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) cpu(?<cpu>\\d+):(?<world_id>\\d+)\\)((?:(?<level>WARNING|ALERT)|(?<subsystem>[^:]+)): )?(?<body>.*)"
+            }
+        }, 
+        "level-field": "level", 
+        "level": {
+            "error": "ALERT", 
+            "warning": "WARNING"
+        }, 
+        "value": {
+            "cpu": {
+                "kind": "integer", 
+                "identifier": true, 
+                "foreign-key": true
+            }, 
+            "world_id": {
+                "kind": "integer", 
+                "identifier": true, 
+                "foreign-key": true
+            }, 
+            "subsystem": {
+                "kind": "string", 
+                "identifier": true
+            }
+        }, 
+        "sample": [
+            {
+                "line": "2014-11-14T19:19:51.559Z cpu7:35233)VC: 2002: Device rescan time 704 msec (total number of devices 91)"
+            }, 
+            {
+                "line": "2015-04-01T22:22:35.038Z cpu22:44012977)ALERT: This is what an alert looks like."
+            }
+        ]
+    }
+}

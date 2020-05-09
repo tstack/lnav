@@ -1,0 +1,93 @@
+{
+    "access_log": {
+        "title": "Common Access Log", 
+        "description": "The default web access log format for servers like Apache.", 
+        "url": "http://en.wikipedia.org/wiki/Common_Log_Format", 
+        "multiline": false, 
+        "regex": {
+            "ts-first-noquotes": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?:-1|\\d+) (?<sc_status>\\d+) \\d+\\s*(?<body>.*)"
+            }, 
+            "ts-first": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+\\s*(?<body>.*)"
+            }, 
+            "std": {
+                "pattern": "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
+            }, 
+            "mod-std": {
+                "module-format": true, 
+                "pattern": "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
+            }
+        }, 
+        "level-field": "sc_status", 
+        "level": {
+            "error": "^[^123].*"
+        }, 
+        "opid-field": "c_ip", 
+        "value": {
+            "c_ip": {
+                "kind": "string", 
+                "collate": "ipaddress", 
+                "identifier": true, 
+                "description": "The client IP address"
+            }, 
+            "cs_username": {
+                "kind": "string", 
+                "identifier": true, 
+                "description": "The username passed from the client to the server"
+            }, 
+            "cs_method": {
+                "kind": "string", 
+                "identifier": true, 
+                "description": "The request method"
+            }, 
+            "cs_uri_stem": {
+                "kind": "string", 
+                "identifier": true, 
+                "description": "The path part of the request URI"
+            }, 
+            "cs_uri_query": {
+                "kind": "string", 
+                "description": "The query parameters in the request URI"
+            }, 
+            "cs_version": {
+                "kind": "string", 
+                "identifier": true, 
+                "description": "The client's HTTP version"
+            }, 
+            "sc_status": {
+                "kind": "integer", 
+                "foreign-key": true, 
+                "rewriter": ";SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '", 
+                "description": "The status code returned by the server"
+            }, 
+            "sc_bytes": {
+                "kind": "integer", 
+                "description": "The number of bytes returned by the server"
+            }, 
+            "cs_referer": {
+                "kind": "string", 
+                "identifier": true, 
+                "description": "The client's referrer"
+            }, 
+            "cs_user_agent": {
+                "kind": "string", 
+                "identifier": true, 
+                "description": "The client's HTTP agent"
+            }
+        }, 
+        "sample": [
+            {
+                "line": "10.112.72.172 - - [11/Feb/2013:06:43:36 +0000] \"GET /client/ HTTP/1.1\" 200 5778 \"-\" \"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17\"", 
+                "level": "info"
+            }, 
+            {
+                "line": "10.112.72.172 - - [11/Feb/2013:06:43:36 +0000] \"GET /client/ HTTP/1.1\" 404 5778 \"-\" \"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.57 Safari/537.17\"", 
+                "level": "error"
+            }, 
+            {
+                "line": "10.1.10.51 -  -  [23/Dec/2014:21:20:35 +0000] \"POST /api/1/rest/foo/bar HTTP/1.1\" 200 - \"-\" \"-\"  293"
+            }
+        ]
+    }
+}

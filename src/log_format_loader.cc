@@ -51,7 +51,7 @@
 #include "sql_util.hh"
 #include "builtin-scripts.h"
 #include "builtin-sh-scripts.h"
-#include "default-log-formats-json.h"
+#include "default-formats.h"
 
 #include "log_format_loader.hh"
 #include "bin2c.h"
@@ -746,18 +746,20 @@ struct json_path_container root_format_handler = json_path_container {
 }
     .with_schema_id(SUPPORTED_FORMAT_SCHEMAS.back());
 
-static void write_sample_file(void)
+static void write_sample_file()
 {
-    auto sample_path = dotlnav_path() / "formats/default/default-formats.json.sample";
-    auto_fd sample_fd;
+    for (int lpc = 0; lnav_format_json[lpc].bsf_name; lpc++) {
+        auto &bsf = lnav_format_json[lpc];
+        auto sample_path = dotlnav_path() /
+            fmt::format("formats/default/{}.sample", bsf.bsf_name);
+        auto_fd sample_fd;
 
-    if ((sample_fd = openp(sample_path,
-                           O_WRONLY|O_TRUNC|O_CREAT,
-                           0644)) == -1 ||
-        (write(sample_fd.get(),
-               default_log_formats_json.bsf_data,
-               default_log_formats_json.bsf_size) == -1)) {
-        perror("error: unable to write default format file");
+        if ((sample_fd = openp(sample_path,
+                               O_WRONLY | O_TRUNC | O_CREAT,
+                               0644)) == -1 ||
+            (write(sample_fd.get(), bsf.bsf_data, bsf.bsf_size) == -1)) {
+            perror("error: unable to write default format file");
+        }
     }
 
     for (int lpc = 0; lnav_sh_scripts[lpc].bsf_name; lpc++) {
@@ -915,22 +917,26 @@ void load_formats(const std::vector<filesystem::path> &extra_paths,
     write_sample_file();
 
     log_debug("Loading default formats");
-    handle = yajl_alloc(&ypc_builtin.ypc_callbacks, nullptr, &ypc_builtin);
-    ud.ud_format_names = &retval;
-    ud.ud_errors = &errors;
-    ypc_builtin
-        .with_obj(ud)
-        .with_handle(handle)
-        .with_error_reporter(format_error_reporter)
-        .ypc_userdata = &ud;
-    yajl_config(handle, yajl_allow_comments, 1);
-    if (ypc_builtin.parse(default_log_formats_json.bsf_data,
-                          default_log_formats_json.bsf_size) != yajl_status_ok) {
-        errors.push_back("builtin: invalid json -- " +
-            string((char *)yajl_get_error(handle, 1, default_log_formats_json.bsf_data, default_log_formats_json.bsf_size)));
+    for (int lpc = 0; lnav_format_json[lpc].bsf_name; lpc++) {
+        auto &bsf = lnav_format_json[lpc];
+        handle = yajl_alloc(&ypc_builtin.ypc_callbacks, nullptr, &ypc_builtin);
+        ud.ud_format_names = &retval;
+        ud.ud_errors = &errors;
+        ypc_builtin
+            .with_obj(ud)
+            .with_handle(handle)
+            .with_error_reporter(format_error_reporter)
+            .ypc_userdata = &ud;
+        yajl_config(handle, yajl_allow_comments, 1);
+        if (ypc_builtin.parse(bsf.bsf_data, bsf.bsf_size) != yajl_status_ok) {
+            errors.push_back("builtin: invalid json -- " +
+                             string((char *) yajl_get_error(handle, 1,
+                                                            bsf.bsf_data,
+                                                            bsf.bsf_size)));
+        }
+        ypc_builtin.complete_parse();
+        yajl_free(handle);
     }
-    ypc_builtin.complete_parse();
-    yajl_free(handle);
 
     for (const auto & extra_path : extra_paths) {
         load_from_path(extra_path, errors);
