@@ -60,9 +60,9 @@ CONFIG_OBJS = \
 	../src/xterm-palette-json.o
 
 TEXT2C_OBJS = \
-	../src/default-log-formats-json.o \
 	../src/builtin-scripts.o \
-	../src/builtin-sh-scripts.o
+	../src/builtin-sh-scripts.o \
+	../src/default-formats.o
 
 LDADD = \
     -lz \
