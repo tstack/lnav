@@ -199,22 +199,12 @@ LDADD = \
 dist_noinst_DATA = \
 	alpha-release.sh \
 	ansi-palette.json \
-	keymaps/default-keymap.json \
-	root-config.json \
-	scripts/dhclient-summary.lnav \
-	scripts/dump-pid.sh \
-	scripts/lnav-pop-view.lnav \
-	scripts/partition-by-boot.lnav \
-	scripts/rename-stdin.lnav \
-	scripts/search-for.lnav \
+	$(BUILTIN_LNAVSCRIPTS) \
+	$(BUILTIN_SHSCRIPTS) \
 	internals/config-v1.schema.json \
 	internals/format-v1.schema.json \
-	themes/default-theme.json \
-	themes/eldar.json \
-    themes/monocai.json \
-    themes/night-owl.json \
-	themes/solarized-dark.json \
-	themes/solarized-light.json \
+	$(CONFIG_FILES) \
+	$(FORMAT_FILES) \
 	xterm-palette.json
 
 BUILT_SOURCES = \
