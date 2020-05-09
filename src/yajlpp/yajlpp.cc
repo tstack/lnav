@@ -989,7 +989,11 @@ void dump_schema_to(const json_path_container &jpc, const char *internals_dir, c
     yajlpp_gen genner;
     yajlpp_gen_context ygc(genner, jpc);
     auto schema_path = fmt::format("{}/{}", internals_dir, name);
-    unique_ptr<FILE, decltype(&fclose)> file(fopen(schema_path.c_str(), "w+"), fclose);
+    auto file = unique_ptr<FILE, decltype(&fclose)>(fopen(schema_path.c_str(), "w+"), fclose);
+
+    if (!file.get()) {
+        return;
+    }
 
     yajl_gen_config(genner, yajl_gen_beautify, true);
     yajl_gen_config(genner, yajl_gen_print_callback, schema_printer, file.get());

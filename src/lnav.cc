@@ -2268,26 +2268,34 @@ int main(int argc, char *argv[])
 
             auto cmd_ref_path = filesystem::path(internals_dir) / "cmd-ref.rst";
             auto cmd_file = unique_ptr<FILE, decltype(&fclose)>(fopen(cmd_ref_path.str().c_str(), "w+"), fclose);
-            set<readline_context::command_t *> unique_cmds;
 
-            for (auto &cmd : lnav_commands) {
-                if (unique_cmds.find(cmd.second) != unique_cmds.end()) {
-                    continue;
+            if (cmd_file.get()) {
+                set<readline_context::command_t *> unique_cmds;
+
+                for (auto &cmd : lnav_commands) {
+                    if (unique_cmds.find(cmd.second) != unique_cmds.end()) {
+                        continue;
+                    }
+                    unique_cmds.insert(cmd.second);
+                    format_help_text_for_rst(cmd.second->c_help, eval_example,
+                                             cmd_file.get());
                 }
-                unique_cmds.insert(cmd.second);
-                format_help_text_for_rst(cmd.second->c_help, eval_example, cmd_file.get());
             }
 
             auto sql_ref_path = filesystem::path(internals_dir) / "sql-ref.rst";
             auto sql_file = unique_ptr<FILE, decltype(&fclose)>(fopen(sql_ref_path.str().c_str(), "w+"), fclose);
             set<help_text *> unique_sql_help;
 
-            for (auto &sql : sqlite_function_help) {
-                if (unique_sql_help.find(sql.second) != unique_sql_help.end()) {
-                    continue;
+            if (sql_file.get()) {
+                for (auto &sql : sqlite_function_help) {
+                    if (unique_sql_help.find(sql.second) !=
+                        unique_sql_help.end()) {
+                        continue;
+                    }
+                    unique_sql_help.insert(sql.second);
+                    format_help_text_for_rst(*sql.second, eval_example,
+                                             sql_file.get());
                 }
-                unique_sql_help.insert(sql.second);
-                format_help_text_for_rst(*sql.second, eval_example, sql_file.get());
             }
 
             return EXIT_SUCCESS;
