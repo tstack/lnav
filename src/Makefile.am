@@ -440,8 +440,8 @@ TEXT2C_FILES = \
 	builtin-sh-scripts.o \
 	help-txt.o \
 	init-sql.o \
-	default-log-formats-json.o \
 	default-config.o \
+	default-formats.o \
 	xterm-palette-json.o
 
 lnav_SOURCES = lnav.cc
