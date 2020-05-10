@@ -49,6 +49,7 @@ std::vector<log_format *>& log_format::get_root_formats()
     return retval;
 }
 
+#if 0
 TEST_CASE("overwritten-logfile") {
     string fname = "reload_test.0";
 
@@ -66,6 +67,7 @@ TEST_CASE("overwritten-logfile") {
     CHECK(rebuild_result == logfile::RR_NO_NEW_LINES);
     CHECK(lf.is_closed());
 }
+#endif
 
 TEST_CASE("duration2str") {
     string val;
