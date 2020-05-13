@@ -1,19 +1,19 @@
 {
     "choose_repo_log": {
-        "title": "Yum choose_repo Log", 
-        "description": "The log format for the yum choose_repo tool.", 
+        "title": "Yum choose_repo Log",
+        "description": "The log format for the yum choose_repo tool.",
         "regex": {
             "std": {
                 "pattern": "^\\[(?<level>\\w+):[^\\]]+] [^:]+:\\d+ (?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[\\.,]\\d{3})?):(?<body>.*)"
             }
-        }, 
-        "level-field": "level", 
+        },
+        "level-field": "level",
         "level": {
-            "error": "ERROR", 
-            "debug": "DEBUG", 
-            "info": "INFO", 
+            "error": "ERROR",
+            "debug": "DEBUG",
+            "info": "INFO",
             "warning": "WARNING"
-        }, 
+        },
         "sample": [
             {
                 "line": "[INFO:choose_repo] choose_repo:47 2013-06-20 17:26:10,691: Setting region in redhat-rhui.repo"

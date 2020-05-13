@@ -1,41 +1,41 @@
 {
     "glog_log": {
-        "title": "Glog", 
-        "description": "The google glog format.", 
-        "url": "https://code.google.com/p/google-glog/", 
+        "title": "Glog",
+        "description": "The google glog format.",
+        "url": "https://code.google.com/p/google-glog/",
         "regex": {
             "std": {
                 "pattern": "^(?<level>[IWECF])(?<timestamp>\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{6}) +(?<thread>\\d+) (?<src_file>[^:]+):(?<src_line>\\d+)\\] (?<body>(?:.|\\n)*)"
             }
-        }, 
-        "level-field": "level", 
+        },
+        "level-field": "level",
         "level": {
-            "error": "E", 
-            "warning": "W", 
-            "info": "I", 
-            "critical": "C", 
+            "error": "E",
+            "warning": "W",
+            "info": "I",
+            "critical": "C",
             "fatal": "F"
-        }, 
-        "opid-field": "thread", 
+        },
+        "opid-field": "thread",
         "value": {
             "thread": {
-                "kind": "integer", 
-                "identifier": true, 
+                "kind": "integer",
+                "identifier": true,
                 "foreign-key": true
-            }, 
+            },
             "src_file": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "src_line": {
-                "kind": "integer", 
+                "kind": "integer",
                 "foreign-key": true
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "E0517 15:04:22.619632 1952452992 logging_unittest.cc:253] Log every 3, iteration 19"
-            }, 
+            },
             {
                 "line": "E0517 15:04:22.619632      52992 logging_unittest.cc:253] Log every 3, iteration 19"
             }

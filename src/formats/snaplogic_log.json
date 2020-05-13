@@ -1,50 +1,50 @@
 {
     "snaplogic_log": {
-        "title": "SnapLogic Server Log", 
-        "description": "The SnapLogic server log format.", 
-        "url": "http://www.snaplogic.com/docs/user-guide/user-guide.htm", 
+        "title": "SnapLogic Server Log",
+        "description": "The SnapLogic server log format.",
+        "url": "http://www.snaplogic.com/docs/user-guide/user-guide.htm",
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<level>\\w{4,}) (?<logger>[^ ]+) (?<facility>[^ ]+) (?<msgid>[^ ]+) (?<pipe_rid>-|\\d+)(?:\\.(?<comp_rid>[^ ]+))? (?<resource_name>[^ ]+) (?<invoker>[^ ]+))|(?:(?:stdout|stderr): ))(?<body>.*)"
             }
-        }, 
-        "level-field": "level", 
+        },
+        "level-field": "level",
         "level": {
-            "error": "ERROR", 
-            "debug": "DEBUG", 
-            "info": "INFO", 
+            "error": "ERROR",
+            "debug": "DEBUG",
+            "info": "INFO",
             "warning": "WARNING"
-        }, 
+        },
         "value": {
             "logger": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "facility": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "msgid": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "pipe_rid": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "comp_rid": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "resource_name": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "invoker": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "2013-07-30T09:40:25 DEBUG main_process.main PM - 1768839331504132353247612213662950165988626018 - - Pipeline manager '' sending to Leads. Invoker 'admin': PREPARE {'parent_rid': '1768839331504132353247612213662950165988626018', 'resource_name': u'Leads', 'input_views': {}, 'parameters': {u'DELIMITER': u',', u'INPUTFILE': u'file://tutorial/data/leads.csv'}, 'output_views': {u'Output1': {'method': 'GET'}}, 'context_name': u'', 'snap_control_version': '1.2'}"

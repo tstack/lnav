@@ -1,43 +1,43 @@
 {
     "strace_log": {
-        "title": "Strace", 
-        "description": "The strace output format.", 
-        "url": "http://en.wikipedia.org/wiki/Strace", 
-        "multiline": false, 
+        "title": "Strace",
+        "description": "The strace output format.",
+        "url": "http://en.wikipedia.org/wiki/Strace",
+        "multiline": false,
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?<rc>[-\\w]+)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
             }
-        }, 
-        "level-field": "errno", 
+        },
+        "level-field": "errno",
         "level": {
             "error": ".+"
-        }, 
+        },
         "value": {
             "syscall": {
-                "kind": "string", 
-                "identifier": true, 
+                "kind": "string",
+                "identifier": true,
                 "rewriter": ":pipe-line-to explain-syscall.sh ${syscall}"
-            }, 
+            },
             "args": {
                 "kind": "string"
-            }, 
+            },
             "rc": {
-                "kind": "integer", 
+                "kind": "integer",
                 "foreign-key": true
-            }, 
+            },
             "duration": {
                 "kind": "float"
-            }, 
+            },
             "errno": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "08:09:33.814936 execve(\"/bin/ls\", [\"ls\"], [/* 38 vars */]) = 0 <0.000264>"
-            }, 
+            },
             {
                 "line": "08:09:33.815943 access(\"/etc/ld.so.nohwcap\", F_OK) = -1 ENOENT (No such file or directory) <0.000019>"
             }

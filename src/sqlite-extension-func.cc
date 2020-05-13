@@ -180,7 +180,7 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             }),
 
         help_text("instr",
-                  "Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if Y is nowhere found within X")
+                  "Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if the needle was not found")
             .sql_function()
             .with_parameter({"haystack", "The string to search within"})
             .with_parameter({"needle", "The string to look for in the haystack"})

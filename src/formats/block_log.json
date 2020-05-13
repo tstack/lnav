@@ -1,12 +1,12 @@
 {
     "block_log": {
-        "title": "Generic Block", 
-        "description": "A generic format for logs, like cron, that have a date at the start of a block.", 
+        "title": "Generic Block",
+        "description": "A generic format for logs, like cron, that have a date at the start of a block.",
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>\\S{3,8} \\w{3}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2} \\w+ \\d{4})(?<body>(?:.|\\n)*)$"
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "Sat Apr 27 03:33:07 PDT 2013"

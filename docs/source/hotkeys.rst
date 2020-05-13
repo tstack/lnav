@@ -267,3 +267,7 @@ Query
      - Execute an lnav script located in a format directory.
    * - |ks| Ctrl |ke| + |ks| ] |ke|
      - Abort the prompt
+
+Customizing
+-----------
+

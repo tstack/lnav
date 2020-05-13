@@ -1,39 +1,39 @@
 {
     "dpkg_log": {
-        "title": "Dpkg Log", 
-        "description": "The debian dpkg log.", 
+        "title": "Dpkg Log",
+        "description": "The debian dpkg log.",
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?:(?:(?<action>startup|status|configure|install|upgrade|trigproc|remove|purge)(?: (?<status>config-files|failed-config|half-configured|half-installed|installed|not-installed|post-inst-failed|removal-failed|triggers-awaited|triggers-pending|unpacked))? (?<package>[^ ]+) (?<installed_version>[^ ]+)(?: (?<available_version>[^ ]+))?)|update-alternatives: (?<body>.*))$"
             }
-        }, 
+        },
         "value": {
             "action": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "status": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "package": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "installed_version": {
                 "kind": "string"
-            }, 
+            },
             "available_version": {
                 "kind": "string"
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "2012-02-14 10:44:10 configure base-files 5.0.0ubuntu20 5.0.0ubuntu20"
-            }, 
+            },
             {
                 "line": "2012-02-14 10:44:30 status unpacked rsyslog 4.2.0-2ubuntu8"
-            }, 
+            },
             {
                 "line": "2012-02-14 10:44:32 update-alternatives: run with --install /usr/bin/rview rview /usr/bin/vim.tiny 10"
             }

@@ -1,13 +1,13 @@
 {
     "tcsh_history": {
-        "title": "TCSH History", 
-        "description": "The tcsh history file format.", 
-        "convert-to-local-time": true, 
+        "title": "TCSH History",
+        "description": "The tcsh history file format.",
+        "convert-to-local-time": true,
         "regex": {
             "std": {
                 "pattern": "^#(?<timestamp>\\+\\d+)\\n?(?<body>.*)?$"
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "#+1375138067\necho HELLO=BAR"

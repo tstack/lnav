@@ -7,12 +7,11 @@ The Log File Navigator, **lnav**, is an advanced log file viewer for the
 terminal.  It provides an :ref:`easy-to-use interface<ui>` for monitoring and
 analyzing your log files with little to no setup.  Simply point **lnav** at
 your log files and it will automatically detect the :ref:`log-formats`, index
-their contents, and display a combined view of all log messages.  A variety of
-:ref:`hotkeys<hotkeys>` allow you to quickly navigate through the logs by
-message level or time.  :ref:`Commands<commands>` give you additional
-control over **lnav**'s behavior for doing things like applying filters,
-tagging messages, and much more.  And, the :ref:`sql-ext` allows you to analyze
-your log messages by executing queries over the log messages.
+their contents, and display a combined view of all log messages.  You can
+navigate through your logs using a variety of :ref:`hotkeys<hotkeys>`.
+:ref:`Commands<commands>` give you additional control over **lnav**'s behavior
+for doing things like applying filters, tagging messages, and more.  You can
+then analyze your log messages using the :ref:`sql-ext`.
 
 Dependencies
 ------------

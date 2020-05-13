@@ -1,57 +1,57 @@
 {
     "java_log": {
-        "title": "Java log format", 
-        "description": "Log format used by log4j and output by most java programs", 
-        "url": "", 
+        "title": "Java log format",
+        "description": "Log format used by log4j and output by most java programs",
+        "url": "",
         "regex": {
             "jvm": {
                 "pattern": "^(?<alert_level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| (?<timestamp_f>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<debug_level>\\w+)\\s+(?<class>[\\w.]+)\\s+-\\s+(?<body>\\S.*)"
-            }, 
+            },
             "dump": {
                 "pattern": "^(?<alert_level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| JVMDUMP\\w+\\s(?<body>\\S.*)$"
-            }, 
+            },
             "tasko": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<alert_level>\\w+)\\s+(?<class>[\\w.]+)\\s+-\\s+(?<body>\\S.*)$"
             }
-        }, 
-        "level-field": "alert_level", 
+        },
+        "level-field": "alert_level",
         "level": {
-            "error": "ERROR", 
-            "warning": "WARN", 
-            "debug": "DEBUG", 
+            "error": "ERROR",
+            "warning": "WARN",
+            "debug": "DEBUG",
             "info": "INFO"
-        }, 
+        },
         "value": {
             "function": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "alert_level": {
                 "kind": "string"
-            }, 
+            },
             "jvm_no": {
                 "kind": "integer"
-            }, 
+            },
             "debug_level": {
                 "kind": "string"
-            }, 
+            },
             "class": {
                 "kind": "string"
-            }, 
+            },
             "body": {
                 "kind": "string"
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "INFO   | jvm 1    | 2015/04/28 18:40:00 | 2015-04-28 18:40:00,077 [DefaultQuartzScheduler_Worker-8] INFO  com.redhat.rhn.taskomatic.TaskoJob - errata-queue-default: bunch errata-queue-bunch STARTED"
-            }, 
+            },
             {
                 "line": "INFO   | jvm 1    | 2015/04/28 18:34:18 | 2015-04-28 18:34:18,872 [Thread-46] DEBUG com.redhat.rhn.common.hibernate.ConnectionManager - Adding resource com/redhat/rhn/domain/action/ActionArchType.hbm.xml"
-            }, 
+            },
             {
                 "line": "2015-05-22 16:10:00,123 [DefaultQuartzScheduler_Worker-5] INFO  com.redhat.rhn.taskomatic.task.ErrataCacheTask  - In the queue: 24"
-            }, 
+            },
             {
                 "line": "INFO   | jvm 1    | 2015/05/24 07:35:50 | JVMDUMP013I Processed dump event \"user\", detail \"\"."
             }

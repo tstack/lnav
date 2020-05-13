@@ -497,9 +497,38 @@ int json_extension_functions(struct FuncDef **basic_funcs,
 
     static struct FuncDefAgg json_agg_funcs[] = {
             { "json_group_object", -1, 0,
-                    sql_json_group_object_step, sql_json_group_object_final, },
+                    sql_json_group_object_step, sql_json_group_object_final,
+                    help_text("json_group_object")
+                        .sql_function()
+                        .with_summary("Collect the given values from a query into a JSON object")
+                        .with_parameter(help_text("name", "The property name for the value"))
+                        .with_parameter(help_text("value", "The value to add to the object")
+                                            .one_or_more())
+                        .with_tags({"json"})
+                        .with_example({
+                            "To create an object from arguments",
+                            "SELECT json_group_object('a', 1, 'b', 2)"
+                        })
+                        .with_example({
+                            "To create an object from a pair of columns",
+                            "SELECT json_group_object(column1, column2) FROM (VALUES ('a', 1), ('b', 2))"
+                        })},
             { "json_group_array", -1, 0,
-                    sql_json_group_array_step, sql_json_group_array_final, },
+                    sql_json_group_array_step, sql_json_group_array_final,
+                    help_text("json_group_array")
+                        .sql_function()
+                        .with_summary("Collect the given values from a query into a JSON array")
+                        .with_parameter(help_text("value", "The values to append to the array")
+                                            .one_or_more())
+                        .with_tags({"json"})
+                        .with_example({
+                            "To create an array from arguments",
+                            "SELECT json_group_array('one', 2, 3.4)"
+                        })
+                        .with_example({
+                            "To create an array from a column of values",
+                            "SELECT json_group_array(column1) FROM (VALUES (1), (2), (3))"
+                        })},
 
             { nullptr }
     };

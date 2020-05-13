@@ -43,9 +43,9 @@ error:bad_regex_log:highlighters/foobar:abc(
 error:bad_regex_log:highlighters/foobar:    ^
 error:bad_sample_log:invalid sample -- 1428634687123; foo bar
 error:bad_sample_log:partial sample matched -- 1428634687123; foo
-error:  against pattern -- ^(?<timestamp>\d+); (?<body>\w+)$
+error:  against pattern bad_sample_log/regex/semi -- ^(?<timestamp>\d+); (?<body>\w+)$
 error:bad_sample_log:partial sample matched -- 1428634687123
-error:  against pattern -- ^(?<timestamp>\d+): (?<body>.*)$
+error:  against pattern bad_sample_log/regex/std -- ^(?<timestamp>\d+): (?<body>.*)$
 error:no_sample_log:no sample logs provided, all formats must have samples
 error:init.sql:2:near "TALE": syntax error
 EOF

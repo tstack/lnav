@@ -55,11 +55,10 @@ json_path_handler_base::json_path_handler_base(const string &property)
 
 static std::string scrub_pattern(const std::string &pattern)
 {
-    // XXX not very accurate
-    static pcrecpp::RE CAPTURE(R"(\(\?\<\w+\>|\(|\))");
+    static pcrecpp::RE CAPTURE(R"(\(\?\<\w+\>)");
     std::string retval = pattern;
 
-    CAPTURE.GlobalReplace("", &retval);
+    CAPTURE.GlobalReplace("(", &retval);
 
     return retval;
 }

@@ -1,34 +1,34 @@
 {
     "autodeploy_log": {
-        "title": "VMware vSphere Auto Deploy log format", 
-        "description": "The log format for the VMware Auto Deploy service", 
-        "url": "http://kb.vmware.com/kb/2000988", 
+        "title": "VMware vSphere Auto Deploy log format",
+        "description": "The log format for the VMware Auto Deploy service",
+        "url": "http://kb.vmware.com/kb/2000988",
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) \\[(?<pid>\\d+)\\](?<level>\\w+):(?<module>[\\w-]+):(?<body>.*$)"
             }
-        }, 
-        "level-field": "level", 
-        "timestamp-field": "timestamp", 
+        },
+        "level-field": "level",
+        "timestamp-field": "timestamp",
         "level": {
-            "error": "ERROR", 
-            "debug": "DEBUG", 
-            "info": "INFO", 
+            "error": "ERROR",
+            "debug": "DEBUG",
+            "info": "INFO",
             "warning": "WARNING"
-        }, 
+        },
         "value": {
             "pid": {
-                "kind": "integer", 
-                "identifier": true, 
-                "foreign-key": true, 
+                "kind": "integer",
+                "identifier": true,
+                "foreign-key": true,
                 "description": "The ID of the process that generated the message"
-            }, 
+            },
             "module": {
-                "kind": "string", 
-                "identifier": true, 
+                "kind": "string",
+                "identifier": true,
                 "description": "The name of the module that generated the message"
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "2015-04-24T21:09:29.296 [25376]INFO:somemodule:Something very INFOrmative."

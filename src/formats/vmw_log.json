@@ -1,74 +1,105 @@
 {
     "vmw_log": {
-        "title": "VMware Logs", 
-        "description": "One of the log formats used in VMware's ESXi and vCenter software.", 
-        "url": "http://kb.vmware.com/kb/2004201", 
+        "title": "VMware Logs",
+        "description": "One of the log formats used in VMware's ESXi and vCenter software.",
+        "url": "http://kb.vmware.com/kb/2004201",
         "regex": {
             "6.0+": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:Section for VMware VirtualCenter,.*|(?<level>\\w+) (?<prc>\\w+)\\[(?<tid>\\w+)\\] \\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>[^ \\]]+))?(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-:]+))?\\]\\s*(?<body>.*)(?:\\n(?:.|\\n)*)?)$"
-            }, 
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\] \\[(?<src>[^ \\]]+)\\s*(?: sub=(?<sub>.+?))?(?: opI(?:D|d)=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-:]+))?\\]\\s*(?<body>.*)(?:\\n(?:.|\\n)*)?$"
+            },
+            "section": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (ESX KMX Agent started.|Section for VMware VirtualCenter,.*|- time the service was last started, Section for (?:[^,]+), pid=(?<tid>\\w+).*)"
+            },
             "5.0+": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) \\[(?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)(?:\\n(?:.|\\n)*)?$"
-            }, 
+            },
             "pre-5.0": {
                 "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (?<tid>\\w+) (?<level>\\w+) '(?<comp>[^']+)'(?: opID=(?<opid>[^ \\]]+))?(?: user=(?<user>[\\w\\-]+))?\\](?<body>.*)(?:\\n(?:.|\\n)*)?$"
-            }, 
+            },
             "ls-log": {
                 "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) (?<tid>[\\w\\-]+)\\s+(?<level>\\w+)\\s+(?<comp>[^\\]]+)\\]\\s+(?<body>(?:.|\\n)*)"
+            },
+            "hdr-ftr": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}(T| )\\d{2}:\\d{2}:\\d{2}(?:.|,)\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) \\[(?<prc>[^\\[]+)\\[(?<tid>\\w+)\\]:\\s+(?<body>.*)\\]$"
+            },
+            "pylog": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[-+]\\d{2}:\\d{2})) (?<prc>[^:]+):\\s+(?<tid>\\w+):\\s+(?<comp>[^:]+):(?<line>\\d+)?\\s+(?<level>\\w+):?\\s+(?<body>.*)(?:\\n(?:.|\\n)*)?$"
             }
-        }, 
-        "level-field": "level", 
+        },
+        "level-field": "level",
         "level": {
-            "error": "(error|ERROR|panic|PANIC)", 
-            "warning": "(warning|WARNING|warn|WARN)", 
+            "error": "(error|ERROR|panic|PANIC)",
+            "warning": "(warning|WARNING|warn|WARN)",
             "trace": "verbose"
-        }, 
-        "opid-field": "opid", 
+        },
+        "opid-field": "opid",
         "value": {
             "prc": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "tid": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "src": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "comp": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
+            "line": {
+                "kind": "integer",
+                "identifier": true
+            },
             "sub": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "opid": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "user": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "[2011-04-01 15:14:34.203 F5A5AB90 info 'vm:/vmfs/volumes/4d6579ec-23f981cb-465c-00237da0cfee/Vmotion-test/Vmotion-test.vmx' opID=F6FC49D5-000007E6-d] VMotionPrepare: dstMgmtIp=10.21.49.138"
-            }, 
+            },
             {
                 "line": "2014-11-04T15:53:31.075+05:30 verbose vpxd[05160] [Originator@6876 sub=PropertyProvider opID=ProcessAlarmFiring-427c3c55] RecordOp ASSIGN: declaredAlarmState[\"alarm-1.host-23\"], host-23. Applied change to temp map."
-            }, 
+            },
+            {
+                "line": "2020-05-11T22:32:22.932Z [/etc/init.d/vvold[1000211787]: WaitVvoldToComeUp /var/run/vmware/.vmware-vvol.started created]"
+            },
+            {
+                "line": "2020-05-11T22:32:22.736Z info -[1000212040] [Originator@6876 sub=Default] Successfully registered SIGHUP handler"
+            },
             {
                 "line": "2014-01-17T04:55:50.347Z [7F03ECE76700 verbose 'Default' opID=2140bc71] [VpxVmomi] Invoke done: vmodl.query.PropertyCollector.waitForUpdatesEx session: c580b3ef-0011-88a5-b2af-7ca7e74114c8"
-            }, 
+            },
             {
                 "line": "2014-11-04T12:46:42.990+05:30 Section for VMware VirtualCenter, pid=6432, version=6.0.0, build=2255588, option=BETA"
-            }, 
+            },
             {
                 "line": "[2013-01-16 02:26:25,500 pool-3-thread-1  INFO  com.vmware.vim.license.service.impl.ServiceImpl] License Accounting Service initialized"
+            },
+            {
+                "line": "2020-05-11T22:32:38.751Z info vsansystem[1000212707] [Originator@6876 sub=Libs opId=vsan-d810] VsanConfigStore: Get object host from vsan"
+            },
+            {
+                "line": "2020-05-11T22:32:56Z lifecycle: 1000212917: lifecyclectl:58 ERROR Failed to delete pidfile(/var/vmware/lifecycle/lifecycle.apply.pid) at boot Traceback (most recent call last):   File \"/usr/lib/vmware/lifecycle/bin/lifecyclectl.py\", line 55, in main     os.remove(PID_APPLY_FILE) FileNotFoundError: [Errno 2] No such file or directory: '/var/vmware/lifecycle/lifecycle.apply.pid'"
+            },
+            {
+                "line": "2020-05-11T22:32:09Z esxupdate: 1000211352: root: INFO: Command = profile.setacceptance"
+            },
+            {
+                "line": "2020-05-11T22:36:11.202Z verbose hostd[1000212678] [Originator@6876 sub=Vimsvc.Ticket 52 66 af 87 76 b0 ab 21-dd 2b 28 27 3a 39 fd fd opID=ec9d7fe8] Ticket issued for root"
             }
         ]
     }

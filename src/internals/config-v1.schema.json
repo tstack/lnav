@@ -45,7 +45,7 @@
                     "title": "/ui/theme-defs",
                     "type": "object",
                     "patternProperties": {
-                        "[\\w\\-]+": {
+                        "([\\w\\-]+)": {
                             "title": "/ui/theme-defs/<theme_name>",
                             "type": "object",
                             "properties": {
@@ -54,7 +54,7 @@
                                     "title": "/ui/theme-defs/<theme_name>/vars",
                                     "type": "object",
                                     "patternProperties": {
-                                        "\\w+": {
+                                        "(\\w+)": {
                                             "title": "/ui/theme-defs/<theme_name>/vars/<var_name>",
                                             "description": "A theme variable definition",
                                             "type": "string"
@@ -246,7 +246,7 @@
                                     "title": "/ui/theme-defs/<theme_name>/log-level-styles",
                                     "type": "object",
                                     "patternProperties": {
-                                        "trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal": {
+                                        "(trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal)": {
                                             "title": "/ui/theme-defs/<theme_name>/log-level-styles/<level>",
                                             "$ref": "#/definitions/style"
                                         }
@@ -264,12 +264,12 @@
                     "title": "/ui/keymap-defs",
                     "type": "object",
                     "patternProperties": {
-                        "[\\w\\-]+": {
+                        "([\\w\\-]+)": {
                             "description": "The keymap definitions",
                             "title": "/ui/keymap-defs/<keymap_name>",
                             "type": "object",
                             "patternProperties": {
-                                "?:x[0-9a-f]{2}+": {
+                                "((?:x[0-9a-f]{2})+)": {
                                     "description": "The hexadecimal encoding of key codes to map to a command.",
                                     "title": "/ui/keymap-defs/<keymap_name>/<key_seq>",
                                     "type": "object",
@@ -302,7 +302,7 @@
             "title": "/global",
             "type": "object",
             "patternProperties": {
-                "\\w+": {
+                "(\\w+)": {
                     "title": "/global/<var_name>",
                     "description": "A global variable definition.  Global variables can be referenced in scripts, SQL statements, or commands.",
                     "type": "string"

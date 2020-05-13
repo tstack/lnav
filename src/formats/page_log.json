@@ -1,63 +1,63 @@
 {
     "page_log": {
-        "title": "CUPS Page Log", 
-        "description": "The CUPS server log of printed pages.", 
-        "url": "http://www.cups.org/documentation.php/doc-1.7/ref-page_log.html", 
-        "multiline": false, 
+        "title": "CUPS Page Log",
+        "description": "The CUPS server log of printed pages.",
+        "url": "http://www.cups.org/documentation.php/doc-1.7/ref-page_log.html",
+        "multiline": false,
         "regex": {
             "pre-1.7": {
                 "pattern": "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+)(?<body>.*)$"
-            }, 
+            },
             "1.7": {
                 "pattern": "^(?<printer>[\\w_\\-\\.]+) (?<username>[\\w\\.\\-]+) (?<job_id>\\d+) \\[(?<timestamp>[^\\]]+)\\] (?<page_number>total|\\d+) (?<num_copies>\\d+) (?<job_billing>[^ ]+) (?<job_originating_hostname>[\\w\\.:\\-]+) (?<job_name>.+) (?<media>[^ ]+) (?<sides>.+)(?<body>.*)$"
             }
-        }, 
+        },
         "value": {
             "printer": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "username": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "job_id": {
-                "kind": "integer", 
-                "identifier": true, 
+                "kind": "integer",
+                "identifier": true,
                 "foreign-key": true
-            }, 
+            },
             "page_number": {
                 "kind": "string"
-            }, 
+            },
             "num_copies": {
                 "kind": "integer"
-            }, 
+            },
             "job_billing": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "job_originating_hostname": {
-                "kind": "string", 
-                "collate": "ipaddress", 
+                "kind": "string",
+                "collate": "ipaddress",
                 "identifier": true
-            }, 
+            },
             "job_name": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "media": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "sides": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "Photosmart_7520_series stack 11 [18/May/2013:13:21:15 -0700] total 0 - localhost 5615311548-159003235-tickets.pdf Letter one-sided"
-            }, 
+            },
             {
                 "line": "tec_IS2027 kurt 401 [22/Apr/2003:10:28:43 +0100] 1 3 #marketing 10.160.50.13"
             }

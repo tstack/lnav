@@ -1712,19 +1712,111 @@ int common_extension_functions(struct FuncDef **basic_funcs,
                                struct FuncDefAgg **agg_funcs) {
   static struct FuncDef aFuncs[] = {
     /* math.h */
-    { "acos",               1, SQLITE_UTF8,    0, acosFunc  },
-    { "asin",               1, SQLITE_UTF8,    0, asinFunc  },
-    { "atan",               1, SQLITE_UTF8,    0, atanFunc  },
-    { "atn2",               2, SQLITE_UTF8,    0, atn2Func  },
+    { "acos",               1, SQLITE_UTF8,    0, acosFunc,
+      help_text("acos")
+          .sql_function()
+          .with_summary("Returns the arccosine of a number, in radians")
+          .with_parameter({"num", "A cosine value that is between -1 and 1"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the arccosine of 0.2",
+              "SELECT acos(0.2)"
+          })},
+    { "asin",               1, SQLITE_UTF8,    0, asinFunc,
+      help_text("asin")
+          .sql_function()
+          .with_summary("Returns the arcsine of a number, in radians")
+          .with_parameter({"num", "A sine value that is between -1 and 1"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the arcsine of 0.2",
+              "SELECT asin(0.2)"
+          })},
+    { "atan",               1, SQLITE_UTF8,    0, atanFunc,
+      help_text("atan")
+          .sql_function()
+          .with_summary("Returns the arctangent of a number, in radians")
+          .with_parameter({"num", "The number"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the arctangent of 0.2",
+              "SELECT atan(0.2)"
+          })},
+    { "atn2",               2, SQLITE_UTF8,    0, atn2Func,
+      help_text("atn2")
+          .sql_function()
+          .with_summary("Returns the angle in the plane between the positive X axis and the ray from (0, 0) to the point (x, y)")
+          .with_parameter({"y", "The y coordinate of the point"})
+          .with_parameter({"x", "The x coordinate of the point"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the angle, in degrees, for the point at (5, 5)",
+              "SELECT degrees(atn2(5, 5))"
+          })},
     /* XXX alias */
-    { "atan2",              2, SQLITE_UTF8,    0, atn2Func  },
-    { "acosh",              1, SQLITE_UTF8,    0, acoshFunc  },
-    { "asinh",              1, SQLITE_UTF8,    0, asinhFunc  },
-    { "atanh",              1, SQLITE_UTF8,    0, atanhFunc  },
+    { "atan2",              2, SQLITE_UTF8,    0, atn2Func,
+      help_text("atan2")
+          .sql_function()
+          .with_summary("Returns the angle in the plane between the positive X axis and the ray from (0, 0) to the point (x, y)")
+          .with_parameter({"y", "The y coordinate of the point"})
+          .with_parameter({"x", "The x coordinate of the point"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the angle, in degrees, for the point at (5, 5)",
+              "SELECT degrees(atan2(5, 5))"
+          })},
+    { "acosh",              1, SQLITE_UTF8,    0, acoshFunc,
+      help_text("acosh")
+          .sql_function()
+          .with_summary("Returns the hyperbolic arccosine of a number")
+          .with_parameter({"num", "A number that is one or more"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the hyperbolic arccosine of 1.2",
+              "SELECT acosh(1.2)"
+          })},
+    { "asinh",              1, SQLITE_UTF8,    0, asinhFunc,
+      help_text("asinh")
+          .sql_function()
+          .with_summary("Returns the hyperbolic arcsine of a number")
+          .with_parameter({"num", "The number"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the hyperbolic arcsine of 0.2",
+              "SELECT asinh(0.2)"
+          })},
+    { "atanh",              1, SQLITE_UTF8,    0, atanhFunc,
+      help_text("atanh")
+          .sql_function()
+          .with_summary("Returns the hyperbolic arctangent of a number")
+          .with_parameter({"num", "The number"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the hyperbolic arctangent of 0.2",
+              "SELECT atanh(0.2)"
+          })},
 
     { "difference",         2, SQLITE_UTF8,    0, differenceFunc},
-    { "degrees",            1, SQLITE_UTF8,    0, rad2degFunc  },
-    { "radians",            1, SQLITE_UTF8,    0, deg2radFunc  },
+    { "degrees",            1, SQLITE_UTF8,    0, rad2degFunc,
+      help_text("degrees")
+          .sql_function()
+          .with_summary("Converts radians to degrees")
+          .with_parameter({"radians", "The radians value to convert to degrees"})
+          .with_tags({"math"})
+          .with_example({
+              "To convert PI to degrees",
+              "SELECT degrees(pi())"
+          })},
+    { "radians",            1, SQLITE_UTF8,    0, deg2radFunc,
+      help_text("radians")
+          .sql_function()
+          .with_summary("Converts degrees to radians")
+          .with_parameter({"degrees", "The degrees value to convert to radians"})
+          .with_tags({"math"})
+          .with_example({
+              "To convert 180 degrees to radians",
+              "SELECT radians(180)"
+          })},
 
     { "cos",                1, SQLITE_UTF8,    0, cosFunc  },
     { "sin",                1, SQLITE_UTF8,    0, sinFunc },
@@ -1735,18 +1827,107 @@ int common_extension_functions(struct FuncDef **basic_funcs,
     { "tanh",               1, SQLITE_UTF8,    0, tanhFunc },
     { "coth",               1, SQLITE_UTF8,    0, cothFunc },
 
-    { "exp",                1, SQLITE_UTF8,    0, expFunc  },
-    { "log",                1, SQLITE_UTF8,    0, logFunc  },
-    { "log10",              1, SQLITE_UTF8,    0, log10Func  },
-    { "power",              2, SQLITE_UTF8,    0, powerFunc  },
-    { "sign",               1, SQLITE_UTF8,    0, signFunc },
+    { "exp",                1, SQLITE_UTF8,    0, expFunc,
+      help_text("exp")
+          .sql_function()
+          .with_summary("Returns the value of e raised to the power of x")
+          .with_parameter({"x", "The exponent"})
+          .with_tags({"math"})
+          .with_example({
+              "To raise e to 2",
+              "SELECT exp(2)"
+          })},
+    { "log",                1, SQLITE_UTF8,    0, logFunc,
+      help_text("log")
+          .sql_function()
+          .with_summary("Returns the natural logarithm of x")
+          .with_parameter({"x", "The number"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the natual logarithm of 8",
+              "SELECT log(8)"
+          })},
+    { "log10",              1, SQLITE_UTF8,    0, log10Func,
+      help_text("log10")
+          .sql_function()
+          .with_summary("Returns the base-10 logarithm of X")
+          .with_parameter({"x", "The number"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the logarithm of 100",
+              "SELECT log10(100)"
+          })},
+    { "power",              2, SQLITE_UTF8,    0, powerFunc,
+      help_text("power")
+          .sql_function()
+          .with_summary("Returns the base to the given exponent")
+          .with_parameter({"base", "The base number"})
+          .with_parameter({"exp", "The exponent"})
+          .with_tags({"math"})
+          .with_example({
+              "To raise two to the power of three",
+              "SELECT power(2, 3)"
+          })},
+    { "sign",               1, SQLITE_UTF8,    0, signFunc,
+      help_text("sign")
+          .sql_function()
+          .with_summary("Returns the sign of the given number as -1, 0, or 1")
+          .with_parameter({"num", "The number"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the sign of 10",
+              "SELECT sign(10)"
+          })
+          .with_example({
+              "To get the sign of 0",
+              "SELECT sign(0)"
+          })
+          .with_example({
+              "To get the sign of -10",
+              "SELECT sign(-10)"
+          })},
     { "sqrt",               1, SQLITE_UTF8,    0, sqrtFunc },
-    { "square",             1, SQLITE_UTF8,    0, squareFunc },
+    { "square",             1, SQLITE_UTF8,    0, squareFunc,
+      help_text("square")
+          .sql_function()
+          .with_summary("Returns the square of the argument")
+          .with_parameter({"num", "The number to square"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the square of two",
+              "SELECT square(2)"
+          })},
 
-    { "ceil",               1, SQLITE_UTF8,    0, ceilFunc },
-    { "floor",              1, SQLITE_UTF8,    0, floorFunc },
+    { "ceil",               1, SQLITE_UTF8,    0, ceilFunc,
+      help_text("ceil")
+          .sql_function()
+          .with_summary("Returns the smallest integer that is not less than the argument")
+          .with_parameter({"num", "The number to raise to the ceiling"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the ceiling of 1.23",
+              "SELECT ceil(1.23)"
+          })},
+    { "floor",              1, SQLITE_UTF8,    0, floorFunc,
+      help_text("floor")
+          .sql_function()
+          .with_summary("Returns the largest integer that is not greater than the argument")
+          .with_parameter({"num", "The number to lower to the floor"})
+          .with_tags({"math"})
+          .with_example({
+              "To get the floor of 1.23",
+              "SELECT floor(1.23)"
+          })},
 
-    { "pi",                 0, SQLITE_UTF8,    1, piFunc },
+    { "pi",                 0, SQLITE_UTF8,    1, piFunc,
+      help_text("pi")
+          .sql_function()
+          .with_summary("Returns the value of PI")
+          .with_tags({"math"})
+          .with_example({
+              "To get the value of PI",
+              "SELECT pi()"
+          })},
 
 
     /* string */
@@ -1763,7 +1944,23 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           })
     },
     { "charindex",          2, SQLITE_UTF8,    0, charindexFunc },
-    { "charindex",          3, SQLITE_UTF8,    0, charindexFunc },
+    { "charindex",          3, SQLITE_UTF8,    0, charindexFunc,
+      help_text("charindex")
+          .sql_function()
+          .with_summary("Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if Y is nowhere found within X")
+          .with_parameter({"needle", "The string to look for in the haystack"})
+          .with_parameter({"haystack", "The string to search within"})
+          .optional()
+          .with_parameter({"start", "The one-based index within the haystack to start the search"})
+          .with_tags({"string"})
+          .with_example({
+              "To search for the string 'abc' within 'abcabc' and starting at position 2",
+              "SELECT charindex('abc', 'abcabc', 2)"
+          })
+          .with_example({
+              "To search for the string 'abc' within 'abcdef' and starting at position 2",
+              "SELECT charindex('abc', 'abcdef', 2)"
+          })},
     { "leftstr",            2, SQLITE_UTF8,    0, leftFunc,
       help_text("leftstr")
           .sql_function()
@@ -1813,11 +2010,72 @@ int common_extension_functions(struct FuncDef **basic_funcs,
               "SELECT reverse('abc')"
           })
     },
-    { "proper",             1, SQLITE_UTF8,    0, properFunc },
-    { "padl",               2, SQLITE_UTF8,    0, padlFunc },
-    { "padr",               2, SQLITE_UTF8,    0, padrFunc },
-    { "padc",               2, SQLITE_UTF8,    0, padcFunc },
-    { "strfilter",          2, SQLITE_UTF8,    0, strfilterFunc },
+    { "proper",             1, SQLITE_UTF8,    0, properFunc,
+      help_text("proper")
+          .sql_function()
+          .with_summary("Capitalize the first character of words in the given string")
+          .with_parameter({"str", "The string to capitalize."})
+          .with_tags({"string"})
+          .with_example({
+              "To capitalize the words in the string 'hello, world!'",
+              "SELECT proper('hello, world!')"
+          })},
+    { "padl",               2, SQLITE_UTF8,    0, padlFunc,
+      help_text("padl")
+          .sql_function()
+          .with_summary("Pad the given string with leading spaces until it reaches the desired length")
+          .with_parameter({"str", "The string to pad"})
+          .with_parameter({"len", "The minimum desired length of the output string"})
+          .with_tags({"string"})
+          .with_example({
+              "To pad the string 'abc' to a length of six characters",
+              "SELECT padl('abc', 6)"
+          })
+          .with_example({
+              "To pad the string 'abcdef' to a length of four characters",
+              "SELECT padl('abcdef', 4)"
+          })},
+    { "padr",               2, SQLITE_UTF8,    0, padrFunc,
+        help_text("padr")
+        .sql_function()
+        .with_summary("Pad the given string with trailing spaces until it reaches the desired length")
+        .with_parameter({"str", "The string to pad"})
+        .with_parameter({"len", "The minimum desired length of the output string"})
+        .with_tags({"string"})
+        .with_example({
+            "To pad the string 'abc' to a length of six characters",
+            "SELECT padr('abc', 6) || 'def'"
+        })
+        .with_example({
+            "To pad the string 'abcdef' to a length of four characters",
+            "SELECT padr('abcdef', 4) || 'ghi'"
+        })},
+    { "padc",               2, SQLITE_UTF8,    0, padcFunc,
+      help_text("padc")
+          .sql_function()
+          .with_summary("Pad the given string with enough spaces to make it centered within the given length")
+          .with_parameter({"str", "The string to pad"})
+          .with_parameter({"len", "The minimum desired length of the output string"})
+          .with_tags({"string"})
+          .with_example({
+              "To pad the string 'abc' to a length of six characters",
+              "SELECT padc('abc', 6) || 'def'"
+          })
+          .with_example({
+              "To pad the string 'abcdef' to a length of eight characters",
+              "SELECT padc('abcdef', 8) || 'ghi'"
+          })},
+    { "strfilter",          2, SQLITE_UTF8,    0, strfilterFunc,
+      help_text("strfilter")
+          .sql_function()
+          .with_summary("Returns the source string with only the characters given in the second parameter")
+          .with_parameter({"source", "The string to filter"})
+          .with_parameter({"include", "The characters to include in the result"})
+          .with_tags({"string"})
+          .with_example({
+              "To get the 'b', 'c', and 'd' characters from the string 'abcabc'",
+              "SELECT strfilter('abcabc', 'bcd')"
+          })},
 
     { NULL }
   };

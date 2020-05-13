@@ -1637,7 +1637,9 @@ void external_log_format::build(std::vector<std::string> &errors) {
                                      this->elf_name.to_string() +
                                      ":partial sample matched -- " +
                                          elf_sample.s_line.substr(0, partial_len));
-                    errors.push_back("error:  against pattern -- " +
+                    errors.push_back("error:  against pattern " +
+                                     (*pat_iter)->p_config_path +
+                                     " -- " +
                                      (*pat_iter)->p_string);
                 }
                 else {

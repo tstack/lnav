@@ -23,8 +23,8 @@ sys.path.insert(0, src_dir)
 import format2csv
 
 format2csv.main(["",
-                 os.path.join(src_dir, "default-log-formats.json"),
-                 os.path.join(this_dir, "format-table.csv")])
+                 os.path.join(this_dir, "format-table.csv"),
+                 os.path.join(src_dir, "formats")])
 
 # -- General configuration -----------------------------------------------------
 

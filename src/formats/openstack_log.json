@@ -1,39 +1,39 @@
 {
     "openstack_log": {
-        "title": "OpenStack log format", 
-        "description": "The log format for the OpenStack log files", 
-        "url": "http://docs.openstack.org/openstack-ops/content/logging_monitoring.html", 
+        "title": "OpenStack log format",
+        "description": "The log format for the OpenStack log files",
+        "url": "http://docs.openstack.org/openstack-ops/content/logging_monitoring.html",
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3}) (?<pid>\\d+) (?<level>\\w+) (?<logger>.+) \\[(?<tid>.+)\\] (?<body>.*)"
             }
-        }, 
-        "level-field": "level", 
+        },
+        "level-field": "level",
         "level": {
-            "error": "ERROR", 
-            "info": "INFO", 
-            "warning": "WARNING", 
-            "trace": "TRACE", 
+            "error": "ERROR",
+            "info": "INFO",
+            "warning": "WARNING",
+            "trace": "TRACE",
             "debug": "DEBUG"
-        }, 
+        },
         "value": {
             "tid": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "pid": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "logger": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": true
-            }, 
+            },
             "body": {
-                "kind": "string", 
+                "kind": "string",
                 "identifier": false
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "2014-10-28 10:42:22.772 23623 INFO neutron.wsgi [req-40743023-00ed-441c-9d0a-19b8167ea0ad None] 10.1.255.252 - - [28/Oct/2014 10:42:22] GET /v2.0/floatingips.json?fixed_ip_address=80.0.0.9&port_id=b4291e0e-a941-4663-9379-7af6471e983f HTTP/1.1 200 208 0.008971"

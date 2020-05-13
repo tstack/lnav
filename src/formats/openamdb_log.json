@@ -1,17 +1,17 @@
 {
     "openamdb_log": {
-        "title": "OpenAM Debug Log", 
-        "description": "Debug logs for the OpenAM identity provider.", 
-        "url": "http://openam.forgerock.org", 
+        "title": "OpenAM Debug Log",
+        "description": "Debug logs for the OpenAM identity provider.",
+        "url": "http://openam.forgerock.org",
         "regex": {
             "std": {
                 "pattern": "^(?<module>[\\w]+):(?<timestamp>\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2}:\\d{3} [AP]M \\w+): Thread\\[(?<thread>[^,]+,\\d+,[^,]+)\\]\\n?(?:\\*+|(?<body>.*))$"
             }
-        }, 
+        },
         "sample": [
             {
                 "line": "amMonitoring:06/09/2014 02:49:59:447 PM UTC: Thread[http-80-1,5,main]\n**********************************************"
-            }, 
+            },
             {
                 "line": "amLog:06/09/2014 04:08:22:515 PM UTC: Thread[http-80-8,5,main]\nERROR: LogMessageProviderBase.createLogRecord: unable to locate message ID object for ATTEMPT_GET_METAALIAS"
             }

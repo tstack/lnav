@@ -44,6 +44,8 @@ User interface themes are also defined through the JSON configuration files.
 
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/definitions/style
 
+.. _keymaps:
+
 Keymaps
 -------
 
