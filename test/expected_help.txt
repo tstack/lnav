@@ -1228,7 +1228,7 @@ Example
 
 
 Synopsis
-  charindex(needle, haystack, start) -- Finds the first occurrence of the 
+  charindex(needle, haystack, [start]) -- Finds the first occurrence of the 
     needle within the haystack and returns the number of prior characters plus 
     1, or 0 if Y is nowhere found within X
 Parameters
@@ -1473,8 +1473,8 @@ Example
 
 
 Synopsis
-  group_concat(X, sep) -- Returns a string which is the concatenation of all 
-    non-NULL values of X.
+  group_concat(X, [sep]) -- Returns a string which is the concatenation of all 
+    non-NULL values of X separated by a comma or the given separator.
 Parameters
   X     The value to concatenate.
   sep   The separator to place between the values.
@@ -1560,7 +1560,7 @@ Example
 
 
 Synopsis
-  jget(json, ptr, default) -- Get the value from a JSON object using a JSON-
+  jget(json, ptr, [default]) -- Get the value from a JSON object using a JSON-
     Pointer.
 Parameters
   json      The JSON object to query.
@@ -1727,7 +1727,7 @@ Example
 
 
 Synopsis
-  like(pattern, str, escape) -- Match a string against a pattern
+  like(pattern, str, [escape]) -- Match a string against a pattern
 Parameters
   pattern   The pattern to match.  A percent symbol (%) will match zero or more
             characters and an underscore (_) will match a single character.
@@ -1760,8 +1760,8 @@ Parameter
 
 
 Synopsis
-  load_extension(path, entry-point) -- Loads SQLite extensions out of the given
-    shared library file using the given entry point.
+  load_extension(path, [entry-point]) -- Loads SQLite extensions out of the 
+    given shared library file using the given entry point.
 Parameters
   path          The path to the shared library containing the extension.
   entry-point   
@@ -1822,7 +1822,7 @@ Example
 
 
 Synopsis
-  ltrim(str, chars) -- Returns a string formed by removing any and all 
+  ltrim(str, [chars]) -- Returns a string formed by removing any and all 
     characters that appear in the second argument from the left side of the 
     first.
 Parameters
@@ -2265,7 +2265,7 @@ Examples
 
 
 Synopsis
-  round(num, digits) -- Returns a floating-point value rounded to the given 
+  round(num, [digits]) -- Returns a floating-point value rounded to the given 
     number of digits to the right of the decimal point.
 Parameters
   num      The value to round.
@@ -2289,7 +2289,7 @@ Examples
 
 
 Synopsis
-  rtrim(str, chars) -- Returns a string formed by removing any and all 
+  rtrim(str, [chars]) -- Returns a string formed by removing any and all 
     characters that appear in the second argument from the right side of the 
     first.
 Parameters
@@ -2468,8 +2468,8 @@ Examples
 
 
 Synopsis
-  substr(str, start, size) -- Returns a substring of input string X that begins
-    with the Y-th character and which is Z characters long.
+  substr(str, start, [size]) -- Returns a substring of input string X that 
+    begins with the Y-th character and which is Z characters long.
 Parameters
   str     The string to extract a substring from.
   start   The index within 'str' that is the start of the substring.  Indexes 
@@ -2595,7 +2595,7 @@ Synopsis
 
 
 Synopsis
-  trim(str, chars) -- Returns a string formed by removing any and all 
+  trim(str, [chars]) -- Returns a string formed by removing any and all 
     characters that appear in the second argument from the left and right sides
     of the first.
 Parameters

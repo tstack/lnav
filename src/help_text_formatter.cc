@@ -138,7 +138,13 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                 } else if (needs_comma) {
                     out.append(", ");
                 }
+                if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                    out.append("[");
+                }
                 out.append(param.ht_name, &view_curses::VC_STYLE, A_UNDERLINE);
+                if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                    out.append("]");
+                }
                 if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE ||
                     param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
                     out.append(", ...");

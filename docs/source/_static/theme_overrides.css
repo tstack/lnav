@@ -7,11 +7,16 @@
         white-space: normal !important;
     }
 
-    .wy-table-responsive {
-        overflow: visible !important;
-    }
+}
+
+th p {
+    margin-bottom: 0px;
 }
 
 .wy-nav-content {
     max-width: 900px;
+}
+
+table.query-results p {
+    font-size: 0.9em !important;
 }

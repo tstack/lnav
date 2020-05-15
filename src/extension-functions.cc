@@ -1950,8 +1950,8 @@ int common_extension_functions(struct FuncDef **basic_funcs,
           .with_summary("Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if Y is nowhere found within X")
           .with_parameter({"needle", "The string to look for in the haystack"})
           .with_parameter({"haystack", "The string to search within"})
-          .optional()
-          .with_parameter({"start", "The one-based index within the haystack to start the search"})
+          .with_parameter(help_text("start", "The one-based index within the haystack to start the search")
+                              .optional())
           .with_tags({"string"})
           .with_example({
               "To search for the string 'abc' within 'abcabc' and starting at position 2",

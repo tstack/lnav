@@ -642,7 +642,7 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
             }),
 
         help_text("group_concat",
-                  "Returns a string which is the concatenation of all non-NULL values of X.")
+                  "Returns a string which is the concatenation of all non-NULL values of X separated by a comma or the given separator.")
             .sql_function()
             .with_parameter({"X", "The value to concatenate."})
             .with_parameter(help_text("sep", "The separator to place between the values.")
