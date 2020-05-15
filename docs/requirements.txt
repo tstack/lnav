@@ -1,1 +1,2 @@
 sphinx-jsonschema
+sphinx-prompt
