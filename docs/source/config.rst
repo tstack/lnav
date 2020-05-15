@@ -38,9 +38,9 @@ Themes
 
 User interface themes are also defined through the JSON configuration files.
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/[\w\-]+/properties/vars
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/vars
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/[\w\-]+/properties/styles
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/styles
 
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/definitions/style
 
@@ -51,4 +51,4 @@ Keymaps
 
 Keymaps in **lnav** map a key sequence to a command to execute.
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/[\w\-]+
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/([\w\-]+)
