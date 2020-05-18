@@ -565,7 +565,7 @@ void format_help_text_for_rst(const help_text &ht,
         for (auto &example: ht.ht_example) {
             fprintf(rst_file, "    %s:\n\n", example.he_description);
             fprintf(rst_file, "    .. code-block::  %s\n\n",
-                is_sql ? "sql" : "");
+                is_sql ? "custsqlite" : "");
             if (ht.ht_context == help_context_t::HC_COMMAND) {
                 fprintf(rst_file, "      %s%s %s\n", prefix, ht.ht_name,
                         example.he_cmd);

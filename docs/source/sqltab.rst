@@ -31,7 +31,7 @@ The **environ** table gives you access to the **lnav** process' environment
 variables.  You can SELECT, INSERT, and UPDATE environment variables, like
 so:
 
-.. code-block:: sql
+.. code-block:: custsqlite
 
     ;SELECT * FROM environ WHERE name = 'SHELL'
      name   value
@@ -45,7 +45,7 @@ from **lnav**'s SQL environment to **lnav**'s commands.  For example, the
 named "FILENAME" and then open it in **lnav** by referencing it with
 "$FILENAME":
 
-.. code-block:: sql
+.. code-block:: custsqlite
 
     ;INSERT INTO environ VALUES ('FILENAME', '/path/to/file')
     :open $FILENAME

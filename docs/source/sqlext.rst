@@ -47,7 +47,7 @@ the prompt to guide you in the usage of SQL keywords and functions.
 A simple query to perform on an Apache access log might be to get the average
 and maximum number of bytes returned by the server, grouped by IP address:
 
-.. code-block:: sql
+.. code-block:: custsqlite
 
     ;SELECT c_ip, avg(sc_bytes), max(sc_bytes) FROM access_log GROUP BY c_ip
 
@@ -132,7 +132,7 @@ Next, we will create a view over the :code:`dhclient_ip` table that returns
 the log message line number, the IP address from the current row and the IP
 address from the previous row:
 
-.. code-block:: sql
+.. code-block:: custsqlite
 
    ;CREATE VIEW IF NOT EXISTS dhclient_ip_changes AS SELECT log_line, ip, lag(ip) OVER (ORDER BY log_line) AS prev_ip FROM dhclient_ip
 
@@ -140,7 +140,7 @@ Finally, the following :code:`UPDATE` statement will concatenate the tag
 "#ipchanged" onto the :code:`log_tags` column for any rows in the view where
 the current IP is different from the previous IP:
 
-.. code-block:: sql
+.. code-block:: custsqlite
 
    ;UPDATE syslog_log SET log_tags = json_concat(log_tags, '#ipchanged') WHERE log_line IN (SELECT log_line FROM dhclient_ip_changes WHERE ip != prev_ip)
 
@@ -177,9 +177,9 @@ Environment variables can be accessed in queries using the usual syntax of
 :code:`$VAR_NAME`.  For example, to read the value of the "USER" variable, you
 can write:
 
-.. code-block:: sql
+.. code-block:: custsqlite
 
-    SELECT $USER
+    ;SELECT $USER
 
 .. _collators:
 

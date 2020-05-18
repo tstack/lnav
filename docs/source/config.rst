@@ -33,8 +33,8 @@ The following high-level configuration options are available:
 
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap
 
-Themes
-------
+Theme Definitions
+-----------------
 
 User interface themes are also defined through the JSON configuration files.
 
@@ -46,8 +46,8 @@ User interface themes are also defined through the JSON configuration files.
 
 .. _keymaps:
 
-Keymaps
--------
+Keymap Definitions
+------------------
 
 Keymaps in **lnav** map a key sequence to a command to execute.
 

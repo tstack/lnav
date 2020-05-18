@@ -98,7 +98,6 @@ endfunction(bin2c)
 foreach(FILE_TO_LINK
         ansi-palette.json
         xterm-palette.json
-        default-log-formats.json
         help.txt
         init.sql)
     string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
@@ -114,6 +113,53 @@ foreach(FILE_TO_LINK
     )
 endforeach(FILE_TO_LINK)
 
+set(FORMAT_FILES
+        formats/access_log.json
+        formats/alb_log.json
+        formats/autodeploy_log.json
+        formats/block_log.json
+        formats/candlepin_log.json
+        formats/choose_repo_log.json
+        formats/cups_log.json
+        formats/dpkg_log.json
+        formats/elb_log.json
+        formats/engine_log.json
+        formats/error_log.json
+        formats/fsck_hfs_log.json
+        formats/glog_log.json
+        formats/haproxy_log.json
+        formats/java_log.json
+        formats/journald_json_log.json
+        formats/katello_log.json
+        formats/openam_log.json
+        formats/openamdb_log.json
+        formats/openstack_log.json
+        formats/page_log.json
+        formats/papertrail_log.json
+        formats/snaplogic_log.json
+        formats/sssd_log.json
+        formats/strace_log.json
+        formats/sudo_log.json
+        formats/syslog_log.json
+        formats/tcf_log.json
+        formats/tcsh_history.json
+        formats/uwsgi_log.json
+        formats/vdsm_log.json
+        formats/vmk_log.json
+        formats/vmw_log.json
+        formats/xmlrpc_log.json
+        )
+
+set(FORMAT_FILE_PATHS ${FORMAT_FILES})
+
+list(TRANSFORM FORMAT_FILE_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+add_custom_command(
+        OUTPUT default-formats.h default-formats.c
+        COMMAND bin2c -n lnav_format_json default-formats ${FORMAT_FILE_PATHS}
+        DEPENDS bin2c ${FORMAT_FILES}
+)
+list(APPEND GEN_SRCS default-formats.h default-formats.c)
 
 set(CONFIG_FILES
         root-config.json
