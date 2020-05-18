@@ -57,11 +57,11 @@ public:
 
         std::vector<logline_value> sub_values;
         struct line_range body;
-        string_attrs_t sa;
 
-        format->annotate(line_number, line, sa, sub_values, false);
+        this->vi_attrs.clear();
+        format->annotate(line_number, line, this->vi_attrs, sub_values, false);
 
-        body = find_string_attr_range(sa, &textview_curses::SA_BODY);
+        body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
         if (body.lr_start == -1) {
             body.lr_start = 0;
             body.lr_end = line.length();

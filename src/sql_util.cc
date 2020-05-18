@@ -56,6 +56,7 @@ const char *sql_keywords[] = {
     "AFTER",
     "ALL",
     "ALTER",
+    "ALWAYS",
     "ANALYZE",
     "AND",
     "AS",
@@ -77,6 +78,7 @@ const char *sql_keywords[] = {
     "CONSTRAINT",
     "CREATE",
     "CROSS",
+    "CURRENT",
     "CURRENT_DATE",
     "CURRENT_TIME",
     "CURRENT_TIMESTAMP",
@@ -88,22 +90,29 @@ const char *sql_keywords[] = {
     "DESC",
     "DETACH",
     "DISTINCT",
+    "DO",
     "DROP",
     "EACH",
     "ELSE",
     "END",
     "ESCAPE",
     "EXCEPT",
+    "EXCLUDE",
     "EXCLUSIVE",
     "EXISTS",
     "EXPLAIN",
     "FAIL",
+    "FILTER",
+    "FIRST",
+    "FOLLOWING",
     "FOR",
     "FOREIGN",
     "FROM",
     "FULL",
+    "GENERATED",
     "GLOB",
-    "GROUP BY",
+    "GROUP",
+    "GROUPS",
     "HAVING",
     "IF",
     "IGNORE",
@@ -121,6 +130,7 @@ const char *sql_keywords[] = {
     "ISNULL",
     "JOIN",
     "KEY",
+    "LAST",
     "LEFT",
     "LIKE",
     "LIMIT",
@@ -128,19 +138,27 @@ const char *sql_keywords[] = {
     "NATURAL",
     "NO",
     "NOT",
+    "NOTHING",
     "NOTNULL",
     "NULL",
+    "NULLS",
     "OF",
     "OFFSET",
     "ON",
     "OR",
-    "ORDER BY",
+    "ORDER",
+    "OTHERS",
     "OUTER",
+    "OVER",
+    "PARTITION",
     "PLAN",
     "PRAGMA",
+    "PRECEDING",
     "PRIMARY",
     "QUERY",
     "RAISE",
+    "RANGE",
+    "RECURSIVE",
     "REFERENCES",
     "REGEXP",
     "REINDEX",
@@ -151,6 +169,7 @@ const char *sql_keywords[] = {
     "RIGHT",
     "ROLLBACK",
     "ROW",
+    "ROWS",
     "SAVEPOINT",
     "SELECT",
     "SET",
@@ -158,9 +177,11 @@ const char *sql_keywords[] = {
     "TEMP",
     "TEMPORARY",
     "THEN",
+    "TIES",
     "TO",
     "TRANSACTION",
     "TRIGGER",
+    "UNBOUNDED",
     "UNION",
     "UNIQUE",
     "UPDATE",
@@ -171,7 +192,9 @@ const char *sql_keywords[] = {
     "VIRTUAL",
     "WHEN",
     "WHERE",
+    "WINDOW",
     "WITH",
+    "WITHOUT",
 };
 
 const char *sql_function_names[] = {
@@ -849,6 +872,7 @@ string_attr_type SQL_FUNCTION_ATTR("sql_func");
 string_attr_type SQL_STRING_ATTR("sql_string");
 string_attr_type SQL_OPERATOR_ATTR("sql_oper");
 string_attr_type SQL_PAREN_ATTR("sql_paren");
+string_attr_type SQL_COMMA_ATTR("sql_comma");
 string_attr_type SQL_GARBAGE_ATTR("sql_garbage");
 
 void annotate_sql_statement(attr_line_t &al)
@@ -860,11 +884,12 @@ void annotate_sql_statement(attr_line_t &al)
         pcrepp re;
         string_attr_type_t type;
     } PATTERNS[] = {
+        { pcrepp{R"(\A,)"}, &SQL_COMMA_ATTR },
+        { pcrepp{R"(\A\(|\A\))"}, &SQL_PAREN_ATTR },
         { pcrepp{keyword_re_str.c_str(), PCRE_CASELESS}, &SQL_KEYWORD_ATTR },
         { pcrepp{R"(\A'[^']*('(?:'[^']*')*|$))"}, &SQL_STRING_ATTR },
         { pcrepp{R"(\A(\$?\b[a-z_]\w*)|\"([^\"]+)\"|\[([^\]]+)])", PCRE_CASELESS}, &SQL_IDENTIFIER_ATTR },
         { pcrepp{R"(\A(\*|<|>|=|!|\-|\+|\|\|))"}, &SQL_OPERATOR_ATTR },
-        { pcrepp{R"(\A\(|\))"}, &SQL_PAREN_ATTR },
         { pcrepp{R"(\A.)"}, &SQL_GARBAGE_ATTR },
     };
 
@@ -934,4 +959,5 @@ void annotate_sql_statement(attr_line_t &al)
     }
 
     remove_string_attr(sa, &SQL_PAREN_ATTR);
+    stable_sort(sa.begin(), sa.end());
 }

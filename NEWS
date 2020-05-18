@@ -21,6 +21,8 @@ lnav v0.8.6:
        $COLS variables.
      * The raise_error(msg) SQL function has been added to make it easier to
        raise an error in an lnav script to stop execution and notify the user.
+     * Added the json_concat() function to make it easier to append/concatenate
+       values onto arrays.
 
      Interface Changes:
      * Data piped into lnav is no longer dumped to the console after exit.

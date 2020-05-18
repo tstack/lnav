@@ -123,20 +123,35 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
         }
         case help_context_t::HC_SQL_FUNCTION:
         case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
+            size_t line_start = body_indent;
+            bool break_all = false;
             bool needs_comma = false;
 
-            out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
-                .append("\n")
-                .append(body_indent, ' ')
+            if (!synopsis_only) {
+                out.append("Synopsis", &view_curses::VC_STYLE, A_UNDERLINE)
+                    .append("\n");
+            }
+
+            line_start = out.length();
+            out.append(body_indent, ' ')
                 .append(ht.ht_name, &view_curses::VC_STYLE, A_BOLD)
                 .append("(");
             for (auto &param : ht.ht_parameters) {
+                if (!param.ht_flag_name && needs_comma) {
+                    out.append(", ");
+                }
+                if (break_all ||
+                    (int)(out.get_string().length() - line_start + 10) >=
+                    tws.tws_width) {
+                    out.append("\n");
+                    line_start = out.get_string().length();
+                    out.append(body_indent + strlen(ht.ht_name) + 1, ' ');
+                    break_all = true;
+                }
                 if (param.ht_flag_name) {
                     out.append(" ")
                         .append(param.ht_flag_name, &view_curses::VC_STYLE, A_BOLD)
                         .append(" ");
-                } else if (needs_comma) {
-                    out.append(", ");
                 }
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                     out.append("[");
@@ -151,9 +166,13 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
                 }
                 needs_comma = true;
             }
-            out.append(") -- ")
-                .append(attr_line_t::from_ansi_str(ht.ht_summary),
-                        &tws.with_indent(body_indent + 2))
+            out.append(") -- ");
+            if (break_all) {
+                out.append("\n")
+                    .append(body_indent + strlen(ht.ht_name) + 1, ' ');
+            }
+            out.append(attr_line_t::from_ansi_str(ht.ht_summary),
+                       &tws.with_indent(body_indent + 2))
                 .append("\n");
             break;
         }

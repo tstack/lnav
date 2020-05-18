@@ -266,6 +266,164 @@ static void sql_jget(sqlite3_context *context,
     sqlite3_result_text(context, result.data(), result.length(), SQLITE_TRANSIENT);
 }
 
+struct concat_context {
+    concat_context(yajl_gen gen_handle)
+        : cc_gen_handle(gen_handle) {
+    }
+
+    yajl_gen cc_gen_handle;
+    int cc_depth{0};
+};
+
+static int concat_gen_null(void *ctx)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    if (cc->cc_depth > 0) {
+        return yajl_gen_null(cc->cc_gen_handle) == yajl_gen_status_ok;
+    }
+
+    return 1;
+}
+
+static int concat_gen_boolean(void *ctx, int val)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    return yajl_gen_bool(cc->cc_gen_handle, val) == yajl_gen_status_ok;
+}
+
+static int concat_gen_number(void *ctx, const char *val, size_t len)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    return yajl_gen_number(cc->cc_gen_handle, val, len) == yajl_gen_status_ok;
+}
+
+static int concat_gen_string(void *ctx, const unsigned char *val, size_t len)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    return yajl_gen_string(cc->cc_gen_handle, val, len) == yajl_gen_status_ok;
+}
+
+static int concat_gen_start_map(void *ctx)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    cc->cc_depth += 1;
+    return yajl_gen_map_open(cc->cc_gen_handle) == yajl_gen_status_ok;
+}
+
+static int concat_gen_end_map(void *ctx)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    cc->cc_depth -= 1;
+    return yajl_gen_map_close(cc->cc_gen_handle) == yajl_gen_status_ok;
+}
+
+static int concat_gen_map_key(void *ctx, const unsigned char *key, size_t len)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    return yajl_gen_string(cc->cc_gen_handle, key, len) == yajl_gen_status_ok;
+}
+
+static int concat_gen_start_array(void *ctx)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    cc->cc_depth += 1;
+    if (cc->cc_depth == 1) {
+        return 1;
+    }
+    return yajl_gen_array_open(cc->cc_gen_handle) == yajl_gen_status_ok;
+}
+
+static int concat_gen_end_array(void *ctx)
+{
+    auto cc = static_cast<concat_context *>(ctx);
+
+    cc->cc_depth -= 1;
+    if (cc->cc_depth == 0) {
+        return 1;
+    }
+    return yajl_gen_array_close(cc->cc_gen_handle) == yajl_gen_status_ok;
+}
+
+static void concat_gen_elements(yajl_gen gen, const unsigned char *text, size_t len)
+{
+    auto_mem<yajl_handle_t> handle(yajl_free);
+    yajl_callbacks callbacks = {nullptr};
+    concat_context cc{gen};
+
+    callbacks.yajl_null = concat_gen_null;
+    callbacks.yajl_boolean = concat_gen_boolean;
+    callbacks.yajl_number = concat_gen_number;
+    callbacks.yajl_string = concat_gen_string;
+    callbacks.yajl_start_map = concat_gen_start_map;
+    callbacks.yajl_end_map = concat_gen_end_map;
+    callbacks.yajl_map_key = concat_gen_map_key;
+    callbacks.yajl_start_array = concat_gen_start_array;
+    callbacks.yajl_end_array = concat_gen_end_array;
+
+    handle = yajl_alloc(&callbacks, nullptr, &cc);
+    yajl_config(handle, yajl_allow_comments, 1);
+    if (yajl_parse(handle, (const unsigned char *) text, len) != yajl_status_ok ||
+        yajl_complete_parse(handle) != yajl_status_ok) {
+        unique_ptr<unsigned char, decltype(&free)> err_msg(
+            yajl_get_error(handle, 1, (const unsigned char *) text, len), free);
+
+        throw sqlite_func_error("Invalid JSON: {}", (const char *) err_msg.get());
+    }
+}
+
+static json_string json_concat(nonstd::optional<const char *> json_in, const vector<sqlite3_value *> &values)
+{
+    yajlpp_gen gen;
+
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+
+    {
+        yajlpp_array array(gen);
+
+        if (json_in) {
+            concat_gen_elements(gen,
+                                (const unsigned char *) json_in.value(),
+                                strlen(json_in.value()));
+        }
+
+        for (const auto val: values) {
+            switch (sqlite3_value_type(val)) {
+                case SQLITE_NULL:
+                    array.gen();
+                    break;
+                case SQLITE_INTEGER:
+                    array.gen(sqlite3_value_int64(val));
+                    break;
+                case SQLITE_FLOAT:
+                    array.gen(sqlite3_value_double(val));
+                    break;
+                case SQLITE3_TEXT: {
+                    auto text_val = sqlite3_value_text(val);
+
+                    if (sqlite3_value_subtype(val) == JSON_SUBTYPE) {
+                        concat_gen_elements(gen,
+                                            text_val,
+                                            strlen((const char *) text_val));
+                    } else {
+                        array.gen((const char *) text_val);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    return json_string(gen);
+}
+
 struct json_agg_context {
     yajl_gen_t *jac_yajl_gen;
 };
@@ -452,8 +610,35 @@ int json_extension_functions(struct FuncDef **basic_funcs,
                              struct FuncDefAgg **agg_funcs)
 {
     static struct FuncDef json_funcs[] = {
+        sqlite_func_adapter<decltype(&json_concat), json_concat>::builder(
+            help_text("json_concat",
+                      "Returns an array with the given values concatenated onto the end.  "
+                      "If the initial value is null, the result will be an array with "
+                      "the given elements.  If the initial value is an array, the result "
+                      "will be an array with the given values at the end.  If the initial "
+                      "value is not null or an array, the result will be an array with "
+                      "two elements: the initial value and the given value.")
+                .sql_function()
+                .with_parameter({"json", "The initial JSON value."})
+                .with_parameter(help_text("value", "The value(s) to add to the end of the array.")
+                                    .one_or_more())
+                .with_tags({"json"})
+                .with_example({
+                    "To append the number 4 to null",
+                    "SELECT json_concat(NULL, 4)"
+                })
+                .with_example({
+                    "To append 4 and 5 to the array [1, 2, 3]",
+                    "SELECT json_concat('[1, 2, 3]', 4, 5)"
+                })
+                .with_example({
+                    "To concatenate two arrays together",
+                    "SELECT json_concat('[1, 2, 3]', json('[4, 5]'))"
+                })
+        ),
+
         sqlite_func_adapter<decltype(&json_contains), json_contains>::builder(
-            help_text("json_contains", "")
+            help_text("json_contains", "Check if a JSON value contains the given element.")
                 .sql_function()
                 .with_parameter({"json", "The JSON value to query."})
                 .with_parameter({"value", "The value to look for in the first argument"})

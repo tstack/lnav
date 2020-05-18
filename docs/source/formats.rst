@@ -293,6 +293,7 @@ with the following contents:
         }
     }
 
+.. _scripts:
 
 Scripts
 -------
@@ -308,7 +309,7 @@ line: a semi-colon begins a SQL statement; a colon starts an **lnav** command;
 and a pipe (|) denotes another script to be executed.  Lines beginning with a
 hash are treated as comments.  Any arguments passed to a script can be
 referenced using '$N' where 'N' is the index of the argument.  Remember that
-you need to use the ':eval' command (see :ref:`misc-cmd`) when referencing
+you need to use the :ref:`:eval<eval>` command when referencing
 variables in most **lnav** commands.  Scripts can provide help text to be
 displayed during interactive usage by adding the following tags in a comment
 header:

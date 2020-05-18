@@ -43,7 +43,7 @@
 
 #include "attr_line.hh"
 
-extern const char *sql_keywords[122];
+extern const char *sql_keywords[145];
 extern const char *sql_function_names[];
 
 typedef int (*sqlite_exec_callback)(void *, int, char **, char **);

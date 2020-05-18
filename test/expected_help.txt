@@ -1012,6 +1012,18 @@ Example
 
 
 Synopsis
+  OVER([base-window-name] PARTITION BY expr, ... ORDER BY expr, ..., 
+       [frame-spec]) -- 
+       Executes the preceding function over a window
+Parameters
+  base-window-name   The name of the window definition
+  expr               The values to use for partitioning
+  expr               The values used to order the rows in the window
+  frame-spec         Determines which output rows are read by an aggregate 
+                     window function
+
+
+Synopsis
   abs(x) -- Return the absolute value of the argument
 Parameter
   x   The number to convert
@@ -1281,6 +1293,12 @@ Examples
 
 
 Synopsis
+  cume_dist() -- Returns the cumulative distribution
+See Also
+  dense_rank(), first_value(), lag(), last_value(), lead(), nth_value(), ntile(), 
+  percent_rank(), rank(), row_number()
+
+Synopsis
   date(timestring, modifier, ...) -- Returns the date in this format: YYYY-MM-
     DD.
 Parameters
@@ -1337,6 +1355,13 @@ Example
    ;SELECT degrees(pi())
    
 
+
+Synopsis
+  dense_rank() -- Returns the row_number() of the first peer in each group 
+    without gaps
+See Also
+  cume_dist(), first_value(), lag(), last_value(), lead(), nth_value(), ntile(), 
+  percent_rank(), rank(), row_number()
 
 Synopsis
   dirname(path) -- Extract the directory portion of a pathname.
@@ -1420,6 +1445,15 @@ Examples
    ;SELECT extract('1.0 abc 2.0')
    
 
+
+Synopsis
+  first_value(expr) -- Returns the result of evaluating the expression against 
+    the first row in the window frame.
+Parameter
+  expr   The expression to execute over the first row
+See Also
+  cume_dist(), dense_rank(), lag(), last_value(), lead(), nth_value(), ntile(), 
+  percent_rank(), rank(), row_number()
 
 Synopsis
   floor(num) -- Returns the largest integer that is not greater than the 
@@ -1567,7 +1601,7 @@ Parameters
   ptr       The JSON-Pointer to lookup in the object.
   default   The default value if the value was not found
 See Also
-  json_contains(), json_group_array(), json_group_object()
+  json_concat(), json_contains(), json_group_array(), json_group_object()
 Examples
 #1 To get the root of a JSON value:
    ;SELECT jget('1', '')
@@ -1609,12 +1643,39 @@ Examples
 
 
 Synopsis
-  json_contains(json, value) -- 
+  json_concat(json, value, ...) -- Returns an array with the given values 
+    concatenated onto the end.  If the initial value is null, the result will 
+    be an array with the given elements.  If the initial value is an array, the
+    result will be an array with the given values at the end.  If the initial 
+    value is not null or an array, the result will be an array with two 
+    elements: the initial value and the given value.
+Parameters
+  json    The initial JSON value.
+  value   The value(s) to add to the end of the array.
+See Also
+  jget(), json_contains(), json_group_array(), json_group_object()
+Examples
+#1 To append the number 4 to null:
+   ;SELECT json_concat(NULL, 4)
+   
+
+#2 To append 4 and 5 to the array [1, 2, 3]:
+   ;SELECT json_concat('[1, 2, 3]', 4, 5)
+   
+
+#3 To concatenate two arrays together:
+   ;SELECT json_concat('[1, 2, 3]', json('[4, 5]'))
+   
+
+
+Synopsis
+  json_contains(json, value) -- Check if a JSON value contains the given 
+    element.
 Parameters
   json    The JSON value to query.
   value   The value to look for in the first argument
 See Also
-  jget(), json_group_array(), json_group_object()
+  jget(), json_concat(), json_group_array(), json_group_object()
 Examples
 #1 To test if a JSON array contains the number 4:
    ;SELECT json_contains('[1, 2, 3]', 4)
@@ -1631,7 +1692,7 @@ Synopsis
 Parameter
   value   The values to append to the array
 See Also
-  jget(), json_contains(), json_group_object()
+  jget(), json_concat(), json_contains(), json_group_object()
 Examples
 #1 To create an array from arguments:
    ;SELECT json_group_array('one', 2, 3.4)
@@ -1649,7 +1710,7 @@ Parameters
   name    The property name for the value
   value   The value to add to the object
 See Also
-  jget(), json_contains(), json_group_array()
+  jget(), json_concat(), json_contains(), json_group_array()
 Examples
 #1 To create an object from arguments:
    ;SELECT json_group_object('a', 1, 'b', 2)
@@ -1683,9 +1744,41 @@ Examples
 
 
 Synopsis
+  lag(expr, [offset], [default]) -- Returns the result of evaluating the 
+    expression against the previous row in the partition.
+Parameters
+  expr      The expression to execute over the previous row
+  offset    The offset from the current row in the partition
+  default   The default value if the previous row does not exist instead of 
+            NULL
+See Also
+  cume_dist(), dense_rank(), first_value(), last_value(), lead(), nth_value(), 
+  ntile(), percent_rank(), rank(), row_number()
+
+Synopsis
   last_insert_rowid() -- Returns the ROWID of the last row insert from the 
     database connection which invoked the function
 
+
+Synopsis
+  last_value(expr) -- Returns the result of evaluating the expression against 
+    the last row in the window frame.
+Parameter
+  expr   The expression to execute over the last row
+See Also
+  cume_dist(), dense_rank(), first_value(), lag(), lead(), nth_value(), ntile(), 
+  percent_rank(), rank(), row_number()
+
+Synopsis
+  lead(expr, [offset], [default]) -- Returns the result of evaluating the 
+    expression against the next row in the partition.
+Parameters
+  expr      The expression to execute over the next row
+  offset    The offset from the current row in the partition
+  default   The default value if the next row does not exist instead of NULL
+See Also
+  cume_dist(), dense_rank(), first_value(), lag(), last_value(), nth_value(), 
+  ntile(), percent_rank(), rank(), row_number()
 
 Synopsis
   leftstr(str, N) -- Returns the N leftmost (UTF-8) characters in the given 
@@ -1885,6 +1978,25 @@ Examples
 
 
 Synopsis
+  nth_value(expr, N) -- Returns the result of evaluating the expression against
+    the nth row in the window frame.
+Parameters
+  expr   The expression to execute over the nth row
+  N      The row number
+See Also
+  cume_dist(), dense_rank(), first_value(), lag(), last_value(), lead(), ntile(), 
+  percent_rank(), rank(), row_number()
+
+Synopsis
+  ntile(groups) -- Returns the number of the group that the current row is a 
+    part of
+Parameter
+  groups   The number of groups
+See Also
+  cume_dist(), dense_rank(), first_value(), lag(), last_value(), lead(), 
+  nth_value(), percent_rank(), rank(), row_number()
+
+Synopsis
   nullif(X, Y) -- Returns its first argument if the arguments are different and
     NULL if the arguments are the same.
 Parameters
@@ -1966,6 +2078,12 @@ Examples
    ;SELECT padr('abcdef', 4) || 'ghi'
    
 
+
+Synopsis
+  percent_rank() -- Returns (rank - 1) / (partition-rows - 1)
+See Also
+  cume_dist(), dense_rank(), first_value(), lag(), last_value(), lead(), 
+  nth_value(), ntile(), rank(), row_number()
 
 Synopsis
   pi() -- Returns the value of PI
@@ -2083,6 +2201,12 @@ Synopsis
 Parameter
   N   The size of the blob in bytes.
 
+
+Synopsis
+  rank() -- Returns the row_number() of the first peer in each group with gaps
+See Also
+  cume_dist(), dense_rank(), first_value(), lag(), last_value(), lead(), 
+  nth_value(), ntile(), percent_rank(), row_number()
 
 Synopsis
   readlink(path) -- Read the target of a symbolic link.
@@ -2285,6 +2409,19 @@ Examples
 
 #3 To round the number 123.456 to a precision of 5:
    ;SELECT round(123.456, 5)
+   
+
+
+Synopsis
+  row_number() -- Returns the number of the row within the current partition, 
+    starting from 1.
+See Also
+  cume_dist(), dense_rank(), first_value(), lag(), last_value(), lead(), 
+  nth_value(), ntile(), percent_rank(), rank()
+Example
+#1 To number messages from a process:
+   ;SELECT row_number() OVER (PARTITION BY ex_procname ORDER BY log_line) AS msg_num, 
+          ex_procname, log_body FROM lnav_example_log
    
 
 
@@ -2763,6 +2900,14 @@ Example
 #1 To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the 'environ' table:
    ;INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')
    
+
+
+Synopsis
+  OVER window-name
+
+  Executes the preceding function over a window
+Parameter
+  window-name   The name of the window definition
 
 
 Synopsis

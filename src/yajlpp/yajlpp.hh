@@ -444,6 +444,11 @@ public:
         return yajl_gen_bool(this->yg_handle, value);
     };
 
+    yajl_gen_status operator()(double value)
+    {
+        return yajl_gen_double(this->yg_handle, value);
+    };
+
     template<typename T>
     yajl_gen_status operator()(T value,
                                typename std::enable_if<std::is_integral<T>::value &&

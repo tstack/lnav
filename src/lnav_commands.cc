@@ -4468,7 +4468,7 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_summary("Mark the top line in the log view as the start of a new partition with the given name")
             .with_parameter(help_text("name", "The name for the new partition"))
             .with_example({
-                              "To mark the top line as the start of the partition named 'boot #1'",
+                "To mark the top line as the start of the partition named 'boot #1'",
                 "boot #1"
             })
     },

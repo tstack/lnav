@@ -96,11 +96,60 @@ allow you to take notes.  The majority of the columns in a log table are
 read-only since they are backed by the log files themselves.  However, the
 following columns can be changed by an :code:`UPDATE` statement:
 
+* **log_part** - The "partition" the log message belongs to.  This column can
+  also be changed by the :ref:`:partition-name<partition_name>` command.
 * **log_mark** - Indicates whether the line has been bookmarked.
 * **log_comment** - A free-form text field for storing commentary.  This
   column can also be changed by the :ref:`:comment<comment>` command.
 * **log_tags** - A JSON list of tags associated with the log message.  This
   column can also be changed by the :ref:`:tag<tag>` command.
+
+While these columns can be updated by through other means, using the SQL
+interface allows you to make changes automatically and en masse.  For example,
+to bookmark all lines that have the text "something interesting" in the log
+message body, you can execute:
+
+.. code-block::
+
+   :UPDATE all_logs SET log_mark = 1 WHERE log_body LIKE '%something interesting%'
+
+As a more advanced example of the power afforded by SQL and **lnav**'s virtual
+tables, we will tag log messages where the IP address bound by dhclient has
+changed.  For example, if dhclient reports "bound to 10.0.0.1" initially and
+then reports "bound to 10.0.0.2", we want to tag only the messages where the
+IP address was different from the previous message.  While this can be done
+with a single SQL statement [#]_, we will break things down into a few steps for
+this example.  First, we will use the :ref:`:create-search-table<create_search_table>`
+command to match the dhclient message and extract the IP address:
+
+.. code-block::
+
+   :create-search-table dhclient_ip bound to (?<ip>[^ ]+)
+
+The above command will create a new table named :code:`dhclient_ip` with the
+standard log columns and an :code:`ip` column that contains the IP address.
+Next, we will create a view over the :code:`dhclient_ip` table that returns
+the log message line number, the IP address from the current row and the IP
+address from the previous row:
+
+.. code-block:: sql
+
+   ;CREATE VIEW IF NOT EXISTS dhclient_ip_changes AS SELECT log_line, ip, lag(ip) OVER (ORDER BY log_line) AS prev_ip FROM dhclient_ip
+
+Finally, the following :code:`UPDATE` statement will concatenate the tag
+"#ipchanged" onto the :code:`log_tags` column for any rows in the view where
+the current IP is different from the previous IP:
+
+.. code-block:: sql
+
+   ;UPDATE syslog_log SET log_tags = json_concat(log_tags, '#ipchanged') WHERE log_line IN (SELECT log_line FROM dhclient_ip_changes WHERE ip != prev_ip)
+
+Since the above can be a lot to type out interactively, you can put these
+commands into a :ref:`script<scripts>` and execute that script with the
+|ks| \| |ke| hotkey.
+
+.. [#] The expression :code:`regexp_match('bound to ([^ ]+)', log_body) as ip`
+   can be used to extract the IP address from the log message body.
 
 Commands
 --------

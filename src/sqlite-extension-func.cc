@@ -688,6 +688,76 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
         ht.index_tags();
     }
 
+    static help_text builtin_win_funcs[] = {
+        help_text("row_number", "Returns the number of the row within the current partition, starting from 1.")
+            .sql_function()
+            .with_tags({"window"})
+            .with_example({
+                "To number messages from a process",
+                "SELECT row_number() OVER (PARTITION BY ex_procname ORDER BY log_line) AS msg_num, ex_procname, log_body FROM lnav_example_log"
+            }),
+
+        help_text("rank", "Returns the row_number() of the first peer in each group with gaps")
+            .sql_function()
+            .with_tags({"window"}),
+
+        help_text("dense_rank", "Returns the row_number() of the first peer in each group without gaps")
+            .sql_function()
+            .with_tags({"window"}),
+
+        help_text("percent_rank", "Returns (rank - 1) / (partition-rows - 1)")
+            .sql_function()
+            .with_tags({"window"}),
+
+        help_text("cume_dist", "Returns the cumulative distribution")
+            .sql_function()
+            .with_tags({"window"}),
+
+        help_text("ntile", "Returns the number of the group that the current row is a part of")
+            .sql_function()
+            .with_parameter({"groups", "The number of groups"})
+            .with_tags({"window"}),
+
+        help_text("lag", "Returns the result of evaluating the expression against the previous row in the partition.")
+            .sql_function()
+            .with_parameter({"expr", "The expression to execute over the previous row"})
+            .with_parameter(help_text("offset", "The offset from the current row in the partition")
+                                .optional())
+            .with_parameter(help_text("default", "The default value if the previous row does not exist instead of NULL")
+                                .optional())
+            .with_tags({"window"}),
+
+        help_text("lead", "Returns the result of evaluating the expression against the next row in the partition.")
+            .sql_function()
+            .with_parameter({"expr", "The expression to execute over the next row"})
+            .with_parameter(help_text("offset", "The offset from the current row in the partition")
+                                .optional())
+            .with_parameter(help_text("default", "The default value if the next row does not exist instead of NULL")
+                                .optional())
+            .with_tags({"window"}),
+
+        help_text("first_value", "Returns the result of evaluating the expression against the first row in the window frame.")
+            .sql_function()
+            .with_parameter({"expr", "The expression to execute over the first row"})
+            .with_tags({"window"}),
+
+        help_text("last_value", "Returns the result of evaluating the expression against the last row in the window frame.")
+            .sql_function()
+            .with_parameter({"expr", "The expression to execute over the last row"})
+            .with_tags({"window"}),
+
+        help_text("nth_value", "Returns the result of evaluating the expression against the nth row in the window frame.")
+            .sql_function()
+            .with_parameter({"expr", "The expression to execute over the nth row"})
+            .with_parameter({"N", "The row number"})
+            .with_tags({"window"}),
+    };
+
+    for (auto &ht : builtin_win_funcs) {
+        sqlite_function_help.insert(make_pair(ht.ht_name, &ht));
+        ht.index_tags();
+    }
+
     static help_text idents[] = {
         help_text("ATTACH",
                   "Attach a database file to the current connection.")
@@ -890,6 +960,22 @@ int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
                 "SELECT CAST(1.23 AS INTEGER)"
             }),
 
+        help_text("OVER", "Executes the preceding function over a window")
+            .sql_keyword()
+            .with_parameter({"window-name", "The name of the window definition"}),
+
+        help_text("OVER", "Executes the preceding function over a window")
+            .sql_function()
+            .with_parameter(help_text{"base-window-name", "The name of the window definition"}
+                                .optional())
+            .with_parameter(help_text{"expr", "The values to use for partitioning"}
+                                .with_flag_name("PARTITION BY")
+                                .zero_or_more())
+            .with_parameter(help_text{"expr", "The values used to order the rows in the window"}
+                                .with_flag_name("ORDER BY")
+                                .zero_or_more())
+            .with_parameter(help_text{"frame-spec", "Determines which output rows are read by an aggregate window function"}
+                                .optional()),
     };
 
     for (auto &ht : idents) {
