@@ -214,8 +214,21 @@ class CustSqliteLexer(RegexLexer):
     def analyse_text(text):
         return 0.01
 
-
 lexers['custsqlite'] = CustSqliteLexer(startinline=True)
+
+class LnavCommandLexer(RegexLexer):
+    name = 'lnav'
+
+    flags = re.IGNORECASE
+    tokens = {
+        'root': [
+            (r'\s+', Whitespace),
+            (r':[\w\-]+', Keyword),
+            (r'.', Text),
+        ]
+    }
+
+lexers['lnav'] = LnavCommandLexer()
 
 # -- General configuration -----------------------------------------------------
 

@@ -14,13 +14,13 @@
 
     To set the top timestamp to a given date:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :adjust-log-time 2017-01-02T05:33:00
 
     To set the top timestamp back an hour:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :adjust-log-time -1h
 
@@ -43,7 +43,7 @@
 
     To display 'Press t to switch to the text view' on the bottom right:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :alt-msg Press t to switch to the text view
 
@@ -69,7 +69,7 @@
 
     To append marked lines to the file /tmp/interesting-lines.txt:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :append-to /tmp/interesting-lines.txt
 
@@ -109,7 +109,7 @@
 
     To clear the highlight with the pattern 'foobar':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :clear-highlight foobar
 
@@ -157,7 +157,7 @@
 
     To add the comment 'This is where it all went wrong' to the top line:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :comment This is where it all went wrong
 
@@ -184,13 +184,13 @@
 
     To read the configuration of the '/ui/clock-format' option:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :config /ui/clock-format
 
     To set the '/ui/dim-text' option to 'false':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :config /ui/dim-text false
 
@@ -216,7 +216,7 @@
 
     To create a logline-style table named 'task_durations':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :create-logline-table task_durations
 
@@ -243,7 +243,7 @@
 
     To create a table named 'task_durations' that matches log messages with the pattern 'duration=(?<duration>\d+)':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :create-search-table task_durations duration=(?<duration>\d+)
 
@@ -280,7 +280,7 @@
 
     To delete the filter with the pattern 'last message repeated':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :delete-filter last message repeated
 
@@ -306,7 +306,7 @@
 
     To delete the logline-style table named 'task_durations':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :delete-logline-table task_durations
 
@@ -332,7 +332,7 @@
 
     To delete the search table named 'task_durations':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :delete-search-table task_durations
 
@@ -358,7 +358,7 @@
 
     To remove the tags '#BUG123' and '#needs-review' from all log lines:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :delete-tags #BUG123 #needs-review
 
@@ -384,7 +384,7 @@
 
     To disable the filter with the pattern 'last message repeated':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :disable-filter last message repeated
 
@@ -424,7 +424,7 @@
 
     To output 'Hello, World!':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :echo Hello, World!
 
@@ -450,7 +450,7 @@
 
     To enable the disabled filter with the pattern 'last message repeated':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :enable-filter last message repeated
 
@@ -490,13 +490,13 @@
 
     To output the user's home directory:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :eval :echo $HOME
 
     To substitute the table name from a variable:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :eval ;SELECT * FROM ${table}
 
@@ -522,7 +522,7 @@
 
     To filter out log messages that do not have the string 'dhclient':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :filter-in dhclient
 
@@ -548,7 +548,7 @@
 
     To filter out log messages that contain the string 'last message repeated':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :filter-out last message repeated
 
@@ -574,19 +574,19 @@
 
     To go to line 22:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :goto 22
 
     To go to the line 75% of the way into the view:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :goto 75%
 
     To go to the first message on the first day of 2017:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :goto 2017-01-01
 
@@ -623,13 +623,13 @@
 
     To hide the log_procname fields in all formats:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :hide-fields log_procname
 
     To hide only the log_procname field in the syslog format:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :hide-fields syslog_log.log_procname
 
@@ -655,13 +655,13 @@
 
     To hide the lines after the top line in the view:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :hide-lines-after here
 
     To hide the lines after 6 AM today:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :hide-lines-after 6am
 
@@ -687,13 +687,13 @@
 
     To hide the lines before the top line in the view:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :hide-lines-before here
 
     To hide the log messages before 6 AM today:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :hide-lines-before 6am
 
@@ -733,7 +733,7 @@
 
     To highlight numbers with three or more digits:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :highlight \d{3,}
 
@@ -798,7 +798,7 @@
 
     To go to the next error:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :next-mark error
 
@@ -824,7 +824,7 @@
 
     To open the file '/path/to/file':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :open /path/to/file
 
@@ -847,7 +847,7 @@
 
     To mark the top line as the start of the partition named 'boot #1':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :partition-name boot #1
 
@@ -870,7 +870,7 @@
 
     To write the top line to 'sed' for processing:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :pipe-line-to sed -e 's/foo/bar/g'
 
@@ -896,7 +896,7 @@
 
     To write marked lines to 'sed' for processing:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :pipe-to sed -e s/foo/bar/g
 
@@ -936,7 +936,7 @@
 
     To go to the previous error:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :prev-mark error
 
@@ -973,7 +973,7 @@
 
     To write the output of lnav commands to the file /tmp/script-output.txt:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :redirect-to /tmp/script-output.txt
 
@@ -1010,13 +1010,13 @@
 
     To move 22 lines down in the view:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :relative-goto +22
 
     To move 10 percent back in the view:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :relative-goto -10%
 
@@ -1042,7 +1042,7 @@
 
     To reset the '/ui/clock-format' option back to the builtin default:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :reset-config /ui/clock-format
 
@@ -1104,7 +1104,7 @@
 
     To add the command ':highlight foobar' to the session file:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :session :highlight foobar
 
@@ -1127,7 +1127,7 @@
 
     To set the minimum log level displayed to error:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :set-min-log-level error
 
@@ -1150,7 +1150,7 @@
 
     To show all the log_procname fields in all formats:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :show-fields log_procname
 
@@ -1204,7 +1204,7 @@
 
     To visualize the sc_bytes field in the access_log format:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :spectrogram sc_bytes
 
@@ -1227,7 +1227,7 @@
 
     To get a summary of the sc_bytes column in the access_log table:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :summarize sc_bytes
 
@@ -1250,7 +1250,7 @@
 
     To switch to the 'schema' view:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :switch-to-view schema
 
@@ -1273,7 +1273,7 @@
 
     To add the tags '#BUG123' and '#needs-review' to the top line:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :tag #BUG123 #needs-review
 
@@ -1299,7 +1299,7 @@
 
     To switch to the 'schema' view if it is not displayed or switch back to the previous view:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :toggle-view schema
 
@@ -1322,7 +1322,7 @@
 
     To convert the epoch time 1490191111:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :unix-time 1490191111
 
@@ -1345,7 +1345,7 @@
 
     To remove the tags '#BUG123' and '#needs-review' from the top line:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :untag #BUG123 #needs-review
 
@@ -1371,7 +1371,7 @@
 
     To write SQL results as text to /tmp/table.txt:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :write-cols-to /tmp/table.txt
 
@@ -1397,7 +1397,7 @@
 
     To write SQL results as CSV to /tmp/table.csv:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :write-csv-to /tmp/table.csv
 
@@ -1423,7 +1423,7 @@
 
     To write SQL results as JSON to /tmp/table.json:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :write-json-to /tmp/table.json
 
@@ -1449,7 +1449,7 @@
 
     To write the top view to /tmp/table.txt:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :write-raw-to /tmp/table.txt
 
@@ -1475,7 +1475,7 @@
 
     To write only the displayed text to /tmp/table.txt:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :write-screen-to /tmp/table.txt
 
@@ -1501,7 +1501,7 @@
 
     To write marked lines to the file /tmp/interesting-lines.txt:
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :write-to /tmp/interesting-lines.txt
 
@@ -1527,7 +1527,7 @@
 
     To set the zoom level to '1-week':
 
-    .. code-block::  
+    .. code-block::  lnav
 
       :zoom-to 1-week
 

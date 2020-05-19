@@ -10,9 +10,7 @@ Log analysis in **lnav** can be done using the SQLite interface.  Log messages
 can be accessed via `virtual tables <https://www.sqlite.org/vtab.html>`_ that
 are created for each file format.  The tables have the same name as the log
 format and each message is its own row in the table.  For example, given the
-following log message from an Apache access log:
-
-.. code-block::
+following log message from an Apache access log::
 
     127.0.0.1 - frank [10/Oct/2000:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
 
@@ -109,9 +107,9 @@ interface allows you to make changes automatically and en masse.  For example,
 to bookmark all lines that have the text "something interesting" in the log
 message body, you can execute:
 
-.. code-block::
+.. code-block:: custsqlite
 
-   :UPDATE all_logs SET log_mark = 1 WHERE log_body LIKE '%something interesting%'
+   ;UPDATE all_logs SET log_mark = 1 WHERE log_body LIKE '%something interesting%'
 
 As a more advanced example of the power afforded by SQL and **lnav**'s virtual
 tables, we will tag log messages where the IP address bound by dhclient has
@@ -122,7 +120,7 @@ with a single SQL statement [#]_, we will break things down into a few steps for
 this example.  First, we will use the :ref:`:create-search-table<create_search_table>`
 command to match the dhclient message and extract the IP address:
 
-.. code-block::
+.. code-block:: lnav
 
    :create-search-table dhclient_ip bound to (?<ip>[^ ]+)
 
