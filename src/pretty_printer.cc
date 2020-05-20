@@ -46,7 +46,7 @@ void pretty_printer::append_to(attr_line_t &al)
                 if (this->pp_is_xml && this->pp_line_length > 0) {
                     this->start_new_line();
                 }
-                this->pp_values.push_back(el);
+                this->pp_values.emplace_back(el);
                 if (this->pp_is_xml) {
                     this->start_new_line();
                 }
@@ -57,7 +57,7 @@ void pretty_printer::append_to(attr_line_t &al)
                     this->write_element(el);
                     this->descend();
                 } else {
-                    this->pp_values.push_back(el);
+                    this->pp_values.emplace_back(el);
                 }
                 continue;
             case DT_XML_CLOSE_TAG:
@@ -70,7 +70,7 @@ void pretty_printer::append_to(attr_line_t &al)
             case DT_LSQUARE:
             case DT_LPAREN:
                 this->flush_values(true);
-                this->pp_values.push_back(el);
+                this->pp_values.emplace_back(el);
                 this->descend();
                 continue;
             case DT_RCURLY:
@@ -101,7 +101,7 @@ void pretty_printer::append_to(attr_line_t &al)
             default:
                 break;
         }
-        this->pp_values.push_back(el);
+        this->pp_values.emplace_back(el);
     }
     while (this->pp_depth > 0) {
         this->ascend();
@@ -128,8 +128,15 @@ void pretty_printer::write_element(const pretty_printer::element &el)
         }
         return;
     }
-    if (this->pp_line_length <= this->pp_leading_indent && el.e_token == DT_LINE) {
+    if (((this->pp_leading_indent == 0) ||
+         (this->pp_line_length <= this->pp_leading_indent)) &&
+        el.e_token == DT_LINE) {
         this->pp_soft_indent = 0;
+        if (this->pp_line_length > 0) {
+            this->pp_line_length = 0;
+            this->pp_stream << std::endl;
+            this->pp_body_lines.top() += 1;
+        }
         return;
     }
     pcre_input &pi = this->pp_scanner->get_input();

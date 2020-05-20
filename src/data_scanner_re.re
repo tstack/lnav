@@ -174,15 +174,15 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
        }
        IPV6ADDR/[^:a-zA-Z0-9] { RET(DT_IPV6_ADDRESS); }
 
-       "<""?"?[a-zA-Z0-9_:]+SPACE*([a-zA-Z0-9_:]+(SPACE*'='SPACE*('"'(('\\'.|[^\x00"])+)'"'|"'"(('\\'.|[^\x00'])+)"'"|[^\x00>]+)))*SPACE*("/"|"?")">" {
+       "<""?"?[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*'='SPACE*('"'(('\\'.|[^\x00"])+)'"'|"'"(('\\'.|[^\x00'])+)"'"|[^\x00>]+)))*SPACE*("/"|"?")">" {
            RET(DT_XML_EMPTY_TAG);
        }
 
-       "<"[a-zA-Z0-9_:]+SPACE*([a-zA-Z0-9_:]+(SPACE*"="SPACE*('"'(('\\'.|[^\x00"])+)'"'|"'"(('\\'.|[^\x00'])+)"'"|[^\x00>]+)))*SPACE*">" {
+       "<"[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*"="SPACE*('"'(('\\'.|[^\x00"])+)'"'|"'"(('\\'.|[^\x00'])+)"'"|[^\x00>]+)))*SPACE*">" {
            RET(DT_XML_OPEN_TAG);
        }
 
-       "</"[a-zA-Z0-9:]+SPACE*">" {
+       "</"[a-zA-Z0-9:\-]+SPACE*">" {
            RET(DT_XML_CLOSE_TAG);
        }
 
@@ -227,7 +227,7 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
            RET(DT_SYMBOL);
        }
 
-       ("\r"?"\n"|"\n") { RET(DT_LINE); }
+       ("\r"?"\n"|"\\n") { RET(DT_LINE); }
        SPACE+ { RET(DT_WHITE); }
        "." { RET(DT_DOT); }
        . { RET(DT_GARBAGE); }

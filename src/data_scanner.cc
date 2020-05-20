@@ -229,11 +229,8 @@ bool data_scanner::tokenize(pcre_context &pc, data_token_t &token_out)
     for (lpc = 0; lpc < DT_TERMINAL_MAX; lpc++) {
         switch (lpc) {
         case DT_QUOTED_STRING: {
-            pcre_input &pi  = this->ds_pcre_input;
-            const char *str = pi.get_string();
             size_t      str_start, str_end;
             bool        found = false;
-
 
             pi.pi_offset = pi.pi_next_offset;
             str_end      = str_start = pi.pi_offset + 1;
