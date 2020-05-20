@@ -357,6 +357,7 @@ DISTCLEANFILES = \
 	logfile_syslog.0 \
 	logfile_syslog_fr.0 \
 	logfile_syslog_with_mixed_times.0 \
+	test_pretty_in.* \
 	unreadable.log \
 	empty \
 	scripts-empty
