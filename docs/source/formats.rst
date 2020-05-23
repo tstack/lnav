@@ -206,7 +206,9 @@ fields:
 
       .. code-block:: sql
 
-          ;SELECT :sc_status || ' (' || (SELECT message FROM http_status_codes WHERE status = :sc_status) || ') '
+          ;SELECT :sc_status || ' (' || (
+              SELECT message FROM http_status_codes
+                  WHERE status = :sc_status) || ') '
 
   :sample: A list of objects that contain sample log messages.  All formats
     must include at least one sample and it must be matched by one of the
