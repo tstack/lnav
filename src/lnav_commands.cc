@@ -1806,7 +1806,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                 retval = "error: lnav was not compiled with libcurl";
 #else
                 if (!ec.ec_dry_run) {
-                    auto_ptr<url_loader> ul(new url_loader(fn));
+                    auto ul = make_unique<url_loader>(fn);
 
                     lnav_data.ld_file_names[fn]
                         .with_fd(ul->copy_fd());

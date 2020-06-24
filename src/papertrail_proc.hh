@@ -56,7 +56,7 @@ public:
                     time_t min_time,
                     time_t max_time)
             : curl_request("papertrailapp.com"),
-              ptp_jcontext(this->cr_name, FORMAT_HANDLERS),
+              ptp_jcontext(this->cr_name, &FORMAT_HANDLERS),
               ptp_jhandle(yajl_free),
               ptp_gen(yajl_gen_free),
               ptp_search(search),
@@ -153,7 +153,7 @@ public:
     static int json_map_end(void *ctx);
 
     static void yajl_writer(void *context, const char *str, size_t len);
-    static struct json_path_handler FORMAT_HANDLERS[];
+    static struct json_path_container FORMAT_HANDLERS;
     static const char *PT_SEARCH_URL;
 
     yajlpp_parse_context ptp_jcontext;
