@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
         struct exttm tm;
         off_t off = 0;
 
+        memset(&tm, 0, sizeof(tm));
         bool rc = ptime_fmt("ts %s ]", &tm, epoch_str, off, strlen(epoch_str));
         assert(rc);
         assert(tm2sec(&tm.et_tm) == 1428721664);
