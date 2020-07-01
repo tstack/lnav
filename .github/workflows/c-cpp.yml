@@ -18,10 +18,15 @@ jobs:
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure
+      run: ./configure --enable-static LDFLAGS=-static
     - name: make
-      run: make
-    - name: make check
-      run: make check
+      run: make -j4
     - name: make distcheck
-      run: make distcheck
+      run: make distcheck -j4
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # Artifact name
+        name: Linux 64-bit
+        # A file, directory or wildcard pattern that describes what to upload
+        path: src/lnav
