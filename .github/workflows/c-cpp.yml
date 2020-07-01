@@ -18,7 +18,7 @@ jobs:
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --enable-static LDFLAGS=-static
+      run: ./configure --enable-static
     - name: make
       run: make -j4
     - name: make distcheck
