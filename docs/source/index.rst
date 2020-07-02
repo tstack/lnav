@@ -15,6 +15,8 @@ Contents:
    :maxdepth: 2
 
    intro
+   usage
+   howitworks
    cli
    ui
    hotkeys
