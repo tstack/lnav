@@ -92,7 +92,7 @@ public:
                              int row,
                              string_attrs_t &value_out)
     {
-        if (this->current_file() == NULL) {
+        if (this->current_file() == nullptr) {
             return;
         }
 
@@ -166,8 +166,7 @@ public:
     };
 
     void push_back(std::shared_ptr<logfile> lf) {
-        line_filter_observer *lfo = new line_filter_observer(
-                this->get_filters(), lf);
+        auto *lfo = new line_filter_observer(this->get_filters(), lf);
         lf->set_logline_observer(lfo);
         this->tss_files.push_back(lf);
     };
@@ -194,7 +193,7 @@ public:
                 uint32_t old_size = lf->size();
                 logfile::rebuild_result_t new_text_data = lf->rebuild_index();
 
-                if (lf->get_format() != NULL) {
+                if (lf->get_format() != nullptr) {
                     iter = this->tss_files.erase(iter);
                     this->detach_observer(lf);
                     callback.promote_file(lf);
@@ -240,7 +239,7 @@ public:
         return retval;
     };
 
-    virtual void text_filters_changed() {
+    void text_filters_changed() {
         std::shared_ptr<logfile> lf = this->current_file();
 
         if (lf == nullptr) {
@@ -269,7 +268,7 @@ public:
         std::shared_ptr<logfile> lf = this->current_file();
         int retval = 0;
 
-        if (lf != NULL) {
+        if (lf != nullptr) {
             line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
             retval = lf->size() - lfo->lfo_filter_state.tfs_index.size();
         }
@@ -303,7 +302,7 @@ public:
 private:
     void detach_observer(std::shared_ptr<logfile> lf) {
         line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
-        lf->set_logline_observer(NULL);
+        lf->set_logline_observer(nullptr);
         delete lfo;
     };
 

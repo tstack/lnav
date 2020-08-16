@@ -41,7 +41,7 @@ using namespace std;
 
 static pcrepp &ansi_regex()
 {
-    static pcrepp retval("\x1b\\[([\\d=;]*)([a-zA-Z])");
+    static pcrepp retval("\x1b\\[([\\d=;\\?]*)([a-zA-Z])");
 
     return retval;
 }
@@ -116,6 +116,19 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
                 if (sscanf(&(str[caps[1].c_begin]), "%u", &spaces) == 1 &&
                     spaces > 0) {
                     str.insert((unsigned long) caps[0].c_end, spaces, ' ');
+                }
+                break;
+            }
+
+            case 'H': {
+                unsigned int row = 0, spaces = 0;
+
+                if (sscanf(&(str[caps[1].c_begin]), "%u;%u", &row, &spaces) == 2 &&
+                    spaces > 1) {
+                    spaces -= 1;
+                    if (spaces > caps[0].c_begin) {
+                        str.insert((unsigned long) caps[0].c_end, spaces - caps[0].c_begin, ' ');
+                    }
                 }
                 break;
             }
