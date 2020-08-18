@@ -384,7 +384,7 @@ void logfile_sub_source::text_attrs_for_line(textview_curses &lv,
 
         auto start = this->lss_token_value.c_str();
         int id_attrs = vc.attrs_for_ident(&start[line_value.lv_origin.lr_start],
-                                          line_value.lv_origin.length());
+                                          line_value.lv_origin.sublen(this->lss_token_value));
 
         line_range ident_range = line_value.lv_origin;
         if (this->lss_token_flags & RF_FULL) {
