@@ -23,6 +23,8 @@ lnav v0.8.6:
        raise an error in an lnav script to stop execution and notify the user.
      * Added the json_concat() function to make it easier to append/concatenate
        values onto arrays.
+     * Added the ":write-jsonlines-to" command that writes the result of a SQL
+       query to a file in the JSON Lines format.
 
      Interface Changes:
      * Data piped into lnav is no longer dumped to the console after exit.

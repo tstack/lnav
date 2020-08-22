@@ -662,6 +662,12 @@ COMMANDS
                     to write to standard out.  Use '-' to write the data to
                     the terminal.
 
+  write-jsonlines-to <file>
+                    Write the results of a SQL query to a JSON-Lines-formatted
+                    file.  Each row in the result set will be a single line of
+                    JSON in the output and each column will be a property in
+                    that object.  Use '-' to write the data to the terminal.
+
   pipe-to <shell-cmd>
                     Send the currently marked lines to the given shell command
                     for processing and open the resulting file for viewing.

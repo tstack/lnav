@@ -574,6 +574,17 @@ check_output "write-json-to is not working" <<EOF
 EOF
 
 
+run_test ${lnav_test} -n \
+    -c ";select * from access_log" \
+    -c ':write-jsonlines-to -' \
+    ${test_dir}/logfile_access_log.0
+
+check_output "write-jsonlines-to is not working" <<EOF
+{"log_line":0,"log_part":null,"log_time":"2009-07-20 22:59:26.000","log_idle_msecs":0,"log_level":"info","log_mark":0,"log_comment":null,"log_tags":null,"log_filters":null,"c_ip":"192.168.202.254","cs_method":"GET","cs_referer":"-","cs_uri_query":null,"cs_uri_stem":"/vmw/cgi/tramp","cs_user_agent":"gPXE/0.9.7","cs_username":"-","cs_version":"HTTP/1.0","sc_bytes":134,"sc_status":200}
+{"log_line":1,"log_part":null,"log_time":"2009-07-20 22:59:29.000","log_idle_msecs":3000,"log_level":"error","log_mark":0,"log_comment":null,"log_tags":null,"log_filters":null,"c_ip":"192.168.202.254","cs_method":"GET","cs_referer":"-","cs_uri_query":null,"cs_uri_stem":"/vmw/vSphere/default/vmkboot.gz","cs_user_agent":"gPXE/0.9.7","cs_username":"-","cs_version":"HTTP/1.0","sc_bytes":46210,"sc_status":404}
+{"log_line":2,"log_part":null,"log_time":"2009-07-20 22:59:29.000","log_idle_msecs":0,"log_level":"info","log_mark":0,"log_comment":null,"log_tags":null,"log_filters":null,"c_ip":"192.168.202.254","cs_method":"GET","cs_referer":"-","cs_uri_query":null,"cs_uri_stem":"/vmw/vSphere/default/vmkernel.gz","cs_user_agent":"gPXE/0.9.7","cs_username":"-","cs_version":"HTTP/1.0","sc_bytes":78929,"sc_status":200}
+EOF
+
 # By setting the LNAVSECURE mode before executing the command, we will disable
 # the access to the write-json-to command and the output would just be the
 # actual display of select query rather than json output.

@@ -658,6 +658,7 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
 
     if (args[0] == "write-csv-to" ||
         args[0] == "write-json-to" ||
+        args[0] == "write-jsonlines-to" ||
         args[0] == "write-cols-to") {
         if (dls.dls_headers.empty()) {
             return ec.make_error("no query result to write, use ';' to execute a query");
@@ -794,6 +795,23 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
                 json_write_row(gen, row);
                 line_count += 1;
             }
+        }
+    }
+    else if (args[0] == "write-jsonlines-to") {
+        yajlpp_gen gen;
+
+        yajl_gen_config(gen, yajl_gen_beautify, 0);
+        yajl_gen_config(gen,
+                        yajl_gen_print_callback, yajl_writer, outfile);
+
+        for (size_t row = 0; row < dls.dls_rows.size(); row++) {
+            if (ec.ec_dry_run && row > 10) {
+                break;
+            }
+
+            json_write_row(gen, row);
+            yajl_gen_reset(gen, "\n");
+            line_count += 1;
         }
     }
     else if (args[0] == "write-screen-to") {
@@ -4176,6 +4194,19 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_tags({"io", "scripting", "sql"})
             .with_example({
                 "To write SQL results as JSON to /tmp/table.json",
+                "/tmp/table.json"
+            })
+    },
+    {
+        "write-jsonlines-to",
+        com_save_to,
+
+        help_text(":write-jsonlines-to")
+            .with_summary("Write SQL results to the given file in JSON Lines format")
+            .with_parameter(help_text("path", "The path to the file to write"))
+            .with_tags({"io", "scripting", "sql"})
+            .with_example({
+                "To write SQL results as JSON Lines to /tmp/table.json",
                 "/tmp/table.json"
             })
     },
