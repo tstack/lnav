@@ -404,12 +404,16 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
             dtc.get_dimensions(doc_height, doc_width);
             etc.get_dimensions(ex_height, ex_width);
             if (help_count > 1 && name != func_pair.first->second->ht_name) {
-                while (find(kw.begin(), kw.end(),
-                            func_pair.first->second->ht_name) == kw.end()) {
-                    ++func_pair.first;
+                while (func_pair.first != func_pair.second) {
+                    if (find(kw.begin(), kw.end(),
+                             func_pair.first->second->ht_name) == kw.end()) {
+                        ++func_pair.first;
+                    } else {
+                        func_pair.second = next(func_pair.first);
+                        break;
+                    }
                 }
-                func_pair.second = next(func_pair.first);
-                help_count = 1;
+                help_count = distance(func_pair.first, func_pair.second);
             }
             for (auto func_iter = func_pair.first;
                  func_iter != func_pair.second;
