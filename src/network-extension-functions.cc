@@ -54,30 +54,37 @@ static string sql_gethostbyname(const char *name_in)
 {
     char             buffer[INET6_ADDRSTRLEN];
     auto_mem<struct addrinfo> ai(freeaddrinfo);
-    void *           addr_ptr = NULL;
+    void *           addr_ptr = nullptr;
+    struct addrinfo hints;
     int rc;
 
-    while ((rc = getaddrinfo(name_in, NULL, NULL, ai.out())) == EAI_AGAIN) {
-        sqlite3_sleep(10);
-    }
-    if (rc != 0) {
-        return name_in;
-    }
+    memset(&hints, 0, sizeof(hints));
+    for (auto family : {AF_INET, AF_INET6}) {
+        hints.ai_family = family;
+        while ((rc = getaddrinfo(name_in, nullptr, &hints, ai.out())) ==
+               EAI_AGAIN) {
+            sqlite3_sleep(10);
+        }
+        if (rc != 0) {
+            return name_in;
+        }
 
-    switch (ai.in()->ai_family) {
-    case AF_INET:
-        addr_ptr = &((struct sockaddr_in *)ai.in()->ai_addr)->sin_addr;
+        switch (ai.in()->ai_family) {
+            case AF_INET:
+                addr_ptr = &((struct sockaddr_in *) ai.in()->ai_addr)->sin_addr;
+                break;
+
+            case AF_INET6:
+                addr_ptr = &((struct sockaddr_in6 *) ai.in()->ai_addr)->sin6_addr;
+                break;
+
+            default:
+                return name_in;
+        }
+
+        inet_ntop(ai.in()->ai_family, addr_ptr, buffer, sizeof(buffer));
         break;
-
-    case AF_INET6:
-        addr_ptr = &((struct sockaddr_in6 *)ai.in()->ai_addr)->sin6_addr;
-        break;
-
-    default:
-        return name_in;
     }
-
-    inet_ntop(ai.in()->ai_family, addr_ptr, buffer, sizeof(buffer));
 
     return buffer;
 }

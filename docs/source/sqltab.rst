@@ -98,6 +98,8 @@ this table:
 
   :name: The name of the view.
 
+.. _table_lnav_view_filters:
+
 lnav_view_filters
 -----------------
 
