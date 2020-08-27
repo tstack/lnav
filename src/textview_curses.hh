@@ -588,6 +588,7 @@ public:
     static string_attr_type SA_BODY;
     static string_attr_type SA_HIDDEN;
     static string_attr_type SA_FORMAT;
+    static string_attr_type SA_REMOVED;
 
     textview_curses();
     virtual ~textview_curses();

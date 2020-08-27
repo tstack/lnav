@@ -39,6 +39,7 @@
 #include <string>
 #include <vector>
 
+#include "base/lnav_log.hh"
 #include "base/intern_string.hh"
 
 /**
@@ -158,21 +159,29 @@ typedef string_attr_type *string_attr_type_t;
 struct string_attr {
     string_attr(const struct line_range &lr, string_attr_type_t type, void *val)
         : sa_range(lr), sa_type(type) {
+        require(lr.is_valid());
+        require(type);
         this->sa_value.sav_ptr = val;
     };
 
     string_attr(const struct line_range &lr, string_attr_type_t type, intern_string_t val)
         : sa_range(lr), sa_type(type) {
+        require(lr.is_valid());
+        require(type);
         this->sa_value.sav_ptr = val.unwrap();
     };
 
     string_attr(const struct line_range &lr, string_attr_type_t type, int64_t val = 0)
         : sa_range(lr), sa_type(type) {
+        require(lr.is_valid());
+        require(type);
         this->sa_value.sav_int = val;
     };
 
     string_attr(const struct line_range &lr, string_attr_type_t type, string_attr_value_t val)
         : sa_range(lr), sa_type(type), sa_value(val) {
+        require(lr.is_valid());
+        require(type);
     };
 
     string_attr() : sa_type(NULL) { };

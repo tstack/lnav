@@ -115,6 +115,7 @@ string_attr_type textview_curses::SA_ORIGINAL_LINE("original_line");
 string_attr_type textview_curses::SA_BODY("body");
 string_attr_type textview_curses::SA_HIDDEN("hidden");
 string_attr_type textview_curses::SA_FORMAT("format");
+string_attr_type textview_curses::SA_REMOVED("removed");
 
 textview_curses::textview_curses()
     : tc_sub_source(NULL),
@@ -356,7 +357,7 @@ void textview_curses::textview_value_for_row(vis_line_t row,
                 for_each(sa.begin(), sa.end(), [&] (string_attr &attr) {
                     if (attr.sa_type == &VC_STYLE &&
                         attr.sa_range.lr_start == lr.lr_start) {
-                        attr.sa_type = nullptr;
+                        attr.sa_type = &SA_REMOVED;
                     }
                 });
             }

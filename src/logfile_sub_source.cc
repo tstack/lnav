@@ -209,8 +209,15 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
 
     sbr.share(this->lss_share_manager,
               (char *)this->lss_token_value.c_str(), this->lss_token_value.size());
-    format->annotate(line, sbr, this->lss_token_attrs, this->lss_token_values,
-                     false);
+    if (this->lss_token_line->is_continued()) {
+        this->lss_token_attrs.emplace_back(
+            line_range{0, (int) this->lss_token_value.length()},
+            &textview_curses::SA_BODY);
+    } else {
+        format->annotate(line, sbr, this->lss_token_attrs,
+                         this->lss_token_values,
+                         false);
+    }
     if (this->lss_token_line->get_sub_offset() != 0) {
         this->lss_token_attrs.clear();
     }

@@ -769,9 +769,11 @@ void external_log_format::annotate(uint64_t line_number, shared_buffer_ref &line
 
     if (!pat.p_module_format) {
         cap = pc[pat.p_timestamp_field_index];
-        lr.lr_start = cap->c_begin;
-        lr.lr_end = cap->c_end;
-        sa.emplace_back(lr, &logline::L_TIMESTAMP);
+        if (cap->is_valid()) {
+            lr.lr_start = cap->c_begin;
+            lr.lr_end = cap->c_end;
+            sa.emplace_back(lr, &logline::L_TIMESTAMP);
+        }
 
         if (pat.p_module_field_index != -1) {
             module_cap = pc[pat.p_module_field_index];
