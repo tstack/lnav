@@ -187,7 +187,7 @@ void rl_change(void *dummy, readline_curses *rc)
                     .with_obj(lnav_config);
                 ypc.update_callbacks();
 
-                if (ypc.ypc_current_handler != NULL) {
+                if (ypc.ypc_current_handler != nullptr) {
                     const json_path_handler_base *jph = ypc.ypc_current_handler;
                     char help_text[1024];
 
@@ -330,7 +330,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
                                          rc->get_value().c_str(),
                                          -1,
                                          stmt.out(),
-                                         NULL);
+                                         nullptr);
             if (retcode != SQLITE_OK) {
                 const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
@@ -348,53 +348,10 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
         annotate_sql_statement(al);
 
-        if (x > 0 && (int)x >= al.length()) {
-            x -= 1;
-        }
+        auto avail_help = find_sql_help_for_line(al, x);
 
-        while (x > 0 && isspace(al.get_string()[x])) {
-            x -= 1;
-        }
-
-        vector<string> kw;
-        auto iter = rfind_string_attr_if(sa, x, [&al, &name, &kw, x](auto sa) {
-            if (sa.sa_type != &SQL_FUNCTION_ATTR &&
-                sa.sa_type != &SQL_KEYWORD_ATTR) {
-                return false;
-            }
-
-            const string &str = al.get_string();
-            const line_range &lr = sa.sa_range;
-            int lpc;
-
-            if (sa.sa_type == &SQL_FUNCTION_ATTR) {
-                if (!sa.sa_range.contains(x)) {
-                    return false;
-                }
-            }
-
-            for (lpc = lr.lr_start; lpc < lr.lr_end; lpc++) {
-                if (!isalnum(str[lpc]) && str[lpc] != '_') {
-                    break;
-                }
-            }
-
-            string tmp_name = str.substr(lr.lr_start, lpc - lr.lr_start);
-            if (sa.sa_type == &SQL_KEYWORD_ATTR) {
-                tmp_name = toupper(tmp_name);
-            }
-            bool retval = sqlite_function_help.count(tmp_name) > 0;
-
-            if (retval) {
-                kw.push_back(tmp_name);
-                name = tmp_name;
-            }
-            return retval;
-        });
-
-        if (iter != sa.end()) {
-            auto func_pair = sqlite_function_help.equal_range(name);
-            size_t help_count = distance(func_pair.first, func_pair.second);
+        if (!avail_help.empty()) {
+            size_t help_count = avail_help.size();
             textview_curses &dtc = lnav_data.ld_doc_view;
             textview_curses &etc = lnav_data.ld_example_view;
             unsigned long doc_width, ex_width;
@@ -403,27 +360,12 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
             dtc.get_dimensions(doc_height, doc_width);
             etc.get_dimensions(ex_height, ex_width);
-            if (help_count > 1 && name != func_pair.first->second->ht_name) {
-                while (func_pair.first != func_pair.second) {
-                    if (find(kw.begin(), kw.end(),
-                             func_pair.first->second->ht_name) == kw.end()) {
-                        ++func_pair.first;
-                    } else {
-                        func_pair.second = next(func_pair.first);
-                        break;
-                    }
-                }
-                help_count = distance(func_pair.first, func_pair.second);
-            }
-            for (auto func_iter = func_pair.first;
-                 func_iter != func_pair.second;
-                 ++func_iter) {
-                const help_text &ht = *func_iter->second;
 
-                format_help_text_for_term(ht, min(70UL, doc_width), doc_al,
+            for (const auto& ht : avail_help) {
+                format_help_text_for_term(*ht, min(70UL, doc_width), doc_al,
                                           help_count > 1);
                 if (help_count == 1) {
-                    format_example_text_for_term(ht, eval_example, ex_width, ex_al);
+                    format_example_text_for_term(*ht, eval_example, ex_width, ex_al);
                 }
             }
 
@@ -440,7 +382,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
             }
         }
 
-        auto ident_iter = find_string_attr_containing(sa, &SQL_IDENTIFIER_ATTR, x);
+        auto ident_iter = find_string_attr_containing(sa, &SQL_IDENTIFIER_ATTR, al.nearest_text(x));
         if (ident_iter != sa.end()) {
             string ident = al.get_substring(ident_iter->sa_range);
             intern_string_t intern_ident = intern_string::lookup(ident);

@@ -36,6 +36,7 @@
 
 #include "lnav_util.hh"
 #include "base/lnav_log.hh"
+#include "sql_util.hh"
 
 #include "sqlite-extension-func.hh"
 
@@ -52,8 +53,6 @@ sqlite_registration_func_t sqlite_registration_funcs[] = {
 
     nullptr
 };
-
-multimap<std::string, help_text *> sqlite_function_help;
 
 int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs)
 {

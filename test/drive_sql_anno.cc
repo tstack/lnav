@@ -32,42 +32,81 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include "lnav.hh"
 #include "sql_util.hh"
+#include "sqlite-extension-func.hh"
+
+using namespace std;
+
+struct _lnav_data lnav_data;
+
+void rebuild_hist()
+{
+}
+
+bool setup_logline_table(exec_context &ec)
+{
+    return false;
+}
+
+bool rescan_files(bool required)
+{
+    return false;
+}
+
+void wait_for_children()
+{
+
+}
+
+void rebuild_indexes()
+{
+}
+
+readline_context::command_map_t lnav_commands;
 
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;
+    auto_mem<sqlite3> db(sqlite3_close);
 
     log_argv(argc, argv);
 
     if (argc < 2) {
         fprintf(stderr, "error: expecting an SQL statement\n");
         retval = EXIT_FAILURE;
+    } else if (sqlite3_open(":memory:", db.out()) != SQLITE_OK) {
+        fprintf(stderr, "error: unable to make sqlite memory database\n");
+        retval = EXIT_FAILURE;
     }
     else {
+        register_sqlite_funcs(db.in(), sqlite_registration_funcs);
+
         attr_line_t al(argv[1]);
 
         annotate_sql_statement(al);
 
+        printf("  %14s %s\n", " ", argv[1]);
         for (auto &attr : al.get_attrs()) {
             auto &lr = attr.sa_range;
 
-            printf("  %d:%d (%s) -- %s\n",
-                   lr.lr_start, lr.lr_end,
+            printf("  %14s %s%s\n",
                    attr.sa_type->sat_name,
-                   al.get_substring(lr).c_str());
+                   string(lr.lr_start, ' ').c_str(),
+                   string(lr.length(), '-').c_str());
         }
 
         if (argc == 3) {
             int near;
-            sscanf(argv[2], "%d", &near);
 
-            auto iter = find_string_attr(al.get_attrs(), (size_t) near);
-            if (iter != al.get_attrs().end()) {
-                printf("nearest %s\n",
-                       al.get_substring(iter->sa_range).c_str());
+            if (sscanf(argv[2], "%d", &near) != 1) {
+                fprintf(stderr, "error: expecting an integer for third arg\n");
+                return EXIT_FAILURE;
+            }
+
+            auto avail_help = find_sql_help_for_line(al, near);
+            for (const auto &ht : avail_help) {
+                printf("%s: %s\n", ht->ht_name, ht->ht_summary);
             }
         }
     }

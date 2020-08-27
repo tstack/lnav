@@ -68,6 +68,7 @@
 #include "filter_sub_source.hh"
 #include "filter_status_source.hh"
 #include "preview_status_source.hh"
+#include "sql_util.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -146,8 +147,6 @@ typedef enum {
 
     LNS__MAX
 } lnav_status_t;
-
-void sqlite_close_wrapper(void *mem);
 
 typedef std::pair<int, int>                      ppid_time_pair_t;
 typedef std::pair<ppid_time_pair_t, std::string> session_pair_t;

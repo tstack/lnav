@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "attr_line.hh"
+#include "help_text.hh"
 
 extern const char *sql_keywords[145];
 extern const char *sql_function_names[];
@@ -117,6 +118,9 @@ extern string_attr_type SQL_GARBAGE_ATTR;
 
 void annotate_sql_statement(attr_line_t &al_inout);
 
+extern std::multimap<std::string, help_text *> sqlite_function_help;
+
 std::string sql_keyword_re(void);
+std::vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x);
 
 #endif

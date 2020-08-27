@@ -375,6 +375,8 @@ public:
     /** @return The attributes for the string. */
     string_attrs_t &get_attrs() { return this->al_attrs; };
 
+    const string_attrs_t &get_attrs() const { return this->al_attrs; };
+
     attr_line_t &with_string(const std::string &str) {
         this->al_string = str;
         return *this;
@@ -518,6 +520,22 @@ public:
     attr_line_t subline(size_t start, size_t len = std::string::npos) const;
 
     void split_lines(std::vector<attr_line_t> &lines) const;
+
+    size_t nearest_text(size_t x) const {
+        if (x > 0 && (int)x >= this->length()) {
+            if (this->empty()) {
+                x = 0;
+            } else {
+                x = this->length() - 1;
+            }
+        }
+
+        while (x > 0 && isspace(this->al_string[x])) {
+            x -= 1;
+        }
+
+        return x;
+    }
 
 private:
     const static size_t RESERVE_SIZE = 128;

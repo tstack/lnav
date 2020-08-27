@@ -89,8 +89,6 @@ int time_extension_functions(struct FuncDef **basic_funcs,
 
 extern sqlite_registration_func_t sqlite_registration_funcs[];
 
-extern std::multimap<std::string, help_text *> sqlite_function_help;
-
 int register_sqlite_funcs(sqlite3 *db, sqlite_registration_func_t *reg_funcs);
 
 #endif

@@ -43,6 +43,7 @@
 #include "base/lnav_log.hh"
 #include "lnav_util.hh"
 #include "pcrepp/pcrepp.hh"
+#include "sqlite-extension-func.hh"
 
 using namespace std;
 
@@ -252,6 +253,8 @@ const char *sql_function_names[] = {
 
     NULL
 };
+
+multimap<std::string, help_text *> sqlite_function_help;
 
 static int handle_db_list(void *ptr,
                           int ncols,
@@ -960,4 +963,73 @@ void annotate_sql_statement(attr_line_t &al)
 
     remove_string_attr(sa, &SQL_PAREN_ATTR);
     stable_sort(sa.begin(), sa.end());
+}
+
+vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x)
+{
+    vector<const help_text *> retval;
+    const auto& sa = al.get_attrs();
+    string name;
+
+    x = al.nearest_text(x);
+
+    vector<string> kw;
+    auto iter = rfind_string_attr_if(sa, x, [&al, &name, &kw, x](auto sa) {
+        if (sa.sa_type != &SQL_FUNCTION_ATTR &&
+            sa.sa_type != &SQL_KEYWORD_ATTR) {
+            return false;
+        }
+
+        const string &str = al.get_string();
+        const line_range &lr = sa.sa_range;
+        int lpc;
+
+        if (sa.sa_type == &SQL_FUNCTION_ATTR) {
+            if (!sa.sa_range.contains(x)) {
+                return false;
+            }
+        }
+
+        for (lpc = lr.lr_start; lpc < lr.lr_end; lpc++) {
+            if (!isalnum(str[lpc]) && str[lpc] != '_') {
+                break;
+            }
+        }
+
+        string tmp_name = str.substr(lr.lr_start, lpc - lr.lr_start);
+        if (sa.sa_type == &SQL_KEYWORD_ATTR) {
+            tmp_name = toupper(tmp_name);
+        }
+        bool retval = sqlite_function_help.count(tmp_name) > 0;
+
+        if (retval) {
+            kw.push_back(tmp_name);
+            name = tmp_name;
+        }
+        return retval;
+    });
+
+    if (iter != sa.end()) {
+        auto func_pair = sqlite_function_help.equal_range(name);
+        size_t help_count = distance(func_pair.first, func_pair.second);
+
+        if (help_count > 1 && name != func_pair.first->second->ht_name) {
+            while (func_pair.first != func_pair.second) {
+                if (find(kw.begin(), kw.end(),
+                         func_pair.first->second->ht_name) == kw.end()) {
+                    ++func_pair.first;
+                } else {
+                    func_pair.second = next(func_pair.first);
+                    break;
+                }
+            }
+        }
+        for (auto func_iter = func_pair.first;
+             func_iter != func_pair.second;
+             ++func_iter) {
+            retval.emplace_back(func_iter->second);
+        }
+    }
+
+    return retval;
 }
