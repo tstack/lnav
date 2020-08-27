@@ -89,11 +89,5 @@ void xterm_mouse::set_enabled(bool enabled)
 
 bool xterm_mouse::is_available()
 {
-    const char *termname = getenv("TERM");
-    bool retval = false;
-
-    if (termname and strstr(termname, "xterm") != NULL) {
-        retval = isatty(STDOUT_FILENO);
-    }
-    return retval;
+    return isatty(STDOUT_FILENO);
 }
