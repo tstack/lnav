@@ -17,11 +17,11 @@ Vagrant.configure(2) do |config|
       v.cpus = 4
   end
 
+  config.vm.synced_folder ".", "/vagrant", type: "nfs"
   config.vm.define :freebsd do |freebsd|
-      config.vm.synced_folder ".", "/vagrant", type: "nfs"
       freebsd.vm.network "private_network", :type => 'dhcp'
-      config.vm.provision "shell", path:"pkg.sh"
-      config.vm.provision "shell", path:"provision.sh"
+      freebsd.vm.provision "shell", path:"pkg.sh"
+      freebsd.vm.provision "shell", path:"provision.sh"
       freebsd.vm.box = "freebsd/FreeBSD-11.2-RELEASE"
       freebsd.vm.box_version = "2018.06.22"
       freebsd.vm.synced_folder ".", "/vagrant", type: "nfs"
@@ -30,18 +30,17 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :linux do |linux|
-      config.vm.synced_folder ".", "/vagrant", type: "nfs"
-      config.vm.network :private_network, ip: "10.11.12.14"
-      config.vm.provision "shell", path:"pkg.sh"
-      config.vm.provision "shell", path:"provision.sh"
+      # config.vm.network :private_network, ip: "10.11.12.14"
+      linux.vm.provision "shell", path:"pkg.sh"
+      linux.vm.provision "shell", path:"provision.sh"
       linux.vm.box = "centos/7"
   end
 
   config.vm.define :pkger do |pkger|
-      config.vm.synced_folder ".", "/vagrant", type: "nfs"
-      config.vm.network :private_network, ip: "10.11.12.15"
-      config.vm.provision "shell", path:"provision-pkg.sh"
-      pkger.vm.box = "ubuntu/trusty64"
+      # config.vm.synced_folder ".", "/vagrant", type: "nfs"
+      pkger.vm.network :private_network, ip: "10.11.12.15"
+      pkger.vm.provision "shell", path:"provision-pkg.sh"
+      pkger.vm.box = "ubuntu/xenial64"
   end
 
   # Disable automatic box update checking. If you disable this, then

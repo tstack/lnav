@@ -16,10 +16,10 @@ PACKAGE_URLS = \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	http://www.zlib.net/zlib-1.2.11.tar.gz \
 	http://www.bzip.org/1.0.8/bzip2-1.0.8.tar.gz \
-	https://www.sqlite.org/2020/sqlite-autoconf-3310100.tar.gz \
+	https://sqlite.org/2020/sqlite-autoconf-3330000.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
-	https://curl.haxx.se/download/curl-7.69.1.tar.gz
+	https://curl.haxx.se/download/curl-7.72.0.tar.gz
 
 .PHONY: linux freebsd pkger download-pkgs
 
