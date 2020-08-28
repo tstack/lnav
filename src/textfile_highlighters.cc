@@ -103,6 +103,71 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         .with_text_format(text_format_t::TF_PYTHON)
         .with_role(view_colors::VCR_KEYWORD);
 
+    hm[{highlight_source_t::INTERNAL, "rust"}] = highlighter(xpcre_compile(
+        "(?:"
+        "\\bas\\b|"
+        "\\buse\\b|"
+        "\\bextern crate\\b|"
+        "\\bbreak\\b|"
+        "\\bconst\\b|"
+        "\\bcontinue\\b|"
+        "\\bcrate\\b|"
+        "\\belse\\b|"
+        "\\bif\\b|"
+        "\\bif let\\b|"
+        "\\benum\\b|"
+        "\\bextern\\b|"
+        "\\bfalse\\b|"
+        "\\bfn\\b|"
+        "\\bfor\\b|"
+        "\\bif\\b|"
+        "\\bimpl\\b|"
+        "\\bin\\b|"
+        "\\bfor\\b|"
+        "\\blet\\b|"
+        "\\bloop\\b|"
+        "\\bmatch\\b|"
+        "\\bmod\\b|"
+        "\\bmove\\b|"
+        "\\bmut\\b|"
+        "\\bpub\\b|"
+        "\\bimpl\\b|"
+        "\\bref\\b|"
+        "\\breturn\\b|"
+        "\\bSelf\\b|"
+        "\\bself\\b|"
+        "\\bstatic\\b|"
+        "\\bstruct\\b|"
+        "\\bsuper\\b|"
+        "\\btrait\\b|"
+        "\\btrue\\b|"
+        "\\btype\\b|"
+        "\\bunsafe\\b|"
+        "\\buse\\b|"
+        "\\bwhere\\b|"
+        "\\bwhile\\b|"
+        "\\babstract\\b|"
+        "\\balignof\\b|"
+        "\\bbecome\\b|"
+        "\\bbox\\b|"
+        "\\bdo\\b|"
+        "\\bfinal\\b|"
+        "\\bmacro\\b|"
+        "\\boffsetof\\b|"
+        "\\boverride\\b|"
+        "\\bpriv\\b|"
+        "\\bproc\\b|"
+        "\\bpure\\b|"
+        "\\bsizeof\\b|"
+        "\\btypeof\\b|"
+        "\\bunsized\\b|"
+        "\\bvirtual\\b|"
+        "\\byield\\b"
+        ")"))
+        .with_nestable(false)
+        .with_text_format(text_format_t::TF_RUST)
+        .with_role(view_colors::VCR_KEYWORD);
+
     hm[{highlight_source_t::INTERNAL, "clike"}] = highlighter(xpcre_compile(
         "(?:"
         "\\babstract\\b|"
@@ -367,6 +432,16 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "(?<!\\$)\\$\\{(\\w+)\\}"
         ")"))
         .with_role(view_colors::VCR_VARIABLE);
+    hm[{highlight_source_t::INTERNAL, "rust.sym"}] = highlighter(xpcre_compile(
+        "\\b[A-Z_][A-Z0-9_]+\\b"))
+        .with_nestable(false)
+        .with_text_format(text_format_t::TF_RUST)
+        .with_role(view_colors::VCR_SYMBOL);
+    hm[{highlight_source_t::INTERNAL, "rust.num"}] = highlighter(xpcre_compile(
+        R"(\b-?(?:\d+|0x[a-zA-Z0-9]+)\b)"))
+        .with_nestable(false)
+        .with_text_format(text_format_t::TF_RUST)
+        .with_role(view_colors::VCR_NUMBER);
     hm[{highlight_source_t::INTERNAL, "sym"}] = highlighter(xpcre_compile(
         "\\b[A-Z_][A-Z0-9_]+\\b"))
         .with_nestable(false)

@@ -39,6 +39,7 @@
 enum class text_format_t {
     TF_UNKNOWN,
     TF_PYTHON,
+    TF_RUST,
     TF_C_LIKE,
     TF_SQL,
 };

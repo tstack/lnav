@@ -45,6 +45,15 @@ text_format_t detect_text_format(const char *str, size_t len)
             ")",
         PCRE_MULTILINE);
 
+    static pcrepp RUST_MATCHERS = pcrepp(R"(
+(?:
+^\s*use\s+[\w+:\{\}]+;$|
+^\s*(?:pub)?\s+(?:const|enum|fn)\s+\w+.*$|
+^\s*impl\s+\w+.*$
+)
+)",
+        PCRE_MULTILINE);
+
     static pcrepp C_LIKE_MATCHERS = pcrepp(
         "(?:"
             "^#\\s*include\\s+|"
@@ -67,6 +76,10 @@ text_format_t detect_text_format(const char *str, size_t len)
 
     if (PYTHON_MATCHERS.match(pc, pi)) {
         return text_format_t::TF_PYTHON;
+    }
+
+    if (RUST_MATCHERS.match(pc, pi)) {
+        return text_format_t::TF_RUST;
     }
 
     if (C_LIKE_MATCHERS.match(pc, pi)) {
