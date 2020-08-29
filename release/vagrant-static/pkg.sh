@@ -14,7 +14,7 @@ if test x"${OS}" != x"FreeBSD"; then
         git \
         centos-release-scl \
         perl-Data-Dumper
-    sudo yum install -y "devtoolset-4-gcc*"
+    sudo yum install -y "devtoolset-9-gcc*"
 else
     pkg install -y wget git m4 bash autoconf automake sqlite3 gmake
 fi

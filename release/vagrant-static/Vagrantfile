@@ -30,7 +30,7 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :linux do |linux|
-      # config.vm.network :private_network, ip: "10.11.12.14"
+      linux.vm.network :private_network, ip: "10.11.12.14"
       linux.vm.provision "shell", path:"pkg.sh"
       linux.vm.provision "shell", path:"provision.sh"
       linux.vm.box = "centos/7"

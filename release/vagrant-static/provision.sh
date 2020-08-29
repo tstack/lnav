@@ -2,7 +2,7 @@
 
 OS=$(uname -s)
 if test x"${OS}" != x"FreeBSD"; then
-    source scl_source enable devtoolset-4
+    source scl_source enable devtoolset-9
 fi
 
 FAKE_ROOT=/home/vagrant/fake.root
