@@ -29,8 +29,8 @@
  * @file vt52_curses.hh
  */
 
-#ifndef __vt52_curses_hh
-#define __vt52_curses_hh
+#ifndef vt52_curses_hh
+#define vt52_curses_hh
 
 #include <list>
 #include <string>

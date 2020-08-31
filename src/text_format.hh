@@ -29,8 +29,8 @@
  * @file text_format.hh
  */
 
-#ifndef __text_format_hh
-#define __text_format_hh
+#ifndef text_format_hh
+#define text_format_hh
 
 #include <sys/types.h>
 

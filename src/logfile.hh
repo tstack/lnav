@@ -31,8 +31,8 @@
  * @file logfile.hh
  */
 
-#ifndef __logfile_hh
-#define __logfile_hh
+#ifndef logfile_hh
+#define logfile_hh
 
 #include <stdio.h>
 #include <stdint.h>

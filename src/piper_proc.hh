@@ -29,8 +29,8 @@
  * @file piper_proc.hh
  */
 
-#ifndef __piper_proc_hh
-#define __piper_proc_hh
+#ifndef piper_proc_hh
+#define piper_proc_hh
 
 #include <string>
 #include <sys/types.h>

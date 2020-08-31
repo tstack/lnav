@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __regexp_vtab_hh
-#define __regexp_vtab_hh
+#ifndef regexp_vtab_hh
+#define regexp_vtab_hh
 
 #include <sqlite3.h>
 

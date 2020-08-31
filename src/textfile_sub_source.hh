@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __textfile_sub_source_hh
-#define __textfile_sub_source_hh
+#ifndef textfile_sub_source_hh
+#define textfile_sub_source_hh
 
 #include <list>
 

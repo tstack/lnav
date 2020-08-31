@@ -29,8 +29,8 @@
  * @file hist_source.hh
  */
 
-#ifndef __hist_source_hh
-#define __hist_source_hh
+#ifndef hist_source_hh
+#define hist_source_hh
 
 #include <map>
 #include <cmath>

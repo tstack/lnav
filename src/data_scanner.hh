@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __data_scanner_hh
-#define __data_scanner_hh
+#ifndef data_scanner_hh
+#define data_scanner_hh
 
 #include <string>
 

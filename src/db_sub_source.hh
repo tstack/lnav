@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __db_sub_source_hh
-#define __db_sub_source_hh
+#ifndef db_sub_source_hh
+#define db_sub_source_hh
 
 #include <string>
 #include <vector>

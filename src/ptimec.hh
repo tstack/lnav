@@ -29,8 +29,8 @@
  * @file ptimec.hh
  */
 
-#ifndef __pctimec_hh
-#define __pctimec_hh
+#ifndef pctimec_hh
+#define pctimec_hh
 
 // XXX
 #define __STDC_FORMAT_MACROS

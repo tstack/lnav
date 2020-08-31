@@ -29,8 +29,8 @@
  * @file strong_int.hh
  */
 
-#ifndef __strong_int_hh
-#define __strong_int_hh
+#ifndef strong_int_hh
+#define strong_int_hh
 
 /**
  * Template class for "strongly-typed" integers, in other words, integers that

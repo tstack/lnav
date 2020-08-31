@@ -29,8 +29,8 @@
  * @file lnav.hh
  */
 
-#ifndef __lnav_hh
-#define __lnav_hh
+#ifndef lnav_hh
+#define lnav_hh
 
 #include "config.h"
 

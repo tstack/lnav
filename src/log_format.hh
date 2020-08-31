@@ -29,8 +29,8 @@
  * @file log_format.hh
  */
 
-#ifndef __log_format_hh
-#define __log_format_hh
+#ifndef log_format_hh
+#define log_format_hh
 
 #include <time.h>
 #include <sys/time.h>

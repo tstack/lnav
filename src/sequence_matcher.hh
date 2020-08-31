@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __sequence_matcher_hh
-#define __sequence_matcher_hh
+#ifndef sequence_matcher_hh
+#define sequence_matcher_hh
 
 #include <list>
 #include <string>

@@ -29,8 +29,8 @@
  * @file auto_pid.hh
  */
 
-#ifndef __auto_pid_hh
-#define __auto_pid_hh
+#ifndef auto_pid_hh
+#define auto_pid_hh
 
 #include <errno.h>
 #include <signal.h>

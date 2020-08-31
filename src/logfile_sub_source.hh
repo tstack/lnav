@@ -29,8 +29,8 @@
  * @file logfile_sub_source.hh
  */
 
-#ifndef __logfile_sub_source_hh
-#define __logfile_sub_source_hh
+#ifndef logfile_sub_source_hh
+#define logfile_sub_source_hh
 
 #include <limits.h>
 

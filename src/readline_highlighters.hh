@@ -29,8 +29,8 @@
  * @file readline_highlighters.hh
  */
 
-#ifndef __readline_highlighters_hh
-#define __readline_highlighters_hh
+#ifndef readline_highlighters_hh
+#define readline_highlighters_hh
 
 #include "view_curses.hh"
 

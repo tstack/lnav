@@ -31,8 +31,8 @@
  * Dumping ground for useful functions with no other home.
  */
 
-#ifndef __lnav_util_hh
-#define __lnav_util_hh
+#ifndef lnav_util_hh
+#define lnav_util_hh
 
 #include <time.h>
 #include <sys/time.h>

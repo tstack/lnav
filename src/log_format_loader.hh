@@ -29,8 +29,8 @@
  * @file log_format_loader.hh
  */
 
-#ifndef __log_format_loader_hh
-#define __log_format_loader_hh
+#ifndef log_format_loader_hh
+#define log_format_loader_hh
 
 #include <sqlite3.h>
 

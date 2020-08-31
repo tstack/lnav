@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __vtab_module_hh
-#define __vtab_module_hh
+#ifndef vtab_module_hh
+#define vtab_module_hh
 
 #include <sqlite3.h>
 

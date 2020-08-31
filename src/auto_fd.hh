@@ -29,8 +29,8 @@
  * @file auto_fd.hh
  */
 
-#ifndef __auto_fd_hh
-#define __auto_fd_hh
+#ifndef auto_fd_hh
+#define auto_fd_hh
 
 #include <fcntl.h>
 #include <unistd.h>

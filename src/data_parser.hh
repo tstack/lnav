@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __data_parser_hh
-#define __data_parser_hh
+#ifndef data_parser_hh
+#define data_parser_hh
 
 #include <stdio.h>
 

@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __filter_observer_hh
-#define __filter_observer_hh
+#ifndef filter_observer_hh
+#define filter_observer_hh
 
 #include <sys/types.h>
 

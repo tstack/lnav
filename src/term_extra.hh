@@ -29,8 +29,8 @@
  * @file term_extra.hh
  */
 
-#ifndef __term_extra_hh
-#define __term_extra_hh
+#ifndef term_extra_hh
+#define term_extra_hh
 
 #include <string.h>
 #include <sys/types.h>

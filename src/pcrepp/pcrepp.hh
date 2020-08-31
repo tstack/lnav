@@ -36,8 +36,8 @@
  * processing a series of matches on text files.
  */
 
-#ifndef __pcrepp_hh
-#define __pcrepp_hh
+#ifndef pcrepp_hh
+#define pcrepp_hh
 
 #ifdef HAVE_PCRE_H
 #include <pcre.h>

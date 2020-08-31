@@ -29,8 +29,8 @@
  * @file yajlpp_def.hh
  */
 
-#ifndef __yajlpp_def_hh
-#define __yajlpp_def_hh
+#ifndef yajlpp_def_hh
+#define yajlpp_def_hh
 
 #include "yajlpp.hh"
 

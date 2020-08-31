@@ -29,8 +29,8 @@
  * @file textview_curses.hh
  */
 
-#ifndef __textview_curses_hh
-#define __textview_curses_hh
+#ifndef textview_curses_hh
+#define textview_curses_hh
 
 #include <utility>
 #include <vector>

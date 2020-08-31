@@ -29,8 +29,8 @@
  * @file lnav_commands.hh
  */
 
-#ifndef __lnav_commands_hh
-#define __lnav_commands_hh
+#ifndef lnav_commands_hh
+#define lnav_commands_hh
 
 #include "readline_curses.hh"
 

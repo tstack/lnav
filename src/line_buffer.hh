@@ -29,8 +29,8 @@
  * @file line_buffer.hh
  */
 
-#ifndef __line_buffer_hh
-#define __line_buffer_hh
+#ifndef line_buffer_hh
+#define line_buffer_hh
 
 #include <errno.h>
 #include <sys/types.h>

@@ -29,8 +29,8 @@
  * @file grep_proc.hh
  */
 
-#ifndef __grep_proc_hh
-#define __grep_proc_hh
+#ifndef grep_proc_hh
+#define grep_proc_hh
 
 #include "config.h"
 

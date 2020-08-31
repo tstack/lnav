@@ -29,8 +29,8 @@
  * @file yajlpp.hh
  */
 
-#ifndef _yajlpp_hh
-#define _yajlpp_hh
+#ifndef yajlpp_hh
+#define yajlpp_hh
 
 #include <string.h>
 #include <stdarg.h>

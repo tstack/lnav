@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __pretty_printer_hh
-#define __pretty_printer_hh
+#ifndef pretty_printer_hh
+#define pretty_printer_hh
 
 #include <sys/time.h>
 #include <sys/types.h>

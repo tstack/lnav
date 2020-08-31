@@ -29,8 +29,8 @@
  * @file xterm_mouse.hh
  */
 
-#ifndef __xterm_mouse_hh
-#define __xterm_mouse_hh
+#ifndef xterm_mouse_hh
+#define xterm_mouse_hh
 
 #include <stdlib.h>
 #include <string.h>

@@ -29,8 +29,8 @@
  * @file listview_curses.hh
  */
 
-#ifndef __listview_curses_hh
-#define __listview_curses_hh
+#ifndef listview_curses_hh
+#define listview_curses_hh
 
 #include <sys/types.h>
 

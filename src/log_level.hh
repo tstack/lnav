@@ -29,8 +29,8 @@
  * @file log_level.hh
  */
 
-#ifndef __log_level_hh
-#define __log_level_hh
+#ifndef log_level_hh
+#define log_level_hh
 
 /**
  * The logging level identifiers for a line(s).

@@ -29,8 +29,8 @@
  * @file spectroview_curses.hh
  */
 
-#ifndef __spectro_source_hh
-#define __spectro_source_hh
+#ifndef spectro_source_hh
+#define spectro_source_hh
 
 #include <time.h>
 

@@ -29,8 +29,8 @@
  * @file termios_guard.hh
  */
 
-#ifndef __termios_guard_hh
-#define __termios_guard_hh
+#ifndef termios_guard_hh
+#define termios_guard_hh
 
 #include <stdio.h>
 #include <string.h>

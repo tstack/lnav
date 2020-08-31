@@ -29,8 +29,8 @@
  * @file highlighter.hh
  */
 
-#ifndef __highlighter_hh
-#define __highlighter_hh
+#ifndef highlighter_hh
+#define highlighter_hh
 
 #include "optional.hpp"
 #include "pcrepp/pcrepp.hh"

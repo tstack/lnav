@@ -29,8 +29,8 @@
  * @file view_curses.hh
  */
 
-#ifndef __view_curses_hh
-#define __view_curses_hh
+#ifndef view_curses_hh
+#define view_curses_hh
 
 #include "config.h"
 

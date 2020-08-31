@@ -29,8 +29,8 @@
  * @file json_op.hh
  */
 
-#ifndef __json_op_hh
-#define __json_op_hh
+#ifndef json_op_hh
+#define json_op_hh
 
 #include <sys/types.h>
 

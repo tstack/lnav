@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __plugins_hh
-#define __plugins_hh
+#ifndef plugins_hh
+#define plugins_hh
 
 #include <string>
 

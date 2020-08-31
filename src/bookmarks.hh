@@ -31,8 +31,8 @@
  * @file bookmarks.hh
  */
 
-#ifndef __bookmarks_hh
-#define __bookmarks_hh
+#ifndef bookmarks_hh
+#define bookmarks_hh
 
 #include <map>
 #include <set>

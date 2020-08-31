@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __elem_to_json_hh
-#define __elem_to_json_hh
+#ifndef elem_to_json_hh
+#define elem_to_json_hh
 
 #include "yajl/api/yajl_gen.h"
 #include "data_parser.hh"

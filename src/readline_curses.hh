@@ -29,8 +29,8 @@
  * @file readline_curses.hh
  */
 
-#ifndef __readline_curses_hh
-#define __readline_curses_hh
+#ifndef readline_curses_hh
+#define readline_curses_hh
 
 #include <stdio.h>
 #include <string.h>

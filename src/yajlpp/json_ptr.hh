@@ -29,8 +29,8 @@
  * @file json_ptr.hh
  */
 
-#ifndef __json_ptr_hh
-#define __json_ptr_hh
+#ifndef json_ptr_hh
+#define json_ptr_hh
 
 #include <stdio.h>
 #include <stdint.h>

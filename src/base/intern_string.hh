@@ -29,8 +29,8 @@
  * @file intern_string.hh
  */
 
-#ifndef __intern_string_hh
-#define __intern_string_hh
+#ifndef intern_string_hh
+#define intern_string_hh
 
 #include <string.h>
 #include <sys/types.h>

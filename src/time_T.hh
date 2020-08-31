@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __time_t_hh
-#define __time_t_hh
+#ifndef time_t_hh
+#define time_t_hh
 
 #include <stdio.h>
 #include <time.h>

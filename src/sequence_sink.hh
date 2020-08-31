@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __sequence_sink_hh
-#define __sequence_sink_hh
+#ifndef sequence_sink_hh
+#define sequence_sink_hh
 
 #include <map>
 

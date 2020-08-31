@@ -26,8 +26,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __grep_highlighter_hh
-#define __grep_highlighter_hh
+#ifndef grep_highlighter_hh
+#define grep_highlighter_hh
 
 #include <string>
 #include <memory>

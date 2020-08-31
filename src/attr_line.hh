@@ -31,8 +31,8 @@
  * @file attr_line.hh
  */
 
-#ifndef __attr_line_hh
-#define __attr_line_hh
+#ifndef attr_line_hh
+#define attr_line_hh
 
 #include <limits.h>
 

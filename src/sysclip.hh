@@ -29,8 +29,8 @@
 * @file sysclip.hh
 */
 
-#ifndef __sysclip_hh
-#define __sysclip_hh
+#ifndef sysclip_hh
+#define sysclip_hh
 
 #include <stdio.h>
 

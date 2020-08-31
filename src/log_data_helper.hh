@@ -31,8 +31,8 @@
  * @file log_data_helper.hh
  */
 
-#ifndef __log_data_helper_hh
-#define __log_data_helper_hh
+#ifndef log_data_helper_hh
+#define log_data_helper_hh
 
 #include <map>
 #include <string>

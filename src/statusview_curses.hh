@@ -29,8 +29,8 @@
  * @file statusview_curses.hh
  */
 
-#ifndef __statusview_curses_hh
-#define __statusview_curses_hh
+#ifndef statusview_curses_hh
+#define statusview_curses_hh
 
 #include <string>
 #include <vector>

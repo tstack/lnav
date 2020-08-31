@@ -29,8 +29,8 @@
  * @file log_accel.hh
  */
 
-#ifndef __log_accel_h
-#define __log_accel_h
+#ifndef log_accel_h
+#define log_accel_h
 
 #include <stdint.h>
 

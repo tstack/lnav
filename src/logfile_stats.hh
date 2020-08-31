@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __logfile_stats_hh
-#define __logfile_stats_hh
+#ifndef logfile_stats_hh
+#define logfile_stats_hh
 
 class logfile_activity {
 public:

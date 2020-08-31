@@ -29,8 +29,8 @@
  * @file shared_buffer.hh
  */
 
-#ifndef __shared_buffer_hh
-#define __shared_buffer_hh
+#ifndef shared_buffer_hh
+#define shared_buffer_hh
 
 #include <stdlib.h>
 #include <string.h>
