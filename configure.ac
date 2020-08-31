@@ -125,8 +125,8 @@ LNAV_WITH_LOCAL_YAJL
 
 AX_WITH_CURSES
 
-AS_VAR_IF([ax_cv_curses],[yes],[],
-    AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])dnl
+AS_VAR_IF([ax_cv_ncursesw],[yes],[],
+    AC_MSG_ERROR([requires an X/Open-compatible ncursesw library with color])dnl
 )
 
 AX_PATH_LIB_PCRE([], [AC_MSG_ERROR([pcre required to build])])
