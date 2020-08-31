@@ -5,7 +5,11 @@
             "default": {
                 "styles": {
                     "text": {
-                        "color": "Silver"
+                        "color": "Silver",
+                        "background-color": "Black"
+                    },
+                    "identifier": {
+                        "background-color": "Black"
                     },
                     "alt-text": {
                         "color": "Silver",
