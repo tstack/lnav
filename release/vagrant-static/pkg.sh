@@ -13,7 +13,9 @@ if test x"${OS}" != x"FreeBSD"; then
         ncurses-static \
         git \
         centos-release-scl \
-        perl-Data-Dumper
+        perl-Data-Dumper \
+        patch \
+        wget
     sudo yum install -y "devtoolset-9-gcc*"
 else
     pkg install -y wget git m4 bash autoconf automake sqlite3 gmake

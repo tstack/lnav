@@ -23,6 +23,24 @@ SQLITE_CFLAGS="\
     -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT \
     "
 
+NCURSES_FALLBACKS="\
+ansi,\
+cygwin,\
+Eterm,\
+Eterm-256color,\
+gnome,\
+gnome-256color,\
+konsole,\
+konsole-256color,\
+linux,\
+screen,\
+screen-16color,\
+screen-256color,\
+vt100,\
+vt220,\
+xterm,\
+xterm-256color\
+"
 
 cd ~/extract
 
@@ -50,6 +68,11 @@ OS=$(uname -s)
  make &&
  make install)
 
+(cd ncurses-5.9 &&
+ wget ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20141206-patch.sh.bz2 &&
+ bunzip2 ncurses-5.9-20141206-patch.sh.bz2 &&
+ bash ./ncurses-5.9-20141206-patch.sh)
+
 if test x"${OS}" != x"FreeBSD"; then
     (cd ncurses-5.9 && \
      ./configure --prefix=${FAKE_ROOT} \
@@ -58,6 +81,8 @@ if test x"${OS}" != x"FreeBSD"; then
          --with-default-terminfo-dir=/usr/share/terminfo \
          --enable-ext-colors \
          --enable-widec \
+         --enable-termcap \
+         --with-fallbacks=$NCURSES_FALLBACKS \
          && \
      make && make install)
 
@@ -95,6 +120,8 @@ else
          --with-default-terminfo-dir=/usr/share/terminfo \
          --enable-ext-colors \
          --enable-widec \
+         --enable-termcap \
+         --with-fallbacks=$NCURSES_FALLBACKS \
          && \
      make && make install)
 
