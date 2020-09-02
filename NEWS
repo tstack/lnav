@@ -1,4 +1,4 @@
-lnav v0.8.6:
+lnav v0.9.0:
      Features:
      * Added support for themes and included a few as well: default, eldar,
        monocai, night-owl, solarized-light, and solarized-dark.  The theme
