@@ -33,6 +33,9 @@ gnome-256color,\
 konsole,\
 konsole-256color,\
 linux,\
+putty,\
+rxvt,\
+rxvt-256color,\
 screen,\
 screen-16color,\
 screen-256color,\

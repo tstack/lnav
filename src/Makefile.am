@@ -172,8 +172,7 @@ AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(READLINE_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
-	$(PCRE_LDFLAGS) \
-	-pthread
+	$(PCRE_LDFLAGS)
 
 AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \

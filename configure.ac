@@ -8,6 +8,11 @@ AC_PREFIX_DEFAULT(/usr)
 
 AC_CANONICAL_HOST
 
+AX_PTHREAD()
+LIBS="$PTHREAD_LIBS $LIBS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CC="$PTHREAD_CC"
+
 AX_CXX_COMPILE_STDCXX_14([noext], [mandatory])
 
 for defdir in /opt/local /usr/local; do

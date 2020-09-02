@@ -51,8 +51,7 @@ AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
 	$(READLINE_LDFLAGS) \
-	$(CURSES_LIB) \
-	-pthread
+	$(CURSES_LIB)
 
 CONFIG_OBJS = \
 	../src/ansi-palette-json.o \
