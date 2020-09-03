@@ -117,7 +117,7 @@ static int handle_map_key(void *ctx, const unsigned char * key, size_t len)
         jpw->jpw_keys.emplace_back(&partially_encoded_key[0], required_len);
     }
     else {
-        char fully_encoded_key[required_len];
+        auto fully_encoded_key = (char *) alloca(required_len);
 
         json_ptr::encode(fully_encoded_key, sizeof(fully_encoded_key),
             (const char *)key, len);

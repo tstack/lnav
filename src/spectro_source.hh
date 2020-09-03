@@ -80,7 +80,7 @@ struct spectrogram_row {
     };
 
     ~spectrogram_row() {
-        delete this->sr_values;
+        delete[] this->sr_values;
     }
 
     struct row_bucket {
@@ -479,14 +479,13 @@ public:
 
         spectrogram_row &s_row = this->ss_row_cache[row_time];
 
-        if (s_row.sr_values == NULL ||
+        if (s_row.sr_values == nullptr ||
             s_row.sr_width != width ||
             s_row.sr_column_size != sr.sr_column_size) {
             s_row.sr_width = width;
             s_row.sr_column_size = sr.sr_column_size;
-            delete s_row.sr_values;
+            delete[] s_row.sr_values;
             s_row.sr_values = new spectrogram_row::row_bucket[width + 1];
-            memset(s_row.sr_values, 0, sizeof(int) * (width + 1));
             this->ss_value_source->spectro_row(sr, s_row);
         }
 

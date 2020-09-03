@@ -166,7 +166,7 @@ void ensure_dotlnav()
             auto old_time = std::chrono::system_clock::now() -
                 STDIN_CAPTURE_RETENTION;
 
-            for (int lpc = 0; lpc < gl->gl_pathc; lpc++) {
+            for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                 struct stat st;
 
                 if (stat(gl->gl_pathv[lpc], &st) == -1) {

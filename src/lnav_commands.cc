@@ -2163,7 +2163,7 @@ static Result<string, string> com_tag(exec_context &ec, string cmdline, vector<s
 
         tc->set_user_mark(&textview_curses::BM_META, tc->get_top(), true);
         bookmark_metadata &line_meta = bm[lss.at(tc->get_top())];
-        for (int lpc = 1; lpc < args.size(); lpc++) {
+        for (size_t lpc = 1; lpc < args.size(); lpc++) {
             string tag = args[lpc];
 
             if (!startswith(tag, "#")) {
@@ -2206,7 +2206,7 @@ static Result<string, string> com_untag(exec_context &ec, string cmdline, vector
         if (iter != bm.end()) {
             bookmark_metadata &line_meta = iter->second;
 
-            for (int lpc = 1; lpc < args.size(); lpc++) {
+            for (size_t lpc = 1; lpc < args.size(); lpc++) {
                 string tag = args[lpc];
 
                 if (!startswith(tag, "#")) {
@@ -2249,7 +2249,7 @@ static Result<string, string> com_delete_tags(exec_context &ec, string cmdline, 
         set<string> &known_tags = bookmark_metadata::KNOWN_TAGS;
         vector<string> tags;
 
-        for (int lpc = 1; lpc < args.size(); lpc++) {
+        for (size_t lpc = 1; lpc < args.size(); lpc++) {
             string tag = args[lpc];
 
             if (!startswith(tag, "#")) {

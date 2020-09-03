@@ -359,7 +359,7 @@ public:
 
     const static int MAX_SIZE = 100;
 protected:
-    int lh_history_position{0};
+    size_t lh_history_position{0};
 };
 
 /**
@@ -367,7 +367,7 @@ protected:
  */
 class text_sub_source {
 public:
-    virtual ~text_sub_source() { };
+    virtual ~text_sub_source() = default;
 
     enum {
         RB_RAW,

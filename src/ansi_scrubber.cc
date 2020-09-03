@@ -125,9 +125,9 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
 
                 if (sscanf(&(str[caps[1].c_begin]), "%u;%u", &row, &spaces) == 2 &&
                     spaces > 1) {
-                    spaces -= 1;
-                    if (spaces > caps[0].c_begin) {
-                        str.insert((unsigned long) caps[0].c_end, spaces - caps[0].c_begin, ' ');
+                    int ispaces = spaces - 1;
+                    if (ispaces > caps[0].c_begin) {
+                        str.insert((unsigned long) caps[0].c_end, ispaces - caps[0].c_begin, ' ');
                     }
                 }
                 break;

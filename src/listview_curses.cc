@@ -287,7 +287,7 @@ void listview_curses::do_update()
             int y = this->lv_y + height - 1;
 
             mvwin_wchnstr(this->lv_window, y, this->lv_x, row_ch, width - 1);
-            for (int lpc = 0; lpc < width - 1; lpc++) {
+            for (unsigned long lpc = 0; lpc < width - 1; lpc++) {
                 row_ch[lpc].attr |= A_UNDERLINE;
             }
             mvwadd_wchnstr(this->lv_window, y, this->lv_x, row_ch, width - 1);

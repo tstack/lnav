@@ -526,7 +526,7 @@ public:
             auto &ll = *ll_iter;
             vis_line_t vis_start = this->find_from_time(ll.get_timeval());
 
-            while (vis_start < this->text_line_count()) {
+            while (vis_start < vis_line_t(this->text_line_count())) {
                 content_line_t guess_cl = this->at(vis_start);
 
                 if (cl == guess_cl) {
