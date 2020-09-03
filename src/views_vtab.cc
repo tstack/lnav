@@ -364,7 +364,7 @@ struct lnav_view_filter_base {
                 filter_stack &fs = tss->get_filters();
 
                 this->i_filter_index += 1;
-                if (this->i_filter_index >= fs.size()) {
+                if (this->i_filter_index >= (ssize_t) fs.size()) {
                     this->i_filter_index = -1;
                     this->i_view_index = lnav_view_t(this->i_view_index + 1);
                 } else {

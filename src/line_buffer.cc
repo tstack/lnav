@@ -448,10 +448,10 @@ void line_buffer::ensure_available(off_t start, ssize_t max_length)
         prefill = start - this->lb_file_offset;
     }
     require(this->lb_file_offset <= start);
-    require(prefill <= (size_t)this->lb_buffer_size);
+    require(prefill <= this->lb_buffer_size);
 
     available = this->lb_buffer_max - (start - this->lb_file_offset);
-    require(available <= (size_t)this->lb_buffer_max);
+    require(available <= this->lb_buffer_max);
 
     if (max_length > available) {
         /*

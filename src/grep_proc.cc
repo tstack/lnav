@@ -249,7 +249,7 @@ void grep_proc<LineType>::cleanup()
         this->gp_child_started = false;
 
         if (this->gp_sink) {
-            for (int lpc = 0; lpc < this->gp_child_queue_size; lpc++) {
+            for (size_t lpc = 0; lpc < this->gp_child_queue_size; lpc++) {
                 this->gp_sink->grep_end(*this);
             }
         }

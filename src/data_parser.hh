@@ -314,14 +314,19 @@ public:
     };
 
     struct element {
-        element() : e_token(DT_INVALID), e_sub_elements(NULL) { };
+        element()
+            : e_capture(-1, -1),
+              e_token(DT_INVALID),
+              e_sub_elements(nullptr) {
+        };
+
         element(element_list_t &subs,
                 data_token_t token,
                 bool assign_subs_elements = true)
             : e_capture(subs.front().e_capture.c_begin,
                         subs.back().e_capture.c_end),
               e_token(token),
-              e_sub_elements(NULL)
+              e_sub_elements(nullptr)
         {
             if (assign_subs_elements) {
                 this->assign_elements(subs);
@@ -330,12 +335,12 @@ public:
 
         element(const element &other)
         {
-            /* require(other.e_sub_elements == NULL); */
+            /* require(other.e_sub_elements == nullptr); */
 
             this->e_capture      = other.e_capture;
             this->e_token        = other.e_token;
-            this->e_sub_elements = NULL;
-            if (other.e_sub_elements != NULL) {
+            this->e_sub_elements = nullptr;
+            if (other.e_sub_elements != nullptr) {
                 this->assign_elements(*other.e_sub_elements);
             }
         };
@@ -343,7 +348,7 @@ public:
         ~element()
         {
             delete this->e_sub_elements;
-            this->e_sub_elements = NULL;
+            this->e_sub_elements = nullptr;
         };
 
         element & operator=(const element &other)
@@ -426,12 +431,9 @@ public:
         {
             int lpc;
 
-            if (this->e_sub_elements != NULL) {
-                for (element_list_t::iterator iter2 =
-                         this->e_sub_elements->begin();
-                     iter2 != this->e_sub_elements->end();
-                     ++iter2) {
-                    iter2->print(out, pi, offset + 1);
+            if (this->e_sub_elements != nullptr) {
+                for (auto & e_sub_element : *this->e_sub_elements) {
+                    e_sub_element.print(out, pi, offset + 1);
                 }
             }
 
@@ -916,16 +918,14 @@ private:
             pairs_out.PUSH_FRONT(element(pair_subs, DNT_PAIR));
         }
 
-        if (schema != NULL) {
+        if (schema != nullptr) {
             context.Final(schema->out(0), schema->out(1));
         }
 
-        if (schema != NULL && this->dp_msg_format != NULL) {
+        if (schema != nullptr && this->dp_msg_format != nullptr) {
             pcre_input &pi = this->dp_scanner->get_input();
-            for (element_list_t::iterator fiter = pairs_out.begin();
-                 fiter != pairs_out.end();
-                 ++fiter) {
-                *(this->dp_msg_format) += this->get_string_up_to_value(*fiter);
+            for (auto & fiter : pairs_out) {
+                *(this->dp_msg_format) += this->get_string_up_to_value(fiter);
                 this->dp_msg_format->append("#");
             }
             if ((size_t) this->dp_msg_format_begin < pi.pi_length) {
@@ -948,7 +948,7 @@ private:
         }
     };
 
-    void discover_format(void)
+    void discover_format()
     {
         pcre_context_static<30> pc;
         std::stack<discover_format_state> state_stack;
@@ -976,9 +976,7 @@ private:
             case DT_LCURLY:
             case DT_LSQUARE:
                 this->dp_group_token.push_back(elem.e_token);
-                this->dp_group_stack.push_back(element_list_t("_anon_",
-                                                              __FILE__,
-                                                              __LINE__));
+                this->dp_group_stack.emplace_back("_anon_", __FILE__, __LINE__);
                 state_stack.push(discover_format_state());
                 break;
 
@@ -1007,8 +1005,7 @@ private:
                 if (this->dp_group_token.back() == (elem.e_token - 1)) {
                     this->dp_group_token.pop_back();
 
-                    std::list<element_list_t>::reverse_iterator riter =
-                        this->dp_group_stack.rbegin();
+                    auto riter = this->dp_group_stack.rbegin();
                     ++riter;
                     state_stack.top().finalize();
                     this->dp_group_stack.back().el_format = state_stack.top().dfs_format;
@@ -1040,8 +1037,7 @@ private:
         while (this->dp_group_stack.size() > 1) {
             this->dp_group_token.pop_back();
 
-            std::list<element_list_t>::reverse_iterator riter =
-                this->dp_group_stack.rbegin();
+            auto riter = this->dp_group_stack.rbegin();
             ++riter;
             if (!this->dp_group_stack.back().empty()) {
                 state_stack.top().finalize();
@@ -1131,7 +1127,7 @@ private:
         value.CLEAR();
     };
 
-    void parse(void)
+    void parse()
     {
         this->discover_format();
 
@@ -1196,10 +1192,8 @@ private:
     {
         fprintf(out, "             %s\n",
                 this->dp_scanner->get_input().get_string());
-        for (element_list_t::iterator iter = el.begin();
-             iter != el.end();
-             ++iter) {
-            iter->print(out, this->dp_scanner->get_input());
+        for (auto & iter : el) {
+            iter.print(out, this->dp_scanner->get_input());
         }
     };
 

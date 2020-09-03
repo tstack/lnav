@@ -57,7 +57,7 @@ string_attr_type logline::L_META("meta");
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<external_log_format *> external_log_format::GRAPH_ORDERED_FORMATS;
 
-struct line_range logline_value::origin_in_full_msg(const char *msg, size_t len) const
+struct line_range logline_value::origin_in_full_msg(const char *msg, ssize_t len) const
 {
     if (this->lv_sub_offset == 0) {
         return this->lv_origin;

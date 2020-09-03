@@ -516,7 +516,7 @@ public:
         return this->lv_sbr.length();
     }
 
-    struct line_range origin_in_full_msg(const char *msg, size_t len) const;
+    struct line_range origin_in_full_msg(const char *msg, ssize_t len) const;
 
     intern_string_t lv_name;
     kind_t      lv_kind;
