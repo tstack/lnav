@@ -3401,6 +3401,7 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
                     } else if (!ec.ec_dry_run) {
                         retval = "info: changed config option -- " + option;
                         rollback_lnav_config = lnav_config;
+                        save_config();
                     }
                 }
             }
@@ -3409,19 +3410,6 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
         }
     } else {
         return ec.make_error("expecting a configuration option to read or write");
-    }
-
-    return Ok(retval);
-}
-
-static Result<string, string> com_save_config(exec_context &ec, string cmdline, vector<string> &args)
-{
-    string retval;
-
-    if (args.empty()) {
-    }
-    else if (!ec.ec_dry_run) {
-        retval = save_config();
     }
 
     return Ok(retval);
@@ -3452,6 +3440,7 @@ static Result<string, string> com_reset_config(exec_context &ec, string cmdline,
             if (!ec.ec_dry_run) {
                 reset_config(option);
                 rollback_lnav_config = lnav_config;
+                save_config();
             }
             if (option == "*") {
                 retval = "info: reset all options";
@@ -4685,14 +4674,6 @@ readline_context::command_t STD_COMMANDS[] = {
                 "To set the '/ui/dim-text' option to 'false'",
                 "/ui/dim-text false"
             })
-            .with_tags({"configuration"})
-    },
-    {
-        "save-config",
-        com_save_config,
-
-        help_text(":save-config")
-            .with_summary("Save the current configuration state")
             .with_tags({"configuration"})
     },
     {

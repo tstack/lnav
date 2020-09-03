@@ -36,6 +36,8 @@ lnav v0.9.0:
        now respected for storing lnav's configuration.  If you have an existing
        ~/.lnav directory, that will continue to be used until you move it to
        $XDG_CONFIG_HOME/lnav or ~/.config/lnav.
+     * Removed the ':save-config' command, changes to the configuration are now
+       immediately saved.
 
      Fixes:
      * Added 'notice' log level.

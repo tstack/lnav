@@ -758,9 +758,6 @@ COMMANDS
                     Reset a configuration option to the default value.  Use
                     '*' to reset all options.
 
-  save-config       Save the current configuration state to:
-                        \~/.lnav/config.json
-
   quit              Quit lnav.
 
 SQL QUERIES (experimental)

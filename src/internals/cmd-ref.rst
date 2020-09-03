@@ -196,7 +196,7 @@
 
   **See Also:**
 
-    :ref:`reset_config`, :ref:`save_config`
+    :ref:`reset_config`
 
 ----
 
@@ -1048,7 +1048,7 @@
 
   **See Also:**
 
-    :ref:`config`, :ref:`save_config`
+    :ref:`config`
 
 ----
 
@@ -1060,20 +1060,6 @@
 
   Reset the session state, clearing all filters, highlights, and bookmarks
 
-
-----
-
-
-.. _save_config:
-
-:save-config
-^^^^^^^^^^^^
-
-  Save the current configuration state
-
-  **See Also:**
-
-    :ref:`config`, :ref:`reset_config`
 
 ----
 
