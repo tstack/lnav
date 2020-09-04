@@ -1166,28 +1166,19 @@ static void handle_key(int ch) {
     }
 }
 
-static input_dispatcher::escape_match_t match_escape_seq(const char *escape_buffer)
+static input_dispatcher::escape_match_t match_escape_seq(const char *keyseq)
 {
     if (lnav_data.ld_mode != LNM_PAGING) {
         return input_dispatcher::escape_match_t::NONE;
     }
 
-    char keyseq[32 * 3 + 1] = "";
-
-    for (size_t lpc = 0; escape_buffer[lpc]; lpc++) {
-        snprintf(keyseq + strlen(keyseq), sizeof(keyseq) - strlen(keyseq),
-                 "x%02x",
-                 escape_buffer[lpc]);
-    }
-
-    auto &km = lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap];
+    auto &km = lnav_config.lc_active_keymap;
     auto iter = km.km_seq_to_cmd.find(keyseq);
     if (iter != km.km_seq_to_cmd.end()) {
         return input_dispatcher::escape_match_t::FULL;
     }
 
     auto lb = km.km_seq_to_cmd.lower_bound(keyseq);
-
     if (lb == km.km_seq_to_cmd.end()) {
         return input_dispatcher::escape_match_t::NONE;
     }
@@ -1197,24 +1188,11 @@ static input_dispatcher::escape_match_t match_escape_seq(const char *escape_buff
         return l.first.size() < r.first.size();
     });
 
-    if (strlen(escape_buffer) < longest->first.size()) {
+    if (strlen(keyseq) < longest->first.size()) {
         return input_dispatcher::escape_match_t::PARTIAL;
     }
 
     return input_dispatcher::escape_match_t::NONE;
-}
-
-static void handle_escape_seq(const char *escape_buffer)
-{
-    char keyseq[32 * 3 + 1] = "";
-
-    for (size_t lpc = 0; escape_buffer[lpc]; lpc++) {
-        snprintf(keyseq + strlen(keyseq), sizeof(keyseq) - strlen(keyseq),
-                 "x%02x",
-                 escape_buffer[lpc]);
-    }
-
-    handle_keyseq(keyseq);
 }
 
 void update_hits(void *dummy, textview_curses *tc)
@@ -1517,7 +1495,7 @@ static void looper()
             input_dispatcher &id = lnav_data.ld_input_dispatcher;
 
             id.id_escape_matcher = match_escape_seq;
-            id.id_escape_handler = handle_escape_seq;
+            id.id_escape_handler = handle_keyseq;
             id.id_key_handler = handle_key;
             id.id_mouse_handler = bind(&xterm_mouse::handle_mouse, &lnav_data.ld_mouse);
         }

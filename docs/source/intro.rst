@@ -25,6 +25,7 @@ When compiling from source, the following dependencies are required:
 * `ZLib <http://wwww.zlib.net>`_
 * `Bzip2 <http://www.bzip.org>`_
 * `Readline <http://www.gnu.org/s/readline>`_
+* `curl <https://curl.haxx.se>`_
 
 Installation
 ------------

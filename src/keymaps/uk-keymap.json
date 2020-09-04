@@ -1,0 +1,15 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "ui": {
+        "keymap-defs": {
+            "uk": {
+                "x22": {
+                    "command": ":goto last 20 minutes after the hour"
+                },
+                "xc2xa3": {
+                    "command": ":goto last 30 minutes after the hour"
+                }
+            }
+        }
+    }
+}

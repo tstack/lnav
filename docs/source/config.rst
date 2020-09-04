@@ -18,6 +18,12 @@ The configuration for **lnav** is stored in the following JSON files in
 * :file:`configs/*/*.json` -- Other directories that contain :file:`*.json`
   files will be loaded on startup.
 
+.. note::
+
+  Log format definitions are stored separately in the :file:`~/.lnav/formats`
+  directly.  See the :ref:`Log Formats<log_formats>` chapter for more
+  information.
+
 Options
 -------
 

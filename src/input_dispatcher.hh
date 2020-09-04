@@ -60,10 +60,14 @@ public:
     std::function<void(const char *)> id_escape_handler;
     std::function<void()> id_mouse_handler;
 private:
+    void reset_escape_buffer(int ch,
+                             const struct timeval &current_time,
+                             ssize_t expected_size = -1);
     void append_to_escape_buffer(int ch);
 
     char id_escape_buffer[32];
     size_t id_escape_index{0};
+    ssize_t id_escape_expected_size{-1};
     struct timeval id_escape_start_time{0, 0};
 };
 

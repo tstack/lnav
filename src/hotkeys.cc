@@ -133,40 +133,40 @@ static int key_sql_callback(exec_context &ec, sqlite3_stmt *stmt)
 
 bool handle_keyseq(const char *keyseq)
 {
-    key_map &km = lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap];
+    key_map &km = lnav_config.lc_active_keymap;
 
     const auto &iter = km.km_seq_to_cmd.find(keyseq);
-    if (iter != km.km_seq_to_cmd.end()) {
-        vector<logline_value> values;
-        exec_context ec(&values, key_sql_callback, pipe_callback);
-        auto &var_stack = ec.ec_local_vars;
-
-        ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
-        var_stack.push(map<string, string>());
-        auto &vars = var_stack.top();
-        vars["keyseq"] = keyseq;
-        const auto &kc = iter->second;
-
-        log_debug("executing key sequence x%02x: %s", keyseq, kc.kc_cmd.c_str());
-        auto result = execute_any(ec, kc.kc_cmd);
-        lnav_data.ld_rl_view->set_value(result.orElse(err_to_ok).unwrap());
-
-        if (!kc.kc_alt_msg.empty()) {
-            shlex lexer(kc.kc_alt_msg);
-            string expanded_msg;
-
-            if (lexer.eval(expanded_msg, {
-                &ec.ec_local_vars.top(),
-                &ec.ec_global_vars,
-            })) {
-                lnav_data.ld_rl_view->set_alt_value(expanded_msg);
-            }
-        }
-
-        return true;
+    if (iter == km.km_seq_to_cmd.end()) {
+        return false;
     }
 
-    return false;
+    vector<logline_value> values;
+    exec_context ec(&values, key_sql_callback, pipe_callback);
+    auto &var_stack = ec.ec_local_vars;
+
+    ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
+    var_stack.push(map<string, string>());
+    auto &vars = var_stack.top();
+    vars["keyseq"] = keyseq;
+    const auto &kc = iter->second;
+
+    log_debug("executing key sequence %s: %s", keyseq, kc.kc_cmd.c_str());
+    auto result = execute_any(ec, kc.kc_cmd);
+    lnav_data.ld_rl_view->set_value(result.orElse(err_to_ok).unwrap());
+
+    if (!kc.kc_alt_msg.empty()) {
+        shlex lexer(kc.kc_alt_msg);
+        string expanded_msg;
+
+        if (lexer.eval(expanded_msg, {
+            &ec.ec_local_vars.top(),
+            &ec.ec_global_vars,
+        })) {
+            lnav_data.ld_rl_view->set_alt_value(expanded_msg);
+        }
+    }
+
+    return true;
 }
 
 void handle_paging_key(int ch)
@@ -1086,7 +1086,7 @@ void handle_paging_key(int ch)
             break;
 
         default:
-            log_warning("unhandled %d", ch);
+            log_warning("unhandled x%02x", ch);
             lnav_data.ld_rl_view->set_value("Unrecognized keystroke, press "
             ANSI_BOLD("?")
             " to view help");

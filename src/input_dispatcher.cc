@@ -33,6 +33,7 @@
 
 #include <string.h>
 #include <sys/time.h>
+#include <array>
 
 #if defined HAVE_NCURSESW_CURSES_H
 #  include <ncursesw/curses.h>
@@ -52,13 +53,23 @@
 #include "input_dispatcher.hh"
 #include "lnav_util.hh"
 
+template<typename A>
+static void to_key_seq(A &dst, char *src)
+{
+    dst[0] = '\0';
+    for (size_t lpc = 0; src[lpc]; lpc++) {
+        snprintf(dst.data() + strlen(dst.data()),
+                 dst.size() - strlen(dst.data()),
+                 "x%02x",
+                 src[lpc] & 0xff);
+    }
+}
+
 void input_dispatcher::new_input(const struct timeval &current_time, int ch)
 {
     switch (ch) {
         case KEY_ESCAPE:
-            this->id_escape_index = 0;
-            this->append_to_escape_buffer(ch);
-            this->id_escape_start_time = current_time;
+            this->reset_escape_buffer(ch, current_time);
             break;
         case KEY_MOUSE:
             this->id_mouse_handler();
@@ -71,7 +82,10 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                     this->id_mouse_handler();
                     this->id_escape_index = 0;
                 } else {
-                    switch (this->id_escape_matcher(this->id_escape_buffer)) {
+                    std::array<char, 32 * 3 + 1> keyseq;
+
+                    to_key_seq(keyseq, this->id_escape_buffer);
+                    switch (this->id_escape_matcher(keyseq.data())) {
                         case escape_match_t::NONE:
                             for (int lpc = 0; this->id_escape_buffer[lpc]; lpc++) {
                                 this->id_key_handler(this->id_escape_buffer[lpc]);
@@ -81,11 +95,21 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                         case escape_match_t::PARTIAL:
                             break;
                         case escape_match_t::FULL:
-                            this->id_escape_handler(this->id_escape_buffer);
+                            this->id_escape_handler(keyseq.data());
                             this->id_escape_index = 0;
                             break;
                     }
                 }
+                if (this->id_escape_expected_size != -1 &&
+                    this->id_escape_index == this->id_escape_expected_size) {
+                    this->id_escape_index = 0;
+                }
+            } else if ((ch & 0xf8) == 0xf0) {
+                this->reset_escape_buffer(ch, current_time, 3);
+            } else if ((ch & 0xf0) == 0xe0) {
+                this->reset_escape_buffer(ch, current_time, 2);
+            } else if ((ch & 0xe0) == 0xc0) {
+                this->reset_escape_buffer(ch, current_time, 1);
             } else {
                 this->id_key_handler(ch);
             }
@@ -105,6 +129,15 @@ void input_dispatcher::poll(const struct timeval &current_time)
             this->id_escape_index = 0;
         }
     }
+}
+
+void input_dispatcher::reset_escape_buffer(int ch, const timeval &current_time,
+                                           ssize_t expected_size)
+{
+    this->id_escape_index = 0;
+    this->append_to_escape_buffer(ch);
+    this->id_escape_expected_size = expected_size;
+    this->id_escape_start_time = current_time;
 }
 
 void input_dispatcher::append_to_escape_buffer(int ch)

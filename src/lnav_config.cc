@@ -808,6 +808,20 @@ struct json_path_container lnav_config_handlers = json_path_container {
 }
     .with_schema_id(SUPPORTED_CONFIG_SCHEMAS.back());
 
+class active_key_map_listener : public lnav_config_listener {
+public:
+    void reload_config(error_reporter &reporter) override
+    {
+        lnav_config.lc_active_keymap = lnav_config.lc_ui_keymaps["default"];
+        for (const auto &pair :
+             lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap].km_seq_to_cmd) {
+            lnav_config.lc_active_keymap.km_seq_to_cmd[pair.first] = pair.second;
+        }
+    }
+};
+
+static active_key_map_listener KEYMAP_LISTENER;
+
 Result<config_file_type, std::string>
 detect_config_file_type(const filesystem::path &path)
 {

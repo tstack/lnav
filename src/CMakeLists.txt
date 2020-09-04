@@ -164,6 +164,7 @@ list(APPEND GEN_SRCS default-formats.h default-formats.c)
 set(CONFIG_FILES
         root-config.json
         keymaps/default-keymap.json
+        keymaps/uk-keymap.json
         themes/default-theme.json
         themes/eldar.json
         themes/monocai.json
@@ -188,6 +189,7 @@ set(BUILTIN_LNAV_SCRIPTS
         scripts/dhclient-summary.lnav
         scripts/lnav-pop-view.lnav
         scripts/partition-by-boot.lnav
+        scripts/rename-stdin.lnav
         scripts/search-for.lnav)
 
 set(BUILTIN_LNAV_SCRIPT_PATHS ${BUILTIN_LNAV_SCRIPTS})

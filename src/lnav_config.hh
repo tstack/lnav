@@ -115,6 +115,8 @@ struct _lnav_config {
     std::map<std::string, std::string> lc_ui_key_overrides;
     std::map<std::string, std::string> lc_global_vars;
     std::map<std::string, lnav_theme> lc_ui_theme_defs;
+
+    key_map lc_active_keymap;
 };
 
 extern struct _lnav_config lnav_config;

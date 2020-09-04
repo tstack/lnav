@@ -1,5 +1,5 @@
 
-.. _log-formats:
+.. _log_formats:
 
 Log Formats
 ===========

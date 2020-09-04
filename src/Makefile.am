@@ -62,6 +62,7 @@ default-formats.h default-formats.c: bin2c $(FORMAT_FILES)
 CONFIG_FILES = \
     $(srcdir)/root-config.json \
     $(srcdir)/keymaps/default-keymap.json \
+    $(srcdir)/keymaps/uk-keymap.json \
     $(srcdir)/themes/default-theme.json \
     $(srcdir)/themes/eldar.json \
     $(srcdir)/themes/monocai.json \
