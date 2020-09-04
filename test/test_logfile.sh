@@ -1,12 +1,12 @@
 #! /bin/bash
 
 if locale -a | grep fr_FR; then
-    cp ${srcdir}/logfile_syslog_fr.0 logfile_syslog_fr.0
-    touch -t 200711030923 logfile_syslog_fr.0
+    cp ${srcdir}/logfile_syslog_fr.0 logfile_syslog_fr_test.0
+    touch -t 200711030923 logfile_syslog_fr_test.0
     run_test env LC_ALL=fr_FR.UTF-8 ${lnav_test} -n \
         -c ";SELECT log_time FROM syslog_log" \
         -c ":write-csv-to -" \
-        logfile_syslog_fr.0
+        logfile_syslog_fr_test.0
 
     check_output "french locale is not recognized" <<EOF
 log_time
@@ -65,9 +65,9 @@ run_test ./drive_logfile ${srcdir}/logfile_empty.0
 
 on_error_fail_with "Didn't handle empty log?"
 
-cp ${srcdir}/logfile_syslog.0 logfile_syslog.0
-touch -t 200711030923 logfile_syslog.0
-run_test ./drive_logfile -t -f syslog_log logfile_syslog.0
+cp ${srcdir}/logfile_syslog.0 logfile_syslog_test.0
+touch -t 200711030923 logfile_syslog_test.0
+run_test ./drive_logfile -t -f syslog_log logfile_syslog_test.0
 
 check_output "Syslog timestamp interpreted incorrectly?" <<EOF
 Nov 03 09:23:38 2007 -- 000

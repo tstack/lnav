@@ -279,12 +279,12 @@ check_error_output "spectrogram worked with unordered log_time?" <<EOF
 command-option:2: error: no 'log_time' column found or not in ascending order, unable to create spectrogram
 EOF
 
-cp ${srcdir}/logfile_syslog_with_mixed_times.0 logfile_syslog_with_mixed_times.0
-touch -t 201511030923 logfile_syslog_with_mixed_times.0
+cp ${srcdir}/logfile_syslog_with_mixed_times.0 logfile_syslog_with_mixed_times_test.0
+touch -t 201511030923 logfile_syslog_with_mixed_times_test.0
 run_test ${lnav_test} -n \
     -c ";select log_time,log_actual_time from syslog_log" \
     -c ':write-csv-to -' \
-    logfile_syslog_with_mixed_times.0
+    logfile_syslog_with_mixed_times_test.0
 
 check_output "log_actual_time column not working" <<EOF
 log_time,log_actual_time
