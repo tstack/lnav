@@ -529,4 +529,7 @@ final_action<A> finally(A act)   // deduce action type
     return final_action<A>{act};
 }
 
+std::string ok_prefix(std::string msg);
+Result<std::string, std::string> err_to_ok(std::string msg);
+
 #endif

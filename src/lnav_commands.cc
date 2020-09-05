@@ -234,6 +234,8 @@ static Result<string, string> com_unix_time(exec_context &ec, string cmdline, ve
                      " -- %ld\n",
                      u_time);
             retval = string(ftime);
+        } else {
+            return ec.make_error("invalid unix time -- {}", args[1]);
         }
     } else {
         return ec.make_error("expecting a unix time value");

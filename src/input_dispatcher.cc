@@ -67,6 +67,9 @@ static void to_key_seq(A &dst, char *src)
 
 void input_dispatcher::new_input(const struct timeval &current_time, int ch)
 {
+    nonstd::optional<bool> handled = nonstd::nullopt;
+    std::array<char, 32 * 3 + 1> keyseq{0};
+
     switch (ch) {
         case KEY_ESCAPE:
             this->reset_escape_buffer(ch, current_time);
@@ -81,17 +84,23 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                 if (strcmp("\x1b[", this->id_escape_buffer) == 0) {
                     this->id_mouse_handler();
                     this->id_escape_index = 0;
-                } else {
-                    std::array<char, 32 * 3 + 1> keyseq;
-
+                } else if (this->id_escape_expected_size == -1 ||
+                           this->id_escape_index ==
+                           this->id_escape_expected_size) {
                     to_key_seq(keyseq, this->id_escape_buffer);
                     switch (this->id_escape_matcher(keyseq.data())) {
-                        case escape_match_t::NONE:
-                            for (int lpc = 0; this->id_escape_buffer[lpc]; lpc++) {
-                                this->id_key_handler(this->id_escape_buffer[lpc]);
+                        case escape_match_t::NONE: {
+                            if (this->id_escape_expected_size == -1) {
+                                for (int lpc = 0; this->id_escape_buffer[lpc]; lpc++) {
+                                    handled = this->id_key_handler(
+                                        this->id_escape_buffer[lpc]);
+                                }
+                            } else {
+                                handled = false;
                             }
                             this->id_escape_index = 0;
                             break;
+                        }
                         case escape_match_t::PARTIAL:
                             break;
                         case escape_match_t::FULL:
@@ -105,15 +114,20 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                     this->id_escape_index = 0;
                 }
             } else if ((ch & 0xf8) == 0xf0) {
-                this->reset_escape_buffer(ch, current_time, 3);
+                this->reset_escape_buffer(ch, current_time, 4);
             } else if ((ch & 0xf0) == 0xe0) {
-                this->reset_escape_buffer(ch, current_time, 2);
+                this->reset_escape_buffer(ch, current_time, 3);
             } else if ((ch & 0xe0) == 0xc0) {
-                this->reset_escape_buffer(ch, current_time, 1);
+                this->reset_escape_buffer(ch, current_time, 2);
             } else {
-                this->id_key_handler(ch);
+                snprintf(keyseq.data(), keyseq.size(), "x%02x", ch & 0xff);
+                handled = this->id_key_handler(ch);
             }
             break;
+    }
+
+    if (handled && !handled.value()) {
+        this->id_unhandled_handler(keyseq.data());
     }
 }
 

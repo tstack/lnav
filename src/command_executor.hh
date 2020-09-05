@@ -137,10 +137,6 @@ int sql_callback(exec_context &ec, sqlite3_stmt *stmt);
 std::future<std::string> pipe_callback(
     exec_context &ec, const std::string &cmdline, auto_fd &fd);
 
-inline Result<std::string, std::string> err_to_ok(const std::string msg) {
-    return Ok(msg);
-}
-
 int sql_progress(const struct log_cursor &lc);
 void sql_progress_finished();
 

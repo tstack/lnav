@@ -152,7 +152,8 @@ bool handle_keyseq(const char *keyseq)
 
     log_debug("executing key sequence %s: %s", keyseq, kc.kc_cmd.c_str());
     auto result = execute_any(ec, kc.kc_cmd);
-    lnav_data.ld_rl_view->set_value(result.orElse(err_to_ok).unwrap());
+    lnav_data.ld_rl_view->set_value(
+        result.map(ok_prefix).orElse(err_to_ok).unwrap());
 
     if (!kc.kc_alt_msg.empty()) {
         shlex lexer(kc.kc_alt_msg);
@@ -169,15 +170,15 @@ bool handle_keyseq(const char *keyseq)
     return true;
 }
 
-void handle_paging_key(int ch)
+bool handle_paging_key(int ch)
 {
     if (lnav_data.ld_view_stack.vs_views.empty()) {
-        return;
+        return false;
     }
 
     textview_curses *tc = *lnav_data.ld_view_stack.top();
     exec_context &ec = lnav_data.ld_exec_context;
-    logfile_sub_source *lss = NULL;
+    logfile_sub_source *lss = nullptr;
     text_sub_source *tc_tss = tc->get_sub_source();
     bookmarks<vis_line_t>::type &     bm  = tc->get_bookmarks();
 
@@ -186,11 +187,11 @@ void handle_paging_key(int ch)
     snprintf(keyseq, sizeof(keyseq), "x%02x", ch);
 
     if (handle_keyseq(keyseq)) {
-        return;
+        return true;
     }
 
     if (tc->handle_key(ch)) {
-        return;
+        return true;
     }
 
     lss = dynamic_cast<logfile_sub_source *>(tc->get_sub_source());
@@ -202,19 +203,19 @@ void handle_paging_key(int ch)
             break;
 
         case 'a':
-            if (lnav_data.ld_last_view == NULL) {
+            if (lnav_data.ld_last_view == nullptr) {
                 alerter::singleton().chime();
             }
             else {
                 textview_curses *tc = lnav_data.ld_last_view;
 
-                lnav_data.ld_last_view = NULL;
+                lnav_data.ld_last_view = nullptr;
                 ensure_view(tc);
             }
             break;
 
         case 'A':
-            if (lnav_data.ld_last_view == NULL) {
+            if (lnav_data.ld_last_view == nullptr) {
                 alerter::singleton().chime();
             }
             else {
@@ -223,8 +224,8 @@ void handle_paging_key(int ch)
                 auto *dst_view = dynamic_cast<text_time_translator *>(tc->get_sub_source());
                 auto *src_view = dynamic_cast<text_time_translator *>(top_tc->get_sub_source());
 
-                lnav_data.ld_last_view = NULL;
-                if (src_view != NULL && dst_view != NULL) {
+                lnav_data.ld_last_view = nullptr;
+                if (src_view != nullptr && dst_view != nullptr) {
                     struct timeval top_time = src_view->time_for_row(top_tc->get_top());
 
                     tc->set_top(vis_line_t(dst_view->row_for_time(top_time)));
@@ -684,7 +685,7 @@ void handle_paging_key(int ch)
                         "now",
                         "today",
                         "yesterday",
-                        NULL
+                        nullptr
                 };
 
                 logfile_sub_source &lss      = lnav_data.ld_log_source;
@@ -719,7 +720,7 @@ void handle_paging_key(int ch)
                         const logline_value_stats *stats = ldh_line_value.lv_format->stats_for_value(
                             ldh_line_value.lv_name);
 
-                        if (stats == NULL) {
+                        if (stats == nullptr) {
                             continue;
                         }
 
@@ -975,7 +976,7 @@ void handle_paging_key(int ch)
                         const char *col_value = dls.dls_rows[db_row][lpc];
                         size_t col_len = strlen(col_value);
 
-                        if (dts.scan(col_value, col_len, NULL, &tm, tv) != NULL) {
+                        if (dts.scan(col_value, col_len, nullptr, &tm, tv) != nullptr) {
                             vis_line_t vl;
 
                             vl = lnav_data.ld_log_source.find_from_time(tv);
@@ -1086,11 +1087,7 @@ void handle_paging_key(int ch)
             break;
 
         default:
-            log_warning("unhandled x%02x", ch);
-            lnav_data.ld_rl_view->set_value("Unrecognized keystroke, press "
-            ANSI_BOLD("?")
-            " to view help");
-            alerter::singleton().chime();
-            break;
+            return false;
     }
+    return true;
 }

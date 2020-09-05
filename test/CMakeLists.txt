@@ -7,6 +7,10 @@ include_directories(
         ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+add_executable(test_ansi_scrubber test_ansi_scrubber.cc)
+target_link_libraries(test_ansi_scrubber diag)
+add_test(NAME test_ansi_scrubber COMMAND test_ansi_scrubber)
+
 add_executable(lnav_doctests lnav_doctests.cc)
 target_link_libraries(lnav_doctests diag ${lnav_LIBS})
 add_test(NAME lnav_doctests COMMAND lnav_doctests)

@@ -45,7 +45,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    view_colors &vc = view_colors::singleton();
     string_attrs_t sa;
     string str_cp;
 
@@ -61,11 +60,11 @@ int main(int argc, char *argv[])
     
     assert(sa[0].sa_range.lr_start == 5);
     assert(sa[0].sa_range.lr_end == 7);
-    assert(sa[0].sa_type == &view_curses::VC_STYLE);
-    assert(sa[0].sa_value.sav_int == vc.ansi_color_pair(0, 4));
+    assert(sa[0].sa_type == &view_curses::VC_BACKGROUND);
+    assert(sa[0].sa_value.sav_int == COLOR_BLUE);
 
     assert(sa[1].sa_range.lr_start == 7);
     assert(sa[1].sa_range.lr_end == 12);
-    assert(sa[1].sa_type == &view_curses::VC_STYLE);
-    assert(sa[1].sa_value.sav_int == vc.ansi_color_pair(3, 0));
+    assert(sa[1].sa_type == &view_curses::VC_FOREGROUND);
+    assert(sa[1].sa_value.sav_int == COLOR_YELLOW);
 }

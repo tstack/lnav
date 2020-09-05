@@ -60,8 +60,8 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
         struct line_range        lr;
         bool has_attrs = false;
         attr_t attrs   = 0;
-        int bg         = 0;
-        int fg         = 0;
+        nonstd::optional<int> bg;
+        nonstd::optional<int> fg;
         size_t lpc;
 
         switch (pi.get_substr_start(&caps[2])[0]) {
@@ -103,9 +103,6 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
                     if (lpc != string::npos) {
                         lpc += 1;
                     }
-                }
-                if (fg != 0 || bg != 0) {
-                    attrs |= vc.ansi_color_pair(fg, bg);
                 }
                 has_attrs = true;
                 break;
@@ -150,12 +147,23 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
                   str.begin() + caps[0].c_end);
 
         if (has_attrs) {
-            if (!sa.empty()) {
-                sa.back().sa_range.lr_end = caps[0].c_begin;
+            for (auto rit = sa.rbegin(); rit != sa.rend(); rit++) {
+                if (rit->sa_range.lr_end != -1) {
+                    break;
+                }
+                rit->sa_range.lr_end = caps[0].c_begin;
             }
             lr.lr_start = caps[0].c_begin;
             lr.lr_end   = -1;
-            sa.push_back(string_attr(lr, &view_curses::VC_STYLE, attrs));
+            if (attrs) {
+                sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
+            }
+            fg | [&lr, &sa](int color) {
+                sa.emplace_back(lr, &view_curses::VC_FOREGROUND, color);
+            };
+            bg | [&lr, &sa](int color) {
+                sa.emplace_back(lr, &view_curses::VC_BACKGROUND, color);
+            };
         }
 
         pi.reset(str);

@@ -46,6 +46,8 @@
 #include "pcrepp/pcrepp.hh"
 #include "lnav_config.hh"
 #include "base/result.h"
+#include "ansi_scrubber.hh"
+#include "view_curses.hh"
 
 using namespace std;
 
@@ -767,4 +769,18 @@ bool is_dev_null(int fd)
 
     fstat(fd, &fd_stat);
     return is_dev_null(fd_stat);
+}
+
+std::string ok_prefix(std::string msg)
+{
+    if (msg.empty()) {
+        return msg;
+    }
+
+    return std::string(ANSI_COLOR(COLOR_GREEN) "\u2714" ANSI_NORM " ") + msg;
+}
+
+Result<std::string, std::string> err_to_ok(const std::string msg)
+{
+    return Ok(std::string(ANSI_COLOR(COLOR_RED) "\u2718" ANSI_NORM " ") + msg);
 }

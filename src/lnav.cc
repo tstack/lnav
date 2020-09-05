@@ -1131,7 +1131,7 @@ public:
 private:
 };
 
-static void handle_key(int ch) {
+static bool handle_key(int ch) {
     lnav_data.ld_input_state.push_back(ch);
 
     switch (ch) {
@@ -1141,12 +1141,11 @@ static void handle_key(int ch) {
         default: {
             switch (lnav_data.ld_mode) {
                 case LNM_PAGING:
-                    handle_paging_key(ch);
-                    break;
+                    return handle_paging_key(ch);
 
                 case LNM_FILTER:
                     if (!lnav_data.ld_filter_view.handle_key(ch)) {
-                        handle_paging_key(ch);
+                        return handle_paging_key(ch);
                     }
                     break;
 
@@ -1164,6 +1163,8 @@ static void handle_key(int ch) {
             }
         }
     }
+
+    return true;
 }
 
 static input_dispatcher::escape_match_t match_escape_seq(const char *keyseq)
@@ -1498,6 +1499,23 @@ static void looper()
             id.id_escape_handler = handle_keyseq;
             id.id_key_handler = handle_key;
             id.id_mouse_handler = bind(&xterm_mouse::handle_mouse, &lnav_data.ld_mouse);
+            id.id_unhandled_handler = [](const char *keyseq) {
+                auto enc_len = lnav_config.lc_ui_keymap.size() * 2;
+                auto encoded_name = (char *) alloca(enc_len);
+
+                json_ptr::encode(encoded_name, enc_len, lnav_config.lc_ui_keymap.c_str());
+                // XXX we should have a hotkey for opening a prompt that is
+                // pre-filled with a suggestion that the user can complete.
+                // This quick-fix key could be used for other stuff as well
+                lnav_data.ld_rl_view->set_value(fmt::format(
+                    ANSI_CSI ANSI_COLOR_PARAM(COLOR_RED) ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
+                    "Unrecognized key"
+                    ANSI_NORM
+                    ", bind to a command using \u2014 "
+                    ANSI_BOLD(":config") " /ui/keymap-defs/{}/{}/command <cmd>",
+                    encoded_name, keyseq));
+                alerter::singleton().chime();
+            };
         }
 
         bool session_loaded = false;

@@ -294,18 +294,21 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
 
         lnav_data.ld_preview_status_source.get_description().clear();
         lnav_data.ld_preview_source.clear();
-        string result = execute_command(lnav_data.ld_exec_context, rc->get_value())
-            .orElse(err_to_ok).unwrap();
+        auto result = execute_command(lnav_data.ld_exec_context, rc->get_value());
 
-        if (result.empty()) {
-            lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
-            lnav_data.ld_bottom_source.grep_error("");
-        } else if (startswith(result, "error:")) {
-            lnav_data.ld_bottom_source.set_prompt("");
-            lnav_data.ld_bottom_source.grep_error(result);
+        if (result.isOk()) {
+            auto msg = result.unwrap();
+
+            if (msg.empty()) {
+                lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
+                lnav_data.ld_bottom_source.grep_error("");
+            } else {
+                lnav_data.ld_bottom_source.set_prompt(msg);
+                lnav_data.ld_bottom_source.grep_error("");
+            }
         } else {
-            lnav_data.ld_bottom_source.set_prompt(result);
-            lnav_data.ld_bottom_source.grep_error("");
+            lnav_data.ld_bottom_source.set_prompt("");
+            lnav_data.ld_bottom_source.grep_error(result.unwrapErr());
         }
 
         lnav_data.ld_preview_view.reload_data();
@@ -496,6 +499,7 @@ void rl_callback(void *dummy, readline_curses *rc)
     case LNM_COMMAND:
         rc->set_alt_value("");
         rc->set_value(execute_command(ec, rc->get_value())
+                          .map(ok_prefix)
                           .orElse(err_to_ok).unwrap());
         break;
 
@@ -525,18 +529,24 @@ void rl_callback(void *dummy, readline_curses *rc)
         break;
 
     case LNM_SQL: {
-        string result = execute_sql(ec, rc->get_value(), alt_msg)
-            .orElse(err_to_ok).unwrap();
+        auto result = execute_sql(ec, rc->get_value(), alt_msg);
         db_label_source &dls = lnav_data.ld_db_row_source;
+        string prompt;
 
-        if (!result.empty()) {
-            result = "SQL Result: " + result;
-            if (dls.dls_rows.size() > 1) {
-                ensure_view(&lnav_data.ld_views[LNV_DB]);
+        if (result.isOk()) {
+            auto msg = result.unwrap();
+
+            if (!msg.empty()) {
+                prompt = "SQL Result: " + msg;
+                if (dls.dls_rows.size() > 1) {
+                    ensure_view(&lnav_data.ld_views[LNV_DB]);
+                }
             }
+        } else {
+            prompt = result.orElse(err_to_ok).unwrap();
         }
 
-        rc->set_value(result);
+        rc->set_value(prompt);
         rc->set_alt_value(alt_msg);
         break;
     }
@@ -558,6 +568,7 @@ void rl_callback(void *dummy, readline_curses *rc)
 
             ec.ec_output_stack.back() = tmpout.in();
             string result = execute_file(ec, path_and_args)
+                .map(ok_prefix)
                 .orElse(err_to_ok).unwrap();
             string::size_type lf_index = result.find('\n');
             if (lf_index != string::npos) {

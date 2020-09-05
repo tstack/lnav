@@ -38,7 +38,9 @@
 #include "attr_line.hh"
 
 #define ANSI_CSI              "\x1b["
-#define ANSI_BOLD_START       ANSI_CSI "1m"
+#define ANSI_CHAR_ATTR        "m"
+#define ANSI_BOLD_PARAM       "1"
+#define ANSI_BOLD_START       ANSI_CSI ANSI_BOLD_PARAM ANSI_CHAR_ATTR
 #define ANSI_UNDERLINE_START  ANSI_CSI "4m"
 #define ANSI_NORM             ANSI_CSI "0m"
 
@@ -46,8 +48,9 @@
 #define ANSI_UNDERLINE(msg)  ANSI_UNDERLINE_START msg ANSI_NORM
 
 #define ANSI_ROLE(msg)  ANSI_CSI "%dO" msg ANSI_NORM
-#define XANSI_COLOR(col) ANSI_CSI "3" #col "m"
-#define ANSI_COLOR(col) XANSI_COLOR(col)
+#define XANSI_COLOR(col) "3" #col
+#define ANSI_COLOR_PARAM(col) XANSI_COLOR(col)
+#define ANSI_COLOR(col) ANSI_CSI XANSI_COLOR(col) "m"
 
 /**
  * Check a string for ANSI escape sequences, process them, remove them, and add
