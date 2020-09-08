@@ -1116,7 +1116,7 @@ static Result<string, string> com_redirect_to(exec_context &ec, string cmdline, 
     FILE *file = fopen(split_args[0].c_str(), "w");
 
     if (file == nullptr) {
-        return ec.make_error("unable to open file -- %s", split_args[0]);
+        return ec.make_error("unable to open file -- {}", split_args[0]);
     }
 
     ec.ec_output_stack.back() = file;
@@ -1528,7 +1528,7 @@ static Result<string, string> com_delete_logline_table(exec_context &ec, string 
     }
     else if (args.size() == 2) {
         if (custom_logline_tables.find(args[1]) == custom_logline_tables.end()) {
-            return ec.make_error("unknown logline table -- %s", args[1]);
+            return ec.make_error("unknown logline table -- {}", args[1]);
         }
 
         if (ec.ec_dry_run) {
@@ -1591,7 +1591,7 @@ static Result<string, string> com_create_search_table(exec_context &ec, string c
             lst = new log_search_table(regex.c_str(),
                                        intern_string::lookup(args[1]));
         } catch (pcrepp::error &e) {
-            return ec.make_error("unable to compile regex -- %s", regex);
+            return ec.make_error("unable to compile regex -- {}", regex);
         }
 
         if (ec.ec_dry_run) {
@@ -1753,7 +1753,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
         return Ok(string());
     }
     else if (lnav_data.ld_flags & LNF_SECURE_MODE) {
-        return ec.make_error("%s -- unavailable in secure mode", args[0]);
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
     else if (args.size() < 2) {
         return ec.make_error("expecting file name to open");
@@ -2258,7 +2258,7 @@ static Result<string, string> com_delete_tags(exec_context &ec, string cmdline, 
                 tag = "#" + tag;
             }
             if (known_tags.find(tag) == known_tags.end()) {
-                return ec.make_error("Unknown tag -- %s", tag);
+                return ec.make_error("Unknown tag -- {}", tag);
             }
 
             tags.emplace_back(tag);
@@ -2883,7 +2883,7 @@ static Result<string, string> com_toggle_field(exec_context &ec, string cmdline,
 
                     format = log_format::find_root_format(format_name.get());
                     if (!format) {
-                        return ec.make_error("unknown format -- %s", format_name.to_string());
+                        return ec.make_error("unknown format -- {}", format_name.to_string());
                     }
                     name = intern_string::lookup(&(args[lpc].c_str()[dot + 1]), args[lpc].length() - dot - 1);
                 } else if (tc->get_inner_height() == 0) {
