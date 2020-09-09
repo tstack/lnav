@@ -15,25 +15,27 @@ CC="$PTHREAD_CC"
 
 AX_CXX_COMPILE_STDCXX_14([noext], [mandatory])
 
-for defdir in /opt/local /usr/local; do
-    if test -d "$defdir/include"; then
-        CPPFLAGS="$CPPFLAGS -I$defdir/include"
-    fi
-done
+if test x"${without-system-paths}" != x"yes"; then
+    for defdir in /opt/local /usr/local; do
+        if test -d "$defdir/include"; then
+            CPPFLAGS="$CPPFLAGS -I$defdir/include"
+        fi
+    done
 
-for defdir in /opt/local /usr/local /usr /; do
+    for defdir in /opt/local /usr/local /usr /; do
 
-    if test -d "$defdir/lib64"; then
-        LDFLAGS="$LDFLAGS -L$defdir/lib64"
-    fi
-    if test -d "$defdir/lib"; then
-        LDFLAGS="$LDFLAGS -L$defdir/lib"
-    fi
+        if test -d "$defdir/lib64"; then
+            LDFLAGS="$LDFLAGS -L$defdir/lib64"
+        fi
+        if test -d "$defdir/lib"; then
+            LDFLAGS="$LDFLAGS -L$defdir/lib"
+        fi
 
-    if test -d "$defdir/lib/x86_64-linux-gnu"; then
-        LDFLAGS="$LDFLAGS -L$defdir/lib/x86_64-linux-gnu"
-    fi
-done
+        if test -d "$defdir/lib/x86_64-linux-gnu"; then
+            LDFLAGS="$LDFLAGS -L$defdir/lib/x86_64-linux-gnu"
+        fi
+    done
+fi
 
 dnl abssrcdir is the absolute path to the source base (regardless of where
 dnl you are building it)
