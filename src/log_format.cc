@@ -248,7 +248,11 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
         otm.tm_mon  -= off_month;
         otm.tm_mday -= off_day;
         otm.tm_hour -= off_hour;
-        iter->set_time(tm2sec(&otm));
+        auto new_time = tm2sec(&otm);
+        if (new_time == -1) {
+            continue;
+        }
+        iter->set_time(new_time);
     }
 }
 

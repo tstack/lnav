@@ -806,7 +806,7 @@ public:
     std::vector<pattern_for_lines> lf_pattern_locks;
     intern_string_t lf_timestamp_field;
     std::vector<const char *> lf_timestamp_format;
-    int lf_timestamp_flags;
+    unsigned int lf_timestamp_flags;
     std::map<std::string, action_def> lf_action_defs;
     std::vector<logline_value_stats> lf_value_stats;
     std::vector<highlighter> lf_highlighters;

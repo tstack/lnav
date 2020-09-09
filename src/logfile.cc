@@ -144,7 +144,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
 
     if (this->lf_format.get() != nullptr) {
         if (!this->lf_index.empty()) {
-            prescan_time = this->lf_index[0].get_time();
+            prescan_time = this->lf_index[prescan_size - 1].get_time();
         }
         /* We've locked onto a format, just use that scanner. */
         found = this->lf_format->scan(*this, this->lf_index, li, sbr);
@@ -205,7 +205,9 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
             if (!this->lf_index.empty()) {
                 this->lf_index.back().set_valid_utf(li.li_valid_utf);
             }
-            if (!this->lf_index.empty() && prescan_time != this->lf_index[0].get_time()) {
+            if (prescan_size > 0 &&
+                this->lf_index.size() >= prescan_size &&
+                prescan_time != this->lf_index[prescan_size - 1].get_time()) {
                 retval = true;
             }
             if (prescan_size > 0 && prescan_size < this->lf_index.size()) {
