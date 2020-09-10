@@ -1,2 +1,3 @@
 sphinx-jsonschema
 sphinx-prompt
+pathlib
