@@ -84,8 +84,8 @@ bool data_scanner::tokenize2(pcre_context &pc, data_token_t &token_out)
             return *this;
         }
 
-        const YYCTYPE *val;
-        const YYCTYPE *lim;
+        const YYCTYPE *val{nullptr};
+        const YYCTYPE *lim{nullptr};
     } YYCURSOR;
     YYCURSOR = (const unsigned char *) pi.get_string() + pi.pi_next_offset;
     _YYCURSOR yyt1;
