@@ -24,10 +24,16 @@ The configuration for **lnav** is stored in the following JSON files in
   directly.  See the :ref:`Log Formats<log_formats>` chapter for more
   information.
 
+
 Options
 -------
 
-The following high-level configuration options are available:
+The following configuration options can be used to customize **lnav** to
+your liking.  The options can be changed using the :code:`:config` command.
+
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap
+
+.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme
 
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/clock-format
 
@@ -35,9 +41,8 @@ The following high-level configuration options are available:
 
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/default-colors
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme
 
-.. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/keymap
+.. _themes:
 
 Theme Definitions
 -----------------
@@ -49,6 +54,7 @@ User interface themes are also defined through the JSON configuration files.
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/styles
 
 .. jsonschema:: ../../src/internals/config-v1.schema.json#/definitions/style
+
 
 .. _keymaps:
 

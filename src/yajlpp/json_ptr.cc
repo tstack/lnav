@@ -213,6 +213,9 @@ json_ptr::encode(char *dst, size_t dst_len, const char *src, size_t src_len)
         }
         retval += 1;
     }
+    if (retval < dst_len) {
+        dst[retval] = '\0';
+    }
 
     return retval;
 }

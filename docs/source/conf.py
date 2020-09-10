@@ -29,7 +29,7 @@ format2csv.main(["",
 import re
 from pygments.lexer import RegexLexer, words
 from pygments.token import Punctuation, Whitespace, Text, Comment, Operator, \
-    Keyword, Name, String, Number, Generic
+    Keyword, Name, String, Literal, Number, Generic
 from sphinx.highlighting import lexers
 
 class CustSqliteLexer(RegexLexer):
@@ -224,6 +224,7 @@ class LnavCommandLexer(RegexLexer):
         'root': [
             (r'\s+', Whitespace),
             (r':[\w\-]+', Keyword),
+            (r'\<[\w\-]+\>', Literal.String.Doc),
             (r'.', Text),
         ]
     }

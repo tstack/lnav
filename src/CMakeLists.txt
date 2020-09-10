@@ -164,7 +164,9 @@ list(APPEND GEN_SRCS default-formats.h default-formats.c)
 set(CONFIG_FILES
         root-config.json
         keymaps/default-keymap.json
+        keymaps/fr-keymap.json
         keymaps/uk-keymap.json
+        keymaps/us-keymap.json
         themes/default-theme.json
         themes/eldar.json
         themes/monocai.json

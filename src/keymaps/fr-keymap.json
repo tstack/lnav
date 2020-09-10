@@ -1,0 +1,51 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "ui": {
+        "keymap-defs": {
+            "fr": {
+                "x26": {
+                    "command": ":goto next 10 minutes after the hour"
+                },
+                "xc3xa9": {
+                    "command": ":goto next 20 minutes after the hour"
+                },
+                "x22": {
+                    "command": ":goto next 30 minutes after the hour"
+                },
+                "x27": {
+                    "command": ":goto next 40 minutes after the hour"
+                },
+                "x28": {
+                    "command": ":goto next 50 minutes after the hour"
+                },
+                "x2d": {
+                    "command": ":goto next hour"
+                },
+                "xc3xa8": {
+                    "command": ":goto next minute"
+                },
+                "x31": {
+                    "command": ":goto last 10 minutes after the hour"
+                },
+                "x32": {
+                    "command": ":goto last 20 minutes after the hour"
+                },
+                "x33": {
+                    "command": ":goto last 30 minutes after the hour"
+                },
+                "x34": {
+                    "command": ":goto last 40 minutes after the hour"
+                },
+                "x35": {
+                    "command": ":goto last 50 minutes after the hour"
+                },
+                "x36": {
+                    "command": ":goto last hour"
+                },
+                "x37": {
+                    "command": ":goto previous minute"
+                }
+            }
+        }
+    }
+}

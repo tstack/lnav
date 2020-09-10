@@ -1503,6 +1503,7 @@ static void looper()
                 auto enc_len = lnav_config.lc_ui_keymap.size() * 2;
                 auto encoded_name = (char *) alloca(enc_len);
 
+                log_info("unbound keyseq: %s", keyseq);
                 json_ptr::encode(encoded_name, enc_len, lnav_config.lc_ui_keymap.c_str());
                 // XXX we should have a hotkey for opening a prompt that is
                 // pre-filled with a suggestion that the user can complete.

@@ -9,7 +9,7 @@ incompatible changes in the future.
 
 Log messages contain a good deal of useful data, but it's not always easy to get
 at.  The log parser built into **lnav** is able to extract data as described by
-:ref:`log-formats` as well as discovering data in plain text messages. This data
+:ref:`log_formats` as well as discovering data in plain text messages. This data
 can then be queried and processed using the SQLite front-end that is also
 incorporated into **lnav**.  As an example, the following Syslog message from
 :code:`sudo` can be processed to extract several key/value pairs::
