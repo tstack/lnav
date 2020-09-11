@@ -24,12 +24,15 @@
             },
             "pylog": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[-+]\\d{2}:\\d{2})) (?<prc>[^:]+):\\s+(?<tid>\\w+):\\s+(?<comp>[^:]+):(?<line>\\d+)?\\s+(?<level>\\w+):?\\s+(?<body>.*)(?:\\n(?:.|\\n)*)?$"
+            },
+            "vum-log4cpp": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}:\\d{3}) '(?<category>[^']*)' (?<tid>\\d+) (?<level>EMERG|FATAL|ALERT|CRIT|ERROR|WARN|NOTICE|INFO|DEBUG|NOTSET)\\]\\s+(\\[(?<file>\\S+), (?<line>\\d+)\\])? (?<body>.*$)"
             }
         },
         "level-field": "level",
         "level": {
-            "error": "(error|ERROR|panic|PANIC)",
-            "warning": "(warning|WARNING|warn|WARN)",
+            "error": "(?i)(alert|crit|emerg|error|fatal|panic)",
+            "warning": "(?i)(warning|warn)",
             "trace": "verbose"
         },
         "opid-field": "opid",
@@ -63,6 +66,10 @@
                 "identifier": true
             },
             "user": {
+                "kind": "string",
+                "identifier": true
+            },
+            "file": {
                 "kind": "string",
                 "identifier": true
             }
@@ -100,6 +107,9 @@
             },
             {
                 "line": "2020-05-11T22:36:11.202Z verbose hostd[1000212678] [Originator@6876 sub=Vimsvc.Ticket 52 66 af 87 76 b0 ab 21-dd 2b 28 27 3a 39 fd fd opID=ec9d7fe8] Ticket issued for root"
+            },
+            {
+                "line": "[2020-05-26 19:46:43:259 'ConfigurationMgr' 139700477753600 INFO]  [configurationMgr, 155] Configuration manager created...vcidbInit"
             }
         ]
     }
