@@ -15,9 +15,15 @@ CC="$PTHREAD_CC"
 
 AX_CXX_COMPILE_STDCXX_14([noext], [mandatory])
 
-if test x"${without-system-paths}" != x"yes"; then
+AC_ARG_ENABLE(
+    [system-paths],
+    AS_HELP_STRING([--disable-system-paths],
+                   [Add extra system paths]),,[enable_system_paths=yes])
+
+if test x"${enable_system_paths}" != x"no"; then
     for defdir in /opt/local /usr/local; do
         if test -d "$defdir/include"; then
+            echo "Adding include path: $defdir/include"
             CPPFLAGS="$CPPFLAGS -I$defdir/include"
         fi
     done
@@ -35,6 +41,8 @@ if test x"${without-system-paths}" != x"yes"; then
             LDFLAGS="$LDFLAGS -L$defdir/lib/x86_64-linux-gnu"
         fi
     done
+else
+    echo "Not including extra system paths"
 fi
 
 dnl abssrcdir is the absolute path to the source base (regardless of where
