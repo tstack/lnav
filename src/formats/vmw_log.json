@@ -31,8 +31,8 @@
         },
         "level-field": "level",
         "level": {
-            "error": "(ALERT|CRIT|EMERG|error|ERROR|FATAL|panic|PANIC)",
-            "warning": "(warning|WARNING|warn|WARN)",
+            "error": "(?i)(alert|crit|emerg|error|fatal|panic)",
+            "warning": "(?i)(warning|warn)",
             "trace": "verbose"
         },
         "opid-field": "opid",
