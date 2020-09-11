@@ -32,8 +32,6 @@
 #ifndef _lnav_config_hh
 #define _lnav_config_hh
 
-#include <sys/queue.h>
-
 #include <map>
 #include <string>
 #include <vector>
