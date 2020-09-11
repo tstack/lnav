@@ -261,8 +261,9 @@ void line_buffer::gz_indexed::seek(size_t offset)
     // Stream from compressed file until we reach our offset
     unsigned char dummy[Z_BUFSIZE];
     while ( offset > this->strm.total_out) {
-        size_t to_copy = std::min(static_cast<size_t>(Z_BUFSIZE),
-                                    offset - this->strm.total_out);
+        size_t to_copy = std::min(
+            static_cast<size_t>(Z_BUFSIZE),
+            static_cast<size_t>(offset - this->strm.total_out));
         auto bytes = stream_data(dummy, to_copy);
         if (bytes <= 0) {
             break;
