@@ -323,8 +323,11 @@ void log_msg_extra_complete()
 static void sigabrt(int sig)
 {
     char crash_path[1024], latest_crash_path[1024];
-    int fd, frame_count;
+    int fd;
+#ifdef HAVE_EXECINFO_H
+    int frame_count;
     void *frames[128];
+#endif
     struct tm localtm;
     time_t curr_time;
 
