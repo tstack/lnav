@@ -10,6 +10,7 @@
 #pragma once
 
 #include "fwd.h"
+#include <limits.h>
 #include <string>
 #include <vector>
 #include <stdexcept>
