@@ -543,34 +543,34 @@ void readline_shlex_highlighter(attr_line_t &al, int x)
 
     while (lexer.tokenize(cap, token)) {
         switch (token) {
-            case ST_ERROR:
+            case shlex_token_t::ST_ERROR:
                 al.with_attr(string_attr(
                         line_range(cap.c_begin, cap.c_end),
                         &view_curses::VC_STYLE,
                         error_attrs));
                 break;
-            case ST_TILDE:
-            case ST_ESCAPE:
+            case shlex_token_t::ST_TILDE:
+            case shlex_token_t::ST_ESCAPE:
                 al.with_attr(string_attr(
                         line_range(cap.c_begin, cap.c_end),
                         &view_curses::VC_STYLE,
                         special_char));
                 break;
-            case ST_DOUBLE_QUOTE_START:
-            case ST_SINGLE_QUOTE_START:
+            case shlex_token_t::ST_DOUBLE_QUOTE_START:
+            case shlex_token_t::ST_SINGLE_QUOTE_START:
                 quote_start = cap.c_begin;
                 break;
-            case ST_DOUBLE_QUOTE_END:
-            case ST_SINGLE_QUOTE_END:
+            case shlex_token_t::ST_DOUBLE_QUOTE_END:
+            case shlex_token_t::ST_SINGLE_QUOTE_END:
                 al.with_attr(string_attr(
                         line_range(quote_start, cap.c_end),
                         &view_curses::VC_STYLE,
                         string_attrs));
                 quote_start = -1;
                 break;
-            case ST_VARIABLE_REF:
-            case ST_QUOTED_VARIABLE_REF: {
-                int extra = token == ST_VARIABLE_REF ? 0 : 1;
+            case shlex_token_t::ST_VARIABLE_REF:
+            case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
+                int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
                 string ident = str.substr(cap.c_begin + 1 + extra, cap.length() - 1 - extra * 2);
                 int attrs = vc.attrs_for_ident(ident.c_str(), ident.size());
 
@@ -590,7 +590,7 @@ void readline_shlex_highlighter(attr_line_t &al, int x)
                 }
                 break;
             }
-            case ST_WHITESPACE:
+            case shlex_token_t::ST_WHITESPACE:
                 break;
         }
     }

@@ -144,3 +144,15 @@ split:
   0 -- ../test
   1 -- foo
 EOF
+
+run_test ./drive_shlexer '~nonexistent/bar baz'
+
+check_output_ws "tilde with username" <<EOF
+    ~nonexistent/bar baz
+til ^----------^
+wsp                 ^
+eval -- ~nonexistent/bar baz
+split:
+  0 -- ~nonexistent/bar
+  1 -- baz
+EOF

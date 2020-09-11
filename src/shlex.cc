@@ -32,3 +32,164 @@
 #include "config.h"
 
 #include "shlex.hh"
+
+bool shlex::tokenize(pcre_context::capture_t &cap_out, shlex_token_t &token_out)
+{
+    while (this->s_index < this->s_len) {
+        switch (this->s_str[this->s_index]) {
+            case '\\':
+                cap_out.c_begin = this->s_index;
+                if (this->s_index + 1 < this->s_len) {
+                    token_out = shlex_token_t::ST_ESCAPE;
+                    this->s_index += 2;
+                    cap_out.c_end = this->s_index;
+                }
+                else {
+                    this->s_index += 1;
+                    cap_out.c_end = this->s_index;
+                    token_out = shlex_token_t::ST_ERROR;
+                }
+                return true;
+            case '\"':
+                if (!this->s_ignore_quotes) {
+                    switch (this->s_state) {
+                        case state_t::STATE_NORMAL:
+                            cap_out.c_begin = this->s_index;
+                            this->s_index += 1;
+                            cap_out.c_end = this->s_index;
+                            token_out = shlex_token_t::ST_DOUBLE_QUOTE_START;
+                            this->s_state = state_t::STATE_IN_DOUBLE_QUOTE;
+                            return true;
+                        case state_t::STATE_IN_DOUBLE_QUOTE:
+                            cap_out.c_begin = this->s_index;
+                            this->s_index += 1;
+                            cap_out.c_end = this->s_index;
+                            token_out = shlex_token_t::ST_DOUBLE_QUOTE_END;
+                            this->s_state = state_t::STATE_NORMAL;
+                            return true;
+                        default:
+                            break;
+                    }
+                }
+                break;
+            case '\'':
+                if (!this->s_ignore_quotes) {
+                    switch (this->s_state) {
+                        case state_t::STATE_NORMAL:
+                            cap_out.c_begin = this->s_index;
+                            this->s_index += 1;
+                            cap_out.c_end = this->s_index;
+                            token_out = shlex_token_t::ST_SINGLE_QUOTE_START;
+                            this->s_state = state_t::STATE_IN_SINGLE_QUOTE;
+                            return true;
+                        case state_t::STATE_IN_SINGLE_QUOTE:
+                            cap_out.c_begin = this->s_index;
+                            this->s_index += 1;
+                            cap_out.c_end = this->s_index;
+                            token_out = shlex_token_t::ST_SINGLE_QUOTE_END;
+                            this->s_state = state_t::STATE_NORMAL;
+                            return true;
+                        default:
+                            break;
+                    }
+                }
+                break;
+            case '$':
+                switch (this->s_state) {
+                    case state_t::STATE_NORMAL:
+                    case state_t::STATE_IN_DOUBLE_QUOTE:
+                        this->scan_variable_ref(cap_out, token_out);
+                        return true;
+                    default:
+                        break;
+                }
+                break;
+            case '~':
+                switch (this->s_state) {
+                    case state_t::STATE_NORMAL:
+                        cap_out.c_begin = this->s_index;
+                        this->s_index += 1;
+                        while (this->s_index < this->s_len &&
+                               (isalnum(this->s_str[this->s_index]) ||
+                                this->s_str[this->s_index] == '_' ||
+                                this->s_str[this->s_index] == '-')) {
+                            this->s_index += 1;
+                        }
+                        cap_out.c_end = this->s_index;
+                        token_out = shlex_token_t::ST_TILDE;
+                        return true;
+                    default:
+                        break;
+                }
+                break;
+            case ' ':
+            case '\t':
+                switch (this->s_state) {
+                    case state_t::STATE_NORMAL:
+                        cap_out.c_begin = this->s_index;
+                        while (isspace(this->s_str[this->s_index])) {
+                            this->s_index += 1;
+                        }
+                        cap_out.c_end = this->s_index;
+                        token_out = shlex_token_t::ST_WHITESPACE;
+                        return true;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
+
+        this->s_index += 1;
+    }
+
+    return false;
+}
+
+void shlex::scan_variable_ref(pcre_context::capture_t &cap_out,
+                              shlex_token_t &token_out)
+{
+    cap_out.c_begin = this->s_index;
+    this->s_index += 1;
+    if (this->s_index >= this->s_len) {
+        cap_out.c_end = this->s_index;
+        token_out = shlex_token_t::ST_ERROR;
+        return;
+    }
+
+    if (this->s_str[this->s_index] == '{') {
+        token_out = shlex_token_t::ST_QUOTED_VARIABLE_REF;
+        this->s_index += 1;
+    } else {
+        token_out = shlex_token_t::ST_VARIABLE_REF;
+    }
+
+    while (this->s_index < this->s_len) {
+        if (token_out == shlex_token_t::ST_VARIABLE_REF) {
+            if (isalnum(this->s_str[this->s_index]) ||
+                this->s_str[this->s_index] == '#' ||
+                this->s_str[this->s_index] == '_') {
+                this->s_index += 1;
+            }
+            else {
+                break;
+            }
+        }
+        else {
+            if (this->s_str[this->s_index] == '}') {
+                this->s_index += 1;
+                break;
+            }
+            this->s_index += 1;
+        }
+    }
+
+    cap_out.c_end = this->s_index;
+    if (token_out == shlex_token_t::ST_QUOTED_VARIABLE_REF &&
+        this->s_str[this->s_index - 1] != '}') {
+        cap_out.c_begin += 1;
+        cap_out.c_end = cap_out.c_begin + 1;
+        token_out = shlex_token_t::ST_ERROR;
+    }
+}

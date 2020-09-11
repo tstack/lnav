@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     while (lexer.tokenize(cap, token)) {
         int lpc;
 
-        printf("%s ", ST_TOKEN_NAMES[token]);
+        printf("%s ", ST_TOKEN_NAMES[(int) token]);
         for (lpc = 0; lpc < cap.c_end; lpc++) {
             if (lpc == cap.c_begin) {
                 fputc('^', stdout);
