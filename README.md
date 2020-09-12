@@ -22,15 +22,14 @@ efficiently zero in on problems.
 
 The following software packages are required to build lnav:
 
-  * gcc/clang - A C++14-compatible compiler.
-  * libpcre   - The Perl Compatible Regular Expression (PCRE) library.
-  * sqlite    - The SQLite database engine.  Version 3.9.0 or higher is required.
-  * ncurses   - The ncurses text UI library.
-  * readline  - The readline line editing library.
-  * zlib      - The zlib compression library.
-  * bz2       - The bzip2 compression library.
-  * libcurl   - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
-
+* gcc/clang - A C++14-compatible compiler.
+* libpcre   - The Perl Compatible Regular Expression (PCRE) library.
+* sqlite    - The SQLite database engine.  Version 3.9.0 or higher is required.
+* ncurses   - The ncurses text UI library.
+* readline  - The readline line editing library.
+* zlib      - The zlib compression library.
+* bz2       - The bzip2 compression library.
+* libcurl   - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
 
 ## Installation
 
@@ -43,7 +42,6 @@ Lnav follows the usual GNU style for configuring and installing software:
 __Run `./autogen.sh` before running any of the above commands when
 compiling from a cloned repository.__
 
-
 ## Cygwin users
 
 It should compile fine in Cygwin.
@@ -55,7 +53,6 @@ Remember that you still need the lnav dependencies under Cygwin, here is a quick
     setup-x86_64.exe -q -P libpcre1 -P libpcrecpp0 -P libsqlite3_0 -P libstdc++6
 
 Currently, the x64 version seems to be working better than the x86 one.
-
 
 ## Usage
 
@@ -115,9 +112,7 @@ highlights. Errors are red and warnings are yellow.
 
 [![Screenshot](http://tstack.github.io/lnav/lnav-syslog-thumb.png)](http://tstack.github.io/lnav/lnav-syslog.png)
 
-
-See Also
---------
+## See Also
 
 The lnav website can be found at:
 

@@ -61,6 +61,7 @@ default-formats.h default-formats.c: bin2c $(FORMAT_FILES)
 
 CONFIG_FILES = \
     $(srcdir)/root-config.json \
+    $(srcdir)/keymaps/de-keymap.json \
     $(srcdir)/keymaps/default-keymap.json \
     $(srcdir)/keymaps/fr-keymap.json \
     $(srcdir)/keymaps/uk-keymap.json \

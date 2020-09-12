@@ -163,6 +163,7 @@ list(APPEND GEN_SRCS default-formats.h default-formats.c)
 
 set(CONFIG_FILES
         root-config.json
+        keymaps/de-keymap.json
         keymaps/default-keymap.json
         keymaps/fr-keymap.json
         keymaps/uk-keymap.json

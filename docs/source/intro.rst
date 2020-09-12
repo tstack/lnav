@@ -92,6 +92,7 @@ can be used to change the keymap:
 
 The builtin keymaps are:
 
+  :de: German
   :fr: French
   :uk: United Kingdom
   :us: United States
