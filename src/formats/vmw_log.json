@@ -26,7 +26,7 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[-+]\\d{2}:\\d{2})) (?<prc>[^:]+):\\s+(?<tid>\\w+):\\s+(?<comp>[^:]+):(?<line>\\d+)?\\s+(?<level>\\w+):?\\s+(?<body>.*)(?:\\n(?:.|\\n)*)?$"
             },
             "vum-log4cpp": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}:\\d{3}) '(?<category>[^']*)' (?<tid>\\d+) (?<level>EMERG|FATAL|ALERT|CRIT|ERROR|WARN|NOTICE|INFO|DEBUG|NOTSET)\\]\\s+(\\[(?<file>\\S+), (?<line>\\d+)\\])? (?<body>.*$)"
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}:\\d{3}) '(?<category>[^']*)' (?<tid>\\d+) (?<level>[a-zA-Z]+)\\]\\s+(\\[(?<file>\\S+), (?<line>\\d+)\\])? (?<body>.*$)"
             }
         },
         "level-field": "level",
