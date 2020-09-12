@@ -78,7 +78,7 @@ static vector<help_text *> get_related(const help_text &ht)
     return retval;
 }
 
-void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out, bool synopsis_only)
+void format_help_text_for_term(const help_text &ht, size_t width, attr_line_t &out, bool synopsis_only)
 {
     static const size_t body_indent = 2;
 
@@ -392,7 +392,7 @@ void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out,
 
 void format_example_text_for_term(const help_text &ht,
                                   const help_example_to_attr_line_fun_t eval,
-                                  int width, attr_line_t &out)
+                                  size_t width, attr_line_t &out)
 {
     text_wrap_settings tws;
 

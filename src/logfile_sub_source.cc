@@ -937,7 +937,7 @@ logfile_sub_source::get_grepper()
 
 void log_location_history::loc_history_append(vis_line_t top)
 {
-    if (top >= this->llh_log_source.text_line_count()) {
+    if (top >= vis_line_t(this->llh_log_source.text_line_count())) {
         return;
     }
 

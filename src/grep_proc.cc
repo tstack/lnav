@@ -400,7 +400,7 @@ template<typename LineType>
 grep_proc<LineType> &grep_proc<LineType>::invalidate()
 {
     if (this->gp_sink) {
-        for (int lpc = 0; lpc < this->gp_queue.size(); lpc++) {
+        for (size_t lpc = 0; lpc < this->gp_queue.size(); lpc++) {
             this->gp_sink->grep_end(*this);
         }
     }

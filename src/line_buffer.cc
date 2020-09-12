@@ -185,7 +185,7 @@ int line_buffer::gz_indexed::stream_data(void * buf, size_t size)
     this->strm.avail_out = size;
     this->strm.next_out = (unsigned char *) buf;
 
-    int last = this->syncpoints.empty() ? 0 :
+    size_t last = this->syncpoints.empty() ? 0 :
                     this->syncpoints.back().in;
     while (this->strm.avail_out) {
         if (!this->strm.avail_in) {
@@ -229,13 +229,13 @@ int line_buffer::gz_indexed::stream_data(void * buf, size_t size)
     return size - this->strm.avail_out;
 }
 
-void line_buffer::gz_indexed::seek(size_t offset)
+void line_buffer::gz_indexed::seek(off_t offset)
 {
-    if (offset == this->strm.total_out) {
+    if ((size_t) offset == this->strm.total_out) {
         return;
     }
 
-    indexDict * dict = NULL;
+    indexDict * dict = nullptr;
     // Find highest syncpoint not past offset
     // FIXME: Make this a binary-tree search
     for (auto &d : this->syncpoints) {
@@ -247,8 +247,8 @@ void line_buffer::gz_indexed::seek(size_t offset)
     }
 
     // Choose highest available syncpoint, or keep current offset if it's ok
-    if (offset < this->strm.total_out ||
-        (dict && this->strm.total_out < dict->out)) {
+    if ((size_t) offset < this->strm.total_out ||
+        (dict && this->strm.total_out < (size_t) dict->out)) {
         // Release the old z_stream
         inflateEnd(&this->strm);
         if (dict) {
@@ -260,7 +260,7 @@ void line_buffer::gz_indexed::seek(size_t offset)
 
     // Stream from compressed file until we reach our offset
     unsigned char dummy[Z_BUFSIZE];
-    while ( offset > this->strm.total_out) {
+    while ((size_t) offset > this->strm.total_out) {
         size_t to_copy = std::min(
             static_cast<size_t>(Z_BUFSIZE),
             static_cast<size_t>(offset - this->strm.total_out));
@@ -746,7 +746,7 @@ Result<line_info, string> line_buffer::load_next_line(file_range prev_line)
         }
     }
 
-    ensure(retval.li_file_range.fr_size <= (size_t)this->lb_buffer_size);
+    ensure(retval.li_file_range.fr_size <= this->lb_buffer_size);
     ensure(this->invariant());
 
     return Ok(retval);

@@ -67,7 +67,7 @@ private:
     void append_to_escape_buffer(int ch);
 
     char id_escape_buffer[32];
-    size_t id_escape_index{0};
+    ssize_t id_escape_index{0};
     ssize_t id_escape_expected_size{-1};
     struct timeval id_escape_start_time{0, 0};
 };

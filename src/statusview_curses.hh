@@ -111,9 +111,9 @@ public:
     view_colors::role_t get_role() const { return this->sf_role; };
 
     /** @param width The maximum display width, in characters. */
-    void set_width(int width) { this->sf_width = width; };
+    void set_width(ssize_t width) { this->sf_width = width; };
     /** @param width The maximum display width, in characters. */
-    size_t get_width() const { return this->sf_width; };
+    ssize_t get_width() const { return this->sf_width; };
 
     /** @param width The maximum display width, in characters. */
     void set_min_width(int width) { this->sf_min_width = width; };
@@ -124,11 +124,11 @@ public:
     int get_share() const { return this->sf_share; };
 
 protected:
-    size_t              sf_width;     /*< The maximum display width, in chars. */
-    size_t              sf_min_width{0}; /*< The minimum display width, in chars. */
+    ssize_t             sf_width;     /*< The maximum display width, in chars. */
+    ssize_t             sf_min_width{0}; /*< The minimum display width, in chars. */
     bool                sf_right_justify{false};
     bool                sf_cylon{false};
-    size_t              sf_cylon_pos{0};
+    ssize_t             sf_cylon_pos{0};
     attr_line_t         sf_value; /*< The value to display for this field. */
     view_colors::role_t sf_role;  /*< The color role for this field. */
     int sf_share{0};
@@ -140,7 +140,7 @@ protected:
  */
 class status_data_source {
 public:
-    virtual ~status_data_source() { };
+    virtual ~status_data_source() = default;
 
     /**
      * @return The number of status_fields in this source.

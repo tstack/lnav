@@ -37,6 +37,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
+#include <array>
 #include <string>
 
 #include "ptimec.hh"
@@ -98,7 +99,7 @@ public:
     };
 
     void clear() {
-        memset(this->rt_field, 0, sizeof(this->rt_field));
+        this->rt_field.fill({});
         this->rt_next = false;
         this->rt_previous = false;
         this->rt_absolute_field_end = 0;
@@ -138,7 +139,7 @@ public:
         return this->rt_absolute_field_end > 0;
     };
 
-    bool is_absolute(rt_field_type rft) {
+    bool is_absolute(rt_field_type rft) const {
         return rft < this->rt_absolute_field_end;
     };
 
@@ -307,7 +308,9 @@ public:
 
         int64_t value;
         bool is_set;
-    } rt_field[RTF__MAX];
+    };
+
+    std::array<_rt_field, RTF__MAX> rt_field;
 
     bool rt_next;
     bool rt_previous;

@@ -133,7 +133,7 @@ template <typename... Args, std::size_t... Idx>
 int bind_values_helper(sqlite3_stmt *stmt, std::index_sequence<Idx...> idxs, Args ... args) {
     int rcs[] = { bind_to_sqlite(stmt, Idx + 1, args)... };
 
-    for (int lpc = 0; lpc < idxs.size(); lpc++) {
+    for (size_t lpc = 0; lpc < idxs.size(); lpc++) {
         if (rcs[lpc] != SQLITE_OK) {
             log_error("Failed to bind column %d in statement: %s", lpc, sqlite3_sql(stmt));
             return rcs[lpc];
@@ -533,7 +533,7 @@ static void load_time_bookmarks()
                             } else {
                                 lss.set_user_mark(&textview_curses::BM_META,
                                                   line_cl);
-                                for (int lpc = 0; lpc < tag_list.in()->u.array.len; lpc++) {
+                                for (size_t lpc = 0; lpc < tag_list.in()->u.array.len; lpc++) {
                                     yajl_val elem = tag_list.in()->u.array.values[lpc];
 
                                     if (!YAJL_IS_STRING(elem)) {

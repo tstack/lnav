@@ -36,6 +36,7 @@
 
 #include <map>
 #include <list>
+#include <array>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -875,7 +876,7 @@ private:
     };
 
     void clear_line_size_cache() {
-        memset(this->lss_line_size_cache, 0, sizeof(this->lss_line_size_cache));
+        this->lss_line_size_cache.fill(std::make_pair(0, 0));
         this->lss_line_size_cache[0].first = -1;
     };
 
@@ -911,7 +912,7 @@ private:
     int lss_token_shift_size;
     shared_buffer     lss_share_manager;
     logfile::iterator lss_token_line;
-    std::pair<int, size_t> lss_line_size_cache[LINE_SIZE_CACHE_SIZE];
+    std::array<std::pair<int, size_t>, LINE_SIZE_CACHE_SIZE> lss_line_size_cache;
     log_level_t  lss_min_log_level;
     struct timeval    lss_min_log_time;
     struct timeval    lss_max_log_time;

@@ -60,8 +60,8 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
         struct line_range        lr;
         bool has_attrs = false;
         attr_t attrs   = 0;
-        nonstd::optional<int> bg;
-        nonstd::optional<int> fg;
+        auto bg = nonstd::optional<int>();
+        auto fg = nonstd::optional<int>();
         size_t lpc;
 
         switch (pi.get_substr_start(&caps[2])[0]) {

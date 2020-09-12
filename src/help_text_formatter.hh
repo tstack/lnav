@@ -38,14 +38,14 @@
 using help_example_to_attr_line_fun_t =
     std::function<attr_line_t(const help_text &, const help_example &)>;
 
-void format_help_text_for_term(const help_text &ht, int width, attr_line_t &out, bool synopsis_only = false);
+void format_help_text_for_term(const help_text &ht, size_t width, attr_line_t &out, bool synopsis_only = false);
 void format_example_text_for_term(
     const help_text &ht,
-    const help_example_to_attr_line_fun_t eval,
-    int width, attr_line_t &out);
+    help_example_to_attr_line_fun_t eval,
+    size_t width, attr_line_t &out);
 
 void format_help_text_for_rst(const help_text &ht,
-                              const help_example_to_attr_line_fun_t eval,
+                              help_example_to_attr_line_fun_t eval,
                               FILE *rst_file);
 
 #endif //LNAV_HELP_TEXT_FORMATTER_HH

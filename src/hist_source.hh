@@ -54,9 +54,9 @@ struct stacked_bar_chart_base {
     struct show_none {};
     struct show_all {};
     struct show_one {
-        int so_index;
+        size_t so_index;
 
-        show_one(int so_index) : so_index(so_index) {
+        explicit show_one(int so_index) : so_index(so_index) {
 
         }
     };
@@ -172,13 +172,13 @@ public:
 
         require(ident_iter != this->sbc_ident_lookup.end());
 
-        int ident_index = ident_iter->second;
+        size_t ident_index = ident_iter->second;
         unsigned long width, avail_width;
         bucket_stats_t overall_stats;
         struct line_range lr;
         vis_line_t height;
 
-        int ident_to_show = this->sbc_show_state.match(
+        size_t ident_to_show = this->sbc_show_state.match(
             [] (const show_none) {
                 return -1;
             },

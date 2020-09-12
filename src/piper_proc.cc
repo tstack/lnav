@@ -57,7 +57,7 @@ static ssize_t write_timestamp(int fd, off_t woff)
 {
     char           time_str[64];
     struct timeval tv;
-    char           ms_str[8];
+    char           ms_str[10];
 
     gettimeofday(&tv, nullptr);
     strftime(time_str, sizeof(time_str), "%FT%T", localtime(&tv.tv_sec));

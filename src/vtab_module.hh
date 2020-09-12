@@ -271,6 +271,11 @@ struct optional_counter<nonstd::optional<T>> {
     constexpr static int value = 1;
 };
 
+template<typename T, typename U>
+struct optional_counter<nonstd::optional<T>, const std::vector<U> &> {
+    constexpr static int value = 1;
+};
+
 template<typename T, typename ... Rest>
 struct optional_counter<nonstd::optional<T>, Rest...> {
     constexpr static int value = 1 + sizeof...(Rest);
@@ -312,9 +317,9 @@ template<typename F, F f> struct sqlite_func_adapter;
 
 template<typename Return, typename ... Args, Return (*f)(Args...)>
 struct sqlite_func_adapter<Return (*)(Args...), f> {
-    constexpr static int OPT_COUNT = optional_counter<Args...>::value;
-    constexpr static int VAR_COUNT = variadic_counter<Args...>::value;
-    constexpr static int REQ_COUNT = sizeof...(Args) - OPT_COUNT - VAR_COUNT;
+    constexpr static size_t OPT_COUNT = optional_counter<Args...>::value;
+    constexpr static size_t VAR_COUNT = variadic_counter<Args...>::value;
+    constexpr static size_t REQ_COUNT = sizeof...(Args) - OPT_COUNT - VAR_COUNT;
 
     template<size_t ... Idx>
     static void func2(sqlite3_context *context,
@@ -341,19 +346,19 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
 
     static void func1(sqlite3_context *context,
                       int argc, sqlite3_value **argv) {
-        if (argc < REQ_COUNT && VAR_COUNT == 0) {
+        if ((size_t) argc < REQ_COUNT && VAR_COUNT == 0) {
             const struct FuncDef *fd = (const FuncDef *) sqlite3_user_data(context);
             char buffer[128];
 
             if (OPT_COUNT == 0) {
                 snprintf(buffer, sizeof(buffer),
-                         "%s() expects exactly %d argument%s",
+                         "%s() expects exactly %ld argument%s",
                          fd->fd_help.ht_name,
                          REQ_COUNT,
                          REQ_COUNT == 1 ? "s" : "");
             } else {
                 snprintf(buffer, sizeof(buffer),
-                         "%s() expects between %d and %d arguments",
+                         "%s() expects between %ld and %ld arguments",
                          fd->fd_help.ht_name,
                          REQ_COUNT,
                          REQ_COUNT + OPT_COUNT);
@@ -362,7 +367,7 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
             return;
         }
 
-        for (int lpc = 0; lpc < REQ_COUNT; lpc++) {
+        for (size_t lpc = 0; lpc < REQ_COUNT; lpc++) {
             if (sqlite3_value_type(argv[lpc]) == SQLITE_NULL) {
                 sqlite3_result_null(context);
                 return;
@@ -377,7 +382,7 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
 
         return {
             ht.ht_name,
-            (OPT_COUNT > 0 || VAR_COUNT > 0) ? -1 : REQ_COUNT,
+            (OPT_COUNT > 0 || VAR_COUNT > 0) ? -1 : (int) REQ_COUNT,
             SQLITE_UTF8 | SQLITE_DETERMINISTIC,
             0,
             func1,

@@ -167,7 +167,7 @@ static Result<string, string> com_adjust_log_time(exec_context &ec, string cmdli
 
             snprintf(buffer, sizeof(buffer),
                      "info: log timestamps will be adjusted by %ld.%06ld seconds",
-                     time_diff.tv_sec, time_diff.tv_usec);
+                     time_diff.tv_sec, (long) time_diff.tv_usec);
 
             retval = buffer;
         } else {

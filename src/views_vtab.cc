@@ -170,7 +170,7 @@ CREATE TABLE lnav_views (
                 sqlite3_result_int(ctx, tc.get_inner_height());
                 break;
             case 5: {
-                text_time_translator *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
+                auto *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
 
                 if (time_source != nullptr && tc.get_inner_height() > 0) {
                     char timestamp[64];
@@ -490,8 +490,8 @@ CREATE TABLE lnav_view_filters (
     }
 
     int delete_row(sqlite3_vtab *tab, sqlite3_int64 rowid) {
-        lnav_view_t view_index = lnav_view_t(rowid >> 32);
-        int filter_index = rowid & 0xffffffffLL;
+        auto view_index = lnav_view_t(rowid >> 32);
+        size_t filter_index = rowid & 0xffffffffLL;
         textview_curses &tc = lnav_data.ld_views[view_index];
         text_sub_source *tss = tc.get_sub_source();
         filter_stack &fs = tss->get_filters();

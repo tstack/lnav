@@ -155,7 +155,7 @@ TEST_CASE("ptime_roundtrip") {
 
 class my_path_source : public unique_path_source {
 public:
-    my_path_source(const filesystem::path &p) : mps_path(p) {
+    explicit my_path_source(const filesystem::path &p) : mps_path(p) {
 
     }
 

@@ -588,7 +588,8 @@ void rebuild_indexes()
         bool force =
             result == logfile_sub_source::rebuild_result::rr_full_rebuild;
 
-        if ((!scroll_downs[LNV_LOG] || log_view.get_top() > new_count) &&
+        if ((!scroll_downs[LNV_LOG] ||
+             log_view.get_top() > vis_line_t(new_count)) &&
             force) {
             scroll_downs[LNV_LOG] = false;
         }

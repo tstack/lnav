@@ -239,7 +239,7 @@ attr_line_t attr_line_t::subline(size_t start, size_t len) const
 
         line_range &last_lr = retval.al_attrs.back().sa_range;
 
-        ensure(last_lr.lr_end <= retval.al_string.length());
+        ensure(last_lr.lr_end <= (int) retval.al_string.length());
     }
 
     return retval;

@@ -79,7 +79,7 @@ static void find_matching_bracket(attr_line_t &al, int x, char left, char right)
     const string &line = al.get_string();
     int depth = 0;
 
-    if (x < 0 || x > line.length()) {
+    if (x < 0 || x > (int) line.length()) {
         return;
     }
 

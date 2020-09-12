@@ -41,6 +41,8 @@
 
 class unique_path_source {
 public:
+    virtual ~unique_path_source() = default;
+
     virtual void set_unique_path(const std::string &path) {
         this->ups_unique_path = path;
     }

@@ -141,7 +141,7 @@ public:
                     sf_format.clear();
                 }
 
-                if (sf_filename.get_width() > lf->get_filename().length()) {
+                if (sf_filename.get_width() > (ssize_t) lf->get_filename().length()) {
                     sf_filename.set_value(lf->get_filename());
                 } else {
                     sf_filename.set_value(lf->get_unique_path());
@@ -154,7 +154,7 @@ public:
 
             line_attr = find_string_attr(sa, &logline::L_PARTITION);
             if (line_attr != sa.end()) {
-                bookmark_metadata *bm = (bookmark_metadata *)line_attr->sa_value.sav_ptr;
+                auto bm = (bookmark_metadata *)line_attr->sa_value.sav_ptr;
 
                 sf_partition.set_value(bm->bm_name.c_str());
             }

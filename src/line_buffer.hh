@@ -107,7 +107,7 @@ public:
         void continue_stream();
         void open(int fd);
         int stream_data(void * buf, size_t size);
-        void seek(size_t offset);
+        void seek(off_t offset);
 
         /**
          * Decompress bytes from the gz file returning at most `size` bytes.
