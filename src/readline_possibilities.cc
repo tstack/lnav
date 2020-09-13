@@ -291,6 +291,9 @@ void add_config_possibilities()
                              const string &path,
                              void *mem) {
         if (jph.jph_children) {
+            if (!jph.jph_regex.p_named_count) {
+                rc->add_possibility(LNM_COMMAND, "config-option", path);
+            }
             for (auto named_iter = jph.jph_regex.named_begin();
                  named_iter != jph.jph_regex.named_end();
                  ++named_iter) {

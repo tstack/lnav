@@ -222,6 +222,7 @@ static ssize_t recvstring(int sock, char *buf, size_t len)
 char *readline_context::completion_generator(const char *text, int state)
 {
     static vector<string> matches;
+    vector<string> long_matches;
 
     char *retval = nullptr;
 
@@ -240,24 +241,50 @@ char *readline_context::completion_generator(const char *text, int state)
                     ((strchr(loaded_context->rc_quote_chars, poss_str[0]) !=
                         nullptr) &&
                      cmpfunc(text, &poss_str[1], len) == 0)) {
-                    matches.push_back(poss);
+                    auto poss_slash_count = std::count(poss.begin(), poss.end(), '/');
+
+                    if (endswith(poss.c_str(), "/")) {
+                        poss_slash_count -= 1;
+                    }
+                    if (std::count(&text[0], &text[len], '/') == poss_slash_count) {
+                        matches.emplace_back(poss);
+                    } else {
+                        long_matches.emplace_back(poss);
+                    }
                 }
             }
 
             if (matches.empty()) {
+                matches = std::move(long_matches);
+            }
+
+            if (matches.empty()) {
                 vector<pair<int, string>> fuzzy_matches;
+                vector<pair<int, string>> fuzzy_long_matches;
 
                 for (const auto &poss : (*arg_possibilities)) {
                     string poss_str = tolower(poss);
                     int score;
 
                     if (fts::fuzzy_match(text, poss_str.c_str(), score) && score > 0) {
-                        log_debug("match score %d %s %s", score, text, poss.c_str());
                         if (score <= 0) {
                             continue;
                         }
-                        fuzzy_matches.emplace_back(score, poss);
+
+                        auto poss_slash_count = std::count(poss_str.begin(), poss_str.end(), '/');
+                        if (endswith(poss.c_str(), "/")) {
+                            poss_slash_count -= 1;
+                        }
+                        if (std::count(&text[0], &text[len], '/') == poss_slash_count) {
+                            fuzzy_matches.emplace_back(score, poss);
+                        } else {
+                            fuzzy_long_matches.emplace_back(score, poss);
+                        }
                     }
+                }
+
+                if (fuzzy_matches.empty()) {
+                    fuzzy_matches = std::move(fuzzy_long_matches);
                 }
 
                 if (!fuzzy_matches.empty()) {
@@ -1027,7 +1054,7 @@ void readline_curses::add_prefix(int context,
     if (sendstring(this->rc_command_pipe[RCF_MASTER],
                    buffer,
                    strlen(buffer) + 1) == -1) {
-        perror("add_possibility: write failed");
+        perror("add_prefix: write failed");
     }
 }
 

@@ -334,6 +334,12 @@ void json_path_handler_base::walk(
     }
     else {
         local_paths.emplace_back(this->jph_property);
+
+        string full_path = base + this->jph_property;
+        if (this->jph_children) {
+            full_path += "/";
+        }
+        cb(*this, full_path, nullptr);
     }
 
     if (this->jph_children) {
