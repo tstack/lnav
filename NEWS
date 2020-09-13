@@ -5,6 +5,10 @@ lnav v0.9.0:
        can be changed using the ':config' command, like so:
          :config /ui/theme night-owl
        Consult the online documentation for defining a new theme.
+     * Added support for custom keymaps and included the following: de, fr,
+       uk, us.  The keymap can be changed using the ':config' command, like so:
+         :config /ui/keymap uk
+       Consult the online documentation for defining a new keymap.
      * Indexing of new data in log files can now be paused by pressing '='
        and unpaused by pressing it again.  The bottom status bar will display
        'Paused' in the right corner while paused.
