@@ -62,7 +62,7 @@ osx-package: clean-outbox osx-build
 	cd osx-pkg && zip -r ../outbox/lnav-${VERSION}-os-x.zip lnav-${VERSION}
 	rm -rf osx-pkg
 
-release: linux-ospkg osx-package
+release: linux-ospkg osx-package musl-package
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
