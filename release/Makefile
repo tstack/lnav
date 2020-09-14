@@ -21,7 +21,7 @@ PACKAGE_URLS = \
 	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
 	https://curl.haxx.se/download/curl-7.72.0.tar.gz
 
-.PHONY: linux freebsd pkger download-pkgs
+.PHONY: linux freebsd pkger download-pkgs musl
 
 %-vm: %
 	cd vagrant-static && vagrant up $<

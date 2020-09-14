@@ -76,32 +76,32 @@ OS=$(uname -s)
  bunzip2 ncurses-5.9-20141206-patch.sh.bz2 &&
  bash ./ncurses-5.9-20141206-patch.sh)
 
+(cd ncurses-5.9 && \
+ ./configure --prefix=${FAKE_ROOT} \
+     --enable-ext-mouse \
+     --enable-sigwinch \
+     --with-default-terminfo-dir=/usr/share/terminfo \
+     --enable-ext-colors \
+     --enable-widec \
+     --enable-termcap \
+     --with-fallbacks=$NCURSES_FALLBACKS \
+     && \
+ make && make install)
+
+(cd pcre-* && \
+ ./configure --prefix=${FAKE_ROOT} \
+     --enable-jit \
+     --enable-utf \
+     && \
+ make && make install)
+
 if test x"${OS}" != x"FreeBSD"; then
-    (cd ncurses-5.9 && \
-     ./configure --prefix=${FAKE_ROOT} \
-         --enable-ext-mouse \
-         --enable-sigwinch \
-         --with-default-terminfo-dir=/usr/share/terminfo \
-         --enable-ext-colors \
-         --enable-widec \
-         --enable-termcap \
-         --with-fallbacks=$NCURSES_FALLBACKS \
-         && \
-     make && make install)
-
-    (cd pcre-* && \
-     ./configure --prefix=${FAKE_ROOT} \
-         --enable-jit \
-         --enable-utf \
-         && \
-     make && make install)
-
     (cd zlib-1.2.11 && ./configure --prefix=${FAKE_ROOT} && make && make install)
 
     (cd libssh2-* &&
      ./configure --prefix=${FAKE_ROOT} \
-         --with-libssl-prefix=/home/vagrant/fake.root \
-         --with-libz-prefix=/home/vagrant/fake.root \
+         --with-libssl-prefix=${FAKE_ROOT} \
+         --with-libz-prefix=${FAKE_ROOT} \
          "CPPFLAGS=-I${FAKE_ROOT}/include" \
          "LDFLAGS=-ldl -L${FAKE_ROOT}/lib" &&
      make &&
@@ -116,32 +116,13 @@ if test x"${OS}" != x"FreeBSD"; then
      make &&
      make install)
 else
-    (cd ncurses-5.9 && \
-     ./configure --prefix=${FAKE_ROOT} \
-         --enable-ext-mouse \
-         --enable-sigwinch \
-         --with-default-terminfo-dir=/usr/share/terminfo \
-         --enable-ext-colors \
-         --enable-widec \
-         --enable-termcap \
-         --with-fallbacks=$NCURSES_FALLBACKS \
-         && \
-     make && make install)
-
-    (cd pcre-* && \
-     ./configure --prefix=${FAKE_ROOT} \
-         --enable-jit \
-         --enable-utf \
-         && \
-     make && make install)
-
     (cd zlib-1.2.11 && ./configure --prefix=${FAKE_ROOT} "CFLAGS=-fPIC" \
         && make && make install)
 
     (cd libssh2-* &&
      ./configure --prefix=${FAKE_ROOT} \
-         --with-libssl-prefix=/home/vagrant/fake.root \
-         --with-libz-prefix=/home/vagrant/fake.root \
+         --with-libssl-prefix=${FAKE_ROOT} \
+         --with-libz-prefix=${FAKE_ROOT} \
          &&
      make &&
      make install)

@@ -40,11 +40,23 @@ mkdir -p ~/github/lbuild
 
 cd ~/github/lbuild
 
+TARGET_FILE='/vagrant/lnav-linux.zip'
 if test x"${OS}" != x"FreeBSD"; then
-    ../lnav/configure \
-        LDFLAGS="-L${FAKE_ROOT}/lib" \
-        CPPFLAGS="-I${FAKE_ROOT}/include" \
-        PATH="${FAKE_ROOT}/bin:${PATH}"
+    if test x"$(lsb_release | awk '{print $3}')" == x"Alpine"; then
+        TARGET_FILE='/vagrant/lnav-musl.zip'
+        ../lnav/configure \
+            CFLAGS='-static -no-pie -s' \
+            CXXFLAGS='-static -msse4 -U__unused -no-pie -s' \
+            LDFLAGS="-L${FAKE_ROOT}/lib" \
+            CPPFLAGS="-I${FAKE_ROOT}/include" \
+            --enable-static
+            PATH="${FAKE_ROOT}/bin:${PATH}"
+    else
+        ../lnav/configure \
+            LDFLAGS="-L${FAKE_ROOT}/lib" \
+            CPPFLAGS="-I${FAKE_ROOT}/include" \
+            PATH="${FAKE_ROOT}/bin:${PATH}"
+    fi
 else
     ../lnav/configure \
         LDFLAGS="-L${FAKE_ROOT}/lib -static" \
@@ -58,7 +70,7 @@ ${MAKE} -j2 && strip -o /vagrant/lnav src/lnav
 if test x"${OS}" != x"FreeBSD"; then
     mkdir instdir
     make install-strip DESTDIR=$PWD/instdir
-    (cd instdir/ && zip -r /vagrant/lnav-linux.zip .)
+    (cd instdir/ && zip -r "${TARGET_FILE}" .)
 fi
 
 export PATH=${saved_PATH}
