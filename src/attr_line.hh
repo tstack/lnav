@@ -148,7 +148,7 @@ typedef union {
 
 class string_attr_type {
 public:
-    string_attr_type(const char *name = nullptr)
+    explicit string_attr_type(const char *name = nullptr) noexcept
         : sat_name(name) {
     };
 

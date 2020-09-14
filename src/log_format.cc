@@ -216,7 +216,6 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
 
     time_t diff = dst.back().get_time() - log_tv.tv_sec;
     int off_year = 0, off_month = 0, off_day = 0, off_hour = 0;
-    std::vector<logline>::iterator iter;
     bool do_change = true;
 
     if (diff <= 0) {
@@ -239,8 +238,8 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
     }
     log_debug("%d:detected time rollover; offsets=%d %d %d %d", dst.size(),
               off_year, off_month, off_day, off_hour);
-    for (iter = dst.begin(); iter != dst.end(); iter++) {
-        time_t     ot = iter->get_time();
+    for (auto &ll : dst) {
+        time_t     ot = ll.get_time();
         struct tm otm;
 
         gmtime_r(&ot, &otm);
@@ -252,7 +251,7 @@ void log_format::check_for_new_year(std::vector<logline> &dst, exttm etm,
         if (new_time == -1) {
             continue;
         }
-        iter->set_time(new_time);
+        ll.set_time(new_time);
     }
 }
 

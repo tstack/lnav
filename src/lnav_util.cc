@@ -780,7 +780,16 @@ std::string ok_prefix(std::string msg)
     return std::string(ANSI_COLOR(COLOR_GREEN) "\u2714" ANSI_NORM " ") + msg;
 }
 
+std::string err_prefix(const std::string msg)
+{
+    if (msg.empty()) {
+        return msg;
+    }
+
+    return std::string(ANSI_COLOR(COLOR_RED) "\u2718" ANSI_NORM " ") + msg;
+}
+
 Result<std::string, std::string> err_to_ok(const std::string msg)
 {
-    return Ok(std::string(ANSI_COLOR(COLOR_RED) "\u2718" ANSI_NORM " ") + msg);
+    return Ok(err_prefix(msg));
 }

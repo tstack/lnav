@@ -537,7 +537,7 @@ void rl_callback(void *dummy, readline_curses *rc)
             auto msg = result.unwrap();
 
             if (!msg.empty()) {
-                prompt = "SQL Result: " + msg;
+                prompt = ok_prefix("SQL Result: " + msg);
                 if (dls.dls_rows.size() > 1) {
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
                 }

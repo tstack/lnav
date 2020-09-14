@@ -241,3 +241,5 @@ Query
 Customizing
 -----------
 
+You can customize the behavior of hotkeys by defining your own keymaps.
+Consult the :ref:`Keymaps<keymaps>` configuration section for more information.

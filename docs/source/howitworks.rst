@@ -4,3 +4,4 @@
 How It Works
 ============
 
+"Magic"

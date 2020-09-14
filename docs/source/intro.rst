@@ -92,10 +92,10 @@ can be used to change the keymap:
 
 The builtin keymaps are:
 
-  :de: German
-  :fr: French
-  :uk: United Kingdom
-  :us: United States
+  :de: `German <https://github.com/tstack/lnav/blob/master/src/keymaps/de-keymap.json>`_
+  :fr: `French <https://github.com/tstack/lnav/blob/master/src/keymaps/fr-keymap.json>`_
+  :uk: `United Kingdom <https://github.com/tstack/lnav/blob/master/src/keymaps/uk-keymap.json>`_
+  :us: `United States <https://github.com/tstack/lnav/blob/master/src/keymaps/us-keymap.json>`_
 
 To create or customize a keymap, consult the :ref:`keymaps` section.
 
@@ -129,4 +129,4 @@ In order for **lnav** to understand your log files, it needs to told how to
 parse the log messages using a log format definition.  There are many log
 formats builtin and **lnav** will automatically determine the best format to
 use.  In case your log file is not recognized, consult the :ref:`log_formats`
-section for information on how to .
+section for information on how to create a format.

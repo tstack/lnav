@@ -238,7 +238,7 @@ bool handle_paging_key(int ch)
             if (xterm_mouse::is_available()) {
                 lnav_data.ld_mouse.set_enabled(!lnav_data.ld_mouse.is_enabled());
                 lnav_data.ld_rl_view->set_value(
-                    string("info: mouse mode -- ") +
+                    ok_prefix("info: mouse mode -- ") +
                     (lnav_data.ld_mouse.is_enabled() ?
                      ANSI_BOLD("enabled") : ANSI_BOLD("disabled")));
             }
@@ -259,7 +259,7 @@ bool handle_paging_key(int ch)
             tc->get_bookmarks()[&textview_curses::BM_USER].clear();
             tc->reload_data();
 
-            lnav_data.ld_rl_view->set_value("Cleared bookmarks");
+            lnav_data.ld_rl_view->set_value(ok_prefix("Cleared bookmarks"));
             break;
 
         case '>':
@@ -625,7 +625,8 @@ bool handle_paging_key(int ch)
                         start_helper.lh_string_attrs, &logline::L_OPID);
                 if (!opid_range.is_valid()) {
                     alerter::singleton().chime();
-                    lnav_data.ld_rl_view->set_value("Log message does not contain an opid");
+                    lnav_data.ld_rl_view->set_value(
+                        err_prefix("Log message does not contain an opid"));
                 } else {
                     unsigned int opid_hash = start_line.get_opid();
                     logline_helper next_helper(*lss);
@@ -671,7 +672,7 @@ bool handle_paging_key(int ch)
                         string opid_str = start_helper.to_string(opid_range);
 
                         lnav_data.ld_rl_view->set_value(
-                                "No more messages found with opid: " + opid_str);
+                            err_prefix("No more messages found with opid: " + opid_str));
                         alerter::singleton().chime();
                     }
                 }
@@ -868,7 +869,8 @@ bool handle_paging_key(int ch)
         case 't':
             if (lnav_data.ld_text_source.current_file() == nullptr) {
                 alerter::singleton().chime();
-                lnav_data.ld_rl_view->set_value("No text files loaded");
+                lnav_data.ld_rl_view->set_value(
+                    err_prefix("No text files loaded"));
             }
             else if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
                 lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
