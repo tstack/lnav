@@ -1510,7 +1510,7 @@ static void looper()
                 // pre-filled with a suggestion that the user can complete.
                 // This quick-fix key could be used for other stuff as well
                 lnav_data.ld_rl_view->set_value(fmt::format(
-                    ANSI_CSI ANSI_COLOR_PARAM(COLOR_RED) ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
+                    ANSI_CSI ANSI_COLOR_PARAM(COLOR_YELLOW) ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
                     "Unrecognized key"
                     ANSI_NORM
                     ", bind to a command using \u2014 "

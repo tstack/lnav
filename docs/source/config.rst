@@ -175,13 +175,22 @@ Key Sequence Encoding
 Key presses are converted into a hex-encoded string that is used to lookup an
 entry in the keymap.  Each byte of the keypress value is formatted as an
 :code:`x` followed by the hex-encoding in lowercase.  For example, the encoding
-for the £ key would be :code:`xc2xa3`.
+for the £ key would be :code:`xc2xa3`.  To make it easier to discover the
+encoding for unassigned keys, **lnav** will print in the command prompt the
+:code:`:config` command and
+`JSON-Pointer <https://tools.ietf.org/html/rfc6901>`_ for assigning a command
+to the key.
+
+.. figure:: key-encoding-prompt.png
+  :align: center
+
+  Screenshot of the command prompt when an unassigned key is pressed.
 
 .. note::
 
   Since **lnav** is a terminal application, it can only receive keypresses that
   can be represented as characters or escape sequences.  For example, it cannot
-  handle modifier keypresses.
+  handle the press of a modifier key.
 
 Reference
 ^^^^^^^^^
