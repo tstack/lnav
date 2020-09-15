@@ -44,6 +44,8 @@
 
 using namespace std;
 
+const auto REVERSE_SEARCH_OFFSET = 2000_vl;
+
 void
 text_filter::revert_to_last(logfile_filter_state &lfs, size_t rollback_size)
 {
@@ -470,9 +472,15 @@ void textview_curses::execute_search(const std::string &regex_orig)
             unique_ptr<grep_proc<vis_line_t>> gp = make_unique<grep_proc<vis_line_t>>(code, *this);
 
             gp->set_sink(this);
-            gp->queue_request(this->get_top());
-            if (this->get_top() > 0) {
-                gp->queue_request(0_vl, this->get_top());
+            auto top = this->get_top();
+            if (top < REVERSE_SEARCH_OFFSET) {
+                top = 0_vl;
+            } else {
+                top -= REVERSE_SEARCH_OFFSET;
+            }
+            gp->queue_request(top);
+            if (top > 0) {
+                gp->queue_request(0_vl, top);
             }
             gp->start();
 
