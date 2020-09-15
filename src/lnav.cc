@@ -1645,8 +1645,8 @@ static void looper()
                 }
                 rebuild_indexes();
                 if (!initial_build &&
-                        lnav_data.ld_log_source.text_line_count() == 0 &&
-                        lnav_data.ld_text_source.text_line_count() > 0) {
+                    lnav_data.ld_log_source.text_line_count() == 0 &&
+                    lnav_data.ld_text_source.text_line_count() > 0) {
                     ensure_view(&lnav_data.ld_views[LNV_TEXT]);
                     lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
                     lnav_data.ld_rl_view->set_alt_value(
@@ -1662,8 +1662,8 @@ static void looper()
                     lnav_data.ld_views[LNV_LOG].set_top(tc_log->get_top_for_last_row());
                 }
                 if (!initial_build &&
-                        lnav_data.ld_log_source.text_line_count() == 0 &&
-                        !lnav_data.ld_other_files.empty()) {
+                    lnav_data.ld_log_source.text_line_count() == 0 &&
+                    !lnav_data.ld_other_files.empty()) {
                     ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
                 }
 
@@ -1677,7 +1677,7 @@ static void looper()
                     initial_build = true;
                 }
 
-                if (!session_loaded) {
+                if (initial_build && !session_loaded) {
                     load_session();
                     if (lnav_data.ld_session_save_time) {
                         std::string ago;

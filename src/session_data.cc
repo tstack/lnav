@@ -1297,7 +1297,7 @@ static void save_session_with_id(const std::string session_id)
                     view_map.gen("commands");
                     yajlpp_array cmd_array(handle);
 
-                    for (const auto filter : fs) {
+                    for (const auto& filter : fs) {
                         string cmd = filter->to_command();
 
                         if (cmd.empty()) {
@@ -1332,7 +1332,7 @@ static void save_session_with_id(const std::string session_id)
                                 continue;
                             }
 
-                            for (auto vd : elf->elf_value_defs) {
+                            for (const auto& vd : elf->elf_value_defs) {
                                 if (!vd.second->vd_user_hidden) {
                                     continue;
                                 }
