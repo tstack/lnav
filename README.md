@@ -7,16 +7,28 @@ _This is the source repository for **lnav**, visit [http://lnav.org](http://lnav
 
 # LNAV -- The Logfile Navigator
 
-The log file navigator, lnav, is an enhanced log file viewer that
-takes advantage of any semantic information that can be gleaned from
-the files being viewed, such as timestamps and log levels.  Using this
-extra semantic information, lnav can do things like interleaving
-messages from different files, generate histograms of messages over
-time, and providing hotkeys for navigating through the file.  It is
-hoped that these features will allow the user to quickly and
-efficiently zero in on problems.
+The Log File Navigator, **lnav** for short, is an advanced log file viewer
+for the small-scale.  It is a terminal application that can understand
+your log files and make it easy for you to find problems with little to
+no setup.
+
+### Links
+
+* [Main Site](https://lnav.org)
+* [**Documentation**](https://lnav.readthedocs.io) on Read the Docs
+
+## Contributing
 
 [Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
+
+## Features
+
+* Log messages from different files are collated together into a single view
+* Automatic detection of log format
+* Automatic decompression of GZip and BZip2 files
+* Filter log messages based on regular expressions
+* Use SQL to analyze your logs
+* And more...
 
 ## Prerequisites
 
@@ -113,10 +125,6 @@ highlights. Errors are red and warnings are yellow.
 [![Screenshot](http://tstack.github.io/lnav/lnav-syslog-thumb.png)](http://tstack.github.io/lnav/lnav-syslog.png)
 
 ## See Also
-
-The lnav website can be found at:
-
-> [http://lnav.org](http://lnav.org)
 
 [Angle-grinder](https://github.com/rcoh/angle-grinder) is a tool to slice and dice log files on the command-line.
 If you're familiar with the SumoLogic query language, you might find this tool more comfortable to work with.
