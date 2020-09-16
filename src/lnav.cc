@@ -1677,7 +1677,7 @@ static void looper()
                     initial_build = true;
                 }
 
-                if (initial_build && !session_loaded) {
+                if (!session_loaded) {
                     load_session();
                     if (lnav_data.ld_session_save_time) {
                         std::string ago;
@@ -1689,6 +1689,10 @@ static void looper()
                                         (ANSI_NORM "; press Ctrl-R to reset session"));
                     }
 
+                    session_loaded = true;
+                }
+
+                if (initial_build) {
                     vector<pair<Result<string, string>, string>> cmd_results;
 
                     execute_init_commands(ec, cmd_results);
@@ -1698,10 +1702,9 @@ static void looper()
 
                         lnav_data.ld_rl_view->set_value(
                             last_cmd_result.first.orElse(err_to_ok).unwrap());
-                        lnav_data.ld_rl_view->set_alt_value(last_cmd_result.second);
+                        lnav_data.ld_rl_view->set_alt_value(
+                            last_cmd_result.second);
                     }
-
-                    session_loaded = true;
                 }
             }
 

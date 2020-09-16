@@ -30,7 +30,7 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :musl do |musl|
-      musl.vm.network "private_network", :type => 'dhcp'
+      musl.vm.network "private_network", ip: "10.11.12.16"
       musl.vm.provision "shell", path:"musl-pkg.sh"
       musl.vm.provision "shell", path:"provision.sh"
       musl.vm.box = "generic/alpine312"
