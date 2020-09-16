@@ -80,7 +80,7 @@ static string scrub_rdns(const string &str)
 }
 
 class generic_log_format : public log_format {
-    static pcrepp &scrub_pattern(void)
+    static pcrepp &scrub_pattern()
     {
         static pcrepp SCRUB_PATTERN(
             "\\d+-(\\d+-\\d+ \\d+:\\d+:\\d+(?:,\\d+)?:)\\w+:(.*)");
@@ -386,13 +386,13 @@ public:
         this->lf_time_ordered = false;
     };
 
-    const intern_string_t get_name(void) const {
+    const intern_string_t get_name() const {
         static const intern_string_t name(intern_string::lookup("bro"));
 
         return this->blf_format_name.empty() ? name : this->blf_format_name;
     };
 
-    virtual void clear(void) {
+    virtual void clear() {
         this->log_format::clear();
         this->blf_format_name.clear();
         this->blf_field_defs.clear();
@@ -661,6 +661,7 @@ public:
                                     this);
             } else {
                 values.emplace_back(fd.fd_name);
+                values.back().lv_format = this;
             }
         }
     };
@@ -721,7 +722,7 @@ public:
         return retval;
     };
 
-    log_vtab_impl *get_vtab_impl(void) const {
+    log_vtab_impl *get_vtab_impl() const {
         if (this->blf_format_name.empty()) {
             return nullptr;
         }

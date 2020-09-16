@@ -129,7 +129,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
                 }
             }
 
-            this->fos_summary_lines.push_back(attr_line_t());
+            this->fos_summary_lines.emplace_back();
             attr_line_t &sum_line = this->fos_summary_lines.back();
             if (tss.empty()) {
                 sum_line.with_ansi_string(

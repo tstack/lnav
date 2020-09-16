@@ -117,7 +117,7 @@ public:
             this->ldh_namer = std::make_unique<column_namer>();
             this->ldh_json_pairs.clear();
 
-            for (auto lv : this->ldh_line_values) {
+            for (const auto& lv : this->ldh_line_values) {
                 this->ldh_namer->cn_builtin_names.emplace_back(lv.lv_name.get());
             }
 
