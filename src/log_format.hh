@@ -348,27 +348,27 @@ public:
         VALUE__MAX
     };
 
-    logline_value(const intern_string_t name)
+    logline_value(const intern_string_t name, const log_format *format)
         : lv_name(name), lv_kind(VALUE_NULL), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) { };
-    logline_value(const intern_string_t name, bool b)
+          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(format) { };
+    logline_value(const intern_string_t name, bool b, const log_format *format)
         : lv_name(name),
           lv_kind(VALUE_BOOLEAN),
           lv_value((int64_t)(b ? 1 : 0)),
           lv_identifier(),
           lv_column(-1),
           lv_hidden(false), lv_sub_offset(0),
-          lv_from_module(false), lv_format(NULL) { };
-    logline_value(const intern_string_t name, int64_t i)
+          lv_from_module(false), lv_format(format) { };
+    logline_value(const intern_string_t name, int64_t i, const log_format *format)
         : lv_name(name), lv_kind(VALUE_INTEGER), lv_value(i), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) { };
-    logline_value(const intern_string_t name, double i)
+          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(format) { };
+    logline_value(const intern_string_t name, double i, const log_format *format)
         : lv_name(name), lv_kind(VALUE_FLOAT), lv_value(i), lv_identifier(), lv_column(-1),
-          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) { };
-    logline_value(const intern_string_t name, shared_buffer_ref &sbr, int column = -1)
+          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(format) { };
+    logline_value(const intern_string_t name, shared_buffer_ref &sbr, int column = -1, const log_format *format = nullptr)
         : lv_name(name), lv_kind(VALUE_TEXT), lv_sbr(sbr),
           lv_identifier(), lv_column(column),
-          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(NULL) {
+          lv_hidden(false), lv_sub_offset(0), lv_from_module(false), lv_format(format) {
     };
     logline_value(const intern_string_t name, const intern_string_t val, int column = -1)
             : lv_name(name), lv_kind(VALUE_TEXT), lv_intern_string(val), lv_identifier(),

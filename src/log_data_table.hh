@@ -200,7 +200,7 @@ public:
         int next_column = this->ldt_parent_column_count;
 
         this->ldt_format_impl->extract(lf, line_number, line, values);
-        values.emplace_back(instance_name, this->ldt_instance);
+        values.emplace_back(instance_name, this->ldt_instance, lf->get_format());
         logline_value &lv = values.back();
         lv.lv_column = next_column++;
         for (auto &ldt_pair : this->ldt_pairs) {
@@ -218,7 +218,7 @@ public:
                 if (sscanf(scan_value, "%lf", &d) != 1) {
                     d = 0.0;
                 }
-                values.emplace_back(intern_string::lookup("", 0), d);
+                values.emplace_back(intern_string::lookup("", 0), d, lf->get_format());
             }
             break;
 

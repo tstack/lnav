@@ -55,9 +55,11 @@ public:
 
     void get_columns_int(std::vector<vtab_column> &cols)
     {
+        const static std::string LOG_MSG_INSTANCE = "log_msg_instance";
+
         column_namer cn;
 
-        cols.push_back(vtab_column("log_msg_instance", SQLITE_INTEGER, NULL));
+        cols.emplace_back(LOG_MSG_INSTANCE, SQLITE_INTEGER);
         for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
             std::vector<pcre_context::capture>::const_iterator iter;
             const char *collator = NULL;
@@ -149,12 +151,9 @@ public:
         static intern_string_t instance_name = intern_string::lookup("log_msg_instance");
         static intern_string_t empty = intern_string::lookup("", 0);
 
-        pcre_input pi(this->lst_current_line.get_data(),
-                      0,
-                      this->lst_current_line.length());
         int next_column = 0;
 
-        values.emplace_back(instance_name, this->lst_instance);
+        values.emplace_back(instance_name, this->lst_instance, lf->get_format());
         values.back().lv_column = next_column++;
         for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
             auto cap = this->lst_match_context[lpc];

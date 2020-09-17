@@ -660,8 +660,7 @@ public:
                                     false,
                                     this);
             } else {
-                values.emplace_back(fd.fd_name);
-                values.back().lv_format = this;
+                values.emplace_back(fd.fd_name, this);
             }
         }
     };
