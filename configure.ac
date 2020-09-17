@@ -13,6 +13,7 @@ LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
+AC_LANG(C++)
 AX_CXX_COMPILE_STDCXX_14([noext], [mandatory])
 
 AC_ARG_ENABLE(
@@ -177,7 +178,9 @@ if test x"${enable_static}" != x"no"; then
 
     AX_CHECK_LINK_FLAG([-static-libgcc], [STATIC_LDFLAGS="$STATIC_LDFLAGS -static-libgcc"])
 
-    STATIC_LDFLAGS="$STATIC_LDFLAGS -L`pwd`/src/static-libs -static-libstdc++"
+    STATIC_LDFLAGS="$STATIC_LDFLAGS -L`pwd`/src/static-libs"
+    AX_CHECK_LINK_FLAG([-static-libstdc++],
+                       [STATIC_LDFLAGS="$STATIC_LDFLAGS -static-libstdc++"])
     # This is a hack to link against static libraries instead of shared
     # so that we can build a mostly statically link exe that can
     # be downloaded and used right away.  This is required for OS X and
