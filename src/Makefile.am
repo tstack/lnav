@@ -463,9 +463,13 @@ bin2c_LDADD =
 ptimec_SOURCES = ptimec.cc
 ptimec_LDADD =
 
+if HAVE_RE2C
+RE2C_FILES = data_scanner_re.cc
+endif
+
 DISTCLEANFILES = \
     $(BUILT_SOURCES) \
-	data_scanner_re.cc \
+	$(RE2C_FILES) \
 	help-txt.c \
 	init-sql.c \
 	log_level_re.cc \
