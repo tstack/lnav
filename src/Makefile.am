@@ -457,11 +457,11 @@ lnav_test_LDADD = \
 	$(TEXT2C_FILES) \
 	$(LDADD)
 
-bin2c_SOURCES = bin2c.c
-bin2c_LDADD =
+bin2c$(EXEEXT): bin2c.c
+	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
 
-ptimec_SOURCES = ptimec.cc
-ptimec_LDADD =
+ptimec$(EXEEXT): ptimec.cc
+	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
 
 if HAVE_RE2C
 RE2C_FILES = data_scanner_re.cc
