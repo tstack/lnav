@@ -15,7 +15,7 @@ configure_file(config.cmake.h.in config.h)
 
 add_executable(bin2c bin2c.h bin2c.c)
 
-add_executable(ptimec ptimec.hh ptimec.cc)
+add_executable(ptimec ptimec.hh ptimec.c)
 
 set(TIME_FORMATS
         "@%@"
@@ -295,7 +295,7 @@ add_library(diag STATIC
         sysclip.cc
         pcrepp/pcrepp.cc
         piper_proc.cc
-        ptimec.cc
+        ptimec.c
         sql_util.cc
         state-extension-functions.cc
         styling.cc

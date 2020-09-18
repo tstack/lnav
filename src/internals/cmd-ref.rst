@@ -814,7 +814,7 @@
 :open *path*
 ^^^^^^^^^^^^
 
-  Open the given file(s) or URLs in lnav
+  Open the given file(s) in lnav
 
   **Parameters:**
 

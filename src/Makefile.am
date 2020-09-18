@@ -462,9 +462,9 @@ bin2c_LDADD =
 bin2c$(EXEEXT): bin2c.c
 	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
 
-ptimec_SOURCES = ptimec.cc
+ptimec_SOURCES = ptimec.c
 ptimec_LDADD =
-ptimec$(EXEEXT): ptimec.cc
+ptimec$(EXEEXT): ptimec.c
 	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
 
 if HAVE_RE2C
