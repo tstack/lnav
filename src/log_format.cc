@@ -584,7 +584,6 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
 
         if (!pat->match(pc, pi, PCRE_NO_UTF8_CHECK)) {
             if (!this->lf_pattern_locks.empty() && pat_index != -1) {
-                log_debug("no match on pattern %d", pat_index);
                 curr_fmt = -1;
                 pat_index = -1;
             }
