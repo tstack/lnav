@@ -138,7 +138,12 @@ AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefault
 dnl Experimental SIMD features.
 AC_ARG_ENABLE([simd],
     AS_HELP_STRING([--enable-simd], [Try and enable simd optimizations]),
-    [enable_simd="yes"], []
+    [
+     AS_CASE(["$enable_simd"],
+             [no], [enable_simd="no"],
+             [yes | ""],[enable_simd="yes"])
+     ],
+     []
 )
 
 AS_IF([test "x$enable_simd" = "xyes"], [
