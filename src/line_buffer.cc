@@ -655,7 +655,6 @@ Result<line_info, string> line_buffer::load_next_line(file_range prev_line)
         /* ... look for the end-of-line or end-of-file. */
         ssize_t utf8_end = -1;
 
-#undef HAVE_X86INTRIN_H
 #ifdef HAVE_X86INTRIN_H
         if (!validate_utf8_fast(line_start, retval.li_file_range.fr_size, &utf8_end)) {
             retval.li_valid_utf = false;
