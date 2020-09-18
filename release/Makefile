@@ -15,7 +15,7 @@ PACKAGE_URLS = \
 	https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz \
 	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	http://www.zlib.net/zlib-1.2.11.tar.gz \
-	http://www.bzip.org/1.0.8/bzip2-1.0.8.tar.gz \
+	https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz \
 	https://sqlite.org/2020/sqlite-autoconf-3330000.tar.gz \
 	https://www.openssl.org/source/openssl-1.0.2n.tar.gz \
 	https://www.libssh2.org/download/libssh2-1.9.0.tar.gz \
@@ -29,7 +29,9 @@ PACKAGE_URLS = \
 download-pkgs:
 	mkdir -p vagrant-static/pkgs && cd vagrant-static/pkgs && \
 	for pkg in $(PACKAGE_URLS); do \
-		wget -N $${pkg}; \
+		if ! wget -N $${pkg}; then \
+		  exit 1; \
+		fi \
 	done
 
 %-build: % %-vm
