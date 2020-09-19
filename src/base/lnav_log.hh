@@ -38,7 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/queue.h>
+
+#include <unordered_set>
 
 #ifndef lnav_dead2
 #define lnav_dead2 __attribute__((noreturn))
@@ -68,53 +69,33 @@ void log_pipe_err(int fd);
 struct log_state_dumper {
 public:
     log_state_dumper() {
-        LIST_INSERT_HEAD(&DUMPER_LIST.lsl_list, this, lsd_link);
+        DUMPER_LIST.insert(this);
     }
 
     virtual ~log_state_dumper() {
-        LIST_REMOVE(this, lsd_link);
+        DUMPER_LIST.erase(this);
     };
 
     virtual void log_state() {
 
     };
 
-    struct log_state_list {
-        log_state_list() {
-            LIST_INIT(&this->lsl_list);
-        }
-
-        LIST_HEAD(dumper_head, log_state_dumper) lsl_list;
-    };
-
-    static log_state_list DUMPER_LIST;
-
-    LIST_ENTRY(log_state_dumper) lsd_link;
+    static std::unordered_set<log_state_dumper*> DUMPER_LIST;
 };
 
 struct log_crash_recoverer {
 public:
     log_crash_recoverer() {
-        LIST_INSERT_HEAD(&CRASH_LIST.lcl_list, this, lcr_link);
+        CRASH_LIST.insert(this);
     }
 
     virtual ~log_crash_recoverer() {
-        LIST_REMOVE(this, lcr_link);
+        CRASH_LIST.erase(this);
     };
 
     virtual void log_crash_recover() = 0;
 
-    struct log_crash_list {
-        log_crash_list() {
-            LIST_INIT(&this->lcl_list);
-        }
-
-        LIST_HEAD(crash_head, log_crash_recoverer) lcl_list;
-    };
-
-    static log_crash_list CRASH_LIST;
-
-    LIST_ENTRY(log_crash_recoverer) lcr_link;
+    static std::unordered_set<log_crash_recoverer*> CRASH_LIST;
 };
 
 extern nonstd::optional<FILE *> lnav_log_file;

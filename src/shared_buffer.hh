@@ -35,9 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/queue.h>
 
 #include <string>
+#include <vector>
 
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
@@ -48,7 +48,6 @@ struct shared_buffer_ref {
 public:
     shared_buffer_ref(char *data = nullptr, size_t len = 0)
         : sb_owner(nullptr), sb_data(data), sb_length(len) {
-        memset(&this->sb_link, 0, sizeof(this->sb_link));
     };
 
     ~shared_buffer_ref() {
@@ -63,7 +62,7 @@ public:
         this->copy_ref(other);
     };
 
-    shared_buffer_ref(shared_buffer_ref &&other);
+    shared_buffer_ref(shared_buffer_ref &&other) noexcept;
 
     shared_buffer_ref &operator=(const shared_buffer_ref &other) {
         if (this != &other) {
@@ -110,36 +109,10 @@ public:
 
     bool subset(shared_buffer_ref &other, off_t offset, size_t len);
 
-    bool take_ownership() {
-        if (this->sb_owner != nullptr && this->sb_data != nullptr) {
-            char *new_data;
-        
-            if ((new_data = (char *)malloc(this->sb_length)) == nullptr) {
-                return false;
-            }
+    bool take_ownership();
 
-            memcpy(new_data, this->sb_data, this->sb_length);
-            this->sb_data = new_data;
-            LIST_REMOVE(this, sb_link);
-            this->sb_owner = nullptr;
-        }
-        return true;
-    };
+    void disown();
 
-    void disown() {
-        if (this->sb_owner == nullptr) {
-            if (this->sb_data != nullptr) {
-                free(this->sb_data);
-            }
-        } else {
-            LIST_REMOVE(this, sb_link);
-        }
-        this->sb_owner = nullptr;
-        this->sb_data = nullptr;
-        this->sb_length = 0;
-    };
-
-    LIST_ENTRY(shared_buffer_ref) sb_link;
 private:
     void copy_ref(const shared_buffer_ref &other) {
         if (other.sb_data == nullptr) {
@@ -165,36 +138,31 @@ private:
 
 class shared_buffer {
 public:
-    shared_buffer() {
-        LIST_INIT(&this->sb_refs);
-    };
-
     ~shared_buffer() {
         this->invalidate_refs();
     }
 
     void add_ref(shared_buffer_ref &ref) {
-        LIST_INSERT_HEAD(&this->sb_refs, &ref, sb_link);
+        this->sb_refs.push_back(&ref);
     };
 
     bool invalidate_refs() {
-        shared_buffer_ref *ref;
         bool retval = true;
 
-        for (ref = LIST_FIRST(&this->sb_refs);
-             ref != nullptr;
-             ref = LIST_FIRST(&this->sb_refs)) {
-            retval = retval && ref->take_ownership();
+        while (!this->sb_refs.empty()) {
+            auto iter = this->sb_refs.begin();
+
+            retval = retval && (*iter)->take_ownership();
         }
 
         return retval;
     };
 
-    LIST_HEAD(shared_buffer_head, shared_buffer_ref) sb_refs;
+    std::vector<shared_buffer_ref*> sb_refs;
 };
 
 struct tmp_shared_buffer {
-    tmp_shared_buffer(const char *str, size_t len = -1) {
+    explicit tmp_shared_buffer(const char *str, size_t len = -1) {
         if (len == (size_t)-1) {
             len = strlen(str);
         }

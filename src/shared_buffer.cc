@@ -75,14 +75,14 @@ bool shared_buffer_ref::subset(shared_buffer_ref &other, off_t offset, size_t le
 
             memcpy(this->sb_data, &other.sb_data[offset], len);
         } else {
-            LIST_INSERT_HEAD(&this->sb_owner->sb_refs, this, sb_link);
+            this->sb_owner->add_ref(*this);
             this->sb_data = &other.sb_data[offset];
         }
     }
     return true;
 }
 
-shared_buffer_ref::shared_buffer_ref(shared_buffer_ref &&other)
+shared_buffer_ref::shared_buffer_ref(shared_buffer_ref &&other) noexcept
 {
     if (other.sb_data == nullptr) {
         this->sb_owner = nullptr;
@@ -101,4 +101,39 @@ shared_buffer_ref::shared_buffer_ref(shared_buffer_ref &&other)
         other.sb_data = nullptr;
         other.sb_length = 0;
     }
+}
+
+bool shared_buffer_ref::take_ownership()
+{
+    if (this->sb_owner != nullptr && this->sb_data != nullptr) {
+        char *new_data;
+
+        if ((new_data = (char *)malloc(this->sb_length)) == nullptr) {
+            return false;
+        }
+
+        memcpy(new_data, this->sb_data, this->sb_length);
+        this->sb_data = new_data;
+        this->sb_owner->sb_refs.erase(find(this->sb_owner->sb_refs.begin(),
+                                           this->sb_owner->sb_refs.end(),
+                                           this));
+        this->sb_owner = nullptr;
+    }
+    return true;
+}
+
+void shared_buffer_ref::disown()
+{
+    if (this->sb_owner == nullptr) {
+        if (this->sb_data != nullptr) {
+            free(this->sb_data);
+        }
+    } else {
+        this->sb_owner->sb_refs.erase(find(this->sb_owner->sb_refs.begin(),
+                                           this->sb_owner->sb_refs.end(),
+                                           this));
+    }
+    this->sb_owner = nullptr;
+    this->sb_data = nullptr;
+    this->sb_length = 0;
 }

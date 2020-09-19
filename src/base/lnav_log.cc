@@ -107,8 +107,8 @@ const char *lnav_log_crash_dir;
 nonstd::optional<const struct termios *> lnav_log_orig_termios;
 static pthread_mutex_t lnav_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-log_state_dumper::log_state_list log_state_dumper::DUMPER_LIST;
-log_crash_recoverer::log_crash_list log_crash_recoverer::CRASH_LIST;
+std::unordered_set<log_state_dumper*> log_state_dumper::DUMPER_LIST;
+std::unordered_set<log_crash_recoverer*> log_crash_recoverer::CRASH_LIST;
 
 static struct {
     size_t lr_length;
@@ -370,14 +370,8 @@ static void sigabrt(int sig)
 
         log_host_info();
 
-        {
-            log_state_dumper *lsd;
-
-            for (lsd = LIST_FIRST(&log_state_dumper::DUMPER_LIST.lsl_list);
-                 lsd != nullptr;
-                 lsd = LIST_NEXT(lsd, lsd_link)) {
-                lsd->log_state();
-            }
+        for (auto lsd : log_state_dumper::DUMPER_LIST) {
+            lsd->log_state();
         }
 
         if (log_ring.lr_frag_start < (off_t)BUFFER_SIZE) {
@@ -392,14 +386,8 @@ static void sigabrt(int sig)
     }
 
     lnav_log_orig_termios | [](auto termios) {
-        {
-            log_crash_recoverer *lcr;
-
-            for (lcr = LIST_FIRST(&log_crash_recoverer::CRASH_LIST.lcl_list);
-                 lcr != nullptr;
-                 lcr = LIST_NEXT(lcr, lcr_link)) {
-                lcr->log_crash_recover();
-            }
+        for (auto lcr : log_crash_recoverer::CRASH_LIST) {
+            lcr->log_crash_recover();
         }
 
         tcsetattr(STDOUT_FILENO, TCSAFLUSH, termios);
