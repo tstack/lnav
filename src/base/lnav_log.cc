@@ -107,8 +107,8 @@ const char *lnav_log_crash_dir;
 nonstd::optional<const struct termios *> lnav_log_orig_termios;
 static pthread_mutex_t lnav_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-std::unordered_set<log_state_dumper*> log_state_dumper::DUMPER_LIST;
-std::unordered_set<log_crash_recoverer*> log_crash_recoverer::CRASH_LIST;
+std::vector<log_state_dumper*> log_state_dumper::DUMPER_LIST;
+std::vector<log_crash_recoverer*> log_crash_recoverer::CRASH_LIST;
 
 static struct {
     size_t lr_length;
@@ -486,4 +486,35 @@ void log_pipe_err(int fd)
     });
 
     reader.detach();
+}
+
+log_state_dumper::log_state_dumper()
+{
+    DUMPER_LIST.push_back(this);
+}
+
+log_state_dumper::~log_state_dumper()
+{
+    auto iter = std::find(DUMPER_LIST.begin(),
+                          DUMPER_LIST.end(),
+                          this);
+    if (iter != DUMPER_LIST.end()) {
+        DUMPER_LIST.erase(std::find(DUMPER_LIST.begin(),
+                                    DUMPER_LIST.end(),
+                                    this));
+    }
+}
+
+log_crash_recoverer::log_crash_recoverer()
+{
+    CRASH_LIST.push_back(this);
+}
+
+log_crash_recoverer::~log_crash_recoverer()
+{
+    auto iter = std::find(CRASH_LIST.begin(), CRASH_LIST.end(), this);
+
+    if (iter != CRASH_LIST.end()) {
+        CRASH_LIST.erase(iter);
+    }
 }

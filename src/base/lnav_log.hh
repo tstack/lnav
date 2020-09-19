@@ -39,7 +39,8 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include <unordered_set>
+#include <vector>
+#include <algorithm>
 
 #ifndef lnav_dead2
 #define lnav_dead2 __attribute__((noreturn))
@@ -68,34 +69,29 @@ void log_pipe_err(int fd);
 
 struct log_state_dumper {
 public:
-    log_state_dumper() {
-        DUMPER_LIST.insert(this);
-    }
+    log_state_dumper();
 
-    virtual ~log_state_dumper() {
-        DUMPER_LIST.erase(this);
-    };
+    virtual ~log_state_dumper();
 
     virtual void log_state() {
 
     };
 
-    static std::unordered_set<log_state_dumper*> DUMPER_LIST;
+    log_state_dumper(const log_state_dumper&) = delete;
+    log_state_dumper& operator=(const log_state_dumper&) = delete;
+
+    static std::vector<log_state_dumper*> DUMPER_LIST;
 };
 
 struct log_crash_recoverer {
 public:
-    log_crash_recoverer() {
-        CRASH_LIST.insert(this);
-    }
+    log_crash_recoverer();
 
-    virtual ~log_crash_recoverer() {
-        CRASH_LIST.erase(this);
-    };
+    virtual ~log_crash_recoverer();;
 
     virtual void log_crash_recover() = 0;
 
-    static std::unordered_set<log_crash_recoverer*> CRASH_LIST;
+    static std::vector<log_crash_recoverer*> CRASH_LIST;
 };
 
 extern nonstd::optional<FILE *> lnav_log_file;
