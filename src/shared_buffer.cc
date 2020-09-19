@@ -35,6 +35,8 @@
 #include <execinfo.h>
 #endif
 
+#include <algorithm>
+
 #include "shared_buffer.hh"
 
 static const bool DEBUG_TRACE = false;
