@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
+#include <random>
 #include <tuple>
 #include <string>
 #include <vector>
@@ -212,7 +213,9 @@ int main(int argc, char *argv[])
 				do {
 					size_t lpc;
 
-					random_shuffle(index.begin(), index.end());
+					std::random_device rd;
+					std::mt19937 g(rd());
+					std::shuffle(index.begin(), index.end(), g);
 					for (lpc = 0; lpc < index.size(); lpc++) {
 					    const auto &index_tuple = index[lpc];
 
