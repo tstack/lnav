@@ -3,7 +3,7 @@ SUBDIRS = base fmtlib pcrepp yajl yajlpp .
 
 bin_PROGRAMS = lnav
 
-noinst_PROGRAMS = bin2c ptimec lnav-test
+noinst_PROGRAMS = lnav-test
 
 noinst_LIBRARIES = libdiag.a
 
@@ -56,8 +56,8 @@ FORMAT_FILES = \
     $(srcdir)/formats/xmlrpc_log.json \
     $()
 
-default-formats.h default-formats.c: bin2c $(FORMAT_FILES)
-	$(BIN2C_V)./bin2c -n lnav_format_json default-formats $(FORMAT_FILES)
+default-formats.h default-formats.c: bin2c$(BUILD_EXEEXT) $(FORMAT_FILES)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_format_json default-formats $(FORMAT_FILES)
 
 CONFIG_FILES = \
     $(srcdir)/root-config.json \
@@ -74,8 +74,8 @@ CONFIG_FILES = \
     $(srcdir)/themes/solarized-light.json \
     $()
 
-default-config.h default-config.c: bin2c $(CONFIG_FILES)
-	$(BIN2C_V)./bin2c -n lnav_config_json default-config $(CONFIG_FILES)
+default-config.h default-config.c: bin2c$(BUILD_EXEEXT) $(CONFIG_FILES)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_config_json default-config $(CONFIG_FILES)
 
 BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/dhclient-summary.lnav \
@@ -85,30 +85,30 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/search-for.lnav \
     $()
 
-builtin-scripts.h builtin-scripts.c: bin2c $(BUILTIN_LNAVSCRIPTS)
-	$(BIN2C_V)./bin2c -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
+builtin-scripts.h builtin-scripts.c: bin2c$(BUILD_EXEEXT) $(BUILTIN_LNAVSCRIPTS)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_scripts builtin-scripts $(BUILTIN_LNAVSCRIPTS)
 
 BUILTIN_SHSCRIPTS = \
     $(srcdir)/scripts/dump-pid.sh \
     $()
 
-builtin-sh-scripts.h builtin-sh-scripts.c: bin2c $(BUILTIN_SHSCRIPTS)
-	$(BIN2C_V)./bin2c -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
+builtin-sh-scripts.h builtin-sh-scripts.c: bin2c$(BUILD_EXEEXT) $(BUILTIN_SHSCRIPTS)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) -n lnav_sh_scripts builtin-sh-scripts $(BUILTIN_SHSCRIPTS)
 
-%-sh.c: $(srcdir)/%.sh bin2c
-	$(BIN2C_V)./bin2c $(*)-sh $<
+%-sh.c: $(srcdir)/%.sh bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-sh $<
 
-%-txt.c %-txt.h: $(srcdir)/%.txt bin2c
-	$(BIN2C_V)./bin2c $(*)-txt $<
+%-txt.c %-txt.h: $(srcdir)/%.txt bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-txt $<
 
-%-sql.c %-sql.h: $(srcdir)/%.sql bin2c
-	$(BIN2C_V)./bin2c $(*)-sql $<
+%-sql.c %-sql.h: $(srcdir)/%.sql bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-sql $<
 
-%-lnav.c %-lnav.h: $(srcdir)/%.lnav bin2c
-	$(BIN2C_V)./bin2c $(*)-lnav $<
+%-lnav.c %-lnav.h: $(srcdir)/%.lnav bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-lnav $<
 
-%-json.c %-json.h: $(srcdir)/%.json bin2c
-	$(BIN2C_V)./bin2c $(*)-json $<
+%-json.c %-json.h: $(srcdir)/%.json bin2c$(BUILD_EXEEXT)
+	$(BIN2C_V)./bin2c$(BUILD_EXEEXT) $(*)-json $<
 
 TIME_FORMATS = \
     "@%@" \
@@ -163,8 +163,8 @@ TIME_FORMATS = \
     "%s.%f" \
     $()
 
-time_fmts.cc: ptimec
-	$(PTIME_V)./ptimec $(TIME_FORMATS) > $@
+time_fmts.cc: ptimec$(BUILD_EXEEXT)
+	$(PTIME_V)./ptimec$(BUILD_EXEEXT) $(TIME_FORMATS) > $@
 
 if HAVE_RE2C
 %.cc: %.re
@@ -457,19 +457,23 @@ lnav_test_LDADD = \
 	$(TEXT2C_FILES) \
 	$(LDADD)
 
-bin2c_SOURCES = bin2c.c
-bin2c_LDADD =
-bin2c$(EXEEXT): bin2c.c
+bin2c$(BUILD_EXEEXT): bin2c.c
 	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
 
-ptimec_SOURCES = ptimec.c
-ptimec_LDADD =
-ptimec$(EXEEXT): ptimec.c
+ptimec$(BUILD_EXEEXT): ptimec.c
 	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
 
 if HAVE_RE2C
 RE2C_FILES = data_scanner_re.cc
 endif
+
+EXTRA_DIST = \
+	bin2c.c \
+	ptimec.c
+
+CLEANFILES = \
+	ptimec$(BUILD_EXEEXT) \
+	bin2c$(BUILD_EXEEXT)
 
 DISTCLEANFILES = \
     $(BUILT_SOURCES) \
