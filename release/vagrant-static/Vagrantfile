@@ -22,11 +22,12 @@ Vagrant.configure(2) do |config|
       freebsd.vm.network "private_network", :type => 'dhcp'
       freebsd.vm.provision "shell", path:"pkg.sh"
       freebsd.vm.provision "shell", path:"provision.sh"
-      freebsd.vm.box = "freebsd/FreeBSD-11.2-RELEASE"
-      freebsd.vm.box_version = "2018.06.22"
+      freebsd.vm.box = "freebsd/FreeBSD-12.1-RELEASE"
+      freebsd.vm.box_version = "2019.11.01"
       freebsd.vm.synced_folder ".", "/vagrant", type: "nfs"
       freebsd.ssh.shell = "sh"
       freebsd.vm.base_mac = "080027D14C66"
+      freebsd.vm.boot_timeout = 1200
   end
 
   config.vm.define :musl do |musl|
