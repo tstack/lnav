@@ -258,6 +258,20 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
 
     mutex_guard mg(lnav_log_mutex);
 
+    {
+        // get the base name of the file.  NB: can't use basename() since it
+        // can modify its argument
+        const char *last_slash = src_file;
+
+        for (int lpc = 0; src_file[lpc]; lpc++) {
+            if (src_file[lpc] == '/' || src_file[lpc] == '\\') {
+                last_slash = &src_file[lpc + 1];
+            }
+        }
+
+        src_file = last_slash;
+    }
+
     va_start(args, fmt);
     gettimeofday(&curr_time, nullptr);
     localtime_r(&curr_time.tv_sec, &localtm);
