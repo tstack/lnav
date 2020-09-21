@@ -41,7 +41,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include <libgen.h>
 #include <pthread.h>
 #include <sys/resource.h>
 
@@ -274,7 +273,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         localtm.tm_sec,
         (int)(curr_time.tv_usec / 1000),
         LEVEL_NAMES[to_underlying(level)],
-        basename((char *)src_file),
+        src_file,
         line_number);
     rc = vsnprintf(&line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,
         fmt, args);
