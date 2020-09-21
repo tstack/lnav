@@ -483,8 +483,10 @@ uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
 		$(HEADERS))
 
+if !DISABLE_DOCUMENTATION
 all-local: lnav
 	env DUMP_INTERNALS_DIR=$(srcdir)/internals ./lnav Makefile
+endif
 
 install-exec-hook:
 	bash $(srcdir)/alpha-release.sh

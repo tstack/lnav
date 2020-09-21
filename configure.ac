@@ -277,6 +277,7 @@ AS_IF([test $? -eq 0],
 
 AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
 AM_CONDITIONAL(HAVE_LIBCURL, test x"$LIBCURL" != x"")
+AM_CONDITIONAL([DISABLE_DOCUMENTATION], [ test x"$cross_compiling" != x"no" ])
 
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_FILES([Makefile])
