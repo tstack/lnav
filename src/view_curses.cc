@@ -270,11 +270,11 @@ void view_curses::mvwattrline(WINDOW *window,
                               int y,
                               int x,
                               attr_line_t &al,
-                              const struct line_range &lr,
+                              const struct line_range &lr_chars,
                               view_colors::role_t base_role)
 {
     attr_t text_attrs, attrs;
-    int line_width;
+    int line_width_chars;
     string_attrs_t &         sa   = al.get_attrs();
     string &                 line = al.get_string();
     string_attrs_t::const_iterator iter;
@@ -285,59 +285,71 @@ void view_curses::mvwattrline(WINDOW *window,
     int exp_offset = 0;
     string full_line;
 
-    require(lr.lr_end >= 0);
+    require(lr_chars.lr_end >= 0);
 
-    line_width    = lr.length();
-    tab_count     = count(line.begin(), line.end(), '\t');
+    line_width_chars = lr_chars.length();
+    tab_count = count(line.begin(), line.end(), '\t');
     expanded_line = (char *)alloca(line.size() + tab_count * 8 + 1);
 
-    short *fg_color = (short *) alloca(line_width * sizeof(short));
+    short *fg_color = (short *) alloca(line_width_chars * sizeof(short));
     bool has_fg = false;
-    short *bg_color = (short *) alloca(line_width * sizeof(short));
+    short *bg_color = (short *) alloca(line_width_chars * sizeof(short));
     bool has_bg = false;
+    line_range lr_bytes{lr_chars.lr_start, lr_chars.lr_end};
+    int char_index = 0;
 
     for (size_t lpc = 0; lpc < line.size(); lpc++) {
         int exp_start_index = exp_index;
         unsigned char ch = static_cast<unsigned char>(line[lpc]);
 
         switch (ch) {
-        case '\t':
-            do {
+            case '\t':
+                do {
+                    expanded_line[exp_index] = ' ';
+                    exp_index += 1;
+                    char_index += 1;
+                } while (exp_index % 8);
+                utf_adjustments.emplace_back(lpc,
+                                             exp_index - exp_start_index - 1);
+                break;
+
+            case '\r':
+            case '\n':
                 expanded_line[exp_index] = ' ';
                 exp_index += 1;
-            } while (exp_index % 8);
-            utf_adjustments.emplace_back(lpc, exp_index - exp_start_index - 1);
-            break;
+                char_index += 1;
+                break;
 
-        case '\r':
-        case '\n':
-            expanded_line[exp_index] = ' ';
-            exp_index += 1;
-            break;
+            default: {
+                int offset = 0;
 
-        default: {
-            int offset = 0;
-
-            expanded_line[exp_index] = line[lpc];
-            exp_index += 1;
-            if ((ch & 0xf8) == 0xf0) {
-                offset = -3;
-            } else if ((ch & 0xf0) == 0xe0) {
-                offset = -2;
-            } else if ((ch & 0xe0) == 0xc0) {
-                offset = -1;
-            }
-
-            if (offset) {
-                exp_offset += offset;
-                utf_adjustments.emplace_back(lpc, offset);
-                for (; offset && (lpc + 1) < line.size(); lpc++, offset++) {
-                    expanded_line[exp_index] = line[lpc + 1];
-                    exp_index += 1;
+                expanded_line[exp_index] = line[lpc];
+                exp_index += 1;
+                if ((ch & 0xf8) == 0xf0) {
+                    offset = -3;
+                } else if ((ch & 0xf0) == 0xe0) {
+                    offset = -2;
+                } else if ((ch & 0xe0) == 0xc0) {
+                    offset = -1;
                 }
+
+                if (offset) {
+                    if (char_index < lr_chars.lr_start) {
+                        lr_bytes.lr_start += abs(offset);
+                    }
+                    if (char_index < lr_chars.lr_end) {
+                        lr_bytes.lr_end += abs(offset);
+                    }
+                    exp_offset += offset;
+                    utf_adjustments.emplace_back(lpc, offset);
+                    for (; offset && (lpc + 1) < line.size(); lpc++, offset++) {
+                        expanded_line[exp_index] = line[lpc + 1];
+                        exp_index += 1;
+                    }
+                }
+                char_index += 1;
+                break;
             }
-            break;
-        }
         }
     }
 
@@ -349,11 +361,11 @@ void view_curses::mvwattrline(WINDOW *window,
     attrs      = text_attrs;
     wmove(window, y, x);
     wattron(window, attrs);
-    if (lr.lr_start < (int)full_line.size()) {
-        waddnstr(window, &full_line.c_str()[lr.lr_start], line_width);
+    if (lr_bytes.lr_start < (int)full_line.size()) {
+        waddnstr(window, &full_line.c_str()[lr_bytes.lr_start], lr_bytes.length());
     }
-    if (lr.lr_end > (int)full_line.size()) {
-        whline(window, ' ', lr.lr_end - (full_line.size() + exp_offset));
+    if (lr_bytes.lr_end > (int)full_line.size()) {
+        whline(window, ' ', lr_bytes.lr_end - (full_line.size() + exp_offset));
     }
     wattroff(window, attrs);
 
@@ -375,7 +387,7 @@ void view_curses::mvwattrline(WINDOW *window,
         for (const auto &adj : utf_adjustments) {
             // If the UTF adjustment is in the viewport, we need to adjust this
             // attribute.
-            if (adj.uda_origin >= lr.lr_start &&
+            if (adj.uda_origin >= lr_chars.lr_start &&
                 adj.uda_origin < iter->sa_range.lr_start) {
                 attr_range.lr_start += adj.uda_offset;
             }
@@ -383,22 +395,22 @@ void view_curses::mvwattrline(WINDOW *window,
 
         if (attr_range.lr_end != -1) {
             for (const auto &adj : utf_adjustments) {
-                if (adj.uda_origin >= lr.lr_start &&
+                if (adj.uda_origin >= lr_chars.lr_start &&
                     adj.uda_origin < iter->sa_range.lr_end) {
                     attr_range.lr_end += adj.uda_offset;
                 }
             }
         }
 
-        attr_range.lr_start = max(0, attr_range.lr_start - lr.lr_start);
-        if (attr_range.lr_start > line_width) {
+        attr_range.lr_start = max(0, attr_range.lr_start - lr_chars.lr_start);
+        if (attr_range.lr_start > line_width_chars) {
             continue;
         }
         if (attr_range.lr_end == -1) {
-            attr_range.lr_end = lr.lr_start + line_width;
+            attr_range.lr_end = lr_chars.lr_start + line_width_chars;
         }
 
-        attr_range.lr_end = min(line_width, attr_range.lr_end - lr.lr_start);
+        attr_range.lr_end = min(line_width_chars, attr_range.lr_end - lr_chars.lr_start);
 
         if (iter->sa_type == &VC_GRAPHIC) {
             for (int index = attr_range.lr_start;
@@ -411,7 +423,7 @@ void view_curses::mvwattrline(WINDOW *window,
 
         if (iter->sa_type == &VC_FOREGROUND) {
             if (!has_fg) {
-                memset(fg_color, -1, line_width * sizeof(short));
+                memset(fg_color, -1, line_width_chars * sizeof(short));
             }
             fill(&fg_color[attr_range.lr_start], &fg_color[attr_range.lr_end], (short) iter->sa_value.sav_int);
             has_fg = true;
@@ -420,7 +432,7 @@ void view_curses::mvwattrline(WINDOW *window,
 
         if (iter->sa_type == &VC_BACKGROUND) {
             if (!has_bg) {
-                memset(bg_color, -1, line_width * sizeof(short));
+                memset(bg_color, -1, line_width_chars * sizeof(short));
             }
             fill(bg_color + attr_range.lr_start, bg_color + attr_range.lr_end, (short) iter->sa_value.sav_int);
             has_bg = true;
@@ -442,7 +454,7 @@ void view_curses::mvwattrline(WINDOW *window,
 
             if (attrs || color_pair > 0) {
                 int x_pos = x + attr_range.lr_start;
-                int ch_width = min(awidth, (line_width - attr_range.lr_start));
+                int ch_width = min(awidth, (line_width_chars - attr_range.lr_start));
                 cchar_t row_ch[ch_width + 1];
 
                 mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
@@ -475,13 +487,13 @@ void view_curses::mvwattrline(WINDOW *window,
 #if 1
     if (has_fg || has_bg) {
         if (!has_fg) {
-            memset(fg_color, -1, line_width * sizeof(short));
+            memset(fg_color, -1, line_width_chars * sizeof(short));
         }
         if (!has_bg) {
-            memset(bg_color, -1, line_width * sizeof(short));
+            memset(bg_color, -1, line_width_chars * sizeof(short));
         }
 
-        int ch_width = lr.length();
+        int ch_width = lr_chars.length();
         cchar_t row_ch[ch_width + 1];
 
         mvwin_wchnstr(window, y, x, row_ch, ch_width);
