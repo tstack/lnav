@@ -225,6 +225,7 @@ BUILT_SOURCES = \
     help-txt.c \
     init-sql.h \
     init-sql.c \
+    time_fmts.cc \
     xterm-palette-json.h \
     xterm-palette-json.c
 
@@ -426,7 +427,6 @@ libdiag_a_SOURCES = \
 	textfile_highlighters.cc \
 	textview_curses.cc \
 	time-extension-functions.cc \
-	time_fmts.cc \
 	view_curses.cc \
 	view_helpers.cc \
 	views_vtab.cc \
@@ -440,10 +440,11 @@ TEXT2C_FILES = \
 	ansi-palette-json.o \
 	builtin-scripts.o \
 	builtin-sh-scripts.o \
-	help-txt.o \
-	init-sql.o \
 	default-config.o \
 	default-formats.o \
+	help-txt.o \
+	init-sql.o \
+	time_fmts.o \
 	xterm-palette-json.o
 
 lnav_SOURCES = lnav.cc
@@ -463,7 +464,7 @@ ptimec$(BUILD_EXEEXT): ptimec.c
 	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
 
 if HAVE_RE2C
-RE2C_FILES = data_scanner_re.cc
+RE2C_FILES = data_scanner_re.cc log_level_re.cc
 endif
 
 EXTRA_DIST = \
@@ -478,9 +479,7 @@ DISTCLEANFILES = \
     $(BUILT_SOURCES) \
 	$(RE2C_FILES) \
 	help-txt.c \
-	init-sql.c \
-	log_level_re.cc \
-    time_fmts.cc
+	init-sql.c
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
