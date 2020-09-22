@@ -356,7 +356,6 @@ noinst_HEADERS = \
     fmtlib/fmt/format.h
 
 libdiag_a_SOURCES = \
-    $(BUILT_SOURCES) \
 	ansi_scrubber.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \

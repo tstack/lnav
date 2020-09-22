@@ -60,10 +60,6 @@ void rebuild_indexes()
 
 readline_context::command_map_t lnav_commands;
 
-extern "C" {
-const char *help_txt = "";
-}
-
 int main(int argc, char *argv[])
 {
     int retval = EXIT_SUCCESS;

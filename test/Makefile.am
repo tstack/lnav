@@ -61,7 +61,8 @@ CONFIG_OBJS = \
 TEXT2C_OBJS = \
 	../src/builtin-scripts.o \
 	../src/builtin-sh-scripts.o \
-	../src/default-formats.o
+	../src/default-formats.o \
+	../src/help-txt.o
 
 LDADD = \
     -lz \
