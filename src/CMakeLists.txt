@@ -295,7 +295,6 @@ add_library(diag STATIC
         sysclip.cc
         pcrepp/pcrepp.cc
         piper_proc.cc
-        ptimec.c
         sql_util.cc
         state-extension-functions.cc
         styling.cc
