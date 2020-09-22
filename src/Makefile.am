@@ -172,6 +172,25 @@ if HAVE_RE2C
 	$(REC2_V)test $@ -ef $(srcdir)/$*.cc || cp $@ $(srcdir)/$*.cc
 endif
 
+LNAV_BUILT_FILES = \
+    ansi-palette-json.h \
+    ansi-palette-json.c \
+    builtin-scripts.h \
+    builtin-scripts.c \
+    builtin-sh-scripts.h \
+    builtin-sh-scripts.c \
+    default-config.h \
+    default-config.c \
+    default-formats.h \
+    default-formats.c \
+    help-txt.h \
+    help-txt.c \
+    init-sql.h \
+    init-sql.c \
+    time_fmts.cc \
+    xterm-palette-json.h \
+    xterm-palette-json.c
+
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(READLINE_LDFLAGS) \
@@ -209,25 +228,6 @@ dist_noinst_DATA = \
 	$(CONFIG_FILES) \
 	$(FORMAT_FILES) \
 	xterm-palette.json
-
-BUILT_SOURCES = \
-    ansi-palette-json.h \
-    ansi-palette-json.c \
-    builtin-scripts.h \
-    builtin-scripts.c \
-    builtin-sh-scripts.h \
-    builtin-sh-scripts.c \
-    default-config.h \
-    default-config.c \
-    default-formats.h \
-    default-formats.c \
-    help-txt.h \
-    help-txt.c \
-    init-sql.h \
-    init-sql.c \
-    time_fmts.cc \
-    xterm-palette-json.h \
-    xterm-palette-json.c
 
 noinst_HEADERS = \
 	all_logs_vtab.hh \
@@ -356,6 +356,12 @@ noinst_HEADERS = \
     fmtlib/fmt/posix.h \
     fmtlib/fmt/format.h
 
+BUILT_SOURCES = \
+	$(LNAV_BUILT_FILES)
+
+nodist_libdiag_a_SOURCES = \
+	$(BUILT_SOURCES)
+
 libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
 	bookmarks.cc \
@@ -436,26 +442,9 @@ libdiag_a_SOURCES = \
 	xterm_mouse.cc \
 	spookyhash/SpookyV2.cpp
 
-TEXT2C_FILES = \
-	ansi-palette-json.o \
-	builtin-scripts.o \
-	builtin-sh-scripts.o \
-	default-config.o \
-	default-formats.o \
-	help-txt.o \
-	init-sql.o \
-	time_fmts.o \
-	xterm-palette-json.o
-
 lnav_SOURCES = lnav.cc
-lnav_LDADD = \
-	$(TEXT2C_FILES) \
-	$(LDADD)
 
 lnav_test_SOURCES = lnav.cc test_override.c
-lnav_test_LDADD = \
-	$(TEXT2C_FILES) \
-	$(LDADD)
 
 bin2c$(BUILD_EXEEXT): bin2c.c
 	$(AM_V_CC) $(CC_FOR_BUILD) -o $@ $?
