@@ -4,23 +4,23 @@ lnav v0.9.0:
        monocai, night-owl, solarized-light, and solarized-dark.  The theme
        can be changed using the ':config' command, like so:
          :config /ui/theme night-owl
-       Consult the online documentation for defining a new theme.
+       Consult the online documentation for defining a new theme at:
+         https://lnav.readthedocs.io/en/latest/config.html#theme-definitions
      * Added support for custom keymaps and included the following: de, fr,
        uk, us.  The keymap can be changed using the ':config' command, like so:
          :config /ui/keymap uk
-       Consult the online documentation for defining a new keymap.
+       Consult the online documentation for defining a new keymap at:
+         https://lnav.readthedocs.io/en/latest/config.html#keymap-definitions
      * Indexing of new data in log files can now be paused by pressing '='
        and unpaused by pressing it again.  The bottom status bar will display
        'Paused' in the right corner while paused.
      * CMake is now a supported way to build.
-     * When viewing data from the standard-input, a symbolic name can now be
-       assigned to the view by doing an UPDATE to the filepath column of the
-       lnav_file table.  For example, to assign the name "journald", the
-       following SQL statement can be executed in lnav:
+     * When viewing data from the standard-input, a symbolic name can be used
+       to preserve session state.  The name can be changed using the
+       "rename-stdin" lnav script or by doing an UPDATE to the filepath
+       column of the lnav_file table.  For example, to assign the name
+       "journald", the following SQL statement can be executed in lnav:
          ;UPDATE lnav_file SET filepath='journald' WHERE filepath='stdin'
-       The symbolic name will be used when saving and loading session
-       information.  A "rename-stdin" lnav script has also been added as a
-       convenience to perform this operation.
      * The size of the terminal can be accessed in SQL using the $LINES and
        $COLS variables.
      * The raise_error(msg) SQL function has been added to make it easier to
@@ -32,7 +32,7 @@ lnav v0.9.0:
 
      Interface Changes:
      * Data piped into lnav is no longer dumped to the console after exit.
-       Instead a file containing the data is left in .lnav/stdin-captures
+       Instead a file containing the data is left in .lnav/stdin-captures/
        and a message is printed to the console indicating the file name.
      * In time-offset mode, the deltas for messages before the first mark
        are now negative instead of relative to the start of the log.
@@ -40,7 +40,7 @@ lnav v0.9.0:
        now respected for storing lnav's configuration.  If you have an existing
        ~/.lnav directory, that will continue to be used until you move it to
        $XDG_CONFIG_HOME/lnav or ~/.config/lnav.
-     * Removed the ':save-config' command, changes to the configuration are now
+     * Removed the ':save-config' command. Changes to the configuration are now
        immediately saved.
 
      Fixes:
