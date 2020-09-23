@@ -1,5 +1,5 @@
 name: lnav
-version: '0.9.0'
+adopt-info: lnav
 summary: Log File Navigator
 description: |
   The Log File Navigator, **lnav** for short, is an advanced log file viewer
@@ -18,10 +18,30 @@ apps:
       - network         # required, lnav uses sendto() with UNIX domain socket 
 
 parts:
+  selective-checkout:
+    source: https://github.com/Lin-Buo-Ren/selective-checkout.git
+    source-tag: v1.0.0
+    plugin: dump
+    build-packages:
+    # Uncomment the VCS your main part is using
+    - git
+    #- mercurial
+    #- subversion
+    stage:
+      - scriptlets/selective-checkout
+    prime:
+      - -*
   lnav:
+    after:
+      - selective-checkout
     plugin: autotools
     source: https://github.com/tstack/lnav.git
     source-tag: v0.9.0
+    source-depth: 500
+    override-pull: |
+      snapcraftctl pull
+
+      "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout
     build-packages: 
       - build-essential
       - libpcre3-dev
