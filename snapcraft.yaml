@@ -50,10 +50,8 @@ parts:
       - zlib1g-dev
       - libbz2-dev
       - libgpm-dev
-      - libcurl-dev
-    stage-packages: 
+    stage-packages:
       - zlib1g
       - libncursesw5
       - libpcre3
       - libgpm2
-      - libcurl3-gnutls
