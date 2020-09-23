@@ -240,7 +240,6 @@ noinst_HEADERS = \
 	bin2c.h \
 	bookmarks.hh \
 	bottom_status_source.hh \
-	builtin-scripts.h \
 	byte_array.hh \
 	column_namer.hh \
 	command_executor.hh \
