@@ -365,11 +365,8 @@ noinst_HEADERS = \
     fmtlib/fmt/posix.h \
     fmtlib/fmt/format.h
 
-BUILT_SOURCES = \
-	$(LNAV_BUILT_FILES)
-
 nodist_libdiag_a_SOURCES = \
-	$(BUILT_SOURCES)
+	$(LNAV_BUILT_FILES)
 
 libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
@@ -476,7 +473,7 @@ CLEANFILES = \
 	bin2c$(BUILD_EXEEXT)
 
 DISTCLEANFILES = \
-    $(BUILT_SOURCES) \
+    $(LNAV_BUILT_FILES) \
 	$(RE2C_FILES)
 
 uncrusty:
