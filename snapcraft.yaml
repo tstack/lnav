@@ -36,7 +36,6 @@ parts:
       - selective-checkout
     plugin: autotools
     source: https://github.com/tstack/lnav.git
-    source-tag: v0.9.0
     source-depth: 500
     override-pull: |
       snapcraftctl pull
