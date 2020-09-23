@@ -172,6 +172,17 @@ if HAVE_RE2C
 	$(REC2_V)test $@ -ef $(srcdir)/$*.cc || cp $@ $(srcdir)/$*.cc
 endif
 
+lnav_config.$(OBJEXT): default-config.h
+
+log_format_loader.$(OBJEXT): \
+	builtin-scripts.h \
+	builtin-sh-scripts.h \
+	default-formats.h
+
+styling.$(OBJEXT): ansi-palette-json.h xterm-palette-json.h
+
+view_helpers.$(OBJEXT): help-txt.h
+
 LNAV_BUILT_FILES = \
     ansi-palette-json.h \
     ansi-palette-json.c \
@@ -439,6 +450,8 @@ libdiag_a_SOURCES = \
 	log_vtab_impl.cc \
 	xterm_mouse.cc \
 	spookyhash/SpookyV2.cpp
+
+lnav.$(OBJEXT): help-txt.h init-sql.h
 
 lnav_SOURCES = lnav.cc
 
