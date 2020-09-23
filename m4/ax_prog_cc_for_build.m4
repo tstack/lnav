@@ -48,7 +48,7 @@ pushdef([ac_cv_prog_gcc], ac_cv_build_prog_gcc)dnl
 pushdef([ac_cv_prog_cc_works], ac_cv_build_prog_cc_works)dnl
 pushdef([ac_cv_prog_cc_cross], ac_cv_build_prog_cc_cross)dnl
 pushdef([ac_cv_prog_cc_g], ac_cv_build_prog_cc_g)dnl
-pushdef([ac_cv_c_compiler_gnu], ac_cv_build_c_compiler_gnu)dnl
+dnl pushdef([ac_cv_c_compiler_gnu], ac_cv_build_c_compiler_gnu)dnl
 pushdef([ac_cv_exeext], ac_cv_build_exeext)dnl
 pushdef([ac_cv_objext], ac_cv_build_objext)dnl
 pushdef([ac_exeext], ac_build_exeext)dnl
@@ -76,6 +76,7 @@ pushdef([am_cv_CC_dependencies_compiler_type], am_cv_build_CC_dependencies_compi
 pushdef([am_cv_prog_cc_c_o], am_cv_build_prog_cc_c_o)dnl
 pushdef([cross_compiling], cross_compiling_build)dnl
 
+_save_ax_prog_cc_for_build__ac_ext="$ac_cv_c_compiler_gnu"
 cross_compiling_build=no
 
 ac_build_tool_prefix=
@@ -90,6 +91,7 @@ AC_PROG_CPP
 
 dnl Restore the old definitions
 dnl
+ac_cv_c_compiler_gnu="$_save_ax_prog_cc_for_build__ac_ext"
 popdef([cross_compiling])dnl
 popdef([am_cv_prog_cc_c_o])dnl
 popdef([am_cv_CC_dependencies_compiler_type])dnl
@@ -116,7 +118,7 @@ popdef([ac_objext])dnl
 popdef([ac_exeext])dnl
 popdef([ac_cv_objext])dnl
 popdef([ac_cv_exeext])dnl
-popdef([ac_cv_c_compiler_gnu])dnl
+dnl popdef([ac_cv_c_compiler_gnu])dnl
 popdef([ac_cv_prog_cc_g])dnl
 popdef([ac_cv_prog_cc_cross])dnl
 popdef([ac_cv_prog_cc_works])dnl
