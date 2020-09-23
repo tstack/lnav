@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/tstack/lnav.png)](https://travis-ci.org/tstack/lnav)
 [![Build status](https://ci.appveyor.com/api/projects/status/24wskehb7j7a65ro?svg=true)](https://ci.appveyor.com/project/tstack/lnav)
-[![Bounties](https://img.shields.io/bountysource/team/lnav/activity.svg)](https://www.bountysource.com/teams/lnav)
+[![lnav](https://snapcraft.io//lnav/badge.svg)](https://snapcraft.io/lnav)
 [![LoC](https://tokei.rs/b1/github/tstack/lnav)](https://github.com/tstack/lnav).
 
 _This is the source repository for **lnav**, visit [http://lnav.org](http://lnav.org) for a high level overview._
