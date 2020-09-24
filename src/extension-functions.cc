@@ -1007,6 +1007,12 @@ static int _substr(const char* z1, const char* z2, int s, const char** p){
     do{
       c1 = sqliteCharVal((unsigned char *)zt1);
       c2 = sqliteCharVal((unsigned char *)zt2);
+      if (c1 == 0) {
+          break;
+      }
+      if (c2 == 0) {
+          break;
+      }
       sqliteNextChar(zt1);
       sqliteNextChar(zt2);
     }while( c1 == c2 && c1 != 0 && c2 != 0 );
