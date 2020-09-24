@@ -53,4 +53,5 @@ parts:
       - zlib1g
       - libncursesw5
       - libpcre3
+      - libpcrecpp0v5
       - libgpm2
