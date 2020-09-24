@@ -268,7 +268,6 @@ noinst_HEADERS = \
 	hist_source.hh \
 	hotkeys.hh \
 	init.sql \
-	init-sql.h \
 	input_dispatcher.hh \
 	k_merge_tree.h \
 	line_buffer.hh \
@@ -465,9 +464,7 @@ CLEANFILES = \
 
 DISTCLEANFILES = \
     $(BUILT_SOURCES) \
-	$(RE2C_FILES) \
-	help-txt.c \
-	init-sql.c
+	$(RE2C_FILES)
 
 uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
