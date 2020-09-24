@@ -39,7 +39,7 @@ parts:
     override-pull: |
       snapcraftctl pull
 
-      "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout --debug
+      "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout --debug --force-snapshot
     build-packages: 
       - build-essential
       - libpcre3-dev
