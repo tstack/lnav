@@ -368,7 +368,7 @@ static void sigabrt(int sig)
         getpid());
     snprintf(latest_crash_path, sizeof(latest_crash_path),
         "%s/latest-crash.log", lnav_log_crash_dir);
-    if ((fd = open(crash_path, O_CREAT|O_TRUNC|O_WRONLY, 0600)) != -1) {
+    if ((fd = open(crash_path, O_CREAT|O_TRUNC|O_RDWR, 0600)) != -1) {
         if (log_ring.lr_frag_start < (off_t)BUFFER_SIZE) {
             (void)write(fd, &log_ring.lr_data[log_ring.lr_frag_start],
                 log_ring.lr_frag_end - log_ring.lr_frag_start);
@@ -392,6 +392,15 @@ static void sigabrt(int sig)
                     log_ring.lr_frag_end - log_ring.lr_frag_start);
         }
         write(fd, log_ring.lr_data, log_ring.lr_length);
+        if (getenv("DUMP_CRASH") != nullptr) {
+            char buffer[1024];
+            int rc;
+
+            lseek(fd, 0, SEEK_SET);
+            while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+                write(STDERR_FILENO, buffer, rc);
+            }
+        }
         close(fd);
 
         remove(latest_crash_path);

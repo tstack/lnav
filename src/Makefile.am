@@ -472,7 +472,7 @@ uncrusty:
 
 if !DISABLE_DOCUMENTATION
 all-local: lnav
-	env DUMP_INTERNALS_DIR=$(srcdir)/internals ./lnav Makefile
+	env DUMP_INTERNALS_DIR=$(srcdir)/internals DUMP_CRASH=1 ./lnav Makefile
 endif
 
 install-exec-hook:
