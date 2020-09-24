@@ -30,7 +30,12 @@ addons:
     - gcc-5
     - g++-5
     - sqlite3
+    - libsqlite3-dev
     - language-pack-fr
+    - libpcre3-dev
+    - libbz2-dev
+    - libncursesw5-dev
+    - libreadline6-dev
     sources:
     - ubuntu-toolchain-r-test
     - sourceline: deb http://cz.archive.ubuntu.com/ubuntu xenial main
