@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "uwsgi_log": {
         "title": "Uwsgi Log",
         "description": "The uwsgi log format.",
@@ -61,6 +62,7 @@
             },
             "s_runtime": {
                 "kind": "float",
+                "description": "hello, world",
                 "unit": {
                     "field": "rt_unit",
                     "scaling-factor": {

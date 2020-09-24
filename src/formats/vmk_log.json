@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "vmk_log": {
         "title": "VMKernel Logs",
         "description": "The VMKernel's log format",

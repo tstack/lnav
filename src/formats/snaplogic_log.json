@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "snaplogic_log": {
         "title": "SnapLogic Server Log",
         "description": "The SnapLogic server log format.",

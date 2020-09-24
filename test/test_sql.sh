@@ -131,6 +131,16 @@ run_test ${lnav_test} -n \
 check_output "output generated for empty result set?" <<EOF
 EOF
 
+run_test ${lnav_test} -n \
+    -c ";SELECT * FROM uwsgi_log LIMIT 1" \
+    -c ':switch-to-view db' \
+    ${test_dir}/logfile_uwsgi.0
+
+check_output "uwsgi not working?" <<EOF
+log_line log_part         log_time        log_idle_msecs log_level log_mark log_comment log_tags log_filters    c_ip   cs_bytes cs_method cs_uri_query   cs_uri_stem   cs_username cs_vars cs_version s_app s_core s_pid s_req s_runtime s_switches s_worker_reqs sc_bytes sc_header_bytes sc_headers sc_status
+       0   <NULL> 2016-03-13 22:49:12.000              0 info             0      <NULL>   <NULL>      <NULL> 127.0.0.1      696 POST            <NULL> /update_metrics                  38 HTTP/1.1   0     3      88185     1     129.0          1             1       47             378          9       200
+EOF
+
 run_test env TZ=UTC ${lnav_test} -n \
     -c ";SELECT bro_conn_log.bro_duration as duration, bro_conn_log.bro_uid, group_concat( distinct (bro_method || ' ' || bro_host)) as req from bro_http_log, bro_conn_log where bro_http_log.bro_uid = bro_conn_log.bro_uid group by bro_http_log.bro_uid order by duration desc limit 10" \
     -c ":write-csv-to -" \

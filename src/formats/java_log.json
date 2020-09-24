@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "java_log": {
         "title": "Java log format",
         "description": "Log format used by log4j and output by most java programs",

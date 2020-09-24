@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "sudo_log": {
         "title": "sudo",
         "description": "The sudo privilege management tool.",

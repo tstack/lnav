@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "tcf_log": {
         "title": "TCF Log",
         "description": "Target Communication Framework log",

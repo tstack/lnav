@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "haproxy_log": {
         "title": "HAProxy HTTP Log Format",
         "description": "The HAProxy log format",

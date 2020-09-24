@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "candlepin_log": {
         "title": "Candlepin log format",
         "description": "Log format used by Candlepin registration system",

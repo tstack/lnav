@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "glog_log": {
         "title": "Glog",
         "description": "The google glog format.",

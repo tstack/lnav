@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "dpkg_log": {
         "title": "Dpkg Log",
         "description": "The debian dpkg log.",

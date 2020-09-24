@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "journald_json_log": {
         "title": "journalctl JSON log format",
         "description": "Logger format as created by systemd journalctl -o json",

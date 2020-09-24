@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "autodeploy_log": {
         "title": "VMware vSphere Auto Deploy log format",
         "description": "The log format for the VMware Auto Deploy service",

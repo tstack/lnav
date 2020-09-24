@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "cups_log": {
         "title": "CUPS log format",
         "description": "Log format used by the Common Unix Printing System",

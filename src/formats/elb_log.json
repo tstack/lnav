@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "elb_log": {
         "title": "Amazon ELB log",
         "description": "Log format for Amazon Elastic Load Balancers",

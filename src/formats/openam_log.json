@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "openam_log": {
         "title": "OpenAM Log",
         "description": "The OpenAM identity provider.",

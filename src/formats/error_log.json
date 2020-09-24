@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "error_log": {
         "title": "Common Error Log",
         "description": "The default web error log format for servers like Apache.",

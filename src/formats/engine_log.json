@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "engine_log": {
         "title": "engine log",
         "description": "The log format for the engine.log files from RHEV/oVirt",

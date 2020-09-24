@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "vdsm_log": {
         "title": "Vdsm Logs",
         "description": "Vdsm log format",

@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "fsck_hfs_log": {
         "title": "Fsck_hfs Log",
         "description": "Log for the fsck_hfs tool on Mac OS X.",

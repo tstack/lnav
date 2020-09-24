@@ -455,7 +455,6 @@ static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
 static struct json_path_container scale_handlers = {
     json_path_handler(pcrepp("(?<scale>.*)"))
         .with_synopsis("[*,/]<unit>")
-        .with_obj_provider(scaling_factor_provider)
         .FOR_FIELD(scaling_factor, sf_value)
 };
 
@@ -467,6 +466,7 @@ static struct json_path_container unit_handlers = {
 
     json_path_handler("scaling-factor")
         .with_description("Transforms the numeric value by the given factor")
+        .with_obj_provider(scaling_factor_provider)
         .with_children(scale_handlers),
 };
 

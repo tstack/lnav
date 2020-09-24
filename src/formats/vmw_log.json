@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "vmw_log": {
         "title": "VMware Logs",
         "description": "One of the log formats used in VMware's ESXi and vCenter software.",

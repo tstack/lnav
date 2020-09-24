@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "tcsh_history": {
         "title": "TCSH History",
         "description": "The tcsh history file format.",

@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "access_log": {
         "title": "Common Access Log",
         "description": "The default web access log format for servers like Apache.",

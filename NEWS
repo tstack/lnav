@@ -11,6 +11,12 @@ lnav v0.9.0:
          :config /ui/keymap uk
        Consult the online documentation for defining a new keymap at:
          https://lnav.readthedocs.io/en/latest/config.html#keymap-definitions
+     * The following JSON-Schemas have been published for the log format and
+       configuration JSON files:
+         https://lnav.org/schemas/format-v1.schema.json
+         https://lnav.org/schemas/config-v1.schema.json
+       Formats should be updated to reference the schema using the "$schema"
+       property.
      * Indexing of new data in log files can now be paused by pressing '='
        and unpaused by pressing it again.  The bottom status bar will display
        'Paused' in the right corner while paused.

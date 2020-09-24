@@ -1,4 +1,5 @@
 {
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "block_log": {
         "title": "Generic Block",
         "description": "A generic format for logs, like cron, that have a date at the start of a block.",
