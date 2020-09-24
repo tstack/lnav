@@ -6,7 +6,6 @@ description: |
   for the small-scale.
 
 base: core18
-grade: stable
 confinement: strict
 
 apps:
