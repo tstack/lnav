@@ -42,6 +42,7 @@
 #include <set>
 #include <list>
 #include <string>
+#include <utility>
 #include <vector>
 #include <limits>
 #include <memory>
@@ -853,45 +854,35 @@ public:
     };
 
     struct value_def {
-        value_def() :
-            vd_kind(logline_value::VALUE_UNKNOWN),
-            vd_identifier(false),
-            vd_foreign_key(false),
-            vd_column(-1),
-            vd_values_index(-1),
-            vd_hidden(false),
-            vd_user_hidden(false),
-            vd_internal(false) {
-
-        };
-
         intern_string_t vd_name;
-        logline_value::kind_t vd_kind;
+        logline_value::kind_t vd_kind{logline_value::VALUE_UNKNOWN};
         std::string vd_collate;
-        bool vd_identifier;
-        bool vd_foreign_key;
+        bool vd_identifier{false};
+        bool vd_foreign_key{false};
         intern_string_t vd_unit_field;
         std::map<const intern_string_t, scaling_factor> vd_unit_scaling;
-        int vd_column;
-        ssize_t vd_values_index;
-        bool vd_hidden;
-        bool vd_user_hidden;
-        bool vd_internal;
+        int vd_column{-1};
+        ssize_t vd_values_index{-1};
+        bool vd_hidden{false};
+        bool vd_user_hidden{false};
+        bool vd_internal{false};
         std::vector<std::string> vd_action_list;
         std::string vd_rewriter;
         std::string vd_description;
     };
 
     struct indexed_value_def {
-        indexed_value_def(int index = -1, int unit_index = -1, value_def *vd = NULL)
+        indexed_value_def(int index = -1,
+                          int unit_index = -1,
+                          std::shared_ptr<value_def> vd = nullptr)
             : ivd_index(index),
               ivd_unit_field_index(unit_index),
-              ivd_value_def(vd) {
+              ivd_value_def(std::move(vd)) {
         }
 
         int ivd_index;
         int ivd_unit_field_index;
-        const struct value_def *ivd_value_def;
+        std::shared_ptr<value_def> ivd_value_def;
 
         bool operator<(const indexed_value_def &rhs) const {
             return this->ivd_index < rhs.ivd_index;

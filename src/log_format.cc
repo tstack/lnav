@@ -1391,21 +1391,21 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
             auto value_iter = this->elf_value_defs.find(name);
             if (value_iter != this->elf_value_defs.end()) {
-                auto &vd = *value_iter->second;
+                auto vd = value_iter->second;
                 indexed_value_def ivd;
 
                 ivd.ivd_index = name_iter->index();
-                if (!vd.vd_unit_field.empty()) {
+                if (!vd->vd_unit_field.empty()) {
                     ivd.ivd_unit_field_index = pat.p_pcre->name_index(
-                        vd.vd_unit_field.get());
+                        vd->vd_unit_field.get());
                 }
                 else {
                     ivd.ivd_unit_field_index = -1;
                 }
-                if (!vd.vd_internal && vd.vd_column == -1) {
-                    vd.vd_column = this->elf_column_count++;
+                if (!vd->vd_internal && vd->vd_column == -1) {
+                    vd->vd_column = this->elf_column_count++;
                 }
-                ivd.ivd_value_def = value_iter->second.get();
+                ivd.ivd_value_def = vd;
                 pat.p_value_by_index.push_back(ivd);
             }
         }
@@ -1414,10 +1414,10 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
         for (int lpc = 0; lpc < (int)pat.p_value_by_index.size(); lpc++) {
             auto &ivd = pat.p_value_by_index[lpc];
-            auto &vd = *ivd.ivd_value_def;
+            auto vd = ivd.ivd_value_def;
 
-            if (!vd.vd_foreign_key && !vd.vd_identifier) {
-                switch (vd.vd_kind) {
+            if (!vd->vd_foreign_key && !vd->vd_identifier) {
+                switch (vd->vd_kind) {
                     case logline_value::VALUE_INTEGER:
                     case logline_value::VALUE_FLOAT:
                         pat.p_numeric_value_indexes.push_back(lpc);
@@ -1870,6 +1870,8 @@ public:
             if (vd->vd_column == -1) {
                 continue;
             }
+
+            require(0 <= vd->vd_column && vd->vd_column < elf.elf_column_count);
 
             cols[vd->vd_column].vc_name = vd->vd_name.get();
             cols[vd->vd_column].vc_type = type_pair.first;
