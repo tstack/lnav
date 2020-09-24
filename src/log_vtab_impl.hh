@@ -76,7 +76,7 @@ public:
     struct vtab_column {
         vtab_column(const std::string name = "",
                     int type = SQLITE3_TEXT,
-                    const char *collator = NULL,
+                    const std::string collator = "",
                     bool hidden = false,
                     const std::string comment = "",
                     unsigned int subtype = 0)
@@ -90,7 +90,7 @@ public:
 
         std::string vc_name;
         int         vc_type;
-        const char *vc_collator;
+        std::string vc_collator;
         bool vc_hidden;
         std::string vc_comment;
         int vc_subtype;

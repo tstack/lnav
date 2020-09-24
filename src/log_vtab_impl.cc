@@ -114,9 +114,8 @@ std::string log_vtab_impl::get_table_statement()
                                   colname.in(),
                                   type_to_string(iter->vc_type),
                                   iter->vc_hidden ? "hidden" : "",
-                                  (iter->vc_collator == NULL ||
-                                   iter->vc_collator[0] == '\0') ?
-                                  "BINARY" : iter->vc_collator,
+                                  iter->vc_collator.empty() ?
+                                  "BINARY" : iter->vc_collator.c_str(),
                                   comment.c_str());
         oss << coldecl;
     }

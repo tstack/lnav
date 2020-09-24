@@ -795,22 +795,22 @@ static struct {
     const char *collator;
     const char *sample;
 } TYPE_TEST_VALUE[] = {
-        { SQLITE3_TEXT, NULL, "foobar" },
-        { SQLITE_INTEGER, NULL, "123" },
-        { SQLITE_FLOAT, NULL, "123.0" },
+        { SQLITE3_TEXT, "", "foobar" },
+        { SQLITE_INTEGER, "", "123" },
+        { SQLITE_FLOAT, "", "123.0" },
         { SQLITE_TEXT, "ipaddress", "127.0.0.1" },
 
         { SQLITE_NULL }
 };
 
-int guess_type_from_pcre(const string &pattern, const char **collator)
+int guess_type_from_pcre(const string &pattern, std::string &collator)
 {
     try {
         pcrepp re(pattern.c_str());
         vector<int> matches;
         int retval = SQLITE3_TEXT;
 
-        *collator = NULL;
+        collator.clear();
         for (int lpc = 0; TYPE_TEST_VALUE[lpc].sqlite_type != SQLITE_NULL; lpc++) {
             pcre_context_static<30> pc;
             pcre_input pi(TYPE_TEST_VALUE[lpc].sample);
@@ -823,7 +823,7 @@ int guess_type_from_pcre(const string &pattern, const char **collator)
 
         if (matches.size() == 1) {
             retval = TYPE_TEST_VALUE[matches.front()].sqlite_type;
-            *collator = TYPE_TEST_VALUE[matches.front()].collator;
+            collator = TYPE_TEST_VALUE[matches.front()].collator;
         }
 
         return retval;

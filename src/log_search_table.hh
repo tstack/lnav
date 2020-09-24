@@ -62,7 +62,7 @@ public:
         cols.emplace_back(LOG_MSG_INSTANCE, SQLITE_INTEGER);
         for (int lpc = 0; lpc < this->lst_regex.get_capture_count(); lpc++) {
             std::vector<pcre_context::capture>::const_iterator iter;
-            const char *collator = NULL;
+            std::string collator;
             std::string cap_re, colname;
             int sqlite_type = SQLITE3_TEXT;
 
@@ -70,7 +70,7 @@ public:
                 iter = this->lst_regex.cap_begin() + lpc;
                 cap_re = this->lst_regex_string.substr(iter->c_begin,
                                                        iter->length());
-                sqlite_type = guess_type_from_pcre(cap_re, &collator);
+                sqlite_type = guess_type_from_pcre(cap_re, collator);
                 switch (sqlite_type) {
                     case SQLITE_FLOAT:
                         this->lst_column_types.push_back(
@@ -87,7 +87,7 @@ public:
                 }
             }
             colname = cn.add_column(this->lst_regex.name_for_capture(lpc));
-            cols.push_back(vtab_column(colname, sqlite_type, collator));
+            cols.emplace_back(colname, sqlite_type, collator);
         }
     };
 

@@ -1487,7 +1487,7 @@ void external_log_format::build(std::vector<std::string> &errors) {
 
     stable_sort(this->elf_level_pairs.begin(), this->elf_level_pairs.end());
 
-    for (auto vd : this->elf_value_def_order) {
+    for (auto &vd : this->elf_value_def_order) {
         std::vector<std::string>::iterator act_iter;
 
         if (!vd->vd_internal &&
@@ -1874,7 +1874,7 @@ public:
             cols[vd->vd_column].vc_name = vd->vd_name.get();
             cols[vd->vd_column].vc_type = type_pair.first;
             cols[vd->vd_column].vc_subtype = type_pair.second;
-            cols[vd->vd_column].vc_collator = vd->vd_collate.c_str();
+            cols[vd->vd_column].vc_collator = vd->vd_collate;
             cols[vd->vd_column].vc_comment = vd->vd_description;
         }
     };

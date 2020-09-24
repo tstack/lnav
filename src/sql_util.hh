@@ -99,7 +99,7 @@ void sql_execute_script(sqlite3 *db,
                         const char *script,
                         std::vector<std::string> &errors);
 
-int guess_type_from_pcre(const std::string &pattern, const char **collator);
+int guess_type_from_pcre(const std::string &pattern, std::string &collator);
 
 /* XXX figure out how to do this with the template */
 void sqlite_close_wrapper(void *mem);

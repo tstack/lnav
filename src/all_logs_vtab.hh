@@ -45,7 +45,7 @@ public:
     void get_columns(std::vector<vtab_column> &cols) const {
         cols.emplace_back(this->alv_value_name.get());
         cols.emplace_back(this->alv_msg_name.get());
-        cols.emplace_back(this->alv_schema_name.get(), SQLITE3_TEXT, nullptr, true);
+        cols.emplace_back(this->alv_schema_name.get(), SQLITE3_TEXT, "", true);
     };
 
     void extract(std::shared_ptr<logfile> lf,

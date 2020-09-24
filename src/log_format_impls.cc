@@ -355,20 +355,19 @@ public:
         const intern_string_t fd_name;
         logline_value::kind_t fd_kind;
         bool fd_identifier;
-        const char *fd_collator;
+        std::string fd_collator;
         int fd_numeric_index;
 
         field_def(const intern_string_t name)
             : fd_name(name),
               fd_kind(logline_value::VALUE_TEXT),
               fd_identifier(false),
-              fd_collator(nullptr),
               fd_numeric_index(-1) {
         };
 
         field_def &with_kind(logline_value::kind_t kind,
                              bool identifier = false,
-                             const char *collator = nullptr) {
+                             const std::string &collator = "") {
             this->fd_kind = kind;
             this->fd_identifier = identifier;
             this->fd_collator = collator;

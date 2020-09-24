@@ -89,7 +89,7 @@ public:
 
         dp.parse();
 
-        cols.emplace_back("log_msg_instance", SQLITE_INTEGER, nullptr);
+        cols.emplace_back("log_msg_instance", SQLITE_INTEGER);
         for (auto pair_iter = dp.dp_pairs.begin();
              pair_iter != dp.dp_pairs.end();
              ++pair_iter) {
@@ -97,7 +97,7 @@ public:
                 pair_iter->e_sub_elements->front());
             std::string colname  = cn.add_column(key_str);
             int         sql_type = SQLITE3_TEXT;
-            const char *collator = NULL;
+            std::string collator;
 
             switch (pair_iter->e_sub_elements->back().value_token()) {
             case DT_IPV4_ADDRESS:
