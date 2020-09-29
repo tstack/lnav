@@ -13,6 +13,8 @@ def main(args):
 
                 for key in sorted(format_dict):
                     value = format_dict[key]
+                    if not isinstance(value, dict):
+                        continue
                     out.writerow((value['title'], key, value['description']))
 
 if __name__ == "__main__":
