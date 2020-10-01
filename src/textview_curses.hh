@@ -604,7 +604,7 @@ public:
         return this->tc_paused;
     }
 
-    vis_bookmarks &get_bookmarks(void) { return this->tc_bookmarks; };
+    vis_bookmarks &get_bookmarks() { return this->tc_bookmarks; };
 
     void toggle_user_mark(bookmark_type_t *bm,
                           vis_line_t start_line,
@@ -753,32 +753,7 @@ public:
         this->tc_search_action = action(mf);
     };
 
-    void grep_end_batch(grep_proc<vis_line_t> &gp)
-    {
-        if (this->tc_follow_deadline.tv_sec) {
-            struct timeval now;
-
-            gettimeofday(&now, nullptr);
-            if (this->tc_follow_deadline < now) {
-                this->tc_follow_deadline.tv_sec = 0;
-                this->tc_follow_deadline.tv_usec = 0;
-            } else if (!this->tc_bookmarks[&BM_SEARCH].empty()) {
-                vis_line_t first_hit;
-
-                first_hit = this->tc_bookmarks[&BM_SEARCH].next(
-                    vis_line_t(this->get_top() - 1));
-                if (first_hit != -1) {
-                    if (first_hit > 0) {
-                        --first_hit;
-                    }
-                    if (first_hit > this->get_top()) {
-                        this->set_top(first_hit);
-                    }
-                }
-            }
-        }
-        this->tc_search_action.invoke(this);
-    };
+    void grep_end_batch(grep_proc<vis_line_t> &gp);
     void grep_end(grep_proc<vis_line_t> &gp);
 
     size_t listview_rows(const listview_curses &lv)
@@ -829,15 +804,18 @@ public:
                     int start,
                     int end);
 
-    bool is_searching(void) { return this->tc_searching > 0; };
+    bool is_searching() { return this->tc_searching > 0; };
 
-    void set_follow_search_for(int64_t ms_to_deadline) {
+    void set_follow_search_for(int64_t ms_to_deadline,
+                               std::function<bool()> func) {
         struct timeval now, tv;
 
         tv.tv_sec = ms_to_deadline / 1000;
         tv.tv_usec = (ms_to_deadline % 1000) * 1000;
         gettimeofday(&now, nullptr);
         timeradd(&now, &tv, &this->tc_follow_deadline);
+        this->tc_follow_top = this->get_top();
+        this->tc_follow_func = func;
     };
 
     size_t get_match_count()
@@ -988,6 +966,8 @@ protected:
 
     int tc_searching{0};
     struct timeval tc_follow_deadline{0, 0};
+    vis_line_t tc_follow_top{-1_vl};
+    std::function<bool()> tc_follow_func;
     action tc_search_action;
 
     highlight_map_t           tc_highlights;

@@ -72,4 +72,14 @@ optional_constexpr nonstd::optional< typename std::decay<T>::type > make_optiona
     return nonstd::nullopt;
 }
 
+template<template <typename, typename...> class C, typename T>
+nonstd::optional<T> cget(const C<T> &container, size_t index)
+{
+    if (index < container.size()) {
+        return container[index];
+    }
+
+    return nonstd::nullopt;
+}
+
 #endif

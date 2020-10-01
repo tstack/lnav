@@ -521,7 +521,15 @@ void format_help_text_for_rst(const help_text &ht,
             out_count += fprintf(rst_file, "%s ", param.ht_flag_name);
         }
         if (param.ht_name[0]) {
-            out_count += fprintf(rst_file, "*%s*", param.ht_name);
+            out_count += fprintf(rst_file, "*");
+            if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                out_count += fprintf(rst_file, "\\[");
+            }
+            out_count += fprintf(rst_file, "%s", param.ht_name);
+            if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                out_count += fprintf(rst_file, "\\]");
+            }
+            out_count += fprintf(rst_file, "*");
         }
         if (is_sql_func) {
             needs_comma = true;
@@ -550,8 +558,9 @@ void format_help_text_for_rst(const help_text &ht,
         fprintf(rst_file, "  **Parameters:**\n\n");
         for (auto &param: ht.ht_parameters) {
             if (param.ht_summary && param.ht_summary[0]) {
-                fprintf(rst_file, "    * **%s** --- %s\n",
+                fprintf(rst_file, "    * **%s%s** --- %s\n",
                         param.ht_name,
+                        param.ht_nargs == help_nargs_t::HN_REQUIRED ? "\\*" : "",
                         param.ht_summary);
             }
         }

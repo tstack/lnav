@@ -84,7 +84,7 @@ struct help_text {
 
     help_text() = default;
 
-    help_text(const char *name, const char *summary = nullptr)
+    help_text(const char *name, const char *summary = nullptr) noexcept
         : ht_name(name),
           ht_summary(summary) {
         if (name[0] == ':') {
@@ -93,43 +93,43 @@ struct help_text {
         }
     };
 
-    help_text &command() {
+    help_text &command() noexcept {
         this->ht_context = help_context_t::HC_COMMAND;
         return *this;
     };
 
-    help_text &sql_function() {
+    help_text &sql_function() noexcept {
         this->ht_context = help_context_t::HC_SQL_FUNCTION;
         return *this;
     };
 
-    help_text &sql_table_valued_function() {
+    help_text &sql_table_valued_function() noexcept {
         this->ht_context = help_context_t::HC_SQL_TABLE_VALUED_FUNCTION;
         return *this;
     };
 
-    help_text &sql_keyword() {
+    help_text &sql_keyword() noexcept {
         this->ht_context = help_context_t::HC_SQL_KEYWORD;
         return *this;
     };
 
-    help_text &with_summary(const char *summary) {
+    help_text &with_summary(const char *summary) noexcept {
         this->ht_summary = summary;
         return *this;
     };
 
-    help_text &with_flag_name(const char *flag) {
+    help_text &with_flag_name(const char *flag) noexcept {
         this->ht_flag_name = flag;
         return *this;
     }
 
-    help_text &with_grouping(const char *group_start, const char *group_end) {
+    help_text &with_grouping(const char *group_start, const char *group_end) noexcept {
         this->ht_group_start = group_start;
         this->ht_group_end = group_end;
         return *this;
     }
 
-    help_text &with_parameters(const std::initializer_list<help_text> &params) {
+    help_text &with_parameters(const std::initializer_list<help_text> &params) noexcept {
         this->ht_parameters = params;
         for (auto &param : this->ht_parameters) {
             param.ht_context = help_context_t::HC_PARAMETER;
@@ -137,59 +137,59 @@ struct help_text {
         return *this;
     }
 
-    help_text &with_parameter(const help_text &ht) {
+    help_text &with_parameter(const help_text &ht) noexcept {
         this->ht_parameters.emplace_back(ht);
         this->ht_parameters.back().ht_context = help_context_t::HC_PARAMETER;
         return *this;
     };
 
-    help_text &with_result(const help_text &ht) {
+    help_text &with_result(const help_text &ht) noexcept {
         this->ht_results.emplace_back(ht);
         this->ht_results.back().ht_context = help_context_t::HC_RESULT;
         return *this;
     };
 
-    help_text &with_examples(const std::initializer_list<help_example> &examples) {
+    help_text &with_examples(const std::initializer_list<help_example> &examples) noexcept {
         this->ht_example = examples;
         return *this;
     }
 
-    help_text &with_example(const help_example &example) {
+    help_text &with_example(const help_example &example) noexcept {
         this->ht_example.emplace_back(example);
         return *this;
     }
 
-    help_text &optional() {
+    help_text &optional() noexcept {
         this->ht_nargs = help_nargs_t::HN_OPTIONAL;
         return *this;
     };
 
-    help_text &zero_or_more() {
+    help_text &zero_or_more() noexcept {
         this->ht_nargs = help_nargs_t::HN_ZERO_OR_MORE;
         return *this;
     };
 
-    help_text &one_or_more() {
+    help_text &one_or_more() noexcept {
         this->ht_nargs = help_nargs_t::HN_ONE_OR_MORE;
         return *this;
     };
 
-    help_text &with_format(help_parameter_format_t format) {
+    help_text &with_format(help_parameter_format_t format) noexcept {
         this->ht_format = format;
         return *this;
     }
 
-    help_text &with_enum_values(const std::initializer_list<const char*> &enum_values) {
+    help_text &with_enum_values(const std::initializer_list<const char*> &enum_values) noexcept {
         this->ht_enum_values = enum_values;
         return *this;
     };
 
-    help_text &with_tags(const std::initializer_list<const char*> &tags) {
+    help_text &with_tags(const std::initializer_list<const char*> &tags) noexcept {
         this->ht_tags = tags;
         return *this;
     };
 
-    help_text &with_opposites(const std::initializer_list<const char*> &opps) {
+    help_text &with_opposites(const std::initializer_list<const char*> &opps) noexcept {
         this->ht_opposites = opps;
         return *this;
     };

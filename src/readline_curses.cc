@@ -69,6 +69,7 @@
 using namespace std;
 
 static int              got_line    = 0;
+static bool             alt_done    = 0;
 static sig_atomic_t     got_timeout = 0;
 static sig_atomic_t     got_winch   = 0;
 static readline_curses *child_this;
@@ -407,6 +408,13 @@ static int rubout_char_or_abort(int count, int key)
     }
 }
 
+static int alt_done_func(int count, int key)
+{
+    alt_done = true;
+    rl_newline(count, key);
+    return 0;
+}
+
 int readline_context::command_complete(int count, int key)
 {
     if (loaded_context->rc_possibilities.find("__command") !=
@@ -578,6 +586,7 @@ void readline_curses::start()
         stifle_history(HISTORY_SIZE);
 
         rl_add_defun("rubout-char-or-abort", rubout_char_or_abort, '\b');
+        rl_add_defun("alt-done", alt_done_func, '\x0a');
         // rl_add_defun("command-complete", readline_context::command_complete, ' ');
 
         for (int lpc = 0; RL_INIT[lpc]; lpc++) {
@@ -817,7 +826,9 @@ void readline_curses::line_ready(const char *line)
     auto_mem<char> expanded;
     char           msg[1024] = {0};
     int            rc;
+    const char *cmd_ch = alt_done ? "D" : "d";
 
+    alt_done = false;
     if (line == nullptr) {
         snprintf(msg, sizeof(msg), "a");
 
@@ -848,13 +859,13 @@ void readline_curses::line_ready(const char *line)
 #endif
 
     case -1:
-        snprintf(msg, sizeof(msg), "d:%s", line);
+        snprintf(msg, sizeof(msg), "%s:%s", cmd_ch, line);
         break;
 
     case 0:
     case 1:
     case 2: /* XXX */
-        snprintf(msg, sizeof(msg), "d:%s", expanded.in());
+        snprintf(msg, sizeof(msg), "%s:%s", cmd_ch, expanded.in());
         break;
     }
 
@@ -868,9 +879,9 @@ void readline_curses::line_ready(const char *line)
     {
         HIST_ENTRY *entry;
 
-        if (line != nullptr && line[0] != '\0' && (
+        if (line[0] != '\0' && (
             history_length == 0 ||
-            (entry = history_get(history_base + history_length - 1)) == NULL ||
+            (entry = history_get(history_base + history_length - 1)) == nullptr ||
             strcmp(entry->line, line) != 0)) {
             add_history(line);
         }
@@ -932,18 +943,19 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                 switch (msg[0]) {
                 case 't':
                 case 'd':
+                case 'D':
                     this->rc_value = string(&msg[2]);
                     break;
                 }
                 switch (msg[0]) {
                 case 'a':
+                    curs_set(0);
                     this->vc_line.clear();
                     this->rc_active_context = -1;
                     this->rc_matches.clear();
                     this->rc_abort.invoke(this);
                     this->rc_display_match.invoke(this);
                     this->rc_blur.invoke(this);
-                    curs_set(0);
                     break;
 
                 case 't':
@@ -951,12 +963,17 @@ void readline_curses::check_poll_set(const vector<struct pollfd> &pollfds)
                     break;
 
                 case 'd':
+                case 'D':
+                    curs_set(0);
                     this->rc_active_context = -1;
                     this->rc_matches.clear();
-                    this->rc_perform.invoke(this);
+                    if (msg[0] == 'D' || this->rc_is_alt_focus) {
+                        this->rc_alt_perform.invoke(this);
+                    } else {
+                        this->rc_perform.invoke(this);
+                    }
                     this->rc_display_match.invoke(this);
                     this->rc_blur.invoke(this);
-                    curs_set(0);
                     break;
 
                 case 'l':
@@ -988,7 +1005,7 @@ void readline_curses::handle_key(int ch)
     }
 }
 
-void readline_curses::focus(int context, const char *prompt, const char *initial)
+void readline_curses::focus(int context, const std::string& prompt, const std::string& initial)
 {
     char buffer[1024];
 
@@ -996,7 +1013,7 @@ void readline_curses::focus(int context, const char *prompt, const char *initial
 
     this->rc_active_context = context;
 
-    snprintf(buffer, sizeof(buffer), "f:%d:%s", context, prompt);
+    snprintf(buffer, sizeof(buffer), "f:%d:%s", context, prompt.c_str());
     if (sendstring(this->rc_command_pipe[RCF_MASTER],
                    buffer,
                    strlen(buffer) + 1) == -1) {
@@ -1004,17 +1021,13 @@ void readline_curses::focus(int context, const char *prompt, const char *initial
     }
     wmove(this->vc_window, this->get_actual_y(), this->vc_left);
     wclrtoeol(this->vc_window);
-    if (initial != nullptr) {
-        snprintf(buffer, sizeof(buffer), "i:0:%s", initial);
-        if (sendstring(this->rc_command_pipe[RCF_MASTER],
-                       buffer,
-                       strlen(buffer) + 1) == -1) {
-            perror("focus: write failed");
-        }
+    if (!initial.empty()) {
+        this->rewrite_line(initial.size(), initial);
     }
+    this->rc_is_alt_focus = false;
 }
 
-void readline_curses::rewrite_line(int pos, std::string value)
+void readline_curses::rewrite_line(int pos, const std::string& value)
 {
     char buffer[1024];
 
@@ -1022,7 +1035,7 @@ void readline_curses::rewrite_line(int pos, std::string value)
     if (sendstring(this->rc_command_pipe[RCF_MASTER],
                    buffer,
                    strlen(buffer) + 1) == -1) {
-        perror("focus: write failed");
+        perror("rewrite_line: write failed");
     }
 }
 

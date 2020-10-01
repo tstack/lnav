@@ -45,6 +45,7 @@
 #include <set>
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 #include <exception>
 
@@ -81,10 +82,14 @@ public:
         struct help_text c_help;
         prompt_func_t c_prompt{nullptr};
 
-        void operator=(command_func_t func) {
-            this->c_name = "anon";
-            this->c_func = func;
-        }
+        _command_t(const char *name,
+                   command_func_t func,
+                   help_text help,
+                   prompt_func_t prompt = nullptr) noexcept
+            : c_name(name), c_func(func), c_help(std::move(help)), c_prompt(prompt) {};
+
+        _command_t(command_func_t func) noexcept
+            : c_name("anon"), c_func(func) {};
     } command_t;
     typedef std::map<std::string, command_t *> command_map_t;
 
@@ -125,17 +130,17 @@ public:
         hs = nullptr;
     };
 
-    void add_possibility(std::string type, std::string value)
+    void add_possibility(const std::string& type, const std::string& value)
     {
         this->rc_possibilities[type].insert(value);
     };
 
-    void rem_possibility(std::string type, std::string value)
+    void rem_possibility(const std::string& type, const std::string& value)
     {
         this->rc_possibilities[type].erase(value);
     };
 
-    void clear_possibilities(std::string type)
+    void clear_possibilities(const std::string& type)
     {
         this->rc_possibilities[type].clear();
     };
@@ -246,6 +251,7 @@ public:
 
     void set_change_action(action va) { this->rc_change = va; };
     void set_perform_action(action va) { this->rc_perform = va; };
+    void set_alt_perform_action(action va) { this->rc_alt_perform = va; };
     void set_timeout_action(action va) { this->rc_timeout = va; };
     void set_abort_action(action va) { this->rc_abort = va; };
     void set_display_match_action(action va) { this->rc_display_match = va; };
@@ -287,9 +293,13 @@ public:
 
     void check_poll_set(const std::vector<struct pollfd> &pollfds);
 
-    void focus(int context, const char *prompt, const char *initial = nullptr);
+    void focus(int context, const std::string& prompt, const std::string& initial = "");
 
-    void rewrite_line(int pos, std::string value);
+    void set_alt_focus(bool alt_focus) {
+        this->rc_is_alt_focus = alt_focus;
+    }
+
+    void rewrite_line(int pos, const std::string &value);
 
     readline_context *get_active_context() const {
         require(this->rc_active_context != -1);
@@ -403,9 +413,11 @@ private:
     int rc_max_match_length;
     int rc_match_index{0};
     std::vector<std::string> rc_matches;
+    bool rc_is_alt_focus{false};
 
     action rc_change;
     action rc_perform;
+    action rc_alt_perform;
     action rc_timeout;
     action rc_abort;
     action rc_display_match;

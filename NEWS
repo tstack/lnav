@@ -1,3 +1,15 @@
+lnav v0.9.1:
+     Features:
+     * Added the ':prompt' command to allow for more customization of prompts.
+       Combined with a custom keymapping, you can now open a prompt and prefill
+       it with a given value.  For example, a key could be bound to the
+       following command to open the command prompt with ":filter-in " already
+       filled in:
+         :prompt command : 'filter-in '
+     * To jump to the first search hit above the top line in a view, you can
+       press CTRL+J instead of ENTER in the search prompt.  Pressing ENTER
+       will jump to the first hit below the current window.
+
 lnav v0.9.0:
      Features:
      * Added support for themes and included a few as well: default, eldar,

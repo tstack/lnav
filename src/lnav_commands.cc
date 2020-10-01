@@ -51,8 +51,11 @@
 #include "command_executor.hh"
 #include "url_loader.hh"
 #include "readline_curses.hh"
+#include "readline_callbacks.hh"
+#include "readline_possibilities.hh"
 #include "relative_time.hh"
 #include "log_search_table.hh"
+#include "field_overlay_source.hh"
 #include "shlex.hh"
 #include "sysclip.hh"
 #include "yajl/api/yajl_parse.h"
@@ -3826,7 +3829,268 @@ static Result<string, string> com_quit(exec_context &ec, string cmdline, vector<
     return Ok(string());
 }
 
+static void command_prompt(vector<string> &args)
+{
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+
+    if (lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
+        static const char *MOVE_TIMES[] = {
+            "here",
+            "now",
+            "today",
+            "yesterday",
+            nullptr
+        };
+
+        logfile_sub_source &lss      = lnav_data.ld_log_source;
+        textview_curses &   log_view = lnav_data.ld_views[LNV_LOG];
+        content_line_t      cl       = lss.at(log_view.get_top());
+        std::shared_ptr<logfile>           lf       = lss.find(cl);
+        auto ll = lf->begin() + cl;
+        log_data_helper ldh(lss);
+
+        lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+
+        lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "numeric-colname");
+        lnav_data.ld_rl_view->clear_possibilities(LNM_COMMAND, "colname");
+
+        ldh.parse_line(log_view.get_top(), true);
+
+        if (tc == &lnav_data.ld_views[LNV_DB]) {
+            db_label_source &dls = lnav_data.ld_db_row_source;
+
+            for (auto &dls_header : dls.dls_headers) {
+                if (!dls_header.hm_graphable) {
+                    continue;
+                }
+
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                      "numeric-colname",
+                                                      dls_header.hm_name);
+            }
+        }
+        else {
+            for (auto &ldh_line_value : ldh.ldh_line_values) {
+                const logline_value_stats *stats = ldh_line_value.lv_format->stats_for_value(
+                    ldh_line_value.lv_name);
+
+                if (stats == nullptr) {
+                    continue;
+                }
+
+                lnav_data.ld_rl_view->add_possibility(LNM_COMMAND,
+                                                      "numeric-colname",
+                                                      ldh_line_value.lv_name.to_string());
+            }
+        }
+
+        for (auto &cn_name : ldh.ldh_namer->cn_names) {
+            lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname",
+                                                  cn_name);
+        }
+        for (const auto& iter : ldh.ldh_namer->cn_builtin_names) {
+            if (iter == "col") {
+                continue;
+            }
+            lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "colname", iter);
+        }
+
+        ldh.clear();
+
+        readline_curses *rlc = lnav_data.ld_rl_view;
+
+        rlc->clear_possibilities(LNM_COMMAND, "move-time");
+        rlc->add_possibility(LNM_COMMAND, "move-time", MOVE_TIMES);
+        rlc->clear_possibilities(LNM_COMMAND, "line-time");
+        {
+            struct timeval tv = lf->get_time_offset();
+            char buffer[64];
+
+            sql_strftime(buffer, sizeof(buffer),
+                         ll->get_time(), ll->get_millis(), 'T');
+            rlc->add_possibility(LNM_COMMAND,
+                                 "line-time",
+                                 buffer);
+            rlc->add_possibility(LNM_COMMAND,
+                                 "move-time",
+                                 buffer);
+            sql_strftime(buffer, sizeof(buffer),
+                         ll->get_time() - tv.tv_sec,
+                         ll->get_millis() - (tv.tv_usec / 1000),
+                         'T');
+            rlc->add_possibility(LNM_COMMAND,
+                                 "line-time",
+                                 buffer);
+            rlc->add_possibility(LNM_COMMAND,
+                                 "move-time",
+                                 buffer);
+        }
+    }
+
+    rollback_lnav_config = lnav_config;
+    lnav_data.ld_doc_status_source.set_title("Command Help");
+    add_view_text_possibilities(lnav_data.ld_rl_view, LNM_COMMAND, "filter", tc);
+    lnav_data.ld_rl_view->add_possibility(LNM_COMMAND, "filter", tc->get_last_search());
+    add_filter_possibilities(tc);
+    add_mark_possibilities();
+    add_config_possibilities();
+    add_env_possibilities(LNM_COMMAND);
+    add_tag_possibilities();
+    lnav_data.ld_mode = LNM_COMMAND;
+    lnav_data.ld_rl_view->focus(LNM_COMMAND,
+                                cget(args, 2).value_or(":"),
+                                cget(args, 3).value_or(""));
+}
+
+static void script_prompt(vector<string> &args)
+{
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    map<string, vector<script_metadata>> &scripts = lnav_data.ld_scripts;
+
+    lnav_data.ld_mode = LNM_EXEC;
+
+    lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+    lnav_data.ld_rl_view->clear_possibilities(LNM_EXEC, "__command");
+    find_format_scripts(lnav_data.ld_config_paths, scripts);
+    for (const auto &iter : scripts) {
+        lnav_data.ld_rl_view->add_possibility(LNM_EXEC, "__command", iter.first);
+    }
+    add_view_text_possibilities(lnav_data.ld_rl_view, LNM_EXEC, "*", tc);
+    add_env_possibilities(LNM_EXEC);
+    lnav_data.ld_rl_view->focus(LNM_EXEC,
+                                cget(args, 2).value_or("|"),
+                                cget(args, 3).value_or(""));
+    lnav_data.ld_bottom_source.set_prompt(
+        "Enter a script to execute: (Press "
+        ANSI_BOLD("CTRL+]") " to abort)");
+}
+
+static void search_prompt(vector<string> &args)
+{
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+
+    lnav_data.ld_mode = LNM_SEARCH;
+    lnav_data.ld_previous_search = tc->get_last_search();
+    lnav_data.ld_search_start_line = tc->get_top();
+    add_view_text_possibilities(lnav_data.ld_rl_view, LNM_SEARCH, "*", tc);
+    lnav_data.ld_rl_view->focus(LNM_SEARCH,
+                                cget(args, 2).value_or("/"),
+                                cget(args, 3).value_or(""));
+    lnav_data.ld_doc_status_source.set_title("Syntax Help");
+    rl_set_help();
+    lnav_data.ld_bottom_source.set_prompt(
+        "Search for:  "
+        "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
+        ANSI_BOLD("CTRL+]") " to abort)");
+}
+
+static void sql_prompt(vector<string> &args)
+{
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
+
+    lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+
+    lnav_data.ld_mode = LNM_SQL;
+    setup_logline_table(lnav_data.ld_exec_context);
+    lnav_data.ld_rl_view->focus(LNM_SQL,
+                                cget(args, 2).value_or(";"),
+                                cget(args, 3).value_or(""));
+
+    lnav_data.ld_doc_status_source.set_title("Query Help");
+    rl_set_help();
+    lnav_data.ld_bottom_source.update_loading(0, 0);
+    lnav_data.ld_status[LNS_BOTTOM].do_update();
+
+    field_overlay_source *fos;
+
+    fos = (field_overlay_source *) log_view.get_overlay_source();
+    fos->fos_active_prev = fos->fos_active;
+    if (!fos->fos_active) {
+        fos->fos_active = true;
+        tc->reload_data();
+    }
+    lnav_data.ld_bottom_source.set_prompt(
+        "Enter an SQL query: (Press " ANSI_BOLD("CTRL+]") " to abort)");
+}
+
+static void user_prompt(vector<string> &args)
+{
+    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    lnav_data.ld_exec_context.ec_top_line = tc->get_top();
+
+    lnav_data.ld_mode = LNM_USER;
+    setup_logline_table(lnav_data.ld_exec_context);
+    lnav_data.ld_rl_view->focus(LNM_USER,
+                                cget(args, 2).value_or("? "),
+                                cget(args, 3).value_or(""));
+
+    lnav_data.ld_bottom_source.update_loading(0, 0);
+    lnav_data.ld_status[LNS_BOTTOM].do_update();
+}
+
+static Result<string, string> com_prompt(exec_context &ec, string cmdline, vector<string> &args)
+{
+    static map<string, std::function<void(vector<string>&)>> PROMPT_TYPES = {
+        {"command", command_prompt},
+        {"script", script_prompt},
+        {"search", search_prompt},
+        {"sql", sql_prompt},
+        {"user", user_prompt},
+    };
+
+    if (args.empty()) {
+
+    }
+    else if (!ec.ec_dry_run) {
+        args.clear();
+
+        auto lexer = shlex(cmdline);
+        lexer.split(args, ec.create_resolver());
+
+        auto alt_flag = std::find(args.begin(), args.end(), "--alt");
+        auto is_alt = false;
+        if (alt_flag != args.end()) {
+            args.erase(alt_flag);
+            is_alt = true;
+        }
+
+        auto prompter = PROMPT_TYPES.find(args[1]);
+
+        if (prompter == PROMPT_TYPES.end()) {
+            return ec.make_error("Unknown prompt type: {}", args[1]);
+        }
+
+        prompter->second(args);
+        lnav_data.ld_rl_view->set_alt_focus(is_alt);
+    }
+    return Ok(string());
+}
+
 readline_context::command_t STD_COMMANDS[] = {
+    {
+        "prompt",
+        com_prompt,
+
+        help_text(":prompt")
+            .with_summary("Open the given prompt")
+            .with_parameter({"type", "The type of prompt -- command, script, search, sql, user"})
+            .with_parameter(help_text("--alt", "Perform the alternate action for this prompt by default")
+                                .optional())
+            .with_parameter(help_text("prompt", "The prompt to display")
+                                .optional())
+            .with_parameter(help_text("initial-value", "The initial value to fill in for the prompt")
+                                .optional())
+            .with_example({
+                "To open the command prompt with 'filter-in' already filled in",
+                "command : 'filter-in '",
+            })
+            .with_example({
+                "To ask the user a question",
+                "user 'Are you sure? '",
+            })
+    },
+
     {
         "adjust-log-time",
         com_adjust_log_time,
@@ -4505,10 +4769,14 @@ readline_context::command_t STD_COMMANDS[] = {
     {
         "pt-min-time",
         com_pt_time,
+
+        help_text(":pt-min-time"),
     },
     {
         "pt-max-time",
         com_pt_time,
+
+        help_text(":pt-max-time"),
     },
     {
         "session",
@@ -4709,20 +4977,16 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":quit")
             .with_summary("Quit lnav")
-    },
-
-    { nullptr },
+    }
 };
 
-unordered_map<char const *, vector<char const *>> aliases = {
+static unordered_map<char const *, vector<char const *>> aliases = {
     { "quit", { "q", "q!" } },
 };
 
 void init_lnav_commands(readline_context::command_map_t &cmd_map)
 {
-    for (int lpc = 0; STD_COMMANDS[lpc].c_name != nullptr; lpc++) {
-        readline_context::command_t &cmd = STD_COMMANDS[lpc];
-
+    for (auto& cmd : STD_COMMANDS) {
         cmd.c_help.index_tags();
         cmd_map[cmd.c_name] = &cmd;
 
@@ -4735,19 +4999,16 @@ void init_lnav_commands(readline_context::command_map_t &cmd_map)
     }
 
     if (getenv("LNAV_SRC") != nullptr) {
-        static readline_context::command_t add_test;
+        static readline_context::command_t add_test(com_add_test);
 
-        add_test = com_add_test;
         cmd_map["add-test"] = &add_test;
     }
     if (getenv("lnav_test") != nullptr) {
-        static readline_context::command_t rebuild, shexec, poll_now;
+        static readline_context::command_t rebuild(com_rebuild),
+            shexec(com_shexec), poll_now(com_poll_now);
 
-        rebuild = com_rebuild;
         cmd_map["rebuild"] = &rebuild;
-        shexec = com_shexec;
         cmd_map["shexec"] = &shexec;
-        poll_now = com_poll_now;
         cmd_map["poll-now"] = &poll_now;
     }
 }

@@ -74,6 +74,18 @@
                 "x58": {
                     "command": ":close"
                 },
+                "x3a": {
+                    "command": ":prompt command"
+                },
+                "x7c": {
+                    "command": ":prompt script"
+                },
+                "x2f": {
+                    "command": ":prompt search"
+                },
+                "x3b": {
+                    "command": ":prompt sql"
+                },
                 "x45": {
                     "command": ":prev-mark error",
                     "alt-msg": "${keymap_def_alt_warning}"

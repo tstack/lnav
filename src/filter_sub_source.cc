@@ -209,7 +209,8 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
             this->fss_editor.set_left(22);
             this->fss_editor.set_width(this->tss_view->get_width() - 8 - 1);
-            this->fss_editor.focus(LNM_FILTER, "", tf->get_id().c_str());
+            this->fss_editor.focus(LNM_FILTER, "");
+            this->fss_editor.rewrite_line(0, tf->get_id().c_str());
             this->fss_filter_state = tf->is_enabled();
             tf->disable();
             tss->text_filters_changed();

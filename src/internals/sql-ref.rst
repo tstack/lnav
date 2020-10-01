@@ -8,8 +8,8 @@ ATTACH DATABASE *filename* AS *schema-name*
 
   **Parameters:**
 
-    * **filename** --- The path to the database file.
-    * **schema-name** --- The prefix for tables in this database.
+    * **filename\*** --- The path to the database file.
+    * **schema-name\*** --- The prefix for tables in this database.
 
   **Examples:**
 
@@ -25,8 +25,8 @@ ATTACH DATABASE *filename* AS *schema-name*
 
 .. _create_view:
 
-CREATE *TEMP* VIEW  *IF NOT EXISTS* *schema-name.* *view-name* AS *select-stmt*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+CREATE *\[TEMP\]* VIEW  *\[IF NOT EXISTS\]* *\[schema-name.\]* *view-name* AS *select-stmt*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Assign a name to a SELECT statement
 
@@ -34,8 +34,8 @@ CREATE *TEMP* VIEW  *IF NOT EXISTS* *schema-name.* *view-name* AS *select-stmt*
 
     * **IF NOT EXISTS** --- Do not create the view if it already exists
     * **schema-name.** --- The database to create the view in
-    * **view-name** --- The name of the view
-    * **select-stmt** --- The SELECT statement the view represents
+    * **view-name\*** --- The name of the view
+    * **select-stmt\*** --- The SELECT statement the view represents
 
 
 ----
@@ -43,8 +43,8 @@ CREATE *TEMP* VIEW  *IF NOT EXISTS* *schema-name.* *view-name* AS *select-stmt*
 
 .. _create_table:
 
-CREATE *TEMP* TABLE  *IF NOT EXISTS* *schema-name.* *table-name* AS *select-stmt*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+CREATE *\[TEMP\]* TABLE  *\[IF NOT EXISTS\]* *\[schema-name.\]* *table-name* AS *select-stmt*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Create a table
 
@@ -61,8 +61,8 @@ WITH RECURSIVE  *cte-table-name* AS *select-stmt*
 
   **Parameters:**
 
-    * **cte-table-name** --- The name for the temporary table.
-    * **select-stmt** --- The SELECT statement used to populate the temporary table.
+    * **cte-table-name\*** --- The name for the temporary table.
+    * **select-stmt\*** --- The SELECT statement used to populate the temporary table.
 
 
 ----
@@ -77,8 +77,8 @@ CAST(*expr* AS *type-name*)
 
   **Parameters:**
 
-    * **expr** --- The value to convert.
-    * **type-name** --- The name of the type to convert to.
+    * **expr\*** --- The value to convert.
+    * **type-name\*** --- The name of the type to convert to.
 
   **Examples:**
 
@@ -95,8 +95,8 @@ CAST(*expr* AS *type-name*)
 
 .. _case_end:
 
-CASE *base-expr* WHEN *cmp-expr* ELSE *else-expr* END 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+CASE *\[base-expr\]* WHEN *cmp-expr* ELSE *\[else-expr\]* END 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Evaluate a series of expressions in order until one evaluates to true and then return it's result.  Similar to an IF-THEN-ELSE construct in other languages.
 
@@ -127,7 +127,7 @@ DETACH DATABASE *schema-name*
 
   **Parameters:**
 
-    * **schema-name** --- The prefix for tables in this database.
+    * **schema-name\*** --- The prefix for tables in this database.
 
   **Examples:**
 
@@ -143,14 +143,14 @@ DETACH DATABASE *schema-name*
 
 .. _delete:
 
-DELETE FROM *table-name* WHERE *cond*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DELETE FROM *table-name* WHERE *\[cond\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Delete rows from a table
 
   **Parameters:**
 
-    * **table-name** --- The name of the table
+    * **table-name\*** --- The name of the table
     * **cond** --- The conditions used to delete the rows.
 
 
@@ -159,8 +159,8 @@ DELETE FROM *table-name* WHERE *cond*
 
 .. _drop_index:
 
-DROP INDEX  *IF EXISTS* *schema-name.* *index-name*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DROP INDEX  *\[IF EXISTS\]* *\[schema-name.\]* *index-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Drop an index
 
@@ -170,8 +170,8 @@ DROP INDEX  *IF EXISTS* *schema-name.* *index-name*
 
 .. _drop_table:
 
-DROP TABLE  *IF EXISTS* *schema-name.* *table-name*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DROP TABLE  *\[IF EXISTS\]* *\[schema-name.\]* *table-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Drop a table
 
@@ -181,8 +181,8 @@ DROP TABLE  *IF EXISTS* *schema-name.* *table-name*
 
 .. _drop_view:
 
-DROP VIEW  *IF EXISTS* *schema-name.* *view-name*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DROP VIEW  *\[IF EXISTS\]* *\[schema-name.\]* *view-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Drop a view
 
@@ -192,8 +192,8 @@ DROP VIEW  *IF EXISTS* *schema-name.* *view-name*
 
 .. _drop_trigger:
 
-DROP TRIGGER  *IF EXISTS* *schema-name.* *trigger-name*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DROP TRIGGER  *\[IF EXISTS\]* *\[schema-name.\]* *trigger-name*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Drop a trigger
 
@@ -203,8 +203,8 @@ DROP TRIGGER  *IF EXISTS* *schema-name.* *trigger-name*
 
 .. _select:
 
-SELECT *result-column* FROM *table* WHERE *cond* GROUP BY *grouping-expr* ORDER BY *ordering-term* LIMIT *limit-expr*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SELECT *result-column* FROM *table* WHERE *\[cond\]* GROUP BY *grouping-expr* ORDER BY *ordering-term* LIMIT *limit-expr*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Query the database and return zero or more rows of data.
 
@@ -230,8 +230,8 @@ SELECT *result-column* FROM *table* WHERE *cond* GROUP BY *grouping-expr* ORDER 
 
 .. _insert_into:
 
-INSERT INTO  *schema-name.* *table-name* *column-name* VALUES *expr*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INSERT INTO  *\[schema-name.\]* *table-name* *column-name* VALUES *expr*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Insert rows into a table
 
@@ -249,8 +249,8 @@ INSERT INTO  *schema-name.* *table-name* *column-name* VALUES *expr*
 
 .. _over:
 
-OVER(*base-window-name* PARTITION BY *expr* ORDER BY *expr*, *frame-spec*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OVER(*\[base-window-name\]* PARTITION BY *expr* ORDER BY *expr*, *\[frame-spec\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Executes the preceding function over a window
 
@@ -274,7 +274,7 @@ OVER *window-name*
 
   **Parameters:**
 
-    * **window-name** --- The name of the window definition
+    * **window-name\*** --- The name of the window definition
 
 
 ----
@@ -282,14 +282,14 @@ OVER *window-name*
 
 .. _update_set:
 
-UPDATE *table* SET  *column-name* WHERE *cond*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UPDATE *table* SET  *column-name* WHERE *\[cond\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Modify a subset of values in zero or more rows of the given table
 
   **Parameters:**
 
-    * **table** --- The table to update
+    * **table\*** --- The table to update
     * **column-name** --- The columns in the table to update.
     * **cond** --- The condition used to determine whether a row should be updated.
 
@@ -314,7 +314,7 @@ abs(*x*)
 
   **Parameters:**
 
-    * **x** --- The number to convert
+    * **x\*** --- The number to convert
 
   **Examples:**
 
@@ -341,7 +341,7 @@ acos(*num*)
 
   **Parameters:**
 
-    * **num** --- A cosine value that is between -1 and 1
+    * **num\*** --- A cosine value that is between -1 and 1
 
   **Examples:**
 
@@ -368,7 +368,7 @@ acosh(*num*)
 
   **Parameters:**
 
-    * **num** --- A number that is one or more
+    * **num\*** --- A number that is one or more
 
   **Examples:**
 
@@ -395,7 +395,7 @@ asin(*num*)
 
   **Parameters:**
 
-    * **num** --- A sine value that is between -1 and 1
+    * **num\*** --- A sine value that is between -1 and 1
 
   **Examples:**
 
@@ -422,7 +422,7 @@ asinh(*num*)
 
   **Parameters:**
 
-    * **num** --- The number
+    * **num\*** --- The number
 
   **Examples:**
 
@@ -449,7 +449,7 @@ atan(*num*)
 
   **Parameters:**
 
-    * **num** --- The number
+    * **num\*** --- The number
 
   **Examples:**
 
@@ -476,8 +476,8 @@ atan2(*y*, *x*)
 
   **Parameters:**
 
-    * **y** --- The y coordinate of the point
-    * **x** --- The x coordinate of the point
+    * **y\*** --- The y coordinate of the point
+    * **x\*** --- The x coordinate of the point
 
   **Examples:**
 
@@ -504,7 +504,7 @@ atanh(*num*)
 
   **Parameters:**
 
-    * **num** --- The number
+    * **num\*** --- The number
 
   **Examples:**
 
@@ -531,8 +531,8 @@ atn2(*y*, *x*)
 
   **Parameters:**
 
-    * **y** --- The y coordinate of the point
-    * **x** --- The x coordinate of the point
+    * **y\*** --- The y coordinate of the point
+    * **x\*** --- The x coordinate of the point
 
   **Examples:**
 
@@ -559,7 +559,7 @@ avg(*X*)
 
   **Parameters:**
 
-    * **X** --- The value to compute the average of.
+    * **X\*** --- The value to compute the average of.
 
   **Examples:**
 
@@ -595,7 +595,7 @@ basename(*path*)
 
   **Parameters:**
 
-    * **path** --- The path
+    * **path\*** --- The path
 
   **Examples:**
 
@@ -657,7 +657,7 @@ ceil(*num*)
 
   **Parameters:**
 
-    * **num** --- The number to raise to the ceiling
+    * **num\*** --- The number to raise to the ceiling
 
   **Examples:**
 
@@ -715,15 +715,15 @@ char(*X*)
 
 .. _charindex:
 
-charindex(*needle*, *haystack*, *start*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+charindex(*needle*, *haystack*, *\[start\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if Y is nowhere found within X
 
   **Parameters:**
 
-    * **needle** --- The string to look for in the haystack
-    * **haystack** --- The string to search within
+    * **needle\*** --- The string to look for in the haystack
+    * **haystack\*** --- The string to search within
     * **start** --- The one-based index within the haystack to start the search
 
   **Examples:**
@@ -758,7 +758,7 @@ coalesce(*X*, *Y*)
 
   **Parameters:**
 
-    * **X** --- A value to check for NULL-ness
+    * **X\*** --- A value to check for NULL-ness
     * **Y** --- A value to check for NULL-ness
 
   **Examples:**
@@ -783,7 +783,7 @@ count(*X*)
 
   **Parameters:**
 
-    * **X** --- The value to count.
+    * **X\*** --- The value to count.
 
   **Examples:**
 
@@ -828,7 +828,7 @@ date(*timestring*, *modifier*)
 
   **Parameters:**
 
-    * **timestring** --- The string to convert to a date.
+    * **timestring\*** --- The string to convert to a date.
     * **modifier** --- A transformation that is applied to the value to the left.
 
   **Examples:**
@@ -870,7 +870,7 @@ datetime(*timestring*, *modifier*)
 
   **Parameters:**
 
-    * **timestring** --- The string to convert to a date with time.
+    * **timestring\*** --- The string to convert to a date with time.
     * **modifier** --- A transformation that is applied to the value to the left.
 
   **Examples:**
@@ -912,7 +912,7 @@ degrees(*radians*)
 
   **Parameters:**
 
-    * **radians** --- The radians value to convert to degrees
+    * **radians\*** --- The radians value to convert to degrees
 
   **Examples:**
 
@@ -953,7 +953,7 @@ dirname(*path*)
 
   **Parameters:**
 
-    * **path** --- The path
+    * **path\*** --- The path
 
   **Examples:**
 
@@ -1008,8 +1008,8 @@ endswith(*str*, *suffix*)
 
   **Parameters:**
 
-    * **str** --- The string to test
-    * **suffix** --- The suffix to check in the string
+    * **str\*** --- The string to test
+    * **suffix\*** --- The suffix to check in the string
 
   **Examples:**
 
@@ -1043,7 +1043,7 @@ exp(*x*)
 
   **Parameters:**
 
-    * **x** --- The exponent
+    * **x\*** --- The exponent
 
   **Examples:**
 
@@ -1070,7 +1070,7 @@ extract(*str*)
 
   **Parameters:**
 
-    * **str** --- The string to parse
+    * **str\*** --- The string to parse
 
   **Examples:**
 
@@ -1104,7 +1104,7 @@ first_value(*expr*)
 
   **Parameters:**
 
-    * **expr** --- The expression to execute over the first row
+    * **expr\*** --- The expression to execute over the first row
 
   **See Also:**
 
@@ -1122,7 +1122,7 @@ floor(*num*)
 
   **Parameters:**
 
-    * **num** --- The number to lower to the floor
+    * **num\*** --- The number to lower to the floor
 
   **Examples:**
 
@@ -1149,7 +1149,7 @@ gethostbyaddr(*hostname*)
 
   **Parameters:**
 
-    * **hostname** --- The IP address to lookup.
+    * **hostname\*** --- The IP address to lookup.
 
   **Examples:**
 
@@ -1176,7 +1176,7 @@ gethostbyname(*hostname*)
 
   **Parameters:**
 
-    * **hostname** --- The DNS hostname to lookup.
+    * **hostname\*** --- The DNS hostname to lookup.
 
   **Examples:**
 
@@ -1203,8 +1203,8 @@ glob(*pattern*, *str*)
 
   **Parameters:**
 
-    * **pattern** --- The glob pattern
-    * **str** --- The string to match
+    * **pattern\*** --- The glob pattern
+    * **str\*** --- The string to match
 
   **Examples:**
 
@@ -1221,14 +1221,14 @@ glob(*pattern*, *str*)
 
 .. _group_concat:
 
-group_concat(*X*, *sep*)
-^^^^^^^^^^^^^^^^^^^^^^^^
+group_concat(*X*, *\[sep\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Returns a string which is the concatenation of all non-NULL values of X separated by a comma or the given separator.
 
   **Parameters:**
 
-    * **X** --- The value to concatenate.
+    * **X\*** --- The value to concatenate.
     * **sep** --- The separator to place between the values.
 
   **Examples:**
@@ -1297,7 +1297,7 @@ hex(*X*)
 
   **Parameters:**
 
-    * **X** --- The blob to convert to hexadecimal
+    * **X\*** --- The blob to convert to hexadecimal
 
   **Examples:**
 
@@ -1321,8 +1321,8 @@ ifnull(*X*, *Y*)
 
   **Parameters:**
 
-    * **X** --- A value to check for NULL-ness
-    * **Y** --- A value to check for NULL-ness
+    * **X\*** --- A value to check for NULL-ness
+    * **Y\*** --- A value to check for NULL-ness
 
   **Examples:**
 
@@ -1346,8 +1346,8 @@ instr(*haystack*, *needle*)
 
   **Parameters:**
 
-    * **haystack** --- The string to search within
-    * **needle** --- The string to look for in the haystack
+    * **haystack\*** --- The string to search within
+    * **needle\*** --- The string to look for in the haystack
 
   **Examples:**
 
@@ -1367,15 +1367,15 @@ instr(*haystack*, *needle*)
 
 .. _jget:
 
-jget(*json*, *ptr*, *default*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+jget(*json*, *ptr*, *\[default\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Get the value from a JSON object using a JSON-Pointer.
 
   **Parameters:**
 
-    * **json** --- The JSON object to query.
-    * **ptr** --- The JSON-Pointer to lookup in the object.
+    * **json\*** --- The JSON object to query.
+    * **ptr\*** --- The JSON-Pointer to lookup in the object.
     * **default** --- The default value if the value was not found
 
   **Examples:**
@@ -1465,7 +1465,7 @@ json_concat(*json*, *value*)
 
   **Parameters:**
 
-    * **json** --- The initial JSON value.
+    * **json\*** --- The initial JSON value.
     * **value** --- The value(s) to add to the end of the array.
 
   **Examples:**
@@ -1507,8 +1507,8 @@ json_contains(*json*, *value*)
 
   **Parameters:**
 
-    * **json** --- The JSON value to query.
-    * **value** --- The value to look for in the first argument
+    * **json\*** --- The JSON value to query.
+    * **value\*** --- The value to look for in the first argument
 
   **Examples:**
 
@@ -1576,7 +1576,7 @@ json_group_object(*name*, *value*)
 
   **Parameters:**
 
-    * **name** --- The property name for the value
+    * **name\*** --- The property name for the value
     * **value** --- The value to add to the object
 
   **Examples:**
@@ -1611,7 +1611,7 @@ julianday(*timestring*, *modifier*)
 
   **Parameters:**
 
-    * **timestring** --- The string to convert to a date with time.
+    * **timestring\*** --- The string to convert to a date with time.
     * **modifier** --- A transformation that is applied to the value to the left.
 
   **Examples:**
@@ -1646,14 +1646,14 @@ julianday(*timestring*, *modifier*)
 
 .. _lag:
 
-lag(*expr*, *offset*, *default*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+lag(*expr*, *\[offset\]*, *\[default\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Returns the result of evaluating the expression against the previous row in the partition.
 
   **Parameters:**
 
-    * **expr** --- The expression to execute over the previous row
+    * **expr\*** --- The expression to execute over the previous row
     * **offset** --- The offset from the current row in the partition
     * **default** --- The default value if the previous row does not exist instead of NULL
 
@@ -1684,7 +1684,7 @@ last_value(*expr*)
 
   **Parameters:**
 
-    * **expr** --- The expression to execute over the last row
+    * **expr\*** --- The expression to execute over the last row
 
   **See Also:**
 
@@ -1695,14 +1695,14 @@ last_value(*expr*)
 
 .. _lead:
 
-lead(*expr*, *offset*, *default*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+lead(*expr*, *\[offset\]*, *\[default\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Returns the result of evaluating the expression against the next row in the partition.
 
   **Parameters:**
 
-    * **expr** --- The expression to execute over the next row
+    * **expr\*** --- The expression to execute over the next row
     * **offset** --- The offset from the current row in the partition
     * **default** --- The default value if the next row does not exist instead of NULL
 
@@ -1722,8 +1722,8 @@ leftstr(*str*, *N*)
 
   **Parameters:**
 
-    * **str** --- The string to return subset.
-    * **N** --- The number of characters from the left side of the string to return.
+    * **str\*** --- The string to return subset.
+    * **N\*** --- The number of characters from the left side of the string to return.
 
   **Examples:**
 
@@ -1757,7 +1757,7 @@ length(*str*)
 
   **Parameters:**
 
-    * **str** --- The string to determine the length of
+    * **str\*** --- The string to determine the length of
 
   **Examples:**
 
@@ -1777,15 +1777,15 @@ length(*str*)
 
 .. _like:
 
-like(*pattern*, *str*, *escape*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+like(*pattern*, *str*, *\[escape\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Match a string against a pattern
 
   **Parameters:**
 
-    * **pattern** --- The pattern to match.  A percent symbol (%) will match zero or more characters and an underscore (_) will match a single character.
-    * **str** --- The string to match
+    * **pattern\*** --- The pattern to match.  A percent symbol (%) will match zero or more characters and an underscore (_) will match a single character.
+    * **str\*** --- The string to match
     * **escape** --- The escape character that can be used to prefix a literal percent or underscore in the pattern.
 
   **Examples:**
@@ -1817,8 +1817,8 @@ likelihood(*value*, *probability*)
 
   **Parameters:**
 
-    * **value** --- The boolean value to return
-    * **probability** --- A floating point constant between 0.0 and 1.0
+    * **value\*** --- The boolean value to return
+    * **probability\*** --- A floating point constant between 0.0 and 1.0
 
 
 ----
@@ -1833,7 +1833,7 @@ likely(*value*)
 
   **Parameters:**
 
-    * **value** --- The boolean value to return
+    * **value\*** --- The boolean value to return
 
 
 ----
@@ -1841,14 +1841,14 @@ likely(*value*)
 
 .. _load_extension:
 
-load_extension(*path*, *entry-point*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+load_extension(*path*, *\[entry-point\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Loads SQLite extensions out of the given shared library file using the given entry point.
 
   **Parameters:**
 
-    * **path** --- The path to the shared library containing the extension.
+    * **path\*** --- The path to the shared library containing the extension.
 
 
 ----
@@ -1863,7 +1863,7 @@ log(*x*)
 
   **Parameters:**
 
-    * **x** --- The number
+    * **x\*** --- The number
 
   **Examples:**
 
@@ -1890,7 +1890,7 @@ log10(*x*)
 
   **Parameters:**
 
-    * **x** --- The number
+    * **x\*** --- The number
 
   **Examples:**
 
@@ -1939,7 +1939,7 @@ lower(*str*)
 
   **Parameters:**
 
-    * **str** --- The string to convert.
+    * **str\*** --- The string to convert.
 
   **Examples:**
 
@@ -1959,14 +1959,14 @@ lower(*str*)
 
 .. _ltrim:
 
-ltrim(*str*, *chars*)
-^^^^^^^^^^^^^^^^^^^^^
+ltrim(*str*, *\[chars\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Returns a string formed by removing any and all characters that appear in the second argument from the left side of the first.
 
   **Parameters:**
 
-    * **str** --- The string to trim characters from the left side
+    * **str\*** --- The string to trim characters from the left side
     * **chars** --- The characters to trim.  Defaults to spaces.
 
   **Examples:**
@@ -2069,8 +2069,8 @@ nth_value(*expr*, *N*)
 
   **Parameters:**
 
-    * **expr** --- The expression to execute over the nth row
-    * **N** --- The row number
+    * **expr\*** --- The expression to execute over the nth row
+    * **N\*** --- The row number
 
   **See Also:**
 
@@ -2088,7 +2088,7 @@ ntile(*groups*)
 
   **Parameters:**
 
-    * **groups** --- The number of groups
+    * **groups\*** --- The number of groups
 
   **See Also:**
 
@@ -2106,8 +2106,8 @@ nullif(*X*, *Y*)
 
   **Parameters:**
 
-    * **X** --- The first argument to compare.
-    * **Y** --- The argument to compare against the first.
+    * **X\*** --- The first argument to compare.
+    * **Y\*** --- The argument to compare against the first.
 
   **Examples:**
 
@@ -2138,8 +2138,8 @@ padc(*str*, *len*)
 
   **Parameters:**
 
-    * **str** --- The string to pad
-    * **len** --- The minimum desired length of the output string
+    * **str\*** --- The string to pad
+    * **len\*** --- The minimum desired length of the output string
 
   **Examples:**
 
@@ -2173,8 +2173,8 @@ padl(*str*, *len*)
 
   **Parameters:**
 
-    * **str** --- The string to pad
-    * **len** --- The minimum desired length of the output string
+    * **str\*** --- The string to pad
+    * **len\*** --- The minimum desired length of the output string
 
   **Examples:**
 
@@ -2208,8 +2208,8 @@ padr(*str*, *len*)
 
   **Parameters:**
 
-    * **str** --- The string to pad
-    * **len** --- The minimum desired length of the output string
+    * **str\*** --- The string to pad
+    * **len\*** --- The minimum desired length of the output string
 
   **Examples:**
 
@@ -2280,8 +2280,8 @@ power(*base*, *exp*)
 
   **Parameters:**
 
-    * **base** --- The base number
-    * **exp** --- The exponent
+    * **base\*** --- The base number
+    * **exp\*** --- The exponent
 
   **Examples:**
 
@@ -2308,8 +2308,8 @@ printf(*format*, *X*)
 
   **Parameters:**
 
-    * **format** --- The format of the string to return.
-    * **X** --- The argument to substitute at a given position in the format.
+    * **format\*** --- The format of the string to return.
+    * **X\*** --- The argument to substitute at a given position in the format.
 
   **Examples:**
 
@@ -2350,7 +2350,7 @@ proper(*str*)
 
   **Parameters:**
 
-    * **str** --- The string to capitalize.
+    * **str\*** --- The string to capitalize.
 
   **Examples:**
 
@@ -2377,7 +2377,7 @@ quote(*X*)
 
   **Parameters:**
 
-    * **X** --- The string to quote.
+    * **X\*** --- The string to quote.
 
   **Examples:**
 
@@ -2408,7 +2408,7 @@ radians(*degrees*)
 
   **Parameters:**
 
-    * **degrees** --- The degrees value to convert to radians
+    * **degrees\*** --- The degrees value to convert to radians
 
   **Examples:**
 
@@ -2435,7 +2435,7 @@ raise_error(*msg*)
 
   **Parameters:**
 
-    * **msg** --- The error message
+    * **msg\*** --- The error message
 
 
 ----
@@ -2461,7 +2461,7 @@ randomblob(*N*)
 
   **Parameters:**
 
-    * **N** --- The size of the blob in bytes.
+    * **N\*** --- The size of the blob in bytes.
 
 
 ----
@@ -2490,7 +2490,7 @@ readlink(*path*)
 
   **Parameters:**
 
-    * **path** --- The path to the symbolic link.
+    * **path\*** --- The path to the symbolic link.
 
   **See Also:**
 
@@ -2508,7 +2508,7 @@ realpath(*path*)
 
   **Parameters:**
 
-    * **path** --- The path to resolve.
+    * **path\*** --- The path to resolve.
 
   **See Also:**
 
@@ -2526,8 +2526,8 @@ regexp(*re*, *str*)
 
   **Parameters:**
 
-    * **re** --- The regular expression to use
-    * **str** --- The string to test against the regular expression
+    * **re\*** --- The regular expression to use
+    * **str\*** --- The string to test against the regular expression
 
 
 ----
@@ -2542,8 +2542,8 @@ regexp_capture(*string*, *pattern*)
 
   **Parameters:**
 
-    * **string** --- The string to match against the given pattern.
-    * **pattern** --- The regular expression to match.
+    * **string\*** --- The string to match against the given pattern.
+    * **pattern\*** --- The regular expression to match.
 
   **Examples:**
 
@@ -2576,8 +2576,8 @@ regexp_match(*re*, *str*)
 
   **Parameters:**
 
-    * **re** --- The regular expression to use
-    * **str** --- The string to test against the regular expression
+    * **re\*** --- The regular expression to use
+    * **str\*** --- The string to test against the regular expression
 
   **Examples:**
 
@@ -2618,9 +2618,9 @@ regexp_replace(*str*, *re*, *repl*)
 
   **Parameters:**
 
-    * **str** --- The string to perform replacements on
-    * **re** --- The regular expression to match
-    * **repl** --- The replacement string.  You can reference capture groups with a backslash followed by the number of the group, starting with 1.
+    * **str\*** --- The string to perform replacements on
+    * **re\*** --- The regular expression to match
+    * **repl\*** --- The replacement string.  You can reference capture groups with a backslash followed by the number of the group, starting with 1.
 
   **Examples:**
 
@@ -2654,9 +2654,9 @@ replace(*str*, *old*, *replacement*)
 
   **Parameters:**
 
-    * **str** --- The string to perform substitutions on.
-    * **old** --- The string to be replaced.
-    * **replacement** --- The string to replace any occurrences of the old string with.
+    * **str\*** --- The string to perform substitutions on.
+    * **old\*** --- The string to be replaced.
+    * **replacement\*** --- The string to replace any occurrences of the old string with.
 
   **Examples:**
 
@@ -2690,8 +2690,8 @@ replicate(*str*, *N*)
 
   **Parameters:**
 
-    * **str** --- The string to replicate.
-    * **N** --- The number of times to replicate the string.
+    * **str\*** --- The string to replicate.
+    * **N\*** --- The number of times to replicate the string.
 
   **Examples:**
 
@@ -2718,7 +2718,7 @@ reverse(*str*)
 
   **Parameters:**
 
-    * **str** --- The string to reverse.
+    * **str\*** --- The string to reverse.
 
   **Examples:**
 
@@ -2745,8 +2745,8 @@ rightstr(*str*, *N*)
 
   **Parameters:**
 
-    * **str** --- The string to return subset.
-    * **N** --- The number of characters from the right side of the string to return.
+    * **str\*** --- The string to return subset.
+    * **N\*** --- The number of characters from the right side of the string to return.
 
   **Examples:**
 
@@ -2773,14 +2773,14 @@ rightstr(*str*, *N*)
 
 .. _round:
 
-round(*num*, *digits*)
-^^^^^^^^^^^^^^^^^^^^^^
+round(*num*, *\[digits\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Returns a floating-point value rounded to the given number of digits to the right of the decimal point.
 
   **Parameters:**
 
-    * **num** --- The value to round.
+    * **num\*** --- The value to round.
     * **digits** --- The number of digits to the right of the decimal to round to.
 
   **Examples:**
@@ -2842,14 +2842,14 @@ row_number()
 
 .. _rtrim:
 
-rtrim(*str*, *chars*)
-^^^^^^^^^^^^^^^^^^^^^
+rtrim(*str*, *\[chars\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Returns a string formed by removing any and all characters that appear in the second argument from the right side of the first.
 
   **Parameters:**
 
-    * **str** --- The string to trim characters from the right side
+    * **str\*** --- The string to trim characters from the right side
     * **chars** --- The characters to trim.  Defaults to spaces.
 
   **Examples:**
@@ -2884,7 +2884,7 @@ sign(*num*)
 
   **Parameters:**
 
-    * **num** --- The number
+    * **num\*** --- The number
 
   **Examples:**
 
@@ -2973,7 +2973,7 @@ sqlite_compileoption_get(*N*)
 
   **Parameters:**
 
-    * **N** --- The option number to get
+    * **N\*** --- The option number to get
 
 
 ----
@@ -2988,7 +2988,7 @@ sqlite_compileoption_used(*option*)
 
   **Parameters:**
 
-    * **option** --- The name of the compile-time option.
+    * **option\*** --- The name of the compile-time option.
 
   **Examples:**
 
@@ -3034,7 +3034,7 @@ square(*num*)
 
   **Parameters:**
 
-    * **num** --- The number to square
+    * **num\*** --- The number to square
 
   **Examples:**
 
@@ -3061,8 +3061,8 @@ startswith(*str*, *prefix*)
 
   **Parameters:**
 
-    * **str** --- The string to test
-    * **prefix** --- The prefix to check in the string
+    * **str\*** --- The string to test
+    * **prefix\*** --- The prefix to check in the string
 
   **Examples:**
 
@@ -3096,8 +3096,8 @@ strfilter(*source*, *include*)
 
   **Parameters:**
 
-    * **source** --- The string to filter
-    * **include** --- The characters to include in the result
+    * **source\*** --- The string to filter
+    * **include\*** --- The characters to include in the result
 
   **Examples:**
 
@@ -3124,8 +3124,8 @@ strftime(*format*, *timestring*, *modifier*)
 
   **Parameters:**
 
-    * **format** --- A format string with substitutions similar to those found in the strftime() standard C library.
-    * **timestring** --- The string to convert to a date with time.
+    * **format\*** --- A format string with substitutions similar to those found in the strftime() standard C library.
+    * **timestring\*** --- The string to convert to a date with time.
     * **modifier** --- A transformation that is applied to the value to the left.
 
   **Examples:**
@@ -3160,15 +3160,15 @@ strftime(*format*, *timestring*, *modifier*)
 
 .. _substr:
 
-substr(*str*, *start*, *size*)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+substr(*str*, *start*, *\[size\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Returns a substring of input string X that begins with the Y-th character and which is Z characters long.
 
   **Parameters:**
 
-    * **str** --- The string to extract a substring from.
-    * **start** --- The index within 'str' that is the start of the substring.  Indexes begin at 1.  A negative value means that the substring is found by counting from the right rather than the left.  
+    * **str\*** --- The string to extract a substring from.
+    * **start\*** --- The index within 'str' that is the start of the substring.  Indexes begin at 1.  A negative value means that the substring is found by counting from the right rather than the left.  
     * **size** --- The size of the substring.  If not given, then all characters through the end of the string are returned.  If the value is negative, then the characters before the start are returned.
 
   **Examples:**
@@ -3217,7 +3217,7 @@ sum(*X*)
 
   **Parameters:**
 
-    * **X** --- The values to add.
+    * **X\*** --- The values to add.
 
   **Examples:**
 
@@ -3244,7 +3244,7 @@ time(*timestring*, *modifier*)
 
   **Parameters:**
 
-    * **timestring** --- The string to convert to a time.
+    * **timestring\*** --- The string to convert to a time.
     * **modifier** --- A transformation that is applied to the value to the left.
 
   **Examples:**
@@ -3286,8 +3286,8 @@ timediff(*time1*, *time2*)
 
   **Parameters:**
 
-    * **time1** --- The first timestamp
-    * **time2** --- The timestamp to subtract from the first
+    * **time1\*** --- The first timestamp
+    * **time2\*** --- The timestamp to subtract from the first
 
   **Examples:**
 
@@ -3321,8 +3321,8 @@ timeslice(*time*, *slice*)
 
   **Parameters:**
 
-    * **time** --- The timestamp to get the time slice for.
-    * **slice** --- The size of the time slices
+    * **time\*** --- The timestamp to get the time slice for.
+    * **slice\*** --- The size of the time slices
 
   **Examples:**
 
@@ -3359,7 +3359,7 @@ total(*X*)
 
   **Parameters:**
 
-    * **X** --- The values to add.
+    * **X\*** --- The values to add.
 
   **Examples:**
 
@@ -3390,14 +3390,14 @@ total_changes()
 
 .. _trim:
 
-trim(*str*, *chars*)
-^^^^^^^^^^^^^^^^^^^^
+trim(*str*, *\[chars\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^
 
   Returns a string formed by removing any and all characters that appear in the second argument from the left and right sides of the first.
 
   **Parameters:**
 
-    * **str** --- The string to trim characters from the left and right sides.
+    * **str\*** --- The string to trim characters from the left and right sides.
     * **chars** --- The characters to trim.  Defaults to spaces.
 
   **Examples:**
@@ -3432,7 +3432,7 @@ typeof(*X*)
 
   **Parameters:**
 
-    * **X** --- The expression to check.
+    * **X\*** --- The expression to check.
 
   **Examples:**
 
@@ -3463,7 +3463,7 @@ unicode(*X*)
 
   **Parameters:**
 
-    * **X** --- The string to examine.
+    * **X\*** --- The string to examine.
 
   **Examples:**
 
@@ -3490,7 +3490,7 @@ unlikely(*value*)
 
   **Parameters:**
 
-    * **value** --- The boolean value to return
+    * **value\*** --- The boolean value to return
 
 
 ----
@@ -3505,7 +3505,7 @@ upper(*str*)
 
   **Parameters:**
 
-    * **str** --- The string to convert.
+    * **str\*** --- The string to convert.
 
   **Examples:**
 
@@ -3532,7 +3532,7 @@ zeroblob(*N*)
 
   **Parameters:**
 
-    * **N** --- The size of the BLOB.
+    * **N\*** --- The size of the BLOB.
 
 
 ----

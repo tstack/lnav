@@ -8,7 +8,7 @@
 
   **Parameters:**
 
-    * **timestamp** --- The new timestamp for the top line in the view
+    * **timestamp\*** --- The new timestamp for the top line in the view
 
   **Examples:**
 
@@ -37,7 +37,7 @@
 
   **Parameters:**
 
-    * **msg** --- The message to display
+    * **msg\*** --- The message to display
 
   **Examples:**
 
@@ -63,7 +63,7 @@
 
   **Parameters:**
 
-    * **path** --- The path to the file to append to
+    * **path\*** --- The path to the file to append to
 
   **Examples:**
 
@@ -103,7 +103,7 @@
 
   **Parameters:**
 
-    * **pattern** --- The regular expression previously used with :highlight
+    * **pattern\*** --- The regular expression previously used with :highlight
 
   **Examples:**
 
@@ -151,7 +151,7 @@
 
   **Parameters:**
 
-    * **text** --- The comment text
+    * **text\*** --- The comment text
 
   **Examples:**
 
@@ -170,14 +170,14 @@
 
 .. _config:
 
-:config *option* *value*
-^^^^^^^^^^^^^^^^^^^^^^^^
+:config *option* *\[value\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Read or write a configuration option
 
   **Parameters:**
 
-    * **option** --- The path to the option to read or write
+    * **option\*** --- The path to the option to read or write
     * **value** --- The value to write.  If not given, the current value is returned
 
   **Examples:**
@@ -210,7 +210,7 @@
 
   **Parameters:**
 
-    * **table-name** --- The name for the new table
+    * **table-name\*** --- The name for the new table
 
   **Examples:**
 
@@ -229,14 +229,14 @@
 
 .. _create_search_table:
 
-:create-search-table *table-name* *pattern*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:create-search-table *table-name* *\[pattern\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Create an SQL table based on a regex search
 
   **Parameters:**
 
-    * **table-name** --- The name of the table to create
+    * **table-name\*** --- The name of the table to create
     * **pattern** --- The regular expression used to capture the table columns.  If not given, the current search pattern is used.
 
   **Examples:**
@@ -274,7 +274,7 @@
 
   **Parameters:**
 
-    * **pattern** --- The regular expression to match
+    * **pattern\*** --- The regular expression to match
 
   **Examples:**
 
@@ -300,7 +300,7 @@
 
   **Parameters:**
 
-    * **table-name** --- The name of the table to delete
+    * **table-name\*** --- The name of the table to delete
 
   **Examples:**
 
@@ -326,7 +326,7 @@
 
   **Parameters:**
 
-    * **table-name** --- The name of the table to create
+    * **table-name\*** --- The name of the table to create
 
   **Examples:**
 
@@ -378,7 +378,7 @@
 
   **Parameters:**
 
-    * **pattern** --- The regular expression used in the filter command
+    * **pattern\*** --- The regular expression used in the filter command
 
   **Examples:**
 
@@ -418,7 +418,7 @@
 
   **Parameters:**
 
-    * **msg** --- The message to display
+    * **msg\*** --- The message to display
 
   **Examples:**
 
@@ -444,7 +444,7 @@
 
   **Parameters:**
 
-    * **pattern** --- The regular expression used in the filter command
+    * **pattern\*** --- The regular expression used in the filter command
 
   **Examples:**
 
@@ -484,7 +484,7 @@
 
   **Parameters:**
 
-    * **command** --- The command or query to perform substitution on.
+    * **command\*** --- The command or query to perform substitution on.
 
   **Examples:**
 
@@ -516,7 +516,7 @@
 
   **Parameters:**
 
-    * **pattern** --- The regular expression to match
+    * **pattern\*** --- The regular expression to match
 
   **Examples:**
 
@@ -542,7 +542,7 @@
 
   **Parameters:**
 
-    * **pattern** --- The regular expression to match
+    * **pattern\*** --- The regular expression to match
 
   **Examples:**
 
@@ -568,7 +568,7 @@
 
   **Parameters:**
 
-    * **line#|N%|date** --- A line number, percent into the file, or a timestamp
+    * **line#|N%|date\*** --- A line number, percent into the file, or a timestamp
 
   **Examples:**
 
@@ -649,7 +649,7 @@
 
   **Parameters:**
 
-    * **date** --- An absolute or relative date
+    * **date\*** --- An absolute or relative date
 
   **Examples:**
 
@@ -681,7 +681,7 @@
 
   **Parameters:**
 
-    * **date** --- An absolute or relative date
+    * **date\*** --- An absolute or relative date
 
   **Examples:**
 
@@ -727,7 +727,7 @@
 
   **Parameters:**
 
-    * **pattern** --- The regular expression to match
+    * **pattern\*** --- The regular expression to match
 
   **Examples:**
 
@@ -792,7 +792,7 @@
 
   **Parameters:**
 
-    * **type** --- The type of bookmark -- error, warning, search, user, file, meta
+    * **type\*** --- The type of bookmark -- error, warning, search, user, file, meta
 
   **Examples:**
 
@@ -841,7 +841,7 @@
 
   **Parameters:**
 
-    * **name** --- The name for the new partition
+    * **name\*** --- The name for the new partition
 
   **Examples:**
 
@@ -864,7 +864,7 @@
 
   **Parameters:**
 
-    * **shell-cmd** --- The shell command-line to execute
+    * **shell-cmd\*** --- The shell command-line to execute
 
   **Examples:**
 
@@ -890,7 +890,7 @@
 
   **Parameters:**
 
-    * **shell-cmd** --- The shell command-line to execute
+    * **shell-cmd\*** --- The shell command-line to execute
 
   **Examples:**
 
@@ -930,7 +930,7 @@
 
   **Parameters:**
 
-    * **type** --- The type of bookmark -- error, warning, search, user, file, meta
+    * **type\*** --- The type of bookmark -- error, warning, search, user, file, meta
 
   **Examples:**
 
@@ -943,6 +943,60 @@
   **See Also:**
 
     :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_mark`, :ref:`prev_location`, :ref:`relative_goto`
+
+----
+
+
+.. _prompt:
+
+:prompt *type* *\[--alt\]* *\[prompt\]* *\[initial-value\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Open the given prompt
+
+  **Parameters:**
+
+    * **type\*** --- The type of prompt -- command, script, search, sql, user
+    * **--alt** --- Perform the alternate action for this prompt by default
+    * **prompt** --- The prompt to display
+    * **initial-value** --- The initial value to fill in for the prompt
+
+  **Examples:**
+
+    To open the command prompt with 'filter-in' already filled in:
+
+    .. code-block::  lnav
+
+      :prompt command : 'filter-in '
+
+    To ask the user a question:
+
+    .. code-block::  lnav
+
+      :prompt user 'Are you sure? '
+
+
+----
+
+
+.. _pt_max_time:
+
+:pt-max-time
+^^^^^^^^^^^^
+
+  (null)
+
+
+----
+
+
+.. _pt_min_time:
+
+:pt-min-time
+^^^^^^^^^^^^
+
+  (null)
+
 
 ----
 
@@ -960,8 +1014,8 @@
 
 .. _redirect_to:
 
-:redirect-to *path*
-^^^^^^^^^^^^^^^^^^^
+:redirect-to *\[path\]*
+^^^^^^^^^^^^^^^^^^^^^^^
 
   Redirect the output of commands to the given file
 
@@ -1004,7 +1058,7 @@
 
   **Parameters:**
 
-    * **line-count|N%** --- The amount to move the view by.
+    * **line-count|N%\*** --- The amount to move the view by.
 
   **Examples:**
 
@@ -1036,7 +1090,7 @@
 
   **Parameters:**
 
-    * **option** --- The path to the option to reset
+    * **option\*** --- The path to the option to reset
 
   **Examples:**
 
@@ -1084,7 +1138,7 @@
 
   **Parameters:**
 
-    * **lnav-command** --- The lnav command to save.
+    * **lnav-command\*** --- The lnav command to save.
 
   **Examples:**
 
@@ -1107,7 +1161,7 @@
 
   **Parameters:**
 
-    * **log-level** --- The new minimum log level
+    * **log-level\*** --- The new minimum log level
 
   **Examples:**
 
@@ -1184,7 +1238,7 @@
 
   **Parameters:**
 
-    * **field-name** --- The name of the numeric field to visualize.
+    * **field-name\*** --- The name of the numeric field to visualize.
 
   **Examples:**
 
@@ -1207,7 +1261,7 @@
 
   **Parameters:**
 
-    * **column-name** --- The name of the column to analyze.
+    * **column-name\*** --- The name of the column to analyze.
 
   **Examples:**
 
@@ -1230,7 +1284,7 @@
 
   **Parameters:**
 
-    * **view-name** --- The name of the view to switch to.
+    * **view-name\*** --- The name of the view to switch to.
 
   **Examples:**
 
@@ -1279,7 +1333,7 @@
 
   **Parameters:**
 
-    * **view-name** --- The name of the view to toggle the display of.
+    * **view-name\*** --- The name of the view to toggle the display of.
 
   **Examples:**
 
@@ -1302,7 +1356,7 @@
 
   **Parameters:**
 
-    * **seconds** --- The epoch timestamp to convert
+    * **seconds\*** --- The epoch timestamp to convert
 
   **Examples:**
 
@@ -1351,7 +1405,7 @@
 
   **Parameters:**
 
-    * **path** --- The path to the file to write
+    * **path\*** --- The path to the file to write
 
   **Examples:**
 
@@ -1377,7 +1431,7 @@
 
   **Parameters:**
 
-    * **path** --- The path to the file to write
+    * **path\*** --- The path to the file to write
 
   **Examples:**
 
@@ -1403,7 +1457,7 @@
 
   **Parameters:**
 
-    * **path** --- The path to the file to write
+    * **path\*** --- The path to the file to write
 
   **Examples:**
 
@@ -1429,7 +1483,7 @@
 
   **Parameters:**
 
-    * **path** --- The path to the file to write
+    * **path\*** --- The path to the file to write
 
   **Examples:**
 
@@ -1455,7 +1509,7 @@
 
   **Parameters:**
 
-    * **path** --- The path to the file to write
+    * **path\*** --- The path to the file to write
 
   **Examples:**
 
@@ -1481,7 +1535,7 @@
 
   **Parameters:**
 
-    * **path** --- The path to the file to write
+    * **path\*** --- The path to the file to write
 
   **Examples:**
 
@@ -1507,7 +1561,7 @@
 
   **Parameters:**
 
-    * **path** --- The path to the file to write
+    * **path\*** --- The path to the file to write
 
   **Examples:**
 
@@ -1533,7 +1587,7 @@
 
   **Parameters:**
 
-    * **zoom-level** --- The zoom level
+    * **zoom-level\*** --- The zoom level
 
   **Examples:**
 

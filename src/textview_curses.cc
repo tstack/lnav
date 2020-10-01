@@ -171,10 +171,31 @@ void textview_curses::grep_begin(grep_proc<vis_line_t> &gp, vis_line_t start, vi
     listview_curses::reload_data();
 }
 
+void textview_curses::grep_end_batch(grep_proc<vis_line_t> &gp)
+{
+    if (this->tc_follow_deadline.tv_sec &&
+        this->tc_follow_top == this->get_top()) {
+        struct timeval now;
+
+        gettimeofday(&now, nullptr);
+        if (this->tc_follow_deadline < now) {
+        } else {
+            if (this->tc_follow_func) {
+                if (this->tc_follow_func()) {
+                    this->tc_follow_deadline = {0};
+                }
+            } else {
+                this->tc_follow_deadline = {0};
+            }
+        }
+    }
+    this->tc_search_action.invoke(this);
+}
+
 void textview_curses::grep_end(grep_proc<vis_line_t> &gp)
 {
     this->tc_searching -= 1;
-    this->tc_search_action.invoke(this);
+    this->grep_end_batch(gp);
 
     ensure(this->tc_searching >= 0);
 }

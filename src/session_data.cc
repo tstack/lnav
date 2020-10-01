@@ -743,7 +743,7 @@ static int read_last_search(yajlpp_parse_context *ypc, const unsigned char *str,
 
     if (view_index < LNV__MAX && !regex.empty()) {
         lnav_data.ld_views[view_index].execute_search(regex);
-        lnav_data.ld_views[view_index].set_follow_search_for(-1);
+        lnav_data.ld_views[view_index].set_follow_search_for(-1, {});
     }
 
     return 1;

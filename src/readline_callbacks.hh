@@ -35,6 +35,7 @@ void rl_change(void *dummy, readline_curses *rc);
 void rl_search(void *dummy, readline_curses *rc);
 void rl_abort(void *dummy, readline_curses *rc);
 void rl_callback(void *dummy, readline_curses *rc);
+void rl_alt_callback(void *dummy, readline_curses *rc);
 void rl_display_matches(void *dummy, readline_curses *rc);
 void rl_display_next(void *dummy, readline_curses *rc);
 

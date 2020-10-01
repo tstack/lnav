@@ -40,6 +40,7 @@
 #include "auto_fd.hh"
 #include "attr_line.hh"
 #include "textview_curses.hh"
+#include "shlex.hh"
 
 struct exec_context;
 
@@ -104,9 +105,16 @@ struct exec_context {
         exec_context &sg_context;
     };
 
-    source_guard enter_source(const std::string path, int line_number) {
+    source_guard enter_source(const std::string& path, int line_number) {
         this->ec_source.emplace(path, line_number);
         return source_guard(*this);
+    }
+
+    scoped_resolver create_resolver() {
+        return {
+            &this->ec_local_vars.top(),
+            &this->ec_global_vars,
+        };
     }
 
     vis_line_t ec_top_line;

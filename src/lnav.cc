@@ -1155,6 +1155,7 @@ static bool handle_key(int ch) {
                 case LNM_CAPTURE:
                 case LNM_SQL:
                 case LNM_EXEC:
+                case LNM_USER:
                     handle_rl_key(ch);
                     break;
 
@@ -1205,14 +1206,14 @@ void update_hits(void *dummy, textview_curses *tc)
         lnav_data.ld_bottom_source.update_hits(tc);
 
         if (lnav_data.ld_mode == LNM_SEARCH) {
-            const int MAX_MATCH_COUNT = 10;
-            const vis_line_t PREVIEW_SIZE = vis_line_t(MAX_MATCH_COUNT + 1);
+            const auto MAX_MATCH_COUNT = 10_vl;
+            const auto PREVIEW_SIZE = MAX_MATCH_COUNT + 1_vl;
 
             int preview_count = 0;
 
             vis_bookmarks &bm = tc->get_bookmarks();
             const auto &bv = bm[&textview_curses::BM_SEARCH];
-            vis_line_t vl = tc->get_top();
+            auto vl = tc->get_top();
             unsigned long width;
             vis_line_t height;
             attr_line_t all_matches;
@@ -1229,8 +1230,26 @@ void update_hits(void *dummy, textview_curses *tc)
                 vl -= PREVIEW_SIZE;
             }
 
+            auto prev_vl = bv.prev(tc->get_top());
+
+            if (prev_vl != -1_vl) {
+                attr_line_t al;
+
+                tc->textview_value_for_row(prev_vl, al);
+                if (preview_count > 0) {
+                    all_matches.append("\n");
+                }
+                snprintf(linebuf, sizeof(linebuf),
+                         "L%*d: ",
+                         max_line_width, (int) prev_vl);
+                all_matches
+                    .append(linebuf)
+                    .append(al);
+                preview_count += 1;
+            }
+
             while ((vl = bv.next(vl)) != -1_vl &&
-                preview_count < MAX_MATCH_COUNT) {
+                   preview_count < MAX_MATCH_COUNT) {
                 attr_line_t al;
 
                 tc->textview_value_for_row(vl, al);
@@ -1252,6 +1271,7 @@ void update_hits(void *dummy, textview_curses *tc)
                 lnav_data.ld_preview_source
                          .replace_with(all_matches)
                          .set_text_format(text_format_t::TF_UNKNOWN);
+                lnav_data.ld_preview_view.set_needs_update();
             }
         }
     }
@@ -1295,10 +1315,11 @@ static void looper()
 
         readline_context command_context("cmd", &lnav_commands);
 
-        readline_context search_context("search", NULL, false);
+        readline_context search_context("search", nullptr, false);
         readline_context index_context("capture");
-        readline_context sql_context("sql", NULL, false);
+        readline_context sql_context("sql", nullptr, false);
         readline_context exec_context("exec");
+        readline_context user_context("user");
         readline_curses  rlc;
         sig_atomic_t overlay_counter = 0;
         int lpc;
@@ -1324,6 +1345,7 @@ static void looper()
         rlc.add_context(LNM_CAPTURE, index_context);
         rlc.add_context(LNM_SQL, sql_context);
         rlc.add_context(LNM_EXEC, exec_context);
+        rlc.add_context(LNM_USER, user_context);
         rlc.start();
 
         lnav_data.ld_filter_source.fss_editor.start();
@@ -1409,6 +1431,7 @@ static void looper()
         rlc.set_y(-1);
         rlc.set_change_action(readline_curses::action(rl_change));
         rlc.set_perform_action(readline_curses::action(rl_callback));
+        rlc.set_alt_perform_action(readline_curses::action(rl_alt_callback));
         rlc.set_timeout_action(readline_curses::action(rl_search));
         rlc.set_abort_action(readline_curses::action(rl_abort));
         rlc.set_display_match_action(
@@ -1433,9 +1456,9 @@ static void looper()
             lnav_data.ld_views[lpc].set_search_action(
                 textview_curses::action(update_hits));
             using std::placeholders::_1;
-            lnav_data.ld_views[lpc].tc_state_event_handler =
-                std::bind(&bottom_status_source::update_search_term,
-                    &lnav_data.ld_bottom_source, _1);
+            lnav_data.ld_views[lpc].tc_state_event_handler = [](auto &&tc) {
+                lnav_data.ld_bottom_source.update_search_term(tc);
+            };
         }
 
         lnav_data.ld_doc_view.set_window(lnav_data.ld_window);

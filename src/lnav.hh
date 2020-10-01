@@ -79,6 +79,7 @@ typedef enum {
     LNM_CAPTURE,
     LNM_SQL,
     LNM_EXEC,
+    LNM_USER,
 } ln_mode_t;
 
 enum {

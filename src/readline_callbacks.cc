@@ -269,7 +269,7 @@ void rl_change(void *dummy, readline_curses *rc)
     }
 }
 
-static void rl_search_internal(void *dummy, readline_curses *rc, bool complete = false)
+static void rl_search_internal(void *dummy, readline_curses *rc, ln_mode_t mode, bool complete = false)
 {
     textview_curses *tc = *lnav_data.ld_view_stack.top();
     string term_val;
@@ -279,7 +279,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     tc->reload_data();
 
-    switch (lnav_data.ld_mode) {
+    switch (mode) {
     case LNM_SEARCH:
         name = "$search";
         break;
@@ -424,6 +424,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, bool complete =
     }
 
     case LNM_EXEC:
+    case LNM_USER:
         return;
 
     default:
@@ -441,8 +442,8 @@ void rl_search(void *dummy, readline_curses *rc)
 {
     textview_curses *tc = *lnav_data.ld_view_stack.top();
 
-    rl_search_internal(dummy, rc);
-    tc->set_follow_search_for(0);
+    rl_search_internal(dummy, rc, lnav_data.ld_mode);
+    tc->set_follow_search_for(0, {});
 }
 
 void rl_abort(void *dummy, readline_curses *rc)
@@ -477,7 +478,7 @@ void rl_abort(void *dummy, readline_curses *rc)
     lnav_data.ld_mode = LNM_PAGING;
 }
 
-void rl_callback(void *dummy, readline_curses *rc)
+static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
 {
     textview_curses *tc = *lnav_data.ld_view_stack.top();
     exec_context &ec = lnav_data.ld_exec_context;
@@ -490,7 +491,9 @@ void rl_callback(void *dummy, readline_curses *rc)
     lnav_data.ld_preview_source.clear();
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
-    switch (lnav_data.ld_mode) {
+
+    auto old_mode = std::exchange(lnav_data.ld_mode, LNM_PAGING);
+    switch (old_mode) {
     case LNM_PAGING:
     case LNM_FILTER:
         require(0);
@@ -503,14 +506,21 @@ void rl_callback(void *dummy, readline_curses *rc)
                           .orElse(err_to_ok).unwrap());
         break;
 
+        case LNM_USER:
+            rc->set_alt_value("");
+            ec.ec_local_vars.top()["value"] = rc->get_value();
+            rc->set_value("");
+            break;
+
     case LNM_SEARCH:
     case LNM_CAPTURE:
-        rl_search_internal(dummy, rc, true);
-        if (rc->get_value().size() > 0) {
+        rl_search_internal(dummy, rc, old_mode, true);
+        if (!rc->get_value().empty()) {
             auto_mem<FILE> pfile(pclose);
             vis_bookmarks &bm = tc->get_bookmarks();
             const auto &bv = bm[&textview_curses::BM_SEARCH];
-            vis_line_t vl = bv.next(tc->get_top());
+            vis_line_t vl = is_alt ? bv.prev(tc->get_top()) :
+                bv.next(tc->get_top());
 
             pfile = open_clipboard(CT_FIND);
             if (pfile.in() != nullptr) {
@@ -519,7 +529,33 @@ void rl_callback(void *dummy, readline_curses *rc)
             if (vl != -1_vl) {
                 tc->set_top(vl);
             } else {
-                tc->set_follow_search_for(750);
+                tc->set_follow_search_for(2000, [tc, is_alt, &bm]() {
+                    if (bm[&textview_curses::BM_SEARCH].empty()) {
+                        return false;
+                    }
+
+                    if (is_alt && tc->is_searching()) {
+                        return false;
+                    }
+
+                    vis_line_t first_hit;
+
+                    if (is_alt) {
+                        first_hit = bm[&textview_curses::BM_SEARCH].prev(
+                            vis_line_t(tc->get_top()));
+                    } else {
+                        first_hit = bm[&textview_curses::BM_SEARCH].next(
+                            vis_line_t(tc->get_top() - 1));
+                    }
+                    if (first_hit != -1) {
+                        if (first_hit > 0) {
+                            --first_hit;
+                        }
+                        tc->set_top(first_hit);
+                    }
+
+                    return true;
+                });
             }
             rc->set_value("search: " + rc->get_value());
             rc->set_alt_value(HELP_MSG_2(
@@ -602,8 +638,16 @@ void rl_callback(void *dummy, readline_curses *rc)
         break;
     }
     }
+}
 
-    lnav_data.ld_mode = LNM_PAGING;
+void rl_callback(void *dummy, readline_curses *rc)
+{
+    rl_callback_int(dummy, rc, false);
+}
+
+void rl_alt_callback(void *dummy, readline_curses *rc)
+{
+    rl_callback_int(dummy, rc, true);
 }
 
 void rl_display_matches(void *dummy, readline_curses *rc)
