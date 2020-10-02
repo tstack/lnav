@@ -15,15 +15,15 @@
                 },
                 "styles": {
                     "identifier": {
-                        "background-color": "$black"
+                        "background-color": ""
                     },
                     "text": {
                         "color": "$white",
-                        "background-color": "$black"
+                        "background-color": ""
                     },
                     "alt-text": {
                         "color": "$white",
-                        "background-color": "$black",
+                        "background-color": "",
                         "bold": true
                     },
                     "ok": {

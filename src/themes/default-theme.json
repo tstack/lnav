@@ -6,10 +6,10 @@
                 "styles": {
                     "text": {
                         "color": "Silver",
-                        "background-color": "Black"
+                        "background-color": ""
                     },
                     "identifier": {
-                        "background-color": "Black"
+                        "background-color": ""
                     },
                     "alt-text": {
                         "color": "Silver",
