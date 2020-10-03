@@ -215,7 +215,8 @@ public:
                 this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
                 line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
                 for (uint32_t lpc = old_size; lpc < lf->size(); lpc++) {
-                    if (lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
+                    if (this->tss_apply_filters &&
+                        lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
                         continue;
                     }
                     lfo->lfo_filter_state.tfs_index.push_back(lpc);
@@ -255,7 +256,8 @@ public:
         this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
         lfo->lfo_filter_state.tfs_index.clear();
         for (uint32_t lpc = 0; lpc < lf->size(); lpc++) {
-            if (lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
+            if (this->tss_apply_filters &&
+                lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
                 continue;
             }
             lfo->lfo_filter_state.tfs_index.push_back(lpc);

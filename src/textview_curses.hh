@@ -486,7 +486,13 @@ public:
         return nonstd::nullopt;
     }
 
+    void toggle_apply_filters() {
+        this->tss_apply_filters = !this->tss_apply_filters;
+        this->text_filters_changed();
+    }
+
     bool tss_supports_filtering{false};
+    bool tss_apply_filters{true};
 protected:
     textview_curses *tss_view{nullptr};
     filter_stack tss_filters;

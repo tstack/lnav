@@ -130,7 +130,8 @@ CREATE TABLE lnav_views (
     inner_height INTEGER,   -- The number of lines in the view.
     top_time DATETIME,      -- The time of the top line in the view, if the content is time-based.
     paused INTEGER,         -- Indicates if the view is paused and will not load new data.
-    search TEXT             -- The text to search for in the view.
+    search TEXT,            -- The text to search for in the view.
+    filtering INTEGER       -- Indicates if the view is applying filters.
 );
 )";
 
@@ -192,6 +193,16 @@ CREATE TABLE lnav_views (
                 sqlite3_result_text(ctx, str.c_str(), str.length(), SQLITE_TRANSIENT);
                 break;
             }
+            case 8: {
+                auto tss = tc.get_sub_source();
+
+                if (tss != nullptr && tss->tss_supports_filtering) {
+                    sqlite3_result_int(ctx, tss->tss_apply_filters);
+                } else {
+                    sqlite3_result_int(ctx, 0);
+                }
+                break;
+            }
         }
 
         return SQLITE_OK;
@@ -218,7 +229,8 @@ CREATE TABLE lnav_views (
                    int64_t inner_height,
                    const char *top_time,
                    bool is_paused,
-                   const char *search) {
+                   const char *search,
+                   bool do_filtering) {
         textview_curses &tc = lnav_data.ld_views[index];
         text_time_translator *time_source = dynamic_cast<text_time_translator *>(tc.get_sub_source());
 
@@ -244,6 +256,13 @@ CREATE TABLE lnav_views (
         tc.set_left(left);
         tc.set_paused(is_paused);
         tc.execute_search(search);
+        auto tss = tc.get_sub_source();
+        if (tss != nullptr &&
+            tss->tss_supports_filtering &&
+            tss->tss_apply_filters != do_filtering) {
+            tss->tss_apply_filters = do_filtering;
+            tss->text_filters_changed();
+        }
 
         return SQLITE_OK;
     };

@@ -35,12 +35,12 @@
 static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
 static auto EXIT_MSG = "Press " ANSI_BOLD("TAB") " to exit ";
 
-static auto HOTKEY_HELP = " "
-    ANSI_BOLD("SPC") ": Enable/Disable  "
-    ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out  "
-    ANSI_BOLD("ENTER") ": Edit  "
-    ANSI_BOLD("t") ": Toggle type  "
-    ANSI_BOLD("D") ": Delete ";
+static auto CREATE_HELP = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
+static auto ENABLE_HELP = ANSI_BOLD("SPC") ": ";
+static auto EDIT_HELP = ANSI_BOLD("ENTER") ": Edit";
+static auto TOGGLE_HELP = ANSI_BOLD("t") ": To ";
+static auto DELETE_HELP = ANSI_BOLD("D") ": Delete";
+static auto FILTERING_HELP = ANSI_BOLD("f") ": ";
 
 filter_status_source::filter_status_source()
 {
@@ -104,7 +104,9 @@ size_t filter_status_source::statusview_fields()
                 this->tss_fields[TSF_COUNT].set_value(
                     " " ANSI_BOLD("%d")
                     " of " ANSI_BOLD("%d")
-                    " enabled ", enabled_count, filter_count);
+                    " enabled ",
+                    enabled_count,
+                    filter_count);
             }
         };
 
@@ -136,7 +138,13 @@ void filter_status_source::update_filtered(text_sub_source *tss)
     status_field &sf = this->tss_fields[TSF_FILTERED];
 
     if (tss == nullptr || tss->get_filtered_count() == 0) {
-        sf.clear();
+        if (tss->tss_apply_filters) {
+            sf.clear();
+        } else {
+            sf.set_value(
+                " \u2718 Filtering disabled, re-enable with "
+                ANSI_BOLD_START ":toggle-filtering" ANSI_NORM);
+        }
     }
     else {
         ui_periodic_timer &timer = ui_periodic_timer::singleton();
@@ -163,11 +171,57 @@ filter_help_status_source::filter_help_status_source()
 {
     this->fss_help.set_min_width(10);
     this->fss_help.set_share(1);
-    this->fss_help.set_value(HOTKEY_HELP);
 }
 
 size_t filter_help_status_source::statusview_fields()
 {
+    lnav_data.ld_view_stack.top() | [this] (auto tc) {
+        text_sub_source *tss = tc->get_sub_source();
+        if (tss == nullptr) {
+            return;
+        }
+
+        if (lnav_data.ld_mode != LNM_FILTER) {
+            return;
+        }
+
+        auto &editor = lnav_data.ld_filter_source;
+        auto &lv = lnav_data.ld_filter_view;
+        auto &fs = tss->get_filters();
+
+        if (editor.fss_editing) {
+            auto tf = *(fs.begin() + lv.get_selection());
+
+            if (tf->get_type() == text_filter::type_t::INCLUDE) {
+                this->fss_help.set_value(
+                    "                     "
+                    "Enter a regular expression to match lines to filter in:");
+            } else {
+                this->fss_help.set_value(
+                    "                     "
+                    "Enter a regular expression to match lines to filter out:");
+            }
+        } else if (fs.empty()) {
+            this->fss_help.set_value("  %s", CREATE_HELP);
+        } else {
+            auto tf = *(fs.begin() + lv.get_selection());
+
+            this->fss_help.set_value("  %s  %s%s  %s  %s%s  %s  %s%s",
+                                     CREATE_HELP,
+                                     ENABLE_HELP,
+                                     tf->is_enabled() ? "Disable" : "Enable ",
+                                     EDIT_HELP,
+                                     TOGGLE_HELP,
+                                     tf->get_type() == text_filter::type_t::INCLUDE ?
+                                     "OUT" : "IN ",
+                                     DELETE_HELP,
+                                     FILTERING_HELP,
+                                     tss->tss_apply_filters ?
+                                     "Disable Filtering" :
+                                     "Enable Filtering");
+        }
+    };
+
     return 1;
 }
 

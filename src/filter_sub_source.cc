@@ -78,6 +78,13 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             lnav_data.ld_mode = LNM_PAGING;
             lnav_data.ld_filter_view.reload_data();
             return true;
+        case 'f': {
+            auto top_view = *lnav_data.ld_view_stack.top();
+            auto tss = top_view->get_sub_source();
+
+            tss->toggle_apply_filters();
+            break;
+        }
         case ' ': {
             textview_curses *top_view = *lnav_data.ld_view_stack.top();
             text_sub_source *tss = top_view->get_sub_source();
@@ -148,8 +155,6 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editing = true;
 
             add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*", top_view);
-            lnav_data.ld_filter_status_source.tss_prompt.set_value(
-                "Enter a regular expression to match lines to filter in:");
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));
@@ -177,8 +182,6 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             this->fss_editing = true;
 
             add_view_text_possibilities(&this->fss_editor, LNM_FILTER, "*", top_view);
-            lnav_data.ld_filter_status_source.tss_prompt.set_value(
-                "Enter a regular expression to match lines to filter out:");
             this->fss_editor.set_window(lv.get_window());
             this->fss_editor.set_visible(true);
             this->fss_editor.set_y(lv.get_y() + (int) (lv.get_selection() - lv.get_top()));

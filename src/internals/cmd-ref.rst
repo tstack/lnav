@@ -1324,6 +1324,17 @@
 ----
 
 
+.. _toggle_filtering:
+
+:toggle-filtering
+^^^^^^^^^^^^^^^^^
+
+  Toggle the filtering flag for the current view
+
+
+----
+
+
 .. _toggle_view:
 
 :toggle-view *view-name*

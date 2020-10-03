@@ -80,7 +80,7 @@ public:
     fss_functor_t fss_abort_wire;
     fss_functor_t fss_display_match_wire;
     fss_functor_t fss_display_next_wire;
-    bool fss_filter_state;
+    bool fss_filter_state{false};
 };
 
 #endif

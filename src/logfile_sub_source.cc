@@ -113,9 +113,6 @@ logfile_sub_source::logfile_sub_source()
     this->clear_min_max_log_times();
 }
 
-logfile_sub_source::~logfile_sub_source()
-{ }
-
 shared_ptr<logfile> logfile_sub_source::find(const char *fn,
                                   content_line_t &line_base)
 {
@@ -740,8 +737,10 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
             logfile_data *ld = this->find_data(cl, line_number);
             auto line_iter = ld->get_file()->begin() + line_number;
 
-            if (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
-                    line_number) && this->check_extra_filters(*line_iter)) {
+            if (!this->tss_apply_filters ||
+                (!ld->ld_filter_state.excluded(filter_in_mask, filter_out_mask,
+                                               line_number) &&
+                 this->check_extra_filters(*line_iter))) {
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != NULL) {
                     shared_ptr<logfile> lf = ld->get_file();
@@ -879,8 +878,10 @@ void logfile_sub_source::text_filters_changed()
         logfile_data *ld = this->find_data(cl, line_number);
         auto line_iter = ld->get_file()->begin() + line_number;
 
-        if (!ld->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
-                line_number) && this->check_extra_filters(*line_iter)) {
+        if (!this->tss_apply_filters ||
+            (!ld->ld_filter_state.excluded(filtered_in_mask, filtered_out_mask,
+                                           line_number) &&
+             this->check_extra_filters(*line_iter))) {
             this->lss_filtered_index.push_back(index_index);
             if (this->lss_index_delegate != nullptr) {
                 shared_ptr<logfile> lf = ld->get_file();

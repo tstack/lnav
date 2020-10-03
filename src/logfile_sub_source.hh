@@ -79,7 +79,7 @@ public:
         : text_filter(type, id, index),
           pf_pcre(code) { };
 
-    ~pcre_filter() override { };
+    ~pcre_filter() override = default;
 
     bool matches(const logfile &lf, const logline &ll, shared_buffer_ref &line) override {
         pcre_context_static<30> pc;
@@ -139,7 +139,7 @@ public:
     virtual void text_filters_changed();
 
     logfile_sub_source();
-    virtual ~logfile_sub_source();
+    virtual ~logfile_sub_source() = default;
 
     void toggle_time_offset() {
         this->lss_flags ^= F_TIME_OFFSET;

@@ -2733,6 +2733,22 @@ static Result<string, string> com_switch_to_view(exec_context &ec, string cmdlin
     return Ok(retval);
 }
 
+static Result<string, string> com_toggle_filtering(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+    }
+    else if (!ec.ec_dry_run) {
+        auto tc = *lnav_data.ld_view_stack.top();
+        auto tss = tc->get_sub_source();
+
+        tss->toggle_apply_filters();
+    }
+
+    return Ok(retval);
+}
+
 static Result<string, string> com_zoom_to(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
@@ -4826,6 +4842,13 @@ readline_context::command_t STD_COMMANDS[] = {
                 "To switch to the 'schema' view if it is not displayed or switch back to the previous view",
                 "schema"
             })
+    },
+    {
+        "toggle-filtering",
+        com_toggle_filtering,
+
+        help_text(":toggle-filtering")
+            .with_summary("Toggle the filtering flag for the current view")
     },
     {
         "reset-session",

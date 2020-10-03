@@ -9,6 +9,12 @@ lnav v0.9.1:
      * To jump to the first search hit above the top line in a view, you can
        press CTRL+J instead of ENTER in the search prompt.  Pressing ENTER
        will jump to the first hit below the current window.
+     * Filtering, as a whole, can be now disabled/enabled without affecting
+       the state of individual filters.  This includes text and time-filters
+       (i.e. :hide-lines-before).  You can enable/disable filtering by:
+       pressing 'f' in the filter editor UI; executing the ':toggle-filtering'
+       command; or by doing an UPDATE on the "filtering" column of the
+       "lnav_views" SQLite table.
 
 lnav v0.9.0:
      Features:

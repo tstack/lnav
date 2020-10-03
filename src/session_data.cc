@@ -790,6 +790,27 @@ static int read_word_wrap(yajlpp_parse_context *ypc, int value)
     return 1;
 }
 
+static int read_filtering(yajlpp_parse_context *ypc, int value)
+{
+    const char **view_name;
+    int view_index;
+
+    view_name = find(lnav_view_strings,
+                     lnav_view_strings + LNV__MAX,
+                     ypc->get_path_fragment(-2));
+    view_index = view_name - lnav_view_strings;
+    if (view_index == LNV_HELP) {
+
+    }
+    else if (view_index < LNV__MAX) {
+        textview_curses &tc = lnav_data.ld_views[view_index];
+
+        tc.get_sub_source()->tss_apply_filters = value;
+    }
+
+    return 1;
+}
+
 static int read_commands(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     std::string cmdline = std::string((const char *)str, len);
@@ -813,6 +834,7 @@ static struct json_path_container view_def_handlers = {
     json_path_handler("top_line",  read_top_line),
     json_path_handler("search",    read_last_search),
     json_path_handler("word_wrap", read_word_wrap),
+    json_path_handler("filtering", read_filtering),
     json_path_handler("commands#", read_commands)
 };
 
@@ -1287,10 +1309,13 @@ static void save_session_with_id(const std::string session_id)
                     view_map.gen("word_wrap");
                     view_map.gen(tc.get_word_wrap());
 
-                    text_sub_source *tss = tc.get_sub_source();
+                    auto tss = tc.get_sub_source();
                     if (tss == nullptr) {
                         continue;
                     }
+
+                    view_map.gen("filtering");
+                    view_map.gen(tss->tss_apply_filters);
 
                     filter_stack &fs = tss->get_filters();
 
@@ -1434,6 +1459,7 @@ void reset_session()
             continue;
         }
         tss->get_filters().clear_filters();
+        tss->tss_apply_filters = true;
         tss->text_filters_changed();
         tss->text_clear_marks(&textview_curses::BM_USER);
         tc.get_bookmarks()[&textview_curses::BM_USER].clear();
