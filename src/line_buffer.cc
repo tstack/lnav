@@ -152,27 +152,9 @@ void line_buffer::gz_indexed::init_stream()
     this->strm.avail_out = 0;
     int rc = inflateInit2(&strm, GZ_HEADER_MODE);
     if (rc != Z_OK) {
-        throw(rc);  // FIXME: exception wrapper
+        log_error(" inflateInit2: %d  %s", (int)rc, this->strm.msg ? this->strm.msg : "");
     }
 }
-
-void line_buffer::gz_indexed::continue_stream()
-{
-    // Save our position and output buffer
-    auto total_in = this->strm.total_in;
-    auto total_out = this->strm.total_out;
-    auto avail_out = this->strm.avail_out;
-    auto next_out = this->strm.next_out;
-
-    init_stream();
-
-    // Restore position and output buffer
-    this->strm.total_in = total_in;
-    this->strm.total_out = total_out;
-    this->strm.avail_out = avail_out;
-    this->strm.next_out = next_out;
-}
-
 void line_buffer::gz_indexed::open(int fd)
 {
     this->close();
@@ -204,11 +186,10 @@ int line_buffer::gz_indexed::stream_data(void * buf, size_t size)
                           ? Z_SYNC_FLUSH : Z_BLOCK;
             auto err = inflate(&this->strm, flush);
             if (err == Z_STREAM_END) {
-                // Reached end of stream; re-init for a possible subsequent stream
-                continue_stream();
+                break;
             } else if (err != Z_OK) {
-                log_error(" inflate-error: %d", (int)err);
-                throw error(err);  // FIXME: exception wrapper
+                log_error(" inflate-error: %d  %s", (int)err, this->strm.msg ? this->strm.msg : "");
+                return 0;
             }
 
             if (this->strm.total_in >= last + SYNCPOINT_SIZE &&

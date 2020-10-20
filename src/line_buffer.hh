@@ -104,7 +104,6 @@ public:
 
         void close();
         void init_stream();
-        void continue_stream();
         void open(int fd);
         int stream_data(void * buf, size_t size);
         void seek(off_t offset);
