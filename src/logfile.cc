@@ -546,7 +546,7 @@ void logfile::reobserve_from(iterator iter)
     }
 }
 
-filesystem::path logfile::get_path() const
+ghc::filesystem::path logfile::get_path() const
 {
     return this->lf_filename;
 }

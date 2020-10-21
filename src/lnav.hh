@@ -223,7 +223,7 @@ struct _lnav_data {
 
     std::list<std::string>                  ld_commands;
     bool                                    ld_cmd_init_done;
-    std::vector<filesystem::path>           ld_config_paths;
+    std::vector<ghc::filesystem::path>      ld_config_paths;
     std::map<std::string, logfile_open_options> ld_file_names;
     std::vector<std::shared_ptr<logfile>>   ld_files;
     std::list<std::string>                  ld_other_files;

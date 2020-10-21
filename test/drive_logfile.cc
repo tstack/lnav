@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
     {
         std::vector<std::string> errors;
-        vector<filesystem::path> paths;
+        vector<ghc::filesystem::path> paths;
 
         if (getenv("test_dir") != NULL) {
             paths.push_back(getenv("test_dir"));

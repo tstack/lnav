@@ -54,7 +54,7 @@
 #include "byte_array.hh"
 #include "optional.hpp"
 #include "base/result.h"
-#include "filesystem/path.h"
+#include "ghc/filesystem.hpp"
 
 inline std::string trim(const std::string &str)
 {
@@ -275,9 +275,9 @@ inline bool endswith(const char *str, const char *suffix)
     return strcmp(&str[len - suffix_len], suffix) == 0;
 }
 
-std::string build_path(const std::vector<filesystem::path> &paths);
+std::string build_path(const std::vector<ghc::filesystem::path> &paths);
 
-bool read_file(const filesystem::path &path, std::string &out);
+bool read_file(const ghc::filesystem::path &path, std::string &out);
 
 /**
  * Convert the time stored in a 'tm' struct into epoch time.
@@ -496,22 +496,22 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
 
 size_t abbreviate_str(char *str, size_t len, size_t max_len);
 
-filesystem::path system_tmpdir();
+ghc::filesystem::path system_tmpdir();
 
-inline int statp(const filesystem::path &path, struct stat *buf) {
-    return stat(path.str().c_str(), buf);
+inline int statp(const ghc::filesystem::path &path, struct stat *buf) {
+    return stat(path.c_str(), buf);
 }
 
-inline int openp(const filesystem::path &path, int flags) {
-    return open(path.str().c_str(), flags);
+inline int openp(const ghc::filesystem::path &path, int flags) {
+    return open(path.c_str(), flags);
 }
 
-inline int openp(const filesystem::path &path, int flags, mode_t mode) {
-    return open(path.str().c_str(), flags, mode);
+inline int openp(const ghc::filesystem::path &path, int flags, mode_t mode) {
+    return open(path.c_str(), flags, mode);
 }
 
-Result<std::pair<filesystem::path, int>, std::string>
-open_temp_file(const filesystem::path &pattern);
+Result<std::pair<ghc::filesystem::path, int>, std::string>
+open_temp_file(const ghc::filesystem::path &pattern);
 
 bool is_dev_null(const struct stat &st);
 bool is_dev_null(int fd);

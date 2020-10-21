@@ -1708,8 +1708,8 @@ static Result<string, string> com_session(exec_context &ec, string cmdline, vect
             auto old_file_name = dotlnav_path() / "session";
             auto new_file_name = dotlnav_path() / "session.tmp";
 
-            ifstream session_file(old_file_name.str());
-            ofstream new_session_file(new_file_name.str());
+            ifstream session_file(old_file_name.string());
+            ofstream new_session_file(new_file_name.string());
 
             if (!new_session_file) {
                 return ec.make_error("cannot write to session file");
@@ -1730,11 +1730,11 @@ static Result<string, string> com_session(exec_context &ec, string cmdline, vect
                 if (!added) {
                     new_session_file << saved_cmd << endl;
 
-                    log_perror(rename(new_file_name.str().c_str(),
-                                      old_file_name.str().c_str()));
+                    log_perror(rename(new_file_name.c_str(),
+                                      old_file_name.c_str()));
                 }
                 else {
-                    log_perror(remove(new_file_name.str().c_str()));
+                    log_perror(remove(new_file_name.c_str()));
                 }
 
                 retval = "info: session file saved";
@@ -1865,7 +1865,9 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                         fifo_fd.release(),
                         false,
                         open_temp_file(system_tmpdir() / "lnav.fifo.XXXXXX")
-                            .then([](auto pair) { pair.first.remove_file(); })
+                            .then([](auto pair) {
+                                ghc::filesystem::remove(pair.first);
+                            })
                             .expect("Cannot create temporary file for FIFO")
                             .second);
                     int fifo_out_fd = fifo_piper->get_fd();

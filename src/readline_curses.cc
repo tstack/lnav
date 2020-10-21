@@ -451,8 +451,8 @@ readline_context::readline_context(const std::string &name,
     history_set_history_state(&this->rc_history);
 
     auto config_dir = dotlnav_path();
-    auto hpath = (config_dir / this->rc_name) + ".history";
-    read_history(hpath.str().c_str());
+    auto hpath = (config_dir / this->rc_name).string() + ".history";
+    read_history(hpath.c_str());
     this->save();
 
     this->rc_append_character = ' ';
@@ -813,8 +813,8 @@ void readline_curses::start()
          ++citer) {
         citer->second->load();
 
-        auto hpath = (config_dir / citer->second->get_name()) + ".history";
-        write_history(hpath.str().c_str());
+        auto hpath = (config_dir / citer->second->get_name()).string() + ".history";
+        write_history(hpath.c_str());
         citer->second->save();
     }
 

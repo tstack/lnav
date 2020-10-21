@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     setenv("HOME", "/", 1);
 
     vector<string> errors;
-    vector<filesystem::path> paths;
+    vector<ghc::filesystem::path> paths;
 
     load_config(paths, errors);
 

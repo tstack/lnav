@@ -42,7 +42,7 @@
 #include "yajlpp/yajlpp.hh"
 #include "log_level.hh"
 #include "styling.hh"
-#include "filesystem/path.h"
+#include "ghc/filesystem.hpp"
 
 class lnav_config_listener {
 public:
@@ -70,7 +70,7 @@ public:
  * @param  sub The path to the file in the '.lnav' directory.
  * @return     The full path
  */
-filesystem::path dotlnav_path();
+ghc::filesystem::path dotlnav_path();
 
 /**
  * Check if an experimental feature should be enabled by
@@ -128,9 +128,9 @@ enum class config_file_type {
     CONFIG,
 };
 
-Result<config_file_type, std::string> detect_config_file_type(const filesystem::path &path);
+Result<config_file_type, std::string> detect_config_file_type(const ghc::filesystem::path &path);
 
-void load_config(const std::vector<filesystem::path> &extra_paths,
+void load_config(const std::vector<ghc::filesystem::path> &extra_paths,
                  std::vector<std::string> &errors);
 
 void reset_config(const std::string &path);

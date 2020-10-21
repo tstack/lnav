@@ -91,7 +91,7 @@ void sql_progress_finished()
     lnav_data.ld_views[LNV_DB].redo_search();
 }
 
-Result<string, string> execute_from_file(exec_context &ec, const filesystem::path &path, int line_number, char mode, const string &cmdline);
+Result<string, string> execute_from_file(exec_context &ec, const ghc::filesystem::path &path, int line_number, char mode, const string &cmdline);
 
 Result<string, string> execute_command(exec_context &ec, const string &cmdline)
 {
@@ -385,10 +385,10 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
     return Ok(retval);
 }
 
-static Result<string, string> execute_file_contents(exec_context &ec, const filesystem::path &path, bool multiline)
+static Result<string, string> execute_file_contents(exec_context &ec, const ghc::filesystem::path &path, bool multiline)
 {
-    static filesystem::path stdin_path("-");
-    static filesystem::path dev_stdin_path("/dev/stdin");
+    static ghc::filesystem::path stdin_path("-");
+    static ghc::filesystem::path dev_stdin_path("/dev/stdin");
 
     string retval;
     FILE *file;
@@ -399,7 +399,7 @@ static Result<string, string> execute_file_contents(exec_context &ec, const file
         }
         file = stdin;
     }
-    else if ((file = fopen(path.str().c_str(), "r")) == nullptr) {
+    else if ((file = fopen(path.c_str(), "r")) == nullptr) {
         return ec.make_error("unable to open file");
     }
 
@@ -524,13 +524,13 @@ Result<string, string> execute_file(exec_context &ec, const string &path_and_arg
     } else if (errno != ENOENT) {
         open_error = strerror(errno);
     } else {
-        auto script_path = filesystem::path(script_name);
+        auto script_path = ghc::filesystem::path(script_name);
 
         if (!script_path.is_absolute()) {
             script_path = ec.ec_path_stack.back() / script_path;
         }
 
-        if (script_path.is_file()) {
+        if (ghc::filesystem::is_regular_file(script_path)) {
             struct script_metadata meta;
 
             meta.sm_path = script_path;
@@ -557,10 +557,10 @@ Result<string, string> execute_file(exec_context &ec, const string &path_and_arg
     return Ok(retval);
 }
 
-Result<string, string> execute_from_file(exec_context &ec, const filesystem::path &path, int line_number, char mode, const string &cmdline)
+Result<string, string> execute_from_file(exec_context &ec, const ghc::filesystem::path &path, int line_number, char mode, const string &cmdline)
 {
     string retval, alt_msg;
-    auto _sg = ec.enter_source(path.str(), line_number);
+    auto _sg = ec.enter_source(path.string(), line_number);
 
     switch (mode) {
         case ':':
@@ -584,7 +584,7 @@ Result<string, string> execute_from_file(exec_context &ec, const filesystem::pat
     }
 
     log_info("%s:%d:execute result -- %s",
-             path.str().c_str(),
+             path.c_str(),
              line_number,
              retval.c_str());
 
@@ -777,7 +777,9 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
     } else {
         auto pp = make_shared<piper_proc>(
             fd, false, open_temp_file(system_tmpdir() / "lnav.out.XXXXXX")
-                .then([](auto pair) { pair.first.remove_file(); })
+                .then([](auto pair) {
+                    ghc::filesystem::remove(pair.first);
+                })
                 .expect("Cannot create temporary file for callback")
                 .second);
         static int exec_count = 0;

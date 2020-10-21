@@ -37,7 +37,7 @@
 #include <string>
 #include <vector>
 
-#include "filesystem/path.h"
+#include "ghc/filesystem.hpp"
 
 class unique_path_source {
 public:
@@ -51,17 +51,17 @@ public:
         return this->ups_unique_path;
     }
 
-    virtual filesystem::path get_path() const = 0;
+    virtual ghc::filesystem::path get_path() const = 0;
 
-    filesystem::path& get_path_prefix() {
+    ghc::filesystem::path& get_path_prefix() {
         return this->ups_prefix;
     }
 
-    void set_path_prefix(const filesystem::path &prefix) {
+    void set_path_prefix(const ghc::filesystem::path &prefix) {
         this->ups_prefix = prefix;
     }
 private:
-    filesystem::path ups_prefix;
+    ghc::filesystem::path ups_prefix;
     std::string ups_unique_path;
 };
 
@@ -72,7 +72,7 @@ public:
     };
 
     void add_source(std::shared_ptr<unique_path_source> path_source) {
-        filesystem::path path = path_source->get_path();
+        ghc::filesystem::path path = path_source->get_path();
 
         path_source->set_unique_path(path.filename());
         path_source->set_path_prefix(path.parent_path());
@@ -134,17 +134,16 @@ public:
             this->upg_unique_paths.clear();
 
             for (auto &src : collisions) {
-                const auto path = src->get_path();
                 const auto unique_path = src->get_unique_path();
                 auto &prefix = src->get_path_prefix();
 
                 if (loop_count == 0) {
-                    src->set_unique_path(prefix.filename() + "]/" + unique_path);
+                    src->set_unique_path(prefix.filename().string() + "]/" + unique_path);
                 } else {
-                    src->set_unique_path(prefix.filename() + "/" + unique_path);
+                    src->set_unique_path(prefix.filename().string() + "/" + unique_path);
                 }
 
-                filesystem::path parent = prefix.parent_path();
+                ghc::filesystem::path parent = prefix.parent_path();
 
                 src->set_path_prefix(parent);
 

@@ -123,7 +123,9 @@ static string execute_action(log_data_helper &ldh,
                     out_pipe.read_end(),
                     false,
                     open_temp_file(system_tmpdir() / "lnav.action.XXXXXX")
-                        .then([](auto pair) { pair.first.remove_file(); })
+                        .then([](auto pair) {
+                            ghc::filesystem::remove(pair.first);
+                        })
                         .expect("Cannot create temporary file for action")
                         .second);
                 char desc[128];

@@ -73,30 +73,30 @@ std::map<intern_string_t, source_location> lnav_config_locations;
 
 lnav_config_listener *lnav_config_listener::LISTENER_LIST;
 
-filesystem::path dotlnav_path()
+ghc::filesystem::path dotlnav_path()
 {
     auto home_env = getenv("HOME");
     auto xdg_config_home = getenv("XDG_CONFIG_HOME");
 
     if (home_env != nullptr) {
-        auto home_path = filesystem::path(home_env);
+        auto home_path = ghc::filesystem::path(home_env);
 
-        if (home_path.is_directory()) {
+        if (ghc::filesystem::is_directory(home_path)) {
             auto home_lnav = home_path / ".lnav";
 
-            if (home_lnav.is_directory()) {
+            if (ghc::filesystem::is_directory(home_lnav)) {
                 return home_lnav;
             }
 
             if (xdg_config_home != nullptr) {
-                auto xdg_path = filesystem::path(xdg_config_home);
+                auto xdg_path = ghc::filesystem::path(xdg_config_home);
 
                 return xdg_path / "lnav";
             }
 
             auto home_config = home_path / ".config";
 
-            if (home_config.is_directory()) {
+            if (ghc::filesystem::is_directory(home_config)) {
                 return home_config / "lnav";
             }
 
@@ -104,7 +104,7 @@ filesystem::path dotlnav_path()
         }
     }
 
-    return filesystem::path::getcwd();
+    return ghc::filesystem::current_path();
 }
 
 bool check_experimental(const char *feature_name)
@@ -140,16 +140,16 @@ void ensure_dotlnav()
     for (auto sub_path : subdirs) {
         auto full_path = path / sub_path;
 
-        log_perror(mkdir(full_path.str().c_str(), 0755));
+        log_perror(mkdir(full_path.c_str(), 0755));
     }
 
-    lnav_log_crash_dir = strdup(path.str().c_str());
+    lnav_log_crash_dir = strdup(path.c_str());
 
     {
         static_root_mem<glob_t, globfree> gl;
         auto crash_glob = path / "crash/*";
 
-        if (glob(crash_glob.str().c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+        if (glob(crash_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
             for (int lpc = 0;
                  lpc < ((int)gl->gl_pathc - MAX_CRASH_LOG_COUNT);
                  lpc++) {
@@ -162,7 +162,7 @@ void ensure_dotlnav()
         static_root_mem<glob_t, globfree> gl;
         auto cap_glob = path / "stdin-captures/*";
 
-        if (glob(cap_glob.str().c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+        if (glob(cap_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
             auto old_time = std::chrono::system_clock::now() -
                 STDIN_CAPTURE_RETENTION;
 
@@ -202,18 +202,18 @@ bool install_from_git(const char *repo)
     auto_pid git_cmd(fork());
 
     if (git_cmd.in_child()) {
-        if (local_formats_path.is_directory()) {
+        if (ghc::filesystem::is_directory(local_formats_path)) {
             printf("Updating format repo: %s\n", repo);
-            log_perror(chdir(local_formats_path.str().c_str()));
+            log_perror(chdir(local_formats_path.c_str()));
             execlp("git", "git", "pull", nullptr);
         }
-        else if (local_configs_path.is_directory()) {
+        else if (ghc::filesystem::is_directory(local_configs_path)) {
             printf("Updating config repo: %s\n", repo);
-            log_perror(chdir(local_configs_path.str().c_str()));
+            log_perror(chdir(local_configs_path.c_str()));
             execlp("git", "git", "pull", nullptr);
         }
         else {
-            execlp("git", "git", "clone", repo, local_staging_path.str().c_str(), nullptr);
+            execlp("git", "git", "clone", repo, local_staging_path.c_str(), nullptr);
         }
         _exit(1);
     }
@@ -224,12 +224,12 @@ bool install_from_git(const char *repo)
         return false;
     }
 
-    if (local_staging_path.is_directory()) {
+    if (ghc::filesystem::is_directory(local_staging_path)) {
         auto config_path = local_staging_path / "*.json";
         static_root_mem<glob_t, globfree> gl;
         bool found_config_file = false, found_format_file = false;
 
-        if (glob(config_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+        if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
             for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                 auto json_file_path = gl->gl_pathv[lpc];
                 auto file_type_result = detect_config_file_type(json_file_path);
@@ -248,15 +248,15 @@ bool install_from_git(const char *repo)
         }
 
         if (found_config_file) {
-            rename(local_staging_path.str().c_str(),
-                   local_configs_path.str().c_str());
+            rename(local_staging_path.c_str(),
+                   local_configs_path.c_str());
             fprintf(stderr, "info: installed configuration repo -- %s\n",
-                    local_configs_path.str().c_str());
+                    local_configs_path.c_str());
         } else if (found_format_file) {
-            rename(local_staging_path.str().c_str(),
-                   local_formats_path.str().c_str());
+            rename(local_staging_path.c_str(),
+                   local_formats_path.c_str());
             fprintf(stderr, "info: installed format repo -- %s\n",
-                    local_formats_path.str().c_str());
+                    local_formats_path.c_str());
         } else {
             fprintf(stderr, "error: cannot find a valid lnav configuration or format file\n");
             return false;
@@ -272,7 +272,7 @@ bool update_installs_from_git()
     auto git_formats = dotlnav_path() / "formats/*/.git";
     bool found = false, retval = true;
 
-    if (glob(git_formats.str().c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+    if (glob(git_formats.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
             char *git_dir = dirname(gl->gl_pathv[lpc]);
             char pull_cmd[1024];
@@ -324,13 +324,13 @@ void install_extra_formats()
     auto config_root = dotlnav_path() / "remote-config";
     auto_fd fd;
 
-    if (access(config_root.str().c_str(), R_OK) == 0) {
+    if (access(config_root.c_str(), R_OK) == 0) {
         char pull_cmd[1024];
 
         printf("Updating lnav remote config repo...\n");
         snprintf(pull_cmd, sizeof(pull_cmd),
                  "cd '%s' && git pull",
-                 config_root.str().c_str());
+                 config_root.c_str());
         log_perror(system(pull_cmd));
     }
     else {
@@ -339,7 +339,7 @@ void install_extra_formats()
         printf("Cloning lnav remote config repo...\n");
         snprintf(clone_cmd, sizeof(clone_cmd),
                  "git clone https://github.com/tstack/lnav-config.git %s",
-                 config_root.str().c_str());
+                 config_root.c_str());
         log_perror(system(clone_cmd));
     }
 
@@ -348,7 +348,7 @@ void install_extra_formats()
         perror("Unable to open remote-config.json");
     }
     else {
-        yajlpp_parse_context ypc_config(config_root.str(), &format_handlers);
+        yajlpp_parse_context ypc_config(config_root.string(), &format_handlers);
         auto_mem<yajl_handle_t> jhandle(yajl_free);
         unsigned char buffer[4096];
         ssize_t rc;
@@ -823,13 +823,13 @@ public:
 static active_key_map_listener KEYMAP_LISTENER;
 
 Result<config_file_type, std::string>
-detect_config_file_type(const filesystem::path &path)
+detect_config_file_type(const ghc::filesystem::path &path)
 {
     static const char *id_path[] = {"$schema", nullptr};
     string content;
 
-    if (!read_file(path.str(), content)) {
-        return Err(fmt::format("unable to open file: {}", path.str()));
+    if (!read_file(path.string(), content)) {
+        return Err(fmt::format("unable to open file: {}", path.string()));
     }
     if (startswith(content, "#")) {
         content.insert(0, "//");
@@ -841,7 +841,7 @@ detect_config_file_type(const filesystem::path &path)
         yajl_tree_free);
     if (content_tree == nullptr) {
         return Err(fmt::format("unable to parse file: {} -- {}",
-            path.str(), error_buffer));
+            path.string(), error_buffer));
     }
 
     auto id_val = yajl_tree_get(content_tree.get(), id_path, yajl_t_string);
@@ -852,16 +852,16 @@ detect_config_file_type(const filesystem::path &path)
             return Ok(config_file_type::CONFIG);
         } else {
             return Err(fmt::format("unsupported configuration version in file: {} -- {}",
-                path.str(), id_val->u.string));
+                path.string(), id_val->u.string));
         }
     } else {
         return Ok(config_file_type::FORMAT);
     }
 }
 
-static void load_config_from(const filesystem::path &path, vector<string> &errors)
+static void load_config_from(const ghc::filesystem::path &path, vector<string> &errors)
 {
-    yajlpp_parse_context ypc(path.str(), &lnav_config_handlers);
+    yajlpp_parse_context ypc(path.string(), &lnav_config_handlers);
     struct userdata ud(errors);
     auto_fd fd;
 
@@ -875,7 +875,7 @@ static void load_config_from(const filesystem::path &path, vector<string> &error
 
             snprintf(errmsg, sizeof(errmsg),
                      "error: unable to open format file -- %s",
-                     path.str().c_str());
+                     path.c_str());
             errors.emplace_back(errmsg);
         }
     }
@@ -895,7 +895,7 @@ static void load_config_from(const filesystem::path &path, vector<string> &error
                 break;
             }
             else if (rc == -1) {
-                errors.push_back(path.str() +
+                errors.push_back(path.string() +
                                  ":unable to read file -- " +
                                  string(strerror(errno)));
                 break;
@@ -949,7 +949,7 @@ static void load_default_configs(struct _lnav_config &config_obj,
     }
 }
 
-void load_config(const vector<filesystem::path> &extra_paths, vector<string> &errors)
+void load_config(const vector<ghc::filesystem::path> &extra_paths, vector<string> &errors)
 {
     auto user_config = dotlnav_path() / "config.json";
 
@@ -974,7 +974,7 @@ void load_config(const vector<filesystem::path> &extra_paths, vector<string> &er
             auto config_path = extra_path / "configs/*/*.json";
             static_root_mem<glob_t, globfree> gl;
 
-            if (glob(config_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+            if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
                 for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                     load_config_from(gl->gl_pathv[lpc], errors);
                 }
@@ -984,7 +984,7 @@ void load_config(const vector<filesystem::path> &extra_paths, vector<string> &er
             auto config_path = extra_path / "formats/*/config.*.json";
             static_root_mem<glob_t, globfree> gl;
 
-            if (glob(config_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+            if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
                 for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                     load_config_from(gl->gl_pathv[lpc], errors);
                 }
@@ -1041,7 +1041,7 @@ string save_config()
         }
     }
 
-    rename(user_config_tmp.str().c_str(), user_config.str().c_str());
+    rename(user_config_tmp.c_str(), user_config.c_str());
 
     return "info: configuration saved";
 }
@@ -1050,7 +1050,7 @@ void reload_config(vector<string> &errors)
 {
     lnav_config_listener *curr = lnav_config_listener::LISTENER_LIST;
 
-    while (curr != NULL) {
+    while (curr != nullptr) {
         auto reporter = [&errors](const void *cfg_value, const std::string &errmsg) {
             auto cb = [&cfg_value, &errors, &errmsg](
                 const json_path_handler_base &jph,

@@ -216,7 +216,7 @@ static void cleanup_session_data()
     map<string, int> session_count;
     auto session_file_pattern = dotlnav_path() / "*-*.ts*.json";
 
-    if (glob(session_file_pattern.str().c_str(),
+    if (glob(session_file_pattern.c_str(),
              0,
              nullptr,
              session_file_list.inout()) == 0) {
@@ -337,7 +337,7 @@ nonstd::optional<session_pair_t> scan_sessions()
              "view-info-%s.*.json",
              session_id.value().c_str());
     auto view_info_pattern = dotlnav_path() / view_info_pattern_base;
-    if (glob(view_info_pattern.str().c_str(), 0, nullptr,
+    if (glob(view_info_pattern.c_str(), 0, nullptr,
              view_info_list.inout()) == 0) {
         for (size_t lpc = 0; lpc < view_info_list->gl_pathc; lpc++) {
             const char *path = view_info_list->gl_pathv[lpc];
@@ -394,9 +394,9 @@ static void load_time_bookmarks()
     bool reload_needed = false;
     auto_mem<char, sqlite3_free> errmsg;
 
-    log_info("loading bookmark db: %s", db_path.str().c_str());
+    log_info("loading bookmark db: %s", db_path.c_str());
 
-    if (sqlite3_open(db_path.str().c_str(), db.out()) != SQLITE_OK) {
+    if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
         return;
     }
 
@@ -989,8 +989,8 @@ static void save_time_bookmarks()
     auto_mem<char, sqlite3_free> errmsg;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 
-    if (sqlite3_open(db_path.str().c_str(), db.out()) != SQLITE_OK) {
-        log_error("unable to open bookmark DB -- %s\n", db_path.str().c_str());
+    if (sqlite3_open(db_path.c_str(), db.out()) != SQLITE_OK) {
+        log_error("unable to open bookmark DB -- %s\n", db_path.c_str());
         return;
     }
 
@@ -1248,9 +1248,9 @@ static void save_session_with_id(const std::string session_id)
              getppid());
 
     auto view_file_name = dotlnav_path() / view_base_name;
-    auto view_file_tmp_name = view_file_name + ".tmp";
+    auto view_file_tmp_name = view_file_name.string() + ".tmp";
 
-    if ((file = fopen(view_file_tmp_name.str().c_str(), "w")) == nullptr) {
+    if ((file = fopen(view_file_tmp_name.c_str(), "w")) == nullptr) {
         perror("Unable to open session file");
     }
     else if (nullptr == (handle = yajl_gen_alloc(nullptr))) {
@@ -1396,10 +1396,10 @@ static void save_session_with_id(const std::string session_id)
 
         fclose(file.release());
 
-        log_perror(rename(view_file_tmp_name.str().c_str(),
-            view_file_name.str().c_str()));
+        log_perror(rename(view_file_tmp_name.c_str(),
+            view_file_name.c_str()));
 
-        log_info("Saved session: %s", view_file_name.str().c_str());
+        log_info("Saved session: %s", view_file_name.c_str());
     }
 }
 

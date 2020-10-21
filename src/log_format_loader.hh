@@ -42,18 +42,18 @@ class log_vtab_manager;
 std::vector<intern_string_t> load_format_file(
         const std::string &filename, std::vector<std::string> &errors);
 
-void load_formats(const std::vector<filesystem::path> &extra_paths,
+void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
                   std::vector<std::string> &errors);
 
 void load_format_vtabs(log_vtab_manager *vtab_manager,
                        std::vector<std::string> &errors);
 
 void load_format_extra(sqlite3 *db,
-                       const std::vector<filesystem::path> &extra_paths,
+                       const std::vector<ghc::filesystem::path> &extra_paths,
                        std::vector<std::string> &errors);
 
 struct script_metadata {
-    filesystem::path sm_path;
+    ghc::filesystem::path sm_path;
     std::string sm_name;
     std::string sm_synopsis;
     std::string sm_description;
@@ -61,7 +61,7 @@ struct script_metadata {
 
 void extract_metadata_from_file(struct script_metadata &meta_inout);
 
-void find_format_scripts(const std::vector<filesystem::path> &extra_paths,
+void find_format_scripts(const std::vector<ghc::filesystem::path> &extra_paths,
                          std::map<std::string, std::vector<script_metadata> > &scripts);
 
 extern struct json_path_container format_handlers;

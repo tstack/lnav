@@ -873,13 +873,13 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
     return retval;
 }
 
-static void load_from_path(const filesystem::path &path, std::vector<string> &errors)
+static void load_from_path(const ghc::filesystem::path &path, std::vector<string> &errors)
 {
     auto format_path = path / "formats/*/*.json";
     static_root_mem<glob_t, globfree> gl;
 
-    log_info("loading formats from path: %s", format_path.str().c_str());
-    if (glob(format_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+    log_info("loading formats from path: %s", format_path.c_str());
+    if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             const char *base = basename(gl->gl_pathv[lpc]);
 
@@ -905,11 +905,11 @@ static void load_from_path(const filesystem::path &path, std::vector<string> &er
     }
 }
 
-void load_formats(const std::vector<filesystem::path> &extra_paths,
+void load_formats(const std::vector<ghc::filesystem::path> &extra_paths,
                   std::vector<std::string> &errors)
 {
     auto default_source = dotlnav_path() / "default";
-    yajlpp_parse_context ypc_builtin(default_source.str(), &root_format_handler);
+    yajlpp_parse_context ypc_builtin(default_source.string(), &root_format_handler);
     std::vector<intern_string_t> retval;
     struct userdata ud;
     yajl_handle handle;
@@ -1033,13 +1033,13 @@ void load_formats(const std::vector<filesystem::path> &extra_paths,
     roots.insert(roots.begin(), graph_ordered_formats.begin(), graph_ordered_formats.end());
 }
 
-static void exec_sql_in_path(sqlite3 *db, const filesystem::path &path, std::vector<string> &errors)
+static void exec_sql_in_path(sqlite3 *db, const ghc::filesystem::path &path, std::vector<string> &errors)
 {
     auto format_path = path / "formats/*/*.sql";
     static_root_mem<glob_t, globfree> gl;
 
-    log_info("executing SQL files in path: %s", format_path.str().c_str());
-    if (glob(format_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+    log_info("executing SQL files in path: %s", format_path.c_str());
+    if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             string filename(gl->gl_pathv[lpc]);
             string content;
@@ -1060,7 +1060,7 @@ static void exec_sql_in_path(sqlite3 *db, const filesystem::path &path, std::vec
 }
 
 void load_format_extra(sqlite3 *db,
-                       const std::vector<filesystem::path> &extra_paths,
+                       const std::vector<ghc::filesystem::path> &extra_paths,
                        std::vector<std::string> &errors)
 {
     for (const auto & extra_path : extra_paths) {
@@ -1102,10 +1102,10 @@ void extract_metadata_from_file(struct script_metadata &meta_inout)
     struct stat st;
 
     if (statp(meta_inout.sm_path, &st) == -1) {
-        log_warning("unable to open script -- %s", meta_inout.sm_path.str().c_str());
+        log_warning("unable to open script -- %s", meta_inout.sm_path.c_str());
     } else if (!S_ISREG(st.st_mode)) {
-        log_warning("not a regular file -- %s", meta_inout.sm_path.str().c_str());
-    } else if ((fp = fopen(meta_inout.sm_path.str().c_str(), "r")) != NULL) {
+        log_warning("not a regular file -- %s", meta_inout.sm_path.c_str());
+    } else if ((fp = fopen(meta_inout.sm_path.c_str(), "r")) != NULL) {
         size_t len;
 
         len = fread(buffer, 1, sizeof(buffer), fp.in());
@@ -1113,14 +1113,14 @@ void extract_metadata_from_file(struct script_metadata &meta_inout)
     }
 }
 
-static void find_format_in_path(const filesystem::path &path,
+static void find_format_in_path(const ghc::filesystem::path &path,
                                 map<string, vector<script_metadata> > &scripts)
 {
     auto format_path = path / "formats/*/*.lnav";
     static_root_mem<glob_t, globfree> gl;
 
-    log_debug("Searching for script in path: %s", format_path.str().c_str());
-    if (glob(format_path.str().c_str(), 0, nullptr, gl.inout()) == 0) {
+    log_debug("Searching for script in path: %s", format_path.c_str());
+    if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             const char *filename = basename(gl->gl_pathv[lpc]);
             string script_name = string(filename, strlen(filename) - 5);
@@ -1131,12 +1131,12 @@ static void find_format_in_path(const filesystem::path &path,
             extract_metadata_from_file(meta);
             scripts[script_name].push_back(meta);
 
-            log_debug("  found script: %s", meta.sm_path.str().c_str());
+            log_debug("  found script: %s", meta.sm_path.c_str());
         }
     }
 }
 
-void find_format_scripts(const vector<filesystem::path> &extra_paths,
+void find_format_scripts(const vector<ghc::filesystem::path> &extra_paths,
                          map<string, vector<script_metadata> > &scripts)
 {
     for (const auto &extra_path : extra_paths) {

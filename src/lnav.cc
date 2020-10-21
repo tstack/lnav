@@ -1511,7 +1511,7 @@ static void looper()
         }
 
         auto session_path = dotlnav_path() / "session";
-        execute_file(ec, session_path.str());
+        execute_file(ec, session_path.string());
 
         sb.invoke(*lnav_data.ld_view_stack.top());
         vsb.invoke(*lnav_data.ld_view_stack.top());
@@ -1849,7 +1849,7 @@ int main(int argc, char *argv[])
     int                  stdin_out_fd = -1;
     bool exec_stdin = false;
     const char *LANG = getenv("LANG");
-    filesystem::path stdin_tmp_path;
+    ghc::filesystem::path stdin_tmp_path;
 
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
         setenv("LANG", "en_US.utf-8", 1);
@@ -2093,7 +2093,7 @@ int main(int argc, char *argv[])
                                      O_WRONLY | O_CREAT | O_TRUNC,
                                      0644)) == -1) {
                 fprintf(stderr, "error: unable to open destination: %s -- %s\n",
-                        dst_path.str().c_str(), strerror(errno));
+                        dst_path.c_str(), strerror(errno));
             }
             else {
                 char buffer[2048];
@@ -2115,7 +2115,7 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                fprintf(stderr, "info: installed: %s\n", dst_path.str().c_str());
+                fprintf(stderr, "info: installed: %s\n", dst_path.c_str());
             }
         }
         return EXIT_SUCCESS;
@@ -2297,8 +2297,8 @@ int main(int argc, char *argv[])
 
             execute_examples();
 
-            auto cmd_ref_path = filesystem::path(internals_dir) / "cmd-ref.rst";
-            auto cmd_file = unique_ptr<FILE, decltype(&fclose)>(fopen(cmd_ref_path.str().c_str(), "w+"), fclose);
+            auto cmd_ref_path = ghc::filesystem::path(internals_dir) / "cmd-ref.rst";
+            auto cmd_file = unique_ptr<FILE, decltype(&fclose)>(fopen(cmd_ref_path.c_str(), "w+"), fclose);
 
             if (cmd_file.get()) {
                 set<readline_context::command_t *> unique_cmds;
@@ -2313,8 +2313,8 @@ int main(int argc, char *argv[])
                 }
             }
 
-            auto sql_ref_path = filesystem::path(internals_dir) / "sql-ref.rst";
-            auto sql_file = unique_ptr<FILE, decltype(&fclose)>(fopen(sql_ref_path.str().c_str(), "w+"), fclose);
+            auto sql_ref_path = ghc::filesystem::path(internals_dir) / "sql-ref.rst";
+            auto sql_file = unique_ptr<FILE, decltype(&fclose)>(fopen(sql_ref_path.c_str(), "w+"), fclose);
             set<help_text *> unique_sql_help;
 
             if (sql_file.get()) {
@@ -2379,7 +2379,9 @@ int main(int argc, char *argv[])
                     fifo_fd.release(),
                     false,
                     open_temp_file(system_tmpdir() / "lnav.fifo.XXXXXX")
-                        .then([](auto pair) { pair.first.remove_file(); })
+                        .then([](auto pair) {
+                            ghc::filesystem::remove(pair.first);
+                        })
                         .expect("Cannot create temporary file for FIFO")
                         .second);
                 int fifo_out_fd = fifo_piper->get_fd();
@@ -2705,13 +2707,13 @@ int main(int argc, char *argv[])
             stdin_out == nullptr &&
             !(lnav_data.ld_flags & LNF_QUIET) &&
             !(lnav_data.ld_flags & LNF_HEADLESS)) {
-            if (stdin_tmp_path.file_size() > MAX_STDIN_CAPTURE_SIZE) {
+            if (ghc::filesystem::file_size(stdin_tmp_path) > MAX_STDIN_CAPTURE_SIZE) {
                 log_info("not saving large stdin capture -- %s",
-                         stdin_tmp_path.str().c_str());
-                stdin_tmp_path.remove_file();
+                         stdin_tmp_path.c_str());
+                ghc::filesystem::remove(stdin_tmp_path);
             } else {
                 auto home = getenv("HOME");
-                auto path_str = stdin_tmp_path.str();
+                auto path_str = stdin_tmp_path.string();
 
                 if (home != nullptr && startswith(path_str, home)) {
                     path_str = path_str.substr(strlen(home));

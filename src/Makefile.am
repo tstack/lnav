@@ -350,9 +350,6 @@ noinst_HEADERS = \
 	log_format_impls.cc \
 	xterm_mouse.hh \
 	spookyhash/SpookyV2.h \
-	filesystem/fwd.h \
-	filesystem/path.h \
-	filesystem/resolver.h \
 	ghc/filesystem.hpp \
 	ghc/fs_fwd.hpp \
 	ghc/fs_impl.hpp \

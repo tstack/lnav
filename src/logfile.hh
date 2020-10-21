@@ -52,7 +52,7 @@
 #include "unique_path.hh"
 #include "text_format.hh"
 #include "shared_buffer.hh"
-#include "filesystem/path.h"
+#include "ghc/filesystem.hpp"
 
 class logfile;
 class logline_observer;
@@ -158,7 +158,7 @@ public:
     void set_filename(const std::string &filename)
     {
         this->lf_filename = filename;
-        filesystem::path p(filename);
+        ghc::filesystem::path p(filename);
         this->lf_basename = p.filename();
     };
 
@@ -362,7 +362,7 @@ public:
         return true;
     }
 
-    filesystem::path get_path() const override;
+    ghc::filesystem::path get_path() const override;
 
 protected:
 
