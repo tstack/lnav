@@ -353,6 +353,12 @@ noinst_HEADERS = \
 	filesystem/fwd.h \
 	filesystem/path.h \
 	filesystem/resolver.h \
+	ghc/filesystem.hpp \
+	ghc/fs_fwd.hpp \
+	ghc/fs_impl.hpp \
+	ghc/fs_std.hpp \
+	ghc/fs_std_fwd.hpp \
+	ghc/fs_std_impl.hpp \
     fmtlib/fmt/time.h \
     fmtlib/fmt/ostream.h \
     fmtlib/fmt/format-inl.h \

@@ -417,6 +417,13 @@ add_library(diag STATIC
         filesystem/path.h
         filesystem/resolver.h
 
+        ghc/filesystem.hpp
+        ghc/fs_fwd.hpp
+        ghc/fs_impl.hpp
+        ghc/fs_std.hpp
+        ghc/fs_std_fwd.hpp
+        ghc/fs_std_impl.hpp
+
         fmtlib/posix.cc
         fmtlib/fmt/time.h
         fmtlib/fmt/ostream.h
