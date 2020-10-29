@@ -347,8 +347,14 @@ public:
             if (this->lv_selectable) {
                 if (this->lv_selection < top) {
                     this->lv_selection = top;
-                } else if (this->lv_selection > this->get_bottom()) {
-                    this->lv_selection = this->get_bottom();
+                } else {
+                    auto bot = this->get_bottom();
+
+                    if (bot != -1_vl) {
+                        if (this->lv_selection > bot) {
+                            this->lv_selection = bot;
+                        }
+                    }
                 }
             }
             this->invoke_scroll();
@@ -367,6 +373,8 @@ public:
 
         if (avail > 0) {
             retval += vis_line_t(avail - 1);
+        } else {
+            retval = -1_vl;
         }
 
         return retval;

@@ -142,7 +142,7 @@ void rl_set_help()
 
 void rl_change(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
 
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
@@ -271,7 +271,7 @@ void rl_change(void *dummy, readline_curses *rc)
 
 static void rl_search_internal(void *dummy, readline_curses *rc, ln_mode_t mode, bool complete = false)
 {
-    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    textview_curses *tc = get_textview_for_mode(mode);
     string term_val;
     string name;
 
@@ -281,6 +281,8 @@ static void rl_search_internal(void *dummy, readline_curses *rc, ln_mode_t mode,
 
     switch (mode) {
     case LNM_SEARCH:
+    case LNM_SEARCH_FILTERS:
+    case LNM_SEARCH_FILES:
         name = "$search";
         break;
 
@@ -440,7 +442,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, ln_mode_t mode,
 
 void rl_search(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
 
     rl_search_internal(dummy, rc, lnav_data.ld_mode);
     tc->set_follow_search_for(0, {});
@@ -448,7 +450,7 @@ void rl_search(void *dummy, readline_curses *rc)
 
 void rl_abort(void *dummy, readline_curses *rc)
 {
-    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
 
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_example_source.clear();
@@ -480,7 +482,7 @@ void rl_abort(void *dummy, readline_curses *rc)
 
 static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
 {
-    textview_curses *tc = *lnav_data.ld_view_stack.top();
+    textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
     exec_context &ec = lnav_data.ld_exec_context;
     string alt_msg;
 
@@ -492,7 +494,20 @@ static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
 
-    auto old_mode = std::exchange(lnav_data.ld_mode, LNM_PAGING);
+    auto new_mode = LNM_PAGING;
+
+    switch (lnav_data.ld_mode) {
+        case LNM_SEARCH_FILTERS:
+            new_mode = LNM_FILTER;
+            break;
+        case LNM_SEARCH_FILES:
+            new_mode = LNM_FILES;
+            break;
+        default:
+            break;
+    }
+
+    auto old_mode = std::exchange(lnav_data.ld_mode, new_mode);
     switch (old_mode) {
     case LNM_PAGING:
     case LNM_FILTER:
@@ -514,6 +529,8 @@ static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
             break;
 
     case LNM_SEARCH:
+    case LNM_SEARCH_FILTERS:
+    case LNM_SEARCH_FILES:
     case LNM_CAPTURE:
         rl_search_internal(dummy, rc, old_mode, true);
         if (!rc->get_value().empty()) {

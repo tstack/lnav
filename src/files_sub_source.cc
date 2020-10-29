@@ -103,6 +103,19 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             lv.reload_data();
             return true;
         }
+        case 'n': {
+            execute_command(lnav_data.ld_exec_context, "next-mark search");
+            return true;
+        }
+        case 'N': {
+            execute_command(lnav_data.ld_exec_context, "prev-mark search");
+            return true;
+        }
+        case '/': {
+            execute_command(lnav_data.ld_exec_context,
+                            "prompt search-files");
+            return true;
+        }
     }
     return false;
 }

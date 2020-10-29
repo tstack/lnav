@@ -219,6 +219,19 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             tss->text_filters_changed();
             return true;
         }
+        case 'n': {
+            execute_command(lnav_data.ld_exec_context, "next-mark search");
+            return true;
+        }
+        case 'N': {
+            execute_command(lnav_data.ld_exec_context, "prev-mark search");
+            return true;
+        }
+        case '/': {
+            execute_command(lnav_data.ld_exec_context,
+                            "prompt search-filters");
+            return true;
+        }
         default:
             log_debug("unhandled %x", ch);
             break;

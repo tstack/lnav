@@ -32,6 +32,7 @@
 #ifndef curl_looper_hh
 #define curl_looper_hh
 
+#include <atomic>
 #include <map>
 #include <string>
 #include <vector>
@@ -234,7 +235,7 @@ private:
 
     bool cl_started;
     pthread_t cl_thread;
-    volatile bool cl_looping;
+    std::atomic<bool> cl_looping;
     auto_mem<CURLM> cl_curl_multi;
     pthread_mutex_t cl_mutex;
     pthread_cond_t cl_cond;

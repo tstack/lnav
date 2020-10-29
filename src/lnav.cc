@@ -715,7 +715,7 @@ vis_line_t next_cluster(
     bookmark_type_t *bt,
     const vis_line_t top)
 {
-    textview_curses *tc = *(lnav_data.ld_view_stack.top());
+    textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
     vis_bookmarks &bm = tc->get_bookmarks();
     bookmark_vector<vis_line_t> &bv = bm[bt];
     bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
@@ -760,19 +760,26 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) con
                     bookmark_type_t *bt,
                     vis_line_t top)
 {
-    textview_curses *tc = *(lnav_data.ld_view_stack.top());
+    textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
     vis_line_t new_top;
 
     new_top = next_cluster(f, bt, top);
     if (new_top == -1) {
-        new_top = next_cluster(f, bt, tc->get_top());
+        new_top = next_cluster(f, bt,
+                               tc->is_selectable() ?
+                               tc->get_selection() :
+                               tc->get_top());
     }
     if (new_top != -1) {
         tc->get_sub_source()->get_location_history() | [new_top] (auto lh) {
             lh->loc_history_append(new_top);
         };
 
-        tc->set_top(new_top);
+        if (tc->is_selectable()) {
+            tc->set_selection(new_top);
+        } else {
+            tc->set_top(new_top);
+        }
         return true;
     }
 
@@ -784,9 +791,14 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) con
 void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
 {
     key_repeat_history &krh = lnav_data.ld_key_repeat_history;
-    vis_line_t height, new_top, initial_top = tc->get_top();
+    vis_line_t height, new_top, initial_top;
     unsigned long width;
 
+    if (tc->is_selectable()) {
+        initial_top = tc->get_selection();
+    } else {
+        initial_top = tc->get_top();
+    }
     new_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
                            bt,
                            initial_top);
@@ -804,7 +816,11 @@ void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
             lh->loc_history_append(new_top);
         };
 
-        tc->set_top(new_top);
+        if (tc->is_selectable()) {
+            tc->set_selection(new_top);
+        } else {
+            tc->set_top(new_top);
+        }
     }
     else {
         alerter::singleton().chime();
@@ -813,7 +829,8 @@ void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
 
 vis_line_t search_forward_from(textview_curses *tc)
 {
-    vis_line_t height, retval = tc->get_top();
+    vis_line_t height, retval =
+        tc->is_selectable() ? tc->get_selection() : tc->get_top();
     key_repeat_history &krh = lnav_data.ld_key_repeat_history;
     unsigned long width;
 
@@ -1315,6 +1332,8 @@ static bool handle_key(int ch) {
 
                 case LNM_COMMAND:
                 case LNM_SEARCH:
+                case LNM_SEARCH_FILTERS:
+                case LNM_SEARCH_FILES:
                 case LNM_CAPTURE:
                 case LNM_SQL:
                 case LNM_EXEC:
@@ -1479,6 +1498,8 @@ static void looper()
         readline_context command_context("cmd", &lnav_commands);
 
         readline_context search_context("search", nullptr, false);
+        readline_context search_filters_context("search-filters", nullptr, false);
+        readline_context search_files_context("search-files", nullptr, false);
         readline_context index_context("capture");
         readline_context sql_context("sql", nullptr, false);
         readline_context exec_context("exec");
@@ -1491,6 +1512,12 @@ static void looper()
         search_context
                 .set_append_character(0)
                 .set_highlighter(readline_regex_highlighter);
+        search_filters_context
+            .set_append_character(0)
+            .set_highlighter(readline_regex_highlighter);
+        search_files_context
+            .set_append_character(0)
+            .set_highlighter(readline_regex_highlighter);
         sql_context
                 .set_highlighter(readline_sqlite_highlighter)
                 .set_quote_chars("\"")
@@ -1505,6 +1532,8 @@ static void looper()
 
         rlc.add_context(LNM_COMMAND, command_context);
         rlc.add_context(LNM_SEARCH, search_context);
+        rlc.add_context(LNM_SEARCH_FILTERS, search_filters_context);
+        rlc.add_context(LNM_SEARCH_FILES, search_files_context);
         rlc.add_context(LNM_CAPTURE, index_context);
         rlc.add_context(LNM_SQL, sql_context);
         rlc.add_context(LNM_EXEC, exec_context);
@@ -1797,6 +1826,8 @@ static void looper()
             for (auto &tc : lnav_data.ld_views) {
                 tc.update_poll_set(pollfds);
             }
+            lnav_data.ld_filter_view.update_poll_set(pollfds);
+            lnav_data.ld_files_view.update_poll_set(pollfds);
 
             if (lnav_data.ld_input_dispatcher.in_escape()) {
                 to.tv_usec = 15000;
@@ -1850,6 +1881,8 @@ static void looper()
 
                 rlc.check_poll_set(pollfds);
                 lnav_data.ld_filter_source.fss_editor.check_poll_set(pollfds);
+                lnav_data.ld_filter_view.check_poll_set(pollfds);
+                lnav_data.ld_files_view.check_poll_set(pollfds);
             }
 
             if (timer.time_to_update(overlay_counter)) {
@@ -2006,6 +2039,8 @@ void wait_for_children()
         for (auto &tc : lnav_data.ld_views) {
             tc.update_poll_set(pollfds);
         }
+        lnav_data.ld_filter_view.update_poll_set(pollfds);
+        lnav_data.ld_files_view.update_poll_set(pollfds);
 
         if (pollfds.empty()) {
             return;
@@ -2030,7 +2065,23 @@ void wait_for_children()
                 lnav_data.ld_bottom_source.update_hits(tc);
             };
         }
+        lnav_data.ld_filter_view.check_poll_set(pollfds);
+        lnav_data.ld_files_view.check_poll_set(pollfds);
     } while (true);
+}
+
+textview_curses *get_textview_for_mode(ln_mode_t mode)
+{
+    switch (mode) {
+        case LNM_SEARCH_FILTERS:
+        case LNM_FILTER:
+            return &lnav_data.ld_filter_view;
+        case LNM_SEARCH_FILES:
+        case LNM_FILES:
+            return &lnav_data.ld_files_view;
+        default:
+            return *lnav_data.ld_view_stack.top();
+    }
 }
 
 static void print_errors(vector<string> error_list)

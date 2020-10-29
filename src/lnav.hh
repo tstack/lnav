@@ -78,6 +78,8 @@ typedef enum {
     LNM_FILES,
     LNM_COMMAND,
     LNM_SEARCH,
+    LNM_SEARCH_FILTERS,
+    LNM_SEARCH_FILES,
     LNM_CAPTURE,
     LNM_SQL,
     LNM_EXEC,
@@ -380,5 +382,6 @@ bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) con
                     vis_line_t top);
 void previous_cluster(bookmark_type_t *bt, textview_curses *tc);
 vis_line_t search_forward_from(textview_curses *tc);
+textview_curses *get_textview_for_mode(ln_mode_t mode);
 
 #endif

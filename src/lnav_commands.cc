@@ -430,7 +430,7 @@ static Result<string, string> com_goto_mark(exec_context &ec, string cmdline, ve
         args.emplace_back("mark-type");
     }
     else {
-        textview_curses *tc = *lnav_data.ld_view_stack.top();
+        textview_curses *tc = get_textview_for_mode(lnav_data.ld_mode);
         string type_name = "user";
 
         if (args.size() > 1) {
@@ -4119,6 +4119,43 @@ static void search_prompt(vector<string> &args)
         ANSI_BOLD("CTRL+]") " to abort)");
 }
 
+static void search_filters_prompt(vector<string> &args)
+{
+    lnav_data.ld_mode = LNM_SEARCH_FILTERS;
+    add_view_text_possibilities(lnav_data.ld_rl_view,
+                                LNM_SEARCH_FILTERS,
+                                "*",
+                                &lnav_data.ld_filter_view);
+    lnav_data.ld_rl_view->focus(LNM_SEARCH_FILTERS,
+                                cget(args, 2).value_or("/"),
+                                cget(args, 3).value_or(""));
+    lnav_data.ld_bottom_source.set_prompt(
+        "Search for:  "
+        "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
+        ANSI_BOLD("CTRL+]") " to abort)");
+}
+
+static void search_files_prompt(vector<string> &args)
+{
+    static pcrecpp::RE re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
+
+    lnav_data.ld_mode = LNM_SEARCH_FILES;
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+        auto path = lf->get_unique_path();
+        re_escape.GlobalReplace(R"(\\\1)", &path);
+        lnav_data.ld_rl_view->add_possibility(LNM_SEARCH_FILES,
+                                              "*",
+                                              path);
+    }
+    lnav_data.ld_rl_view->focus(LNM_SEARCH_FILES,
+                                cget(args, 2).value_or("/"),
+                                cget(args, 3).value_or(""));
+    lnav_data.ld_bottom_source.set_prompt(
+        "Search for:  "
+        "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
+        ANSI_BOLD("CTRL+]") " to abort)");
+}
+
 static void sql_prompt(vector<string> &args)
 {
     textview_curses *tc = *lnav_data.ld_view_stack.top();
@@ -4170,6 +4207,8 @@ static Result<string, string> com_prompt(exec_context &ec, string cmdline, vecto
         {"command", command_prompt},
         {"script", script_prompt},
         {"search", search_prompt},
+        {"search-filters", search_filters_prompt},
+        {"search-files", search_files_prompt},
         {"sql", sql_prompt},
         {"user", user_prompt},
     };
