@@ -449,6 +449,10 @@ static struct json_path_container global_var_handlers = {
 
 static struct json_path_container style_config_handlers =
     json_path_container{
+        json_path_handler("semantic")
+            .with_description(
+                "Pick a color based on the text being highlighted")
+            .FOR_FIELD(style_config, sc_semantic),
         json_path_handler("color")
             .with_synopsis("#hex|color_name")
             .with_description(
@@ -571,6 +575,12 @@ static struct json_path_container theme_syntax_styles_handlers = {
             return &root->lt_style_comment;
         })
         .with_children(style_config_handlers),
+    json_path_handler("doc-directive")
+        .with_description("Styling for documentation directives in source files")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_doc_directive;
+        })
+        .with_children(style_config_handlers),
     json_path_handler("variable")
         .with_description("Styling for variables in text")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
@@ -689,6 +699,36 @@ static struct json_path_container theme_log_level_styles_handlers = {
         .with_children(style_config_handlers)
 };
 
+static struct json_path_container highlighter_handlers = {
+    json_path_handler("pattern")
+        .with_synopsis("regular expression")
+        .with_description("The regular expression to highlight")
+        .FOR_FIELD(highlighter_config, hc_regex),
+
+    json_path_handler("style")
+        .with_description("The styling for the text that matches the associated pattern")
+        .with_obj_provider<style_config, highlighter_config>([](const yajlpp_provider_context &ypc, highlighter_config *root) {
+            return &root->hc_style;
+        })
+        .with_children(style_config_handlers),
+};
+
+static struct json_path_container theme_highlights_handlers = {
+    json_path_handler(pcrepp("(?<highlight_name>\\w+)"))
+        .with_obj_provider<highlighter_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            highlighter_config &hc = root->lt_highlights[
+                ypc.ypc_extractor.get_substr_i("highlight_name").get()];
+
+            return &hc;
+        })
+        .with_path_provider<lnav_theme>([](struct lnav_theme *cfg, vector<string> &paths_out) {
+            for (const auto& pair : cfg->lt_highlights) {
+                paths_out.emplace_back(pair.first);
+            }
+        })
+        .with_children(highlighter_handlers)
+};
+
 static struct json_path_container theme_vars_handlers = {
     json_path_handler(pcrepp("(?<var_name>\\w+)"))
         .with_synopsis("name")
@@ -720,7 +760,11 @@ static struct json_path_container theme_def_handlers = {
 
     json_path_handler("log-level-styles")
         .with_description("Styles for each log message level.")
-        .with_children(theme_log_level_styles_handlers)
+        .with_children(theme_log_level_styles_handlers),
+
+    json_path_handler("highlights")
+        .with_description("Styles for text highlights.")
+        .with_children(theme_highlights_handlers),
 };
 
 static struct json_path_container theme_defs_handlers = {

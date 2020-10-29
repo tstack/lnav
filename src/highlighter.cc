@@ -16,6 +16,7 @@ highlighter::highlighter(const highlighter &other)
     this->h_text_format = other.h_text_format;
     this->h_format_name = other.h_format_name;
     this->h_nestable = other.h_nestable;
+    this->h_semantic = other.h_semantic;
 }
 
 highlighter &highlighter::operator=(const highlighter &other)
@@ -37,6 +38,7 @@ highlighter &highlighter::operator=(const highlighter &other)
     this->h_attrs = other.h_attrs;
     this->h_text_format = other.h_text_format;
     this->h_nestable = other.h_nestable;
+    this->h_semantic = other.h_semantic;
 
     return *this;
 }
@@ -49,7 +51,7 @@ void highlighter::study()
     if (!this->h_code_extra && errptr) {
         log_error("pcre_study error: %s", errptr);
     }
-    if (this->h_code_extra != NULL) {
+    if (this->h_code_extra != nullptr) {
         pcre_extra *extra = this->h_code_extra;
 
         extra->flags |= (PCRE_EXTRA_MATCH_LIMIT |
@@ -103,6 +105,10 @@ void highlighter::annotate(attr_line_t &al, int start) const
 
                 if (this->h_attrs != -1) {
                     attrs = this->h_attrs;
+                }
+                if (this->h_semantic) {
+                    attrs |= vc.attrs_for_ident(&line_start[lr.lr_start],
+                                                lr.length());
                 }
                 if (!this->h_fg.empty()) {
                     sa.emplace_back(lr,

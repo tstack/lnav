@@ -76,6 +76,9 @@
                     "comment": {
                         "color": "$base1"
                     },
+                    "doc-directive": {
+                        "color": "$blue"
+                    },
                     "variable": {
                         "color": "$blue"
                     },

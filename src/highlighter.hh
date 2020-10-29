@@ -40,12 +40,10 @@
 struct highlighter {
     highlighter()
         : h_code(nullptr),
-          h_code_extra(nullptr),
-          h_attrs(-1),
-          h_text_format(text_format_t::TF_UNKNOWN) { };
+          h_code_extra(nullptr) { };
 
     explicit highlighter(pcre *code)
-        : h_code(code), h_attrs(-1), h_text_format(text_format_t::TF_UNKNOWN)
+        : h_code(code)
     {
         pcre_refcount(this->h_code, 1);
         this->study();
@@ -107,6 +105,11 @@ struct highlighter {
         return *this;
     }
 
+    highlighter &with_semantic(bool val) {
+        this->h_semantic = val;
+        return *this;
+    }
+
     int get_attrs() const
     {
         ensure(this->h_attrs != -1);
@@ -122,10 +125,11 @@ struct highlighter {
     rgb_color h_bg;
     pcre *h_code;
     pcre_extra *h_code_extra;
-    int h_attrs;
-    text_format_t h_text_format;
+    int h_attrs{-1};
+    text_format_t h_text_format{text_format_t::TF_UNKNOWN};
     intern_string_t h_format_name;
     bool h_nestable{true};
+    bool h_semantic{false};
 };
 
 #endif

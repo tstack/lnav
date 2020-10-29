@@ -67,6 +67,9 @@
                     "comment": {
                         "color": "$cyan"
                     },
+                    "doc-directive": {
+                        "color": "$green"
+                    },
                     "number": {
                         "color": "$red"
                     },

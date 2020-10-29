@@ -918,6 +918,8 @@ void view_colors::init_roles(const lnav_theme &lt,
         lt, lt.lt_style_string, lt.lt_style_text, reporter);
     this->vc_role_colors[VCR_COMMENT] = this->to_attrs(color_pair_base,
         lt, lt.lt_style_comment, lt.lt_style_text, reporter);
+    this->vc_role_colors[VCR_DOC_DIRECTIVE] = this->to_attrs(color_pair_base,
+        lt, lt.lt_style_doc_directive, lt.lt_style_text, reporter);
     this->vc_role_colors[VCR_VARIABLE] = this->to_attrs(color_pair_base,
         lt, lt.lt_style_variable, lt.lt_style_text, reporter);
     this->vc_role_colors[VCR_SYMBOL] = this->to_attrs(color_pair_base,

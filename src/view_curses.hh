@@ -172,37 +172,37 @@ private:
  * Class that encapsulates a method to execute and the object on which to
  * execute it.
  *
- * @param _Sender The type of object that will be triggering an action.
+ * @param Sender The type of object that will be triggering an action.
  */
-template<class _Sender>
+template<class Sender>
 class view_action {
 public:
 
     /**
      *
-     * @param _Receiver The type of object that will be triggered by an action.
+     * @param Receiver The type of object that will be triggered by an action.
      */
-    template<class _Receiver>
+    template<class Receiver>
     class mem_functor_t {
 public:
-        mem_functor_t(_Receiver &receiver,
-                      void(_Receiver::*selector)(_Sender *))
+        mem_functor_t(Receiver &receiver,
+                      void(Receiver::*selector)(Sender *))
             : mf_receiver(receiver),
               mf_selector(selector) { };
 
-        void operator()(_Sender *sender) const
+        void operator()(Sender *sender) const
         {
             (this->mf_receiver.*mf_selector)(sender);
         };
 
-        static void invoke(mem_functor_t *self, _Sender *sender)
+        static void invoke(mem_functor_t *self, Sender *sender)
         {
             (*self)(sender);
         };
 
 private:
-        _Receiver & mf_receiver;
-        void        (_Receiver::*mf_selector)(_Sender *);
+        Receiver & mf_receiver;
+        void        (Receiver::*mf_selector)(Sender *);
     };
 
     class broadcaster
@@ -213,7 +213,7 @@ public:
             : b_functor(*this, &broadcaster::invoke) { };
         virtual ~broadcaster() = default;
 
-        void invoke(_Sender *sender)
+        void invoke(Sender *sender)
         {
             typename std::vector<view_action>::iterator iter;
 
@@ -238,15 +238,15 @@ private:
      * parameters, the first being the value of the receiver pointer and the
      * second being the sender pointer as passed to invoke().
      */
-    view_action(void(*invoker)(void *, _Sender *) = nullptr)
+    view_action(void(*invoker)(void *, Sender *) = nullptr)
         : va_functor(nullptr),
           va_invoker(invoker) { };
 
-    template<class _Receiver>
-    view_action(mem_functor_t<_Receiver> *mf)
+    template<class Receiver>
+    view_action(mem_functor_t<Receiver> *mf)
         : va_functor(mf),
-          va_invoker((void(*) (void *, _Sender *))
-                     mem_functor_t<_Receiver>::invoke) { };
+          va_invoker((void(*) (void *, Sender *))
+                     mem_functor_t<Receiver>::invoke) { };
 
     /**
      * Performs a shallow copy of another view_action.
@@ -257,8 +257,6 @@ private:
     view_action(const view_action &va)
         : va_functor(va.va_functor),
           va_invoker(va.va_invoker) { };
-
-    ~view_action() { };
 
     /**
      * @param rhs The view_action to shallow copy.
@@ -277,7 +275,7 @@ private:
      *
      * @param sender Pointer to the object that called this method.
      */
-    void invoke(_Sender *sender)
+    void invoke(Sender *sender)
     {
         if (this->va_invoker != NULL) {
             this->va_invoker(this->va_functor, sender);
@@ -289,7 +287,7 @@ private:
     /** The object to pass as the first argument to the selector function.*/
     void *va_functor;
     /** The function to call when this action is invoke()'d. */
-    void (*va_invoker)(void *functor, _Sender *sender);
+    void (*va_invoker)(void *functor, Sender *sender);
 };
 
 /**
@@ -339,6 +337,7 @@ public:
         VCR_KEYWORD,
         VCR_STRING,
         VCR_COMMENT,
+        VCR_DOC_DIRECTIVE,
         VCR_VARIABLE,
         VCR_SYMBOL,
         VCR_NUMBER,
@@ -365,7 +364,7 @@ public:
      * called before this method, but the returned attributes cannot be used
      * with curses code until this method is called.
      */
-    static void init(void);
+    static void init();
 
     void init_roles(const lnav_theme &lt, lnav_config_listener::error_reporter &reporter);
 

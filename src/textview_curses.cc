@@ -34,6 +34,8 @@
 
 #include <pcrecpp.h>
 
+#include "shlex.hh"
+#include "fmt/format.h"
 #include "pcrepp/pcrepp.hh"
 #include "lnav_util.hh"
 #include "data_parser.hh"
@@ -120,8 +122,8 @@ string_attr_type textview_curses::SA_FORMAT("format");
 string_attr_type textview_curses::SA_REMOVED("removed");
 
 textview_curses::textview_curses()
-    : tc_sub_source(NULL),
-      tc_delegate(NULL),
+    : tc_sub_source(nullptr),
+      tc_delegate(nullptr),
       tc_selection_start(-1),
       tc_selection_last(-1),
       tc_selection_cleared(false),
@@ -130,10 +132,83 @@ textview_curses::textview_curses()
     this->set_data_source(this);
 }
 
-textview_curses::~textview_curses()
-{ }
+void textview_curses::reload_config(error_reporter &reporter)
+{
+    static auto DEFAULT_THEME_NAME = string("default");
 
-void textview_curses::reload_data(void)
+    for (auto iter = this->tc_highlights.begin();
+         iter != this->tc_highlights.end();) {
+        if (iter->first.first != highlight_source_t::THEME) {
+            ++iter;
+            continue;
+        }
+
+        iter = this->tc_highlights.erase(iter);
+    }
+
+    for (const auto& theme_name : {DEFAULT_THEME_NAME, lnav_config.lc_ui_theme}) {
+        auto theme_iter = lnav_config.lc_ui_theme_defs.find(theme_name);
+
+        if (theme_iter == lnav_config.lc_ui_theme_defs.end()) {
+            continue;
+        }
+
+        for (const auto &hl_pair : theme_iter->second.lt_highlights) {
+            if (hl_pair.second.hc_regex.empty()) {
+                continue;
+            }
+
+            const char *errptr;
+            pcre *code;
+            int eoff;
+
+            if ((code = pcre_compile(hl_pair.second.hc_regex.c_str(),
+                                     0,
+                                     &errptr,
+                                     &eoff,
+                                     nullptr)) == nullptr) {
+                reporter(&hl_pair.second.hc_regex,
+                         fmt::format("invalid highlight regex: {} at {}",
+                                     errptr, eoff));
+                continue;
+            }
+
+            const auto &sc = hl_pair.second.hc_style;
+            string fg1, bg1, fg_color, bg_color, errmsg;
+            rgb_color fg, bg;
+            int attrs = 0;
+
+            fg1 = sc.sc_color;
+            bg1 = sc.sc_background_color;
+            shlex(fg1).eval(fg_color, theme_iter->second.lt_vars);
+            shlex(bg1).eval(bg_color, theme_iter->second.lt_vars);
+
+            if (!rgb_color::from_str(fg_color, fg, errmsg)) {
+                reporter(&sc.sc_color, errmsg);
+                continue;
+            }
+            if (!rgb_color::from_str(bg_color, bg, errmsg)) {
+                reporter(&sc.sc_background_color, errmsg);
+                continue;
+            }
+
+            if (sc.sc_bold) {
+                attrs |= A_BOLD;
+            }
+            if (sc.sc_underline) {
+                attrs |= A_UNDERLINE;
+            }
+            this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}] =
+                highlighter(code)
+                    .with_pattern(hl_pair.second.hc_regex)
+                    .with_attrs(attrs != 0 ? attrs : -1)
+                    .with_color(fg, bg)
+                    .with_semantic(sc.sc_semantic);
+        }
+    }
+}
+
+void textview_curses::reload_data()
 {
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
@@ -343,7 +418,8 @@ void textview_curses::textview_value_for_row(vis_line_t row,
 
     for (auto &tc_highlight : this->tc_highlights) {
         bool internal_hl =
-            tc_highlight.first.first == highlight_source_t::INTERNAL;
+            tc_highlight.first.first == highlight_source_t::INTERNAL ||
+            tc_highlight.first.first == highlight_source_t::THEME;
 
         if (tc_highlight.second.h_text_format != text_format_t::TF_UNKNOWN &&
             source_format != tc_highlight.second.h_text_format) {

@@ -116,10 +116,16 @@ struct term_color_palette {
 };
 
 struct style_config {
+    bool sc_semantic{false};
     std::string sc_color;
     std::string sc_background_color;
     bool sc_underline{false};
     bool sc_bold{false};
+};
+
+struct highlighter_config {
+    std::string hc_regex;
+    style_config hc_style;
 };
 
 struct lnav_theme {
@@ -141,6 +147,7 @@ struct lnav_theme {
     style_config lt_style_keyword;
     style_config lt_style_string;
     style_config lt_style_comment;
+    style_config lt_style_doc_directive;
     style_config lt_style_variable;
     style_config lt_style_symbol;
     style_config lt_style_number;
@@ -159,6 +166,7 @@ struct lnav_theme {
     style_config lt_style_inactive_status;
     style_config lt_style_file;
     std::map<log_level_t, style_config> lt_level_styles;
+    std::map<std::string, highlighter_config> lt_highlights;
 };
 
 extern term_color_palette xterm_colors;

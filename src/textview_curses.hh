@@ -568,6 +568,7 @@ public:
 
 enum class highlight_source_t {
     INTERNAL,
+    THEME,
     PREVIEW,
     CONFIGURATION,
     INTERACTIVE,
@@ -581,7 +582,8 @@ class textview_curses
     : public listview_curses,
       public list_data_source,
       public grep_proc_source<vis_line_t>,
-      public grep_proc_sink<vis_line_t> {
+      public grep_proc_sink<vis_line_t>,
+      public lnav_config_listener {
 public:
 
     typedef view_action<textview_curses> action;
@@ -597,7 +599,9 @@ public:
     static string_attr_type SA_REMOVED;
 
     textview_curses();
-    virtual ~textview_curses();
+    virtual ~textview_curses() = default;
+
+    void reload_config(error_reporter &reporter);
 
     void set_paused(bool paused) {
         this->tc_paused = paused;

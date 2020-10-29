@@ -426,6 +426,7 @@ void filter_sub_source::rl_abort(readline_curses *rc)
     top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     top_view->reload_data();
     fs.delete_filter("");
+    this->tss_view->reload_data();
     this->fss_editor.set_visible(false);
     this->fss_editing = false;
     this->tss_view->set_needs_update();

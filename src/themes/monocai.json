@@ -72,6 +72,9 @@
                     "comment": {
                         "color": "#727072"
                     },
+                    "doc-directive": {
+                        "color": "#a9dc76"
+                    },
                     "variable": {
                         "color": "#a9dc76"
                     },

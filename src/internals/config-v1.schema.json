@@ -150,6 +150,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/comment",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "doc-directive": {
+                                            "description": "Styling for documentation directives in source files",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/doc-directive",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "variable": {
                                             "description": "Styling for variables in text",
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/variable",
@@ -252,6 +257,31 @@
                                         }
                                     },
                                     "additionalProperties": false
+                                },
+                                "highlights": {
+                                    "description": "Styles for text highlights.",
+                                    "title": "/ui/theme-defs/<theme_name>/highlights",
+                                    "type": "object",
+                                    "patternProperties": {
+                                        "(\\w+)": {
+                                            "title": "/ui/theme-defs/<theme_name>/highlights/<highlight_name>",
+                                            "type": "object",
+                                            "properties": {
+                                                "pattern": {
+                                                    "title": "/ui/theme-defs/<theme_name>/highlights/<highlight_name>/pattern",
+                                                    "description": "The regular expression to highlight",
+                                                    "type": "string"
+                                                },
+                                                "style": {
+                                                    "description": "The styling for the text that matches the associated pattern",
+                                                    "title": "/ui/theme-defs/<theme_name>/highlights/<highlight_name>/style",
+                                                    "$ref": "#/definitions/style"
+                                                }
+                                            },
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "additionalProperties": false
                                 }
                             },
                             "additionalProperties": false
@@ -318,6 +348,11 @@
             "type": "object",
             "$$target": "#/definitions/style",
             "properties": {
+                "semantic": {
+                    "title": "/semantic",
+                    "description": "Pick a color based on the text being highlighted",
+                    "type": "boolean"
+                },
                 "color": {
                     "title": "/color",
                     "description": "The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",

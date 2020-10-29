@@ -55,11 +55,6 @@ static pcre *xpcre_compile(const char *pattern, int options = 0)
     return retval;
 }
 
-static highlighter static_highlighter(const string &regex) {
-    return highlighter(xpcre_compile(regex.c_str()))
-        .with_attrs(view_colors::singleton().attrs_for_ident(regex));
-}
-
 void setup_highlights(textview_curses::highlight_map_t &hm)
 {
     hm[{highlight_source_t::INTERNAL, "python"}] = highlighter(xpcre_compile(
@@ -399,7 +394,6 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
         "(?:java|a|o|so|c|cc|cpp|cxx|h|hh|hpp|hxx|py|pyc|rb):"
         "\\d+"))
         .with_role(view_colors::VCR_FILE);
-    hm[{highlight_source_t::INTERNAL, "xml"}] = static_highlighter("<(/?[^ >=]+)[^>]*>");
     hm[{highlight_source_t::INTERNAL, "1.stringd"}] = highlighter(xpcre_compile(
         "\"(?:\\\\.|[^\"])*\""))
         .with_role(view_colors::VCR_STRING);
@@ -418,12 +412,12 @@ void setup_highlights(textview_curses::highlight_map_t &hm)
     hm[{highlight_source_t::INTERNAL, "diffs"}] = highlighter(xpcre_compile(
         "^\\@@ .*"))
         .with_role(view_colors::VCR_DIFF_SECTION);
-    hm[{highlight_source_t::INTERNAL, "ip"}] = static_highlighter("\\d+\\.\\d+\\.\\d+\\.\\d+");
     hm[{highlight_source_t::INTERNAL, "0.comment"}] = highlighter(xpcre_compile(
         "(?<=[\\s;])//.*|/\\*.*\\*/|\\(\\*.*\\*\\)|^#.*|\\s+#.*|dnl.*"))
         .with_role(view_colors::VCR_COMMENT);
-    hm[{highlight_source_t::INTERNAL, "javadoc"}] = static_highlighter(
-        "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)");
+    hm[{highlight_source_t::INTERNAL, "javadoc"}] = highlighter(xpcre_compile(
+        "@(?:author|deprecated|exception|file|param|return|see|since|throws|todo|version)"))
+        .with_role(view_colors::VCR_DOC_DIRECTIVE);
     hm[{highlight_source_t::INTERNAL, "var"}] = highlighter(xpcre_compile(
         "(?:"
         "(?:var\\s+)?([\\-\\w]+)\\s*[!=+\\-*/|&^]?=|"
