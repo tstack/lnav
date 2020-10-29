@@ -1,5 +1,17 @@
 #! /bin/bash
 
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":goto 0" \
+    -c ":close" \
+    -c ":goto 0" \
+    "${test_dir}/logfile_access_log.*"
+
+check_output "close not sticking" <<EOF
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+
 run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":goto 0" \
     -c ":hide-file" \
@@ -497,16 +509,6 @@ EOF
 check_output "open non-existent is not working" <<EOF
 EOF
 
-
-run_test ${lnav_test} -n \
-    -c ":goto 0" \
-    -c ":close" \
-    -c ":goto 0" \
-    "${test_dir}/logfile_access_log.*"
-
-check_output "close not sticking" <<EOF
-10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
-EOF
 
 
 run_test ${lnav_test} -n \

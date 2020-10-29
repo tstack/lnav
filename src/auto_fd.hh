@@ -90,7 +90,8 @@ public:
      * @param af The source of the file descriptor.
      */
     auto_fd(auto_fd && af)
-        : af_fd(af.release()) { };
+        : af_fd(af.release()) {
+    };
 
     /**
      * Const copy constructor.  The file descriptor from the source will be
@@ -115,7 +116,7 @@ public:
     };
 
     /** @return The file descriptor as a plain integer. */
-    operator int(void) const { return this->af_fd;  };
+    operator int() const { return this->af_fd;  };
 
     /**
      * Replace the current descriptor with the given one.  The current
@@ -150,7 +151,7 @@ public:
      *
      * @return A pointer to the internal integer.
      */
-    int *out(void)
+    int *out()
     {
         this->reset();
         return &this->af_fd;
@@ -161,7 +162,7 @@ public:
      *
      * @return The file descriptor.
      */
-    int release(void)
+    int release()
     {
         int retval = this->af_fd;
 
@@ -172,7 +173,7 @@ public:
     /**
      * @return The file descriptor.
      */
-    int get(void) const
+    int get() const
     {
         return this->af_fd;
     };

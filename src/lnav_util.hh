@@ -43,6 +43,7 @@
 
 #include "spookyhash/SpookyV2.h"
 
+#include <future>
 #include <string>
 #include <vector>
 #include <sstream>

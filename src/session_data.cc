@@ -302,7 +302,7 @@ static nonstd::optional<std::string> compute_session_id()
 
     context.Init(0, 0);
     hash_updater updater(&context);
-    for (auto &ld_file_name : lnav_data.ld_file_names) {
+    for (auto &ld_file_name : lnav_data.ld_active_files.fc_file_names) {
         if (!ld_file_name.second.loo_include_in_session) {
             continue;
         }
@@ -1276,7 +1276,7 @@ static void save_session_with_id(const std::string session_id)
             {
                 yajlpp_array file_list(handle);
 
-                for (auto &ld_file_name : lnav_data.ld_file_names) {
+                for (auto &ld_file_name : lnav_data.ld_active_files.fc_file_names) {
                     file_list.gen(ld_file_name.first);
                 }
             }

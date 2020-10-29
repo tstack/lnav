@@ -274,7 +274,7 @@ void add_file_possibilities()
 
     rc->clear_possibilities(LNM_COMMAND, "visible-files");
     rc->clear_possibilities(LNM_COMMAND, "hidden-files");
-    for (const auto& lf : lnav_data.ld_files) {
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
         if (lf.get() == nullptr) {
             continue;
         }

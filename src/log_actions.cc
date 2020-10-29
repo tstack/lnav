@@ -135,7 +135,7 @@ static string execute_action(log_data_helper &ldh,
                          sizeof(desc), "[%d] Output of %s",
                          exec_count++,
                          action.ad_cmdline[0].c_str());
-                lnav_data.ld_file_names[desc]
+                lnav_data.ld_active_files.fc_file_names[desc]
                     .with_fd(pp->get_fd());
                 lnav_data.ld_files_to_front.push_back({ desc, 0 });
             }

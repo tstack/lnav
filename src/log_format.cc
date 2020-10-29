@@ -504,6 +504,10 @@ log_format::scan_result_t external_log_format::scan(logfile &lf,
         yajl_handle handle = this->jlf_yajl_handle.in();
         json_log_userdata jlu(sbr);
 
+        if (!this->lf_specialized && dst.size() >= 3) {
+            return log_format::SCAN_NO_MATCH;
+        }
+
         if (li.li_partial) {
             log_debug("skipping partial line at offset %d", li.li_file_range.fr_offset);
             return log_format::SCAN_INCOMPLETE;

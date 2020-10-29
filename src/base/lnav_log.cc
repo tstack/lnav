@@ -109,6 +109,18 @@ static pthread_mutex_t lnav_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 std::vector<log_state_dumper*> log_state_dumper::DUMPER_LIST;
 std::vector<log_crash_recoverer*> log_crash_recoverer::CRASH_LIST;
 
+struct thid {
+    static uint32_t COUNTER;
+
+    thid() : t_id(COUNTER++) {}
+
+    uint32_t t_id;
+};
+
+uint32_t thid::COUNTER = 0;
+
+thread_local thid current_thid;
+
 static struct {
     size_t lr_length;
     off_t lr_frag_start;
@@ -278,7 +290,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
     auto line = log_alloc();
     prefix_size = snprintf(
         line, MAX_LOG_LINE_SIZE,
-        "%4d-%02d-%02dT%02d:%02d:%02d.%03d %s %s:%d ",
+        "%4d-%02d-%02dT%02d:%02d:%02d.%03d %s t%u %s:%d ",
         localtm.tm_year + 1900,
         localtm.tm_mon + 1,
         localtm.tm_mday,
@@ -287,6 +299,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         localtm.tm_sec,
         (int)(curr_time.tv_usec / 1000),
         LEVEL_NAMES[to_underlying(level)],
+        current_thid.t_id,
         src_file,
         line_number);
     rc = vsnprintf(&line[prefix_size], MAX_LOG_LINE_SIZE - prefix_size,

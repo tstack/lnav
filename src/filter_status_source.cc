@@ -220,15 +220,16 @@ size_t filter_help_status_source::statusview_fields()
                                          "Disable Filtering" :
                                          "Enable Filtering");
             }
-        } else if (lnav_data.ld_mode == LNM_FILES) {
-            if (lnav_data.ld_files.empty()) {
+        } else if (lnav_data.ld_mode == LNM_FILES &&
+                   lnav_data.ld_session_loaded) {
+            if (lnav_data.ld_active_files.fc_files.empty()) {
                 this->fss_help.clear();
                 return;
             }
 
             auto &lv = lnav_data.ld_files_view;
             auto sel = lv.get_selection();
-            auto &lf = lnav_data.ld_files[sel];
+            auto &lf = lnav_data.ld_active_files.fc_files[sel];
 
             this->fss_help.set_value("  %s%s  %s",
                                      ENABLE_HELP,

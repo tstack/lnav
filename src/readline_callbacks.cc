@@ -624,7 +624,7 @@ static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
                          "Output of %s (%s)",
                          path_and_args.c_str(),
                          timestamp);
-                lnav_data.ld_file_names[desc]
+                lnav_data.ld_active_files.fc_file_names[desc]
                     .with_fd(fd_copy)
                     .with_include_in_session(false)
                     .with_detect_format(false);

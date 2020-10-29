@@ -215,6 +215,32 @@ struct key_repeat_history {
     };
 };
 
+struct file_collection {
+    std::map<std::string, std::string> fc_name_to_errors;
+    std::map<std::string, logfile_open_options> fc_file_names;
+    std::vector<std::shared_ptr<logfile>> fc_files;
+    int fc_files_generation{0};
+    std::vector<std::pair<std::shared_ptr<logfile>, std::string>>
+        fc_renamed_files;
+    std::set<std::string> fc_closed_files;
+    std::map<std::string, std::string> fc_other_files;
+
+    void clear() {
+        this->fc_name_to_errors.clear();
+        this->fc_file_names.clear();
+        this->fc_files.clear();
+        this->fc_closed_files.clear();
+        this->fc_other_files.clear();
+    }
+    file_collection rescan_files(bool required = false);
+    file_collection expand_filename(const std::string& path, logfile_open_options &loo, bool required);
+    std::future<file_collection>
+    watch_logfile(const std::string& filename, logfile_open_options &loo, bool required);
+    void merge(const file_collection &other);
+    void close_file(const std::shared_ptr<logfile> &lf);
+    void regenerate_unique_file_names();
+};
+
 struct _lnav_data {
     std::map<std::string, std::list<session_pair_t>> ld_session_id;
     time_t                                  ld_session_time;
@@ -227,10 +253,7 @@ struct _lnav_data {
     bool                                    ld_cmd_init_done;
     bool                                    ld_session_loaded;
     std::vector<ghc::filesystem::path>      ld_config_paths;
-    std::map<std::string, logfile_open_options> ld_file_names;
-    std::vector<std::shared_ptr<logfile>>   ld_files;
-    std::list<std::string>                  ld_other_files;
-    std::set<std::string>                   ld_closed_files;
+    file_collection                         ld_active_files;
     std::list<std::pair<std::string, int> > ld_files_to_front;
     std::string                             ld_pt_search;
     time_t                                  ld_pt_min_time;
@@ -344,6 +367,7 @@ void layout_views();
 bool setup_logline_table(exec_context &ec);
 
 bool rescan_files(bool required = false);
+bool update_active_files(const file_collection& new_files);
 
 void wait_for_children();
 

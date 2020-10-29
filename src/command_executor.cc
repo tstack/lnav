@@ -672,7 +672,7 @@ void execute_init_commands(exec_context &ec, vector<pair<Result<string, string>,
                 lnav_data.ld_pt_search.substr(3),
                 lnav_data.ld_pt_min_time,
                 lnav_data.ld_pt_max_time));
-        lnav_data.ld_file_names[lnav_data.ld_pt_search]
+        lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search]
             .with_fd(pt->copy_fd());
         lnav_data.ld_curl_looper.add_request(pt.release());
 #endif
@@ -791,7 +791,7 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
                  sizeof(desc), "[%d] Output of %s",
                  exec_count++,
                  cmdline.c_str());
-        lnav_data.ld_file_names[desc]
+        lnav_data.ld_active_files.fc_file_names[desc]
             .with_fd(pp->get_fd())
             .with_include_in_session(false)
             .with_detect_format(false);

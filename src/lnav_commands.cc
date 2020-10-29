@@ -94,7 +94,7 @@ static string refresh_pt_search()
     }
 
 #ifdef HAVE_LIBCURL
-    for (const auto &lf : lnav_data.ld_files) {
+    for (const auto &lf : lnav_data.ld_active_files.fc_files) {
         if (startswith(lf->get_filename(), "pt:")) {
             lf->close();
         }
@@ -109,7 +109,7 @@ static string refresh_pt_search()
             lnav_data.ld_pt_search.substr(3),
             lnav_data.ld_pt_min_time,
             lnav_data.ld_pt_max_time));
-    lnav_data.ld_file_names[lnav_data.ld_pt_search]
+    lnav_data.ld_active_files.fc_file_names[lnav_data.ld_pt_search]
         .with_fd(pt->copy_fd());
     lnav_data.ld_curl_looper.add_request(pt.release());
 
@@ -1804,8 +1804,8 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
             }
         }
 
-        auto file_iter = lnav_data.ld_files.begin();
-        for (; file_iter != lnav_data.ld_files.end(); ++file_iter) {
+        auto file_iter = lnav_data.ld_active_files.fc_files.begin();
+        for (; file_iter != lnav_data.ld_active_files.fc_files.end(); ++file_iter) {
             auto lf = *file_iter;
 
             if (lf->get_filename() == fn) {
@@ -1820,7 +1820,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                 }
             }
         }
-        if (file_iter == lnav_data.ld_files.end()) {
+        if (file_iter == lnav_data.ld_active_files.fc_files.end()) {
             logfile_open_options default_loo;
             auto_mem<char> abspath;
             struct stat    st;
@@ -1832,7 +1832,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                 if (!ec.ec_dry_run) {
                     auto ul = make_unique<url_loader>(fn);
 
-                    lnav_data.ld_file_names[fn]
+                    lnav_data.ld_active_files.fc_file_names[fn]
                         .with_fd(ul->copy_fd());
                     lnav_data.ld_curl_looper.add_request(ul.release());
                     lnav_data.ld_files_to_front.emplace_back(fn, top);
@@ -1877,7 +1877,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                     snprintf(desc, sizeof(desc),
                              "FIFO [%d]",
                              lnav_data.ld_fifo_counter++);
-                    lnav_data.ld_file_names[desc]
+                    lnav_data.ld_active_files.fc_file_names[desc]
                         .with_fd(fifo_out_fd);
                     lnav_data.ld_pipers.push_back(fifo_piper);
                 }
@@ -1899,7 +1899,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                                      fn);
             }
             else if (access(fn.c_str(), R_OK) == -1) {
-                return ec.make_error("error: cannot read file {} -- {}", fn,
+                return ec.make_error("cannot read file {} -- {}", fn,
                     strerror(errno));
             }
             else {
@@ -1990,9 +1990,9 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
             lnav_data.ld_files_to_front.end(),
             files_to_front.begin(),
             files_to_front.end());
-        lnav_data.ld_file_names.insert(file_names.begin(), file_names.end());
+        lnav_data.ld_active_files.fc_file_names.insert(file_names.begin(), file_names.end());
         for (const auto &fn : closed_files) {
-            lnav_data.ld_closed_files.erase(fn);
+            lnav_data.ld_active_files.fc_closed_files.erase(fn);
         }
     }
 
@@ -2049,8 +2049,8 @@ static Result<string, string> com_close(exec_context &ec, string cmdline, vector
                 if (is_url(fn.c_str())) {
                     lnav_data.ld_curl_looper.close_request(fn);
                 }
-                lnav_data.ld_file_names.erase(fn);
-                lnav_data.ld_closed_files.insert(fn);
+                lnav_data.ld_active_files.fc_file_names.erase(fn);
+                lnav_data.ld_active_files.fc_closed_files.insert(fn);
                 retval = "info: closed -- " + fn;
             }
         }
@@ -2104,7 +2104,7 @@ static Result<string, string> com_file_visibility(exec_context &ec, string cmdli
         lexer.split(args, ec.create_resolver());
         args.erase(args.begin());
 
-        for (const auto &lf : lnav_data.ld_files) {
+        for (const auto &lf : lnav_data.ld_active_files.fc_files) {
             if (lf.get() == nullptr) {
                 continue;
             }

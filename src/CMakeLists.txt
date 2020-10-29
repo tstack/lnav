@@ -349,6 +349,7 @@ add_library(diag STATIC
         doc_status_source.hh
         elem_to_json.hh
         base/enum_util.hh
+        base/future_util.hh
         field_overlay_source.hh
         file_vtab.hh
         files_sub_source.hh

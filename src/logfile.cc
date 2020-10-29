@@ -59,8 +59,9 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
 {
     require(!filename.empty());
 
+    this->lf_options = loo;
     memset(&this->lf_stat, 0, sizeof(this->lf_stat));
-    if (loo.loo_fd == -1) {
+    if (this->lf_options.loo_fd == -1) {
         char resolved_path[PATH_MAX];
 
         errno = 0;
@@ -76,14 +77,14 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
             throw error(filename, EINVAL);
         }
 
-        if ((loo.loo_fd = open(resolved_path, O_RDONLY)) == -1) {
+        if ((this->lf_options.loo_fd = open(resolved_path, O_RDONLY)) == -1) {
             throw error(filename, errno);
         }
 
-        loo.loo_fd.close_on_exec();
+        this->lf_options.loo_fd.close_on_exec();
 
         log_info("Creating logfile: fd=%d; size=%" PRId64 "; mtime=%" PRId64 "; filename=%s",
-                 (int) loo.loo_fd,
+                 (int) this->lf_options.loo_fd,
                  (long long) this->lf_stat.st_size,
                  (long long) this->lf_stat.st_mtime,
                  filename.c_str());
@@ -91,7 +92,7 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
         this->lf_valid_filename = true;
     }
     else {
-        log_perror(fstat(loo.loo_fd, &this->lf_stat));
+        log_perror(fstat(this->lf_options.loo_fd, &this->lf_stat));
         this->lf_valid_filename = false;
     }
 
@@ -101,10 +102,9 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
     }
 
     this->lf_content_id = hash_string(this->lf_filename);
-    this->lf_line_buffer.set_fd(loo.loo_fd);
+    this->lf_line_buffer.set_fd(this->lf_options.loo_fd);
     this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
-    this->lf_options = loo;
     this->lf_is_visible = loo.loo_is_visible;
 
     ensure(this->invariant());
@@ -291,8 +291,11 @@ logfile::rebuild_result_t logfile::rebuild_index()
     if (st.st_size < this->lf_stat.st_size ||
         (this->lf_stat.st_size == st.st_size &&
          this->lf_stat.st_mtime != st.st_mtime)) {
-        log_info("overwritten file detected, closing -- %s",
-                 this->lf_filename.c_str());
+        log_info("overwritten file detected, closing -- %s  new: %" PRId64
+                     "/%" PRId64 "  old: %" PRId64 "/%" PRId64,
+                 this->lf_filename.c_str(),
+                 st.st_size, st.st_mtime,
+                 this->lf_stat.st_size, this->lf_stat.st_mtime);
         this->close();
         return RR_NO_NEW_LINES;
     }
@@ -426,7 +429,7 @@ logfile::rebuild_result_t logfile::rebuild_index()
 
             if (this->lf_logfile_observer != nullptr) {
                 this->lf_logfile_observer->logfile_indexing(
-                    *this,
+                    this->shared_from_this(),
                     this->lf_line_buffer.get_read_offset(li.li_file_range.next_offset()),
                     st.st_size);
             }
@@ -563,7 +566,7 @@ void logfile::reobserve_from(iterator iter)
 
         if (this->lf_logfile_observer != nullptr) {
             this->lf_logfile_observer->logfile_indexing(
-                *this, offset, this->size());
+                this->shared_from_this(), offset, this->size());
         }
 
         this->read_line(iter).then([this, iter](auto sbr) {
@@ -578,7 +581,7 @@ void logfile::reobserve_from(iterator iter)
     }
     if (this->lf_logfile_observer != nullptr) {
         this->lf_logfile_observer->logfile_indexing(
-            *this, this->size(), this->size());
+            this->shared_from_this(), this->size(), this->size());
         this->lf_logline_observer->logline_eof(*this);
     }
 }

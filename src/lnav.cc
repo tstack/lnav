@@ -127,6 +127,7 @@
 #include "regexp_vtab.hh"
 #include "fstat_vtab.hh"
 #include "textfile_highlighters.hh"
+#include "base/future_util.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
@@ -154,6 +155,7 @@
 #endif
 
 using namespace std;
+using namespace std::literals::chrono_literals;
 
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
@@ -232,17 +234,6 @@ static std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
 };
 
 const static size_t MAX_STDIN_CAPTURE_SIZE = 10 * 1024 * 1024;
-
-static void regenerate_unique_file_names()
-{
-    unique_path_generator upg;
-
-    for (const auto& lf : lnav_data.ld_files) {
-        upg.add_source(shared_ptr<logfile>(lf));
-    }
-
-    upg.generate();
-}
 
 bool setup_logline_table(exec_context &ec)
 {
@@ -380,7 +371,7 @@ public:
 
     };
 
-    void logfile_indexing(logfile &lf, off_t off, size_t total)
+    void logfile_indexing(const shared_ptr<logfile>& lf, off_t off, size_t total)
     {
         static sig_atomic_t index_counter = 0;
 
@@ -401,26 +392,23 @@ public:
         }
 
         if (!lnav_data.ld_looping) {
-            throw logfile::error(lf.get_filename(), EINTR);
+            throw logfile::error(lf->get_filename(), EINTR);
         }
     };
 
 private:
-    void do_update(logfile &lf)
+    void do_update(const shared_ptr<logfile>& lf)
     {
         lnav_data.ld_top_source.update_time();
         for (auto &sc : lnav_data.ld_status) {
             sc.do_update();
         }
         if (!lnav_data.ld_session_loaded && lnav_data.ld_mode == LNM_FILES) {
-            auto iter = std::find_if(lnav_data.ld_files.begin(),
-                                     lnav_data.ld_files.end(),
-                                     [&lf](auto elem) {
-                return elem.get() == &lf;
-            });
+            auto iter = std::find(lnav_data.ld_active_files.fc_files.begin(),
+                                  lnav_data.ld_active_files.fc_files.end(), lf);
 
-            if (iter != lnav_data.ld_files.end()) {
-                auto index = std::distance(lnav_data.ld_files.begin(),
+            if (iter != lnav_data.ld_active_files.fc_files.end()) {
+                auto index = std::distance(lnav_data.ld_active_files.fc_files.begin(),
                                            iter);
                 lnav_data.ld_files_view.set_selection(vis_line_t(index));
                 lnav_data.ld_files_view.reload_data();
@@ -496,15 +484,7 @@ public:
 
     void closed_file(const shared_ptr<logfile> &lf) {
         log_info("closed text file: %s", lf->get_filename().c_str());
-        if (!lf->is_valid_filename()) {
-            lnav_data.ld_file_names.erase(lf->get_filename());
-        }
-        auto file_iter = find(lnav_data.ld_files.begin(),
-                              lnav_data.ld_files.end(),
-                              lf);
-        lnav_data.ld_files.erase(file_iter);
-
-        regenerate_unique_file_names();
+        lnav_data.ld_active_files.close_file(lf);
     };
 
     void promote_file(const shared_ptr<logfile> &lf) {
@@ -581,20 +561,21 @@ void rebuild_indexes()
         }
     }
 
-    for (auto file_iter = lnav_data.ld_files.begin();
-         file_iter != lnav_data.ld_files.end(); ) {
+    for (auto file_iter = lnav_data.ld_active_files.fc_files.begin();
+         file_iter != lnav_data.ld_active_files.fc_files.end(); ) {
         auto lf = *file_iter;
 
         if ((!lf->exists() || lf->is_closed())) {
             log_info("closed log file: %s", lf->get_filename().c_str());
             if (!lf->is_valid_filename()) {
-                lnav_data.ld_file_names.erase(lf->get_filename());
+                lnav_data.ld_active_files.fc_file_names.erase(lf->get_filename());
             }
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
-            file_iter = lnav_data.ld_files.erase(file_iter);
+            file_iter = lnav_data.ld_active_files.fc_files.erase(file_iter);
+            lnav_data.ld_active_files.fc_files_generation += 1;
 
-            regenerate_unique_file_names();
+            lnav_data.ld_active_files.regenerate_unique_file_names();
         }
         else {
             ++file_iter;
@@ -619,7 +600,7 @@ void rebuild_indexes()
             unordered_map<string, list<shared_ptr<logfile>>> id_to_files;
             bool reload = false;
 
-            for (const auto &lf : lnav_data.ld_files) {
+            for (const auto &lf : lnav_data.ld_active_files.fc_files) {
                 if (!lf->is_visible()) {
                     continue;
                 }
@@ -691,7 +672,7 @@ static bool append_default_files(lnav_flags_t flag)
                 else {
                     logfile_open_options default_loo;
 
-                    lnav_data.ld_file_names[abspath.in()] = default_loo;
+                    lnav_data.ld_active_files.fc_file_names[abspath.in()] = default_loo;
                 }
             }
             else if (stat(path.c_str(), &st) == 0) {
@@ -955,6 +936,54 @@ struct same_file {
     const struct stat &sf_stat;
 };
 
+void file_collection::close_file(const std::shared_ptr<logfile> &lf)
+{
+    if (!lf->is_valid_filename()) {
+        this->fc_file_names.erase(lf->get_filename());
+    }
+    auto file_iter = find(this->fc_files.begin(),
+                          this->fc_files.end(),
+                          lf);
+    if (file_iter != this->fc_files.end()) {
+        this->fc_files.erase(file_iter);
+        this->fc_files_generation += 1;
+    }
+
+    this->regenerate_unique_file_names();
+}
+
+void file_collection::regenerate_unique_file_names()
+{
+    unique_path_generator upg;
+
+    for (const auto& lf : this->fc_files) {
+        upg.add_source(shared_ptr<logfile>(lf));
+    }
+
+    upg.generate();
+}
+
+void file_collection::merge(const file_collection& other)
+{
+    this->fc_name_to_errors.insert(other.fc_name_to_errors.begin(),
+                                   other.fc_name_to_errors.end());
+    this->fc_file_names.insert(other.fc_file_names.begin(),
+                               other.fc_file_names.end());
+    if (!other.fc_files.empty()) {
+        this->fc_files.insert(this->fc_files.end(),
+                              other.fc_files.begin(),
+                              other.fc_files.end());
+        this->fc_files_generation += 1;
+    }
+    for (auto& pair : other.fc_renamed_files) {
+        pair.first->set_filename(pair.second);
+    }
+    this->fc_closed_files.insert(other.fc_closed_files.begin(),
+                                 other.fc_closed_files.end());
+    this->fc_other_files.insert(other.fc_other_files.begin(),
+                                other.fc_other_files.end());
+}
+
 /**
  * Try to load the given file as a log file.  If the file has not already been
  * loaded, it will be loaded.  If the file has already been loaded, the file
@@ -964,15 +993,17 @@ struct same_file {
  * @param fd       An already-opened descriptor for 'filename'.
  * @param required Specifies whether or not the file must exist and be valid.
  */
-static bool watch_logfile(string filename, logfile_open_options &loo, bool required)
+std::future<file_collection>
+file_collection::watch_logfile(const string& filename, logfile_open_options &loo, bool required)
 {
     static loading_observer obs;
+
+    file_collection retval;
     struct stat st;
     int         rc;
-    bool retval = false;
 
-    if (lnav_data.ld_closed_files.count(filename)) {
-        return retval;
+    if (this->fc_closed_files.count(filename)) {
+        return make_ready_future(retval);
     }
 
     if (loo.loo_fd != -1) {
@@ -986,13 +1017,12 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
         if (S_ISDIR(st.st_mode) && lnav_data.ld_flags & LNF_RECURSIVE) {
             string wilddir = filename + "/*";
 
-            if (lnav_data.ld_file_names.find(wilddir) ==
-                lnav_data.ld_file_names.end()) {
+            if (this->fc_file_names.find(wilddir) == this->fc_file_names.end()) {
                 logfile_open_options default_loo;
 
-                lnav_data.ld_file_names[wilddir] = default_loo;
+                retval.fc_file_names[wilddir] = default_loo;
             }
-            return retval;
+            return make_ready_future(retval);
         }
         if (!S_ISREG(st.st_mode)) {
             if (required) {
@@ -1000,40 +1030,40 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
                 errno = EINVAL;
             }
             else {
-                return retval;
+                return make_ready_future(retval);
             }
         }
     }
     if (rc == -1) {
         if (required) {
-            throw logfile::error(filename, errno);
+            retval.fc_name_to_errors[filename] = strerror(errno);
         }
-        else{
-            return retval;
-        }
+        return make_ready_future(retval);
     }
 
-    auto file_iter = find_if(lnav_data.ld_files.begin(),
-                             lnav_data.ld_files.end(),
+    auto file_iter = find_if(this->fc_files.begin(),
+                             this->fc_files.end(),
                              same_file(st));
 
-    if (file_iter == lnav_data.ld_files.end()) {
-        if (find(lnav_data.ld_other_files.begin(),
-                 lnav_data.ld_other_files.end(),
-                 filename) == lnav_data.ld_other_files.end()) {
+    if (file_iter == this->fc_files.end()) {
+        if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
+            return make_ready_future(retval);
+        }
+        return std::async(std::launch::async, [filename, &loo]() {
             file_format_t ff = detect_file_format(filename);
+            file_collection retval;
 
             switch (ff) {
                 case file_format_t::FF_SQLITE_DB:
-                    lnav_data.ld_other_files.push_back(filename);
                     attach_sqlite_db(lnav_data.ld_db.in(), filename);
-                    retval = true;
+                    retval.fc_other_files[filename] = "SQLite Database";
                     break;
 
                 case file_format_t::FF_ARCHIVE: {
-                    archive_manager::walk_archive_files(filename,
-                                            [&filename](const auto& tmp_path,
-                                                        const auto& entry) {
+                    retval.fc_other_files[filename] = "Archive";
+                    archive_manager::walk_archive_files(
+                        filename, [&filename, &retval](const auto& tmp_path,
+                                                       const auto& entry) {
                         auto ext = entry.path().extension();
                         if (ext == ".jar" || ext == ".war" || ext == ".zip") {
                             return;
@@ -1054,43 +1084,48 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
                                  filename.c_str(),
                                  entry.path().c_str());
                         // TODO add some heuristics for hiding files
-                        lnav_data.ld_file_names[entry.path().string()] =
+                        retval.fc_file_names[entry.path().string()] =
                             logfile_open_options()
                                 .with_filename(custom_name.string())
                                 .with_visibility(is_visible)
                                 .with_non_utf_visibility(false)
                                 .with_visible_size_limit(128 * 1024);
                     });
-                    lnav_data.ld_other_files.emplace_back(filename);
-                    retval = true;
                     break;
                 }
 
                 default:
-                    /* It's a new file, load it in. */
-                    shared_ptr<logfile> lf = make_shared<logfile>(filename, loo);
-
                     log_info("loading new file: filename=%s",
                              filename.c_str());
-                    lf->set_logfile_observer(&obs);
-                    lnav_data.ld_files.push_back(lf);
-                    lnav_data.ld_text_source.push_back(lf);
 
-                    regenerate_unique_file_names();
+                    /* It's a new file, load it in. */
+                    try {
+                        shared_ptr<logfile> lf = make_shared<logfile>(filename,
+                                                                      loo);
 
-                    retval = true;
+                        lf->set_logfile_observer(&obs);
+                        retval.fc_files.push_back(lf);
+                    } catch (logfile::error& e) {
+                        retval.fc_name_to_errors[filename] = e.what();
+                    }
                     break;
             }
+
+            return retval;
+        });
+    }
+    else {
+        auto lf = *file_iter;
+
+        if (lf->is_valid_filename() && lf->get_filename() != filename) {
+            /* The file is already loaded, but has been found under a different
+             * name.  We just need to update the stored file name.
+             */
+            retval.fc_renamed_files.emplace_back(lf, filename);
         }
     }
-    else if ((*file_iter)->is_valid_filename()) {
-        /* The file is already loaded, but has been found under a different
-         * name.  We just need to update the stored file name.
-         */
-        (*file_iter)->set_filename(filename);
-    }
 
-    return retval;
+    return make_ready_future(retval);
 }
 
 /**
@@ -1099,14 +1134,18 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
  * @param path     The glob pattern to expand.
  * @param required Passed to watch_logfile.
  */
-static void expand_filename(const string& path, logfile_open_options &loo, bool required)
+file_collection file_collection::expand_filename(const string& path, logfile_open_options &loo, bool required)
 {
     static_root_mem<glob_t, globfree> gl;
+    file_collection retval;
 
     if (is_url(path.c_str())) {
-        return;
+        return retval;
     }
     else if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+        future_queue<file_collection> fq([&retval](auto& fc) {
+            retval.merge(fc);
+        });
         int lpc;
 
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
@@ -1132,55 +1171,68 @@ static void expand_filename(const string& path, logfile_open_options &loo, bool 
                 }
             }
             else if (required || access(abspath.in(), R_OK) == 0) {
-                watch_logfile(abspath.in(), loo, required);
+                fq.push_back(watch_logfile(abspath.in(), loo, required));
             }
-        }
-    }
-}
-
-bool rescan_files(bool required)
-{
-    map<string, logfile_open_options>::iterator iter;
-    bool retval = false;
-
-    for (iter = lnav_data.ld_file_names.begin();
-         iter != lnav_data.ld_file_names.end();
-         iter++) {
-        if (iter->second.loo_fd == -1) {
-            expand_filename(iter->first, iter->second, required);
-            if (lnav_data.ld_flags & LNF_ROTATED) {
-                string path = iter->first + ".*";
-
-                expand_filename(path, iter->second, false);
-            }
-        } else {
-           retval = retval ||
-                    watch_logfile(iter->first, iter->second, required);
-        }
-    }
-
-    for (auto file_iter = lnav_data.ld_files.begin();
-         file_iter != lnav_data.ld_files.end(); ) {
-        auto lf = *file_iter;
-
-        if ((!lf->exists() || lf->is_closed())) {
-            log_info("Log file no longer exists or is closed: %s",
-                     lf->get_filename().c_str());
-            return true;
-        }
-        else {
-            ++file_iter;
         }
     }
 
     return retval;
 }
 
+file_collection file_collection::rescan_files(bool required)
+{
+    file_collection retval;
+    future_queue<file_collection> fq([&retval](auto& fc) {
+        retval.merge(fc);
+    });
+
+    for (auto& pair : this->fc_file_names) {
+        if (pair.second.loo_fd == -1) {
+            retval.merge(this->expand_filename(pair.first, pair.second, required));
+            if (lnav_data.ld_flags & LNF_ROTATED) {
+                string path = pair.first + ".*";
+
+                retval.merge(this->expand_filename(path, pair.second, false));
+            }
+        } else {
+            fq.push_back(watch_logfile(pair.first, pair.second, required));
+        }
+    }
+
+    fq.pop_to();
+
+    return retval;
+}
+
+bool update_active_files(const file_collection& new_files)
+{
+    for (const auto& lf : new_files.fc_files) {
+        lnav_data.ld_text_source.push_back(lf);
+    }
+    lnav_data.ld_active_files.merge(new_files);
+    if (!new_files.fc_files.empty()) {
+        lnav_data.ld_active_files.regenerate_unique_file_names();
+    }
+
+    return true;
+}
+
+bool rescan_files(bool req)
+{
+    bool done = false;
+
+    do {
+        auto fc = lnav_data.ld_active_files.rescan_files(req);
+
+        update_active_files(fc);
+        done = fc.fc_file_names.empty();
+    } while (!done);
+    return true;
+}
+
 class lnav_behavior : public mouse_behavior {
 public:
-    lnav_behavior() {};
-
-    void mouse_event(int button, bool release, int x, int y)
+    void mouse_event(int button, bool release, int x, int y) override
     {
         textview_curses *tc = *(lnav_data.ld_view_stack.top());
         struct mouse_event me;
@@ -1557,7 +1609,6 @@ static void looper()
             set_scroll_action(sb.get_functor());
             lnav_data.ld_views[lpc].set_search_action(
                 textview_curses::action(update_hits));
-            using std::placeholders::_1;
             lnav_data.ld_views[lpc].tc_state_event_handler = [](auto &&tc) {
                 lnav_data.ld_bottom_source.update_search_term(tc);
             };
@@ -1657,6 +1708,17 @@ static void looper()
         lnav_data.ld_mode = LNM_FILES;
 
         timer.start_fade(index_counter, 1);
+
+        log_debug("rescan started");
+        file_collection active_copy;
+        active_copy.merge(lnav_data.ld_active_files);
+        future<file_collection> rescan_future =
+            std::async(std::launch::async,
+                       &file_collection::rescan_files,
+                       active_copy,
+                       false);
+        bool initial_rescan_completed = false;
+
         while (lnav_data.ld_looping) {
             vector<struct pollfd> pollfds;
             struct timeval to = { 0, 333000 };
@@ -1669,7 +1731,21 @@ static void looper()
 
             layout_views();
 
-            rescan_files();
+            if (rescan_future.wait_for(0s) == std::future_status::ready) {
+                auto new_files = rescan_future.get();
+                if (!initial_rescan_completed &&
+                    new_files.fc_file_names.empty()) {
+                    initial_rescan_completed = true;
+                }
+                update_active_files(new_files);
+
+                active_copy.clear();
+                active_copy.merge(lnav_data.ld_active_files);
+                rescan_future = std::async(std::launch::async,
+                                           &file_collection::rescan_files,
+                                           active_copy,
+                                           false);
+            }
             rebuild_indexes();
 
             lnav_data.ld_view_stack.do_update();
@@ -1774,8 +1850,8 @@ static void looper()
             }
 
             static bool initial_build = false;
-            if (!initial_build || timer.fade_diff(index_counter) == 0) {
-
+            if (initial_rescan_completed &&
+                (!initial_build || timer.fade_diff(index_counter) == 0)) {
                 if (lnav_data.ld_mode == LNM_PAGING) {
                     timer.start_fade(index_counter, 1);
                 }
@@ -1802,7 +1878,7 @@ static void looper()
                 }
                 if (!initial_build &&
                     lnav_data.ld_log_source.text_line_count() == 0 &&
-                    !lnav_data.ld_other_files.empty()) {
+                    !lnav_data.ld_active_files.fc_other_files.empty()) {
                     ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
                 }
 
@@ -1812,7 +1888,7 @@ static void looper()
                 }
                 if (lnav_data.ld_log_source.text_line_count() > 0 ||
                     lnav_data.ld_text_source.text_line_count() > 0 ||
-                    !lnav_data.ld_other_files.empty()) {
+                    !lnav_data.ld_active_files.fc_other_files.empty()) {
                     initial_build = true;
                 }
 
@@ -1895,7 +1971,7 @@ static void looper()
             if (lnav_data.ld_view_stack.vs_views.empty() ||
                 (lnav_data.ld_view_stack.vs_views.size() == 1 &&
                  starting_view_stack_size == 2 &&
-                 lnav_data.ld_file_names.size() ==
+                 lnav_data.ld_active_files.fc_file_names.size() ==
                  lnav_data.ld_text_source.size())) {
                 lnav_data.ld_looping = false;
             }
@@ -2400,7 +2476,7 @@ int main(int argc, char *argv[])
                         retval = EXIT_FAILURE;
                     }
                 }
-            } while (lnav_data.ld_file_names.empty() &&
+            } while (lnav_data.ld_active_files.fc_file_names.empty() &&
                      change_to_parent_dir());
 
             if (chdir(start_dir) == -1) {
@@ -2471,17 +2547,24 @@ int main(int argc, char *argv[])
         else if (is_url(argv[lpc])) {
             unique_ptr<url_loader> ul(new url_loader(argv[lpc]));
 
-            lnav_data.ld_file_names[argv[lpc]]
+            lnav_data.ld_active_files.fc_file_names[argv[lpc]]
                 .with_fd(ul->copy_fd());
             lnav_data.ld_curl_looper.add_request(ul.release());
         }
 #endif
         else if (is_glob(argv[lpc])) {
-            lnav_data.ld_file_names[argv[lpc]] = default_loo;
+            lnav_data.ld_active_files.fc_file_names[argv[lpc]] = default_loo;
         }
         else if (stat(argv[lpc], &st) == -1) {
             fprintf(stderr,
                     "Cannot stat file: %s -- %s\n",
+                    argv[lpc],
+                    strerror(errno));
+            retval = EXIT_FAILURE;
+        }
+        else if (access(argv[lpc], R_OK) == -1) {
+            fprintf(stderr,
+                    "Cannot read file: %s -- %s\n",
                     argv[lpc],
                     strerror(errno));
             retval = EXIT_FAILURE;
@@ -2511,7 +2594,7 @@ int main(int argc, char *argv[])
                 snprintf(desc, sizeof(desc),
                          "FIFO [%d]",
                          lnav_data.ld_fifo_counter++);
-                lnav_data.ld_file_names[desc]
+                lnav_data.ld_active_files.fc_file_names[desc]
                     .with_fd(fifo_out_fd);
                 lnav_data.ld_pipers.push_back(fifo_piper);
             }
@@ -2526,17 +2609,16 @@ int main(int argc, char *argv[])
             if (dir_wild[dir_wild.size() - 1] == '/') {
                 dir_wild.resize(dir_wild.size() - 1);
             }
-            lnav_data.ld_file_names[dir_wild + "/*"] = default_loo;
+            lnav_data.ld_active_files.fc_file_names[dir_wild + "/*"] = default_loo;
         }
         else {
-            lnav_data.ld_file_names[abspath.in()] = default_loo;
+            lnav_data.ld_active_files.fc_file_names[abspath.in()] = default_loo;
         }
     }
 
     if (lnav_data.ld_flags & LNF_CHECK_CONFIG) {
         rescan_files(true);
-        for (auto &ld_file : lnav_data.ld_files) {
-            auto lf = ld_file;
+        for (auto &lf : lnav_data.ld_active_files.fc_files) {
             logfile::rebuild_result_t rebuild_result;
 
             do {
@@ -2622,7 +2704,7 @@ int main(int argc, char *argv[])
 
         stdin_reader = make_shared<piper_proc>(
             STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out_fd);
-        lnav_data.ld_file_names["stdin"]
+        lnav_data.ld_active_files.fc_file_names["stdin"]
             .with_fd(stdin_out_fd)
             .with_include_in_session(false);
         lnav_data.ld_pipers.push_back(stdin_reader);
@@ -2634,7 +2716,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (lnav_data.ld_file_names.empty() &&
+    if (lnav_data.ld_active_files.fc_file_names.empty() &&
         lnav_data.ld_commands.empty() &&
         lnav_data.ld_pt_search.empty() &&
         !(lnav_data.ld_flags & LNF_HELP)) {
@@ -2647,8 +2729,6 @@ int main(int argc, char *argv[])
     }
     else {
         try {
-            rescan_files(true);
-
             log_info("startup: %s", VCS_PACKAGE_STRING);
             log_host_info();
             log_info("Libraries:");
@@ -2676,9 +2756,8 @@ int main(int argc, char *argv[])
                 log_info("    %s", cmd_iter->c_str());
             }
             log_info("  files:");
-            for (auto file_iter =
-                 lnav_data.ld_file_names.begin();
-                 file_iter != lnav_data.ld_file_names.end();
+            for (auto file_iter = lnav_data.ld_active_files.fc_file_names.begin();
+                 file_iter != lnav_data.ld_active_files.fc_file_names.end();
                  ++file_iter) {
                 log_info("    %s", file_iter->first.c_str());
             }
@@ -2688,6 +2767,17 @@ int main(int argc, char *argv[])
                 textview_curses *log_tc, *text_tc, *tc;
                 bool found_error = false;
 
+                rescan_files(true);
+                if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+                    for (const auto& pair : lnav_data.ld_active_files.fc_name_to_errors) {
+                        fprintf(stderr,
+                                "error: unable to read file: %s -- %s\n",
+                                pair.first.c_str(),
+                                pair.second.c_str());
+                    }
+
+                    return EXIT_FAILURE;
+                }
                 init_session();
                 lnav_data.ld_exec_context.ec_output_stack.back() = stdout;
                 alerter::singleton().enabled(false);

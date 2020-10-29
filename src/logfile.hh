@@ -71,7 +71,9 @@ public:
      * @param off The current offset in the file being processed.
      * @param total The total size of the file.
      */
-    virtual void logfile_indexing(logfile &lf, off_t off, size_t total) = 0;
+    virtual void logfile_indexing(const std::shared_ptr<logfile>& lf,
+                                  off_t off,
+                                  size_t total) = 0;
 };
 
 struct logfile_open_options {
@@ -135,7 +137,9 @@ struct logfile_activity {
 /**
  * Container for the lines in a log file and some metadata.
  */
-class logfile : public unique_path_source {
+class logfile :
+    public unique_path_source,
+    public std::enable_shared_from_this<logfile> {
 public:
 
     class error : public std::exception {
@@ -182,9 +186,11 @@ public:
     /** @param filename The new filename for this log file. */
     void set_filename(const std::string &filename)
     {
-        this->lf_filename = filename;
-        ghc::filesystem::path p(filename);
-        this->lf_basename = p.filename();
+        if (this->lf_filename != filename) {
+            this->lf_filename = filename;
+            ghc::filesystem::path p(filename);
+            this->lf_basename = p.filename();
+        }
     };
 
     const std::string &get_content_id() const { return this->lf_content_id; };

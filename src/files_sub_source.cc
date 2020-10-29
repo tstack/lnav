@@ -52,12 +52,12 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
 
         case KEY_ENTER:
         case '\r': {
-            if (lnav_data.ld_files.empty()) {
+            if (lnav_data.ld_active_files.fc_files.empty()) {
                 return true;
             }
 
             auto& lss = lnav_data.ld_log_source;
-            auto &lf = lnav_data.ld_files[lv.get_selection()];
+            auto &lf = lnav_data.ld_active_files.fc_files[lv.get_selection()];
 
             if (!lf->is_visible()) {
                 lf->show();
@@ -86,11 +86,11 @@ bool files_sub_source::list_input_handle_key(listview_curses &lv, int ch)
         }
 
         case ' ': {
-            if (lnav_data.ld_files.empty()) {
+            if (lnav_data.ld_active_files.fc_files.empty()) {
                 return true;
             }
 
-            auto &lf = lnav_data.ld_files[lv.get_selection()];
+            auto &lf = lnav_data.ld_active_files.fc_files[lv.get_selection()];
             lf->set_visibility(!lf->is_visible());
             auto top_view = *lnav_data.ld_view_stack.top();
             auto tss = top_view->get_sub_source();
@@ -115,7 +115,7 @@ void files_sub_source::list_input_handle_scroll_out(listview_curses &lv)
 
 size_t files_sub_source::text_line_count()
 {
-    return lnav_data.ld_files.size();
+    return lnav_data.ld_active_files.fc_files.size();
 }
 
 size_t files_sub_source::text_line_width(textview_curses &curses)
@@ -127,7 +127,7 @@ void files_sub_source::text_value_for_line(textview_curses &tc, int line,
                                            std::string &value_out,
                                            text_sub_source::line_flags_t flags)
 {
-    const auto &lf = lnav_data.ld_files[line];
+    const auto &lf = lnav_data.ld_active_files.fc_files[line];
     char start_time[64] = "", end_time[64] = "";
 
     if (lf->get_format() != nullptr) {
@@ -148,7 +148,7 @@ void files_sub_source::text_attrs_for_line(textview_curses &tc, int line,
     auto &vcolors = view_colors::singleton();
     bool selected = lnav_data.ld_mode == LNM_FILES && line == tc.get_selection();
     int bg = selected ? COLOR_WHITE : COLOR_BLACK;
-    auto &lf = lnav_data.ld_files[line];
+    auto &lf = lnav_data.ld_active_files.fc_files[line];
 
     chtype visible = lf->is_visible() ? ACS_DIAMOND : ' ';
     value_out.emplace_back(line_range{2, 3}, &view_curses::VC_GRAPHIC, visible);
