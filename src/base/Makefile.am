@@ -15,7 +15,6 @@ noinst_HEADERS = \
     is_utf8.hh \
     lnav_log.hh \
     opt_util.hh \
-    pthreadpp.hh \
     result.h \
     string_util.hh
 

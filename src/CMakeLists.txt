@@ -383,7 +383,6 @@ add_library(diag STATIC
         pretty_printer.hh
         preview_status_source.hh
         ptimec.hh
-        base/pthreadpp.hh
         readline_callbacks.hh
         readline_possibilities.hh
         regexp_vtab.hh

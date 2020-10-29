@@ -41,7 +41,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include <pthread.h>
 #include <sys/resource.h>
 
 #ifdef HAVE_EXECINFO_H
@@ -54,6 +53,7 @@
 #include <sys/wait.h>
 #include <sys/param.h>
 
+#include <mutex>
 #include <thread>
 
 #ifdef HAVE_PCRE_H
@@ -84,7 +84,6 @@
 #endif
 
 #include "lnav_log.hh"
-#include "pthreadpp.hh"
 #include "enum_util.hh"
 
 static const size_t BUFFER_SIZE = 256 * 1024;
@@ -104,7 +103,7 @@ nonstd::optional<FILE *> lnav_log_file;
 lnav_log_level_t lnav_log_level = lnav_log_level_t::DEBUG;
 const char *lnav_log_crash_dir;
 nonstd::optional<const struct termios *> lnav_log_orig_termios;
-static pthread_mutex_t lnav_log_mutex = PTHREAD_MUTEX_INITIALIZER;
+static std::mutex *lnav_log_mutex = new std::mutex();
 
 std::vector<log_state_dumper*> log_state_dumper::DUMPER_LIST;
 std::vector<log_crash_recoverer*> log_crash_recoverer::CRASH_LIST;
@@ -268,7 +267,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
         return;
     }
 
-    mutex_guard mg(lnav_log_mutex);
+    std::lock_guard<std::mutex> log_lock(*lnav_log_mutex);
 
     {
         // get the base name of the file.  NB: can't use basename() since it
@@ -318,7 +317,7 @@ void log_msg(lnav_log_level_t level, const char *src_file, int line_number,
 
 void log_msg_extra(const char *fmt, ...)
 {
-    mutex_guard mg(lnav_log_mutex);
+    std::lock_guard<std::mutex> mg(*lnav_log_mutex);
     va_list args;
 
     va_start(args, fmt);
@@ -334,7 +333,7 @@ void log_msg_extra(const char *fmt, ...)
 
 void log_msg_extra_complete()
 {
-    mutex_guard mg(lnav_log_mutex);
+    std::lock_guard<std::mutex> mg(*lnav_log_mutex);
     auto line = log_alloc();
     line[0] = '\n';
     log_ring.lr_length += 1;

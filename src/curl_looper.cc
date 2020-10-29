@@ -33,7 +33,7 @@
 
 #include <algorithm>
 
-#ifdef HAVE_LIBCURL
+#if defined(HAVE_LIBCURL)
 #include <curl/multi.h>
 
 #include "curl_looper.hh"
@@ -91,13 +91,6 @@ int curl_request::debug_cb(CURL *handle,
     return 0;
 }
 
-void *curl_looper::trampoline(void *arg)
-{
-    curl_looper *cl = (curl_looper *) arg;
-
-    return cl->run();
-}
-
 void *curl_looper::run()
 {
     log_info("curl looper thread started");
@@ -106,7 +99,7 @@ void *curl_looper::run()
     }
     log_info("curl looper thread exiting");
 
-    return NULL;
+    return nullptr;
 }
 
 void curl_looper::loop_body()
@@ -115,15 +108,11 @@ void curl_looper::loop_body()
     int timeout = this->compute_timeout(current_time);
 
     if (this->cl_handle_to_request.empty()) {
-        mutex_guard mg(this->cl_mutex);
+        std::unique_lock<std::mutex> mg(this->cl_mutex);
 
         if (this->cl_new_requests.empty() && this->cl_close_requests.empty()) {
             mstime_t deadline = current_time + timeout;
-            struct timespec ts;
-
-            ts.tv_sec = deadline / 1000ULL;
-            ts.tv_nsec = (deadline % 1000ULL) * 1000 * 1000;
-            pthread_cond_timedwait(&this->cl_cond, &this->cl_mutex, &ts);
+            this->cl_cond.wait_for(mg, std::chrono::milliseconds(deadline));
         }
     }
 
@@ -147,10 +136,10 @@ void curl_looper::perform_io()
     int running_handles;
 
     curl_multi_wait(this->cl_curl_multi,
-                    NULL,
+                    nullptr,
                     0,
                     timeout,
-                    NULL);
+                    nullptr);
     curl_multi_perform(this->cl_curl_multi, &running_handles);
 }
 
@@ -169,7 +158,7 @@ void curl_looper::requeue_requests(mstime_t up_to_time)
 }
 
 void curl_looper::check_for_new_requests() {
-    mutex_guard mg(this->cl_mutex);
+    std::unique_lock<std::mutex> mg(this->cl_mutex);
 
     while (!this->cl_new_requests.empty()) {
         curl_request *cr = this->cl_new_requests.back();
@@ -183,7 +172,7 @@ void curl_looper::check_for_new_requests() {
     }
     while (!this->cl_close_requests.empty()) {
         const std::string &name = this->cl_close_requests.back();
-        vector<curl_request *>::iterator all_iter = find_if(
+        auto all_iter = find_if(
                 this->cl_all_requests.begin(),
                 this->cl_all_requests.end(),
                 curl_request_eq(name));
@@ -219,7 +208,7 @@ void curl_looper::check_for_new_requests() {
 
         this->cl_close_requests.pop_back();
 
-        pthread_cond_broadcast(&this->cl_cond);
+        this->cl_cond.notify_all();
     }
 }
 
@@ -228,13 +217,14 @@ void curl_looper::check_for_finished_requests()
     CURLMsg *msg;
     int msgs_left;
 
-    while ((msg = curl_multi_info_read(this->cl_curl_multi, &msgs_left)) != NULL) {
+    while ((msg = curl_multi_info_read(this->cl_curl_multi, &msgs_left)) !=
+        nullptr) {
         if (msg->msg != CURLMSG_DONE) {
             continue;
         }
 
         CURL *easy = msg->easy_handle;
-        map<CURL *, curl_request *>::iterator iter = this->cl_handle_to_request.find(easy);
+        auto iter = this->cl_handle_to_request.find(easy);
 
         curl_multi_remove_handle(this->cl_curl_multi, easy);
         if (iter != this->cl_handle_to_request.end()) {
@@ -249,7 +239,7 @@ void curl_looper::check_for_finished_requests()
                 log_info("%s:curl_request %p finished, deleting...",
                          cr->get_name().c_str(), cr);
                 {
-                    mutex_guard mg(this->cl_mutex);
+                    std::unique_lock<std::mutex> mg(this->cl_mutex);
 
                     all_iter = find(this->cl_all_requests.begin(),
                                     this->cl_all_requests.end(),
@@ -257,7 +247,7 @@ void curl_looper::check_for_finished_requests()
                     if (all_iter != this->cl_all_requests.end()) {
                         this->cl_all_requests.erase(all_iter);
                     }
-                    pthread_cond_broadcast(&cl_cond);
+                    this->cl_cond.notify_all();
                 }
                 delete cr;
             }
@@ -266,8 +256,7 @@ void curl_looper::check_for_finished_requests()
                           cr->get_name().c_str(),
                           cr,
                           delay_ms);
-                this->cl_poll_queue.push_back(
-                        make_pair(getmstime() + delay_ms, cr));
+                this->cl_poll_queue.emplace_back(getmstime() + delay_ms, cr);
                 sort(this->cl_poll_queue.begin(), this->cl_poll_queue.end());
             }
         }

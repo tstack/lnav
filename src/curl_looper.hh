@@ -35,9 +35,10 @@
 #include <atomic>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
-#ifndef HAVE_LIBCURL
+#if !defined(HAVE_LIBCURL)
 
 typedef int CURLcode;
 
@@ -57,17 +58,20 @@ public:
 };
 
 #else
+#include <mutex>
+#include <thread>
+#include <condition_variable>
+
 #include <curl/curl.h>
 
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "lnav_util.hh"
-#include "base/pthreadpp.hh"
 
 class curl_request {
 public:
-    curl_request(const std::string &name)
-            : cr_name(name),
+    curl_request(std::string name)
+            : cr_name(std::move(name)),
               cr_open(true),
               cr_handle(curl_easy_cleanup),
               cr_completions(0) {
@@ -77,7 +81,7 @@ public:
         curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGFUNCTION, debug_cb);
         curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGDATA, this);
         curl_easy_setopt(this->cr_handle, CURLOPT_VERBOSE, 1);
-        if (getenv("SSH_AUTH_SOCK") != NULL) {
+        if (getenv("SSH_AUTH_SOCK") != nullptr) {
             curl_easy_setopt(this->cr_handle, CURLOPT_SSH_AUTH_TYPES,
 #ifdef CURLSSH_AUTH_AGENT
                              CURLSSH_AUTH_AGENT|
@@ -86,9 +90,7 @@ public:
         }
     };
 
-    virtual ~curl_request() {
-
-    };
+    virtual ~curl_request() = default;
 
     const std::string &get_name() const {
         return this->cr_name;
@@ -98,7 +100,7 @@ public:
         this->cr_open = false;
     };
 
-    bool is_open() {
+    bool is_open() const {
         return this->cr_open;
     };
 
@@ -146,34 +148,27 @@ public:
               cl_looping(true),
               cl_curl_multi(curl_multi_cleanup) {
         this->cl_curl_multi.reset(curl_multi_init());
-        pthread_mutex_init(&this->cl_mutex, NULL);
-        pthread_cond_init(&this->cl_cond, NULL);
     };
 
     ~curl_looper() {
         this->stop();
-        pthread_cond_destroy(&this->cl_cond);
-        pthread_mutex_destroy(&this->cl_mutex);
     }
 
     void start() {
-        if (pthread_create(&this->cl_thread, NULL, trampoline, this) == 0) {
-            this->cl_started = true;
-        }
+        this->cl_thread = std::thread(&curl_looper::run, this);
+        this->cl_started = true;
     };
 
     void stop() {
         if (this->cl_started) {
-            void *result;
-
             this->cl_looping = false;
             {
-                mutex_guard mg(this->cl_mutex);
+                std::unique_lock<std::mutex> mg(this->cl_mutex);
 
-                pthread_cond_broadcast(&this->cl_cond);
+                this->cl_cond.notify_all();
             }
             log_debug("waiting for curl_looper thread");
-            pthread_join(this->cl_thread, &result);
+            this->cl_thread.join();
             log_debug("curl_looper thread joined");
             this->cl_started = false;
         }
@@ -192,20 +187,20 @@ public:
     };
 
     void add_request(curl_request *cr) {
-        mutex_guard mg(this->cl_mutex);
+        std::unique_lock<std::mutex> mg(this->cl_mutex);
 
-        require(cr != NULL);
+        require(cr != nullptr);
 
         this->cl_all_requests.push_back(cr);
         this->cl_new_requests.push_back(cr);
-        pthread_cond_broadcast(&this->cl_cond);
+        this->cl_cond.notify_all();
     };
 
     void close_request(const std::string &name) {
-        mutex_guard mg(this->cl_mutex);
+        std::unique_lock<std::mutex> mg(this->cl_mutex);
 
         this->cl_close_requests.push_back(name);
-        pthread_cond_broadcast(&this->cl_cond);
+        this->cl_cond.notify_all();
     };
 
 private:
@@ -231,14 +226,12 @@ private:
         return retval;
     };
 
-    static void *trampoline(void *arg);
-
     bool cl_started;
-    pthread_t cl_thread;
+    std::thread cl_thread;
     std::atomic<bool> cl_looping;
     auto_mem<CURLM> cl_curl_multi;
-    pthread_mutex_t cl_mutex;
-    pthread_cond_t cl_cond;
+    std::mutex cl_mutex;
+    std::condition_variable cl_cond;
     std::vector<curl_request *> cl_all_requests;
     std::vector<curl_request *> cl_new_requests;
     std::vector<std::string> cl_close_requests;
