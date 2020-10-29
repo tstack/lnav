@@ -212,6 +212,9 @@ public:
         vis_line_t height;
 
         this->get_dimensions(height, width);
+        if (height <= 0) {
+            return;
+        }
         if (this->lv_selection >= (this->lv_top + height - 1)) {
             this->set_top(this->lv_selection - height + 2_vl, true);
         } else if (this->lv_selection < this->lv_top) {
@@ -359,9 +362,12 @@ public:
     /** @return The line number that is displayed at the bottom. */
     vis_line_t get_bottom() const
     {
-        vis_line_t retval = this->lv_top;
+        auto retval = this->lv_top;
+        auto avail = this->rows_available(retval, RD_DOWN);
 
-        retval += vis_line_t(this->rows_available(retval, RD_DOWN) - 1);
+        if (avail > 0) {
+            retval += vis_line_t(avail - 1);
+        }
 
         return retval;
     };

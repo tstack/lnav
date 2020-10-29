@@ -265,6 +265,7 @@ struct _lnav_data {
     unsigned long                           ld_flags;
     WINDOW *                                ld_window;
     ln_mode_t                               ld_mode;
+    ln_mode_t                               ld_last_config_mode{LNM_FILTER};
 
     statusview_curses                       ld_status[LNS__MAX];
     top_status_source                       ld_top_source;

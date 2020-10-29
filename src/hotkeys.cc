@@ -850,8 +850,34 @@ bool handle_paging_key(int ch)
 
                 tc->reload_data();
             } else if (tc_tss != nullptr && tc_tss->tss_supports_filtering) {
-                lnav_data.ld_mode = LNM_FILTER;
+                lnav_data.ld_mode = lnav_data.ld_last_config_mode;
                 lnav_data.ld_filter_view.reload_data();
+                lnav_data.ld_files_view.reload_data();
+                if (tc->get_inner_height() > 0_vl) {
+                    string_attrs_t::const_iterator line_attr;
+                    std::vector<attr_line_t> rows(1);
+
+                    tc->get_data_source()->
+                        listview_value_for_rows(*tc, tc->get_top(), rows);
+                    string_attrs_t &sa = rows[0].get_attrs();
+                    line_attr = find_string_attr(sa, &logline::L_FILE);
+                    if (line_attr != sa.end()) {
+                        const auto &fc = lnav_data.ld_active_files;
+                        auto lf = ((logfile *)line_attr->sa_value.sav_ptr)->
+                            shared_from_this();
+                        auto iter = find(fc.fc_files.begin(),
+                                         fc.fc_files.end(),
+                                         lf);
+                        if (iter != fc.fc_files.end()) {
+                            auto index = distance(fc.fc_files.begin(), iter);
+                            auto index_vl = vis_line_t(index);
+
+                            log_debug("index %d", index);
+                            lnav_data.ld_files_view.set_top(index_vl);
+                            lnav_data.ld_files_view.set_selection(index_vl);
+                        }
+                    }
+                }
             } else {
                 alerter::singleton().chime();
             }

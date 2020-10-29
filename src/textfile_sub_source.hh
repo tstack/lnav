@@ -30,7 +30,7 @@
 #ifndef textfile_sub_source_hh
 #define textfile_sub_source_hh
 
-#include <list>
+#include <deque>
 
 #include "logfile.hh"
 #include "textview_curses.hh"
@@ -39,7 +39,7 @@
 class textfile_sub_source
     : public text_sub_source, public vis_location_history {
 public:
-    typedef std::list<std::shared_ptr<logfile>>::iterator file_iterator;
+    typedef std::deque<std::shared_ptr<logfile>>::iterator file_iterator;
 
     textfile_sub_source() {
         this->tss_supports_filtering = true;
@@ -53,18 +53,7 @@ public:
         return this->tss_files.size();
     }
 
-    size_t text_line_count()
-    {
-        size_t retval = 0;
-
-        if (!this->tss_files.empty()) {
-            std::shared_ptr<logfile> lf = this->current_file();
-            line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
-            retval = lfo->lfo_filter_state.tfs_index.size();
-        }
-
-        return retval;
-    };
+    size_t text_line_count();
 
     size_t text_line_width(textview_curses &curses) {
         return this->tss_files.empty() ? 0 : this->current_file()->get_longest_line_length();
@@ -73,47 +62,13 @@ public:
     void text_value_for_line(textview_curses &tc,
                              int line,
                              std::string &value_out,
-                             line_flags_t flags)
-    {
-        if (!this->tss_files.empty()) {
-            std::shared_ptr<logfile> lf = this->current_file();
-            line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
-            auto read_result = lf->read_line(lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
-            if (read_result.isOk()) {
-                value_out = to_string(read_result.unwrap());
-            }
-        }
-        else {
-            value_out.clear();
-        }
-    };
+                             line_flags_t flags);
 
     void text_attrs_for_line(textview_curses &tc,
                              int row,
-                             string_attrs_t &value_out)
-    {
-        if (this->current_file() == nullptr) {
-            return;
-        }
+                             string_attrs_t &value_out);
 
-        struct line_range lr;
-
-        lr.lr_start = 0;
-        lr.lr_end   = -1;
-        value_out.push_back(string_attr(lr, &logline::L_FILE, this->current_file().get()));
-    };
-
-    size_t text_size_for_line(textview_curses &tc, int line, line_flags_t flags) {
-        size_t retval = 0;
-
-        if (!this->tss_files.empty()) {
-            std::shared_ptr<logfile> lf = this->current_file();
-            line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
-            retval = lf->line_length(lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
-        }
-
-        return retval;
-    };
+    size_t text_size_for_line(textview_curses &tc, int line, line_flags_t flags);
 
     std::shared_ptr<logfile> current_file() const
     {
@@ -132,46 +87,18 @@ public:
         return this->tss_files.front()->get_filename();
     };
 
-    void to_front(std::shared_ptr<logfile> lf) {
-        this->tss_files.remove(lf);
-        this->tss_files.push_front(lf);
-        this->tss_view->reload_data();
-    };
+    void to_front(const std::shared_ptr<logfile>& lf);
 
-    void rotate_left() {
-        if (this->tss_files.size() > 1) {
-            this->tss_files.push_back(this->tss_files.front());
-            this->tss_files.pop_front();
-            this->tss_view->reload_data();
-            this->tss_view->redo_search();
-        }
-    };
+    void rotate_left();
 
-    void rotate_right() {
-        if (this->tss_files.size() > 1) {
-            this->tss_files.push_front(this->tss_files.back());
-            this->tss_files.pop_back();
-            this->tss_view->reload_data();
-            this->tss_view->redo_search();
-        }
-    };
+    void rotate_right();
 
-    void remove(std::shared_ptr<logfile> lf) {
-        auto iter = std::find(this->tss_files.begin(),
-                this->tss_files.end(), lf);
-        if (iter != this->tss_files.end()) {
-            this->tss_files.erase(iter);
-            detach_observer(lf);
-        }
-    };
+    void remove(const std::shared_ptr<logfile>& lf);
 
-    void push_back(std::shared_ptr<logfile> lf) {
-        auto *lfo = new line_filter_observer(this->get_filters(), lf);
-        lf->set_logline_observer(lfo);
-        this->tss_files.push_back(lf);
-    };
+    void push_back(const std::shared_ptr<logfile>& lf);
 
-    template<class T> bool rescan_files(T &callback) {
+    template<class T>
+    bool rescan_files(T &callback) {
         file_iterator iter;
         bool retval = false;
 
@@ -213,7 +140,7 @@ public:
                 uint32_t filter_in_mask, filter_out_mask;
 
                 this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
-                line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+                auto *lfo = (line_filter_observer *) lf->get_logline_observer();
                 for (uint32_t lpc = old_size; lpc < lf->size(); lpc++) {
                     if (this->tss_apply_filters &&
                         lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
@@ -240,61 +167,13 @@ public:
         return retval;
     };
 
-    void text_filters_changed() {
-        std::shared_ptr<logfile> lf = this->current_file();
+    void text_filters_changed();
 
-        if (lf == nullptr) {
-            return;
-        }
+    int get_filtered_count() const;
 
-        line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
-        uint32_t filter_in_mask, filter_out_mask;
+    int get_filtered_count_for(size_t filter_index) const;
 
-        lfo->clear_deleted_filter_state();
-        lf->reobserve_from(lf->begin() + lfo->get_min_count(lf->size()));
-
-        this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
-        lfo->lfo_filter_state.tfs_index.clear();
-        for (uint32_t lpc = 0; lpc < lf->size(); lpc++) {
-            if (this->tss_apply_filters &&
-                lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
-                continue;
-            }
-            lfo->lfo_filter_state.tfs_index.push_back(lpc);
-        }
-
-        this->tss_view->redo_search();
-    };
-
-    int get_filtered_count() const {
-        std::shared_ptr<logfile> lf = this->current_file();
-        int retval = 0;
-
-        if (lf != nullptr) {
-            line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
-            retval = lf->size() - lfo->lfo_filter_state.tfs_index.size();
-        }
-        return retval;
-    }
-
-    int get_filtered_count_for(size_t filter_index) const {
-        std::shared_ptr<logfile> lf = this->current_file();
-
-        if (lf == nullptr) {
-            return 0;
-        }
-
-        line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
-        return lfo->lfo_filter_state.tfs_filter_hits[filter_index];
-    }
-
-    text_format_t get_text_format() const {
-        if (this->tss_files.empty()) {
-            return text_format_t::TF_UNKNOWN;
-        }
-
-        return this->tss_files.front()->get_text_format();
-    }
+    text_format_t get_text_format() const;
 
     nonstd::optional<location_history *> get_location_history()
     {
@@ -303,12 +182,13 @@ public:
 
 private:
     void detach_observer(std::shared_ptr<logfile> lf) {
-        line_filter_observer *lfo = (line_filter_observer *) lf->get_logline_observer();
+        auto *lfo = (line_filter_observer *) lf->get_logline_observer();
         lf->set_logline_observer(nullptr);
         delete lfo;
     };
 
-    std::list<std::shared_ptr<logfile>> tss_files;
+    std::deque<std::shared_ptr<logfile>> tss_files;
+    std::deque<std::shared_ptr<logfile>> tss_hidden_files;
 };
 
 #endif

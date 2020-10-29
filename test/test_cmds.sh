@@ -17,8 +17,16 @@ run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":hide-file" \
     ${test_dir}/logfile_access_log.*
 
-check_output "prev-location is not working" <<EOF
+check_output "hide-file with log file does not work" <<EOF
 10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":hide-file" \
+    ${test_dir}/textfile_json_indented.0
+
+check_output "hide-file with text file does not work" <<EOF
 EOF
 
 

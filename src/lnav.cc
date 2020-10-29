@@ -1289,6 +1289,7 @@ static bool handle_key(int ch) {
 
                 case LNM_FILTER:
                     if (ch == 'F') {
+                        lnav_data.ld_last_config_mode = LNM_FILES;
                         lnav_data.ld_mode = LNM_FILES;
                         lnav_data.ld_files_view.reload_data();
                     } else if (!lnav_data.ld_filter_view.handle_key(ch)) {
@@ -1297,6 +1298,7 @@ static bool handle_key(int ch) {
                     break;
                 case LNM_FILES:
                     if (ch == 'T') {
+                        lnav_data.ld_last_config_mode = LNM_FILTER;
                         lnav_data.ld_mode = LNM_FILTER;
                         lnav_data.ld_filter_view.reload_data();
                     } else if (!lnav_data.ld_files_view.handle_key(ch)) {

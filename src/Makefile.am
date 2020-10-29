@@ -440,6 +440,7 @@ libdiag_a_SOURCES = \
 	string-extension-functions.cc \
 	styling.cc \
 	text_format.cc \
+	textfile_sub_source.cc \
 	timer.cc \
 	piper_proc.cc \
 	sql_util.cc \

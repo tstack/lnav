@@ -305,6 +305,7 @@ add_library(diag STATIC
         strnatcmp.c
         text_format.cc
         textfile_highlighters.cc
+        textfile_sub_source.cc
         textview_curses.cc
         time-extension-functions.cc
         timer.cc
