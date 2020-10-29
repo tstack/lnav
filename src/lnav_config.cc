@@ -48,6 +48,7 @@
 #include "pcrecpp.h"
 
 #include "auto_fd.hh"
+#include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "lnav_util.hh"
 #include "auto_mem.hh"
@@ -55,7 +56,6 @@
 #include "lnav_config.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
-#include "shlex.hh"
 #include "styling.hh"
 #include "bin2c.h"
 #include "default-config.h"

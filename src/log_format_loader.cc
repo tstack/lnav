@@ -39,10 +39,10 @@
 
 #include <map>
 #include <string>
-#include <fstream>
 
 #include "fmt/format.h"
 
+#include "base/string_util.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 #include "lnav_config.hh"

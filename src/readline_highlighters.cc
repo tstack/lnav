@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include "base/string_util.hh"
 #include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
 #include "shlex.hh"

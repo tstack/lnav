@@ -29,15 +29,9 @@
 
 #include "config.h"
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
-#include "logfile.hh"
-#include "auto_mem.hh"
 #include "base/lnav_log.hh"
+#include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
-#include "file_vtab.hh"
 #include "vtab_module.hh"
 
 using namespace std;
@@ -55,8 +49,6 @@ enum {
 };
 
 struct regexp_capture {
-    using iterator = vector<logfile *>::iterator;
-
     static constexpr const char *CREATE_STMT = R"(
 -- The regexp_capture() table-valued function allows you to execute a regular-
 -- expression over a given string and get the captured data as rows in a table.

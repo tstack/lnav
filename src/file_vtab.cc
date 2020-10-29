@@ -29,14 +29,11 @@
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 
 #include "lnav.hh"
-#include "auto_mem.hh"
 #include "base/lnav_log.hh"
-#include "sql_util.hh"
 #include "file_vtab.hh"
 #include "session_data.hh"
 #include "vtab_module.hh"

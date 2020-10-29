@@ -36,7 +36,6 @@
 
 #include "shlex.hh"
 #include "fmt/format.h"
-#include "pcrepp/pcrepp.hh"
 #include "lnav_util.hh"
 #include "data_parser.hh"
 #include "ansi_scrubber.hh"

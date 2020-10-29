@@ -29,8 +29,8 @@
  * @file session_data.hh
  */
 
-#ifndef _session_data_hh
-#define _session_data_hh
+#ifndef lnav_session_data_hh
+#define lnav_session_data_hh
 
 #include <map>
 #include <string>

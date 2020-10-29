@@ -99,45 +99,6 @@ std::string hash_bytes(const char *str1, size_t s1len, ...)
     return hash.to_string();
 }
 
-size_t unquote(char *dst, const char *str, size_t len)
-{
-    if (str[0] == 'r' || str[0] == 'u') {
-        str += 1;
-        len -= 1;
-    }
-    char quote_char = str[0];
-    size_t index = 0;
-
-    require(str[0] == '\'' || str[0] == '"');
-
-    for (size_t lpc = 1; lpc < (len - 1); lpc++, index++) {
-        dst[index] = str[lpc];
-        if (str[lpc] == quote_char) {
-            lpc += 1;
-        }
-        else if (str[lpc] == '\\' && (lpc + 1) < len) {
-            switch (str[lpc + 1]) {
-                case 'n':
-                    dst[index] = '\n';
-                    break;
-                case 'r':
-                    dst[index] = '\r';
-                    break;
-                case 't':
-                    dst[index] = '\t';
-                    break;
-                default:
-                    dst[index] = str[lpc + 1];
-                    break;
-            }
-            lpc += 1;
-        }
-    }
-    dst[index] = '\0';
-
-    return index;
-}
-
 std::string time_ago(time_t last_time, bool convert_local)
 {
     time_t      delta, current_time = time(NULL);

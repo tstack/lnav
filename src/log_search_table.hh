@@ -29,8 +29,8 @@
  * @file log_search_table.hh
  */
 
-#ifndef _log_search_table_hh
-#define _log_search_table_hh
+#ifndef lnav_log_search_table_hh
+#define lnav_log_search_table_hh
 
 #include <string>
 #include <vector>

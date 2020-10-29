@@ -1,5 +1,3 @@
-#include <utility>
-
 /**
  * Copyright (c) 2007-2012, Timothy Stack
  *
@@ -176,8 +174,8 @@ public:
     };
 
     static bookmark_type_t *find_type(const std::string &name) {
-        type_iterator iter = find_if(type_begin(), type_end(), mark_eq(name));
-        bookmark_type_t *retval = NULL;
+        auto iter = find_if(type_begin(), type_end(), mark_eq(name));
+        bookmark_type_t *retval = nullptr;
 
         if (iter != type_end()) {
             retval = (*iter);

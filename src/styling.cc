@@ -29,8 +29,6 @@
 
 #include "config.h"
 
-#include <stdlib.h>
-
 #include <string>
 
 #include "yajlpp/yajlpp.hh"

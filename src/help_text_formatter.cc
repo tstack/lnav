@@ -29,13 +29,11 @@
 
 #include "config.h"
 
-#include <numeric>
 #include <algorithm>
 
 #include <pcrecpp.h>
 
 #include "fmt/format.h"
-#include "lnav_util.hh"
 #include "ansi_scrubber.hh"
 #include "help_text_formatter.hh"
 #include "readline_highlighters.hh"

@@ -19,6 +19,7 @@
 
 #include "pcrepp/pcrepp.hh"
 
+#include "base/string_util.hh"
 #include "yajlpp/yajlpp.hh"
 #include "column_namer.hh"
 #include "yajl/api/yajl_gen.h"
@@ -340,7 +341,9 @@ int string_extension_functions(struct FuncDef **basic_funcs,
                 })
         ),
 
-        sqlite_func_adapter<decltype(&endswith), endswith>::builder(
+        sqlite_func_adapter<decltype(
+            static_cast<bool (*)(const char *, const char *)>(&endswith)),
+            endswith>::builder(
             help_text("endswith",
                       "Test if a string ends with the given suffix")
                 .sql_function()

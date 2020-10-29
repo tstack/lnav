@@ -32,21 +32,13 @@
 #ifndef _column_namer_hh
 #define _column_namer_hh
 
-#include <map>
 #include <string>
 #include <vector>
-#include <algorithm>
 #include <unordered_map>
-
-#include "sql_util.hh"
-#include "lnav_util.hh"
 
 class column_namer {
 public:
-    column_namer()
-    {
-        this->cn_builtin_names.emplace_back("col");
-    };
+    column_namer() : cn_builtin_names({"col"}) {}
 
     bool existing_name(const std::string &in_name) const;
 

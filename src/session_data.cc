@@ -35,7 +35,6 @@
 #include <glob.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <dirent.h>
 
 #include "spookyhash/SpookyV2.h"
 

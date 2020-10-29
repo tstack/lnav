@@ -32,8 +32,6 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <string.h>
-#include <stdio.h>
 
 #include "strnatcmp.h"
 

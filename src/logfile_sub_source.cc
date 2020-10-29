@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <sqlite3.h>
 
+#include "base/string_util.hh"
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "log_accel.hh"
@@ -87,7 +88,7 @@ static future<string> pretty_pipe_callback(exec_context &ec,
 
         string retval = ss.str();
 
-        if (endswith(retval.c_str(), "\n")) {
+        if (endswith(retval, "\n")) {
             retval.resize(retval.length() - 1);
         }
 

@@ -29,8 +29,8 @@
  * @file lnav_config.hh
  */
 
-#ifndef _lnav_config_hh
-#define _lnav_config_hh
+#ifndef lnav_config_hh
+#define lnav_config_hh
 
 #include <map>
 #include <string>

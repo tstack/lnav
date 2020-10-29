@@ -29,8 +29,8 @@
  * @file ansi_scrubber.hh
  */
 
-#ifndef _ansi_scrubber_hh
-#define _ansi_scrubber_hh
+#ifndef lnav_ansi_scrubber_hh
+#define lnav_ansi_scrubber_hh
 
 #include <map>
 #include <string>

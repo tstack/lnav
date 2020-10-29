@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _bottom_status_source_hh
-#define _bottom_status_source_hh
+#ifndef lnav_bottom_status_source_hh
+#define lnav_bottom_status_source_hh
 
 #include <string>
 
@@ -58,7 +58,7 @@ public:
 
     bottom_status_source();
 
-    virtual ~bottom_status_source() { };
+    virtual ~bottom_status_source() = default;
 
     lv_functor_t line_number_wire;
     lv_functor_t percent_wire;

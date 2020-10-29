@@ -29,8 +29,8 @@
  * @file log_data_table.hh
  */
 
-#ifndef _log_data_table_hh
-#define _log_data_table_hh
+#ifndef lnav_log_data_table_hh
+#define lnav_log_data_table_hh
 
 #include <string>
 #include <vector>

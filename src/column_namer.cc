@@ -31,6 +31,11 @@
 
 #include "config.h"
 
+#include <algorithm>
+
+#include "sql_util.hh"
+#include "lnav_util.hh"
+
 #include "base/lnav_log.hh"
 #include "column_namer.hh"
 
@@ -42,15 +47,15 @@ bool column_namer::existing_name(const std::string &in_name) const
         return true;
     }
 
-    if (find(this->cn_builtin_names.begin(),
-             this->cn_builtin_names.end(),
-             in_name) != this->cn_builtin_names.end()) {
+    if (std::find(this->cn_builtin_names.begin(),
+                  this->cn_builtin_names.end(),
+                  in_name) != this->cn_builtin_names.end()) {
         return true;
     }
 
-    if (find(this->cn_names.begin(),
-             this->cn_names.end(),
-             in_name) != this->cn_names.end()) {
+    if (std::find(this->cn_names.begin(),
+                  this->cn_names.end(),
+                  in_name) != this->cn_names.end()) {
         return true;
     }
 

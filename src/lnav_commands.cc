@@ -41,6 +41,7 @@
 #include <pcrecpp.h>
 #include <yajl/api/yajl_tree.h>
 
+#include "base/string_util.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"

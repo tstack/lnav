@@ -32,8 +32,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <strings.h>
 
+#include "base/string_util.hh"
 #include "fmt/format.h"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
@@ -96,6 +96,131 @@ struct line_range logline_value::origin_in_full_msg(const char *msg, ssize_t len
     }
 
     return retval;
+}
+
+logline_value::logline_value(const intern_string_t name,
+                             logline_value::kind_t kind, shared_buffer_ref &sbr,
+                             bool ident, const scaling_factor *scaling, int col,
+                             int start, int end, bool from_module,
+                             const log_format *format)
+    : lv_name(name), lv_kind(kind),
+      lv_identifier(ident), lv_column(col), lv_hidden(false), lv_sub_offset(0),
+      lv_origin(start, end),
+      lv_from_module(from_module),
+      lv_format(format)
+{
+    if (sbr.get_data() == nullptr) {
+        this->lv_kind = kind = VALUE_NULL;
+    }
+
+    switch (kind) {
+        case VALUE_JSON:
+        case VALUE_STRUCT:
+        case VALUE_TEXT:
+        case VALUE_QUOTED:
+        case VALUE_TIMESTAMP:
+            this->lv_sbr.subset(sbr, start, end - start);
+            break;
+
+        case VALUE_NULL:
+            break;
+
+        case VALUE_INTEGER:
+            strtonum(this->lv_value.i, sbr.get_data_at(start), end - start);
+            if (scaling != NULL) {
+                scaling->scale(this->lv_value.i);
+            }
+            break;
+
+        case VALUE_FLOAT: {
+            ssize_t len = end - start;
+            char scan_value[len + 1];
+
+            memcpy(scan_value, sbr.get_data_at(start), len);
+            scan_value[len] = '\0';
+            this->lv_value.d = strtod(scan_value, NULL);
+            if (scaling != NULL) {
+                scaling->scale(this->lv_value.d);
+            }
+            break;
+        }
+
+        case VALUE_BOOLEAN:
+            if (strncmp(sbr.get_data_at(start), "true", end - start) == 0 ||
+                strncmp(sbr.get_data_at(start), "yes", end - start) == 0) {
+                this->lv_value.i = 1;
+            }
+            else {
+                this->lv_value.i = 0;
+            }
+            break;
+
+        case VALUE_UNKNOWN:
+        case VALUE__MAX:
+            ensure(0);
+            break;
+    }
+}
+
+std::string logline_value::to_string() const
+{
+    char buffer[128];
+
+    switch (this->lv_kind) {
+        case VALUE_NULL:
+            return "null";
+
+        case VALUE_JSON:
+        case VALUE_STRUCT:
+        case VALUE_TEXT:
+        case VALUE_TIMESTAMP:
+            if (this->lv_sbr.empty()) {
+                return this->lv_intern_string.to_string();
+            }
+            return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
+
+        case VALUE_QUOTED:
+            if (this->lv_sbr.length() == 0) {
+                return "";
+            } else {
+                switch (this->lv_sbr.get_data()[0]) {
+                    case '\'':
+                    case '"': {
+                        char unquoted_str[this->lv_sbr.length()];
+                        size_t unquoted_len;
+
+                        unquoted_len = unquote(unquoted_str, this->lv_sbr.get_data(),
+                                               this->lv_sbr.length());
+                        return std::string(unquoted_str, unquoted_len);
+                    }
+                    default:
+                        return std::string(this->lv_sbr.get_data(), this->lv_sbr.length());
+                }
+            }
+
+        case VALUE_INTEGER:
+            snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_value.i);
+            break;
+
+        case VALUE_FLOAT:
+            snprintf(buffer, sizeof(buffer), "%lf", this->lv_value.d);
+            break;
+
+        case VALUE_BOOLEAN:
+            if (this->lv_value.i) {
+                return "true";
+            }
+            else {
+                return "false";
+            }
+            break;
+        case VALUE_UNKNOWN:
+        case VALUE__MAX:
+            ensure(0);
+            break;
+    }
+
+    return std::string(buffer);
 }
 
 vector<log_format *> log_format::lf_root_formats;

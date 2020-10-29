@@ -99,8 +99,6 @@ inline std::string toupper(const std::string &str)
     return toupper(str.c_str());
 }
 
-size_t unquote(char *dst, const char *str, size_t len);
-
 #undef rounddown
 
 /**
@@ -255,27 +253,6 @@ inline bool is_glob(const char *fn)
 };
 
 bool is_url(const char *fn);
-
-inline bool startswith(const char *str, const char *prefix)
-{
-    return strncmp(str, prefix, strlen(prefix)) == 0;
-}
-
-inline bool startswith(const std::string &str, const char *prefix)
-{
-    return startswith(str.c_str(), prefix);
-}
-
-inline bool endswith(const char *str, const char *suffix)
-{
-    size_t len = strlen(str), suffix_len = strlen(suffix);
-
-    if (suffix_len > len) {
-        return false;
-    }
-
-    return strcmp(&str[len - suffix_len], suffix) == 0;
-}
 
 std::string build_path(const std::vector<ghc::filesystem::path> &paths);
 

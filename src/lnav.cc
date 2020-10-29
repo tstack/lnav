@@ -83,6 +83,7 @@
 #include "help-txt.h"
 #include "init-sql.h"
 #include "logfile.hh"
+#include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "log_accel.hh"
 #include "lnav_util.hh"

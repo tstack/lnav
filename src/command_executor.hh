@@ -39,7 +39,6 @@
 #include "optional.hpp"
 #include "auto_fd.hh"
 #include "attr_line.hh"
-#include "textview_curses.hh"
 #include "shlex.hh"
 
 struct exec_context;

@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "view_curses.hh"
+#include "base/string_util.hh"
 #include "pretty_printer.hh"
 
 void pretty_printer::append_to(attr_line_t &al)
@@ -168,7 +168,7 @@ void pretty_printer::write_element(const pretty_printer::element &el)
             this->pp_stream
                 << std::endl
                 << result.get_string();
-            if (!endswith(result.get_string().c_str(), "\n")) {
+            if (result.empty() || result.get_string().back() != '\n') {
                 this->pp_stream << std::endl;
             }
             this->pp_stream

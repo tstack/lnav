@@ -39,8 +39,6 @@
 #include "view_curses.hh"
 #include "ansi_scrubber.hh"
 #include "lnav_config.hh"
-#include "yajlpp/yajlpp.hh"
-#include "yajlpp/yajlpp_def.hh"
 #include "attr_line.hh"
 #include "shlex.hh"
 

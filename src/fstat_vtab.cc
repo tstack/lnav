@@ -30,14 +30,11 @@
 #include "config.h"
 
 #include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <glob.h>
 #include <grp.h>
 #include <pwd.h>
 
-#include "auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"

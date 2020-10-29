@@ -55,6 +55,7 @@
 
 #include <string>
 
+#include "base/string_util.hh"
 #include "lnav_config.hh"
 #include "pcrepp/pcrepp.hh"
 #include "shlex.hh"
@@ -244,7 +245,7 @@ char *readline_context::completion_generator(const char *text, int state)
                      cmpfunc(text, &poss_str[1], len) == 0)) {
                     auto poss_slash_count = std::count(poss.begin(), poss.end(), '/');
 
-                    if (endswith(poss.c_str(), "/")) {
+                    if (endswith(poss, "/")) {
                         poss_slash_count -= 1;
                     }
                     if (std::count(&text[0], &text[len], '/') == poss_slash_count) {
@@ -273,7 +274,7 @@ char *readline_context::completion_generator(const char *text, int state)
                         }
 
                         auto poss_slash_count = std::count(poss_str.begin(), poss_str.end(), '/');
-                        if (endswith(poss.c_str(), "/")) {
+                        if (endswith(poss, "/")) {
                             poss_slash_count -= 1;
                         }
                         if (std::count(&text[0], &text[len], '/') == poss_slash_count) {

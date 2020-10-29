@@ -31,25 +31,23 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
-#include "sql_util.hh"
 #include "environ_vtab.hh"
 
 using namespace std;
 
 extern char **environ;
 
-const char *ENVIRON_CREATE_STMT = "\
--- Access lnav's environment variables through this table.\n\
-CREATE TABLE environ (\n\
-    name text PRIMARY KEY,\n\
-    value text\n\
-);\n\
-";
+const char *ENVIRON_CREATE_STMT = R"(
+-- Access lnav's environment variables through this table.
+CREATE TABLE environ (
+    name text PRIMARY KEY,
+    value text
+);
+)";
 
 struct vtab {
     sqlite3_vtab        base;

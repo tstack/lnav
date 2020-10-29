@@ -30,10 +30,46 @@
 #ifndef lnav_string_util_hh
 #define lnav_string_util_hh
 
+#include <string.h>
+#include <string>
+
 void scrub_to_utf8(char *buffer, size_t length);
 
 inline bool is_line_ending(char ch) {
     return ch == '\r' || ch == '\n';
+}
+
+size_t unquote(char *dst, const char *str, size_t len);
+
+inline bool startswith(const char *str, const char *prefix)
+{
+    return strncmp(str, prefix, strlen(prefix)) == 0;
+}
+
+inline bool startswith(const std::string &str, const char *prefix)
+{
+    return startswith(str.c_str(), prefix);
+}
+
+inline bool endswith(const char *str, const char *suffix)
+{
+    size_t len = strlen(str), suffix_len = strlen(suffix);
+
+    if (suffix_len > len) {
+        return false;
+    }
+
+    return strcmp(&str[len - suffix_len], suffix) == 0;
+}
+
+template<int N>
+inline bool endswith(const std::string& str, const char (&suffix) [N])
+{
+    if (N > str.length()) {
+        return false;
+    }
+
+    return strcmp(&str[str.size() - N], suffix) == 0;
 }
 
 #endif

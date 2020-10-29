@@ -30,19 +30,15 @@
 #ifndef pretty_printer_hh
 #define pretty_printer_hh
 
-#include <sys/time.h>
 #include <sys/types.h>
-#include <signal.h>
 
 #include <stack>
 #include <deque>
 #include <sstream>
-#include <iomanip>
 #include <utility>
 
 #include "attr_line.hh"
 #include "data_scanner.hh"
-#include "lnav_util.hh"
 
 class pretty_printer {
 

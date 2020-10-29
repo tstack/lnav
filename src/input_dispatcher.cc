@@ -54,7 +54,7 @@
 #include "lnav_util.hh"
 
 template<typename A>
-static void to_key_seq(A &dst, char *src)
+static void to_key_seq(A &dst, const char *src)
 {
     dst[0] = '\0';
     for (size_t lpc = 0; src[lpc]; lpc++) {
