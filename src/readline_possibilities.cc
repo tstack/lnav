@@ -125,8 +125,8 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
 
 static void add_text_possibilities(readline_curses *rlc, int context, const string &type, const std::string &str)
 {
-    static pcrecpp::RE re_escape("([.\\^$*+?()\\[\\]{}\\\\|])");
-    static pcrecpp::RE re_escape_no_dot("([\\^$*+?()\\[\\]{}\\\\|])");
+    static pcrecpp::RE re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
+    static pcrecpp::RE re_escape_no_dot(R"(([\^$*+?()\[\]{}\\|]))");
 
     pcre_context_static<30> pc;
     data_scanner ds(str);
@@ -263,6 +263,28 @@ void add_filter_possibilities(textview_curses *tc)
         else {
             rc->add_possibility(LNM_COMMAND, "disabled-filter", tf->get_id());
         }
+    }
+}
+
+void add_file_possibilities()
+{
+    static pcrecpp::RE sh_escape(R"(([\s\'\"]+))");
+
+    readline_curses *rc = lnav_data.ld_rl_view;
+
+    rc->clear_possibilities(LNM_COMMAND, "visible-files");
+    rc->clear_possibilities(LNM_COMMAND, "hidden-files");
+    for (const auto& lf : lnav_data.ld_files) {
+        if (lf.get() == nullptr) {
+            continue;
+        }
+
+        auto escaped_fn = lf->get_filename();
+        sh_escape.GlobalReplace(R"(\\\1)", &escaped_fn);
+
+        rc->add_possibility(LNM_COMMAND,
+                            lf->is_visible() ? "visible-files" : "hidden-files",
+                            escaped_fn);
     }
 }
 

@@ -3,6 +3,13 @@
 lnav_test="${top_builddir}/src/lnav-test"
 
 run_test ${lnav_test} -n \
+    -c ";UPDATE lnav_file SET visible=0" \
+    ${test_dir}/logfile_access_log.0
+
+check_output "file is not hidden?" <<EOF
+EOF
+
+run_test ${lnav_test} -n \
     -c ";UPDATE lnav_file SET filepath='foo' WHERE endswith(filepath, '_log.0')" \
     ${test_dir}/logfile_access_log.0
 

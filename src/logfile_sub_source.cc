@@ -735,6 +735,11 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
             content_line_t cl = (content_line_t) this->lss_index[index_index];
             uint64_t line_number;
             logfile_data *ld = this->find_data(cl, line_number);
+
+            if (!ld->get_file()->is_visible()) {
+                continue;
+            }
+
             auto line_iter = ld->get_file()->begin() + line_number;
 
             if (!this->tss_apply_filters ||
@@ -876,6 +881,11 @@ void logfile_sub_source::text_filters_changed()
         content_line_t cl = (content_line_t) this->lss_index[index_index];
         uint64_t line_number;
         logfile_data *ld = this->find_data(cl, line_number);
+
+        if (!ld->get_file()->is_visible()) {
+            continue;
+        }
+
         auto line_iter = ld->get_file()->begin() + line_number;
 
         if (!this->tss_apply_filters ||

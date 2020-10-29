@@ -286,7 +286,7 @@
 
   **See Also:**
 
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
 
@@ -390,7 +390,7 @@
 
   **See Also:**
 
-    :ref:`enable_filter`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+    :ref:`enable_filter`, :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
 
@@ -456,7 +456,7 @@
 
   **See Also:**
 
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
 
@@ -528,7 +528,7 @@
 
   **See Also:**
 
-    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
 
@@ -554,7 +554,7 @@
 
   **See Also:**
 
-    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_in`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+    :ref:`delete_filter`, :ref:`disable_filter`, :ref:`filter_in`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
 
@@ -640,6 +640,21 @@
 ----
 
 
+.. _hide_file:
+
+:hide-file *path*
+^^^^^^^^^^^^^^^^^
+
+  Hide the given file(s) and skip indexing until it is shown again.  If no path is given, the current file in the view is hidden
+
+  **Parameters:**
+
+    * **path** --- A path or glob pattern that specifies the files to hide
+
+
+----
+
+
 .. _hide_lines_after:
 
 :hide-lines-after *date*
@@ -667,7 +682,7 @@
 
   **See Also:**
 
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`, :ref:`toggle_filtering`
 
 ----
 
@@ -699,7 +714,7 @@
 
   **See Also:**
 
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_unmarked_lines`, :ref:`show_lines_before_and_after`, :ref:`toggle_filtering`
 
 ----
 
@@ -713,7 +728,7 @@
 
   **See Also:**
 
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`
 
 ----
 
@@ -1201,6 +1216,21 @@
 ----
 
 
+.. _show_file:
+
+:show-file *path*
+^^^^^^^^^^^^^^^^^
+
+  Show the given file(s) and resume indexing.
+
+  **Parameters:**
+
+    * **path** --- The path or glob pattern that specifies the files to show
+
+
+----
+
+
 .. _show_lines_before_and_after:
 
 :show-lines-before-and-after
@@ -1210,7 +1240,7 @@
 
   **See Also:**
 
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`toggle_filtering`
 
 ----
 
@@ -1224,7 +1254,7 @@
 
   **See Also:**
 
-    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`toggle_filtering`
 
 ----
 
@@ -1331,6 +1361,9 @@
 
   Toggle the filtering flag for the current view
 
+  **See Also:**
+
+    :ref:`filter_in`, :ref:`filter_out`, :ref:`hide_lines_after`, :ref:`hide_lines_before`, :ref:`hide_unmarked_lines`
 
 ----
 

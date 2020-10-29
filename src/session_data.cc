@@ -805,7 +805,9 @@ static int read_filtering(yajlpp_parse_context *ypc, int value)
     else if (view_index < LNV__MAX) {
         textview_curses &tc = lnav_data.ld_views[view_index];
 
-        tc.get_sub_source()->tss_apply_filters = value;
+        if (tc.get_sub_source() != nullptr) {
+            tc.get_sub_source()->tss_apply_filters = value;
+        }
     }
 
     return 1;

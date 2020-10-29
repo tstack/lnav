@@ -36,6 +36,17 @@ EOF
         echo "archived file is writable"
         exit 1
     fi
+
+    run_test env TMPDIR=tmp ${lnav_test} -n \
+        -c ';SELECT basename(filepath), visible FROM lnav_file' \
+        test-logs.tgz
+
+    check_output "archive files not loaded correctly" <<EOF
+ basename(filepath)  visible
+logfile_access_log.0       1
+logfile_access_log.1       1
+logfile_empty.0            0
+EOF
 fi
 
 touch unreadable.log

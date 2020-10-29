@@ -31,6 +31,7 @@
 
 #include <glob.h>
 #include <sys/stat.h>
+#include <fnmatch.h>
 
 #include <string>
 #include <vector>
@@ -2058,6 +2059,121 @@ static Result<string, string> com_close(exec_context &ec, string cmdline, vector
     return Ok(retval);
 }
 
+static Result<string, string> com_file_visibility(exec_context &ec, string cmdline, vector<string> &args)
+{
+    bool make_visible = args[0] == "show-file";
+    string retval;
+
+    if (args.size() == 1) {
+        textview_curses *tc = *lnav_data.ld_view_stack.top();
+        shared_ptr<logfile> lf;
+
+        if (tc == &lnav_data.ld_views[LNV_TEXT]) {
+            textfile_sub_source &tss = lnav_data.ld_text_source;
+
+            if (tss.empty()) {
+                return ec.make_error("no text files are opened");
+            } else {
+                lf = tss.current_file();
+            }
+        } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            if (tc->get_inner_height() == 0) {
+                return ec.make_error("no log files loaded");
+            } else {
+                logfile_sub_source &lss = lnav_data.ld_log_source;
+                vis_line_t vl = tc->get_top();
+                content_line_t cl = lss.at(vl);
+                lf = lss.find(cl);
+            }
+        } else {
+            return ec.make_error(
+                ":{} must be run in the log or text file views", args[0]);
+        }
+
+        if (!ec.ec_dry_run) {
+            lf->set_visibility(make_visible);
+            tc->get_sub_source()->text_filters_changed();
+        }
+        retval = fmt::format("{} file -- {}",
+                             make_visible ? "showing" : "hiding",
+                             lf->get_filename());
+    } else {
+        int text_file_count = 0, log_file_count = 0;
+        auto lexer = shlex(cmdline);
+
+        lexer.split(args, ec.create_resolver());
+        args.erase(args.begin());
+
+        for (const auto &lf : lnav_data.ld_files) {
+            if (lf.get() == nullptr) {
+                continue;
+            }
+
+            if (lf->is_visible() == make_visible) {
+                continue;
+            }
+
+            auto find_iter = find_if(args.begin(), args.end(),
+                                     [&lf](const auto &arg) {
+                                         return fnmatch(arg.c_str(),
+                                                        lf->get_filename().c_str(),
+                                                        0) == 0;
+                                     });
+
+            if (find_iter == args.end()) {
+                continue;
+            }
+
+            if (!ec.ec_dry_run) {
+                lf->set_visibility(make_visible);
+            }
+            if (lf->get_format() != nullptr) {
+                log_file_count += 1;
+            } else {
+                text_file_count += 1;
+            }
+        }
+        if (!ec.ec_dry_run && log_file_count > 0) {
+            lnav_data.ld_views[LNV_LOG].get_sub_source()->text_filters_changed();
+        }
+        if (!ec.ec_dry_run && text_file_count > 0) {
+            lnav_data.ld_views[LNV_TEXT].get_sub_source()->text_filters_changed();
+        }
+        retval = fmt::format("{} {} log files and {} text files",
+                             make_visible ? "showing" : "hiding",
+                             log_file_count,
+                             text_file_count);
+    }
+
+    return Ok(retval);
+}
+
+static Result<string, string> com_hide_file(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+        args.emplace_back("visible-files");
+    } else {
+        return com_file_visibility(ec, cmdline, args);
+    }
+
+    return Ok(retval);
+}
+
+static Result<string, string> com_show_file(exec_context &ec, string cmdline, vector<string> &args)
+{
+    string retval;
+
+    if (args.empty()) {
+        args.emplace_back("hidden-files");
+    } else {
+        return com_file_visibility(ec, cmdline, args);
+    }
+
+    return Ok(retval);
+}
+
 static Result<string, string> com_comment(exec_context &ec, string cmdline, vector<string> &args)
 {
     string retval;
@@ -3954,6 +4070,7 @@ static void command_prompt(vector<string> &args)
     add_config_possibilities();
     add_env_possibilities(LNM_COMMAND);
     add_tag_possibilities();
+    add_file_possibilities();
     lnav_data.ld_mode = LNM_COMMAND;
     lnav_data.ld_rl_view->focus(LNM_COMMAND,
                                 cget(args, 2).value_or(":"),
@@ -4689,6 +4806,32 @@ readline_context::command_t STD_COMMANDS[] = {
             })
     },
     {
+        "hide-file",
+        com_hide_file,
+
+        help_text(":hide-file")
+            .with_summary("Hide the given file(s) and skip indexing until it "
+                          "is shown again.  If no path is given, the current "
+                          "file in the view is hidden")
+            .with_parameter(help_text{
+                "path",
+                "A path or glob pattern that specifies the files to hide"}
+                .zero_or_more())
+            .with_opposites({"show-file"})
+    },
+    {
+        "show-file",
+        com_show_file,
+
+        help_text(":show-file")
+            .with_summary("Show the given file(s) and resume indexing.")
+            .with_parameter(help_text{
+                "path",
+                "The path or glob pattern that specifies the files to show"}
+                .zero_or_more())
+            .with_opposites({"hide-file"})
+    },
+    {
         "close",
         com_close,
 
@@ -4851,6 +4994,7 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":toggle-filtering")
             .with_summary("Toggle the filtering flag for the current view")
+            .with_tags({"filtering"})
     },
     {
         "reset-session",

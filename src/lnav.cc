@@ -237,7 +237,7 @@ static void regenerate_unique_file_names()
 {
     unique_path_generator upg;
 
-    for (auto lf : lnav_data.ld_files) {
+    for (const auto& lf : lnav_data.ld_files) {
         upg.add_source(shared_ptr<logfile>(lf));
     }
 
@@ -980,14 +980,34 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
 
                 case file_format_t::FF_ARCHIVE: {
                     archive_manager::walk_archive_files(filename,
-                                            [&filename](const auto& entry) {
-                        logfile_open_options loo;
+                                            [&filename](const auto& tmp_path,
+                                                        const auto& entry) {
+                        auto ext = entry.path().extension();
+                        if (ext == ".jar" || ext == ".war" || ext == ".zip") {
+                            return;
+                        }
+
+                        auto arc_path = ghc::filesystem::relative(
+                            entry.path(), tmp_path);
+                        auto custom_name = filename / arc_path;
+                        bool is_visible = true;
+
+                        if (entry.file_size() == 0) {
+                            log_info("hiding empty archive file: %s",
+                                     entry.path().c_str());
+                            is_visible = false;
+                        }
 
                         log_info("adding file from archive: %s/%s",
                                  filename.c_str(),
                                  entry.path().c_str());
                         // TODO add some heuristics for hiding files
-                        lnav_data.ld_file_names[entry.path().string()] = loo;
+                        lnav_data.ld_file_names[entry.path().string()] =
+                            logfile_open_options()
+                                .with_filename(custom_name.string())
+                                .with_visibility(is_visible)
+                                .with_non_utf_visibility(false)
+                                .with_visible_size_limit(128 * 1024);
                     });
                     lnav_data.ld_other_files.emplace_back(filename);
                     break;
@@ -1010,7 +1030,7 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
             }
         }
     }
-    else {
+    else if ((*file_iter)->is_valid_filename()) {
         /* The file is already loaded, but has been found under a different
          * name.  We just need to update the stored file name.
          */
@@ -1026,14 +1046,14 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
  * @param path     The glob pattern to expand.
  * @param required Passed to watch_logfile.
  */
-static void expand_filename(string path, bool required)
+static void expand_filename(const string& path, logfile_open_options &loo, bool required)
 {
     static_root_mem<glob_t, globfree> gl;
 
     if (is_url(path.c_str())) {
         return;
     }
-    else if (glob(path.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+    else if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
         int lpc;
 
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
@@ -1052,15 +1072,13 @@ static void expand_filename(string path, bool required)
         for (lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
             auto_mem<char> abspath;
 
-            if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) == NULL) {
+            if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) == nullptr) {
                 if (required) {
                     fprintf(stderr, "Cannot find file: %s -- %s",
                         gl->gl_pathv[lpc], strerror(errno));
                 }
             }
             else if (required || access(abspath.in(), R_OK) == 0) {
-                logfile_open_options loo;
-
                 watch_logfile(abspath.in(), loo, required);
             }
         }
@@ -1076,11 +1094,11 @@ bool rescan_files(bool required)
          iter != lnav_data.ld_file_names.end();
          iter++) {
         if (iter->second.loo_fd == -1) {
-            expand_filename(iter->first, required);
+            expand_filename(iter->first, iter->second, required);
             if (lnav_data.ld_flags & LNF_ROTATED) {
                 string path = iter->first + ".*";
 
-                expand_filename(path, false);
+                expand_filename(path, iter->second, false);
             }
         } else {
             retval = retval ||

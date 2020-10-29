@@ -64,7 +64,7 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
         char resolved_path[PATH_MAX];
 
         errno = 0;
-        if (realpath(filename.c_str(), resolved_path) == NULL) {
+        if (realpath(filename.c_str(), resolved_path) == nullptr) {
             throw error(resolved_path, errno);
         }
 
@@ -95,17 +95,19 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
         this->lf_valid_filename = false;
     }
 
+    if (!loo.loo_filename.empty()) {
+        this->set_filename(loo.loo_filename);
+        this->lf_valid_filename = false;
+    }
+
     this->lf_content_id = hash_string(this->lf_filename);
     this->lf_line_buffer.set_fd(loo.loo_fd);
     this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
     this->lf_options = loo;
+    this->lf_is_visible = loo.loo_is_visible;
 
     ensure(this->invariant());
-}
-
-logfile::~logfile()
-{
 }
 
 bool logfile::exists() const
@@ -247,7 +249,7 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
                  */
                 last_time = ll.get_time();
                 last_millis = ll.get_millis();
-                if (this->lf_format.get() != NULL) {
+                if (this->lf_format.get() != nullptr) {
                     last_level = (log_level_t)(ll.get_level_and_flags() |
                         LEVEL_CONTINUED);
                 }
@@ -272,6 +274,10 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
 
 logfile::rebuild_result_t logfile::rebuild_index()
 {
+    if (!this->lf_is_visible) {
+        return logfile::rebuild_result_t::RR_NO_NEW_LINES;
+    }
+
     rebuild_result_t retval = RR_NO_NEW_LINES;
     struct stat st;
 
@@ -305,6 +311,10 @@ logfile::rebuild_result_t logfile::rebuild_index()
 
         if (record_rusage) {
             getrusage(RUSAGE_SELF, &begin_rusage);
+        }
+
+        if (begin_size == 0 && !has_format) {
+            log_debug("scanning file... %s", this->lf_filename.c_str());
         }
 
         if (!this->lf_index.empty()) {
@@ -341,13 +351,16 @@ logfile::rebuild_result_t logfile::rebuild_index()
         else {
             off = 0;
         }
-        if (this->lf_logline_observer != NULL) {
+        if (this->lf_logline_observer != nullptr) {
             this->lf_logline_observer->logline_restart(*this, rollback_size);
         }
 
         bool sort_needed = this->lf_sort_needed;
         this->lf_sort_needed = false;
 
+        if (!has_format) {
+            log_debug("loading file... %s", this->lf_filename.c_str());
+        }
         auto prev_range = file_range{off};
         while (true) {
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
@@ -363,6 +376,14 @@ logfile::rebuild_result_t logfile::rebuild_index()
                 break;
             }
             prev_range = li.li_file_range;
+
+            if (!this->lf_options.loo_non_utf_is_visible && !li.li_valid_utf) {
+                log_info("file is not utf, hiding: %s",
+                         this->lf_filename.c_str());
+                this->lf_is_visible = false;
+                this->lf_options.loo_non_utf_is_visible = true;
+                break;
+            }
 
             size_t old_size = this->lf_index.size();
 
@@ -410,6 +431,19 @@ logfile::rebuild_result_t logfile::rebuild_index()
             if (!has_format && this->lf_format != nullptr) {
                 break;
             }
+            if (begin_size == 0 && !has_format &&
+                li.li_file_range.fr_offset > 32 * 1024) {
+                break;
+            }
+        }
+
+        if (this->lf_format == nullptr &&
+            this->lf_options.loo_visible_size_limit > 0 &&
+            st.st_size >= this->lf_options.loo_visible_size_limit) {
+            log_info("file has unknown format and is too large: %s",
+                     this->lf_filename.c_str());
+            this->lf_is_visible = false;
+            this->lf_options.loo_visible_size_limit = -1;
         }
 
         if (this->lf_logline_observer != nullptr) {

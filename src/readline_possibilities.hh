@@ -41,6 +41,7 @@ void add_filter_possibilities(textview_curses *tc);
 void add_mark_possibilities();
 void add_config_possibilities();
 void add_tag_possibilities();
+void add_file_possibilities();
 
 extern struct sqlite_metadata_callbacks lnav_sql_meta_callbacks;
 

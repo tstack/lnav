@@ -2,6 +2,16 @@
 
 run_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":goto 0" \
+    -c ":hide-file" \
+    ${test_dir}/logfile_access_log.*
+
+check_output "prev-location is not working" <<EOF
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+
+run_test ${lnav_test} -n -d /tmp/lnav.err \
+    -c ":goto 0" \
     -c ":next-mark error" \
     -c ":prev-location" \
     ${test_dir}/logfile_access_log.0

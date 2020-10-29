@@ -75,7 +75,10 @@ public:
 };
 
 struct logfile_open_options {
-    logfile_open_options() : loo_detect_format(true) {
+    logfile_open_options &with_filename(const std::string& val) {
+        this->loo_filename = val;
+
+        return *this;
     };
 
     logfile_open_options &with_fd(auto_fd fd) {
@@ -96,19 +99,37 @@ struct logfile_open_options {
         return *this;
     };
 
+    logfile_open_options &with_visibility(bool val) {
+        this->loo_is_visible = val;
+
+        return *this;
+    }
+
+    logfile_open_options &with_non_utf_visibility(bool val) {
+        this->loo_non_utf_is_visible = val;
+
+        return *this;
+    };
+
+    logfile_open_options &with_visible_size_limit(ssize_t val) {
+        this->loo_visible_size_limit = val;
+
+        return *this;
+    }
+
+    std::string loo_filename;
     auto_fd loo_fd;
-    bool loo_detect_format;
+    bool loo_detect_format{true};
     bool loo_include_in_session{true};
+    bool loo_is_visible{true};
+    bool loo_non_utf_is_visible{true};
+    ssize_t loo_visible_size_limit{-1};
 };
 
 struct logfile_activity {
-    logfile_activity() {
-        memset(this, 0, sizeof(*this));
-    };
-
-    int64_t la_polls;
-    int64_t la_reads;
-    struct rusage la_initial_index_rusage;
+    int64_t la_polls{0};
+    int64_t la_reads{0};
+    struct rusage la_initial_index_rusage{};
 };
 
 /**
@@ -117,11 +138,15 @@ struct logfile_activity {
 class logfile : public unique_path_source {
 public:
 
-    class error {
+    class error : public std::exception {
 public:
         error(std::string filename, int err)
             : e_filename(std::move(filename)),
               e_err(err) { };
+
+        const char *what() const noexcept override {
+            return strerror(this->e_err);
+        };
 
         std::string e_filename;
         int         e_err;
@@ -140,7 +165,7 @@ public:
      */
     logfile(const std::string &filename, logfile_open_options &loo);
 
-    virtual ~logfile();
+    virtual ~logfile() = default;
 
     const logfile_activity &get_activity() const {
         return this->lf_activity;
@@ -256,6 +281,22 @@ public:
 
     /** @return True if this log file still exists. */
     bool exists() const;
+
+    void hide() {
+        this->lf_is_visible = false;
+    }
+
+    void show() {
+        this->lf_is_visible = true;
+    }
+
+    void set_visibility(bool value) {
+        this->lf_is_visible = value;
+    }
+
+    bool is_visible() const {
+        return this->lf_is_visible;
+    }
 
     void close() {
         this->lf_is_closed = true;
@@ -393,6 +434,7 @@ protected:
     int lf_time_offset_line{0};
     struct timeval lf_time_offset{0, 0};
     bool lf_is_closed{false};
+    bool lf_is_visible{true};
     bool lf_partial_line{false};
     logline_observer *lf_logline_observer{nullptr};
     logfile_observer *lf_logfile_observer{nullptr};

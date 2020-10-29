@@ -96,6 +96,7 @@ filename_to_tmp_path(const std::string &filename)
 
 void walk_archive_files(const std::string &filename,
                         const std::function<void(
+                            const fs::path&,
                             const fs::directory_entry &)>& callback)
 {
     auto tmp_path = filename_to_tmp_path(filename);
@@ -110,7 +111,7 @@ void walk_archive_files(const std::string &filename,
             continue;
         }
 
-        callback(entry);
+        callback(tmp_path, entry);
     }
 }
 
@@ -165,6 +166,7 @@ void extract(const std::string &filename)
         struct archive_entry *entry;
         auto r = archive_read_next_header(arc, &entry);
         if (r == ARCHIVE_EOF) {
+            log_info("all done");
             break;
         }
         if (r < ARCHIVE_OK) {

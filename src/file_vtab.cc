@@ -54,7 +54,8 @@ CREATE TABLE lnav_file (
     filepath text,        -- The path to the file.
     format text,          -- The log file format for the file.
     lines integer,        -- The number of lines in the file.
-    time_offset integer   -- The millisecond offset for timestamps.
+    time_offset integer,  -- The millisecond offset for timestamps.
+    visible integer       -- Indicates whether or not this file is being shown.
 );
 )";
 
@@ -105,6 +106,9 @@ CREATE TABLE lnav_file (
                 to_sqlite(ctx, ms);
                 break;
             }
+            case 6:
+                to_sqlite(ctx, (int64_t) lf->is_visible());
+                break;
             default:
                 ensure(0);
                 break;
@@ -132,7 +136,8 @@ CREATE TABLE lnav_file (
                    std::string path,
                    const char *format,
                    int64_t lines,
-                   int64_t time_offset) {
+                   int64_t time_offset,
+                   bool visible) {
         auto lf = lnav_data.ld_files[rowid];
         struct timeval tv = {
             (int) (time_offset / 1000LL),
@@ -163,6 +168,10 @@ CREATE TABLE lnav_file (
             }
         }
 
+        if (lf->is_visible() != visible) {
+            lf->set_visibility(visible);
+            lnav_data.ld_log_source.text_filters_changed();
+        }
 
         return SQLITE_OK;
     };
