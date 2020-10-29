@@ -825,6 +825,16 @@ void view_colors::init_roles(const lnav_theme &lt,
     this->vc_role_colors[VCR_STATUS_SUBTITLE] = this->to_attrs(
         color_pair_base, lt, lt.lt_style_status_subtitle, lt.lt_style_status, reporter);
 
+    this->vc_role_colors[VCR_STATUS_HOTKEY] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_status_hotkey, lt.lt_style_status,
+        reporter);
+    this->vc_role_colors[VCR_STATUS_TITLE_HOTKEY] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_status_title_hotkey, lt.lt_style_status,
+        reporter);
+    this->vc_role_colors[VCR_STATUS_DISABLED_TITLE] = this->to_attrs(
+        color_pair_base, lt, lt.lt_style_status_disabled_title, lt.lt_style_status,
+        reporter);
+
     {
         style_config stitch_sc;
 

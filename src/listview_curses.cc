@@ -321,6 +321,20 @@ void listview_curses::do_update()
 #endif
 }
 
+void listview_curses::shift_selection(int offset)
+{
+    vis_line_t new_selection = this->lv_selection + vis_line_t(offset);
+
+    if (new_selection >= 0_vl &&
+        new_selection < this->get_inner_height()) {
+        this->set_selection(new_selection);
+        this->scroll_selection_into_view();
+    } else if (!alerter::singleton().chime()) {
+        // XXX Disabling for now...
+        // this->delegate_scroll_out();
+    }
+}
+
 static int scroll_polarity(mouse_button_t button)
 {
     return button == BUTTON_SCROLL_UP ? -1 : 1;

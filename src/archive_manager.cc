@@ -133,27 +133,12 @@ filename_to_tmp_path(const std::string &filename)
     return tmp_path / fs::path(subdir_name) / basename;
 }
 
-void walk_archive_files(const std::string &filename,
-                        const std::function<void(
-                            const fs::path&,
-                            const fs::directory_entry &)>& callback)
-{
-    auto tmp_path = filename_to_tmp_path(filename);
-
-    extract(filename);
-
-    for (const auto& entry : fs::recursive_directory_iterator(tmp_path)) {
-        if (!entry.is_regular_file()) {
-            continue;
-        }
-
-        callback(tmp_path, entry);
-    }
-}
-
 #if HAVE_ARCHIVE_H
 static int
-copy_data(const ghc::filesystem::path &path, struct archive *ar, struct archive *aw)
+copy_data(const ghc::filesystem::path &path,
+          struct archive *ar,
+          struct archive *aw,
+          struct extract_progress *ep)
 {
     int r;
     const void *buff;
@@ -175,6 +160,7 @@ copy_data(const ghc::filesystem::path &path, struct archive *ar, struct archive 
         }
 
         total += size;
+        ep->ep_out_size.fetch_add(size);
 
         if ((total - last_space_check) > (1024 * 1024)) {
             auto tmp_space = ghc::filesystem::space(path);
@@ -187,7 +173,7 @@ copy_data(const ghc::filesystem::path &path, struct archive *ar, struct archive 
     }
 }
 
-void extract(const std::string &filename)
+static void extract(const std::string &filename, const extract_cb &cb)
 {
     static int FLAGS = ARCHIVE_EXTRACT_TIME
                        | ARCHIVE_EXTRACT_PERM
@@ -221,7 +207,9 @@ void extract(const std::string &filename)
         return;
     }
 
-    log_info("extracting %s to %s", filename.c_str(), tmp_path.c_str());
+    log_info("extracting %s to %s",
+             filename.c_str(),
+             tmp_path.c_str());
     while (true) {
         struct archive_entry *entry;
         auto r = archive_read_next_header(arc, &entry);
@@ -239,6 +227,9 @@ void extract(const std::string &filename)
         auto_mem<archive_entry> wentry(archive_entry_free);
         wentry = archive_entry_clone(entry);
         auto entry_path = tmp_path / fs::path(archive_entry_pathname(entry));
+        auto prog = cb(entry_path,
+                       archive_entry_size_is_set(entry) ?
+                       archive_entry_size(entry) : -1);
         archive_entry_copy_pathname(wentry, entry_path.c_str());
         auto entry_mode = archive_entry_mode(wentry);
 
@@ -249,7 +240,7 @@ void extract(const std::string &filename)
             log_error("%s", archive_error_string(ext));
         }
         else if (archive_entry_size(entry) > 0) {
-            r = copy_data(tmp_path, arc, ext);
+            r = copy_data(tmp_path, arc, ext, prog);
             if (r < ARCHIVE_OK) {
                 log_error("%s", archive_error_string(ext));
             }
@@ -272,11 +263,28 @@ void extract(const std::string &filename)
 
     // TODO return errors
 }
-#else
-void extract(const std::string &filename)
-{
-
-}
 #endif
+
+void walk_archive_files(const std::string &filename,
+                        const extract_cb &cb,
+                        const std::function<void(
+                            const fs::path&,
+                            const fs::directory_entry &)>& callback)
+{
+#if HAVE_ARCHIVE_H
+
+    auto tmp_path = filename_to_tmp_path(filename);
+
+    extract(filename, cb);
+
+    for (const auto& entry : fs::recursive_directory_iterator(tmp_path)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+
+        callback(tmp_path, entry);
+    }
+#endif
+}
 
 }

@@ -748,11 +748,7 @@ static int read_top_line(yajlpp_parse_context *ypc, long long value)
                      ypc->get_path_fragment(-2));
     view_index = view_name - lnav_view_strings;
     if (view_index < LNV__MAX) {
-        textview_curses &tc = lnav_data.ld_views[view_index];
-
-        if (value != -1 && value < tc.get_inner_height()) {
-            tc.set_top(vis_line_t(value));
-        }
+        session_data.sd_view_states[view_index].vs_top = value;
     }
 
     return 1;

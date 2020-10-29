@@ -4123,6 +4123,7 @@ static void search_prompt(vector<string> &args)
 static void search_filters_prompt(vector<string> &args)
 {
     lnav_data.ld_mode = LNM_SEARCH_FILTERS;
+    lnav_data.ld_filter_view.reload_data();
     add_view_text_possibilities(lnav_data.ld_rl_view,
                                 LNM_SEARCH_FILTERS,
                                 "*",

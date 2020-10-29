@@ -90,6 +90,11 @@
                         "background-color": "Blue",
                         "bold": true
                     },
+                    "disabled-title": {
+                        "color": "Black",
+                        "background-color": "Silver",
+                        "bold": true
+                    },
                     "subtitle": {
                         "color": "Black",
                         "background-color": "Teal"
@@ -113,6 +118,17 @@
                     "inactive": {
                         "color": "Silver",
                         "background-color": "Grey37"
+                    },
+                    "title-hotkey": {
+                        "color": "Teal",
+                        "background-color": "Blue",
+                        "underline": true
+                    },
+                    "hotkey": {
+                        "color": "Purple",
+                        "background-color": "Silver",
+                        "underline": true,
+                        "bold": true
                     }
                 },
                 "log-level-styles": {

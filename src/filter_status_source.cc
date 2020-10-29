@@ -33,7 +33,7 @@
 #include "filter_status_source.hh"
 
 static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
-static auto EXIT_MSG = "Press " ANSI_BOLD("TAB") " to exit ";
+static auto EXIT_MSG = "Press " ANSI_BOLD("q") " to exit ";
 
 static auto CREATE_HELP = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
 static auto ENABLE_HELP = ANSI_BOLD("SPC") ": ";
@@ -45,9 +45,11 @@ static auto JUMP_HELP = ANSI_BOLD("ENTER") ": Jump To";
 
 filter_status_source::filter_status_source()
 {
-    this->tss_fields[TSF_TITLE].set_width(9);
+    this->tss_fields[TSF_TITLE].set_width(14);
     this->tss_fields[TSF_TITLE].set_role(view_colors::VCR_STATUS_TITLE);
-    this->tss_fields[TSF_TITLE].set_value(" Filters ");
+    this->tss_fields[TSF_TITLE].set_value(
+        " " ANSI_ROLE("T") "ext Filters ",
+        view_colors::VCR_STATUS_TITLE_HOTKEY);
 
     this->tss_fields[TSF_STITCH_TITLE].set_width(2);
     this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
@@ -61,6 +63,18 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_FILTERED].set_min_width(20);
     this->tss_fields[TSF_FILTERED].set_share(1);
     this->tss_fields[TSF_FILTERED].set_role(view_colors::VCR_STATUS);
+
+    this->tss_fields[TSF_FILES_TITLE].set_width(7);
+    this->tss_fields[TSF_FILES_TITLE].set_role(
+        view_colors::VCR_STATUS_DISABLED_TITLE);
+    this->tss_fields[TSF_FILES_TITLE].set_value(
+        " " ANSI_ROLE("F") "iles ",
+        view_colors::VCR_STATUS_HOTKEY);
+
+    this->tss_fields[TSF_FILES_RIGHT_STITCH].set_width(2);
+    this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
+        view_colors::VCR_STATUS,
+        view_colors::VCR_STATUS);
 
     this->tss_fields[TSF_HELP].right_justify(true);
     this->tss_fields[TSF_HELP].set_width(20);
@@ -77,10 +91,55 @@ filter_status_source::filter_status_source()
 
 size_t filter_status_source::statusview_fields()
 {
-    if (lnav_data.ld_mode == LNM_FILTER) {
-        this->tss_fields[TSF_HELP].set_value(EXIT_MSG);
+    switch (lnav_data.ld_mode) {
+        case LNM_SEARCH_FILTERS:
+        case LNM_SEARCH_FILES:
+            this->tss_fields[TSF_HELP].set_value("");
+            break;
+        case LNM_FILTER:
+        case LNM_FILES:
+            this->tss_fields[TSF_HELP].set_value(EXIT_MSG);
+            break;
+        default:
+            this->tss_fields[TSF_HELP].set_value(TOGGLE_MSG);
+            break;
+    }
+
+    if (lnav_data.ld_mode == LNM_FILES ||
+        lnav_data.ld_mode == LNM_SEARCH_FILES) {
+        this->tss_fields[TSF_FILES_TITLE].set_value(
+            " " ANSI_ROLE("F") "iles ",
+            view_colors::VCR_STATUS_TITLE_HOTKEY);
+        this->tss_fields[TSF_FILES_TITLE]
+            .set_role(view_colors::VCR_STATUS_TITLE);
+        this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
+            view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+            view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+        this->tss_fields[TSF_TITLE].set_value(
+            " " ANSI_ROLE("T") "ext Filters ",
+            view_colors::VCR_STATUS_HOTKEY);
+        this->tss_fields[TSF_TITLE]
+            .set_role(view_colors::VCR_STATUS_DISABLED_TITLE);
+        this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
+            view_colors::VCR_STATUS,
+            view_colors::VCR_STATUS);
     } else {
-        this->tss_fields[TSF_HELP].set_value(TOGGLE_MSG);
+        this->tss_fields[TSF_FILES_TITLE].set_value(
+            " " ANSI_ROLE("F") "iles ",
+            view_colors::VCR_STATUS_HOTKEY);
+        this->tss_fields[TSF_FILES_TITLE]
+            .set_role(view_colors::VCR_STATUS_DISABLED_TITLE);
+        this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
+            view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE,
+            view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL);
+        this->tss_fields[TSF_TITLE].set_value(
+            " " ANSI_ROLE("T") "ext Filters ",
+            view_colors::VCR_STATUS_TITLE_HOTKEY);
+        this->tss_fields[TSF_TITLE]
+            .set_role(view_colors::VCR_STATUS_TITLE);
+        this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
+            view_colors::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+            view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
     }
 
     if (this->tss_prompt.empty() && this->tss_error.empty()) {
@@ -164,7 +223,7 @@ void filter_status_source::update_filtered(text_sub_source *tss)
             this->bss_last_filtered_count = tss->get_filtered_count();
             timer.start_fade(this->bss_filter_counter, 3);
         }
-        sf.set_value("%'9d Lines not shown", tss->get_filtered_count());
+        sf.set_value("%'9d Lines not shown ", tss->get_filtered_count());
     }
 }
 
@@ -222,13 +281,22 @@ size_t filter_help_status_source::statusview_fields()
             }
         } else if (lnav_data.ld_mode == LNM_FILES &&
                    lnav_data.ld_session_loaded) {
-            if (lnav_data.ld_active_files.fc_files.empty()) {
+            const auto &fc = lnav_data.ld_active_files;
+
+            if (fc.fc_files.empty() && fc.fc_other_files.empty()) {
                 this->fss_help.clear();
                 return;
             }
 
             auto &lv = lnav_data.ld_files_view;
-            auto sel = lv.get_selection();
+            auto sel = (int) lv.get_selection();
+
+            if (sel < fc.fc_other_files.size()) {
+                this->fss_help.clear();
+                return;
+            }
+            sel -= fc.fc_other_files.size();
+
             auto &lf = lnav_data.ld_active_files.fc_files[sel];
 
             this->fss_help.set_value("  %s%s  %s",

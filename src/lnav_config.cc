@@ -669,10 +669,22 @@ static struct json_path_container theme_status_styles_handlers = {
             return &root->lt_style_inactive_status;
         })
         .with_children(style_config_handlers),
+    yajlpp::property_handler("title-hotkey")
+        .with_description("Styling for hotkey highlights in titles")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_status_title_hotkey;
+        })
+        .with_children(style_config_handlers),
     yajlpp::property_handler("title")
         .with_description("Styling for title sections of status bars")
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_status_title;
+        })
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("disabled-title")
+        .with_description("Styling for title sections of status bars")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_status_disabled_title;
         })
         .with_children(style_config_handlers),
     yajlpp::property_handler("subtitle")
@@ -680,7 +692,13 @@ static struct json_path_container theme_status_styles_handlers = {
         .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
             return &root->lt_style_status_subtitle;
         })
-        .with_children(style_config_handlers)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("hotkey")
+        .with_description("Styling for hotkey highlights of status bars")
+        .with_obj_provider<style_config, lnav_theme>([](const yajlpp_provider_context &ypc, lnav_theme *root) {
+            return &root->lt_style_status_hotkey;
+        })
+        .with_children(style_config_handlers),
 };
 
 static struct json_path_container theme_log_level_styles_handlers = {

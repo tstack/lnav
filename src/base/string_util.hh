@@ -72,4 +72,6 @@ inline bool endswith(const std::string& str, const char (&suffix) [N])
     return strcmp(&str[str.size() - N], suffix) == 0;
 }
 
+void truncate_to(std::string &str, size_t len);
+
 #endif

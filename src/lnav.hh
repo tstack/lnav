@@ -70,6 +70,7 @@
 #include "filter_status_source.hh"
 #include "preview_status_source.hh"
 #include "sql_util.hh"
+#include "archive_manager.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -184,17 +185,10 @@ private:
 };
 
 struct key_repeat_history {
-    key_repeat_history()
-        : krh_key(0),
-          krh_count(0) {
-        this->krh_last_press_time.tv_sec = 0;
-        this->krh_last_press_time.tv_usec = 0;
-    }
-
-    int krh_key;
-    int krh_count;
-    vis_line_t krh_start_line;
-    struct timeval krh_last_press_time;
+    int krh_key{0};
+    int krh_count{0};
+    vis_line_t krh_start_line{0_vl};
+    struct timeval krh_last_press_time{0, 0};
 
     void update(int ch, vis_line_t top) {
         struct timeval now, diff;
@@ -217,6 +211,11 @@ struct key_repeat_history {
     };
 };
 
+struct scan_progress {
+    std::mutex sp_mutex;
+    std::list<archive_manager::extract_progress> sp_extractions;
+};
+
 struct file_collection {
     std::map<std::string, std::string> fc_name_to_errors;
     std::map<std::string, logfile_open_options> fc_file_names;
@@ -226,6 +225,10 @@ struct file_collection {
         fc_renamed_files;
     std::set<std::string> fc_closed_files;
     std::map<std::string, std::string> fc_other_files;
+    std::shared_ptr<scan_progress> fc_progress;
+    size_t fc_largest_path_length{0};
+
+    file_collection() : fc_progress(std::make_shared<scan_progress>()) {}
 
     void clear() {
         this->fc_name_to_errors.clear();
@@ -286,6 +289,7 @@ struct _lnav_data {
     filter_sub_source                       ld_filter_source;
     textview_curses                         ld_filter_view;
     files_sub_source                        ld_files_source;
+    files_overlay_source                    ld_files_overlay;
     textview_curses                         ld_files_view;
     plain_text_source                       ld_example_source;
     textview_curses                         ld_example_view;

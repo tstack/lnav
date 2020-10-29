@@ -222,17 +222,7 @@ public:
         }
     }
 
-    void shift_selection(int offset) {
-        vis_line_t new_selection = this->lv_selection + vis_line_t(offset);
-
-        if (new_selection >= 0_vl &&
-            new_selection < this->get_inner_height()) {
-            this->set_selection(new_selection);
-            this->scroll_selection_into_view();
-        } else if (!alerter::singleton().chime()) {
-            this->delegate_scroll_out();
-        }
-    }
+    void shift_selection(int offset);
 
     vis_line_t get_selection() const {
         return this->lv_selection;
@@ -543,6 +533,14 @@ public:
             width_out = 0;
         }
     };
+
+    std::pair<vis_line_t, unsigned long> get_dimensions() const {
+        unsigned long width;
+        vis_line_t height;
+
+        this->get_dimensions(height, width);
+        return std::make_pair(height, width);
+    }
 
     /** This method should be called when the data source has changed. */
     virtual void reload_data();

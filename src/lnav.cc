@@ -129,6 +129,7 @@
 #include "fstat_vtab.hh"
 #include "textfile_highlighters.hh"
 #include "base/future_util.hh"
+#include "base/humanize.hh"
 
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
@@ -404,14 +405,15 @@ private:
         for (auto &sc : lnav_data.ld_status) {
             sc.do_update();
         }
-        if (!lnav_data.ld_session_loaded && lnav_data.ld_mode == LNM_FILES) {
-            auto iter = std::find(lnav_data.ld_active_files.fc_files.begin(),
-                                  lnav_data.ld_active_files.fc_files.end(), lf);
+        if (lnav_data.ld_mode == LNM_FILES) {
+            auto &fc = lnav_data.ld_active_files;
+            auto iter = std::find(fc.fc_files.begin(),
+                                  fc.fc_files.end(), lf);
 
-            if (iter != lnav_data.ld_active_files.fc_files.end()) {
-                auto index = std::distance(lnav_data.ld_active_files.fc_files.begin(),
-                                           iter);
-                lnav_data.ld_files_view.set_selection(vis_line_t(index));
+            if (iter != fc.fc_files.end()) {
+                auto index = std::distance(fc.fc_files.begin(), iter);
+                lnav_data.ld_files_view.set_selection(
+                    vis_line_t(fc.fc_other_files.size() + index));
                 lnav_data.ld_files_view.reload_data();
                 lnav_data.ld_files_view.do_update();
             }
@@ -504,7 +506,8 @@ public:
 
             auto iter = session_data.sd_file_states.find(lf->get_filename());
             if (iter != session_data.sd_file_states.end()) {
-                log_debug("found state for log file");
+                log_debug("found state for log file %d",
+                          iter->second.fs_is_visible);
                 lf->set_visibility(iter->second.fs_is_visible);
             }
         }
@@ -982,10 +985,25 @@ void file_collection::regenerate_unique_file_names()
     unique_path_generator upg;
 
     for (const auto& lf : this->fc_files) {
-        upg.add_source(shared_ptr<logfile>(lf));
+        upg.add_source(lf);
     }
 
     upg.generate();
+
+    this->fc_largest_path_length = 0;
+    for (const auto& lf : this->fc_files) {
+        const auto& path = lf->get_unique_path();
+
+        if (path.length() > this->fc_largest_path_length) {
+            this->fc_largest_path_length = path.length();
+        }
+    }
+    for (const auto& pair : this->fc_other_files) {
+        auto bn = ghc::filesystem::path(pair.first).filename().string();
+        if (bn.length() > this->fc_largest_path_length) {
+            this->fc_largest_path_length = bn.length();
+        }
+    }
 }
 
 void file_collection::merge(const file_collection& other)
@@ -1074,7 +1092,7 @@ file_collection::watch_logfile(const string& filename, logfile_open_options &loo
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
             return make_ready_future(retval);
         }
-        return std::async(std::launch::async, [filename, &loo]() {
+        return std::async(std::launch::async, [filename, &loo, prog=this->fc_progress]() {
             file_format_t ff = detect_file_format(filename);
             file_collection retval;
 
@@ -1087,8 +1105,16 @@ file_collection::watch_logfile(const string& filename, logfile_open_options &loo
                 case file_format_t::FF_ARCHIVE: {
                     retval.fc_other_files[filename] = "Archive";
                     archive_manager::walk_archive_files(
-                        filename, [&filename, &retval](const auto& tmp_path,
-                                                       const auto& entry) {
+                        filename,
+                        [prog](const auto& path, const auto total) {
+                            std::lock_guard<std::mutex> guard(prog->sp_mutex);
+                            prog->sp_extractions.clear();
+                            prog->sp_extractions.emplace_back(path, total);
+
+                            return &prog->sp_extractions.back();
+                        },
+                        [&filename, &retval](const auto& tmp_path,
+                                             const auto& entry) {
                         auto ext = entry.path().extension();
                         if (ext == ".jar" || ext == ".war" || ext == ".zip") {
                             return;
@@ -1116,6 +1142,10 @@ file_collection::watch_logfile(const string& filename, logfile_open_options &loo
                                 .with_non_utf_visibility(false)
                                 .with_visible_size_limit(128 * 1024);
                     });
+                    {
+                        std::lock_guard<std::mutex> guard(prog->sp_mutex);
+                        prog->sp_extractions.clear();
+                    }
                     break;
                 }
 
@@ -1222,6 +1252,11 @@ file_collection file_collection::rescan_files(bool required)
         } else {
             fq.push_back(watch_logfile(pair.first, pair.second, required));
         }
+
+        if (retval.fc_files.size() >= 100) {
+            log_debug("too many new files, breaking...");
+            break;
+        }
     }
 
     fq.pop_to();
@@ -1300,6 +1335,51 @@ public:
 private:
 };
 
+static bool handle_config_ui_key(int ch)
+{
+    nonstd::optional<ln_mode_t> new_mode;
+
+    if (ch == 'F') {
+        new_mode = LNM_FILES;
+    } else if (ch == 'T') {
+        new_mode = LNM_FILTER;
+    }
+    if (!lnav_data.ld_filter_source.fss_editing &&
+        (ch == '\t' || ch == KEY_BTAB)) {
+        if (lnav_data.ld_mode == LNM_FILES) {
+            new_mode = LNM_FILTER;
+        } else {
+            new_mode = LNM_FILES;
+        }
+    }
+
+    if (ch == 'q') {
+        lnav_data.ld_mode = LNM_PAGING;
+    } else if (new_mode) {
+        lnav_data.ld_last_config_mode = new_mode.value();
+        lnav_data.ld_mode = new_mode.value();
+        lnav_data.ld_files_view.reload_data();
+        lnav_data.ld_filter_view.reload_data();
+        lnav_data.ld_status[LNS_FILTER].set_needs_update();
+    } else {
+        switch (lnav_data.ld_mode) {
+            case LNM_FILES:
+                if (!lnav_data.ld_files_view.handle_key(ch)) {
+                    return handle_paging_key(ch);
+                }
+                break;
+            case LNM_FILTER:
+                if (!lnav_data.ld_filter_view.handle_key(ch)) {
+                    return handle_paging_key(ch);
+                }
+                break;
+            default:
+                ensure(0);
+        }
+    }
+    return true;
+}
+
 static bool handle_key(int ch) {
     lnav_data.ld_input_state.push_back(ch);
 
@@ -1313,23 +1393,8 @@ static bool handle_key(int ch) {
                     return handle_paging_key(ch);
 
                 case LNM_FILTER:
-                    if (ch == 'F') {
-                        lnav_data.ld_last_config_mode = LNM_FILES;
-                        lnav_data.ld_mode = LNM_FILES;
-                        lnav_data.ld_files_view.reload_data();
-                    } else if (!lnav_data.ld_filter_view.handle_key(ch)) {
-                        return handle_paging_key(ch);
-                    }
-                    break;
                 case LNM_FILES:
-                    if (ch == 'T') {
-                        lnav_data.ld_last_config_mode = LNM_FILTER;
-                        lnav_data.ld_mode = LNM_FILTER;
-                        lnav_data.ld_filter_view.reload_data();
-                    } else if (!lnav_data.ld_files_view.handle_key(ch)) {
-                        return handle_paging_key(ch);
-                    }
-                    break;
+                    return handle_config_ui_key(ch);
 
                 case LNM_COMMAND:
                 case LNM_SEARCH:
@@ -1671,6 +1736,7 @@ static void looper()
         lnav_data.ld_files_view.set_selectable(true);
         lnav_data.ld_files_view.set_window(lnav_data.ld_window);
         lnav_data.ld_files_view.set_show_scrollbar(true);
+        lnav_data.ld_files_view.set_overlay_source(&lnav_data.ld_files_overlay);
 
         lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
@@ -1751,18 +1817,22 @@ static void looper()
         log_debug("rescan started");
         file_collection active_copy;
         active_copy.merge(lnav_data.ld_active_files);
+        active_copy.fc_progress = lnav_data.ld_active_files.fc_progress;
         future<file_collection> rescan_future =
             std::async(std::launch::async,
                        &file_collection::rescan_files,
                        active_copy,
                        false);
         bool initial_rescan_completed = false;
+        int session_stage = 0;
 
         while (lnav_data.ld_looping) {
             vector<struct pollfd> pollfds;
-            struct timeval to = { 0, 333000 };
-            int            rc;
+            auto poll_to = initial_rescan_completed ?
+                           timeval{ 0, 333000 } :
+                           timeval{ 0, 0 };
             size_t starting_view_stack_size = lnav_data.ld_view_stack.vs_views.size();
+            int rc;
 
             gettimeofday(&current_time, nullptr);
 
@@ -1770,13 +1840,40 @@ static void looper()
 
             layout_views();
 
-            if (rescan_future.wait_for(0s) == std::future_status::ready) {
+            auto scan_timeout = initial_rescan_completed ? 0s : 10ms;
+            if (rescan_future.wait_for(scan_timeout) ==
+                std::future_status::ready) {
                 auto new_files = rescan_future.get();
                 if (!initial_rescan_completed &&
-                    new_files.fc_file_names.empty()) {
+                    new_files.fc_file_names.empty() &&
+                    new_files.fc_files.empty()) {
                     initial_rescan_completed = true;
+
+                    load_session();
+                    if (session_data.sd_save_time) {
+                        std::string ago;
+
+                        ago = time_ago(session_data.sd_save_time);
+                        lnav_data.ld_rl_view->set_value(
+                            ("restored session from " ANSI_BOLD_START) +
+                            ago +
+                            (ANSI_NORM "; press Ctrl-R to reset session"));
+                    }
+
+                    lnav_data.ld_session_loaded = true;
+                    session_stage += 1;
+                    log_debug("file count %d",
+                              lnav_data.ld_active_files.fc_files.size())
                 }
                 update_active_files(new_files);
+                if (!initial_rescan_completed) {
+                    auto &fview = lnav_data.ld_files_view;
+                    auto height = fview.get_inner_height();
+
+                    if (height > 0_vl) {
+                        fview.set_selection(height - 1_vl);
+                    }
+                }
 
                 active_copy.clear();
                 active_copy.merge(lnav_data.ld_active_files);
@@ -1785,7 +1882,11 @@ static void looper()
                                            active_copy,
                                            false);
             }
-            rebuild_indexes();
+            if (initial_rescan_completed) {
+                rebuild_indexes();
+            } else {
+                lnav_data.ld_files_view.set_overlay_needs_update();
+            }
 
             lnav_data.ld_view_stack.do_update();
             lnav_data.ld_doc_view.do_update();
@@ -1795,21 +1896,26 @@ static void looper()
             for (auto &sc : lnav_data.ld_status) {
                 sc.do_update();
             }
-            rlc.do_update();
             if (lnav_data.ld_filter_source.fss_editing) {
                 lnav_data.ld_filter_source.fss_match_view.set_needs_update();
             }
             switch (lnav_data.ld_mode) {
                 case LNM_FILTER:
+                case LNM_SEARCH_FILTERS:
                     lnav_data.ld_filter_view.set_needs_update();
                     lnav_data.ld_filter_view.do_update();
                     break;
+                case LNM_SEARCH_FILES:
                 case LNM_FILES:
                     lnav_data.ld_files_view.set_needs_update();
                     lnav_data.ld_files_view.do_update();
                     break;
                 default:
                     break;
+            }
+            if (lnav_data.ld_mode != LNM_FILTER &&
+                lnav_data.ld_mode != LNM_FILES) {
+                rlc.do_update();
             }
             refresh();
 
@@ -1830,10 +1936,11 @@ static void looper()
             lnav_data.ld_filter_view.update_poll_set(pollfds);
             lnav_data.ld_files_view.update_poll_set(pollfds);
 
-            if (lnav_data.ld_input_dispatcher.in_escape()) {
-                to.tv_usec = 15000;
+            if (initial_rescan_completed &&
+                lnav_data.ld_input_dispatcher.in_escape()) {
+                poll_to.tv_usec = 15000;
             }
-            rc = poll(&pollfds[0], pollfds.size(), to.tv_usec / 1000);
+            rc = poll(&pollfds[0], pollfds.size(), poll_to.tv_usec / 1000);
 
             gettimeofday(&current_time, nullptr);
             lnav_data.ld_input_dispatcher.poll(current_time);
@@ -1935,22 +2042,6 @@ static void looper()
                     initial_build = true;
                 }
 
-                if (!lnav_data.ld_session_loaded) {
-                    load_session();
-                    if (session_data.sd_save_time) {
-                        std::string ago;
-
-                        ago = time_ago(session_data.sd_save_time);
-                        lnav_data.ld_rl_view->set_value(
-                                ("restored session from " ANSI_BOLD_START) +
-                                        ago +
-                                        (ANSI_NORM "; press Ctrl-R to reset session"));
-                    }
-
-                    lnav_data.ld_mode = LNM_PAGING;
-                    lnav_data.ld_session_loaded = true;
-                }
-
                 if (initial_build) {
                     vector<pair<Result<string, string>, string>> cmd_results;
 
@@ -1964,6 +2055,21 @@ static void looper()
                         lnav_data.ld_rl_view->set_alt_value(
                             last_cmd_result.second);
                     }
+                }
+
+                if (session_stage == 1) {
+                    for (size_t view_index = 0;
+                         view_index < LNV__MAX;
+                         view_index++) {
+                        const auto &vs = session_data.sd_view_states[view_index];
+
+                        if (vs.vs_top > 0) {
+                            lnav_data.ld_views[view_index]
+                                .set_top(vis_line_t(vs.vs_top));
+                        }
+                    }
+                    lnav_data.ld_mode = LNM_PAGING;
+                    session_stage += 1;
                 }
             }
 

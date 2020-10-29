@@ -589,8 +589,9 @@ logfile_sub_source::rebuild_result logfile_sub_source::rebuild_index()
                         if (retval == rebuild_result::rr_no_change) {
                             retval = rebuild_result::rr_appended_lines;
                         }
-                        if (!this->lss_index.empty()) {
-                            logline &new_file_line = lf[ld.ld_lines_indexed - 1];
+                        if (!this->lss_index.empty() &&
+                            lf.size() > ld.ld_lines_indexed) {
+                            logline &new_file_line = lf[ld.ld_lines_indexed];
                             content_line_t cl = this->lss_index.back();
                             logline *last_indexed_line = this->find_line(cl);
 

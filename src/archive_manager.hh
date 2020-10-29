@@ -32,22 +32,38 @@
 #ifndef lnav_archive_manager_hh
 #define lnav_archive_manager_hh
 
+#include <atomic>
 #include <string>
 #include <functional>
+#include <utility>
 
 #include "ghc/filesystem.hpp"
 
 namespace archive_manager {
+
+struct extract_progress {
+    extract_progress(ghc::filesystem::path path,
+                     ssize_t total) : ep_path(std::move(path)),
+                                      ep_total_size(total)
+    {}
+
+    const ghc::filesystem::path ep_path;
+    const ssize_t ep_total_size;
+    std::atomic<size_t> ep_out_size{0};
+};
+
+using extract_cb = std::function<extract_progress *(
+    const ghc::filesystem::path &, ssize_t)>;
+
 bool is_archive(const std::string &filename);
 
 ghc::filesystem::path filename_to_tmp_path(const std::string &filename);
 
 void walk_archive_files(const std::string &filename,
+                        const extract_cb &cb,
                         const std::function<void(
-                            const ghc::filesystem::path&,
-                            const ghc::filesystem::directory_entry&)>&);
-
-void extract(const std::string &filename);
+                            const ghc::filesystem::path &,
+                            const ghc::filesystem::directory_entry &)> &);
 }
 
 #endif

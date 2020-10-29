@@ -89,3 +89,16 @@ size_t unquote(char *dst, const char *str, size_t len)
 
     return index;
 }
+
+void truncate_to(std::string &str, size_t len)
+{
+    static const std::string ELLIPSIS = "\xE2\x8B\xAF";
+
+    if (str.length() <= len) {
+        return;
+    }
+
+    size_t half_width = str.size() / 2 - 1;
+    str.erase(half_width, str.length() - (half_width * 2));
+    str.insert(half_width, ELLIPSIS);
+}

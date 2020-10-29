@@ -101,6 +101,11 @@
                     }
                 },
                 "status-styles": {
+                    "disabled-title": {
+                        "color": "#5394ec",
+                        "background-color": "#353535",
+                        "bold": true
+                    },
                     "title": {
                         "color": "#f6f6f6",
                         "background-color": "#5394ec",
@@ -110,6 +115,16 @@
                         "color": "#555",
                         "background-color": "#66d9ee",
                         "bold": true
+                    },
+                    "title-hotkey": {
+                        "color": "$black",
+                        "background-color": "#5394ec",
+                        "underline": true
+                    },
+                    "hotkey": {
+                        "color": "#fff",
+                        "background-color": "#353535",
+                        "underline": true
                     },
                     "text": {
                         "color": "#f6f6f6",

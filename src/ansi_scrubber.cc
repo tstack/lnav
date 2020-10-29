@@ -48,8 +48,6 @@ static pcrepp &ansi_regex()
 
 void scrub_ansi_string(std::string &str, string_attrs_t &sa)
 {
-    view_colors &vc = view_colors::singleton();
-
     pcre_context_static<60> context;
     pcrepp &   regex = ansi_regex();
     pcre_input pi(str);
@@ -62,6 +60,7 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
         attr_t attrs   = 0;
         auto bg = nonstd::optional<int>();
         auto fg = nonstd::optional<int>();
+        auto role = nonstd::optional<int>();
         size_t lpc;
 
         switch (pi.get_substr_start(&caps[2])[0]) {
@@ -135,8 +134,7 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
 
                 if (sscanf(&(str[caps[1].c_begin]), "%d", &role_int) == 1) {
                     if (role_int >= 0 && role_int < view_colors::VCR__MAX) {
-                        attrs = vc.attrs_for_role(
-                            (view_colors::role_t) role_int);
+                        role = role_int;
                         has_attrs = true;
                     }
                 }
@@ -158,6 +156,9 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
             if (attrs) {
                 sa.emplace_back(lr, &view_curses::VC_STYLE, attrs);
             }
+            role | [&lr, &sa](int r) {
+                sa.emplace_back(lr, &view_curses::VC_ROLE, r);
+            };
             fg | [&lr, &sa](int color) {
                 sa.emplace_back(lr, &view_curses::VC_FOREGROUND, color);
             };

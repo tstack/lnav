@@ -35,14 +35,21 @@
 #include <map>
 #include <string>
 
+#include "lnav.hh"
+
 struct file_state {
     bool fs_is_visible{true};
+};
+
+struct view_state {
+    int64_t vs_top{0};
 };
 
 struct session_data_t {
     uint64_t sd_save_time{0};
     bool sd_time_offset{false};
     std::map<std::string, file_state> sd_file_states;
+    view_state sd_view_states[LNV__MAX];
 };
 
 extern struct session_data_t session_data;

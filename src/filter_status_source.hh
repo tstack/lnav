@@ -27,8 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _filter_status_source_hh
-#define _filter_status_source_hh
+#ifndef lnav_filter_status_source_hh
+#define lnav_filter_status_source_hh
 
 #include <string>
 
@@ -39,6 +39,8 @@ class filter_status_source
     : public status_data_source {
 public:
     typedef enum {
+        TSF_FILES_TITLE,
+        TSF_FILES_RIGHT_STITCH,
         TSF_TITLE,
         TSF_STITCH_TITLE,
         TSF_COUNT,

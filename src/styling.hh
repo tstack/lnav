@@ -143,7 +143,10 @@ struct lnav_theme {
     style_config lt_style_skewed_time;
     style_config lt_style_offset_time;
     style_config lt_style_status_title;
+    style_config lt_style_status_title_hotkey;
+    style_config lt_style_status_disabled_title;
     style_config lt_style_status_subtitle;
+    style_config lt_style_status_hotkey;
     style_config lt_style_keyword;
     style_config lt_style_string;
     style_config lt_style_comment;

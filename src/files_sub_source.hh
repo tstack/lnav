@@ -59,4 +59,12 @@ public:
     bool fss_filter_state{false};
 };
 
+struct files_overlay_source : public list_overlay_source {
+    bool list_value_for_overlay(const listview_curses &lv, int y, int bottom,
+                                vis_line_t line,
+                                attr_line_t &value_out) override;
+
+    size_t fos_counter{0};
+};
+
 #endif

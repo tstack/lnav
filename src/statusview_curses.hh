@@ -54,7 +54,7 @@ public:
           sf_role(role) {
     };
 
-    virtual ~status_field() { };
+    virtual ~status_field() = default;
 
     /** @param value The new value for this field. */
     void set_value(std::string value);

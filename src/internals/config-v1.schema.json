@@ -233,14 +233,29 @@
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/inactive",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "title-hotkey": {
+                                            "description": "Styling for hotkey highlights in titles",
+                                            "title": "/ui/theme-defs/<theme_name>/status-styles/title-hotkey",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "title": {
                                             "description": "Styling for title sections of status bars",
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/title",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "disabled-title": {
+                                            "description": "Styling for title sections of status bars",
+                                            "title": "/ui/theme-defs/<theme_name>/status-styles/disabled-title",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "subtitle": {
                                             "description": "Styling for subtitle sections of status bars",
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/subtitle",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "hotkey": {
+                                            "description": "Styling for hotkey highlights of status bars",
+                                            "title": "/ui/theme-defs/<theme_name>/status-styles/hotkey",
                                             "$ref": "#/definitions/style"
                                         }
                                     },

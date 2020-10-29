@@ -4,6 +4,7 @@
         "theme-defs": {
             "night-owl": {
                 "vars": {
+                    "black": "#011627",
                     "red": "#ff6868",
                     "green": "#007f00",
                     "yellow": "#cdcd00",
@@ -125,6 +126,18 @@
                     "inactive": {
                         "color": "#f0f0f0",
                         "background-color": "#0F1F2B"
+                    },
+                    "hotkey": {
+                        "color": "#2d5a80",
+                        "background-color": "#162d40",
+                        "bold": true,
+                        "underline": true
+                    },
+                    "title-hotkey": {
+                        "color": "$black",
+                        "background-color": "#2d5a80",
+                        "bold": true,
+                        "underline": true
                     }
                 },
                 "log-level-styles": {

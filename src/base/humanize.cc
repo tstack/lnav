@@ -45,6 +45,10 @@ std::string file_size(ssize_t value)
         " ", "K", "M", "G", "T", "P", "E",
     };
 
+    if (value < 0) {
+        return "Unknown";
+    }
+
     auto exp = floor(std::min(log(value) / LN1024, (double) UNITS.size()));
     auto divisor = pow(1024, exp);
 

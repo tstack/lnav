@@ -72,12 +72,6 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
     }
 
     switch (ch) {
-        case '\t':
-        case KEY_BTAB:
-        case 'q':
-            lnav_data.ld_mode = LNM_PAGING;
-            lnav_data.ld_filter_view.reload_data();
-            return true;
         case 'f': {
             auto top_view = *lnav_data.ld_view_stack.top();
             auto tss = top_view->get_sub_source();
