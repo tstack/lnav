@@ -296,7 +296,8 @@ void logfile_sub_source::text_value_for_line(textview_curses &tc,
                 this->lss_basename_width = name.size();
             }
         }
-        value_out.insert(0, file_offset_end - name.size() + 1, '|');
+        value_out.insert(0, 1, '|');
+        value_out.insert(0, file_offset_end - name.size(), ' ');
         value_out.insert(0, name);
     } else {
         // Insert space for the file/search-hit markers.
