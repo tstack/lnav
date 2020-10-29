@@ -243,6 +243,7 @@ add_library(diag STATIC
         extension-functions.cc
         field_overlay_source.cc
         file_vtab.cc
+        files_sub_source.cc
         filter_observer.cc
         filter_status_source.cc
         filter_sub_source.cc
@@ -254,6 +255,7 @@ add_library(diag STATIC
         highlighter.cc
         hist_source.cc
         hotkeys.cc
+        base/humanize.cc
         input_dispatcher.cc
         base/intern_string.cc
         base/is_utf8.cc
@@ -349,6 +351,7 @@ add_library(diag STATIC
         base/enum_util.hh
         field_overlay_source.hh
         file_vtab.hh
+        files_sub_source.hh
         filter_observer.hh
         filter_status_source.hh
         filter_sub_source.hh
@@ -359,6 +362,7 @@ add_library(diag STATIC
         help_text_formatter.hh
         highlighter.hh
         hotkeys.hh
+        base/humanize.hh
         input_dispatcher.hh
         base/intern_string.hh
         base/is_utf8.hh

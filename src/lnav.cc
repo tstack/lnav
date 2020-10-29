@@ -396,7 +396,7 @@ public:
         if ((((size_t)off == total) && (this->lo_last_offset != off)) ||
             ui_periodic_timer::singleton().time_to_update(index_counter)) {
             lnav_data.ld_bottom_source.update_loading(off, total);
-            this->do_update();
+            this->do_update(lf);
             this->lo_last_offset = off;
         }
 
@@ -406,11 +406,26 @@ public:
     };
 
 private:
-    void do_update()
+    void do_update(logfile &lf)
     {
         lnav_data.ld_top_source.update_time();
         for (auto &sc : lnav_data.ld_status) {
             sc.do_update();
+        }
+        if (!lnav_data.ld_session_loaded && lnav_data.ld_mode == LNM_FILES) {
+            auto iter = std::find_if(lnav_data.ld_files.begin(),
+                                     lnav_data.ld_files.end(),
+                                     [&lf](auto elem) {
+                return elem.get() == &lf;
+            });
+
+            if (iter != lnav_data.ld_files.end()) {
+                auto index = std::distance(lnav_data.ld_files.begin(),
+                                           iter);
+                lnav_data.ld_files_view.set_selection(vis_line_t(index));
+                lnav_data.ld_files_view.reload_data();
+                lnav_data.ld_files_view.do_update();
+            }
         }
         refresh();
     };
@@ -531,7 +546,6 @@ void rebuild_indexes()
     textview_curses &log_view  = lnav_data.ld_views[LNV_LOG];
     textview_curses &text_view = lnav_data.ld_views[LNV_TEXT];
     vis_line_t old_bottoms[LNV__MAX];
-
     bool scroll_downs[LNV__MAX];
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -587,7 +601,7 @@ void rebuild_indexes()
         }
     }
 
-    logfile_sub_source::rebuild_result result = lss.rebuild_index();
+    auto result = lss.rebuild_index();
     if (result != logfile_sub_source::rebuild_result::rr_no_change) {
         size_t new_count = lss.text_line_count();
         bool force =
@@ -600,6 +614,44 @@ void rebuild_indexes()
         }
 
         log_view.reload_data();
+
+        {
+            unordered_map<string, list<shared_ptr<logfile>>> id_to_files;
+            bool reload = false;
+
+            for (const auto &lf : lnav_data.ld_files) {
+                if (!lf->is_visible()) {
+                    continue;
+                }
+
+                id_to_files[lf->get_content_id()].push_back(lf);
+            }
+
+            for (auto &pair : id_to_files) {
+                if (pair.second.size() == 1) {
+                    continue;
+                }
+
+                pair.second.sort([](const auto& left, const auto& right) {
+                    return right->get_stat().st_size <
+                           left->get_stat().st_size;
+                });
+
+                pair.second.pop_front();
+                for_each(pair.second.begin(),
+                         pair.second.end(),
+                         [](auto& lf) {
+                    log_info("Hiding duplicate file: %s",
+                             lf->get_filename().c_str());
+                    lf->hide();
+                });
+                reload = true;
+            }
+
+            if (reload) {
+                lss.text_filters_changed();
+            }
+        }
     }
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
@@ -1010,6 +1062,7 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
                                 .with_visible_size_limit(128 * 1024);
                     });
                     lnav_data.ld_other_files.emplace_back(filename);
+                    retval = true;
                     break;
                 }
 
@@ -1101,8 +1154,8 @@ bool rescan_files(bool required)
                 expand_filename(path, iter->second, false);
             }
         } else {
-            retval = retval ||
-                     watch_logfile(iter->first, iter->second, required);
+           retval = retval ||
+                    watch_logfile(iter->first, iter->second, required);
         }
     }
 
@@ -1183,7 +1236,18 @@ static bool handle_key(int ch) {
                     return handle_paging_key(ch);
 
                 case LNM_FILTER:
-                    if (!lnav_data.ld_filter_view.handle_key(ch)) {
+                    if (ch == 'F') {
+                        lnav_data.ld_mode = LNM_FILES;
+                        lnav_data.ld_files_view.reload_data();
+                    } else if (!lnav_data.ld_filter_view.handle_key(ch)) {
+                        return handle_paging_key(ch);
+                    }
+                    break;
+                case LNM_FILES:
+                    if (ch == 'T') {
+                        lnav_data.ld_mode = LNM_FILTER;
+                        lnav_data.ld_filter_view.reload_data();
+                    } else if (!lnav_data.ld_files_view.handle_key(ch)) {
                         return handle_paging_key(ch);
                     }
                     break;
@@ -1514,6 +1578,10 @@ static void looper()
         lnav_data.ld_filter_view.set_window(lnav_data.ld_window);
         lnav_data.ld_filter_view.set_show_scrollbar(true);
 
+        lnav_data.ld_files_view.set_selectable(true);
+        lnav_data.ld_files_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_files_view.set_show_scrollbar(true);
+
         lnav_data.ld_status[LNS_TOP].set_top(0);
         lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc.get_height() + 1));
         for (auto &sc : lnav_data.ld_status) {
@@ -1581,12 +1649,12 @@ static void looper()
             };
         }
 
-        bool session_loaded = false;
         ui_periodic_timer &timer = ui_periodic_timer::singleton();
         struct timeval current_time;
 
         static sig_atomic_t index_counter;
 
+        lnav_data.ld_mode = LNM_FILES;
 
         timer.start_fade(index_counter, 1);
         while (lnav_data.ld_looping) {
@@ -1616,11 +1684,21 @@ static void looper()
             if (lnav_data.ld_filter_source.fss_editing) {
                 lnav_data.ld_filter_source.fss_match_view.set_needs_update();
             }
-            lnav_data.ld_filter_view.set_needs_update();
-            lnav_data.ld_filter_view.do_update();
+            switch (lnav_data.ld_mode) {
+                case LNM_FILTER:
+                    lnav_data.ld_filter_view.set_needs_update();
+                    lnav_data.ld_filter_view.do_update();
+                    break;
+                case LNM_FILES:
+                    lnav_data.ld_files_view.set_needs_update();
+                    lnav_data.ld_files_view.do_update();
+                    break;
+                default:
+                    break;
+            }
             refresh();
 
-            if (session_loaded) {
+            if (lnav_data.ld_session_loaded) {
                 // Only take input from the user after everything has loaded.
                 pollfds.push_back((struct pollfd) {
                     STDIN_FILENO,
@@ -1738,7 +1816,7 @@ static void looper()
                     initial_build = true;
                 }
 
-                if (!session_loaded) {
+                if (!lnav_data.ld_session_loaded) {
                     load_session();
                     if (lnav_data.ld_session_save_time) {
                         std::string ago;
@@ -1750,7 +1828,8 @@ static void looper()
                                         (ANSI_NORM "; press Ctrl-R to reset session"));
                     }
 
-                    session_loaded = true;
+                    lnav_data.ld_mode = LNM_PAGING;
+                    lnav_data.ld_session_loaded = true;
                 }
 
                 if (initial_build) {
@@ -1788,6 +1867,7 @@ static void looper()
                 lnav_data.ld_example_view.set_needs_update();
                 lnav_data.ld_match_view.set_needs_update();
                 lnav_data.ld_filter_view.set_needs_update();
+                lnav_data.ld_files_view.set_needs_update();
             }
 
             if (lnav_data.ld_child_terminated) {
@@ -2277,6 +2357,9 @@ int main(int argc, char *argv[])
              .add_input_delegate(lnav_data.ld_filter_source)
              .add_child_view(&lnav_data.ld_filter_source.fss_match_view)
              .add_child_view(&lnav_data.ld_filter_source.fss_editor);
+    lnav_data.ld_files_view
+        .set_sub_source(&lnav_data.ld_files_source)
+        .add_input_delegate(lnav_data.ld_files_source);
 
     for (lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());

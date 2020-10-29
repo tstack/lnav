@@ -1471,6 +1471,7 @@ void reset_session()
     }
 
     lnav_data.ld_filter_view.reload_data();
+    lnav_data.ld_files_view.reload_data();
     for (auto format : log_format::get_root_formats()) {
         auto *elf = dynamic_cast<external_log_format *>(format);
 

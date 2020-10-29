@@ -66,6 +66,7 @@
 #include "plain_text_source.hh"
 #include "input_dispatcher.hh"
 #include "filter_sub_source.hh"
+#include "files_sub_source.hh"
 #include "filter_status_source.hh"
 #include "preview_status_source.hh"
 #include "sql_util.hh"
@@ -74,6 +75,7 @@
 typedef enum {
     LNM_PAGING,
     LNM_FILTER,
+    LNM_FILES,
     LNM_COMMAND,
     LNM_SEARCH,
     LNM_CAPTURE,
@@ -223,6 +225,7 @@ struct _lnav_data {
 
     std::list<std::string>                  ld_commands;
     bool                                    ld_cmd_init_done;
+    bool                                    ld_session_loaded;
     std::vector<ghc::filesystem::path>      ld_config_paths;
     std::map<std::string, logfile_open_options> ld_file_names;
     std::vector<std::shared_ptr<logfile>>   ld_files;
@@ -257,6 +260,8 @@ struct _lnav_data {
     textview_curses                         ld_doc_view;
     filter_sub_source                       ld_filter_source;
     textview_curses                         ld_filter_view;
+    files_sub_source                        ld_files_source;
+    textview_curses                         ld_files_view;
     plain_text_source                       ld_example_source;
     textview_curses                         ld_example_view;
     plain_text_source                       ld_match_source;

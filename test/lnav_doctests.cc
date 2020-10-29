@@ -39,6 +39,7 @@
 #include "relative_time.hh"
 #include "unique_path.hh"
 #include "logfile.hh"
+#include "base/humanize.hh"
 
 using namespace std;
 
@@ -92,6 +93,13 @@ TEST_CASE("duration2str") {
     val.clear();
     duration2str(-10 * 1000, val);
     CHECK(val == "-10s000");
+}
+
+TEST_CASE("humanize::file_size") {
+        CHECK(humanize::file_size(1) == "1.0 B");
+        CHECK(humanize::file_size(1024) == "1.0KB");
+        CHECK(humanize::file_size(1500) == "1.5KB");
+        CHECK(humanize::file_size(55LL * 784LL * 1024LL * 1024LL) == "42.1GB");
 }
 
 TEST_CASE("ptime_fmt") {

@@ -41,6 +41,7 @@ static auto EDIT_HELP = ANSI_BOLD("ENTER") ": Edit";
 static auto TOGGLE_HELP = ANSI_BOLD("t") ": To ";
 static auto DELETE_HELP = ANSI_BOLD("D") ": Delete";
 static auto FILTERING_HELP = ANSI_BOLD("f") ": ";
+static auto JUMP_HELP = ANSI_BOLD("ENTER") ": Jump To";
 
 filter_status_source::filter_status_source()
 {
@@ -181,44 +182,58 @@ size_t filter_help_status_source::statusview_fields()
             return;
         }
 
-        if (lnav_data.ld_mode != LNM_FILTER) {
-            return;
-        }
+        if (lnav_data.ld_mode == LNM_FILTER) {
+            auto &editor = lnav_data.ld_filter_source;
+            auto &lv = lnav_data.ld_filter_view;
+            auto &fs = tss->get_filters();
 
-        auto &editor = lnav_data.ld_filter_source;
-        auto &lv = lnav_data.ld_filter_view;
-        auto &fs = tss->get_filters();
+            if (editor.fss_editing) {
+                auto tf = *(fs.begin() + lv.get_selection());
 
-        if (editor.fss_editing) {
-            auto tf = *(fs.begin() + lv.get_selection());
-
-            if (tf->get_type() == text_filter::type_t::INCLUDE) {
-                this->fss_help.set_value(
-                    "                     "
-                    "Enter a regular expression to match lines to filter in:");
+                if (tf->get_type() == text_filter::type_t::INCLUDE) {
+                    this->fss_help.set_value(
+                        "                     "
+                        "Enter a regular expression to match lines to filter in:");
+                } else {
+                    this->fss_help.set_value(
+                        "                     "
+                        "Enter a regular expression to match lines to filter out:");
+                }
+            } else if (fs.empty()) {
+                this->fss_help.set_value("  %s", CREATE_HELP);
             } else {
-                this->fss_help.set_value(
-                    "                     "
-                    "Enter a regular expression to match lines to filter out:");
-            }
-        } else if (fs.empty()) {
-            this->fss_help.set_value("  %s", CREATE_HELP);
-        } else {
-            auto tf = *(fs.begin() + lv.get_selection());
+                auto tf = *(fs.begin() + lv.get_selection());
 
-            this->fss_help.set_value("  %s  %s%s  %s  %s%s  %s  %s%s",
-                                     CREATE_HELP,
+                this->fss_help.set_value("  %s  %s%s  %s  %s%s  %s  %s%s",
+                                         CREATE_HELP,
+                                         ENABLE_HELP,
+                                         tf->is_enabled() ? "Disable"
+                                                          : "Enable ",
+                                         EDIT_HELP,
+                                         TOGGLE_HELP,
+                                         tf->get_type() ==
+                                         text_filter::type_t::INCLUDE ?
+                                         "OUT" : "IN ",
+                                         DELETE_HELP,
+                                         FILTERING_HELP,
+                                         tss->tss_apply_filters ?
+                                         "Disable Filtering" :
+                                         "Enable Filtering");
+            }
+        } else if (lnav_data.ld_mode == LNM_FILES) {
+            if (lnav_data.ld_files.empty()) {
+                this->fss_help.clear();
+                return;
+            }
+
+            auto &lv = lnav_data.ld_files_view;
+            auto sel = lv.get_selection();
+            auto &lf = lnav_data.ld_files[sel];
+
+            this->fss_help.set_value("  %s%s  %s",
                                      ENABLE_HELP,
-                                     tf->is_enabled() ? "Disable" : "Enable ",
-                                     EDIT_HELP,
-                                     TOGGLE_HELP,
-                                     tf->get_type() == text_filter::type_t::INCLUDE ?
-                                     "OUT" : "IN ",
-                                     DELETE_HELP,
-                                     FILTERING_HELP,
-                                     tss->tss_apply_filters ?
-                                     "Disable Filtering" :
-                                     "Enable Filtering");
+                                     lf->is_visible() ? "Hide" : "Show",
+                                     JUMP_HELP);
         }
     };
 

@@ -496,6 +496,7 @@ static void rl_callback_int(void *dummy, readline_curses *rc, bool is_alt)
     switch (old_mode) {
     case LNM_PAGING:
     case LNM_FILTER:
+    case LNM_FILES:
         require(0);
         break;
 

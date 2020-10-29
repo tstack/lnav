@@ -50,6 +50,8 @@
 struct tm *secs2tm(time_t *tim_p, struct tm *res);
 time_t tm2sec(const struct tm *t);
 
+constexpr time_t MAX_TIME_T = 4000000000LL;
+
 enum exttm_bits_t {
     ETB_YEAR_SET,
     ETB_MONTH_SET,
@@ -341,6 +343,10 @@ inline bool ptime_s(struct exttm *dst, const char *str, off_t &off_inout, ssize_
         off_inout += 1;
     }
 
+    if (epoch >= MAX_TIME_T) {
+        return false;
+    }
+
     secs2tm(&epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
@@ -437,6 +443,11 @@ inline bool ptime_i(struct exttm *dst, const char *str, off_t &off_inout, ssize_
 
     dst->et_nsec = (epoch_ms % 1000ULL) * 1000000;
     epoch = (epoch_ms / 1000ULL);
+
+    if (epoch >= MAX_TIME_T) {
+        return false;
+    }
+
     secs2tm(&epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
@@ -467,6 +478,11 @@ inline bool ptime_6(struct exttm *dst, const char *str, off_t &off_inout, ssize_
 
     dst->et_nsec = (epoch_us % 1000000ULL) * 1000ULL;
     epoch = (epoch_us / 1000000ULL);
+
+    if (epoch >= MAX_TIME_T) {
+        return false;
+    }
+
     secs2tm(&epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET|ETF_MONTH_SET|ETF_YEAR_SET|ETF_MACHINE_ORIENTED|ETF_EPOCH_TIME;
 
@@ -980,6 +996,11 @@ inline bool ptime_at(struct exttm *dst, const char *str, off_t &off_inout, ssize
         dst->et_nsec = 0;
 
         time_t small_secs = secs - 4611686018427387914ULL;
+
+        if (small_secs >= MAX_TIME_T) {
+            return false;
+        }
+
         secs2tm(&small_secs, &dst->et_tm);
     });
 

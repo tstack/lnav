@@ -204,6 +204,10 @@ public:
         return this->lf_valid_filename;
     };
 
+    off_t get_index_size() const {
+        return this->lf_index_size;
+    }
+
     /**
      * @return The detected format, rebuild_index() must be called before this
      * will return a value other than NULL.
@@ -274,6 +278,10 @@ public:
     size_t size() const { return this->lf_index.size(); }
 
     logline &operator[](int index) { return this->lf_index[index]; };
+
+    logline &front() {
+        return this->lf_index.front();
+    }
 
     logline &back() {
         return this->lf_index.back();

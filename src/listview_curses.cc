@@ -43,12 +43,6 @@ using namespace std;
 
 list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
-listview_curses::listview_curses()
-= default;
-
-listview_curses::~listview_curses()
-= default;
-
 void listview_curses::reload_data()
 {
     if (this->lv_source == nullptr) {
@@ -76,7 +70,7 @@ bool listview_curses::handle_key(int ch)
         }
     }
 
-    vis_line_t height(0);
+    auto height = 0_vl;
 
     unsigned long width;
     bool          retval = true;

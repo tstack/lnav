@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Timothy Stack
+ * Copyright (c) 2020, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,19 +27,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef filter_sub_source_hh
-#define filter_sub_source_hh
+#ifndef files_sub_source_hh
+#define files_sub_source_hh
 
-#include "readline_curses.hh"
 #include "textview_curses.hh"
-#include "plain_text_source.hh"
 
-class filter_sub_source
+class files_sub_source
     : public text_sub_source, public list_input_delegate {
 public:
-    using fss_functor_t = readline_curses::action::mem_functor_t<filter_sub_source>;
-
-    filter_sub_source();
+    files_sub_source();
 
     bool list_input_handle_key(listview_curses &lv, int ch) override;
 
@@ -59,27 +55,7 @@ public:
     size_t
     text_size_for_line(textview_curses &tc, int line, line_flags_t raw) override;
 
-    void rl_change(readline_curses *rc);
-
-    void rl_perform(readline_curses *rc);
-
-    void rl_abort(readline_curses *rc);
-
-    void rl_display_matches(readline_curses *rc);
-
-    void rl_display_next(readline_curses *rc);
-
-    readline_context filter_context{"filter", nullptr, false};
-    readline_curses fss_editor;
-    plain_text_source fss_match_source;
-    textview_curses fss_match_view;
-
     bool fss_editing{false};
-    fss_functor_t fss_change_wire;
-    fss_functor_t fss_perform_wire;
-    fss_functor_t fss_abort_wire;
-    fss_functor_t fss_display_match_wire;
-    fss_functor_t fss_display_next_wire;
     bool fss_filter_state{false};
 };
 

@@ -57,7 +57,7 @@ class listview_curses;
  */
 class list_data_source {
 public:
-    virtual ~list_data_source() { };
+    virtual ~list_data_source() = default;
 
     /** @return The number of rows in the list. */
     virtual size_t listview_rows(const listview_curses &lv) = 0;
@@ -86,9 +86,7 @@ public:
 
 class list_gutter_source {
 public:
-    virtual ~list_gutter_source() {
-
-    };
+    virtual ~list_gutter_source() = default;
 
     virtual void listview_gutter_value_for_range(
         const listview_curses &lv, int start, int end,
@@ -101,7 +99,7 @@ public:
 
 class list_overlay_source {
 public:
-    virtual ~list_overlay_source() { };
+    virtual ~list_overlay_source() = default;
 
     virtual bool list_value_for_overlay(const listview_curses &lv,
                                         int y, int bottom,
@@ -111,7 +109,7 @@ public:
 
 class list_input_delegate {
 public:
-    virtual ~list_input_delegate() { };
+    virtual ~list_input_delegate() = default;
 
     virtual bool list_input_handle_key(listview_curses &lv, int ch) = 0;
 
@@ -126,11 +124,6 @@ class listview_curses
     : public view_curses, private log_state_dumper {
 public:
     typedef view_action<listview_curses> action;
-
-    /** Construct an empty list view. */
-    listview_curses();
-
-    ~listview_curses();
 
     void set_title(const std::string &title) {
         this->lv_title = title;
@@ -181,8 +174,8 @@ public:
      */
     void set_scroll_action(action va) { this->lv_scroll = va; };
 
-    template<class _Receiver>
-    void set_scroll_action(action::mem_functor_t<_Receiver> *mf)
+    template<class Receiver>
+    void set_scroll_action(action::mem_functor_t<Receiver> *mf)
     {
         this->lv_scroll = action(mf);
     };
@@ -336,16 +329,25 @@ public:
      */
     void set_top(vis_line_t top, bool suppress_flash = false)
     {
-        if (this->get_inner_height() > 0 && top >= this->get_inner_height()) {
-            top = vis_line_t(this->get_inner_height() - 1);
+        auto inner_height = this->get_inner_height();
+
+        if (inner_height > 0 && top >= inner_height) {
+            top = vis_line_t(inner_height - 1);
         }
-        if (top < 0 || (top > 0 && top >= this->get_inner_height())) {
+        if (top < 0 || (top > 0 && top >= inner_height)) {
             if (suppress_flash == false) {
                 alerter::singleton().chime();
             }
         }
         else if (this->lv_top != top) {
             this->lv_top = top;
+            if (this->lv_selectable) {
+                if (this->lv_selection < top) {
+                    this->lv_selection = top;
+                } else if (this->lv_selection > this->get_bottom()) {
+                    this->lv_selection = this->get_bottom();
+                }
+            }
             this->invoke_scroll();
             this->set_needs_update();
         }
@@ -365,7 +367,7 @@ public:
     };
 
     vis_line_t get_top_for_last_row() {
-        vis_line_t retval(0);
+        auto retval = 0_vl;
 
         if (this->get_inner_height() > 0) {
             vis_line_t last_line(this->get_inner_height() - 1);
@@ -380,7 +382,7 @@ public:
     };
 
     /** @return True if the given line is visible. */
-    bool is_line_visible(vis_line_t line)
+    bool is_line_visible(vis_line_t line) const
     {
         return this->get_top() <= line && line <= this->get_bottom();
     };
@@ -400,7 +402,7 @@ public:
             }
         }
         else {
-            this->set_top(std::max(vis_line_t(0), this->lv_top + offset), suppress_flash);
+            this->set_top(std::max(0_vl, this->lv_top + offset), suppress_flash);
         }
 
         return this->lv_top;
@@ -503,7 +505,7 @@ public:
         unsigned long height;
 
         if (this->lv_window == nullptr) {
-            height_out = std::max(this->lv_height, vis_line_t(1));
+            height_out = std::max(this->lv_height, 1_vl);
             if (this->lv_source) {
                 width_out = this->lv_source->listview_width(*this);
             } else {

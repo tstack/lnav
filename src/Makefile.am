@@ -269,6 +269,7 @@ noinst_HEADERS = \
 	environ_vtab.hh \
 	field_overlay_source.hh \
 	file_vtab.hh \
+	files_sub_source.hh \
 	filter_observer.hh \
 	filter_status_source.hh \
 	filter_sub_source.hh \
@@ -390,6 +391,7 @@ libdiag_a_SOURCES = \
 	extension-functions.cc \
 	field_overlay_source.cc \
 	file_vtab.cc \
+	files_sub_source.cc \
 	filter_observer.cc \
 	filter_status_source.cc \
 	filter_sub_source.cc \

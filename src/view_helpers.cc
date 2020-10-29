@@ -255,7 +255,8 @@ void layout_views()
     }
 
     bool doc_open = doc_height > 0;
-    bool filters_open = lnav_data.ld_mode == LNM_FILTER &&
+    bool filters_open = (lnav_data.ld_mode == LNM_FILTER ||
+                         lnav_data.ld_mode == LNM_FILES) &&
                         !preview_status_open &&
                         !doc_open;
     int filter_height = filters_open ? 3 : 0;
@@ -311,6 +312,10 @@ void layout_views()
     lnav_data.ld_filter_view.set_height(vis_line_t(filter_height));
     lnav_data.ld_filter_view.set_y(height - bottom_height - filter_height);
     lnav_data.ld_filter_view.set_width(width);
+
+    lnav_data.ld_files_view.set_height(vis_line_t(filter_height));
+    lnav_data.ld_files_view.set_y(height - bottom_height - filter_height);
+    lnav_data.ld_files_view.set_width(width);
 
     lnav_data.ld_preview_view.set_height(vis_line_t(preview_height));
     lnav_data.ld_preview_view.set_y(height
