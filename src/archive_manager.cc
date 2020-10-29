@@ -39,6 +39,7 @@
 #include "archive_entry.h"
 #endif
 
+#include "auto_fd.hh"
 #include "auto_mem.hh"
 #include "fmt/format.h"
 #include "base/lnav_log.hh"
@@ -48,6 +49,44 @@
 namespace fs = ghc::filesystem;
 
 namespace archive_manager {
+
+const static size_t MIN_FREE_SPACE = 32 * 1024 * 1024;
+
+class archive_lock {
+public:
+    class guard {
+    public:
+
+        explicit guard(archive_lock& arc_lock) : g_lock(arc_lock) {
+            this->g_lock.lock();
+        };
+
+        ~guard() {
+            this->g_lock.unlock();
+        };
+
+    private:
+        archive_lock &g_lock;
+    };
+
+    void lock() const {
+        lockf(this->lh_fd, F_LOCK, 0);
+    };
+
+    void unlock() const {
+        lockf(this->lh_fd, F_ULOCK, 0);
+    };
+
+    explicit archive_lock(const ghc::filesystem::path& archive_path) {
+        auto lock_path = archive_path;
+
+        lock_path += ".lck";
+        this->lh_fd = open(lock_path.c_str(), O_CREAT | O_RDWR, 0600);
+        log_perror(fcntl(this->lh_fd, F_SETFD, FD_CLOEXEC));
+    };
+
+    auto_fd lh_fd;
+};
 
 bool is_archive(const std::string &filename)
 {
@@ -101,10 +140,7 @@ void walk_archive_files(const std::string &filename,
 {
     auto tmp_path = filename_to_tmp_path(filename);
 
-    // TODO take care of locking
-    if (!fs::exists(tmp_path)) {
-        extract(filename);
-    }
+    extract(filename);
 
     for (const auto& entry : fs::recursive_directory_iterator(tmp_path)) {
         if (!entry.is_regular_file()) {
@@ -117,11 +153,11 @@ void walk_archive_files(const std::string &filename,
 
 #if HAVE_ARCHIVE_H
 static int
-copy_data(struct archive *ar, struct archive *aw)
+copy_data(const ghc::filesystem::path &path, struct archive *ar, struct archive *aw)
 {
     int r;
     const void *buff;
-    size_t size;
+    size_t size, last_space_check = 0, total = 0;
     la_int64_t offset;
 
     for (;;) {
@@ -137,6 +173,17 @@ copy_data(struct archive *ar, struct archive *aw)
             log_error("%s", archive_error_string(aw));
             return (r);
         }
+
+        total += size;
+
+        if ((total - last_space_check) > (1024 * 1024)) {
+            auto tmp_space = ghc::filesystem::space(path);
+
+            if (tmp_space.available < MIN_FREE_SPACE) {
+                log_error("available space too low: %lld", tmp_space.available);
+                return ARCHIVE_FATAL;
+            }
+        }
     }
 }
 
@@ -146,6 +193,20 @@ void extract(const std::string &filename)
                        | ARCHIVE_EXTRACT_PERM
                        | ARCHIVE_EXTRACT_ACL
                        | ARCHIVE_EXTRACT_FFLAGS;
+
+    auto tmp_path = filename_to_tmp_path(filename);
+    auto arc_lock = archive_lock(tmp_path);
+    auto lock_guard = archive_lock::guard(arc_lock);
+    auto done_path = tmp_path;
+
+    done_path += ".done";
+
+    if (ghc::filesystem::exists(done_path)) {
+        ghc::filesystem::last_write_time(
+            done_path, std::chrono::system_clock::now());
+        log_debug("already extracted! %s", done_path.c_str());
+        return;
+    }
 
     auto_mem<archive> arc(archive_free);
     auto_mem<archive> ext(archive_free);
@@ -160,7 +221,6 @@ void extract(const std::string &filename)
         return;
     }
 
-    auto tmp_path = filename_to_tmp_path(filename);
     log_info("extracting %s to %s", filename.c_str(), tmp_path.c_str());
     while (true) {
         struct archive_entry *entry;
@@ -189,7 +249,7 @@ void extract(const std::string &filename)
             log_error("%s", archive_error_string(ext));
         }
         else if (archive_entry_size(entry) > 0) {
-            r = copy_data(arc, ext);
+            r = copy_data(tmp_path, arc, ext);
             if (r < ARCHIVE_OK) {
                 log_error("%s", archive_error_string(ext));
             }
@@ -207,6 +267,8 @@ void extract(const std::string &filename)
     }
     archive_read_close(arc);
     archive_write_close(ext);
+
+    auto_fd(open(done_path.c_str(), O_CREAT | O_WRONLY, 0600));
 
     // TODO return errors
 }
