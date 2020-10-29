@@ -45,6 +45,7 @@ if test x"${OS}" != x"FreeBSD"; then
     if test x"$(lsb_release | awk '{print $3}')" == x"Alpine"; then
         TARGET_FILE='/vagrant/lnav-musl.zip'
         ../lnav/configure \
+            --with-libarchive=${FAKE_ROOT} \
             CFLAGS='-static -no-pie -s -O2' \
             CXXFLAGS='-static -U__unused -no-pie -s -O2' \
             LDFLAGS="-L${FAKE_ROOT}/lib" \

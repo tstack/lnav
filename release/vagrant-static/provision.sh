@@ -138,6 +138,10 @@ else
 fi
 
 (cd libarchive-* &&
- ./configure --prefix=${FAKE_ROOT} &&
+ ./configure --prefix=${FAKE_ROOT} \
+     --disable-shared \
+     "LDFLAGS=-L${FAKE_ROOT}/lib" \
+     "CPPFLAGS=-I${FAKE_ROOT}/include" \
+      &&
  make &&
  make install)
