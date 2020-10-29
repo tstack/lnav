@@ -584,13 +584,18 @@ static void json_write_row(yajl_gen handle, int row)
     }
 }
 
-static void write_line_to(FILE *outfile, attr_line_t &al)
+static void write_line_to(FILE *outfile, const attr_line_t &al)
 {
-    auto al_attrs = al.get_attrs();
-    struct line_range lr = find_string_attr_range(
+    const auto& al_attrs = al.get_attrs();
+    auto lr = find_string_attr_range(
         al_attrs, &textview_curses::SA_ORIGINAL_LINE);
-    auto line_meta = find_string_attr(
-        al_attrs, &logline::L_META);
+    const auto& line_meta = find_string_attr(al_attrs, &logline::L_META);
+
+    if (lr.lr_start > 1) {
+        // If the line is prefixed with some extra information, include that
+        // in the output.  For example, the log file name or time offset.
+        lr = line_range{0, -1};
+    }
 
     fwrite(lr.substr(al.get_string()),
            1,

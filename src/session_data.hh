@@ -56,6 +56,7 @@ extern struct session_data_t session_data;
 
 void init_session();
 void load_session();
+void load_time_bookmarks();
 void save_session();
 void reset_session();
 

@@ -384,7 +384,7 @@ nonstd::optional<session_pair_t> scan_sessions()
     return nonstd::make_optional(session_file_names.back());
 }
 
-static void load_time_bookmarks()
+void load_time_bookmarks()
 {
     logfile_sub_source &lss = lnav_data.ld_log_source;
     std::map<content_line_t, bookmark_metadata> &bm_meta = lss.get_user_bookmark_metadata();

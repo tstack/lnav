@@ -16,6 +16,10 @@ lnav v0.9.1:
        command; or by doing an UPDATE on the "filtering" column of the
        "lnav_views" SQLite table.
 
+     Interface Changes:
+     * When copying log lines, the file name and time offset will be included
+       in the copy if they are enabled.
+
 lnav v0.9.0:
      Features:
      * Added support for themes and included a few as well: default, eldar,

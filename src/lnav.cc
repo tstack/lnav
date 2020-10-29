@@ -2070,6 +2070,7 @@ static void looper()
                     }
                     lnav_data.ld_mode = LNM_PAGING;
                     session_stage += 1;
+                    load_time_bookmarks();
                 }
             }
 
