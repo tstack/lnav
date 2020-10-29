@@ -136,3 +136,8 @@ else
      make &&
      make install)
 fi
+
+(cd libarchive-* &&
+ ./configure --prefix=${FAKE_ROOT} &&
+ make &&
+ make install)

@@ -4,8 +4,13 @@ LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
 
 AM_CPPFLAGS = \
     -Wall \
+	$(LIBARCHIVE_CFLAGS) \
     -I$(top_srcdir)/src/ \
     -I$(top_srcdir)/src/fmtlib
+
+AM_LDFLAGS = \
+    $(LIBARCHIVE_LDFLAGS) \
+	$(STATIC_LDFLAGS)
 
 noinst_LIBRARIES = libyajlpp.a
 
@@ -35,6 +40,7 @@ test_json_ptr_SOURCES = test_json_ptr.cc
 test_yajlpp_SOURCES = test_yajlpp.cc
 
 LDADD = \
+    $(LIBARCHIVE_LIBS) \
     libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/fmtlib/libcppfmt.a \

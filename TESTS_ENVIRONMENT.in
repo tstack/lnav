@@ -10,6 +10,9 @@ export srcdir
 top_builddir=`dirname $0`
 export top_builddir
 
+builddir=`pwd`
+export builddir
+
 test_dir="@abssrcdir@/test"
 export test_dir
 
@@ -19,6 +22,9 @@ export BZIP2_SUPPORT
 
 BZIP2_CMD="@BZIP2_CMD@"
 export BZIP2_CMD
+
+LIBARCHIVE_LIBS="@LIBARCHIVE_LIBS@"
+export LIBARCHIVE_LIBS
 
 HOME="${top_builddir}/test"
 export HOME

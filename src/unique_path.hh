@@ -71,7 +71,7 @@ public:
 
     };
 
-    void add_source(std::shared_ptr<unique_path_source> path_source) {
+    void add_source(const std::shared_ptr<unique_path_source>& path_source) {
         ghc::filesystem::path path = path_source->get_path();
 
         path_source->set_unique_path(path.filename());
@@ -107,6 +107,9 @@ public:
 
                             if (common.empty()) {
                                 common = path.filename();
+                                if (common.empty()) {
+                                    all_common = false;
+                                }
                             } else if (common != path.filename()) {
                                 all_common = false;
                             }
@@ -115,8 +118,9 @@ public:
                         if (all_common) {
                             for (auto &src : pair.second) {
                                 auto &path = src->get_path_prefix();
+                                auto par = path.parent_path();
 
-                                if (path.empty()) {
+                                if (path.empty() || path == par) {
                                     all_common = false;
                                 } else {
                                     src->set_path_prefix(path.parent_path());
@@ -147,11 +151,11 @@ public:
 
                 src->set_path_prefix(parent);
 
-                if (!parent.empty()) {
+                if (parent.empty() || parent == prefix) {
+                    src->set_unique_path("[" + src->get_unique_path());
+                } else {
                     this->upg_unique_paths[src->get_unique_path()].push_back(
                         src);
-                } else {
-                    src->set_unique_path("[" + src->get_unique_path());
                 }
             }
 

@@ -10,6 +10,7 @@ clean-outbox: outbox
 	rm -f outbox/*
 
 PACKAGE_URLS = \
+	https://libarchive.org/downloads/libarchive-3.4.3.tar.gz \
 	https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz \
 	ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz \
 	https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz \

@@ -10,6 +10,7 @@ AM_CPPFLAGS = \
 	-Wall \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/fmtlib \
+	$(LIBARCHIVE_CFLAGS) \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS)
 
@@ -48,6 +49,7 @@ check_PROGRAMS = \
 	test_top_status
 
 AM_LDFLAGS = \
+    $(LIBARCHIVE_LDFLAGS) \
 	$(STATIC_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
 	$(READLINE_LDFLAGS) \
@@ -76,6 +78,7 @@ LDADD = \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(CURSES_LIB) \
+    $(LIBARCHIVE_LIBS) \
     $(SQLITE3_LIBS) \
     $(PCRE_LIBS) \
     $(READLINE_LIBS) \
@@ -361,13 +364,16 @@ DISTCLEANFILES = \
 	logfile_syslog_test.0 \
 	logfile_syslog_fr_test.0 \
 	logfile_syslog_with_mixed_times_test.0 \
+	test-logs.tgz \
 	test_pretty_in.* \
+	tmp \
 	unreadable.log \
 	empty \
 	scripts-empty
 
 distclean-local:
 	$(RM_V)rm -rf sessions
+	$(RM_V)rm -rf tmp
 	$(RM_V)rm -rf meta-sessions
 	$(RM_V)rm -rf test-config
 	$(RM_V)rm -rf .lnav

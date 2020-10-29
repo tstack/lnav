@@ -14,6 +14,30 @@ log_time
 EOF
 fi
 
+if test x"${LIBARCHIVE_LIBS}" != x""; then
+    (cd ${srcdir} && tar cfz ${builddir}/test-logs.tgz logfile_access_log.* logfile_empty.0)
+
+    mkdir -p tmp
+    run_test env TMPDIR=tmp ${lnav_test} -n test-logs.tgz
+
+    check_output "archive not unpacked" <<EOF
+192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkboot.gz HTTP/1.0" 404 46210 "-" "gPXE/0.9.7"
+192.168.202.254 - - [20/Jul/2009:22:59:29 +0000] "GET /vmw/vSphere/default/vmkernel.gz HTTP/1.0" 200 78929 "-" "gPXE/0.9.7"
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+    if ! test tmp/*/test-logs.tgz/logfile_access_log.0; then
+        echo "archived file not unpacked"
+        exit 1
+    fi
+
+    if test -w tmp/*/test-logs.tgz/logfile_access_log.0; then
+        echo "archived file is writable"
+        exit 1
+    fi
+fi
+
 touch unreadable.log
 chmod ugo-r unreadable.log
 

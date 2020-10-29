@@ -155,7 +155,7 @@ TEST_CASE("ptime_roundtrip") {
 
 class my_path_source : public unique_path_source {
 public:
-    explicit my_path_source(const ghc::filesystem::path &p) : mps_path(p) {
+    explicit my_path_source(ghc::filesystem::path p) : mps_path(std::move(p)) {
 
     }
 

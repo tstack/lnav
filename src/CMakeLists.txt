@@ -229,6 +229,7 @@ add_library(diag STATIC
         config.h
 
         ansi_scrubber.cc
+        archive_manager.cc
         bin2c.h
         bookmarks.cc
         bottom_status_source.cc
@@ -332,6 +333,7 @@ add_library(diag STATIC
         spookyhash/SpookyV2.cpp
 
         all_logs_vtab.hh
+        archive_manager.hh
         attr_line.hh
         auto_fd.hh
         auto_mem.hh

@@ -40,6 +40,8 @@
 #include "strnatcmp.h"
 
 struct string_fragment {
+    using iterator = const char *;
+
     explicit string_fragment(const char *str, int begin = 0, int end = -1)
         : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end) {
     };
@@ -65,6 +67,14 @@ struct string_fragment {
 
     const char *data() const {
         return &this->sf_string[this->sf_begin];
+    }
+
+    iterator begin() const {
+        return &this->sf_string[this->sf_begin];
+    }
+
+    iterator end() const {
+        return &this->sf_string[this->sf_end];
     }
 
     bool empty() const {
@@ -109,7 +119,18 @@ struct string_fragment {
                strncmp(this->data(), str, this->length()) == 0;
     };
 
-    const char *to_string(char *buf) {
+    bool startswith(const char *prefix) const {
+        auto iter = this->begin();
+
+        while (*prefix != '\0' && *prefix == *iter && iter < this->end()) {
+            prefix += 1;
+            iter += 1;
+        }
+
+        return *prefix == '\0';
+    }
+
+    const char *to_string(char *buf) const {
         memcpy(buf, this->data(), this->length());
         buf[this->length()] = '\0';
 
@@ -119,10 +140,6 @@ struct string_fragment {
     std::string to_string() const {
         return std::string(this->data(), this->length());
     }
-
-    std::string to_string() {
-        return std::string(&this->sf_string[this->sf_begin], this->length());
-    };
 
     void clear() {
         this->sf_begin = 0;

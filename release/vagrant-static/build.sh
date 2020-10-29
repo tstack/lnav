@@ -45,23 +45,24 @@ if test x"${OS}" != x"FreeBSD"; then
     if test x"$(lsb_release | awk '{print $3}')" == x"Alpine"; then
         TARGET_FILE='/vagrant/lnav-musl.zip'
         ../lnav/configure \
-            CFLAGS='-static -no-pie -s' \
-            CXXFLAGS='-static -U__unused -no-pie -s' \
+            CFLAGS='-static -no-pie -s -O2' \
+            CXXFLAGS='-static -U__unused -no-pie -s -O2' \
             LDFLAGS="-L${FAKE_ROOT}/lib" \
             CPPFLAGS="-I${FAKE_ROOT}/include" \
             --enable-static
             PATH="${FAKE_ROOT}/bin:${PATH}"
     else
         ../lnav/configure \
+            --with-libarchive=${FAKE_ROOT} \
             LDFLAGS="-L${FAKE_ROOT}/lib" \
-            CPPFLAGS="-I${FAKE_ROOT}/include" \
+            CPPFLAGS="-I${FAKE_ROOT}/include -O2" \
             PATH="${FAKE_ROOT}/bin:${PATH}"
     fi
 else
     ../lnav/configure \
         LDFLAGS="-L${FAKE_ROOT}/lib -static" \
         LIBS="-lm -lelf" \
-        CPPFLAGS="-I${FAKE_ROOT}/include" \
+        CPPFLAGS="-I${FAKE_ROOT}/include -O2" \
         PATH="${FAKE_ROOT}/bin:${PATH}"
 fi
 

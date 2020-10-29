@@ -48,6 +48,7 @@
 #include "base/result.h"
 #include "ansi_scrubber.hh"
 #include "view_curses.hh"
+#include "archive_manager.hh"
 
 using namespace std;
 
@@ -304,17 +305,23 @@ std::pair<std::string, std::string> split_path(const char *path, ssize_t len)
 
 file_format_t detect_file_format(const std::string &filename)
 {
-    file_format_t retval = FF_UNKNOWN;
+    if (archive_manager::is_archive(filename)) {
+        return file_format_t::FF_ARCHIVE;
+    }
+
+    file_format_t retval = file_format_t::FF_UNKNOWN;
     auto_fd       fd;
 
     if ((fd = open(filename.c_str(), O_RDONLY)) != -1) {
         char buffer[32];
-        int  rc;
+        ssize_t rc;
 
         if ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
-            if (rc > 16 &&
-                strncmp(buffer, "SQLite format 3", 16) == 0) {
-                retval = FF_SQLITE_DB;
+            static auto SQLITE3_HEADER = "SQLite format 3";
+            auto header_frag = string_fragment(buffer, 0, rc);
+
+            if (header_frag.startswith(SQLITE3_HEADER)) {
+                retval = file_format_t::FF_SQLITE_DB;
             }
         }
     }

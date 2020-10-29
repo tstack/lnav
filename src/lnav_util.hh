@@ -219,9 +219,10 @@ std::pair<std::string, std::string> split_path(const std::string &path) {
     return split_path(path.c_str(), path.size());
 };
 
-enum file_format_t {
+enum class file_format_t {
     FF_UNKNOWN,
     FF_SQLITE_DB,
+    FF_ARCHIVE,
 };
 
 file_format_t detect_file_format(const std::string &filename);

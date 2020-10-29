@@ -132,6 +132,10 @@
 #include <curl/curl.h>
 #endif
 
+#if HAVE_ARCHIVE_H
+#include <archive.h>
+#endif
+
 #include "yajlpp/yajlpp.hh"
 #include "readline_callbacks.hh"
 #include "command_executor.hh"
@@ -143,6 +147,7 @@
 #include "log_search_table.hh"
 #include "shlex.hh"
 #include "log_actions.hh"
+#include "archive_manager.hh"
 
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/usr/etc"
@@ -967,26 +972,41 @@ static bool watch_logfile(string filename, logfile_open_options &loo, bool requi
             file_format_t ff = detect_file_format(filename);
 
             switch (ff) {
-            case FF_SQLITE_DB:
-                lnav_data.ld_other_files.push_back(filename);
-                attach_sqlite_db(lnav_data.ld_db.in(), filename);
-                retval = true;
-                break;
+                case file_format_t::FF_SQLITE_DB:
+                    lnav_data.ld_other_files.push_back(filename);
+                    attach_sqlite_db(lnav_data.ld_db.in(), filename);
+                    retval = true;
+                    break;
 
-            default:
-                /* It's a new file, load it in. */
-                shared_ptr<logfile> lf = make_shared<logfile>(filename, loo);
+                case file_format_t::FF_ARCHIVE: {
+                    archive_manager::walk_archive_files(filename,
+                                            [&filename](const auto& entry) {
+                        logfile_open_options loo;
 
-                log_info("loading new file: filename=%s",
-                         filename.c_str());
-                lf->set_logfile_observer(&obs);
-                lnav_data.ld_files.push_back(lf);
-                lnav_data.ld_text_source.push_back(lf);
+                        log_info("adding file from archive: %s/%s",
+                                 filename.c_str(),
+                                 entry.path().c_str());
+                        // TODO add some heuristics for hiding files
+                        lnav_data.ld_file_names[entry.path().string()] = loo;
+                    });
+                    lnav_data.ld_other_files.emplace_back(filename);
+                    break;
+                }
 
-                regenerate_unique_file_names();
+                default:
+                    /* It's a new file, load it in. */
+                    shared_ptr<logfile> lf = make_shared<logfile>(filename, loo);
 
-                retval = true;
-                break;
+                    log_info("loading new file: filename=%s",
+                             filename.c_str());
+                    lf->set_logfile_observer(&obs);
+                    lnav_data.ld_files.push_back(lf);
+                    lnav_data.ld_text_source.push_back(lf);
+
+                    regenerate_unique_file_names();
+
+                    retval = true;
+                    break;
             }
         }
     }
@@ -2536,6 +2556,9 @@ int main(int argc, char *argv[])
 #endif
 #ifdef HAVE_LIBCURL
             log_info("  curl=%s (%s)", LIBCURL_VERSION, LIBCURL_TIMESTAMP);
+#endif
+#ifdef HAVE_ARCHIVE_H
+            log_info("  libarchive=%d", ARCHIVE_VERSION_NUMBER);
 #endif
             log_info("  ncurses=%s", NCURSES_VERSION);
             log_info("  pcre=%s", pcre_version());

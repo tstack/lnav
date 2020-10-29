@@ -204,6 +204,7 @@ LNAV_BUILT_FILES = \
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
+	$(LIBARCHIVE_LDFLAGS) \
 	$(READLINE_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
 	$(PCRE_LDFLAGS)
@@ -212,6 +213,7 @@ AM_CPPFLAGS = \
 	-DSYSCONFDIR='"$(sysconfdir)"' \
 	-I$(srcdir)/fmtlib \
 	-Wall \
+	$(LIBARCHIVE_CFLAGS) \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
 	$(LIBCURL_CPPFLAGS)
@@ -226,6 +228,7 @@ LDADD = \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
+	$(LIBARCHIVE_LIBS) \
 	$(LIBCURL) \
 	-lpcrecpp
 
@@ -243,6 +246,7 @@ dist_noinst_DATA = \
 noinst_HEADERS = \
 	all_logs_vtab.hh \
 	ansi_scrubber.hh \
+	archive_manager.hh \
 	attr_line.hh \
 	auto_fd.hh \
 	auto_mem.hh \
@@ -373,6 +377,7 @@ nodist_libdiag_a_SOURCES = \
 
 libdiag_a_SOURCES = \
 	ansi_scrubber.cc \
+	archive_manager.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \
 	collation-functions.cc \
