@@ -55,6 +55,8 @@
 
 using namespace std;
 
+struct session_data_t session_data;
+
 static const char *LOG_METADATA_NAME = "log_metadata.db";
 
 static const char *BOOKMARK_TABLE_DEF = R"(
@@ -713,18 +715,6 @@ static void load_time_bookmarks()
     }
 }
 
-static int read_save_time(yajlpp_parse_context *ypc, long long value)
-{
-    lnav_data.ld_session_save_time = value;
-
-    return 1;
-}
-
-static int read_time_offset(yajlpp_parse_context *ypc, int value)
-{
-    return 1;
-}
-
 static int read_files(yajlpp_parse_context *ypc, const unsigned char *str, size_t len)
 {
     return 1;
@@ -841,16 +831,36 @@ static struct json_path_container view_def_handlers = {
 };
 
 static struct json_path_container view_handlers = {
-    json_path_handler(pcrepp("([^/]+)"))
+    yajlpp::pattern_property_handler("([^/]+)")
         .with_children(view_def_handlers)
 };
 
+static struct json_path_container file_state_handlers = {
+    yajlpp::property_handler("visible")
+        .with_description("Indicates whether the file is visible or not")
+        .FOR_FIELD(file_state, fs_is_visible),
+};
+
+static struct json_path_container file_states_handlers = {
+    yajlpp::pattern_property_handler(R"((?<filename>[^/]+))")
+        .with_description("Map of file names to file state objects")
+        .with_obj_provider<file_state, void>([](const auto& ypc, auto *root) {
+            auto fn = ypc.get_substr("filename");
+            return &session_data.sd_file_states[fn];
+        })
+        .with_children(file_state_handlers),
+};
+
 static struct json_path_container view_info_handlers = {
-    json_path_handler("save-time",               read_save_time),
-    json_path_handler("time-offset",             read_time_offset),
+    yajlpp::property_handler("save-time")
+        .FOR_FIELD(session_data_t, sd_save_time),
+    yajlpp::property_handler("time-offset")
+        .FOR_FIELD(session_data_t, sd_time_offset),
     json_path_handler("files#",                  read_files),
-    json_path_handler("views")
-        .with_children(view_handlers)
+    yajlpp::property_handler("file-states")
+        .with_children(file_states_handlers),
+    yajlpp::property_handler("views")
+        .with_children(view_handlers),
 };
 
 void load_session()
@@ -861,10 +871,11 @@ void load_session()
         auto_fd fd;
 
         lnav_data.ld_session_load_time = pair.first.second;
-        lnav_data.ld_session_save_time = pair.first.second;
+        session_data.sd_save_time = pair.first.second;
         const string &view_info_name = pair.second;
 
         yajlpp_parse_context ypc(view_info_name, &view_info_handlers);
+        ypc.with_obj(session_data);
         handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
 
         load_time_bookmarks();
@@ -883,6 +894,35 @@ void load_session()
             yajl_complete_parse(handle);
         }
         yajl_free(handle);
+
+        bool log_changes = false, text_changes = false;
+
+        for (auto& lf : lnav_data.ld_active_files.fc_files) {
+            auto iter = session_data.sd_file_states.find(lf->get_filename());
+
+            if (iter == session_data.sd_file_states.end()) {
+                continue;
+            }
+
+            log_debug("found state for file: %s %d",
+                      lf->get_content_id().c_str(),
+                      iter->second.fs_is_visible);
+            lf->set_visibility(iter->second.fs_is_visible);
+            if (!iter->second.fs_is_visible) {
+                if (lf->get_format() != nullptr) {
+                    log_changes = true;
+                } else {
+                    text_changes = true;
+                }
+            }
+        }
+
+        if (log_changes) {
+            lnav_data.ld_log_source.text_filters_changed();
+        }
+        if (text_changes) {
+            lnav_data.ld_text_source.text_filters_changed();
+        }
     };
 }
 
@@ -1266,7 +1306,7 @@ static void save_session_with_id(const std::string session_id)
             yajlpp_map root_map(handle);
 
             root_map.gen("save-time");
-            root_map.gen((long long) time(NULL));
+            root_map.gen((long long) time(nullptr));
 
             root_map.gen("time-offset");
             root_map.gen(lnav_data.ld_log_source.is_time_offset_enabled());
@@ -1278,6 +1318,23 @@ static void save_session_with_id(const std::string session_id)
 
                 for (auto &ld_file_name : lnav_data.ld_active_files.fc_file_names) {
                     file_list.gen(ld_file_name.first);
+                }
+            }
+
+            root_map.gen("file-states");
+
+            {
+                yajlpp_map file_states(handle);
+
+                for (auto &lf : lnav_data.ld_active_files.fc_files) {
+                    file_states.gen(lf->get_filename());
+
+                    {
+                        yajlpp_map file_state(handle);
+
+                        file_state.gen("visible");
+                        file_state.gen(lf->is_visible());
+                    }
                 }
             }
 
@@ -1413,7 +1470,7 @@ void save_session()
     opt_session_id | [](auto &session_id) {
         save_session_with_id(session_id);
     };
-    for (const auto pair : lnav_data.ld_session_id) {
+    for (const auto& pair : lnav_data.ld_session_id) {
         if (opt_session_id && pair.first == opt_session_id.value()) {
             continue;
         }
@@ -1428,6 +1485,7 @@ void reset_session()
     save_session();
 
     lnav_data.ld_session_time = time(nullptr);
+    session_data.sd_file_states.clear();
 
     for (auto &tc : lnav_data.ld_views) {
         auto &hmap = tc.get_highlights();
@@ -1442,10 +1500,8 @@ void reset_session()
         }
     }
 
-    for (auto ld : lnav_data.ld_log_source) {
-        shared_ptr<logfile> lf = ld->get_file();
-
-        lf->clear_time_offset();
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+        lf->reset_state();
     }
 
     lnav_data.ld_log_source.set_marked_only(false);

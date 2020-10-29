@@ -42,27 +42,27 @@
 using namespace std;
 
 static struct json_path_container term_color_rgb_handler = {
-    json_path_handler("r")
+    yajlpp::property_handler("r")
         .FOR_FIELD(rgb_color, rc_r),
-    json_path_handler("g")
+    yajlpp::property_handler("g")
         .FOR_FIELD(rgb_color, rc_g),
-    json_path_handler("b")
+    yajlpp::property_handler("b")
         .FOR_FIELD(rgb_color, rc_b)
 };
 
 static struct json_path_container term_color_handler = {
-    json_path_handler("colorId")
+    yajlpp::property_handler("colorId")
         .FOR_FIELD(term_color, xc_id),
-    json_path_handler("name")
+    yajlpp::property_handler("name")
         .FOR_FIELD(term_color, xc_name),
-    json_path_handler("rgb")
+    yajlpp::property_handler("rgb")
         .with_obj_provider<rgb_color, term_color>(
             [](const auto &pc, term_color *xc) { return &xc->xc_color; })
         .with_children(term_color_rgb_handler)
 };
 
 static struct json_path_container root_color_handler = {
-    json_path_handler("#")
+    yajlpp::property_handler("#")
         .with_obj_provider<term_color, vector<term_color>>(
         [](const yajlpp_provider_context &ypc, vector<term_color> *palette) {
             palette->resize(ypc.ypc_index + 1);

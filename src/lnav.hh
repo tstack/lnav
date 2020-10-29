@@ -245,7 +245,6 @@ struct _lnav_data {
     std::map<std::string, std::list<session_pair_t>> ld_session_id;
     time_t                                  ld_session_time;
     time_t                                  ld_session_load_time;
-    time_t                                  ld_session_save_time;
     const char *                            ld_program_name;
     const char *                            ld_debug_log_name;
 

@@ -481,4 +481,16 @@ struct json_path_container {
     std::vector<json_path_handler> jpc_children;
 };
 
+namespace yajlpp {
+inline json_path_handler property_handler(const std::string &path)
+{
+    return {path};
+}
+
+inline json_path_handler pattern_property_handler(const std::string &path)
+{
+    return {pcrepp(path)};
+}
+}
+
 #endif

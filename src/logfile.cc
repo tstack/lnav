@@ -127,6 +127,12 @@ bool logfile::exists() const
            this->lf_stat.st_size <= st.st_size;
 }
 
+void logfile::reset_state()
+{
+    this->clear_time_offset();
+    this->lf_is_visible = this->lf_options.loo_is_visible;
+}
+
 void logfile::set_format_base_time(log_format *lf)
 {
     time_t file_time = this->lf_line_buffer.get_file_time();

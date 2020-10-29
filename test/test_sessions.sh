@@ -6,6 +6,26 @@ export HOME="./sessions"
 rm -rf "./sessions"
 mkdir -p $HOME
 
+run_test ${lnav_test} -n \
+    -c ":reset-session" \
+    -c ":goto 0" \
+    -c ":hide-file" \
+    -c ":save-session" \
+    ${test_dir}/logfile_access_log.*
+
+check_output "hiding file is not working" <<EOF
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+run_test ${lnav_test} -n \
+    -c ":load-session" \
+    ${test_dir}/logfile_access_log.*
+
+check_output "hidden file was not saved in session" <<EOF
+10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
+EOF
+
+
 run_test ${lnav_test} -nq \
     -c ":reset-session" \
     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \

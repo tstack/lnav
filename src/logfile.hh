@@ -267,6 +267,13 @@ public:
         this->adjust_content_time(-1, tv);
     };
 
+    void mark_as_duplicate() {
+        this->hide();
+        this->lf_options.loo_is_visible = false;
+    }
+
+    void reset_state();
+
     bool is_time_adjusted() const {
         return (this->lf_time_offset.tv_sec != 0 ||
                 this->lf_time_offset.tv_usec != 0);

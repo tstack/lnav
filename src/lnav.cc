@@ -489,15 +489,22 @@ public:
 
     void promote_file(const shared_ptr<logfile> &lf) {
         if (lnav_data.ld_log_source.insert_file(lf)) {
-            log_info("promoting text file to log file: %s",
-                     lf->get_filename().c_str());
-            log_format *format = lf->get_format();
+            log_info("promoting text file to log file: %s (%s)",
+                     lf->get_filename().c_str(),
+                     lf->get_content_id().c_str());
+            auto *format = lf->get_format();
             if (format->lf_is_self_describing) {
                 log_vtab_impl *vt = format->get_vtab_impl();
 
                 if (vt) {
                     lnav_data.ld_vtab_manager->register_vtab(vt);
                 }
+            }
+
+            auto iter = session_data.sd_file_states.find(lf->get_filename());
+            if (iter != session_data.sd_file_states.end()) {
+                log_debug("found state for log file");
+                lf->set_visibility(iter->second.fs_is_visible);
             }
         }
         else {
@@ -624,7 +631,7 @@ void rebuild_indexes()
                          [](auto& lf) {
                     log_info("Hiding duplicate file: %s",
                              lf->get_filename().c_str());
-                    lf->hide();
+                    lf->mark_as_duplicate();
                 });
                 reload = true;
             }
@@ -1896,10 +1903,10 @@ static void looper()
 
                 if (!lnav_data.ld_session_loaded) {
                     load_session();
-                    if (lnav_data.ld_session_save_time) {
+                    if (session_data.sd_save_time) {
                         std::string ago;
 
-                        ago = time_ago(lnav_data.ld_session_save_time);
+                        ago = time_ago(session_data.sd_save_time);
                         lnav_data.ld_rl_view->set_value(
                                 ("restored session from " ANSI_BOLD_START) +
                                         ago +

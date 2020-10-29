@@ -353,13 +353,13 @@ static int create_search_table(yajlpp_parse_context *ypc, const unsigned char *s
 
 
 static struct json_path_container pattern_handlers = {
-    json_path_handler("pattern")
+    yajlpp::property_handler("pattern")
         .with_synopsis("<message-regex>")
         .with_description(
             "The regular expression to match a log message and capture fields.")
         .with_min_length(1)
         .FOR_FIELD(external_log_format::pattern, p_string),
-    json_path_handler("module-format")
+    yajlpp::property_handler("module-format")
         .with_synopsis("<bool>")
         .with_description(
             "If true, this pattern will only be used to parse message bodies "
@@ -392,48 +392,48 @@ static const json_path_handler_base::enum_value_t TRANSFORM_ENUM[] = {
 };
 
 static struct json_path_container line_format_handlers = {
-    json_path_handler("field")
+    yajlpp::property_handler("field")
         .with_synopsis("<field-name>")
         .with_description("The name of the field to substitute at this position")
         .with_min_length(1)
         .FOR_FIELD(external_log_format::json_format_element, jfe_value),
 
-    json_path_handler("default-value")
+    yajlpp::property_handler("default-value")
         .with_synopsis("<string>")
         .with_description("The default value for this position if the field is null")
         .FOR_FIELD(external_log_format::json_format_element, jfe_default_value),
 
-    json_path_handler("timestamp-format")
+    yajlpp::property_handler("timestamp-format")
         .with_synopsis("<string>")
         .with_min_length(1)
         .with_description("The strftime(3) format for this field")
         .FOR_FIELD(external_log_format::json_format_element, jfe_ts_format),
 
-    json_path_handler("min-width")
+    yajlpp::property_handler("min-width")
         .with_min_value(0)
         .with_synopsis("<size>")
         .with_description("The minimum width of the field")
         .FOR_FIELD(external_log_format::json_format_element, jfe_min_width),
 
-    json_path_handler("max-width")
+    yajlpp::property_handler("max-width")
         .with_min_value(0)
         .with_synopsis("<size>")
         .with_description("The maximum width of the field")
         .FOR_FIELD(external_log_format::json_format_element, jfe_max_width),
 
-    json_path_handler("align")
+    yajlpp::property_handler("align")
         .with_synopsis("left|right")
         .with_description("Align the text in the column to the left or right side")
         .with_enum_values(ALIGN_ENUM)
         .FOR_FIELD(external_log_format::json_format_element, jfe_align),
 
-    json_path_handler("overflow")
+    yajlpp::property_handler("overflow")
         .with_synopsis("abbrev|truncate|dot-dot")
         .with_description("Overflow style")
         .with_enum_values(OVERFLOW_ENUM)
         .FOR_FIELD(external_log_format::json_format_element, jfe_overflow),
 
-    json_path_handler("text-transform")
+    yajlpp::property_handler("text-transform")
         .with_synopsis("none|uppercase|lowercase|capitalize")
         .with_description("Text transformation")
         .with_enum_values(TRANSFORM_ENUM)
@@ -453,92 +453,92 @@ static const json_path_handler_base::enum_value_t KIND_ENUM[] = {
 };
 
 static struct json_path_container scale_handlers = {
-    json_path_handler(pcrepp("(?<scale>.*)"))
+    yajlpp::pattern_property_handler("(?<scale>.*)")
         .with_synopsis("[*,/]<unit>")
         .FOR_FIELD(scaling_factor, sf_value)
 };
 
 static struct json_path_container unit_handlers = {
-    json_path_handler("field")
+    yajlpp::property_handler("field")
         .with_synopsis("<field-name>")
         .with_description("The name of the field that contains the units for this field")
         .FOR_FIELD(external_log_format::value_def, vd_unit_field),
 
-    json_path_handler("scaling-factor")
+    yajlpp::property_handler("scaling-factor")
         .with_description("Transforms the numeric value by the given factor")
         .with_obj_provider(scaling_factor_provider)
         .with_children(scale_handlers),
 };
 
 static struct json_path_container value_def_handlers = {
-    json_path_handler("kind")
+    yajlpp::property_handler("kind")
         .with_synopsis("string|integer|float|boolean|json|quoted")
         .with_description("The type of data in the field")
         .with_enum_values(KIND_ENUM)
         .FOR_FIELD(external_log_format::value_def, vd_kind),
 
-    json_path_handler("collate")
+    yajlpp::property_handler("collate")
         .with_synopsis("<function>")
         .with_description("The collating function to use for this column")
         .FOR_FIELD(external_log_format::value_def, vd_collate),
 
-    json_path_handler("unit")
+    yajlpp::property_handler("unit")
         .with_description("Unit definitions for this field")
         .with_children(unit_handlers),
 
-    json_path_handler("identifier")
+    yajlpp::property_handler("identifier")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field contains an identifier that should be highlighted")
         .FOR_FIELD(external_log_format::value_def, vd_identifier),
 
-    json_path_handler("foreign-key")
+    yajlpp::property_handler("foreign-key")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field should be treated as a foreign key for row in another table")
         .FOR_FIELD(external_log_format::value_def, vd_foreign_key),
 
-    json_path_handler("hidden")
+    yajlpp::property_handler("hidden")
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field should be hidden")
         .FOR_FIELD(external_log_format::value_def, vd_hidden),
 
-    json_path_handler("action-list#")
+    yajlpp::property_handler("action-list#")
         .with_synopsis("<string>")
         .with_description("Actions to execute when this field is clicked on")
         .FOR_FIELD(external_log_format::value_def, vd_action_list),
 
-    json_path_handler("rewriter")
+    yajlpp::property_handler("rewriter")
         .with_synopsis("<command>")
         .with_description("A command that will rewrite this field when pretty-printing")
         .FOR_FIELD(external_log_format::value_def, vd_rewriter),
 
-    json_path_handler("description")
+    yajlpp::property_handler("description")
         .with_synopsis("<string>")
         .with_description("A description of the field")
         .FOR_FIELD(external_log_format::value_def, vd_description)
 };
 
 static struct json_path_container highlighter_def_handlers = {
-    json_path_handler("pattern")
+    yajlpp::property_handler("pattern")
         .with_synopsis("<regex>")
         .with_description("A regular expression to highlight in logs of this format.")
         .FOR_FIELD(external_log_format::highlighter_def, hd_pattern),
 
-    json_path_handler("color")
+    yajlpp::property_handler("color")
         .with_synopsis("#<hex>|<name>")
         .with_description("The color to use when highlighting this pattern.")
         .FOR_FIELD(external_log_format::highlighter_def, hd_color),
 
-    json_path_handler("background-color")
+    yajlpp::property_handler("background-color")
         .with_synopsis("#<hex>|<name>")
         .with_description("The background color to use when highlighting this pattern.")
         .FOR_FIELD(external_log_format::highlighter_def, hd_background_color),
 
-    json_path_handler("underline")
+    yajlpp::property_handler("underline")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern with an underline.")
         .FOR_FIELD(external_log_format::highlighter_def, hd_underline),
 
-    json_path_handler("blink")
+    yajlpp::property_handler("blink")
         .with_synopsis("<enabled>")
         .with_description("Highlight this pattern by blinking.")
         .FOR_FIELD(external_log_format::highlighter_def, hd_blink)
@@ -563,12 +563,12 @@ static const json_path_handler_base::enum_value_t LEVEL_ENUM[] = {
 };
 
 static struct json_path_container sample_handlers = {
-    json_path_handler("line")
+    yajlpp::property_handler("line")
         .with_synopsis("<log-line>")
         .with_description("A sample log line that should match a pattern in this format.")
         .FOR_FIELD(external_log_format::sample, s_line),
 
-    json_path_handler("level")
+    yajlpp::property_handler("level")
         .with_enum_values(LEVEL_ENUM)
         .with_description("The expected level for this sample log line.")
         .FOR_FIELD(external_log_format::sample, s_level)
@@ -583,15 +583,15 @@ static const json_path_handler_base::enum_value_t TYPE_ENUM[] = {
 };
 
 static struct json_path_container regex_handlers = {
-    json_path_handler(pcrepp(R"((?<pattern_name>[^/]+))"))
+    yajlpp::pattern_property_handler(R"((?<pattern_name>[^/]+))")
         .with_description("The set of patterns used to match log messages")
         .with_obj_provider(pattern_provider)
         .with_children(pattern_handlers),
 };
 
 static struct json_path_container level_handlers = {
-    json_path_handler(
-        pcrepp("(?<level>trace|debug[2345]?|info|stats|notice|warning|error|critical|fatal)"))
+    yajlpp::pattern_property_handler(
+        "(?<level>trace|debug[2345]?|info|stats|notice|warning|error|critical|fatal)")
         .add_cb(read_levels)
         .add_cb(read_level_int)
         .with_synopsis("<pattern|integer>")
@@ -600,14 +600,14 @@ static struct json_path_container level_handlers = {
 };
 
 static struct json_path_container value_handlers = {
-    json_path_handler(pcrepp("(?<value_name>[^/]+)"))
+    yajlpp::pattern_property_handler("(?<value_name>[^/]+)")
         .with_description("The set of values captured by the log message patterns")
         .with_obj_provider(value_def_provider)
         .with_children(value_def_handlers)
 };
 
 static struct json_path_container highlight_handlers = {
-    json_path_handler(pcrepp(R"((?<highlight_name>[^/]+))"))
+    yajlpp::pattern_property_handler(R"((?<highlight_name>[^/]+))")
         .with_description("The definition of a highlight")
         .with_obj_provider<external_log_format::highlighter_def, external_log_format>([](const yajlpp_provider_context &ypc, external_log_format *root) {
             return &(root->elf_highlighter_patterns[ypc.get_substr_i(0)]);
@@ -633,13 +633,13 @@ static struct json_path_container search_table_def_handlers = {
 };
 
 static struct json_path_container search_table_handlers = {
-    json_path_handler(pcrepp("\\w+"))
+    yajlpp::pattern_property_handler("\\w+")
         .with_description("The set of search tables to be automatically defined")
         .with_children(search_table_def_handlers)
 };
 
 struct json_path_container format_handlers = {
-    json_path_handler("regex")
+    yajlpp::property_handler("regex")
         .with_description("The set of regular expressions used to match log messages")
         .with_children(regex_handlers),
 
@@ -676,26 +676,26 @@ struct json_path_container format_handlers = {
         .with_description("The name of the module field in the log message pattern"),
     json_path_handler("opid-field", read_format_field)
         .with_description("The name of the operation-id field in the log message pattern"),
-    json_path_handler("ordered-by-time")
+    yajlpp::property_handler("ordered-by-time")
         .with_synopsis("<bool>")
         .with_description("Indicates that the order of messages in the file is time-based.")
         .FOR_FIELD(log_format, lf_time_ordered),
-    json_path_handler("level")
+    yajlpp::property_handler("level")
         .with_description("The map of level names to patterns or integer values")
         .with_children(level_handlers),
 
-    json_path_handler("value")
+    yajlpp::property_handler("value")
         .with_description("The set of value definitions")
         .with_children(value_handlers),
 
-    json_path_handler("action")
+    yajlpp::property_handler("action")
         .with_children(action_handlers),
-    json_path_handler("sample#")
+    yajlpp::property_handler("sample#")
         .with_description("An array of sample log messages to be tested against the log message patterns")
         .with_obj_provider(sample_provider)
         .with_children(sample_handlers),
 
-    json_path_handler("line-format#")
+    yajlpp::property_handler("line-format#")
         .with_description("The display format for JSON-encoded log messages")
         .with_obj_provider(line_format_provider)
         .add_cb(read_json_constant)
@@ -704,11 +704,11 @@ struct json_path_container format_handlers = {
         .with_description("Search tables to automatically define for this log format")
         .with_children(search_table_handlers),
 
-    json_path_handler("highlights")
+    yajlpp::property_handler("highlights")
         .with_description("The set of highlight definitions")
         .with_children(highlight_handlers),
 
-    json_path_handler("file-type")
+    yajlpp::property_handler("file-type")
         .with_synopsis("text|json|csv")
         .with_description("The type of file that contains the log messages")
         .with_enum_values(TYPE_ENUM)
@@ -739,7 +739,7 @@ struct json_path_container root_format_handler = json_path_container {
         .with_synopsis("The URI of the schema for this file")
         .with_description("Specifies the type of this file"),
 
-    json_path_handler(pcrepp("(?<format_name>\\w+)"))
+    yajlpp::pattern_property_handler("(?<format_name>\\w+)")
         .with_description("The definition of a log file format.")
         .with_obj_provider(ensure_format)
         .with_children(format_handlers)
