@@ -1263,7 +1263,7 @@ void file_collection::expand_filename(future_queue<file_collection> &fq,
                     }
                     continue;
                 } else {
-                    auto p = REALPATH_CACHE.emplace(path_str, abspath);
+                    auto p = REALPATH_CACHE.emplace(path_str, abspath.in());
 
                     iter = p.first;
                 }
