@@ -15,7 +15,9 @@ EOF
 fi
 
 if test x"${LIBARCHIVE_LIBS}" != x""; then
-    (cd ${srcdir} && tar cfz ${builddir}/test-logs.tgz logfile_access_log.* logfile_empty.0)
+    (cd ${srcdir} && tar cfz ${builddir}/test-logs.tgz logfile_access_log.* logfile_empty.0 -C ${builddir} ../src/lnav)
+
+    dd if=test-logs.tgz of=test-logs-trunc.tgz bs=4096 count=20
 
     mkdir -p tmp
     run_test env TMPDIR=tmp ${lnav_test} -n test-logs.tgz
@@ -46,6 +48,29 @@ EOF
 logfile_access_log.0       1
 logfile_access_log.1       1
 logfile_empty.0            0
+EOF
+
+    run_test env TMPDIR=tmp ${lnav_test} -n \
+        test-logs-trunc.tgz
+
+    sed -e "s|${builddir}||g" `test_err_filename` | head -1 \
+        > test_logfile.trunc.out
+    mv test_logfile.trunc.out `test_err_filename`
+    check_error_output "truncated tgz not reported correctly" <<EOF
+error: unable to open file: /test-logs-trunc.tgz -- failed to read file: /test-logs-trunc.tgz >> ../src/lnav -- truncated gzip input
+EOF
+
+    mkdir -p rotmp
+    chmod ugo-w rotmp
+    run_test env TMPDIR=rotmp ${lnav_test} -n test-logs.tgz
+
+    sed -e "s|lnav-[0-9]*-archives|lnav-NNN-archives|g" \
+        -e "s|${builddir}||g" \
+        `test_err_filename` | head -1 \
+        > test_logfile.rotmp.out
+    mv test_logfile.rotmp.out `test_err_filename`
+    check_error_output "archive not unpacked" <<EOF
+error: unable to open file: /test-logs.tgz -- unable to write entry: rotmp/lnav-NNN-archives/test-logs.tgz/logfile_access_log.0 -- Failed to create dir 'rotmp/lnav-NNN-archives'
 EOF
 fi
 

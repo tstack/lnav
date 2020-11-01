@@ -629,15 +629,21 @@ struct Storage<void, E> {
         }
     }
 
-    template<typename U>
+    template<typename U,
+        typename = std::enable_if_t<!std::is_same<U, void>::value>>
     const U& get() const {
         return *reinterpret_cast<const U *>(&storage_);
     }
 
-    template<typename U>
-    U& get() {
+    template<typename U,
+        typename = std::enable_if_t<!std::is_same<U, void>::value>>
+    typename std::add_lvalue_reference<U>::type get() {
         return *reinterpret_cast<U *>(&storage_);
     }
+
+    template<typename U,
+        typename = std::enable_if_t<std::is_same<U, void>::value>>
+    void get() {}
 
     type storage_;
     bool initialized_;

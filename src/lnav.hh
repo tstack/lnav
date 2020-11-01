@@ -43,6 +43,8 @@
 #include <stack>
 #include <memory>
 
+#include "base/future_util.hh"
+#include "safe/safe.h"
 #include "logfile.hh"
 #include "hist_source.hh"
 #include "statusview_curses.hh"
@@ -212,9 +214,10 @@ struct key_repeat_history {
 };
 
 struct scan_progress {
-    std::mutex sp_mutex;
     std::list<archive_manager::extract_progress> sp_extractions;
 };
+
+using safe_scan_progress = safe::Safe<scan_progress>;
 
 struct file_collection {
     std::map<std::string, std::string> fc_name_to_errors;
@@ -225,10 +228,11 @@ struct file_collection {
         fc_renamed_files;
     std::set<std::string> fc_closed_files;
     std::map<std::string, std::string> fc_other_files;
-    std::shared_ptr<scan_progress> fc_progress;
+    std::shared_ptr<safe_scan_progress> fc_progress;
     size_t fc_largest_path_length{0};
 
-    file_collection() : fc_progress(std::make_shared<scan_progress>()) {}
+    file_collection()
+        : fc_progress(std::make_shared<safe::Safe<scan_progress>>()) {}
 
     void clear() {
         this->fc_name_to_errors.clear();
@@ -238,7 +242,7 @@ struct file_collection {
         this->fc_other_files.clear();
     }
     file_collection rescan_files(bool required = false);
-    file_collection expand_filename(const std::string& path, logfile_open_options &loo, bool required);
+    void expand_filename(future_queue<file_collection> &fq, const std::string& path, logfile_open_options &loo, bool required);
     std::future<file_collection>
     watch_logfile(const std::string& filename, logfile_open_options &loo, bool required);
     void merge(const file_collection &other);

@@ -258,8 +258,8 @@ files_overlay_source::list_value_for_overlay(const listview_curses &lv, int y,
 {
     if (y == 0) {
         auto &fc = lnav_data.ld_active_files;
-        auto &sp = fc.fc_progress;
-        std::lock_guard<std::mutex> guard(sp->sp_mutex);
+        auto &fc_prog = fc.fc_progress;
+        safe::WriteAccess<safe_scan_progress> sp(*fc_prog);
 
         if (!sp->sp_extractions.empty()) {
             static char PROG[] = "-\\|/";

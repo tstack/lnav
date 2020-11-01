@@ -37,6 +37,7 @@
 #include <functional>
 #include <utility>
 
+#include "base/result.h"
 #include "ghc/filesystem.hpp"
 
 namespace archive_manager {
@@ -59,11 +60,14 @@ bool is_archive(const std::string &filename);
 
 ghc::filesystem::path filename_to_tmp_path(const std::string &filename);
 
-void walk_archive_files(const std::string &filename,
-                        const extract_cb &cb,
-                        const std::function<void(
-                            const ghc::filesystem::path &,
-                            const ghc::filesystem::directory_entry &)> &);
+using walk_result_t = Result<void, std::string>;
+
+walk_result_t walk_archive_files(
+    const std::string &filename,
+    const extract_cb &cb,
+    const std::function<void(
+        const ghc::filesystem::path &,
+        const ghc::filesystem::directory_entry &)> &);
 }
 
 #endif

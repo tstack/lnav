@@ -578,15 +578,9 @@ void rebuild_indexes()
 
         if ((!lf->exists() || lf->is_closed())) {
             log_info("closed log file: %s", lf->get_filename().c_str());
-            if (!lf->is_valid_filename()) {
-                lnav_data.ld_active_files.fc_file_names.erase(lf->get_filename());
-            }
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
-            file_iter = lnav_data.ld_active_files.fc_files.erase(file_iter);
-            lnav_data.ld_active_files.fc_files_generation += 1;
-
-            lnav_data.ld_active_files.regenerate_unique_file_names();
+            lnav_data.ld_active_files.close_file(lf);
         }
         else {
             ++file_iter;
@@ -964,9 +958,16 @@ struct same_file {
     const struct stat &sf_stat;
 };
 
+static std::mutex REALPATH_CACHE_MUTEX;
+static std::unordered_map<std::string, std::string> REALPATH_CACHE;
+
 void file_collection::close_file(const std::shared_ptr<logfile> &lf)
 {
-    if (!lf->is_valid_filename()) {
+    if (lf->is_valid_filename()) {
+        std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
+
+        REALPATH_CACHE.erase(lf->get_filename());
+    } else {
         this->fc_file_names.erase(lf->get_filename());
     }
     auto file_iter = find(this->fc_files.begin(),
@@ -1092,9 +1093,15 @@ file_collection::watch_logfile(const string& filename, logfile_open_options &loo
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
             return make_ready_future(retval);
         }
-        return std::async(std::launch::async, [filename, &loo, prog=this->fc_progress]() {
-            file_format_t ff = detect_file_format(filename);
+        return std::async(std::launch::async, [filename, &loo, prog=this->fc_progress, errs=this->fc_name_to_errors]() {
             file_collection retval;
+
+            if (errs.find(filename) != errs.end()) {
+                // The file is broken, no reason to try and reopen
+                return retval;
+            }
+
+            file_format_t ff = detect_file_format(filename);
 
             switch (ff) {
                 case file_format_t::FF_SQLITE_DB:
@@ -1103,15 +1110,23 @@ file_collection::watch_logfile(const string& filename, logfile_open_options &loo
                     break;
 
                 case file_format_t::FF_ARCHIVE: {
-                    retval.fc_other_files[filename] = "Archive";
-                    archive_manager::walk_archive_files(
-                        filename,
-                        [prog](const auto& path, const auto total) {
-                            std::lock_guard<std::mutex> guard(prog->sp_mutex);
-                            prog->sp_extractions.clear();
-                            prog->sp_extractions.emplace_back(path, total);
+                    nonstd::optional<std::list<archive_manager::extract_progress>::iterator>
+                        prog_iter_opt;
 
-                            return &prog->sp_extractions.back();
+                    auto res = archive_manager::walk_archive_files(
+                        filename,
+                        [prog, &prog_iter_opt](
+                            const auto& path, const auto total) {
+                            safe::WriteAccess<safe_scan_progress> sp(*prog);
+
+                            prog_iter_opt | [&sp](auto prog_iter) {
+                                sp->sp_extractions.erase(prog_iter);
+                            };
+                            auto prog_iter = sp->sp_extractions.emplace(
+                                sp->sp_extractions.begin(), path, total);
+                            prog_iter_opt = prog_iter;
+
+                            return &(*prog_iter);
                         },
                         [&filename, &retval](const auto& tmp_path,
                                              const auto& entry) {
@@ -1134,7 +1149,6 @@ file_collection::watch_logfile(const string& filename, logfile_open_options &loo
                         log_info("adding file from archive: %s/%s",
                                  filename.c_str(),
                                  entry.path().c_str());
-                        // TODO add some heuristics for hiding files
                         retval.fc_file_names[entry.path().string()] =
                             logfile_open_options()
                                 .with_filename(custom_name.string())
@@ -1142,9 +1156,18 @@ file_collection::watch_logfile(const string& filename, logfile_open_options &loo
                                 .with_non_utf_visibility(false)
                                 .with_visible_size_limit(128 * 1024);
                     });
+                    if (res.isErr()) {
+                        log_error("archive extraction failed: %s",
+                                  res.unwrapErr().c_str());
+                        retval.clear();
+                        retval.fc_name_to_errors[filename] = res.unwrapErr();
+                    } else {
+                        retval.fc_other_files[filename] = "Archive";
+                    }
                     {
-                        std::lock_guard<std::mutex> guard(prog->sp_mutex);
-                        prog->sp_extractions.clear();
+                        prog_iter_opt | [&prog](auto prog_iter) {
+                            prog->writeAccess()->sp_extractions.erase(prog_iter);
+                        };
                     }
                     break;
                 }
@@ -1189,18 +1212,25 @@ file_collection::watch_logfile(const string& filename, logfile_open_options &loo
  * @param path     The glob pattern to expand.
  * @param required Passed to watch_logfile.
  */
-file_collection file_collection::expand_filename(const string& path, logfile_open_options &loo, bool required)
+void file_collection::expand_filename(future_queue<file_collection> &fq,
+                                      const string& path,
+                                      logfile_open_options &loo,
+                                      bool required)
 {
     static_root_mem<glob_t, globfree> gl;
-    file_collection retval;
+
+    {
+        std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
+
+        if (REALPATH_CACHE.find(path) != REALPATH_CACHE.end()) {
+            return;
+        }
+    }
 
     if (is_url(path.c_str())) {
-        return retval;
+        return;
     }
     else if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
-        future_queue<file_collection> fq([&retval](auto& fc) {
-            retval.merge(fc);
-        });
         int lpc;
 
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
@@ -1216,22 +1246,34 @@ file_collection file_collection::expand_filename(const string& path, logfile_ope
             strcmp(path.c_str(), gl->gl_pathv[0]) != 0) {
             required = false;
         }
-        for (lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
-            auto_mem<char> abspath;
 
-            if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) == nullptr) {
-                if (required) {
-                    fprintf(stderr, "Cannot find file: %s -- %s",
-                        gl->gl_pathv[lpc], strerror(errno));
+        std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
+        for (lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
+            auto path_str = std::string(gl->gl_pathv[lpc]);
+            auto iter = REALPATH_CACHE.find(path_str);
+
+            if (iter == REALPATH_CACHE.end()) {
+                auto_mem<char> abspath;
+
+                if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) ==
+                    nullptr) {
+                    if (required) {
+                        fprintf(stderr, "Cannot find file: %s -- %s",
+                                gl->gl_pathv[lpc], strerror(errno));
+                    }
+                    continue;
+                } else {
+                    auto p = REALPATH_CACHE.emplace(path_str, abspath);
+
+                    iter = p.first;
                 }
             }
-            else if (required || access(abspath.in(), R_OK) == 0) {
-                fq.push_back(watch_logfile(abspath.in(), loo, required));
+
+            if (required || access(iter->second.c_str(), R_OK) == 0) {
+                fq.push_back(watch_logfile(iter->second, loo, required));
             }
         }
     }
-
-    return retval;
 }
 
 file_collection file_collection::rescan_files(bool required)
@@ -1243,11 +1285,11 @@ file_collection file_collection::rescan_files(bool required)
 
     for (auto& pair : this->fc_file_names) {
         if (pair.second.loo_fd == -1) {
-            retval.merge(this->expand_filename(pair.first, pair.second, required));
+            this->expand_filename(fq, pair.first, pair.second, required);
             if (lnav_data.ld_flags & LNF_ROTATED) {
                 string path = pair.first + ".*";
 
-                retval.merge(this->expand_filename(path, pair.second, false));
+                this->expand_filename(fq, path, pair.second, false);
             }
         } else {
             fq.push_back(watch_logfile(pair.first, pair.second, required));
@@ -2939,7 +2981,7 @@ int main(int argc, char *argv[])
                 if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
                     for (const auto& pair : lnav_data.ld_active_files.fc_name_to_errors) {
                         fprintf(stderr,
-                                "error: unable to read file: %s -- %s\n",
+                                "error: unable to open file: %s -- %s\n",
                                 pair.first.c_str(),
                                 pair.second.c_str());
                     }

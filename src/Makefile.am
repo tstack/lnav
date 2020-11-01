@@ -322,6 +322,10 @@ noinst_HEADERS = \
 	regexp_vtab.hh \
 	relative_time.hh \
 	ring_span.hh \
+	safe/accessmode.h \
+	safe/defaulttypes.h \
+	safe/mutableref.h \
+	safe/safe.h \
 	sequence_matcher.hh \
 	sequence_sink.hh \
 	session_data.hh \

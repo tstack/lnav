@@ -390,6 +390,10 @@ add_library(diag STATIC
         base/result.h
         styling.hh
         ring_span.hh
+        safe/accessmode.h
+        safe/defaulttypes.h
+        safe/mutableref.h
+        safe/safe.h
         sequence_sink.hh
         shlex.hh
         simdutf8check.h

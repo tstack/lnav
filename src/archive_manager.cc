@@ -134,10 +134,12 @@ filename_to_tmp_path(const std::string &filename)
 }
 
 #if HAVE_ARCHIVE_H
-static int
-copy_data(const ghc::filesystem::path &path,
+static walk_result_t
+copy_data(const std::string& filename,
           struct archive *ar,
+          struct archive_entry *entry,
           struct archive *aw,
+          const ghc::filesystem::path &entry_path,
           struct extract_progress *ep)
 {
     int r;
@@ -148,32 +150,38 @@ copy_data(const ghc::filesystem::path &path,
     for (;;) {
         r = archive_read_data_block(ar, &buff, &size, &offset);
         if (r == ARCHIVE_EOF) {
-            return (ARCHIVE_OK);
+            return Ok();
         }
-        if (r < ARCHIVE_OK) {
-            return (r);
+        if (r != ARCHIVE_OK) {
+            return Err(fmt::format("failed to read file: {} >> {} -- {}",
+                                   filename,
+                                   archive_entry_pathname_utf8(entry),
+                                   archive_error_string(ar)));
         }
         r = archive_write_data_block(aw, buff, size, offset);
-        if (r < ARCHIVE_OK) {
-            log_error("%s", archive_error_string(aw));
-            return (r);
+        if (r != ARCHIVE_OK) {
+            return Err(fmt::format("failed to write file: {} -- {}",
+                                   entry_path.string(),
+                                   archive_error_string(aw)));
         }
 
         total += size;
         ep->ep_out_size.fetch_add(size);
 
         if ((total - last_space_check) > (1024 * 1024)) {
-            auto tmp_space = ghc::filesystem::space(path);
+            auto tmp_space = ghc::filesystem::space(entry_path);
 
             if (tmp_space.available < MIN_FREE_SPACE) {
-                log_error("available space too low: %lld", tmp_space.available);
-                return ARCHIVE_FATAL;
+                return Err(fmt::format(
+                    "{} -- available space too low: %lld",
+                    entry_path.string(),
+                    tmp_space.available));
             }
         }
     }
 }
 
-static void extract(const std::string &filename, const extract_cb &cb)
+static walk_result_t extract(const std::string &filename, const extract_cb &cb)
 {
     static int FLAGS = ARCHIVE_EXTRACT_TIME
                        | ARCHIVE_EXTRACT_PERM
@@ -191,7 +199,7 @@ static void extract(const std::string &filename, const extract_cb &cb)
         ghc::filesystem::last_write_time(
             done_path, std::chrono::system_clock::now());
         log_debug("already extracted! %s", done_path.c_str());
-        return;
+        return Ok();
     }
 
     auto_mem<archive> arc(archive_free);
@@ -204,7 +212,9 @@ static void extract(const std::string &filename, const extract_cb &cb)
     archive_write_disk_set_options(ext, FLAGS);
     archive_write_disk_set_standard_lookup(ext);
     if (archive_read_open_filename(arc, filename.c_str(), 10240) != ARCHIVE_OK) {
-        return;
+        return Err(fmt::format("unable to open archive: {} -- {}",
+                               filename,
+                               archive_error_string(arc)));
     }
 
     log_info("extracting %s to %s",
@@ -217,11 +227,10 @@ static void extract(const std::string &filename, const extract_cb &cb)
             log_info("all done");
             break;
         }
-        if (r < ARCHIVE_OK) {
-            log_error("%s", archive_error_string(arc));
-        }
-        if (r < ARCHIVE_WARN) {
-            return;
+        if (r != ARCHIVE_OK) {
+            return Err(fmt::format("unable to read entry header: {} -- {}",
+                                   filename,
+                                   archive_error_string(arc)));
         }
 
         auto_mem<archive_entry> wentry(archive_entry_free);
@@ -237,23 +246,18 @@ static void extract(const std::string &filename, const extract_cb &cb)
             wentry, S_IRUSR | (S_ISDIR(entry_mode) ? S_IXUSR|S_IWUSR : 0));
         r = archive_write_header(ext, wentry);
         if (r < ARCHIVE_OK) {
-            log_error("%s", archive_error_string(ext));
+            return Err(fmt::format("unable to write entry: {} -- {}",
+                                   entry_path.string(),
+                                   archive_error_string(ext)));
         }
         else if (archive_entry_size(entry) > 0) {
-            r = copy_data(tmp_path, arc, ext, prog);
-            if (r < ARCHIVE_OK) {
-                log_error("%s", archive_error_string(ext));
-            }
-            if (r < ARCHIVE_WARN) {
-                return;
-            }
+            TRY(copy_data(filename, arc, entry, ext, entry_path, prog));
         }
         r = archive_write_finish_entry(ext);
-        if (r < ARCHIVE_OK) {
-            log_error("%s", archive_error_string(ext));
-        }
-        if (r < ARCHIVE_WARN) {
-            return;
+        if (r != ARCHIVE_OK) {
+            return Err(fmt::format("unable to finish entry: {} -- {}",
+                                   entry_path.string(),
+                                   archive_error_string(ext)));
         }
     }
     archive_read_close(arc);
@@ -261,21 +265,21 @@ static void extract(const std::string &filename, const extract_cb &cb)
 
     auto_fd(open(done_path.c_str(), O_CREAT | O_WRONLY, 0600));
 
-    // TODO return errors
+    return Ok();
 }
 #endif
 
-void walk_archive_files(const std::string &filename,
-                        const extract_cb &cb,
-                        const std::function<void(
-                            const fs::path&,
-                            const fs::directory_entry &)>& callback)
+walk_result_t walk_archive_files(
+    const std::string &filename,
+    const extract_cb &cb,
+    const std::function<void(
+        const fs::path&,
+        const fs::directory_entry &)>& callback)
 {
 #if HAVE_ARCHIVE_H
-
     auto tmp_path = filename_to_tmp_path(filename);
 
-    extract(filename, cb);
+    TRY(extract(filename, cb));
 
     for (const auto& entry : fs::recursive_directory_iterator(tmp_path)) {
         if (!entry.is_regular_file()) {
@@ -284,6 +288,10 @@ void walk_archive_files(const std::string &filename,
 
         callback(tmp_path, entry);
     }
+
+    return Ok();
+#else
+    return Err("not compiled with libarchive");
 #endif
 }
 
