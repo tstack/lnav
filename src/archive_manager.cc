@@ -291,7 +291,7 @@ walk_result_t walk_archive_files(
 
     return Ok();
 #else
-    return Err("not compiled with libarchive");
+    return Err(std::string("not compiled with libarchive"));
 #endif
 }
 
