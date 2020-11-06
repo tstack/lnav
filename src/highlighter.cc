@@ -64,8 +64,8 @@ void highlighter::study()
 void highlighter::annotate(attr_line_t &al, int start) const
 {
     auto &vc = view_colors::singleton();
-    const std::string &str = al.get_string();
-    string_attrs_t &sa = al.get_attrs();
+    const auto &str = al.get_string();
+    auto &sa = al.get_attrs();
     // The line we pass to pcre_exec will be treated as the start when the
     // carat (^) operator is used.
     const char *line_start = &(str.c_str()[start]);
@@ -107,7 +107,7 @@ void highlighter::annotate(attr_line_t &al, int start) const
                     attrs = this->h_attrs;
                 }
                 if (this->h_semantic) {
-                    attrs |= vc.attrs_for_ident(&line_start[lr.lr_start],
+                    attrs |= vc.attrs_for_ident(&str[lr.lr_start],
                                                 lr.length());
                 }
                 if (!this->h_fg.empty()) {
