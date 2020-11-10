@@ -68,7 +68,7 @@ struct bookmark_metadata {
         return retval;
     };
 
-    bool empty() {
+    bool empty() const {
         return this->bm_name.empty() &&
                this->bm_comment.empty() &&
                this->bm_tags.empty();
@@ -189,7 +189,7 @@ public:
         return all_types;
     };
 
-    bookmark_type_t(std::string name) : bt_name(std::move(name)) {
+    explicit bookmark_type_t(std::string name) : bt_name(std::move(name)) {
         get_all_types().push_back(this);
     };
 
@@ -199,7 +199,7 @@ public:
 
 private:
     struct mark_eq {
-        mark_eq(const std::string &name) : me_name(name) { };
+        explicit mark_eq(const std::string &name) : me_name(name) { };
 
         bool operator()(bookmark_type_t *bt) {
             return bt->bt_name == this->me_name;

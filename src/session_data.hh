@@ -35,7 +35,7 @@
 #include <map>
 #include <string>
 
-#include "lnav.hh"
+#include "view_helpers.hh"
 
 struct file_state {
     bool fs_is_visible{true};

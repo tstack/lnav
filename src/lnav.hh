@@ -73,6 +73,8 @@
 #include "preview_status_source.hh"
 #include "sql_util.hh"
 #include "archive_manager.hh"
+#include "file_collection.hh"
+#include "view_helpers.hh"
 
 /** The command modes that are available while viewing a file. */
 typedef enum {
@@ -97,8 +99,6 @@ enum {
     LNB_HELP,
     LNB_HEADLESS,
     LNB_QUIET,
-    LNB_ROTATED,
-    LNB_RECURSIVE,
     LNB_CHECK_CONFIG,
     LNB_INSTALL,
     LNB_UPDATE_FORMATS,
@@ -109,9 +109,6 @@ enum {
 /** Flags set on the lnav command-line. */
 typedef enum {
     LNF_SYSLOG    = (1L << LNB_SYSLOG),
-
-    LNF_ROTATED   = (1L << LNB_ROTATED),
-    LNF_RECURSIVE = (1L << LNB_RECURSIVE),
 
     LNF_TIMESTAMP = (1L << LNB_TIMESTAMP),
     LNF_HELP      = (1L << LNB_HELP),
@@ -125,22 +122,6 @@ typedef enum {
 
     LNF__ALL      = (LNF_SYSLOG|LNF_HELP),
 } lnav_flags_t;
-
-/** The different views available. */
-typedef enum {
-    LNV_LOG,
-    LNV_TEXT,
-    LNV_HELP,
-    LNV_HISTOGRAM,
-    LNV_DB,
-    LNV_SCHEMA,
-    LNV_PRETTY,
-    LNV_SPECTRO,
-
-    LNV__MAX
-} lnav_view_t;
-
-extern const char *lnav_view_strings[LNV__MAX + 1];
 
 extern const char *lnav_zoom_strings[];
 
@@ -157,7 +138,7 @@ typedef enum {
 } lnav_status_t;
 
 typedef std::pair<int, int>                      ppid_time_pair_t;
-typedef std::pair<ppid_time_pair_t, std::string> session_pair_t;
+typedef std::pair<ppid_time_pair_t, ghc::filesystem::path> session_pair_t;
 
 class input_state_tracker : public log_state_dumper {
 public:
@@ -165,7 +146,7 @@ public:
         memset(this->ist_recent_key_presses, 0, sizeof(this->ist_recent_key_presses));
     };
 
-    void log_state() {
+    void log_state() override {
         log_info("recent_key_presses: index=%d", this->ist_index);
         for (int lpc = 0; lpc < COUNT; lpc++) {
             log_msg_extra(" 0x%x (%c)", this->ist_recent_key_presses[lpc],
@@ -195,7 +176,7 @@ struct key_repeat_history {
     void update(int ch, vis_line_t top) {
         struct timeval now, diff;
 
-        gettimeofday(&now, NULL);
+        gettimeofday(&now, nullptr);
         timersub(&now, &this->krh_last_press_time, &diff);
         if (diff.tv_sec >= 1 || diff.tv_usec > (750 * 1000)) {
             this->krh_key = 0;
@@ -213,44 +194,7 @@ struct key_repeat_history {
     };
 };
 
-struct scan_progress {
-    std::list<archive_manager::extract_progress> sp_extractions;
-};
-
-using safe_scan_progress = safe::Safe<scan_progress>;
-
-struct file_collection {
-    std::map<std::string, std::string> fc_name_to_errors;
-    std::map<std::string, logfile_open_options> fc_file_names;
-    std::vector<std::shared_ptr<logfile>> fc_files;
-    int fc_files_generation{0};
-    std::vector<std::pair<std::shared_ptr<logfile>, std::string>>
-        fc_renamed_files;
-    std::set<std::string> fc_closed_files;
-    std::map<std::string, std::string> fc_other_files;
-    std::shared_ptr<safe_scan_progress> fc_progress;
-    size_t fc_largest_path_length{0};
-
-    file_collection()
-        : fc_progress(std::make_shared<safe::Safe<scan_progress>>()) {}
-
-    void clear() {
-        this->fc_name_to_errors.clear();
-        this->fc_file_names.clear();
-        this->fc_files.clear();
-        this->fc_closed_files.clear();
-        this->fc_other_files.clear();
-    }
-    file_collection rescan_files(bool required = false);
-    void expand_filename(future_queue<file_collection> &fq, const std::string& path, logfile_open_options &loo, bool required);
-    std::future<file_collection>
-    watch_logfile(const std::string& filename, logfile_open_options &loo, bool required);
-    void merge(const file_collection &other);
-    void close_file(const std::shared_ptr<logfile> &lf);
-    void regenerate_unique_file_names();
-};
-
-struct _lnav_data {
+struct lnav_data_t {
     std::map<std::string, std::list<session_pair_t>> ld_session_id;
     time_t                                  ld_session_time;
     time_t                                  ld_session_load_time;
@@ -353,7 +297,7 @@ struct _lnav_data {
     struct key_repeat_history ld_key_repeat_history;
 };
 
-extern struct _lnav_data lnav_data;
+extern struct lnav_data_t lnav_data;
 
 extern readline_context::command_map_t lnav_commands;
 extern const int ZOOM_LEVELS[];
@@ -367,12 +311,6 @@ extern const ssize_t ZOOM_COUNT;
 
 void rebuild_hist();
 void rebuild_indexes();
-void execute_examples();
-attr_line_t eval_example(const help_text &ht, const help_example &ex);
-
-bool ensure_view(textview_curses *expected_tc);
-bool toggle_view(textview_curses *toggle_tc);
-void layout_views();
 
 bool setup_logline_table(exec_context &ec);
 

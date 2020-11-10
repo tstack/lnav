@@ -217,13 +217,7 @@ public:
 
     void resolve_home_dir(std::string& result, const pcre_context::capture_t cap) const {
         if (cap.length() == 1) {
-            const char *home_dir = getenv("HOME");
-
-            if (home_dir != nullptr) {
-                result.append(home_dir);
-            } else {
-                result.append("~");
-            }
+            result.append(getenv_opt("HOME").value_or("~"));
         } else {
             auto username = (char *) alloca(cap.length());
 

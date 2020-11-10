@@ -27,103 +27,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LNAV_ALL_LOGS_VTAB_HH
-#define LNAV_ALL_LOGS_VTAB_HH
+#ifndef lnav_all_logs_vtab_hh
+#define lnav_all_logs_vtab_hh
+
+#include <array>
 
 #include "log_vtab_impl.hh"
 #include "data_parser.hh"
 
+/**
+ * A virtual table that provides access to all log messages from all formats.
+ */
 class all_logs_vtab : public log_vtab_impl {
 public:
 
-    all_logs_vtab() : log_vtab_impl(intern_string::lookup("all_logs")) {
-        this->alv_value_name = intern_string::lookup("log_format");
-        this->alv_msg_name = intern_string::lookup("log_msg_format");
-        this->alv_schema_name = intern_string::lookup("log_msg_schema");
-    }
+    all_logs_vtab();
 
-    void get_columns(std::vector<vtab_column> &cols) const {
-        cols.emplace_back(this->alv_value_name.get());
-        cols.emplace_back(this->alv_msg_name.get());
-        cols.emplace_back(this->alv_schema_name.get(), SQLITE3_TEXT, "", true);
-    };
+    void get_columns(std::vector<vtab_column> &cols) const override;
 
     void extract(std::shared_ptr<logfile> lf,
                  uint64_t line_number,
                  shared_buffer_ref &line,
-                 std::vector<logline_value> &values) {
-        log_format *format = lf->get_format();
-        values.emplace_back(this->alv_value_name, format->get_name(), 0);
+                 std::vector<logline_value> &values) override;
 
-        std::vector<logline_value> sub_values;
-        struct line_range body;
+    bool is_valid(log_cursor &lc, logfile_sub_source &lss) override;
 
-        this->vi_attrs.clear();
-        format->annotate(line_number, line, this->vi_attrs, sub_values, false);
-
-        body = find_string_attr_range(this->vi_attrs, &textview_curses::SA_BODY);
-        if (body.lr_start == -1) {
-            body.lr_start = 0;
-            body.lr_end = line.length();
-        }
-
-        data_scanner ds(line, body.lr_start, body.lr_end);
-        data_parser dp(&ds);
-
-        std::string str;
-        dp.dp_msg_format = &str;
-        dp.parse();
-
-        tmp_shared_buffer tsb(str.c_str());
-
-        values.emplace_back(this->alv_msg_name, tsb.tsb_ref, 1);
-
-        this->alv_schema_manager.invalidate_refs();
-        dp.dp_schema_id.to_string(this->alv_schema_buffer);
-        shared_buffer_ref schema_ref;
-        schema_ref.share(this->alv_schema_manager,
-                         this->alv_schema_buffer,
-                         data_parser::schema_id_t::STRING_SIZE - 1);
-        values.emplace_back(this->alv_schema_name, schema_ref, 2);
-    }
-
-    bool is_valid(log_cursor &lc, logfile_sub_source &lss) {
-        content_line_t    cl(lss.at(lc.lc_curr_line));
-        std::shared_ptr<logfile> lf = lss.find(cl);
-        auto lf_iter = lf->begin() + cl;
-
-        if (lf_iter->is_continued()) {
-            return false;
-        }
-
-        return true;
-    };
-
-    bool next(log_cursor &lc, logfile_sub_source &lss) {
-        lc.lc_curr_line = lc.lc_curr_line + vis_line_t(1);
-        lc.lc_sub_index = 0;
-
-        if (lc.is_eof()) {
-            return true;
-        }
-
-        content_line_t    cl(lss.at(lc.lc_curr_line));
-        std::shared_ptr<logfile> lf = lss.find(cl);
-        auto lf_iter = lf->begin() + cl;
-
-        if (lf_iter->is_continued()) {
-            return false;
-        }
-
-        return true;
-    };
+    bool next(log_cursor &lc, logfile_sub_source &lss) override;
 
 private:
-    intern_string_t alv_value_name;
-    intern_string_t alv_msg_name;
-    intern_string_t alv_schema_name;
+    const intern_string_t alv_value_name;
+    const intern_string_t alv_msg_name;
+    const intern_string_t alv_schema_name;
     shared_buffer alv_schema_manager;
-    char alv_schema_buffer[data_parser::schema_id_t::STRING_SIZE];
+    std::array<char, data_parser::schema_id_t::STRING_SIZE> alv_schema_buffer{};
 };
 
 #endif //LNAV_ALL_LOGS_VTAB_HH

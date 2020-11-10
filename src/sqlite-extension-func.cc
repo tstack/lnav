@@ -31,10 +31,9 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <assert.h>
 
-#include "lnav_util.hh"
+#include "base/string_util.hh"
 #include "base/lnav_log.hh"
 #include "sql_util.hh"
 

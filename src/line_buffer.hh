@@ -238,7 +238,7 @@ public:
     };
 
     /** Check the invariants for this object. */
-    bool invariant(void)
+    bool invariant()
     {
         require(this->lb_buffer != NULL);
         require(this->lb_buffer_size <= this->lb_buffer_max);

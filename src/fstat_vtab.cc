@@ -89,14 +89,6 @@ CREATE TABLE fstat (
 );
 )";
 
-    struct vtab {
-        sqlite3_vtab base;
-
-        operator sqlite3_vtab *() {
-            return &this->base;
-        };
-    };
-
     struct cursor {
         sqlite3_vtab_cursor base;
         string c_pattern;

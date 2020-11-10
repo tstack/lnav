@@ -74,4 +74,46 @@ inline bool endswith(const std::string& str, const char (&suffix) [N])
 
 void truncate_to(std::string &str, size_t len);
 
+inline std::string trim(const std::string &str)
+{
+    std::string::size_type start, end;
+
+    for (start = 0; start < str.size() && isspace(str[start]); start++);
+    for (end = str.size(); end > 0 && isspace(str[end - 1]); end--);
+
+    return str.substr(start, end - start);
+}
+
+inline std::string tolower(const char *str)
+{
+    std::string retval;
+
+    for (int lpc = 0; str[lpc]; lpc++) {
+        retval.push_back(::tolower(str[lpc]));
+    }
+
+    return retval;
+}
+
+inline std::string tolower(const std::string &str)
+{
+    return tolower(str.c_str());
+}
+
+inline std::string toupper(const char *str)
+{
+    std::string retval;
+
+    for (int lpc = 0; str[lpc]; lpc++) {
+        retval.push_back(::toupper(str[lpc]));
+    }
+
+    return retval;
+}
+
+inline std::string toupper(const std::string &str)
+{
+    return toupper(str.c_str());
+}
+
 #endif

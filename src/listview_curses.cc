@@ -202,7 +202,7 @@ void listview_curses::do_update()
         while (y < bottom) {
             lr.lr_start = this->lv_left;
             lr.lr_end   = this->lv_left + wrap_width;
-            if (this->lv_overlay_source != NULL &&
+            if (this->lv_overlay_source != nullptr &&
                 this->lv_overlay_source->list_value_for_overlay(
                     *this,
                     y - this->lv_y, bottom - this->lv_y,

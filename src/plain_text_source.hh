@@ -39,11 +39,9 @@
 class plain_text_source
         : public text_sub_source, public vis_location_history {
 public:
-    plain_text_source()
-        : tds_text_format(text_format_t::TF_UNKNOWN), tds_longest_line(0) {
-    };
+    plain_text_source() = default;
 
-    plain_text_source(const std::string &text) : tds_text_format(text_format_t::TF_UNKNOWN) {
+    plain_text_source(const std::string &text) {
         size_t start = 0, end;
 
         while ((end = text.find('\n', start)) != std::string::npos) {
@@ -57,13 +55,11 @@ public:
         this->tds_longest_line = this->compute_longest_line();
     };
 
-    plain_text_source(const std::vector<std::string> &text_lines)
-        : tds_text_format(text_format_t::TF_UNKNOWN) {
+    plain_text_source(const std::vector<std::string> &text_lines) {
         this->replace_with(text_lines);
     };
 
-    plain_text_source(const std::vector<attr_line_t> &text_lines)
-        : tds_text_format(text_format_t::TF_UNKNOWN) {
+    plain_text_source(const std::vector<attr_line_t> &text_lines) {
         this->tds_lines = text_lines;
         this->tds_longest_line = this->compute_longest_line();
     };
@@ -148,8 +144,8 @@ private:
     };
 
     std::vector<attr_line_t> tds_lines;
-    text_format_t tds_text_format;
-    size_t tds_longest_line;
+    text_format_t tds_text_format{text_format_t::TF_UNKNOWN};
+    size_t tds_longest_line{0};
 };
 
 #endif //LNAV_PLAIN_TEXT_SOURCE_HH

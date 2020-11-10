@@ -55,7 +55,6 @@ class vt52_curses
     : public view_curses {
 public:
     vt52_curses();
-    virtual ~vt52_curses();
 
     /** @param win The curses window this view is attached to. */
     void set_window(WINDOW *win) { this->vc_window = win; };

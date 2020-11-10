@@ -106,14 +106,6 @@ struct from_sqlite<pair<string, pcre *>> {
 };
 
 struct lnav_views : public tvt_iterator_cursor<lnav_views> {
-    struct vtab {
-        sqlite3_vtab base;
-
-        operator sqlite3_vtab *() {
-            return &this->base;
-        };
-    };
-
     static constexpr const char *CREATE_STMT = R"(
 -- Access lnav's views through this table.
 CREATE TABLE lnav_views (
@@ -272,14 +264,6 @@ CREATE TABLE lnav_view_stack (
 );
 )";
 
-    struct vtab {
-        sqlite3_vtab base;
-
-        operator sqlite3_vtab *() {
-            return &this->base;
-        };
-    };
-
     iterator begin() {
         return lnav_data.ld_view_stack.vs_views.begin();
     }
@@ -290,7 +274,7 @@ CREATE TABLE lnav_view_stack (
 
     int get_column(cursor &vc, sqlite3_context *ctx, int col) {
         textview_curses *tc = *vc.iter;
-        lnav_view_t view = lnav_view_t(tc - lnav_data.ld_views);
+        auto view = lnav_view_t(tc - lnav_data.ld_views);
 
         switch (col) {
             case 0:
@@ -341,15 +325,6 @@ CREATE TABLE lnav_view_stack (
 };
 
 struct lnav_view_filter_base {
-
-    struct vtab {
-        sqlite3_vtab base;
-
-        operator sqlite3_vtab *() {
-            return &this->base;
-        };
-    };
-
     struct iterator {
         using difference_type = int;
         using value_type = text_filter;
@@ -528,7 +503,7 @@ CREATE TABLE lnav_view_filters (
                    bool enabled,
                    text_filter::type_t type,
                    pair<string, pcre *> pattern) {
-        lnav_view_t view_index = lnav_view_t(rowid >> 32);
+        auto view_index = lnav_view_t(rowid >> 32);
         int filter_index = rowid & 0xffffffffLL;
         textview_curses &tc = lnav_data.ld_views[view_index];
         text_sub_source *tss = tc.get_sub_source();

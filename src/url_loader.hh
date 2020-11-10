@@ -37,20 +37,15 @@
 class url_loader : public curl_request {
 public:
     url_loader(const std::string &url) : curl_request(url), ul_resume_offset(0) {
-        char piper_tmpname[PATH_MAX];
-        const char *tmpdir;
-
-        if ((tmpdir = getenv("TMPDIR")) == NULL) {
-            tmpdir = _PATH_VARTMP;
-        }
-        snprintf(piper_tmpname, sizeof(piper_tmpname),
-                 "%s/lnav.url.XXXXXX",
-                 tmpdir);
-        if ((this->ul_fd = mkstemp(piper_tmpname)) == -1) {
+        auto tmp_res = open_temp_file(ghc::filesystem::temp_directory_path() /
+                                      "lnav.url.XXXXXX");
+        if (tmp_res.isErr()) {
             return;
         }
 
-        unlink(piper_tmpname);
+        auto tmp_pair = tmp_res.unwrap();
+        ghc::filesystem::remove(tmp_pair.first);
+        this->ul_fd = tmp_pair.second;
 
         curl_easy_setopt(this->cr_handle, CURLOPT_URL, this->cr_name.c_str());
         curl_easy_setopt(this->cr_handle, CURLOPT_WRITEFUNCTION, write_cb);

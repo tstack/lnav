@@ -228,6 +228,7 @@ add_library(diag STATIC
 
         config.h
 
+        all_logs_vtab.cc
         ansi_scrubber.cc
         archive_manager.cc
         bin2c.h
@@ -242,6 +243,7 @@ add_library(diag STATIC
         environ_vtab.cc
         extension-functions.cc
         field_overlay_source.cc
+        file_collection.cc
         file_vtab.cc
         files_sub_source.cc
         filter_observer.cc
@@ -352,6 +354,7 @@ add_library(diag STATIC
         base/enum_util.hh
         base/future_util.hh
         field_overlay_source.hh
+        file_collection.hh
         file_vtab.hh
         files_sub_source.hh
         filter_observer.hh
@@ -409,6 +412,7 @@ add_library(diag STATIC
         timer.hh
         top_status_source.hh
         url_loader.hh
+        view_helpers.hh
         views_vtab.hh
         vtab_module.hh
         yajlpp/yajlpp.hh
@@ -469,6 +473,9 @@ endif()
 add_executable(test_yajlpp yajlpp/test_yajlpp.cc)
 target_link_libraries(test_yajlpp diag ${lnav_LIBS})
 add_test(NAME test_yajlpp COMMAND test_yajlpp)
+
+add_executable(drive_json_op yajlpp/drive_json_op.cc)
+target_link_libraries(drive_json_op diag ${lnav_LIBS})
 
 add_executable(lnav ${lnav_SRCS})
 target_link_libraries(lnav diag)

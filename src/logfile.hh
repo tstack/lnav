@@ -84,7 +84,7 @@ struct logfile_open_options {
     };
 
     logfile_open_options &with_fd(auto_fd fd) {
-        this->loo_fd = fd;
+        this->loo_fd = std::move(fd);
 
         return *this;
     };

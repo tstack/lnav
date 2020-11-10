@@ -262,7 +262,7 @@ size_t db_overlay_source::list_overlay_count(const listview_curses &lv)
                 .with_margins(3, 0);
 
             for (auto &jpw_value : jpw.jpw_values) {
-                this->dos_lines.push_back("   " + jpw_value.wt_ptr + " = " +
+                this->dos_lines.emplace_back("   " + jpw_value.wt_ptr + " = " +
                                           jpw_value.wt_value);
 
                 string_attrs_t &sa = this->dos_lines.back().get_attrs();

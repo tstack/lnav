@@ -37,15 +37,11 @@
 #include "pretty_printer.hh"
 #include "sysclip.hh"
 #include "log_data_helper.hh"
-#include "session_data.hh"
 #include "command_executor.hh"
 #include "termios_guard.hh"
-#include "readline_callbacks.hh"
-#include "readline_possibilities.hh"
 #include "readline_highlighters.hh"
 #include "field_overlay_source.hh"
 #include "hotkeys.hh"
-#include "log_format_loader.hh"
 #include "base/opt_util.hh"
 #include "shlex.hh"
 
@@ -408,7 +404,7 @@ bool handle_paging_key(int ch)
                 tc->get_dimensions(height, width);
                 if (lnav_data.ld_last_user_mark[tc] > (tc->get_bottom() - 2) &&
                     tc->get_top() + height < tc->get_inner_height()) {
-                    tc->shift_top(vis_line_t(1));
+                    tc->shift_top(1_vl);
                 }
                 if (lnav_data.ld_last_user_mark[tc] + 1 >=
                     tc->get_inner_height()) {
@@ -441,7 +437,7 @@ bool handle_paging_key(int ch)
             tc->toggle_user_mark(&textview_curses::BM_USER,
                                  vis_line_t(new_mark));
             if (new_mark == tc->get_top()) {
-                tc->shift_top(vis_line_t(-1));
+                tc->shift_top(-1_vl);
             }
             if (new_mark > 0) {
                 lnav_data.ld_last_user_mark[tc] = new_mark - 1;
@@ -872,7 +868,6 @@ bool handle_paging_key(int ch)
                             auto index = distance(fc.fc_files.begin(), iter);
                             auto index_vl = vis_line_t(index);
 
-                            log_debug("index %d", index);
                             lnav_data.ld_files_view.set_top(index_vl);
                             lnav_data.ld_files_view.set_selection(index_vl);
                         }

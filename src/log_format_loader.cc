@@ -65,7 +65,7 @@ typedef map<intern_string_t, external_log_format *> log_formats_map_t;
 static log_formats_map_t LOG_FORMATS;
 
 struct userdata {
-    std::string ud_format_path;
+    ghc::filesystem::path ud_format_path;
     vector<intern_string_t> *ud_format_names{nullptr};
     std::vector<std::string> *ud_errors{nullptr};
 };
@@ -81,7 +81,7 @@ static external_log_format *ensure_format(const yajlpp_provider_context &ypc, us
         LOG_FORMATS[name] = retval = new external_log_format(name);
         log_debug("Loading format -- %s", name.get());
     }
-    retval->elf_source_path.insert(ud->ud_format_path.substr(0, ud->ud_format_path.rfind('/')));
+    retval->elf_source_path.insert(ud->ud_format_path.filename().string());
 
     if (find(formats->begin(), formats->end(), name) == formats->end()) {
         formats->push_back(name);
@@ -810,7 +810,9 @@ static void format_error_reporter(const yajlpp_parse_context &ypc,
     }
 }
 
-std::vector<intern_string_t> load_format_file(const string &filename, std::vector<string> &errors)
+std::vector<intern_string_t>
+load_format_file(const ghc::filesystem::path &filename,
+                 std::vector<string> &errors)
 {
     std::vector<intern_string_t> retval;
     struct userdata ud;
@@ -823,14 +825,10 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
     yajlpp_parse_context ypc(filename, &root_format_handler);
     ypc.ypc_userdata = &ud;
     ypc.with_obj(ud);
-    if ((fd = open(filename.c_str(), O_RDONLY)) == -1) {
-        char errmsg[1024];
-
-        snprintf(errmsg, sizeof(errmsg),
-                 "error:unable to open format file '%s' -- %s",
-                 filename.c_str(),
-                 strerror(errno));
-        errors.emplace_back(errmsg);
+    if ((fd = openp(filename, O_RDONLY)) == -1) {
+        errors.emplace_back(fmt::format(
+            "error: unable to open format file '{}' -- {}",
+            filename.string(), strerror(errno)));
     }
     else {
         auto_mem<yajl_handle_t> handle(yajl_free);
@@ -838,7 +836,7 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
         off_t offset = 0;
         ssize_t rc = -1;
 
-        handle = yajl_alloc(&ypc.ypc_callbacks, NULL, &ypc);
+        handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
         ypc.with_handle(handle)
             .with_error_reporter(format_error_reporter);
         yajl_config(handle, yajl_allow_comments, 1);
@@ -848,11 +846,10 @@ std::vector<intern_string_t> load_format_file(const string &filename, std::vecto
                 break;
             }
             else if (rc == -1) {
-                errors.push_back(
-                    "error:" +
-                    filename +
-                    ":unable to read file -- " +
-                    string(strerror(errno)));
+                errors.push_back(fmt::format(
+                    "error:{}:unable to read file -- {}",
+                    filename.string(),
+                    strerror(errno)));
                 break;
             }
             if (offset == 0 && (rc > 2) &&
@@ -1105,7 +1102,7 @@ void extract_metadata_from_file(struct script_metadata &meta_inout)
         log_warning("unable to open script -- %s", meta_inout.sm_path.c_str());
     } else if (!S_ISREG(st.st_mode)) {
         log_warning("not a regular file -- %s", meta_inout.sm_path.c_str());
-    } else if ((fp = fopen(meta_inout.sm_path.c_str(), "r")) != NULL) {
+    } else if ((fp = fopen(meta_inout.sm_path.c_str(), "r")) != nullptr) {
         size_t len;
 
         len = fread(buffer, 1, sizeof(buffer), fp.in());

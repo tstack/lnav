@@ -56,7 +56,7 @@ struct extract_progress {
 using extract_cb = std::function<extract_progress *(
     const ghc::filesystem::path &, ssize_t)>;
 
-bool is_archive(const std::string &filename);
+bool is_archive(const ghc::filesystem::path& filename);
 
 ghc::filesystem::path filename_to_tmp_path(const std::string &filename);
 

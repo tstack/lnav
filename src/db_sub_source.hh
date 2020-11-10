@@ -42,12 +42,6 @@
 
 class db_label_source : public text_sub_source, public text_time_translator {
 public:
-    db_label_source() : dls_time_column_index(-1) {
-
-    };
-
-    ~db_label_source() { };
-
     bool has_log_time_column() const {
         return !this->dls_time_column.empty();
     };
@@ -118,7 +112,7 @@ public:
     };
 
     struct header_meta {
-        header_meta(std::string name)
+        explicit header_meta(std::string name)
             : hm_name(std::move(name)),
               hm_column_type(SQLITE3_TEXT),
               hm_graphable(false),
@@ -143,26 +137,22 @@ public:
     std::vector<header_meta> dls_headers;
     std::vector<std::vector<const char *> > dls_rows;
     std::vector<struct timeval> dls_time_column;
-    int dls_time_column_index;
+    int dls_time_column_index{-1};
 
     static const char *NULL_STR;
 };
 
 class db_overlay_source : public list_overlay_source {
 public:
-    db_overlay_source() : dos_active(false), dos_labels(nullptr) {
-
-    };
-
     size_t list_overlay_count(const listview_curses &lv);
 
     bool list_value_for_overlay(const listview_curses &lv,
                                 int y, int bottom,
                                 vis_line_t row,
-                                attr_line_t &value_out);
+                                attr_line_t &value_out) override;
 
-    bool dos_active;
-    db_label_source *dos_labels;
+    bool dos_active{false};
+    db_label_source *dos_labels{nullptr};
     std::vector<attr_line_t> dos_lines;
 };
 #endif

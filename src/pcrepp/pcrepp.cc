@@ -193,7 +193,7 @@ bool pcrepp::match(pcre_context &pc, pcre_input &pi, int options) const
     return rc > 0;
 }
 
-void pcrepp::study(void)
+void pcrepp::study()
 {
     const char *errptr;
 
@@ -237,7 +237,7 @@ void pcrepp::study(void)
 }
 
 #ifdef PCRE_STUDY_JIT_COMPILE
-pcre_jit_stack *pcrepp::jit_stack(void)
+pcre_jit_stack *pcrepp::jit_stack()
 {
     static pcre_jit_stack *retval = NULL;
 

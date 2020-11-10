@@ -37,18 +37,15 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <stdarg.h>
-#include <paths.h>
-
-#include <fstream>
 
 #include "auto_fd.hh"
 #include "lnav_util.hh"
 #include "pcrepp/pcrepp.hh"
-#include "lnav_config.hh"
 #include "base/result.h"
 #include "ansi_scrubber.hh"
 #include "view_curses.hh"
 #include "archive_manager.hh"
+#include "fmt/format.h"
 
 using namespace std;
 
@@ -83,11 +80,11 @@ std::string hash_bytes(const char *str1, size_t s1len, ...)
     va_start(args, s1len);
 
     context.Init(0, 0);
-    while (str1 != NULL) {
+    while (str1 != nullptr) {
         context.Update(str1, s1len);
 
         str1 = va_arg(args, const char *);
-        if (str1 == NULL) {
+        if (str1 == nullptr) {
             break;
         }
         s1len = va_arg(args, size_t);
@@ -101,7 +98,7 @@ std::string hash_bytes(const char *str1, size_t s1len, ...)
 
 std::string time_ago(time_t last_time, bool convert_local)
 {
-    time_t      delta, current_time = time(NULL);
+    time_t      delta, current_time = time(nullptr);
     const char *fmt;
     char        buffer[64];
     int         amount;
@@ -155,7 +152,7 @@ std::string precise_time_ago(const struct timeval &tv, bool convert_local)
 {
     struct timeval now, diff;
 
-    gettimeofday(&now, NULL);
+    gettimeofday(&now, nullptr);
     if (convert_local) {
         now.tv_sec = convert_log_time_to_local(now.tv_sec);
     }
@@ -194,31 +191,12 @@ std::string precise_time_ago(const struct timeval &tv, bool convert_local)
     }
 }
 
-std::string get_current_dir(void)
-{
-    char        cwd[FILENAME_MAX];
-    std::string retval = ".";
-
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        perror("getcwd");
-    }
-    else {
-        retval = std::string(cwd);
-    }
-
-    if (retval != "/") {
-        retval += "/";
-    }
-
-    return retval;
-}
-
-bool change_to_parent_dir(void)
+bool change_to_parent_dir()
 {
     bool retval = false;
     char cwd[3] = "";
 
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
         /* perror("getcwd"); */
     }
     if (strcmp(cwd, "/") != 0) {
@@ -243,28 +221,7 @@ void split_ws(const std::string &str, std::vector<std::string> &toks_out)
     }
 }
 
-std::pair<std::string, std::string> split_path(const char *path, ssize_t len)
-{
-    ssize_t dir_len = len;
-
-    while (dir_len >= 0 && (path[dir_len] == '/' || path[dir_len] == '\\')) {
-        dir_len -= 1;
-    }
-
-    while (dir_len >= 0) {
-        if (path[dir_len] == '/' || path[dir_len] == '\\') {
-            return make_pair(string(path, dir_len),
-                             string(&path[dir_len + 1], len - dir_len));
-        }
-
-        dir_len -= 1;
-    }
-
-    return make_pair(path[0] == '/' ? "/" : ".",
-                     path[0] == '/' ? string(&path[1], len - 1) : string(path, len));
-}
-
-file_format_t detect_file_format(const std::string &filename)
+file_format_t detect_file_format(const ghc::filesystem::path &filename)
 {
     if (archive_manager::is_archive(filename)) {
         return file_format_t::FF_ARCHIVE;
@@ -273,7 +230,7 @@ file_format_t detect_file_format(const std::string &filename)
     file_format_t retval = file_format_t::FF_UNKNOWN;
     auto_fd       fd;
 
-    if ((fd = open(filename.c_str(), O_RDONLY)) != -1) {
+    if ((fd = openp(filename, O_RDONLY)) != -1) {
         char buffer[32];
         ssize_t rc;
 
@@ -446,7 +403,7 @@ bool next_format(const char * const fmt[], int &index, int &locked_index)
 
     if (locked_index == -1) {
         index += 1;
-        if (fmt[index] == NULL) {
+        if (fmt[index] == nullptr) {
             retval = false;
         }
     }
@@ -469,7 +426,7 @@ const char *date_time_scanner::scan(const char *time_dest,
 {
     int  curr_time_fmt = -1;
     bool found         = false;
-    const char *retval = NULL;
+    const char *retval = nullptr;
 
     if (!time_fmt) {
         time_fmt = PTIMEC_FORMAT_STR;
@@ -486,7 +443,7 @@ const char *date_time_scanner::scan(const char *time_dest,
             char time_cp[time_len + 1];
             int gmt_int, off;
 
-            retval = NULL;
+            retval = nullptr;
             memcpy(time_cp, time_dest, time_len);
             time_cp[time_len] = '\0';
             if (sscanf(time_cp, "+%d%n", &gmt_int, &off) == 1) {
@@ -495,7 +452,7 @@ const char *date_time_scanner::scan(const char *time_dest,
                 if (convert_local && this->dts_local_time) {
                     localtime_r(&gmt, &tm_out->et_tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-                    tm_out->et_tm.tm_zone = NULL;
+                    tm_out->et_tm.tm_zone = nullptr;
 #endif
                     tm_out->et_tm.tm_isdst = 0;
                     gmt = tm2sec(&tm_out->et_tm);
@@ -517,7 +474,7 @@ const char *date_time_scanner::scan(const char *time_dest,
 
 #ifdef HAVE_STRUCT_TM_TM_ZONE
             if (!this->dts_keep_base_tz) {
-                tm_out->et_tm.tm_zone = NULL;
+                tm_out->et_tm.tm_zone = nullptr;
             }
 #endif
             if (func(tm_out, time_dest, off, time_len)) {
@@ -548,7 +505,7 @@ const char *date_time_scanner::scan(const char *time_dest,
 
 #ifdef HAVE_STRUCT_TM_TM_ZONE
             if (!this->dts_keep_base_tz) {
-                tm_out->et_tm.tm_zone = NULL;
+                tm_out->et_tm.tm_zone = nullptr;
             }
 #endif
             if (ptime_fmt(time_fmt[curr_time_fmt], tm_out, time_dest, off, time_len) &&
@@ -563,7 +520,7 @@ const char *date_time_scanner::scan(const char *time_dest,
 
                     this->to_localtime(gmt, *tm_out);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-                    tm_out->et_tm.tm_zone = NULL;
+                    tm_out->et_tm.tm_zone = nullptr;
 #endif
                     tm_out->et_tm.tm_isdst = 0;
                 }
@@ -582,10 +539,10 @@ const char *date_time_scanner::scan(const char *time_dest,
     }
 
     if (!found) {
-        retval = NULL;
+        retval = nullptr;
     }
 
-    if (retval != NULL) {
+    if (retval != nullptr) {
         /* Try to pull out the milli/micro-second value. */
         if (retval[0] == '.' || retval[0] == ',') {
             off_t off = (retval - time_dest) + 1;
@@ -649,7 +606,10 @@ string build_path(const vector<ghc::filesystem::path> &paths)
         }
         retval += path.string();
     }
-    retval += ":" + string(getenv("PATH"));
+    auto env_path = getenv_opt("PATH");
+    if (env_path) {
+        retval += ":" + string(*env_path);
+    }
     return retval;
 }
 
@@ -695,17 +655,6 @@ size_t abbreviate_str(char *str, size_t len, size_t max_len)
     return len;
 }
 
-ghc::filesystem::path system_tmpdir()
-{
-    const char *tmpdir;
-
-    if ((tmpdir = getenv("TMPDIR")) == nullptr) {
-        tmpdir = _PATH_VARTMP;
-    }
-
-    return ghc::filesystem::path(tmpdir);
-}
-
 Result<std::pair<ghc::filesystem::path, int>, std::string>
 open_temp_file(const ghc::filesystem::path &pattern)
 {
@@ -715,7 +664,8 @@ open_temp_file(const ghc::filesystem::path &pattern)
 
     strcpy(pattern_copy, pattern_str.c_str());
     if ((fd = mkstemp(pattern_copy)) == -1) {
-        throw Err(strerror(errno));
+        return Err(fmt::format("unable to create temporary file: {} -- {}",
+                               pattern.string(), strerror(errno)));
     }
 
     return Ok(make_pair(ghc::filesystem::path(pattern_copy), fd));

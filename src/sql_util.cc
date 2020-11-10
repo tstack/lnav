@@ -40,9 +40,10 @@
 
 #include "auto_mem.hh"
 #include "sql_util.hh"
+#include "base/string_util.hh"
 #include "base/lnav_log.hh"
-#include "lnav_util.hh"
 #include "pcrepp/pcrepp.hh"
+#include "lnav_util.hh"
 #include "sqlite-extension-func.hh"
 
 using namespace std;
@@ -727,7 +728,7 @@ void sql_execute_script(sqlite3 *db,
                     sqlite3_bind_text(stmt, lpc + 1,
                                       iter->second.c_str(), -1,
                                       SQLITE_TRANSIENT);
-                } else if ((env_value = getenv(&name[1])) != NULL) {
+                } else if ((env_value = getenv(&name[1])) != nullptr) {
                     sqlite3_bind_text(stmt, lpc + 1,
                                       env_value, -1,
                                       SQLITE_TRANSIENT);

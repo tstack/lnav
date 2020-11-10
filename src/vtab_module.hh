@@ -38,6 +38,7 @@
 
 #include "optional.hpp"
 #include "base/lnav_log.hh"
+#include "base/string_util.hh"
 #include "lnav_util.hh"
 #include "auto_mem.hh"
 #include "yajl/api/yajl_gen.h"
@@ -58,12 +59,12 @@ struct from_sqlite_conversion_error : std::exception {
 
 struct sqlite_func_error : std::exception {
     template<typename ...Args>
-    sqlite_func_error(
+    explicit sqlite_func_error(
         fmt::string_view format_str, const Args& ...args) :
         e_what(fmt::vformat(format_str, fmt::make_format_args(args...))) {
     }
 
-    const char *what() const noexcept {
+    const char *what() const noexcept override {
         return this->e_what.c_str();
     }
 
@@ -436,11 +437,11 @@ public:
     };
 
     const_iterator begin() {
-        return const_iterator(this);
+        return {this};
     };
 
     const_iterator end() {
-        return const_iterator(this, this->vic_index_info.nConstraint);
+        return {this, this->vic_index_info.nConstraint};
     };
 
 private:
@@ -497,14 +498,26 @@ private:
 
 template<typename T>
 struct vtab_module {
+    struct vtab {
+        explicit vtab(T& impl) : v_impl(impl) {};
+
+        explicit operator sqlite3_vtab *() {
+            return &this->base;
+        };
+
+        sqlite3_vtab v_base{};
+        T &v_impl;
+    };
+
     static int tvt_create(sqlite3 *db,
                           void *pAux,
                           int argc, const char *const *argv,
                           sqlite3_vtab **pp_vt,
                           char **pzErr) {
-        static typename T::vtab vt;
+        auto* mod = static_cast<vtab_module<T> *>(pAux);
+        auto vt = new vtab(mod->vm_impl);
 
-        *pp_vt = (sqlite3_vtab *) vt;
+        *pp_vt = (sqlite3_vtab *) &vt->v_base;
 
         return sqlite3_declare_vtab(db, T::CREATE_STMT);
     };
@@ -558,7 +571,7 @@ struct vtab_module {
 
         auto *p_cur = new (typename T::cursor)(p_svt);
 
-        if (p_cur == NULL) {
+        if (p_cur == nullptr) {
             return SQLITE_NOMEM;
         } else {
             *pp_cursor = (sqlite3_vtab_cursor *) p_cur;
@@ -598,10 +611,10 @@ struct vtab_module {
     };
 
     static int tvt_column(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int col) {
+        auto *mod_vt = (typename vtab_module<T>::vtab *) cur->pVtab;
         auto *p_cur = (typename T::cursor *) cur;
-        T handler;
 
-        return handler.get_column(*p_cur, ctx, col);
+        return mod_vt->v_impl.get_column(*p_cur, ctx, col);
     };
 
     static int vt_best_index(sqlite3_vtab *tab, sqlite3_index_info *p_info) {
@@ -620,17 +633,17 @@ struct vtab_module {
                           int argc,
                           sqlite3_value **argv,
                           sqlite_int64 *rowid) {
-        T handler;
+        auto *mod_vt = (typename vtab_module<T>::vtab *) tab;
 
         if (argc <= 1) {
             sqlite3_int64 rowid = sqlite3_value_int64(argv[0]);
 
-            return handler.delete_row(tab, rowid);
+            return mod_vt->v_impl.delete_row(tab, rowid);
         }
 
         if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
             sqlite3_int64 *rowid2 = rowid;
-            return vtab_module<T>::apply(handler, &T::insert_row, tab, *rowid2, argc - 2, argv + 2);
+            return vtab_module<T>::apply(mod_vt->v_impl, &T::insert_row, tab, *rowid2, argc - 2, argv + 2);
         }
 
         sqlite3_int64 index = sqlite3_value_int64(argv[0]);
@@ -641,7 +654,7 @@ struct vtab_module {
             return SQLITE_ERROR;
         }
 
-        return vtab_module<T>::apply(handler, &T::update_row, tab, index, argc - 2, argv + 2);
+        return vtab_module<T>::apply(mod_vt->v_impl, &T::update_row, tab, index, argc - 2, argv + 2);
     };
 
     template<typename U>
@@ -653,7 +666,8 @@ struct vtab_module {
     void addUpdate(...) {
     };
 
-    vtab_module() noexcept {
+    template<typename ...Args>
+    vtab_module(Args& ...args) noexcept : vm_impl(args...) {
         memset(&this->vm_module, 0, sizeof(this->vm_module));
         this->vm_module.iVersion = 0;
         this->vm_module.xCreate = tvt_create;
@@ -668,52 +682,53 @@ struct vtab_module {
         this->vm_module.xBestIndex = vt_best_index;
         this->vm_module.xFilter = vt_filter;
         this->vm_module.xColumn = tvt_column;
-        this->addUpdate<T>(T());
+        this->addUpdate<T>(this->vm_impl);
     };
 
-    int create(sqlite3 *db, const char *name) {
-        std::string impl_name = name;
+    int create(sqlite3 *db, const char *name)
+    {
+        auto impl_name = std::string(name);
         vtab_module_schemas += T::CREATE_STMT;
         vtab_module_ddls[intern_string::lookup(name)] = trim(T::CREATE_STMT);
 
         // XXX Eponymous tables don't seem to work in older sqlite versions
         impl_name += "_impl";
-        int rc = sqlite3_create_module(db, impl_name.c_str(), &this->vm_module, NULL);
+        int rc = sqlite3_create_module(
+            db, impl_name.c_str(), &this->vm_module, this);
         ensure(rc == SQLITE_OK);
-        std::string create_stmt = std::string("CREATE VIRTUAL TABLE ") + name + " USING " + impl_name + "()";
-        return sqlite3_exec(db, create_stmt.c_str(), NULL, NULL, NULL);
+        auto create_stmt = fmt::format("CREATE VIRTUAL TABLE {} USING {}()",
+                                       name, impl_name);
+        return sqlite3_exec(db, create_stmt.c_str(), nullptr, nullptr, nullptr);
     };
 
     sqlite3_module vm_module;
+    T vm_impl;
 };
 
 template<typename T>
 struct tvt_iterator_cursor {
     struct cursor {
-        sqlite3_vtab_cursor base;
+        sqlite3_vtab_cursor base{};
+
         typename T::iterator iter;
 
-        cursor(sqlite3_vtab *vt)
+        explicit cursor(sqlite3_vtab *vt)
         {
-            T handler;
+            auto* mod_vt = (typename vtab_module<T>::vtab *) vt;
 
             this->base.pVtab = vt;
-            this->iter = handler.begin();
+            this->iter = mod_vt->v_impl.begin();
         };
 
         int reset() {
-            T handler;
-
-            this->iter = handler.begin();
+            this->iter = get_handler().begin();
 
             return SQLITE_OK;
         };
 
         int next()
         {
-            T handler;
-
-            if (this->iter != handler.end()) {
+            if (this->iter != get_handler().end()) {
                 ++this->iter;
             }
 
@@ -722,9 +737,7 @@ struct tvt_iterator_cursor {
 
         int eof()
         {
-            T handler;
-
-            return this->iter == handler.end();
+            return this->iter == get_handler().end();
         };
 
         template< bool cond, typename U >
@@ -734,9 +747,7 @@ struct tvt_iterator_cursor {
         resolvedType< std::is_same<std::random_access_iterator_tag,
             typename std::iterator_traits<typename T::iterator>::iterator_category>::value, U >
         get_rowid(sqlite_int64 &rowid_out) {
-            T handler;
-
-            rowid_out = std::distance(handler.begin(), this->iter);
+            rowid_out = std::distance(get_handler().begin(), this->iter);
 
             return SQLITE_OK;
         }
@@ -745,11 +756,16 @@ struct tvt_iterator_cursor {
         resolvedType< !std::is_same<std::random_access_iterator_tag,
             typename std::iterator_traits<typename T::iterator>::iterator_category>::value, U >
         get_rowid(sqlite_int64 &rowid_out) {
-            T handler;
-
-            rowid_out = handler.get_rowid(this->iter);
+            rowid_out = get_handler().get_rowid(this->iter);
 
             return SQLITE_OK;
+        }
+
+    private:
+        T &get_handler() {
+            auto* mod_vt = (typename vtab_module<T>::vtab *) this->base.pVtab;
+
+            return mod_vt->v_impl;
         }
     };
 };

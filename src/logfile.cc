@@ -33,12 +33,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <ctype.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
 #include <sys/resource.h>
@@ -59,7 +56,7 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
 {
     require(!filename.empty());
 
-    this->lf_options = loo;
+    this->lf_options = std::move(loo);
     memset(&this->lf_stat, 0, sizeof(this->lf_stat));
     if (this->lf_options.loo_fd == -1) {
         char resolved_path[PATH_MAX];

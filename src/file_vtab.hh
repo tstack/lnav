@@ -32,6 +32,8 @@
 
 #include <sqlite3.h>
 
-int register_file_vtab(sqlite3 *db);
+#include "file_collection.hh"
+
+int register_file_vtab(sqlite3 *db, file_collection &fc);
 
 #endif

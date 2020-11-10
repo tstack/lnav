@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "lnav.hh"
+#include "ansi_scrubber.hh"
 #include "vtab_module.hh"
 #include "relative_time.hh"
 #include "field_overlay_source.hh"
@@ -41,7 +41,8 @@ json_string extract(const char *str);
 
 void field_overlay_source::build_summary_lines(const listview_curses &lv)
 {
-    textfile_sub_source &tss = lnav_data.ld_text_source;
+    auto& tc = dynamic_cast<const textview_curses &>(lv);
+    textfile_sub_source &tss = this->fos_tss;
     logfile_sub_source &lss = this->fos_lss;
 
     this->fos_summary_lines.clear();
@@ -55,7 +56,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
 
         lv.get_dimensions(height, width);
         free_rows = height - filled_rows - vis_line_t(this->fos_lines.size());
-        if (free_rows < 2 || lnav_data.ld_flags & LNF_HEADLESS) {
+        if (free_rows < 2 || !this->fos_show_status) {
             this->fos_summary_lines.clear();
         }
         else {
@@ -68,7 +69,7 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
             }
             else {
                 logline *first_line, *last_line;
-                time_t now = time(NULL);
+                time_t now = time(nullptr);
 
                 first_line = lss.find_line(lss.at(vis_line_t(0)));
                 last_line = lss.find_line(lss.at(lv.get_bottom()));
@@ -84,11 +85,12 @@ void field_overlay_source::build_summary_lines(const listview_curses &lv)
 
                 vis_line_t from_five_min_ago = lss.find_from_time(five_minutes_ago);
                 vis_line_t from_ten_secs_ago = lss.find_from_time(ten_secs_ago);
-                vis_bookmarks &bm = lnav_data.ld_views[LNV_LOG].get_bookmarks();
-                bookmark_vector<vis_line_t> &error_bookmarks =
-                    bm[&logfile_sub_source::BM_ERRORS];
+                auto &bm = tc.get_bookmarks();
+                auto error_bm_iter = bm.find(&logfile_sub_source::BM_ERRORS);
 
-                if (now > last_line->get_time() && from_five_min_ago != -1) {
+                if (now > last_line->get_time() && from_five_min_ago != -1 &&
+                    error_bm_iter != bm.end()) {
+                    auto& error_bookmarks = error_bm_iter->second;
                     auto five_min_lower =
                         lower_bound(error_bookmarks.begin(),
                                     error_bookmarks.end(),
@@ -369,7 +371,7 @@ void field_overlay_source::build_field_lines(const listview_curses &lv)
         this->fos_lines.emplace_back(" No known message fields");
     }
 
-    const log_format *last_format = NULL;
+    const log_format *last_format = nullptr;
 
     for (auto & lv : this->fos_log_helper.ldh_line_values) {
         string format_name = lv.lv_format->get_name().to_string();

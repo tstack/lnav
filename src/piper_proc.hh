@@ -72,7 +72,7 @@ public:
     virtual ~piper_proc();
 
     /** @return The file descriptor for the temporary file. */
-    int get_fd() { return this->pp_fd.release(); };
+    auto_fd get_fd() { return std::move(this->pp_fd); };
 
     pid_t get_child_pid() const { return this->pp_child; };
 

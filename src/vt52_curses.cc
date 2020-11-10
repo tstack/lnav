@@ -162,9 +162,6 @@ vt52_curses::vt52_curses()
       vc_map_buffer(0)
 { }
 
-vt52_curses::~vt52_curses()
-{ }
-
 const char *vt52_curses::map_input(int ch, int &len_out)
 {
     const char *esc, *retval;

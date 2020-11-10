@@ -487,12 +487,12 @@ public:
     /** @return The number of rows of data in this view's source data. */
     vis_line_t get_inner_height() const
     {
-        return vis_line_t(this->lv_source == NULL ? 0 :
+        return vis_line_t(this->lv_source == nullptr ? 0 :
                           this->lv_source->listview_rows(*this));
     };
 
     size_t get_inner_width() const {
-        return this->lv_source == NULL ? 0 :
+        return this->lv_source == nullptr ? 0 :
                this->lv_source->listview_width(*this);
     };
 

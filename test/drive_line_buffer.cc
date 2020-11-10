@@ -36,18 +36,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 
 #include <random>
 #include <tuple>
-#include <string>
 #include <vector>
 #include <algorithm>
 
 #include "base/string_util.hh"
-#include "lnav_util.hh"
 #include "auto_fd.hh"
 #include "line_buffer.hh"
 
@@ -57,7 +54,7 @@ int main(int argc, char *argv[])
 {
 	int c, rnd_iters = 5, retval = EXIT_SUCCESS;
 	vector<tuple<int, off_t, ssize_t> > index;
-	auto_fd fd = STDIN_FILENO, fd_cmp;
+	auto_fd fd = auto_fd(STDIN_FILENO), fd_cmp;
 	int offseti = 0;
 	off_t offset = 0;
 	int count = 1000;

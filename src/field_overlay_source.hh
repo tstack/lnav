@@ -35,18 +35,19 @@
 #include "listview_curses.hh"
 #include "log_data_helper.hh"
 #include "logfile_sub_source.hh"
+#include "textfile_sub_source.hh"
 
 class field_overlay_source : public list_overlay_source {
 public:
-    field_overlay_source(logfile_sub_source &lss)
-            : fos_lss(lss), fos_log_helper(lss) {
+    explicit field_overlay_source(logfile_sub_source &lss, textfile_sub_source &tss)
+            : fos_lss(lss), fos_tss(tss), fos_log_helper(lss) {
 
     };
 
     void add_key_line_attrs(int key_size, bool last_line = false) {
         string_attrs_t &sa = this->fos_lines.back().get_attrs();
         struct line_range lr(1, 2);
-        sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, last_line ? ACS_LLCORNER : ACS_LTEE));
+        sa.emplace_back(lr, &view_curses::VC_GRAPHIC, last_line ? ACS_LLCORNER : ACS_LTEE);
 
         lr.lr_start = 3 + key_size + 3;
         lr.lr_end   = -1;
@@ -93,9 +94,11 @@ public:
                          std::vector<attr_line_t> &dst,
                          vis_line_t row);
 
+    bool fos_show_status{true};
     bool fos_active{false};
     bool fos_active_prev{false};
     logfile_sub_source &fos_lss;
+    textfile_sub_source &fos_tss;
     log_data_helper fos_log_helper;
     int fos_known_key_size{0};
     int fos_unknown_key_size{0};

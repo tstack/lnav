@@ -73,7 +73,7 @@ void hist_source2::text_value_for_line(textview_curses &tc, int row,
     char tm_buffer[128];
     char line[256];
 
-    if (gmtime_r(&bucket.b_time, &bucket_tm) != NULL) {
+    if (gmtime_r(&bucket.b_time, &bucket_tm) != nullptr) {
         strftime(tm_buffer, sizeof(tm_buffer),
                  " %a %b %d %H:%M:%S  ",
                  &bucket_tm);

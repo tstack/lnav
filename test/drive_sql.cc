@@ -16,7 +16,7 @@ struct callback_state {
     int cs_row;
 };
 
-struct _lnav_data lnav_data;
+struct lnav_data_t lnav_data;
 
 static int sql_callback(void *ptr,
                         int ncols,

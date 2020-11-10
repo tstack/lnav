@@ -32,12 +32,10 @@
 #include "config.h"
 
 #include <errno.h>
-#include <stdarg.h>
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 
@@ -56,8 +54,8 @@
 #include <string>
 
 #include "base/string_util.hh"
+#include "fmt/format.h"
 #include "lnav_config.hh"
-#include "pcrepp/pcrepp.hh"
 #include "shlex.hh"
 #include "auto_mem.hh"
 #include "base/lnav_log.hh"
@@ -354,7 +352,7 @@ char **readline_context::attempted_completion(const char *text,
         arg_possibilities = nullptr;
         rl_completion_append_character = 0;
         if (lexer.split(prefix, scope)) {
-            string prefix2 = join(prefix.begin(), prefix.end(), "\x1f");
+            auto prefix2 = fmt::format("{}", fmt::join(prefix, "\x1f"));
             auto prefix_iter = loaded_context->rc_prefixes.find(prefix2);
 
             if (prefix_iter != loaded_context->rc_prefixes.end()) {
@@ -1058,7 +1056,7 @@ void readline_curses::add_prefix(int context,
                                  const string &value)
 {
     char buffer[1024];
-    string prefix_wire = join(prefix.begin(), prefix.end(), "\x1f");
+    auto prefix_wire = fmt::format("{}", fmt::join(prefix, "\x1f"));
 
     snprintf(buffer, sizeof(buffer),
              "apre:%d:%s\x1d%s",

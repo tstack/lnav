@@ -31,10 +31,7 @@
 
 #include <assert.h>
 
-#include <cstdlib>
-
 #include "pcrepp/pcrepp.hh"
-#include "lnav_util.hh"
 #include "relative_time.hh"
 
 using namespace std;
@@ -151,7 +148,7 @@ bool relative_time::parse(const char *str, size_t len, struct parse_error &pe_ou
                     struct timeval tv;
                     struct exttm tm;
 
-                    gettimeofday(&tv, NULL);
+                    gettimeofday(&tv, nullptr);
                     localtime_r(&tv.tv_sec, &tm.et_tm);
                     tm.et_nsec = tv.tv_usec * 1000;
                     this->add(tm);
@@ -519,7 +516,7 @@ size_t duration2str(int64_t millis, std::string &value_out)
         {   60, "%qd%s",   "m" },
         {   24, "%qd%s",   "h" },
         {    0, "%qd%s",   "d" },
-        {    0, NULL, NULL }
+        {    0, nullptr, nullptr }
     };
 
     struct rel_interval *curr_interval = intervals;
@@ -538,7 +535,7 @@ size_t duration2str(int64_t millis, std::string &value_out)
         curr_interval += 1;
     }
 
-    for (; curr_interval->symbol != NULL; curr_interval++) {
+    for (; curr_interval->symbol != nullptr; curr_interval++) {
         long long amount;
         char      segment[32];
 

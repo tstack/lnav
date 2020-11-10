@@ -70,7 +70,7 @@ public:
         this->reset();
     };
 
-    operator T *(void) const { return this->am_ptr; };
+    operator T *() const { return this->am_ptr; };
 
     auto_mem &operator =(T *ptr)
     {
@@ -85,7 +85,7 @@ public:
         return *this;
     };
 
-    T *release(void)
+    T *release()
     {
         T *retval = this->am_ptr;
 
@@ -93,12 +93,12 @@ public:
         return retval;
     };
 
-    T *in(void) const
+    T *in() const
     {
         return this->am_ptr;
     };
 
-    T **out(void)
+    T **out()
     {
         this->reset();
         return &this->am_ptr;

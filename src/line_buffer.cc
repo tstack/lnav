@@ -274,7 +274,7 @@ line_buffer::line_buffer()
       lb_seekable(false),
       lb_last_line_offset(-1)
 {
-    if ((this->lb_buffer = (char *)malloc(this->lb_buffer_max)) == NULL) {
+    if ((this->lb_buffer = (char *)malloc(this->lb_buffer_max)) == nullptr) {
         throw bad_alloc();
     }
 
@@ -283,11 +283,11 @@ line_buffer::line_buffer()
 
 line_buffer::~line_buffer()
 {
-    auto_fd fd = -1;
+    auto empty_fd = auto_fd();
 
     // Make sure any shared refs take ownership of the data.
     this->lb_share_manager.invalidate_refs();
-    this->set_fd(fd);
+    this->set_fd(empty_fd);
 }
 
 void line_buffer::set_fd(auto_fd &fd)
@@ -356,7 +356,7 @@ void line_buffer::set_fd(auto_fd &fd)
     }
     this->lb_file_offset = newoff;
     this->lb_buffer_size = 0;
-    this->lb_fd          = fd;
+    this->lb_fd          = std::move(fd);
 
     ensure(this->invariant());
 }

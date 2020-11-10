@@ -856,8 +856,8 @@ static int vt_update(sqlite3_vtab *tab,
             ypc.parse(log_tags, strlen((const char *) log_tags));
             ypc.complete_parse();
             if (!errors.empty()) {
-                tab->zErrMsg = sqlite3_mprintf("%s",
-                                               join(errors.begin(), errors.end(), "\n").c_str());
+                auto all_errors = fmt::format("{}", fmt::join(errors, "\n"));
+                tab->zErrMsg = sqlite3_mprintf("%s", all_errors.c_str());
                 return SQLITE_ERROR;
             }
         }

@@ -35,7 +35,6 @@
 #include "pcrepp/pcrepp.hh"
 #include "sql_util.hh"
 #include "shlex.hh"
-#include "lnav_util.hh"
 
 #include "readline_highlighters.hh"
 
@@ -183,7 +182,7 @@ static void readline_regex_highlighter_int(attr_line_t &al, int x, int skip)
         "()",
         "QE",
 
-        NULL
+        nullptr
     };
 
     string &line = al.get_string();
@@ -449,7 +448,7 @@ void readline_sqlite_highlighter(attr_line_t &al, int x)
         "[]",
         "()",
 
-        NULL
+        nullptr
     };
 
     view_colors &vc = view_colors::singleton();

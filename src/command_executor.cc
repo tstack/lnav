@@ -31,6 +31,7 @@
 
 #include <vector>
 
+#include "base/string_util.hh"
 #include "yajlpp/json_ptr.hh"
 #include "pcrecpp.h"
 #include "lnav.hh"
@@ -48,9 +49,12 @@ exec_context INIT_EXEC_CONTEXT;
 
 bookmark_type_t BM_QUERY("query");
 
-static const string MSG_FORMAT_STMT =
-        "SELECT count(*) as total, min(log_line) as log_line, log_msg_format "
-                "FROM all_logs GROUP BY log_msg_format ORDER BY total desc";
+static const string MSG_FORMAT_STMT = R"(
+SELECT count(*) AS total, min(log_line) AS log_line, log_msg_format
+    FROM all_logs
+    GROUP BY log_msg_format
+    ORDER BY total DESC
+)";
 
 int sql_progress(const struct log_cursor &lc)
 {
@@ -147,19 +151,19 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                                       sql_progress_finished,
                                       source.first,
                                       source.second);
-    gettimeofday(&start_tv, NULL);
+    gettimeofday(&start_tv, nullptr);
     retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
        stmt_str.c_str(),
        -1,
        stmt.out(),
-       NULL);
+       nullptr);
     if (retcode != SQLITE_OK) {
         const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
         alt_msg = "";
         return ec.make_error("{}", errmsg);
     }
-    else if (stmt == NULL) {
+    else if (stmt == nullptr) {
         alt_msg = "";
         return ec.make_error("No statement given");
     }
@@ -215,11 +219,11 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                                       global_var->second.c_str(), -1,
                                       SQLITE_TRANSIENT);
                 }
-                else if ((env_value = getenv(&name[1])) != NULL) {
+                else if ((env_value = getenv(&name[1])) != nullptr) {
                     sqlite3_bind_text(stmt.in(), lpc + 1, env_value, -1, SQLITE_STATIC);
                 }
             }
-            else if (name[0] == ':' && ec.ec_line_values != NULL) {
+            else if (name[0] == ':' && ec.ec_line_values != nullptr) {
                 vector<logline_value> &lvalues = *ec.ec_line_values;
                 vector<logline_value>::iterator iter;
 
@@ -256,7 +260,7 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
             }
         }
 
-        if (lnav_data.ld_rl_view != NULL) {
+        if (lnav_data.ld_rl_view != nullptr) {
             lnav_data.ld_rl_view->set_value("Executing query: " + sql + " ...");
         }
 
@@ -305,7 +309,7 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
         }
     }
 
-    gettimeofday(&end_tv, NULL);
+    gettimeofday(&end_tv, nullptr);
     if (retcode == SQLITE_DONE) {
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_files_view.reload_data();
@@ -379,6 +383,8 @@ Result<string, string> execute_sql(exec_context &ec, const string &sql, string &
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
                 }
             }
+        } else {
+            lnav_data.ld_log_source.text_filters_changed();
         }
 #endif
     }
@@ -777,7 +783,8 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
         });
     } else {
         auto pp = make_shared<piper_proc>(
-            fd, false, open_temp_file(system_tmpdir() / "lnav.out.XXXXXX")
+            fd, false, open_temp_file(ghc::filesystem::temp_directory_path() /
+            "lnav.out.XXXXXX")
                 .then([](auto pair) {
                     ghc::filesystem::remove(pair.first);
                 })
@@ -801,11 +808,7 @@ future<string> pipe_callback(exec_context &ec, const string &cmdline, auto_fd &f
                 HELP_MSG_1(X, "to close the file"));
         }
 
-        packaged_task<string()> task([]() { return ""; });
-
-        task();
-
-        return task.get_future();
+        return make_ready_future(std::string());
     }
 }
 

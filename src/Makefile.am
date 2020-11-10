@@ -268,6 +268,7 @@ noinst_HEADERS = \
 	elem_to_json.hh \
 	environ_vtab.hh \
 	field_overlay_source.hh \
+	file_collection.hh \
 	file_vtab.hh \
 	files_sub_source.hh \
 	filter_observer.hh \
@@ -352,6 +353,7 @@ noinst_HEADERS = \
 	unique_path.hh \
 	url_loader.hh \
 	view_curses.hh \
+	view_helpers.hh \
 	views_vtab.hh \
 	vt52_curses.hh \
 	vtab_module.hh \
@@ -381,6 +383,7 @@ nodist_libdiag_a_SOURCES = \
 	$(LNAV_BUILT_FILES)
 
 libdiag_a_SOURCES = \
+	all_logs_vtab.cc \
 	ansi_scrubber.cc \
 	archive_manager.cc \
 	bookmarks.cc \
@@ -394,6 +397,7 @@ libdiag_a_SOURCES = \
 	environ_vtab.cc \
 	extension-functions.cc \
 	field_overlay_source.cc \
+	file_collection.cc \
 	file_vtab.cc \
 	files_sub_source.cc \
 	filter_observer.cc \

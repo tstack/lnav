@@ -117,7 +117,7 @@ public:
         content_line_t cl;
 
         cl = lss.at(lc.lc_curr_line);
-        std::shared_ptr<logfile> lf = lss.find(cl);
+        auto lf = lss.find(cl);
         auto lf_iter = lf->begin() + cl;
 
         if (lf_iter->is_continued()) {

@@ -67,9 +67,6 @@
 #include <set>
 #include <stack>
 #include <vector>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <algorithm>
 #include <functional>
 
@@ -147,7 +144,6 @@
 #include "readline_possibilities.hh"
 #include "field_overlay_source.hh"
 #include "url_loader.hh"
-#include "log_search_table.hh"
 #include "shlex.hh"
 #include "log_actions.hh"
 #include "archive_manager.hh"
@@ -161,7 +157,7 @@ using namespace std::literals::chrono_literals;
 
 static multimap<lnav_flags_t, string> DEFAULT_FILES;
 
-struct _lnav_data lnav_data;
+struct lnav_data_t lnav_data;
 
 const int ZOOM_LEVELS[] = {
     1,
@@ -258,7 +254,7 @@ bool setup_logline_table(exec_context &ec)
     textview_curses &log_view = lnav_data.ld_views[LNV_LOG];
     bool             retval   = false;
     bool update_possibilities = (
-        lnav_data.ld_rl_view != NULL &&
+        lnav_data.ld_rl_view != nullptr &&
         ec.ec_local_vars.size() == 1);
 
     if (update_possibilities) {
@@ -559,7 +555,7 @@ void rebuild_indexes()
 
             if (tss->current_file() != cb.front_file) {
                 tss->to_front(cb.front_file);
-                old_bottoms[LNV_TEXT] = vis_line_t(-1);
+                old_bottoms[LNV_TEXT] = -1_vl;
             }
 
             if (cb.front_top < 0) {
@@ -659,31 +655,31 @@ static bool append_default_files(lnav_flags_t flag)
     bool retval = true;
 
     if (lnav_data.ld_flags & flag) {
+        auto cwd = ghc::filesystem::current_path();
+
         pair<multimap<lnav_flags_t, string>::iterator,
              multimap<lnav_flags_t, string>::iterator> range;
         for (range = DEFAULT_FILES.equal_range(flag);
              range.first != range.second;
              range.first++) {
-            string      path = range.first->second;
+            string path = range.first->second;
             struct stat st;
 
             if (access(path.c_str(), R_OK) == 0) {
                 auto_mem<char> abspath;
 
-                path = get_current_dir() + range.first->second;
-                if ((abspath = realpath(path.c_str(), NULL)) == NULL) {
+                path = cwd / range.first->second;
+                if ((abspath = realpath(path.c_str(), nullptr)) == nullptr) {
                     perror("Unable to resolve path");
                 }
                 else {
-                    logfile_open_options default_loo;
-
-                    lnav_data.ld_active_files.fc_file_names[abspath.in()] = default_loo;
+                    lnav_data.ld_active_files.fc_file_names[abspath.in()];
                 }
             }
             else if (stat(path.c_str(), &st) == 0) {
                 fprintf(stderr,
                         "error: cannot read -- %s%s\n",
-                        get_current_dir().c_str(),
+                        cwd.c_str(),
                         path.c_str());
                 retval = false;
             }
@@ -751,7 +747,7 @@ vis_line_t next_cluster(
         return last_top;
     }
 
-    return vis_line_t(-1);
+    return -1_vl;
 }
 
 bool moveto_cluster(vis_line_t(bookmark_vector<vis_line_t>::*f) (vis_line_t) const,
@@ -806,7 +802,7 @@ void previous_cluster(bookmark_type_t *bt, textview_curses *tc)
         initial_top < (krh.krh_start_line - (1.5 * height)) &&
         (initial_top - new_top) < height) {
         bookmark_vector<vis_line_t> &bv = tc->get_bookmarks()[bt];
-        new_top = bv.next(std::max(vis_line_t(0), initial_top - height));
+        new_top = bv.next(std::max(0_vl, initial_top - height));
     }
 
     if (new_top != -1) {
@@ -937,379 +933,22 @@ static void clear_last_user_mark(void *, listview_curses *lv)
     }
 }
 
-/**
- * Functor used to compare files based on their device and inode number.
- */
-struct same_file {
-    same_file(const struct stat &stat) : sf_stat(stat) { };
-
-    /**
-     * Compare the given log file against the 'stat' given in the constructor.
-     * @param  lf The log file to compare.
-     * @return    True if the dev/inode values in the stat given in the
-     *   constructor matches the stat in the logfile object.
-     */
-    bool operator()(const shared_ptr<logfile> &lf) const
-    {
-        return this->sf_stat.st_dev == lf->get_stat().st_dev &&
-               this->sf_stat.st_ino == lf->get_stat().st_ino;
-    };
-
-    const struct stat &sf_stat;
-};
-
-static std::mutex REALPATH_CACHE_MUTEX;
-static std::unordered_map<std::string, std::string> REALPATH_CACHE;
-
-void file_collection::close_file(const std::shared_ptr<logfile> &lf)
-{
-    if (lf->is_valid_filename()) {
-        std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
-
-        REALPATH_CACHE.erase(lf->get_filename());
-    } else {
-        this->fc_file_names.erase(lf->get_filename());
-    }
-    auto file_iter = find(this->fc_files.begin(),
-                          this->fc_files.end(),
-                          lf);
-    if (file_iter != this->fc_files.end()) {
-        this->fc_files.erase(file_iter);
-        this->fc_files_generation += 1;
-    }
-
-    this->regenerate_unique_file_names();
-}
-
-void file_collection::regenerate_unique_file_names()
-{
-    unique_path_generator upg;
-
-    for (const auto& lf : this->fc_files) {
-        upg.add_source(lf);
-    }
-
-    upg.generate();
-
-    this->fc_largest_path_length = 0;
-    for (const auto& lf : this->fc_files) {
-        const auto& path = lf->get_unique_path();
-
-        if (path.length() > this->fc_largest_path_length) {
-            this->fc_largest_path_length = path.length();
-        }
-    }
-    for (const auto& pair : this->fc_other_files) {
-        auto bn = ghc::filesystem::path(pair.first).filename().string();
-        if (bn.length() > this->fc_largest_path_length) {
-            this->fc_largest_path_length = bn.length();
-        }
-    }
-}
-
-void file_collection::merge(const file_collection& other)
-{
-    this->fc_name_to_errors.insert(other.fc_name_to_errors.begin(),
-                                   other.fc_name_to_errors.end());
-    this->fc_file_names.insert(other.fc_file_names.begin(),
-                               other.fc_file_names.end());
-    if (!other.fc_files.empty()) {
-        this->fc_files.insert(this->fc_files.end(),
-                              other.fc_files.begin(),
-                              other.fc_files.end());
-        this->fc_files_generation += 1;
-    }
-    for (auto& pair : other.fc_renamed_files) {
-        pair.first->set_filename(pair.second);
-    }
-    this->fc_closed_files.insert(other.fc_closed_files.begin(),
-                                 other.fc_closed_files.end());
-    this->fc_other_files.insert(other.fc_other_files.begin(),
-                                other.fc_other_files.end());
-}
-
-/**
- * Try to load the given file as a log file.  If the file has not already been
- * loaded, it will be loaded.  If the file has already been loaded, the file
- * name will be updated.
- *
- * @param filename The file name to check.
- * @param fd       An already-opened descriptor for 'filename'.
- * @param required Specifies whether or not the file must exist and be valid.
- */
-std::future<file_collection>
-file_collection::watch_logfile(const string& filename, logfile_open_options &loo, bool required)
+bool update_active_files(const file_collection& new_files)
 {
     static loading_observer obs;
 
-    file_collection retval;
-    struct stat st;
-    int         rc;
-
-    if (this->fc_closed_files.count(filename)) {
-        return make_ready_future(retval);
-    }
-
-    if (loo.loo_fd != -1) {
-        rc = fstat(loo.loo_fd, &st);
-    }
-    else {
-        rc = stat(filename.c_str(), &st);
-    }
-
-    if (rc == 0) {
-        if (S_ISDIR(st.st_mode) && lnav_data.ld_flags & LNF_RECURSIVE) {
-            string wilddir = filename + "/*";
-
-            if (this->fc_file_names.find(wilddir) == this->fc_file_names.end()) {
-                logfile_open_options default_loo;
-
-                retval.fc_file_names[wilddir] = default_loo;
-            }
-            return make_ready_future(retval);
-        }
-        if (!S_ISREG(st.st_mode)) {
-            if (required) {
-                rc    = -1;
-                errno = EINVAL;
-            }
-            else {
-                return make_ready_future(retval);
-            }
-        }
-    }
-    if (rc == -1) {
-        if (required) {
-            retval.fc_name_to_errors[filename] = strerror(errno);
-        }
-        return make_ready_future(retval);
-    }
-
-    auto file_iter = find_if(this->fc_files.begin(),
-                             this->fc_files.end(),
-                             same_file(st));
-
-    if (file_iter == this->fc_files.end()) {
-        if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
-            return make_ready_future(retval);
-        }
-        return std::async(std::launch::async, [filename, &loo, prog=this->fc_progress, errs=this->fc_name_to_errors]() {
-            file_collection retval;
-
-            if (errs.find(filename) != errs.end()) {
-                // The file is broken, no reason to try and reopen
-                return retval;
-            }
-
-            file_format_t ff = detect_file_format(filename);
-
-            switch (ff) {
-                case file_format_t::FF_SQLITE_DB:
-                    attach_sqlite_db(lnav_data.ld_db.in(), filename);
-                    retval.fc_other_files[filename] = "SQLite Database";
-                    break;
-
-                case file_format_t::FF_ARCHIVE: {
-                    nonstd::optional<std::list<archive_manager::extract_progress>::iterator>
-                        prog_iter_opt;
-
-                    auto res = archive_manager::walk_archive_files(
-                        filename,
-                        [prog, &prog_iter_opt](
-                            const auto& path, const auto total) {
-                            safe::WriteAccess<safe_scan_progress> sp(*prog);
-
-                            prog_iter_opt | [&sp](auto prog_iter) {
-                                sp->sp_extractions.erase(prog_iter);
-                            };
-                            auto prog_iter = sp->sp_extractions.emplace(
-                                sp->sp_extractions.begin(), path, total);
-                            prog_iter_opt = prog_iter;
-
-                            return &(*prog_iter);
-                        },
-                        [&filename, &retval](const auto& tmp_path,
-                                             const auto& entry) {
-                        auto ext = entry.path().extension();
-                        if (ext == ".jar" || ext == ".war" || ext == ".zip") {
-                            return;
-                        }
-
-                        auto arc_path = ghc::filesystem::relative(
-                            entry.path(), tmp_path);
-                        auto custom_name = filename / arc_path;
-                        bool is_visible = true;
-
-                        if (entry.file_size() == 0) {
-                            log_info("hiding empty archive file: %s",
-                                     entry.path().c_str());
-                            is_visible = false;
-                        }
-
-                        log_info("adding file from archive: %s/%s",
-                                 filename.c_str(),
-                                 entry.path().c_str());
-                        retval.fc_file_names[entry.path().string()] =
-                            logfile_open_options()
-                                .with_filename(custom_name.string())
-                                .with_visibility(is_visible)
-                                .with_non_utf_visibility(false)
-                                .with_visible_size_limit(128 * 1024);
-                    });
-                    if (res.isErr()) {
-                        log_error("archive extraction failed: %s",
-                                  res.unwrapErr().c_str());
-                        retval.clear();
-                        retval.fc_name_to_errors[filename] = res.unwrapErr();
-                    } else {
-                        retval.fc_other_files[filename] = "Archive";
-                    }
-                    {
-                        prog_iter_opt | [&prog](auto prog_iter) {
-                            prog->writeAccess()->sp_extractions.erase(prog_iter);
-                        };
-                    }
-                    break;
-                }
-
-                default:
-                    log_info("loading new file: filename=%s",
-                             filename.c_str());
-
-                    /* It's a new file, load it in. */
-                    try {
-                        shared_ptr<logfile> lf = make_shared<logfile>(filename,
-                                                                      loo);
-
-                        lf->set_logfile_observer(&obs);
-                        retval.fc_files.push_back(lf);
-                    } catch (logfile::error& e) {
-                        retval.fc_name_to_errors[filename] = e.what();
-                    }
-                    break;
-            }
-
-            return retval;
-        });
-    }
-    else {
-        auto lf = *file_iter;
-
-        if (lf->is_valid_filename() && lf->get_filename() != filename) {
-            /* The file is already loaded, but has been found under a different
-             * name.  We just need to update the stored file name.
-             */
-            retval.fc_renamed_files.emplace_back(lf, filename);
-        }
-    }
-
-    return make_ready_future(retval);
-}
-
-/**
- * Expand a glob pattern and call watch_logfile with the file names that match
- * the pattern.
- * @param path     The glob pattern to expand.
- * @param required Passed to watch_logfile.
- */
-void file_collection::expand_filename(future_queue<file_collection> &fq,
-                                      const string& path,
-                                      logfile_open_options &loo,
-                                      bool required)
-{
-    static_root_mem<glob_t, globfree> gl;
-
-    {
-        std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
-
-        if (REALPATH_CACHE.find(path) != REALPATH_CACHE.end()) {
-            return;
-        }
-    }
-
-    if (is_url(path.c_str())) {
-        return;
-    }
-    else if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
-        int lpc;
-
-        if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
-            /* It's a pattern that doesn't match any files
-             * yet, allow it through since we'll load it in
-             * dynamically.
-             */
-            if (access(path.c_str(), F_OK) == -1) {
-                required = false;
-            }
-        }
-        if (gl->gl_pathc > 1 ||
-            strcmp(path.c_str(), gl->gl_pathv[0]) != 0) {
-            required = false;
-        }
-
-        std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
-        for (lpc = 0; lpc < (int)gl->gl_pathc; lpc++) {
-            auto path_str = std::string(gl->gl_pathv[lpc]);
-            auto iter = REALPATH_CACHE.find(path_str);
-
-            if (iter == REALPATH_CACHE.end()) {
-                auto_mem<char> abspath;
-
-                if ((abspath = realpath(gl->gl_pathv[lpc], nullptr)) ==
-                    nullptr) {
-                    if (required) {
-                        fprintf(stderr, "Cannot find file: %s -- %s",
-                                gl->gl_pathv[lpc], strerror(errno));
-                    }
-                    continue;
-                } else {
-                    auto p = REALPATH_CACHE.emplace(path_str, abspath.in());
-
-                    iter = p.first;
-                }
-            }
-
-            if (required || access(iter->second.c_str(), R_OK) == 0) {
-                fq.push_back(watch_logfile(iter->second, loo, required));
-            }
-        }
-    }
-}
-
-file_collection file_collection::rescan_files(bool required)
-{
-    file_collection retval;
-    future_queue<file_collection> fq([&retval](auto& fc) {
-        retval.merge(fc);
-    });
-
-    for (auto& pair : this->fc_file_names) {
-        if (pair.second.loo_fd == -1) {
-            this->expand_filename(fq, pair.first, pair.second, required);
-            if (lnav_data.ld_flags & LNF_ROTATED) {
-                string path = pair.first + ".*";
-
-                this->expand_filename(fq, path, pair.second, false);
-            }
-        } else {
-            fq.push_back(watch_logfile(pair.first, pair.second, required));
-        }
-
-        if (retval.fc_files.size() >= 100) {
-            log_debug("too many new files, breaking...");
-            break;
-        }
-    }
-
-    fq.pop_to();
-
-    return retval;
-}
-
-bool update_active_files(const file_collection& new_files)
-{
     for (const auto& lf : new_files.fc_files) {
+        lf->set_logfile_observer(&obs);
         lnav_data.ld_text_source.push_back(lf);
+    }
+    for (const auto& other_pair : new_files.fc_other_files) {
+        switch (other_pair.second) {
+            case file_format_t::FF_SQLITE_DB:
+                attach_sqlite_db(lnav_data.ld_db.in(), other_pair.first);
+                break;
+            default:
+                break;
+        }
     }
     lnav_data.ld_active_files.merge(new_files);
     if (!new_files.fc_files.empty()) {
@@ -2055,7 +1694,7 @@ static void looper()
                     lnav_data.ld_log_source.text_line_count() == 0 &&
                     lnav_data.ld_text_source.text_line_count() > 0) {
                     ensure_view(&lnav_data.ld_views[LNV_TEXT]);
-                    lnav_data.ld_views[LNV_TEXT].set_top(vis_line_t(0));
+                    lnav_data.ld_views[LNV_TEXT].set_top(0_vl);
                     lnav_data.ld_rl_view->set_alt_value(
                             HELP_MSG_2(f, F,
                                     "to switch to the next/previous file"));
@@ -2377,11 +2016,11 @@ int main(int argc, char *argv[])
             break;
 
         case 'R':
-            lnav_data.ld_flags |= LNF_ROTATED;
+            lnav_data.ld_active_files.fc_rotated = true;
             break;
 
         case 'r':
-            lnav_data.ld_flags |= LNF_RECURSIVE;
+            lnav_data.ld_active_files.fc_recursive = true;
             break;
 
         case 't':
@@ -2555,7 +2194,7 @@ int main(int argc, char *argv[])
 
     register_environ_vtab(lnav_data.ld_db.in());
     register_views_vtab(lnav_data.ld_db.in());
-    register_file_vtab(lnav_data.ld_db.in());
+    register_file_vtab(lnav_data.ld_db.in(), lnav_data.ld_active_files);
     register_regexp_vtab(lnav_data.ld_db.in());
     register_fstat_vtab(lnav_data.ld_db.in());
 
@@ -2613,12 +2252,17 @@ int main(int argc, char *argv[])
     lnav_data.ld_views[LNV_HELP]
         .set_sub_source(&lnav_data.ld_help_source)
         .set_word_wrap(true);
+    auto log_fos = new field_overlay_source(lnav_data.ld_log_source,
+                                            lnav_data.ld_text_source);
+    if (lnav_data.ld_flags & LNF_HEADLESS) {
+        log_fos->fos_show_status = false;
+    }
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)
         .set_delegate(new action_delegate(lnav_data.ld_log_source))
         .add_input_delegate(lnav_data.ld_log_source)
-        .set_tail_space(vis_line_t(2))
-        .set_overlay_source(new field_overlay_source(lnav_data.ld_log_source));
+        .set_tail_space(2_vl)
+        .set_overlay_source(log_fos);
     lnav_data.ld_views[LNV_TEXT]
         .set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_HISTOGRAM]
@@ -2632,7 +2276,7 @@ int main(int argc, char *argv[])
         .set_sub_source(&lnav_data.ld_spectro_source)
         .set_overlay_source(&lnav_data.ld_spectro_source)
         .add_input_delegate(lnav_data.ld_spectro_source)
-        .set_tail_space(vis_line_t(2));
+        .set_tail_space(2_vl);
 
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
@@ -2741,7 +2385,6 @@ int main(int argc, char *argv[])
     }
 
     for (lpc = 0; lpc < argc; lpc++) {
-        logfile_open_options default_loo;
         auto_mem<char> abspath;
         struct stat    st;
 
@@ -2763,7 +2406,8 @@ int main(int argc, char *argv[])
         }
 #endif
         else if (is_glob(argv[lpc])) {
-            lnav_data.ld_active_files.fc_file_names[argv[lpc]] = default_loo;
+            lnav_data.ld_active_files.fc_file_names
+                .emplace(argv[lpc], logfile_open_options());
         }
         else if (stat(argv[lpc], &st) == -1) {
             fprintf(stderr,
@@ -2792,13 +2436,14 @@ int main(int argc, char *argv[])
                 auto fifo_piper = make_shared<piper_proc>(
                     fifo_fd.release(),
                     false,
-                    open_temp_file(system_tmpdir() / "lnav.fifo.XXXXXX")
+                    open_temp_file(ghc::filesystem::temp_directory_path() /
+                                   "lnav.fifo.XXXXXX")
                         .then([](auto pair) {
                             ghc::filesystem::remove(pair.first);
                         })
                         .expect("Cannot create temporary file for FIFO")
                         .second);
-                int fifo_out_fd = fifo_piper->get_fd();
+                auto fifo_out_fd = fifo_piper->get_fd();
                 char desc[128];
 
                 snprintf(desc, sizeof(desc),
@@ -2819,10 +2464,12 @@ int main(int argc, char *argv[])
             if (dir_wild[dir_wild.size() - 1] == '/') {
                 dir_wild.resize(dir_wild.size() - 1);
             }
-            lnav_data.ld_active_files.fc_file_names[dir_wild + "/*"] = default_loo;
+            lnav_data.ld_active_files.fc_file_names
+                .emplace(dir_wild + "/*", logfile_open_options());
         }
         else {
-            lnav_data.ld_active_files.fc_file_names[abspath.in()] = default_loo;
+            lnav_data.ld_active_files.fc_file_names
+                .emplace(abspath.in(), logfile_open_options());
         }
     }
 
@@ -2915,7 +2562,7 @@ int main(int argc, char *argv[])
         stdin_reader = make_shared<piper_proc>(
             STDIN_FILENO, lnav_data.ld_flags & LNF_TIMESTAMP, stdin_out_fd);
         lnav_data.ld_active_files.fc_file_names["stdin"]
-            .with_fd(stdin_out_fd)
+            .with_fd(auto_fd(stdin_out_fd))
             .with_include_in_session(false);
         lnav_data.ld_pipers.push_back(stdin_reader);
     }
@@ -2993,15 +2640,15 @@ int main(int argc, char *argv[])
                 alerter::singleton().enabled(false);
 
                 log_tc = &lnav_data.ld_views[LNV_LOG];
-                log_tc->set_height(vis_line_t(24));
+                log_tc->set_height(24_vl);
                 lnav_data.ld_view_stack.vs_views.push_back(log_tc);
                 // Read all of stdin
                 wait_for_pipers();
                 rebuild_indexes();
 
-                log_tc->set_top(vis_line_t(0));
+                log_tc->set_top(0_vl);
                 text_tc = &lnav_data.ld_views[LNV_TEXT];
-                text_tc->set_top(vis_line_t(0));
+                text_tc->set_top(0_vl);
                 text_tc->set_height(vis_line_t(text_tc->get_inner_height()));
                 if (lnav_data.ld_log_source.text_line_count() == 0 &&
                     lnav_data.ld_text_source.text_line_count() > 0) {

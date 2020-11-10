@@ -76,7 +76,7 @@ inline ssize_t sql_strftime(char *buffer, size_t buffer_size,
     return sql_strftime(buffer, buffer_size, tv.tv_sec, tv.tv_usec / 1000, sep);
 }
 
-void sql_install_logger(void);
+void sql_install_logger();
 
 bool sql_ident_needs_quote(const char *ident);
 
@@ -120,7 +120,7 @@ void annotate_sql_statement(attr_line_t &al_inout);
 
 extern std::multimap<std::string, help_text *> sqlite_function_help;
 
-std::string sql_keyword_re(void);
+std::string sql_keyword_re();
 std::vector<const help_text *> find_sql_help_for_line(const attr_line_t &al, size_t x);
 
 #endif

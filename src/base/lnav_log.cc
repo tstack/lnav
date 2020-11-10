@@ -103,6 +103,8 @@ nonstd::optional<FILE *> lnav_log_file;
 lnav_log_level_t lnav_log_level = lnav_log_level_t::DEBUG;
 const char *lnav_log_crash_dir;
 nonstd::optional<const struct termios *> lnav_log_orig_termios;
+// NOTE: This mutex is leaked so that it is not destroyed during exit.
+// Otherwise, any attempts to log will fail.
 static std::mutex *lnav_log_mutex = new std::mutex();
 
 std::vector<log_state_dumper*> log_state_dumper::DUMPER_LIST;
@@ -111,7 +113,7 @@ std::vector<log_crash_recoverer*> log_crash_recoverer::CRASH_LIST;
 struct thid {
     static uint32_t COUNTER;
 
-    thid() : t_id(COUNTER++) {}
+    thid() noexcept : t_id(COUNTER++) {}
 
     uint32_t t_id;
 };

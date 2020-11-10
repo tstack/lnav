@@ -30,6 +30,9 @@
 #ifndef lnav_opt_util_hh
 #define lnav_opt_util_hh
 
+#include <stdlib.h>
+
+#include "intern_string.hh"
 #include "optional.hpp"
 
 namespace detail {
@@ -80,6 +83,10 @@ nonstd::optional<T> cget(const C<T> &container, size_t index)
     }
 
     return nonstd::nullopt;
+}
+
+inline nonstd::optional<const char *> getenv_opt(const char *name) {
+    return make_optional_from_nullable(getenv(name));
 }
 
 #endif

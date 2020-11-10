@@ -62,9 +62,9 @@ public:
         this->tss_fields[TSF_TOGGLE].right_justify(true);
     };
 
-    size_t statusview_fields(void) { return TSF__MAX; };
+    size_t statusview_fields() override { return TSF__MAX; };
 
-    status_field &statusview_value_for_field(int field) {
+    status_field &statusview_value_for_field(int field) override {
         return this->tss_fields[field];
     };
 

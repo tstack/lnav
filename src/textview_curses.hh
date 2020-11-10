@@ -616,6 +616,8 @@ public:
 
     vis_bookmarks &get_bookmarks() { return this->tc_bookmarks; };
 
+    const vis_bookmarks &get_bookmarks() const { return this->tc_bookmarks; };
+
     void toggle_user_mark(bookmark_type_t *bm,
                           vis_line_t start_line,
                           vis_line_t end_line = vis_line_t(-1))

@@ -55,49 +55,8 @@
 #include "byte_array.hh"
 #include "optional.hpp"
 #include "base/result.h"
+#include "fmt/format.h"
 #include "ghc/filesystem.hpp"
-
-inline std::string trim(const std::string &str)
-{
-    std::string::size_type start, end;
-
-    for (start = 0; start < str.size() && isspace(str[start]); start++);
-    for (end = str.size(); end > 0 && isspace(str[end - 1]); end--);
-
-    return str.substr(start, end - start);
-}
-
-inline std::string tolower(const char *str)
-{
-    std::string retval;
-
-    for (int lpc = 0; str[lpc]; lpc++) {
-        retval.push_back(::tolower(str[lpc]));
-    }
-
-    return retval;
-}
-
-inline std::string tolower(const std::string &str)
-{
-    return tolower(str.c_str());
-}
-
-inline std::string toupper(const char *str)
-{
-    std::string retval;
-
-    for (int lpc = 0; str[lpc]; lpc++) {
-        retval.push_back(::toupper(str[lpc]));
-    }
-
-    return retval;
-}
-
-inline std::string toupper(const std::string &str)
-{
-    return toupper(str.c_str());
-}
 
 #undef rounddown
 
@@ -205,18 +164,9 @@ object_field_t<UnaryFunction, Member> object_field(UnaryFunction &func,
     return object_field_t<UnaryFunction, Member>(func, mem);
 }
 
-std::string get_current_dir(void);
-
-bool change_to_parent_dir(void);
+bool change_to_parent_dir();
 
 void split_ws(const std::string &str, std::vector<std::string> &toks_out);
-
-std::pair<std::string, std::string> split_path(const char *path, ssize_t len);
-
-inline
-std::pair<std::string, std::string> split_path(const std::string &path) {
-    return split_path(path.c_str(), path.size());
-};
 
 enum class file_format_t {
     FF_UNKNOWN,
@@ -224,7 +174,26 @@ enum class file_format_t {
     FF_ARCHIVE,
 };
 
-file_format_t detect_file_format(const std::string &filename);
+file_format_t detect_file_format(const ghc::filesystem::path& filename);
+
+template<>
+struct fmt::formatter<file_format_t> : fmt::formatter<fmt::string_view> {
+    template<typename FormatContext>
+    auto format(file_format_t ff, FormatContext& ctx) {
+        fmt::string_view name = "unknown";
+        switch (ff) {
+            case file_format_t::FF_SQLITE_DB:
+                name = "SQLite Database";
+                break;
+            case file_format_t::FF_ARCHIVE:
+                name = "Archive";
+                break;
+            default:
+                break;
+        }
+        return fmt::formatter<fmt::string_view>::format(name, ctx);
+    }
+};
 
 bool next_format(const char * const fmt[], int &index, int &locked_index);
 
@@ -233,23 +202,11 @@ namespace std {
     inline string to_string(const char *s) { return s; }
 }
 
-template<class InputIt>
-inline std::string join(InputIt first, InputIt last, const std::string &delim)
-{
-    std::string retval;
-    return std::accumulate(first, last, retval, [&] (
-        auto l, auto r) {
-        std::string lstr = std::to_string(l);
-
-        return lstr + (lstr.empty() ? "" : delim) + std::to_string(r);
-    });
-}
-
 inline bool is_glob(const char *fn)
 {
-    return (strchr(fn, '*') != NULL ||
-            strchr(fn, '?') != NULL ||
-            strchr(fn, '[') != NULL);
+    return (strchr(fn, '*') != nullptr ||
+            strchr(fn, '?') != nullptr ||
+            strchr(fn, '[') != nullptr);
 };
 
 bool is_url(const char *fn);
@@ -313,14 +270,14 @@ struct date_time_scanner {
         this->clear();
     };
 
-    void clear(void) {
+    void clear() {
         this->dts_base_time = 0;
         memset(&this->dts_base_tm, 0, sizeof(this->dts_base_tm));
         this->dts_fmt_lock = -1;
         this->dts_fmt_len = -1;
     };
 
-    void unlock(void) {
+    void unlock() {
         this->dts_fmt_lock = -1;
         this->dts_fmt_len = -1;
     }
@@ -423,16 +380,13 @@ struct date_time_scanner {
 template<typename T>
 size_t strtonum(T &num_out, const char *data, size_t len);
 
-inline bool pollfd_ready(const std::vector<struct pollfd> &pollfds, int fd, short events = POLLIN|POLLHUP) {
-    for (std::vector<struct pollfd>::const_iterator iter = pollfds.begin();
-            iter != pollfds.end();
-            ++iter) {
-        if (iter->fd == fd && iter->revents & events) {
-            return true;
-        }
-    }
-
-    return false;
+inline bool pollfd_ready(const std::vector<struct pollfd> &pollfds, int fd,
+                         short events = POLLIN | POLLHUP)
+{
+    return std::any_of(pollfds.begin(), pollfds.end(),
+                       [fd, events](const auto &entry) {
+                           return entry.fd == fd && entry.revents & events;
+                       });
 };
 
 inline void rusagesub(const struct rusage &left, const struct rusage &right, struct rusage &diff_out)
@@ -474,8 +428,6 @@ inline void rusageadd(const struct rusage &left, const struct rusage &right, str
 }
 
 size_t abbreviate_str(char *str, size_t len, size_t max_len);
-
-ghc::filesystem::path system_tmpdir();
 
 inline int statp(const ghc::filesystem::path &path, struct stat *buf) {
     return stat(path.c_str(), buf);

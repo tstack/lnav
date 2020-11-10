@@ -173,16 +173,16 @@ void scrub_ansi_string(std::string &str, string_attrs_t &sa)
 
 void add_ansi_vars(std::map<std::string, std::string> &vars)
 {
-    vars["ansi_csi"] = "\x1b[";
-    vars["ansi_norm"] = "\x1b[0m";
-    vars["ansi_bold"] = "\x1b[1m";
-    vars["ansi_underline"] = "\x1b[4m";
-    vars["ansi_black"] = "\x1b[30m";
-    vars["ansi_red"] = "\x1b[31m";
-    vars["ansi_green"] = "\x1b[32m";
-    vars["ansi_yellow"] = "\x1b[33m";
-    vars["ansi_blue"] = "\x1b[34m";
-    vars["ansi_magenta"] = "\x1b[35m";
-    vars["ansi_cyan"] = "\x1b[36m";
-    vars["ansi_white"] = "\x1b[37m";
+    vars["ansi_csi"] = ANSI_CSI;
+    vars["ansi_norm"] = ANSI_NORM;
+    vars["ansi_bold"] = ANSI_BOLD_START;
+    vars["ansi_underline"] = ANSI_UNDERLINE_START;
+    vars["ansi_black"] = ANSI_COLOR(COLOR_BLACK);
+    vars["ansi_red"] = ANSI_COLOR(COLOR_RED);
+    vars["ansi_green"] = ANSI_COLOR(COLOR_GREEN);
+    vars["ansi_yellow"] = ANSI_COLOR(COLOR_YELLOW);
+    vars["ansi_blue"] = ANSI_COLOR(COLOR_BLUE);
+    vars["ansi_magenta"] = ANSI_COLOR(COLOR_MAGENTA);
+    vars["ansi_cyan"] = ANSI_COLOR(COLOR_CYAN);
+    vars["ansi_white"] = ANSI_COLOR(COLOR_WHITE);
 }

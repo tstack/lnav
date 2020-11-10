@@ -34,15 +34,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <paths.h>
 #include <fcntl.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/param.h>
 #include <sys/time.h>
 #include <signal.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <poll.h>
 
 #include "base/lnav_log.hh"

@@ -59,7 +59,7 @@
  */
 class mouse_behavior {
 public:
-    virtual ~mouse_behavior() { };
+    virtual ~mouse_behavior() = default;
 
     /**
      * Callback used to process mouse events.

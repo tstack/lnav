@@ -30,9 +30,9 @@
 #include "config.h"
 
 #include <algorithm>
+#include <regex>
 
-#include <pcrecpp.h>
-
+#include "base/string_util.hh"
 #include "fmt/format.h"
 #include "ansi_scrubber.hh"
 #include "help_text_formatter.hh"
@@ -451,7 +451,7 @@ void format_example_text_for_term(const help_text &ht,
 
 static std::string link_name(const help_text &ht)
 {
-    const static pcrecpp::RE SCRUBBER("[^\\w_]");
+    const static std::regex SCRUBBER("[^\\w_]");
 
     auto scrubbed_name = string(ht.ht_name);
     for (auto &param : ht.ht_parameters) {
@@ -462,7 +462,7 @@ static std::string link_name(const help_text &ht)
         scrubbed_name += "_";
         scrubbed_name += param.ht_flag_name;
     }
-    SCRUBBER.GlobalReplace("_", &scrubbed_name);
+    scrubbed_name = std::regex_replace(scrubbed_name, SCRUBBER, "_");
 
     return tolower(scrubbed_name);
 }
@@ -600,8 +600,8 @@ void format_help_text_for_rst(const help_text &ht,
         }
         stable_sort(related_refs.begin(), related_refs.end());
 
-        fprintf(rst_file, "  **See Also:**\n\n    %s\n",
-            join(related_refs.begin(), related_refs.end(), ", ").c_str());
+        fmt::print(rst_file, "  **See Also:**\n\n    {}\n",
+                   fmt::join(related_refs, ", "));
     }
 
     fprintf(rst_file, "\n----\n\n");

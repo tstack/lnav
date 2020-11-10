@@ -38,7 +38,7 @@
 
 using namespace std;
 
-struct _lnav_data lnav_data;
+struct lnav_data_t lnav_data;
 
 void rebuild_hist()
 {

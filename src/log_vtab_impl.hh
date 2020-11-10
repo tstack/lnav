@@ -103,12 +103,12 @@ public:
     };
     virtual ~log_vtab_impl() { };
 
-    const intern_string_t get_name(void) const
+    const intern_string_t get_name() const
     {
         return this->vi_name;
     };
 
-    std::string get_table_statement(void);
+    std::string get_table_statement();
 
     virtual bool is_valid(log_cursor &lc, logfile_sub_source &lss) {
         content_line_t    cl(lss.at(lc.lc_curr_line));

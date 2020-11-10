@@ -86,7 +86,7 @@ public:
     lv_functor_t filename_wire;
     lv_functor_t view_name_wire;
 
-    size_t statusview_fields(void) { return TSF__MAX; };
+    size_t statusview_fields() { return TSF__MAX; };
 
     status_field &statusview_value_for_field(int field)
     {

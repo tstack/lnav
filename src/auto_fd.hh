@@ -61,7 +61,7 @@ public:
     {
         int retval, fd[2];
 
-        require(fd != NULL);
+        require(af != nullptr);
 
         if ((retval = ::pipe(fd)) == 0) {
             af[0] = fd[0];
@@ -76,7 +76,7 @@ public:
      *
      * @param fd The file descriptor to be managed.
      */
-    auto_fd(int fd = -1)
+    explicit auto_fd(int fd = -1)
         : af_fd(fd)
     {
         require(fd >= -1);
@@ -89,7 +89,7 @@ public:
      *
      * @param af The source of the file descriptor.
      */
-    auto_fd(auto_fd && af)
+    auto_fd(auto_fd && af) noexcept
         : af_fd(af.release()) {
     };
 
@@ -116,7 +116,7 @@ public:
     };
 
     /** @return The file descriptor as a plain integer. */
-    operator int() const { return this->af_fd;  };
+    operator int() const { return this->af_fd; };
 
     /**
      * Replace the current descriptor with the given one.  The current
@@ -125,7 +125,7 @@ public:
      * @param fd The file descriptor to store in this object.
      * @return *this
      */
-    auto_fd &operator =(int fd)
+    auto_fd &operator=(int fd)
     {
         require(fd >= -1);
 
@@ -139,8 +139,7 @@ public:
      * @param af The old manager of the file descriptor.
      * @return *this
      */
-    auto_fd &operator =(auto_fd & af)
-    {
+    auto_fd &operator=(auto_fd && af) noexcept {
         this->reset(af.release());
         return *this;
     };
@@ -209,7 +208,7 @@ private:
 
 class auto_pipe {
 public:
-    auto_pipe(int child_fd = -1, int child_flags = O_RDONLY)
+    explicit auto_pipe(int child_fd = -1, int child_flags = O_RDONLY)
         : ap_child_flags(child_flags), ap_child_fd(child_fd)
     {
         switch (child_fd) {
@@ -250,17 +249,17 @@ public:
         case 0:
             if (this->ap_child_flags == O_RDONLY) {
                 this->write_end().reset();
-                if (this->read_end() == -1) {
+                if (this->read_end().get() == -1) {
                     this->read_end() = ::open("/dev/null", O_RDONLY);
                 }
-                new_fd = this->read_end();
+                new_fd = this->read_end().get();
             }
             else {
                 this->read_end().reset();
-                if (this->write_end() == -1) {
+                if (this->write_end().get() == -1) {
                     this->write_end() = ::open("/dev/null", O_WRONLY);
                 }
-                new_fd = this->write_end();
+                new_fd = this->write_end().get();
             }
             if (this->ap_child_fd != -1) {
                 if (new_fd != this->ap_child_fd) {

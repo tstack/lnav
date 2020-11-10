@@ -34,11 +34,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
 #include "base/lnav_log.hh"
@@ -46,8 +44,6 @@
 #include "lnav_util.hh"
 #include "grep_proc.hh"
 #include "listview_curses.hh"
-
-#include "time_T.hh"
 
 using namespace std;
 
@@ -132,7 +128,7 @@ void grep_proc<LineType>::start()
         log_perror(fcntl(err_pipe.read_end(), F_SETFL, O_NONBLOCK));
         log_perror(fcntl(err_pipe.read_end(), F_SETFD, 1));
         require(this->gp_err_pipe.get() == -1);
-        this->gp_err_pipe      = err_pipe.read_end();
+        this->gp_err_pipe = std::move(err_pipe.read_end());
         this->gp_child_started = true;
         this->gp_child_queue_size = this->gp_queue.size();
 

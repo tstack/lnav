@@ -610,10 +610,7 @@ static void write_line_to(FILE *outfile, const attr_line_t &al)
             fprintf(outfile, "  // %s\n", bm->bm_comment.c_str());
         }
         if (!bm->bm_tags.empty()) {
-            fprintf(outfile, "  -- %s\n",
-                    join(bm->bm_tags.begin(),
-                         bm->bm_tags.end(),
-                         " ").c_str());
+            fmt::print(outfile, "  -- {}\n", fmt::join(bm->bm_tags, " "));
         }
     }
 }
@@ -921,7 +918,7 @@ static Result<string, string> com_save_to(exec_context &ec, string cmdline, vect
 
         lnav_data.ld_preview_source
                  .replace_with(al)
-                 .set_text_format(detect_text_format(buffer, rc))
+                 .set_text_format(detect_text_format(al.get_string()))
                  .truncate_to(10);
         lnav_data.ld_preview_status_source.get_description()
                  .set_value("First lines of file: %s", fn.c_str());
@@ -1827,7 +1824,6 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
             }
         }
         if (file_iter == lnav_data.ld_active_files.fc_files.end()) {
-            logfile_open_options default_loo;
             auto_mem<char> abspath;
             struct stat    st;
 
@@ -1849,7 +1845,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
 #endif
             }
             else if (is_glob(fn.c_str())) {
-                file_names[fn] = default_loo;
+                file_names.emplace(fn, logfile_open_options());
                 retval = "info: watching -- " + fn;
             }
             else if (stat(fn.c_str(), &st) == -1) {
@@ -1871,13 +1867,14 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                     auto fifo_piper = make_shared<piper_proc>(
                         fifo_fd.release(),
                         false,
-                        open_temp_file(system_tmpdir() / "lnav.fifo.XXXXXX")
+                        open_temp_file(ghc::filesystem::temp_directory_path() /
+                                       "lnav.fifo.XXXXXX")
                             .then([](auto pair) {
                                 ghc::filesystem::remove(pair.first);
                             })
                             .expect("Cannot create temporary file for FIFO")
                             .second);
-                    int fifo_out_fd = fifo_piper->get_fd();
+                    auto fifo_out_fd = fifo_piper->get_fd();
                     char desc[128];
 
                     snprintf(desc, sizeof(desc),
@@ -1888,7 +1885,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                     lnav_data.ld_pipers.push_back(fifo_piper);
                 }
             }
-            else if ((abspath = realpath(fn.c_str(), NULL)) == NULL) {
+            else if ((abspath = realpath(fn.c_str(), nullptr)) == nullptr) {
                 return ec.make_error("cannot find file -- {}", fn);
             }
             else if (S_ISDIR(st.st_mode)) {
@@ -1897,7 +1894,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
                 if (dir_wild[dir_wild.size() - 1] == '/') {
                     dir_wild.resize(dir_wild.size() - 1);
                 }
-                file_names[dir_wild + "/*"] = default_loo;
+                file_names.emplace(dir_wild + "/*", logfile_open_options());
                 retval = "info: watching -- " + dir_wild;
             }
             else if (!S_ISREG(st.st_mode)) {
@@ -1910,12 +1907,12 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
             }
             else {
                 fn = abspath.in();
-                file_names[fn] = default_loo;
+                file_names.emplace(fn, logfile_open_options());
                 retval = "info: opened -- " + fn;
                 files_to_front.emplace_back(fn, top);
 
                 closed_files.push_back(fn);
-                if (lnav_data.ld_rl_view != NULL) {
+                if (lnav_data.ld_rl_view != nullptr) {
                     lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(
                         X, "to close the file"));
                 }
@@ -1933,7 +1930,7 @@ static Result<string, string> com_open(exec_context &ec, string cmdline, vector<
             if (is_glob(fn.c_str())) {
                 static_root_mem<glob_t, globfree> gl;
 
-                if (glob(fn.c_str(), GLOB_NOCHECK, NULL, gl.inout()) == 0) {
+                if (glob(fn.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
                     attr_line_t al;
 
                     for (size_t lpc = 0; lpc < gl->gl_pathc && lpc < 10; lpc++) {
@@ -2547,7 +2544,7 @@ static Result<string, string> com_pt_time(exec_context &ec, string cmdline, vect
             new_time.tv_sec = timegm(&tm.et_tm);
         }
         else {
-            dts.scan(args[1].c_str(), args[1].size(), NULL, &tm, new_time);
+            dts.scan(args[1].c_str(), args[1].size(), nullptr, &tm, new_time);
         }
         if (ec.ec_dry_run) {
             retval = "";
@@ -2607,7 +2604,7 @@ static Result<string, string> com_summarize(exec_context &ec, string cmdline, ve
                                      query.c_str(),
                                      -1,
                                      stmt.out(),
-                                     NULL);
+                                     nullptr);
         if (retcode != SQLITE_OK) {
             const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
@@ -2729,14 +2726,14 @@ static Result<string, string> com_summarize(exec_context &ec, string cmdline, ve
                                      query.c_str(),
                                      -1,
                                      stmt.out(),
-                                     NULL);
+                                     nullptr);
 
         if (retcode != SQLITE_OK) {
             const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
             return ec.make_error("{}", errmsg);
         }
-        else if (stmt == NULL) {
+        else if (stmt == nullptr) {
             retval = "";
         }
         else {
@@ -2814,7 +2811,7 @@ static Result<string, string> com_add_test(exec_context &ec, string cmdline, vec
                      getenv("LNAV_SRC"),
                      hash_string(line).c_str());
 
-            if ((file = fopen(path, "w")) == NULL) {
+            if ((file = fopen(path, "w")) == nullptr) {
                 perror("fopen failed");
             }
             else {
@@ -3041,7 +3038,7 @@ static Result<string, string> com_toggle_field(exec_context &ec, string cmdline,
                 if (format->hide_field(name, hide)) {
                     found_fields.push_back(args[lpc]);
                     if (hide) {
-                        if (lnav_data.ld_rl_view != NULL) {
+                        if (lnav_data.ld_rl_view != nullptr) {
                             lnav_data.ld_rl_view->set_alt_value(
                                 HELP_MSG_1(x, "to quickly show hidden fields"));
                         }
@@ -3053,21 +3050,13 @@ static Result<string, string> com_toggle_field(exec_context &ec, string cmdline,
             }
 
             if (missing_fields.empty()) {
-                string all_fields = join(found_fields.begin(),
-                                         found_fields.end(),
-                                         ", ");
-
-                if (hide) {
-                    retval = "info: hiding field(s) -- " + all_fields;
-                } else {
-                    retval = "info: showing field(s) -- " + all_fields;
-                }
+                auto visibility = hide ? "hiding" : "showing";
+                retval = fmt::format("info: {} field(s) -- {}",
+                                     visibility,
+                                     fmt::join(found_fields, ", "));
             } else {
-                string all_fields = join(missing_fields.begin(),
-                                         missing_fields.end(),
-                                         ", ");
-
-                return ec.make_error("unknown field(s) -- {}", all_fields);
+                return ec.make_error("unknown field(s) -- {}",
+                                     fmt::join(missing_fields, ", "));
             }
         }
     }
@@ -3349,7 +3338,7 @@ static Result<string, string> com_alt_msg(exec_context &ec, string cmdline, vect
         retval = "";
     }
     else if (args.size() == 1) {
-        if (lnav_data.ld_rl_view != NULL) {
+        if (lnav_data.ld_rl_view != nullptr) {
             lnav_data.ld_rl_view->set_alt_value("");
         }
         retval = "";
@@ -3357,7 +3346,7 @@ static Result<string, string> com_alt_msg(exec_context &ec, string cmdline, vect
     else {
         string msg = remaining_args(cmdline, args);
 
-        if (lnav_data.ld_rl_view != NULL) {
+        if (lnav_data.ld_rl_view != nullptr) {
             lnav_data.ld_rl_view->set_alt_value(msg);
         }
 
@@ -3474,8 +3463,7 @@ static Result<string, string> com_config(exec_context &ec, string cmdline, vecto
 
                     lnav_data.ld_preview_source
                         .replace_with(al)
-                        .set_text_format(detect_text_format(old_value.c_str(),
-                                                            old_value.size()))
+                        .set_text_format(detect_text_format(old_value))
                         .truncate_to(10);
                     lnav_data.ld_preview_status_source.get_description()
                         .set_value("Value of option: %s", option.c_str());
@@ -3580,7 +3568,7 @@ static Result<string, string> com_reset_config(exec_context &ec, string cmdline,
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
 
-        if (option == "*" || (ypc.ypc_current_handler != NULL ||
+        if (option == "*" || (ypc.ypc_current_handler != nullptr ||
                               !ypc.ypc_handler_stack.empty())) {
             if (!ec.ec_dry_run) {
                 reset_config(option);
@@ -4181,9 +4169,7 @@ static void sql_prompt(vector<string> &args)
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].do_update();
 
-    field_overlay_source *fos;
-
-    fos = (field_overlay_source *) log_view.get_overlay_source();
+    auto* fos = (field_overlay_source *) log_view.get_overlay_source();
     fos->fos_active_prev = fos->fos_active;
     if (!fos->fos_active) {
         fos->fos_active = true;

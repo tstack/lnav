@@ -32,7 +32,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "lnav.hh"
 #include "base/lnav_log.hh"
 #include "file_vtab.hh"
 #include "session_data.hh"
@@ -56,20 +55,15 @@ CREATE TABLE lnav_file (
 );
 )";
 
-    struct vtab {
-        sqlite3_vtab base;
-
-        explicit operator sqlite3_vtab *() {
-            return &this->base;
-        };
-    };
+    lnav_file(file_collection& fc) : lf_collection(fc) {
+    }
 
     iterator begin() {
-        return lnav_data.ld_active_files.fc_files.begin();
+        return this->lf_collection.fc_files.begin();
     }
 
     iterator end() {
-        return lnav_data.ld_active_files.fc_files.end();
+        return this->lf_collection.fc_files.end();
     }
 
     int get_column(const cursor &vc, sqlite3_context *ctx, int col) {
@@ -135,7 +129,7 @@ CREATE TABLE lnav_file (
                    int64_t lines,
                    int64_t time_offset,
                    bool visible) {
-        auto lf = lnav_data.ld_active_files.fc_files[rowid];
+        auto lf = this->lf_collection.fc_files[rowid];
         struct timeval tv = {
             (int) (time_offset / 1000LL),
             (int) (time_offset / (1000LL * 1000LL)),
@@ -149,15 +143,15 @@ CREATE TABLE lnav_file (
                     "real file paths cannot be updated, only symbolic ones");
             }
 
-            auto iter = lnav_data.ld_active_files.fc_file_names.find(lf->get_filename());
+            auto iter = this->lf_collection.fc_file_names.find(lf->get_filename());
 
-            if (iter != lnav_data.ld_active_files.fc_file_names.end()) {
-                auto loo = iter->second;
+            if (iter != this->lf_collection.fc_file_names.end()) {
+                auto loo = std::move(iter->second);
 
-                lnav_data.ld_active_files.fc_file_names.erase(iter);
+                this->lf_collection.fc_file_names.erase(iter);
 
                 loo.loo_include_in_session = true;
-                lnav_data.ld_active_files.fc_file_names[path] = loo;
+                this->lf_collection.fc_file_names[path] = std::move(loo);
                 lf->set_filename(path);
 
                 init_session();
@@ -167,21 +161,21 @@ CREATE TABLE lnav_file (
 
         if (lf->is_visible() != visible) {
             lf->set_visibility(visible);
-            lnav_data.ld_log_source.text_filters_changed();
         }
 
         return SQLITE_OK;
     };
+
+    file_collection &lf_collection;
 };
 
 
-int register_file_vtab(sqlite3 *db)
+int register_file_vtab(sqlite3 *db, file_collection &fc)
 {
-    static vtab_module<lnav_file> LNAV_FILE_MODULE;
-
+    auto mod = new vtab_module<lnav_file>(fc);
     int rc;
 
-    rc = LNAV_FILE_MODULE.create(db, "lnav_file");
+    rc = mod->create(db, "lnav_file");
 
     ensure(rc == SQLITE_OK);
 

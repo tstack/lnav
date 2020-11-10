@@ -182,7 +182,7 @@ struct string_attr {
         require(type);
     };
 
-    string_attr() : sa_type(NULL) { };
+    string_attr() : sa_type(nullptr) { };
 
     bool operator<(const struct string_attr &rhs) const
     {

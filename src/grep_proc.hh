@@ -100,7 +100,7 @@ public:
 class grep_proc_control {
 public:
 
-    virtual ~grep_proc_control() { };
+    virtual ~grep_proc_control() = default;
 
     /** @param msg The error encountered while attempting the grep. */
     virtual void grep_error(std::string msg) { };

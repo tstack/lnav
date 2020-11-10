@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2020, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,55 +25,37 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * @file view_helpers.hh
  */
 
-#ifndef _top_sys_status_source_hh
-#define _top_sys_status_source_hh
+#ifndef lnav_view_helpers_hh
+#define lnav_view_helpers_hh
 
-#include <string>
+#include "help_text.hh"
+#include "textview_curses.hh"
 
-#include "logfile_sub_source.hh"
-#include "statusview_curses.hh"
+/** The different views available. */
+typedef enum {
+    LNV_LOG,
+    LNV_TEXT,
+    LNV_HELP,
+    LNV_HISTOGRAM,
+    LNV_DB,
+    LNV_SCHEMA,
+    LNV_PRETTY,
+    LNV_SPECTRO,
 
-class top_sys_status_source
-    : public status_data_source {
-public:
+    LNV__MAX
+} lnav_view_t;
 
-    typedef enum {
-        TSF_CPU,
-        TSF_MEM,
-        TSF_TRAF,
+extern const char *lnav_view_strings[LNV__MAX + 1];
 
-        TSF__MAX
-    } field_t;
+bool ensure_view(textview_curses *expected_tc);
+bool toggle_view(textview_curses *toggle_tc);
+void layout_views();
 
-    top_sys_status_source()
-    {
-        static std::string names[TSF__MAX] = {
-            "#CPU",
-            "#Mem",
-            "#Traf",
-        };
+void execute_examples();
+attr_line_t eval_example(const help_text &ht, const help_example &ex);
 
-        int lpc;
-
-        for (lpc = 0; lpc < TSF__MAX; lpc++) {
-            this->tss_fields[lpc].set_width(5);
-            this->tss_fields[lpc].set_value(names[lpc]);
-        }
-        this->tss_fields[TSF_CPU].set_role(view_colors::VCR_WARN_STATUS);
-        this->tss_fields[TSF_MEM].set_role(view_colors::VCR_ALERT_STATUS);
-        this->tss_fields[TSF_TRAF].set_role(view_colors::VCR_ACTIVE_STATUS);
-    };
-
-    size_t statusview_fields() { return TSF__MAX; };
-
-    status_field &statusview_value_for_field(int field)
-    {
-        return this->tss_fields[field];
-    };
-
-private:
-    telltale_field tss_fields[TSF__MAX];
-};
 #endif

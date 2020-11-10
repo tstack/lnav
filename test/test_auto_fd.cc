@@ -30,7 +30,6 @@
 #include "config.h"
 
 #include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
@@ -50,7 +49,7 @@ int main(int argc, char *argv[])
     fd1 = tmp;
     fd1 = tmp;
     assert(fcntl(tmp, F_GETFL) >= 0);
-    fd1 = fd2;
+    fd1 = std::move(fd2);
     assert(fcntl(tmp, F_GETFL) == -1);
     assert(errno == EBADF);
     assert(fd1 == -1);

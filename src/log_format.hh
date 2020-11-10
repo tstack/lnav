@@ -39,6 +39,7 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
+#include <memory>
 #include <set>
 #include <list>
 #include <string>
@@ -168,7 +169,7 @@ public:
         }
     };
 
-    bool is_marked(void) const { return this->ll_level & LEVEL_MARK; };
+    bool is_marked() const { return this->ll_level & LEVEL_MARK; };
 
     void set_time_skew(bool val) {
         if (val) {
@@ -227,7 +228,7 @@ public:
     /**
      * @return  True if there is a schema value set for this log line.
      */
-    bool has_schema(void) const
+    bool has_schema() const
     {
         return (this->ll_schema[0] != 0 ||
                 this->ll_schema[1] != 0);
@@ -508,7 +509,7 @@ public:
     /**
      * @return The collection of builtin log formats.
      */
-    static std::vector<log_format *> &get_root_formats(void);
+    static std::vector<log_format *> &get_root_formats();
 
     /**
      * Template used to register log formats during initialization.
@@ -531,7 +532,7 @@ public:
                 return lf;
             }
         }
-        return NULL;
+        return nullptr;
     }
 
     struct action_def {
@@ -618,20 +619,20 @@ public:
     };
 
     virtual const logline_value_stats *stats_for_value(const intern_string_t &name) const {
-        return NULL;
+        return nullptr;
     };
 
     virtual std::unique_ptr<log_format> specialized(int fmt_lock = -1) = 0;
 
-    virtual log_vtab_impl *get_vtab_impl(void) const {
-        return NULL;
+    virtual log_vtab_impl *get_vtab_impl() const {
+        return nullptr;
     };
 
     virtual void get_subline(const logline &ll, shared_buffer_ref &sbr, bool full_message = false) {
     };
 
     virtual const std::vector<std::string> *get_actions(const logline_value &lv) const {
-        return NULL;
+        return nullptr;
     };
 
     virtual const std::set<std::string> get_source_path() const {
@@ -648,7 +649,7 @@ public:
 
     const char * const *get_timestamp_formats() const {
         if (this->lf_timestamp_format.empty()) {
-            return NULL;
+            return nullptr;
         }
 
         return &this->lf_timestamp_format[0];
@@ -705,7 +706,7 @@ protected:
             this->pf_timestamp_index = this->pcre.name_index("timestamp");
         };
 
-        pcre_format() : name(NULL), pcre("") { };
+        pcre_format() : name(nullptr), pcre("") { };
 
         const char *name;
         pcrepp pcre;
@@ -773,36 +774,23 @@ public:
     };
 
     struct pattern {
-        pattern() : p_pcre(NULL),
-                    p_timestamp_field_index(-1),
-                    p_level_field_index(-1),
-                    p_module_field_index(-1),
-                    p_opid_field_index(-1),
-                    p_body_field_index(-1),
-                    p_timestamp_end(-1),
-                    p_module_format(false) {
-
-        };
-
         std::string p_config_path;
         std::string p_string;
-        pcrepp *p_pcre;
+        pcrepp *p_pcre{nullptr};
         std::vector<indexed_value_def> p_value_by_index;
         std::vector<int> p_numeric_value_indexes;
-        int p_timestamp_field_index;
-        int p_level_field_index;
-        int p_module_field_index;
-        int p_opid_field_index;
-        int p_body_field_index;
-        int p_timestamp_end;
-        bool p_module_format;
+        int p_timestamp_field_index{-1};
+        int p_level_field_index{-1};
+        int p_module_field_index{-1};
+        int p_opid_field_index{-1};
+        int p_body_field_index{-1};
+        int p_timestamp_end{-1};
+        bool p_module_format{false};
     };
 
     struct level_pattern {
-        level_pattern() : lp_pcre(NULL) { };
-        
         std::string lp_regex;
-        pcrepp *lp_pcre;
+        pcrepp *lp_pcre{nullptr};
     };
 
     external_log_format(const intern_string_t name)
@@ -824,7 +812,7 @@ public:
             this->jlf_line_offsets.reserve(128);
         };
 
-    const intern_string_t get_name(void) const {
+    const intern_string_t get_name() const {
         return this->elf_name;
     };
 
@@ -879,10 +867,10 @@ public:
         }
 
         if (this->elf_type == ELF_TYPE_JSON) {
-            this->jlf_parse_context.reset(new yajlpp_parse_context(this->elf_name.to_string()));
+            this->jlf_parse_context = std::make_shared<yajlpp_parse_context>(this->elf_name.to_string());
             this->jlf_yajl_handle.reset(yajl_alloc(
                     &this->jlf_parse_context->ypc_callbacks,
-                    NULL,
+                    nullptr,
                     this->jlf_parse_context.get()));
             yajl_config(this->jlf_yajl_handle.in(), yajl_dont_validate_strings, 1);
             this->jlf_cached_line.reserve(16 * 1024);
@@ -895,7 +883,7 @@ public:
     };
 
     const logline_value_stats *stats_for_value(const intern_string_t &name) const {
-        const logline_value_stats *retval = NULL;
+        const logline_value_stats *retval = nullptr;
 
         for (size_t lpc = 0; lpc < this->elf_numeric_value_defs.size(); lpc++) {
             value_def &vd = *this->elf_numeric_value_defs[lpc];
@@ -911,10 +899,10 @@ public:
 
     void get_subline(const logline &ll, shared_buffer_ref &sbr, bool full_message);
 
-    log_vtab_impl *get_vtab_impl(void) const;
+    log_vtab_impl *get_vtab_impl() const;
 
     const std::vector<std::string> *get_actions(const logline_value &lv) const {
-        const std::vector<std::string> *retval = NULL;
+        const std::vector<std::string> *retval = nullptr;
 
         const auto iter = this->elf_value_defs.find(lv.lv_name);
         if (iter != this->elf_value_defs.end()) {
@@ -998,7 +986,7 @@ public:
 
     long value_line_count(const intern_string_t ist,
                           bool top_level,
-                          const unsigned char *str = NULL,
+                          const unsigned char *str = nullptr,
                           ssize_t len = -1) const {
         const auto iter = this->elf_value_defs.find(ist);
         long line_count = (str != NULL) ? std::count(&str[0], &str[len], '\n') + 1 : 1;
@@ -1161,11 +1149,7 @@ private:
 class module_format {
 
 public:
-    module_format() : mf_mod_format(NULL) {
-
-    };
-
-    external_log_format *mf_mod_format;
+    external_log_format *mf_mod_format{nullptr};
 };
 
 #endif

@@ -43,6 +43,7 @@
 #include "auto_mem.hh"
 #include "fmt/format.h"
 #include "base/lnav_log.hh"
+#include "lnav_util.hh"
 
 #include "archive_manager.hh"
 
@@ -81,14 +82,14 @@ public:
         auto lock_path = archive_path;
 
         lock_path += ".lck";
-        this->lh_fd = open(lock_path.c_str(), O_CREAT | O_RDWR, 0600);
+        this->lh_fd = openp(lock_path, O_CREAT | O_RDWR, 0600);
         log_perror(fcntl(this->lh_fd, F_SETFD, FD_CLOEXEC));
     };
 
     auto_fd lh_fd;
 };
 
-bool is_archive(const std::string &filename)
+bool is_archive(const ghc::filesystem::path& filename)
 {
 #if HAVE_ARCHIVE_H
     auto_mem<archive> arc(archive_read_free);

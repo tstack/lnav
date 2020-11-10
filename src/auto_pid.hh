@@ -39,49 +39,59 @@
 
 class auto_pid {
 public:
-    auto_pid(pid_t child = -1) : ap_child(child), ap_status(0) {};
+    explicit auto_pid(pid_t child = -1) : ap_child(child)
+    {};
 
-    auto_pid(auto_pid &other) : ap_child(other.release()), ap_status(0) { };
+    auto_pid(const auto_pid &other) = delete;
 
-    ~auto_pid() { this->reset(); };
+    auto_pid(auto_pid &&other) noexcept : ap_child(other.release())
+    {};
 
-    auto_pid &operator =(auto_pid &other) {
+    ~auto_pid()
+    { this->reset(); };
+
+    auto_pid &operator=(auto_pid &&other) noexcept {
         this->reset(other.release());
         this->ap_status = other.ap_status;
         return *this;
     };
 
-    bool in_child() const {
+    bool in_child() const
+    {
         return this->ap_child == 0;
     };
 
-    pid_t release() {
+    pid_t release()
+    {
         pid_t retval = this->ap_child;
 
         this->ap_child = -1;
         return retval;
     };
 
-    int status() const {
+    int status() const
+    {
         return this->ap_status;
     };
 
-    bool was_normal_exit() const {
+    bool was_normal_exit() const
+    {
         return WIFEXITED(this->ap_status);
     }
 
-    int exit_status() const {
+    int exit_status() const
+    {
         return WEXITSTATUS(this->ap_status);
     }
 
-    bool wait_for_child(int options = 0) {
+    bool wait_for_child(int options = 0)
+    {
         if (this->ap_child != -1) {
             int rc;
 
             while ((rc = waitpid(this->ap_child,
                                  &this->ap_status,
-                                 options)) < 0 && (errno == EINTR)) {
-                ;
+                                 options)) < 0 && (errno == EINTR)) { ;
             }
             if (rc > 0) {
                 this->ap_child = -1;
@@ -91,7 +101,8 @@ public:
         return this->ap_child == -1;
     };
 
-    void reset(pid_t child = -1) {
+    void reset(pid_t child = -1)
+    {
         if (this->ap_child != child) {
             this->ap_status = 0;
             if (this->ap_child != -1) {
@@ -103,10 +114,8 @@ public:
     };
 
 private:
-    auto_pid(const auto_pid &other) { };
-
     pid_t ap_child;
-    int ap_status;
+    int ap_status{0};
 };
 
 #endif

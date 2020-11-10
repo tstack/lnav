@@ -31,11 +31,8 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <stdint.h>
 #include <unistd.h>
 
 #include <string>
@@ -158,7 +155,7 @@ string sql_realpath(const char *path)
 {
     char resolved_path[PATH_MAX];
 
-    if (realpath(path, resolved_path) == NULL) {
+    if (realpath(path, resolved_path) == nullptr) {
         throw sqlite_func_error("Could not get real path for {} -- {}",
                                 path, strerror(errno));
     }
@@ -280,11 +277,11 @@ int fs_extension_functions(struct FuncDef **basic_funcs,
          * TODO: add other functions like normpath, ...
          */
 
-        { NULL }
+        { nullptr }
     };
 
     *basic_funcs = fs_funcs;
-    *agg_funcs   = NULL;
+    *agg_funcs   = nullptr;
 
     return SQLITE_OK;
 }

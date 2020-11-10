@@ -33,8 +33,8 @@
 
 #include <algorithm>
 
+#include "base/string_util.hh"
 #include "sql_util.hh"
-#include "lnav_util.hh"
 
 #include "base/lnav_log.hh"
 #include "column_namer.hh"

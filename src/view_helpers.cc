@@ -36,6 +36,7 @@
 #include "vtab_module.hh"
 #include "shlex.hh"
 #include "help-txt.h"
+#include "view_helpers.hh"
 
 using namespace std;
 
@@ -61,7 +62,7 @@ static void open_schema_view()
     schema_tc->set_sub_source(pts);
 }
 
-static void open_pretty_view(void)
+static void open_pretty_view()
 {
     static const char *NOTHING_MSG =
         "Nothing to pretty-print";

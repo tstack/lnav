@@ -122,7 +122,8 @@ static string execute_action(log_data_helper &ldh,
                 auto pp = make_shared<piper_proc>(
                     out_pipe.read_end(),
                     false,
-                    open_temp_file(system_tmpdir() / "lnav.action.XXXXXX")
+                    open_temp_file(ghc::filesystem::temp_directory_path() /
+                                   "lnav.action.XXXXXX")
                         .then([](auto pair) {
                             ghc::filesystem::remove(pair.first);
                         })

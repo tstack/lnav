@@ -867,22 +867,22 @@ void load_session()
 
         lnav_data.ld_session_load_time = pair.first.second;
         session_data.sd_save_time = pair.first.second;
-        const string &view_info_name = pair.second;
+        const auto& view_info_path = pair.second;
 
-        yajlpp_parse_context ypc(view_info_name, &view_info_handlers);
+        yajlpp_parse_context ypc(view_info_path, &view_info_handlers);
         ypc.with_obj(session_data);
         handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
 
         load_time_bookmarks();
 
-        if ((fd = open(view_info_name.c_str(), O_RDONLY)) < 0) {
+        if ((fd = openp(view_info_path, O_RDONLY)) < 0) {
             perror("cannot open session file");
         }
         else {
             unsigned char buffer[1024];
             ssize_t        rc;
 
-            log_info("loading session file: %s", view_info_name.c_str());
+            log_info("loading session file: %s", view_info_path.c_str());
             while ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
                 yajl_parse(handle, buffer, rc);
             }

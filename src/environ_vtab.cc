@@ -210,7 +210,7 @@ static int vt_update(sqlite3_vtab *tab,
                      sqlite_int64 *rowid)
 {
     const char *name = (
-        argc > 2 ? (const char *)sqlite3_value_text(argv[2]) : NULL);
+        argc > 2 ? (const char *)sqlite3_value_text(argv[2]) : nullptr);
     vtab *p_vt = (vtab *)tab;
     int retval = SQLITE_ERROR;
 
@@ -225,7 +225,7 @@ static int vt_update(sqlite3_vtab *tab,
 
         return SQLITE_ERROR;
     }
-    if (name != NULL && strchr(name, '=') != NULL) {
+    if (name != nullptr && strchr(name, '=') != nullptr) {
         tab->zErrMsg = sqlite3_mprintf(
             "Environment variable names cannot contain an equals sign (=)");
 
@@ -244,7 +244,7 @@ static int vt_update(sqlite3_vtab *tab,
         unsetenv(name);
 
         retval = SQLITE_OK;
-    } else if (name != NULL && getenv(name) != NULL) {
+    } else if (name != nullptr && getenv(name) != nullptr) {
 #ifdef SQLITE_FAIL
         int rc;
 
@@ -266,7 +266,7 @@ static int vt_update(sqlite3_vtab *tab,
 #endif
     }
 
-    if (name != NULL && argc == 4) {
+    if (name != nullptr && argc == 4) {
         const unsigned char *value = sqlite3_value_text(argv[3]);
 
         setenv((const char *)name, (const char *)value, 1);

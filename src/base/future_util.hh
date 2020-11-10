@@ -30,6 +30,7 @@
 #ifndef lnav_future_util_hh
 #define lnav_future_util_hh
 
+#include <deque>
 #include <future>
 
 template<class T>
@@ -43,7 +44,7 @@ std::future<std::decay_t<T>> make_ready_future( T&& t ) {
 template<typename T>
 class future_queue {
 public:
-    future_queue(std::function<void(const T&)> processor)
+    explicit future_queue(std::function<void(const T&)> processor)
         : fq_processor(processor) {};
 
     ~future_queue() {

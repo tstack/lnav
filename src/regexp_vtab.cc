@@ -65,14 +65,6 @@ CREATE TABLE regexp_capture (
 );
 )";
 
-    struct vtab {
-        sqlite3_vtab base;
-
-        operator sqlite3_vtab *() {
-            return &this->base;
-        };
-    };
-
     struct cursor {
         sqlite3_vtab_cursor base;
         unique_ptr<pcrepp> c_pattern;
