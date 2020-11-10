@@ -449,6 +449,8 @@ add_library(diag STATIC
         fmtlib/fmt/format.h
         fmtlib/format.cc
 
+        ww898/cp_utf8.hpp
+
         log_level_re.cc
         )
 

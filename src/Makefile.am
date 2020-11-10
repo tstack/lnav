@@ -377,7 +377,8 @@ noinst_HEADERS = \
     fmtlib/fmt/color.h \
     fmtlib/fmt/printf.h \
     fmtlib/fmt/posix.h \
-    fmtlib/fmt/format.h
+    fmtlib/fmt/format.h \
+    ww898/cp_utf8.hpp
 
 nodist_libdiag_a_SOURCES = \
 	$(LNAV_BUILT_FILES)
