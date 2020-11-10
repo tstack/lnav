@@ -32,6 +32,8 @@
 #ifndef log_level_hh
 #define log_level_hh
 
+#include <sys/types.h>
+
 /**
  * The logging level identifiers for a line(s).
  */
