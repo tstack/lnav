@@ -33,6 +33,8 @@
 #include <string.h>
 #include <string>
 
+#include "ww898/cp_utf8.hpp"
+
 void scrub_to_utf8(char *buffer, size_t length);
 
 inline bool is_line_ending(char ch) {
@@ -114,6 +116,22 @@ inline std::string toupper(const char *str)
 inline std::string toupper(const std::string &str)
 {
     return toupper(str.c_str());
+}
+
+inline ssize_t utf8_char_to_byte_index(const std::string &str, ssize_t ch_index)
+{
+    ssize_t retval = 0;
+
+    while (ch_index > 0) {
+        auto ch_len = ww898::utf::utf8::char_size([&str, retval]() {
+            return str[retval];
+        });
+
+        retval += ch_len;
+        ch_index -= 1;
+    }
+
+    return retval;
 }
 
 #endif

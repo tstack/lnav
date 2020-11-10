@@ -210,7 +210,7 @@ static void dump_memory(FILE *dst, const char *src, int len)
     int lpc;
 
     for (lpc = 0; lpc < len; lpc++) {
-        fprintf(dst, "%02x", src[lpc]);
+        fprintf(dst, "%02x", src[lpc] & 0xff);
     }
 }
 

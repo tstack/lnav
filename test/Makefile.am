@@ -330,12 +330,12 @@ TESTS = \
 	test_sql_str_func.sh \
 	test_sql_time_func.sh \
 	test_data_parser.sh \
-	test_pretty_print.sh
+	test_pretty_print.sh \
+	test_vt52_curses.sh
 
 DISABLED_TESTS = \
 	test_top_status \
-    test_view_colors.sh \
-    test_vt52_curses.sh
+    test_view_colors.sh
 
 if HAVE_LIBCURL
 TESTS += \

@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "base/lnav_log.hh"
+#include "base/string_util.hh"
 #include "base/intern_string.hh"
 
 /**
@@ -460,6 +461,13 @@ public:
         this->al_string.erase(pos, len);
 
         shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
+
+        return *this;
+    };
+
+    attr_line_t &erase_utf8_chars(size_t start) {
+        auto byte_index = utf8_char_to_byte_index(this->al_string, start);
+        this->erase(byte_index);
 
         return *this;
     };

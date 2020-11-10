@@ -1,38 +1,39 @@
-read 1b29301b371b5b3f3437681b5b313b3234721b5b6d1b5b346c1b5b481b5b324a616263
-# write 31
+read 1b29301b371b5b3f3437681b5b313b3234721b5b6d1b5b346c1b5b481b5b324a477275c39f
+# write 0d
 read 0d
-# write 32
+# write 0d
 read 1b5b4a
-# write 33
+# write 0d
 read 6465
-# write 34
+# write 0d
 read 0d1b5b4a
-# write 35
+# write 0d
 read 
-# write 36
+# write 0d
 read 
-# write 37
+# write 0d
 read 
-# write 38
+# write 0d
 read 
-# write 39
+# write 0d
 read 
-# write 30
+# write 0d
 read 
-# write 61
+# write 0d
 read 
-# write 62
+# write 0d
 read 
-# write 63
+# write 0d
 read 
-# write 64
+# write 0d
 read 616263
-# write 65
+# write 0d
 read 0d1b5b4a
-# write 66
+# write 0d
 read 07
-# write 67
+# write 0d
 read 6163646566
-# write 68
+# write 0d
 read 
-# write 69
+# write 0d
+read 1b5b32343b31481b5b324a1b5b3f34376c1b380d1b5b3f316c1b3e

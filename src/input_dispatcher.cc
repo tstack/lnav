@@ -50,8 +50,11 @@
 #endif
 
 #include "base/lnav_log.hh"
+#include "ww898/cp_utf8.hpp"
 #include "input_dispatcher.hh"
 #include "lnav_util.hh"
+
+using namespace ww898;
 
 template<typename A>
 static void to_key_seq(A &dst, const char *src)
@@ -90,13 +93,9 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                     to_key_seq(keyseq, this->id_escape_buffer);
                     switch (this->id_escape_matcher(keyseq.data())) {
                         case escape_match_t::NONE: {
-                            if (this->id_escape_expected_size == -1) {
-                                for (int lpc = 0; this->id_escape_buffer[lpc]; lpc++) {
-                                    handled = this->id_key_handler(
-                                        this->id_escape_buffer[lpc]);
-                                }
-                            } else {
-                                handled = false;
+                            for (int lpc = 0; this->id_escape_buffer[lpc]; lpc++) {
+                                handled = this->id_key_handler(
+                                    this->id_escape_buffer[lpc]);
                             }
                             this->id_escape_index = 0;
                             break;
@@ -113,15 +112,15 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                     this->id_escape_index == this->id_escape_expected_size) {
                     this->id_escape_index = 0;
                 }
-            } else if ((ch & 0xf8) == 0xf0) {
-                this->reset_escape_buffer(ch, current_time, 4);
-            } else if ((ch & 0xf0) == 0xe0) {
-                this->reset_escape_buffer(ch, current_time, 3);
-            } else if ((ch & 0xe0) == 0xc0) {
-                this->reset_escape_buffer(ch, current_time, 2);
             } else {
-                snprintf(keyseq.data(), keyseq.size(), "x%02x", ch & 0xff);
-                handled = this->id_key_handler(ch);
+                auto seq_size = utf::utf8::char_size([ch]() { return ch; });
+
+                if (seq_size == 1) {
+                    snprintf(keyseq.data(), keyseq.size(), "x%02x", ch & 0xff);
+                    handled = this->id_key_handler(ch);
+                } else {
+                    this->reset_escape_buffer(ch, current_time, seq_size);
+                }
             }
             break;
     }

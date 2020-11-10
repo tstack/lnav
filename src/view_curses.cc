@@ -319,18 +319,12 @@ void view_curses::mvwattrline(WINDOW *window,
                 break;
 
             default: {
-                int offset = 0;
+                auto offset = 1 - (int) ww898::utf::utf8::char_size([ch]() {
+                    return ch;
+                });
 
                 expanded_line[exp_index] = line[lpc];
                 exp_index += 1;
-                if ((ch & 0xf8) == 0xf0) {
-                    offset = -3;
-                } else if ((ch & 0xf0) == 0xe0) {
-                    offset = -2;
-                } else if ((ch & 0xe0) == 0xc0) {
-                    offset = -1;
-                }
-
                 if (offset) {
                     if (char_index < lr_chars.lr_start) {
                         lr_bytes.lr_start += abs(offset);

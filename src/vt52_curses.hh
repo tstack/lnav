@@ -54,8 +54,6 @@
 class vt52_curses
     : public view_curses {
 public:
-    vt52_curses();
-
     /** @param win The curses window this view is attached to. */
     void set_window(WINDOW *win) { this->vc_window = win; };
 
@@ -145,14 +143,15 @@ protected:
         return retval;
     };
 
-    WINDOW *vc_window;        /*< The window that contains this view. */
+    WINDOW *vc_window{nullptr}; /*< The window that contains this view. */
     int     vc_left{0};
-    int     vc_x;             /*< The X position of the cursor. */
-    int     vc_y;             /*< The Y position of the cursor. */
-    int     vc_max_height;
+    int     vc_x{0};             /*< The X position of the cursor. */
+    int     vc_y{0};             /*< The Y position of the cursor. */
+    int     vc_max_height{0};
     char    vc_escape[16];    /*< Storage for escape sequences. */
-    int     vc_escape_len;    /*< The number of chars in vc_escape. */
-    char    vc_map_buffer;    /*<
+    int     vc_escape_len{0};    /*< The number of chars in vc_escape. */
+    int     vc_expected_escape_len{-1};
+    char    vc_map_buffer{0};    /*<
                                * Buffer returned by map_input for trivial
                                * translations (one-to-one).
                                */

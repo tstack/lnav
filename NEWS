@@ -20,6 +20,9 @@ lnav v0.9.1:
      * When copying log lines, the file name and time offset will be included
        in the copy if they are enabled.
 
+     Fixes:
+     * Unicode text can now be entered in prompts.
+
 lnav v0.9.0:
      Features:
      * Added support for themes and included a few as well: default, eldar,

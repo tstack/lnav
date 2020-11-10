@@ -31,7 +31,6 @@
 
 #include "config.h"
 
-#include <unistd.h>
 #include <string.h>
 
 #include <map>
@@ -82,7 +81,7 @@ public:
     const char *operator[](int ch) const
     {
         map<int, const char *>::const_iterator iter;
-        const char *retval = NULL;
+        const char *retval = nullptr;
 
         if ((iter = this->vem_map.find(ch)) != this->vem_map.end()) {
             retval = iter->second;
@@ -94,9 +93,9 @@ public:
     const char *operator[](const char *seq) const
     {
         map<string, const char *>::const_iterator iter;
-        const char *retval = NULL;
+        const char *retval = nullptr;
 
-        require(seq != NULL);
+        require(seq != nullptr);
 
         if ((iter = this->vem_input_map.find(seq)) !=
             this->vem_input_map.end()) {
@@ -114,7 +113,7 @@ private:
         static char area_buffer[1024];
         char *      area = area_buffer;
 
-        if (tgetent(NULL, "vt52") == ERR) {
+        if (tgetent(nullptr, "vt52") == ERR) {
             perror("tgetent");
         }
         this->vem_map[KEY_UP]        = tgetstr((char *)"ku", &area);
@@ -122,7 +121,7 @@ private:
         this->vem_map[KEY_RIGHT]     = tgetstr((char *)"kr", &area);
         this->vem_map[KEY_LEFT]      = tgetstr((char *)"kl", &area);
         this->vem_map[KEY_HOME]      = tgetstr((char *)"kh", &area);
-        if (this->vem_map[KEY_HOME] == NULL) {
+        if (this->vem_map[KEY_HOME] == nullptr) {
             this->vem_map[KEY_HOME] = "\x01";
         }
         this->vem_map[KEY_BACKSPACE] = "\010";
@@ -132,11 +131,11 @@ private:
         this->vem_map[KEY_END] = "\x05";
 
         this->vem_map[KEY_SLEFT] = tgetstr((char *)"#4", &area);
-        if (this->vem_map[KEY_SLEFT] == NULL) {
+        if (this->vem_map[KEY_SLEFT] == nullptr) {
             this->vem_map[KEY_SLEFT] = "\033b";
         }
         this->vem_map[KEY_SRIGHT] = tgetstr((char *)"%i", &area);
-        if (this->vem_map[KEY_SRIGHT] == NULL) {
+        if (this->vem_map[KEY_SRIGHT] == nullptr) {
             this->vem_map[KEY_SRIGHT] = "\033f";
         }
 
@@ -145,7 +144,7 @@ private:
         this->vem_input_map[tgetstr((char *)"ce", &area)] = "ce";
         this->vem_input_map[tgetstr((char *)"kl", &area)] = "kl";
         this->vem_input_map[tgetstr((char *)"kr", &area)] = "kr";
-        tgetent(NULL, getenv("TERM"));
+        tgetent(nullptr, getenv("TERM"));
     };
 
     /** Map of ncurses keycodes to VT52 escape sequences. */
@@ -153,21 +152,12 @@ private:
     map<string, const char *> vem_input_map;
 };
 
-vt52_curses::vt52_curses()
-    : vc_window(NULL),
-      vc_x(0),
-      vc_y(0),
-      vc_max_height(0),
-      vc_escape_len(0),
-      vc_map_buffer(0)
-{ }
-
 const char *vt52_curses::map_input(int ch, int &len_out)
 {
     const char *esc, *retval;
 
     /* Check for an escape sequence, otherwise just return the char. */
-    if ((esc = vt52_escape_map::singleton()[ch]) != NULL) {
+    if ((esc = vt52_escape_map::singleton()[ch]) != nullptr) {
         retval  = esc;
         len_out = strlen(retval);
     }
@@ -182,7 +172,7 @@ const char *vt52_curses::map_input(int ch, int &len_out)
         len_out = 1;
     }
 
-    ensure(retval != NULL);
+    ensure(retval != nullptr);
     ensure(len_out > 0);
 
     return retval;
@@ -202,10 +192,26 @@ void vt52_curses::map_output(const char *output, int len)
             this->vc_escape_len += 1;
             this->vc_escape[this->vc_escape_len] = '\0';
 
-            if ((cap = vt52_escape_map::singleton()[this->vc_escape]) !=
-                nullptr) {
+            if (this->vc_expected_escape_len != -1) {
+                if (this->vc_escape_len == this->vc_expected_escape_len) {
+                    auto& line_string = this->vc_line.get_string();
+                    auto x_byte_index = utf8_char_to_byte_index(line_string, this->vc_x);
+
+                    for (int esc_index = 0; esc_index < this->vc_escape_len; esc_index++) {
+                        if (x_byte_index < this->vc_line.length()) {
+                            line_string[x_byte_index] = this->vc_escape[esc_index];
+                        } else {
+                            this->vc_line.append(1, this->vc_escape[esc_index]);
+                        }
+                        x_byte_index += 1;
+                    }
+                    this->vc_x += 1;
+                    this->vc_escape_len = 0;
+                }
+            } else if ((cap = vt52_escape_map::singleton()[this->vc_escape]) !=
+                       nullptr) {
                 if (strcmp(cap, "ce") == 0) {
-                    this->vc_line.erase(this->vc_x);
+                    this->vc_line.erase_utf8_chars(this->vc_x);
                     this->vc_escape_len = 0;
                 }
                 else if (strcmp(cap, "kl") == 0) {
@@ -222,7 +228,19 @@ void vt52_curses::map_output(const char *output, int len)
             }
         }
         else {
-            switch (output[lpc]) {
+            auto next_ch = output[lpc];
+            auto seq_size = ww898::utf::utf8::char_size([next_ch]() {
+                return next_ch;
+            });
+
+            if (seq_size > 1) {
+                this->vc_escape[0] = next_ch;
+                this->vc_escape_len = 1;
+                this->vc_expected_escape_len = seq_size;
+                continue;
+            }
+
+            switch (next_ch) {
             case STX:
                 this->vc_x = 0;
                 this->vc_line.clear();
@@ -239,6 +257,7 @@ void vt52_curses::map_output(const char *output, int len)
             case ESCAPE:
                 this->vc_escape[0] = ESCAPE;
                 this->vc_escape_len = 1;
+                this->vc_expected_escape_len = -1;
                 break;
 
             case '\n':
@@ -250,14 +269,18 @@ void vt52_curses::map_output(const char *output, int len)
                 this->vc_x = 0;
                 break;
 
-            default:
-                if (this->vc_x < this->vc_line.length()) {
-                    this->vc_line.get_string()[this->vc_x] = output[lpc];
+            default: {
+                auto& line_string = this->vc_line.get_string();
+                auto x_byte_index = utf8_char_to_byte_index(line_string, this->vc_x);
+
+                if (x_byte_index < this->vc_line.length()) {
+                    line_string[x_byte_index] = next_ch;
                 } else {
-                    this->vc_line.append(1, output[lpc]);
+                    this->vc_line.append(1, next_ch);
                 }
                 this->vc_x += 1;
                 break;
+            }
             }
         }
     }
@@ -269,4 +292,5 @@ void vt52_curses::do_update()
                              this->get_actual_y(), this->vc_left,
                              this->vc_line,
                              line_range{ 0, (int) this->vc_width });
+    wmove(this->vc_window, this->get_actual_y(), this->vc_left + this->vc_x);
 }

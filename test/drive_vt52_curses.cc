@@ -35,7 +35,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <locale.h>
 
+#include "base/lnav_log.hh"
 #include "view_curses.hh"
 #include "vt52_curses.hh"
 
@@ -64,11 +66,14 @@ int main(int argc, char *argv[])
 {
   int lpc, c, fd, retval = EXIT_SUCCESS;
   vt52_curses vt;
-  
+
+  setenv("LANG", "en_US.utf-8", 1);
+  setlocale(LC_ALL, "");
   fd = open("/tmp/lnav.err", O_WRONLY|O_CREAT|O_APPEND, 0666);
   dup2(fd, STDERR_FILENO);
   close(fd);
   fprintf(stderr, "startup\n");
+  lnav_log_file = stderr;
 
   while ((c = getopt(argc, argv, "y:")) != -1) {
     switch (c) {
@@ -81,16 +86,16 @@ int main(int argc, char *argv[])
   for (lpc = 0; lpc < 1000; lpc++) {
     int len;
     
-    assert(vt.map_input(random(), len) != NULL);
+    assert(vt.map_input(random(), len) != nullptr);
     assert(len > 0);
   }
 
-  tgetent(NULL, "vt52");
+  tgetent(nullptr, "vt52");
   {
     static const char *CANNED_INPUT[] = {
-      "abc",
+      "Gru\xC3\x9F",
       "\r",
-      tgetstr((char *)"ce", NULL),
+      tgetstr((char *)"ce", nullptr),
       "de",
       "\n",
       "1\n",
@@ -103,7 +108,7 @@ int main(int argc, char *argv[])
       "8\n",
       "9\n",
       "abc",
-      "\x2",
+      "\x02",
       "\a",
       "ab\bcdef",
       0

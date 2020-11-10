@@ -1471,16 +1471,19 @@ static void looper()
                 auto encoded_name = (char *) alloca(enc_len);
 
                 log_info("unbound keyseq: %s", keyseq);
-                json_ptr::encode(encoded_name, enc_len, lnav_config.lc_ui_keymap.c_str());
+                json_ptr::encode(encoded_name, enc_len,
+                                 lnav_config.lc_ui_keymap.c_str());
                 // XXX we should have a hotkey for opening a prompt that is
                 // pre-filled with a suggestion that the user can complete.
                 // This quick-fix key could be used for other stuff as well
                 lnav_data.ld_rl_view->set_value(fmt::format(
-                    ANSI_CSI ANSI_COLOR_PARAM(COLOR_YELLOW) ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
+                    ANSI_CSI ANSI_COLOR_PARAM(COLOR_YELLOW)
+                    ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
                     "Unrecognized key"
                     ANSI_NORM
                     ", bind to a command using \u2014 "
-                    ANSI_BOLD(":config") " /ui/keymap-defs/{}/{}/command <cmd>",
+                    ANSI_BOLD(":config")
+                    " /ui/keymap-defs/{}/{}/command <cmd>",
                     encoded_name, keyseq));
                 alerter::singleton().chime();
             };
