@@ -36,8 +36,6 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#include "spookyhash/SpookyV2.h"
-
 #include <algorithm>
 #include <utility>
 #include <yajl/api/yajl_tree.h>
@@ -173,9 +171,10 @@ static bool bind_line(sqlite3 *db,
     }
 
     auto line_hash = read_result.map([cl](auto sbr) {
-        return hash_bytes(sbr.get_data(), sbr.length(),
-                          &cl, sizeof(cl),
-                          nullptr);
+        return hasher()
+            .update(sbr.get_data(), sbr.length())
+            .update(cl)
+            .to_string();
     }).unwrap();
 
     return bind_values(stmt,
@@ -297,25 +296,21 @@ void init_session()
 
 static nonstd::optional<std::string> compute_session_id()
 {
-    byte_array<2, uint64> hash;
-    SpookyHash context;
     bool has_files = false;
+    hasher h;
 
-    context.Init(0, 0);
-    hash_updater updater(&context);
     for (auto &ld_file_name : lnav_data.ld_active_files.fc_file_names) {
         if (!ld_file_name.second.loo_include_in_session) {
             continue;
         }
         has_files = true;
-        updater(ld_file_name.first);
+        h.update(ld_file_name.first);
     }
     if (!has_files) {
         return nonstd::nullopt;
     }
-    context.Final(hash.out(0), hash.out(1));
 
-    return hash.to_string();
+    return h.to_string();
 }
 
 nonstd::optional<session_pair_t> scan_sessions()
@@ -504,9 +499,10 @@ void load_time_bookmarks()
 
                     auto sbr = read_result.unwrap();
 
-                    string line_hash = hash_bytes(sbr.get_data(), sbr.length(),
-                                                  &cl, sizeof(cl),
-                                                  nullptr);
+                    string line_hash = hasher()
+                        .update(sbr.get_data(), sbr.length())
+                        .update(cl)
+                        .to_string();
 
                     if (line_hash == log_hash) {
                         content_line_t line_cl = content_line_t(
@@ -671,7 +667,9 @@ void load_time_bookmarks()
 
                     auto sbr = read_result.unwrap();
 
-                    string line_hash = hash_bytes(sbr.get_data(), sbr.length(), nullptr);
+                    string line_hash = hasher()
+                        .update(sbr.get_data(), sbr.length())
+                        .to_string();
                     if (line_hash == log_hash) {
                         int file_line = std::distance(lf->begin(), line_iter);
                         content_line_t line_cl = content_line_t(
@@ -1241,7 +1239,9 @@ static void save_time_bookmarks()
                     lf->original_line_time(line_iter),
                     lf->get_format()->get_name(),
                     read_result.map([](auto sbr) {
-                        return hash_bytes(sbr.get_data(), sbr.length(), nullptr);
+                        return hasher()
+                            .update(sbr.get_data(), sbr.length())
+                            .to_string();
                     }).unwrap(),
                     lnav_data.ld_session_time,
                     offset.tv_sec,

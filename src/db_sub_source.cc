@@ -74,11 +74,11 @@ void db_label_source::text_attrs_for_line(textview_curses &tc, int row,
     }
     for (size_t lpc = 0; lpc < this->dls_headers.size() - 1; lpc++) {
         if (row % 2 == 0) {
-            sa.push_back(string_attr(lr2, &view_curses::VC_STYLE, A_BOLD));
+            sa.emplace_back(lr2, &view_curses::VC_STYLE, A_BOLD);
         }
         lr.lr_start += this->dls_headers[lpc].hm_column_size - 1;
         lr.lr_end = lr.lr_start + 1;
-        sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_VLINE));
+        sa.emplace_back(lr, &view_curses::VC_GRAPHIC, ACS_VLINE);
         lr.lr_start += 1;
     }
 
@@ -268,10 +268,10 @@ size_t db_overlay_source::list_overlay_count(const listview_curses &lv)
                 string_attrs_t &sa = this->dos_lines.back().get_attrs();
                 struct line_range lr(1, 2);
 
-                sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_LTEE));
+                sa.emplace_back(lr, &view_curses::VC_GRAPHIC, ACS_LTEE);
                 lr.lr_start = 3 + jpw_value.wt_ptr.size() + 3;
                 lr.lr_end = -1;
-                sa.push_back(string_attr(lr, &view_curses::VC_STYLE, A_BOLD));
+                sa.emplace_back(lr, &view_curses::VC_STYLE, A_BOLD);
 
                 double num_value = 0.0;
 
@@ -309,10 +309,10 @@ size_t db_overlay_source::list_overlay_count(const listview_curses &lv)
         string_attrs_t &sa = this->dos_lines.back().get_attrs();
         struct line_range lr(1, 2);
 
-        sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_LLCORNER));
+        sa.emplace_back(lr, &view_curses::VC_GRAPHIC, ACS_LLCORNER);
         lr.lr_start = 2;
         lr.lr_end = -1;
-        sa.push_back(string_attr(lr, &view_curses::VC_GRAPHIC, ACS_HLINE));
+        sa.emplace_back(lr, &view_curses::VC_GRAPHIC, ACS_HLINE);
 
         retval += 1;
     }
@@ -348,8 +348,7 @@ bool db_overlay_source::list_value_for_overlay(const listview_curses &lv, int y,
             if (!this->dos_labels->dls_headers[lpc].hm_graphable) {
                 attrs = A_UNDERLINE;
             }
-            sa.push_back(string_attr(header_range, &view_curses::VC_STYLE,
-                                     attrs));
+            sa.emplace_back(header_range, &view_curses::VC_STYLE, attrs);
 
             before = total_fill / 2;
             total_fill -= before;
@@ -360,8 +359,7 @@ bool db_overlay_source::list_value_for_overlay(const listview_curses &lv, int y,
 
         struct line_range lr(0);
 
-        sa.push_back(string_attr(lr, &view_curses::VC_STYLE,
-                                 A_BOLD | A_UNDERLINE));
+        sa.emplace_back(lr, &view_curses::VC_STYLE, A_BOLD | A_UNDERLINE);
         return true;
     }
     else if (this->dos_active && y >= 2 && ((size_t) y) < (this->dos_lines.size() + 2)) {

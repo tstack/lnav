@@ -58,8 +58,6 @@ public:
 
     bottom_status_source();
 
-    virtual ~bottom_status_source() = default;
-
     lv_functor_t line_number_wire;
     lv_functor_t percent_wire;
     lv_functor_t marks_wire;
@@ -71,12 +69,12 @@ public:
         this->bss_prompt.set_value(prompt);
     };
 
-    void grep_error(std::string msg)
+    void grep_error(const std::string& msg) override
     {
         this->bss_error.set_value(msg);
     };
 
-    size_t statusview_fields()
+    size_t statusview_fields() override
     {
         size_t retval;
 
@@ -90,7 +88,7 @@ public:
         return retval;
     };
 
-    status_field &statusview_value_for_field(int field)
+    status_field &statusview_value_for_field(int field) override
     {
         if (!this->bss_error.empty()) {
             return this->bss_error;

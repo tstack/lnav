@@ -1317,7 +1317,11 @@ static Result<string, string> com_filter(exec_context &ec, string cmdline, vecto
             text_filter::type_t lt  = (args[0] == "filter-out") ?
                                          text_filter::EXCLUDE :
                                          text_filter::INCLUDE;
-            auto pf = make_shared<pcre_filter>(lt, args[1], fs.next_index(), code.release());
+            auto filter_index = fs.next_index();
+            if (!filter_index) {
+                return ec.make_error("too many filters");
+            }
+            auto pf = make_shared<pcre_filter>(lt, args[1], *filter_index, code.release());
 
             log_debug("%s [%d] %s", args[0].c_str(), pf->get_index(), args[1].c_str());
             fs.add_filter(pf);
@@ -2809,7 +2813,7 @@ static Result<string, string> com_add_test(exec_context &ec, string cmdline, vec
             snprintf(path, sizeof(path),
                      "%s/test/log-samples/sample-%s.txt",
                      getenv("LNAV_SRC"),
-                     hash_string(line).c_str());
+                     hasher().update(line).to_string().c_str());
 
             if ((file = fopen(path, "w")) == nullptr) {
                 perror("fopen failed");

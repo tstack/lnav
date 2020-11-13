@@ -340,7 +340,7 @@ static void rl_search_internal(void *dummy, readline_curses *rc, ln_mode_t mode,
                 const char *errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
                 lnav_data.ld_bottom_source.
-                    grep_error(string("sql error: ") + string(errmsg));
+                    grep_error(fmt::format("sql error: {}", errmsg));
             } else {
                 lnav_data.ld_bottom_source.grep_error("");
             }

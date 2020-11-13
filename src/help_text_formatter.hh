@@ -36,9 +36,12 @@
 #include "attr_line.hh"
 
 using help_example_to_attr_line_fun_t =
-    std::function<attr_line_t(const help_text &, const help_example &)>;
+std::function<attr_line_t(const help_text &, const help_example &)>;
 
-void format_help_text_for_term(const help_text &ht, size_t width, attr_line_t &out, bool synopsis_only = false);
+void
+format_help_text_for_term(const help_text &ht, size_t width, attr_line_t &out,
+                          bool synopsis_only = false);
+
 void format_example_text_for_term(
     const help_text &ht,
     help_example_to_attr_line_fun_t eval,

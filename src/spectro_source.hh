@@ -404,11 +404,11 @@ public:
             else {
                 color = COLOR_RED;
             }
-            value_out.push_back(string_attr(
+            value_out.emplace_back(
                 line_range(lpc, lpc + 1),
                 &view_curses::VC_STYLE,
                 vc.ansi_color_pair(COLOR_BLACK, color)
-            ));
+            );
         }
     };
 

@@ -230,8 +230,9 @@ void vt52_curses::map_output(const char *output, int len)
         else {
             auto next_ch = output[lpc];
             auto seq_size = ww898::utf::utf8::char_size([next_ch]() {
-                return next_ch;
-            });
+                return std::make_pair(next_ch, 16);
+            })
+                .unwrapOr(size_t{1});
 
             if (seq_size > 1) {
                 this->vc_escape[0] = next_ch;

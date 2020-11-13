@@ -124,8 +124,8 @@ inline ssize_t utf8_char_to_byte_index(const std::string &str, ssize_t ch_index)
 
     while (ch_index > 0) {
         auto ch_len = ww898::utf::utf8::char_size([&str, retval]() {
-            return str[retval];
-        });
+            return std::make_pair(str[retval], str.length() - retval - 1);
+        }).unwrapOr(1);
 
         retval += ch_len;
         ch_index -= 1;

@@ -190,7 +190,7 @@ class generic_log_format : public log_format {
 
         lr.lr_start = pc[0]->c_begin;
         lr.lr_end   = pc[0]->c_end;
-        sa.push_back(string_attr(lr, &logline::L_TIMESTAMP));
+        sa.emplace_back(lr, &logline::L_TIMESTAMP);
 
         const char *level = &line.get_data()[pc[1]->c_begin];
 
@@ -203,11 +203,11 @@ class generic_log_format : public log_format {
 
         lr.lr_start = 0;
         lr.lr_end   = prefix_len;
-        sa.push_back(string_attr(lr, &logline::L_PREFIX));
+        sa.emplace_back(lr, &logline::L_PREFIX);
 
         lr.lr_start = prefix_len;
         lr.lr_end   = line.length();
-        sa.push_back(string_attr(lr, &textview_curses::SA_BODY));
+        sa.emplace_back(lr, &textview_curses::SA_BODY);
     };
 
     unique_ptr<log_format> specialized(int fmt_lock)

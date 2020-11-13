@@ -98,7 +98,7 @@ logfile::logfile(const string &filename, logfile_open_options &loo)
         this->lf_valid_filename = false;
     }
 
-    this->lf_content_id = hash_string(this->lf_filename);
+    this->lf_content_id = hasher().update(this->lf_filename).to_string();
     this->lf_line_buffer.set_fd(this->lf_options.loo_fd);
     this->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
@@ -187,7 +187,9 @@ bool logfile::process_prefix(shared_buffer_ref &sbr, const line_info &li)
 
                 this->lf_format = (*iter)->specialized();
                 this->set_format_base_time(this->lf_format.get());
-                this->lf_content_id = hash_string(string(sbr.get_data(), sbr.length()));
+                this->lf_content_id = hasher()
+                    .update(sbr.get_data(), sbr.length())
+                    .to_string();
 
                 /*
                  * We'll go ahead and assume that any previous lines were

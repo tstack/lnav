@@ -25,7 +25,10 @@
 #pragma once
 
 #include <cstdint>
+#include <utility>
 #include <stdexcept>
+
+#include "base/result.h"
 
 namespace ww898 {
 namespace utf {
@@ -47,24 +50,34 @@ struct utf8 final
     using char_type = uint8_t;
 
     template<typename PeekFn>
-    static size_t char_size(PeekFn && peek_fn)
+    static Result<size_t, const char *> char_size(PeekFn && peek_fn)
     {
-        char_type const ch0 = std::forward<PeekFn>(peek_fn)();
-        if (ch0 < 0x80) // 0xxx_xxxx
-            return 1;
-        if (ch0 < 0xC0)
-            throw std::runtime_error("The utf8 first char in sequence is incorrect");
-        if (ch0 < 0xE0) // 110x_xxxx 10xx_xxxx
-            return 2;
-        if (ch0 < 0xF0) // 1110_xxxx 10xx_xxxx 10xx_xxxx
-            return 3;
-        if (ch0 < 0xF8) // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
-            return 4;
-        if (ch0 < 0xFC) // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
-            return 5;
-        if (ch0 < 0xFE) // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
-            return 6;
-        throw std::runtime_error("The utf8 first char in sequence is incorrect");
+        const std::pair<char_type, size_t> peek_res = std::forward<PeekFn>(peek_fn)();
+        const auto ch0 = peek_res.first;
+        const auto remaining = peek_res.second;
+        size_t retval = 0;
+
+        if (ch0 < 0x80) { // 0xxx_xxxx
+            retval = 1;
+        } else if (ch0 < 0xC0) {
+            return Err("The utf8 first char in sequence is incorrect");
+        } else if (ch0 < 0xE0) { // 110x_xxxx 10xx_xxxx
+            retval = 2;
+        } else if (ch0 < 0xF0) { // 1110_xxxx 10xx_xxxx 10xx_xxxx
+            retval = 3;
+        } else if (ch0 < 0xF8) { // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+            retval = 4;
+        } else if (ch0 < 0xFC) { // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+            retval = 5;
+        } else if (ch0 < 0xFE) { // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+            retval = 6;
+        } else {
+            return Err("The utf8 first char in sequence is incorrect");
+        }
+        if (retval - 1 > remaining) {
+            return Err("Truncated utf8 sequence");
+        }
+        return Ok(retval);
     }
 
     template<typename ReadFn>

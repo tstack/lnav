@@ -113,7 +113,10 @@ void input_dispatcher::new_input(const struct timeval &current_time, int ch)
                     this->id_escape_index = 0;
                 }
             } else {
-                auto seq_size = utf::utf8::char_size([ch]() { return ch; });
+                auto seq_size = utf::utf8::char_size([ch]() {
+                    return std::make_pair(ch, 16);
+                })
+                    .unwrapOr(size_t{1});
 
                 if (seq_size == 1) {
                     snprintf(keyseq.data(), keyseq.size(), "x%02x", ch & 0xff);

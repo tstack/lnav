@@ -51,6 +51,8 @@ STRONG_INT_TYPE(int, bucket_group);
 STRONG_INT_TYPE(int, bucket_type);
 
 struct stacked_bar_chart_base {
+    virtual ~stacked_bar_chart_base() = default;
+
     struct show_none {};
     struct show_all {};
     struct show_one {
@@ -77,8 +79,6 @@ public:
             : sbc_do_stacking(true), sbc_left(0), sbc_right(0), sbc_show_state(show_all()) {
 
     };
-
-    virtual ~stacked_bar_chart() { };
 
     stacked_bar_chart &with_stacking_enabled(bool enabled) {
         this->sbc_do_stacking = enabled;

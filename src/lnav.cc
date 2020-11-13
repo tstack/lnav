@@ -1020,6 +1020,7 @@ static bool handle_config_ui_key(int ch)
 {
     nonstd::optional<ln_mode_t> new_mode;
 
+    lnav_data.ld_filter_help_status_source.fss_error.clear();
     if (ch == 'F') {
         new_mode = LNM_FILES;
     } else if (ch == 'T') {

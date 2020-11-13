@@ -203,7 +203,7 @@ public:
         return this->fs_filters.size() == logfile_filter_state::MAX_FILTERS;
     }
 
-    size_t next_index() {
+    nonstd::optional<size_t> next_index() {
         bool used[32];
 
         memset(used, 0, sizeof(used));
@@ -223,7 +223,7 @@ public:
                 return lpc;
             }
         }
-        throw "No more filters";
+        return nonstd::nullopt;
     };
 
     void add_filter(const std::shared_ptr<text_filter> &filter) {

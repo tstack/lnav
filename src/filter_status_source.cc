@@ -80,13 +80,6 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_HELP].set_width(20);
     this->tss_fields[TSF_HELP].set_value(TOGGLE_MSG);
     this->tss_fields[TSF_HELP].set_left_pad(1);
-
-    this->tss_prompt.set_left_pad(1);
-    this->tss_prompt.set_min_width(35);
-    this->tss_prompt.set_share(1);
-    this->tss_error.set_left_pad(1);
-    this->tss_error.set_min_width(35);
-    this->tss_error.set_share(1);
 }
 
 size_t filter_status_source::statusview_fields()
@@ -142,54 +135,38 @@ size_t filter_status_source::statusview_fields()
             view_colors::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
     }
 
-    if (this->tss_prompt.empty() && this->tss_error.empty()) {
-        lnav_data.ld_view_stack.top() | [this] (auto tc) {
-            text_sub_source *tss = tc->get_sub_source();
-            if (tss == nullptr) {
-                return;
+    lnav_data.ld_view_stack.top() | [this](auto tc) {
+        text_sub_source *tss = tc->get_sub_source();
+        if (tss == nullptr) {
+            return;
+        }
+
+        filter_stack &fs = tss->get_filters();
+        auto enabled_count = 0, filter_count = 0;
+
+        for (const auto &tf : fs) {
+            if (tf->is_enabled()) {
+                enabled_count += 1;
             }
+            filter_count += 1;
+        }
+        if (filter_count == 0) {
+            this->tss_fields[TSF_COUNT].set_value("");
+        } else {
+            this->tss_fields[TSF_COUNT].set_value(
+                " " ANSI_BOLD("%d")
+                " of " ANSI_BOLD("%d")
+                " enabled ",
+                enabled_count,
+                filter_count);
+        }
+    };
 
-            filter_stack &fs = tss->get_filters();
-            auto enabled_count = 0, filter_count = 0;
-
-            for (const auto &tf : fs) {
-                if (tf->is_enabled()) {
-                    enabled_count += 1;
-                }
-                filter_count += 1;
-            }
-            if (filter_count == 0) {
-                this->tss_fields[TSF_COUNT].set_value("");
-            } else {
-                this->tss_fields[TSF_COUNT].set_value(
-                    " " ANSI_BOLD("%d")
-                    " of " ANSI_BOLD("%d")
-                    " enabled ",
-                    enabled_count,
-                    filter_count);
-            }
-        };
-
-        return TSF__MAX;
-    }
-
-    return 3;
+    return TSF__MAX;
 }
 
 status_field &filter_status_source::statusview_value_for_field(int field)
 {
-    if (field <= 1) {
-        return this->tss_fields[field];
-    }
-
-    if (!this->tss_error.empty()) {
-        return this->tss_error;
-    }
-
-    if (!this->tss_prompt.empty()) {
-        return this->tss_prompt;
-    }
-
     return this->tss_fields[field];
 }
 
@@ -231,6 +208,12 @@ filter_help_status_source::filter_help_status_source()
 {
     this->fss_help.set_min_width(10);
     this->fss_help.set_share(1);
+    this->fss_prompt.set_left_pad(1);
+    this->fss_prompt.set_min_width(35);
+    this->fss_prompt.set_share(1);
+    this->fss_error.set_left_pad(22);
+    this->fss_error.set_min_width(35);
+    this->fss_error.set_share(1);
 }
 
 size_t filter_help_status_source::statusview_fields()
@@ -311,5 +294,13 @@ size_t filter_help_status_source::statusview_fields()
 
 status_field &filter_help_status_source::statusview_value_for_field(int field)
 {
+    if (!this->fss_error.empty()) {
+        return this->fss_error;
+    }
+
+    if (!this->fss_prompt.empty()) {
+        return this->fss_prompt;
+    }
+
     return this->fss_help;
 }

@@ -127,20 +127,41 @@ inline mstime_t getmstime() {
 #error "off_t has unhandled size..."
 #endif
 
-struct hash_updater {
-    hash_updater(SpookyHash *context) : su_context(context) { };
-
-    void operator()(const std::string &str)
-    {
-        this->su_context->Update(str.c_str(), str.length());
+class hasher {
+public:
+    hasher() {
+        this->h_context.Init(0, 0);
     }
 
-    SpookyHash *su_context;
+    hasher &update(const std::string &str) {
+        this->h_context.Update(str.data(), str.length());
+
+        return *this;
+    }
+
+    hasher &update(const char *bits, size_t len) {
+        this->h_context.Update(bits, len);
+
+        return *this;
+    }
+
+    template<typename T,
+    typename = std::enable_if<std::is_arithmetic<T>::value>>
+    hasher &update(T value) {
+        this->h_context.Update(&value, sizeof(value));
+
+        return *this;
+    }
+
+    std::string to_string() {
+        byte_array<2, uint64> bits;
+
+        this->h_context.Final(bits.out(0), bits.out(1));
+        return bits.to_string();
+    }
+private:
+    SpookyHash h_context;
 };
-
-std::string hash_string(const std::string &str);
-
-std::string hash_bytes(const char *str1, size_t s1len, ...);
 
 template<typename UnaryFunction, typename Member>
 struct object_field_t {

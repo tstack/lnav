@@ -462,10 +462,14 @@ CREATE TABLE lnav_view_filters (
         textview_curses &tc = lnav_data.ld_views[view_index];
         text_sub_source *tss = tc.get_sub_source();
         filter_stack &fs = tss->get_filters();
+        auto filter_index = fs.next_index();
+        if (!filter_index) {
+            throw sqlite_func_error("Too many filters");
+        }
         auto pf = make_shared<pcre_filter>(
             type.value_or(text_filter::type_t::EXCLUDE),
             pattern.first,
-            fs.next_index(),
+            *filter_index,
             pattern.second);
         fs.add_filter(pf);
         if (!enabled.value_or(true)) {

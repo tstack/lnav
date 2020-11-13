@@ -32,8 +32,6 @@
 
 #include <stdio.h>
 
-#include "spookyhash/SpookyV2.h"
-
 #include <list>
 #include <stack>
 #include <vector>

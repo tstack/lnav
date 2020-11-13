@@ -15,6 +15,8 @@ lnav v0.9.1:
        pressing 'f' in the filter editor UI; executing the ':toggle-filtering'
        command; or by doing an UPDATE on the "filtering" column of the
        "lnav_views" SQLite table.
+     * Themes can now include definitions for text highlights under:
+         /ui/theme-defs/<theme_name>/highlights
 
      Interface Changes:
      * When copying log lines, the file name and time offset will be included

@@ -319,24 +319,32 @@ void view_curses::mvwattrline(WINDOW *window,
                 break;
 
             default: {
-                auto offset = 1 - (int) ww898::utf::utf8::char_size([ch]() {
-                    return ch;
+                auto size_result = ww898::utf::utf8::char_size([&line, lpc]() {
+                    return std::make_pair(line[lpc], line.length() - lpc - 1);
                 });
 
-                expanded_line[exp_index] = line[lpc];
-                exp_index += 1;
-                if (offset) {
-                    if (char_index < lr_chars.lr_start) {
-                        lr_bytes.lr_start += abs(offset);
-                    }
-                    if (char_index < lr_chars.lr_end) {
-                        lr_bytes.lr_end += abs(offset);
-                    }
-                    exp_offset += offset;
-                    utf_adjustments.emplace_back(lpc, offset);
-                    for (; offset && (lpc + 1) < line.size(); lpc++, offset++) {
-                        expanded_line[exp_index] = line[lpc + 1];
-                        exp_index += 1;
+                if (size_result.isErr()) {
+                    expanded_line[exp_index] = '?';
+                    exp_index += 1;
+                } else {
+                    auto offset = 1 - (int) size_result.unwrap();
+
+                    expanded_line[exp_index] = line[lpc];
+                    exp_index += 1;
+                    if (offset) {
+                        if (char_index < lr_chars.lr_start) {
+                            lr_bytes.lr_start += abs(offset);
+                        }
+                        if (char_index < lr_chars.lr_end) {
+                            lr_bytes.lr_end += abs(offset);
+                        }
+                        exp_offset += offset;
+                        utf_adjustments.emplace_back(lpc, offset);
+                        for (; offset &&
+                               (lpc + 1) < line.size(); lpc++, offset++) {
+                            expanded_line[exp_index] = line[lpc + 1];
+                            exp_index += 1;
+                        }
                     }
                 }
                 char_index += 1;

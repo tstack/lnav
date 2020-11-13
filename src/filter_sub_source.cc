@@ -136,12 +136,15 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             textview_curses *top_view = *lnav_data.ld_view_stack.top();
             text_sub_source *tss = top_view->get_sub_source();
             filter_stack &fs = tss->get_filters();
+            auto filter_index = fs.next_index();
 
-            if (fs.full()) {
+            if (!filter_index) {
+                lnav_data.ld_filter_help_status_source.fss_error
+                    .set_value("error: too many filters");
                 return true;
             }
 
-            auto ef = make_shared<empty_filter>(text_filter::type_t::INCLUDE, fs.next_index());
+            auto ef = make_shared<empty_filter>(text_filter::type_t::INCLUDE, *filter_index);
             fs.add_filter(ef);
             lv.set_selection(vis_line_t(fs.size() - 1));
             lv.reload_data();
@@ -163,12 +166,15 @@ bool filter_sub_source::list_input_handle_key(listview_curses &lv, int ch)
             textview_curses *top_view = *lnav_data.ld_view_stack.top();
             text_sub_source *tss = top_view->get_sub_source();
             filter_stack &fs = tss->get_filters();
+            auto filter_index = fs.next_index();
 
-            if (fs.full()) {
+            if (!filter_index) {
+                lnav_data.ld_filter_help_status_source.fss_error
+                    .set_value("error: too many filters");
                 return true;
             }
 
-            auto ef = make_shared<empty_filter>(text_filter::type_t::EXCLUDE, fs.next_index());
+            auto ef = make_shared<empty_filter>(text_filter::type_t::EXCLUDE, *filter_index);
             fs.add_filter(ef);
             lv.set_selection(vis_line_t(fs.size() - 1));
             lv.reload_data();
@@ -362,7 +368,7 @@ void filter_sub_source::rl_change(readline_curses *rc)
                              &errptr,
                              &eoff,
                              nullptr)) == nullptr) {
-        lnav_data.ld_filter_status_source.tss_error
+        lnav_data.ld_filter_help_status_source.fss_error
                  .set_value("error: %s", errptr);
     } else {
         textview_curses::highlight_map_t &hm = top_view->get_highlights();
@@ -379,7 +385,7 @@ void filter_sub_source::rl_change(readline_curses *rc)
 
         hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
         top_view->set_needs_update();
-        lnav_data.ld_filter_status_source.tss_error.clear();
+        lnav_data.ld_filter_help_status_source.fss_error.clear();
     }
 }
 
@@ -414,7 +420,7 @@ void filter_sub_source::rl_perform(readline_curses *rc)
         tss->text_filters_changed();
     }
 
-    lnav_data.ld_filter_status_source.tss_prompt.clear();
+    lnav_data.ld_filter_help_status_source.fss_prompt.clear();
     this->fss_editing = false;
     this->fss_editor.set_visible(false);
     this->tss_view->reload_data();
@@ -428,8 +434,8 @@ void filter_sub_source::rl_abort(readline_curses *rc)
     auto iter = fs.begin() + this->tss_view->get_selection();
     shared_ptr<text_filter> tf = *iter;
 
-    lnav_data.ld_filter_status_source.tss_prompt.clear();
-    lnav_data.ld_filter_status_source.tss_error.clear();
+    lnav_data.ld_filter_help_status_source.fss_prompt.clear();
+    lnav_data.ld_filter_help_status_source.fss_error.clear();
     top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     top_view->reload_data();
     fs.delete_filter("");

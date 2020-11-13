@@ -72,7 +72,7 @@ void textfile_sub_source::text_attrs_for_line(textview_curses &tc, int row,
 
     lr.lr_start = 0;
     lr.lr_end   = -1;
-    value_out.push_back(string_attr(lr, &logline::L_FILE, this->current_file().get()));
+    value_out.emplace_back(lr, &logline::L_FILE, this->current_file().get());
 }
 
 size_t textfile_sub_source::text_size_for_line(textview_curses &tc, int line,
