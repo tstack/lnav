@@ -197,11 +197,13 @@ enum class file_format_t {
 
 file_format_t detect_file_format(const ghc::filesystem::path& filename);
 
+namespace fmt {
 template<>
-struct fmt::formatter<file_format_t> : fmt::formatter<fmt::string_view> {
+struct formatter<file_format_t> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(file_format_t ff, FormatContext& ctx) {
-        fmt::string_view name = "unknown";
+    auto format(file_format_t ff, FormatContext &ctx)
+    {
+        string_view name = "unknown";
         switch (ff) {
             case file_format_t::FF_SQLITE_DB:
                 name = "SQLite Database";
@@ -212,9 +214,10 @@ struct fmt::formatter<file_format_t> : fmt::formatter<fmt::string_view> {
             default:
                 break;
         }
-        return fmt::formatter<fmt::string_view>::format(name, ctx);
+        return formatter<string_view>::format(name, ctx);
     }
 };
+}
 
 bool next_format(const char * const fmt[], int &index, int &locked_index);
 
